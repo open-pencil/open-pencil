@@ -129,19 +129,28 @@ watch(
 )
 watch(
   () => [activeTab.value?.id, activeTab.value?.store.state.preparation] as const,
-  async ([, preparation]) => {
+  async ([tabId, preparation], [previousTabId]) => {
     if (preparation) {
       viewGeneration++
       submission.cancel()
       return
     }
     const generation = ++viewGeneration
+    const conversationId = history.current.value?.id
     submission.cancel()
-    chat.value = null
+    if (tabId !== previousTabId) chat.value = null
     try {
       await history.initialize()
     } catch {
-      if (generation === viewGeneration) toast.error(ai.value.chatHistoryFailed)
+      if (generation === viewGeneration) {
+        chat.value = null
+        toast.error(ai.value.chatHistoryFailed)
+      }
+      return
+    }
+    // A page switch keeps the document and its conversation, so a running chat stays attached.
+    if (generation === viewGeneration && history.current.value?.id !== conversationId) {
+      chat.value = null
     }
   }
 )
@@ -180,6 +189,7 @@ function handleStop() {
         :messages="messages"
         :status="status"
         :show-continue="showContinue"
+        :nodes-live="!history.readOnly.value"
         @continue="
           submission.submit({
             modelText: 'Continue where you left off',

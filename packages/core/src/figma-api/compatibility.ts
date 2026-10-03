@@ -70,6 +70,9 @@ type InstancePropertySurfaceMatch = Expect<
       | 'setProperties'
       | 'isExposedInstance'
       | 'exposedInstances'
+      | 'getMainComponentAsync'
+      | 'detachInstance'
+      | 'swapComponent'
     >,
     Pick<
       InstanceNode,
@@ -78,8 +81,15 @@ type InstancePropertySurfaceMatch = Expect<
       | 'setProperties'
       | 'isExposedInstance'
       | 'exposedInstances'
+      | 'getMainComponentAsync'
+      | 'detachInstance'
+      | 'swapComponent'
     >
   >
 >
 
 const _instancePropertySurfaceMatch: InstancePropertySurfaceMatch = true
+
+// `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
+type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
+const _effectShapeMatch: EffectShapeMatch = true

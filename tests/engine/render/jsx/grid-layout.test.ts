@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import {
-  renderTree,
-  renderJSX,
-  computeLayout,
-  computeAllLayouts,
-  Frame,
-  Rectangle
-} from '@open-pencil/core'
+import { renderTree, renderJSX, computeLayout, computeAllLayouts } from '@open-pencil/core'
+import { Frame, Rectangle } from '@open-pencil/design-jsx'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

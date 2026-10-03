@@ -1,9 +1,10 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { importNodeChanges, parseFigFile } from '@open-pencil/core'
+import { parseFigFile } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 
 setDefaultTimeout(60_000)
 
@@ -18,9 +19,8 @@ describe('edge cases', () => {
     await expect(parseFigFile(garbage.buffer as ArrayBuffer)).rejects.toThrow()
   })
 
-  test('REMOVED nodes are skipped', async () => {
-    const { importNodeChanges } = await import('#core/kiwi/fig/import')
-    const graph = importNodeChanges([
+  test('REMOVED nodes are skipped', () => {
+    const graph = materializeDocument([
       {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
@@ -62,7 +62,7 @@ describe('edge cases', () => {
         size: { x: 100, y: 100 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       }
-    ])
+    ]).graph
     const children = graph.getChildren(graph.getPages()[0].id)
     expect(children).toHaveLength(1)
     expect(children[0].name).toBe('Visible')
@@ -80,7 +80,7 @@ describe('edge cases', () => {
     //
     // After import, OuterUse should contain a clone of InnerUse,
     // which should contain a Label text with "Changed" (not "Default")
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
@@ -158,7 +158,7 @@ describe('edge cases', () => {
           symbolID: { sessionID: 1, localID: 3 }
         }
       } as NodeChange
-    ])
+    ]).graph
 
     const page = graph.getPages()[0]
     const outerUse = graph.getChildren(page.id).find((n) => n.name === 'OuterUse')
@@ -185,7 +185,7 @@ describe('edge cases', () => {
     //   INSTANCE "ToolbarUse" (1:9) of Toolbar on the page
     //
     // After import, ToolbarUse > btn clone > icon clone should have IconB's children
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
@@ -312,7 +312,10 @@ describe('edge cases', () => {
         phase: 'CREATED',
         size: { x: 24, y: 24 },
         transform: { m00: 1, m01: 0, m02: 24, m10: 0, m11: 1, m12: 0 },
-        symbolData: { symbolID: { sessionID: 1, localID: 1 } }
+        symbolData: {
+          symbolID: { sessionID: 1, localID: 1 },
+          symbolOverrides: [{ guidPath: { guids: [{ sessionID: 1, localID: 1 }] }, name: 'icon' }]
+        }
       } as NodeChange,
       // Toolbar component with instance of Button, swapping icon to IconB
       {
@@ -383,7 +386,7 @@ describe('edge cases', () => {
           symbolID: { sessionID: 1, localID: 7 }
         }
       } as NodeChange
-    ])
+    ]).graph
 
     const page = graph.getPages()[0]
     const toolbarUse = graph.getChildren(page.id).find((n) => n.name === 'ToolbarUse')
@@ -421,7 +424,7 @@ describe('edge cases', () => {
   })
 
   test('component swaps use the component set name for variants', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
@@ -448,6 +451,7 @@ describe('edge cases', () => {
         parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
         type: 'FRAME',
         name: 'Avatar',
+        isStateGroup: true,
         phase: 'CREATED',
         componentPropDefs: [
           {
@@ -483,7 +487,7 @@ describe('edge cases', () => {
           ]
         }
       } as NodeChange
-    ])
+    ]).graph
 
     const instance = graph
       .getChildren(graph.getPages()[0].id)

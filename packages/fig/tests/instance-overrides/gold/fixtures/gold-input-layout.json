@@ -1,0 +1,49 @@
+{
+  "fileKey": "NmoHzskYNiSKOaRX14bMdw",
+  "nodes": [
+    {
+      "id": "1:3503",
+      "name": "Input",
+      "x": 49,
+      "y": 521,
+      "width": 393.5667419433594,
+      "height": 39.3802604675293,
+      "paddingLeft": 8.908441543579102,
+      "paddingTop": 0,
+      "itemSpacing": 0
+    },
+    {
+      "id": "I1:3503;4188:18912;4188:19312",
+      "name": "Tags",
+      "x": 0,
+      "y": 0,
+      "width": 277.3519592285156,
+      "height": 39.3802604675293,
+      "paddingLeft": 7.126753330230713,
+      "paddingTop": 5.345065116882324,
+      "itemSpacing": 3.5633766651153564
+    },
+    {
+      "id": "I1:3503;4188:18912;4275:72192",
+      "name": "Badge",
+      "x": 7.126753330230713,
+      "y": 5.345065116882324,
+      "width": 85.32389831542969,
+      "height": 28.69013023376465,
+      "paddingLeft": 0,
+      "paddingTop": 0,
+      "itemSpacing": 0
+    },
+    {
+      "id": "I1:3503;4188:18912;4188:19287",
+      "name": "Content",
+      "x": 0,
+      "y": 0,
+      "width": 374.8589782714844,
+      "height": 39.3802604675293,
+      "paddingLeft": 0,
+      "paddingTop": 0,
+      "itemSpacing": 0
+    }
+  ]
+}

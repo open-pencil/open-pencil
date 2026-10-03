@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderJSX, sceneNodeToJSX } from '@open-pencil/core'
+import { renderJSX } from '@open-pencil/core'
+import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 
 import { getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

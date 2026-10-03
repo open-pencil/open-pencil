@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { type Fill, type SceneNode } from '@open-pencil/core'
 
-import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 
 setDefaultTimeout(60_000)
 

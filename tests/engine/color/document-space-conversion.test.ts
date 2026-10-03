@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolveOkHCLForPreview, resolveRGBAForPreview } from '#core/color/management'
+import { resolveOkHCLForPreview, resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 
 /** #2563EB as authored in an sRGB document. */
 const BLUE = { r: 0.1450980392156863, g: 0.38823529411764707, b: 0.9215686274509803, a: 1 }

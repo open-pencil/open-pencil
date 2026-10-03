@@ -13,6 +13,7 @@ import {
 import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
 import { bindClipboardNotifications } from '@/app/editor/clipboard/notifications'
 import { loadFont } from '@/app/editor/fonts'
+import { createRecentPages } from '@/app/editor/pages/recent'
 import { createCanvasPaneRegistry } from '@/app/editor/panes/registry'
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
 import {
@@ -28,6 +29,7 @@ import {
 } from '@/app/editor/session/modules'
 import { createInitialAppEditorState, type AppEditorState } from '@/app/editor/session/types'
 import { notificationMessages } from '@/app/i18n/notifications'
+import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 import { IS_BROWSER, IS_TAURI } from '@/constants'
 
@@ -54,7 +56,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
             height: IS_BROWSER ? window.innerHeight : 1080
           }
   })
-  const canvasReadiness = Promise.withResolvers<undefined>()
+  const canvasReadiness = createDeferred<undefined>()
   const io = new IORegistry(BUILTIN_IO_FORMATS)
   bindClipboardNotifications(editor)
 
@@ -76,6 +78,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     syncDocumentColorSpace
   )
   editor.onEditorEvent('graph:replaced', syncDocumentColorSpace)
+  const recentPages = createRecentPages(editor)
 
   const preparationEvents = createEditorPreparationEvents()
   const preparationLifecycle = new Map<
@@ -178,7 +181,12 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       }
       succeeded = true
     } catch (error) {
-      if (preparation.signal.aborted) throw error
+      if (preparation.signal.aborted) {
+        // Another switch took over; its page is the one to show, so this one ends quietly.
+        // A caller's own preparation reports its cancellation itself.
+        if (ownsPreparation) return
+        throw error
+      }
       if (ownsPreparation) {
         const presentationTimedOut =
           error instanceof Error && error.message === 'The operation was timed out'
@@ -223,6 +231,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     getPaneRenderState: panes.getPaneRenderState,
     setActivePane: panes.setActivePane,
     switchPage,
+    recentPages: recentPages.ids,
     splitPane: panes.splitPane,
     closePane: panes.closePane,
     resizePane: panes.resizePane,
@@ -232,6 +241,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     ...modules,
     dispose() {
       stopColorSpaceSync()
+      recentPages.dispose()
       disposeSelection()
       modules.dispose()
     }

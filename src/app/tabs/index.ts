@@ -2,9 +2,8 @@ import { promiseTimeout } from '@vueuse/core'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { findFigThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { findFigThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
-import { populateLazyFigImportRoots } from '@open-pencil/core/kiwi'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -31,6 +30,7 @@ import {
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
+import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
@@ -214,7 +214,7 @@ async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGra
   if (firstPageId) computeAllLayouts(imported, firstPageId)
   const coverPageId = findFigThumbnailPageId(imported.getPages())
   if (coverPageId && coverPageId !== firstPageId) {
-    populateLazyFigImportRoots(imported, [coverPageId])
+    populateFigPage(imported, coverPageId)
     computeAllLayouts(imported, coverPageId)
   }
   return imported
@@ -430,7 +430,7 @@ export async function openFileInNewTab(
       subject: file.name
     })
 
-    const completion = Promise.withResolvers<undefined>()
+    const completion = createDeferred<undefined>()
     void completion.promise.catch(() => undefined)
     const pendingOpen = { completion: completion.promise, identity, store }
     fileOpenCoordinator.add(pendingOpen)

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -8,7 +8,7 @@ import { canvas, doc, node } from '../helpers'
 
 describe('fig-import: arc data', () => {
   test('partial ellipse', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('ELLIPSE', 10, 1, {
@@ -18,7 +18,7 @@ describe('fig-import: arc data', () => {
           innerRadius: 0
         }
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData).toBeDefined()
     const arcData = expectDefined(n.arcData, 'ellipse arc data')
@@ -28,7 +28,7 @@ describe('fig-import: arc data', () => {
   })
 
   test('donut (inner radius)', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('ELLIPSE', 10, 1, {
@@ -38,7 +38,7 @@ describe('fig-import: arc data', () => {
           innerRadius: 0.5
         }
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData?.innerRadius).toBe(0.5)
   })

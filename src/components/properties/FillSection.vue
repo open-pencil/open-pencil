@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { colorToHexRaw } from '@open-pencil/core/color'
 import type { Fill } from '@open-pencil/scene-graph'
+import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   BindableValueRoot,

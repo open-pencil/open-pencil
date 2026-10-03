@@ -20,10 +20,9 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-
-import { parseColor } from './color'
 
 export interface PenDocument {
   version: string

@@ -2,5 +2,9 @@
   "newPage": "Nueva página",
   "rename": "Renombrar",
   "delete": "Eliminar",
-  "pageName": "Página {number}"
+  "pageName": "Página {number}",
+  "pages": "Páginas",
+  "goToPage": "Ir a la página…",
+  "recentPage": "Reciente",
+  "currentPage": "Página actual"
 }

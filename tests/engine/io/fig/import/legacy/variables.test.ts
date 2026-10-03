@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -8,7 +8,7 @@ import { canvas, doc, node } from './helpers'
 
 describe('fig-import: variable asset refs', () => {
   test('imports node-scoped modes and native paint aliases', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       {
@@ -67,7 +67,7 @@ describe('fig-import: variable asset refs', () => {
           }
         ] as NodeChange['fillPaints']
       })
-    ])
+    ]).graph
 
     const frame = expectDefined(
       [...graph.getAllNodes()].find((candidate) => candidate.name === 'Dark scope'),
@@ -84,7 +84,7 @@ describe('fig-import: variable asset refs', () => {
   })
 
   test('imports native scalar variable bindings', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       {
@@ -131,7 +131,7 @@ describe('fig-import: variable asset refs', () => {
           ]
         }
       })
-    ])
+    ]).graph
 
     const frame = expectDefined(
       [...graph.getAllNodes()].find((candidate) => candidate.name === 'FRAME_30'),
@@ -145,7 +145,7 @@ describe('fig-import: variable asset refs', () => {
   })
 
   test('resolves color variables and aliases by assetRef', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       {
@@ -209,7 +209,7 @@ describe('fig-import: variable asset refs', () => {
           }
         ] as NodeChange['fillPaints']
       })
-    ])
+    ]).graph
 
     const primary = expectDefined(
       [...graph.variables.values()].find((v) => v.name === 'Primary'),

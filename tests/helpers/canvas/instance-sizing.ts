@@ -1,4 +1,5 @@
-import { Component, Frame, Instance, Text, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
+import { Component, Frame, Instance, Text } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 export async function createInstanceSizingScene(graph: SceneGraph, parentId: string) {

@@ -186,7 +186,8 @@ heavy('CLI tool operations via eval', () => {
         offset: { x: 0, y: 4 },
         radius: 8,
         spread: 0,
-        visible: true
+        visible: true,
+        blendMode: 'NORMAL'
       }]
       return { count: f.effects.length, type: f.effects[0].type }
     `)

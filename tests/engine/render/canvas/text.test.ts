@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- text rendering scenarios share CanvasKit setup and fixtures */
 
-import { describe, test, expect, mock } from 'bun:test'
+import { describe, test, expect, mock, spyOn } from 'bun:test'
 
 import {
   detectTextDirection,
@@ -14,7 +14,7 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText, textVerticalOffset } from '#core/canvas/scene'
-import { buildParagraph, isNodeFontLoaded } from '#core/canvas/text'
+import { buildParagraph, isNodeFontLoaded, nodeFontReadiness } from '#core/canvas/text'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
@@ -385,6 +385,38 @@ describe('renderText headless visual', () => {
       expect(missingGlyphCharacters('A𠀀B', paragraph.getShapedLines())).toEqual(['𠀀'])
       paragraph.delete()
     } finally {
+      manager.cjkFallbackFamilies = originalFallbacks
+      surface.delete()
+    }
+  })
+
+  test('requests a CJK fallback for text whose face is substituted', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+    fontManager.markLoaded('Inter', 'Regular', interData)
+    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
+    const originalFallbacks = [...manager.cjkFallbackFamilies]
+    manager.cjkFallbackFamilies = []
+    const fallbackPack = spyOn(fontManager, 'ensureFallbackPack').mockResolvedValue({})
+    const face = fontFaceDemand('Undrawable Sans', 'Regular')
+    fontResolver.exhaust(face)
+    const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
+
+    try {
+      const renderer = new SkiaRendererClass(ck, surface)
+      renderer.fontsLoaded = true
+      renderer.fontProvider = fontProvider
+      const node = textNode({ text: '按钮', fontFamily: 'Undrawable Sans', fontWeight: 400 })
+
+      expect(nodeFontReadiness(renderer, node)).toBe('pending')
+      await Promise.resolve()
+      expect(fallbackPack).toHaveBeenCalled()
+      expect(fallbackPack.mock.calls[0]?.[0]?.some((script) => script.startsWith('cjk'))).toBe(true)
+    } finally {
+      fallbackPack.mockRestore()
+      fontResolver.reset(face)
       manager.cjkFallbackFamilies = originalFallbacks
       surface.delete()
     }

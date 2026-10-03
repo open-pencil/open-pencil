@@ -1,18 +1,36 @@
-import { wcagLuminance } from 'culori'
 import { sumBy } from 'es-toolkit/math'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { colorToHex } from '#core/color'
 
 import type { DescribeIssue } from './issues'
 import { CONTAINER_TYPES, findAncestorBackground } from './shared'
 
-const DARK_BG_LUMINANCE = 0.35
+const WCAG_AA_CONTRAST = 4.5
+const WCAG_AA_LARGE_TEXT_CONTRAST = 3
 
-function rgbLuminance(c: Color): number {
-  return wcagLuminance({ mode: 'rgb', r: c.r, g: c.g, b: c.b })
+// Translucent text, through its fill or the node's own opacity, is seen blended with the background.
+function blendOver(fill: Fill, nodeOpacity: number, background: Color): Color {
+  return compositeOver(fill.color, background, fill.opacity * fill.color.a * nodeOpacity)
+}
+
+// Round down so a failing ratio such as 4.499 is not shown as 4.50.
+function formatRatio(ratio: number): string {
+  return (Math.floor(ratio * 100) / 100).toFixed(2)
+}
+
+// WCAG large text is at least 18pt, or 14pt bold (1pt = 4/3px).
+function isLargeSize(fontSize: number, fontWeight: number): boolean {
+  return fontSize >= 24 || (fontSize >= 56 / 3 && fontWeight >= 700)
+}
+
+// Text qualifies only when every range does: the base style and each style run's own size and weight.
+function isLargeText(node: SceneNode): boolean {
+  if (!isLargeSize(node.fontSize, node.fontWeight)) return false
+  return node.styleRuns.every(({ style }) =>
+    isLargeSize(style.fontSize ?? node.fontSize, style.fontWeight ?? node.fontWeight)
+  )
 }
 
 interface LayoutContext {
@@ -205,7 +223,8 @@ function checkTextVisibility(ctx: LayoutContext): void {
   for (const childId of node.childIds) {
     const child = graph.getNode(childId)
     if (!child?.visible || child.type !== 'TEXT') continue
-    const textFill = child.fills.find((f) => f.visible && f.type === 'SOLID')
+    const textFillIndex = child.fills.findIndex((f) => f.visible && f.type === 'SOLID')
+    const textFill = child.fills[textFillIndex] as Fill | undefined
     if (!textFill) {
       issues.push({
         message: `"${child.name || child.text.slice(0, 20) || 'Text'}" has no color — invisible`,
@@ -213,14 +232,17 @@ function checkTextVisibility(ctx: LayoutContext): void {
       })
       continue
     }
-    const textLum = rgbLuminance(textFill.color)
-    if (textLum > DARK_BG_LUMINANCE) continue
+    // A variable-bound color depends on the active mode, so its static value proves nothing;
+    // the color-contrast lint rule skips it for the same reason.
+    if (child.boundVariables[`fills/${textFillIndex}/color`]) continue
     const bg = findAncestorBackground(child, graph)
     if (!bg) continue
-    if (rgbLuminance(bg) < DARK_BG_LUMINANCE) {
+    const ratio = contrastRatio(blendOver(textFill, child.opacity, bg), bg)
+    const required = isLargeText(child) ? WCAG_AA_LARGE_TEXT_CONTRAST : WCAG_AA_CONTRAST
+    if (ratio < required) {
       issues.push({
-        message: `"${child.name || child.text.slice(0, 20) || 'Text'}" dark on dark (${colorToHex(textFill.color)} on ${colorToHex(bg)})`,
-        suggestion: 'Use a light color'
+        message: `"${child.name || child.text.slice(0, 20) || 'Text'}" contrast ${formatRatio(ratio)}:1 is below WCAG AA ${required}:1 (${colorToHex(textFill.color)} on ${colorToHex(bg)})`,
+        suggestion: 'Increase contrast between text and background'
       })
     }
   }

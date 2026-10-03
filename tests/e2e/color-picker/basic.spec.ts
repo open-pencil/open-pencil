@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import type { OkHCLPayload } from '@open-pencil/core/color'
+import type { OkHCLPayload } from '@open-pencil/scene-graph/color'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 

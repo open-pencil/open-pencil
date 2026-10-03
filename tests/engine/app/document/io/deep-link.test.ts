@@ -163,6 +163,25 @@ describe('openDeepLink', () => {
     expect(notices[0]).toContain('Nope')
   })
 
+  test('reports a failed layer search as an error, not a missing layer', async () => {
+    const notices: string[] = []
+
+    await openDeepLink(
+      { path: 'web/design/hikyo.pen', node: 'Button' },
+      {
+        openPaths: () => ['/r/hikyo/web/design/hikyo.pen'],
+        selectByName: async () => {
+          throw new Error('page failed to load')
+        },
+        notify: (message) => notices.push(message)
+      },
+      io()
+    )
+
+    expect(notices).toHaveLength(1)
+    expect(notices[0]).toContain('page failed to load')
+  })
+
   test('reports a dismissed picker as nothing chosen, not a wrong file', async () => {
     const deps = io({ choosePaths: mock(async () => []) })
     const notices: string[] = []

@@ -86,5 +86,9 @@
   "mcpFailureUnknownHint": "Relancez-le ou consultez les détails techniques ci-dessous.",
   "mcpFailureDetails": "Détails",
   "mcpFailureCopy": "Copier les détails",
-  "mcpFailureCopied": "Détails techniques copiés."
+  "mcpFailureCopied": "Détails techniques copiés.",
+  "toolMode": "Mode des outils",
+  "toolModeDescription": "Choisissez un accès complet ou uniquement un aperçu et les détails structurés de la sélection actuelle. Redémarrez le serveur pour appliquer les modifications.",
+  "toolModeFull": "Accès complet aux outils",
+  "toolModeSelectionContext": "Contexte de sélection uniquement"
 }

@@ -1,5 +1,5 @@
 import type { SceneGraph } from '../index'
-import { setInstanceOverride } from '../instance-overrides'
+import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
 import { findInstanceAncestor } from '../instances'
 import type {
   ComponentPropertyDefinition,
@@ -70,10 +70,22 @@ export function findComponentPropertyTargets(
   if (!component) return []
   const targets: ComponentPropertyTarget[] = []
   const visit = (sourceParent: SceneNode, instanceParent: SceneNode): void => {
-    for (const [index, childId] of sourceParent.childIds.entries()) {
+    const bySource = new Map<string, SceneNode>()
+    for (const child of graph.getChildren(instanceParent.id)) {
+      const mapped = getInstanceOverride(
+        instance.instanceOverrides,
+        instance.id,
+        child.id,
+        'sourceComponentId'
+      )
+      const sourceId = typeof mapped === 'string' ? mapped : child.componentId
+      if (!sourceId) continue
+      if (bySource.has(sourceId)) throw new Error(`Ambiguous component-property target ${sourceId}`)
+      bySource.set(sourceId, child)
+    }
+    for (const childId of sourceParent.childIds) {
       const source = graph.getNode(childId)
-      const targetId = instanceParent.childIds[index]
-      const target = targetId ? graph.getNode(targetId) : undefined
+      const target = bySource.get(childId)
       if (!source || !target) continue
       const reference = source.componentPropertyReferences.find(
         (candidate) => candidate.propertyId === propertyId

@@ -6,7 +6,11 @@ export const pageMessageDefaults = {
   newPage: 'New page',
   rename: 'Rename',
   delete: 'Delete',
-  pageName: params('Page {number}')
+  pageName: params('Page {number}'),
+  pages: 'Pages',
+  goToPage: 'Go to page…',
+  recentPage: 'Recent',
+  currentPage: 'Current page'
 } as const
 
 export const pageMessages = i18n('pages', pageMessageDefaults)

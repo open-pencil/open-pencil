@@ -3,24 +3,29 @@ import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph'
 import { effectiveFigmaRawNodeFields } from '../source-metadata'
 import { computeExportTransform, fractionalPosition, mapToFigmaType } from './basics'
 import { bytesToHex } from './bytes'
-import { VARIABLE_BINDING_FIELDS } from './convert'
-import { buildDerivedTextData as buildSharedDerivedTextData } from './derived-text-data'
-import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export-runtime'
+import { buildDerivedTextData as buildSharedDerivedTextData } from './derived-text/data'
+import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
 import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
 import { bakeGlyphScale, encodePathCommandsBlob } from './path/commands'
 import {
   BOUND_VARIABLES_PLUGIN_KEY,
+  removePluginData,
   LAYOUT_DIRECTION_PLUGIN_KEY,
   TEXT_DIRECTION_PLUGIN_KEY,
-  upsertPluginData
+  upsertPluginData,
+  OPEN_PENCIL_PLUGIN_ID
 } from './plugin-data'
+import {
+  exportedVariableConsumptionEntries,
+  mergeVariableConsumptionMaps
+} from './variable/bindings'
 import {
   buildStyleOverrideTable,
   encodeVectorNetworkBlob,
   type StyleOverride
-} from './vector-network'
+} from './vector/network'
 
 export {
   buildFigKiwi,
@@ -28,9 +33,9 @@ export {
   FIG_KIWI_DEFAULT_VERSION,
   parseFigKiwiChunks
 } from '@open-pencil/kiwi/fig/container'
-import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -38,8 +43,9 @@ import {
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
-} from './export-node'
-import { exportTextData, fontVariationToKiwi } from './text-data-export'
+} from './export/node'
+import { exportTextData, fontVariationToKiwi } from './text/data-export'
+import { toKiwiWindingRule } from './vector/geometry'
 
 function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
   const lineCount = Math.max(1, text.split('\n').length)
@@ -187,23 +193,6 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
   }
 }
 
-function resolveTextAutoResize(node: SceneNode, graph: SceneGraph): SceneNode['textAutoResize'] {
-  // For nodes imported from .fig files, preserve the original textAutoResize
-  // value. Forcing 'HEIGHT' for fixed-height text inside auto-layout causes
-  // layout drift on roundtrip.
-  if (node.source.id) return node.textAutoResize
-  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
-  if (
-    parent &&
-    parent.layoutMode !== 'NONE' &&
-    parent.layoutMode !== 'GRID' &&
-    node.layoutPositioning !== 'ABSOLUTE'
-  ) {
-    return 'HEIGHT'
-  }
-  return node.textAutoResize
-}
-
 function serializeTextProps(
   node: SceneNode,
   nc: KiwiNodeChange,
@@ -224,7 +213,7 @@ function serializeTextProps(
   if (node.fontVariations.length > 0) {
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
-  const autoResize = resolveTextAutoResize(node, graph)
+  const autoResize = node.textAutoResize
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
   if (!node.source.id || autoResize !== 'NONE' || 'textAutoResize' in rawNodeFields) {
     nc.textAutoResize = autoResize
@@ -337,6 +326,40 @@ function serializeSizeConstraints(node: SceneNode, nc: KiwiNodeChange): void {
   }
 }
 
+function exportSizing(value: SceneNode['primaryAxisSizing']) {
+  return value === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
+}
+
+function applyEditedLayoutFields(node: SceneNode, nc: KiwiNodeChange): void {
+  const values: Partial<Record<keyof SceneNode, Partial<KiwiNodeChange>>> = {
+    layoutMode: { stackMode: normalizeStackMode(node.layoutMode) },
+    itemSpacing: { stackSpacing: node.itemSpacing },
+    paddingLeft: { stackHorizontalPadding: node.paddingLeft },
+    paddingRight: { stackPaddingRight: node.paddingRight },
+    paddingTop: { stackVerticalPadding: node.paddingTop },
+    paddingBottom: { stackPaddingBottom: node.paddingBottom },
+    primaryAxisSizing: { stackPrimarySizing: exportSizing(node.primaryAxisSizing) },
+    counterAxisSizing: { stackCounterSizing: exportSizing(node.counterAxisSizing) },
+    primaryAxisAlign: { stackPrimaryAlignItems: normalizeStackJustify(node.primaryAxisAlign) },
+    counterAxisAlign: {
+      stackCounterAlignItems: normalizeStackCounterAlignItems(node.counterAxisAlign)
+    },
+    layoutGrow: { stackChildPrimaryGrow: node.layoutGrow },
+    layoutAlignSelf: { stackChildAlignSelf: node.layoutAlignSelf },
+    layoutPositioning: { stackPositioning: node.layoutPositioning },
+    layoutWrap: { stackWrap: node.layoutWrap },
+    counterAxisSpacing: { stackCounterSpacing: node.counterAxisSpacing },
+    strokesIncludedInLayout: { bordersTakeSpace: node.strokesIncludedInLayout },
+    itemReverseZIndex: { stackReverseZIndex: node.itemReverseZIndex }
+  }
+  for (const field of node.source.editedFields) {
+    if (field in values) Object.assign(nc, values[field as keyof SceneNode])
+  }
+  if (node.source.editedFields.includes('layoutDirection')) {
+    upsertPluginData(node, LAYOUT_DIRECTION_PLUGIN_KEY, node.layoutDirection)
+  }
+}
+
 function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneGraph): void {
   if (!node.source.id) upsertPluginData(node, LAYOUT_DIRECTION_PLUGIN_KEY, node.layoutDirection)
   serializeSizeConstraints(node, nc)
@@ -377,6 +400,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
     nc.bordersTakeSpace = figLayout.bordersTakeSpace
     if (figLayout.stackReverseZIndex) nc.stackReverseZIndex = true
     serializeInheritedCounterAxisStretch(node, nc, graph)
+    applyEditedLayoutFields(node, nc)
     return
   }
   if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
@@ -386,8 +410,8 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
     nc.stackHorizontalPadding = node.paddingLeft
     nc.stackPaddingBottom = node.paddingBottom
     nc.stackPaddingRight = node.paddingRight
-    nc.stackPrimarySizing = node.primaryAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
-    nc.stackCounterSizing = node.counterAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
+    nc.stackPrimarySizing = exportSizing(node.primaryAxisSizing)
+    nc.stackCounterSizing = exportSizing(node.counterAxisSizing)
     nc.stackPrimaryAlignItems = normalizeStackJustify(node.primaryAxisAlign)
     nc.stackCounterAlignItems = normalizeStackCounterAlignItems(node.counterAxisAlign)
     if (node.layoutWrap === 'WRAP') nc.stackWrap = 'WRAP'
@@ -427,11 +451,18 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
       const blobIdx = blobs.length
       blobs.push(geometry.commandsBlob)
       if (!geometry.fills || geometry.fills.length === 0) {
-        return { windingRule: geometry.windingRule, commandsBlob: blobIdx }
+        return {
+          windingRule: toKiwiWindingRule(geometry.windingRule),
+          commandsBlob: blobIdx
+        }
       }
       const styleID = styleOverrides.length + 1
       styleOverrides.push({ styleID, fillPaints: geometry.fills.map(fillToKiwiPaint) })
-      return { windingRule: geometry.windingRule, commandsBlob: blobIdx, styleID }
+      return {
+        windingRule: toKiwiWindingRule(geometry.windingRule),
+        commandsBlob: blobIdx,
+        styleID
+      }
     })
   }
 
@@ -442,7 +473,7 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     nc.strokeGeometry = node.strokeGeometry.map((g) => {
       const blobIdx = blobs.length
       blobs.push(g.commandsBlob)
-      return { windingRule: g.windingRule, commandsBlob: blobIdx }
+      return { windingRule: toKiwiWindingRule(g.windingRule), commandsBlob: blobIdx }
     })
   }
 }
@@ -453,32 +484,42 @@ function serializeVariableBindings(
   graph: SceneGraph,
   varIdToGuid?: Map<string, GUID>
 ): void {
-  if (Object.keys(node.boundVariables).length === 0) return
-  const entries: VariableConsumptionEntry[] = []
+  const entries = exportedVariableConsumptionEntries(node, graph, varIdToGuid)
   const roundtripBindings: Record<string, string> = {}
-  const typeMap: Record<string, string> = { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }
   for (const [field, varId] of Object.entries(node.boundVariables)) {
     const variable = graph.variables.get(varId)
     if (!variable) continue
     const varGuid = varIdToGuid?.get(varId) ?? stringToGuid(varId)
     roundtripBindings[field] = guidToString(varGuid)
-
-    const kiwiField = VARIABLE_BINDING_FIELDS[field]
-    if (!kiwiField) continue
-    const resolvedType = typeMap[variable.type] ?? 'FLOAT'
-    entries.push({
-      variableData: {
-        value: { alias: { guid: varGuid } },
-        dataType: 'ALIAS',
-        resolvedDataType: resolvedType
-      },
-      variableField: kiwiField
-    })
   }
-  if (Object.keys(roundtripBindings).length > 0) {
+  // An entry the node was imported with is dropped rather than emptied: nothing reads an
+  // empty map, and writing one leaves the record in every file the node is exported to.
+  if (Object.keys(roundtripBindings).length > 0)
     upsertPluginData(node, BOUND_VARIABLES_PLUGIN_KEY, JSON.stringify(roundtripBindings))
+  else removePluginData(node, BOUND_VARIABLES_PLUGIN_KEY)
+  if (entries.length > 0) {
+    nc.variableConsumptionMap = { entries }
+    Object.assign(
+      nc,
+      mergeVariableConsumptionMaps(effectiveFigmaRawNodeFields(node), {
+        parameterConsumptionMap: { entries }
+      })
+    )
   }
-  if (entries.length > 0) nc.variableConsumptionMap = { entries }
+}
+
+/** Identity maps and caches one document shares across every node it serializes. */
+export interface SceneNodeToKiwiOptions {
+  nodeIdToGuid?: Map<string, GUID>
+  fontDigestMap?: Map<string, Uint8Array>
+  varIdToGuid?: Map<string, GUID>
+  glyphBlobMap?: Map<string, number>
+  blobIndexByHex?: Map<string, number>
+  assignedGuidValues?: Set<string>
+  runtime?: FigNodeChangeExportRuntime
+  componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
+  modeIdToGuid?: Map<string, GUID>
+  propertyIdToGuid?: Map<string, GUID>
 }
 
 export function sceneNodeToKiwi(
@@ -488,17 +529,20 @@ export function sceneNodeToKiwi(
   localIdCounter: { value: number },
   graph: SceneGraph,
   blobs: Uint8Array[],
-  nodeIdToGuid?: Map<string, GUID>,
-  fontDigestMap?: Map<string, Uint8Array>,
-  varIdToGuid?: Map<string, GUID>,
-  glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>,
-  assignedGuidValues?: Set<string>,
-  runtime: FigNodeChangeExportRuntime = EMPTY_EXPORT_RUNTIME,
-  componentPropertyDefinitionsById = buildComponentPropIndex(graph),
-  modeIdToGuid?: Map<string, GUID>,
-  propertyIdToGuid = new Map<string, GUID>()
+  options: SceneNodeToKiwiOptions = {}
 ): KiwiNodeChange[] {
+  const {
+    nodeIdToGuid,
+    fontDigestMap,
+    varIdToGuid,
+    glyphBlobMap = new Map<string, number>(),
+    blobIndexByHex,
+    assignedGuidValues,
+    runtime = EMPTY_EXPORT_RUNTIME,
+    componentPropertyDefinitionsById = buildComponentPropIndex(graph),
+    modeIdToGuid,
+    propertyIdToGuid = new Map<string, GUID>()
+  } = options
   // Raw paints retain library asset refs; effects use this map because their
   // Kiwi schema accepts only GUID-backed aliases.
   const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined

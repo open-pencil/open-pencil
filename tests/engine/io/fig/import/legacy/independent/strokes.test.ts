@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { canvas, doc, node } from '../helpers'
 
 describe('fig-import: independent stroke weights', () => {
   test('border weights imported', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('FRAME', 10, 1, {
@@ -16,7 +16,7 @@ describe('fig-import: independent stroke weights', () => {
         borderLeftWeight: 4,
         borderStrokeWeightsIndependent: true
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.borderTopWeight).toBe(2)
     expect(n.borderRightWeight).toBe(4)

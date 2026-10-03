@@ -1,0 +1,33 @@
+{
+  "native": {
+    "id": "293841:7",
+    "width": 16.5,
+    "height": 3.5,
+    "right": 3,
+    "nested": {
+      "width": 8.5,
+      "height": 3.5,
+      "left": 3,
+      "right": 3
+    }
+  },
+  "reopened": {
+    "width": 16.5,
+    "height": 3.5,
+    "right": 3,
+    "nested": {
+      "width": 8.5,
+      "left": 3,
+      "right": 3
+    }
+  },
+  "reopenedEdit": {
+    "width": 19.5,
+    "right": 4,
+    "nested": {
+      "width": 10.5,
+      "left": 4,
+      "right": 4
+    }
+  }
+}

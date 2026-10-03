@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -8,7 +8,7 @@ import { canvas, doc, node } from './helpers'
 
 describe('fig-import: gradient fills', () => {
   test('linear gradient', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('RECTANGLE', 10, 1, {
@@ -26,7 +26,7 @@ describe('fig-import: gradient fills', () => {
           }
         ] as NodeChange['fillPaints']
       })
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills).toHaveLength(1)
     expect(n.fills[0].type).toBe('GRADIENT_LINEAR')
@@ -38,7 +38,7 @@ describe('fig-import: gradient fills', () => {
   })
 
   test('radial gradient', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('ELLIPSE', 10, 1, {
@@ -56,7 +56,7 @@ describe('fig-import: gradient fills', () => {
           }
         ] as NodeChange['fillPaints']
       })
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills[0].type).toBe('GRADIENT_RADIAL')
     expect(n.fills[0].opacity).toBe(0.8)

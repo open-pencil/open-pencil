@@ -1,41 +1,57 @@
-import { describe, expect, test } from 'bun:test'
+import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
-import { syncChildrenDeep } from '@open-pencil/fig/instance-overrides'
+import { materializeDocument } from '@open-pencil/fig'
 
-describe('instance override clone sync', () => {
-  test('reclones nested instance children when the source component changes', () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const sourceParent = graph.createNode('FRAME', page.id)
-    const targetParent = graph.createNode('FRAME', page.id)
-    const sourceComponent = graph.createNode('COMPONENT', page.id, { name: 'source component' })
-    const targetComponent = graph.createNode('COMPONENT', page.id, { name: 'target component' })
-    graph.createNode('TEXT', sourceComponent.id, { name: 'label', text: 'Source' })
-    graph.createNode('TEXT', targetComponent.id, { name: 'label', text: 'Target' })
-    const sourceChild = graph.createNode('INSTANCE', sourceParent.id, {
-      name: 'nested',
-      componentId: sourceComponent.id
-    })
-    graph.populateInstanceChildren(sourceChild.id, sourceComponent.id)
-    const targetChild = graph.createNode('INSTANCE', targetParent.id, {
-      name: 'nested',
-      componentId: targetComponent.id
-    })
-    graph.populateInstanceChildren(targetChild.id, targetComponent.id)
-    const previousTargetLabel = graph.getChildren(targetChild.id)[0]
-    const downstreamLabel = graph.createNode('TEXT', page.id, {
-      name: 'downstream label',
-      text: 'Target',
-      componentId: previousTargetLabel.id
-    })
-
-    syncChildrenDeep(graph, sourceParent.id, targetParent.id, new Set())
-
-    const syncedChild = graph.getNode(targetChild.id)
-    const syncedLabel = graph.getChildren(targetChild.id)[0]
-    expect(syncedChild?.componentId).toBe(sourceComponent.id)
-    expect(syncedLabel.text).toBe('Source')
-    expect(graph.getNode(downstreamLabel.id)?.componentId).toBe(syncedLabel.id)
-  })
+test('nested component swap changes descendants through source instance chains', () => {
+  const guid = (localID: number) => ({ sessionID: 1, localID })
+  const { graph, sources } = materializeDocument([
+    { guid: guid(0), type: 'DOCUMENT' },
+    { guid: guid(1), type: 'CANVAS', parentIndex: { guid: guid(0), position: '!' } },
+    { guid: guid(2), type: 'SYMBOL', parentIndex: { guid: guid(1), position: '!' } },
+    {
+      guid: guid(3),
+      type: 'TEXT',
+      parentIndex: { guid: guid(2), position: '!' },
+      textData: { characters: 'Source' }
+    },
+    { guid: guid(4), type: 'SYMBOL', parentIndex: { guid: guid(1), position: '"' } },
+    {
+      guid: guid(5),
+      type: 'TEXT',
+      parentIndex: { guid: guid(4), position: '!' },
+      textData: { characters: 'Target' }
+    },
+    { guid: guid(6), type: 'SYMBOL', parentIndex: { guid: guid(1), position: '#' } },
+    {
+      guid: guid(7),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(6), position: '!' },
+      symbolData: { symbolID: guid(4) }
+    },
+    {
+      guid: guid(8),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(1), position: '$' },
+      symbolData: {
+        symbolID: guid(6),
+        symbolOverrides: [{ guidPath: { guids: [guid(7)] }, overriddenSymbolID: guid(2) }]
+      }
+    },
+    {
+      guid: guid(9),
+      type: 'INSTANCE',
+      parentIndex: { guid: guid(1), position: '%' },
+      symbolData: { symbolID: guid(8) }
+    }
+  ])
+  for (const id of ['1:8', '1:9']) {
+    const root = sources.get(id)
+    if (!root) throw new Error('Missing source instance')
+    const nested = graph.getChildren(root)[0]
+    expect(nested.componentId).toBe(sources.get('1:2'))
+    expect(graph.getChildren(nested.id).map((node) => node.text)).toEqual(['Source'])
+    expect(graph.getChildren(nested.id)[0].componentId).toBe(
+      graph.getChildren(sources.get('1:2') ?? '')[0].id
+    )
+  }
 })

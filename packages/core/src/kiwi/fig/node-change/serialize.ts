@@ -1,8 +1,9 @@
 import {
   sceneNodeToKiwi as sceneNodeToKiwiWithRuntime,
-  type KiwiNodeChange
+  type KiwiNodeChange,
+  type SceneNodeToKiwiOptions
 } from '@open-pencil/fig/node-change'
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
@@ -31,32 +32,10 @@ export function sceneNodeToKiwi(
   localIdCounter: { value: number },
   graph: SceneGraph,
   blobs: Uint8Array[],
-  nodeIdToGuid?: Map<string, GUID>,
-  fontDigestMap?: Map<string, Uint8Array>,
-  varIdToGuid?: Map<string, GUID>,
-  glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>,
-  assignedGuidValues?: Set<string>,
-  componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>,
-  modeIdToGuid?: Map<string, GUID>,
-  propertyIdToGuid?: Map<string, GUID>
+  options: SceneNodeToKiwiOptions = {}
 ): KiwiNodeChange[] {
-  return sceneNodeToKiwiWithRuntime(
-    node,
-    parentGuid,
-    childIndex,
-    localIdCounter,
-    graph,
-    blobs,
-    nodeIdToGuid,
-    fontDigestMap,
-    varIdToGuid,
-    glyphBlobMap,
-    blobIndexByHex,
-    assignedGuidValues,
-    coreFigExportRuntime,
-    componentPropertyDefinitionsById,
-    modeIdToGuid,
-    propertyIdToGuid
-  )
+  return sceneNodeToKiwiWithRuntime(node, parentGuid, childIndex, localIdCounter, graph, blobs, {
+    ...options,
+    runtime: options.runtime ?? coreFigExportRuntime
+  })
 }

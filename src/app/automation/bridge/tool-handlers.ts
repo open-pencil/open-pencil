@@ -1,4 +1,4 @@
-import { renderTreeNode } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   ALL_TOOLS,
@@ -23,10 +23,10 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     toolArgs: Record<string, unknown>
   ): Promise<unknown> {
     const store = target.store
-    const tree = toolArgs.tree as Parameters<typeof renderTreeNode>[1]
+    const tree = toolArgs.tree as Parameters<typeof renderTree>[1]
     const result = await store.runMutationWithLayout(
       () =>
-        renderTreeNode(store.graph, tree, {
+        renderTree(store.graph, tree, {
           parentId: (toolArgs.parent_id as string | undefined) ?? target.pageId,
           x: toolArgs.x as number | undefined,
           y: toolArgs.y as number | undefined

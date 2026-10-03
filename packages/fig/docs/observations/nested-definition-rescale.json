@@ -1,0 +1,55 @@
+{
+  "before": {
+    "componentId": "293885:13",
+    "instanceId": "293885:15",
+    "before": {
+      "root": {
+        "width": 16.25,
+        "height": 3.5,
+        "left": 5,
+        "right": 5
+      },
+      "nested": {
+        "width": 6.25,
+        "height": 3.5,
+        "left": 2.5,
+        "right": 1.25
+      }
+    }
+  },
+  "after": {
+    "root": {
+      "width": 22.5,
+      "height": 7,
+      "left": 5,
+      "right": 5
+    },
+    "nested": {
+      "width": 12.5,
+      "height": 7,
+      "left": 5,
+      "right": 2.5
+    },
+    "definition": {
+      "width": 50,
+      "height": 28,
+      "left": 20,
+      "right": 10
+    }
+  },
+  "reopened": {
+    "width": 22.5,
+    "height": 7,
+    "nested": {
+      "width": 12.5,
+      "height": 7,
+      "left": 5,
+      "right": 2.5
+    }
+  },
+  "token": {
+    "width": 27.5,
+    "left": 10,
+    "nestedWidth": 17.5
+  }
+}

@@ -11,11 +11,12 @@ import {
   type Node as YogaNode
 } from 'yoga-layout'
 
+import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
+
 import { applyYogaLayout } from './layout/apply'
 import { usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
-import { resolveNodeLayoutDirection } from './text/direction'
 export {
   estimateTextSize,
   getTextMeasurer,
@@ -521,6 +522,9 @@ function configureTextLeaf(
       const cached = cache.get(cacheKey)
       if (cached) return cached
 
+      if (constraintW === child.width && (child.derivedTextGlyphs?.length ?? 0) > 0) {
+        return { width: constraintW, height: child.height }
+      }
       const measured = getTextMeasurer()?.(child, constraintW)
       const result = {
         width: constraintW,

@@ -1,7 +1,7 @@
 import isIgnored from '@commitlint/is-ignored'
 import type { UserConfig } from '@commitlint/types'
 
-import { hasAICoauthor, noAICoauthors } from './tools/ci/src/commit-attribution'
+import { hasAICoauthor, noAICoauthors } from './tools/ci/policy/src/commit-attribution'
 
 export default {
   extends: ['@commitlint/config-conventional'],

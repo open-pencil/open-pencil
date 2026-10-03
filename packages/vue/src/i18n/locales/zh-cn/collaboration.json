@@ -1,7 +1,5 @@
 {
   "inThisRoom": "此房间中",
-  "followingPeerStop": "正在跟随 {name}（点击停止）",
-  "clickToFollowPeer": "点击跟随 {name}",
   "yourName": "你的名字",
   "enterYourName": "请输入你的名字",
   "shareThisFile": "分享此文件",
@@ -13,5 +11,17 @@
   "pasteRoomLinkOrId": "粘贴房间链接或 ID",
   "connected": "已连接",
   "disconnect": "断开连接",
-  "share": "分享"
+  "share": "分享",
+  "follow": "跟随 {name}",
+  "stopFollowing": "停止跟随 {name}",
+  "followingPerson": "正在跟随 {name}",
+  "followingAgent": "正在跟随 {agent}（{owner}）",
+  "stopFollowingShort": "停止跟随",
+  "leaveRoom": "离开房间",
+  "morePeople": "还有 {count} 人",
+  "renameAgent": "重命名 {name}",
+  "agentName": "智能体名称",
+  "agentThinking": "思考中",
+  "agentEditing": "编辑中",
+  "agentIdle": "空闲"
 }

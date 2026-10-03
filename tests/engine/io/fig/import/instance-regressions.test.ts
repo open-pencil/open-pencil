@@ -4,38 +4,42 @@ import { computeAllLayouts, parseFigFile, type SceneGraph, type SceneNode } from
 
 import { computeContentBounds } from '#core/io/formats/raster/render'
 
-import { parseFixture, readFixtureBytes } from '#tests/helpers/fig-fixtures'
+import { parseFixture, readFixtureBytes } from '#tests/helpers/fig/fixtures'
 import {
   childMatching,
   childNamed,
   collectAllNodes,
   previewChild
-} from '#tests/helpers/fig-traversal'
+} from '#tests/helpers/fig/traversal'
 
 setDefaultTimeout(60_000)
 
 describe('derived instance layout regressions', () => {
   let layoutGraph: SceneGraph
   let layoutNodes: SceneNode[]
+  let savedGlyphNodeIds: string[]
 
   beforeAll(async () => {
     layoutGraph = await parseFixture('gold-preview.fig')
+    savedGlyphNodeIds = collectAllNodes(layoutGraph)
+      .filter((node) => node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0)
+      .map((node) => node.id)
     computeAllLayouts(layoutGraph)
     layoutNodes = collectAllNodes(layoutGraph)
   })
 
   test('retains imported glyph outlines through non-glyph layout updates', () => {
-    const glyphCount = () =>
-      layoutNodes.filter(
-        (node) => node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0
-      ).length
-
-    expect(glyphCount()).toBe(43)
+    const glyphIds = () =>
+      layoutNodes
+        .filter((node) => node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0)
+        .map((node) => node.id)
+    expect(savedGlyphNodeIds.length).toBeGreaterThan(0)
+    expect(glyphIds()).toEqual(savedGlyphNodeIds)
 
     computeAllLayouts(layoutGraph)
     layoutNodes = collectAllNodes(layoutGraph)
 
-    expect(glyphCount()).toBe(43)
+    expect(glyphIds()).toEqual(savedGlyphNodeIds)
   })
 
   test('preserves repeated badge overrides without moving sibling component wrappers', () => {
@@ -53,13 +57,14 @@ describe('derived instance layout regressions', () => {
     expect(inputFrame?.width).toBeCloseTo(375.7498, 3)
     expect(inputFrame?.height).toBeCloseTo(39.3803, 3)
     expect(content).toMatchObject({ x: 0, y: 0 })
-    expect(firstBadge?.x).toBeCloseTo(8, 3)
-    expect(firstBadge?.y).toBeCloseTo(6, 3)
+    // Original Figma capture: gold-input-layout.json. The outer instance scales padding too.
+    expect(firstBadge?.x).toBeCloseTo(7.126753330230713, 3)
+    expect(firstBadge?.y).toBeCloseTo(5.345065116882324, 3)
     expect(firstBadge?.width).toBeCloseTo(85.3239, 3)
     expect(firstBadge?.height).toBeCloseTo(28.6901, 3)
     expect(firstBadgeContent).toMatchObject({ x: 0, y: 0 })
     expect(placeholderFrame?.x).toBeCloseTo(277.352, 3)
-    expect(placeholderFrame?.y).toBeCloseTo(0, 3)
+    expect(placeholderFrame?.y).toBeCloseTo(0.0915584564, 3)
     expect(placeholderText?.x).toBeCloseTo(14.2535, 3)
     expect(placeholderText?.y).toBeCloseTo(10.6901, 3)
   })
@@ -100,11 +105,8 @@ describe('derived instance layout regressions', () => {
         node.source.format === null
     )
     expect(dividers).toHaveLength(3)
-    const generatedDividers = dividers.filter(
-      (node) => layoutGraph.getNode(node.componentId)?.derivedLayout?.y === 13.5
-    )
-    expect(generatedDividers).toHaveLength(3)
-    for (const divider of generatedDividers) expect(divider.y).toBeCloseTo(13.5, 3)
+    // Effective occurrence positions are the contract, not a legacy generated-source cache.
+    for (const divider of dividers) expect(divider.y).toBeCloseTo(13.5, 3)
   })
 
   test('does not collapse unrelated datepicker instances to the page origin', () => {
@@ -196,7 +198,7 @@ describe('derived instance layout regressions', () => {
       b: 0.9215686321258545,
       a: 1
     })
-    expect(linkText?.derivedTextGlyphs).toBeNull()
+    expect(linkText?.derivedTextGlyphs).toHaveLength(6)
 
     const input = previewChild(graph, nodes, 'Input')
     const inputRoot = childNamed(graph, input, '_input')

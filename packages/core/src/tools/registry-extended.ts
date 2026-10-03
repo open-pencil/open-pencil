@@ -4,7 +4,7 @@ import {
   analyzeOverlaps,
   analyzeSpacing,
   analyzeTypography,
-  diffCreate,
+  diffApply,
   diffShow
 } from './analyze'
 import { designToComponentMap, designToTokens } from './codegen'
@@ -38,7 +38,6 @@ import {
   setVisible
 } from './modify'
 import {
-  diffJSX,
   getComponents,
   getCurrentPage,
   getFontStatus,
@@ -124,7 +123,6 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   getFontStatus,
   listFonts,
   listAvailableFonts,
-  diffJSX,
   // Create (advanced)
   createShape,
   searchIconsTool,
@@ -201,8 +199,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   analyzeSpacing,
   analyzeClusters,
   analyzeOverlaps,
-  diffCreate,
   diffShow,
+  diffApply,
   // Codegen
   designToTokens,
   designToComponentMap

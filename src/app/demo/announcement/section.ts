@@ -1,4 +1,5 @@
-import { Frame, Instance, Text, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
+import { Frame, Instance, Text } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { ANNOUNCEMENT_PROPERTIES, createAnnouncementComponent } from './component'

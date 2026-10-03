@@ -1,0 +1,11 @@
+{
+  "name": "@open-pencil/architecture-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*"
+  }
+}

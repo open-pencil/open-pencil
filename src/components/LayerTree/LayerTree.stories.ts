@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 
-import LayerTreeThemeDemo from './demo/LayerTreeThemeDemo.vue'
-import LayerTreeVirtualizedDemo from './demo/LayerTreeVirtualizedDemo.vue'
+import LayerTreeStateMatrix from './examples/States.vue'
+import LayerTreeVirtualized from './examples/Virtualized.vue'
 
 const meta = {
   title: 'Editor/Layer Tree',
-  component: LayerTreeThemeDemo,
+  component: LayerTreeStateMatrix,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -23,8 +23,8 @@ type Story = StoryObj<{ adjacent?: boolean }>
 
 export const Virtualized: Story = {
   render: () => ({
-    components: { LayerTreeVirtualizedDemo },
-    template: '<LayerTreeVirtualizedDemo />'
+    components: { LayerTreeVirtualized },
+    template: '<LayerTreeVirtualized />'
   })
 }
 

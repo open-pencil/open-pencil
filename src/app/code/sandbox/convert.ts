@@ -13,7 +13,7 @@ import {
   radialGradient,
   solid,
   type TreeNode
-} from '@open-pencil/core/design-jsx'
+} from '@open-pencil/design-jsx'
 
 import type { DesignJSXHelperDescriptor } from '@/app/code/sandbox/types'
 

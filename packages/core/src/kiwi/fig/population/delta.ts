@@ -129,5 +129,11 @@ export function applyFigPopulationDelta(graph: SceneGraph, delta: FigPopulationD
     for (const [id, changes] of delta.updated) graph.updateNode(id, changes)
     for (const id of delta.deleted) graph.deleteNode(id)
   })
-  graph.instanceIndex = new Map(delta.instanceIndex.map(([id, ids]) => [id, new Set(ids)]))
+  graph.instanceIndex.clear()
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'INSTANCE' || !node.componentId) continue
+    const ids = graph.instanceIndex.get(node.componentId) ?? new Set<string>()
+    ids.add(node.id)
+    graph.instanceIndex.set(node.componentId, ids)
+  }
 }

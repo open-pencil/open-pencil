@@ -1,9 +1,9 @@
 import * as v from 'valibot'
 
-import type { Effect } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
-import { parseColor } from '#core/color'
-import { DEFAULT_SHADOW_COLOR, TRANSPARENT } from '#core/constants'
+import { DEFAULT_SHADOW_COLOR } from '#core/constants'
+import type { FigmaEffect } from '#core/figma-api/effects'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
 import { defineTool, nodeNotFound } from '#core/tools/schema'
 
@@ -32,18 +32,23 @@ export const setEffects = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
 
-    const isBlur = args.type === 'FOREGROUND_BLUR' || args.type === 'BACKGROUND_BLUR'
-    let color = { ...DEFAULT_SHADOW_COLOR }
-    if (isBlur) color = { ...TRANSPARENT }
-    else if (args.color) color = parseColor(args.color)
-    const effect: Effect = {
-      type: args.type as Effect['type'],
-      visible: true,
-      radius: args.radius,
-      color,
-      offset: { x: isBlur ? 0 : args.offset_x, y: isBlur ? 0 : args.offset_y },
-      spread: isBlur ? 0 : args.spread
-    }
+    const effect: FigmaEffect =
+      args.type === 'FOREGROUND_BLUR' || args.type === 'BACKGROUND_BLUR'
+        ? {
+            type: args.type === 'BACKGROUND_BLUR' ? 'BACKGROUND_BLUR' : 'LAYER_BLUR',
+            radius: args.radius,
+            visible: true,
+            blurType: 'NORMAL'
+          }
+        : {
+            type: args.type,
+            color: args.color ? parseColor(args.color) : { ...DEFAULT_SHADOW_COLOR },
+            offset: { x: args.offset_x, y: args.offset_y },
+            radius: args.radius,
+            spread: args.spread,
+            visible: true,
+            blendMode: 'NORMAL'
+          }
 
     node.effects = [...node.effects, effect]
     return { id: args.id, effects: node.effects.length }

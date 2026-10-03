@@ -15,7 +15,7 @@ import {
 } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixtures'
+import { loadFigFixture } from '#tests/helpers/fig/fixtures'
 
 /** Signed shortest angular difference a - b. */
 function angleDiff(a: number, b: number): number {

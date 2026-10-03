@@ -1,9 +1,10 @@
+import { toUint8Array } from 'js-base64'
+
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
-import { decodeBase64 } from '#core/bytes'
-import type { RenderColorSpace, ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
   SELECTION_COLOR,
@@ -35,7 +36,7 @@ import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 import { createGlyphSilhouetteCache } from './text/derived'
 import { TextPreparationCache } from './text/preparation-cache'
-export type { MeasurementMode, RenderOverlays, RulerTheme } from './renderer/types'
+export type { MeasurementMode, PresenceCursor, RenderOverlays, RulerTheme } from './renderer/types'
 import type {
   Image as CKImage,
   Path,
@@ -68,7 +69,8 @@ export interface PendingFontNode {
 
 import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
-import type { RenderOverlays, RulerTheme } from './renderer/types'
+import type { TransientCanvasPreview } from './renderer/transient-previews'
+import type { PresenceCursor, RenderOverlays, RulerTheme } from './renderer/types'
 
 export class SkiaRenderer {
   ck: CanvasKit
@@ -101,6 +103,7 @@ export class SkiaRenderer {
     | undefined
   pendingFontNodes = new Map<string, PendingFontNode>()
   textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
+  readonly transientPreviews = new Map<string, TransientCanvasPreview>()
   imageCache = new Map<string, CKImage>()
   vectorPathCache = new Map<string, Path[]>()
   vectorStrokePathCache = new Map<string, Path[]>()
@@ -263,10 +266,10 @@ export class SkiaRenderer {
     editState?: RenderOverlays['nodeEditState']
   ) => void
   declare drawPenOverlay: (canvas: Canvas, penState: RenderOverlays['penState']) => void
-  declare drawRemoteCursors: (
+  declare drawPresenceCursors: (
     canvas: Canvas,
     graph: SceneGraph,
-    cursors?: RenderOverlays['remoteCursors']
+    cursors?: PresenceCursor[]
   ) => void
   declare drawRulers: (
     canvas: Canvas,
@@ -465,11 +468,7 @@ export class SkiaRenderer {
     return RendererFonts.isTextPictureCurrent(this, node)
   }
 
-  async prepareForExport(
-    graph: SceneGraph,
-    pageId: string,
-    nodeIds: string[]
-  ): Promise<() => void> {
+  async prepareForExport(graph: SceneGraph, pageId: string, nodeIds: string[]): Promise<void> {
     return RendererFonts.prepareForExport(this, graph, pageId, nodeIds)
   }
 
@@ -745,7 +744,7 @@ export class SkiaRenderer {
       if (!dataURL.startsWith(`data:${mime}`)) return null
       const base64 = dataURL.split(',')[1]
       if (!base64) return null
-      return decodeBase64(base64)
+      return toUint8Array(base64)
     } catch (err) {
       console.warn('Raster encode fallback failed:', err)
       return null

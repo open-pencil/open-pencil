@@ -3,7 +3,7 @@ import {
   DESIGN_JSX_ELEMENTS,
   DESIGN_JSX_HELPERS,
   transformDesignJSXExpression
-} from '@open-pencil/core/design-jsx'
+} from '@open-pencil/design-jsx'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import {

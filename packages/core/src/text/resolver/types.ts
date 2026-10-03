@@ -1,6 +1,7 @@
 export type FontResolutionState = 'idle' | 'loading' | 'loaded' | 'failed' | 'exhausted'
 
-export type FontResolutionEvent = 'started' | 'settled' | 'reset'
+/** `progressed` follows each candidate that did not load while later candidates are still tried. */
+export type FontResolutionEvent = 'started' | 'progressed' | 'settled' | 'reset'
 
 export type FontResolutionListener = (
   event: FontResolutionEvent,

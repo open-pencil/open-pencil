@@ -7,8 +7,8 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { colorToHex8 } from '@open-pencil/scene-graph/color'
 
-import { colorToHex8 } from '#core/color'
 import type { FigmaAPI } from '#core/figma-api'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'

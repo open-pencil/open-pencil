@@ -2,9 +2,96 @@
 
 ## Unreleased
 
+### Breaking changes
+
+- The editor state's `remoteCursors` is now `presenceCursors`, typed `PresenceCursor[]` from `@open-pencil/core/canvas`, and each cursor has a `kind` of `'person'` or `'agent'`.
+- `VariableBinding` and the `colorVariableBinding` paint field are gone from `@open-pencil/core`, `@open-pencil/core/kiwi`, and the Kiwi `Paint` type. `fig.kiwi` never defined the field, so only `.fig` files OpenPencil itself wrote before `colorVar` contain one; reopening such a file leaves the paint's colour unbound, and binding it again records it the way Figma does.
+- `encodeNodeChangeWithVariables`, `encodePaintWithVariableBinding`, and `encodeVarint` are removed from `@open-pencil/core` and `@open-pencil/core/kiwi`. They spliced a colour-variable binding into encoded bytes because the field had no schema entry; exports now write `colorVar`, which `fig.kiwi` defines, so nothing needs them. `parseVariableId` is unchanged.
+- The desktop app now requires macOS 13 or later; the web app supports Chrome 111, Edge 111, Firefox 128, and Safari 16.4 or later.
+- `.fig` reading moved to one reader, so the previous importer's exports are gone. `importNodeChanges` (`@open-pencil/core` and `@open-pencil/core/kiwi`) and `importClipboardNodes` (`@open-pencil/fig/clipboard`) are replaced by `parseFigFile` and `parseFigmaClipboard`; `populateLazyFigImportRoots` and `populateAllLazyFigImportRoots` (`@open-pencil/core/kiwi`) are replaced by `populateFigPage` and `populateAllFigPages` on `@open-pencil/core/io/formats/fig`; `populateAndApplyOverrides` (`@open-pencil/fig/instance-overrides`) is replaced by `interpretInstance` with `materializeInstance`. `FIG_PACKAGE_STATUS` now reads `document-reader`, and `assertFigPackageReady()` is gone, because `@open-pencil/fig` reads an archive into a SceneGraph itself rather than directing callers to Core.
+- `sceneNodeToJSX` and `selectionToJSX` in `@open-pencil/core` produce only OpenPencil JSX, and `JSXFormat` and `JSXExportOptions` are removed. For Tailwind JSX, use `sceneNodesToTailwindJSX(graph, nodeIds)` from `@open-pencil/dom-css` or the browser-safe `@open-pencil/dom-css/export`.
+- Color conversion and management and text/layout direction helpers moved from `@open-pencil/core/color` and `@open-pencil/core/text` to `@open-pencil/scene-graph/color` and `@open-pencil/scene-graph/text-direction`, and `@open-pencil/core/bytes` is removed in favor of `js-base64`; the `@open-pencil/core` root exports are unchanged. `@open-pencil/dom-css` no longer requires `@open-pencil/core`, and `exportHTMLBundle` takes a font resolver in `fonts` instead of `'assets'`; pass one built on `exportWebFontFaceAssets` from `@open-pencil/core/text/web-font/assets` to keep font files in standalone exports.
+- Design JSX moved from `@open-pencil/core` to the new `@open-pencil/design-jsx` package, which depends only on `@open-pencil/scene-graph`. Import elements, paint and effect helpers, variables, `JSX_REFERENCE`, `buildComponent`, `sceneNodeToJSX`, and `selectionToJSX` from `@open-pencil/design-jsx`; `@open-pencil/core/design-jsx` now exports only `renderJSX` and `renderTree`, which render with OpenPencil's icons and layout. The `@open-pencil/core` root keeps `renderJSX` and `renderTree` and drops the other design JSX exports, `renderTreeNode` is removed in favor of `renderTree`, and the `@open-pencil/core/io/formats/jsx` subpath is removed.
+- `diff_create` and `diff_show` patches list changed JSX attributes per node, such as `-rounded={8}` and `+rounded={12}`, instead of `key: value` property lines, so they cover every property the JSX export writes and report reordered children as moves. `diff_show` takes JSX attributes in `attributes`, such as `w={200} bg="#FF0000"`, instead of a JSON `props` object, and patches in the old format no longer apply.
+
 ### Added
 
 - Add MCP selection-context tools that combine a visual selection preview with bounded structural inspection, plus a restricted mode that exposes only those tools.
+- Follow collaborators and their AI agents from the avatars in the toolbar: an avatar counts that person's agents, hovering lists what each is doing and on which page, and clicking follows. A frame in their color and a “Following …” bar show whom you follow; Escape, clicking, scrolling, zooming, or switching pages stops it. Your own avatar renames your agents and leaves the room.
+- See where the built-in AI chat is working: while it replies, a cursor whose outlined label shows a sparkle and a callsign such as *Fern* marks the layers it edits. In a shared room, collaborators see each other's agents in the color of the person running them.
+- Hide, lock, and constrain layers in design JSX with `visible={false}`, `locked`, and `constraints={{ horizontal, vertical }}`, set italic text with `italic`, and describe strokes fully with `strokes`, `strokeWeights`, `strokeCap`, `strokeJoin`, and the node-level `dashPattern`. JSX export now writes these together with stacked, gradient, and image fills, every effect, absolutely positioned children, size limits, vertical text alignment, masks, and variable bindings, so rendering exported JSX reproduces them and `diff_jsx` reports changes to them.
+- Jump between pages from the command palette: it lists the pages you visited recently in the tab, **Go to page…** lists every page, and typing a page name finds it.
+- Choose how much an AI model thinks for each message from the chat composer, from Off to Extra high or the provider default. Anthropic, Google, DeepSeek, OpenAI, OpenRouter, and compatible models apply it, where reasoning effort previously reached only OpenAI and OpenRouter models. A model profile's thinking level, which replaces its free-text reasoning effort, sets the starting choice, and finished reasoning shows how long the model thought.
+- Read AI tool calls at a glance: each call shows a one-line summary and buttons that bring the layers it touched into view, even on another page. Expanded, it shows highlighted JSX, scripts, and JSON input and output, and exported images inline. A render call's JSX streams in as the model writes it, and a long run folds its earlier steps into one row.
+- Review what each AI edit changed from its tool call in the chat: a before and after image with a comparison slider or highlighted changed pixels, and a diff of the layers' JSX. Both are saved with the conversation. Settings → Chat → Change previews sets the image size (240, 480, or 960 px) or turns images off to keep only the JSX diff. The chat AI can check its own work the same way with `diff_changes`, which compares the page or a layer with its state before the run edited it as a patch that `diff_apply` can replay.
+- Preview designs progressively on the canvas as direct AI providers stream JSX, without saving partial designs or adding intermediate undo steps. A preview stays with its page: it hides while you view another page and returns when you come back.
+- Write design trees as TSX with `@open-pencil/design-jsx` as the JSX import source, and render them with `renderTree`.
+- Swap the component behind an instance with `instance.swapComponent(component)` in the plugin API, as in Figma.
+- Detach an instance from its component with `detachInstance()` in the plugin API, as in Figma, from scripts run through `eval`.
+- Run scripts written for Figma's dynamic-page mode that call `figma.getNodeByIdAsync()` or `getMainComponentAsync()`; both resolve to the same nodes as their synchronous forms.
+- Export components to Storybook with `openpencil export -f storybook`: one CSF3 story file per component set or component for React, Vue, or HTML, with a story and `select` controls per variant, a design image per variant, and an `openpencil://` link that opens the variant in OpenPencil. `--watch` re-exports on every save and removes stories of deleted components, and `--beside` writes each document's stories next to it, for many documents at once (#727).
+- Export HTML and Tailwind JSX from the app's export options and through the IO registry, and export Tailwind JSX from the CLI with `-f tailwind-jsx` (`-f jsx --style tailwind` still works). HTML export of a single layer now includes the layer itself, as other formats do.
+- Choose PPTX in the Export panel's format list, alongside PNG, JPG, WEBP, SVG, and PDF.
+- Let AI and MCP agents verify and replay their edits with diff tools: `diff_visual` returns a pixel diff of two rendered nodes with the changed region, and `diff_apply` applies a `diff_create` or `diff_show` patch, including moved, added, and removed children, only when every node still matches it. The built-in AI chat enables `diff_create`, `diff_jsx`, and `diff_visual` by default.
+- Compare designs from the terminal with `openpencil diff`: `create`, `jsx`, `show`, `apply`, and `visual` work on a file or the running app, and `diff files` compares two documents page by page and exits with status 1 when they differ.
+
+### Changed
+
+- Keep the Share button labeled Share while you are in a room, instead of turning it into a Connected status; a green dot on your avatar shows the room is live.
+- Show Flatten, Outline text, and Outline stroke in the canvas context menu without icons, like every other item there.
+- Keep an AI chat working on the page where it started when you switch to another page, instead of sending its next edits to whichever page is on screen. When the AI switches pages itself, your view follows.
+- `openpencil://` and web `?node=` links select the layer on another page when the current page has none, switching to that page.
+- Generate Tailwind JSX with the same class mapping as Tailwind HTML export, so both describe a design the same way, and write opaque colors as hex in HTML, CSS, and Tailwind output. `openpencil export -f jsx --style tailwind` now exports a whole page when no `--node` is given.
+- Show download progress with a percentage and transferred size while installing a desktop update, instead of an indeterminate message that lasted until the restart.
+
+### Fixed
+
+- Stop showing a “signal is aborted without reason” error when you switch pages again before the previous page has finished loading.
+- Export layers with two shadows as one `effects` prop instead of repeating the `shadow` attribute, background blurs as `backgroundBlur` instead of a layer blur, hidden children with `visible={false}` instead of leaving them out, and per-corner radii even when the uniform radius is 0.
+- Apply `strokeAlign`, `strokeDash`, `minH`, and `maxH` in design JSX, which were accepted but ignored, and make `minW` and `maxW` set the layer's minimum and maximum width rather than only clamping its initial width.
+- Render the canvas with the Vue SDK's `CanvasRoot` and `CanvasSurface`; CanvasKit never started there and the canvas stayed blank.
+- Keep the view centered on what you were looking at when zooming to 100% or another fixed level, instead of jumping elsewhere whenever the zoom changes.
+- Draw collaborators' names on their cursors with proper letter spacing and fallback fonts, and end long names with an ellipsis.
+- Keep line breaks in multi-line text when exporting OpenPencil JSX, so `get_jsx` output and `openpencil export -f jsx` render back to the same text instead of joining the lines with spaces.
+- Announce unavailable commands in the command palette as disabled to screen readers.
+- Show an imported Figma page's background, and keep a background you change when you switch pages or save the document.
+- Keep fixed-size text from collapsing and clipping beside smaller siblings in a Hug auto-layout container.
+- Keep the text and icon an instance was given when a page loads on its own, instead of resynchronising it back to the component's defaults.
+- Keep the ordering keys a `.fig` gave its layers when saving one again, instead of renumbering every sibling, and give every layer on a canvas its own key. Shared styles, variables and the canvas's own layers were numbered in separate passes that each restarted, so Figma saw siblings claiming the same position and ordered them arbitrarily.
+- Clear a `.fig` fill or stroke's colour-variable binding when you unbind it, instead of exporting the variable the layer was imported with and rebinding it on reopen. An emptied binding record is no longer written into the file either.
+- Keep an AI reply running in the chat panel, with its Stop button, when you switch pages, instead of detaching the panel from the reply in progress.
+- Undo an AI edit while another page is on screen; undo previously did nothing until you returned to the page the AI changed.
+- Type `parameterConsumptionMap`, `propRefValue`, and `expressionValue` in the Kiwi `NodeChange` codec, which `fig.kiwi` declares but the TypeScript definitions omitted, so reading them no longer needs a cast.
+- Read `.fig` text bound to a string variable, in a component and through an instance override, and keep the bound value where Figma does instead of applying a literal override the layer's binding retires. Text bindings also survive export.
+- Draw a `.fig` fill or stroke bound to a colour variable at the variable's own transparency, which was previously ignored in favour of the paint's own opacity — so a translucent token drew opaque, and an opacity left over from an override the binding supersedes drew in its place.
+- Export the instance overrides you make in OpenPencil to `.fig` beyond text and fill colour — strokes, size, padding and spacing, sizing modes, text styles, visibility, name, opacity, and variable bindings, including the variable bound to an overridden fill — addressed through nested instances so Figma applies each one to the right layer.
+- Reject malformed effects assigned to `node.effects` in the plugin API with an error naming the invalid field, as Figma does, instead of storing them. `node.effects` now reads back in Figma's shape: layer blurs are `LAYER_BLUR` with `blurType`, and blurs no longer carry shadow fields (#786).
+- Render fragments (`<>…</>`) nested inside other elements in JSX from the AI and MCP `render` tool, which previously failed with `Unknown element: <>`.
+- Judge text contrast in the AI and MCP `describe` tool by its WCAG 2 ratio (4.5:1, or 3:1 for large text), the same ratio the `color-contrast` lint rule computes. It no longer reports passing dark text on mid-tone backgrounds as "dark on dark", now reports low-contrast light text, measures translucent and faded text as it is drawn, skips text whose color is bound to a variable, and says the ratio and the threshold it missed (#735).
+- Warn about options the paint and effect helpers ignore when rendering JSX instead of dropping them silently, and point `blur` in effect helpers at `radius`, the name Figma uses (#736).
+- Size groups and boolean operations made through the AI and MCP `group_nodes` and `boolean_*` tools to what they contain, as the editor's commands already do, instead of a default 100 × 100 box or the first operand's box (#738).
+- Keep a layer where it is drawn when it moves into or out of a rotated or flipped parent, instead of shifting it and leaving it at its old angle (#737).
+- Size auto-width text from `.pen` files to its content in CLI exports, instead of a 10000px placeholder that stretched hugging frames in HTML and Storybook output, and keep narrow widths a `.pen` file sets explicitly instead of widening multi-character text.
+- Keep grid layouts, rotation, inner shadows, every shadow of a layer, layer and background blur, flex grow, right-to-left direction, and sections in HTML export, which previously turned grids into columns and dropped the rest.
+- Show what to update instead of a blank window when the browser or system WebView is too old, naming the detected macOS, Safari, Chrome, Edge, Firefox, WebKitGTK, or WebView2 version and linking a prefilled bug report, and explain a failed start the same way (#744).
+- Start on macOS 13 with WebKit older than Safari 17.4, which previously failed with `Promise.withResolvers is not a function` (#744).
+- Evaluate the `**` operator in the AI and MCP `calc` tool, which its own description advertised but which the tool rejected. `calc` now accepts exactly the arithmetic it documents — `+ - * / % **`, parentheses and `min max floor ceil round abs sqrt pow` — and no longer evaluates undocumented expressions such as `random()`, factorials, trigonometry, strings, arrays, or property access.
+- Show Chinese, Japanese, Korean, and Arabic characters in a fallback font when the text's own font is unavailable and another font substitutes for it, instead of drawing missing-glyph boxes (#746).
+- Explain in the font issues banner when an installed font, such as PingFang on macOS 15 and later, stores outlines in a format OpenPencil cannot draw yet, instead of spending over a second trying to load each of its styles (#746).
+- Render the Medium, Semibold, Bold, and other styles of variable fonts at their named weights instead of drawing Regular or a synthetic bold.
+- Load the Bold, Medium, and other styles of macOS system fonts packaged as font collections, such as Menlo, Helvetica Neue, and Avenir Next, instead of reporting them as substituted or drawing a different style (#746).
+- Load the Medium, Semibold, Bold, and other styles of installed variable fonts such as SF Pro on macOS instead of reporting them as substituted (#752).
+- Ship the MIT license text in every published npm package, and add READMEs for `@open-pencil/core`, `@open-pencil/cli`, and `@open-pencil/mcp` on npm.
+
+### Performance
+
+- Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, each page resolves only the layers it adds instead of rescanning the whole document, placing an instance no longer re-synchronises every other instance of its component, and archive records are copied directly rather than through `structuredClone`. A 33-page file loads about a fifth quicker, and a page of repeated components opens three to four times faster once a document is already open.
+
+### Security
+
+- Validate cursors, selections, and names that collaborators send before drawing them, and cap their size, so a broken or hostile peer cannot crash or flood the canvas.
+- Evaluate `calc` expressions through `jsep` and an arithmetic allowlist that never compiles input into JavaScript, replacing the `expr-eval` dependency and its unpatched critical code-execution advisory (GHSA-q9v2-7m5w-4693).
+- Escape layer names and other text properties in JSX and Tailwind JSX export, so text from a document can no longer add attributes or JavaScript expressions that the AI and MCP `render` and `replace` tools would execute, and names containing `&` no longer change when the JSX is rendered back.
 
 ## 0.15.1 — 2026-09-18
 
@@ -621,7 +708,6 @@
 - Fix component property override resolution through clone chains.
 - Fix text/property overrides clobbered by second transitive sync.
 
-
 - Fix text rendering with wrong fonts on file open — all font weights (including default family) are now loaded before the first render.
 - Fix `weightToStyle` mapping: weight 400 now correctly maps to "Regular" instead of "Medium".
 - Fix detached ArrayBuffer crash when switching pages after saving — export worker now copies image buffers before transferring.
@@ -744,7 +830,6 @@
 - Centralize all color utilities in `packages/core/src/color.ts` — `colorToHex8`, `colorToCSSCompact`, `normalizeColor`, `colorDistance`; remove 5 duplicate implementations across the codebase.
 - Add `geometry.ts` with shared rotation math (`degToRad`, `radToDeg`, `rotatePoint`, `rotatedCorners`, `rotatedBBox`).
 - Extract `isArrayMixed()` helper for multi-selection property panels.
-
 
 - Add `motion-v` for declarative animations — used in mobile drawer (spring-animated height with pan gestures) and toolbar (layout-animated category switching with directional slide transitions).
 - Mobile drawer: replace `useSwipe` + manual rAF animation with `motion.div` `:animate` + `@pan`/`@panEnd`; always-on tab state (no more null `activeRibbonTab`); content stays rendered when closed.
@@ -896,17 +981,14 @@
 - Fix font picker dropdown truncating long font names.
 - Show explanation in font picker when Local Font Access API unavailable (Safari/Firefox).
 
-
 - Auto-populate GitHub Release notes from CHANGELOG.md via `ffurrer2/extract-release-notes@v2`.
 - Skip already-published npm versions on CI re-runs instead of failing.
 - Exclude non-app directories from Vite file watcher.
-
 
 - Extract shared color constants (`BLACK`, `TRANSPARENT`, `DEFAULT_SHADOW_COLOR`) — replaces 8 inline literals across core.
 - Extract shared `NodeContextMenuContent` component to avoid menu duplication.
 - Fix `@open-pencil/core` dep in MCP package: `workspace:*` for local dev (pnpm resolves at publish time).
 - Replace store thunks with a late-binding proxy.
-
 
 - Clipboard roundtrip tests: encode to Figma Kiwi binary → decode → verify.
 - 9 visual regression snapshot tests for effects rendering.
@@ -938,7 +1020,6 @@
 
 - Import additional properties from Figma clipboard: `layoutAlignSelf`, `clipsContent`, `fontWeight`, `italic`, `letterSpacing`, `lineHeight`.
 - Convert `letterSpacing` PERCENT units to pixels based on font size.
-
 
 - 7 new clipboard import unit tests (14 total).
 
@@ -1079,12 +1160,10 @@ First public alpha. The editor is functional but not production-ready.
 - ScrubInput drag-to-change number controls.
 - Resizable side panels via reka-ui Splitter.
 
-
 - .fig file import via Kiwi binary codec (194 definitions, ~390 fields).
 - .fig file export with Kiwi encoding, Zstd compression, thumbnail generation.
 - Figma clipboard: copy/paste between OpenPencil and Figma.
 - Round-trip fidelity for supported node types.
-
 
 - Built-in AI chat in properties panel (⌘J).
 - Direct browser → OpenRouter communication, no backend.
@@ -1093,11 +1172,9 @@ First public alpha. The editor is functional but not production-ready.
 - Streaming markdown responses (vue-stream-markdown).
 - Tool call timeline with collapsible details.
 
-
 - JSX export of selected nodes with Tailwind-like shorthand props.
 - Syntax highlighting via Prism.js.
 - Copy to clipboard.
-
 
 - `info` — document stats, node types, fonts.
 - `tree` — visual node tree.
@@ -1113,13 +1190,11 @@ First public alpha. The editor is functional but not production-ready.
 - `analyze clusters` — repeated patterns.
 - All commands support `--json`.
 
-
 - Scene graph with flat Map storage and parentIndex tree.
 - FigmaAPI with ~65% Figma plugin API compatibility.
 - JSX renderer (TreeNode builder functions with shorthand props).
 - Kiwi binary codec (encode/decode).
 - Vector network blob encoder/decoder.
-
 
 - Tauri v2 (~5 MB).
 - Native menu bar, save/open dialogs.
@@ -1127,11 +1202,9 @@ First public alpha. The editor is functional but not production-ready.
 - Zstd compression in Rust.
 - macOS and Windows builds via GitHub Actions.
 
-
 - Runs at [app.openpencil.dev](https://app.openpencil.dev).
 - No installation required.
 - File System Access API for save/open (Chrome/Edge), download fallback elsewhere.
-
 
 - [openpencil.dev](https://openpencil.dev) — VitePress site with user guide, reference, and development docs.
 - Deployed via Cloudflare Pages.

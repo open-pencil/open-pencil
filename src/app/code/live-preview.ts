@@ -1,6 +1,6 @@
-import type { TreeNode } from '@open-pencil/core/design-jsx'
 import { renderTree } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import type { TreeNode } from '@open-pencil/design-jsx'
 import type { Vector } from '@open-pencil/scene-graph'
 
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'

@@ -16,6 +16,7 @@ function createRenderer() {
   const renderer: Partial<SkiaRenderer> = {
     destroyed: false,
     textPreparationCache: new TextPreparationCache(),
+    transientPreviews: new Map(),
     imageCache: new Map(),
     vectorPathCache: new Map(),
     vectorStrokePathCache: new Map(),

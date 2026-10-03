@@ -5,11 +5,16 @@ import type {
   VariableValue
 } from '@open-pencil/scene-graph'
 
+import { reconcileVariableLayouts } from '#core/layout/variables'
 import { randomHex } from '#core/random'
 
 import type { EditorContext } from './types'
 
 export function createVariableActions(ctx: EditorContext) {
+  function refreshVariables() {
+    reconcileVariableLayouts(ctx.graph)
+    ctx.requestRender()
+  }
   function getVariablesByType(type: VariableType) {
     return ctx.graph.getVariablesByType(type)
   }
@@ -73,14 +78,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add collection',
       forward: () => {
         ctx.graph.addCollection(collection)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.removeCollection(collection.id)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function removeCollection(id: string) {
@@ -96,15 +101,15 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Remove collection',
       forward: () => {
         ctx.graph.removeCollection(id)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.addCollection(snapshot)
         for (const v of variables) ctx.graph.addVariable(v)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function addVariable(variable: Variable) {
@@ -113,14 +118,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add variable',
       forward: () => {
         ctx.graph.addVariable(variable)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.removeVariable(variable.id)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function removeVariable(id: string) {
@@ -132,14 +137,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Remove variable',
       forward: () => {
         ctx.graph.removeVariable(id)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.addVariable(snapshot)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function renameVariable(id: string, newName: string) {
@@ -173,14 +178,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add mode',
       forward: () => {
         ctx.graph.addMode(collectionId, modeId, modeName)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.removeMode(collectionId, modeId)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
     return modeId
   }
 
@@ -202,7 +207,7 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Remove mode',
       forward: () => {
         ctx.graph.removeMode(collectionId, modeId)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.addMode(collectionId, modeId, modeName)
@@ -216,10 +221,10 @@ export function createVariableActions(ctx: EditorContext) {
           if (v) v.valuesByMode[modeId] = structuredClone(value)
         }
         if (wasDefault) ctx.graph.setDefaultMode(collectionId, modeId)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function renameMode(collectionId: string, modeId: string, newName: string) {
@@ -252,14 +257,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Set default mode',
       forward: () => {
         ctx.graph.setDefaultMode(collectionId, modeId)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.setDefaultMode(collectionId, prevDefault)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function duplicateMode(collectionId: string, sourceModeId: string): string | undefined {
@@ -274,20 +279,20 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Duplicate mode',
       forward: () => {
         ctx.graph.addMode(collectionId, modeId, modeName, sourceModeId)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         ctx.graph.removeMode(collectionId, modeId)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
     return modeId
   }
 
   function setActiveMode(collectionId: string, modeId: string) {
     ctx.graph.setActiveMode(collectionId, modeId)
-    ctx.requestRender()
+    refreshVariables()
   }
 
   function updateVariableValue(id: string, modeId: string, value: VariableValue) {
@@ -301,15 +306,15 @@ export function createVariableActions(ctx: EditorContext) {
       forward: () => {
         const v = ctx.graph.variables.get(id)
         if (v) v.valuesByMode[modeId] = structuredClone(newValue)
-        ctx.requestRender()
+        refreshVariables()
       },
       inverse: () => {
         const v = ctx.graph.variables.get(id)
         if (v) v.valuesByMode[modeId] = structuredClone(prevValue)
-        ctx.requestRender()
+        refreshVariables()
       }
     })
-    ctx.requestRender()
+    refreshVariables()
   }
 
   return {

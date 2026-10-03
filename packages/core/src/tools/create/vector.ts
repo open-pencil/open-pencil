@@ -7,9 +7,9 @@ import {
   validateVectorNetwork
 } from '@open-pencil/scene-graph'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
-import { parseColor } from '#core/color'
 import { toolNumber, positionInputs } from '#core/tools/input'
 import { defineTool, nodeSummary } from '#core/tools/schema'
 import { computeAccurateBounds } from '#core/vector/curve-math'

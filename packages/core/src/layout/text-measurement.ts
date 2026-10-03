@@ -43,3 +43,17 @@ export function getTextMeasurer(): TextMeasurer | null {
 export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
 }
+
+/**
+ * Run `fn` with `measurer` as the layout text measurer. The measurer is shared, so `fn` must
+ * be synchronous: an override held across an await would leak into other layouts.
+ */
+export function withTextMeasurer<T>(measurer: TextMeasurer, fn: () => T): T {
+  const previous = globalTextMeasurer
+  globalTextMeasurer = measurer
+  try {
+    return fn()
+  } finally {
+    globalTextMeasurer = previous
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "name": "@open-pencil/design-jsx",
+  "version": "0.15.1",
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#design-jsx/*": {
+      "types": "./src/*",
+      "bun": "./src/*",
+      "default": "./dist/*"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./jsx-runtime": {
+      "types": "./dist/jsx-runtime.d.ts",
+      "bun": "./src/jsx-runtime.ts",
+      "import": "./dist/jsx-runtime.js",
+      "default": "./dist/jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./dist/jsx-dev-runtime.d.ts",
+      "bun": "./src/jsx-dev-runtime.ts",
+      "import": "./dist/jsx-dev-runtime.js",
+      "default": "./dist/jsx-dev-runtime.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run build && bun run smoke:dist",
+    "prepack": "bun run build",
+    "smoke:dist": "bun scripts/smoke-dist.ts",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/design-jsx"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "peerDependencies": {
+    "@open-pencil/scene-graph": "workspace:*"
+  },
+  "dependencies": {
+    "@lezer/common": "^1.5.2",
+    "@lezer/javascript": "^1.5.4",
+    "@open-pencil/codegen": "workspace:*",
+    "acorn": "^8.18.0",
+    "dedent": "^1.7.2",
+    "entities": "^8.0.0",
+    "es-toolkit": "^1.51.0",
+    "sucrase": "^3.35.1",
+    "valibot": "^1.4.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "tsdown": "^0.22.14",
+    "typescript": "~5.8.3",
+    "unplugin-raw": "^0.7.0"
+  }
+}

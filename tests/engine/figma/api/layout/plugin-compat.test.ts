@@ -75,6 +75,29 @@ describe('Figma Plugin API layout compatibility', () => {
     expect(graph.getNode(text.id)?.width).toBe(200)
   })
 
+  test('rescale rejects occurrence descendants without mutation but permits definition children', () => {
+    const { api, graph } = setup()
+    const page = graph.getPages()[0]
+    const inner = graph.createNode('COMPONENT', page.id)
+    graph.createNode('RECTANGLE', inner.id, { width: 20, height: 10 })
+    const outer = graph.createNode('COMPONENT', page.id)
+    const definition = graph.createInstance(inner.id, outer.id)
+    if (!definition) throw new Error('Missing definition instance')
+    api.getNodeById(definition.id).rescale(2)
+    expect(graph.getChildren(definition.id)[0].width).toBe(40)
+    const owner = graph.createInstance(outer.id, page.id)
+    if (!owner) throw new Error('Missing placed owner')
+    const nested = graph.getChildren(owner.id)[0]
+    const rectangle = graph.getChildren(nested.id)[0]
+    for (const target of [nested, rectangle]) {
+      const before = structuredClone(target)
+      expect(() => api.getNodeById(target.id).rescale(1)).toThrow(
+        'cannot be overridden in an instance: size'
+      )
+      expect(target).toEqual(before)
+    }
+  })
+
   test('rescale rejects non-Figma scale factors and pages', () => {
     const { api } = setup()
     const rect = api.createRectangle()

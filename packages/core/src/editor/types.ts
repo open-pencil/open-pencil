@@ -15,7 +15,7 @@ import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type { MeasurementMode, RenderOverlays } from '#core/canvas/renderer/types'
+import type { MeasurementMode, PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
@@ -37,13 +37,7 @@ export type Tool =
 export interface EditorSharedState {
   activeTool: Tool
   snappingPreferences: SnappingPreferences
-  remoteCursors: Array<{
-    name: string
-    color: Color
-    x: number
-    y: number
-    selection?: string[]
-  }>
+  presenceCursors: PresenceCursor[]
   documentName: string
   rulerTheme?: RulerTheme
   sceneVersion: number

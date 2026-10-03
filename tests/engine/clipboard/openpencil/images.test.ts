@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { deflateSync } from 'fflate'
+import { fromUint8Array } from 'js-base64'
 
 import {
   buildOpenPencilClipboardHTML,
@@ -9,7 +10,6 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/core'
-import { encodeBase64 } from '@open-pencil/core/bytes'
 import { getInstanceOverride, setInstanceOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -59,7 +59,7 @@ describe('clipboard roundtrip with images', () => {
       ],
       images: {}
     }
-    const encoded = encodeBase64(deflateSync(new TextEncoder().encode(JSON.stringify(legacy))))
+    const encoded = fromUint8Array(deflateSync(new TextEncoder().encode(JSON.stringify(legacy))))
     const parsed = expectDefined(
       parseOpenPencilClipboard(`<!--(openpencil)${encoded}(/openpencil)-->`),
       'OpenPencil clipboard'

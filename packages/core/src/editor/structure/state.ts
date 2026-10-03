@@ -1,3 +1,5 @@
+import { findInstanceAncestor, setInstanceOverride } from '@open-pencil/scene-graph'
+
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 
@@ -6,6 +8,8 @@ export function createStructureStateActions(ctx: EditorContext) {
     assertNodeEditable(ctx.graph, id)
     const node = ctx.graph.getNode(id)
     if (!node) return
+    const owner = findInstanceAncestor(ctx.graph, id)
+    if (owner) setInstanceOverride(owner.instanceOverrides, owner.id, id, 'visible', true)
     ctx.graph.updateNode(id, { visible: !node.visible })
     if (node.parentId) ctx.runLayoutForNode(node.parentId)
   }

@@ -1,61 +1,76 @@
+import {
+  cloneInstanceOverrideState,
+  findInstanceAncestor,
+  variableBindingOwner,
+  isNumericVariableBindingField,
+  type SceneNode
+} from '@open-pencil/scene-graph'
+
+import { reconcileVariableLayouts } from '#core/layout/variables'
+
 import type { EditorContext } from './types'
 
 export function createVariableBindingActions(ctx: EditorContext) {
-  function bindVariable(nodeId: string, path: string, variableId: string) {
-    const node = ctx.graph.getNode(nodeId)
-    if (!node) return
-    const prevVarId = node.boundVariables[path]
-    ctx.graph.bindVariable(nodeId, path, variableId)
-    ctx.undo.push({
-      label: 'Bind variable',
-      forward: () => {
-        try {
-          ctx.graph.bindVariable(nodeId, path, variableId)
-          ctx.requestRender()
-        } catch (e) {
-          console.warn('Redo bindVariable failed:', e instanceof Error ? e.message : String(e))
-        }
-      },
-      inverse: () => {
-        try {
-          if (prevVarId) ctx.graph.bindVariable(nodeId, path, prevVarId)
-          else ctx.graph.unbindVariable(nodeId, path)
-          ctx.requestRender()
-        } catch (e) {
-          console.warn('Undo bindVariable failed:', e instanceof Error ? e.message : String(e))
-        }
-      }
-    })
+  function refreshBindings() {
+    reconcileVariableLayouts(ctx.graph)
     ctx.requestRender()
   }
 
-  function unbindVariable(nodeId: string, path: string) {
+  function changeBinding(nodeId: string, path: string, variableId?: string) {
     const node = ctx.graph.getNode(nodeId)
-    if (!node) return
-    const prevVarId = node.boundVariables[path]
-    if (!prevVarId) return
-    ctx.graph.unbindVariable(nodeId, path)
+    if (!node || (variableId === undefined && !(path in node.boundVariables))) return
+    const previous = {
+      boundVariables: { ...node.boundVariables },
+      variableBindingScales: { ...node.variableBindingScales },
+      ...(isNumericVariableBindingField(path) ? { [path]: node[path as keyof SceneNode] } : {})
+    }
+    const owner = variableBindingOwner(ctx.graph, node)
+    const nearest = findInstanceAncestor(ctx.graph, nodeId)
+    const owners = new Map(
+      [owner, ...(nearest ? [nearest] : [])].map(
+        (item) => [item.id, cloneInstanceOverrideState(item.instanceOverrides)] as const
+      )
+    )
+    const apply = () => {
+      if (variableId === undefined) ctx.graph.unbindVariable(nodeId, path)
+      else ctx.graph.bindVariable(nodeId, path, variableId)
+      refreshBindings()
+    }
+    apply()
     ctx.undo.push({
-      label: 'Unbind variable',
+      label: variableId === undefined ? 'Unbind variable' : 'Bind variable',
       forward: () => {
         try {
-          ctx.graph.unbindVariable(nodeId, path)
-          ctx.requestRender()
-        } catch (e) {
-          console.warn('Redo unbindVariable failed:', e instanceof Error ? e.message : String(e))
+          apply()
+        } catch (error) {
+          console.warn(
+            'Redo variable binding failed:',
+            error instanceof Error ? error.message : String(error)
+          )
         }
       },
       inverse: () => {
-        try {
-          ctx.graph.bindVariable(nodeId, path, prevVarId)
-          ctx.requestRender()
-        } catch (e) {
-          console.warn('Undo unbindVariable failed:', e instanceof Error ? e.message : String(e))
+        for (const [id, state] of owners) {
+          ctx.graph.updateNode(id, { instanceOverrides: cloneInstanceOverrideState(state) })
         }
+        const restored = structuredClone(previous)
+        restored.boundVariables = Object.fromEntries(
+          Object.entries(restored.boundVariables).filter(([, id]) => ctx.graph.variables.has(id))
+        )
+        restored.variableBindingScales = Object.fromEntries(
+          Object.entries(restored.variableBindingScales).filter(
+            ([field]) => field in restored.boundVariables
+          )
+        )
+        ctx.graph.updateNode(nodeId, restored)
+        refreshBindings()
       }
     })
-    ctx.requestRender()
   }
 
-  return { bindVariable, unbindVariable }
+  return {
+    bindVariable: (nodeId: string, path: string, variableId: string) =>
+      changeBinding(nodeId, path, variableId),
+    unbindVariable: (nodeId: string, path: string) => changeBinding(nodeId, path)
+  }
 }

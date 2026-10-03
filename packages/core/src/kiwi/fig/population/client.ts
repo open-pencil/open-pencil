@@ -1,19 +1,13 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { getLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
+import { updateReaderRecovery, releaseReaderRecovery } from '#core/kiwi/fig/session/document-state'
 import type { FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 import { randomHex } from '#core/random'
 
-import { applyFigPopulationDelta, type FigPopulationDelta } from './delta'
+import { applyFigPopulationDelta } from './delta'
 
-interface PopulationResult {
-  type: 'population-result'
-  requestId: string
-  baseRevision: number
-  populated: boolean
-  delta: FigPopulationDelta
-}
-type WorkerResult = PopulationResult | { type: 'population-error'; error: string }
+/** The two responses this client acts on, taken from the session protocol itself. */
+type WorkerResult = Extract<FigSessionResponse, { type: 'population-result' | 'population-error' }>
 
 const MAX_FIG_POPULATION_WORKER_NODES = 200_000
 const FIG_POPULATION_WORKER_TIMEOUT_MS = 30_000
@@ -59,16 +53,8 @@ export function registerFigPopulationWorker(
   emitTelemetry({ event: 'registered' })
 }
 
-function isDevelopmentBuild(env?: { DEV?: boolean }): boolean {
-  return env?.DEV ?? false
-}
-
 export function canUseFigPopulationWorker(graph: SceneGraph): boolean {
-  return (
-    isDevelopmentBuild(import.meta.env) &&
-    populationWorkers.has(graph) &&
-    getLazyFigImportContext(graph) !== undefined
-  )
+  return populationWorkers.has(graph)
 }
 
 export function registerOriginalArchiveRequest(
@@ -100,6 +86,7 @@ export async function requestOriginalArchive(graph: SceneGraph): Promise<Uint8Ar
 }
 
 export function releaseFigPopulationWorker(graph: SceneGraph): void {
+  releaseReaderRecovery(graph)
   populationWorkers.get(graph)?.terminate()
   populationWorkers.delete(graph)
   originalArchiveRequests.get(graph)?.unbind()
@@ -131,10 +118,10 @@ export function createFigPopulationWorker(graph: SceneGraph): FigPopulationWorke
   return populationWorkers.get(graph) ?? null
 }
 
-function createPopulationWorkerClient(
+export function createPopulationWorkerClient(
   graph: SceneGraph,
-  worker: Worker,
-  port?: MessagePort
+  worker: Pick<Worker, 'postMessage' | 'terminate' | 'onerror' | 'onmessage'>,
+  port?: Pick<MessagePort, 'postMessage' | 'start' | 'close' | 'onmessage'>
 ): FigPopulationWorker {
   const pending = new Map<
     string,
@@ -199,8 +186,7 @@ function createPopulationWorkerClient(
     const applyStartedAt = performance.now()
     try {
       applyFigPopulationDelta(graph, result.delta)
-      const context = getLazyFigImportContext(graph)
-      if (context) context.populatedRootIds = new Set(result.delta.populatedRootIds)
+      if (result.checkpoint) updateReaderRecovery(graph, result.checkpoint)
     } catch {
       applyingDelta = false
       fail()
@@ -219,8 +205,7 @@ function createPopulationWorkerClient(
     })
   }
   if (port) {
-    port.onmessage = (event: MessageEvent<FigSessionResponse>) =>
-      receive(event.data as WorkerResult)
+    port.onmessage = (event: MessageEvent<WorkerResult>) => receive(event.data)
     port.start()
   } else {
     worker.onmessage = (event: MessageEvent<WorkerResult>) => receive(event.data)

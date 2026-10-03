@@ -47,8 +47,8 @@ provide(COMMAND_PALETTE_KEY, {
 })
 
 function select(item: CommandPaletteItem) {
-  palette.select(item)
-  emit('select', item)
+  // Opening a nested step is navigation, not a selection the host should close on.
+  if (palette.select(item)) emit('select', item)
 }
 </script>
 
@@ -92,6 +92,7 @@ function select(item: CommandPaletteItem) {
             :key="item.id"
             :value="item.id"
             :disabled="item.disabled"
+            :aria-disabled="item.disabled || undefined"
             :class="ui?.item"
             @select="select(item)"
           >

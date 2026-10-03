@@ -48,6 +48,14 @@ export function installTextNodeProxyAccessors(
       }
     },
     fontSize: field(internals, 'fontSize'),
+    textStyleId: {
+      get(this: ProxyThis): string {
+        return raw(this, internals).textStyleId ?? ''
+      },
+      set(this: ProxyThis, value: string) {
+        updateNode(this, internals, { textStyleId: value || null })
+      }
+    },
     fontWeight: field(internals, 'fontWeight'),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),

@@ -1,0 +1,12 @@
+{
+  "name": "@open-pencil/tauri-menu-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/vue": "workspace:*"
+  }
+}

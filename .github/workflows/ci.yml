@@ -1,8 +1,8 @@
 name: CI
 
 on:
+  # Every base, so stacked pull requests are checked against the PR below them.
   pull_request:
-    branches: [master]
 
 permissions:
   contents: read
@@ -35,7 +35,7 @@ jobs:
         id: classify
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: bun tools/ci/src/classify.ts
+        run: bun tools/ci/policy/src/classify.ts
 
   commit-messages:
     name: Commit messages
@@ -101,7 +101,7 @@ jobs:
         run: bun run typecheck
 
       - name: Enforce architecture and type-shape boundaries
-        run: bun run check:arch && bun run test:type-shapes
+        run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
 
   package-quality:
     name: Package integrity
@@ -247,7 +247,7 @@ jobs:
         run: bun --filter @open-pencil/core build
 
       - name: Run ${{ matrix.group }} unit tests
-        run: bun tools/unit-tests/src/run.ts "${{ matrix.group }}"
+        run: bun tools/dev/unit-tests/src/run.ts "${{ matrix.group }}"
 
   result:
     name: CI result
@@ -263,4 +263,4 @@ jobs:
       - name: Require successful checks for the selected scope
         env:
           CI_NEEDS: ${{ toJSON(needs) }}
-        run: bun tools/ci/src/gate.ts
+        run: bun tools/ci/policy/src/gate.ts

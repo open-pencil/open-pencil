@@ -62,6 +62,7 @@ export const programmableSidebar = (
       { text: labels.inspecting, link: `${prefix}/programmable/cli/inspecting` },
       { text: labels.exporting, link: `${prefix}/programmable/cli/exporting` },
       { text: labels.analyzing, link: `${prefix}/programmable/cli/analyzing` },
+      { text: labels.comparing, link: '/programmable/cli/comparing' },
       { text: labels.scripting, link: `${prefix}/programmable/cli/scripting` },
       { text: labels.jsxRenderer, link: `${prefix}/programmable/jsx-renderer` },
       { text: 'Native JavaScript APIs', link: '/programmable/native-api' },
@@ -111,6 +112,7 @@ export const developmentSidebar = (
       { text: 'Contributing', link: `${prefix}/development/contributing` },
       { text: 'Testing', link: `${prefix}/development/testing` },
       { text: labels.architecture, link: `${prefix}/development/architecture` },
+      { text: '.fig Reader Architecture', link: '/development/fig-reader' },
       { text: labels.techStack, link: `${prefix}/development/tech-stack` },
       ...(!prefix
         ? [

@@ -1,3 +1,5 @@
+import { toUint8Array } from 'js-base64'
+
 import { expect, test } from '#tests/helpers/chat/fixture'
 
 test('completed responses release streaming parser history', async ({ configuredChat: chat }) => {
@@ -32,8 +34,9 @@ test('Markdown blocks unsafe links and cross-origin images', async ({ configured
   await chat.page.route(approvedImageURL, async (route) => {
     await route.fulfill({
       body: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEAQH/69cbGAAAAABJRU5ErkJggg==',
-        'base64'
+        toUint8Array(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEAQH/69cbGAAAAABJRU5ErkJggg=='
+        )
       ),
       contentType: 'image/png'
     })

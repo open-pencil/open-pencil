@@ -86,5 +86,9 @@
   "mcpFailureUnknownHint": "Erneut starten oder die technischen Details unten prüfen.",
   "mcpFailureDetails": "Details",
   "mcpFailureCopy": "Details kopieren",
-  "mcpFailureCopied": "Technische Details kopiert."
+  "mcpFailureCopied": "Technische Details kopiert.",
+  "toolMode": "Werkzeugmodus",
+  "toolModeDescription": "Vollzugriff oder nur Bild und strukturierte Details der aktuellen Auswahl bereitstellen. Server neu starten, um Änderungen anzuwenden.",
+  "toolModeFull": "Vollständiger Werkzeugzugriff",
+  "toolModeSelectionContext": "Nur Auswahlkontext"
 }

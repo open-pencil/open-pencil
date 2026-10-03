@@ -1,0 +1,1018 @@
+{
+  "expected": {
+    "name": "Custom card",
+    "width": 240,
+    "height": 80,
+    "visible": false,
+    "scaledWidth": 150,
+    "scaledHeight": 45
+  },
+  "ids": {
+    "page": "292486:1721",
+    "component": "292486:1723",
+    "text": "292486:1724",
+    "instance": "292486:1725",
+    "scaled": "292486:1727"
+  },
+  "records": [
+    {
+      "guid": {
+        "sessionID": 0,
+        "localID": 0
+      },
+      "phase": "CREATED",
+      "type": "DOCUMENT",
+      "name": "Document",
+      "visible": true,
+      "opacity": 1,
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "CENTER",
+      "strokeJoin": "MITER",
+      "pluginData": [],
+      "documentColorProfile": "DISPLAY_P3"
+    },
+    {
+      "guid": {
+        "sessionID": 0,
+        "localID": 3513
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 0,
+          "localID": 0
+        },
+        "position": "#"
+      },
+      "type": "CANVAS",
+      "name": "Internal Only Canvas",
+      "visible": true,
+      "opacity": 1,
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "CENTER",
+      "strokeJoin": "MITER",
+      "internalOnly": true
+    },
+    {
+      "guid": {
+        "sessionID": 292486,
+        "localID": 1721
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 0,
+          "localID": 0
+        },
+        "position": "~!"
+      },
+      "type": "CANVAS",
+      "name": "Export contract oracle",
+      "visible": true,
+      "opacity": 1,
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "backgroundOpacity": 1,
+      "backgroundColor": {
+        "r": 0.11764705926179886,
+        "g": 0.11764705926179886,
+        "b": 0.11764705926179886,
+        "a": 1
+      },
+      "isPageDivider": false,
+      "backgroundEnabled": true
+    },
+    {
+      "guid": {
+        "sessionID": 292486,
+        "localID": 1722
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 0,
+          "localID": 3513
+        },
+        "position": "~m"
+      },
+      "type": "TEXT",
+      "name": "Oracle/Medium14",
+      "isPublishable": true,
+      "styleType": "TEXT",
+      "version": "292486:5",
+      "sortPosition": "\"",
+      "fontSize": 14,
+      "textAlignVertical": "TOP",
+      "lineHeight": {
+        "value": 20,
+        "units": "PIXELS"
+      },
+      "fontName": {
+        "family": "Inter",
+        "style": "Medium",
+        "postscript": ""
+      },
+      "textData": {
+        "characters": "Ag",
+        "lines": [
+          {
+            "lineType": "PLAIN",
+            "styleId": 0,
+            "indentationLevel": 0,
+            "sourceDirectionality": "AUTO",
+            "listStartOffset": 0,
+            "isFirstLineOfList": false
+          }
+        ]
+      },
+      "derivedTextData": {
+        "layoutSize": {
+          "x": 19,
+          "y": 20
+        },
+        "baselines": [
+          {
+            "position": {
+              "x": 0,
+              "y": 15.090909004211426
+            },
+            "width": 18.3203125,
+            "lineY": -8.669766771163268e-8,
+            "lineHeight": 20,
+            "lineAscent": 13,
+            "firstCharacter": 0,
+            "endCharacter": 2
+          }
+        ],
+        "glyphs": [
+          {
+            "commandsBlob": 0,
+            "position": {
+              "x": 0,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 0,
+            "advance": 0.6999289989471436,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 1,
+            "position": {
+              "x": 9.6796875,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 1,
+            "advance": 0.6171875,
+            "rotation": 0
+          }
+        ],
+        "fontMetaData": [
+          {
+            "key": {
+              "family": "Inter",
+              "style": "Medium",
+              "postscript": ""
+            },
+            "fontLineHeight": 1.2102272510528564,
+            "fontDigest": [
+              212, 131, 226, 199, 248, 3, 44, 102, 56, 208, 71, 22, 126, 251, 235, 160, 3, 15, 6, 73
+            ],
+            "fontStyle": "NORMAL",
+            "fontWeight": 500
+          }
+        ],
+        "truncationStartIndex": -1,
+        "truncatedHeight": -1,
+        "logicalIndexToCharacterOffsetMap": [0, 9.6796875],
+        "derivedLines": [
+          {
+            "directionality": "LTR"
+          }
+        ]
+      },
+      "fontVariantCommonLigatures": true,
+      "fontVariantContextualLigatures": true,
+      "letterSpacing": {
+        "value": 0,
+        "units": "PERCENT"
+      },
+      "fontVersion": "",
+      "textUserLayoutVersion": 5,
+      "textExplicitLayoutVersion": 1,
+      "fontVariations": [],
+      "textBidiVersion": 1,
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 19,
+        "y": 20
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 0,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": true,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 0,
+            "c1": 0,
+            "c2": 0,
+            "c3": 1
+          }
+        }
+      ],
+      "textDecorationSkipInk": true,
+      "autoRename": false,
+      "textTracking": 0,
+      "textAutoResize": "WIDTH_AND_HEIGHT"
+    },
+    {
+      "guid": {
+        "sessionID": 292486,
+        "localID": 1723
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 292486,
+          "localID": 1721
+        },
+        "position": "!"
+      },
+      "type": "SYMBOL",
+      "name": "Oracle Card",
+      "isSymbolPublishable": true,
+      "sharedSymbolVersion": "292486:7",
+      "componentPropDefs": [
+        {
+          "id": {
+            "sessionID": 292486,
+            "localID": 0
+          },
+          "name": "Show label",
+          "sortPosition": "\"",
+          "type": "BOOL",
+          "preferredValues": {},
+          "varValue": {
+            "value": {
+              "boolValue": true
+            },
+            "dataType": "BOOLEAN",
+            "resolvedDataType": "BOOLEAN"
+          }
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 200,
+        "y": 60
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "frameMaskDisabled": true
+    },
+    {
+      "guid": {
+        "sessionID": 292486,
+        "localID": 1724
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 292486,
+          "localID": 1723
+        },
+        "position": "!"
+      },
+      "type": "TEXT",
+      "name": "Styled label",
+      "styleIdForText": {
+        "guid": {
+          "sessionID": 292486,
+          "localID": 1722
+        }
+      },
+      "fontSize": 12,
+      "textAlignVertical": "TOP",
+      "lineHeight": {
+        "value": 100,
+        "units": "PERCENT"
+      },
+      "fontName": {
+        "family": "Inter",
+        "style": "Regular",
+        "postscript": ""
+      },
+      "textData": {
+        "characters": "Styled label",
+        "lines": [
+          {
+            "lineType": "PLAIN",
+            "styleId": 0,
+            "indentationLevel": 0,
+            "sourceDirectionality": "AUTO",
+            "listStartOffset": 0,
+            "isFirstLineOfList": false
+          }
+        ]
+      },
+      "derivedTextData": {
+        "layoutSize": {
+          "x": 79,
+          "y": 20
+        },
+        "baselines": [
+          {
+            "position": {
+              "x": 0,
+              "y": 15.090909004211426
+            },
+            "width": 78.244140625,
+            "lineY": -8.669766771163268e-8,
+            "lineHeight": 20,
+            "lineAscent": 13,
+            "firstCharacter": 0,
+            "endCharacter": 12
+          }
+        ],
+        "glyphs": [
+          {
+            "commandsBlob": 2,
+            "position": {
+              "x": 0,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 0,
+            "advance": 0.6434659361839294,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 3,
+            "position": {
+              "x": 9.009765625,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 1,
+            "advance": 0.37180399894714355,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 4,
+            "position": {
+              "x": 14.21875,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 2,
+            "advance": 0.56640625,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 5,
+            "position": {
+              "x": 22.1484375,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 3,
+            "advance": 0.24893467128276825,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 6,
+            "position": {
+              "x": 25.634765625,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 4,
+            "advance": 0.5873579978942871,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 7,
+            "position": {
+              "x": 33.8515625,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 5,
+            "advance": 0.6257102489471436,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 8,
+            "position": {
+              "x": 42.615234375,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 6,
+            "advance": 0.26491478085517883,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 5,
+            "position": {
+              "x": 46.3203125,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 7,
+            "advance": 0.24893467128276825,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 9,
+            "position": {
+              "x": 49.806640625,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 8,
+            "advance": 0.5692471861839294,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 10,
+            "position": {
+              "x": 57.77734375,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 9,
+            "advance": 0.6257102489471436,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 6,
+            "position": {
+              "x": 66.541015625,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 10,
+            "advance": 0.5873579978942871,
+            "rotation": 0
+          },
+          {
+            "commandsBlob": 5,
+            "position": {
+              "x": 74.7578125,
+              "y": 15.090909004211426
+            },
+            "fontSize": 14,
+            "firstCharacter": 11,
+            "advance": 0.24893467128276825,
+            "rotation": 0
+          }
+        ],
+        "fontMetaData": [
+          {
+            "key": {
+              "family": "Inter",
+              "style": "Medium",
+              "postscript": ""
+            },
+            "fontLineHeight": 1.2102272510528564,
+            "fontDigest": [
+              212, 131, 226, 199, 248, 3, 44, 102, 56, 208, 71, 22, 126, 251, 235, 160, 3, 15, 6, 73
+            ],
+            "fontStyle": "NORMAL",
+            "fontWeight": 500
+          }
+        ],
+        "truncationStartIndex": -1,
+        "truncatedHeight": -1,
+        "logicalIndexToCharacterOffsetMap": [
+          0, 9.009765625, 14.21875, 22.1484375, 25.634765625, 33.8515625, 42.615234375, 46.3203125,
+          49.806640625, 57.77734375, 66.541015625, 74.7578125
+        ],
+        "derivedLines": [
+          {
+            "directionality": "LTR"
+          }
+        ]
+      },
+      "fontVariantCommonLigatures": true,
+      "fontVariantContextualLigatures": true,
+      "letterSpacing": {
+        "value": 0,
+        "units": "PERCENT"
+      },
+      "fontVersion": "",
+      "textUserLayoutVersion": 5,
+      "textExplicitLayoutVersion": 1,
+      "fontVariations": [],
+      "textBidiVersion": 1,
+      "emojiImageSet": "APPLE",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 79,
+        "y": 20
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "OUTSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": true,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 0,
+            "c1": 0,
+            "c2": 0,
+            "c3": 1
+          }
+        }
+      ],
+      "textDecorationSkipInk": true,
+      "autoRename": true,
+      "textTracking": 0,
+      "textAutoResize": "WIDTH_AND_HEIGHT",
+      "parameterConsumptionMap": {
+        "entries": [
+          {
+            "variableData": {
+              "value": {
+                "propRefValue": {
+                  "defId": {
+                    "sessionID": 292486,
+                    "localID": 0
+                  }
+                }
+              },
+              "dataType": "PROP_REF",
+              "resolvedDataType": "BOOLEAN"
+            },
+            "variableField": "VISIBLE"
+          }
+        ]
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 292486,
+        "localID": 1725
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 292486,
+          "localID": 1721
+        },
+        "position": "\""
+      },
+      "type": "INSTANCE",
+      "name": "Custom card",
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 292486,
+          "localID": 1723
+        },
+        "symbolOverrides": [
+          {
+            "name": "Custom card",
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 292486,
+                  "localID": 1723
+                }
+              ]
+            },
+            "size": {
+              "x": 240,
+              "y": 80
+            }
+          }
+        ],
+        "uniformScaleFactor": 1
+      },
+      "derivedSymbolData": [],
+      "componentPropAssignments": [
+        {
+          "defID": {
+            "sessionID": 292486,
+            "localID": 0
+          },
+          "varValue": {
+            "value": {
+              "boolValue": false
+            },
+            "dataType": "BOOLEAN",
+            "resolvedDataType": "BOOLEAN"
+          }
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 240,
+        "y": 80
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 250,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "frameMaskDisabled": true,
+      "derivedSymbolDataLayoutVersion": 3
+    },
+    {
+      "guid": {
+        "sessionID": 292486,
+        "localID": 1727
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 292486,
+          "localID": 1721
+        },
+        "position": "#"
+      },
+      "type": "INSTANCE",
+      "name": "Oracle Card",
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 292486,
+          "localID": 1723
+        },
+        "symbolOverrides": [],
+        "uniformScaleFactor": 0.75
+      },
+      "derivedSymbolData": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 292486,
+                "localID": 1724
+              }
+            ]
+          },
+          "derivedTextData": {
+            "layoutSize": {
+              "x": 59,
+              "y": 15
+            },
+            "baselines": [
+              {
+                "position": {
+                  "x": 0,
+                  "y": 11.318181991577148
+                },
+                "width": 58.68310546875,
+                "lineY": 1.7339533542326535e-7,
+                "lineHeight": 15,
+                "lineAscent": 10,
+                "firstCharacter": 0,
+                "endCharacter": 12
+              }
+            ],
+            "glyphs": [
+              {
+                "commandsBlob": 2,
+                "position": {
+                  "x": 0,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 0,
+                "advance": 0.6434659361839294,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 3,
+                "position": {
+                  "x": 6.75732421875,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 1,
+                "advance": 0.37180399894714355,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 4,
+                "position": {
+                  "x": 10.6640625,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 2,
+                "advance": 0.56640625,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 5,
+                "position": {
+                  "x": 16.611328125,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 3,
+                "advance": 0.24893467128276825,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 6,
+                "position": {
+                  "x": 19.22607421875,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 4,
+                "advance": 0.5873579978942871,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 7,
+                "position": {
+                  "x": 25.388671875,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 5,
+                "advance": 0.6257102489471436,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 8,
+                "position": {
+                  "x": 31.96142578125,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 6,
+                "advance": 0.26491478085517883,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 5,
+                "position": {
+                  "x": 34.740234375,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 7,
+                "advance": 0.24893467128276825,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 9,
+                "position": {
+                  "x": 37.35498046875,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 8,
+                "advance": 0.5692471861839294,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 10,
+                "position": {
+                  "x": 43.3330078125,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 9,
+                "advance": 0.6257102489471436,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 6,
+                "position": {
+                  "x": 49.90576171875,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 10,
+                "advance": 0.5873579978942871,
+                "rotation": 0
+              },
+              {
+                "commandsBlob": 5,
+                "position": {
+                  "x": 56.068359375,
+                  "y": 11.318181991577148
+                },
+                "fontSize": 10.5,
+                "firstCharacter": 11,
+                "advance": 0.24893467128276825,
+                "rotation": 0
+              }
+            ],
+            "fontMetaData": [
+              {
+                "key": {
+                  "family": "Inter",
+                  "style": "Medium",
+                  "postscript": ""
+                },
+                "fontLineHeight": 1.2102272510528564,
+                "fontDigest": [
+                  212, 131, 226, 199, 248, 3, 44, 102, 56, 208, 71, 22, 126, 251, 235, 160, 3, 15,
+                  6, 73
+                ],
+                "fontStyle": "NORMAL",
+                "fontWeight": 500
+              }
+            ],
+            "truncationStartIndex": -1,
+            "truncatedHeight": -1,
+            "logicalIndexToCharacterOffsetMap": [
+              0, 6.75732421875, 10.6640625, 16.611328125, 19.22607421875, 25.388671875,
+              31.96142578125, 34.740234375, 37.35498046875, 43.3330078125, 49.90576171875,
+              56.068359375
+            ],
+            "derivedLines": [
+              {
+                "directionality": "LTR"
+              }
+            ]
+          },
+          "size": {
+            "x": 59,
+            "y": 15
+          }
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 150,
+        "y": 45
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 150
+      },
+      "strokeWeight": 0.75,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "frameMaskDisabled": true,
+      "derivedSymbolDataLayoutVersion": 3
+    }
+  ],
+  "blobs": [
+    "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",
+    "AAFGF40+o4suvAOji1Y+o4suvF10IT5GF708A1502T2MLmo9RhedPXXR9T0Du+hCPemiOz676EI9RheLPgO76EI9GF24PnXRnT2ji9g+A7vo2j0vuvg+o4siPrroBD8D6aJXPl10DT9ddI0+XXQNPwNddKc+XXQNP9JFtz5GFwk/A9JFxz510QQ/AADQPowu/j4Du+jYPi+68j510d0+AADqPgJGF+E+AADqPgJGF+E+jC46PwIvugs/jC46PwIvugs/AAAAAAIYXeI+AAAAAAIYXeI+ddGtPQJ10d0+ddGtPQO76Ng+jC6KPemizz4vujg9A6OLxj6MLro8o4u2PnXRxTsDo4umPqOLLrxGF40+o4suvAABRheZPumioz0Do4uwPumioz0vusA+RhfVPQNGF9E+6aIDPl502T4AADA+AwAA4j4YXVw+AADiPumiiz4DAADiPi+6qD7potk+o4u+PgPSRdE+GF3UPkYXwT6ji+A+A7vosD4vuuw+RheZPi+67D4Do4uAPi+67D4YXWA+AADgPgPpoj8+0kXTPrvoLj7SRb0+A6OLHj7SRac+o4sePumiiz4Do4sePtJFXz7SRS8+o4syPgMAAEA+ddEFPi+6YD7SRdc9A7rogD7poqM9RheZPumioz0A",
+    "AA==",
+    "AAHpoms+ddFFvAOjizY+ddFFvOmiCz4vuug7A110wT2MLto80kWPPYwugj0D6aI7PXXRzT3pojs9ddEdPgPpojs9RhdNPowugj3poms+A6OLpj1GF4U+GF3kPQAAjj4DRhcRPrrolj7SRTc+XXSbPgNedF0+AACgPqOLgj4YXaI+A+mimz7SRaU+0kWrPkYXpz4Du+i6PkYXqT4AAMI+XXStPgNGF8k+ddGxPkYXyT7pors+AkYXyT676Lw+A0YXyT4vutQ+6aK7PnXR4T4DGF2uPrvo7j4AAJQ+u+juPgNGF3E+u+juPl50UT4vuuI+A4wuMj4vutY+jC4mPgAAyD4CAACAPemi0z4DGF2kPUYX7T6MLuo9L7r8PgMYXRg+0kUGP4wuRj510Qk/AwAAdD5ddA0/0kWTPl10DT8DAACkPl10DT8vurY+XXQLPwPposk+o4sJPwAA2j4YXQQ/A6OL6j4YXf4+Rhf1PkYX6z4D6aL/PgAA2D7pov8+XXS5PgLpov8+AAAAAAKji8o+AAAAAAKji8o+L7qYPQIYXcg+L7qYPQNGF8M+RhddPaOLuD7pogs9AwAArj4vumg8XXSdPumiizoDuuiMPnXRRbzpoms+ddFFvAAB6aKBPnXRlT0DjC6YPnXRlT2MLqg+XXS5PQMYXbg+RhfdPS+6wD7SRQs+A9JFyT4YXSg+0kXJPl10ST4C0kXJPi+6iD4DGF3GPnXRhT4AAL4+0kWDPgN10bU+uuiAPtJFqz6MLn4+Ay+6oD676Ho+L7qWPgAAeD4DL7qMPl50dT4AAIY+6aJzPgMYXWw+6aJvPowuUj6MLmY+AxhdOD4vulw+L7ooPrvoSj4DXXQZPl10OT5ddBk+GF0cPgNddBk+AADoPdJFNz6ji749A0YXVT510ZU96aKBPnXRlT0A",
+    "AAHpoqM9AAAAAALpoqM9jC46PwKjiz4+jC46PwKjiz4+AADqPgJGF0U+AADqPgOji04+L7ryPhhdYD6MLv4+A4wucj510QQ/uuiIPkYXCT8DL7qYPl10DT8vurI+XXQNPwOji9Q+XXQNP0YX7z666AQ/A3XRBD8vuvg+GF0MP6OL2D4DAAAUPxhduD4AABQ/RheLPgMAABQ/6aI7Pl10DD910fU9A7roBD+MLmo9XnTvPkYXvTwDRhfVPqOLLrzSRbM+o4suvAN10Zk+o4suvOmiiT510cU7A9JFcz6MLro8RhdhPi+6OD0Du+hOPowuij1GF0U+ddGtPQIAADw+ddGtPQIAADw+AAAAAALpoqM9AAAAAAABGF08Pumiiz4DGF08PhhdXD5ddE0+AAAwPgOji14+6aIDPrvofj5GF9U9A+mijz7poqM9RhenPumioz0DXXS/Pumioz110c8+0kXXPQOMLuA+ddEFPqOL6D6jizI+A0YX8T7SRV8+RhfxPumiiz4DRhfxPtJFpz4vuug+0kW9PgOji+A+0kXTPgAA0D4AAOA+A+mivz4vuuw+RhenPi+67D4DXXSPPi+67D6MLn4+o4vgPgN10V0+GF3UPkYXTT6ji74+AxhdPD4vuqg+GF08Pumiiz4A"
+  ]
+}

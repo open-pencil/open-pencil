@@ -1,10 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec } from '@open-pencil/core'
-import { parseFigBuffer } from '@open-pencil/fig'
+import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { importNodeChanges } from '#core/kiwi/fig/import'
 
 describe('Figma component property roundtrip', () => {
   beforeAll(async () => {
@@ -38,9 +36,7 @@ describe('Figma component property roundtrip', () => {
     const parsed = parseFigBuffer(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
     )
-    const imported = importNodeChanges(parsed.nodeChanges, parsed.blobs, undefined, {
-      populate: 'all'
-    })
+    const imported = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
     expect(imported.enabledLibraries.get('design-system')).toEqual({
       libraryId: 'design-system',
       revisionId: 'revision-1',
@@ -100,9 +96,7 @@ describe('Figma component property roundtrip', () => {
     const parsed = parseFigBuffer(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
     )
-    const imported = importNodeChanges(parsed.nodeChanges, parsed.blobs, undefined, {
-      populate: 'all'
-    })
+    const imported = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
     const importedSet = [...imported.getAllNodes()].find(
       (node) => node.type === 'COMPONENT_SET' && node.name === 'Button'
     )
@@ -147,9 +141,7 @@ describe('Figma component property roundtrip', () => {
     const parsed = parseFigBuffer(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
     )
-    const imported = importNodeChanges(parsed.nodeChanges, parsed.blobs, undefined, {
-      populate: 'all'
-    })
+    const imported = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
     const importedComponent = [...imported.getAllNodes()].find((node) => node.name === 'Card')
     const importedInstance = [...imported.getAllNodes()].find(
       (node) => node.name === 'Card instance'
@@ -189,12 +181,10 @@ describe('Figma component property roundtrip', () => {
     if (!instance) throw new Error('Expected instance')
     instance.source.id = '20:1'
 
-    const imported = importNodeChanges(
+    const imported = materializeDocument(
       parseFigBuffer((await exportFigFile(graph)).buffer as ArrayBuffer).nodeChanges,
-      [],
-      undefined,
-      { populate: 'all' }
-    )
+      []
+    ).graph
     const importedInstance = [...imported.getAllNodes()].find(
       (node) => node.name === 'Card instance'
     )
@@ -203,12 +193,10 @@ describe('Figma component property roundtrip', () => {
       componentPropertyAssignments: { '30:1': 'Edited' }
     })
 
-    const reloaded = importNodeChanges(
+    const reloaded = materializeDocument(
       parseFigBuffer((await exportFigFile(imported)).buffer as ArrayBuffer).nodeChanges,
-      [],
-      undefined,
-      { populate: 'all' }
-    )
+      []
+    ).graph
     const reloadedInstance = [...reloaded.getAllNodes()].find(
       (node) => node.name === 'Card instance'
     )

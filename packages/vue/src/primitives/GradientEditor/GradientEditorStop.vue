@@ -2,7 +2,7 @@
 import { Primitive } from 'reka-ui'
 import { computed } from 'vue'
 
-import { colorToCSS, colorToHexRaw } from '@open-pencil/core/color'
+import { colorToCSS, colorToHexRaw } from '@open-pencil/scene-graph/color'
 
 import type {
   GradientEditorStopActions,

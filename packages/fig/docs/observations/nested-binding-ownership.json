@@ -1,0 +1,121 @@
+{
+  "inherited": {
+    "value": 20,
+    "nodes": [
+      {
+        "id": "293733:8",
+        "width": 32.5,
+        "height": 7,
+        "x": 150,
+        "y": 0,
+        "paddingLeft": 10,
+        "boundVariables": {}
+      },
+      {
+        "id": "I293733:8;1:5",
+        "width": 12.5,
+        "height": 7,
+        "x": 10,
+        "y": 0,
+        "paddingLeft": 5,
+        "boundVariables": {}
+      },
+      {
+        "id": "I293733:8;1:5;1:3",
+        "width": 5,
+        "height": 5,
+        "x": 5,
+        "y": 1,
+        "boundVariables": {}
+      }
+    ]
+  },
+  "direct": {
+    "before": {
+      "value": 8,
+      "nodes": [
+        {
+          "id": "293733:8",
+          "padding": 10,
+          "width": 31.5,
+          "boundVariables": {}
+        },
+        {
+          "id": "I293733:8;1:5",
+          "padding": 4,
+          "width": 11.5,
+          "boundVariables": {
+            "paddingLeft": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:293742:7"
+            }
+          }
+        }
+      ]
+    },
+    "after": {
+      "value": 12,
+      "nodes": [
+        {
+          "id": "293733:8",
+          "padding": 10,
+          "width": 33.5,
+          "boundVariables": {}
+        },
+        {
+          "id": "I293733:8;1:5",
+          "padding": 6,
+          "width": 13.5,
+          "boundVariables": {
+            "paddingLeft": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:293742:7"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "reencoded": {
+    "value": 12,
+    "nodes": [
+      {
+        "id": "1:7",
+        "width": 33.5,
+        "height": 7,
+        "x": 150,
+        "y": 0,
+        "padding": 10,
+        "boundVariables": {}
+      },
+      {
+        "id": "I1:7;1:5",
+        "width": 13.5,
+        "height": 7,
+        "x": 10,
+        "y": 0,
+        "padding": 6,
+        "boundVariables": {
+          "paddingLeft": {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:293742:7"
+          }
+        }
+      },
+      {
+        "id": "I1:7;1:5;1:3",
+        "width": 5,
+        "height": 5,
+        "x": 6,
+        "y": 1,
+        "boundVariables": {}
+      }
+    ],
+    "after": {
+      "value": 16,
+      "width": 35.5,
+      "nestedWidth": 15.5,
+      "padding": 8
+    }
+  }
+}

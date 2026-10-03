@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { canvas, doc, node } from './legacy/helpers'
 
 describe('fig-import: stroke options', () => {
   test('stroke cap and join', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('VECTOR', 10, 1, {
@@ -25,7 +25,7 @@ describe('fig-import: stroke options', () => {
         strokeJoin: 'BEVEL',
         miterLimit: 9
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.strokes[0].cap).toBe('ROUND')
     expect(n.strokes[0].join).toBe('BEVEL')
@@ -33,7 +33,7 @@ describe('fig-import: stroke options', () => {
   })
 
   test('dash pattern', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('RECTANGLE', 10, 1, {
@@ -50,7 +50,7 @@ describe('fig-import: stroke options', () => {
         strokeAlign: 'CENTER',
         dashPattern: [10, 5]
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.strokes[0].dashPattern).toEqual([10, 5])
   })

@@ -4,8 +4,8 @@ import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 
 import type { NodeChange } from '#core/kiwi/fig/codec'
 
-import { parseFixture } from '#tests/helpers/fig-fixtures'
-import { collectAllNodes } from '#tests/helpers/fig-traversal'
+import { parseFixture } from '#tests/helpers/fig/fixtures'
+import { collectAllNodes } from '#tests/helpers/fig/traversal'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('Figma group reclassification on import', () => {

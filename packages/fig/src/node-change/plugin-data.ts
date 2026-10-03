@@ -1,7 +1,10 @@
+import { omit } from 'es-toolkit/object'
+
 import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   clampExportScale,
+  isExportFormatId,
   type ExportFormatId,
   type ExportSetting,
   type PluginDataEntry,
@@ -11,7 +14,12 @@ import {
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
-import { resolveVariableConsumptionEntry } from './variable-bindings'
+import {
+  resolveVariableConsumptionEntry,
+  variableConsumptionEntries,
+  VARIABLE_BINDING_FIELDS_INVERSE,
+  referencesVariable
+} from './variable/bindings'
 
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
@@ -40,6 +48,12 @@ export function upsertPluginData(
   )
   pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_ID, key, value })
   node.pluginData = pluginData
+}
+
+export function removePluginData(node: { pluginData: PluginDataEntry[] }, key: string): void {
+  node.pluginData = node.pluginData.filter(
+    (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
+  )
 }
 
 export function applyExportSettingsPluginData(
@@ -115,30 +129,26 @@ function parseBoundVariablesPluginValue(value: string | null): Record<string, st
 }
 
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
-  const bindings = parseBoundVariablesPluginValue(
+  let bindings = parseBoundVariablesPluginValue(
     getOpenPencilPluginValue(nc, BOUND_VARIABLES_PLUGIN_KEY)
   )
-  for (const entry of nc.variableConsumptionMap?.entries ?? []) {
+  for (const entry of variableConsumptionEntries(nc)) {
     const binding = resolveVariableConsumptionEntry(entry)
     if (binding) bindings[binding.field] = binding.variableId
+    else if (entry.variableField && !referencesVariable(entry.variableData?.dataType)) {
+      const field = VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
+      if (field) bindings = omit(bindings, [field])
+    }
   }
   nc.fillPaints?.forEach((paint, i) => {
-    const variableGuid =
-      paint.colorVariableBinding?.variableID ?? paint.colorVar?.value?.alias?.guid
+    const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`fills/${i}/color`] = guidToString(variableGuid)
   })
   nc.strokePaints?.forEach((paint, i) => {
-    const variableGuid =
-      paint.colorVariableBinding?.variableID ?? paint.colorVar?.value?.alias?.guid
+    const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)
   })
   return bindings
-}
-
-function isExportFormatId(value: unknown): value is ExportFormatId {
-  return (
-    value === 'png' || value === 'jpg' || value === 'webp' || value === 'svg' || value === 'pdf'
-  )
 }
 
 function parseExportSettingsPluginValue(value: string | null): ExportSetting[] | null {

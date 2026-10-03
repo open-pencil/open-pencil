@@ -1,4 +1,5 @@
-import { selectionToJSX } from '#core/design-jsx'
+import { selectionToJSX } from '@open-pencil/design-jsx'
+
 import type { EditorContext } from '#core/editor/types'
 import { renderNodesToSVG } from '#core/io/formats/svg'
 

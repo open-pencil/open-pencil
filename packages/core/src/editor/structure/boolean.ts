@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
@@ -12,7 +12,6 @@ export type BooleanOperation = 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
 
 export function booleanOperationSelected(
   ctx: EditorContext,
-  isTopLevel: (parentId: string | null) => boolean,
   selectedNodes: SceneNode[],
   operation: BooleanOperation
 ) {
@@ -26,13 +25,12 @@ export function booleanOperationSelected(
   const childSnapshots = childIds.map((id) => ({ id, subtree: snapshotSubtree(ctx.graph, id) }))
   const origPositions = topLevel.map((node) => ({ id: node.id, x: node.x, y: node.y }))
   const firstIndex = Math.min(...childIds.map((id) => parent.childIds.indexOf(id)))
-  const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : ctx.graph.getAbsolutePosition(parentId)
-  const bounds = computeAbsoluteBounds(topLevel, (id) => ctx.graph.getAbsolutePosition(id))
+  const bounds = getAxisAlignedBoundsInParent(topLevel, parentId, ctx.graph)
 
   const booleanNode = ctx.graph.createNode('BOOLEAN_OPERATION', parentId, {
     name: operationLabel(operation),
-    x: bounds.x - parentAbs.x,
-    y: bounds.y - parentAbs.y,
+    x: bounds.x,
+    y: bounds.y,
     width: bounds.width,
     height: bounds.height,
     fills: copyFills(topLevel[0].fills),

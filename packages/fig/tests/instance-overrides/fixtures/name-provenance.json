@@ -1,0 +1,320 @@
+{
+  "oracle": {
+    "names": {
+      "page": "293147:1802",
+      "component": "293147:1803",
+      "instances": [
+        {
+          "id": "293147:1804",
+          "name": "Original",
+          "overrides": []
+        },
+        {
+          "id": "293147:1805",
+          "name": "Original",
+          "overrides": [
+            {
+              "id": "293147:1805",
+              "overriddenFields": ["name"]
+            }
+          ]
+        },
+        {
+          "id": "293147:1806",
+          "name": "Custom",
+          "overrides": [
+            {
+              "id": "293147:1806",
+              "overriddenFields": ["name"]
+            }
+          ]
+        }
+      ]
+    },
+    "variants": {
+      "page": "293150:1807",
+      "set": "293150:1810",
+      "components": ["293150:1808", "293150:1809", "293150:1811"],
+      "before": [
+        {
+          "id": "293150:1812",
+          "name": "Control",
+          "overrides": []
+        },
+        {
+          "id": "293150:1813",
+          "name": "Custom",
+          "overrides": [
+            {
+              "id": "293150:1813",
+              "overriddenFields": ["name"]
+            }
+          ]
+        }
+      ],
+      "variant": [
+        {
+          "id": "293150:1812",
+          "name": "Control",
+          "overrides": []
+        },
+        {
+          "id": "293150:1813",
+          "name": "Custom",
+          "overrides": [
+            {
+              "id": "293150:1813",
+              "overriddenFields": ["name"]
+            }
+          ]
+        }
+      ],
+      "unrelated": [
+        {
+          "id": "293150:1812",
+          "name": "Other",
+          "overrides": []
+        },
+        {
+          "id": "293150:1813",
+          "name": "Custom",
+          "overrides": [
+            {
+              "id": "293150:1813",
+              "overriddenFields": ["name"]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "records": [
+    {
+      "guid": {
+        "sessionID": 293147,
+        "localID": 1803
+      },
+      "type": "SYMBOL",
+      "name": "Original",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293147,
+          "localID": 1802
+        },
+        "position": "!"
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293147,
+        "localID": 1804
+      },
+      "type": "INSTANCE",
+      "name": "Original",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293147,
+          "localID": 1802
+        },
+        "position": "\""
+      },
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293147,
+          "localID": 1803
+        },
+        "symbolOverrides": [],
+        "uniformScaleFactor": 1
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293147,
+        "localID": 1805
+      },
+      "type": "INSTANCE",
+      "name": "Original",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293147,
+          "localID": 1802
+        },
+        "position": "#"
+      },
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293147,
+          "localID": 1803
+        },
+        "symbolOverrides": [
+          {
+            "name": "Original",
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 293147,
+                  "localID": 1803
+                }
+              ]
+            }
+          }
+        ],
+        "uniformScaleFactor": 1
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293147,
+        "localID": 1806
+      },
+      "type": "INSTANCE",
+      "name": "Custom",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293147,
+          "localID": 1802
+        },
+        "position": "$"
+      },
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293147,
+          "localID": 1803
+        },
+        "symbolOverrides": [
+          {
+            "name": "Custom",
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 293147,
+                  "localID": 1803
+                }
+              ]
+            }
+          }
+        ],
+        "uniformScaleFactor": 1
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293150,
+        "localID": 1808
+      },
+      "type": "SYMBOL",
+      "name": "State=Closed",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293150,
+          "localID": 1810
+        },
+        "position": "!"
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293150,
+        "localID": 1809
+      },
+      "type": "SYMBOL",
+      "name": "State=Open",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293150,
+          "localID": 1810
+        },
+        "position": "\""
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293150,
+        "localID": 1810
+      },
+      "type": "FRAME",
+      "name": "Control",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293150,
+          "localID": 1807
+        },
+        "position": "#"
+      },
+      "isStateGroup": true
+    },
+    {
+      "guid": {
+        "sessionID": 293150,
+        "localID": 1811
+      },
+      "type": "SYMBOL",
+      "name": "Other",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293150,
+          "localID": 1807
+        },
+        "position": "$"
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293150,
+        "localID": 1812
+      },
+      "type": "INSTANCE",
+      "name": "Other",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293150,
+          "localID": 1807
+        },
+        "position": "%"
+      },
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293150,
+          "localID": 1811
+        },
+        "symbolOverrides": [],
+        "uniformScaleFactor": 1
+      }
+    },
+    {
+      "guid": {
+        "sessionID": 293150,
+        "localID": 1813
+      },
+      "type": "INSTANCE",
+      "name": "Custom",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293150,
+          "localID": 1807
+        },
+        "position": "&"
+      },
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293150,
+          "localID": 1811
+        },
+        "symbolOverrides": [
+          {
+            "name": "Custom",
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 293150,
+                  "localID": 1811
+                }
+              ]
+            }
+          }
+        ],
+        "uniformScaleFactor": 1
+      }
+    }
+  ]
+}

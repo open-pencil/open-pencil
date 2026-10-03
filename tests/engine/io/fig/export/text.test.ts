@@ -10,7 +10,7 @@ import {
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { parseFixture } from '#tests/helpers/fig-fixtures'
+import { parseFixture } from '#tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -222,7 +222,7 @@ describe('text node export', () => {
     expect((fontMetaData[0].key as JSONObject).style).toBe('Semi Bold')
   })
 
-  test('auto-layout text children export height auto-resize for Figma rendering', async () => {
+  test('auto-layout text children preserve explicit fixed text sizing', async () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
@@ -266,7 +266,7 @@ describe('text node export', () => {
       'text node change'
     )
 
-    expect(textNc.textAutoResize).toBe('HEIGHT')
+    expect(textNc.textAutoResize).toBe('NONE')
     expect(textNc.lineHeight).toBeUndefined()
     expect(textNc.stackChildAlignSelf).toBeUndefined()
   })

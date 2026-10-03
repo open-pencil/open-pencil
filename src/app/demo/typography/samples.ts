@@ -1,4 +1,5 @@
-import { Text, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
+import { Text } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 interface TypographySample {

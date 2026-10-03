@@ -3,11 +3,11 @@ import { limitAsync } from 'es-toolkit/promise'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { getPageColor, setPageBackgrounds } from '#core/figma-api/page-backgrounds'
-import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
   canUseFigPopulationWorker,
   createFigPopulationWorker
 } from '#core/kiwi/fig/population/client'
+import { isReaderPagePending, recoverReaderPage } from '#core/kiwi/fig/session/document-state'
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
 import { collectGraphFontRequirements } from '#core/text/requirements'
@@ -60,9 +60,10 @@ export function createPageActions(ctx: EditorContext) {
     return populationWorkerInstance
   }
 
+  /** `switchGeneration` is null for a lookup, which no page switch can supersede. */
   async function populatePage(
     pageId: string,
-    switchGeneration: number,
+    switchGeneration: number | null,
     signal?: AbortSignal
   ): Promise<boolean | null> {
     throwIfAborted(signal)
@@ -72,14 +73,17 @@ export function createPageActions(ctx: EditorContext) {
     throwIfAborted(signal)
     if (
       workerGeneration !== populationWorkerGeneration ||
-      switchGeneration !== pageSwitchGeneration
+      (switchGeneration !== null && switchGeneration !== pageSwitchGeneration)
     ) {
       return null
     }
     if (workerResult !== null) return workerResult
     worker?.terminate()
     populationWorkerInstance = undefined
-    return populateLazyFigImportRoots(ctx.graph, [pageId])
+    if (isReaderPagePending(ctx.graph, pageId)) {
+      return recoverReaderPage(ctx.graph, pageId)
+    }
+    return false
   }
 
   async function resolvePageFonts(
@@ -188,6 +192,14 @@ export function createPageActions(ctx: EditorContext) {
     return true
   }
 
+  /**
+   * Loads a page's layers so they can be searched, without fonts, layout, or switching to
+   * it — and without superseding a page switch the user has in progress.
+   */
+  async function loadPageNodes(pageId: string): Promise<void> {
+    if (ctx.graph.getNode(pageId)?.type === 'CANVAS') await populatePage(pageId, null)
+  }
+
   async function switchPage(pageId: string, options: SwitchPageOptions = {}): Promise<void> {
     const prepared = await preparePage(pageId, options)
     if (prepared) commitPageSwitch(prepared)
@@ -247,7 +259,14 @@ export function createPageActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
+  /** Advances whenever a page switch starts, so a caller can tell it was overtaken. */
+  function pageSwitchCount(): number {
+    return pageSwitchGeneration
+  }
+
   return {
+    loadPageNodes,
+    pageSwitchCount,
     preparePage,
     commitPageSwitch,
     switchPage,

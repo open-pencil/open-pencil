@@ -11,7 +11,7 @@ OpenPencil's native APIs are the ordinary JavaScript libraries used by the edito
 | --- | --- | --- |
 | Document nodes, hierarchy, variables, instances, geometry | `@open-pencil/scene-graph` | [Scene Graph](../reference/scene-graph) |
 | Editing actions, selection, undo, component properties, events | `@open-pencil/core/editor` | `createEditor()` and its inferred `Editor` type; [custom editor shell](./sdk/guides/custom-editor-shell) |
-| Declarative scene construction | `@open-pencil/core/design-jsx` | [JSX guide](./jsx-renderer) and [authoring reference](../reference/design-authoring) |
+| Declarative scene construction | `@open-pencil/design-jsx` for elements, helpers, and JSX export; `@open-pencil/core/design-jsx` to render them | [JSX guide](./jsx-renderer) and [authoring reference](../reference/design-authoring) |
 | Layout computation | `@open-pencil/core/layout` | `computeLayout(graph, frameId)` and `computeAllLayouts(graph, scopeId)` |
 | Figma-compatible scripting | `@open-pencil/core/figma-api` | [Compatibility](../reference/figma-compatibility) |
 | Schema-backed agent operations | `@open-pencil/core/tools` | [MCP](./mcp-server) |

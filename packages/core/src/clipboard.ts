@@ -1,14 +1,17 @@
 import { embedClipboardImages, encodeFigmaClipboard } from '@open-pencil/fig/clipboard'
-export {
-  parseFigmaClipboard,
-  importClipboardNodes,
-  figmaNodesBounds
-} from '@open-pencil/fig/clipboard'
+export { parseFigmaClipboard, figmaNodesBounds } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import {
+  appendVariableNodeChanges,
+  assignSharedStyleGuids,
+  assignVariableGuids
+} from '#core/io/formats/fig/variable-export'
+
 import { shapeTextForClipboard } from './canvas/text/clipboard'
+import { prepareClipboardImport } from './clipboard/fig-import'
 import {
   sceneNodeToKiwi,
   makeDocumentNodeChange,
@@ -20,6 +23,26 @@ import { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 
 export async function prefetchFigmaSchema(): Promise<void> {
   await initCodec()
+}
+
+export function importClipboardNodes(
+  nodeChanges: KiwiNodeChange[],
+  graph: SceneGraph,
+  targetParentId: string,
+  offsetX = 0,
+  offsetY = 0,
+  blobs: Uint8Array[] = []
+): string[] {
+  const operation = prepareClipboardImport(
+    nodeChanges,
+    graph,
+    targetParentId,
+    blobs,
+    offsetX,
+    offsetY
+  )
+  operation.commit()
+  return operation.plan.rootIds
 }
 
 export async function buildFigmaClipboardHTML(
@@ -49,26 +72,72 @@ export async function buildFigmaClipboardHTML(
   const nodeIdToGuid = new Map<string, GUID>()
   const assignedGuidValues = new Set<string>()
   const blobs: Uint8Array[] = []
+  const variableIds = new Map<string, GUID>()
+  const modeIds = new Map<string, GUID>()
+  assignVariableGuids(graph, localIdCounter, variableIds, modeIds, assignedGuidValues, new Set())
+  assignSharedStyleGuids(
+    [...graph.nodes.values()].filter((node) => node.sharedStyleType !== null),
+    localIdCounter,
+    nodeIdToGuid,
+    assignedGuidValues
+  )
   for (let i = 0; i < nodes.length; i++) {
     collectTextNodes(nodes[i])
     nodeChanges.push(
-      ...sceneNodeToKiwi(
-        nodes[i],
-        canvasGuid,
-        i,
-        localIdCounter,
-        graph,
-        blobs,
+      ...sceneNodeToKiwi(nodes[i], canvasGuid, i, localIdCounter, graph, blobs, {
         nodeIdToGuid,
         fontDigestMap,
-        undefined,
-        undefined,
-        undefined,
-        assignedGuidValues
-      )
+        varIdToGuid: variableIds,
+        assignedGuidValues,
+        modeIdToGuid: modeIds
+      })
     )
   }
 
+  const dependencies = new Map<string, SceneNode>()
+  const selected = new Set<string>()
+  const mark = (node: SceneNode): void => {
+    selected.add(node.id)
+    for (const child of graph.getChildren(node.id)) mark(child)
+  }
+  for (const node of nodes) mark(node)
+  const visitDependencies = (node: SceneNode): void => {
+    if (
+      node.type === 'INSTANCE' &&
+      node.componentId &&
+      !selected.has(node.componentId) &&
+      !dependencies.has(node.componentId)
+    ) {
+      const component = graph.getNode(node.componentId)
+      if (!component) throw new Error(`Missing clipboard component ${node.componentId}`)
+      dependencies.set(component.id, component)
+      visitDependencies(component)
+    }
+    for (const child of graph.getChildren(node.id)) visitDependencies(child)
+  }
+  for (const node of nodes) visitDependencies(node)
+  for (const node of graph.getAllNodes())
+    if (node.sharedStyleType && !selected.has(node.id)) dependencies.set(node.id, node)
+  const dependencyCanvas = { sessionID: 0, localID: 2 }
+  if (dependencies.size || graph.variableCollections.size)
+    nodeChanges.push({
+      ...makeCanvasNodeChange(dependencyCanvas, docGuid, '"', 'Clipboard dependencies'),
+      internalOnly: true
+    })
+  for (const component of dependencies.values()) {
+    collectTextNodes(component)
+    nodeChanges.push(
+      ...sceneNodeToKiwi(component, dependencyCanvas, 0, localIdCounter, graph, blobs, {
+        nodeIdToGuid,
+        fontDigestMap,
+        varIdToGuid: variableIds,
+        assignedGuidValues,
+        modeIdToGuid: modeIds
+      })
+    )
+  }
+
+  appendVariableNodeChanges(graph, nodeChanges, dependencyCanvas, variableIds, modeIds)
   const textNodeQueue = [...exportedTextNodes]
   await Promise.all(
     nodeChanges.map(async (change) => {

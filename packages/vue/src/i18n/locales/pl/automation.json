@@ -86,5 +86,9 @@
   "mcpFailureUnknownHint": "Uruchom go ponownie lub sprawdź szczegóły techniczne poniżej.",
   "mcpFailureDetails": "Szczegóły",
   "mcpFailureCopy": "Kopiuj szczegóły",
-  "mcpFailureCopied": "Skopiowano szczegóły techniczne."
+  "mcpFailureCopied": "Skopiowano szczegóły techniczne.",
+  "toolMode": "Tryb narzędzi",
+  "toolModeDescription": "Wybierz pełny dostęp lub tylko podgląd i uporządkowane szczegóły bieżącego zaznaczenia. Uruchom serwer ponownie, aby zastosować zmiany.",
+  "toolModeFull": "Pełny dostęp do narzędzi",
+  "toolModeSelectionContext": "Tylko kontekst zaznaczenia"
 }
