@@ -33,9 +33,11 @@
 - Choose PPTX in the Export panel's format list, alongside PNG, JPG, WEBP, SVG, and PDF.
 - Let AI and MCP agents verify and replay their edits with diff tools: `diff_visual` returns a pixel diff of two rendered nodes with the changed region, and `diff_apply` applies a `diff_create` or `diff_show` patch, including moved, added, and removed children, only when every node still matches it. The built-in AI chat enables `diff_create`, `diff_jsx`, and `diff_visual` by default.
 - Compare designs from the terminal with `openpencil diff`: `create`, `jsx`, `show`, `apply`, and `visual` work on a file or the running app, and `diff files` compares two documents page by page and exits with status 1 when they differ.
+- Fill slots in component instances as in Figma: drop, paste, or move layers into a slot, or add preferred components from **Add instances** in the properties panel, which shows each slot as Default or Modified with its item count and limits. **Reset slot** brings back the component content and **Delete contents** empties it. Slots are outlined in pink on the canvas and marked in the layers panel, and parts of an instance outside its slots refuse drops.
 
 ### Changed
 
+- Pick variables, shared styles, and swap components from one searchable list that groups preferred components first and works with the keyboard.
 - Keep the Share button labeled Share while you are in a room, instead of turning it into a Connected status; a green dot on your avatar shows the room is live.
 - Show Flatten, Outline text, and Outline stroke in the canvas context menu without icons, like every other item there.
 - Keep an AI chat working on the page where it started when you switch to another page, instead of sending its next edits to whichever page is on screen. When the AI switches pages itself, your view follows.
