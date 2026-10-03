@@ -141,7 +141,13 @@ describe('suggestions', () => {
     const updates: Array<Partial<SceneNode>> = []
     const target = graphFixTarget(graph)
     const applied = applyLintFixes(
-      { ...target, updateNode: (id, changes) => (updates.push(changes), target.updateNode(id, changes)) },
+      {
+        ...target,
+        updateNode: (id, changes) => {
+          updates.push(changes)
+          target.updateNode(id, changes)
+        }
+      },
       messages.flatMap((m) => (m.suggestions ?? []).map((fix) => ({ nodeId: m.nodeId, fix })))
     )
 
