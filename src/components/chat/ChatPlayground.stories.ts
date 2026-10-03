@@ -70,6 +70,9 @@ const meta = {
               :messages="selected.messages"
               :presentations="presentations"
               :status="selected.status"
+              interactive
+              @regenerate="regenerate"
+              @edit="resend"
             />
             <p v-if="notice" role="status" class="px-3 py-2 text-xs text-muted">{{ notice }}</p>
             <ChatComposer

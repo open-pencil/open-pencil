@@ -2,7 +2,7 @@
 import { refAutoReset, useClipboard } from '@vueuse/core'
 import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useI18n, vTestId } from '@open-pencil/vue'
 
@@ -15,17 +15,27 @@ import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
 import ToolCallGroup from '@/components/chat/tool/ToolCallGroup.vue'
+import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
+import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 const {
   message,
   streaming = false,
-  presentation
+  presentation,
+  canRegenerate = false,
+  canEdit = false
 } = defineProps<{
   message: UIMessage
   streaming?: boolean
   presentation?: { text?: string; attachments?: AttachmentPresentation[] }
+  /** The last reply, when the chat is idle. */
+  canRegenerate?: boolean
+  /** The last user message without attachments, when the chat is idle. */
+  canEdit?: boolean
 }>()
+const emit = defineEmits<{ regenerate: []; edit: [text: string] }>()
+const editing = ref(false)
 const { ai } = useI18n()
 const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
 const storedAttachments = attachmentsForMessage(message.id)
@@ -36,6 +46,23 @@ const assistantText = computed(() =>
     .map((part) => part.text)
     .join('')
 )
+const userText = computed(
+  () =>
+    presentation?.text ??
+    visibleUserMessageText(
+      message.id,
+      message.parts
+        .filter(isTextUIPart)
+        .map((p) => p.text)
+        .join('')
+    )
+)
+
+function saveEdit(text: string): void {
+  editing.value = false
+  emit('edit', text)
+}
+
 const firstAssistantTextPartIndex = computed(() =>
   message.parts.findIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
@@ -106,25 +133,40 @@ function groupKey(group: MessagePartGroup): string {
             </IconButton>
           </div>
         </template>
+        <ChatTurnActions
+          v-if="!streaming"
+          :message-id="message.id"
+          :can-regenerate="canRegenerate"
+          @regenerate="emit('regenerate')"
+        />
       </template>
 
       <!-- User message -->
       <template v-else-if="message.role === 'user'">
         <AttachmentList v-if="attachments.length" :attachments="attachments" />
-        <div
-          data-test-id="chat-text-bubble"
-          class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
-        >
-          {{
-            presentation?.text ??
-            visibleUserMessageText(
-              message.id,
-              message.parts
-                .filter(isTextUIPart)
-                .map((p) => p.text)
-                .join('')
-            )
-          }}
+        <ChatMessageEditor
+          v-if="editing"
+          :text="userText"
+          @save="saveEdit"
+          @cancel="editing = false"
+        />
+        <div v-else class="group/request relative">
+          <div
+            data-test-id="chat-text-bubble"
+            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
+          >
+            {{ userText }}
+          </div>
+          <IconButton
+            v-if="canEdit"
+            :label="ai.editMessage"
+            size="xs"
+            data-slot="chat-edit-message"
+            class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
+            @click="editing = true"
+          >
+            <icon-lucide-pencil class="size-3" />
+          </IconButton>
         </div>
       </template>
     </div>

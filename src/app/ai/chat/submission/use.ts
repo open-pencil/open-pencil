@@ -16,9 +16,15 @@ import { snapshotNode } from '@/app/ai/attachment/node/snapshot'
 import { setMessageAttachments } from '@/app/ai/attachment/presentation/store'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
+import { recordTurn, revertTurn } from '@/app/ai/chat/turns'
+import { runUndoEntries } from '@/app/ai/tools'
 import type { EditorStore } from '@/app/editor/active-store'
 
-export type ChatInstance = Pick<Chat<UIMessage>, 'messages' | 'sendMessage' | 'stop'>
+/** The part of the AI SDK Chat that submissions drive. */
+export type ChatInstance = Pick<
+  Chat<UIMessage>,
+  'messages' | 'sendMessage' | 'stop' | 'regenerate' | 'status'
+>
 
 interface SubmissionMessages {
   openSettings: string
@@ -27,8 +33,8 @@ interface SubmissionMessages {
 }
 
 interface SubmissionOptions {
-  chat: Ref<Chat<UIMessage> | null>
-  ensureChat: () => Promise<Chat<UIMessage> | null>
+  chat: Ref<ChatInstance | null>
+  ensureChat: () => Promise<ChatInstance | null>
   flush?: () => Promise<void>
   clearFailure: () => void
   getEditor: () => EditorStore
@@ -41,9 +47,25 @@ export function useChatSubmission(options: SubmissionOptions) {
   const isPreparingAttachments = ref(false)
   let operationVersion = 0
 
+  function lastAssistantId(chat: ChatInstance): string | undefined {
+    return chat.messages.findLast((message) => message.role === 'assistant')?.id
+  }
+
+  /** Runs one message and keeps the undo entries its edits pushed, so the turn can be reverted. */
+  async function withTurn(chat: ChatInstance, send: () => Promise<void>): Promise<void> {
+    const previous = lastAssistantId(chat)
+    await send()
+    const reply = lastAssistantId(chat)
+    if (!reply || reply === previous) return
+    const editor = options.getEditor()
+    recordTurn(reply, editor, runUndoEntries(editor))
+  }
+
   async function sendText(currentChat: ChatInstance, submission: ChatSubmission): Promise<void> {
     const previousIds = new Set(currentChat.messages.map((message) => message.id))
-    await currentChat.sendMessage({ text: submission.modelText }).catch(() => undefined)
+    await withTurn(currentChat, () =>
+      currentChat.sendMessage({ text: submission.modelText }).catch(() => undefined)
+    )
     const message = currentChat.messages.find(
       (candidate) => candidate.role === 'user' && !previousIds.has(candidate.id)
     )
@@ -70,9 +92,9 @@ export function useChatSubmission(options: SubmissionOptions) {
     for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
 
     if (submission.images.length === 0) {
-      await currentChat
-        .sendMessage({ messageId, text: submission.modelText })
-        .catch(() => undefined)
+      await withTurn(currentChat, () =>
+        currentChat.sendMessage({ messageId, text: submission.modelText }).catch(() => undefined)
+      )
       return
     }
 
@@ -88,16 +110,18 @@ export function useChatSubmission(options: SubmissionOptions) {
       preparedImages
     )
     setMessageAttachments(messageId, [...nodeAttachments, ...normalizedImages])
-    await currentChat
-      .sendMessage({
-        messageId,
-        text: designMessageWithImageFindings(
-          submission.modelText,
-          submission.images.map((image) => image.file.name),
-          findings
-        )
-      })
-      .catch(() => undefined)
+    await withTurn(currentChat, () =>
+      currentChat
+        .sendMessage({
+          messageId,
+          text: designMessageWithImageFindings(
+            submission.modelText,
+            submission.images.map((image) => image.file.name),
+            findings
+          )
+        })
+        .catch(() => undefined)
+    )
   }
 
   function reportSubmissionError(error: unknown): void {
@@ -144,6 +168,48 @@ export function useChatSubmission(options: SubmissionOptions) {
     }
   }
 
+  function readyChat(): ChatInstance | null {
+    const currentChat = options.chat.value
+    if (!currentChat || isPreparingAttachments.value) return null
+    return currentChat.status === 'ready' || currentChat.status === 'error' ? currentChat : null
+  }
+
+  /** Asks again for the last reply, undoing its edits first while nothing has been edited since. */
+  async function regenerate(): Promise<void> {
+    const currentChat = readyChat()
+    const reply = currentChat ? lastAssistantId(currentChat) : undefined
+    if (!currentChat || !reply) return
+    options.clearFailure()
+    revertTurn(reply)
+    try {
+      await withTurn(currentChat, () =>
+        currentChat.regenerate({ messageId: reply }).catch(() => undefined)
+      )
+    } finally {
+      await options.flush?.().catch(() => undefined)
+    }
+  }
+
+  /** Replaces the last user message and asks again, undoing the old reply's edits when it can. */
+  async function resend(messageId: string, text: string): Promise<void> {
+    const currentChat = readyChat()
+    const trimmed = text.trim()
+    if (!currentChat || !trimmed) return
+    const index = currentChat.messages.findIndex((message) => message.id === messageId)
+    const later = currentChat.messages.slice(index + 1)
+    if (index === -1 || later.some((message) => message.role === 'user')) return
+    options.clearFailure()
+    for (const message of later) if (message.role === 'assistant') revertTurn(message.id)
+    setVisibleMessageText(messageId, trimmed)
+    try {
+      await withTurn(currentChat, () =>
+        currentChat.sendMessage({ messageId, text: trimmed }).catch(() => undefined)
+      )
+    } finally {
+      await options.flush?.().catch(() => undefined)
+    }
+  }
+
   function cancel(): void {
     operationVersion += 1
     isPreparingAttachments.value = false
@@ -155,6 +221,8 @@ export function useChatSubmission(options: SubmissionOptions) {
     busy,
     cancel,
     stop: () => options.chat.value?.stop(),
-    submit
+    submit,
+    regenerate,
+    resend
   }
 }

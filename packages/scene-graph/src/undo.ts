@@ -127,6 +127,14 @@ export class UndoManager {
     return this.redoStack.length > 0
   }
 
+  /**
+   * The entry `depth` steps below the top of the undo stack, so a caller that pushed entries
+   * can tell whether they are still the most recent ones.
+   */
+  peekUndo(depth = 0): UndoEntry | undefined {
+    return this.undoStack.at(-1 - depth)
+  }
+
   get undoLabel(): string | null {
     return this.undoStack.at(-1)?.label ?? null
   }

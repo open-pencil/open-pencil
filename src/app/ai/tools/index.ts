@@ -24,12 +24,13 @@ import {
   markRunWork,
   moveRunToPage,
   recordRunBaseline,
+  recordRunUndoEntry,
   runBaseline,
   runPageId,
   stepBudget
 } from './run'
 
-export { didHitStepLimit, endRun, recordStep, runPageId, startRun } from './run'
+export { didHitStepLimit, endRun, recordStep, runPageId, runUndoEntries, startRun } from './run'
 
 export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnosticContext) {
   const acquireMutation = createMutex()
@@ -88,6 +89,8 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
           }
           // View tools (selection, viewport, pages) cannot change the document.
           if (toolChangesDocument(def)) {
+            // Atomic and snapshot edits both label their entries this way.
+            recordRunUndoEntry(store, `AI: ${def.name}`)
             try {
               recordToolChange(store, toolCallId, before, after)
             } catch (error) {
