@@ -91,6 +91,16 @@ function overviewNode(node: SceneNode): OverviewNode {
   return result
 }
 
+function attachTraversalChildren<
+  T extends { children?: T[]; returnedChildCount?: number; childrenTruncated?: boolean }
+>(entry: TraversalEntry<T>, children: T[]): void {
+  if (children.length > 0) entry.result.children = children
+  if (entry.node.childIds.length > children.length) {
+    entry.result.returnedChildCount = children.length
+    entry.result.childrenTruncated = true
+  }
+}
+
 function buildOverviewFromGraph(graph: SceneGraph, roots: SceneNode[]) {
   const selection: OverviewNode[] = []
   const queue: TraversalEntry<OverviewNode>[] = []
@@ -121,11 +131,7 @@ function buildOverviewFromGraph(graph: SceneGraph, roots: SceneNode[]) {
       queue.push({ node: child, result, depth: entry.depth + 1 })
       returnedNodeCount++
     }
-    if (children.length > 0) entry.result.children = children
-    if (entry.node.childIds.length > children.length) {
-      entry.result.returnedChildCount = children.length
-      entry.result.childrenTruncated = true
-    }
+    attachTraversalChildren(entry, children)
   }
   return { selection, returnedNodeCount, truncated }
 }
@@ -371,11 +377,7 @@ export const getUserSelectionDetails = defineTool({
         queue.push({ node: child, result, depth: entry.depth + 1 })
         returnedNodeCount++
       }
-      if (children.length > 0) entry.result.children = children
-      if (entry.node.childIds.length > children.length) {
-        entry.result.returnedChildCount = children.length
-        entry.result.childrenTruncated = true
-      }
+      attachTraversalChildren(entry, children)
     }
     return { requestedIds, nodes, returnedNodeCount, truncated }
   }
