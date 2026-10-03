@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- The `design_to_tokens` AI and MCP tool writes a stylesheet of CSS custom properties built from the document's variables. Its `tailwind` format is a Tailwind v4 `@theme` instead of a JavaScript object, and the `json` format is removed. Names come from the variable's code syntax or from Tailwind namespaces (`--color-gray-50`) instead of the collection name, aliases stay `var()` references instead of resolving through the first mode, and non-default modes go under their condition (`[data-theme="dark"]` by default) instead of a class named after the mode. The result lists the tokens it left out under `issues`.
 - The editor state's `remoteCursors` is now `presenceCursors`, typed `PresenceCursor[]` from `@open-pencil/core/canvas`, and each cursor has a `kind` of `'person'` or `'agent'`.
 - `VariableBinding` and the `colorVariableBinding` paint field are gone from `@open-pencil/core`, `@open-pencil/core/kiwi`, and the Kiwi `Paint` type. `fig.kiwi` never defined the field, so only `.fig` files OpenPencil itself wrote before `colorVar` contain one; reopening such a file leaves the paint's colour unbound, and binding it again records it the way Figma does.
 - `encodeNodeChangeWithVariables`, `encodePaintWithVariableBinding`, and `encodeVarint` are removed from `@open-pencil/core` and `@open-pencil/core/kiwi`. They spliced a colour-variable binding into encoded bytes because the field had no schema entry; exports now write `colorVar`, which `fig.kiwi` defines, so nothing needs them. `parseVariableId` is unchanged.
@@ -15,6 +16,7 @@
 
 ### Added
 
+- Copy the document's variables as a CSS stylesheet or a Tailwind v4 theme from the variables dialog's collection menu, or print them with `openpencil tokens`. Each collection's default mode goes in `:root` (or `@theme`, with a `@custom-variant` per mode), other modes override under their condition, `[data-theme="dark"]` unless the mode names a selector or `@media` query, and aliases stay `var()` references that follow the mode. Variables CSS cannot express, such as booleans, are named instead of written.
 - See where the built-in AI chat is working: while it replies, a cursor whose outlined label shows a sparkle and a callsign such as *Fern* marks the layers it edits. In a shared room, collaborators see each other's agents in the color of the person running them.
 - Hide, lock, and constrain layers in design JSX with `visible={false}`, `locked`, and `constraints={{ horizontal, vertical }}`, set italic text with `italic`, and describe strokes fully with `strokes`, `strokeWeights`, `strokeCap`, `strokeJoin`, and the node-level `dashPattern`. JSX export now writes these together with stacked, gradient, and image fills, every effect, absolutely positioned children, size limits, vertical text alignment, masks, and variable bindings, so rendering exported JSX reproduces them and `diff_jsx` reports changes to them.
 - Jump between pages from the command palette: it lists the pages you visited recently in the tab, **Go to page…** lists every page, and typing a page name finds it.

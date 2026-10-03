@@ -9,5 +9,7 @@
   "renameMode": "Renombrar modo",
   "duplicateMode": "Duplicar modo",
   "deleteMode": "Eliminar modo",
-  "setDefaultMode": "Establecer como predeterminado"
+  "setDefaultMode": "Establecer como predeterminado",
+  "copyAsCSS": "Copiar como CSS",
+  "copyAsTailwindTheme": "Copiar como tema de Tailwind"
 }

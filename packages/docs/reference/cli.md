@@ -88,6 +88,21 @@ openpencil variables [file] [options]
 | `--type` | Filter by type: `COLOR`, `FLOAT`, `STRING`, `BOOLEAN` |
 | `--json` | Output as JSON |
 
+## tokens
+
+Print design variables as a stylesheet of CSS custom properties. Default mode values go in `:root`; every other mode overrides them under its condition, `[data-<collection>="<mode>"]` unless the mode names a selector or `@media` query. Aliases stay `var()` references. Tokens or modes that cannot be written are listed on stderr.
+
+```sh
+openpencil tokens [file] [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--format` | `css` (default), or `tailwind` for a Tailwind v4 `@theme` with a `@custom-variant` per mode |
+| `--collection` | Filter by collection name |
+| `--type` | Filter by type: `COLOR`, `FLOAT`, `STRING`, `BOOLEAN` |
+| `--json` | Output `{ css, tokenCount, issues }` as JSON |
+
 ## export
 
 Export to PNG, JPG, WEBP, SVG, JSX, HTML, `.fig`, or Storybook stories.
