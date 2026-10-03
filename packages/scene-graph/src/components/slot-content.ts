@@ -39,30 +39,15 @@ export function slotScope(graph: SceneGraph, parentId: string): SlotScope {
   return { kind: 'free' }
 }
 
-/** Every layer below `node`, without entering instances, which own their own layers. */
-function ownedDescendants(graph: SceneGraph, node: SceneNode): SceneNode[] {
+/** Every layer below `node`; `enterInstances` also walks the layers of nested instances. */
+function descendants(graph: SceneGraph, node: SceneNode, enterInstances: boolean): SceneNode[] {
   const result: SceneNode[] = []
   const visit = (parent: SceneNode): void => {
     for (const childId of parent.childIds) {
       const child = graph.nodes.get(childId)
       if (!child) continue
       result.push(child)
-      if (child.type !== 'INSTANCE') visit(child)
-    }
-  }
-  visit(node)
-  return result
-}
-
-/** Every layer below an instance, including those of instances nested in it. */
-function allDescendants(graph: SceneGraph, node: SceneNode): SceneNode[] {
-  const result: SceneNode[] = []
-  const visit = (parent: SceneNode): void => {
-    for (const childId of parent.childIds) {
-      const child = graph.nodes.get(childId)
-      if (!child) continue
-      result.push(child)
-      visit(child)
+      if (enterInstances || child.type !== 'INSTANCE') visit(child)
     }
   }
   visit(node)
@@ -81,14 +66,14 @@ export function claimSlotContent(
   const { frame, instance, propertyId } = scope
   if (ownsSlotContent(graph, frame, propertyId)) return
   const overrides = instance.instanceOverrides
-  for (const node of ownedDescendants(graph, frame)) {
+  for (const node of descendants(graph, frame, false)) {
     overrides.descendants.delete(node.id)
     if (node.type !== 'INSTANCE') {
       graph.updateNode(node.id, { componentId: null })
       continue
     }
     // A nested instance keeps the overrides its former owner applied inside it.
-    for (const inner of allDescendants(graph, node)) {
+    for (const inner of descendants(graph, node, true)) {
       const fields = overrides.descendants.get(inner.id)
       if (!fields) continue
       for (const [field, value] of fields)

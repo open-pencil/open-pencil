@@ -22,24 +22,26 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
 
+/** Open the components picker and wait for its search field to take focus. */
+async function openComponents(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const page = within(canvasElement.ownerDocument.body)
+  await userEvent.click(canvas.getByRole('button', { name: 'Add instances' }))
+  const search = await page.findByPlaceholderText('Search components')
+  await waitFor(() => expect(search).toHaveFocus())
+  return { canvas, page }
+}
+
 export const Components: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const page = within(canvasElement.ownerDocument.body)
-    await userEvent.click(canvas.getByRole('button', { name: 'Add instances' }))
-    const search = await page.findByPlaceholderText('Search components')
-    await waitFor(() => expect(search).toHaveFocus())
+    const { page } = await openComponents(canvasElement)
     await expect(page.getAllByText('Design system')).toHaveLength(2)
   }
 }
 
 export const KeyboardSearch: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const page = within(canvasElement.ownerDocument.body)
-    await userEvent.click(canvas.getByRole('button', { name: 'Add instances' }))
-    const search = await page.findByPlaceholderText('Search components')
-    await waitFor(() => expect(search).toHaveFocus())
+    const { canvas, page } = await openComponents(canvasElement)
     await userEvent.keyboard('butt')
     await expect(page.queryByText('Divider')).toBeNull()
     await userEvent.keyboard('{ArrowDown}{Enter}')
