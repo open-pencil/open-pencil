@@ -122,7 +122,11 @@ Stories carry `parameters.design` entries for [`@storybook/addon-designs`](https
 Omit the file to export from the running app:
 
 ```sh
-openpencil export -f png    # export from the current document
+openpencil export -f png                       # export the selection in the active document
+openpencil export --page "Components" -f png   # export every layer of a page
+openpencil export --node 1:23 -f png           # export one layer, on any page
 ```
+
+`--page` takes a page name and `--page-id` a page ID from `openpencil documents`; either exports that page without switching the app to it. Add `--document-id` to export from a document other than the active one.
 
 Live app mode supports PNG, JPG, WEBP, SVG, and PDF. PowerPoint, JSX, HTML, Storybook, and `.fig` exports require a file argument. File-mode thumbnail export is not currently supported.

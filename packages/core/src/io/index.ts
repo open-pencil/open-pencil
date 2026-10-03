@@ -1,5 +1,5 @@
 export { IORegistry } from './registry'
-export { extractExportGraph } from './subgraph'
+export { extractExportGraph, findPageId } from './subgraph'
 export {
   BUILTIN_IO_FORMATS,
   type BuiltinIOFormatId,
