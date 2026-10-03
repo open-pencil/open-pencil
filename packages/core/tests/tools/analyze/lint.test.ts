@@ -4,7 +4,7 @@ import { FigmaAPI } from '@open-pencil/core'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { getNodeOrThrow } from '../../helpers/assert'
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 function tool(name: string) {
   const def = ALL_TOOLS.find((candidate) => candidate.name === name)
