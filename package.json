@@ -31,6 +31,7 @@
     "tools/ci/pr-review-guidance",
     "tools/dev/dev-server",
     "tools/dev/navigation-benchmark",
+    "tools/dev/document-identity",
     "tools/dev/unit-tests",
     "tools/generate/authoring-reference",
     "tools/generate/brand",
@@ -41,6 +42,7 @@
   ],
   "type": "module",
   "scripts": {
+    "poc:770": "bun tools/dev/document-identity/src/index.ts",
     "dev": "vite",
     "dev:portless": "portless run vite",
     "build": "bun run build:packages && bun run lint && vite build",

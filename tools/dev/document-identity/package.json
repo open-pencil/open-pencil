@@ -1,0 +1,13 @@
+{
+  "name": "@open-pencil/document-identity-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/fig": "workspace:*",
+    "@open-pencil/kiwi": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "valibot": "^1.4.2",
+    "yjs": "^13.6.32"
+  }
+}

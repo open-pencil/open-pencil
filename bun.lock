@@ -506,6 +506,17 @@
     "tools/dev/dev-server": {
       "name": "@open-pencil/dev-server-tools",
     },
+    "tools/dev/document-identity": {
+      "name": "@open-pencil/document-identity-tools",
+      "dependencies": {
+        "@open-pencil/core": "workspace:*",
+        "@open-pencil/fig": "workspace:*",
+        "@open-pencil/kiwi": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
+        "valibot": "^1.4.2",
+        "yjs": "^13.6.32",
+      },
+    },
     "tools/dev/navigation-benchmark": {
       "name": "@open-pencil/navigation-benchmark-tools",
     },
@@ -1453,6 +1464,8 @@
     "@open-pencil/docs": ["@open-pencil/docs@workspace:packages/docs"],
 
     "@open-pencil/docs-tools": ["@open-pencil/docs-tools@workspace:tools/checks/docs"],
+
+    "@open-pencil/document-identity-tools": ["@open-pencil/document-identity-tools@workspace:tools/dev/document-identity"],
 
     "@open-pencil/dom-css": ["@open-pencil/dom-css@workspace:packages/dom-css"],
 

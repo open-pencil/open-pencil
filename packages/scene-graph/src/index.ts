@@ -108,6 +108,8 @@ function stripUndefinedProps<T extends object>(obj: T): T {
 }
 
 export { captureGraphCheckpoint } from './checkpoint'
+export { createSessionIdGenerator } from './document/identity'
+export { serializeGraphSnapshot } from './document/snapshot'
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
@@ -131,8 +133,8 @@ export class SceneGraph {
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
 
-  constructor() {
-    const root = createDefaultNode(generateId, 'FRAME', {
+  constructor(private readonly idGenerator: () => string = generateId) {
+    const root = createDefaultNode(this.idGenerator, 'FRAME', {
       name: 'Document',
       width: 0,
       height: 0
@@ -194,11 +196,18 @@ export class SceneGraph {
     collectionId: string,
     value?: VariableValue
   ): Variable {
-    return Variables.createVariable(this, generateId, name, type, collectionId, value)
+    return Variables.createVariable(
+      this,
+      () => this.generateEntityId(),
+      name,
+      type,
+      collectionId,
+      value
+    )
   }
 
   createCollection(name: string): VariableCollection {
-    return Variables.createCollection(this, generateId, name)
+    return Variables.createCollection(this, () => this.generateEntityId(), name)
   }
 
   removeCollection(id: string): void {
@@ -325,9 +334,18 @@ export class SceneGraph {
       height: node?.height ?? 0
     }
   }
-  private generateNodeId(): string {
-    let id = generateId()
-    while (this.nodes.has(id)) id = generateId()
+  private generateEntityId(): string {
+    let id = this.idGenerator()
+    while (
+      this.nodes.has(id) ||
+      this.variables.has(id) ||
+      this.variableCollections.has(id) ||
+      [...this.variableCollections.values()].some((collection) =>
+        collection.modes.some((mode) => mode.modeId === id)
+      )
+    ) {
+      id = this.idGenerator()
+    }
     return id
   }
   private registerNode(node: SceneNode, parentId: string | null): SceneNode {
@@ -350,7 +368,7 @@ export class SceneGraph {
   }
 
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
+    const node = createDefaultNode(() => this.generateEntityId(), type, overrides)
     this.nodes.get(parentId)?.childIds.push(node.id)
     return this.registerNode(node, parentId)
   }

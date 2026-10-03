@@ -14,6 +14,8 @@
 
 ### Added
 
+- Opt into session-scoped scene-graph IDs and capture deterministic graph snapshots for review from the Scene Graph SDK (#770).
+
 - Jump between pages from the command palette: it lists the pages you visited recently in the tab, **Go to page…** lists every page, and typing a page name finds it.
 - Preview designs progressively on the canvas as direct AI providers stream JSX, without saving partial designs or adding intermediate undo steps. A preview stays with its page: it hides while you view another page and returns when you come back.
 - Write design trees as TSX with `@open-pencil/design-jsx` as the JSX import source, and render them with `renderTree`.
