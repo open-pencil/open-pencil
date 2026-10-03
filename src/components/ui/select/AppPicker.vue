@@ -14,7 +14,8 @@ export interface AppPickerItem {
 }
 
 export interface AppPickerProps {
-  title: string
+  /** Header text of the open list, also its accessible name. */
+  heading: string
   items: AppPickerItem[]
   searchPlaceholder: string
   emptyLabel: string
@@ -65,7 +66,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/select/picker'
 
 const {
-  title,
+  heading,
   items,
   searchPlaceholder,
   emptyLabel,
@@ -129,12 +130,12 @@ function select(value: AcceptableValue) {
         :side="side"
         :align="align"
         :side-offset="8"
-        :aria-label="title"
+        :aria-label="heading"
         :class="styles.content({ class: ui?.content })"
         @open-auto-focus.prevent
       >
         <div :class="styles.header({ class: ui?.header })">
-          <h3 :class="styles.title({ class: ui?.title })">{{ title }}</h3>
+          <h3 :class="styles.title({ class: ui?.title })">{{ heading }}</h3>
           <PopoverClose as-child>
             <AppButton :aria-label="closeLabel" class="ml-auto">
               <icon-lucide-x class="size-3.5" />
@@ -144,7 +145,7 @@ function select(value: AcceptableValue) {
         <ListboxRoot
           class="flex min-h-0 flex-col"
           highlight-on-hover
-          :aria-label="title"
+          :aria-label="heading"
           @update:model-value="select"
         >
           <div :class="styles.search({ class: ui?.search })">

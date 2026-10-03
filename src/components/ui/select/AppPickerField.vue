@@ -24,7 +24,7 @@ const current = computed(() => items.find((item) => item.value === value.value))
 
 <template>
   <AppPicker
-    :title="label"
+    :heading="label"
     :items="items"
     :selected="value"
     density="compact"

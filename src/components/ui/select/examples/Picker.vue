@@ -34,7 +34,7 @@ const chosen = ref('')
     <div class="flex items-center justify-between text-xs text-surface">
       Components
       <AppPicker
-        title="Add instances"
+        heading="Add instances"
         :items="components"
         search-placeholder="Search components"
         empty-label="No components found"
@@ -50,7 +50,7 @@ const chosen = ref('')
     <div class="flex items-center justify-between text-xs text-surface">
       Variables
       <AppPicker
-        title="Apply variable"
+        heading="Apply variable"
         :items="variables"
         density="compact"
         search-placeholder="Search variables"

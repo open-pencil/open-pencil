@@ -96,7 +96,7 @@ defineOptions({ inheritAttrs: false })
   <span class="inline-flex shrink-0 items-center" data-slot="anchor">
     <AppPicker
       v-model:open="open"
-      :title="triggerLabel"
+      :heading="triggerLabel"
       :items="items"
       :selected="binding.variable.value?.id"
       density="compact"

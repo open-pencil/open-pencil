@@ -39,7 +39,7 @@ const items = computed<AppPickerItem[]>(() => {
 
 <template>
   <AppPicker
-    :title="panels.addInstances"
+    :heading="panels.addInstances"
     :items="items"
     :search-placeholder="panels.searchInstances"
     :empty-label="panels.noInstancesFound"
