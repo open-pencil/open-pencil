@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit/array'
 import { kebabCase } from 'es-toolkit/string'
 import valueParser from 'postcss-value-parser'
 import { themeNamespaces, type ThemeNamespace } from 'twirlwind'
@@ -71,10 +72,7 @@ export function explicitCSSName(variable: Variable): string | undefined {
 /** `Gray/50` as COLOR is `color-gray-50`; `Space/small` is `spacing-small`. */
 export function deriveCSSName(variable: Variable): string {
   const namespace = variableNamespace(variable)
-  const segments = variable.name
-    .split('/')
-    .map((segment) => kebabCase(segment))
-    .filter(Boolean)
+  const segments = compact(variable.name.split('/').map((segment) => kebabCase(segment)))
   if (segments.length > 1 && namespace && NAMESPACE_WORDS[segments[0] ?? ''] === namespace) {
     segments.shift()
   }

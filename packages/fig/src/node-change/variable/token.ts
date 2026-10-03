@@ -1,10 +1,11 @@
+import { mapKeys } from 'es-toolkit/object'
+import { isEmptyObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
   TOKEN_UNITS,
   type PluginDataEntry,
-  type TokenExpression,
   type Variable,
   type VariableCollection,
   type VariableValue
@@ -44,6 +45,10 @@ export function withoutTokenPluginData(pluginData: PluginDataEntry[]): PluginDat
   )
 }
 
+function nonEmpty<T extends object>(record: T): T | undefined {
+  return isEmptyObject(record) ? undefined : record
+}
+
 function sameNumber(a: VariableValue | undefined, b: number): boolean {
   return typeof a === 'number' && Math.abs(a - b) < 1e-6
 }
@@ -61,10 +66,7 @@ export function readVariableToken(
   const expressions = Object.entries(token.expressions ?? {}).filter(([mode, expression]) =>
     sameNumber(valuesByMode[mode], expression.resolved)
   )
-  return {
-    unit: token.unit,
-    expressions: expressions.length > 0 ? Object.fromEntries(expressions) : undefined
-  }
+  return { unit: token.unit, expressions: nonEmpty(Object.fromEntries(expressions)) }
 }
 
 export function readModeConditions(nc: NodeChange): Record<string, string> {
@@ -84,13 +86,9 @@ export function tokenPluginData(
   variable: Variable,
   modeKey: (modeId: string) => string
 ): PluginDataEntry | undefined {
-  const expressions: Record<string, TokenExpression> = {}
-  for (const [mode, expression] of Object.entries(variable.expressions ?? {})) {
-    expressions[modeKey(mode)] = expression
-  }
   const token = {
     unit: variable.unit,
-    expressions: Object.keys(expressions).length > 0 ? expressions : undefined
+    expressions: nonEmpty(mapKeys(variable.expressions ?? {}, (_, mode) => modeKey(mode)))
   }
   if (!token.unit && !token.expressions) return undefined
   return entry(TOKEN_PLUGIN_KEY, token)
