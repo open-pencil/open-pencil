@@ -1,3 +1,5 @@
+import type { MCPToolMode } from '@open-pencil/mcp/tools'
+
 export const DEV_MCP_RESTART_PATH = '/__openpencil/mcp/restart'
 
 const MAX_ROOT_DIRECTORY_LENGTH = 4_096
@@ -10,6 +12,7 @@ export interface DevMCPConfiguration {
   authenticationEnabled: boolean
   rootDirectory: string
   disabledTools: string[]
+  toolMode: MCPToolMode
 }
 
 function parseDisabledTools(value: unknown): string[] | null {
@@ -35,6 +38,11 @@ export function parseDevMCPConfiguration(value: unknown): DevMCPConfiguration | 
   const authenticationEnabled = Reflect.get(value, 'authenticationEnabled')
   const rootDirectory = Reflect.get(value, 'rootDirectory')
   const disabledTools = parseDisabledTools(Reflect.get(value, 'disabledTools'))
+  const rawToolMode = Reflect.get(value, 'toolMode')
+  if (rawToolMode !== undefined && rawToolMode !== 'full' && rawToolMode !== 'selection-context') {
+    return null
+  }
+  const toolMode: MCPToolMode = rawToolMode ?? 'full'
   if (
     typeof authenticationEnabled !== 'boolean' ||
     typeof rootDirectory !== 'string' ||
@@ -43,5 +51,5 @@ export function parseDevMCPConfiguration(value: unknown): DevMCPConfiguration | 
   ) {
     return null
   }
-  return { authenticationEnabled, rootDirectory, disabledTools }
+  return { authenticationEnabled, rootDirectory, disabledTools, toolMode }
 }

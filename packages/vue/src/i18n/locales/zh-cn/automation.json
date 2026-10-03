@@ -30,6 +30,8 @@
   "version": "版本",
   "authentication": "要求身份验证",
   "authenticationDescription": "使用 Bearer 令牌保护本地 MCP 端点。仅在可信设备上禁用。重启服务器以应用更改。",
+  "followAgent": "跟随智能体",
+  "followAgentDescription": "让画布聚焦于 MCP 工具使用的页面或图层，以便你跟随智能体的工作。",
   "rootDirectory": "MCP 根目录",
   "rootDirectoryDefault": "服务器默认目录",
   "chooseRootDirectory": "选择文件夹",
@@ -84,5 +86,9 @@
   "mcpFailureUnknownHint": "请重新启动，或查看下方的技术细节。",
   "mcpFailureDetails": "详细信息",
   "mcpFailureCopy": "复制详细信息",
-  "mcpFailureCopied": "已复制技术细节。"
+  "mcpFailureCopied": "已复制技术细节。",
+  "toolMode": "工具模式",
+  "toolModeDescription": "选择完整访问权限，或仅提供当前选区的预览和结构化详情。重启服务器以应用更改。",
+  "toolModeFull": "完整工具访问权限",
+  "toolModeSelectionContext": "仅选区上下文"
 }
