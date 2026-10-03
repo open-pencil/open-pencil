@@ -61,6 +61,11 @@ export function createOpenPencilAliases(rootDir: string) {
     },
     { find: /^@open-pencil\/vue$/, replacement: resolve(rootDir, 'packages/vue/src/index.ts') },
     { find: '@open-pencil/vue', replacement: resolve(rootDir, 'packages/vue/src') },
+    // Bundled fonts ship beside the sources, not inside them.
+    {
+      find: /^@open-pencil\/core\/assets\//,
+      replacement: `${resolve(rootDir, 'packages/core/assets')}/`
+    },
     { find: /^@open-pencil\/core$/, replacement: resolve(rootDir, 'packages/core/src/index.ts') },
     { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') },
     {

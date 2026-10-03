@@ -2,9 +2,11 @@ import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
 import { watch } from 'vue'
 
-import { useAppTheme } from '../src/app/shell/theme'
+import { installBundledFonts } from '@/app/editor/fonts/bundled'
+import { useAppTheme } from '@/app/shell/theme'
+import '@/app.css'
 
-import '../src/app.css'
+installBundledFonts()
 
 const preview: Preview = {
   decorators: [

@@ -30,7 +30,7 @@ test.each([
   }
 ])('labels reuse shared fallback loading and render real $family glyphs', async (fixture) => {
   const provider = ck.TypefaceFontProvider.Make()
-  provider.registerFont(readFileSync(repoPath('public/Inter-Regular.ttf')), 'Inter')
+  provider.registerFont(readFileSync(repoPath('packages/core/assets/Inter-Regular.ttf')), 'Inter')
   const release = Promise.withResolvers<undefined>()
   const settled = Promise.withResolvers<undefined>()
   let generation = 1

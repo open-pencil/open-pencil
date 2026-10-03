@@ -6,6 +6,7 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 
 - `src/app/editor/session/create.ts` wraps Core: it creates reactive state, calls `createEditor()`, and assembles document I/O, autosave, export, vector edit, pen resume, flashes, profiler, and mobile clipboard. Tabs live in `src/app/tabs/`; active editor access in `src/app/editor/active-store/`.
 - Use editor actions (`clearSelection()`, `select()`, `setTool()`), never direct state assignments (`packages/core/AGENTS.md`, Editor).
+- Call `useEditorStore()` during component setup. It returns the store a subtree pinned with `provideEditorStore()`, and otherwise the active-tab proxy; the docs landing page relies on this to show several editors at once (`src/app/editor/active-store/index.ts`).
 - File System Access APIs are browser APIs, not Tauri-only. Keep the Safari download fallback and defer `revokeObjectURL`.
 - Vectorize provider clients, preferences, and lazy credential resolution live under `src/app/editor/vectorize/`; conversion itself is in Core.
 
@@ -42,6 +43,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 ### Building blocks
 
 - Use Reka UI primitives and typed Tailwind Variants themes under `src/theme/**`; merge per-instance `ui` slot overrides, expose `class` for single-root components, and do not add one-off class props. Use `UI` casing in type names. App wrappers around SDK primitives use shared UI helpers rather than scattered raw classes.
+- Design tokens, custom variants, and custom utilities live in `src/theme/tokens.css`, which the docs site also imports; `src/app.css` keeps only the app's document-level rules.
 - Tailwind 4 and `tw-animate-css`; no static inline styling or component `<style>` blocks. Dynamic `:style` bindings are allowed for runtime geometry and CSS variables.
 - Bind visual state through semantic `data-*` attributes. Steiger rejects template-time `use*UI()`, visual-state utility branches, and raw SVG app icons.
 - `Tip`, not native `title`; Lucide/Iconify components, not raw SVG or Unicode icons; `e.code`, not `e.key`, for modified shortcuts.

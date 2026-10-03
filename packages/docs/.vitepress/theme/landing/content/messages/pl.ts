@@ -1,0 +1,196 @@
+import type { LandingMessages } from './types'
+
+export const pl: LandingMessages = {
+  hero: {
+    title: 'Projektuj bez uzależnienia od dostawcy.',
+    lede: 'Edytor graficzny open source, który otwiera pliki Figmy, działa na Twoim komputerze i pozwala Tobie lub Twojemu agentowi AI sterować każdą warstwą.',
+    open: 'Otwórz edytor',
+    download: 'Pobierz',
+    github: 'GitHub'
+  },
+  loading: 'Ładowanie edytora',
+  features: {
+    figma: {
+      title: 'Otwórz swoje pliki Figmy',
+      detail:
+        'OpenPencil czyta pliki .fig bezpośrednio: strony, komponenty, instancje, zmienne i auto-layout trafiają do edytora jako edytowalne warstwy. Kopiowanie i wklejanie działa w obie strony, a dokument można ponownie zapisać jako .fig.',
+      hint: 'To prawdziwy plik .fig. Rozwiń warstwy i sprawdź, co jest w środku.'
+    },
+    design: {
+      title: 'Projektuj prawdziwymi narzędziami',
+      detail:
+        'Auto-layout, ograniczenia, wypełnienia, obrysy, efekty i typografia, z kontrolkami tam, gdzie się ich spodziewasz. Wszystko można cofnąć i nic nie czeka na serwer.',
+      hint: 'Zaznacz warstwę i zmień jej wypełnienie, promień lub odstęp wewnętrzny.'
+    },
+    components: {
+      title: 'Komponenty i zmienne',
+      detail:
+        'Zbuduj bibliotekę z wariantami i właściwościami komponentów, powiąż kolory i odstępy ze zmiennymi i przełączaj tryby. Instancje podążają za źródłem, gdy je edytujesz.',
+      hint: 'Wyszukaj zasób, a potem przeciągnij komponent na obszar roboczy.'
+    },
+    ai: {
+      title: 'Projektuj z AI, na własnych kluczach',
+      detail:
+        'Opisz zadanie zwykłym językiem, a agent edytuje dokument tymi samymi narzędziami co Ty i pokazuje efekty na obszarze roboczym już w trakcie generowania. Podłącz dowolnego dostawcę własnym kluczem albo użyj agenta programistycznego, z którego już korzystasz.',
+      hint: 'Nagrana tura przechodzi przez prawdziwą pętlę agenta. Zobacz, jak obszar roboczy powstaje w trakcie strumieniowania.'
+    },
+    code: {
+      title: 'Od projektu do kodu',
+      detail:
+        'Każde zaznaczenie jest dostępne jako Tailwind JSX, HTML lub JSX projektu, a komponenty można wyeksportować jako historie Storybooka. Zmień JSX, a obszar roboczy podąży za zmianą.',
+      hint: 'Zaznacz inną warstwę i zobacz, jak zmienia się kod.'
+    },
+    script: {
+      title: 'Wszystko da się oskryptować',
+      detail:
+        'CLI openpencil pracuje na pliku bez uruchomionej aplikacji albo steruje otwartą aplikacją. Przejrzyj dokument, odpytaj go przez XPath, sprawdź linterem, wyeksportuj albo uruchom na nim kod wtyczek Figmy przez eval. Serwer MCP daje agentom te same możliwości przez stdio lub HTTP.',
+      hint: 'Uruchom polecenie i obserwuj obszar roboczy.'
+    },
+    sdk: {
+      title: 'Wbuduj go we własny produkt',
+      detail:
+        'OpenPencil to nie tylko aplikacja, ale też zestaw narzędzi: silnik niezależny od frameworka, SDK Vue bez interfejsu oraz osobne pakiety dla grafu sceny i formatów plików. Osadź obszar roboczy w swoim produkcie, renderuj i sprawdzaj projekty w CI albo zbuduj inny edytor na tym samym silniku. Każdy obszar roboczy na tej stronie to właśnie to SDK działające w witrynie z dokumentacją.',
+      hint: 'Kod obok obszaru roboczego wystarczy, żeby go zamontować.'
+    }
+  },
+  agents: {
+    heading: 'Działa z',
+    rest: 'i każdym klientem MCP'
+  },
+  commands: {
+    cli: 'Polecenia CLI: {count}',
+    mcp: 'Narzędzia MCP: {count}',
+    mcpDetail:
+      'Tworzenie, stylowanie, układ, inspekcja i eksport. Każde z nich jest też dostępne dla wbudowanego agenta.'
+  },
+  ownership: {
+    title: 'Twoje pliki pozostają Twoje',
+    items: [
+      {
+        title: 'Najpierw lokalnie',
+        detail:
+          'Dokumenty to pliki na Twoim dysku. Bez konta, bez serwera, bez dostępu do internetu.'
+      },
+      {
+        title: 'Twoja pamięć masowa',
+        detail: 'Synchronizuj przez własny zasobnik zgodny z S3, kiedy tego potrzebujesz.'
+      },
+      {
+        title: 'Otwarte formaty',
+        detail: 'Eksport do .fig, PDF, PPTX, SVG, HTML i JSX. Zawsze możesz odejść.'
+      },
+      {
+        title: 'Licencja MIT',
+        detail: 'Edytor, silnik renderujący, kodek .fig i CLI.'
+      }
+    ]
+  },
+  roadmap: {
+    title: 'Plan rozwoju',
+    more: 'Pełny plan rozwoju',
+    now: {
+      label: 'Teraz',
+      entries: [
+        {
+          title: 'Agenci AI jako współpracownicy',
+          detail:
+            'Agenci są widoczni na obszarze roboczym jak każdy inny uczestnik i można śledzić ich pracę.'
+        },
+        {
+          title: 'Cofanie, ponowne generowanie i edycja tur AI',
+          detail: 'Każde wywołanie narzędzia pokazuje, co zmieniło.'
+        },
+        {
+          title: 'Sprawdzanie projektu na żywo',
+          detail: 'Panel Lint ze znacznikami na obszarze roboczym i poprawkami.'
+        },
+        {
+          title: 'Kod powiązany z warstwami',
+          detail: 'Zaznaczenie i zmiany synchronizują się w obie strony.'
+        },
+        {
+          title: 'Wizualny diff i łatki',
+          detail: 'W aplikacji, dla agentów i jako openpencil diff.'
+        }
+      ]
+    },
+    next: {
+      label: 'Następnie',
+      lead: {
+        title: 'OpenPencil na własnym serwerze',
+        detail:
+          'Cała przestrzeń robocza we własnej sieci: synchronizacja, udostępnianie, komentarze i biblioteki zespołu bez wysyłania pliku komukolwiek innemu.',
+        features: [
+          {
+            title: 'Twoja pamięć masowa',
+            detail: 'Dokumenty pozostają w Twoim zasobniku, w Twoim regionie.'
+          },
+          {
+            title: 'Twoja tożsamość',
+            detail: 'Logowanie przez Twojego dostawcę OIDC lub SSO, z rolami.'
+          },
+          {
+            title: 'Twoja sieć',
+            detail: 'Przekaźnik współpracy, który działa za Twoją zaporą.'
+          },
+          {
+            title: 'Twoje utrzymanie',
+            detail: 'Wdrożenie z przewodnikiem, aktualizacje, kopie zapasowe i retencja.'
+          }
+        ]
+      },
+      entries: [
+        {
+          title: 'Historia wersji',
+          detail: 'Automatyczne migawki, nazwane punkty kontrolne i przywracanie.'
+        },
+        {
+          title: 'Opcjonalny OpenPencil Cloud',
+          detail:
+            'Hostowana synchronizacja i udostępnianie dla zespołów, które tego chcą. Nigdy obowiązkowo.'
+        }
+      ]
+    },
+    later: {
+      label: 'Później',
+      entries: [
+        {
+          title: 'Zarządzane systemy projektowe',
+          detail: 'Proponowanie, przegląd, publikacja i migracja.'
+        },
+        {
+          title: 'Edytor do osadzenia',
+          detail: 'Przenieś edytor z tej strony do własnego produktu.'
+        }
+      ]
+    }
+  },
+  closing: {
+    title: 'Zabierz swoje projekty ze sobą.',
+    download: 'Pobierz OpenPencil',
+    docs: 'Czytaj dokumentację'
+  },
+  stage: {
+    terminal: {
+      tree: 'Drzewo warstw',
+      restyle: 'Zmień styl przycisków',
+      addPlan: 'Dodaj plan',
+      selection: 'Zaznaczenie',
+      export: 'Eksport do Tailwind'
+    },
+    ai: {
+      recorded: 'Nagrana tura',
+      play: 'Odtwórz',
+      replay: 'Odtwórz ponownie',
+      request: 'Dodaj trzy gwarancje pod planami.',
+      reasoning:
+        'Plany leżą w kolumnie z auto-layoutem, więc rząd trzech kart zmieści się tuż pod nimi.',
+      reply:
+        'Dodałem pod planami rząd **Guarantees**: trzy karty z takim samym tłem i promieniem jak karty planów.'
+    },
+    sdk: {
+      copy: 'Kopiuj',
+      copied: 'Skopiowano'
+    }
+  }
+}

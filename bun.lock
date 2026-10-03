@@ -280,10 +280,22 @@
       "name": "@open-pencil/docs",
       "version": "0.1.0",
       "dependencies": {
+        "@ai-sdk/vue": "^4.0.66",
         "@iconify/vue": "^5.0.1",
+        "@open-pencil/core": "workspace:*",
+        "@open-pencil/design-jsx": "workspace:*",
+        "@open-pencil/dom-css": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
+        "@vueuse/core": "^14.4.0",
+        "ai": "^7.0.66",
+        "canvaskit-wasm": "^0.41.1",
+        "dedent": "^1.7.2",
       },
       "devDependencies": {
+        "@iconify-json/simple-icons": "^1.2.98",
         "@open-pencil/brand-tools": "workspace:*",
+        "@open-pencil/cli": "workspace:*",
+        "@open-pencil/vite-config": "workspace:*",
         "@shikijs/vitepress-twoslash": "^4.4.3",
         "@tailwindcss/vite": "^4.3.3",
         "vitepress": "^2.0.0-alpha.19",
@@ -582,6 +594,16 @@
       },
       "devDependencies": {
         "nanotar": "^0.3.0",
+      },
+    },
+    "vite": {
+      "name": "@open-pencil/vite-config",
+      "dependencies": {
+        "@open-pencil/core": "workspace:*",
+        "unplugin-icons": "^23.0.1",
+        "unplugin-vue-components": "^31.1.0",
+        "vite": "8.1.4",
+        "vite-plugin-pwa": "^1.3.0",
       },
     },
   },
@@ -1169,7 +1191,7 @@
 
     "@iconify-json/lucide": ["@iconify-json/lucide@1.2.124", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-mO6JyBVNER7uXEkW2bXiN9Rrm6w91IXxwnNmIMbu2KZX0ZPcVZH1xDUTw94pryxESUIpBhinkOUIZIav+TA9ng=="],
 
-    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.93", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw=="],
+    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.98", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-35CEBG1H/3nsohVgJaRWtOZ/P5syRTL++ZXTISdQSC76o1mAFXngFoSm9EOnnBiDApKPu8WN/DY+z69yCycL9A=="],
 
     "@iconify/types": ["@iconify/types@2.0.0", "", {}, "sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg=="],
 
@@ -1504,6 +1526,8 @@
     "@open-pencil/unit-tests-tools": ["@open-pencil/unit-tests-tools@workspace:tools/dev/unit-tests"],
 
     "@open-pencil/visual-oracles-tools": ["@open-pencil/visual-oracles-tools@workspace:tools/generate/visual-oracles"],
+
+    "@open-pencil/vite-config": ["@open-pencil/vite-config@workspace:vite"],
 
     "@open-pencil/vue": ["@open-pencil/vue@workspace:packages/vue"],
 
@@ -5144,6 +5168,8 @@
     "vee-validate/@vue/devtools-api": ["@vue/devtools-api@7.7.10", "", { "dependencies": { "@vue/devtools-kit": "^7.7.10" } }, "sha512-KxtEpUOOpFz/qOGRrAwA36QF7DqIA+FXgCYit9mk9wjbaZt0sXOFz81ElOZtKA4HbWHUdwNjZHBFsFFyp5BZiA=="],
 
     "vite/rolldown": ["rolldown@1.1.5", "", { "dependencies": { "@oxc-project/types": "=0.139.0", "@rolldown/pluginutils": "^1.0.0" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.1.5", "@rolldown/binding-darwin-arm64": "1.1.5", "@rolldown/binding-darwin-x64": "1.1.5", "@rolldown/binding-freebsd-x64": "1.1.5", "@rolldown/binding-linux-arm-gnueabihf": "1.1.5", "@rolldown/binding-linux-arm64-gnu": "1.1.5", "@rolldown/binding-linux-arm64-musl": "1.1.5", "@rolldown/binding-linux-ppc64-gnu": "1.1.5", "@rolldown/binding-linux-s390x-gnu": "1.1.5", "@rolldown/binding-linux-x64-gnu": "1.1.5", "@rolldown/binding-linux-x64-musl": "1.1.5", "@rolldown/binding-openharmony-arm64": "1.1.5", "@rolldown/binding-wasm32-wasi": "1.1.5", "@rolldown/binding-win32-arm64-msvc": "1.1.5", "@rolldown/binding-win32-x64-msvc": "1.1.5" }, "bin": { "rolldown": "./bin/cli.mjs" } }, "sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA=="],
+
+    "vitepress/@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.93", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw=="],
 
     "vitepress/vite": ["vite@8.2.1", "", { "dependencies": { "lightningcss": "^1.33.0", "picomatch": "^4.0.5", "postcss": "^8.5.25", "rolldown": "~1.2.1", "tinyglobby": "^0.2.17" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "@vitejs/devtools": "^0.4.0", "esbuild": "^0.27.0 || ^0.28.0", "jiti": ">=1.21.0", "less": "^4.0.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "@vitejs/devtools", "esbuild", "jiti", "less", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-EU/eS7BH3XROHh2YnBefjM6DBKA6ZeMZEYQbj7NLWg5wHYlhB8B/Mayd5XsgWq+NFYccDOTemRpdETWR6Ka/lw=="],
 

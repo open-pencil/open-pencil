@@ -15,7 +15,10 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "@iconify-json/simple-icons": "^1.2.98",
     "@open-pencil/brand-tools": "workspace:*",
+    "@open-pencil/cli": "workspace:*",
+    "@open-pencil/vite-config": "workspace:*",
     "@shikijs/vitepress-twoslash": "^4.4.3",
     "@tailwindcss/vite": "^4.3.3",
     "vitepress": "^2.0.0-alpha.19",
@@ -24,6 +27,15 @@
     "vue-component-meta": "^3.3.10"
   },
   "dependencies": {
-    "@iconify/vue": "^5.0.1"
+    "@ai-sdk/vue": "^4.0.66",
+    "@iconify/vue": "^5.0.1",
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/design-jsx": "workspace:*",
+    "@open-pencil/dom-css": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@vueuse/core": "^14.4.0",
+    "ai": "^7.0.66",
+    "canvaskit-wasm": "^0.41.1",
+    "dedent": "^1.7.2"
   }
 }

@@ -43,6 +43,15 @@ const BUNDLED_FONTS: Record<string, string> = {
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf'
 }
 
+/**
+ * Maps a bundled font's file name (`Inter-Regular.ttf`) to the URL a browser fetches it from.
+ * Mirrors CanvasKit's `locateFile`; the default expects the host to serve
+ * `@open-pencil/core/assets` at the site root.
+ */
+export type BundledFontLocator = (file: string) => string
+
+const defaultBundledFontLocator: BundledFontLocator = (file) => `/${file}`
+
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
@@ -52,6 +61,7 @@ export class FontManager {
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private blockedNodeIds = new Set<string>()
   private fontProvider: TypefaceFontProvider | null = null
+  private bundledFontLocator: BundledFontLocator = defaultBundledFontLocator
   private fontProviders = new Set<TypefaceFontProvider>()
   private registrationGeneration = 0
   private providerRegistrations = new WeakMap<TypefaceFontProvider, Map<string, Set<ArrayBuffer>>>()
@@ -129,6 +139,11 @@ export class FontManager {
 
   setHostFontLoader(loader: HostFontLoader | null): void {
     this.hostFontLoader = loader
+  }
+
+  /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
+  setBundledFontLocator(locate: BundledFontLocator | null): void {
+    this.bundledFontLocator = locate ?? defaultBundledFontLocator
   }
 
   setOnlineFontProviders(settings: Partial<Record<WebFontProviderId, boolean>>): void {
@@ -222,7 +237,7 @@ export class FontManager {
 
   async fetchBundledFont(url: string): Promise<ArrayBuffer | null> {
     if (IS_BROWSER) {
-      const response = await fetch(url)
+      const response = await fetch(this.bundledFontLocator(url.replace(/^\//, '')))
       return response.arrayBuffer()
     }
     const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')

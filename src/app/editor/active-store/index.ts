@@ -1,4 +1,5 @@
-import { shallowRef, triggerRef } from 'vue'
+import { hasInjectionContext, inject, provide, shallowRef, triggerRef } from 'vue'
+import type { InjectionKey } from 'vue'
 
 import type { EditorStore } from '@/app/editor/session'
 
@@ -30,6 +31,18 @@ const storeProxy = new Proxy({} as EditorStore, {
   }
 })
 
+const EDITOR_STORE_KEY: InjectionKey<EditorStore> = Symbol('editor-store')
+
+/**
+ * Pins a subtree to one document. The app shows one document at a time and leaves this
+ * unset; a surface that shows several editors at once, such as the docs landing page, gives
+ * each its own store so their panels do not all follow the active tab.
+ */
+export function provideEditorStore(store: EditorStore): void {
+  provide(EDITOR_STORE_KEY, store)
+}
+
 export function useEditorStore(): EditorStore {
-  return storeProxy
+  const scoped = hasInjectionContext() ? inject(EDITOR_STORE_KEY, null) : null
+  return scoped ?? storeProxy
 }

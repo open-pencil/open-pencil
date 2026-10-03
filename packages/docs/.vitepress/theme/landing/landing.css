@@ -1,0 +1,64 @@
+/*
+ * Shared by every landing section: the page column, element resets VitePress's content
+ * styles would otherwise apply, and the section rhythm. Section-specific rules live in the
+ * section components.
+ */
+.landing {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 120px;
+}
+
+.landing :where(h1, h2, h3, p, ul, ol, dl, dd) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-section {
+  padding-top: 160px;
+}
+
+.landing-section > h2 {
+  font-size: clamp(26px, 3.6vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+/* A grid of short titled facts, used for ownership and inside the roadmap. */
+.landing-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 36px 48px;
+  margin-top: 40px;
+}
+
+.landing-facts dt {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.landing-facts dd {
+  margin-top: 6px;
+  color: var(--vp-c-text-2);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+@media (max-width: 860px) {
+  .landing {
+    padding: 0 16px 80px;
+  }
+
+  .landing-section {
+    padding-top: 96px;
+  }
+}

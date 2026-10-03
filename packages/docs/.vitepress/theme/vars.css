@@ -1,0 +1,25 @@
+/*
+ * The docs site takes its palette from the editor's own tokens (`src/theme/tokens.css`), so
+ * the site and the app components it embeds read as one product.
+ */
+:root {
+  --vp-c-brand-1: #2563eb;
+  --vp-c-brand-2: #3b82f6;
+  --vp-c-brand-3: #2563eb;
+  --vp-c-brand-soft: rgb(59 130 246 / 0.14);
+}
+
+.dark {
+  --vp-c-bg: var(--color-canvas);
+  --vp-c-bg-alt: var(--color-panel-secondary);
+  --vp-c-bg-elv: var(--color-panel);
+  --vp-c-bg-soft: var(--color-panel);
+  --vp-c-divider: var(--color-border);
+  --vp-c-border: var(--color-border);
+  --vp-c-gutter: var(--color-canvas);
+  --vp-c-text-1: var(--color-surface);
+  --vp-c-text-2: var(--color-muted);
+  --vp-c-brand-1: var(--color-primary);
+  --vp-c-brand-2: var(--color-accent);
+  --vp-c-brand-3: var(--color-accent);
+}

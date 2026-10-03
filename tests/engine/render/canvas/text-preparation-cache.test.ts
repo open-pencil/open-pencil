@@ -57,7 +57,7 @@ async function fixture(maxEntries = 8, maxUnits = 1000) {
 describe('text preparation cache', () => {
   test('does not repeatedly shape coverage when a dense scan exceeds paragraph capacity', async () => {
     const f = await fixture(8)
-    const data = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+    const data = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
     f.provider.registerFont(data, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', data)
     let builds = 0

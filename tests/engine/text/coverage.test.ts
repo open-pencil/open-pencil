@@ -20,7 +20,7 @@ describe('font fallback coverage indexing', () => {
 
   test('detects supplementary-plane Han code points', async () => {
     const family = `SupplementaryHan_${Date.now()}`
-    const data = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+    const data = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
     fontManager.markLoaded(family, 'Regular', data)
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
@@ -34,7 +34,7 @@ describe('font fallback coverage indexing', () => {
 
   test('uses BCP-47 language hints for Han fallback selection', async () => {
     const family = `LanguageHint_${Date.now()}`
-    const data = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+    const data = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
     fontManager.markLoaded(family, 'Regular', data)
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
@@ -56,7 +56,7 @@ describe('font fallback coverage indexing', () => {
 
   test('uses UTF-16 style-run indices after a surrogate pair', async () => {
     const cjkData = await Bun.file('tests/fixtures/fonts/NotoSansSC-Regular.ttf').arrayBuffer()
-    const latinData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+    const latinData = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
     const cjkFamily = `CJKRunBase_${Date.now()}`
     const latinFamily = `CJKRunOverride_${Date.now()}`
     fontManager.markLoaded(cjkFamily, 'Regular', cjkData)

@@ -12,6 +12,7 @@ paths = [
   '''(^|/)node_modules/''',
   '''^desktop/target/''',
   '''^packages/[^/]+/dist/''',
+  '''^packages/docs/\.vitepress/cache/''',
   '''^test-results/''',
   '''^scratch/'''
 ]

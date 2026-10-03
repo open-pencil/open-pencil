@@ -18,19 +18,29 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 
 ## Recently delivered
 
-v0.14.0 established several foundations that earlier versions of this roadmap treated as future work:
+v0.15.0 and v0.15.1 shipped work that earlier versions of this roadmap listed as in development:
 
-- A searchable Assets panel, component details, instance insertion, frame presets, richer component properties, layout grids, constraints, and deeper typography controls.
-- A local-first Storage Workspace for S3-compatible providers with background synchronization and remote document previews.
-- Editable PowerPoint export; editable HTML, CSS, Tailwind, JSX, SVG, and image-vectorization workflows.
-- Private local MCP transport discovery, an installable OpenPencil agent skill, and stronger CLI/MCP support for large and multi-document sessions.
-- Published `@open-pencil/scene-graph`, `@open-pencil/pen`, `@open-pencil/kiwi`, `@open-pencil/fig`, `@open-pencil/dom-css`, and `@open-pencil/vue` packages with documented public boundaries.
+- Editable ruler guides, snapping to geometry and guides, and Option/Alt distance measurements.
+- Multidimensional component variants and published component libraries with revision review and linked-instance updates.
+- Local recovery of unsaved documents, saved AI conversations, and CLI font diagnostics.
+- Opt-in browser WebMCP access, separate controls for the local MCP server and remote connections, and per-tool permissions.
+- `openpencil://` and web links that open a document and select a layer.
 
 ### Current development version
 
-Since v0.14.0, the development branch adds editable ruler guides and snapping preferences, Option/Alt distance measurements, multidimensional variant authoring, component-library publication and revision review, local document recovery, saved AI conversations, CLI font diagnostics, and opt-in browser WebMCP access. These workflows are implemented on the development branch but are not part of v0.14.0.
+Since v0.15.1, the development branch adds progressive canvas previews while an AI provider streams JSX, Storybook export of components, HTML and Tailwind JSX in the app's export options, a single occurrence-scoped `.fig` reader with faster multi-page opens, wider instance-override and variable-binding export to `.fig`, page navigation from the command palette, and broader variable-font, system-font, and CJK/Arabic fallback rendering. `@open-pencil/design-jsx` is now its own package. These changes are on the development branch but are not part of v0.15.1; `CHANGELOG.md` lists them under Unreleased.
 
-See [canvas navigation](../user-guide/canvas-navigation), [components and libraries](../user-guide/components), [document recovery](../user-guide/layers-and-pages#documents-and-recovery), [AI chat](../programmable/ai-chat), and [font diagnostics](../programmable/cli/inspecting#font-diagnostics).
+See [AI chat](../programmable/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
+
+### In development
+
+Work with open pull requests. It may change before it merges:
+
+- AI agents as collaborators: agents shown on the canvas and to other participants, follow mode for agents, and per-page presence.
+- AI chat turns that can be reverted, regenerated, and edited, with tool calls shown as summaries of what each edit changed, and a thinking level per message.
+- Live design checks: a Lint panel with canvas markers and fixes.
+- The Code tab linked to canvas layers, with selection and edits syncing both ways.
+- Visual diff and patch tools, including `openpencil diff`.
 
 ## Near-term work
 

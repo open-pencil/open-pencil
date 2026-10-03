@@ -16,7 +16,7 @@ import { repoPath } from '#tests/helpers/paths'
 const FONT_FAMILY = 'Painted text fixture'
 beforeAll(async () => {
   for (const style of ['Regular', 'SemiBold']) {
-    const data = await Bun.file(repoPath(`public/Inter-${style}.ttf`)).arrayBuffer()
+    const data = await Bun.file(repoPath(`packages/core/assets/Inter-${style}.ttf`)).arrayBuffer()
     fontManager.markLoaded(FONT_FAMILY, style, data)
   }
 })
