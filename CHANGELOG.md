@@ -78,6 +78,8 @@
 - Load the Bold, Medium, and other styles of macOS system fonts packaged as font collections, such as Menlo, Helvetica Neue, and Avenir Next, instead of reporting them as substituted or drawing a different style (#746).
 - Load the Medium, Semibold, Bold, and other styles of installed variable fonts such as SF Pro on macOS instead of reporting them as substituted (#752).
 - Ship the MIT license text in every published npm package, and add READMEs for `@open-pencil/core`, `@open-pencil/cli`, and `@open-pencil/mcp` on npm.
+- Reject malformed vector network JSON in the AI and MCP `path_set` tool with an error instead of storing it on the node, where later path tools failed on it.
+- Keep image bytes when the CLI reads a component library revision back from its catalog, instead of restoring every image empty.
 
 ### Performance
 
@@ -88,6 +90,9 @@
 - Validate cursors, selections, and names that collaborators send before drawing them, and cap their size, so a broken or hostile peer cannot crash or flood the canvas.
 - Evaluate `calc` expressions through `jsep` and an arithmetic allowlist that never compiles input into JavaScript, replacing the `expr-eval` dependency and its unpatched critical code-execution advisory (GHSA-q9v2-7m5w-4693).
 - Escape layer names and other text properties in JSX and Tailwind JSX export, so text from a document can no longer add attributes or JavaScript expressions that the AI and MCP `render` and `replace` tools would execute, and names containing `&` no longer change when the JSX is rendered back.
+- Validate OpenPencil and Figma clipboard data before pasting, so malformed or hostile clipboard content is ignored instead of throwing out of paste or writing mistyped layers into the document.
+- Validate component library revisions from shared storage and from CLI catalogs before reading them, and run the CLI's revisions through the same size, identity, and content-hash checks as the app, so a malformed or tampered revision is rejected instead of crashing or entering the document.
+- Validate MCP and automation WebSocket messages and the MCP discovery file, so a malformed message or a non-string auth token is rejected instead of being used unchecked.
 
 ## 0.15.1 — 2026-09-18
 

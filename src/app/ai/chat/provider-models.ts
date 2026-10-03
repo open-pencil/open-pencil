@@ -1,7 +1,21 @@
+import * as v from 'valibot'
+
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
+
+const CachedModelOptions = v.array(
+  v.object({
+    id: v.string(),
+    name: v.string(),
+    tag: v.optional(v.string()),
+    capabilities: v.optional(v.array(v.picklist(['tools', 'vision']))),
+    recommendedMaxOutputTokens: v.optional(v.number()),
+    releaseDate: v.optional(v.string()),
+    status: v.optional(v.picklist(['active', 'beta', 'deprecated']))
+  })
+) satisfies v.GenericSchema<unknown, ModelOption[]>
 
 type OpenRouterModel = {
   id?: unknown
@@ -63,8 +77,9 @@ async function fetchOpenRouterModels(fetcher: typeof fetch): Promise<ModelOption
 
 async function listOpenRouterModels(fetcher: typeof fetch = fetch): Promise<ModelOption[]> {
   modelsPromise ??= (async () => {
-    const cached = await readCacheJSON<ModelOption[]>(
+    const cached = await readCacheJSON(
       OPENROUTER_MODELS_CACHE_KEY,
+      CachedModelOptions,
       OPENROUTER_MODELS_CACHE_TTL_MS
     )
     if (cached?.length) return cached

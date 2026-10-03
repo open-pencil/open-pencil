@@ -128,6 +128,26 @@ describe('storage library catalog', () => {
     ).rejects.toThrow('hash mismatch')
   })
 
+  test('rejects malformed revision objects before deserializing them', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+    const key = `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
+    for (const source of [
+      '{not json',
+      JSON.stringify({ manifest: revision.manifest, graph: { nodes: 'none' } })
+    ]) {
+      objects.values.set(key, new TextEncoder().encode(source))
+      await expect(
+        catalog.getRevision('design-system', revision.manifest.revisionId)
+      ).rejects.toThrow('Invalid component library revision')
+    }
+  })
+
   test('rejects updates when the provider cannot return latest-manifest ETags', async () => {
     const objects = new MemoryObjects()
     const catalog = new StorageLibraryCatalog(objects)

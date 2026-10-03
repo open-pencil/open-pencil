@@ -47,9 +47,21 @@ describe('source library publication identity', () => {
     const graph = new SceneGraph()
     const root = graph.getNode(graph.rootId)
     if (!root) throw new Error('Root missing')
-    graph.updateNode(root.id, {
-      pluginData: [{ pluginId: 'open-pencil', key: 'sourceLibraryPublication', value: '{}' }]
-    })
-    expect(readSourceLibraryPublication(graph)).toBeNull()
+    for (const value of [
+      '{}',
+      '{not json',
+      JSON.stringify({ libraryId: 'design-system', revisionId: 'revision-1', name: 1 }),
+      JSON.stringify({
+        libraryId: 'design-system',
+        revisionId: 'revision-1',
+        name: 'Design system',
+        catalogSource: 7
+      })
+    ]) {
+      graph.updateNode(root.id, {
+        pluginData: [{ pluginId: 'open-pencil', key: 'sourceLibraryPublication', value }]
+      })
+      expect(readSourceLibraryPublication(graph)).toBeNull()
+    }
   })
 })
