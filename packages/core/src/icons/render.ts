@@ -2,7 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { createPathStroke } from '#core/icons/path-style'
+import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
 
 import type { IconData } from './types'
 
@@ -44,9 +44,13 @@ export function createIconFromPaths(
 
     if (path.stroke) {
       const strokeColor = path.stroke === 'currentColor' ? color : parseColor(path.stroke)
-      graph.updateNode(vector.id, {
-        strokes: [createPathStroke(strokeColor, path.strokeWidth, path.strokeCap, path.strokeJoin)]
-      })
+      const stroke = createPathStroke(
+        strokeColor,
+        path.strokeWidth,
+        path.strokeCap,
+        path.strokeJoin
+      )
+      graph.updateNode(vector.id, { strokes: [stroke], ...pathStrokeLineStyle(stroke) })
     }
   }
 
