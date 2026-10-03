@@ -33,7 +33,7 @@ function slotName(graph: SceneGraph, componentId: string | null, propertyId: str
 }
 
 /** An instance's slot frames, without entering nested instances, whose slots are their own. */
-function slotFrames(graph: SceneGraph, instance: SceneNode): SceneNode[] {
+export function instanceSlotFrames(graph: SceneGraph, instance: SceneNode): SceneNode[] {
   const frames: SceneNode[] = []
   const visit = (node: SceneNode): void => {
     for (const childId of node.childIds) {
@@ -62,7 +62,7 @@ export interface ParkedSlotContent {
  */
 export function detachOwnedSlotContent(graph: SceneGraph, instance: SceneNode): ParkedSlotContent {
   const parked: ParkedSlotContent = { content: new Map(), propertyIds: [] }
-  for (const frame of slotFrames(graph, instance)) {
+  for (const frame of instanceSlotFrames(graph, instance)) {
     const propertyId = slotPropertyId(frame)
     if (!propertyId || !Object.hasOwn(instance.componentPropertyAssignments, propertyId)) continue
     parked.propertyIds.push(propertyId)
@@ -88,7 +88,7 @@ export function restoreOwnedSlotContent(
     )
   )
   const placed = new Set<string>()
-  for (const frame of slotFrames(graph, instance)) {
+  for (const frame of instanceSlotFrames(graph, instance)) {
     const propertyId = slotPropertyId(frame)
     const name = propertyId && slotName(graph, instance.componentId, propertyId)
     const content = name ? parked.content.get(name) : undefined

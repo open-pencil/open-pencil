@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, instanceSlotFrames } from '@open-pencil/scene-graph'
 import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
-import { instanceSlotFrame, slotInstanceOptions, slotLimits } from '@open-pencil/vue'
+import { slotInstanceOptions, slotLimits } from '@open-pencil/vue'
 
 function card() {
   const graph = new SceneGraph()
@@ -31,11 +31,10 @@ function card() {
 
 describe('slot property model', () => {
   test('finds the instance frame that holds a slot', () => {
-    const { graph, component, definition } = card()
+    const { graph, component } = card()
     const instance = graph.createInstance(component.id, graph.getPages()[0].id)
     if (!instance) throw new Error('No instance')
-    expect(instanceSlotFrame(graph, instance, definition.id)?.name).toBe('Body')
-    expect(instanceSlotFrame(graph, instance, 'missing')).toBeUndefined()
+    expect(instanceSlotFrames(graph, instance).map((frame) => frame.name)).toEqual(['Body'])
   })
 
   test('measures limits against the content and names offending layers', () => {

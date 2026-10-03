@@ -238,7 +238,6 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
-  instanceSlotFrame,
   slotInstanceOptions,
   slotLimits,
   useComponentProperties,

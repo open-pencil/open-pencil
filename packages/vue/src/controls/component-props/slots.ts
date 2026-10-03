@@ -1,5 +1,5 @@
 import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { slotPropertyId, ownsSlotContent } from '@open-pencil/scene-graph'
+import { instanceSlotFrames, ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
@@ -31,24 +31,6 @@ export interface SlotPropertyControl {
   preferredOnly: boolean
   /** Content layers that break the preferred-only limit. */
   offendingIds: string[]
-}
-
-/** The frame inside this instance, not a nested one, that holds a slot's content. */
-export function instanceSlotFrame(
-  graph: SceneGraph,
-  instance: SceneNode,
-  propertyId: string
-): SceneNode | undefined {
-  const visit = (node: SceneNode): SceneNode | undefined => {
-    for (const child of graph.getChildren(node.id)) {
-      if (slotPropertyId(child) === propertyId) return child
-      if (child.type === 'INSTANCE' || slotPropertyId(child)) continue
-      const found = visit(child)
-      if (found) return found
-    }
-    return undefined
-  }
-  return visit(instance)
 }
 
 function isPreferred(component: SceneNode | undefined, preferred: ReadonlySet<string>): boolean {
@@ -144,8 +126,9 @@ export function useSlotProperties() {
   const slots = useSceneComputed<SlotPropertyControl[]>(() => {
     const owner = instance.value
     if (!owner) return []
+    const frames = instanceSlotFrames(editor.graph, owner)
     return definitions.value.flatMap((definition) => {
-      const frame = instanceSlotFrame(editor.graph, owner, definition.id)
+      const frame = frames.find((candidate) => slotPropertyId(candidate) === definition.id)
       if (!frame) return []
       const content = editor.graph.getChildren(frame.id)
       const { limits, offendingIds } = slotLimits(editor.graph, definition, content)

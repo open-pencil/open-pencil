@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
+import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 
 function measurementVisible(overlays: RenderOverlays): boolean {
@@ -43,6 +44,8 @@ export function drawOverlayPass(
     measuring || overlays.hoveredNodeId === overlays.nodeEditState?.nodeId
       ? null
       : overlays.hoveredNodeId
+  if (!measuring)
+    drawSlotOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays.rotationPreview)
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   r.profiler.beginPhase('render:selection')

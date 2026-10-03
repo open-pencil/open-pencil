@@ -112,7 +112,7 @@ export function drawSingleSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['sizeFont']>
 ): void {
   const sizeText = `${Math.round(node.width)} × ${Math.round(node.height)}`
-  const pillColor = r.isComponentType(node.type) ? r.compColor() : r.selColor()
+  const pillColor = r.outlineColor(node)
   const transform = frameLabelPlacement(node, graph, overlays.rotationPreview, {
     x: 0.5,
     y: 1

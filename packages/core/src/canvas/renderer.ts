@@ -1,5 +1,6 @@
 import { toUint8Array } from 'js-base64'
 
+import { slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -9,6 +10,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import {
   SELECTION_COLOR,
   COMPONENT_COLOR,
+  SLOT_COLOR,
   CANVAS_BG_COLOR,
   DEFAULT_FONT_SIZE,
   COMPONENT_SET_DASH,
@@ -406,6 +408,16 @@ export class SkiaRenderer {
 
   compColor(alpha = 1) {
     return this.ck.Color4f(COMPONENT_COLOR.r, COMPONENT_COLOR.g, COMPONENT_COLOR.b, alpha)
+  }
+
+  slotColor(alpha = 1) {
+    return this.ck.Color4f(SLOT_COLOR.r, SLOT_COLOR.g, SLOT_COLOR.b, alpha)
+  }
+
+  /** The outline colour for a node: pink for slots, purple for components, blue otherwise. */
+  outlineColor(node: SceneNode) {
+    if (slotPropertyId(node)) return this.slotColor()
+    return this.isComponentType(node.type) ? this.compColor() : this.selColor()
   }
 
   isComponentType(type: string): boolean {
