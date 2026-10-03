@@ -10,12 +10,7 @@ import {
 } from '@open-pencil/scene-graph'
 
 import { extractPluginData, mergePluginData } from '../plugin-data'
-import {
-  modeConditionsPluginData,
-  tokenPluginData,
-  webCodeSyntax,
-  withoutTokenPluginData
-} from './token'
+import { modeConditionsPluginData, tokenPluginData, withoutTokenPluginData } from './token'
 
 type VariableMetadata = Pick<
   Variable,
@@ -54,11 +49,10 @@ export function variableMetadataNodeChange(
   variable: Variable,
   modeKey: ModeKey
 ): Partial<NodeChange> {
-  const { web, pluginCSSName } = webCodeSyntax(variable)
-  const codeSyntax = Object.entries({ ...variable.codeSyntax, WEB: web }).flatMap(
-    ([platform, value]) => (value ? [{ platform, value }] : [])
+  const codeSyntax = Object.entries(variable.codeSyntax ?? {}).flatMap(([platform, value]) =>
+    value ? [{ platform, value }] : []
   )
-  const token = tokenPluginData(variable, pluginCSSName, modeKey)
+  const token = tokenPluginData(variable, modeKey)
   const nc: Partial<NodeChange> = {
     isPublishable: !variable.hiddenFromPublishing,
     variableScopes: variable.scopes?.length ? variable.scopes : ['ALL_SCOPES'],

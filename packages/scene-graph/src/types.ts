@@ -663,11 +663,12 @@ export interface Variable {
   hiddenFromPublishing: boolean
   /** Absent means every scope. */
   scopes?: VariableScope[]
-  /** Per-platform code snippets, as Figma's Dev Mode shows them. */
+  /**
+   * Per-platform code snippets, as Figma's Dev Mode shows them. A `WEB` snippet of `--x` or
+   * `var(--x)` names the token's CSS custom property; otherwise the name is derived.
+   */
   codeSyntax?: Partial<Record<CodeSyntaxPlatform, string>>
-  /** Custom property name without `--`. Absent means derived from the name; see `variableCSSNames`. */
-  cssName?: string
-  /** FLOAT only. Absent means inferred; see `variableUnit`. */
+  /** FLOAT only. Absent means inferred when written as CSS. */
   unit?: TokenUnit
   /** Raw CSS by mode id, for values a number cannot express (`clamp()`, `calc()`). */
   expressions?: Record<string, TokenExpression>

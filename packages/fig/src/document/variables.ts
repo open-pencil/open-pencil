@@ -124,7 +124,7 @@ function addVariables(
       collectionId,
       valuesByMode,
       ...metadata,
-      ...readVariableToken(resource, valuesByMode, metadata.codeSyntax?.WEB)
+      ...readVariableToken(resource, valuesByMode)
     })
   }
 }

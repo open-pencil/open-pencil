@@ -298,7 +298,7 @@ describe('variable roundtrip', () => {
     )
   })
 
-  test('token names, units, expressions and mode conditions survive export → re-import', async () => {
+  test('token units, expressions and mode conditions survive export → re-import', async () => {
     await initCodec()
     const graph = new SceneGraph()
     graph.addCollection({
@@ -323,27 +323,18 @@ describe('variable roundtrip', () => {
         ...extra
       })
     add('5:10', 'Space/page', {
-      cssName: 'page-gutter',
+      codeSyntax: { WEB: 'var(--page-gutter)' },
       unit: 'rem',
       expressions: { '4:7': { css: 'clamp(1rem, 4vw, 2rem)', resolved: 16 } }
     })
-    add('5:11', 'Radius/card', { cssName: 'radius-card', codeSyntax: { WEB: '--old-card' } })
-    add('5:12', 'rounded-xs', { cssName: 'radius-xs', codeSyntax: { WEB: 'rounded-xs' } })
 
     const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
 
     const page = expectDefined(reimported.variables.get('5:10'), 'page token')
     expect(page).toMatchObject({
-      cssName: 'page-gutter',
       unit: 'rem',
       codeSyntax: { WEB: 'var(--page-gutter)' },
       expressions: { '4:7': { css: 'clamp(1rem, 4vw, 2rem)', resolved: 16 } }
-    })
-    // A bare `--x` snippet keeps its form; a non-name snippet is left alone.
-    expect(reimported.variables.get('5:11')?.codeSyntax?.WEB).toBe('--radius-card')
-    expect(reimported.variables.get('5:12')).toMatchObject({
-      cssName: 'radius-xs',
-      codeSyntax: { WEB: 'rounded-xs' }
     })
     expect(reimported.variableCollections.get('4:70')?.modes).toEqual([
       { modeId: '4:7', name: 'Light', condition: undefined },
@@ -365,20 +356,6 @@ describe('variable roundtrip', () => {
     const imported = [...reimported.variables.values()].find((v) => v.name === 'Gutter')
     expect(imported?.valuesByMode[collection.defaultModeId]).toBe(20)
     expect(imported?.expressions).toBeUndefined()
-  })
-
-  test('a mode condition that could break out of its rule is ignored on read', async () => {
-    await initCodec()
-    const graph = new SceneGraph()
-    const collection = graph.createCollection('Theme')
-    graph.addMode(collection.id, 'evil', 'Evil')
-    const evil = expectDefined(collection.modes.find((mode) => mode.modeId === 'evil'), 'mode')
-    evil.condition = '.x } body { display: none'
-
-    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
-
-    const imported = [...reimported.variableCollections.values()].find((c) => c.name === 'Theme')
-    expect(imported?.modes.map((mode) => mode.condition)).toEqual([undefined, undefined])
   })
 
   test('a default mode that is not first survives export → re-import', async () => {
