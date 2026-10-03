@@ -96,7 +96,9 @@ export function designJSXElement(nodeId: string, graph: SceneGraph): DesignJSXEl
   // A text layer's content is written as its children, not as the `text` attribute.
   const isText = node.type === 'TEXT'
   const attributes = Object.fromEntries(
-    printed.filter(({ name }) => !isText || name !== 'text').map(({ name, source }) => [name, source])
+    printed
+      .filter(({ name }) => !isText || name !== 'text')
+      .map(({ name, source }) => [name, source])
   )
   if (isText) {
     const text = node.text ? jsx.printJSX(jsx.text(node.text)) : null

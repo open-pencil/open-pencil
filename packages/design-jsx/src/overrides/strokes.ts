@@ -1,8 +1,8 @@
+import { designJSXProp } from '#design-jsx/schema'
+
 import type { SceneNode, Stroke, StrokeCap, StrokeJoin } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { designJSXProp } from '#design-jsx/schema'
 
 const ALIGN_VALUES: Record<string, Stroke['align']> = {
   inside: 'INSIDE',
