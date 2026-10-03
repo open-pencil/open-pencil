@@ -3,6 +3,7 @@ export { sceneGraphToDesignDocument, sceneNodeToDesignDocument } from './project
 export { exportHTMLBundle } from './bundle'
 export { designDocumentToTailwindJSX, sceneNodesToTailwindJSX } from './tailwind-jsx'
 export { serializeHTML } from './html'
+export * from '../tokens'
 export type {
   ExportHTMLBundle,
   ExportHTMLBundleOptions,

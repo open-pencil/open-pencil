@@ -4,6 +4,11 @@ import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
 
 import { extractPluginData } from '../node-change/plugin-data'
 import { readVariableMetadata } from '../node-change/variable/metadata'
+import {
+  readModeConditions,
+  readVariableToken,
+  withoutTokenPluginData
+} from '../node-change/variable/token'
 import { createResourceResolver } from './resource-reference'
 
 function valueOf(
@@ -58,11 +63,15 @@ export function materializeVariableResources(
       report(resource, 'missing collection identity or modes')
       continue
     }
-    const pluginData = extractPluginData(resource)
+    const pluginData = withoutTokenPluginData(extractPluginData(resource))
+    const conditions = readModeConditions(resource)
     graph.addCollection({
       id: guidToString(resource.guid),
       name: resource.name ?? 'Variables',
-      modes: modes.map((mode) => ({ modeId: guidToString(mode.id), name: mode.name })),
+      modes: modes.map((mode) => {
+        const modeId = guidToString(mode.id)
+        return { modeId, name: mode.name, condition: conditions[modeId] }
+      }),
       defaultModeId: guidToString(modes[0].id),
       variableIds: [],
       pluginData: pluginData.length > 0 ? pluginData : undefined
@@ -107,13 +116,15 @@ function addVariables(
       report(resource, error instanceof Error ? error.message : 'Invalid mode value')
       continue
     }
+    const metadata = readVariableMetadata(resource)
     graph.addVariable({
       id: guidToString(resource.guid),
       name: resource.name ?? 'Variable',
       type,
       collectionId,
       valuesByMode,
-      ...readVariableMetadata(resource)
+      ...metadata,
+      ...readVariableToken(resource, valuesByMode)
     })
   }
 }
