@@ -306,6 +306,8 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `analyze_typography` | Analyze font/size/weight distribution |
 | `analyze_spacing` | Analyze gap and padding values |
 | `analyze_clusters` | Detect repeated patterns (potential components) |
+| `lint` | Check accessibility and consistency issues, with fixes and suggestions |
+| `lint_fix` | Apply safe lint fixes, and optionally the first suggestion of each finding |
 
 ### Diff
 

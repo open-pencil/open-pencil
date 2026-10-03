@@ -7,6 +7,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
     snappingPreferences: { ...DEFAULT_SNAPPING_PREFERENCES },
     presenceCursors: [],
     documentName: 'Untitled',
+    designIssues: null,
     rulerTheme: undefined,
     sceneVersion: 0
   }

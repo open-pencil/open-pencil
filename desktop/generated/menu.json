@@ -190,6 +190,11 @@
         "checkbox": true
       },
       {
+        "id": "view-design-issues",
+        "label": "Design Issues",
+        "checkbox": true
+      },
+      {
         "type": "separator"
       },
       {

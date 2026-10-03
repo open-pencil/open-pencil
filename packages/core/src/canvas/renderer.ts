@@ -67,6 +67,7 @@ export interface PendingFontNode {
   keys: Set<string>
 }
 
+import type { PlacedIssueMarker } from './issues/types'
 import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
@@ -174,6 +175,10 @@ export class SkiaRenderer {
   pageColor = CANVAS_BG_COLOR
   rulerTheme: RulerTheme | null = null
   pageId: string | null = null
+  /** Issue markers placed in the last overlay pass; hit testing reads the same layout. */
+  issueMarkers: PlacedIssueMarker[] = []
+  /** Screen rectangles of UI floating over this canvas, which overlays such as edge pins avoid. */
+  overlayObstacles: readonly Rect[] = []
 
   boundEffectLayersToViewport = false
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
