@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { encodeBase64 } from '#core/bytes'
+import type { FigmaAPI } from '#core/figma-api'
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
@@ -59,6 +60,58 @@ export const exportPDF = defineTool({
   }
 })
 
+export interface RasterImageResult {
+  mimeType: 'image/png' | 'image/jpeg' | 'image/webp'
+  base64: string
+  byteLength: number
+  width: number
+  height: number
+  scale: number
+}
+
+export async function rasterizeNodes(
+  figma: FigmaAPI,
+  ids: string[],
+  options: { format: RasterExportFormat; scale: number; maxEdge: number }
+): Promise<RasterImageResult | { error: string }> {
+  if (!figma.exportImage) return { error: 'Image export is not available in this environment' }
+  const nodes = ids.map((id) => figma.getNodeById(id)).filter((node) => node !== null)
+  if (nodes.length === 0) return { error: 'No visible nodes to export' }
+  const bounds = nodes.reduce(
+    (result, node) => {
+      const box = node.absoluteBoundingBox
+      return {
+        minX: Math.min(result.minX, box.x),
+        minY: Math.min(result.minY, box.y),
+        maxX: Math.max(result.maxX, box.x + box.width),
+        maxY: Math.max(result.maxY, box.y + box.height)
+      }
+    },
+    {
+      minX: Number.POSITIVE_INFINITY,
+      minY: Number.POSITIVE_INFINITY,
+      maxX: Number.NEGATIVE_INFINITY,
+      maxY: Number.NEGATIVE_INFINITY
+    }
+  )
+  const width = bounds.maxX - bounds.minX
+  const height = bounds.maxY - bounds.minY
+  const longestEdge = Math.max(width, height)
+  const boundedScale = longestEdge > 0 ? Math.min(options.scale, options.maxEdge / longestEdge) : 0
+  if (boundedScale <= 0) return { error: 'No visible nodes to export' }
+  const data = await figma.exportImage(ids, { scale: boundedScale, format: options.format })
+  if (!data || data.length === 0) return { error: 'No visible nodes to export' }
+  const mimeMap = { PNG: 'image/png', JPG: 'image/jpeg', WEBP: 'image/webp' } as const
+  return {
+    mimeType: mimeMap[options.format],
+    base64: encodeBase64(data),
+    byteLength: data.length,
+    width: Math.ceil(width * boundedScale),
+    height: Math.ceil(height * boundedScale),
+    scale: boundedScale
+  }
+}
+
 export const exportImage = defineTool({
   name: 'export_image',
   description:
@@ -99,51 +152,12 @@ export const exportImage = defineTool({
     )
   }),
   execute: async (figma, args) => {
-    if (!figma.exportImage) {
-      return { error: 'Image export is not available in this environment' }
-    }
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const format = args.format.toUpperCase() as RasterExportFormat
-    const requestedScale = args.scale
-    const maxEdge = args.maxEdge
-    const nodes = ids.map((id) => figma.getNodeById(id)).filter((node) => node !== null)
-    if (nodes.length === 0) return { error: 'No visible nodes to export' }
-    const bounds = nodes.reduce(
-      (result, node) => {
-        const box = node.absoluteBoundingBox
-        const minX = Math.min(result.minX, box.x)
-        const minY = Math.min(result.minY, box.y)
-        const maxX = Math.max(result.maxX, box.x + box.width)
-        const maxY = Math.max(result.maxY, box.y + box.height)
-        return { minX, minY, maxX, maxY }
-      },
-      {
-        minX: Number.POSITIVE_INFINITY,
-        minY: Number.POSITIVE_INFINITY,
-        maxX: Number.NEGATIVE_INFINITY,
-        maxY: Number.NEGATIVE_INFINITY
-      }
-    )
-    const width = bounds.maxX - bounds.minX
-    const height = bounds.maxY - bounds.minY
-    const longestEdge = Math.max(width, height)
-    const boundedScale = longestEdge > 0 ? Math.min(requestedScale, maxEdge / longestEdge) : 0
-    if (boundedScale <= 0) return { error: 'No visible nodes to export' }
-    const data = await figma.exportImage(ids, {
-      scale: boundedScale,
-      format
+    return rasterizeNodes(figma, ids, {
+      format: args.format.toUpperCase() as RasterExportFormat,
+      scale: args.scale,
+      maxEdge: args.maxEdge
     })
-    if (!data || data.length === 0) return { error: 'No visible nodes to export' }
-    const base64 = encodeBase64(data)
-    const mimeMap = { PNG: 'image/png', JPG: 'image/jpeg', WEBP: 'image/webp' } as const
-    return {
-      mimeType: mimeMap[format],
-      base64,
-      byteLength: data.length,
-      width: Math.ceil(width * boundedScale),
-      height: Math.ceil(height * boundedScale),
-      scale: boundedScale
-    }
   }
 })

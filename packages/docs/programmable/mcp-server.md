@@ -17,6 +17,15 @@ Use **Settings → Tool access** (select **Local MCP**) to search and toggle the
 
 Restart the MCP server, then reconnect stdio clients, to apply changes. For an externally managed server, restart its owning process. The list reflects the tools discovered from the server; disabling a dedicated tool does not prevent an enabled script tool from performing the same operation. These switches are not a sandbox and do not configure remote MCP servers or WebMCP.
 
+## Selection context mode
+
+Use **Selection context only** in the local MCP settings when an agent should inspect only what you explicitly select. This mode exposes exactly two read-only tools and blocks the raw RPC endpoint:
+
+- `see_user_selection` returns a PNG vision attachment together with a compact node tree through depth 2. The tree is capped and includes child counts so the agent can identify branches that need closer inspection.
+- `get_user_selection_details` requires specific node IDs from the current selection, accepts a depth from 0 through 3, and returns only the requested property categories. IDs outside the current selection and its descendants are rejected.
+
+Set `OPENPENCIL_MCP_MODE=selection-context` when starting the MCP server directly. Stdio clients inherit the selected mode from runtime discovery unless the environment variable overrides it.
+
 ## Browser-native WebMCP (experimental) {#webmcp}
 
 WebMCP is **off by default**. Open **Settings → MCP → WebMCP** and choose **Inspect** for read-only access or **Edit** to also allow scoped, undoable changes. **Off** unregisters all browser tools; changing modes revokes the previous registrations immediately. This preference is independent of local MCP authentication, tool switches, and outbound connections.

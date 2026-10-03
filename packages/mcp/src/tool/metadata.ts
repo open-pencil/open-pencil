@@ -3,6 +3,7 @@ export type { ToolCapability } from '@open-pencil/core/tools'
 
 export type ToolEffect = 'read' | 'write'
 export type ToolAvailability = 'default' | 'eval' | 'filesystem'
+export type MCPToolMode = 'full' | 'selection-context'
 export interface ToolDescriptor {
   name: string
   description: string
@@ -15,6 +16,7 @@ export interface ToolDescriptor {
 export interface ToolPolicy {
   allowEval: boolean
   disabledTools: string[]
+  mode: MCPToolMode
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

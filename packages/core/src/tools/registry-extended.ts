@@ -43,6 +43,7 @@ import {
   getCurrentPage,
   getFontStatus,
   getPageTree,
+  getUserSelectionDetails,
   insertLibraryComponent,
   listAvailableFonts,
   listFonts,
@@ -51,6 +52,7 @@ import {
   pageBounds,
   queryNodes,
   selectNodes,
+  seeUserSelection,
   switchPage
 } from './read'
 import type { ToolDef } from './schema'
@@ -108,6 +110,8 @@ import {
 export const EXTENDED_TOOLS: ToolDef[] = [
   // Read (advanced)
   getPageTree,
+  seeUserSelection,
+  getUserSelectionDetails,
   getCurrentPage,
   listPages,
   selectNodes,

@@ -4,7 +4,11 @@ export type MCPContent =
   | { type: 'text'; text: string }
   | { type: 'image'; data: string; mimeType: string }
 
-export type MCPResult = { content: MCPContent[]; isError?: boolean }
+export type MCPResult = {
+  content: MCPContent[]
+  isError?: boolean
+  structuredContent?: Record<string, unknown>
+}
 
 export const MAX_RESULT_BYTES = 900_000
 

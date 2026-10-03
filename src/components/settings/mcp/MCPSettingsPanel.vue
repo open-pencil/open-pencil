@@ -7,7 +7,8 @@ import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@
 import {
   mcpAuthenticationEnabled,
   mcpFollowAgent,
-  mcpRootDirectory
+  mcpRootDirectory,
+  mcpToolMode
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
@@ -17,6 +18,7 @@ import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 import MCPFailureAlert from './MCPFailureAlert.vue'
@@ -72,6 +74,16 @@ const { restart, chooseRootDirectory } = useMCPSettings()
       </SettingsRow>
       <SettingsRow :label="automation.followAgent" :description="automation.followAgentDescription">
         <AppSwitch v-model="mcpFollowAgent" :label="automation.followAgent" />
+      </SettingsRow>
+      <SettingsRow :label="automation.toolMode" :description="automation.toolModeDescription">
+        <AppSelect
+          v-model="mcpToolMode"
+          :options="[
+            { label: automation.toolModeFull, value: 'full' },
+            { label: automation.toolModeSelectionContext, value: 'selection-context' }
+          ]"
+          data-test-id="settings-mcp-tool-mode"
+        />
       </SettingsRow>
       <div class="flex flex-col gap-2 px-3 py-2.5">
         <p class="text-xs font-medium text-surface">{{ automation.rootDirectory }}</p>

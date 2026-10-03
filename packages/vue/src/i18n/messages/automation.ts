@@ -86,6 +86,11 @@ export const automationMessageDefaults = {
   followAgent: 'Follow agent',
   followAgentDescription:
     'Keep the canvas focused on the page or layers used by MCP tools, so you can follow the agent’s work.',
+  toolMode: 'Tool mode',
+  toolModeDescription:
+    'Choose full access or expose only vision and structured details for the current selection. Restart the server to apply changes.',
+  toolModeFull: 'Full tool access',
+  toolModeSelectionContext: 'Selection context only',
   rootDirectory: 'MCP root directory',
   rootDirectoryDefault: 'Server default directory',
   chooseRootDirectory: 'Choose folder',
