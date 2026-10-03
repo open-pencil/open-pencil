@@ -1,6 +1,6 @@
 import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import type { InstanceAssignmentDiagnostic } from './interpret'
+import type { InstanceAssignmentDiagnostic } from './occurrence/types'
 import { symbolOverridesOf, type ComponentPropAssignment } from './types'
 
 /** Mutable per-owner frame shared by the layers an owner declares. */

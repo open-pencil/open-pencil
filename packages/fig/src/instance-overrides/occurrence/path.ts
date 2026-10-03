@@ -1,9 +1,9 @@
 import type { GUID } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
-import type { InstanceOccurrence, InstancePathDiagnostic } from './interpret'
-import { sameGuid } from './source-index'
-import { descendants, findWithinBoundary, type TreeShape } from './tree'
+import { sameGuid } from '../source-index'
+import { descendants, findWithinBoundary, type TreeShape } from '../tree'
+import type { InstanceOccurrence, InstancePathDiagnostic } from './types'
 
 export const OCCURRENCE_TREE: TreeShape<InstanceOccurrence> = {
   childrenOf: (node) => node.children,

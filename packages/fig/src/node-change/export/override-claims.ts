@@ -1,7 +1,7 @@
 import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { forEachInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import { forEachInstanceOverride, ownsSlotContent, type SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { instanceExportAddress } from '../instance/geometry'
@@ -180,6 +180,8 @@ export function serializeRuntimePropertyOverrides(
         )
         if (claim) result.push(claim)
       })
+    // Slot content the instance owns carries its own values; it has no component address.
+    if (ownsSlotContent(context.graph, node)) return
     for (const child of context.graph.getChildren(node.id)) visit(child)
   }
   visit(instance)

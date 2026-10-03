@@ -2,6 +2,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneGraph, SceneNode } from '../'
+import { ownsSlotContent, slotPropertyId } from '../components/slots'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
 import type { NodeCloneMode } from '../copy'
 import {
@@ -382,7 +383,10 @@ export function syncChildren(
 
     if (
       compChild.childIds.length > 0 &&
-      !hasNodeInstanceOverride(overrides, instParentId, instChild.id, 'componentId')
+      !hasNodeInstanceOverride(overrides, instParentId, instChild.id, 'componentId') &&
+      // The component's frame is the authority on which slot this is; instance copies of
+      // its bindings are not synced.
+      !ownsSlotContent(graph, instChild, slotPropertyId(compChild))
     ) {
       syncChildren(graph, compChildId, instChild.id, overrides)
     }

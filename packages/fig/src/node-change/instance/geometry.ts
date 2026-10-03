@@ -4,6 +4,7 @@ import type { GUID } from '@open-pencil/kiwi/fig/codec'
 import {
   findInstanceAncestor,
   getInstanceOverride,
+  ownsSlotContent,
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -99,7 +100,8 @@ export function snapshotInstanceGeometry(
         throw new Error(`Ambiguous instance geometry address ${id} under ${owner.id}`)
       visited.add(id)
       entries.set(id, { ...entries.get(id), guidPath: { guids: path }, ...geometry(child) })
-      visit(child)
+      // Slot content the instance owns is written as its own records, not as derived data.
+      if (!ownsSlotContent(graph, child)) visit(child)
     }
   }
   visit(owner)

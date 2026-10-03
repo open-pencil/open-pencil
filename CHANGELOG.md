@@ -46,6 +46,7 @@
 
 ### Fixed
 
+- Open Figma files that use slots with each instance's own slot content instead of its component's default, keep slot properties, their settings, and instance content when saving back to `.fig`, and keep an instance's slot content when you switch its variant.
 - Stop showing a “signal is aborted without reason” error when you switch pages again before the previous page has finished loading.
 - Export layers with two shadows as one `effects` prop instead of repeating the `shadow` attribute, background blurs as `backgroundBlur` instead of a layer blur, hidden children with `visible={false}` instead of leaving them out, and per-corner radii even when the uniform radius is 0.
 - Apply `strokeAlign`, `strokeDash`, `minH`, and `maxH` in design JSX, which were accepted but ignored, and make `minW` and `maxW` set the layer's minimum and maximum width rather than only clamping its initial width.

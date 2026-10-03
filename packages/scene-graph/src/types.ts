@@ -587,15 +587,30 @@ export interface SceneNode {
   textPathBox: Rect | null
 }
 
-export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP'
+export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP' | 'SLOT'
 
-export type ComponentPropertyReferenceField = 'VISIBLE' | 'TEXT' | 'INSTANCE_SWAP'
+/** `SLOT_CONTENT` marks a frame whose children are the slot's content. */
+export type ComponentPropertyReferenceField = 'VISIBLE' | 'TEXT' | 'INSTANCE_SWAP' | 'SLOT_CONTENT'
 
 export interface ComponentPropertyReference {
   propertyId: string
   field: ComponentPropertyReferenceField
 }
 
+/** Guidance for a slot property; Figma reports a breach but still accepts the content. */
+export interface SlotSettings {
+  minChildren?: number
+  maxChildren?: number
+  allowPreferredValuesOnly: boolean
+  displayEmptyByDefault: boolean
+  /** Content added to the slot fills its counter axis. */
+  stretchChildOnInsert: boolean
+}
+
+/**
+ * For a `SLOT` property, an instance assignment (whatever its value) means the instance owns
+ * that slot's content: the slot frame's children in the instance, which component sync keeps.
+ */
 export interface ComponentPropertyDefinition {
   id: string
   name: string
@@ -603,6 +618,8 @@ export interface ComponentPropertyDefinition {
   defaultValue: string
   variantOptions?: string[]
   preferredValues?: string[]
+  description?: string
+  slotSettings?: SlotSettings
 }
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'

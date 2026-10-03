@@ -1,4 +1,5 @@
 import type {
+  ComponentPropertyReferenceField,
   ComponentPropertyDefinition,
   ComponentPropertyType,
   SceneGraph,
@@ -251,13 +252,16 @@ function editPropertyDefinitions(
   })
   return propertyName(updated)
 }
-function propertyReferenceField(field: string): 'TEXT' | 'VISIBLE' | 'INSTANCE_SWAP' {
+function propertyReferenceField(field: string): ComponentPropertyReferenceField {
   if (field === 'mainComponent') return 'INSTANCE_SWAP'
+  if (field === 'slotContentId') return 'SLOT_CONTENT'
   return field === 'characters' ? 'TEXT' : 'VISIBLE'
 }
 
-function propertyReferenceName(field: 'TEXT' | 'VISIBLE' | 'INSTANCE_SWAP'): string {
+/** Figma's names: `slotContentId` is what a slot frame reports for its slot property. */
+function propertyReferenceName(field: ComponentPropertyReferenceField): string {
   if (field === 'INSTANCE_SWAP') return 'mainComponent'
+  if (field === 'SLOT_CONTENT') return 'slotContentId'
   return field === 'TEXT' ? 'characters' : 'visible'
 }
 function applyProperty(
