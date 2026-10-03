@@ -1,4 +1,4 @@
-import { params } from '@nanostores/i18n'
+import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
 
@@ -161,6 +161,28 @@ export const panelMessageDefaults = {
   variables: 'Variables',
   variants: 'Variants',
   componentProperties: 'Component properties',
+  slotDefault: 'Default',
+  slotModified: 'Modified',
+  slotItemCount: count({ one: '{count} item', many: '{count} items' }),
+  addInstances: 'Add instances',
+  searchInstances: 'Search components',
+  preferredInstances: 'Preferred',
+  allInstances: 'All components',
+  noInstancesFound: 'No components found',
+  notPreferredInstance: 'Not preferred',
+  slotLimits: 'Slot limits',
+  slotLimitCount: count({ one: '{count} limit', many: '{count} limits' }),
+  slotLimitIssueCount: count({ one: '{count} issue', many: '{count} issues' }),
+  slotMinimumLayers: count({ one: 'At least {count} layer', many: 'At least {count} layers' }),
+  slotMaximumLayers: count({ one: 'At most {count} layer', many: 'At most {count} layers' }),
+  slotPreferredOnly: 'Preferred instances only',
+  slotNonPreferredFound: count({
+    one: '{count} layer is not preferred',
+    many: '{count} layers are not preferred'
+  }),
+  selectLayers: 'Select layers',
+  resetSlot: 'Reset slot',
+  deleteSlotContents: 'Delete contents',
   constraints: 'Constraints',
   horizontalConstraint: 'Horizontal constraint',
   verticalConstraint: 'Vertical constraint',

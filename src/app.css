@@ -63,6 +63,7 @@
   --color-muted: #a6a6a6;
   --color-input: #1e1e1e;
   --color-component: #9747ff;
+  --color-slot: #f24bbc;
   --color-warning-bg: rgb(245 158 11 / 0.1);
   --color-warning-border: rgb(245 158 11 / 0.3);
   --color-warning-text: #fde68a;
@@ -106,6 +107,7 @@ html[data-theme='light'] {
   --color-muted: #6b7280;
   --color-input: #ffffff;
   --color-component: #7c3aed;
+  --color-slot: #db2777;
   --color-warning-bg: rgb(245 158 11 / 0.14);
   --color-warning-border: rgb(245 158 11 / 0.32);
   --color-warning-text: #92400e;
