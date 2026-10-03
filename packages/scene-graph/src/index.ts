@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- SceneGraph exposes a stable facade over domain modules */
 export * from './mutation-impact'
 export * from './variables/bindings'
+export { modesDefaultFirst } from './variables'
 export { rescaleNodeTree, scaleNodeChanges } from './scaling'
 import { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'
 export { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'

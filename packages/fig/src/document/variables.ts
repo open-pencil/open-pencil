@@ -2,6 +2,8 @@ import type { NodeChange, VariableDataValuesEntry } from '@open-pencil/kiwi/fig/
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
 
+import { extractPluginData } from '../node-change/plugin-data'
+import { readVariableMetadata } from '../node-change/variable/metadata'
 import { createResourceResolver } from './resource-reference'
 
 function valueOf(
@@ -56,12 +58,14 @@ export function materializeVariableResources(
       report(resource, 'missing collection identity or modes')
       continue
     }
+    const pluginData = extractPluginData(resource)
     graph.addCollection({
       id: guidToString(resource.guid),
       name: resource.name ?? 'Variables',
       modes: modes.map((mode) => ({ modeId: guidToString(mode.id), name: mode.name })),
       defaultModeId: guidToString(modes[0].id),
-      variableIds: []
+      variableIds: [],
+      pluginData: pluginData.length > 0 ? pluginData : undefined
     })
   }
   addVariables(graph, resources, report)
@@ -109,8 +113,7 @@ function addVariables(
       type,
       collectionId,
       valuesByMode,
-      description: '',
-      hiddenFromPublishing: false
+      ...readVariableMetadata(resource)
     })
   }
 }
