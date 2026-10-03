@@ -5,13 +5,15 @@ import { MIXED, useComponentProperties, useI18n } from '@open-pencil/vue'
 
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import type { AppPickerItem } from '@/components/ui/select/AppPicker.vue'
+import AppPickerField from '@/components/ui/select/AppPickerField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 import ComponentPropertyTextField from './ComponentPropertyTextField.vue'
 
 const { active, controls, setValue, setTextValue, flush } = useComponentProperties()
-const { panels } = useI18n()
+const { panels, common } = useI18n()
 const componentSectionUI = { title: 'text-component' }
 
 function selectOptions(control: (typeof controls.value)[number]) {
@@ -26,6 +28,21 @@ function selectValue(control: (typeof controls.value)[number]) {
 
 function updateSelect(propertyId: string, value: string) {
   if (value !== 'MIXED') setValue(propertyId, value)
+}
+
+/** Swap choices with the definition's preferred components first, as Figma lists them. */
+function swapItems(control: (typeof controls.value)[number]): AppPickerItem[] {
+  const anyPreferred = control.options.some((option) => option.preferred)
+  const groupOf = (preferred: boolean | undefined) => {
+    if (!anyPreferred) return undefined
+    return preferred ? panels.value.preferredInstances : panels.value.allInstances
+  }
+  return control.options.map((option) => ({
+    value: option.value,
+    label: option.label,
+    disabled: option.disabled,
+    group: groupOf(option.preferred)
+  }))
 }
 
 function booleanValue(control: (typeof controls.value)[number]) {
@@ -60,6 +77,18 @@ const sectionLabel = computed(() =>
             @update:model-value="setValue(control.id, String($event))"
           />
         </div>
+        <AppPickerField
+          v-else-if="control.type === 'INSTANCE_SWAP'"
+          :model-value="control.value === MIXED ? '' : control.value"
+          :items="swapItems(control)"
+          :label="control.name"
+          :placeholder="control.value === MIXED ? panels.mixed : undefined"
+          :search-placeholder="panels.searchInstances"
+          :empty-label="panels.noComponentsFound"
+          :close-label="common.close"
+          :data-property="control.id"
+          @update:model-value="setValue(control.id, $event)"
+        />
         <AppSelect
           v-else
           :label="control.name"

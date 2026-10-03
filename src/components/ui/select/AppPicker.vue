@@ -19,6 +19,10 @@ export interface AppPickerProps {
   searchPlaceholder: string
   emptyLabel: string
   closeLabel: string
+  /** The current choice, marked with a check. */
+  selected?: string
+  /** Tooltip on the trigger; wraps the popover trigger so both reach the same element. */
+  tooltip?: string
   density?: 'compact' | 'comfortable'
   side?: 'left' | 'right' | 'top' | 'bottom'
   align?: 'start' | 'center' | 'end'
@@ -57,6 +61,7 @@ import { computed, ref } from 'vue'
 import { useRetainedPopup } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/select/picker'
 
 const {
@@ -65,6 +70,8 @@ const {
   searchPlaceholder,
   emptyLabel,
   closeLabel,
+  selected,
+  tooltip,
   density = 'comfortable',
   side = 'left',
   align = 'start',
@@ -72,7 +79,8 @@ const {
 } = defineProps<AppPickerProps>()
 const emit = defineEmits<{ select: [value: string] }>()
 const slots = defineSlots<AppPickerSlots>()
-const { open, portalActive } = useRetainedPopup()
+const open = defineModel<boolean>('open', { default: false })
+const { portalActive } = useRetainedPopup(open, () => close())
 const query = ref('')
 const styles = computed(() => tv(theme)({ density }))
 
@@ -111,9 +119,11 @@ function select(value: AcceptableValue) {
 
 <template>
   <PopoverRoot v-model:open="open" @update:open="!$event && (query = '')">
-    <PopoverTrigger as-child>
-      <slot name="trigger" />
-    </PopoverTrigger>
+    <Tip as-child :label="tooltip" :disabled="!tooltip">
+      <PopoverTrigger as-child>
+        <slot name="trigger" />
+      </PopoverTrigger>
+    </Tip>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
         :side="side"
@@ -174,6 +184,10 @@ function select(value: AcceptableValue) {
                     {{ item.description }}
                   </span>
                 </span>
+                <icon-lucide-check
+                  v-if="item.value === selected"
+                  :class="styles.check({ class: ui?.check })"
+                />
               </ListboxItem>
             </ListboxGroup>
           </ListboxContent>
