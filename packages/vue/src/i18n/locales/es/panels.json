@@ -200,6 +200,46 @@
   "add": "Añadir",
   "variants": "Variantes",
   "componentProperties": "Propiedades del componente",
+  "slotDefault": "Predeterminado",
+  "slotModified": "Modificado",
+  "slotItemCount": {
+    "one": "{count} elemento",
+    "many": "{count} elementos"
+  },
+  "addInstances": "Añadir instancias",
+  "searchInstances": "Buscar componentes",
+  "preferredInstances": "Preferidos",
+  "allInstances": "Todos los componentes",
+  "noInstancesFound": "No se encontraron componentes",
+  "notPreferredInstance": "No preferido",
+  "slotLimits": "Límites del slot",
+  "slotLimitCount": {
+    "one": "{count} límite",
+    "many": "{count} límites"
+  },
+  "slotLimitIssueCount": {
+    "one": "{count} problema",
+    "many": "{count} problemas"
+  },
+  "slotMinimumLayers": {
+    "one": "Al menos {count} capa",
+    "many": "Al menos {count} capas"
+  },
+  "slotMaximumLayers": {
+    "one": "Como máximo {count} capa",
+    "many": "Como máximo {count} capas"
+  },
+  "slotPreferredOnly": "Solo instancias preferidas",
+  "slotNonPreferredFound": {
+    "one": "{count} capa no es preferida",
+    "many": "{count} capas no son preferidas"
+  },
+  "selectLayers": "Seleccionar capas",
+  "resetSlot": "Restablecer slot",
+  "deleteSlotContents": "Eliminar contenido",
+  "searchStyles": "Buscar estilos",
+  "noStylesFound": "No se encontraron estilos",
+  "noComponentsFound": "No se encontraron componentes",
   "gapAuto": "Espaciado auto",
   "horizontalGap": "Espaciado horizontal",
   "verticalGap": "Espaciado vertical",

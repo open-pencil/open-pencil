@@ -183,6 +183,40 @@
   "add": "添加",
   "variants": "变体",
   "componentProperties": "组件属性",
+  "slotDefault": "默认",
+  "slotModified": "已修改",
+  "slotItemCount": {
+    "many": "{count} 项"
+  },
+  "addInstances": "添加实例",
+  "searchInstances": "搜索组件",
+  "preferredInstances": "首选",
+  "allInstances": "所有组件",
+  "noInstancesFound": "未找到组件",
+  "notPreferredInstance": "非首选",
+  "slotLimits": "插槽限制",
+  "slotLimitCount": {
+    "many": "{count} 项限制"
+  },
+  "slotLimitIssueCount": {
+    "many": "{count} 个问题"
+  },
+  "slotMinimumLayers": {
+    "many": "至少 {count} 个图层"
+  },
+  "slotMaximumLayers": {
+    "many": "最多 {count} 个图层"
+  },
+  "slotPreferredOnly": "仅限首选实例",
+  "slotNonPreferredFound": {
+    "many": "{count} 个图层不是首选"
+  },
+  "selectLayers": "选择图层",
+  "resetSlot": "重置插槽",
+  "deleteSlotContents": "删除内容",
+  "searchStyles": "搜索样式",
+  "noStylesFound": "未找到样式",
+  "noComponentsFound": "未找到组件",
   "gapAuto": "自动间距",
   "horizontalGap": "水平间距",
   "verticalGap": "垂直间距",

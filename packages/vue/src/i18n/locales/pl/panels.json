@@ -183,6 +183,52 @@
   "add": "Dodaj",
   "variants": "Warianty",
   "componentProperties": "Właściwości komponentu",
+  "slotDefault": "Domyślna",
+  "slotModified": "Zmieniona",
+  "slotItemCount": {
+    "one": "{count} element",
+    "few": "{count} elementy",
+    "many": "{count} elementów"
+  },
+  "addInstances": "Dodaj instancje",
+  "searchInstances": "Szukaj komponentów",
+  "preferredInstances": "Preferowane",
+  "allInstances": "Wszystkie komponenty",
+  "noInstancesFound": "Nie znaleziono komponentów",
+  "notPreferredInstance": "Niepreferowany",
+  "slotLimits": "Limity slotu",
+  "slotLimitCount": {
+    "one": "{count} limit",
+    "few": "{count} limity",
+    "many": "{count} limitów"
+  },
+  "slotLimitIssueCount": {
+    "one": "{count} problem",
+    "few": "{count} problemy",
+    "many": "{count} problemów"
+  },
+  "slotMinimumLayers": {
+    "one": "Co najmniej {count} warstwa",
+    "few": "Co najmniej {count} warstwy",
+    "many": "Co najmniej {count} warstw"
+  },
+  "slotMaximumLayers": {
+    "one": "Najwyżej {count} warstwa",
+    "few": "Najwyżej {count} warstwy",
+    "many": "Najwyżej {count} warstw"
+  },
+  "slotPreferredOnly": "Tylko preferowane instancje",
+  "slotNonPreferredFound": {
+    "one": "{count} warstwa nie jest preferowana",
+    "few": "{count} warstwy nie są preferowane",
+    "many": "{count} warstw nie jest preferowanych"
+  },
+  "selectLayers": "Zaznacz warstwy",
+  "resetSlot": "Resetuj slot",
+  "deleteSlotContents": "Usuń zawartość",
+  "searchStyles": "Szukaj stylów",
+  "noStylesFound": "Nie znaleziono stylów",
+  "noComponentsFound": "Nie znaleziono komponentów",
   "gapAuto": "Automatyczny odstep",
   "horizontalGap": "Odstep poziomy",
   "verticalGap": "Odstep pionowy",

@@ -200,6 +200,40 @@
   "add": "追加",
   "variants": "バリアント",
   "componentProperties": "コンポーネントのプロパティ",
+  "slotDefault": "デフォルト",
+  "slotModified": "変更済み",
+  "slotItemCount": {
+    "many": "{count} 個の項目"
+  },
+  "addInstances": "インスタンスを追加",
+  "searchInstances": "コンポーネントを検索",
+  "preferredInstances": "優先",
+  "allInstances": "すべてのコンポーネント",
+  "noInstancesFound": "コンポーネントが見つかりません",
+  "notPreferredInstance": "優先ではありません",
+  "slotLimits": "スロットの制限",
+  "slotLimitCount": {
+    "many": "{count} 件の制限"
+  },
+  "slotLimitIssueCount": {
+    "many": "{count} 件の問題"
+  },
+  "slotMinimumLayers": {
+    "many": "{count} レイヤー以上"
+  },
+  "slotMaximumLayers": {
+    "many": "{count} レイヤー以下"
+  },
+  "slotPreferredOnly": "優先インスタンスのみ",
+  "slotNonPreferredFound": {
+    "many": "{count} 個のレイヤーが優先ではありません"
+  },
+  "selectLayers": "レイヤーを選択",
+  "resetSlot": "スロットをリセット",
+  "deleteSlotContents": "内容を削除",
+  "searchStyles": "スタイルを検索",
+  "noStylesFound": "スタイルが見つかりません",
+  "noComponentsFound": "コンポーネントが見つかりません",
   "gapAuto": "間隔自動",
   "horizontalGap": "水平方向の間隔",
   "verticalGap": "垂直方向の間隔",

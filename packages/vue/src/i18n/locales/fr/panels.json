@@ -183,6 +183,46 @@
   "add": "Ajouter",
   "variants": "Variantes",
   "componentProperties": "Propriétés du composant",
+  "slotDefault": "Par défaut",
+  "slotModified": "Modifié",
+  "slotItemCount": {
+    "one": "{count} élément",
+    "many": "{count} éléments"
+  },
+  "addInstances": "Ajouter des instances",
+  "searchInstances": "Rechercher des composants",
+  "preferredInstances": "Préférés",
+  "allInstances": "Tous les composants",
+  "noInstancesFound": "Aucun composant trouvé",
+  "notPreferredInstance": "Non préféré",
+  "slotLimits": "Limites du slot",
+  "slotLimitCount": {
+    "one": "{count} limite",
+    "many": "{count} limites"
+  },
+  "slotLimitIssueCount": {
+    "one": "{count} problème",
+    "many": "{count} problèmes"
+  },
+  "slotMinimumLayers": {
+    "one": "Au moins {count} calque",
+    "many": "Au moins {count} calques"
+  },
+  "slotMaximumLayers": {
+    "one": "Au plus {count} calque",
+    "many": "Au plus {count} calques"
+  },
+  "slotPreferredOnly": "Instances préférées uniquement",
+  "slotNonPreferredFound": {
+    "one": "{count} calque n’est pas préféré",
+    "many": "{count} calques ne sont pas préférés"
+  },
+  "selectLayers": "Sélectionner les calques",
+  "resetSlot": "Réinitialiser le slot",
+  "deleteSlotContents": "Supprimer le contenu",
+  "searchStyles": "Rechercher des styles",
+  "noStylesFound": "Aucun style trouvé",
+  "noComponentsFound": "Aucun composant trouvé",
   "gapAuto": "Espacement auto",
   "horizontalGap": "Espacement horizontal",
   "verticalGap": "Espacement vertical",
