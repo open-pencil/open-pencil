@@ -37,7 +37,7 @@ export function createOpenPencilAliases(rootDir: string) {
     { find: '@open-pencil/scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
     { find: '#emit', replacement: resolve(rootDir, 'packages/emit/src') },
     {
-      find: /^@open-pencil\/codegen$/,
+      find: /^@open-pencil\/emit$/,
       replacement: resolve(rootDir, 'packages/emit/src/index.ts')
     },
     { find: '#design-jsx', replacement: resolve(rootDir, 'packages/design-jsx/src') },
