@@ -236,10 +236,11 @@ export function patchChildren(
   const before = base.childIds.filter((id) => survivors.has(id) && written.has(id))
   const after = next.childIds.filter((id) => survivors.has(id) && written.has(id))
   if (before.some((id, index) => id !== after[index])) {
-    if (!reorderChildren(ctx, node, elements, written, base, next)) {
-      ctx.stale.push({ kind: 'order', from: element.nameFrom, to: element.nameTo })
-    }
-    return
+    // A reorder rewrites the children with their additions and removals included.
+    if (reorderChildren(ctx, node, elements, written, base, next)) return
+    // Children that cannot move keep their order, which is marked; layers added or deleted
+    // in the same change still reach the code.
+    ctx.stale.push({ kind: 'order', from: element.nameFrom, to: element.nameTo })
   }
   const kept = new Set(next.childIds)
   for (const id of base.childIds) {
