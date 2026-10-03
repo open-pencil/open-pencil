@@ -1,4 +1,4 @@
-import { jsx, type SyntaxNode } from '@open-pencil/codegen'
+import { jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { collectProps, NODE_TYPE_TO_TAG, type JSXProp } from './props'
