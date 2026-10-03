@@ -1,8 +1,14 @@
 import { CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 
+import { acceptingParent } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
 
+/** Where pasted layers go; never the locked part of an instance, only its slots. */
 export function resolvePasteTarget(ctx: EditorContext): string {
+  return acceptingParent(ctx, pasteTargetCandidate(ctx))
+}
+
+function pasteTargetCandidate(ctx: EditorContext): string {
   if (ctx.state.enteredContainerId) return ctx.state.enteredContainerId
   const ids = [...ctx.state.selectedIds]
   if (ids.length !== 1) return ctx.state.currentPageId

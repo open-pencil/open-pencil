@@ -3,6 +3,7 @@ import type { SceneNode, Vector } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
+import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
 
 type InstanceCreateSnapshot = Partial<SceneNode> & { id: string }
@@ -64,6 +65,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
   ) {
     const component = ctx.graph.getNode(componentId)
     if (component?.type !== 'COMPONENT') return null
+    if (!prepareSlotEdits(ctx, [parentId])) return null
 
     const previousSelection = new Set(ctx.state.selectedIds)
     const defaultPlacement = defaultInstancePlacement(ctx, component, parentId)

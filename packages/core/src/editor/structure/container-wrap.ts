@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
+import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
 
 export function wrapSelectionInContainer(
@@ -19,6 +20,7 @@ export function wrapSelectionInContainer(
 
   const parent = ctx.graph.getNode(parentId)
   if (!parent) return null
+  prepareSlotEdits(ctx, [parentId], { allowLocked: true })
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const nodeIds = selectedNodes.map((n) => n.id)

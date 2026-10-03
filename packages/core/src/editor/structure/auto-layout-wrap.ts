@@ -1,6 +1,7 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
+import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
@@ -12,6 +13,7 @@ export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[])
     (n) => (n.parentId ?? ctx.state.currentPageId) === parentId
   )
   if (!sameParent) return
+  prepareSlotEdits(ctx, [parentId], { allowLocked: true })
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const origPositions = selectedNodes.map((n) => ({ id: n.id, x: n.x, y: n.y, parentId }))

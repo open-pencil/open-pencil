@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FRAME_FILL } from '#core/constants'
+import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {
@@ -30,8 +31,15 @@ export function createStructureActions(ctx: EditorContext) {
     return !parentId || parentId === ctx.graph.rootId || parentId === ctx.state.currentPageId
   }
 
-  function reparentNodes(nodeIds: string[], newParentId: string) {
+  /** Moves layers under a new parent; refuses the locked part of an instance. */
+  function reparentNodes(nodeIds: string[], newParentId: string): boolean {
     const parent = ctx.graph.getNode(newParentId)
+    const parents = new Set([newParentId])
+    for (const id of nodeIds) {
+      const current = ctx.graph.getNode(id)?.parentId
+      if (current && current !== newParentId) parents.add(current)
+    }
+    if (!prepareSlotEdits(ctx, parents)) return false
     for (const id of nodeIds) {
       const node = ctx.graph.getNode(id)
       if (
@@ -43,6 +51,7 @@ export function createStructureActions(ctx: EditorContext) {
         continue
       ctx.graph.reparentNode(id, newParentId)
     }
+    return true
   }
 
   function wrapSelectionInContainer(
@@ -136,6 +145,8 @@ export function createStructureActions(ctx: EditorContext) {
 
   return {
     isTopLevel,
+    acceptsChildren: (parentId: string) => acceptsChildren(ctx, parentId),
+    acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
     ...reorderActions,
     reparentNodes,
     wrapSelectionInContainer,

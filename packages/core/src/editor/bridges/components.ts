@@ -51,6 +51,9 @@ export function createComponentBridge(
     removeVariant: components.removeVariant,
     getInstanceComponentPropertyDefinitions: components.getInstanceComponentPropertyDefinitions,
     getInstanceComponentPropertyValue: components.getInstanceComponentPropertyValue,
-    setInstanceComponentProperty: components.setInstanceComponentProperty
+    setInstanceComponentProperty: components.setInstanceComponentProperty,
+    resetSlot: components.resetSlot,
+    clearSlot: components.clearSlot,
+    addInstanceToSlot: components.addInstanceToSlot
   }
 }

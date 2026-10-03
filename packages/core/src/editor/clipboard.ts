@@ -18,6 +18,7 @@ import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboa
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import { prepareSlotEdits } from './components/slots'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -29,6 +30,8 @@ export function createClipboardActions(ctx: EditorContext) {
     const prevSelection = new Set(ctx.state.selectedIds)
     const selectedSet = new Set(selectedNodes.map((n) => n.id))
     const topLevel = selectedNodes.filter((n) => !n.parentId || !selectedSet.has(n.parentId))
+    const parents = topLevel.map((node) => node.parentId ?? ctx.state.currentPageId)
+    if (!prepareSlotEdits(ctx, parents)) return
 
     const newRootIds: string[] = []
     const allSnapshots = new Map<string, SceneNode>()
@@ -153,6 +156,7 @@ export function createClipboardActions(ctx: EditorContext) {
       const prevSelection = new Set(ctx.state.selectedIds)
       const replacementTargets = options.replaceSelection ? selectedReplacementTargets(ctx) : []
       const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+      if (!prepareSlotEdits(ctx, [pasteTarget])) return
       const operation = prepareClipboardImport(figma.nodes, ctx.graph, pasteTarget, figma.blobs)
       let deliveryError: CommittedGraphEventError | undefined
       try {
@@ -219,6 +223,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
 
     const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+    if (!prepareSlotEdits(ctx, [pasteTarget])) return created
     const dependencyRootIds: string[] = []
     for (const dependency of dependencies)
       dependencyRootIds.push(createNodeTree(dependency, ctx.state.currentPageId))
@@ -326,6 +331,12 @@ export function createClipboardActions(ctx: EditorContext) {
       entries.push({ id, parentId, index, subtree: snapshotSubtree(ctx.graph, id) })
     }
     if (entries.length === 0) return
+    prepareSlotEdits(
+      ctx,
+      entries.map((entry) => entry.parentId),
+      { allowLocked: true }
+    )
+    for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 
     const relayoutParents = () => {
       for (const parentId of new Set(entries.map((entry) => entry.parentId))) {

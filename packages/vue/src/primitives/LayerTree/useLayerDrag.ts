@@ -42,10 +42,20 @@ export function useLayerDrag(
 
       const isContainer = editor.graph.isContainer(data.id)
       const mode: ItemMode = data.hasChildren ? 'expanded' : 'standard'
+      const parentId = editor.graph.getNode(data.id)?.parentId ?? editor.state.currentPageId
+      // Inside an instance only slots take layers; the rest of it comes from its component.
+      const acceptsChildren = isContainer && editor.acceptsChildren(data.id)
+      const acceptsSiblings = editor.acceptsChildren(parentId)
+      const block: Array<'make-child' | 'reorder-above' | 'reorder-below' | 'reparent'> = [
+        'reparent',
+        ...(acceptsChildren ? [] : (['make-child'] as const)),
+        ...(acceptsSiblings ? [] : (['reorder-above', 'reorder-below'] as const))
+      ]
 
       const cleanup = combine(
         draggable({
           element,
+          canDrag: () => acceptsSiblings,
           getInitialData: () => ({ id: data.id }),
           onDragStart: () => {
             draggingId.value = data.id
@@ -65,7 +75,7 @@ export function useLayerDrag(
                 indentPerLevel,
                 currentLevel: data.level,
                 mode,
-                block: isContainer ? ['reparent'] : ['make-child', 'reparent']
+                block
               }
             ),
           canDrop: ({ source }) => source.data.id !== data.id,

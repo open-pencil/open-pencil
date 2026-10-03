@@ -10,6 +10,7 @@ export * from './instance-overrides'
 export * from './images'
 export * from './components/properties'
 export * from './components/slots'
+export * from './components/slot-content'
 export * from './copy'
 export { createDefaultNode } from './node-defaults'
 export {

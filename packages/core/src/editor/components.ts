@@ -6,6 +6,7 @@ import { randomHex } from '#core/random'
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
+import { createSlotActions } from './components/slots'
 import { createVariantActions } from './components/variants'
 import type { EditorContext } from './types'
 
@@ -85,6 +86,7 @@ export function createComponentActions(ctx: EditorContext) {
     ...instanceActions,
     ...focusActions,
     ...variantActions,
-    ...componentPropertyActions
+    ...componentPropertyActions,
+    ...createSlotActions(ctx)
   }
 }
