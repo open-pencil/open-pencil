@@ -41,8 +41,6 @@
   "toolStepsFailed": "en échec : {count}",
   "showNodeOnCanvas": "Afficher {name} sur le canevas",
   "toolChanges": "Modifications",
-  "changeView": "Vue des modifications",
-  "changeCompare": "Comparer",
   "changeHighlight": "Surligner",
   "changeBefore": "Avant",
   "changeAfter": "Après",

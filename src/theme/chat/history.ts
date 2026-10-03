@@ -1,5 +1,7 @@
 import { tv } from 'tailwind-variants'
 
+import { motionStyles } from '../motion/styles'
+
 export const chatHistoryTheme = tv({
   slots: {
     root: 'shrink-0 border-b border-border',
@@ -8,8 +10,10 @@ export const chatHistoryTheme = tv({
       'flex min-w-0 flex-1 items-center gap-1 rounded px-1.5 py-1 text-left text-xs text-surface hover:bg-hover disabled:opacity-50',
     title: 'min-w-0 flex-1 truncate',
     icon: 'size-3.5 shrink-0',
-    content:
+    content: [
       'z-50 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-border bg-panel p-2 text-surface shadow-lg',
+      motionStyles.floating
+    ],
     input:
       'w-full rounded border border-border bg-input px-2 py-1.5 text-xs outline-none focus:border-accent',
     scope: 'my-2 flex gap-1',

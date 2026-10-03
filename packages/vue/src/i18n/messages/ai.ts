@@ -83,8 +83,6 @@ export const aiMessageDefaults = {
   toolStepsFailed: params('failed: {count}'),
   showNodeOnCanvas: params('Show {name} on canvas'),
   toolChanges: 'Changes',
-  changeView: 'Change view',
-  changeCompare: 'Compare',
   changeHighlight: 'Highlight',
   changeBefore: 'Before',
   changeAfter: 'After',

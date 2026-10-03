@@ -41,8 +41,6 @@
   "toolStepsFailed": "fehlgeschlagen: {count}",
   "showNodeOnCanvas": "{name} auf der Arbeitsfläche zeigen",
   "toolChanges": "Änderungen",
-  "changeView": "Änderungsansicht",
-  "changeCompare": "Vergleichen",
   "changeHighlight": "Hervorheben",
   "changeBefore": "Vorher",
   "changeAfter": "Nachher",

@@ -41,8 +41,6 @@
   "toolStepsFailed": "con errores: {count}",
   "showNodeOnCanvas": "Mostrar {name} en el lienzo",
   "toolChanges": "Cambios",
-  "changeView": "Vista de cambios",
-  "changeCompare": "Comparar",
   "changeHighlight": "Resaltar",
   "changeBefore": "Antes",
   "changeAfter": "Después",

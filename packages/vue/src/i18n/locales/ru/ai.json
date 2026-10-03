@@ -41,8 +41,6 @@
   "toolStepsFailed": "с ошибкой: {count}",
   "showNodeOnCanvas": "Показать {name} на холсте",
   "toolChanges": "Изменения",
-  "changeView": "Вид изменений",
-  "changeCompare": "Сравнить",
   "changeHighlight": "Подсветить",
   "changeBefore": "До",
   "changeAfter": "После",

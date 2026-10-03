@@ -41,8 +41,6 @@
   "toolStepsFailed": "失敗: {count}",
   "showNodeOnCanvas": "{name} をキャンバスに表示",
   "toolChanges": "変更",
-  "changeView": "変更の表示",
-  "changeCompare": "比較",
   "changeHighlight": "ハイライト",
   "changeBefore": "変更前",
   "changeAfter": "変更後",
