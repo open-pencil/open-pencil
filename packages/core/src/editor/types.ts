@@ -42,6 +42,8 @@ export interface EditorSharedState {
   documentName: string
   /** Design check markers and highlight, shared by every canvas pane. */
   designIssues: DesignIssueOverlay | null
+  /** The layer of the code element around the cursor in a code editor, shown in every pane. */
+  codeFocusNodeId: string | null
   rulerTheme?: RulerTheme
   sceneVersion: number
 }

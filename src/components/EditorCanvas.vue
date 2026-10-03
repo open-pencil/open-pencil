@@ -140,7 +140,7 @@ const { detailMarker: hoveredIssueMarker, cursor: issueMarkerCursor } = useCanva
       // An edge pin leads to its nearest issue; a marker opens every layer it covers.
       const nodeIds = marker.direction ? marker.nodeIds.slice(0, 1) : marker.nodeIds
       store.designCheck.openMarker(nodeIds)
-      if (marker.direction && nodeIds[0]) store.designCheck.revealNode(nodeIds[0])
+      if (marker.direction) store.revealNodes(nodeIds)
     }
   }
 )
