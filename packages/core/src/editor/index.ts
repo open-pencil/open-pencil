@@ -15,6 +15,7 @@ export {
 export { createDefaultEditorState, createEditor } from './create'
 export { executeAtomicTool } from './history/atomic-tool'
 export type { ClipboardPayload, ClipboardSnapshot } from './clipboard/copy'
+export { resolvePasteTarget } from './clipboard/paste-target'
 export type { Editor } from './create'
 export { reapplyInstanceComponentProperties } from './components/properties'
 export { createGuideActions } from './guides'

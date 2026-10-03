@@ -14,6 +14,7 @@
 
 ### Added
 
+- Embedders can import `resolvePasteTarget` from `@open-pencil/core/editor` to place ordinary pasted or dropped content in the same container the editor would choose. Replacement paste uses the selected replacement target's parent instead.
 - Jump between pages from the command palette: it lists the pages you visited recently in the tab, **Go to page…** lists every page, and typing a page name finds it.
 - Preview designs progressively on the canvas as direct AI providers stream JSX, without saving partial designs or adding intermediate undo steps. A preview stays with its page: it hides while you view another page and returns when you come back.
 - Write design trees as TSX with `@open-pencil/design-jsx` as the JSX import source, and render them with `renderTree`.
