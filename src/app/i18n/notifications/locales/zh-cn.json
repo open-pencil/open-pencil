@@ -26,5 +26,6 @@
   "deepLinkPickerDismissed": "已取消链接：未选择任何文件。",
   "deepLinkCancelled": "已取消链接：需要以“{file}”结尾的文件。",
   "deepLinkNodeNotFound": "在“{file}”中未找到图层“{node}”。",
-  "openQueuedFilesFailed": "无法打开传递给 OpenPencil 的文件：{error}"
+  "openQueuedFilesFailed": "无法打开传递给 OpenPencil 的文件：{error}",
+  "tokensLeftOut": "未写入样式表：{names}"
 }

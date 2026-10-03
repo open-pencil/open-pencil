@@ -18,6 +18,7 @@ import node from './commands/node'
 import pages from './commands/pages'
 import query from './commands/query'
 import selection from './commands/selection'
+import tokens from './commands/tokens'
 import tree from './commands/tree'
 import variables from './commands/variables'
 
@@ -47,6 +48,7 @@ const main = defineCommand({
     node,
     pages,
     selection,
+    tokens,
     tree,
     variables
   }
