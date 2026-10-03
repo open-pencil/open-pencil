@@ -8,6 +8,7 @@ import { getRequestListener } from '@hono/node-server'
 import type { Hono } from 'hono'
 import type { WebSocketServer } from 'ws'
 
+import type { MCPToolMode } from '#mcp/tool/metadata'
 import {
   removeDiscoveryFile,
   removeStaleSocket,
@@ -167,7 +168,8 @@ export async function writeDiscovery(
   actualHttpPort: number,
   authToken: string | null,
   version: string,
-  disabledTools: string[]
+  disabledTools: string[],
+  toolMode: MCPToolMode
 ): Promise<string> {
   const startedAt = new Date().toISOString()
   await writeDiscoveryFile({
@@ -178,7 +180,8 @@ export async function writeDiscovery(
     authToken,
     version,
     startedAt,
-    disabledTools
+    disabledTools,
+    toolMode
   })
   return startedAt
 }
@@ -370,6 +373,7 @@ export async function tryWriteDiscovery(
   authToken: string | null,
   version: string,
   disabledTools: string[],
+  toolMode: MCPToolMode,
   state: ListenerState
 ): Promise<string> {
   try {
@@ -378,7 +382,8 @@ export async function tryWriteDiscovery(
       actualHttpPort,
       authToken,
       version,
-      disabledTools
+      disabledTools,
+      toolMode
     )
   } catch (err) {
     // If discovery file write fails after both listeners are up, tear down

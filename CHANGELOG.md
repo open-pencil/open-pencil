@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Add MCP selection-context tools that combine a visual selection preview with bounded structural inspection, plus a restricted mode that exposes only those tools.
+
 ## 0.15.1 — 2026-09-18
 
 ### Added

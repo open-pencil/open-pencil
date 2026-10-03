@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { access, constants, lstat, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { Socket } from 'node:net'
 
+import type { MCPToolMode } from '#mcp/tool/metadata'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
 /**
@@ -22,6 +23,7 @@ export interface DiscoveryInfo {
   version: string
   startedAt: string
   disabledTools?: string[]
+  toolMode?: MCPToolMode
 }
 
 /**
@@ -90,9 +92,22 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
   return info
 }
 
+function parseDiscoveryToolMode(value: unknown): MCPToolMode {
+  return value === 'selection-context' ? value : 'full'
+}
+
 function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo | null {
-  const { pid, version, httpPort, authRequired, startedAt, socketPath, authToken, disabledTools } =
-    obj
+  const {
+    pid,
+    version,
+    httpPort,
+    authRequired,
+    startedAt,
+    socketPath,
+    authToken,
+    disabledTools,
+    toolMode
+  } = obj
   if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) return null
   if (typeof version !== 'string') return null
   if (typeof httpPort !== 'number' || !Number.isInteger(httpPort)) return null
@@ -116,7 +131,8 @@ function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo
     startedAt,
     socketPath,
     authToken,
-    disabledTools: disabledTools ?? []
+    disabledTools: disabledTools ?? [],
+    toolMode: parseDiscoveryToolMode(toolMode)
   }
 }
 

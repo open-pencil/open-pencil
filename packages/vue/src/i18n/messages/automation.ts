@@ -83,6 +83,11 @@ export const automationMessageDefaults = {
   authentication: 'Require authentication',
   authenticationDescription:
     'Protect the localhost MCP endpoint with a bearer token. Disable only on a trusted machine. Restart the server to apply changes.',
+  toolMode: 'Tool mode',
+  toolModeDescription:
+    'Choose full access or expose only vision and structured details for the current selection. Restart the server to apply changes.',
+  toolModeFull: 'Full tool access',
+  toolModeSelectionContext: 'Selection context only',
   rootDirectory: 'MCP root directory',
   rootDirectoryDefault: 'Server default directory',
   chooseRootDirectory: 'Choose folder',
