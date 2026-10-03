@@ -2,6 +2,7 @@
 import { javascript } from '@codemirror/lang-javascript'
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
+import { unifiedMergeView } from '@codemirror/merge'
 import { search, searchKeymap } from '@codemirror/search'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView, highlightSpecialChars, keymap } from '@codemirror/view'
@@ -12,10 +13,12 @@ import { codeEditorTheme, codeViewerTheme } from '@/theme/code/editor'
 
 export type CodeViewerLanguage = 'json' | 'design-jsx' | 'javascript'
 
-const { code, language, label } = defineProps<{
+const { code, language, label, original } = defineProps<{
   code: string
   language: CodeViewerLanguage
   label: string
+  /** Shows `code` as a unified diff against this text. Read at mount. */
+  original?: string
 }>()
 
 function languageExtension(language: CodeViewerLanguage): Extension {
@@ -32,7 +35,10 @@ const view = useCodeMirror(useTemplateRef('host'), {
     foldGutter(),
     search({ top: true }),
     keymap.of(searchKeymap),
-    EditorView.lineWrapping
+    EditorView.lineWrapping,
+    original === undefined
+      ? []
+      : unifiedMergeView({ original, mergeControls: false, collapseUnchanged: {} })
   ],
   reactive: [() => languageExtension(language)]
 })

@@ -7,7 +7,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
-import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
@@ -349,5 +349,24 @@ export function renderThumbnail(
     canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
     canvas.translate(-bounds.minX * scale, -bounds.minY * scale)
     canvas.scale(scale, scale)
+  })
+}
+
+/** Draws a page region with `renderer`; `region.ts` gives it a renderer of its own. */
+export function drawRegionToImage(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  bounds: VisualBounds,
+  scale: number
+): Uint8Array | null {
+  const pixelW = Math.max(1, Math.round((bounds.maxX - bounds.minX) * scale))
+  const pixelH = Math.max(1, Math.round((bounds.maxY - bounds.minY) * scale))
+  if (!graph.getNode(pageId) || !Number.isFinite(pixelW * pixelH)) return null
+  return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
+    canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
+    canvas.scale(scale, scale)
+    canvas.translate(-bounds.minX, -bounds.minY)
   })
 }

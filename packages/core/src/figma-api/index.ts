@@ -600,4 +600,6 @@ export class FigmaAPI implements NodeProxyHost {
 
   exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
   rasterCodec?: RasterCodec
+  /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
+  changeBaseline?: (pageId: string) => SceneGraph | null
 }
