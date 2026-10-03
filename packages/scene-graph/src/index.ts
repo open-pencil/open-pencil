@@ -2,6 +2,7 @@
 export * from './mutation-impact'
 export * from './variables/bindings'
 export { modesDefaultFirst } from './variables'
+export * from './variables/css'
 export { rescaleNodeTree, scaleNodeChanges } from './scaling'
 import { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'
 export { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'

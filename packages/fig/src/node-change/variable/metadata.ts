@@ -5,15 +5,24 @@ import {
   type CodeSyntaxPlatform,
   type PluginDataEntry,
   type Variable,
+  type VariableCollection,
   type VariableScope
 } from '@open-pencil/scene-graph'
 
 import { extractPluginData, mergePluginData } from '../plugin-data'
+import {
+  modeConditionsPluginData,
+  tokenPluginData,
+  webCodeSyntax,
+  withoutTokenPluginData
+} from './token'
 
 type VariableMetadata = Pick<
   Variable,
   'description' | 'hiddenFromPublishing' | 'scopes' | 'codeSyntax' | 'pluginData'
 >
+
+type ModeKey = (modeId: string) => string
 
 const isScope = (value: string): value is VariableScope =>
   (VARIABLE_SCOPES as readonly string[]).includes(value)
@@ -31,7 +40,7 @@ function readCodeSyntax(nc: NodeChange): Variable['codeSyntax'] {
 /** Figma keeps the description twice, as `description` and `symbolDescription`. */
 export function readVariableMetadata(nc: NodeChange): VariableMetadata {
   const scopes = nc.variableScopes?.filter(isScope)
-  const pluginData = extractPluginData(nc)
+  const pluginData = withoutTokenPluginData(extractPluginData(nc))
   return {
     description: nc.description ?? nc.symbolDescription ?? '',
     hiddenFromPublishing: nc.isPublishable === false,
@@ -41,14 +50,22 @@ export function readVariableMetadata(nc: NodeChange): VariableMetadata {
   }
 }
 
-export function variableMetadataNodeChange(variable: Variable): Partial<NodeChange> {
-  const codeSyntax = Object.entries(variable.codeSyntax ?? {}).flatMap(([platform, value]) =>
-    value ? [{ platform, value }] : []
+export function variableMetadataNodeChange(
+  variable: Variable,
+  modeKey: ModeKey
+): Partial<NodeChange> {
+  const { web, pluginCSSName } = webCodeSyntax(variable)
+  const codeSyntax = Object.entries({ ...variable.codeSyntax, WEB: web }).flatMap(
+    ([platform, value]) => (value ? [{ platform, value }] : [])
   )
+  const token = tokenPluginData(variable, pluginCSSName, modeKey)
   const nc: Partial<NodeChange> = {
     isPublishable: !variable.hiddenFromPublishing,
     variableScopes: variable.scopes?.length ? variable.scopes : ['ALL_SCOPES'],
-    pluginData: pluginDataNodeChange(variable.pluginData)
+    pluginData: pluginDataNodeChange([
+      ...withoutTokenPluginData(variable.pluginData ?? []),
+      ...(token ? [token] : [])
+    ])
   }
   if (variable.description) {
     nc.description = variable.description
@@ -56,6 +73,17 @@ export function variableMetadataNodeChange(variable: Variable): Partial<NodeChan
   }
   if (codeSyntax.length > 0) nc.codeSyntax = { entries: codeSyntax }
   return nc
+}
+
+export function collectionPluginDataNodeChange(
+  collection: VariableCollection,
+  modeKey: ModeKey
+): NodeChange['pluginData'] {
+  const conditions = modeConditionsPluginData(collection, modeKey)
+  return pluginDataNodeChange([
+    ...withoutTokenPluginData(collection.pluginData ?? []),
+    ...(conditions ? [conditions] : [])
+  ])
 }
 
 export function pluginDataNodeChange(
