@@ -124,13 +124,13 @@ export function createSlotActions(ctx: EditorContext) {
   function addInstanceToSlot(frameId: string, componentId: string): string | null {
     const scope = slotAt(frameId)
     if (!scope || ctx.graph.getNode(componentId)?.type !== 'COMPONENT') return null
-    let created: string | null = null
+    const created: { id: string | null } = { id: null }
     recordInstanceEdit(ctx, 'Add instance', scope.instance.id, () => {
       claimSlotContent(ctx.graph, scope)
-      created = ctx.graph.createInstance(componentId, frameId)?.id ?? null
+      created.id = ctx.graph.createInstance(componentId, frameId)?.id ?? null
     })
-    if (created) ctx.setSelectedIds(new Set([created]))
-    return created
+    if (created.id) ctx.setSelectedIds(new Set([created.id]))
+    return created.id
   }
 
   return { resetSlot, clearSlot, addInstanceToSlot }

@@ -3,11 +3,10 @@ import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigge
 import { computed } from 'vue'
 
 import { useI18n, useRetainedPopup } from '@open-pencil/vue'
+import type { SlotLimit } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-
-import type { SlotLimit } from './types'
 
 const { limits } = defineProps<{ limits: SlotLimit[] }>()
 const emit = defineEmits<{ selectLayers: [] }>()

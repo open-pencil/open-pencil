@@ -2,11 +2,10 @@
 import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
+import type { SlotInstanceOption } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
-
-import type { SlotInstanceOption } from './types'
 
 /**
  * Slots that allow only preferred instances list just those; otherwise every component is

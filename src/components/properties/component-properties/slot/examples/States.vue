@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue'
+
 import ComponentPropertyTextField from '@/components/properties/component-properties/ComponentPropertyTextField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 import SlotPropertyRow from '../SlotPropertyRow.vue'
-import type { SlotInstanceOption, SlotLimit } from '../types'
 
 const options: SlotInstanceOption[] = [
   { id: 'item', name: 'List item', preferred: true, source: 'This file' },

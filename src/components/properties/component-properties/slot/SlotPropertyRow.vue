@@ -8,6 +8,7 @@ import {
 } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
+import type { SlotInstanceOption, SlotLimit } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -16,7 +17,6 @@ import { panelFieldBase } from '@/theme/panel/field'
 
 import AddInstancesPopover from './AddInstancesPopover.vue'
 import SlotLimitsPopover from './SlotLimitsPopover.vue'
-import type { SlotInstanceOption, SlotLimit } from './types'
 
 /** One slot property of a selected instance: its state, limits, and content actions. */
 const {
