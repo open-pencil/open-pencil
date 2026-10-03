@@ -43,13 +43,7 @@ export async function readManifest(outputDir: string): Promise<StoryManifest> {
       return { version: 1, files: {} }
     throw error
   }
-  let data: unknown
-  try {
-    data = JSON.parse(text)
-  } catch {
-    data = undefined
-  }
-  const result = v.safeParse(ManifestSchema, data)
+  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), ManifestSchema), text)
   if (!result.success)
     throw new Error(
       `${path} is not a valid OpenPencil stories manifest; remove it together with the stories it listed, then export again.`

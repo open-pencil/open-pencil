@@ -1,4 +1,5 @@
 import { omit } from 'es-toolkit/object'
+import * as v from 'valibot'
 
 import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
@@ -30,6 +31,65 @@ export const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
 export const TEXT_PATH_BOX_PLUGIN_KEY = 'textPathBox'
 export const LIBRARY_SOURCE_PLUGIN_KEY = 'librarySource'
 export const ENABLED_LIBRARIES_PLUGIN_KEY = 'enabledLibraries'
+
+const TextPathBoxJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ x: v.number(), y: v.number(), width: v.number(), height: v.number() }),
+  v.check(
+    ({ x, y, width, height }) => Number.isFinite(x + y + width + height) && width > 0 && height > 0
+  )
+)
+
+/** String-valued entries of a JSON object; other entries are dropped, not rejected. */
+const BoundVariablesJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.check((value) => !Array.isArray(value)),
+  v.record(v.string(), v.unknown()),
+  v.transform((value) =>
+    Object.fromEntries(
+      Object.entries(value).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string'
+      )
+    )
+  )
+)
+
+/** Every entry must be valid, or the plugin value is ignored in favour of native settings. */
+const ExportSettingsJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.array(
+    v.pipe(
+      v.object({
+        scale: v.pipe(v.number(), v.finite()),
+        format: v.custom<ExportFormatId>(isExportFormatId)
+      }),
+      // Clamp at the file-format boundary: imported plugin data may carry an
+      // out-of-range scale the UI would never produce.
+      v.transform(({ scale, format }): ExportSetting => ({
+        scale: clampExportScale(scale),
+        format
+      }))
+    )
+  )
+)
+
+const LibrarySourceJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    identity: v.object({ libraryId: v.string(), assetKey: v.string(), revisionId: v.string() }),
+    sourceNodeId: v.optional(v.unknown()),
+    readOnly: v.optional(v.unknown())
+  }),
+  v.transform(({ identity, sourceNodeId, readOnly }): NonNullable<SceneNode['librarySource']> => ({
+    identity,
+    sourceNodeId: typeof sourceNodeId === 'string' ? sourceNodeId : null,
+    readOnly: readOnly === true
+  }))
+)
 
 const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PNG: 'png',
@@ -85,25 +145,11 @@ export function applyTextPathBoxPluginData(node: {
 }
 
 export function extractTextPathBox(nc: NodeChange): Rect | null {
-  const value = getOpenPencilPluginValue(nc, TEXT_PATH_BOX_PLUGIN_KEY)
-  if (!value) return null
-  try {
-    const parsed = JSON.parse(value) as Partial<Rect> | null
-    if (!parsed || typeof parsed !== 'object') return null
-    const { x, y, width, height } = parsed
-    if (
-      typeof x !== 'number' ||
-      typeof y !== 'number' ||
-      typeof width !== 'number' ||
-      typeof height !== 'number'
-    ) {
-      return null
-    }
-    if (!Number.isFinite(x + y + width + height) || width <= 0 || height <= 0) return null
-    return { x, y, width, height }
-  } catch {
-    return null
-  }
+  const parsed = v.safeParse(
+    TextPathBoxJSON,
+    getOpenPencilPluginValue(nc, TEXT_PATH_BOX_PLUGIN_KEY)
+  )
+  return parsed.success ? parsed.output : null
 }
 
 function hasOpenPencilExportSettingsPluginData(pluginData: PluginDataEntry[]): boolean {
@@ -112,26 +158,12 @@ function hasOpenPencilExportSettingsPluginData(pluginData: PluginDataEntry[]): b
   )
 }
 
-function parseBoundVariablesPluginValue(value: string | null): Record<string, string> {
-  if (!value) return {}
-  try {
-    const parsed = JSON.parse(value) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    return Object.fromEntries(
-      Object.entries(parsed).filter(
-        (entry): entry is [string, string] =>
-          typeof entry[0] === 'string' && typeof entry[1] === 'string'
-      )
-    )
-  } catch {
-    return {}
-  }
-}
-
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
-  let bindings = parseBoundVariablesPluginValue(
+  const stored = v.safeParse(
+    BoundVariablesJSON,
     getOpenPencilPluginValue(nc, BOUND_VARIABLES_PLUGIN_KEY)
   )
+  let bindings: Record<string, string> = stored.success ? stored.output : {}
   for (const entry of variableConsumptionEntries(nc)) {
     const binding = resolveVariableConsumptionEntry(entry)
     if (binding) bindings[binding.field] = binding.variableId
@@ -149,28 +181,6 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)
   })
   return bindings
-}
-
-function parseExportSettingsPluginValue(value: string | null): ExportSetting[] | null {
-  if (!value) return null
-  try {
-    const parsed = JSON.parse(value) as unknown
-    if (!Array.isArray(parsed)) return null
-    const settings = parsed.flatMap((entry): ExportSetting[] => {
-      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return []
-      const scale = (entry as { scale?: unknown }).scale
-      const format = (entry as { format?: unknown }).format
-      if (typeof scale !== 'number' || !Number.isFinite(scale) || !isExportFormatId(format)) {
-        return []
-      }
-      // Clamp at the file-format boundary: imported plugin data may carry an
-      // out-of-range scale the UI would never produce.
-      return [{ scale: clampExportScale(scale), format }]
-    })
-    return settings.length === parsed.length ? settings : null
-  } catch {
-    return null
-  }
 }
 
 function mapNativeImageType(imageType: unknown): ExportFormatId | null {
@@ -192,10 +202,11 @@ function extractNativeConstraintScale(constraint: unknown): number {
 }
 
 export function extractExportSettings(nc: NodeChange): ExportSetting[] {
-  const pluginSettings = parseExportSettingsPluginValue(
+  const pluginSettings = v.safeParse(
+    ExportSettingsJSON,
     getOpenPencilPluginValue(nc, EXPORT_SETTINGS_PLUGIN_KEY)
   )
-  if (pluginSettings) return pluginSettings
+  if (pluginSettings.success) return pluginSettings.output
 
   return (nc.exportSettings ?? []).flatMap((entry): ExportSetting[] => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return []
@@ -219,35 +230,11 @@ export function extractPluginData(nc: NodeChange): PluginDataEntry[] {
 }
 
 export function extractLibrarySource(nc: NodeChange): SceneNode['librarySource'] {
-  const value = getOpenPencilPluginValue(nc, LIBRARY_SOURCE_PLUGIN_KEY)
-  if (!value) return null
-  try {
-    const parsed = JSON.parse(value) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
-    const source = parsed as {
-      identity?: { libraryId?: unknown; assetKey?: unknown; revisionId?: unknown }
-      sourceNodeId?: unknown
-      readOnly?: unknown
-    }
-    if (
-      typeof source.identity?.libraryId !== 'string' ||
-      typeof source.identity.assetKey !== 'string' ||
-      typeof source.identity.revisionId !== 'string'
-    ) {
-      return null
-    }
-    return {
-      identity: {
-        libraryId: source.identity.libraryId,
-        assetKey: source.identity.assetKey,
-        revisionId: source.identity.revisionId
-      },
-      sourceNodeId: typeof source.sourceNodeId === 'string' ? source.sourceNodeId : null,
-      readOnly: source.readOnly === true
-    }
-  } catch {
-    return null
-  }
+  const parsed = v.safeParse(
+    LibrarySourceJSON,
+    getOpenPencilPluginValue(nc, LIBRARY_SOURCE_PLUGIN_KEY)
+  )
+  return parsed.success ? parsed.output : null
 }
 
 export function applyLibrarySourcePluginData(node: SceneNode): void {

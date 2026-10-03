@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 export const SOURCE_LIBRARY_PUBLICATION_PLUGIN_KEY = 'sourceLibraryPublication'
@@ -10,16 +12,16 @@ export interface SourceLibraryPublication {
   catalogSource?: string
 }
 
-function isPublication(value: unknown): value is SourceLibraryPublication {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-  const publication = value as Partial<SourceLibraryPublication>
-  return (
-    typeof publication.libraryId === 'string' &&
-    typeof publication.revisionId === 'string' &&
-    typeof publication.name === 'string' &&
-    (publication.catalogSource === undefined || typeof publication.catalogSource === 'string')
-  )
-}
+const SourceLibraryPublicationJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    libraryId: v.string(),
+    revisionId: v.string(),
+    name: v.string(),
+    catalogSource: v.optional(v.string())
+  })
+) satisfies v.GenericSchema<string, SourceLibraryPublication>
 
 export function readSourceLibraryPublication(graph: SceneGraph): SourceLibraryPublication | null {
   const root = graph.getNode(graph.rootId)
@@ -28,12 +30,8 @@ export function readSourceLibraryPublication(graph: SceneGraph): SourceLibraryPu
       item.pluginId === OPEN_PENCIL_PLUGIN_ID && item.key === SOURCE_LIBRARY_PUBLICATION_PLUGIN_KEY
   )
   if (!entry) return null
-  try {
-    const parsed: unknown = JSON.parse(entry.value)
-    return isPublication(parsed) ? parsed : null
-  } catch {
-    return null
-  }
+  const parsed = v.safeParse(SourceLibraryPublicationJSON, entry.value)
+  return parsed.success ? parsed.output : null
 }
 
 export function writeSourceLibraryPublication(

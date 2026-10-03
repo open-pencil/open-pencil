@@ -454,6 +454,15 @@
     {
       "files": [
         "src/**/*.{ts,vue}",
+        "packages/*/src/**/*.{ts,vue}"
+      ],
+      "rules": {
+        "open-pencil/no-unvalidated-json-parse": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.{ts,vue}",
         "packages/{scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}"
       ],
       "rules": {

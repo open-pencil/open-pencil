@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
@@ -34,6 +36,21 @@ type ModelsDevProvider = {
 
 type ModelsDevCatalog = Record<string, ModelsDevProvider>
 
+const CachedModelsDevCatalog = v.record(
+  v.string(),
+  v.object({
+    models: v.optional(
+      v.record(
+        v.string(),
+        v.looseObject({
+          modalities: v.optional(v.looseObject({ output: v.optional(v.unknown()) })),
+          limit: v.optional(v.looseObject({ output: v.optional(v.unknown()) }))
+        })
+      )
+    )
+  })
+) satisfies v.GenericSchema<unknown, ModelsDevCatalog>
+
 let catalogPromise: Promise<ModelsDevCatalog | null> | null = null
 
 function normalizedStatus(status: unknown): ModelOption['status'] {
@@ -64,8 +81,9 @@ async function loadCatalog(
   options: { useCache: boolean }
 ): Promise<ModelsDevCatalog | null> {
   if (options.useCache) {
-    const cached = await readCacheJSON<ModelsDevCatalog>(
+    const cached = await readCacheJSON(
       MODELS_DEV_CACHE_KEY,
+      CachedModelsDevCatalog,
       MODELS_DEV_CACHE_TTL_MS
     )
     if (cached) return cached

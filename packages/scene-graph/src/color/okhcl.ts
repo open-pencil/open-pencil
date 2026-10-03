@@ -96,31 +96,25 @@ export function serializeOkHCLPayload(payload: OkHCLPayload): string {
   return JSON.stringify(payload)
 }
 
+function isJSONObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 export function parseOkHCLPayload(value: string): OkHCLPayload | null {
+  let parsed: unknown
   try {
-    const parsed = JSON.parse(value) as Partial<OkHCLPayload>
-    if (parsed.version !== 1) return null
-    if (parsed.kind !== 'fill' && parsed.kind !== 'stroke') return null
-    if (typeof parsed.index !== 'number') return null
-    if (!parsed.color) return null
-    const color = parsed.color as Partial<OkHCLColor>
-    if (typeof color.h !== 'number' || typeof color.c !== 'number' || typeof color.l !== 'number') {
-      return null
-    }
-    return {
-      version: 1,
-      kind: parsed.kind,
-      index: parsed.index,
-      color: {
-        h: color.h,
-        c: color.c,
-        l: color.l,
-        a: typeof color.a === 'number' ? color.a : undefined
-      }
-    }
+    parsed = JSON.parse(value)
   } catch {
     return null
   }
+  if (!isJSONObject(parsed) || parsed.version !== 1) return null
+  const { kind, index, color } = parsed
+  if (kind !== 'fill' && kind !== 'stroke') return null
+  if (typeof index !== 'number') return null
+  if (!isJSONObject(color)) return null
+  const { h, c, l, a } = color
+  if (typeof h !== 'number' || typeof c !== 'number' || typeof l !== 'number') return null
+  return { version: 1, kind, index, color: { h, c, l, a: typeof a === 'number' ? a : undefined } }
 }
 
 function createOkHCLPayload(
