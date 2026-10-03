@@ -44,6 +44,15 @@ function codeLine(page: Page, text: string) {
   return page.locator('[data-slot="code-editor"] .cm-line', { hasText: text })
 }
 
+/** The layer under the pointer on the canvas, which is separate from the code's layer. */
+function hoveredLayer(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const id = store?.state.hoveredNodeId
+    return id ? (store.graph.getNode(id)?.name ?? null) : null
+  })
+}
+
 function focusedLayer(page: Page) {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
@@ -94,15 +103,7 @@ test('the element around the cursor marks its tags and its layer', async () => {
 
   // Canvas hover is a separate mark: hovering another layer keeps the code's layer marked.
   await editor.canvas.hover(130, 170)
-  await expect
-    .poll(() =>
-      editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
-        const id = store?.state.hoveredNodeId
-        return id ? (store.graph.getNode(id)?.name ?? null) : null
-      })
-    )
-    .toBe('Swatch')
+  await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
   expect(await focusedLayer(editor.page)).toBe('Fine print')
   await editor.canvas.waitForRender()
   const canvas = await editor.canvas.canvas.boundingBox()
@@ -323,4 +324,31 @@ test('a value written inside style is patched there in its own format', async ()
 
   await expect(codeLine(editor.page, 'name="Card"')).toContainText("style={{ width: '400px' }}")
   await expect(codeLine(editor.page, 'name="Card"')).not.toContainText(' w={')
+})
+
+test('a reorder that cannot move the code still writes layers added with it', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  // Two children on one line cannot be moved as blocks of their own.
+  const code = (await codeText(editor.page))
+    .replace(/<\/Text>\n\s*<Rectangle/, '</Text> <Rectangle')
+    .replace(/(name="Card"[^>]*?) h=\{160\}/, '$1 h={170}')
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(code)
+  await expect.poll(() => cardSize(editor.page)).toBe('320x170')
+
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const swatch = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Swatch')
+    if (!store || !swatch?.parentId) throw new Error('Swatch not found')
+    store.graph.reorderChild(swatch.id, swatch.parentId, 0)
+    store.graph.createNode('ELLIPSE', swatch.parentId, { name: 'Dot', width: 24, height: 24 })
+    store.requestRender()
+  })
+
+  await expect(codeLine(editor.page, 'name="Dot"')).toBeVisible()
+  await expect(editor.page.locator('[data-slot="code-editor"] .cm-lintRange-info')).toHaveText(
+    'Frame'
+  )
 })
