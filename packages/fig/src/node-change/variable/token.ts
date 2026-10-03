@@ -10,7 +10,7 @@ import {
   type VariableValue
 } from '@open-pencil/scene-graph'
 
-import { OPEN_PENCIL_PLUGIN_ID } from '../plugin-data'
+import { getOpenPencilPluginValue, OPEN_PENCIL_PLUGIN_ID } from '../plugin-data'
 
 /** Token fields Figma has no slot for, on each VARIABLE. */
 export const TOKEN_PLUGIN_KEY = 'token'
@@ -20,27 +20,20 @@ export const MODE_CONDITIONS_PLUGIN_KEY = 'modeConditions'
 // Shape only. Whether a string is valid CSS is checked where it is written into a stylesheet.
 const cssText = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(1000))
 
-const TokenSchema = v.object({
-  unit: v.optional(v.picklist(TOKEN_UNITS)),
-  expressions: v.optional(
-    v.record(v.string(), v.object({ css: cssText, resolved: v.pipe(v.number(), v.finite()) }))
-  )
-})
-const ModeConditionsSchema = v.record(v.string(), cssText)
+// Plugin data is a JSON string; invalid JSON is an issue like any wrong shape, never a throw.
+const TokenJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    unit: v.optional(v.picklist(TOKEN_UNITS)),
+    expressions: v.optional(
+      v.record(v.string(), v.object({ css: cssText, resolved: v.pipe(v.number(), v.finite()) }))
+    )
+  })
+)
+const ModeConditionsJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), cssText))
 
 type TokenFields = Pick<Variable, 'unit' | 'expressions'>
-
-function openPencilValue(nc: NodeChange, key: string): unknown {
-  const value = nc.pluginData?.find(
-    (entry) => entry.pluginID === OPEN_PENCIL_PLUGIN_ID && entry.key === key
-  )?.value
-  if (!value) return undefined
-  try {
-    return JSON.parse(value) as unknown
-  } catch {
-    return undefined
-  }
-}
 
 /** Plugin data other than the entries this module owns, which are rebuilt on every save. */
 export function withoutTokenPluginData(pluginData: PluginDataEntry[]): PluginDataEntry[] {
@@ -63,7 +56,7 @@ export function readVariableToken(
   nc: NodeChange,
   valuesByMode: Record<string, VariableValue>
 ): TokenFields {
-  const parsed = v.safeParse(TokenSchema, openPencilValue(nc, TOKEN_PLUGIN_KEY))
+  const parsed = v.safeParse(TokenJSON, getOpenPencilPluginValue(nc, TOKEN_PLUGIN_KEY))
   const token = parsed.success ? parsed.output : {}
   const expressions = Object.entries(token.expressions ?? {}).filter(([mode, expression]) =>
     sameNumber(valuesByMode[mode], expression.resolved)
@@ -75,7 +68,10 @@ export function readVariableToken(
 }
 
 export function readModeConditions(nc: NodeChange): Record<string, string> {
-  const parsed = v.safeParse(ModeConditionsSchema, openPencilValue(nc, MODE_CONDITIONS_PLUGIN_KEY))
+  const parsed = v.safeParse(
+    ModeConditionsJSON,
+    getOpenPencilPluginValue(nc, MODE_CONDITIONS_PLUGIN_KEY)
+  )
   return parsed.success ? parsed.output : {}
 }
 
