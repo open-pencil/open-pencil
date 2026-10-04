@@ -1,10 +1,9 @@
-import { readFile } from 'node:fs/promises'
-
 import { defineCommand } from 'citty'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { dim, entity, fail, fmtList, ok, printError, warn } from '#cli/format'
 import { documentWriteOptions, writeFigDocument } from '#cli/headless'
+import { readTextSource } from '#cli/input'
 import { runToolData } from '#cli/tool-data'
 
 interface PatchResult {
@@ -21,13 +20,6 @@ interface ApplyResult {
   applied?: number
   failed?: number
   results?: PatchResult[]
-}
-
-async function readPatch(source: string): Promise<string> {
-  if (source !== '-') return readFile(source, 'utf-8')
-  const chunks: Buffer[] = []
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer)
-  return Buffer.concat(chunks).toString('utf-8')
 }
 
 function patchDetails(row: PatchResult) {
@@ -75,7 +67,7 @@ export default defineCommand({
     const { result, graph } = await runToolData(
       args.file,
       'diff_apply',
-      { patch: await readPatch(args.patch), dryRun, force: !!args.force },
+      { patch: await readTextSource(args.patch), dryRun, force: !!args.force },
       args
     )
     const report = result as ApplyResult

@@ -1,7 +1,7 @@
 import { renderTree } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { reconcileRenderedLayers, type TreeNode } from '@open-pencil/design-jsx'
-import type { Vector } from '@open-pencil/scene-graph'
+import type { SceneNode, Vector } from '@open-pencil/scene-graph'
 
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import { evaluateDesignJSX } from '@/app/code/sandbox/evaluate'
@@ -138,6 +138,26 @@ export async function previewDesignJSX(
     store.select(selectionBefore)
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
+}
+
+/**
+ * Applies canvas edits made while the code waited to render, which its preview drew over. They
+ * came after the code, so they win, and join the edit's undo step. Layers the preview removed
+ * are skipped.
+ */
+export function reapplyCanvasEdits(
+  store: EditorStore,
+  session: DesignJSXEditSession,
+  edits: ReadonlyMap<string, Partial<SceneNode>>
+): void {
+  const present = [...edits].filter(([id]) => store.graph.getNode(id))
+  if (present.length === 0) return
+  const before = store.snapshotPage()
+  const selection = [...store.state.selectedIds]
+  for (const [id, changes] of present) store.graph.updateNode(id, changes)
+  computeAllLayouts(store.graph, store.state.currentPageId)
+  store.requestRender()
+  recordPreview(store, session, before, selection)
 }
 
 function sameIds(a: readonly string[], b: readonly string[]): boolean {

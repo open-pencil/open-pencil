@@ -20,6 +20,8 @@ Das Werkzeug `render`, verfügbar in AI-Chat, MCP und CLI `eval`, akzeptiert JSX
 </Frame>
 ```
 
+In Anwendungs- oder Headless-Bibliothekscode importieren Sie `Frame`, `Text` und weitere Authoring-Exporte aus `@open-pencil/design-jsx` und erzeugen die Objekte mit `renderTree` oder `renderJSX` aus `@open-pencil/core/design-jsx`, die Icons, SVG-Umwandlung und Layout ergänzen. Um die Bäume als TSX zu schreiben, setzen Sie in der `tsconfig.json` `"jsxImportSource": "@open-pencil/design-jsx"` zusammen mit `"jsx": "react-jsx"` oder fügen der Datei den Kommentar `/** @jsxImportSource @open-pencil/design-jsx */` hinzu. Welche APIs `eval` bereitstehen, bestimmt die Skriptumgebung; Paket-Exporte sind dort nicht automatisch global verfügbar.
+
 ## Elemente
 
 JSX-Elemente wie `<Frame>`, `<Rectangle>`, `<Ellipse>`, `<Text>`, `<Line>`, `<Vector>`, `<Group>` und `<Section>` erzeugen die entsprechenden OpenPencil-Objekte.
@@ -40,4 +42,4 @@ openpencil export design.fig -f jsx
 openpencil export design.fig -f jsx --style tailwind
 ```
 
-Exportiertes JSX kann als Code verändert und erneut gerendert werden. Unterschiede können in Pull Requests geprüft und in der Versionsverwaltung gespeichert werden.
+Exportiertes JSX kann als Code verändert und erneut gerendert werden. Der Export schreibt ausgeblendete und gesperrte Ebenen, Constraints, Größenbegrenzungen, gestapelte Füllungen, Verlaufs- und Bildfüllungen, Konturen, Effekte, Masken und Variablenbindungen. Das erneute Rendern eines Exports bildet sie daher nach, und `diff_jsx` zeigt Änderungen an jedem davon. Rich Text mit gemischten Stilen, Vektorpfade, Layoutraster, geteilte Stile und Definitionen von Komponenteneigenschaften werden noch nicht geschrieben. Instanzen werden als Rahmen mit ihrem Inhalt geschrieben, sodass exportiertes JSX für sich allein steht. Unterschiede können in Pull Requests geprüft und in der Versionsverwaltung gespeichert werden.

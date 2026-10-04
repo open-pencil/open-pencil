@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 export interface SceneOracleNode {
   path: number[]
   type: string
@@ -13,6 +15,22 @@ export interface SceneOracleNode {
   fills: string[]
   strokes: string[]
 }
+
+/** One node of a scene oracle, as captures and baseline files store it. */
+export const SceneOracleNodeSchema: v.GenericSchema<unknown, SceneOracleNode> = v.object({
+  path: v.array(v.number()),
+  type: v.string(),
+  name: v.string(),
+  visible: v.boolean(),
+  x: v.number(),
+  y: v.number(),
+  width: v.number(),
+  height: v.number(),
+  text: v.nullable(v.string()),
+  main: v.nullable(v.string()),
+  fills: v.array(v.string()),
+  strokes: v.array(v.string())
+})
 
 export interface SceneOracleDifference {
   path: number[]

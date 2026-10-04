@@ -148,6 +148,46 @@ describe('storage library catalog', () => {
     }
   })
 
+  test('rejects image bytes with missing indexes, which hashes do not cover', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const graph = sourceGraph()
+    const button = [...graph.getAllNodes()].find((node) => node.componentKey === 'button')
+    if (!button) throw new Error('Expected component')
+    graph.images.set('logo', new Uint8Array([17, 34, 51]))
+    graph.updateNode(button.id, {
+      fills: [
+        {
+          type: 'IMAGE',
+          visible: true,
+          opacity: 1,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          imageHash: 'logo',
+          imageScaleMode: 'FILL'
+        }
+      ]
+    })
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph
+    })
+    const key = `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
+    const bytes = objects.values.get(key)
+    if (!bytes) throw new Error('Expected revision object')
+    const source = new TextDecoder().decode(bytes)
+    expect(source).toContain('{"$bytes":"ESIz"}')
+    objects.values.set(
+      key,
+      // The index-keyed form older revisions used, with byte 1 missing.
+      new TextEncoder().encode(source.replace('{"$bytes":"ESIz"}', '{"0":17,"2":51}'))
+    )
+
+    await expect(
+      catalog.getRevision('design-system', revision.manifest.revisionId)
+    ).rejects.toThrow('Invalid component library revision')
+  })
+
   test('rejects updates when the provider cannot return latest-manifest ETags', async () => {
     const objects = new MemoryObjects()
     const catalog = new StorageLibraryCatalog(objects)

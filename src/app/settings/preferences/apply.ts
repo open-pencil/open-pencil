@@ -14,7 +14,12 @@ export function setSnappingPreference(
   preference: keyof SnappingPreferences,
   enabled: boolean
 ): void {
-  updateSnappingPreferences({ [preference]: enabled })
+  applySnappingPreferences({ [preference]: enabled })
+}
+
+/** Stores snapping changes and pushes them to every open editor and the native menu. */
+export function applySnappingPreferences(changes: Partial<SnappingPreferences>): void {
+  updateSnappingPreferences(changes)
   const snapping = appPreferences.value.editing.snapping
   for (const tab of getTabsSnapshot()) {
     tab.store.state.snappingPreferences = { ...snapping }

@@ -64,7 +64,9 @@ describe('Renderer effect ordering (Behavioral)', () => {
           spread: 0
         }
       ],
-      strokes: [{ visible: true, weight: 1, opacity: 1, color: { r: 0, g: 0, b: 0, a: 1 } }]
+      strokes: [
+        { type: 'SOLID', visible: true, weight: 1, opacity: 1, color: { r: 0, g: 0, b: 0, a: 1 } }
+      ]
     })
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node)

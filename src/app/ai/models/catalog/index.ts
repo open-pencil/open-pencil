@@ -36,7 +36,7 @@ type ModelsDevProvider = {
 
 type ModelsDevCatalog = Record<string, ModelsDevProvider>
 
-const CachedModelsDevCatalog = v.record(
+const ModelsDevCatalogSchema = v.record(
   v.string(),
   v.object({
     models: v.optional(
@@ -83,7 +83,7 @@ async function loadCatalog(
   if (options.useCache) {
     const cached = await readCacheJSON(
       MODELS_DEV_CACHE_KEY,
-      CachedModelsDevCatalog,
+      ModelsDevCatalogSchema,
       MODELS_DEV_CACHE_TTL_MS
     )
     if (cached) return cached
@@ -91,7 +91,11 @@ async function loadCatalog(
   try {
     const response = await fetcher(MODELS_DEV_URL)
     if (!response.ok) throw new Error(`models.dev catalog request failed: ${response.status}`)
-    const catalog = (await response.json()) as ModelsDevCatalog
+    // Validated like the cached copy, so a bad entry falls back instead of crashing the list.
+    const catalog = v.parse(
+      v.pipe(v.string(), v.parseJson(), ModelsDevCatalogSchema),
+      await response.text()
+    )
     if (options.useCache) await writeCacheJSON(MODELS_DEV_CACHE_KEY, catalog)
     return catalog
   } catch {

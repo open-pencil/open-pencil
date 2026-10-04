@@ -67,6 +67,24 @@ export function createStructureActions(ctx: EditorContext) {
     })
   }
 
+  /**
+   * Turns a group into a frame in place. The layer keeps its id, children, bounds and look: a
+   * group has no fill and does not clip, and the frame starts the same way.
+   */
+  function convertGroupToFrame(nodeId: string) {
+    if (ctx.graph.getNode(nodeId)?.type !== 'GROUP') return
+    const apply = (type: 'GROUP' | 'FRAME') => {
+      ctx.graph.updateNode(nodeId, { type })
+      ctx.runLayoutForNode(nodeId)
+    }
+    apply('FRAME')
+    ctx.undo.push({
+      label: 'Convert to frame',
+      forward: () => apply('FRAME'),
+      inverse: () => apply('GROUP')
+    })
+  }
+
   function booleanOperationSelected(selectedNodes: SceneNode[], operation: BooleanOperation) {
     return booleanOperationSelectedImpl(ctx, selectedNodes, operation)
   }
@@ -142,6 +160,7 @@ export function createStructureActions(ctx: EditorContext) {
     wrapInAutoLayout,
     groupSelected,
     frameSelection,
+    convertGroupToFrame,
     booleanOperationSelected,
     ungroupSelected,
     flattenSelected,

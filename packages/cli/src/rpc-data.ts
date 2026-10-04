@@ -1,7 +1,7 @@
 import { executeRPCCommand } from '@open-pencil/core/rpc'
 
-import { isAppMode, requireFile, rpc } from '#cli/app-client'
-import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app-target'
+import { isAppMode, requireFile, rpc } from '#cli/app/client'
+import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app/target'
 import { loadDocument, prepareDocumentForRPC } from '#cli/headless'
 
 type RPCArgs = { [key: string]: unknown }

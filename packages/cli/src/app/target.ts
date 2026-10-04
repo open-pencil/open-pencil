@@ -1,3 +1,12 @@
+/** The document and page the running app resolved for a command. */
+export type AppTarget = {
+  documentId: string
+  documentName: string
+  path?: string
+  pageId: string
+  pageName: string
+}
+
 export type AppTargetCLIArgs = {
   'document-id'?: string
   'page-id'?: string

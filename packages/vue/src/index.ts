@@ -126,6 +126,7 @@ export { isStrokeCapValue } from '#vue/controls/stroke/helpers'
 export {
   applySolidFillColor,
   applySolidStrokeColor,
+  applyStrokePaint,
   BUILT_IN_COLOR_FORMATS,
   fromPercent,
   toPercent,

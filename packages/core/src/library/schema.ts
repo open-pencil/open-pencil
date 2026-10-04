@@ -10,7 +10,9 @@ const SerializedNodeShape = v.looseObject({
   id: v.string(),
   type: v.string(),
   parentId: v.nullable(v.string()),
-  childIds: v.array(v.string())
+  childIds: v.array(v.string()),
+  // Asset keys fall back to `source.id`, which is null for nodes that never came from a file.
+  source: v.looseObject({ id: v.nullable(v.string()) })
 })
 
 const SerializedVariableShape = v.looseObject({
@@ -41,6 +43,11 @@ const SerializedBytes = v.union([
   v.instance(Uint8Array),
   v.pipe(
     v.record(v.string(), v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(255))),
+    // A gap or a stray key would silently shift the bytes; asset hashes do not cover images.
+    v.check(
+      (bytes) => Object.keys(bytes).every((key, index) => key === String(index)),
+      'Expected byte indexes 0 to length - 1'
+    ),
     v.transform((bytes) => Uint8Array.from(Object.values(bytes)))
   )
 ])

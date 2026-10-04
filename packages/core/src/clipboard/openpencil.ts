@@ -61,12 +61,13 @@ interface SerializedClipboardNode {
 }
 
 const finiteNumber = v.pipe(v.number(), v.finite())
+const byte = v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(255))
 
 const SerializedGeometry = v.optional(
   v.array(
     v.looseObject({
       windingRule: v.picklist(['NONZERO', 'EVENODD']),
-      commandsBlob: v.record(v.string(), v.number())
+      commandsBlob: v.record(v.string(), byte)
     })
   )
 )

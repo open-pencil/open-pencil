@@ -14,6 +14,6 @@
   "dependencies": {
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "citty": "^0.1.6",
-    "es-toolkit": "^1.51.0"
+    "es-toolkit": "^1.52.0"
   }
 }

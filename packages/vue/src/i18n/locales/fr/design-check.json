@@ -65,6 +65,8 @@
   "fixRoundPixels": "Arrondir au pixel entier",
   "fixUseValue": "Remplacer par {value}",
   "fixFullRadius": "Utiliser un rayon complet",
+  "fixConvertToFrame": "Convertir en cadre",
+  "fixDeleteLayer": "Supprimer le calque",
   "fixAll": "Tout corriger ({count})",
   "ruleNoDefaultNames": "Nom de calque par défaut",
   "ruleNoDefaultNamesHelp": "Des noms descriptifs facilitent la recherche, la transmission et la réutilisation des calques.",

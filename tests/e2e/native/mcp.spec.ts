@@ -5,6 +5,8 @@ import * as v from 'valibot'
 
 import { invokeNative } from '#tests/helpers/tauri/invoke'
 
+const HealthJSON = v.pipe(v.string(), v.parseJson(), v.object({ status: v.string() }))
+
 const DiscoveryFileJSON = v.pipe(
   v.string(),
   v.parseJson(),
@@ -155,7 +157,7 @@ describe('native MCP server lifecycle', () => {
       headers: { authorization: `Bearer ${discovery.authToken}` }
     })
     assert.equal(health.status, 200)
-    assert.equal(((await health.json()) as { status: string }).status, 'ok')
+    assert.equal(v.parse(HealthJSON, await health.text()).status, 'ok')
 
     // Hiding the resolved binary must report the missing install, and restoring
     // it must recover without relaunching the app.

@@ -65,6 +65,8 @@
   "fixRoundPixels": "Auf ganze Pixel runden",
   "fixUseValue": "Auf {value} ändern",
   "fixFullRadius": "Vollen Radius verwenden",
+  "fixConvertToFrame": "In Rahmen umwandeln",
+  "fixDeleteLayer": "Ebene löschen",
   "fixAll": "Alle {count} beheben",
   "ruleNoDefaultNames": "Standardname der Ebene",
   "ruleNoDefaultNamesHelp": "Aussagekräftige Namen machen Ebenen leichter auffindbar, übergebbar und wiederverwendbar.",

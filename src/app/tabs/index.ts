@@ -10,6 +10,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { confirmAllDocuments } from '@/app/document/close/all'
+import { confirmDocumentClose } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -153,13 +154,19 @@ export function switchTab(tabId: string): boolean {
   return true
 }
 
-export async function closeTab(tabId: string): Promise<void> {
+/**
+ * Close a tab, asking whether to save unsaved changes. Pass `unsaved` to decide without
+ * asking, as automation must: nobody may be there to answer.
+ */
+export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Promise<void> {
   const idx = tabsRef.value.findIndex((t) => t.id === tabId)
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
   if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
-  const choice = await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
+  const choice = unsaved
+    ? await confirmDocumentClose(closingTab.store, async () => unsaved)
+    : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
   if (choice === 'cancel') return
   if (choice === 'discard') await closingTab.store.discardRecovery()
   else await closingTab.store.persistRecoveryNow()

@@ -17,21 +17,22 @@ const CachedModelOptions = v.array(
   })
 ) satisfies v.GenericSchema<unknown, ModelOption[]>
 
-type OpenRouterModel = {
-  id?: unknown
-  name?: unknown
-  supported_parameters?: unknown
-  architecture?: {
-    input_modalities?: unknown
-  }
-  top_provider?: {
-    max_completion_tokens?: unknown
-  }
-}
+const OpenRouterModelSchema = v.looseObject({
+  id: v.optional(v.unknown()),
+  name: v.optional(v.unknown()),
+  supported_parameters: v.optional(v.unknown()),
+  architecture: v.nullish(v.looseObject({ input_modalities: v.optional(v.unknown()) })),
+  top_provider: v.nullish(v.looseObject({ max_completion_tokens: v.optional(v.unknown()) }))
+})
 
-type OpenRouterModelsResponse = {
-  data?: OpenRouterModel[]
-}
+type OpenRouterModel = v.InferOutput<typeof OpenRouterModelSchema>
+
+// Entries are checked one by one in `fetchOpenRouterModels`, so one odd model keeps the rest.
+const OpenRouterModelsResponseJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ data: v.optional(v.array(v.unknown())) })
+)
 
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models'
 const OPENROUTER_MODELS_CACHE_KEY = 'openrouter/models'
@@ -71,8 +72,11 @@ export function normalizeOpenRouterModel(model: OpenRouterModel): ModelOption | 
 async function fetchOpenRouterModels(fetcher: typeof fetch): Promise<ModelOption[]> {
   const response = await fetcher(OPENROUTER_MODELS_URL)
   if (!response.ok) throw new Error(`OpenRouter models request failed: ${response.status}`)
-  const json = (await response.json()) as OpenRouterModelsResponse
-  return json.data?.map(normalizeOpenRouterModel).filter((model) => model !== null) ?? []
+  const json = v.parse(OpenRouterModelsResponseJSON, await response.text())
+  return (json.data ?? []).flatMap((entry) => {
+    const model = v.is(OpenRouterModelSchema, entry) ? normalizeOpenRouterModel(entry) : null
+    return model ? [model] : []
+  })
 }
 
 async function listOpenRouterModels(fetcher: typeof fetch = fetch): Promise<ModelOption[]> {

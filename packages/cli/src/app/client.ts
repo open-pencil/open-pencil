@@ -5,6 +5,8 @@ import { readDiscoveryFile } from '@open-pencil/mcp/discovery'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
 
+import type { AppTarget } from '#cli/app/target'
+
 /** Maximum time to wait for a single RPC request before giving up. */
 const RPC_TIMEOUT_MS = 30_000
 
@@ -78,12 +80,18 @@ function doRequest(
   })
 }
 
+/** A successful app response: the command result plus the document it ran against, if any. */
+export interface RPCResponse<T> {
+  result: T
+  target?: AppTarget
+}
+
 async function doRPC<T>(
   info: DiscoveryInfo,
   command: string,
   args: unknown,
   forceTcp = false
-): Promise<T> {
+): Promise<RPCResponse<T>> {
   const { status, data } = await doRequest(info, '/rpc', 'POST', { command, args }, forceTcp)
 
   if (status === 401) {
@@ -96,9 +104,9 @@ async function doRPC<T>(
     throw new Error(errData.error ?? `RPC failed: HTTP ${status}`)
   }
 
-  const body = data as { ok?: boolean; result?: T; error?: string }
+  const body = data as { ok?: boolean; result?: T; target?: AppTarget; error?: string }
   if (body.ok === false) throw new Error(body.error ?? 'RPC failed')
-  return body.result as T
+  return { result: body.result as T, ...(body.target ? { target: body.target } : {}) }
 }
 
 /** Error class to distinguish auth failures for retry logic. */
@@ -121,7 +129,11 @@ function isSocketConnectionError(error: unknown): boolean {
   )
 }
 
-async function rpcWithFallback<T>(info: DiscoveryInfo, command: string, args: unknown): Promise<T> {
+async function rpcWithFallback<T>(
+  info: DiscoveryInfo,
+  command: string,
+  args: unknown
+): Promise<RPCResponse<T>> {
   try {
     return await doRPC<T>(info, command, args)
   } catch (error) {
@@ -138,6 +150,14 @@ async function rpcWithFallback<T>(info: DiscoveryInfo, command: string, args: un
 }
 
 export async function rpc<T = unknown>(command: string, args: unknown = {}): Promise<T> {
+  return (await rpcResponse<T>(command, args)).result
+}
+
+/** Like `rpc`, but keeps the target document the app resolved for the command. */
+export async function rpcResponse<T = unknown>(
+  command: string,
+  args: unknown = {}
+): Promise<RPCResponse<T>> {
   try {
     return await rpcWithFallback<T>(await resolveDiscovery(), command, args)
   } catch (error) {

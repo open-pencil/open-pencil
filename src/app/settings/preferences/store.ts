@@ -4,15 +4,18 @@ import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pe
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 
-export type AnimationPreference = 'system' | 'off'
+export const ANIMATION_PREFERENCES = ['system', 'off'] as const
+export type AnimationPreference = (typeof ANIMATION_PREFERENCES)[number]
 
-export type ReasoningDisplay = 'collapsed' | 'while-thinking' | 'expanded'
+export const REASONING_DISPLAYS = ['collapsed', 'while-thinking', 'expanded'] as const
+export type ReasoningDisplay = (typeof REASONING_DISPLAYS)[number]
 
 export const CHANGE_PREVIEW_SIZES = ['off', 'small', 'medium', 'large'] as const
 /** How large the before/after images kept for each AI edit are; `off` keeps only the JSX diff. */
 export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
 
-export type CanvasRenderingMode = 'retained' | 'tiled'
+export const CANVAS_RENDERING_MODES = ['retained', 'tiled'] as const
+export type CanvasRenderingMode = (typeof CANVAS_RENDERING_MODES)[number]
 
 export const DESIGN_CHECK_PRESETS = ['recommended', 'strict', 'accessibility'] as const
 export type DesignCheckPreset = (typeof DESIGN_CHECK_PRESETS)[number]

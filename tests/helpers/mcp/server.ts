@@ -12,12 +12,28 @@ import {
 } from '@open-pencil/core'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 
-export interface HealthResponse {
-  status: string
-  version: string
-  authRequired: boolean
-  tools?: ToolDescriptor[]
-  discoveryPath?: string
+const ToolDescriptorShape = v.looseObject({ name: v.string(), enabled: v.boolean() })
+
+export const HealthResponseSchema = v.object({
+  status: v.string(),
+  version: v.string(),
+  authRequired: v.boolean(),
+  tools: v.optional(v.array(v.custom<ToolDescriptor>((value) => v.is(ToolDescriptorShape, value)))),
+  discoveryPath: v.optional(v.string())
+})
+
+export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>
+
+/** Read a JSON response body or file, checked against `schema`. */
+export async function readJSON<T>(
+  source: { text(): Promise<string> },
+  schema: v.GenericSchema<unknown, T>
+): Promise<T> {
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), await source.text())
+}
+
+export function readHealth(response: Response): Promise<HealthResponse> {
+  return readJSON(response, HealthResponseSchema)
 }
 
 export interface MockBrowserRequest {
@@ -198,6 +214,17 @@ function randomHex(bytes: number): string {
     .join('')
 }
 
+// App commands whose mock result does not depend on the graph or arguments.
+const FIXED_MOCK_RESULTS: Partial<Record<string, object>> = {
+  save_file: {},
+  new_document: {},
+  open_file: {},
+  close_file: { closed: true },
+  activate_document: { activated: true },
+  undo: { applied: true, label: 'Agent: mock' },
+  redo: { applied: true, label: 'Agent: mock' }
+}
+
 async function handleMockCommand(
   graph: SceneGraph,
   command: string,
@@ -234,12 +261,12 @@ async function handleMockCommand(
     }
   }
 
-  if (command === 'save_file' || command === 'new_document' || command === 'open_file') {
-    return {}
-  }
+  const fixed = FIXED_MOCK_RESULTS[command]
+  if (fixed) return fixed
 
-  if (command === 'close_file') {
-    return { closed: true }
+  if (command === 'get_settings' || command === 'update_settings') {
+    const settings = (rawArgs as { settings?: unknown } | undefined)?.settings
+    return { settings: settings ?? { appearance: { theme: 'dark' } } }
   }
 
   return executeRPCCommand(graph, command, args ?? {})
@@ -320,7 +347,7 @@ export async function waitForBrowserRegistration(port: number, timeoutMs = 5000)
   while (Date.now() - start < timeoutMs) {
     try {
       const resp = await fetch(`http://127.0.0.1:${port}/health`)
-      const health = (await resp.json()) as HealthResponse
+      const health = await readHealth(resp)
       lastStatus = health.status
       if (health.status === 'ok') return
     } catch {

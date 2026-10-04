@@ -25,6 +25,7 @@ Rows that can be fixed in one step show a button on hover:
 - A hardcoded color that matches one of the document's color variables binds to it (link button). The row names the variable.
 - Subpixel positions and sizes round to whole pixels. Values that auto layout or text resizing sets, and vector artwork and the parts of groups, are left alone.
 - Off-scale corner radius and spacing change to the nearest scale value, and text below the minimum size grows to it (wand button). These change the design, so they apply one row at a time.
+- A group converts to a frame in place, keeping its layers, position, and look (frame button), and a hidden layer can be deleted (trash button). Neither is offered for locked layers or layers inside a component or instance, whose structure belongs to the component.
 
 Binding colors and rounding pixels keep the design as it looks, so their groups also offer **Bind all** or **Fix all**. Every fix is a single undo step.
 

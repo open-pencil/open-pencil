@@ -79,10 +79,56 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       : []),
     {
       name: 'close_file',
-      description: 'Close an open document tab, prompting to save unsaved changes.',
+      description:
+        'Close an open document tab. With unsaved changes it fails unless unsaved is "save" or "discard"; it never prompts in the app.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['document:write', 'filesystem:write'],
+      enabled: true
+    },
+    {
+      name: 'activate_document',
+      description:
+        'Bring an open document tab to the front in the app, optionally switching it to a page.',
       effect: 'read',
       availability: 'default',
       capabilities: ['document:read'],
+      enabled: true
+    },
+    {
+      name: 'undo',
+      description:
+        "Undo the newest change made through MCP or the CLI in a document. Fails if the newest change was made in the editor, so the user's work is never reverted.",
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['document:write'],
+      enabled: true
+    },
+    {
+      name: 'redo',
+      description:
+        'Redo the newest change undone through MCP or the CLI. Fails if the newest undone change was made in the editor.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['document:write'],
+      enabled: true
+    },
+    {
+      name: 'get_settings',
+      description:
+        'Read editor settings: appearance (theme, language, animations), snapping, canvas rendering, recovery, AI chat, and design check preferences.',
+      effect: 'read',
+      availability: 'default',
+      capabilities: ['settings:read'],
+      enabled: true
+    },
+    {
+      name: 'update_settings',
+      description:
+        'Change editor settings with a partial object shaped like get_settings output. Returns the applied patch. Credentials, models, MCP connections, storage, and tool access are not exposed.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['settings:write'],
       enabled: true
     },
     {
