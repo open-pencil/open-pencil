@@ -73,7 +73,7 @@ const candidates = computed<AppPickerItem[]>(() =>
   <PopoverRoot v-model:open="popupOpen">
     <PopoverTrigger as-child>
       <IconButton :label="panels.slotSettings" data-property="slot-settings">
-        <icon-lucide-settings-2 class="size-3.5" />
+        <icon-lucide-sliders-horizontal class="size-3.5" />
       </IconButton>
     </PopoverTrigger>
     <PopoverPortal v-if="portalActive">

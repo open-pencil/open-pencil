@@ -26,7 +26,10 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
         <label class="text-[11px] text-muted">
           {{ trackProp === 'gridTemplateColumns' ? panels.columns : panels.rows }}
         </label>
-        <IconButton @click="ctx.addTrack(trackProp)">
+        <IconButton
+          :label="trackProp === 'gridTemplateColumns' ? panels.addGridColumn : panels.addGridRow"
+          @click="ctx.addTrack(trackProp)"
+        >
           <icon-lucide-plus class="size-3.5" />
         </IconButton>
       </div>
@@ -52,8 +55,14 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
               })
             "
           />
-          <IconButton v-if="ctx.node[trackProp].length > 1" @click="ctx.removeTrack(trackProp, i)">
-            <icon-lucide-x class="size-3.5" />
+          <IconButton
+            v-if="ctx.node[trackProp].length > 1"
+            :label="
+              trackProp === 'gridTemplateColumns' ? panels.removeGridColumn : panels.removeGridRow
+            "
+            @click="ctx.removeTrack(trackProp, i)"
+          >
+            <icon-lucide-minus class="size-3.5" />
           </IconButton>
         </div>
       </div>
