@@ -88,7 +88,7 @@ function takeCanvasEdits(): Map<string, Partial<SceneNode>> {
   return edits
 }
 
-/** Hands edits taken by a superseded preview to the next one, behind any made since. */
+/** Hands edits taken by a superseded or failed preview to the next one, behind any made since. */
 function returnCanvasEdits(edits: ReadonlyMap<string, Partial<SceneNode>>) {
   for (const [id, changes] of edits) canvasEdits.set(id, { ...changes, ...canvasEdits.get(id) })
 }
@@ -215,6 +215,9 @@ async function runPreview(version: number): Promise<void> {
   if (!result.ok) {
     status.value = 'error'
     error.value = result.error
+    // The code still waits to render, so its next preview applies these and later edits.
+    previewDue = true
+    returnCanvasEdits(edits)
     return
   }
   status.value = 'updated'

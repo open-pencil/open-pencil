@@ -396,3 +396,20 @@ test('code follows a value while it is dragged and goes back when the drag is ca
   expect(during).toContain('w={360}')
   expect(after).toContain('w={320}')
 })
+
+test('a canvas edit while replaced code does not render survives the corrected code', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  const valid = (await codeText(editor.page)).replace(/(name="Card"[^>]*?) h=\{160\}/, '$1 h={170}')
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(`${valid}\n<Frame`)
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Preview failed')
+
+  await editLayer(editor.page, 'Card', { width: 400 })
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(valid)
+
+  await expect.poll(() => cardSize(editor.page)).toBe('400x170')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
+})
