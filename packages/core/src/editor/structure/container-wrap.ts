@@ -4,19 +4,24 @@ import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinat
 import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
 
+/** The parent all these layers share, or null when they are not siblings. */
+export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+  const first = nodes.at(0)
+  if (!first) return null
+  const parentId = first.parentId ?? ctx.state.currentPageId
+  return nodes.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId)
+    ? parentId
+    : null
+}
+
 export function wrapSelectionInContainer(
   ctx: EditorContext,
   containerType: 'GROUP' | 'FRAME' | 'COMPONENT' | 'COMPONENT_SET',
   selectedNodes: SceneNode[],
   extraProps?: Partial<SceneNode>
 ) {
-  if (selectedNodes.length === 0) return null
-
-  const parentId = selectedNodes[0].parentId ?? ctx.state.currentPageId
-  const sameParent = selectedNodes.every(
-    (n) => (n.parentId ?? ctx.state.currentPageId) === parentId
-  )
-  if (!sameParent) return null
+  const parentId = sharedParentId(ctx, selectedNodes)
+  if (!parentId) return null
 
   const parent = ctx.graph.getNode(parentId)
   if (!parent) return null

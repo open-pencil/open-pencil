@@ -2,7 +2,7 @@ import type { SceneGraph } from '../index'
 import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
 import { cloneChildrenWithMapping } from '../instances/sync'
 import type { SceneNode } from '../types'
-import { ownsSlotContent, slotPropertyId } from './slots'
+import { ownsSlotContent, slotPropertyId } from './frames'
 
 /**
  * Where layers may be added, moved, or removed under a parent:

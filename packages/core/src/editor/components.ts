@@ -7,6 +7,7 @@ import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
 import { createSlotActions } from './components/slots'
+import { createSlotAuthoringActions } from './components/slots/authoring'
 import { createVariantActions } from './components/variants'
 import type { EditorContext } from './types'
 
@@ -87,6 +88,7 @@ export function createComponentActions(ctx: EditorContext) {
     ...focusActions,
     ...variantActions,
     ...componentPropertyActions,
-    ...createSlotActions(ctx)
+    ...createSlotActions(ctx),
+    ...createSlotAuthoringActions(ctx)
   }
 }

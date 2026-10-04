@@ -2,7 +2,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '../'
-import { ownsSlotContent, slotPropertyId } from '../components/slots'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
 import type { NodeCloneMode } from '../copy'
 import {
@@ -12,6 +11,7 @@ import {
   type InstanceOverrideState
 } from '../instance-overrides'
 import { scaleNodeChanges } from '../scaling/node'
+import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { INSTANCE_SYNC_FIELDS } from './fields'
 
@@ -411,7 +411,12 @@ export function syncChildren(
     const componentScale =
       (compChild.componentScale * instParent.componentScale) / compParent.componentScale
     const source = sourceInTargetCoordinates(compChild, componentScale)
-    const updates: Partial<SceneNode> = { componentScale }
+    // Which properties a layer serves is the component's to say; a slot or exposed layer
+    // created on the component becomes one in every instance.
+    const updates: Partial<SceneNode> = {
+      componentScale,
+      componentPropertyReferences: structuredClone(compChild.componentPropertyReferences)
+    }
     syncBindingFields(instChild, source, updates, protectedField)
     for (const key of INSTANCE_SYNC_FIELDS) {
       if (key === 'boundVariables') continue

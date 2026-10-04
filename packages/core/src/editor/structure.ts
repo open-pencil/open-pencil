@@ -63,7 +63,7 @@ export function createStructureActions(ctx: EditorContext) {
   }
 
   function wrapInAutoLayout(selectedNodes: SceneNode[]) {
-    wrapInAutoLayoutImpl(ctx, selectedNodes)
+    return wrapInAutoLayoutImpl(ctx, selectedNodes)
   }
 
   function groupSelected(selectedNodes: SceneNode[]) {

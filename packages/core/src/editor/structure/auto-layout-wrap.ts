@@ -2,17 +2,14 @@ import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
 import { prepareSlotEdits } from '#core/editor/components/slots'
+import { sharedParentId } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
-export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[]) {
-  if (selectedNodes.length === 0) return
-
-  const parentId = selectedNodes[0].parentId ?? ctx.state.currentPageId
-  const sameParent = selectedNodes.every(
-    (n) => (n.parentId ?? ctx.state.currentPageId) === parentId
-  )
-  if (!sameParent) return
+/** Wrap sibling layers in a new auto layout frame; returns the frame, or null if they are not siblings. */
+export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[]): string | null {
+  const parentId = sharedParentId(ctx, selectedNodes)
+  if (!parentId) return null
   prepareSlotEdits(ctx, [parentId], { allowLocked: true })
 
   const prevSelection = new Set(ctx.state.selectedIds)
@@ -69,4 +66,5 @@ export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[])
       ctx.setSelectedIds(prevSelection)
     }
   })
+  return frameId
 }

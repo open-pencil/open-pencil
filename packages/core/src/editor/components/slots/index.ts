@@ -4,59 +4,14 @@ import {
   ownsSlotContent,
   resetSlotContent,
   slotScope,
-  type SceneNode,
   type SlotScope
 } from '@open-pencil/scene-graph'
 
-import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import type { EditorContext } from '#core/editor/types'
 
+import { recordSubtreeEdit } from './history'
+
 type InstanceSlot = Extract<SlotScope, { kind: 'slot' }>
-
-/** Put back a recorded instance subtree in place of the live one, at the same position. */
-function replaceSubtree(
-  ctx: Pick<EditorContext, 'graph'>,
-  rootId: string,
-  snapshot: Map<string, SceneNode>
-): void {
-  const root = snapshot.get(rootId)
-  const parentId = root?.parentId
-  if (!root || !parentId) return
-  const index = ctx.graph.getNode(parentId)?.childIds.indexOf(rootId) ?? -1
-  ctx.graph.deleteNode(rootId)
-  restoreSubtree(ctx.graph, root, parentId, snapshot)
-  if (index >= 0) ctx.graph.insertChildAt(rootId, parentId, index)
-}
-
-/**
- * Run an edit of one instance's slot content as one undo step that restores the whole
- * instance; slot edits unlink and recreate layers, which per-field undo cannot express.
- */
-function recordInstanceEdit(
-  ctx: EditorContext,
-  label: string,
-  instanceId: string,
-  mutate: () => void
-): void {
-  const before = snapshotSubtree(ctx.graph, instanceId)
-  mutate()
-  const after = snapshotSubtree(ctx.graph, instanceId)
-  ctx.runLayoutForNode(instanceId)
-  ctx.requestRender()
-  ctx.undo.push({
-    label,
-    forward: () => {
-      replaceSubtree(ctx, instanceId, after)
-      ctx.runLayoutForNode(instanceId)
-      ctx.requestRender()
-    },
-    inverse: () => {
-      replaceSubtree(ctx, instanceId, before)
-      ctx.runLayoutForNode(instanceId)
-      ctx.requestRender()
-    }
-  })
-}
 
 /**
  * Check every parent a structural edit touches. Returns false when one is a locked part of
@@ -76,9 +31,7 @@ export function prepareSlotEdits(
   }
   for (const scope of slots.values()) {
     if (ownsSlotContent(ctx.graph, scope.frame, scope.propertyId)) continue
-    recordInstanceEdit(ctx, 'Edit slot', scope.instance.id, () =>
-      claimSlotContent(ctx.graph, scope)
-    )
+    recordSubtreeEdit(ctx, 'Edit slot', scope.instance.id, () => claimSlotContent(ctx.graph, scope))
   }
   return true
 }
@@ -107,7 +60,7 @@ export function createSlotActions(ctx: EditorContext) {
   function resetSlot(frameId: string): void {
     const scope = slotAt(frameId)
     if (!scope) return
-    recordInstanceEdit(ctx, 'Reset slot', scope.instance.id, () =>
+    recordSubtreeEdit(ctx, 'Reset slot', scope.instance.id, () =>
       resetSlotContent(ctx.graph, scope)
     )
   }
@@ -115,7 +68,7 @@ export function createSlotActions(ctx: EditorContext) {
   function clearSlot(frameId: string): void {
     const scope = slotAt(frameId)
     if (!scope) return
-    recordInstanceEdit(ctx, 'Delete slot contents', scope.instance.id, () =>
+    recordSubtreeEdit(ctx, 'Delete slot contents', scope.instance.id, () =>
       clearSlotContent(ctx.graph, scope)
     )
   }
@@ -125,7 +78,7 @@ export function createSlotActions(ctx: EditorContext) {
     const scope = slotAt(frameId)
     if (!scope || ctx.graph.getNode(componentId)?.type !== 'COMPONENT') return null
     const created: { id: string | null } = { id: null }
-    recordInstanceEdit(ctx, 'Add instance', scope.instance.id, () => {
+    recordSubtreeEdit(ctx, 'Add instance', scope.instance.id, () => {
       claimSlotContent(ctx.graph, scope)
       created.id = ctx.graph.createInstance(componentId, frameId)?.id ?? null
     })
