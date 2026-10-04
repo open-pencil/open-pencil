@@ -20,6 +20,17 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-stat",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-open",
+      "allow": [{ "path": "**" }]
+    },
+    "fs:allow-fstat",
+    "fs:allow-seek",
+    "fs:allow-read",
+    {
       "identifier": "fs:allow-read-text-file",
       "allow": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },

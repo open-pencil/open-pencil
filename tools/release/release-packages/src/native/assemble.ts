@@ -4,13 +4,14 @@ import { join } from 'node:path'
 
 import { readReleaseNotes } from '#release/release-notes'
 import { isEqual } from 'es-toolkit'
-import { toUint8Array } from 'js-base64'
+import { decode, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { desktopAssets } from './catalog.ts'
 import { releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 import { digestFile, validateTargetManifests } from './manifest.ts'
+import { assertSignedVersion } from './signature.ts'
 
 const { identity, repository, version, paths } = createReleaseContext()
 const { verifySignature } = releaseCommands(paths.root)
@@ -74,6 +75,7 @@ try {
       const decoded = join(temporary, `${asset.name}.minisig`)
       await writeFile(decoded, toUint8Array(signature))
       await verifySignature(join(source, asset.name), publicKey, decoded)
+      assertSignedVersion(decode(signature), version, asset.name)
 
       for (const platform of asset.updaterKeys) {
         if (platforms[platform]) throw new Error(`Duplicate updater platform: ${platform}`)

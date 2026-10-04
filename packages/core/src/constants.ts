@@ -252,30 +252,30 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'OpenRouter',
     keyPlaceholder: 'sk-or-…',
     keyURL: 'https://openrouter.ai/keys',
-    defaultModel: 'anthropic/claude-sonnet-5',
+    defaultModel: 'anthropic/claude-sonnet-5.5',
     supportsCustomModel: true,
     models: [
       {
-        id: 'anthropic/claude-sonnet-5',
-        name: 'Claude Sonnet 5',
+        id: 'anthropic/claude-sonnet-5.5',
+        name: 'Claude Sonnet 5.5',
         tag: 'Best for design',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'anthropic/claude-opus-5',
-        name: 'Claude Opus 5',
-        tag: 'Smartest',
+        id: 'anthropic/claude-opus-5.5',
+        name: 'Claude Opus 5.5',
+        tag: 'Deep reasoning',
         capabilities: ['tools', 'vision']
       },
       {
         id: 'anthropic/claude-fable-5.1',
         name: 'Claude Fable 5.1',
-        tag: 'Latest Anthropic',
+        tag: 'Most capable',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'openai/gpt-5.6',
-        name: 'GPT-5.6',
+        id: 'openai/gpt-6.1-sol',
+        name: 'GPT-6.1 Sol',
         tag: 'Latest OpenAI',
         capabilities: ['tools', 'vision']
       },
@@ -298,8 +298,18 @@ export const AI_PROVIDERS: AIProviderDef[] = [
         tag: 'Vision + code',
         capabilities: ['tools', 'vision']
       },
-      { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', tag: 'Free' },
-      { id: 'openai/gpt-oss-120b:free', name: 'GPT-OSS 120B', tag: 'Free' }
+      {
+        id: 'qwen/qwen3.8-27b:free',
+        name: 'Qwen3.8 27B',
+        tag: 'Free',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'google/gemma-4-31b-it:free',
+        name: 'Gemma 4 31B',
+        tag: 'Free',
+        capabilities: ['tools', 'vision']
+      }
     ]
   },
   {
@@ -307,24 +317,24 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'Anthropic',
     keyPlaceholder: 'sk-ant-…',
     keyURL: 'https://console.anthropic.com/settings/keys',
-    defaultModel: 'claude-sonnet-5',
+    defaultModel: 'claude-sonnet-5-5',
     models: [
       {
-        id: 'claude-sonnet-5',
-        name: 'Claude Sonnet 5',
+        id: 'claude-sonnet-5-5',
+        name: 'Claude Sonnet 5.5',
         tag: 'Best for design',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'claude-opus-5',
-        name: 'Claude Opus 5',
-        tag: 'Smartest',
+        id: 'claude-opus-5-5',
+        name: 'Claude Opus 5.5',
+        tag: 'Deep reasoning',
         capabilities: ['tools', 'vision']
       },
       {
         id: 'claude-fable-5-1',
         name: 'Claude Fable 5.1',
-        tag: 'Latest',
+        tag: 'Most capable',
         capabilities: ['tools', 'vision']
       }
     ]
@@ -334,12 +344,16 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'OpenAI',
     keyPlaceholder: 'sk-…',
     keyURL: 'https://platform.openai.com/api-keys',
-    defaultModel: 'gpt-5.6',
+    defaultModel: 'gpt-6.1-sol',
     models: [
-      { id: 'gpt-5.6', name: 'GPT-5.6', tag: 'Best', capabilities: ['tools', 'vision'] },
-      { id: 'gpt-5.5', name: 'GPT-5.5', capabilities: ['tools', 'vision'] },
-      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', tag: 'Fast', capabilities: ['tools', 'vision'] },
-      { id: 'gpt-5.4-nano', name: 'GPT-5.4 nano', tag: 'Cheap', capabilities: ['tools', 'vision'] }
+      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', tag: 'Best', capabilities: ['tools', 'vision'] },
+      {
+        id: 'gpt-6-astra',
+        name: 'GPT-6 Astra',
+        tag: 'Smartest',
+        capabilities: ['tools', 'vision']
+      },
+      { id: 'gpt-6-luna', name: 'GPT-6 Luna', tag: 'Fast', capabilities: ['tools', 'vision'] }
     ]
   },
   {

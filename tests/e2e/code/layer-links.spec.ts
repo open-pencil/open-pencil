@@ -352,3 +352,64 @@ test('a reorder that cannot move the code still writes layers added with it', as
     'Frame'
   )
 })
+
+test('a canvas edit right after replacing all the code survives its preview', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  const code = (await codeText(editor.page)).replace(/(name="Card"[^>]*?) h=\{160\}/, '$1 h={170}')
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(code)
+  // Before the preview runs, the replaced code has no links to patch.
+  await editLayer(editor.page, 'Card', { width: 400 })
+
+  await expect.poll(() => cardSize(editor.page)).toBe('400x170')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={170}')
+
+  // The edit applied again belongs to the code's undo step, which leaves the canvas edit.
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await expect.poll(() => cardSize(editor.page)).toBe('400x160')
+})
+
+test('code follows a value while it is dragged and goes back when the drag is cancelled', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+
+  const [during, after] = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
+    if (!store || !card) throw new Error('Card not found')
+    const frames = async (count: number) => {
+      for (let i = 0; i < count; i++) await new Promise(requestAnimationFrame)
+    }
+    const code = () => document.querySelector('[data-slot="code-editor"] .cm-content')?.textContent
+    const preview = store.beginNodePreview('Resize')
+    preview.update(card.id, { width: 360 })
+    await frames(3)
+    const live = code()
+    preview.cancel()
+    await frames(3)
+    return [live, code()]
+  })
+
+  expect(during).toContain('w={360}')
+  expect(after).toContain('w={320}')
+})
+
+test('a canvas edit while replaced code does not render survives the corrected code', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  const valid = (await codeText(editor.page)).replace(/(name="Card"[^>]*?) h=\{160\}/, '$1 h={170}')
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(`${valid}\n<Frame`)
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Preview failed')
+
+  await editLayer(editor.page, 'Card', { width: 400 })
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(valid)
+
+  await expect.poll(() => cardSize(editor.page)).toBe('400x170')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
+})
