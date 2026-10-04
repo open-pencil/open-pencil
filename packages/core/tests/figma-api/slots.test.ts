@@ -98,3 +98,31 @@ describe('slots', () => {
     )
   })
 })
+
+describe('swapping an instance', () => {
+  /** An outer component holding a Card instance named `innerName`, whose slot has a layer. */
+  function outerWithFilledSlot(innerName: string) {
+    const { api, component: card } = setup()
+    card.createSlot()
+    const outer = (name: string, nestedName: string) => {
+      const component = api.createComponent()
+      component.name = name
+      component.appendChild(Object.assign(card.createInstance(), { name: nestedName }))
+      return component
+    }
+    const instance = outer('Outer A', 'Card').createInstance()
+    const nestedSlot = () =>
+      instance.children[0]?.children.find((child) => child.type === 'SLOT')
+    nestedSlot()?.appendChild(Object.assign(api.createText(), { name: 'Filled' }))
+    return { instance, nestedSlot, same: outer('Outer B', 'Card'), other: outer('Outer C', innerName) }
+  }
+
+  // Recorded in live Figma: nested slot content follows a nested instance of the same name.
+  test('keeps a nested instance’s slot content when the new component nests one of the same name', () => {
+    const { instance, nestedSlot, same, other } = outerWithFilledSlot('Other name')
+    instance.swapComponent(same)
+    expect(nestedSlot()?.children.map((child) => child.name)).toEqual(['Filled'])
+    instance.swapComponent(other)
+    expect(nestedSlot()?.children.map((child) => child.name)).toEqual([])
+  })
+})

@@ -1,6 +1,7 @@
 import type { SceneGraph } from '../index'
 import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
 import { findInstanceAncestor } from '../instances'
+import { instanceMainComponent } from '../instances/main-component'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -14,8 +15,8 @@ export interface ComponentPropertyTarget {
 }
 
 export function componentPropertyOwners(graph: SceneGraph, instance: SceneNode): SceneNode[] {
-  if (instance.type !== 'INSTANCE' || !instance.componentId) return []
-  const component = graph.getNode(instance.componentId)
+  if (instance.type !== 'INSTANCE') return []
+  const component = instanceMainComponent(graph, instance)
   if (!component) return []
   const parent = component.parentId ? graph.getNode(component.parentId) : null
   return parent?.type === 'COMPONENT_SET' ? [parent, component] : [component]

@@ -35,7 +35,7 @@ import type { FigmaFontName } from './fonts'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
-import { installSlotAccessors } from './slots'
+import { installSlotAccessors, prepareSlotMove } from './slots'
 import * as TextProxy from './text'
 import * as Traversal from './traversal'
 import type { FigmaTransform } from './types'
@@ -282,12 +282,14 @@ export class FigmaNodeProxy {
   appendChild(child: FigmaNodeProxy): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
+    prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'appendChild')
     this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
   }
 
   insertChild(index: number, child: FigmaNodeProxy): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
+    prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'insertChild')
     this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].reorderChild(child[INTERNAL_ID], this[INTERNAL_ID], index)
   }

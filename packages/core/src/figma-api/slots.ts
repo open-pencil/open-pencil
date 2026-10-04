@@ -1,5 +1,6 @@
 import {
   DEFAULT_SLOT_SETTINGS,
+  claimSlotContent,
   componentPropertyDefinitions,
   createSlotProperty,
   resetSlotContent,
@@ -7,6 +8,7 @@ import {
   slotPropertyId,
   slotScope,
   type ComponentPropertyType,
+  type SceneGraph,
   type SlotLimitViolation,
   type SlotSettings
 } from '@open-pencil/scene-graph'
@@ -63,6 +65,27 @@ export function assertSlotSettings(
 ): void {
   if (settings && type !== 'SLOT')
     throw new Error("slotSettings is only supported for 'SLOT' properties")
+}
+
+/**
+ * Ready a move of `childId` into `parentId` the way Figma's appendChild does: the locked part
+ * of an instance refuses it, and a slot on either side becomes the instance's own content.
+ */
+export function prepareSlotMove(
+  g: SceneGraph,
+  parentId: string,
+  childId: string,
+  method: 'appendChild' | 'insertChild'
+): void {
+  const target = slotScope(g, parentId)
+  if (target.kind === 'locked')
+    throw new Error(
+      `in ${method}: Cannot move node. New parent is an instance or is inside of an instance`
+    )
+  const sourceParentId = g.getNode(childId)?.parentId
+  const source = sourceParentId ? slotScope(g, sourceParentId) : undefined
+  if (target.kind === 'slot') claimSlotContent(g, target)
+  if (source?.kind === 'slot') claimSlotContent(g, source)
 }
 
 function host(target: ProxyThis, internals: NodeProxyInternals): NodeProxyHost {
