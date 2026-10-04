@@ -468,9 +468,7 @@ describe('fig roundtrip source metadata', () => {
       return nodeChange?.guid ? guidToString(nodeChange.guid) : undefined
     }
 
-    const reopened = await parseFigFile(
-      saved.buffer.slice(saved.byteOffset, saved.byteOffset + saved.byteLength)
-    )
+    const reopened = await parseFigFile(saved.slice().buffer)
     const page = reopened.getPages()[0]
     const inserted = reopened.createNode('RECTANGLE', page.id, { name: 'Inserted' })
     reopened.reorderChild(inserted.id, page.id, 0)
