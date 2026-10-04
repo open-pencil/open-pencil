@@ -167,7 +167,7 @@ test('loading page nodes for a lookup does not supersede a page switch in progre
   expect(editor.state.currentPageId).toBe(target.id)
 })
 
-test('preparing a page for rendering loads its fonts and layout without switching to it', async () => {
+test('preparing a page for rendering loads its fonts and layout once without switching to it', async () => {
   const graph = new SceneGraph()
   const firstPage = graph.getPages()[0]
   if (!firstPage) throw new Error('Expected default page')
@@ -200,12 +200,41 @@ test('preparing a page for rendering loads its fonts and layout without switchin
 
   const switching = editor.switchPage(target.id)
   await Promise.resolve()
-  await editor.preparePageNodes(prepared.id)
-  await editor.preparePageNodes(prepared.id)
+  const concurrent = await Promise.all([
+    editor.preparePageNodes(prepared.id),
+    editor.preparePageNodes(prepared.id)
+  ])
+  const again = await editor.preparePageNodes(prepared.id)
   release()
   await switching
 
+  expect([...concurrent, again]).toEqual([true, true, true])
   expect(loaded.filter((family) => family === 'Prepared Font')).toHaveLength(1)
   expect(graph.getNode(row.id)?.width).toBe(30)
   expect(editor.state.currentPageId).toBe(target.id)
+})
+
+test('preparing a page reports failure when the document is replaced meanwhile', async () => {
+  const graph = new SceneGraph()
+  const page = graph.addPage('Prepared')
+  graph.createNode('TEXT', page.id, { text: 'Label', fontFamily: 'Prepared Font' })
+  let release: () => void = () => undefined
+  const fontReady = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const editor = createEditor({
+    graph,
+    skipInitialGraphSetup: true,
+    loadFont: async () => {
+      await fontReady
+      return null
+    }
+  })
+
+  const preparing = editor.preparePageNodes(page.id)
+  await Promise.resolve()
+  editor.replaceGraph(new SceneGraph())
+  release()
+
+  expect(await preparing).toBe(false)
 })
