@@ -38,10 +38,10 @@ const colorSchema = v.union([
   v.object({ r: v.number(), g: v.number(), b: v.number(), a: v.number() })
 ])
 const stopsSchema = v.array(
-  v.union([
-    v.tuple([colorSchema, v.number()]),
-    v.object({ color: colorSchema, position: v.number() })
-  ])
+  v.union(
+    [v.tuple([colorSchema, v.number()]), v.object({ color: colorSchema, position: v.number() })],
+    (issue) => `Expected [color, position] or { color, position } but received ${issue.received}`
+  )
 )
 
 const GRADIENT_HELPERS = {
@@ -53,24 +53,18 @@ const GRADIENT_HELPERS = {
 
 type GradientType = keyof typeof GRADIENT_HELPERS
 
-/** A received value for an error message, as JSON where it can be, which a bigint or a cycle cannot. */
-function describeReceived(value: unknown): string {
-  if (typeof value === 'bigint') return `${value}n`
-  try {
-    return String(JSON.stringify(value)).slice(0, 120)
-  } catch {
-    return 'a value that cannot be shown as JSON'
-  }
-}
-
-/** Scripts call the helpers with whatever they guess, so a wrong call says what it expects. */
+/**
+ * Scripts call the helpers with whatever they guess, so a wrong call says what it expects
+ * and what was wrong, as Valibot describes it.
+ */
 function parseStops(type: GradientType, stops: unknown): PaintStop[] {
   const parsed = v.safeParse(stopsSchema, stops)
   if (parsed.success) return parsed.output
-  const index = Array.isArray(stops) ? v.getDotPath(parsed.issues[0])?.split('.')[0] : undefined
-  const got = index === undefined ? `got ${describeReceived(stops)}` : `stop ${index} is invalid`
+  const [issue] = parsed.issues
+  // Only the array's items are checked one level down, so a path is a stop's index.
+  const stop = v.getDotPath(issue)
   throw new Error(
-    `${GRADIENT_HELPERS[type]} expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]] or [{ color: '#3b82f6', position: 0 }]; ${got}`
+    `${GRADIENT_HELPERS[type]}() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]: ${issue.message}${stop === null ? '' : ` (stop ${stop})`}`
   )
 }
 
