@@ -371,3 +371,28 @@ test('a canvas edit right after replacing all the code survives its preview', as
   await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
   await expect.poll(() => cardSize(editor.page)).toBe('400x160')
 })
+
+test('code follows a value while it is dragged and goes back when the drag is cancelled', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+
+  const [during, after] = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
+    if (!store || !card) throw new Error('Card not found')
+    const frames = async (count: number) => {
+      for (let i = 0; i < count; i++) await new Promise(requestAnimationFrame)
+    }
+    const code = () => document.querySelector('[data-slot="code-editor"] .cm-content')?.textContent
+    const preview = store.beginNodePreview('Resize')
+    preview.update(card.id, { width: 360 })
+    await frames(3)
+    const live = code()
+    preview.cancel()
+    await frames(3)
+    return [live, code()]
+  })
+
+  expect(during).toContain('w={360}')
+  expect(after).toContain('w={320}')
+})

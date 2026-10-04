@@ -295,7 +295,7 @@ function showCanvas(next: Exclude<CodeSource, 'html-css'>) {
  * generated again; code the person wrote is patched where layers changed, keeping the rest as
  * written. Another selection starts over with its generated code.
  */
-function followCanvas() {
+function followCanvas(live = false) {
   const current = source.value
   if (!editorActive.value || current === 'html-css' || previewing > 0) return
   if (selectionKey.value !== followedSelection) {
@@ -306,15 +306,27 @@ function followCanvas() {
     showCanvas(current)
     return
   }
-  if (store.state.sceneVersion === previewedVersion) return
+  // A live preview leaves the scene version alone, so it is followed whatever the version.
+  if (!live && store.state.sceneVersion === previewedVersion) return
   codeEditor.value?.patchFromLayers()
 }
 
-watch([() => store.state.sceneVersion, selectionKey, source, editorActive], followCanvas, {
+watch([() => store.state.sceneVersion, selectionKey, source, editorActive], () => followCanvas(), {
   immediate: true
 })
 
+/** Dragging or scrubbing a value previews it; the code follows once per frame, like the Design panel. */
+let livePreviewFrame = 0
+useEditorEvent('node:previewUpdated', () => {
+  if (livePreviewFrame) return
+  livePreviewFrame = requestAnimationFrame(() => {
+    livePreviewFrame = 0
+    followCanvas(true)
+  })
+})
+
 onBeforeUnmount(() => {
+  cancelAnimationFrame(livePreviewFrame)
   void commitCurrentSession()
 })
 
