@@ -17,7 +17,7 @@ async function withConcurrentEdits(
       const pageId = expectDefined(stores.hostStore.graph.getPages()[0], 'first page').id
       seed(stores.hostStore.graph, pageId)
       stores.hostSync.syncAllNodesToYjs()
-      stores.disconnectYDocs?.()
+      expectDefined(stores.disconnectYDocs, 'connected peers to disconnect')()
       edit(stores, pageId)
       const disconnect = connectYDocs(stores.hostDoc, stores.peerDoc)
       try {
