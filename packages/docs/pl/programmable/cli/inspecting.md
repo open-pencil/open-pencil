@@ -83,13 +83,13 @@ openpencil variables design.fig
 Jeśli aplikacja komputerowa jest uruchomiona, nie podawaj ścieżki pliku. CLI połączy się przez RPC z otwartym dokumentem:
 
 ```sh
-openpencil documents
+openpencil documents list
 openpencil tree
 openpencil tree --document-id tab-123 --page-id 0:1
 openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-W procesach automatycznych najpierw wywołaj `openpencil documents --json`, a potem jawnie przekazuj `--document-id` i `--page-id`.
+W procesach automatycznych najpierw wywołaj `openpencil documents list --json`, a potem jawnie przekazuj `--document-id` i `--page-id`. Otwieranie, zapisywanie, przełączanie i zamykanie dokumentów, cofanie zmian, ustawienia i wywoływanie dowolnych narzędzi edytora opisuje [Controlling the App](/programmable/cli/app-control).
 
 ## Kontrola jakości
 

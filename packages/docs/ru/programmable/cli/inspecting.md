@@ -110,13 +110,13 @@ openpencil variables design.fig
 Если настольное приложение запущено, не указывайте путь к файлу. CLI подключится по RPC к открытому документу:
 
 ```sh
-openpencil documents
+openpencil documents list
 openpencil tree
 openpencil tree --document-id tab-123 --page-id 0:1
 openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-Для автоматизированных процессов сначала вызовите `openpencil documents --json`, а затем явно передавайте `--document-id` и `--page-id`, не полагаясь на видимую активную вкладку или страницу.
+Для автоматизированных процессов сначала вызовите `openpencil documents list --json`, а затем явно передавайте `--document-id` и `--page-id`, не полагаясь на видимую активную вкладку или страницу. Как открывать, сохранять, переключать и закрывать документы, отменять изменения, менять настройки и вызывать любые инструменты редактора, описано в [Controlling the App](/programmable/cli/app-control).
 
 ## Проверка качества
 
