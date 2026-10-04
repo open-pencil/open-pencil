@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "Déplier pendant le raisonnement",
   "reasoningExpanded": "Déplié par défaut",
   "jumpToLatest": "Aller au dernier message",
-  "maxAgentStepsCustom": "Personnalisé…"
+  "maxAgentStepsCustom": "Personnalisé…",
+  "chatAgentWorkingOn": "{agent} travaille sur « {page} »",
+  "chatGoToPage": "Aller à la page"
 }

@@ -46,7 +46,7 @@ export function startRun(store: EditorStore, maxSteps: number, model?: string): 
   const run = getRunState(store)
   run.start(maxSteps, store.state.currentPageId)
   run.agent ??= addAgent(store, 'chat', model)
-  run.agent.update({ status: 'thinking', model })
+  run.agent.update({ status: 'thinking', model, pageId: store.state.currentPageId })
 }
 
 /** The reply finished, failed, or was stopped: the agent stays listed but leaves the canvas. */
@@ -89,8 +89,15 @@ export function runPageId(store: EditorStore): string {
 
 /** Move the run to `pageId`, and the user's view with it, as the agent's `switch_page` does. */
 export async function moveRunToPage(store: EditorStore, pageId: string): Promise<void> {
-  getRunState(store).pageId = pageId
+  const run = getRunState(store)
+  run.pageId = pageId
+  run.agent?.update({ pageId })
   if (store.state.currentPageId !== pageId) await store.switchPage(pageId)
+}
+
+/** The built-in chat's agent in this document, once it has replied. */
+export function runAgentId(store: EditorStore): string | undefined {
+  return getRunState(store).agent?.id
 }
 
 /** Keep `snapshot` as the run's starting state of its page unless the run already edited it. */

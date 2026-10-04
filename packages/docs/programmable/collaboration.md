@@ -28,6 +28,8 @@ Click a collaborator's avatar in the top bar to follow their viewport. Your canv
 
 An avatar counts the agents that person runs. Hover over it to see each agent, what it is doing, and on which page, and click **Follow** next to an agent to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. The button after the avatars lists everyone in the room with their agents, and works from the keyboard. Your own avatar lists your agents — click one to rename it — and has **Leave room**.
 
+The share panel lists everyone in the room with the agents they run, what each agent is doing, and on which page. Follow an agent the same way to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. Double-click one of your own agents to rename it.
+
 ## How It Works
 
 Peers connect directly via WebRTC — your design data goes straight from browser to browser, never through a central server. The document state uses a CRDT (conflict-free replicated data type), so concurrent edits merge automatically without conflicts.

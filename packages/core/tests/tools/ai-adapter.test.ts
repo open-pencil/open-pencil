@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { toolModelMessageSchema } from 'ai'
 import * as v from 'valibot'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
@@ -40,15 +41,34 @@ function hasModelOutput(value: unknown): value is ModelOutputTool {
 }
 
 describe('AI adapter model output', () => {
-  test('sends any image result as media with its metadata as text', () => {
+  test('sends any image result as a file with its metadata as text', () => {
     const output = { mimeType: 'image/png', base64: 'AAAA', changedPixels: 12 }
     expect(adapt(output).toModelOutput({ output })).toEqual({
       type: 'content',
       value: [
         { type: 'text', text: '{"changedPixels":12}' },
-        { type: 'media', mediaType: 'image/png', data: 'AAAA' }
+        { type: 'file', mediaType: 'image/png', data: { type: 'data', data: 'AAAA' } }
       ]
     })
+  })
+
+  test.each([
+    { mimeType: 'image/png', base64: 'AAAA', changedPixels: 12 },
+    { mimeType: 'image/png', base64: 'AAAA' },
+    { mimeType: 'application/pdf', base64: 'AAAA' }
+  ])('produces a tool message the AI SDK accepts in the next prompt (%p)', (output) => {
+    const message = {
+      role: 'tool',
+      content: [
+        {
+          type: 'tool-result',
+          toolCallId: 'call',
+          toolName: 'image_tool',
+          output: adapt(output).toModelOutput({ output })
+        }
+      ]
+    }
+    expect(toolModelMessageSchema.safeParse(message).success).toBe(true)
   })
 
   test('keeps non-image results as JSON', () => {

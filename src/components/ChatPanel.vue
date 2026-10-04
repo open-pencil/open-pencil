@@ -6,6 +6,7 @@ import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { chatDocumentId } from '@/app/ai/chat/history/document'
+import { useChatRunLocation } from '@/app/ai/chat/run-location'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { useAIChat } from '@/app/ai/chat/use'
 import { didHitStepLimit } from '@/app/ai/tools'
@@ -16,11 +17,13 @@ import { activeTab } from '@/app/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
+import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
 const { ai } = useI18n()
+const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const submission = useChatSubmission({
@@ -206,6 +209,12 @@ function handleStop() {
       <p v-if="history.readOnly.value" role="status" class="px-3 py-2 text-xs text-muted">
         {{ ai.chatReadOnly }}
       </p>
+      <ChatRunLocation
+        v-if="runLocation"
+        :agent="runLocation.agent"
+        :page="runLocation.page"
+        @open="runLocation.open"
+      />
       <ChatInput
         v-if="isConfigured && !agentHistoryReadOnly && !history.readOnly.value"
         :status="status"

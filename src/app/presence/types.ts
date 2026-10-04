@@ -26,6 +26,8 @@ export interface AgentPresence {
   kind: AgentKind
   model?: string
   status: AgentStatus
+  /** The page the agent works on, known before its first edit. */
+  pageId?: string
   /** Where the agent last worked, derived from the nodes it touched. */
   cursor?: PresencePoint
   selection?: string[]

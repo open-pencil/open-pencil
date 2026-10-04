@@ -59,6 +59,59 @@ export function presenceOf(store: EditorStore): Presence {
   return presence
 }
 
+function localAgentColor(store: EditorStore): Color {
+  return presenceOf(store).ownerColor.value ?? SOLO_AGENT_COLOR
+}
+
+/** Someone working on a page, as page lists show them. */
+export interface PagePresenceEntry {
+  /** Stable per person or agent; names can repeat, such as two people named Anonymous. */
+  id: string
+  kind: 'person' | 'agent'
+  name: string
+  color: Color
+}
+
+function agentPage(agent: AgentPresence): string | undefined {
+  return agent.status === 'idle' ? undefined : (agent.pageId ?? agent.cursor?.pageId)
+}
+
+/**
+ * People and working agents by page. Reads reactive state, so computed values that call it
+ * update as people move and agents start and stop.
+ */
+export function presenceByPage(store: EditorStore): Map<string, PagePresenceEntry[]> {
+  const { agents, peers } = presenceOf(store)
+  const byPage = new Map<string, PagePresenceEntry[]>()
+  const add = (pageId: string | undefined, entry: PagePresenceEntry) => {
+    if (pageId) byPage.set(pageId, [...(byPage.get(pageId) ?? []), entry])
+  }
+  for (const peer of peers.value) {
+    add(peer.cursor?.pageId, {
+      id: `person:${peer.clientId}`,
+      kind: 'person',
+      name: peer.name,
+      color: peer.color
+    })
+    for (const agent of peer.agents)
+      add(agentPage(agent), {
+        id: `agent:${agent.id}`,
+        kind: 'agent',
+        name: agent.name,
+        color: peer.color
+      })
+  }
+  for (const agent of agents.value) {
+    add(agentPage(agent), {
+      id: `agent:${agent.id}`,
+      kind: 'agent',
+      name: agent.name,
+      color: localAgentColor(store)
+    })
+  }
+  return byPage
+}
+
 function agentCursor(agent: AgentPresence, color: Color, pageId: string): PresenceCursor[] {
   if (agent.status === 'idle' || agent.cursor?.pageId !== pageId) return []
   const { x, y } = agent.cursor
@@ -67,7 +120,7 @@ function agentCursor(agent: AgentPresence, color: Color, pageId: string): Presen
 
 /** Draw everyone working on the page on screen: people, their agents, and ours. */
 export function refreshCursors(store: EditorStore): void {
-  const { agents, peers, ownerColor } = presenceOf(store)
+  const { agents, peers } = presenceOf(store)
   const pageId = store.state.currentPageId
   store.state.presenceCursors = [
     ...peers.value.flatMap((peer): PresenceCursor[] => [
@@ -84,9 +137,7 @@ export function refreshCursors(store: EditorStore): void {
         : []),
       ...peer.agents.flatMap((agent) => agentCursor(agent, peer.color, pageId))
     ]),
-    ...agents.value.flatMap((agent) =>
-      agentCursor(agent, ownerColor.value ?? SOLO_AGENT_COLOR, pageId)
-    )
+    ...agents.value.flatMap((agent) => agentCursor(agent, localAgentColor(store), pageId))
   ]
   store.requestRepaint()
   keepFollowing(store)

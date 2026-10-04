@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "思考时展开",
   "reasoningExpanded": "默认展开",
   "jumpToLatest": "跳转到最新消息",
-  "maxAgentStepsCustom": "自定义…"
+  "maxAgentStepsCustom": "自定义…",
+  "chatAgentWorkingOn": "{agent} 正在处理“{page}”",
+  "chatGoToPage": "转到页面"
 }

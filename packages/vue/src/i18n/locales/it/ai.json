@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "Espandi durante il ragionamento",
   "reasoningExpanded": "Espanso per impostazione predefinita",
   "jumpToLatest": "Vai all’ultimo messaggio",
-  "maxAgentStepsCustom": "Personalizzato…"
+  "maxAgentStepsCustom": "Personalizzato…",
+  "chatAgentWorkingOn": "{agent} sta lavorando su «{page}»",
+  "chatGoToPage": "Vai alla pagina"
 }

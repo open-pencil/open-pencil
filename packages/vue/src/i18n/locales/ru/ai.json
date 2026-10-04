@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "Разворачивать во время размышлений",
   "reasoningExpanded": "Развёрнуто по умолчанию",
   "jumpToLatest": "К последнему сообщению",
-  "maxAgentStepsCustom": "Своё значение…"
+  "maxAgentStepsCustom": "Своё значение…",
+  "chatAgentWorkingOn": "{agent} работает над «{page}»",
+  "chatGoToPage": "Перейти к странице"
 }

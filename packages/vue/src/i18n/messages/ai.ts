@@ -37,6 +37,8 @@ export const aiMessageDefaults = {
   chatStorageFailed: 'Chat history could not be saved. Keep this window open and try again.',
   chatHistoryFailed: 'Could not update chat history. Try again.',
   chatInterrupted: 'This response was interrupted.',
+  chatAgentWorkingOn: params('{agent} is working on “{page}”'),
+  chatGoToPage: 'Go to page',
   connectProvider: 'Connect an AI provider to start chatting.',
   connectionTestSuccess: 'Connected successfully. Model is reachable.',
   connectionTestMissingAPIKey: 'Enter an API key before testing.',

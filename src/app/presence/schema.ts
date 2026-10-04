@@ -32,6 +32,7 @@ const agent = v.object({
   kind: v.picklist(AGENT_KINDS),
   model: lenient(v.pipe(v.string(), v.maxLength(MAX_NAME_LENGTH))),
   status: v.picklist(AGENT_STATUSES),
+  pageId: lenient(id),
   cursor: lenient(point),
   selection: lenient(selection)
 })

@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "思考中に展開",
   "reasoningExpanded": "既定で展開",
   "jumpToLatest": "最新へ移動",
-  "maxAgentStepsCustom": "カスタム…"
+  "maxAgentStepsCustom": "カスタム…",
+  "chatAgentWorkingOn": "{agent}が「{page}」で作業中",
+  "chatGoToPage": "ページへ移動"
 }

@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "Rozwijaj podczas rozumowania",
   "reasoningExpanded": "Domyślnie rozwinięte",
   "jumpToLatest": "Przejdź do najnowszej wiadomości",
-  "maxAgentStepsCustom": "Własna wartość…"
+  "maxAgentStepsCustom": "Własna wartość…",
+  "chatAgentWorkingOn": "{agent} pracuje nad „{page}”",
+  "chatGoToPage": "Przejdź do strony"
 }

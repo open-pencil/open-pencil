@@ -98,6 +98,6 @@ The assistant can verify its work visually. When `export_image` is enabled, it c
 - Select nodes before asking — the assistant knows what's selected.
 - Be specific about colors, sizes, and positions for precise results.
 - The assistant can modify multiple nodes in one message.
-- You can browse other pages while a reply runs: the assistant keeps working on the page where the message started, and its previews show when you return. If the assistant switches pages itself, your view follows.
+- You can browse other pages while a reply runs: the assistant keeps working on the page where the message started, and its previews show when you return. While you're away, the chat says which page it is working on, with **Go to page** to return. If the assistant switches pages itself, your view follows.
 - Use "undo" in the editor if you don't like the result — AI mutations support full undo.
 - All layout is recomputed automatically after each tool execution.

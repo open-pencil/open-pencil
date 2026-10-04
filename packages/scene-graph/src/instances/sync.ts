@@ -1,7 +1,7 @@
 // Child cloning and property synchronization shared by instance creation, swap, and sync.
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '../'
+import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '../'
 import { ownsSlotContent, slotPropertyId } from '../components/slots'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
 import type { NodeCloneMode } from '../copy'
@@ -174,6 +174,45 @@ export function enclosingInstanceOverrideFields(graph: SceneGraph, node: SceneNo
     parent = parent.parentId ? graph.nodes.get(parent.parentId) : undefined
   }
   return fields
+}
+
+/** SLOT_CONTENT is absent because it drives children, which `ownsSlotContent` keeps instead. */
+const PROPERTY_REFERENCE_FIELDS: Partial<Record<ComponentPropertyReferenceField, string>> = {
+  VISIBLE: 'visible',
+  TEXT: 'text',
+  INSTANCE_SWAP: 'componentId'
+}
+
+/** The nearest enclosing instance that assigns `propertyId`, if any does. */
+function hasEnclosingAssignment(graph: SceneGraph, node: SceneNode, propertyId: string): boolean {
+  let current: SceneNode | undefined = node
+  while (current) {
+    if (
+      current.type === 'INSTANCE' &&
+      Object.hasOwn(current.componentPropertyAssignments, propertyId)
+    )
+      return true
+    current = current.parentId ? graph.nodes.get(current.parentId) : undefined
+  }
+  return false
+}
+
+/**
+ * Fields a component property drives on this child. The component states the default, but
+ * an enclosing instance's assignment decides the value, so synchronising must not copy the
+ * default over it — a page loaded later would otherwise reset the instance to the default.
+ */
+function propertyDrivenFields(
+  graph: SceneGraph,
+  instChild: SceneNode,
+  compChild: SceneNode
+): Set<string> {
+  const driven = new Set<string>()
+  for (const reference of compChild.componentPropertyReferences) {
+    const field = PROPERTY_REFERENCE_FIELDS[reference.field]
+    if (field && hasEnclosingAssignment(graph, instChild, reference.propertyId)) driven.add(field)
+  }
+  return driven
 }
 
 function childBindingProtection(
@@ -368,6 +407,7 @@ export function syncChildren(
     if (!compChild || !instChild) continue
 
     const protectedField = childBindingProtection(graph, instChild, overrides)
+    const driven = propertyDrivenFields(graph, instChild, compChild)
     const componentScale =
       (compChild.componentScale * instParent.componentScale) / compParent.componentScale
     const source = sourceInTargetCoordinates(compChild, componentScale)
@@ -375,6 +415,7 @@ export function syncChildren(
     syncBindingFields(instChild, source, updates, protectedField)
     for (const key of INSTANCE_SYNC_FIELDS) {
       if (key === 'boundVariables') continue
+      if (driven.has(key)) continue
       if (isProtectedSyncField(instChild, key, protectedField)) continue
 
       copyProp(updates, source, key)

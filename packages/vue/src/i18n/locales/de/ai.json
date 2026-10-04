@@ -170,5 +170,7 @@
   "reasoningWhileThinking": "Beim Nachdenken ausklappen",
   "reasoningExpanded": "Standardmäßig ausgeklappt",
   "jumpToLatest": "Zum neuesten Beitrag",
-  "maxAgentStepsCustom": "Eigener Wert…"
+  "maxAgentStepsCustom": "Eigener Wert…",
+  "chatAgentWorkingOn": "{agent} arbeitet an „{page}“",
+  "chatGoToPage": "Zur Seite"
 }
