@@ -44,7 +44,7 @@
 
 ### Changed
 
-- Open popovers, menus, dropdowns, and pickers with the same short fade and grow from the side they open on, and close them with a fade; with reduced motion they appear and disappear at once.
+- Give popovers, menus, dropdowns, and pickers one look and motion: the same rounded panel with a thin outline that reads in light and dark themes, a short fade and grow from the side they open on, and an immediate close; with reduced motion they appear at once.
 - Add and remove items the same way across the properties panel: a section's + adds an item and a row's − removes it, now including grid columns and rows and variant properties. The + of a component set adds Property 1 ready to rename instead of showing a form, and a variant is removed with Delete like any layer.
 - Pick variables, shared styles, and swap components from one searchable list that groups preferred components first and works with the keyboard.
 - Recommend the latest models in the AI model picker: Claude Sonnet 5.5 (the new Anthropic and OpenRouter default), Claude Opus 5.5, GPT-6.1 Sol (the new OpenAI default), GPT-6 Astra, and GPT-6 Luna, and replace the free OpenRouter models OpenRouter retired with Qwen3.8 27B and Gemma 4 31B. Saved profiles keep the model they chose.
@@ -60,6 +60,7 @@
 
 ### Fixed
 
+- Keep the canvas context menu open when you right-click again right after closing it, which could close it again at once, especially with reduced motion.
 - Show and edit the component properties of an instance nested inside another instance; they were missing because the nested instance was read as its own component.
 - Read and set `componentPropertyReferences` in the plugin API with property keys such as `Label#prop:1a2b`, as `componentPropertyDefinitions` lists them and Figma uses them, instead of internal property ids.
 - Open Figma files that use slots with each instance's own slot content instead of its component's default, keep slot properties, their settings, and instance content when saving back to `.fig`, and keep an instance's slot content, and that of instances nested in it with the same names, when you switch its variant or swap it.

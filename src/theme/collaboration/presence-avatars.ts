@@ -1,6 +1,7 @@
 import { tv } from 'tailwind-variants'
 
 import { motionStyles } from '@/theme/motion/styles'
+import { floatingSurface } from '@/theme/overlay'
 
 /** The avatar stack in the toolbar: you, collaborators with their agent counts, then "+N". */
 export const presenceAvatars = tv({
@@ -15,10 +16,7 @@ export const presenceAvatars = tv({
     live: 'absolute -top-0.5 -right-0.5 size-2 rounded-full border border-panel bg-[var(--color-success-bg)]',
     overflow:
       'relative flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-panel bg-hover text-[9px] font-semibold text-surface outline-none focus-visible:ring-2 focus-visible:ring-accent',
-    card: [
-      'z-50 w-60 rounded-xl bg-panel p-2 shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
-      motionStyles.floating
-    ],
+    card: ['z-50 w-60 p-2', floatingSurface, motionStyles.floating],
     leave: 'mt-2 w-full'
   }
 })

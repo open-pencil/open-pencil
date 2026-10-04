@@ -1,11 +1,13 @@
 import { motionStyles } from '../motion/styles'
+import { floatingSurface } from '../overlay'
 import { panelFieldBase } from '../panel/field'
 
 /** A searchable list of choices that opens beside the properties panel, as Figma's pickers do. */
 const appPickerTheme = {
   slots: {
     content: [
-      'z-[100] flex max-h-96 w-64 max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl bg-panel shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
+      'z-[100] flex max-h-96 w-64 max-w-[calc(100vw-1rem)] flex-col overflow-hidden',
+      floatingSurface,
       motionStyles.floating
     ],
     header: 'flex items-center gap-1.5 border-b border-border px-3 py-2',

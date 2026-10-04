@@ -1,6 +1,7 @@
 import { tv } from 'tailwind-variants'
 
 import { motionStyles } from '@/theme/motion/styles'
+import { floatingSurface } from '@/theme/overlay'
 
 export const designCheck = tv({
   slots: {
@@ -70,7 +71,8 @@ export const pageIssueBadge = tv({
 export const issueTooltip = tv({
   slots: {
     content: [
-      'pointer-events-none z-50 w-64 rounded-lg bg-panel py-1.5 text-[11px] text-surface shadow-[0_0_0_1px_var(--color-border),0_8px_30px_rgb(0_0_0/0.35)]',
+      'pointer-events-none z-50 w-64 py-1.5 text-[11px]',
+      floatingSurface,
       motionStyles.popup
     ],
     header: 'flex items-center gap-1.5 px-2.5 pt-0.5 pb-1 font-semibold',
