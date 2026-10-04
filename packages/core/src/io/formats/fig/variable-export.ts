@@ -1,6 +1,9 @@
-import { pluginDataNodeChange, variableMetadataNodeChange } from '@open-pencil/fig/node-change'
+import {
+  collectionPluginDataNodeChange,
+  variableMetadataNodeChange
+} from '@open-pencil/fig/node-change'
 import type { GUID, NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   modesDefaultFirst,
   type SceneGraph,
@@ -128,6 +131,7 @@ export function appendVariableNodeChanges(
   modes: Map<string, GUID>,
   nextPosition: () => string = sequentialPositions()
 ): void {
+  const modeKey = (modeId: string) => guidToString(modes.get(modeId) ?? stringToGuid(modeId))
   for (const collection of graph.variableCollections.values()) {
     const guid = ids.get(collection.id) ?? stringToGuid(collection.id)
     changes.push({
@@ -143,7 +147,7 @@ export function appendVariableNodeChanges(
         name: mode.name,
         sortPosition: fractionalPosition(i)
       })),
-      pluginData: pluginDataNodeChange(collection.pluginData)
+      pluginData: collectionPluginDataNodeChange(collection, modeKey)
     })
     for (const id of collection.variableIds) {
       const variable = graph.variables.get(id)
@@ -164,7 +168,7 @@ export function appendVariableNodeChanges(
             variableData: variableValueToKiwi(value, variable.type, ids)
           }))
         },
-        ...variableMetadataNodeChange(variable),
+        ...variableMetadataNodeChange(variable, modeKey),
         key: variable.key,
         version: variable.version
       })

@@ -27,4 +27,4 @@ import { renderJSX } from '@open-pencil/core/design-jsx'
 await renderJSX(graph, '<Frame w={320} p={16} bg="#FFFFFF"><Text>Hello</Text></Frame>')
 ```
 
-This package depends only on `@open-pencil/scene-graph` and `@open-pencil/codegen`. Rendering needs icons, SVG conversion, and layout, which `@open-pencil/core/design-jsx` provides; other engines can supply their own through `createDesignJSXRenderer(services)`.
+This package depends only on `@open-pencil/scene-graph` and `@open-pencil/emit`. Rendering needs icons, SVG conversion, and layout, which `@open-pencil/core/design-jsx` provides; other engines can supply their own through `createDesignJSXRenderer(services)`.
