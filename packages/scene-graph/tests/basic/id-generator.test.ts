@@ -63,4 +63,16 @@ describe('SceneGraph ID generator', () => {
     for (const id of ids) expect(id).toMatch(/^0:\d+$/)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  test('gives a new collection and its default mode different IDs even if the generator repeats', () => {
+    const ids = ['7:1', '7:2', 'same', 'same', '7:3']
+    const graph = new SceneGraph(() => ids.shift() ?? 'exhausted')
+    const collection = graph.createCollection('Colors')
+    expect(collection.id).toBe('same')
+    expect(collection.defaultModeId).toBe('7:3')
+  })
+
+  test('throws instead of hanging when the generator only returns IDs in use', () => {
+    expect(() => new SceneGraph(() => 'same')).toThrow('IDs in a row that are in use')
+  })
 })

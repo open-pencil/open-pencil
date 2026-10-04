@@ -119,6 +119,9 @@ function stripUndefinedProps<T extends object>(obj: T): T {
 
 export { captureGraphCheckpoint } from './checkpoint'
 
+/** How many taken IDs a generator may return in a row before it counts as exhausted. */
+const MAX_ID_ATTEMPTS = 1000
+
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
@@ -215,7 +218,9 @@ export class SceneGraph {
   }
 
   createCollection(name: string): VariableCollection {
-    return Variables.createCollection(this, () => this.generateEntityId(), name)
+    // The collection and its default mode are both created before either is registered.
+    const issued = new Set<string>()
+    return Variables.createCollection(this, () => this.generateEntityId(issued), name)
   }
 
   removeCollection(id: string): void {
@@ -350,10 +355,15 @@ export class SceneGraph {
       height: node?.height ?? 0
     }
   }
-  private generateEntityId(): string {
-    let id = this.idGenerator()
-    while (this.isEntityIdTaken(id)) id = this.idGenerator()
-    return id
+  /** An ID no entity uses; `issued` also excludes IDs handed out earlier in the same creation. */
+  private generateEntityId(issued?: Set<string>): string {
+    for (let attempt = 0; attempt < MAX_ID_ATTEMPTS; attempt++) {
+      const id = this.idGenerator()
+      if (this.isEntityIdTaken(id) || issued?.has(id)) continue
+      issued?.add(id)
+      return id
+    }
+    throw new Error(`The ID generator returned ${MAX_ID_ATTEMPTS} IDs in a row that are in use`)
   }
   private isEntityIdTaken(id: string): boolean {
     if (this.nodes.has(id) || this.variables.has(id) || this.variableCollections.has(id))
