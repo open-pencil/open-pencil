@@ -109,6 +109,7 @@
 - Validate OpenPencil and Figma clipboard data before pasting, so malformed or hostile clipboard content is ignored instead of throwing out of paste or writing mistyped layers into the document.
 - Validate component library revisions from shared storage and from CLI catalogs before reading them, and run the CLI's revisions through the same size, identity, and content-hash checks as the app, so a malformed or tampered revision is rejected instead of crashing or entering the document.
 - Validate MCP and automation WebSocket messages and the MCP discovery file, so a malformed message or a non-string auth token is rejected instead of being used unchecked.
+- List AI models when the models.dev catalog returns a malformed entry: the curated list is shown instead of model listing failing until the app restarts.
 
 ## 0.15.1 — 2026-09-18
 

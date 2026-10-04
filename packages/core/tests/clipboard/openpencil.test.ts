@@ -53,6 +53,21 @@ describe('OpenPencil clipboard parsing', () => {
         format: 'openpencil/v1',
         nodes: [{ id: '0:1', type: 'VECTOR', x: 0, y: 0, fillGeometry: [null] }]
       })
+    ],
+    [
+      'geometry bytes outside 0-255',
+      JSON.stringify({
+        format: 'openpencil/v1',
+        nodes: [
+          {
+            id: '0:1',
+            type: 'VECTOR',
+            x: 0,
+            y: 0,
+            fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: { 0: 1, 1: 300 } }]
+          }
+        ]
+      })
     ]
   ])('ignores %s', (_label, payload) => {
     expect(parseOpenPencilClipboard(clipboardHTML(payload))).toBeNull()

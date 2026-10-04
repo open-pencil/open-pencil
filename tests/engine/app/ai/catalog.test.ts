@@ -102,6 +102,15 @@ describe('models.dev catalog', () => {
     expect(models[0]).toMatchObject({ id: 'claude-sonnet-5', tag: 'Best for design' })
   })
 
+  test('falls back to curated models when the catalog has a malformed entry', async () => {
+    const models = await listCatalogModels(
+      'anthropic',
+      catalogResponse({ anthropic: { models: { 'claude-sonnet-5': null } } })
+    )
+
+    expect(models[0]).toMatchObject({ id: 'claude-sonnet-5', tag: 'Best for design' })
+  })
+
   test('retries a failed shared request and shares a successful request', async () => {
     const originalFetch = globalThis.fetch
     let requests = 0
