@@ -4,12 +4,13 @@ import {
   ALL_TOOLS,
   registerComponentCatalog,
   isAtomicTool,
-  isToolExposed
+  isToolExposed,
+  toolChangesDocument
 } from '@open-pencil/core/tools'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
-import { executeAtomicEditorTool } from '@/app/automation/execution/editor'
+import { executeAtomicEditorTool, executeWithPageUndo } from '@/app/automation/execution/editor'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 import { useLibraryService } from '@/app/libraries'
 
@@ -22,17 +23,19 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
   ): Promise<unknown> {
     const store = target.store
     const tree = toolArgs.tree as Parameters<typeof renderTree>[1]
-    const result = await store.runMutationWithLayout(
-      () =>
-        renderTree(store.graph, tree, {
-          parentId: (toolArgs.parent_id as string | undefined) ?? target.pageId,
-          x: toolArgs.x as number | undefined,
-          y: toolArgs.y as number | undefined
-        }),
-      target.pageId,
-      async (node) => {
-        await ensureGraphFonts(store.graph, [node.id], store.renderer)
-      }
+    const result = await executeWithPageUndo(store, target.pageId, 'Agent: render', () =>
+      store.runMutationWithLayout(
+        () =>
+          renderTree(store.graph, tree, {
+            parentId: (toolArgs.parent_id as string | undefined) ?? target.pageId,
+            x: toolArgs.x as number | undefined,
+            y: toolArgs.y as number | undefined
+          }),
+        target.pageId,
+        async (node) => {
+          await ensureGraphFonts(store.graph, [node.id], store.renderer)
+        }
+      )
     )
     store.requestRender()
     store.flashNodes([result.id])
@@ -62,14 +65,20 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     if (isAtomicTool(def)) {
       result = await executeAtomicEditorTool(store, figma, def, toolArgs)
     } else if (def.mutates) {
-      result = await store.runMutationWithLayout(
-        () => def.execute(figma, toolArgs),
-        figma.currentPageId,
-        async () => {
-          const pageNode = store.graph.getNode(figma.currentPageId)
-          if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
-        }
-      )
+      const pageId = figma.currentPageId
+      const mutate = () =>
+        store.runMutationWithLayout(
+          () => def.execute(figma, toolArgs),
+          figma.currentPageId,
+          async () => {
+            const pageNode = store.graph.getNode(figma.currentPageId)
+            if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
+          }
+        )
+      // View tools (selection, viewport, pages) leave the document and its history alone.
+      result = toolChangesDocument(def)
+        ? await executeWithPageUndo(store, pageId, `Agent: ${def.name}`, mutate)
+        : await mutate()
     } else {
       result = await def.execute(figma, toolArgs)
     }
