@@ -16,6 +16,15 @@ describe('gradient helpers', () => {
     expect(() => linearGradient(stops as never)).toThrow(message)
   })
 
+  test('describe a value that cannot be shown as JSON', () => {
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+    expect(() => linearGradient(circular as never)).toThrow(
+      /linearGradient expects an array of stops.*; got a value that cannot be shown as JSON/
+    )
+    expect(() => linearGradient(10n as never)).toThrow(/; got 10n$/)
+  })
+
   test('name the stop that is wrong', () => {
     expect(() => radialGradient([['#000000', 0], ['#ffffff']] as never)).toThrow(
       /radialGradient expects an array of stops.*; stop 1 is invalid/

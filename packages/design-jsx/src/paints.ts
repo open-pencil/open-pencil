@@ -53,15 +53,22 @@ const GRADIENT_HELPERS = {
 
 type GradientType = keyof typeof GRADIENT_HELPERS
 
+/** A received value for an error message, as JSON where it can be, which a bigint or a cycle cannot. */
+function describeReceived(value: unknown): string {
+  if (typeof value === 'bigint') return `${value}n`
+  try {
+    return String(JSON.stringify(value)).slice(0, 120)
+  } catch {
+    return 'a value that cannot be shown as JSON'
+  }
+}
+
 /** Scripts call the helpers with whatever they guess, so a wrong call says what it expects. */
 function parseStops(type: GradientType, stops: unknown): PaintStop[] {
   const parsed = v.safeParse(stopsSchema, stops)
   if (parsed.success) return parsed.output
   const index = Array.isArray(stops) ? v.getDotPath(parsed.issues[0])?.split('.')[0] : undefined
-  const got =
-    index === undefined
-      ? `got ${String(JSON.stringify(stops)).slice(0, 120)}`
-      : `stop ${index} is invalid`
+  const got = index === undefined ? `got ${describeReceived(stops)}` : `stop ${index} is invalid`
   throw new Error(
     `${GRADIENT_HELPERS[type]} expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]] or [{ color: '#3b82f6', position: 0 }]; ${got}`
   )
