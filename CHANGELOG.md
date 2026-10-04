@@ -94,7 +94,7 @@
 - Load the Bold, Medium, and other styles of macOS system fonts packaged as font collections, such as Menlo, Helvetica Neue, and Avenir Next, instead of reporting them as substituted or drawing a different style (#746).
 - Load the Medium, Semibold, Bold, and other styles of installed variable fonts such as SF Pro on macOS instead of reporting them as substituted (#752).
 - Ship the MIT license text in every published npm package, and add READMEs for `@open-pencil/core`, `@open-pencil/cli`, and `@open-pencil/mcp` on npm.
-- Keep round and other stroke caps and joins on icons from `insert_icon` and the icon picker, and on vectors from `import_svg`, after saving and reopening the file. They were set only on the stroke paint, which `.fig` does not store, so outline icons such as Lucide's reopened with butt caps and miter joins and showed gaps where their strokes meet.
+- Keep round and other stroke caps and joins after saving and reopening the file on icons from `insert_icon` and Design JSX `<Icon>`, and on vectors from inline Design JSX `<svg>`, `import_svg`, and dropped or pasted SVG files. They were set only on the stroke paint, which `.fig` does not store, so outline icons such as Lucide's reopened with butt caps and miter joins and showed gaps where their strokes meet.
 
 ### Performance
 
