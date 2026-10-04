@@ -49,9 +49,21 @@ function isAtRuleCondition(condition: string): boolean {
 /**
  * A mode's name as an identifier. A name with no letters or digits falls back to its id, slugged
  * too: Figma ids such as `1:2` are not valid in a selector value or a variant name as they are.
+ * Names that slug alike in one collection, such as `Dark` and `dark!`, are numbered in mode
+ * order, so each mode keeps its own selector and variant.
  */
-function modeSlug(mode: VariableCollectionMode): string {
-  return tokenSlug(mode.name) || `mode-${tokenSlug(mode.modeId) || 'unnamed'}`
+function modeSlug(collection: VariableCollection, mode: VariableCollectionMode): string {
+  const plainSlug = ({ name, modeId }: VariableCollectionMode) =>
+    tokenSlug(name) || `mode-${tokenSlug(modeId) || 'unnamed'}`
+  const taken = new Set<string>()
+  for (const candidate of collection.modes) {
+    const base = plainSlug(candidate)
+    let slug = base
+    for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`
+    if (candidate.modeId === mode.modeId) return slug
+    taken.add(slug)
+  }
+  return plainSlug(mode)
 }
 
 /** The scope a mode applies in when it names none: `[data-theme="dark"]` for Theme / Dark. */
@@ -59,7 +71,7 @@ export function defaultModeCondition(
   collection: VariableCollection,
   mode: VariableCollectionMode
 ): string {
-  return `[data-${tokenSlug(collection.name) || 'mode'}="${modeSlug(mode)}"]`
+  return `[data-${tokenSlug(collection.name) || 'mode'}="${modeSlug(collection, mode)}"]`
 }
 
 function quoteString(value: string): string {
@@ -113,7 +125,7 @@ function customVariant(name: string, condition: string): string {
 
 /** Variants are named after their mode, prefixed with the collection where two modes share a name. */
 function variantNames(scopes: ModeScope[]): string[] {
-  const plain = scopes.map(({ mode }) => modeSlug(mode))
+  const plain = scopes.map(({ collection, mode }) => modeSlug(collection, mode))
   return plain.map((name, index) => {
     const shared = plain.filter((other) => other === name).length > 1
     const collection = scopes[index]?.collection.name ?? ''
@@ -247,7 +259,7 @@ export function buildTokenStylesheet(
     sections.push(
       scopes
         .map((scope, index) =>
-          customVariant(variants[index] ?? modeSlug(scope.mode), scope.condition)
+          customVariant(variants[index] ?? modeSlug(scope.collection, scope.mode), scope.condition)
         )
         .join('\n')
     )

@@ -182,6 +182,34 @@ describe('token stylesheet', () => {
     )
   })
 
+  test('numbers modes whose names slug alike, so neither overrides the other', async () => {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'theme',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light' },
+        { modeId: 'dark', name: 'Dark' },
+        { modeId: 'dark-alt', name: 'dark!' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    add(graph, 'theme', 'surface', 'Surface', 'COLOR', {
+      light: WHITE,
+      dark: INK,
+      'dark-alt': BLUE_500
+    })
+
+    const { css, issues } = await tokenStylesheet(graph, { format: 'tailwind' })
+
+    expect(issues).toEqual([])
+    expect(css).toContain('[data-theme="dark"] {\n  --color-surface: #121726;')
+    expect(css).toContain('[data-theme="dark-2"] {\n  --color-surface: #3B82F5;')
+    expect(css).toContain('@custom-variant dark (')
+    expect(css).toContain('@custom-variant dark-2 (')
+  })
+
   test('reports and skips what cannot be written as CSS', async () => {
     const graph = new SceneGraph()
     graph.addCollection({
