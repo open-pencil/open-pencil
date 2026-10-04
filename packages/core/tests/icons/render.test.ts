@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SceneGraph, SkiaRenderer } from '@open-pencil/core'
+import { SkiaRenderer } from '@open-pencil/core'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { createIconFromPaths } from '#core/icons/render'

@@ -2,13 +2,14 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core'
 import { importSVG } from '@open-pencil/core/tools'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 async function importVectors(svg: string) {
   const graph = new SceneGraph()
   await importSVG.execute(new FigmaAPI(graph), { svg })
-  return { vectors: [...graph.nodes.values()].filter((node) => node.type === 'VECTOR') }
+  return { graph, vectors: [...graph.nodes.values()].filter((node) => node.type === 'VECTOR') }
 }
 
 describe('SVG vector placement', () => {
