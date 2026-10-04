@@ -47,6 +47,7 @@
 
 ### Fixed
 
+- Show variable-bound colours and numbers correctly when a `.fig` exported from OpenPencil opens in Figma. Figma draws the value a bound field stores until something makes it resolve the variable again, and exports stored the colour from before the binding, so a bound fill appeared in its old colour. Each bound field is now written as it resolves in its layer's mode, or in the collection's default mode when the layer sets none.
 - Open Figma files that use slots with each instance's own slot content instead of its component's default, keep slot properties, their settings, and instance content when saving back to `.fig`, and keep an instance's slot content when you switch its variant.
 - Stop showing a “signal is aborted without reason” error when you switch pages again before the previous page has finished loading.
 - Export layers with two shadows as one `effects` prop instead of repeating the `shadow` attribute, background blurs as `backgroundBlur` instead of a layer blur, hidden children with `visible={false}` instead of leaving them out, and per-corner radii even when the uniform radius is 0.
@@ -61,6 +62,7 @@
 - Keep fixed-size text from collapsing and clipping beside smaller siblings in a Hug auto-layout container.
 - Keep the text and icon an instance was given when a page loads on its own, instead of resynchronising it back to the component's defaults.
 - Keep the ordering keys a `.fig` gave its layers when saving one again, instead of renumbering every sibling, and give every layer on a canvas its own key. Shared styles, variables and the canvas's own layers were numbered in separate passes that each restarted, so Figma saw siblings claiming the same position and ordered them arbitrarily.
+- Keep a `.fig` variable's description, scopes, code syntax, publishing visibility, and plugin data when saving the file, and a collection's plugin data and default mode. Saving previously wrote every variable as published to all scopes with no description or code names, and made the first mode the default.
 - Clear a `.fig` fill or stroke's colour-variable binding when you unbind it, instead of exporting the variable the layer was imported with and rebinding it on reopen. An emptied binding record is no longer written into the file either.
 - Keep an AI reply running in the chat panel, with its Stop button, when you switch pages, instead of detaching the panel from the reply in progress.
 - Undo an AI edit while another page is on screen; undo previously did nothing until you returned to the page the AI changed.
