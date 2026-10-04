@@ -180,7 +180,8 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     return
   }
 
-  editor.undo.runBatch('Move', () => {
+  // The batch keeps a slot claim in the same undo step; it carries the edit's own name.
+  editor.undo.runBatch(d.duplicated ? 'Duplicate' : 'Move', () => {
     if (moved) {
       restoreOriginalPositions(d, editor)
       applyFinalPositions(d, editor)
