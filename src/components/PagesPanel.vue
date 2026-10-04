@@ -15,6 +15,8 @@ import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@ope
 
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { presenceByPage } from '@/app/presence/registry'
+import { appPreferences } from '@/app/settings/preferences/store'
+import PageIssueBadge from '@/components/design-check/PageIssueBadge.vue'
 import PresenceMarkers from '@/components/presence/PresenceMarkers.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -43,6 +45,13 @@ const storeRef = useActiveEditorStoreRef()
 const pagePresence = computed(() =>
   storeRef.value ? presenceByPage(storeRef.value) : new Map<string, never[]>()
 )
+
+/** Errors and warnings per page, following the View → Design issues toggle like the markers. */
+function pageIssues(pageId: string) {
+  if (!appPreferences.value.designCheck.showOnCanvas) return null
+  return storeRef.value?.designCheck.pages.counts.value.get(pageId) ?? null
+}
+
 const pageActions = ref<Pick<PageActions, 'rename'> | null>(null)
 const currentPages = ref<readonly PageItem[]>([])
 const currentMovePage = ref<PageActions['move'] | null>(null)
@@ -151,6 +160,7 @@ function setupPageRowRef(
                   <span :class="pageStyles(pg, currentPageId).label()">{{ pg.name }}</span>
                   <span :class="pageStyles(pg, currentPageId).trailing()">
                     <PresenceMarkers :entries="pagePresence.get(pg.id) ?? []" />
+                    <PageIssueBadge :counts="pageIssues(pg.id)" />
                   </span>
                 </button>
                 <div

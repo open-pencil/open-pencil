@@ -4,12 +4,14 @@ on:
   # Every base, so stacked pull requests are checked against the PR below them.
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  # A queued change was checked as a pull request; the queue still needs the result.
+  merge_group:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pr-title-${{ github.event.pull_request.number }}
+  group: pr-title-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,6 +25,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
       - name: Validate PR title
+        if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           COMMITLINT_PR_TITLE: '1'

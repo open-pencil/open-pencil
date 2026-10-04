@@ -100,6 +100,7 @@ Follow `packages/docs/development/testing.md` and `tests/AGENTS.md`. Package-loc
 - Conventional Commits (`feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, `chore`); short imperative subjects, rationale in the body; release commits are exactly `Release vX.Y.Z`. Preserve product casing: DOM/CSS, HTML, JSX, Tailwind, Kiwi, `.fig`, MCP, CLI, AI, ACP, i18n. Validate with `bun run check:commits --last` or `--from`/`--to`.
 - PR titles are Conventional Commits because GitHub uses them as merge subjects; branch-update merges get explicit subjects such as `chore: merge master into <branch>`. Do not rewrite published history solely to normalize messages.
 - Disclose AI assistance in the PR's AI assistance section, never as commit authorship, `Co-authored-by` trailers, promotional signatures, or session links. Preserve human co-author credits and third-party notices.
+- Stacked pull requests: `gh stack`, rebase never merge, land from the top layer via the merge queue (`CONTRIBUTING.md#stacked-pull-requests`).
 - Issues, PR descriptions, and public comments use concise concrete technical prose: lead with the problem and outcome, add a short example when needed, avoid filler, promotional claims, decorative emojis, unnecessary tables, and file-by-file inventories. Link long logs or design notes.
 
 ## Code review

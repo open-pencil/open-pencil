@@ -22,16 +22,20 @@ import {
   useCanvas,
   useCanvasDrop,
   useCanvasInput,
+  useCanvasIssueMarkers,
   useCanvasVirtualReference,
   useTextEdit
 } from '@open-pencil/vue'
 
+import { useAIChat } from '@/app/ai/chat/use'
 import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 
@@ -88,19 +92,17 @@ useCanvas(sceneCanvasRef, store, {
     store.state.canvasPresentation = colorSpace
   }
 })
-const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
-  canvasRef,
-  store,
-  {
+const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker } =
+  useCanvas(canvasRef, store, {
     layer: 'overlays',
     get showRulers() {
       return appRuntimeConfig.showRulers && store.state.showRulers
     },
+    getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
     shouldSuspendRender,
     getRenderState,
     onViewportResize
-  }
-)
+  })
 const {
   cursorOverride,
   canvasLabelEdit,
@@ -127,6 +129,24 @@ watch(isActivePane, (active) => {
   if (!active) cleanupInteractions()
 })
 onUnmounted(cleanupInteractions)
+
+const { activeTab: propertiesTab } = useAIChat()
+const { detailMarker: hoveredIssueMarker, cursor: issueMarkerCursor } = useCanvasIssueMarkers(
+  canvasRef,
+  store,
+  {
+    hitTest: hitTestIssueMarker,
+    onHover: (marker) => store.designCheck.highlightMarker(marker?.nodeIds ?? null),
+    onActivate: (marker) => {
+      activatePane()
+      propertiesTab.value = 'lint'
+      // An edge pin leads to its nearest issue; a marker opens every layer it covers.
+      const nodeIds = marker.direction ? marker.nodeIds.slice(0, 1) : marker.nodeIds
+      store.designCheck.openMarker(nodeIds)
+      if (marker.direction) store.revealNodes(nodeIds)
+    }
+  }
+)
 
 useTextEdit(canvasRef, store, { isEnabled: () => isActivePane.value })
 const { isDraggingOver } = useCanvasDrop(canvasRef, store, activatePane)
@@ -172,7 +192,9 @@ const paddingEditorIcon = computed(() => {
   return edit ? paddingSideIcons[edit.side] : IconLucidePanelTop
 })
 
-const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))
+const cursor = computed(() =>
+  toolCursor(store.state.activeTool, issueMarkerCursor.value ?? cursorOverride.value)
+)
 </script>
 
 <template>
@@ -215,6 +237,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             class="pointer-events-none absolute inset-0 z-40 border-2 border-dashed border-accent/60 bg-accent/5"
           />
         </Transition>
+        <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
         <CanvasLabelEditor
           :edit="canvasLabelEdit"
           :presentation="canvasLabelEditPresentation"

@@ -46,8 +46,34 @@ export function designDocumentToTailwindJSX(document: DesignDocument): string {
 
 /** Tailwind JSX for scene nodes, separated by blank lines. */
 export function sceneNodesToTailwindJSX(graph: SceneGraph, nodeIds: string[]): string {
-  return nodeIds
-    .map((id) => designDocumentToTailwindJSX(sceneNodeToDesignDocument(graph, id, false)))
-    .filter(Boolean)
-    .join('\n\n')
+  return sceneNodesToTailwindJSXWithLayers(graph, nodeIds).code
+}
+
+/** Tailwind JSX with the layer behind each element, in the order elements open. */
+export interface TailwindJSXWithLayers {
+  code: string
+  /** One entry per JSX element in pre-order; `null` for an element no layer produced. */
+  layerIds: Array<string | null>
+}
+
+function collectLayerIds(node: DesignNode, layerIds: Array<string | null>): void {
+  if (node.type === 'text') return
+  layerIds.push(node.sourceSceneNodeId ?? node.sourceSceneNode?.id ?? null)
+  for (const child of node.children) collectLayerIds(child, layerIds)
+}
+
+export function sceneNodesToTailwindJSXWithLayers(
+  graph: SceneGraph,
+  nodeIds: string[]
+): TailwindJSXWithLayers {
+  const layerIds: Array<string | null> = []
+  const blocks: string[] = []
+  for (const id of nodeIds) {
+    const document = sceneNodeToDesignDocument(graph, id, false)
+    const code = designDocumentToTailwindJSX(document)
+    if (!code) continue
+    blocks.push(code)
+    for (const node of document.children) collectLayerIds(node, layerIds)
+  }
+  return { code: blocks.join('\n\n'), layerIds }
 }
