@@ -125,7 +125,8 @@ function renderNodeContent(
 ): void {
   if (node.type === 'SECTION') {
     r.renderSection(canvas, node, graph)
-  } else if (node.type === 'COMPONENT_SET') {
+  } else if (node.type === 'COMPONENT_SET' && !overlays.playing) {
+    // A previewing canvas draws a set as a plain frame, without its dashed editing border.
     r.renderComponentSet(canvas, node, graph)
   } else if (node.type === 'BOOLEAN_OPERATION') {
     renderBooleanOperation(r, canvas, node, graph)
@@ -297,6 +298,32 @@ function nodeIsolationLayerBounds(
     : r.ck.LTRBRect(0, 0, node.width, node.height)
 }
 
+/** Draw a previewing canvas's copy of a node, and everything below it, from the play session's graph. */
+function renderPlaySubstitute(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  nodeId: string,
+  overlays: RenderOverlays,
+  parentAbsX: number,
+  parentAbsY: number,
+  hasTransformedAncestor: boolean
+): boolean {
+  const substitute = overlays.playSubstitutes?.get(nodeId)
+  if (!substitute || substitute.graph === graph) return false
+  renderNode(
+    r,
+    canvas,
+    substitute.graph,
+    substitute.nodeId,
+    overlays,
+    parentAbsX,
+    parentAbsY,
+    hasTransformedAncestor
+  )
+  return true
+}
+
 export function renderNode(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -307,6 +334,19 @@ export function renderNode(
   parentAbsY = 0,
   hasTransformedAncestor = false
 ): void {
+  if (
+    renderPlaySubstitute(
+      r,
+      canvas,
+      graph,
+      nodeId,
+      overlays,
+      parentAbsX,
+      parentAbsY,
+      hasTransformedAncestor
+    )
+  )
+    return
   const node = graph.getNode(nodeId)
   if (
     !node ||

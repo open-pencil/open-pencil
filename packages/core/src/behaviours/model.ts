@@ -45,6 +45,22 @@ export const DEFAULT_NUMBER_SETTINGS: BehaviourNumberSettings = {
   default: 50
 }
 
+/** A boolean value's binding, if the behaviour has one. */
+export function booleanBinding(
+  behaviour: Behaviour,
+  valueId: string
+): BehaviourBooleanBinding | undefined {
+  return Object.hasOwn(behaviour.booleans, valueId) ? behaviour.booleans[valueId] : undefined
+}
+
+/** A number value's range, if the behaviour has one. */
+export function numberSettings(
+  behaviour: Behaviour,
+  valueId: string
+): BehaviourNumberSettings | undefined {
+  return Object.hasOwn(behaviour.numbers, valueId) ? behaviour.numbers[valueId] : undefined
+}
+
 /** A new behaviour of a kind, its number values at their defaults and nothing bound. */
 export function emptyBehaviour(kind: BehaviourKind): Behaviour {
   const contract = behaviourContract(kind)

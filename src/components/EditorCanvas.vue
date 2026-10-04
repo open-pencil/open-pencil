@@ -98,7 +98,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
   useCanvas(canvasRef, store, {
     layer: 'overlays',
     get showRulers() {
-      return appRuntimeConfig.showRulers && store.state.showRulers
+      return appRuntimeConfig.showRulers && store.state.showRulers && store.state.play === null
     },
     getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
     shouldSuspendRender,

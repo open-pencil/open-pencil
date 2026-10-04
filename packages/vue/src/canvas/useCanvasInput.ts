@@ -47,6 +47,8 @@ export function useCanvasInput(
   const drag = ref<DragState | null>(null)
   const canvasLabelEdit = createCanvasLabelEdit(editor)
   const cursorOverride = ref<string | null>(null)
+  /** Whether the primary button is held on a preview control, such as a slider thumb. */
+  const playDragging = ref(false)
   const autoLayoutPaddingEdit = ref<{
     nodeId: string
     side: 'top' | 'right' | 'bottom' | 'left'
@@ -212,6 +214,7 @@ export function useCanvasInput(
   }
 
   function onDblClick(e: MouseEvent) {
+    if (editor.state.play) return
     if (startAutoLayoutPaddingEdit(e)) return
     onTextDblClick(e)
   }
@@ -219,6 +222,14 @@ export function useCanvasInput(
   function onMouseDown(e: MouseEvent) {
     onActivate?.()
     if (!isEnabled()) return
+    // Preview: the primary button uses controls; panning (Space, middle button, Hand) still works.
+    if (editor.state.play && e.button === 0 && editor.state.activeTool !== 'HAND') {
+      if (!editor.state.editingTextId) canvasRef.value?.focus()
+      const { cx, cy } = getCoords(e)
+      playDragging.value = editor.playPointerDown(cx, cy)
+      e.preventDefault()
+      return
+    }
     editor.setMeasurementMode('off')
     const paddingEdit = autoLayoutPaddingEdit.value
     if (paddingEdit) {
@@ -264,6 +275,12 @@ export function useCanvasInput(
     lastPointer.value = { cx: coords.cx, cy: coords.cy }
     if (onCursorMove) {
       onCursorMove(coords.cx, coords.cy)
+    }
+
+    if (editor.state.play && !drag.value) {
+      if (playDragging.value) editor.playPointerMove(coords.cx)
+      cursorOverride.value = editor.playHitsControl(coords.cx, coords.cy) ? 'pointer' : null
+      return
     }
 
     if (!drag.value) {
@@ -351,6 +368,10 @@ export function useCanvasInput(
   }
 
   function onMouseUp() {
+    if (playDragging.value) {
+      playDragging.value = false
+      editor.playPointerUp()
+    }
     if (!drag.value) return
     const d = drag.value
 
@@ -497,17 +518,16 @@ export function useCanvasInput(
     editor.setMeasurementMode('off')
     cancelPointerInteraction()
   })
-  const stopPreviewListeners = (
-    ['selection:changed', 'page:changed', 'graph:replaced'] as const
-  ).map((event) =>
-    editor.onEditorEvent(event, () => {
-      if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
-    })
+  const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
+    (event) =>
+      editor.onEditorEvent(event, () => {
+        if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
+      })
   )
   onScopeDispose(() => {
     stopRotationListener()
     stopToolListener()
-    for (const stop of stopPreviewListeners) stop()
+    for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
   })
 

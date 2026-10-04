@@ -33,6 +33,7 @@ import { createGuideActions } from './guides'
 import { createDesignIssueActions } from './issues'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
+import { createPlayActions } from './play/actions'
 import { createSelectionActions } from './selection'
 import { createShapeActions } from './shapes'
 import { createDefaultEditorState } from './state'
@@ -232,6 +233,7 @@ export function createEditor(options?: EditorOptions) {
   const variables = createVariableActions(ctx)
   const vectorize = createVectorizeActions(ctx)
   const alignment = createAlignmentActions(ctx)
+  const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
@@ -348,6 +350,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Alignment (align, flip, rotate)
     ...alignment,
+
+    // Preview: instances with a behaviour respond to the pointer on this canvas
+    ...preview,
 
     // Bitmap-to-vector replacement
     ...vectorize,

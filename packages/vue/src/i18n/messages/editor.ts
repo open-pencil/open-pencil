@@ -7,6 +7,7 @@ export const editorMessageDefaults = {
   removeGradientStop: 'Remove gradient stop',
   showUI: params('Show UI ({shortcut})'),
   previewing: 'Previewing',
+  startPreview: params('Preview ({shortcut})'),
   resetPreview: 'Reset',
   leavePreview: params('Leave preview ({shortcut})')
 } as const

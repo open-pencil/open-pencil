@@ -2,12 +2,12 @@ import {
   behaviourContract,
   behaviourOwner,
   behaviourProperties,
+  booleanBinding,
   DEFAULT_NUMBER_SETTINGS,
   emptyBehaviour,
   missingBindings,
   readBehaviour,
   type Behaviour,
-  type BehaviourBooleanBinding,
   type BehaviourKind,
   type BehaviourNumberSettings
 } from '@open-pencil/core/behaviours'
@@ -16,14 +16,6 @@ import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 import type { BehaviourControl, BehaviourPropertyOption, BehaviourValueControl } from './types'
-
-/** A boolean value's binding, if the behaviour has one. */
-function booleanBinding(
-  behaviour: Behaviour,
-  valueId: string
-): BehaviourBooleanBinding | undefined {
-  return Object.hasOwn(behaviour.booleans, valueId) ? behaviour.booleans[valueId] : undefined
-}
 
 /**
  * The behaviour of the selected main component or component set, as the properties panel
