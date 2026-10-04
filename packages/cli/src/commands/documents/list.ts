@@ -2,11 +2,11 @@ import { defineCommand } from 'citty'
 
 import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 
-import { rpc } from '#cli/app-client'
+import { rpc } from '#cli/app/client'
 import { bold, entity, fmtList, kv, printError } from '#cli/format'
 
 export default defineCommand({
-  meta: { description: 'List open documents in the running app' },
+  meta: { description: 'List open documents (tabs) in the running app' },
   args: {
     json: { type: 'boolean', description: 'Output as JSON' }
   },

@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import { removeDiscoveryFile, writeDiscoveryFile } from '@open-pencil/mcp/discovery'
 
-import { rpc } from '#cli/app-client'
+import { rpc } from '#cli/app/client'
 
 let server: Server | null = null
 

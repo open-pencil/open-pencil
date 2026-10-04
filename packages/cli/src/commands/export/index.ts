@@ -6,8 +6,8 @@ import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@open-pencil/core/io'
 
-import { isAppMode, requireFile, rpc } from '#cli/app-client'
-import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
+import { isAppMode, requireFile, rpc } from '#cli/app/client'
+import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { ok, printError } from '#cli/format'
 import {
   loadDocument,
