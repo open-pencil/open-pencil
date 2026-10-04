@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import { IS_TAURI } from '@open-pencil/core/constants'
 
 const APP_CACHE_DIR = 'cache/v1'
@@ -116,23 +118,29 @@ export async function removeCachePrefix(prefix: string): Promise<void> {
   removeStorageEntriesWithPrefix(prefix)
 }
 
-type JSONCacheEnvelope<T> = {
-  updatedAt: number
-  value: T
-}
+const CacheEnvelopeJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ updatedAt: v.number(), value: v.unknown() })
+)
 
-export async function readCacheJSON<T>(key: string, maxAgeMs?: number): Promise<T | null> {
+/**
+ * Read a JSON value written by `writeCacheJSON`. A missing, expired, malformed or
+ * mismatched entry reads as null, so callers refetch instead of trusting stale shapes.
+ */
+export async function readCacheJSON<TSchema extends v.GenericSchema>(
+  key: string,
+  schema: TSchema,
+  maxAgeMs?: number
+): Promise<v.InferOutput<TSchema> | null> {
   const raw = await readCacheText(key)
   if (!raw) return null
 
-  try {
-    const envelope = JSON.parse(raw) as Partial<JSONCacheEnvelope<T>>
-    if (typeof envelope.updatedAt !== 'number' || !('value' in envelope)) return null
-    if (maxAgeMs !== undefined && Date.now() - envelope.updatedAt > maxAgeMs) return null
-    return envelope.value as T
-  } catch {
-    return null
-  }
+  const envelope = v.safeParse(CacheEnvelopeJSON, raw)
+  if (!envelope.success) return null
+  if (maxAgeMs !== undefined && Date.now() - envelope.output.updatedAt > maxAgeMs) return null
+  const value = v.safeParse(schema, envelope.output.value)
+  return value.success ? value.output : null
 }
 
 export async function writeCacheJSON(key: string, value: unknown): Promise<void> {

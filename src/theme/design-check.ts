@@ -1,5 +1,8 @@
 import { tv } from 'tailwind-variants'
 
+import { motionStyles } from '@/theme/motion/styles'
+import { floatingSurface } from '@/theme/overlay'
+
 export const designCheck = tv({
   slots: {
     root: 'flex min-h-0 flex-1 flex-col',
@@ -39,17 +42,6 @@ export const designCheck = tv({
   }
 })
 
-export const severityIcon = tv({
-  base: 'size-3 shrink-0',
-  variants: {
-    severity: {
-      error: 'text-issue-error',
-      warning: 'text-issue-warning',
-      info: 'text-issue-info'
-    }
-  }
-})
-
 /** The Layers panel mark: a severity icon on a layer, a dot on a collapsed layer holding issues. */
 export const layerIssueMark = tv({
   slots: {
@@ -78,8 +70,11 @@ export const pageIssueBadge = tv({
 
 export const issueTooltip = tv({
   slots: {
-    content:
-      'pointer-events-none z-50 w-64 rounded-lg bg-panel py-1.5 text-[11px] text-surface shadow-[0_0_0_1px_var(--color-border),0_8px_30px_rgb(0_0_0/0.35)]',
+    content: [
+      'pointer-events-none z-50 w-64 py-1.5 text-[11px]',
+      floatingSurface,
+      motionStyles.popup
+    ],
     header: 'flex items-center gap-1.5 px-2.5 pt-0.5 pb-1 font-semibold',
     headerIcon: 'size-3 shrink-0 text-muted',
     headerText: 'min-w-0 truncate',

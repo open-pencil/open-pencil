@@ -1,5 +1,6 @@
 import { type RequestOptions, request as httpRequest } from 'node:http'
 
+import * as v from 'valibot'
 import { WebSocket } from 'ws'
 
 import {
@@ -11,12 +12,28 @@ import {
 } from '@open-pencil/core'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 
-export interface HealthResponse {
-  status: string
-  version: string
-  authRequired: boolean
-  tools?: ToolDescriptor[]
-  discoveryPath?: string
+const ToolDescriptorShape = v.looseObject({ name: v.string(), enabled: v.boolean() })
+
+export const HealthResponseSchema = v.object({
+  status: v.string(),
+  version: v.string(),
+  authRequired: v.boolean(),
+  tools: v.optional(v.array(v.custom<ToolDescriptor>((value) => v.is(ToolDescriptorShape, value)))),
+  discoveryPath: v.optional(v.string())
+})
+
+export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>
+
+/** Read a JSON response body or file, checked against `schema`. */
+export async function readJSON<T>(
+  source: { text(): Promise<string> },
+  schema: v.GenericSchema<unknown, T>
+): Promise<T> {
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), await source.text())
+}
+
+export function readHealth(response: Response): Promise<HealthResponse> {
+  return readJSON(response, HealthResponseSchema)
 }
 
 export interface MockBrowserRequest {
@@ -31,8 +48,27 @@ export interface MockBrowser {
   close: () => void
 }
 
-/** Read the next WebSocket JSON message with a timeout. */
-export function readWsJSON<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
+/** A `register` broadcast: the browser bridge announcing its token. */
+export const RegisterMessage = v.object({
+  type: v.string(),
+  token: v.optional(v.nullable(v.string()))
+})
+
+/** A tool response relayed through the browser bridge. */
+export const ResponseMessage = v.object({
+  type: v.string(),
+  id: v.string(),
+  ok: v.optional(v.boolean()),
+  result: v.optional(v.looseObject({ name: v.optional(v.string()) })),
+  error: v.optional(v.string())
+})
+
+/** Read the next WebSocket JSON message with a timeout, checked against `schema`. */
+export function readWsJSON<T>(
+  ws: WebSocket,
+  schema: v.GenericSchema<unknown, T>,
+  timeoutMs = 1000
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const cleanup = () => {
       clearTimeout(timer)
@@ -42,7 +78,7 @@ export function readWsJSON<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
     const onMessage = (raw: WebSocket.RawData) => {
       cleanup()
       try {
-        resolve(JSON.parse(raw.toString()) as T)
+        resolve(v.parse(v.pipe(v.string(), v.parseJson(), schema), raw.toString()))
       } catch (error) {
         reject(error)
       }
@@ -78,13 +114,17 @@ export function openWs(url: string, authToken?: string | null): Promise<WebSocke
 }
 
 /** Read the next WebSocket JSON message, skipping any 'register' broadcasts. */
-export async function readNextResponse<T>(ws: WebSocket, timeoutMs = 5000): Promise<T> {
+export async function readNextResponse<T>(
+  ws: WebSocket,
+  schema: v.GenericSchema<unknown, T>,
+  timeoutMs = 5000
+): Promise<T> {
   const start = Date.now()
   for (let i = 0; ; i++) {
     const remaining = timeoutMs - (Date.now() - start)
     if (remaining <= 0) throw new Error(`Timed out after reading ${i} register messages`)
-    const msg = await readWsJSON<T & { type: string }>(ws, remaining)
-    if (msg.type !== 'register') return msg
+    const msg = await readWsJSON(ws, v.looseObject({ type: v.string() }), remaining)
+    if (msg.type !== 'register') return v.parse(schema, msg)
   }
 }
 
@@ -307,7 +347,7 @@ export async function waitForBrowserRegistration(port: number, timeoutMs = 5000)
   while (Date.now() - start < timeoutMs) {
     try {
       const resp = await fetch(`http://127.0.0.1:${port}/health`)
-      const health = (await resp.json()) as HealthResponse
+      const health = await readHealth(resp)
       lastStatus = health.status
       if (health.status === 'ok') return
     } catch {

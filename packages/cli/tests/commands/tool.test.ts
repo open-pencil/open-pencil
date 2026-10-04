@@ -3,11 +3,17 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import * as v from 'valibot'
+
 import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
 
 setDefaultTimeout(60_000)
 
 const FIXTURE = join(FIXTURES, 'gold-preview.fig')
+
+function parseJSON<T>(text: string, schema: v.GenericSchema<unknown, T>): T {
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), text)
+}
 
 async function cli(args: string[]) {
   const proc = Bun.spawn([process.execPath, CLI_ENTRY, ...args], { stdout: 'pipe', stderr: 'pipe' })
@@ -22,13 +28,19 @@ describe('tool CLI', () => {
   test('lists and describes tools with their effect and argument schema', async () => {
     const listed = await cli(['tool', 'list', '--json'])
     expect(listed.exitCode).toBe(0)
-    const tools = JSON.parse(listed.stdout) as Array<{ name: string; effect: string }>
+    const tools = parseJSON(
+      listed.stdout,
+      v.array(v.looseObject({ name: v.string(), effect: v.string() }))
+    )
     expect(tools).toContainEqual(expect.objectContaining({ name: 'set_fill', effect: 'write' }))
     expect(tools).toContainEqual(expect.objectContaining({ name: 'list_pages', effect: 'read' }))
 
     const described = await cli(['tool', 'describe', 'create_page', '--json'])
     expect(described.exitCode).toBe(0)
-    const info = JSON.parse(described.stdout) as { schema: { properties: object } }
+    const info = parseJSON(
+      described.stdout,
+      v.looseObject({ schema: v.looseObject({ properties: v.record(v.string(), v.unknown()) }) })
+    )
     expect(info.schema.properties).toHaveProperty('name')
   })
 
@@ -49,7 +61,10 @@ describe('tool CLI', () => {
     expect(JSON.parse(created.stdout)).toMatchObject({ name: 'From CLI' })
 
     const pages = await cli(['tool', 'call', 'list_pages', outPath, '--json'])
-    const result = JSON.parse(pages.stdout) as { pages: Array<{ name: string }> }
+    const result = parseJSON(
+      pages.stdout,
+      v.looseObject({ pages: v.array(v.looseObject({ name: v.string() })) })
+    )
     expect(result.pages.map((page) => page.name)).toContain('From CLI')
   })
 

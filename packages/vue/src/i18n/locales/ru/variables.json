@@ -9,5 +9,7 @@
   "renameMode": "Переименовать режим",
   "duplicateMode": "Дублировать режим",
   "deleteMode": "Удалить режим",
-  "setDefaultMode": "Установить по умолчанию"
+  "setDefaultMode": "Установить по умолчанию",
+  "copyAsCSS": "Копировать как CSS",
+  "copyAsTailwindTheme": "Копировать как тему Tailwind"
 }

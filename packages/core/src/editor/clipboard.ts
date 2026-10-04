@@ -18,6 +18,7 @@ import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboa
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -29,6 +30,8 @@ export function createClipboardActions(ctx: EditorContext) {
     const prevSelection = new Set(ctx.state.selectedIds)
     const selectedSet = new Set(selectedNodes.map((n) => n.id))
     const topLevel = selectedNodes.filter((n) => !n.parentId || !selectedSet.has(n.parentId))
+    const parents = topLevel.map((node) => node.parentId ?? ctx.state.currentPageId)
+    if (!prepareSlotEdits(ctx, parents)) return
 
     const newRootIds: string[] = []
     const allSnapshots = new Map<string, SceneNode>()
@@ -137,12 +140,9 @@ export function createClipboardActions(ctx: EditorContext) {
   async function pasteFromHTML(html: string, cursorPos?: Vector, options: PasteOptions = {}) {
     const openPencil = parseOpenPencilClipboard(html)
     if (openPencil) {
-      const created = pasteOpenPencilNodes(
-        openPencil.nodes,
-        openPencil.images,
-        [],
-        cursorPos,
-        options
+      // One undo step for the paste and any slot it claims.
+      const created = ctx.undo.runBatch('Paste', () =>
+        pasteOpenPencilNodes(openPencil.nodes, openPencil.images, [], cursorPos, options)
       )
       await fontActions.loadFontsForNodes(created)
       return
@@ -150,38 +150,45 @@ export function createClipboardActions(ctx: EditorContext) {
 
     const figma = await parseFigmaClipboard(html)
     if (figma) {
-      const prevSelection = new Set(ctx.state.selectedIds)
-      const replacementTargets = options.replaceSelection ? selectedReplacementTargets(ctx) : []
-      const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
-      const operation = prepareClipboardImport(figma.nodes, ctx.graph, pasteTarget, figma.blobs)
-      let deliveryError: CommittedGraphEventError | undefined
-      try {
-        operation.commit()
-      } catch (error) {
-        if (!(error instanceof CommittedGraphEventError)) throw error
-        deliveryError = error
-      }
-      const created = operation.plan.rootIds
-      if (created.length === 0) return
+      // One undo step for the paste and any slot it claims.
+      const pasted = ctx.undo.runBatch('Paste', () => {
+        const prevSelection = new Set(ctx.state.selectedIds)
+        const replacementTargets = options.replaceSelection ? selectedReplacementTargets(ctx) : []
+        const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+        if (!prepareSlotEdits(ctx, [pasteTarget])) return null
+        const operation = prepareClipboardImport(figma.nodes, ctx.graph, pasteTarget, figma.blobs)
+        let deliveryError: CommittedGraphEventError | undefined
+        try {
+          operation.commit()
+        } catch (error) {
+          if (!(error instanceof CommittedGraphEventError)) throw error
+          deliveryError = error
+        }
+        const created = operation.plan.rootIds
+        if (created.length === 0) return null
 
-      if (replacementTargets.length > 0) {
-        replaceTargetsWithCreated(
-          ctx,
-          placementActions.centerNodesAt,
-          created,
-          replacementTargets,
-          prevSelection,
-          operation
-        )
-      } else {
-        const { width: viewW, height: viewH } = ctx.getViewportSize()
-        const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
-        const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
-        placementActions.centerNodesAt(created, cx, cy)
-        computeAllLayouts(ctx.graph, ctx.state.currentPageId)
-        ctx.setSelectedIds(new Set(created))
-        pushCreatedNodesUndo(created, prevSelection, 'Paste', operation)
-      }
+        if (replacementTargets.length > 0) {
+          replaceTargetsWithCreated(
+            ctx,
+            placementActions.centerNodesAt,
+            created,
+            replacementTargets,
+            prevSelection,
+            operation
+          )
+        } else {
+          const { width: viewW, height: viewH } = ctx.getViewportSize()
+          const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
+          const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
+          placementActions.centerNodesAt(created, cx, cy)
+          computeAllLayouts(ctx.graph, ctx.state.currentPageId)
+          ctx.setSelectedIds(new Set(created))
+          pushCreatedNodesUndo(created, prevSelection, 'Paste', operation)
+        }
+        return { created, deliveryError }
+      })
+      if (!pasted) return
+      const { created, deliveryError } = pasted
 
       if (deliveryError) throw deliveryError
       await Promise.all([
@@ -219,6 +226,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
 
     const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+    if (!prepareSlotEdits(ctx, [pasteTarget])) return created
     const dependencyRootIds: string[] = []
     for (const dependency of dependencies)
       dependencyRootIds.push(createNodeTree(dependency, ctx.state.currentPageId))
@@ -311,10 +319,16 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   /**
-   * Deletes layers with their children as one undo step, skipping locked ones. Deleted layers
-   * leave the selection, and undo restores the selection from before.
+   * Deletes layers with their children as one undo step, skipping locked ones and, as in Figma,
+   * layers of an instance outside its slots. Deleted layers leave the selection, and undo
+   * restores the selection from before.
    */
   function deleteNodes(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
+    // One undo step for the delete and any slot it claims.
+    ctx.undo.runBatch('Delete', () => deleteLayers(nodeIds, nextSelection))
+  }
+
+  function deleteLayers(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
     const entries: Array<{
       id: string
       parentId: string
@@ -325,11 +339,17 @@ export function createClipboardActions(ctx: EditorContext) {
       const node = ctx.graph.getNode(id)
       if (!node || node.locked) continue
       const parentId = node.parentId ?? ctx.state.currentPageId
+      if (!acceptsChildren(ctx, parentId)) continue
       const parent = ctx.graph.getNode(parentId)
       const index = parent?.childIds.indexOf(id) ?? -1
       entries.push({ id, parentId, index, subtree: snapshotSubtree(ctx.graph, id) })
     }
     if (entries.length === 0) return
+    prepareSlotEdits(
+      ctx,
+      entries.map((entry) => entry.parentId)
+    )
+    for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 
     const relayoutParents = () => {
       for (const parentId of new Set(entries.map((entry) => entry.parentId))) {

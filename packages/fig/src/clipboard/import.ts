@@ -1,5 +1,6 @@
 import { inflateSync } from 'fflate'
 import { decode as decodeText, toUint8Array, isValid } from 'js-base64'
+import * as v from 'valibot'
 
 import type { NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
@@ -7,11 +8,13 @@ import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi
 import { parseFigKiwiChunks, decompressFigKiwiDataAsync } from '../node-change'
 import { isFigClipboardVisualType } from '../node-classification'
 
-interface FigmaClipboardMeta {
-  fileKey: string
-  pasteID: number
-  dataType: string
-}
+const FigmaClipboardMetaJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ fileKey: v.string(), pasteID: v.number(), dataType: v.string() })
+)
+
+type FigmaClipboardMeta = v.InferOutput<typeof FigmaClipboardMetaJSON>
 
 export async function parseFigmaClipboard(
   html: string
@@ -22,7 +25,9 @@ export async function parseFigmaClipboard(
 
   // Clipboard HTML comes from other applications, so its Base64 is checked first.
   if (!isValid(metaMatch[1]) || !isValid(bufMatch[1])) throw new TypeError('Invalid Base64 string')
-  const meta: FigmaClipboardMeta = JSON.parse(decodeText(metaMatch[1]))
+  const parsedMeta = v.safeParse(FigmaClipboardMetaJSON, decodeText(metaMatch[1]))
+  if (!parsedMeta.success) return null
+  const meta = parsedMeta.output
   const binary = toUint8Array(bufMatch[1])
 
   try {

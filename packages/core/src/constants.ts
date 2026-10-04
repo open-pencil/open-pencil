@@ -9,6 +9,9 @@ export const TRANSPARENT: Color = { r: 0, g: 0, b: 0, a: 0 }
 export const DEFAULT_SHADOW_COLOR: Color = { r: 0, g: 0, b: 0, a: 0.25 }
 export const SELECTION_COLOR = { r: 0.23, g: 0.51, b: 0.96, a: 1 } satisfies Color
 export const COMPONENT_COLOR = { r: 0.592, g: 0.278, b: 1, a: 1 } satisfies Color
+/** Slot frames and their outlines, `#f24bbc` like the app's `--color-slot`. */
+export const SLOT_COLOR = { r: 0.949, g: 0.294, b: 0.737, a: 1 } satisfies Color
+export const SLOT_EMPTY_FILL_ALPHA = 0.08
 export const SNAP_COLOR = { r: 1.0, g: 0.0, b: 0.56, a: 1 } satisfies Color
 export const MEASUREMENT_COLOR = { r: 0.949, g: 0.282, b: 0.133, a: 1 } satisfies Color
 export const MEASUREMENT_PILL_PADDING_X = 5

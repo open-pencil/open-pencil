@@ -241,12 +241,20 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
+  slotInstanceOptions,
+  slotLimits,
   useComponentProperties,
+  useSlotAuthoring,
+  useSlotProperties,
   useVariantAuthoring
 } from '#vue/controls/component-props'
 export type {
   ComponentPropertyControl,
   ComponentPropertyOption,
+  SlotDefinitionControl,
+  SlotInstanceOption,
+  SlotLimit,
+  SlotPropertyControl,
   VariantDefinitionControl
 } from '#vue/controls/component-props'
 export type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'

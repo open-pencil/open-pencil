@@ -40,3 +40,9 @@ Gesten über den Ebenen- und Eigenschaften-Panels werden nicht an die Arbeitsfl�
 | 100 % | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Strg</kbd><kbd>0</kbd> |
 | Dokument einpassen | <kbd>⌘</kbd><kbd>1</kbd> | <kbd>Strg</kbd><kbd>1</kbd> |
 | Auf Auswahl zoomen | <kbd>⌘</kbd><kbd>2</kbd> | <kbd>Strg</kbd><kbd>2</kbd> |
+
+## Befehlspalette
+
+<kbd>⌘</kbd><kbd>K</kbd> unter macOS beziehungsweise <kbd>Strg</kbd><kbd>K</kbd> unter Windows und Linux durchsucht Aktionen des Editors und der Anwendung. Ein Treffer wird mit Auswahl ausgeführt; nicht verfügbare Aktionen bleiben von der aktuellen Auswahl und dem Dokumentzustand abhängig.
+
+Die Palette wechselt auch zwischen Seiten. Vor der Eingabe listet sie die in diesem Tab zuletzt besuchten Seiten, die neueste zuerst, und **Zu Seite wechseln…** öffnet eine Liste aller Seiten. Auch die Eingabe eines Seitennamens findet sie. Seiten, auf denen Mitarbeitende oder AI-Agenten arbeiten, nennen deren Namen; das Seiten-Panel markiert dieselben Seiten mit ihren Farben.

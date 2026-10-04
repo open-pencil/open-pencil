@@ -26,7 +26,7 @@ const { panels } = useI18n()
   <PanelSection :label="panels.variables" :empty="!hasVariables">
     <template #actions>
       <IconButton :label="panels.openVariables" @click="emit('openDialog')">
-        <icon-lucide-settings-2 class="size-3.5" />
+        <icon-lucide-square-arrow-out-up-right class="size-3.5" />
       </IconButton>
     </template>
     <div v-if="hasVariables" class="mt-1 text-[11px] text-muted">

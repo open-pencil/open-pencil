@@ -13,6 +13,7 @@ import IconMousePointer from '~icons/lucide/mouse-pointer'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconRows from '~icons/lucide/rows-3'
 import IconSquare from '~icons/lucide/square'
+import IconSlot from '~icons/lucide/square-dashed'
 import IconStar from '~icons/lucide/star'
 import IconTriangle from '~icons/lucide/triangle'
 import IconType from '~icons/lucide/type'
@@ -57,7 +58,8 @@ export const COMPONENT_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'INSTANCE'
 
 export { IconFrame, IconSquare }
 
-export function nodeIcon(node: { type: string; layoutMode: string }) {
+export function nodeIcon(node: { type: string; layoutMode: string; slot?: boolean }) {
+  if (node.slot) return IconSlot
   if (node.type === 'FRAME' && node.layoutMode !== 'NONE')
     return AUTO_LAYOUT_ICONS[node.layoutMode] ?? IconFrame
   return NODE_ICONS[node.type] ?? IconSquare

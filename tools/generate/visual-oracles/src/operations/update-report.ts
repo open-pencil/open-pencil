@@ -2,35 +2,46 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-interface Metrics {
-  figmaSize: string
-  openPencilSize: string
-  differentPixels: number
-  differentPercent: number
-  fuzz?: string
-  fuzzDifferentPixels?: number
-  fuzzDifferentPercent?: number
-  rmse: string
-}
+import * as v from 'valibot'
 
-interface Comparison {
-  name: string
-  nodeId: string
-  output: string
-  figmaSize?: string
-  openPencilSize?: string
-  differentPixels?: number
-  differentPercent?: number
-  fuzz?: string
-  fuzzDifferentPixels?: number
-  fuzzDifferentPercent?: number
-  rmse?: string
-  rmseNormalized?: number
-}
+const MetricsJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    figmaSize: v.string(),
+    openPencilSize: v.string(),
+    differentPixels: v.number(),
+    differentPercent: v.number(),
+    fuzz: v.optional(v.string()),
+    fuzzDifferentPixels: v.optional(v.number()),
+    fuzzDifferentPercent: v.optional(v.number()),
+    rmse: v.string()
+  })
+)
 
-interface Report {
-  comparisons: Comparison[]
-}
+// The report is written back in place, so loose objects keep fields this script does not own.
+const ReportJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.looseObject({
+    comparisons: v.array(
+      v.looseObject({
+        name: v.string(),
+        nodeId: v.string(),
+        output: v.string(),
+        figmaSize: v.optional(v.string()),
+        openPencilSize: v.optional(v.string()),
+        differentPixels: v.optional(v.number()),
+        differentPercent: v.optional(v.number()),
+        fuzz: v.optional(v.string()),
+        fuzzDifferentPixels: v.optional(v.number()),
+        fuzzDifferentPercent: v.optional(v.number()),
+        rmse: v.optional(v.string()),
+        rmseNormalized: v.optional(v.number())
+      })
+    )
+  })
+)
 
 const { values: opts } = parseArgs({
   options: {
@@ -46,8 +57,8 @@ const { values: opts } = parseArgs({
 if (!opts.name) throw new Error('--name is required')
 if (!opts.metrics) throw new Error('--metrics is required')
 
-const report = JSON.parse(readFileSync(opts.report, 'utf8')) as Report
-const metrics = JSON.parse(readFileSync(opts.metrics, 'utf8')) as Metrics
+const report = v.parse(ReportJSON, readFileSync(opts.report, 'utf8'))
+const metrics = v.parse(MetricsJSON, readFileSync(opts.metrics, 'utf8'))
 const comparison = report.comparisons.find((item) => item.name === opts.name)
 if (!comparison) throw new Error(`No comparison named ${opts.name}`)
 

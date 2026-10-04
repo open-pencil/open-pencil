@@ -2,9 +2,9 @@ import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { expectDefined } from '../assert'
-import { readFixtureJSON } from './fixtures'
+import { readFixtureObject } from './fixtures'
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-binding-ownership-records.json')
+const fixture = readFixtureObject('nested-binding-ownership-records.json')
 
 /** Remove only the placed owner's declaration, retaining the saved inherited expression. */
 export function inheritedNestedBindingRecords(): NodeChange[] {

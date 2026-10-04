@@ -15,9 +15,8 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { issueDetail, ruleTitle } from '@/app/editor/design-check/format'
 import { compareIssueSeverity, type DesignIssue } from '@/app/editor/design-check/issues'
 import { nodeIcon } from '@/app/editor/icons'
+import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import { issueTooltip } from '@/theme/design-check'
-
-import SeverityIcon from './SeverityIcon.vue'
 
 /** Issues listed before the tooltip summarizes the rest. */
 const MAX_ITEMS = 4

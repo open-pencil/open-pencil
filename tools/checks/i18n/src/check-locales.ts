@@ -2,6 +2,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
+import * as v from 'valibot'
+
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
@@ -38,8 +40,10 @@ function localeFileName(namespace: string) {
   return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
+const JSONObjectText = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+
 function readJSONObject(path: string): JSONObject {
-  return JSON.parse(readFileSync(path, 'utf-8')) as JSONObject
+  return v.parse(JSONObjectText, readFileSync(path, 'utf-8'))
 }
 
 function report(message: string) {

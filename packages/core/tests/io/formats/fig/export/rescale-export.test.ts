@@ -10,9 +10,9 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { setInstanceOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { readFixtureJSON } from '#core-tests/helpers/fig/fixtures'
+import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-binding-ownership-records.json')
+const fixture = readFixtureObject('nested-binding-ownership-records.json')
 
 for (const scale of [0.5, 2]) {
   for (const literalClaim of [false, true]) {

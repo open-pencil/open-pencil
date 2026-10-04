@@ -151,6 +151,10 @@
   "auto": "自动",
   "columns": "列",
   "rows": "行",
+  "addGridColumn": "添加列",
+  "addGridRow": "添加行",
+  "removeGridColumn": "移除列",
+  "removeGridRow": "移除行",
   "sizingFixed": "固定",
   "sizingHug": "适应内容",
   "sizingFill": "填充",
@@ -183,6 +187,52 @@
   "add": "添加",
   "variants": "变体",
   "componentProperties": "组件属性",
+  "slotDefault": "默认",
+  "slotModified": "已修改",
+  "slotItemCount": {
+    "many": "{count} 项"
+  },
+  "addInstances": "添加实例",
+  "searchInstances": "搜索组件",
+  "preferredInstances": "首选",
+  "allInstances": "所有组件",
+  "noInstancesFound": "未找到组件",
+  "notPreferredInstance": "非首选",
+  "slotLimits": "插槽限制",
+  "slotLimitCount": {
+    "many": "{count} 项限制"
+  },
+  "slotLimitIssueCount": {
+    "many": "{count} 个问题"
+  },
+  "slotMinimumLayers": {
+    "many": "至少 {count} 个图层"
+  },
+  "slotMaximumLayers": {
+    "many": "最多 {count} 个图层"
+  },
+  "slotPreferredOnly": "仅限首选实例",
+  "slotNonPreferredFound": {
+    "many": "{count} 个图层不是首选"
+  },
+  "selectLayers": "选择图层",
+  "resetSlot": "重置插槽",
+  "deleteSlotContents": "删除内容",
+  "slotActions": "{name} 操作",
+  "slots": "插槽",
+  "createSlot": "创建插槽",
+  "removeSlot": "移除插槽",
+  "slotSettings": "插槽设置",
+  "slotName": "插槽名称",
+  "slotDescription": "描述",
+  "slotMinimum": "最少图层数",
+  "slotMaximum": "最多图层数",
+  "slotNoLimit": "无限制",
+  "addPreferredInstances": "添加首选实例",
+  "removePreferredInstance": "从首选中移除",
+  "searchStyles": "搜索样式",
+  "noStylesFound": "未找到样式",
+  "noComponentsFound": "未找到组件",
   "gapAuto": "自动间距",
   "horizontalGap": "水平间距",
   "verticalGap": "垂直间距",
@@ -264,11 +314,9 @@
   "assetVariantSummary": "{count} 个变体 · {names}",
   "duplicateVariantValues": "重复的变体值",
   "variantPropertyName": "属性名称",
-  "variantPropertyValue": "初始值",
   "addVariantProperty": "添加变体属性",
   "addVariant": "添加变体",
   "duplicateVariant": "复制变体",
-  "removeVariant": "删除变体",
   "removeVariantProperty": "删除变体属性",
   "moveVariantPropertyUp": "向上移动变体属性",
   "moveVariantPropertyDown": "向下移动变体属性",

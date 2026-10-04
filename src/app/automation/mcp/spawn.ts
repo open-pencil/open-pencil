@@ -1,4 +1,5 @@
 import { promiseTimeout } from '@vueuse/core'
+import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
@@ -117,6 +118,13 @@ function rememberStartupError(error: unknown): null {
   return null
 }
 
+/** The one discovery-file field the app reads; the MCP package validates the whole file. */
+const DiscoveryTokenJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.looseObject({ authToken: v.optional(v.nullable(v.string())) })
+) satisfies v.GenericSchema<string, Partial<Pick<DiscoveryInfo, 'authToken'>>>
+
 /**
  * Reads the auth token from the MCP discovery file via Tauri's FS plugin.
  * The discovery file path is computed locally (not from the /health endpoint)
@@ -126,9 +134,8 @@ function rememberStartupError(error: unknown): null {
 async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
   try {
     const { readTextFile } = await import('@tauri-apps/plugin-fs')
-    const raw = await readTextFile(discoveryPath)
-    const info = JSON.parse(raw) as DiscoveryInfo
-    return info.authToken ?? null
+    const info = v.safeParse(DiscoveryTokenJSON, await readTextFile(discoveryPath))
+    return info.success ? (info.output.authToken ?? null) : null
   } catch {
     return null
   }

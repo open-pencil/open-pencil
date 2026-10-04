@@ -1,25 +1,30 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import * as v from 'valibot'
+
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type MaskType } from '@open-pencil/scene-graph'
 
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 
-interface MaskOracleEntry {
-  isMask: boolean
-  maskType: MaskType
-}
+const MASK_TYPE_VALUES = ['ALPHA', 'VECTOR', 'LUMINANCE'] as const satisfies readonly MaskType[]
 
-interface MaskOracle {
-  masks: MaskOracleEntry[]
-  nested: { children: MaskOracleEntry[] }
-  maskIsOutline: { pluginApiReadable: boolean; note: string }
-}
+const MaskOracleEntry = v.object({ isMask: v.boolean(), maskType: v.picklist(MASK_TYPE_VALUES) })
 
-function readOracle(): MaskOracle {
-  return JSON.parse(readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8')) as MaskOracle
+const MaskOracleJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    masks: v.array(MaskOracleEntry),
+    nested: v.object({ children: v.array(MaskOracleEntry) }),
+    maskIsOutline: v.object({ pluginApiReadable: v.boolean(), note: v.string() })
+  })
+)
+
+function readOracle() {
+  return v.parse(MaskOracleJSON, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
 }
 
 describe('Figma mask oracle', () => {

@@ -38,6 +38,10 @@ const layerTreeTheme = {
       true: { icon: 'text-component opacity-100' },
       false: { icon: 'opacity-70' }
     },
+    slot: {
+      true: { icon: 'text-slot opacity-100', label: 'text-slot' },
+      false: {}
+    },
     expanded: {
       true: { disclosure: 'rotate-90' },
       false: { disclosure: 'rotate-0' }
@@ -86,6 +90,7 @@ const layerTreeTheme = {
     dragging: false,
     visible: true,
     component: false,
+    slot: false,
     expanded: false,
     actionsVisible: true,
     actionActive: false,

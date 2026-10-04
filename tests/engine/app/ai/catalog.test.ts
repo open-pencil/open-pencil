@@ -102,6 +102,16 @@ describe('models.dev catalog', () => {
     expect(models[0]).toMatchObject({ id: 'claude-sonnet-5-5', tag: 'Best for design' })
   })
 
+  test('falls back to curated models when the catalog has a malformed entry', async () => {
+    const failingFetch = (async () => new Response(null, { status: 503 })) as typeof fetch
+    const models = await listCatalogModels(
+      'anthropic',
+      catalogResponse({ anthropic: { models: { 'claude-sonnet-5': null } } })
+    )
+
+    expect(models).toEqual(await listCatalogModels('anthropic', failingFetch))
+  })
+
   test('retries a failed shared request and shares a successful request', async () => {
     const originalFetch = globalThis.fetch
     let requests = 0

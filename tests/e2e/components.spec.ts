@@ -105,12 +105,12 @@ test('instance shows INSTANCE type in design panel', async () => {
   await expect(editor.page.getByRole('img', { name: 'INSTANCE' })).toBeVisible()
 })
 
-test('instance has "Go to Main Component" button', async () => {
-  await expect(editor.page.getByRole('button', { name: 'Go to Main Component' })).toBeVisible()
+test('instance has "Go to main component" button', async () => {
+  await expect(editor.page.getByRole('button', { name: 'Go to main component' })).toBeVisible()
 })
 
 test('instance has "Detach" button', async () => {
-  await expect(editor.page.getByRole('button', { name: 'Detach Instance' })).toBeVisible()
+  await expect(editor.page.getByRole('button', { name: 'Detach instance' })).toBeVisible()
 })
 
 test('modifying component propagates to instance', async () => {

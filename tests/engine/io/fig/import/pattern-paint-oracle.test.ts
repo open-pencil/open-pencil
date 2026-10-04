@@ -1,66 +1,77 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import * as v from 'valibot'
 
-interface PatternOracleFill {
-  type: string
-  sourceNodeId: string
-  tileType: string
-  spacing: Vector
-  horizontalAlignment: string
-  verticalAlignment: string
-}
+const OracleVector = v.object({ x: v.number(), y: v.number() })
 
-interface EffectOracleResult {
-  ok: boolean
-  effects: Array<{
-    type: string
-    noiseType?: string
-    noiseSize?: number
-    noiseSizeVector?: Vector
-    density?: number
-    opacity?: number
-    secondaryColor?: unknown
-  }>
-}
+const PatternOracleFill = v.object({
+  type: v.string(),
+  sourceNodeId: v.string(),
+  tileType: v.string(),
+  spacing: OracleVector,
+  horizontalAlignment: v.string(),
+  verticalAlignment: v.string()
+})
 
-interface PaintOracle {
-  pattern: {
-    frame: { id: string }
-    source: { id: string; visible: boolean }
-    target: { fills: PatternOracleFill[] }
-  }
-  patternAlignment: {
-    frame: { id: string }
-    source: { id: string; visible: boolean }
-    targets: Array<{ alignment: string; fills: PatternOracleFill[] }>
-    metrics: { rmseNormalized: number; fuzzDifferentPixels: number }
-    analysis: Record<
-      string,
-      {
-        pairedRowCount: number
-        avgDeltaY: number
-        avgDeltaFirstX: number
-        missingOpenPencilRows: number
-        extraOpenPencilRows: number
-      }
-    >
-  }
-  effects: {
-    noise: { results: Record<string, EffectOracleResult> }
-    textureAndGlass: { results: Record<string, EffectOracleResult> }
-  }
-  pluginRuntimeCreation: Record<string, { ok: boolean; message: string }>
-  currentFileFillTypes: Record<string, number>
-  localFigFixtureFillTypes: Record<string, Record<string, number>>
-  status: string
-}
+const EffectOracleResult = v.object({
+  ok: v.boolean(),
+  effects: v.array(
+    v.object({
+      type: v.string(),
+      noiseType: v.optional(v.string()),
+      noiseSize: v.optional(v.number()),
+      noiseSizeVector: v.optional(OracleVector),
+      density: v.optional(v.number()),
+      opacity: v.optional(v.number()),
+      secondaryColor: v.optional(v.unknown())
+    })
+  )
+})
 
-function readOracle(): PaintOracle {
-  return JSON.parse(
+const OracleSource = v.object({ id: v.string(), visible: v.boolean() })
+
+const PaintOracleJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    pattern: v.object({
+      frame: v.object({ id: v.string() }),
+      source: OracleSource,
+      target: v.object({ fills: v.array(PatternOracleFill) })
+    }),
+    patternAlignment: v.object({
+      frame: v.object({ id: v.string() }),
+      source: OracleSource,
+      targets: v.array(v.object({ alignment: v.string(), fills: v.array(PatternOracleFill) })),
+      metrics: v.object({ rmseNormalized: v.number(), fuzzDifferentPixels: v.number() }),
+      analysis: v.record(
+        v.string(),
+        v.object({
+          pairedRowCount: v.number(),
+          avgDeltaY: v.number(),
+          avgDeltaFirstX: v.number(),
+          missingOpenPencilRows: v.number(),
+          extraOpenPencilRows: v.number()
+        })
+      )
+    }),
+    effects: v.object({
+      noise: v.object({ results: v.record(v.string(), EffectOracleResult) }),
+      textureAndGlass: v.object({ results: v.record(v.string(), EffectOracleResult) })
+    }),
+    pluginRuntimeCreation: v.record(v.string(), v.object({ ok: v.boolean(), message: v.string() })),
+    currentFileFillTypes: v.record(v.string(), v.number()),
+    localFigFixtureFillTypes: v.record(v.string(), v.record(v.string(), v.number())),
+    status: v.string()
+  })
+)
+
+function readOracle() {
+  return v.parse(
+    PaintOracleJSON,
     readFileSync('tests/fixtures/figma-oracles/pattern-noise-custom-paints.json', 'utf8')
-  ) as PaintOracle
+  )
 }
 
 describe('Figma pattern/noise/custom paint oracle availability', () => {

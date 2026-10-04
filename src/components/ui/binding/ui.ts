@@ -22,15 +22,6 @@ export function useBindingFieldUI(options: BindingFieldUIOptions = {}, ui?: Bind
     pill: styles.pill({ class: ui?.pill }),
     pillLabel: styles.pillLabel({ class: ui?.pillLabel }),
     trigger: styles.trigger({ class: ui?.trigger }),
-    pickerContent: styles.pickerContent({ class: ui?.pickerContent }),
-    pickerSearch: styles.pickerSearch({ class: ui?.pickerSearch }),
-    pickerViewport: styles.pickerViewport({ class: ui?.pickerViewport }),
-    pickerItem: styles.pickerItem({ class: ui?.pickerItem }),
-    pickerItemIcon: styles.pickerItemIcon({ class: ui?.pickerItemIcon }),
-    pickerItemLabel: styles.pickerItemLabel({ class: ui?.pickerItemLabel }),
-    pickerItemIndicator: styles.pickerItemIndicator({ class: ui?.pickerItemIndicator }),
-    pickerEmpty: styles.pickerEmpty({ class: ui?.pickerEmpty }),
-    pickerFooter: styles.pickerFooter({ class: ui?.pickerFooter }),
     createForm: styles.createForm({ class: ui?.createForm }),
     createInput: styles.createInput({ class: ui?.createInput })
   }

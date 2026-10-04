@@ -5,6 +5,8 @@ import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
+import * as v from 'valibot'
+
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 
 setDefaultTimeout(60_000)
@@ -17,7 +19,13 @@ const TARGET = {
   pageName: 'Page 1'
 }
 
-type Request = { command: string; args: Record<string, unknown> }
+const RequestJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ command: v.string(), args: v.record(v.string(), v.unknown()) })
+)
+
+type Request = v.InferOutput<typeof RequestJSON>
 
 const requests: Request[] = []
 const responses = new Map<string, unknown>()
@@ -31,7 +39,7 @@ beforeAll(async () => {
       body += chunk.toString()
     })
     request.on('end', () => {
-      const parsed = JSON.parse(body) as Request
+      const parsed = v.parse(RequestJSON, body)
       requests.push(parsed)
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(

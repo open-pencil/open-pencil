@@ -65,6 +65,7 @@ export type {
   FigmaPolygonNode,
   FigmaRectangleNode,
   FigmaSectionNode,
+  FigmaSlotNode,
   FigmaStarNode,
   FigmaTextNode,
   FigmaVectorNode

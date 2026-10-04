@@ -43,6 +43,7 @@ de:panels.position
 de:panels.radialGradient
 de:panels.radius
 de:panels.textCaseOriginal
+de:panels.slots
 de:settings.mcp
 de:storage.bucket
 de:storage.providerAmazonS3
@@ -81,6 +82,7 @@ es:panels.localLibraries
 es:panels.radialGradient
 es:panels.textCaseOriginal
 es:panels.variables
+es:panels.slots
 es:rendering.experimental
 es:settings.general
 es:settings.mcp
@@ -142,6 +144,8 @@ fr:panels.radialGradient
 fr:panels.rotation
 fr:panels.saturation
 fr:panels.variables
+fr:panels.slots
+fr:panels.slotDescription
 fr:settings.animations
 fr:settings.diagnostics
 fr:settings.mcp
