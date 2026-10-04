@@ -77,6 +77,9 @@ function buildPathMap(graph: SceneGraph): Map<string, SceneNode> {
   return map
 }
 
+/** `SceneNode` has no index signature; the generic comparison reads its fields by name. */
+const nodeFields = (node: SceneNode): Map<string, unknown> => new Map(Object.entries(node))
+
 // oxlint-disable-next-line eslint(complexity)
 function deepCompare(
   a: unknown,
@@ -231,10 +234,12 @@ function compareSceneProps(
   for (const [p, aNode] of aNodes) {
     const bNode = bNodes.get(p)
     if (!bNode) continue
-    for (const k of new Set([...Object.keys(aNode as object), ...Object.keys(bNode as object)])) {
+    const aFields = nodeFields(aNode)
+    const bFields = nodeFields(bNode)
+    for (const k of new Set([...aFields.keys(), ...bFields.keys()])) {
       if (SKIP_KEYS.has(k)) continue
       if (k === 'source') continue
-      deepCompare((aNode as JSONObject)[k], (bNode as JSONObject)[k], k, p, opts)
+      deepCompare(aFields.get(k), bFields.get(k), k, p, opts)
     }
   }
   if (errors.length > 0) throw new Error(`${label} scene props:\n${summarize(errors)}`)
@@ -270,8 +275,8 @@ function compareRawNodeFields(
   for (const [p, aNode] of aNodes) {
     const bNode = bNodes.get(p)
     if (!bNode) continue
-    const aRaw = (aNode as JSONObject).source as JSONObject | undefined
-    const bRaw = (bNode as JSONObject).source as JSONObject | undefined
+    const aRaw = nodeFields(aNode).get('source') as JSONObject | undefined
+    const bRaw = nodeFields(bNode).get('source') as JSONObject | undefined
     const aFig = aRaw?.fig as JSONObject | undefined
     const bFig = bRaw?.fig as JSONObject | undefined
     const aFields = aFig?.rawNodeFields as JSONObject | undefined

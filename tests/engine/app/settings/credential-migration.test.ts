@@ -8,6 +8,11 @@ import {
   PEXELS_CREDENTIAL,
   providerCredentialRef
 } from '@/app/settings/credentials/migration'
+import type {
+  CredentialRef,
+  CredentialStore,
+  CredentialStoreAvailability
+} from '@/app/settings/credentials/types'
 
 class TestStorage implements Storage {
   readonly #values = new Map<string, string>()
@@ -37,9 +42,28 @@ class TestStorage implements Storage {
   }
 }
 
-class UnavailableCredentialStore extends MemoryCredentialStore {
-  override async availability() {
-    return 'unavailable' as const
+class UnavailableCredentialStore implements CredentialStore {
+  readonly backend = 'memory' as const
+  readonly #delegate = new MemoryCredentialStore()
+
+  async availability(): Promise<CredentialStoreAvailability> {
+    return 'unavailable'
+  }
+
+  status(reference: CredentialRef) {
+    return this.#delegate.status(reference)
+  }
+
+  read(reference: CredentialRef) {
+    return this.#delegate.read(reference)
+  }
+
+  write(reference: CredentialRef, value: string) {
+    return this.#delegate.write(reference, value)
+  }
+
+  remove(reference: CredentialRef) {
+    return this.#delegate.remove(reference)
   }
 }
 

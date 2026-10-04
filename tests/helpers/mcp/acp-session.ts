@@ -21,7 +21,7 @@ function pairedStreams() {
 
 export async function captureACPSessionMCPServers(): Promise<McpServer[]> {
   const streams = pairedStreams()
-  let received: NewSessionRequest | null = null
+  const captured: { request?: NewSessionRequest } = {}
   const client: Client = {
     requestPermission: async () => ({ outcome: { outcome: 'cancelled' } }),
     sessionUpdate: async () => undefined
@@ -32,7 +32,7 @@ export async function captureACPSessionMCPServers(): Promise<McpServer[]> {
       agentCapabilities: { loadSession: false }
     }),
     newSession: async (params) => {
-      received = params
+      captured.request = params
       return { sessionId: 'smoke-session' }
     },
     authenticate: async () => ({}),
@@ -47,6 +47,7 @@ export async function captureACPSessionMCPServers(): Promise<McpServer[]> {
     cwd: '/tmp',
     mcpServers: await buildACPMCPServers({ authorizationToken: 'built-in-token' })
   })
+  const received = captured.request
   if (!received) throw new Error('ACP agent did not receive session configuration')
   void agentConnection
   return received.mcpServers

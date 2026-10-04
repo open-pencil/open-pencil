@@ -14,8 +14,7 @@ import {
   removePluginData,
   LAYOUT_DIRECTION_PLUGIN_KEY,
   TEXT_DIRECTION_PLUGIN_KEY,
-  upsertPluginData,
-  OPEN_PENCIL_PLUGIN_ID
+  upsertPluginData
 } from './plugin-data'
 import {
   exportedVariableConsumptionEntries,
@@ -196,7 +195,7 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
 function serializeTextProps(
   node: SceneNode,
   nc: KiwiNodeChange,
-  graph: SceneGraph,
+  _graph: SceneGraph,
   fontDigestMap: Map<string, Uint8Array> | undefined,
   blobs: Uint8Array[],
   glyphBlobMap: Map<string, number> | undefined,

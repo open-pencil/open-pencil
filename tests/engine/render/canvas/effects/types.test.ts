@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
+import type { ImageFilter, Path } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
@@ -9,6 +9,7 @@ import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
 import { renderEffects } from '#core/canvas/shadows'
 
+import { asCanvas, asDouble } from '../helpers'
 import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 
 describe('Renderer handles all effect types (Behavioral)', () => {
@@ -33,13 +34,13 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         }
       ]
     }
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
     expect(canvas.drawRect).toHaveBeenCalled()
   })
 
   test('drop shadow follows stroke geometry and hides shadow behind unfilled nodes', () => {
-    const strokePath = { kind: 'stroke' }
-    const fillPath = { kind: 'fill' }
+    const strokePath = asDouble<Path>({ kind: 'stroke' })
+    const fillPath = asDouble<Path>({ kind: 'fill' })
     const r = createMockRenderer({
       getFillGeometry: mock(() => [fillPath]),
       getStrokeGeometry: mock(() => [strokePath])
@@ -51,7 +52,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       height: 100,
       fills: [],
       childIds: [],
-      strokeGeometry: [{ commandsBlob: new Uint8Array([0]) }],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array([0]) }],
       effects: [
         {
           type: 'DROP_SHADOW',
@@ -65,7 +66,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       ]
     }
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
 
     expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
     expect(r.getFillGeometry).toHaveBeenCalledWith(node)
@@ -97,7 +98,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       ]
     }
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
 
     expect(r.auxFill.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.Screen)
     expect(r.auxFill.setBlendMode).toHaveBeenLastCalledWith(r.ck.BlendMode.SrcOver)
@@ -125,7 +126,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     }
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array([0, 0, 100, 100]),
       false,
@@ -148,6 +149,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         format: 'fig',
         id: '1:1',
         orderKey: null,
+        editedFields: [],
         fig: {
           rawSize: null,
           rawTransform: null,
@@ -175,7 +177,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array([0, 0, 20, 20]),
       false,
@@ -200,6 +202,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         format: 'fig',
         id: '1:1',
         orderKey: null,
+        editedFields: [],
         fig: {
           rawSize: null,
           rawTransform: null,
@@ -226,7 +229,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array([0, 0, 1000, 1000]),
       false,
@@ -242,14 +245,23 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     const node: Partial<SceneNode> = {
       fills: [],
       childIds: [],
-      effects: [{ type: 'BACKGROUND_BLUR', visible: true, radius: 10 }]
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          visible: true,
+          radius: 10,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ]
     }
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
     expect(r.applyClippedBlur).toHaveBeenCalled()
   })
 
   test('background blur uses a backdrop filter instead of a layer content filter', () => {
-    const blurFilter = { kind: 'blur' }
+    const blurFilter = asDouble<ImageFilter>({ kind: 'blur' })
     const r = createMockRenderer({
       clipNodeShape: mock(() => undefined),
       getCachedBlur: mock(() => blurFilter)
@@ -265,7 +277,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       effects: []
     }
 
-    applyClippedBlur(r, canvas as Canvas, node as SceneNode, rect, false, 5)
+    applyClippedBlur(r, asCanvas(canvas), node as SceneNode, rect, false, 5)
 
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(
@@ -289,14 +301,23 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       height: 100,
       rotation: 0,
       opacity: 1,
-      effects: [{ type: 'LAYER_BLUR', visible: true, radius: 10 }],
+      effects: [
+        {
+          type: 'LAYER_BLUR',
+          visible: true,
+          radius: 10,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ],
       childIds: [],
       source: createDefaultSourceMetadata()
     }
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node as SceneNode)
     }
-    renderNode(r, canvas as Canvas, graph as SceneGraph, 'n1', {})
+    renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
     expect(r.getCachedBlur).toHaveBeenCalledWith(5)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-20, -20, 120, 120)
@@ -314,14 +335,23 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       height: 100,
       rotation: 0,
       opacity: 1,
-      effects: [{ type: 'FOREGROUND_BLUR', visible: true, radius: 20 }],
+      effects: [
+        {
+          type: 'FOREGROUND_BLUR',
+          visible: true,
+          radius: 20,
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          spread: 0
+        }
+      ],
       childIds: [],
       source: createDefaultSourceMetadata()
     }
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node as SceneNode)
     }
-    renderNode(r, canvas as Canvas, graph as SceneGraph, 'n1', {})
+    renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
     expect(r.getCachedBlur).toHaveBeenCalledWith(10)
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-40, -40, 140, 140)

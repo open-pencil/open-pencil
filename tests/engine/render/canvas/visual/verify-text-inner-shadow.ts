@@ -72,7 +72,7 @@ async function main() {
     scale: 2,
     format: 'PNG'
   })
-  await Bun.write('scratch/text-inner-shadow-verification.png', data)
+  if (data) await Bun.write('scratch/text-inner-shadow-verification.png', data)
   surface.delete()
 
   if (data && data.length > 2000) {

@@ -41,7 +41,7 @@ test.describe.serial('large-document performance', () => {
         })
       })
 
-      const result = await page.evaluate((profile): Promise<TimingSummary> => {
+      const result = await page.evaluate((profile): TimingSummary => {
         const store = window.openPencil?.getStore?.()
         if (!store) throw new Error('OpenPencil store not initialized')
         const renderer = store.renderer

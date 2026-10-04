@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from 'bun:test'
 
-import type { RequestPermissionRequest } from '@agentclientprotocol/sdk'
+import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
 
 import {
   permissionQueue,
@@ -24,11 +24,15 @@ function makeRequest(
       name: o.name
     })),
     toolCall: {
-      sessionUpdate: 'tool_call_update',
       toolCallId: 'tc-1',
       status: 'pending' as const
     }
   }
+}
+
+function selectedOptionId(response: RequestPermissionResponse): string | null {
+  const { outcome } = response
+  return outcome.outcome === 'selected' ? outcome.optionId : null
 }
 
 describe('acp-permission', () => {
@@ -49,7 +53,7 @@ describe('acp-permission', () => {
     respondToPermission('allow')
     const result = await promise
     expect(result.outcome.outcome).toBe('selected')
-    expect(result.outcome.optionId).toBe('allow')
+    expect(selectedOptionId(result)).toBe('allow')
     expect(permissionQueue.value).toHaveLength(0)
   })
 
@@ -57,7 +61,7 @@ describe('acp-permission', () => {
     const promise = requestPermissionFromUser(makeRequest())
     rejectCurrentPermission()
     const result = await promise
-    expect(result.outcome.optionId).toBe('reject')
+    expect(selectedOptionId(result)).toBe('reject')
   })
 
   test('rejectCurrentPermission falls back to first option when no reject kind', async () => {
@@ -65,7 +69,7 @@ describe('acp-permission', () => {
     const promise = requestPermissionFromUser(req)
     rejectCurrentPermission()
     const result = await promise
-    expect(result.outcome.optionId).toBe('only-allow')
+    expect(selectedOptionId(result)).toBe('only-allow')
   })
 
   test('queue handles multiple concurrent requests in order', async () => {
@@ -80,12 +84,12 @@ describe('acp-permission', () => {
 
     respondToPermission('a1')
     const r1 = await p1
-    expect(r1.outcome.optionId).toBe('a1')
+    expect(selectedOptionId(r1)).toBe('a1')
     expect(currentPermission.value?.request.options[0].optionId).toBe('a2')
 
     respondToPermission('a2')
     const r2 = await p2
-    expect(r2.outcome.optionId).toBe('a2')
+    expect(selectedOptionId(r2)).toBe('a2')
     expect(permissionQueue.value).toHaveLength(0)
   })
 
@@ -105,7 +109,7 @@ describe('acp-permission', () => {
     const promise = requestPermissionFromUser(makeRequest())
     respondToPermission('allow')
     const result = await promise
-    expect(result.outcome.optionId).toBe('allow')
+    expect(selectedOptionId(result)).toBe('allow')
     // Timer should be cleared — wait to ensure no stale timeout fires
     await new Promise((resolve) => {
       setTimeout(resolve, 50)
@@ -139,7 +143,7 @@ describe('acp-permission', () => {
     timerFn()
 
     const result = await promise
-    expect(result.outcome.optionId).toBe('reject')
+    expect(selectedOptionId(result)).toBe('reject')
     expect(permissionQueue.value).toHaveLength(0)
   })
 })

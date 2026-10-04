@@ -11,7 +11,7 @@ import { effectiveFigmaRawNodeFields, parseFigBuffer, materializeDocument } from
 import { MAX_EXPORT_SCALE } from '@open-pencil/scene-graph'
 
 function decodeExport(bytes: Uint8Array) {
-  return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+  return parseFigBuffer(new Uint8Array(bytes).buffer)
 }
 
 function doc(): NodeChange {

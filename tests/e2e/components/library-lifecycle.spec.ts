@@ -56,8 +56,13 @@ test('preserves source publication identity across FIG save and reopen', async (
       ({
         name: 'source.fig',
         getFile: async () => new File([], 'source.fig'),
-        createWritable: async () => ({
-          write: async (data: Uint8Array) => writes.push(data),
+        createWritable: async (): Promise<
+          Pick<FileSystemWritableFileStream, 'write' | 'close'>
+        > => ({
+          write: async (data: FileSystemWriteChunkType) => {
+            if (!(data instanceof Uint8Array)) throw new Error('Unexpected write chunk')
+            writes.push(data)
+          },
           close: async () => undefined
         })
       }) as FileSystemFileHandle
@@ -221,8 +226,13 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
       ({
         name: 'consumer.fig',
         getFile: async () => new File([], 'consumer.fig'),
-        createWritable: async () => ({
-          write: async (data: Uint8Array) => writes.push(data),
+        createWritable: async (): Promise<
+          Pick<FileSystemWritableFileStream, 'write' | 'close'>
+        > => ({
+          write: async (data: FileSystemWriteChunkType) => {
+            if (!(data instanceof Uint8Array)) throw new Error('Unexpected write chunk')
+            writes.push(data)
+          },
           close: async () => undefined
         })
       }) as FileSystemFileHandle
@@ -236,11 +246,12 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
   await page.evaluate(async (bytes) => {
     const file = new File([new Uint8Array(bytes)], 'consumer.fig')
     const originalFetch = window.fetch
-    window.fetch = async (...args) => {
+    // The page's `fetch` has no Bun namespace properties, so the stub is asserted, not widened.
+    window.fetch = (async (...args) => {
       const url = String(args[0])
       if (url.includes('library')) throw new Error('offline')
       return originalFetch(...args)
-    }
+    }) as typeof window.fetch
     window.showOpenFilePicker = async () => [{ getFile: async () => file } as FileSystemFileHandle]
   }, saved)
   await page.keyboard.press('ControlOrMeta+KeyO')

@@ -26,15 +26,17 @@ interface SceneTreeNode {
 async function getSceneTree(): Promise<SceneTreeNode> {
   return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
-    if (!store) return null
+    if (!store) throw new Error('OpenPencil store not initialized')
 
-    function nodeTree(id: string): SceneTreeNode | null {
+    const nodeTree = (id: string): SceneTreeNode | null => {
       const node = store.graph.getNode(id)
       if (!node) return null
       return {
         name: node.name,
         type: node.type,
-        children: node.childIds.map((cid: string) => nodeTree(cid)).filter(Boolean)
+        children: node.childIds
+          .map((cid: string) => nodeTree(cid))
+          .filter((child): child is SceneTreeNode => child !== null)
       }
     }
     const tree = nodeTree(store.state.currentPageId)

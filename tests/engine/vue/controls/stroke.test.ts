@@ -59,7 +59,9 @@ describe('stroke geometry controls', () => {
     const second = graph.createNode('RECTANGLE', pageId, { strokes: [{ ...DEFAULT_STROKE }] })
     const editor = createEditor({ graph })
     const nodes = computed(() =>
-      [graph.getNode(first.id), graph.getNode(second.id)].filter(Boolean)
+      [graph.getNode(first.id), graph.getNode(second.id)].filter(
+        (node): node is SceneNode => node !== undefined
+      )
     )
     const actions = createStrokeGeometryActions(editor, nodes)
 
@@ -88,7 +90,9 @@ describe('stroke geometry controls', () => {
     })
     const editor = createEditor({ graph })
     const nodes = computed(() =>
-      [graph.getNode(first.id), graph.getNode(second.id)].filter(Boolean)
+      [graph.getNode(first.id), graph.getNode(second.id)].filter(
+        (node): node is SceneNode => node !== undefined
+      )
     )
     const actions = createStrokeGeometryActions(editor, nodes)
 
@@ -129,7 +133,9 @@ describe('setCap with per-vertex overrides', () => {
       }
     })
     const editor = createEditor({ graph })
-    const nodes = computed(() => [graph.getNode(vector.id)].filter(Boolean))
+    const nodes = computed(() =>
+      [graph.getNode(vector.id)].filter((node): node is SceneNode => node !== undefined)
+    )
     const actions = createStrokeGeometryActions(editor, nodes)
 
     actions.setCap('ROUND')
@@ -199,7 +205,9 @@ describe('cap state with per-vertex overrides', () => {
       }
     })
     const editor = createEditor({ graph })
-    const nodes = computed(() => [graph.getNode(vector.id)].filter(Boolean))
+    const nodes = computed(() =>
+      [graph.getNode(vector.id)].filter((node): node is SceneNode => node !== undefined)
+    )
     const capState = () =>
       createStrokeGeometryState({ nodes, merged: (key) => merged(nodes.value)(key) }).cap.value
 

@@ -3,9 +3,33 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
 import { guidToString } from '@open-pencil/fig/node-change'
+import type { Vector } from '@open-pencil/scene-graph'
+
+/** The codec types only the fields it writes; raw passthrough metadata is read through these. */
+interface RawLayoutGrid {
+  type?: string
+  axis?: string
+  color?: { a?: number }
+}
+
+interface RawNoiseEffect {
+  type?: string
+  noiseType?: string
+  noiseSize?: Vector
+  density?: number
+}
+
+interface RawVectorData {
+  normalizedSize?: Vector
+  vectorNetworkBlob?: number
+}
+
+interface RawTransitionInfo {
+  type?: string
+}
 
 function decodeExport(bytes: Uint8Array) {
-  return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+  return parseFigBuffer(new Uint8Array(bytes).buffer)
 }
 
 describe('fig roundtrip source metadata', () => {
@@ -62,9 +86,9 @@ describe('fig roundtrip source metadata', () => {
 
     const decoded = decodeExport(await exportFigFile(graph))
     const changes = new Map(
-      decoded.nodeChanges
-        .filter((nodeChange) => nodeChange.guid)
-        .map((nodeChange) => [guidToString(nodeChange.guid), nodeChange])
+      decoded.nodeChanges.flatMap((nodeChange) =>
+        nodeChange.guid ? [[guidToString(nodeChange.guid), nodeChange] as const] : []
+      )
     )
 
     expect(changes.get('0:0')?.strokeJoin).toBe('BEVEL')
@@ -75,7 +99,9 @@ describe('fig roundtrip source metadata', () => {
     expect(canvas?.strokeJoin).toBe('BEVEL')
     expect(canvas?.strokeWeight).toBe(0)
     expect(canvas?.backgroundColor).toEqual(page.source.fig.rawNodeFields.backgroundColor)
-    expect(canvas?.backgroundPaints).toEqual(page.source.fig.rawNodeFields.backgroundPaints)
+    expect<unknown>(canvas?.backgroundPaints).toEqual(
+      page.source.fig.rawNodeFields.backgroundPaints
+    )
     expect(canvas?.guides).toEqual([
       { axis: 'X', offset: 42 },
       { axis: 'Y', offset: 84 }
@@ -210,7 +236,7 @@ describe('fig roundtrip source metadata', () => {
 
     expect(exported?.leadingTrim).toBe('CAP_HEIGHT')
     expect(exported?.textDecorationStyle).toBe('WAVY')
-    expect(exported?.textDecorationFillPaints).toEqual(
+    expect<unknown>(exported?.textDecorationFillPaints).toEqual(
       text.source.fig.rawNodeFields.textDecorationFillPaints
     )
     expect(exported?.textUnderlineOffset).toEqual({ value: 2, units: 'PIXELS' })
@@ -258,12 +284,13 @@ describe('fig roundtrip source metadata', () => {
       (nodeChange) => nodeChange.guid && guidToString(nodeChange.guid) === '4:505'
     )
 
-    expect(exported?.layoutGrids?.[0]?.type).toBe('MIN')
-    expect(exported?.layoutGrids?.[0]?.axis).toBe('X')
-    expect(exported?.layoutGrids?.[0]?.color?.a).toBeCloseTo(0.1)
-    expect(exported?.exportSettings).toEqual(frame.source.fig.rawNodeFields.exportSettings)
+    const grid = exported?.layoutGrids?.[0] as RawLayoutGrid | undefined
+    expect(grid?.type).toBe('MIN')
+    expect(grid?.axis).toBe('X')
+    expect(grid?.color?.a).toBeCloseTo(0.1)
+    expect<unknown>(exported?.exportSettings).toEqual(frame.source.fig.rawNodeFields.exportSettings)
     expect(exported?.prototypeStartNodeID).toEqual({ sessionID: 4, localID: 900 })
-    expect(exported?.transitionInfo?.type).toBe('DISSOLVE')
+    expect((exported?.transitionInfo as RawTransitionInfo | undefined)?.type).toBe('DISSOLVE')
   })
 
   test('preserves unrelated raw metadata when visual fields are edited', () => {
@@ -333,10 +360,11 @@ describe('fig roundtrip source metadata', () => {
       (nodeChange) => nodeChange.guid && guidToString(nodeChange.guid) === '4:503'
     )
 
-    expect(exported?.effects?.[0]?.type).toBe('NOISE')
-    expect(exported?.effects?.[0]?.noiseType).toBe('MONOTONE')
-    expect(exported?.effects?.[0]?.noiseSize).toEqual({ x: 0.5, y: 0.5 })
-    expect(exported?.effects?.[0]?.density).toBeCloseTo(0.4)
+    const noise = exported?.effects?.[0] as RawNoiseEffect | undefined
+    expect(noise?.type).toBe('NOISE')
+    expect(noise?.noiseType).toBe('MONOTONE')
+    expect(noise?.noiseSize).toEqual({ x: 0.5, y: 0.5 })
+    expect(noise?.density).toBeCloseTo(0.4)
   })
 
   test('ignores raw unsupported effects when normalized effects are edited', () => {
@@ -453,8 +481,9 @@ describe('fig roundtrip source metadata', () => {
       (nodeChange) => nodeChange.guid && guidToString(nodeChange.guid) === '4:465'
     )
 
-    expect(exported?.vectorData?.normalizedSize).toEqual({ x: 0, y: 0 })
-    const blobIndex = exported?.vectorData?.vectorNetworkBlob
+    const vectorData = exported?.vectorData as RawVectorData | undefined
+    expect(vectorData?.normalizedSize).toEqual({ x: 0, y: 0 })
+    const blobIndex = vectorData?.vectorNetworkBlob
     expect(typeof blobIndex).toBe('number')
     expect(decoded.blobs[blobIndex as number]).toEqual(rawVectorBlob)
   })

@@ -60,21 +60,23 @@ for (const mutation of ['local-child', 'reorder', 'wrong-revision'] as const) {
       if (mutation === 'local-child') graph.createNode('RECTANGLE', page.id)
       if (mutation === 'reorder') graph.insertChildAt(second.id, page.id, 0)
       const expected = [...page.childIds]
-      port.onmessage?.({
-        data: {
-          type: 'population-result',
-          requestId: request.requestId,
-          baseRevision: request.baseRevision + (mutation === 'wrong-revision' ? 1 : 0),
-          populated: true,
-          delta: {
-            created: [],
-            updated: [[page.id, { childIds: [first.id] }]],
-            deleted: [],
-            instanceIndex: [],
-            populatedRootIds: [page.id]
+      port.onmessage?.(
+        new MessageEvent<FigSessionResponse>('message', {
+          data: {
+            type: 'population-result',
+            requestId: request.requestId,
+            baseRevision: request.baseRevision + (mutation === 'wrong-revision' ? 1 : 0),
+            populated: true,
+            delta: {
+              created: [],
+              updated: [[page.id, { childIds: [first.id] }]],
+              deleted: [],
+              instanceIndex: [],
+              populatedRootIds: [page.id]
+            }
           }
-        }
-      } as MessageEvent<FigSessionResponse>)
+        })
+      )
       expect(await pending).toBeNull()
       expect(page.childIds).toEqual(expected)
     } finally {

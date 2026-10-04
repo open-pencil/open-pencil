@@ -122,5 +122,8 @@
     "tests/**/*.ts",
     "packages/*/tests/**/*.ts",
     "tests/helpers/tauri/native-global.d.ts"
+  ],
+  "exclude": [
+    "tests/e2e/native/**"
   ]
 }
