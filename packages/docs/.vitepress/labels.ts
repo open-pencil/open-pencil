@@ -30,6 +30,7 @@ export interface ProgrammableLabels {
   inspecting: string
   exporting: string
   analyzing: string
+  comparing: string
   scripting: string
   jsxRenderer: string
   mcpServer: string
@@ -53,6 +54,7 @@ export const EN_PROG: ProgrammableLabels = {
   inspecting: 'Inspecting Files',
   exporting: 'Exporting',
   analyzing: 'Analyzing Designs',
+  comparing: 'Comparing Designs',
   scripting: 'Scripting',
   jsxRenderer: 'JSX Renderer',
   mcpServer: 'MCP Server',
@@ -65,6 +67,7 @@ export const DE_PROG: ProgrammableLabels = {
   inspecting: 'Dateien inspizieren',
   exporting: 'Exportieren',
   analyzing: 'Designs analysieren',
+  comparing: 'Designs vergleichen',
   scripting: 'Skripte',
   jsxRenderer: 'JSX-Renderer',
   mcpServer: 'MCP-Server',
@@ -77,6 +80,7 @@ export const IT_PROG: ProgrammableLabels = {
   inspecting: 'Ispezione file',
   exporting: 'Esportazione',
   analyzing: 'Analisi design',
+  comparing: 'Confronto dei design',
   scripting: 'Scripting',
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Server MCP',
@@ -89,6 +93,7 @@ export const FR_PROG: ProgrammableLabels = {
   inspecting: 'Inspecter les fichiers',
   exporting: 'Exporter',
   analyzing: 'Analyser les designs',
+  comparing: 'Comparer des designs',
   scripting: 'Scripts',
   jsxRenderer: 'Moteur JSX',
   mcpServer: 'Serveur MCP',
@@ -101,6 +106,7 @@ export const ES_PROG: ProgrammableLabels = {
   inspecting: 'Inspeccionar archivos',
   exporting: 'Exportar',
   analyzing: 'Analizar diseños',
+  comparing: 'Comparar diseños',
   scripting: 'Scripts',
   jsxRenderer: 'Renderizador JSX',
   mcpServer: 'Servidor MCP',
@@ -113,6 +119,7 @@ export const PL_PROG: ProgrammableLabels = {
   inspecting: 'Inspekcja plików',
   exporting: 'Eksportowanie',
   analyzing: 'Analiza projektów',
+  comparing: 'Porównywanie projektów',
   scripting: 'Skrypty',
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Serwer MCP',
@@ -125,6 +132,7 @@ export const RU_PROG: ProgrammableLabels = {
   inspecting: 'Инспекция файлов',
   exporting: 'Экспорт',
   analyzing: 'Анализ дизайна',
+  comparing: 'Сравнение дизайнов',
   scripting: 'Скрипты',
   jsxRenderer: 'JSX-рендерер',
   mcpServer: 'MCP-сервер',

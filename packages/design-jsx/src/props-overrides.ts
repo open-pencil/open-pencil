@@ -1,16 +1,10 @@
-/* eslint-disable max-lines -- JSX property conversion stays together to preserve shared coercion rules */
-
-import type {
-  Effect,
-  Fill,
-  GridTrack,
-  LayoutMode,
-  SceneNode,
-  Stroke
-} from '@open-pencil/scene-graph'
-import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
-import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import type { Fill, GridTrack, LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import { colorToFill } from '@open-pencil/scene-graph/color'
 import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
+
+import { applyEffectOverrides } from './overrides/effects'
+import { applyStateOverrides } from './overrides/state'
+import { applyStrokeOverrides } from './overrides/strokes'
 
 const WEIGHT_MAP: Record<string, number> = {
   normal: 400,
@@ -55,7 +49,8 @@ const TEXT_ALIGN_ALIAS_MAP: Record<string, SceneNode['textAlignHorizontal']> = {
 const TEXT_AUTO_RESIZE_MAP: Record<string, SceneNode['textAutoResize']> = {
   none: 'NONE',
   width: 'WIDTH_AND_HEIGHT',
-  height: 'HEIGHT'
+  height: 'HEIGHT',
+  truncate: 'TRUNCATE'
 }
 
 const DIRECTION_MAP: Record<string, SceneNode['textDirection']> = {
@@ -67,17 +62,6 @@ const DIRECTION_MAP: Record<string, SceneNode['textDirection']> = {
 function parseDirection(value: unknown): SceneNode['textDirection'] | undefined {
   if (typeof value !== 'string') return undefined
   return DIRECTION_MAP[value.toLowerCase()] ?? 'AUTO'
-}
-
-function parseStroke(value: string | Color, width: number): Stroke {
-  const color = typeof value === 'string' ? parseColor(value) : value
-  return {
-    color,
-    opacity: color.a,
-    visible: true,
-    weight: width,
-    align: 'INSIDE'
-  }
 }
 
 function numberFromPx(value: unknown): number | undefined {
@@ -208,14 +192,6 @@ function applyFillOverride(props: Record<string, unknown>, o: Partial<SceneNode>
   if (isFillValue(bg)) o.fills = [fillFromValue(bg)]
 }
 
-function applyStrokeOverride(props: Record<string, unknown>, o: Partial<SceneNode>): void {
-  const stroke = props.stroke ?? props.border ?? props.borderColor
-  if (typeof stroke !== 'string' && !isColor(stroke)) return
-  const strokeWidth =
-    (props.strokeWidth as number | undefined) ?? (props.borderWidth as number | undefined) ?? 1
-  o.strokes = [parseStroke(stroke, strokeWidth)]
-}
-
 function applyCornerOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   const rounded = props.rounded ?? props.cornerRadius ?? props.borderRadius
   if (typeof rounded === 'number') o.cornerRadius = rounded
@@ -238,7 +214,7 @@ function applyCornerOverrides(props: Record<string, unknown>, o: Partial<SceneNo
 
 function applyVisualOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   applyFillOverride(props, o)
-  applyStrokeOverride(props, o)
+  applyStrokeOverrides(props, o)
   applyCornerOverrides(props, o)
 
   if (props.opacity !== undefined) o.opacity = props.opacity as number
@@ -247,14 +223,6 @@ function applyVisualOverrides(props: Record<string, unknown>, o: Partial<SceneNo
     o.blendMode = (props.blendMode as string).toUpperCase() as SceneNode['blendMode']
   }
   if (props.overflow === 'hidden') o.clipsContent = true
-  if (props.mask) {
-    o.isMask = true
-    const maskTypeMap: Record<string, SceneNode['maskType']> = {
-      luminance: 'LUMINANCE',
-      vector: 'VECTOR'
-    }
-    o.maskType = maskTypeMap[props.mask as string] ?? 'ALPHA'
-  }
 }
 
 function applyTransformOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
@@ -451,9 +419,6 @@ function applyLayoutOverrides(
   applyPaddingOverrides(props, o)
 
   if (props.grow !== undefined) o.layoutGrow = props.grow as number
-
-  if (props.minW !== undefined) o.width = Math.max(o.width ?? 0, props.minW as number)
-  if (props.maxW !== undefined) o.width = Math.min(o.width ?? Infinity, props.maxW as number)
 }
 
 function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
@@ -464,6 +429,8 @@ function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<Scen
   if (typeof fontFamily === 'string') o.fontFamily = fontFamily
 
   const weight = props.weight ?? props.fontWeight
+  if (typeof props.italic === 'boolean') o.italic = props.italic
+
   if (typeof weight === 'number') {
     o.fontWeight = weight
   } else if (typeof weight === 'string') {
@@ -536,57 +503,10 @@ function applyTextOverrides(
   applyTextAutoResize(props, o, parentLayout)
 }
 
-function isEffect(value: unknown): value is Effect {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    'type' in value &&
-    'radius' in value &&
-    'visible' in value
-  )
-}
-
-function applyShapeAndEffectOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
-  if (Array.isArray(props.effects)) {
-    const effects = props.effects.filter(isEffect).map((effect) => structuredClone(effect))
-    if (effects.length > 0) o.effects = effects
-  }
-
+function applyShapeOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   if (props.points !== undefined) o.pointCount = props.points as number
   if (props.innerRadius !== undefined) o.starInnerRadius = props.innerRadius as number
   if (props.pointCount !== undefined) o.pointCount = props.pointCount as number
-
-  if (typeof props.shadow === 'string') {
-    const parts = props.shadow.split(/\s+/)
-    if (parts.length >= 4) {
-      const c = parseColor(parts.slice(3).join(' '))
-      o.effects = [
-        ...(o.effects ?? []),
-        {
-          type: 'DROP_SHADOW',
-          color: c,
-          offset: { x: Number.parseFloat(parts[0]), y: Number.parseFloat(parts[1]) },
-          radius: Number.parseFloat(parts[2]),
-          spread: 0,
-          visible: true
-        }
-      ]
-    }
-  }
-
-  if (typeof props.blur === 'number') {
-    o.effects = [
-      ...(o.effects ?? []),
-      {
-        type: 'LAYER_BLUR',
-        radius: props.blur,
-        visible: true,
-        color: { ...TRANSPARENT },
-        offset: { x: 0, y: 0 },
-        spread: 0
-      }
-    ]
-  }
 }
 
 export function propsToOverrides(
@@ -603,7 +523,9 @@ export function propsToOverrides(
   applyVisualOverrides(props, o)
   applyLayoutOverrides(props, o, w, h, isText, parentLayout)
   if (isText) applyTextOverrides(props, o, parentLayout)
-  applyShapeAndEffectOverrides(props, o)
+  applyShapeOverrides(props, o)
+  applyEffectOverrides(props, o)
+  applyStateOverrides(props, o)
 
   return o
 }

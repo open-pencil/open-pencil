@@ -11,6 +11,7 @@ import type { AIModelProfileDraft, AIModelCapability } from '@/app/ai/models'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import { useProviderModelCatalog } from '@/app/ai/models/catalog/use'
 import { modelPickerOptions, type ModelPickerLabels } from '@/app/ai/models/picker/options'
+import { supportsThinkingLevel } from '@/app/ai/models/thinking'
 
 export function useProfileModelSelection(
   draft: AIModelProfileDraft,
@@ -31,9 +32,7 @@ export function useProfileModelSelection(
   const { models: availableModels } = useProviderModelCatalog(catalogProviderID, fallbackModels)
   const isACP = computed(() => draft.providerID.startsWith('acp:'))
   const isHarness = computed(() => draft.providerID === 'harness:pi')
-  const supportsReasoningEffort = computed(() =>
-    ['openai', 'openai-compatible', 'openrouter'].includes(draft.providerID)
-  )
+  const supportsThinking = computed(() => supportsThinkingLevel(draft.providerID))
   const providerDisplayName = computed(() => {
     if (!isACP.value) return providerDef.value.name
 
@@ -171,7 +170,7 @@ export function useProfileModelSelection(
     isACP,
     isHarness,
     customModelSelected,
-    supportsReasoningEffort,
+    supportsThinking,
     providerDisplayName,
     modelOptions,
     selectedModelValue,

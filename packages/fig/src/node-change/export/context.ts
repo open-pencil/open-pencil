@@ -57,6 +57,11 @@ export interface SceneNodeToKiwiContext {
    *  variantPropSpecs pointing at the same property reuse the same GUID. */
   propertyIdToGuid: Map<string, GUID>
   componentPropertyDefinitionsById: ReadonlyMap<string, ComponentPropertyDefinition>
+  /**
+   * Receives the content frames of instance slots. Figma stores them on the internal canvas,
+   * so the caller re-parents the `isSlotContent` roots there after serializing its nodes.
+   */
+  slotContentRecords?: KiwiNodeChange[]
   fractionalPosition: (index: number) => string
   mapToFigmaType: (type: SceneNode['type']) => string
   fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint

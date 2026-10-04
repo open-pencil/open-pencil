@@ -73,14 +73,14 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 - **Components** — create components, instances, component sets. Manage overrides.
 - **Variables** — create/edit variables, collections, modes. Bind to fills.
 - **Query** — find nodes, XPath selectors, read properties, list pages, fonts, selection.
-- **Inspect** — `get_jsx` for JSX roundtrip view, `diff_jsx` for structural diffs, `describe` for semantic role and design issue detection.
+- **Inspect** — `get_jsx` for JSX roundtrip view, `diff_create` and `diff_jsx` for structural diffs, `diff_visual` for pixel diffs, `describe` for semantic role and design issue detection.
 - **Analyze** — color palette, typography audit, spacing consistency, cluster detection.
 - **Export** — PNG, SVG, JSX with Tailwind classes. Vision-based verification via `export_image`.
 - **Vector** — boolean operations, path manipulation.
 
 ## Visual Verification
 
-The assistant can verify its work visually. When `export_image` is enabled, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss.
+The assistant can verify its work visually. When `export_image` is enabled, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_visual`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
 
 ## Example Prompts
 
@@ -98,6 +98,6 @@ The assistant can verify its work visually. When `export_image` is enabled, it c
 - Select nodes before asking — the assistant knows what's selected.
 - Be specific about colors, sizes, and positions for precise results.
 - The assistant can modify multiple nodes in one message.
-- You can browse other pages while a reply runs: the assistant keeps working on the page where the message started, and its previews show when you return. If the assistant switches pages itself, your view follows.
+- You can browse other pages while a reply runs: the assistant keeps working on the page where the message started, and its previews show when you return. While you're away, the chat says which page it is working on, with **Go to page** to return. If the assistant switches pages itself, your view follows.
 - Use "undo" in the editor if you don't like the result — AI mutations support full undo.
 - All layout is recomputed automatically after each tool execution.

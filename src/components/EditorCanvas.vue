@@ -7,7 +7,7 @@ import {
   PopoverPortal,
   PopoverRoot
 } from 'reka-ui'
-import { computed, onUnmounted, ref, watch, type Component } from 'vue'
+import { computed, onUnmounted, ref, useTemplateRef, watch, type Component } from 'vue'
 import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
 import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
@@ -30,8 +30,10 @@ import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import FollowFrame from '@/components/presence/FollowFrame.vue'
 
 import CanvasMenu from './canvas/CanvasMenu.vue'
 import CanvasLabelEditor from './canvas/labels/CanvasLabelEditor.vue'
@@ -48,6 +50,7 @@ const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const isActivePane = computed(() => !paneId || store.activePaneId.value === paneId)
+const followView = useFollowView(useTemplateRef<HTMLElement>('area'))
 
 function activatePane() {
   if (paneId) store.setActivePane(paneId)
@@ -176,6 +179,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
   <ContextMenuRoot :modal="false">
     <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
+        ref="area"
         data-test-id="canvas-area"
         :data-pane-id="paneId"
         :data-active-pane="isActivePane ? 'true' : 'false'"
@@ -255,6 +259,11 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             </PopoverContent>
           </PopoverPortal>
         </PopoverRoot>
+        <FollowFrame
+          v-if="isActivePane && followView.label.value"
+          :followed="followView.label.value"
+          @stop="followView.stop"
+        />
         <PreparationOverlay
           v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"
           :preparation="store.state.preparation"

@@ -1,5 +1,6 @@
+import { whenever } from '@vueuse/core'
 import type { CanvasKit } from 'canvaskit-wasm'
-import { onMounted, onScopeDispose } from 'vue'
+import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
@@ -42,9 +43,9 @@ export function useCanvasKitLoader({
     onReady?.()
   }
 
-  onMounted(() => {
-    void init()
-  })
+  // Start once there is a canvas: a CanvasSurface child hands its element over after the
+  // root has mounted, so waiting for mount alone would find none.
+  whenever(canvasRef, () => void init(), { once: true, flush: 'post', immediate: true })
 
   onScopeDispose(() => {
     lifecycle.destroyed = true

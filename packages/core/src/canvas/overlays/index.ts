@@ -14,5 +14,6 @@ export { drawFlashes, drawLayoutInsertIndicator, drawMarquee, drawSnapGuides } f
 export { drawMeasurements } from './measurement'
 export { drawTextEditOverlay } from './text-edit'
 export { drawSelectionLabels } from '#core/canvas/labels/selection'
-export { drawPenOverlay, drawRemoteCursors } from '#core/canvas/pen-overlay'
+export { drawPenOverlay } from '#core/canvas/pen-overlay'
+export { drawPresenceCursors } from './presence'
 export { computeHandleVisibleVertices, drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'

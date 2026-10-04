@@ -114,6 +114,14 @@ export function object(entries: (readonly [string, SyntaxNode])[]): SyntaxNode {
 
 export const array = (elements: SyntaxNode[]): SyntaxNode => ({ type: 'ArrayExpression', elements })
 
+/** A call of a function by name, such as a helper inside an exported prop value. */
+export const call = (callee: string, args: SyntaxNode[]): SyntaxNode => ({
+  type: 'CallExpression',
+  callee: identifier(callee),
+  arguments: args,
+  optional: false
+})
+
 export function stringUnionType(values: string[]): SyntaxNode {
   const literals = values.map((value) => ({ type: 'TSLiteralType', literal: string(value) }))
   return literals.length === 1 && literals[0]

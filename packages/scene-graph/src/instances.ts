@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from './'
+import { detachOwnedSlotContent, restoreOwnedSlotContent } from './components/slots'
 import type { NodeCloneMode } from './copy'
 import {
   clearInstanceOverrides,
@@ -114,9 +115,11 @@ export function swapInstanceComponent(
   if (!previousComponent || instance.name === previousComponent.name) updates.name = component.name
 
   const childIds = Array.from(instance.childIds)
+  const slotContent = detachOwnedSlotContent(graph, instance)
   for (const childId of childIds) graph.deleteNode(childId)
   graph.updateNode(instanceId, updates)
   cloneChildrenWithMapping(graph, componentId, instanceId)
+  restoreOwnedSlotContent(graph, instance, slotContent)
 }
 
 const syncingComponentsByGraph = new WeakMap<SceneGraph, Set<string>>()

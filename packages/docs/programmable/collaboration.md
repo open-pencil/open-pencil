@@ -20,10 +20,15 @@ Anyone with the link can join. The room stays active as long as at least one par
 - **Document changes** — every edit (shapes, text, properties, layout) syncs instantly
 - **Cursors** — see where each collaborator is pointing, with their name and color
 - **Selections** — highlighted selections are visible to everyone
+- **Agents** — the built-in AI chat appears as a cursor at the layers it is editing, its outlined label showing a sparkle and a callsign such as *Fern*. The cursor and outline have the color of the person running it, so you can tell whose agent it is. Only its name, kind, model, status, page, position, and edited layers are shared, never prompts or replies.
 
 ## Follow Mode
 
-Click a collaborator's avatar in the top bar to follow their viewport. Your canvas pans and zooms to match their view. Click again to stop following.
+Click a collaborator's avatar in the top bar to follow their viewport. Your canvas pans and zooms to match their view, and a frame in their color with a “Following …” bar shows whom you follow. Click the avatar again, press <kbd>Esc</kbd>, or click, scroll, zoom, or switch pages yourself to stop.
+
+An avatar counts the agents that person runs. Hover over it to see each agent, what it is doing, and on which page, and click **Follow** next to an agent to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. The button after the avatars lists everyone in the room with their agents, and works from the keyboard. Your own avatar lists your agents — click one to rename it — and has **Leave room**.
+
+The share panel lists everyone in the room with the agents they run, what each agent is doing, and on which page. Follow an agent the same way to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. Double-click one of your own agents to rename it.
 
 ## How It Works
 

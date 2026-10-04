@@ -1,9 +1,12 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import type { InstanceOccurrence, InterpretInstanceOptions } from '../instance-overrides/interpret'
 import { reconcileLiveComponentEdits } from '../instance-overrides/live-component-edits'
 import { materializeInstance } from '../instance-overrides/materialize-instance'
+import type {
+  InstanceOccurrence,
+  InterpretInstanceOptions
+} from '../instance-overrides/occurrence/types'
 import {
   reconcileOccurrenceStructure,
   linkInstanceSourceChildren,

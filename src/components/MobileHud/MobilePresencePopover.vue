@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import { tv } from 'tailwind-variants'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 
@@ -8,14 +7,14 @@ import { initials } from '@/app/shell/ui'
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import collaborationTheme from '@/theme/collaboration'
+import { avatar } from '@/theme/collaboration/avatar'
+import { presencePopover } from '@/theme/mobile/presence-popover'
 
 const hud = useMobileHudContext()
-const collaboration = tv(collaborationTheme)
-const styles = collaboration({ size: 'md' })
+const styles = presencePopover()
 
 function peerAvatarClass(following: boolean) {
-  return collaboration({ size: 'md', following }).avatar()
+  return avatar({ size: 'md', following, interactive: true })
 }
 </script>
 
@@ -23,7 +22,7 @@ function peerAvatarClass(following: boolean) {
   <PopoverRoot v-if="hud.collabState.connected">
     <PopoverTrigger as-child>
       <HudButton :label="`Online: ${hud.onlineCount}`">
-        <template #leading><span :class="styles.presenceDot()" /></template>
+        <template #leading><span :class="styles.dot()" /></template>
       </HudButton>
     </PopoverTrigger>
     <PopoverPortal>
@@ -32,7 +31,7 @@ function peerAvatarClass(following: boolean) {
         :side-offset="8"
         side="bottom"
         align="center"
-        :class="styles.presenceContent()"
+        :class="styles.content()"
       >
         <div class="mb-2 text-[11px] tracking-wider text-muted uppercase">
           {{ hud.messages.inThisRoom }}
@@ -40,7 +39,7 @@ function peerAvatarClass(following: boolean) {
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2">
             <div
-              :class="styles.avatar()"
+              :class="avatar({ size: 'md' })"
               :style="{ background: colorToCSS(hud.collabState.localColor) }"
             >
               {{ initials(hud.collabState.localName || 'You') }}
@@ -59,7 +58,7 @@ function peerAvatarClass(following: boolean) {
             @click="hud.toggleFollowPeer(peer.clientId)"
           >
             <div
-              :class="[peerAvatarClass(hud.followingPeer === peer.clientId), styles.peerAvatar()]"
+              :class="peerAvatarClass(hud.followingPeer === peer.clientId)"
               :style="{ background: colorToCSS(peer.color) }"
             >
               {{ initials(peer.name) }}

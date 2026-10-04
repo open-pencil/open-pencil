@@ -200,7 +200,8 @@ function copyPropertyDefs(
     defs?.map((d) => ({
       ...d,
       variantOptions: d.variantOptions ? [...d.variantOptions] : undefined,
-      preferredValues: d.preferredValues ? [...d.preferredValues] : undefined
+      preferredValues: d.preferredValues ? [...d.preferredValues] : undefined,
+      slotSettings: d.slotSettings ? { ...d.slotSettings } : undefined
     })) ?? []
   )
 }

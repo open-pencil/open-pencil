@@ -1,6 +1,6 @@
 de:ai.chatSettings
 de:ai.completions
-de:ai.harnessThinkingMinimal
+de:ai.thinkingMinimal
 de:ai.modelAgentConnection
 de:ai.modelCapabilityVisionShort
 de:ai.modelName
@@ -84,7 +84,7 @@ es:storage.providerBackblaze
 es:storage.providerR2
 es:variableTypes.color
 fr:ai.completions
-fr:ai.harnessThinkingMinimal
+fr:ai.thinkingMinimal
 fr:ai.modelAgentConnection
 fr:ai.modelCapabilityVisionShort
 fr:ai.modelRoleVision

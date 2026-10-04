@@ -137,6 +137,7 @@ export type StyleProps = {
   strokeWidth?: number | DesignVariable
   strokeAlign?: 'inside' | 'outside' | 'center'
   strokeDash?: number[] | boolean
+  dashPattern?: number[]
   rounded?: number | DesignVariable
   roundedTL?: number | DesignVariable
   roundedTR?: number | DesignVariable
