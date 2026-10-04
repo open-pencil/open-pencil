@@ -125,7 +125,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'update_settings',
       description:
-        'Change editor settings with a partial object shaped like get_settings output. Returns the updated settings. Credentials, models, MCP connections, storage, and tool access are not exposed.',
+        'Change editor settings with a partial object shaped like get_settings output. Returns the applied patch. Credentials, models, MCP connections, storage, and tool access are not exposed.',
       effect: 'write',
       availability: 'default',
       capabilities: ['settings:write'],

@@ -387,8 +387,9 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     },
     async (args: { settings: Record<string, unknown> }) => {
       try {
-        const res = await sendCommand(sendRPC, 'update_settings', { settings: args.settings })
-        return ok(res.result ?? {})
+        // Echo only the applied patch: with get_settings disabled, writing must not read.
+        await sendCommand(sendRPC, 'update_settings', { settings: args.settings })
+        return ok({ updated: args.settings })
       } catch (e) {
         return fail(e)
       }

@@ -19,9 +19,8 @@ type HistoryDirection = 'undo' | 'redo'
 function stepHistory(target: AutomationTarget, direction: HistoryDirection) {
   const store = target.store
   if (store.state.nodeEditState) {
-    if (direction === 'undo') store.nodeEditUndo()
-    else store.nodeEditRedo()
-    return { applied: true, label: null, scope: 'vector-edit' }
+    const applied = direction === 'undo' ? store.nodeEditUndo() : store.nodeEditRedo()
+    return { applied, label: null, scope: 'vector-edit' }
   }
   const available = direction === 'undo' ? store.undo.canUndo : store.undo.canRedo
   if (!available) return { applied: false, label: null, scope: 'document' }

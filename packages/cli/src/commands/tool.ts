@@ -141,6 +141,11 @@ const call = defineCommand({
   },
   async run({ args }) {
     try {
+      if (!args.file && (args.write || args.output)) {
+        throw new Error(
+          '--write and --output need a document file; in the running app, use `openpencil documents save`'
+        )
+      }
       const def = findTool(args.name)
       const toolArgs = await readToolArgs(args)
       const { result, graph } = await runToolData(args.file, def.name, toolArgs, args)

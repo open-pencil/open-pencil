@@ -58,6 +58,10 @@ describe('tool CLI', () => {
     expect(unknown.exitCode).toBe(1)
     expect(unknown.stderr + unknown.stdout).toContain('Unknown tool "not_a_tool"')
 
+    const appWrite = await cli(['tool', 'call', 'create_page', '--output', 'out.fig'])
+    expect(appWrite.exitCode).toBe(1)
+    expect(appWrite.stderr).toContain('--write and --output need a document file')
+
     const badArgs = await cli(['tool', 'call', 'list_pages', FIXTURE, '--args', '[1]'])
     expect(badArgs.exitCode).toBe(1)
     expect(badArgs.stderr + badArgs.stdout).toContain('Tool arguments must be a JSON object')

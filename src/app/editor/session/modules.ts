@@ -89,6 +89,7 @@ export function createEditorStoreModules(
     setDocumentSource: documentIO.setDocumentSource,
     setStorageDocumentSource: documentIO.setStorageDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
+    saveFigFileToPath: documentIO.saveFigFileToPath,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
     dispose: () => {
       editor.releaseGraphResources()

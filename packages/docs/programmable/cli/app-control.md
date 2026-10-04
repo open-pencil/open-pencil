@@ -41,10 +41,17 @@ Step a document's history exactly like **Edit → Undo** and **Edit → Redo**, 
 
 ```sh
 openpencil undo --document-id tab-123
-openpencil redo --document-id tab-123 --json   # { "applied": true, "label": "Set opacity", ... }
+openpencil redo --document-id tab-123 --json
 ```
 
-When there is nothing to undo or redo, the command says so and `applied` is `false`.
+```json
+{
+  "result": { "applied": true, "label": "Set opacity", "scope": "document" },
+  "target": { "documentId": "tab-123", "documentName": "Landing", "pageId": "0:1", "pageName": "Page 1" }
+}
+```
+
+When there is nothing to undo or redo, the command says so and `result.applied` is `false`.
 
 ## Settings
 

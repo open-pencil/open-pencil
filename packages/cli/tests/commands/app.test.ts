@@ -143,6 +143,9 @@ describe('settings CLI', () => {
     const theme = await cli(['settings', 'get', 'appearance.theme'])
     expect(theme.stdout).toBe('auto')
 
+    const inherited = await cli(['settings', 'get', 'appearance.constructor'])
+    expect(inherited.exitCode).toBe(1)
+
     const missing = await cli(['settings', 'get', 'appearance.font'])
     expect(missing.exitCode).toBe(1)
     expect(missing.stderr).toContain('Unknown setting "appearance.font"')

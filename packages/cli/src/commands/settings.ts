@@ -11,7 +11,7 @@ const json = { type: 'boolean', description: 'Output as JSON' } as const
 function readPath(settings: Settings, key: string): unknown {
   let value: unknown = settings
   for (const part of key.split('.')) {
-    if (!value || typeof value !== 'object' || !(part in value)) {
+    if (!value || typeof value !== 'object' || !Object.hasOwn(value, part)) {
       throw new Error(`Unknown setting "${key}"`)
     }
     value = (value as Settings)[part]

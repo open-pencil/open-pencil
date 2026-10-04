@@ -21,15 +21,13 @@ const closeArgsSchema = v.object({
 // Automation never opens the Save dialog: nobody may be there to answer it.
 async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string): Promise<void> {
   const name = store.state.documentName
-  if (path) {
-    // Create the folder first, so a refused path leaves the document's source untouched.
-    await ensureTauriParentDirectory(path)
-    store.setPlannedFilePath(path)
-  } else if (!store.hasWritableSource()) {
+  if (!path && !store.hasWritableSource()) {
     throw new Error(`"${name}" has not been saved to a file yet; pass a path to save it`)
   }
-  if (!(await store.saveFigFile())) throw new Error(`Could not save "${name}"`)
-  if (path) store.startWatchingCurrentFile()
+  if (path) await ensureTauriParentDirectory(path)
+  // A failed save to a new path leaves the document with the source it had.
+  const saved = path ? await store.saveFigFileToPath(path) : await store.saveFigFile()
+  if (!saved) throw new Error(`Could not save "${name}"`)
 }
 
 export async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
