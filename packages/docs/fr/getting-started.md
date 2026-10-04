@@ -18,6 +18,18 @@ Les versions prêtes à l'emploi pour macOS, Windows et Linux sont disponibles s
 | Windows (ARM) | `.msi` / `.exe` |
 | Linux (x64) | `.AppImage` / `.deb` |
 
+## Configuration requise
+
+OpenPencil affiche le rendu avec CanvasKit sur WebGL et s’appuie sur des fonctionnalités récentes de la plateforme web ; il faut donc un moteur de navigateur récent. L’application web prend en charge Chrome 111, Edge 111, Firefox 128 et Safari 16.4 ou version ultérieure ; les navigateurs basés sur Chromium, comme Brave et Opera, suivent leur version de Chrome. L’application de bureau s’affiche dans la WebView du système : le minimum dépend donc du moteur du système d’exploitation.
+
+| Plateforme | Configuration requise |
+| ---------- | --------------------- |
+| macOS | macOS 13 Ventura ou version ultérieure, avec les dernières mises à jour de Safari installées (Safari 16.4 est fourni avec macOS 13.3). |
+| Windows | Windows 10 ou version ultérieure, avec le runtime Evergreen de Microsoft Edge WebView2, qui se met à jour seul. |
+| Linux | WebKitGTK 2.40 ou version ultérieure (`webkit2gtk-4.1`). |
+
+Lorsque le moteur est trop ancien, OpenPencil indique ce qu’il faut mettre à jour au lieu d’afficher une fenêtre vide. Si cet avis apparaît sur un système conforme, utilisez son lien « Report a problem », qui préremplit les informations sur le navigateur et le moteur.
+
 ## Installation sous macOS avec Homebrew
 
 ```sh

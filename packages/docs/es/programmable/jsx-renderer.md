@@ -55,6 +55,10 @@ OpenPencil puede convertir JSX declarativo en un árbol de diseño. El mismo sis
 
 Las propiedades desconocidas se conservan cuando el tipo de objeto las admite. Los eventos DOM no se ejecutan: el resultado es un documento de diseño, no una aplicación web.
 
+## Importar en código
+
+En código de aplicación o de biblioteca sin interfaz, importa `Frame`, `Text` y el resto de exportaciones de autoría desde `@open-pencil/design-jsx` y crea los nodos con `renderTree` o `renderJSX` de `@open-pencil/core/design-jsx`, que añaden iconos, conversión de SVG y disposición. Para escribir los árboles como TSX, define `"jsxImportSource": "@open-pencil/design-jsx"` con `"jsx": "react-jsx"` en `tsconfig.json`, o añade al archivo el comentario `/** @jsxImportSource @open-pencil/design-jsx */`. El entorno de scripting determina qué API se exponen a `eval`; las exportaciones de los paquetes no son globales automáticamente.
+
 ## Exportar a JSX
 
-El menú **Copiar como → JSX** convierte la selección en JSX y clases Tailwind. La salida intenta conservar jerarquía, disposición, tamaños, colores, tipografía y bordes, y sirve como punto de partida para implementar una interfaz.
+El menú **Copiar como → JSX** convierte la selección en JSX y clases Tailwind. La salida intenta conservar jerarquía, disposición, tamaños, colores, tipografía y bordes, y sirve como punto de partida para implementar una interfaz. El JSX exportado se puede editar y volver a renderizar en el documento. La exportación incluye capas ocultas y bloqueadas, restricciones, límites de tamaño, rellenos apilados, de degradado y de imagen, contornos, efectos, máscaras y enlaces a variables, así que al renderizarla se reproducen y `diff_jsx` muestra los cambios en cualquiera de ellos. Aún no se escriben el texto enriquecido con estilos mixtos, los trazados vectoriales, las cuadrículas de disposición, los estilos compartidos ni las definiciones de propiedades de componentes. Las instancias se escriben como marcos con su contenido, de modo que el JSX exportado se sostiene por sí solo.

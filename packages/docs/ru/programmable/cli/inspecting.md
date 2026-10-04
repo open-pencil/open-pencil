@@ -127,9 +127,10 @@ openpencil lint design.fig
 openpencil lint design.pen --preset strict
 openpencil lint design.fig --rule color-contrast
 openpencil lint design.fig --list-rules
+openpencil lint design.fig --fix -o fixed.fig
 ```
 
-Добавьте `--json`, если результат будет обрабатывать другая программа.
+Добавьте `--json`, если результат будет обрабатывать другая программа: каждое сообщение содержит `fix` и `suggestions` в виде данных. `--fix` применяет безопасные исправления — привязывает цвета к подходящим переменным цвета и округляет геометрию до целых пикселей — и записывает результат в файл `.fig`, указанный в `-o`.
 
 ## Вывод JSON
 

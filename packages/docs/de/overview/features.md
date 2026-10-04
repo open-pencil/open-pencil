@@ -19,7 +19,7 @@ OpenPencil öffnet und speichert `.fig`-Dateien direkt. Import und Export verwen
 
 ## Eigenschaften
 
-Die Registerkarten Design, Code und AI passen sich der aktuellen Auswahl an:
+Die Registerkarten Design, Code, KI und Prüfen passen sich der aktuellen Auswahl an:
 
 - **Darstellung:** Deckkraft, einheitlicher oder separater Eckenradius und Sichtbarkeit.
 - **Füllung:** Volltonfarbe, lineare, radiale, Winkel- und Diamantverläufe sowie Bilder.
@@ -28,6 +28,8 @@ Die Registerkarten Design, Code und AI passen sich der aktuellen Auswahl an:
 - **Typografie:** Schriftwahl mit Suche und virtuellem Scrollen, Schnitt, Größe, Ausrichtung und Formatierung.
 - **Anordnung:** Einstellungen der automatischen Anordnung.
 - **Export:** Maßstab, PNG/JPG/WEBP/SVG und Vorschau.
+- **Code:** Design JSX und Tailwind JSX für die Auswahl, mit Design JSX live in beide Richtungen bearbeitbar: Der Code wird angepasst, wenn sich Ebenen ändern. Das Element an der Cursorposition umrandet seine Ebene auf der Arbeitsfläche, und Designprobleme werden an der Eigenschaft unterstrichen, die sie verursacht.
+- **Prüfen:** Live-Designprüfung für die Seite oder die Auswahl: geringer Kontrast, kleine Touch-Ziele, nicht gebundene Farben, Abstände außerhalb der Skala, mit Problemmarkierungen auf der Arbeitsfläche und Variablenbindung per Klick ([Designs prüfen](/user-guide/checking-designs)).
 
 ## Darstellung
 
