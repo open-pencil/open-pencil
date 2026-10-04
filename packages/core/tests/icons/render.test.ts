@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { SceneGraph } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { createIconFromPaths } from '#core/icons/render'
