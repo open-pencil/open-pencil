@@ -151,6 +151,8 @@ Endpoints are available over both active transports:
 7. **Save** — `save_file` to write back to `.fig`
 8. **Close** — `close_file` to close an open document tab; it prompts to save unsaved changes.
 
+`undo` and `redo` step a document's history, and `activate_document` brings a tab to the front when the user should see it.
+
 Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
 ## AI Agent Skill
@@ -176,6 +178,23 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
 | `list_documents` | List open app documents/tabs and their pages |
+| `activate_document` | Bring a document tab to the front, optionally on a given page |
+
+### History
+
+| Tool | Description |
+|------|-------------|
+| `undo` | Undo the last change in a document, like Edit → Undo |
+| `redo` | Redo the last undone change in a document, like Edit → Redo |
+
+### Settings
+
+| Tool | Description |
+|------|-------------|
+| `get_settings` | Read editor settings: appearance, snapping, canvas rendering, recovery, and AI chat preferences |
+| `update_settings` | Change settings with a partial object shaped like `get_settings` output; invalid keys and values are rejected |
+
+Settings tools never expose credentials, AI models, MCP connections, storage, or tool access. The available keys are listed in [Controlling the App](/programmable/cli/app-control#settings).
 
 ### Read
 

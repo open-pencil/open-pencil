@@ -31,6 +31,7 @@ export interface ProgrammableLabels {
   exporting: string
   analyzing: string
   comparing: string
+  appControl: string
   scripting: string
   jsxRenderer: string
   mcpServer: string
@@ -55,6 +56,7 @@ export const EN_PROG: ProgrammableLabels = {
   exporting: 'Exporting',
   analyzing: 'Analyzing Designs',
   comparing: 'Comparing Designs',
+  appControl: 'Controlling the App',
   scripting: 'Scripting',
   jsxRenderer: 'JSX Renderer',
   mcpServer: 'MCP Server',
@@ -68,6 +70,7 @@ export const DE_PROG: ProgrammableLabels = {
   exporting: 'Exportieren',
   analyzing: 'Designs analysieren',
   comparing: 'Designs vergleichen',
+  appControl: 'App steuern',
   scripting: 'Skripte',
   jsxRenderer: 'JSX-Renderer',
   mcpServer: 'MCP-Server',
@@ -81,6 +84,7 @@ export const IT_PROG: ProgrammableLabels = {
   exporting: 'Esportazione',
   analyzing: 'Analisi design',
   comparing: 'Confronto dei design',
+  appControl: 'Controllare l’app',
   scripting: 'Scripting',
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Server MCP',
@@ -94,6 +98,7 @@ export const FR_PROG: ProgrammableLabels = {
   exporting: 'Exporter',
   analyzing: 'Analyser les designs',
   comparing: 'Comparer des designs',
+  appControl: 'Piloter l’application',
   scripting: 'Scripts',
   jsxRenderer: 'Moteur JSX',
   mcpServer: 'Serveur MCP',
@@ -107,6 +112,7 @@ export const ES_PROG: ProgrammableLabels = {
   exporting: 'Exportar',
   analyzing: 'Analizar diseños',
   comparing: 'Comparar diseños',
+  appControl: 'Controlar la app',
   scripting: 'Scripts',
   jsxRenderer: 'Renderizador JSX',
   mcpServer: 'Servidor MCP',
@@ -120,6 +126,7 @@ export const PL_PROG: ProgrammableLabels = {
   exporting: 'Eksportowanie',
   analyzing: 'Analiza projektów',
   comparing: 'Porównywanie projektów',
+  appControl: 'Sterowanie aplikacją',
   scripting: 'Skrypty',
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Serwer MCP',
@@ -133,6 +140,7 @@ export const RU_PROG: ProgrammableLabels = {
   exporting: 'Экспорт',
   analyzing: 'Анализ дизайна',
   comparing: 'Сравнение дизайнов',
+  appControl: 'Управление приложением',
   scripting: 'Скрипты',
   jsxRenderer: 'JSX-рендерер',
   mcpServer: 'MCP-сервер',

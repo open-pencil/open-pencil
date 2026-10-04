@@ -5,7 +5,7 @@ description: Complete reference for all openpencil commands, options, and flags.
 
 # CLI Reference
 
-All commands accept a `.fig` file as a positional argument. When omitted, the CLI connects to the running desktop app via RPC.
+Document commands accept a `.fig` file as a positional argument. When omitted, the CLI connects to the running desktop app via RPC. `documents`, `undo`, `redo`, and `settings` always act on the running app.
 
 ## info
 
@@ -297,3 +297,63 @@ openpencil diff files <before> <after> [options]
 | `--page` | Compare only the page with this name |
 | `--depth` | Max tree depth below each page (default: unlimited) |
 | `--json` | Output as JSON |
+
+## documents
+
+Manage documents (tabs) in the running app. See [Controlling the App](/programmable/cli/app-control).
+
+```sh
+openpencil documents list [--json]
+openpencil documents open <file> [--json]
+openpencil documents new [--path <file>] [--json]
+openpencil documents save [--path <file>] [--document-id <id>] [--json]
+openpencil documents close [--document-id <id>] [--json]
+openpencil documents activate <document-id> [--page-id <id>] [--json]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--path` | `.fig` path to create or save to; relative to the current directory |
+| `--document-id` | Target document; defaults to the active tab |
+| `--page-id` | Page to switch the activated document to |
+| `--json` | Output the result and target document as JSON |
+
+## undo / redo
+
+Step a document's history in the running app, like Edit → Undo and Edit → Redo.
+
+```sh
+openpencil undo [--document-id <id>] [--json]
+openpencil redo [--document-id <id>] [--json]
+```
+
+## settings
+
+Read and change editor settings in the running app by dotted key. Values parse as JSON, falling back to plain strings.
+
+```sh
+openpencil settings get [key] [--json]
+openpencil settings set <key> <value> [--json]
+```
+
+See [Controlling the App](/programmable/cli/app-control#settings) for the available keys.
+
+## tool
+
+List, describe, and call the editor tools that the MCP server exposes.
+
+```sh
+openpencil tool list [--json]
+openpencil tool describe <name> [--json]
+openpencil tool call <name> [file] [options]
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--args` | | Tool arguments as a JSON object |
+| `--args-file` | | Read arguments from a JSON file, or `-` for stdin |
+| `--write` | `-w` | Headless: write changes back to the input file |
+| `--output` | `-o` | Headless: write changes to a different file |
+| `--document-id` | | App: target document |
+| `--page-id` | | App: target page |
+| `--json` | | Output as JSON |
