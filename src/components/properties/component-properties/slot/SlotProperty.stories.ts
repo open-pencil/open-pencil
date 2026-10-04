@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
+import SlotSettings from './examples/Settings.vue'
 import SlotPropertyStates from './examples/States.vue'
 
 const meta = {
@@ -53,5 +54,22 @@ export const AddPreferredOnly: Story = {
     await userEvent.click(row.getByRole('button', { name: 'Add instances' }))
     await expect(page.getByText('List item')).toBeVisible()
     await expect(page.queryByText('Avatar')).toBeNull()
+  }
+}
+
+export const Settings: Story = {
+  render: () => ({ components: { SlotSettings }, template: '<SlotSettings />' }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'Slot settings' }))
+    const maximum = await page.findByLabelText('Maximum layers')
+    await userEvent.clear(maximum)
+    await userEvent.type(maximum, '5')
+    await userEvent.tab()
+    await expect(canvas.getByText('limits: 1..5')).toBeVisible()
+    await userEvent.click(page.getByRole('button', { name: 'Add preferred instances' }))
+    await userEvent.click(await page.findByRole('option', { name: /Divider/ }))
+    await expect(canvas.getByText('prefer divider')).toBeVisible()
   }
 }

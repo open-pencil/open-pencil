@@ -241,12 +241,14 @@ export {
   slotInstanceOptions,
   slotLimits,
   useComponentProperties,
+  useSlotAuthoring,
   useSlotProperties,
   useVariantAuthoring
 } from '#vue/controls/component-props'
 export type {
   ComponentPropertyControl,
   ComponentPropertyOption,
+  SlotDefinitionControl,
   SlotInstanceOption,
   SlotLimit,
   SlotPropertyControl,

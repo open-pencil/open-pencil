@@ -12,6 +12,7 @@ export const commandMessageDefaults = {
   frameSelection: 'Frame selection',
   ungroup: 'Ungroup',
   createComponent: 'Create component',
+  createSlot: 'Create slot',
   createComponentSet: 'Create component set',
   createInstance: 'Create instance',
   detachInstance: 'Detach instance',

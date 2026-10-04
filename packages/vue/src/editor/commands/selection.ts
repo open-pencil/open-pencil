@@ -132,6 +132,14 @@ export function createSelectionCommands({
       enabled: capabilities.canGoToMainComponent,
       run: () => void editor.goToMainComponent()
     },
+    'selection.createSlot': {
+      id: 'selection.createSlot',
+      get label() {
+        return t.value.createSlot
+      },
+      enabled: capabilities.canCreateSlot,
+      run: () => void editor.createSlot()
+    },
     'selection.wrapInAutoLayout': {
       id: 'selection.wrapInAutoLayout',
       get label() {

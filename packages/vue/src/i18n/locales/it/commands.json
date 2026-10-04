@@ -7,6 +7,7 @@
   "group": "Raggruppa",
   "ungroup": "Separa",
   "createComponent": "Crea componente",
+  "createSlot": "Crea slot",
   "createComponentSet": "Crea set di componenti",
   "createInstance": "Crea istanza",
   "detachInstance": "Scollega istanza",
