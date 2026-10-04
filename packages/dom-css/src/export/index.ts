@@ -8,6 +8,7 @@ export {
   type TailwindJSXWithLayers
 } from './tailwind-jsx'
 export { serializeHTML } from './html'
+export * from '../tokens'
 export type {
   ExportHTMLBundle,
   ExportHTMLBundleOptions,

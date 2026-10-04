@@ -1,9 +1,9 @@
-# @open-pencil/codegen
+# @open-pencil/emit
 
-Syntax-tree code generation for OpenPencil's exporters. Build JavaScript, TypeScript, and JSX as ESTree nodes and print them with [esrap](https://github.com/sveltejs/esrap), instead of concatenating strings.
+How OpenPencil's exporters emit source code. Build JavaScript, TypeScript, and JSX as ESTree nodes and print them with [esrap](https://github.com/sveltejs/esrap), instead of concatenating strings.
 
 ```ts
-import { jsx } from '@open-pencil/codegen'
+import { jsx } from '@open-pencil/emit'
 
 const card = jsx.element(
   'Card',
@@ -20,7 +20,7 @@ jsx.printJSX(card) // <Card title={"Fish & chips"}>Hello</Card>
 `es` parses TypeScript templates, fills `$name` placeholders, and prints modules:
 
 ```ts
-import { es } from '@open-pencil/codegen'
+import { es } from '@open-pencil/emit'
 
 const module = es.fill(es.parseModule("export const title = '$title'"), {
   $title: es.string('Checkout')

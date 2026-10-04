@@ -18,7 +18,7 @@
     "source=open-pencil-core-modules-${devcontainerId},target=/workspace/open-pencil/packages/core/node_modules,type=volume",
     "source=open-pencil-dom-css-modules-${devcontainerId},target=/workspace/open-pencil/packages/dom-css/node_modules,type=volume",
     "source=open-pencil-design-jsx-modules-${devcontainerId},target=/workspace/open-pencil/packages/design-jsx/node_modules,type=volume",
-    "source=open-pencil-codegen-modules-${devcontainerId},target=/workspace/open-pencil/packages/codegen/node_modules,type=volume",
+    "source=open-pencil-emit-modules-${devcontainerId},target=/workspace/open-pencil/packages/emit/node_modules,type=volume",
     "source=open-pencil-vue-modules-${devcontainerId},target=/workspace/open-pencil/packages/vue/node_modules,type=volume",
     "source=open-pencil-cli-modules-${devcontainerId},target=/workspace/open-pencil/packages/cli/node_modules,type=volume",
     "source=open-pencil-mcp-modules-${devcontainerId},target=/workspace/open-pencil/packages/mcp/node_modules,type=volume",

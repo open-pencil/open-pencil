@@ -1,11 +1,11 @@
 {
-  "name": "@open-pencil/codegen",
+  "name": "@open-pencil/emit",
   "version": "0.15.1",
   "license": "MIT",
   "type": "module",
-  "description": "Syntax-tree code generation for OpenPencil exporters: JavaScript, TypeScript, and JSX built as ESTree and printed with esrap.",
+  "description": "How OpenPencil exporters emit source: JavaScript, TypeScript, and JSX built as ESTree and printed with esrap.",
   "imports": {
-    "#codegen/*": {
+    "#emit/*": {
       "types": "./src/*",
       "bun": "./src/*",
       "default": "./dist/*"
@@ -47,7 +47,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
-    "directory": "packages/codegen"
+    "directory": "packages/emit"
   },
   "publishConfig": {
     "access": "public",
