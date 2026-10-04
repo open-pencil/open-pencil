@@ -7,12 +7,14 @@ import {
   onBeforeUnmount,
   ref,
   shallowRef,
+  nextTick,
   useTemplateRef,
   watch
 } from 'vue'
 
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
-import { useI18n } from '@open-pencil/vue'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { useEditorEvent, useI18n } from '@open-pencil/vue'
 
 import {
   commitDOMCodeSession,
@@ -26,6 +28,7 @@ import { useCodeLayers } from '@/app/code/layers/use'
 import {
   createDesignJSXEditSession,
   previewDesignJSX,
+  reapplyCanvasEdits,
   resetDesignJSXPreview,
   type DesignJSXEditSession,
   type DesignJSXLayerLine
@@ -65,6 +68,30 @@ let previewing = 0
 let previewedVersion: number | null = null
 /** The selection the code was generated for. */
 let followedSelection: string | null = null
+/** Code typed since the last preview started, which the canvas does not show yet. */
+let previewDue = false
+/**
+ * Canvas edits made while code waits to render. Code replaced as a whole has no links to patch
+ * them into until its preview links it again, so they are applied once more after that preview.
+ */
+let canvasEdits = new Map<string, Partial<SceneNode>>()
+
+useEditorEvent('node:updated', (id, changes) => {
+  if (!previewDue || previewing > 0 || source.value !== 'design-jsx') return
+  canvasEdits.set(id, { ...canvasEdits.get(id), ...structuredClone(changes) })
+})
+
+function takeCanvasEdits(): Map<string, Partial<SceneNode>> {
+  const edits = canvasEdits
+  canvasEdits = new Map()
+  previewDue = false
+  return edits
+}
+
+/** Hands edits taken by a superseded or failed preview to the next one, behind any made since. */
+function returnCanvasEdits(edits: ReadonlyMap<string, Partial<SceneNode>>) {
+  for (const [id, changes] of edits) canvasEdits.set(id, { ...changes, ...canvasEdits.get(id) })
+}
 
 /** Set by "Write JSX": the editor stays open for new layers until something is selected. */
 const composing = ref(false)
@@ -141,6 +168,7 @@ async function commitCurrentSession(): Promise<void> {
     await pendingPreview
     await previewQueue
     updateVersion += 1
+    takeCanvasEdits()
     const dom = domSession
     designSession.value = null
     domSession = null
@@ -157,6 +185,7 @@ async function commitCurrentSession(): Promise<void> {
 
 async function runPreview(version: number): Promise<void> {
   if (version !== updateVersion || readOnly.value || !draft.value.trim()) return
+  const edits = takeCanvasEdits()
   status.value = 'updating'
   error.value = ''
   previewing += 1
@@ -178,14 +207,26 @@ async function runPreview(version: number): Promise<void> {
     previewedVersion = store.state.sceneVersion
     followedSelection = selectionKey.value
   }
-  if (version !== updateVersion) return
+  if (version !== updateVersion) {
+    returnCanvasEdits(edits)
+    return
+  }
   if (previewLayers) codeLayers.showPreview(previewLayers)
   if (!result.ok) {
     status.value = 'error'
     error.value = result.error
+    // The code still waits to render, so its next preview applies these and later edits.
+    previewDue = true
+    returnCanvasEdits(edits)
     return
   }
   status.value = 'updated'
+  const session = designSession.value
+  if (!session || edits.size === 0) return
+  // Once the code is linked again, the edits reach it as canvas changes do.
+  await nextTick()
+  if (version === updateVersion) reapplyCanvasEdits(store, session, edits)
+  else returnCanvasEdits(edits)
 }
 
 const schedulePreview = useDebounceFn(
@@ -204,6 +245,7 @@ function updateDraft(value: string, origin: 'user' | 'layers'): void {
   edited.value = true
   error.value = ''
   updateVersion += 1
+  previewDue = true
   pendingPreview = schedulePreview(updateVersion)
 }
 
@@ -211,6 +253,7 @@ async function resetDraft(): Promise<void> {
   updateVersion += 1
   await pendingPreview
   await previewQueue
+  takeCanvasEdits()
   const design = designSession.value
   const dom = domSession
   designSession.value = null
@@ -255,7 +298,7 @@ function showCanvas(next: Exclude<CodeSource, 'html-css'>) {
  * generated again; code the person wrote is patched where layers changed, keeping the rest as
  * written. Another selection starts over with its generated code.
  */
-function followCanvas() {
+function followCanvas(live = false) {
   const current = source.value
   if (!editorActive.value || current === 'html-css' || previewing > 0) return
   if (selectionKey.value !== followedSelection) {
@@ -266,15 +309,27 @@ function followCanvas() {
     showCanvas(current)
     return
   }
-  if (store.state.sceneVersion === previewedVersion) return
+  // A live preview leaves the scene version alone, so it is followed whatever the version.
+  if (!live && store.state.sceneVersion === previewedVersion) return
   codeEditor.value?.patchFromLayers()
 }
 
-watch([() => store.state.sceneVersion, selectionKey, source, editorActive], followCanvas, {
+watch([() => store.state.sceneVersion, selectionKey, source, editorActive], () => followCanvas(), {
   immediate: true
 })
 
+/** Dragging or scrubbing a value previews it; the code follows once per frame, like the Design panel. */
+let livePreviewFrame = 0
+useEditorEvent('node:previewUpdated', () => {
+  if (livePreviewFrame) return
+  livePreviewFrame = requestAnimationFrame(() => {
+    livePreviewFrame = 0
+    followCanvas(true)
+  })
+})
+
 onBeforeUnmount(() => {
+  cancelAnimationFrame(livePreviewFrame)
   void commitCurrentSession()
 })
 

@@ -15,8 +15,8 @@
     "resolveJsonModule": true,
     "types": ["bun"],
     "paths": {
-      "#codegen/*": ["./src/*"],
-      "@open-pencil/codegen": ["./src/index.ts"]
+      "#emit/*": ["./src/*"],
+      "@open-pencil/emit": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

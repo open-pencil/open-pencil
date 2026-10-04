@@ -30,3 +30,11 @@ export function createPathStroke(
     join: STROKE_JOIN_MAP[strokeJoin] ?? 'MITER'
   }
 }
+
+/**
+ * Node-level cap and join for an SVG path stroke. `.fig` files store these on the node, not on the
+ * stroke paint, so a vector that sets only `Stroke.cap`/`Stroke.join` loses them when reopened.
+ */
+export function pathStrokeLineStyle(stroke: Stroke): Pick<SceneNode, 'strokeCap' | 'strokeJoin'> {
+  return { strokeCap: stroke.cap ?? 'NONE', strokeJoin: stroke.join ?? 'MITER' }
+}

@@ -1,44 +1,17 @@
 import { createPi } from '@ai-sdk/harness-pi'
-import type { PiAuthOptions } from '@ai-sdk/harness-pi'
+import type { PiAuthenticationMode, PiHarnessSettings } from '@ai-sdk/harness-pi'
 import { HarnessAgent } from '@ai-sdk/harness/agent'
 import type { HarnessAgentResumeSessionState, HarnessAgentSession } from '@ai-sdk/harness/agent'
 import { createJustBashSandbox } from '@ai-sdk/sandbox-just-bash'
 import type { TextStreamPart, ToolSet } from 'ai'
 
 import type { HarnessSessionConfiguration, JSONValue } from '../protocol'
-
-function optional<T>(key: string, value: T | undefined): Record<string, T> {
-  return value === undefined ? {} : { [key]: value }
-}
-
-function restoreEnvironment(previous: Map<string, string | undefined>): void {
-  for (const [name, value] of previous) {
-    if (value === undefined) Reflect.deleteProperty(process.env, name)
-    else process.env[name] = value
-  }
-}
-
-async function withEnvironment<T>(
-  environment: Record<string, string>,
-  run: () => Promise<T>
-): Promise<T> {
-  const previous = new Map<string, string | undefined>()
-  for (const [name, value] of Object.entries(environment)) {
-    previous.set(name, process.env[name])
-    process.env[name] = value
-  }
-  try {
-    return await run()
-  } finally {
-    restoreEnvironment(previous)
-  }
-}
 import type { BackendEvent, BackendSession, HarnessBackend, HarnessResumeState } from './types'
 
-export type PiThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+export type PiThinkingLevel = NonNullable<PiHarnessSettings['thinkingLevel']>
 
 export interface PiHarnessBackendOptions {
-  auth?: PiAuthOptions
+  auth?: PiAuthenticationMode
   apiKey?: string
   model?: string
   thinkingLevel?: PiThinkingLevel
@@ -145,35 +118,35 @@ export class PiHarnessBackend implements HarnessBackend {
       typeof configuration.settings?.permissionMode === 'string'
         ? (configuration.settings.permissionMode as PiHarnessBackendOptions['permissionMode'])
         : undefined
-    const environment: Record<string, string> = this.defaults.apiKey
-      ? { AI_GATEWAY_API_KEY: this.defaults.apiKey }
-      : {}
-    return withEnvironment(environment, async () => {
-      const harness = createPi({
-        ...optional('auth', this.defaults.auth),
-        ...optional('model', configuration.model),
-        ...optional('thinkingLevel', thinkingLevel ?? this.defaults.thinkingLevel),
-        ...optional('agentDir', this.defaults.agentDir),
-        ...optional('mcpServers', options.configuration?.mcpServers ?? this.defaults.mcpServers)
-      })
-      const agent = new HarnessAgent({
-        harness,
-        sandbox: createJustBashSandbox({ cwd: '/workspace' }),
-        sandboxConfig: { workDir: 'workspace' },
-        ...optional('instructions', configuration.instructions ?? this.defaults.instructions),
-        permissionMode: permissionMode ?? this.defaults.permissionMode ?? 'allow-edits'
-      })
-      const sessionOptions: {
-        sessionId: string
-        resumeFrom?: HarnessAgentResumeSessionState
-        abortSignal?: AbortSignal
-      } = { sessionId: options.sessionId }
-      if (options.resumeState !== undefined) {
-        sessionOptions.resumeFrom = options.resumeState as HarnessAgentResumeSessionState
-      }
-      if (options.signal !== undefined) sessionOptions.abortSignal = options.signal
-      const session = await agent.createSession(sessionOptions)
-      return new PiBackendSession(agent, session)
+    // A supplied environment authenticates this session alone, without touching process.env.
+    const auth =
+      this.defaults.auth ??
+      (this.defaults.apiKey ? { AI_GATEWAY_API_KEY: this.defaults.apiKey } : undefined)
+    // Plain literals, so the compiler rejects a setting an adapter no longer accepts.
+    const harness = createPi({
+      auth,
+      thinkingLevel: thinkingLevel ?? this.defaults.thinkingLevel,
+      agentDir: this.defaults.agentDir,
+      mcpServers: configuration.mcpServers ?? this.defaults.mcpServers
     })
+    const agent = new HarnessAgent({
+      harness,
+      model: configuration.model,
+      sandbox: createJustBashSandbox({ cwd: '/workspace' }),
+      sandboxConfig: { workDir: 'workspace' },
+      instructions: configuration.instructions ?? this.defaults.instructions,
+      permissionMode: permissionMode ?? this.defaults.permissionMode ?? 'allow-edits'
+    })
+    const sessionOptions: {
+      sessionId: string
+      resumeFrom?: HarnessAgentResumeSessionState
+      abortSignal?: AbortSignal
+    } = { sessionId: options.sessionId }
+    if (options.resumeState !== undefined) {
+      sessionOptions.resumeFrom = options.resumeState as HarnessAgentResumeSessionState
+    }
+    if (options.signal !== undefined) sessionOptions.abortSignal = options.signal
+    const session = await agent.createSession(sessionOptions)
+    return new PiBackendSession(agent, session)
   }
 }

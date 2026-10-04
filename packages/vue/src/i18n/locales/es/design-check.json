@@ -65,6 +65,8 @@
   "fixRoundPixels": "Redondear a píxeles enteros",
   "fixUseValue": "Cambiar a {value}",
   "fixFullRadius": "Usar radio completo",
+  "fixConvertToFrame": "Convertir en marco",
+  "fixDeleteLayer": "Eliminar capa",
   "fixAll": "Corregir las {count}",
   "ruleNoDefaultNames": "Nombre de capa predeterminado",
   "ruleNoDefaultNamesHelp": "Los nombres descriptivos facilitan encontrar, entregar y reutilizar capas.",

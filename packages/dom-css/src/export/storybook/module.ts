@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 
-import { es } from '@open-pencil/codegen'
+import { es } from '@open-pencil/emit'
 
 export const STORYBOOK_FRAMEWORKS = ['react', 'vue', 'html'] as const
 export type StorybookFramework = (typeof STORYBOOK_FRAMEWORKS)[number]

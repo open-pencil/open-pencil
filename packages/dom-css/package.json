@@ -77,9 +77,9 @@
   },
   "dependencies": {
     "@acemir/cssom": "^0.9.31",
-    "@open-pencil/codegen": "workspace:*",
+    "@open-pencil/emit": "workspace:*",
     "dedent": "^1.7.2",
-    "es-toolkit": "^1.51.0",
+    "es-toolkit": "^1.52.0",
     "js-base64": "^3.9.3",
     "parse5": "^8.0.1",
     "postcss-value-parser": "^4.2.0",

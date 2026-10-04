@@ -46,6 +46,15 @@ test('materializes separate occurrence nodes with direct component identities an
   for (const node of result.nodes.values()) expect(node.source.id).toBeNull()
 })
 
+test('materialized occurrences keep the order keys Figma saved', () => {
+  const { occurrence, graph, page, components } = setup()
+  const result = materializeInstance(graph, page.id, occurrence, components)
+  for (const [source, node] of result.nodes) {
+    expect(node.source.orderKey).toBe(source.properties.parentIndex?.position ?? null)
+  }
+  expect(result.root.source.orderKey).not.toBeNull()
+})
+
 test('materialization does not share editable paint payloads with interpreted occurrences', () => {
   const { occurrence, graph, page, components } = setup()
   occurrence.properties.fillPaints = [

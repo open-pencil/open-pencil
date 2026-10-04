@@ -81,9 +81,23 @@ describe('siblingOrderKeys', () => {
     expectStrictlyIncreasing(keys)
   })
 
-  test('re-keys imported siblings that were moved out of order', () => {
-    const keys = siblingOrderKeys(['#', '!', '"'])
-    expect(keys[0]).toBe('#')
+  test('re-keys only the sibling that was moved out of order', () => {
+    const keys = siblingOrderKeys(['$', '!O', '"', '#'])
+    expect(keys.slice(1)).toEqual(['!O', '"', '#'])
+    expectStrictlyIncreasing(keys)
+  })
+
+  test('does not anchor on the lowest key when a sibling has to precede it', () => {
+    const keys = siblingOrderKeys(['"', '!', '#'])
+    expect(keys[0]).toBe('"')
+    expect(keys[2]).toBe('#')
+    expectStrictlyIncreasing(keys)
+  })
+
+  test('keeps the siblings a moved layer jumped over', () => {
+    const keys = siblingOrderKeys([null, '~', '!O', '"', '#'])
+    expect(keys.slice(2)).toEqual(['!O', '"', '#'])
+    expect(new Set(keys).size).toBe(keys.length)
     expectStrictlyIncreasing(keys)
   })
 })

@@ -65,6 +65,8 @@
   "fixRoundPixels": "Zaokrąglij do pełnych pikseli",
   "fixUseValue": "Zmień na {value}",
   "fixFullRadius": "Użyj pełnego promienia",
+  "fixConvertToFrame": "Przekształć w ramkę",
+  "fixDeleteLayer": "Usuń warstwę",
   "fixAll": "Popraw wszystkie ({count})",
   "ruleNoDefaultNames": "Domyślna nazwa warstwy",
   "ruleNoDefaultNamesHelp": "Opisowe nazwy ułatwiają znajdowanie, przekazywanie i ponowne użycie warstw.",

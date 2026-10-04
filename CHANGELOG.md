@@ -17,9 +17,9 @@
 
 ### Added
 
-- Check designs from the new Lint tab in the right panel: issues on the page, in the selection, or across the document are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and one-click fixes bind colors to the variable they match and round subpixel geometry for a row or a whole group, and snap radius, spacing, and small text to the scale one row at a time. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
+- Check designs from the new Lint tab in the right panel: issues on the page, in the selection, or across the document are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and one-click fixes bind colors to the variable they match and round subpixel geometry for a row or a whole group, and snap radius, spacing, and small text to the scale, convert groups to frames, and delete hidden layers one row at a time. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
 - See which layer the code is about in the Code tab's Design JSX and Tailwind JSX: the element around the cursor marks its opening and closing tag and shows its layer on the canvas as a tinted box, apart from canvas hover, and design issues are underlined on the property that causes them, including while you edit Design JSX live.
-- Fix lint issues outside the app: `openpencil lint --fix -o fixed.fig` binds colors to the variable they match and rounds subpixel geometry, and the `lint` and `lint_fix` tools let MCP clients and AI chat check a page and apply those fixes, plus radius, spacing, and text size suggestions on request. Lint messages carry each fix as data in `fix` and `suggestions`.
+- Fix lint issues outside the app: `openpencil lint --fix -o fixed.fig` binds colors to the variable they match and rounds subpixel geometry, and the `lint` and `lint_fix` tools let MCP clients and AI chat check a page and apply those fixes, plus radius, spacing, text size, group-to-frame, and hidden-layer suggestions on request. Lint messages carry each fix as data in `fix` and `suggestions`.
 - Mark layers with errors and warnings on the canvas while you work, and pin those outside the view to the canvas edge in their direction, with matching marks in the Layers panel and error and warning counts in the page list; hover a marker or pin for its issues or click it to open them in Lint, and turn markers on or off with View → Design issues.
 - Follow collaborators and their AI agents from the avatars in the toolbar: an avatar counts that person's agents, hovering lists what each is doing and on which page, and clicking follows. A frame in their color and a “Following …” bar show whom you follow; Escape, clicking, scrolling, zooming, or switching pages stops it. Your own avatar renames your agents and leaves the room.
 - See where the built-in AI chat is working: while it replies, a cursor whose outlined label shows a sparkle and a callsign such as *Fern* marks the layers it edits. In a shared room, collaborators see each other's agents in the color of the person running them.
@@ -42,6 +42,8 @@
 
 ### Changed
 
+- Recommend the latest models in the AI model picker: Claude Sonnet 5.5 (the new Anthropic and OpenRouter default), Claude Opus 5.5, GPT-6.1 Sol (the new OpenAI default), GPT-6 Astra, and GPT-6 Luna, and replace the free OpenRouter models OpenRouter retired with Qwen3.8 27B and Gemma 4 31B. Saved profiles keep the model they chose.
+- The Linux AppImage no longer bundles `xdg-open`; opening links relies on the system's `xdg-utils`, as most desktop distributions provide.
 - With nothing selected, the Code tab explains that it shows the selection's code and offers Write JSX for new layers, instead of showing a template frame that looked like a real layer.
 - Design lint reports far fewer false positives in `openpencil lint` and the app: `no-hardcoded-colors` flags only colors that match a color variable and names it, `no-deeply-nested` flags only the layer that crosses the depth limit, `touch-target-size` checks the WCAG 2.2 AA minimum of 24 × 24 in the Recommended preset (Strict and Accessibility keep 44 × 44), matches control names as whole words (a layer named "Rectangle" is no longer a call to action) and ignores icons and controls inside other controls, `consistent-spacing` accepts multiples of 4, `color-contrast` checks text bound to color variables, and layers inside instances are checked once through their main component. The Recommended preset reports unbound colors, deep nesting, mixed text styles, and off-scale spacing as suggestions instead of warnings. Lint messages carry the measured values in `data`.
 - Keep the Share button labeled Share while you are in a room, instead of turning it into a Connected status; a green dot on your avatar shows the room is live.
@@ -53,6 +55,8 @@
 
 ### Fixed
 
+- Show `.fig` thumbnails in the desktop app's recent files, which the app was not permitted to read.
+- Give paints set through the plugin API, `eval`, and AI and MCP scripts an opacity of 1 and make them visible when the script leaves those out, as Figma does. Such paints were stored without them, which the Design panel could not show.
 - Show variable-bound colours and numbers correctly when a `.fig` exported from OpenPencil opens in Figma. Figma draws the value a bound field stores until something makes it resolve the variable again, and exports stored the colour from before the binding, so a bound fill appeared in its old colour. Each bound field is now written as it resolves in its layer's mode, or in the collection's default mode when the layer sets none.
 - Open Figma files that use slots with each instance's own slot content instead of its component's default, keep slot properties, their settings, and instance content when saving back to `.fig`, and keep an instance's slot content when you switch its variant.
 - Stop showing a “signal is aborted without reason” error when you switch pages again before the previous page has finished loading.
@@ -95,6 +99,7 @@
 - Load the Medium, Semibold, Bold, and other styles of installed variable fonts such as SF Pro on macOS instead of reporting them as substituted (#752).
 - Ship the MIT license text in every published npm package, and add READMEs for `@open-pencil/core`, `@open-pencil/cli`, and `@open-pencil/mcp` on npm.
 - Work with pages other than the one on screen through MCP, `eval`, and the CLI against the running app without switching to them: `openpencil export --page` and `--page-id` export that page instead of the selection, `export_image` and `openpencil export --node` export layers from any page instead of failing with "Raster export selection must stay on a single page", and a `.fig` page that has not been shown yet gets its layers, fonts, and layout before a command reads or changes it.
+- Keep round and other stroke caps and joins after saving and reopening the file on icons from `insert_icon` and Design JSX `<Icon>`, and on vectors from inline Design JSX `<svg>`, `import_svg`, and dropped or pasted SVG files. They were set only on the stroke paint, which `.fig` does not store, so outline icons such as Lucide's reopened with butt caps and miter joins and showed gaps where their strokes meet.
 
 ### Performance
 
@@ -102,6 +107,9 @@
 
 ### Security
 
+- Update the desktop app to Tauri 2.12, which binds large IPC channel responses to the webview that requested them instead of letting another webview fetch them (GHSA-w28w-mhc8-qvjv).
+- Install a desktop update only when its signature names the version the update server announces, so a tampered update manifest cannot pair a newer version number with an older signed build.
+- Update `@xmldom/xmldom` to 0.9.12, which fixes quadratic-time and quadratic-memory parsing of crafted SVG and XML and reports malformed end tags instead of accepting them.
 - Validate cursors, selections, and names that collaborators send before drawing them, and cap their size, so a broken or hostile peer cannot crash or flood the canvas.
 - Evaluate `calc` expressions through `jsep` and an arithmetic allowlist that never compiles input into JavaScript, replacing the `expr-eval` dependency and its unpatched critical code-execution advisory (GHSA-q9v2-7m5w-4693).
 - Escape layer names and other text properties in JSX and Tailwind JSX export, so text from a document can no longer add attributes or JavaScript expressions that the AI and MCP `render` and `replace` tools would execute, and names containing `&` no longer change when the JSX is rendered back.

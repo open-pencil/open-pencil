@@ -65,6 +65,8 @@
   "fixRoundPixels": "Округлить до целых пикселей",
   "fixUseValue": "Изменить на {value}",
   "fixFullRadius": "Использовать полное скругление",
+  "fixConvertToFrame": "Преобразовать во фрейм",
+  "fixDeleteLayer": "Удалить слой",
   "fixAll": "Исправить все ({count})",
   "ruleNoDefaultNames": "Стандартное имя слоя",
   "ruleNoDefaultNamesHelp": "Понятные имена помогают находить, передавать и переиспользовать слои.",
