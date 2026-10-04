@@ -78,7 +78,9 @@ export function renderFromEditorState(
           } as RenderOverlays['penState'])
         : null,
       nodeEditState: state.nodeEditState ?? null,
-      remoteCursors: state.remoteCursors,
+      presenceCursors: state.presenceCursors,
+      designIssues: state.designIssues,
+      codeFocusNodeId: state.codeFocusNodeId,
       autoLayoutHover: state.autoLayoutHover
     },
     state.sceneVersion,

@@ -11,5 +11,11 @@
   "updatedLive": "Aggiornato in tempo reale",
   "previewFailed": "Anteprima non riuscita",
   "generatedReadOnly": "Generato, in sola lettura",
-  "reset": "Reimposta"
+  "reset": "Reimposta",
+  "noSelection": "Seleziona un livello per vederne il codice",
+  "noSelectionDesignJSX": "Oppure scrivi Design JSX per aggiungere nuovi livelli alla pagina.",
+  "noSelectionTailwindJSX": "Il Tailwind JSX viene generato per i livelli selezionati.",
+  "writeJSX": "Scrivi JSX",
+  "canvasChangedExpression": "Sulla tela ora è {value}; l’espressione resta com’è scritta.",
+  "canvasChangedOrder": "Sulla tela questi livelli ora sono in un altro ordine; il codice resta com’è scritto."
 }

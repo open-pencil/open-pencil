@@ -49,6 +49,7 @@ test('pattern fills from source nodes', async () => {
       ],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0.08, g: 0.1, b: 0.18, a: 0.18 },
           weight: 2,
           visible: true,
@@ -115,6 +116,7 @@ test('luminance masks and transformed tile fills', async () => {
       ],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 1, g: 1, b: 1, a: 0.85 },
           weight: 2,
           visible: true,

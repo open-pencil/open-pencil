@@ -4,7 +4,7 @@ export type {
   InstanceOccurrence,
   InterpretInstanceOptions,
   InstancePathDiagnostic
-} from './interpret'
+} from './occurrence/types'
 export { materializeInstance } from './materialize-instance'
 export { materializeComponentClosure } from './component-closure'
 export { linkInstanceSourceChildren, mapInstanceSourceChildren } from './source-children'

@@ -46,6 +46,36 @@ export function focusNodes(store: FocusStore, ids: readonly string[]): boolean {
   return true
 }
 
+function pageIdOf(graph: FocusStore['graph'], id: string): string | null {
+  let node = graph.getNode(id)
+  while (node && node.type !== 'CANVAS')
+    node = node.parentId ? graph.getNode(node.parentId) : undefined
+  return node?.id ?? null
+}
+
+/**
+ * Focuses the nodes that share the first present node's page, switching to that page.
+ * An AI run can work on a page other than the one on screen.
+ */
+export async function focusNodesOnTheirPage(
+  store: FocusStore,
+  ids: readonly string[]
+): Promise<boolean> {
+  const pageIds = new Map(ids.map((id) => [id, pageIdOf(store.graph, id)]))
+  const pageId = [...pageIds.values()].find((id) => id !== null)
+  if (!pageId) return false
+  if (pageId !== store.state.currentPageId) {
+    const switches = store.pageSwitchCount()
+    await store.switchPage(pageId)
+    if (store.pageSwitchCount() !== switches + 1 || store.state.currentPageId !== pageId)
+      return false
+  }
+  return focusNodes(
+    store,
+    ids.filter((id) => pageIds.get(id) === pageId)
+  )
+}
+
 /** `superseded` when the user switched pages while other pages were being searched. */
 export type FocusByNameResult = 'found' | 'missing' | 'superseded'
 

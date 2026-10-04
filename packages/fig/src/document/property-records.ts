@@ -7,6 +7,8 @@ interface PropertyDefinition {
   varValue?: ComponentPropAssignment['varValue']
 }
 
+const BOUND_FIELDS = new Set(['VISIBLE', 'TEXT_DATA', 'OVERRIDDEN_SYMBOL_ID', 'SLOT_CONTENT_ID'])
+
 /** Adapt current typed property values to the interpreter's common representation. */
 function normalizeDefaults(node: NodeChange): void {
   for (const definition of (node.componentPropDefs as PropertyDefinition[] | undefined) ?? []) {
@@ -25,7 +27,7 @@ export function normalizeComponentPropertyRecords(node: NodeChange): void {
   for (const entry of parameters?.entries ?? []) {
     const id = entry.variableData?.value?.propRefValue?.defId
     if (entry.variableData?.dataType !== 'PROP_REF' || !id || !entry.variableField) continue
-    if (!['VISIBLE', 'TEXT_DATA', 'OVERRIDDEN_SYMBOL_ID'].includes(entry.variableField)) continue
+    if (!BOUND_FIELDS.has(entry.variableField)) continue
     const ref = { defID: structuredClone(id), componentPropNodeField: entry.variableField }
     const index = refs.findIndex(
       (candidate) => candidate.componentPropNodeField === entry.variableField

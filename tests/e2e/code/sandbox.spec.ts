@@ -38,9 +38,11 @@ test('evaluates JSX into plain inert data', async ({ page }) => {
           w: 320,
           fill: { __openPencilHelper: 'solid', args: ['#fff'] }
         },
-        children: [{ type: 'text', props: {}, children: ['Hello'] }]
+        children: [{ type: 'text', props: {}, children: ['Hello'], source: ['expression', 1] }],
+        source: ['expression', 1]
       }
-    ]
+    ],
+    lineOffsets: { statements: 0, expression: 0 }
   })
 })
 
@@ -59,6 +61,7 @@ const Card = ({ title, visible }) => (
 <Card title="Hello" visible />`
   )
 
+  // Elements carry the chunk and line they were written on; the offsets map them to the source.
   expect(result).toEqual({
     ok: true,
     roots: [
@@ -66,12 +69,14 @@ const Card = ({ title, visible }) => (
         type: 'frame',
         props: { fill: '#fff' },
         children: [
-          { type: 'text', props: {}, children: ['Hello'] },
-          { type: 'text', props: {}, children: [1] },
-          { type: 'text', props: {}, children: [2] }
-        ]
+          { type: 'text', props: {}, children: ['Hello'], source: ['statements', 4] },
+          { type: 'text', props: {}, children: [1], source: ['statements', 5] },
+          { type: 'text', props: {}, children: [2], source: ['statements', 5] }
+        ],
+        source: ['statements', 3]
       }
-    ]
+    ],
+    lineOffsets: { statements: 0, expression: 7 }
   })
 })
 
@@ -96,9 +101,10 @@ test('supports multiple roots through fragments', async ({ page }) => {
   expect(result).toEqual({
     ok: true,
     roots: [
-      { type: 'rectangle', props: { name: 'One' }, children: [] },
-      { type: 'ellipse', props: { name: 'Two' }, children: [] }
-    ]
+      { type: 'rectangle', props: { name: 'One' }, children: [], source: ['expression', 1] },
+      { type: 'ellipse', props: { name: 'Two' }, children: [], source: ['expression', 1] }
+    ],
+    lineOffsets: { statements: 0, expression: 0 }
   })
 })
 

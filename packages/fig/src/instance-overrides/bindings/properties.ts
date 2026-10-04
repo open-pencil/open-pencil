@@ -36,6 +36,7 @@ function assignmentValue(assignment: ComponentPropAssignment): ComponentPropValu
   if (variable?.boolValue !== undefined) return { boolValue: variable.boolValue }
   if (variable?.textValue !== undefined) return { textValue: variable.textValue }
   if (variable?.textDataValue !== undefined) return { textDataValue: variable.textDataValue }
+  if (variable?.slotContentIdValue) return { slotContentIdValue: variable.slotContentIdValue }
   return undefined
 }
 
@@ -85,7 +86,7 @@ export function componentBindings(source: NodeChange): PropertyBinding[] {
 
 export interface BoundPropertyClaim {
   definitionId: GUID
-  field: 'visible' | 'textData' | 'symbolData'
+  field: 'visible' | 'textData' | 'symbolData' | 'slotContent'
   origin: PropertyBinding['origin']
 }
 
@@ -122,6 +123,9 @@ export function bindSourceProperties(
     } else if (ref.componentPropNodeField === 'OVERRIDDEN_SYMBOL_ID' && value.guidValue) {
       result.symbolData = { ...result.symbolData, symbolID: value.guidValue }
       claim('symbolData')
+    } else if (ref.componentPropNodeField === 'SLOT_CONTENT_ID' && value.slotContentIdValue) {
+      // The record keeps its fields; the expansion reads the content from the claim's binding.
+      claim('slotContent')
     }
   }
   return result

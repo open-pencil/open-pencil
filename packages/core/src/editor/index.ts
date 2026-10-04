@@ -14,6 +14,8 @@ export {
 } from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
 export { executeAtomicTool } from './history/atomic-tool'
+export type { PageSnapshot } from './history/snapshot'
+export { graphFromPageSnapshot } from './history/snapshot-graph'
 export type { ClipboardPayload, ClipboardSnapshot } from './clipboard/copy'
 export type { Editor } from './create'
 export { reapplyInstanceComponentProperties } from './components/properties'
