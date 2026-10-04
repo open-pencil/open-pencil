@@ -1,14 +1,19 @@
 import { describe, expect, test } from 'bun:test'
 
 import { applyDocumentMetadata } from '#fig/document/metadata'
-import { ENABLED_LIBRARIES_PLUGIN_KEY, OPEN_PENCIL_PLUGIN_ID } from '#fig/node-change/plugin-data'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  OPEN_PENCIL_PLUGIN_DATA,
+  OPEN_PENCIL_PLUGIN_ID,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 
 function enabledLibraries(value: string) {
   const graph = new SceneGraph()
   applyDocumentMetadata(graph, {
-    pluginData: [{ pluginID: OPEN_PENCIL_PLUGIN_ID, key: ENABLED_LIBRARIES_PLUGIN_KEY, value }]
+    pluginData: [
+      { pluginID: OPEN_PENCIL_PLUGIN_ID, key: OPEN_PENCIL_PLUGIN_DATA.enabledLibraries.key, value }
+    ]
   })
   return [...graph.enabledLibraries.values()]
 }

@@ -9,7 +9,11 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_MITER_LIMIT } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_STROKE_MITER_LIMIT,
+  OPEN_PENCIL_PLUGIN_DATA,
+  withPluginData
+} from '@open-pencil/scene-graph'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
@@ -22,9 +26,7 @@ import {
   applyLibrarySourcePluginData,
   applyTextPathBoxPluginData,
   mergePluginData,
-  NODE_TYPE_PLUGIN_KEY,
-  serializePluginRelaunchData,
-  upsertPluginData
+  serializePluginRelaunchData
 } from '../plugin-data'
 import {
   applyColorVariableBinding,
@@ -931,7 +933,8 @@ export function sceneNodeToKiwiWithContext(
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
-  if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
+  if (node.type === 'COMPONENT_SET')
+    node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)
