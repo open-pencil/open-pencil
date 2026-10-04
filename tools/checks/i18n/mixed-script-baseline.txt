@@ -22,7 +22,7 @@ ja:ai.modelID
 ja:ai.modelIDPlaceholder
 ja:ai.modelRoleDesignDescription
 ja:ai.provider
-ja:ai.reasoningEffortPlaceholder
+ja:ai.changePreviewHint
 ja:automation.addServerConnection
 ja:automation.aiToolAccessDescription
 ja:automation.authenticationDescription
@@ -158,7 +158,7 @@ zh-cn:ai.modelID
 zh-cn:ai.modelIDPlaceholder
 zh-cn:ai.modelRoleDesignDescription
 zh-cn:ai.provider
-zh-cn:ai.reasoningEffortPlaceholder
+zh-cn:ai.changePreviewHint
 zh-cn:automation.addServerConnection
 zh-cn:automation.aiToolAccessDescription
 zh-cn:automation.authenticationDescription

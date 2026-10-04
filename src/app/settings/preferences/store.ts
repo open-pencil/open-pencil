@@ -8,11 +8,19 @@ export type AnimationPreference = 'system' | 'off'
 
 export type ReasoningDisplay = 'collapsed' | 'while-thinking' | 'expanded'
 
+export const CHANGE_PREVIEW_SIZES = ['off', 'small', 'medium', 'large'] as const
+/** How large the before/after images kept for each AI edit are; `off` keeps only the JSX diff. */
+export type ChangePreviewSize = (typeof CHANGE_PREVIEW_SIZES)[number]
+
 export type CanvasRenderingMode = 'retained' | 'tiled'
 
 export interface AppPreferences {
   appearance: { animations: AnimationPreference }
-  chat: { reasoningDisplay: ReasoningDisplay; maxAgentSteps: number }
+  chat: {
+    reasoningDisplay: ReasoningDisplay
+    maxAgentSteps: number
+    changePreviewSize: ChangePreviewSize
+  }
   version: 1
   recovery: {
     enabled: boolean
@@ -27,7 +35,11 @@ export interface AppPreferences {
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   appearance: { animations: 'system' },
-  chat: { reasoningDisplay: 'collapsed', maxAgentSteps: DEFAULT_AGENT_STEPS },
+  chat: {
+    reasoningDisplay: 'collapsed',
+    maxAgentSteps: DEFAULT_AGENT_STEPS,
+    changePreviewSize: 'medium'
+  },
   version: 1,
   recovery: { enabled: true },
   editing: {
@@ -50,7 +62,7 @@ interface StoredSnappingPreferences {
 
 interface StoredAppPreferences {
   appearance?: { animations?: unknown }
-  chat?: { reasoningDisplay?: unknown; maxAgentSteps?: unknown }
+  chat?: { reasoningDisplay?: unknown; maxAgentSteps?: unknown; changePreviewSize?: unknown }
   recovery?: { enabled?: unknown }
   editing?: { snapping?: StoredSnappingPreferences }
   rendering?: { canvasMode?: unknown }
@@ -70,7 +82,10 @@ function normalizeChatPreferences(chat: StoredAppPreferences['chat']): AppPrefer
     reasoningDisplay:
       chat?.reasoningDisplay === 'expanded' || chat?.reasoningDisplay === 'while-thinking'
         ? chat.reasoningDisplay
-        : 'collapsed'
+        : 'collapsed',
+    changePreviewSize: CHANGE_PREVIEW_SIZES.includes(chat?.changePreviewSize as ChangePreviewSize)
+      ? (chat?.changePreviewSize as ChangePreviewSize)
+      : DEFAULT_APP_PREFERENCES.chat.changePreviewSize
   }
 }
 

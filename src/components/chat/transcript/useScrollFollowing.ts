@@ -55,9 +55,9 @@ export function useScrollFollowing(
     'click',
     (event) => {
       if (!(event.target instanceof Element)) return
-      if (event.target.closest('[data-slot="chat-reasoning-trigger"]')) {
-        following.value = false
-      }
+      // Opening reasoning or a tool call is reading, not new output: following would pin the
+      // bottom on every frame of the animation and slide the opened content away.
+      if (event.target.closest('[aria-expanded]')) following.value = false
     },
     { capture: true }
   )

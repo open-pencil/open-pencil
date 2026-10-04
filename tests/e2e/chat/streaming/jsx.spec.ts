@@ -123,8 +123,19 @@ test('keeps the run and its preview on their page while the user views another',
     expect(await previewKey(chat.page)).toBe('')
     await expect(chat.page.getByTestId('chat-stop-button')).toBeVisible()
 
-    await switchPage(chat.page, pages.current)
+    // Away from the run's page: the chat says where it works, and the page list marks it.
+    const location = chat.page.getByTestId('chat-run-location')
+    await expect(location).toContainText('is working on “Page 1”')
+    await expect(
+      chat.page
+        .getByTestId('pages-row')
+        .filter({ hasText: 'Page 1' })
+        .getByTestId('presence-markers')
+    ).toBeVisible()
+
+    await location.getByRole('button', { name: 'Go to page' }).click()
     await expect.poll(() => previewKey(chat.page)).not.toBe('')
+    await expect(location).toHaveCount(0)
 
     await switchPage(chat.page, pages.added)
     await stream.evaluate((s) => s.complete())

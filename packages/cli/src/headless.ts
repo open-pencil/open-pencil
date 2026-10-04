@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 
 import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
@@ -16,6 +16,18 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const { graph } = await io.readDocument({ name: filePath, data: bytes })
   computeAllLayouts(graph)
   return graph
+}
+
+/** `--write` and `--output` for commands that change a headless document. */
+export const documentWriteOptions = {
+  write: { type: 'boolean', alias: 'w', description: 'Write changes back to the input file' },
+  output: { type: 'string', alias: 'o', description: 'Write to a different file', required: false }
+} as const
+
+/** Save a headless document as `.fig`, as `eval --write` and `diff apply --write` do. */
+export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
+  const result = await io.writeDocument('fig', graph)
+  await writeFile(filePath, result.data as Uint8Array)
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {

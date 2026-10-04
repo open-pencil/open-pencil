@@ -520,6 +520,7 @@ export interface SceneNodeToKiwiOptions {
   componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
   modeIdToGuid?: Map<string, GUID>
   propertyIdToGuid?: Map<string, GUID>
+  slotContentRecords?: KiwiNodeChange[]
 }
 
 export function sceneNodeToKiwi(
@@ -541,7 +542,8 @@ export function sceneNodeToKiwi(
     runtime = EMPTY_EXPORT_RUNTIME,
     componentPropertyDefinitionsById = buildComponentPropIndex(graph),
     modeIdToGuid,
-    propertyIdToGuid = new Map<string, GUID>()
+    propertyIdToGuid = new Map<string, GUID>(),
+    slotContentRecords
   } = options
   // Raw paints retain library asset refs; effects use this map because their
   // Kiwi schema accepts only GUID-backed aliases.
@@ -559,6 +561,7 @@ export function sceneNodeToKiwi(
     assetRefToVarGuid,
     componentPropertyDefinitionsById,
     propertyIdToGuid,
+    slotContentRecords,
     fractionalPosition,
     mapToFigmaType,
     fillToKiwiPaint,

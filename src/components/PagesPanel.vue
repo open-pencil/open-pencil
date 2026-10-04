@@ -8,11 +8,14 @@ import {
   ContextMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
+import { useActiveEditorStoreRef } from '@/app/editor/active-store'
+import { presenceByPage } from '@/app/presence/registry'
+import PresenceMarkers from '@/components/presence/PresenceMarkers.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import pageListTheme from '@/theme/page-list'
@@ -35,6 +38,11 @@ const menuCls = useMenuUI({
 const pageListStyles = tv(pageListTheme)
 const baseStyles = pageListStyles()
 
+const storeRef = useActiveEditorStoreRef()
+/** Who works on each page: people in the room and active agents. */
+const pagePresence = computed(() =>
+  storeRef.value ? presenceByPage(storeRef.value) : new Map<string, never[]>()
+)
 const pageActions = ref<Pick<PageActions, 'rename'> | null>(null)
 const currentPages = ref<readonly PageItem[]>([])
 const currentMovePage = ref<PageActions['move'] | null>(null)
@@ -141,6 +149,9 @@ function setupPageRowRef(
                 >
                   <icon-lucide-file :class="pageStyles(pg, currentPageId).icon()" />
                   <span :class="pageStyles(pg, currentPageId).label()">{{ pg.name }}</span>
+                  <span :class="pageStyles(pg, currentPageId).trailing()">
+                    <PresenceMarkers :entries="pagePresence.get(pg.id) ?? []" />
+                  </span>
                 </button>
                 <div
                   v-if="pageDropPosition(pg) === 'after'"

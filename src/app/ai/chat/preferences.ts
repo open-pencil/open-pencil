@@ -1,6 +1,10 @@
 import { computed } from 'vue'
 
-import { appPreferences, type ReasoningDisplay } from '@/app/settings/preferences/store'
+import {
+  appPreferences,
+  type ChangePreviewSize,
+  type ReasoningDisplay
+} from '@/app/settings/preferences/store'
 
 import { resolveAgentStepLimit } from './step-limit'
 
@@ -20,6 +24,16 @@ export const reasoningDisplay = computed({
     appPreferences.value = {
       ...appPreferences.value,
       chat: { ...appPreferences.value.chat, reasoningDisplay }
+    }
+  }
+})
+
+export const changePreviewSize = computed({
+  get: () => appPreferences.value.chat.changePreviewSize,
+  set: (changePreviewSize: ChangePreviewSize) => {
+    appPreferences.value = {
+      ...appPreferences.value,
+      chat: { ...appPreferences.value.chat, changePreviewSize }
     }
   }
 })

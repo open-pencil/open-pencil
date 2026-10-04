@@ -1,8 +1,11 @@
+import type { PageSnapshot } from '@open-pencil/core/editor'
+import { computeContentBounds } from '@open-pencil/core/io'
 import type { StepBudget } from '@open-pencil/core/tools'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
+import { addAgent, type AgentHandle } from '@/app/presence/registry'
 
 class RunState {
   currentSteps = 0
@@ -10,11 +13,16 @@ class RunState {
   maxSteps = DEFAULT_AGENT_STEPS
   /** The page the run works on. The user's navigation does not move it; the agent's does. */
   pageId: string | null = null
+  /** The built-in chat as other people see it; one per document, kept between replies. */
+  agent: AgentHandle | null = null
+  /** Each page as it was before the run first edited it, for `diff_changes`. */
+  baselines = new Map<string, PageSnapshot>()
 
   start(maxSteps: number, pageId: string): void {
     this.currentSteps = 0
     this.maxSteps = resolveAgentStepLimit(maxSteps)
     this.pageId = pageId
+    this.baselines = new Map()
   }
 
   hitLimit(): boolean {
@@ -34,8 +42,28 @@ function getRunState(store?: EditorStore): RunState {
 }
 
 /** Begin a run on the page the user is viewing. */
-export function startRun(store: EditorStore, maxSteps: number): void {
-  getRunState(store).start(maxSteps, store.state.currentPageId)
+export function startRun(store: EditorStore, maxSteps: number, model?: string): void {
+  const run = getRunState(store)
+  run.start(maxSteps, store.state.currentPageId)
+  run.agent ??= addAgent(store, 'chat', model)
+  run.agent.update({ status: 'thinking', model, pageId: store.state.currentPageId })
+}
+
+/** The reply finished, failed, or was stopped: the agent stays listed but leaves the canvas. */
+export function endRun(store: EditorStore): void {
+  getRunState(store).agent?.update({ status: 'idle', cursor: undefined, selection: undefined })
+}
+
+/** Point the run's agent at nodes a tool just created or changed. */
+export function markRunWork(store: EditorStore, nodeIds: string[]): void {
+  const run = getRunState(store)
+  const bounds = computeContentBounds(store.graph, nodeIds)
+  if (!run.agent || !bounds) return
+  run.agent.update({
+    status: 'editing',
+    cursor: { x: bounds.minX, y: bounds.minY, pageId: runPageId(store) },
+    selection: nodeIds
+  })
 }
 
 export function recordStep(store?: EditorStore): void {
@@ -61,6 +89,24 @@ export function runPageId(store: EditorStore): string {
 
 /** Move the run to `pageId`, and the user's view with it, as the agent's `switch_page` does. */
 export async function moveRunToPage(store: EditorStore, pageId: string): Promise<void> {
-  getRunState(store).pageId = pageId
+  const run = getRunState(store)
+  run.pageId = pageId
+  run.agent?.update({ pageId })
   if (store.state.currentPageId !== pageId) await store.switchPage(pageId)
+}
+
+/** The built-in chat's agent in this document, once it has replied. */
+export function runAgentId(store: EditorStore): string | undefined {
+  return getRunState(store).agent?.id
+}
+
+/** Keep `snapshot` as the run's starting state of its page unless the run already edited it. */
+export function recordRunBaseline(store: EditorStore, snapshot: PageSnapshot): void {
+  const pageId = snapshot.values().next().value?.id
+  const { baselines } = getRunState(store)
+  if (pageId && !baselines.has(pageId)) baselines.set(pageId, snapshot)
+}
+
+export function runBaseline(store: EditorStore, pageId: string): PageSnapshot | null {
+  return getRunState(store).baselines.get(pageId) ?? null
 }

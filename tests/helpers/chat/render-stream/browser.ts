@@ -15,7 +15,7 @@ export function installBrowserRenderStream(scenario: RenderStreamScenario) {
       providerID: 'openrouter',
       effectiveModelID: 'streaming-jsx',
       maxOutputTokens: 4096,
-      reasoningEffort: ''
+      thinkingLevel: () => 'default'
     })
   )
   return controls

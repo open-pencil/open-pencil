@@ -74,6 +74,22 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
+  /** Put the world point (x, y) at the center of the viewport, at `zoom` (the current one by default). */
+  function centerOn(x: number, y: number, zoom = ctx.state.zoom) {
+    const previous = currentViewport()
+    const { width, height } = ctx.getViewportSize()
+    const nextZoom = Math.max(0.02, Math.min(256, zoom))
+    const panX = width / 2 - x * nextZoom
+    const panY = height / 2 - y * nextZoom
+    // Remote cursors are finite but unbounded; a point that overflows leaves the view alone.
+    if (!Number.isFinite(panX) || !Number.isFinite(panY)) return
+    ctx.state.zoom = nextZoom
+    ctx.state.panX = panX
+    ctx.state.panY = panY
+    ctx.requestRepaint()
+    emitViewportChanged(previous)
+  }
+
   function zoomToFit() {
     const nodes = ctx.graph.getChildren(ctx.state.currentPageId)
     if (nodes.length === 0) return
@@ -118,6 +134,7 @@ export function createViewportActions(ctx: EditorContext) {
     applyZoom,
     pan,
     zoomToBounds,
+    centerOn,
     zoomToFit,
     zoomTo100,
     zoomToLevel,

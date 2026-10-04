@@ -62,6 +62,7 @@ export const programmableSidebar = (
       { text: labels.inspecting, link: `${prefix}/programmable/cli/inspecting` },
       { text: labels.exporting, link: `${prefix}/programmable/cli/exporting` },
       { text: labels.analyzing, link: `${prefix}/programmable/cli/analyzing` },
+      { text: labels.comparing, link: '/programmable/cli/comparing' },
       { text: labels.scripting, link: `${prefix}/programmable/cli/scripting` },
       { text: labels.jsxRenderer, link: `${prefix}/programmable/jsx-renderer` },
       { text: 'Native JavaScript APIs', link: '/programmable/native-api' },

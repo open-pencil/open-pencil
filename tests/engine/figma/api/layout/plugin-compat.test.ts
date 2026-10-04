@@ -23,6 +23,7 @@ describe('Figma Plugin API layout compatibility', () => {
     frame.cornerRadius = 7
     frame.strokes = [
       {
+        type: 'SOLID',
         color: { r: 0, g: 0, b: 0, a: 1 },
         weight: 3,
         opacity: 1,
@@ -154,6 +155,7 @@ describe('Figma Plugin API layout compatibility', () => {
     rect.resize(10, 20)
     rect.strokes = [
       {
+        type: 'SOLID',
         color: { r: 1, g: 0, b: 0, a: 1 },
         weight: 4,
         opacity: 1,

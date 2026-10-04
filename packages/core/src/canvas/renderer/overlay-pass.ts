@@ -59,7 +59,7 @@ export function drawOverlayPass(
   if (!measuring) r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
   r.drawPenOverlay(canvas, overlays.penState)
-  r.drawRemoteCursors(canvas, graph, overlays.remoteCursors)
+  r.drawPresenceCursors(canvas, graph, overlays.presenceCursors)
 }
 
 export function drawChromePass(
