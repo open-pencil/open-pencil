@@ -100,7 +100,10 @@ openpencil lint design.fig
 openpencil lint design.pen --preset strict
 openpencil lint design.fig --rule color-contrast
 openpencil lint design.fig --list-rules
+openpencil lint design.fig --fix -o fixed.fig
 ```
+
+Wyjście `--json` zawiera dla każdego komunikatu dane `fix` i `suggestions`. Opcja `--fix` stosuje bezpieczne poprawki — wiąże kolory z pasującą zmienną koloru i zaokrągla geometrię do pełnych pikseli — a wynik zapisuje w pliku `.fig` podanym w `-o`.
 
 ## Wyjście JSON
 

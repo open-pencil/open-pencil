@@ -66,6 +66,7 @@ Für automatisierte Abläufe zuerst `openpencil documents list --json` aufrufen 
 openpencil lint design.fig
 openpencil lint design.pen --preset strict
 openpencil lint design.fig --rule color-contrast
+openpencil lint design.fig --fix -o fixed.fig
 ```
 
-Alle Befehle unterstützen `--json`.
+Alle Befehle unterstützen `--json`; jede Meldung enthält ihre `fix`- und `suggestions`-Angaben als Daten. `--fix` wendet die sicheren Korrekturen an – Farben werden an die passende Farbvariable gebunden und die Geometrie auf ganze Pixel gerundet – und schreibt das Ergebnis in die mit `-o` angegebene `.fig`-Datei.
