@@ -29,6 +29,7 @@ test('stroke caps joins and miter limits', async () => {
         strokeCap: cap,
         strokes: [
           {
+            type: 'SOLID',
             color,
             weight: 20,
             visible: true,
@@ -59,6 +60,7 @@ test('stroke caps joins and miter limits', async () => {
         strokeMiterLimit: limit,
         strokes: [
           {
+            type: 'SOLID',
             color: { r: 0.96, g: 0.35, b: 0.12, a: 1 },
             weight: 10,
             visible: true,

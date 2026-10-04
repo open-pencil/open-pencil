@@ -8,6 +8,7 @@ import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 const NAVY: Color = { r: 2 / 255, g: 26 / 255, b: 59 / 255, a: 1 }
 
 const HIDDEN_STROKE: Stroke = {
+  type: 'SOLID',
   color: { r: 1, g: 0, b: 0, a: 1 },
   weight: 4,
   opacity: 1,
@@ -18,6 +19,7 @@ const HIDDEN_STROKE: Stroke = {
 }
 
 const VISIBLE_STROKE: Stroke = {
+  type: 'SOLID',
   color: NAVY,
   weight: 10.126,
   opacity: 1,

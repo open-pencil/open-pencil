@@ -20,6 +20,7 @@ export function createPathStroke(
   strokeJoin: string
 ): Stroke {
   return {
+    type: 'SOLID',
     color,
     weight,
     opacity: 1,

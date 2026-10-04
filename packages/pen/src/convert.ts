@@ -313,6 +313,7 @@ export function convertStroke(
   else if (stroke.align === 'outside') align = 'OUTSIDE'
 
   const result: Stroke = {
+    type: 'SOLID',
     visible: true,
     color,
     opacity: color.a,

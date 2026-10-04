@@ -206,11 +206,9 @@ export interface SharedStyle {
   type: SharedStyleType
 }
 
-export interface Stroke {
-  color: Color
+/** A stroke is a paint with the geometry that decides where it is drawn. */
+export interface Stroke extends Fill {
   weight: number
-  opacity: number
-  visible: boolean
   align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
   cap?: StrokeCap
   join?: StrokeJoin

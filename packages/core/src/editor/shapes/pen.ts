@@ -26,6 +26,7 @@ type CreateShape = (
 ) => string
 
 const PEN_DEFAULT_STROKE: SceneNode['strokes'][number] = {
+  type: 'SOLID',
   color: BLACK,
   weight: 2,
   opacity: 1,

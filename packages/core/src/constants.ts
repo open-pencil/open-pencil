@@ -488,6 +488,7 @@ export const SECTION_DEFAULT_FILL: Fill = {
 }
 
 export const SECTION_DEFAULT_STROKE: Stroke = {
+  type: 'SOLID',
   color: { r: 0.55, g: 0.55, b: 0.55, a: 1 },
   weight: 1,
   opacity: 1,
