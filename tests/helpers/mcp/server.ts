@@ -12,12 +12,28 @@ import {
 } from '@open-pencil/core'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 
-export interface HealthResponse {
-  status: string
-  version: string
-  authRequired: boolean
-  tools?: ToolDescriptor[]
-  discoveryPath?: string
+const ToolDescriptorShape = v.looseObject({ name: v.string(), enabled: v.boolean() })
+
+export const HealthResponseSchema = v.object({
+  status: v.string(),
+  version: v.string(),
+  authRequired: v.boolean(),
+  tools: v.optional(v.array(v.custom<ToolDescriptor>((value) => v.is(ToolDescriptorShape, value)))),
+  discoveryPath: v.optional(v.string())
+})
+
+export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>
+
+/** Read a JSON response body or file, checked against `schema`. */
+export async function readJSON<T>(
+  source: { text(): Promise<string> },
+  schema: v.GenericSchema<unknown, T>
+): Promise<T> {
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), await source.text())
+}
+
+export function readHealth(response: Response): Promise<HealthResponse> {
+  return readJSON(response, HealthResponseSchema)
 }
 
 export interface MockBrowserRequest {
@@ -320,7 +336,7 @@ export async function waitForBrowserRegistration(port: number, timeoutMs = 5000)
   while (Date.now() - start < timeoutMs) {
     try {
       const resp = await fetch(`http://127.0.0.1:${port}/health`)
-      const health = (await resp.json()) as HealthResponse
+      const health = await readHealth(resp)
       lastStatus = health.status
       if (health.status === 'ok') return
     } catch {

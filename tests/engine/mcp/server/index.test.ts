@@ -11,11 +11,13 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer } from '#mcp/server'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
+import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
+import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
+  readHealth,
   waitForBrowserRegistration,
-  type HealthResponse,
   type MockBrowser
 } from '#tests/helpers/mcp/server'
 
@@ -206,7 +208,7 @@ describe('MCP server', () => {
     const healthResponse = await fetch(`http://127.0.0.1:${ctx.handle.httpPort}/health`, {
       headers: { Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}` }
     })
-    const health = (await healthResponse.json()) as HealthResponse
+    const health = await readHealth(healthResponse)
     const descriptors = health.tools ?? []
     expect(descriptors.find((tool) => tool.name === 'create_shape')?.enabled).toBe(false)
     expect(descriptors.find((tool) => tool.name === 'list_documents')?.enabled).toBe(false)
@@ -583,12 +585,8 @@ describe('MCP server concurrent startServer', () => {
       expect(a.httpPort).not.toBe(b.httpPort)
 
       // Each responds on /health with the expected auth state.
-      const aHealth = (await (
-        await fetch(`http://127.0.0.1:${a.httpPort}/health`)
-      ).json()) as HealthResponse
-      const bHealth = (await (
-        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
-      ).json()) as HealthResponse
+      const aHealth = await readHealth(await fetch(`http://127.0.0.1:${a.httpPort}/health`))
+      const bHealth = await readHealth(await fetch(`http://127.0.0.1:${b.httpPort}/health`))
       expect(aHealth.status).toBe('no_app')
       expect(bHealth.status).toBe('no_app')
 
@@ -597,7 +595,7 @@ describe('MCP server concurrent startServer', () => {
       const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
-      const info = (await file.json()) as { pid: number; authToken: string }
+      const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.pid).toBe(process.pid)
       expect(['token-a', 'token-b']).toContain(info.authToken)
     } finally {
@@ -639,16 +637,14 @@ describe('MCP server concurrent startServer', () => {
       await a.close()
 
       // Server b should still be healthy and reachable.
-      const bHealth = (await (
-        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
-      ).json()) as HealthResponse
+      const bHealth = await readHealth(await fetch(`http://127.0.0.1:${b.httpPort}/health`))
       expect(bHealth.status).toBe('no_app')
 
       // Discovery file should still exist (owned by server b now).
       const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
-      const info = (await file.json()) as { authToken: string }
+      const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.authToken).toBe('token-b')
     } finally {
       await b.close()

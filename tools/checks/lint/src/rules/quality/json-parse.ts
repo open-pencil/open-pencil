@@ -33,24 +33,48 @@ function isJSONParseCall(sourceCode: SourceCode, node: ESTree.Expression): boole
   return propertyName(node.callee) === 'parse' && isGlobalJSON(sourceCode, node.callee.object)
 }
 
-/** Strip parentheses and the assertions layered on the parsed value (`as unknown as Foo`). */
+/** `response.json()`, `Bun.file(path).json()` and the like: a parse with no schema. */
+function isJSONMethodCall(node: ESTree.Expression): boolean {
+  return (
+    node.type === 'CallExpression' &&
+    node.arguments.length === 0 &&
+    node.callee.type === 'MemberExpression' &&
+    propertyName(node.callee) === 'json'
+  )
+}
+
+/**
+ * Strip parentheses, `await`, and the assertions layered on the parsed value
+ * (`as unknown as Foo`).
+ */
 function assertedExpression(node: Assertion): ESTree.Expression {
   let current: ESTree.Expression = node.expression
   while (
     current.type === 'ParenthesizedExpression' ||
+    current.type === 'AwaitExpression' ||
     current.type === 'TSAsExpression' ||
     current.type === 'TSTypeAssertion' ||
     current.type === 'TSSatisfiesExpression' ||
     current.type === 'TSNonNullExpression'
   ) {
-    current = current.expression
+    current = current.type === 'AwaitExpression' ? current.argument : current.expression
   }
   return current
 }
 
+/** `unknown`, or `Promise<unknown>` for an un-awaited `.json()`. */
 function isUnknownType(type: ESTree.TSType): boolean {
   let current = type
   while (current.type === 'TSParenthesizedType') current = current.typeAnnotation
+  if (
+    current.type === 'TSTypeReference' &&
+    current.typeName.type === 'Identifier' &&
+    current.typeName.name === 'Promise' &&
+    current.typeArguments?.params.length === 1
+  ) {
+    const [argument] = current.typeArguments.params
+    return argument !== undefined && isUnknownType(argument)
+  }
   return current.type === 'TSUnknownKeyword'
 }
 
@@ -59,17 +83,19 @@ export const noUnvalidatedJSONParseRule = defineRule({
   meta: {
     type: 'problem',
     docs: {
-      description: 'Disallow type assertions on JSON.parse results other than `as unknown`.'
+      description:
+        'Disallow type assertions on JSON.parse and `.json()` results other than `as unknown`.'
     },
     messages: {
       unvalidated:
-        'Validate parsed JSON instead of asserting its type: v.safeParse(v.pipe(v.string(), v.parseJson(), Schema), text), or assert only `as unknown` and narrow.'
+        'Validate parsed JSON instead of asserting its type: v.safeParse(v.pipe(v.string(), v.parseJson(), Schema), text) (for a Response, read `await response.text()`), or assert only `as unknown` and narrow.'
     }
   },
   createOnce(context) {
     function check(node: Assertion): void {
       if (isUnknownType(node.typeAnnotation)) return
-      if (isJSONParseCall(context.sourceCode, assertedExpression(node)))
+      const parsed = assertedExpression(node)
+      if (isJSONParseCall(context.sourceCode, parsed) || isJSONMethodCall(parsed))
         context.report({ node, messageId: 'unvalidated' })
     }
     return {

@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 import { toUint8Array } from 'js-base64'
+import * as v from 'valibot'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io'
@@ -92,10 +93,10 @@ try {
 }
 if (values['figma-key']) {
   const code = `if(figma.fileKey!==${JSON.stringify(values['figma-key'])})throw Error("Wrong Figma document");const n=await figma.getNodeByIdAsync(${JSON.stringify(values.node)});if(!n||!("exportAsync"in n))throw Error("Missing export node");return {png:figma.base64Encode(await n.exportAsync({format:"PNG",constraint:{type:"SCALE",value:${scale}}})),bounds:n.absoluteRenderBounds}`
-  const exported = (await $`figma-use eval --json --timeout 60 ${code}`.json()) as {
-    png: string
-    bounds: unknown
-  }
+  const exported = v.parse(
+    v.pipe(v.string(), v.parseJson(), v.object({ png: v.string(), bounds: v.unknown() })),
+    await $`figma-use eval --json --timeout 60 ${code}`.text()
+  )
   await Bun.write(join(values.output, 'figma.png'), toUint8Array(exported.png))
   await Bun.write(
     join(values.output, 'figma-bounds.json'),

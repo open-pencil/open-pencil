@@ -8,10 +8,13 @@ import type { WebSocket } from 'ws'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
+import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
+import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
   openWs,
+  readHealth,
   readNextResponse,
   readWsJSON,
   RegisterMessage,
@@ -19,7 +22,6 @@ import {
   socketRequest,
   tcpRequest,
   waitForBrowserRegistration,
-  type HealthResponse,
   type MockBrowser
 } from '#tests/helpers/mcp/server'
 
@@ -140,13 +142,7 @@ describe('MCP server unified transport', () => {
       const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
-      const info = (await file.json()) as {
-        pid: number
-        httpPort: number
-        socketPath: string | null
-        version: string
-        authToken: string | null
-      }
+      const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.pid).toBe(process.pid)
       expect(info.httpPort).toBe(handle?.httpPort ?? 0)
       expect(info.socketPath).toBe(handle?.socketPath ?? null)
@@ -424,7 +420,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
         let last: { status: string } = { status: 'unknown' }
         while (Date.now() - start < timeoutMs) {
           const r = await fetch(`http://127.0.0.1:${httpPort}/health`)
-          last = (await r.json()) as { status: string }
+          last = await readHealth(r)
           if (predicate(last.status)) return last
           await sleep(25)
         }

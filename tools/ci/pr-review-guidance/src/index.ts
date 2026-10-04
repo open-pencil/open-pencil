@@ -29,6 +29,13 @@ export interface PullRequestSummary {
   user: { login: string }
 }
 
+const PullRequestSummarySchema: v.GenericSchema<unknown, PullRequestSummary> = v.object({
+  state: v.string(),
+  author_association: v.string(),
+  title: v.string(),
+  user: v.object({ login: v.string() })
+})
+
 interface EventContext {
   issueNumber?: number
   shouldInspect: boolean
@@ -123,6 +130,7 @@ async function github<T>(
   token: string,
   path: string,
   fetchImpl: FetchLike,
+  schema: v.GenericSchema<unknown, T>,
   options: RequestInit = {}
 ): Promise<T | null> {
   const response = await fetchImpl(`${apiURL}${path}`, {
@@ -144,7 +152,7 @@ async function github<T>(
   }
 
   if (response.status === 204) return null
-  return response.json() as Promise<T>
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), await response.text())
 }
 
 function repositoryName(repository?: string): string | undefined {
@@ -191,11 +199,12 @@ export async function monitorPRReviewGuidance(options: MonitorOptions = {}): Pro
     return
   }
 
-  const pr = await github<PullRequestSummary>(
+  const pr = await github(
     env.apiURL,
     env.token,
     `/repos/${env.owner}/${env.repo}/pulls/${context.issueNumber}`,
-    fetchImpl
+    fetchImpl,
+    PullRequestSummarySchema
   )
   if (!pr) throw new Error(`PR #${context.issueNumber} returned no data`)
 
