@@ -1,16 +1,26 @@
 import { readFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
+import * as v from 'valibot'
+
 const CODE_RABBIT_AUTHORS = new Set(['coderabbitai[bot]', 'coderabbitai'])
 const REVIEW_GUIDANCE_PREFIXES = ['pr hygiene', 'pr readability', 'pr description']
 
-export interface GitHubEvent {
-  sender?: { login?: string }
-  review?: { state?: string; body?: string }
-  pull_request?: { number?: number }
-  issue?: { number?: number; pull_request?: unknown }
-  comment?: { body?: string }
-}
+const GitHubEventJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    sender: v.optional(v.object({ login: v.optional(v.string()) })),
+    review: v.optional(v.object({ state: v.optional(v.string()), body: v.optional(v.string()) })),
+    pull_request: v.optional(v.object({ number: v.optional(v.number()) })),
+    issue: v.optional(
+      v.object({ number: v.optional(v.number()), pull_request: v.optional(v.unknown()) })
+    ),
+    comment: v.optional(v.object({ body: v.optional(v.string()) }))
+  })
+)
+
+export type GitHubEvent = v.InferOutput<typeof GitHubEventJSON>
 
 export interface PullRequestSummary {
   state: string
@@ -159,7 +169,7 @@ export async function monitorPRReviewGuidance(options: MonitorOptions = {}): Pro
   const env = requiredEnvironment(options.env ?? process.env)
   const log = options.log ?? ((message: string) => process.stdout.write(`${message}\n`))
   const fetchImpl = options.fetchImpl ?? fetch
-  const event = JSON.parse(await readFile(env.eventPath, 'utf8')) as GitHubEvent
+  const event = v.parse(GitHubEventJSON, await readFile(env.eventPath, 'utf8'))
   const sender = event.sender?.login ?? ''
 
   if (!CODE_RABBIT_AUTHORS.has(sender)) {

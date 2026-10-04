@@ -4,12 +4,12 @@ import { resolve } from 'node:path'
 import { chromium } from '@playwright/test'
 
 import { startChromiumTrace } from './chromium-trace'
-import { compareNavigationMetrics } from './compare'
+import { compareNavigationMetrics, readMetrics } from './compare'
 import { computeNavigationMetrics } from './metrics'
 import { readRecording } from './recording'
 import { replay, type ReplayMode } from './replay'
 import { setupScenario, type NavigationScenario } from './scenario'
-import type { NavigationMetrics, NavigationRecordingFile } from './types'
+import type { NavigationRecordingFile } from './types'
 
 function argument(name: string, fallback?: string): string {
   const index = process.argv.indexOf(name)
@@ -20,8 +20,8 @@ function argument(name: string, fallback?: string): string {
 
 const command = process.argv[2]
 if (command === 'compare') {
-  const baseline = JSON.parse(await readFile(argument('--baseline'), 'utf8')) as NavigationMetrics
-  const candidate = JSON.parse(await readFile(argument('--candidate'), 'utf8')) as NavigationMetrics
+  const baseline = await readMetrics(argument('--baseline'))
+  const candidate = await readMetrics(argument('--candidate'))
   const comparison = compareNavigationMetrics(baseline, candidate)
   const comparisonOutput = process.argv.includes('--output') ? argument('--output') : null
   if (comparisonOutput) await writeFile(comparisonOutput, JSON.stringify(comparison, null, 2))

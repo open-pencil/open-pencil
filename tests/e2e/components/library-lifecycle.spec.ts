@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
+import * as v from 'valibot'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+
+const PublicationJSON = v.pipe(v.string(), v.parseJson(), v.object({ revisionId: v.string() }))
 
 async function openAssets(page: Page) {
   await page.getByTestId('left-panel-assets-tab').click()
@@ -37,13 +40,14 @@ test('preserves source publication identity across FIG save and reopen', async (
   await expect(publish.getByLabel('Library ID')).toBeHidden()
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('asset-libraries-dialog')).toBeHidden()
-  const firstRevision = await page.evaluate(() => {
+  const firstPublication = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     const value = store?.graph
       .getNode(store.graph.rootId)
       ?.pluginData.find((entry) => entry.key === 'sourceLibraryPublication')?.value
-    return value ? (JSON.parse(value) as { revisionId: string }).revisionId : null
+    return value ?? null
   })
+  const firstRevision = firstPublication && v.parse(PublicationJSON, firstPublication).revisionId
   expect(firstRevision).toBeTruthy()
 
   const saved = await page.evaluate(async () => {
@@ -105,13 +109,14 @@ test('preserves source publication identity across FIG save and reopen', async (
   await publish.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Library ID')).toBeHidden()
 
-  const secondRevision = await page.evaluate(() => {
+  const secondPublication = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     const value = store?.graph
       .getNode(store.graph.rootId)
       ?.pluginData.find((entry) => entry.key === 'sourceLibraryPublication')?.value
-    return value ? (JSON.parse(value) as { revisionId: string }).revisionId : null
+    return value ?? null
   })
+  const secondRevision = secondPublication && v.parse(PublicationJSON, secondPublication).revisionId
   expect(secondRevision).toBeTruthy()
   expect(secondRevision).not.toBe(firstRevision)
 })

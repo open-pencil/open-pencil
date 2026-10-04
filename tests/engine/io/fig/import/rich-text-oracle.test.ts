@@ -1,46 +1,51 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import * as v from 'valibot'
+
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 
-interface OracleColor {
-  r: number
-  g: number
-  b: number
-}
+const OracleLength = v.object({ unit: v.string(), value: v.number() })
 
-interface OracleDecorationColor {
-  value: {
-    color: OracleColor
-    opacity: number
-  }
-}
+const OracleDecorationColor = v.object({
+  value: v.object({
+    color: v.object({ r: v.number(), g: v.number(), b: v.number() }),
+    opacity: v.number()
+  })
+})
 
-interface OracleRange {
-  start: number
-  end: number
-  textDecoration: string
-  textDecorationStyle: string
-  textDecorationThickness: { unit: string; value: number }
-  textDecorationColor: OracleDecorationColor
-}
+type OracleDecorationColor = v.InferOutput<typeof OracleDecorationColor>
 
-interface RichTextOracle {
-  characters: string
-  leadingTrim: string
-  textDecorationOffset: { unit: string; value: number }
-  textDecorationSkipInk: boolean
-  ranges: OracleRange[]
-}
+const RichTextOracleJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    characters: v.string(),
+    leadingTrim: v.string(),
+    textDecorationOffset: OracleLength,
+    textDecorationSkipInk: v.boolean(),
+    ranges: v.array(
+      v.object({
+        start: v.number(),
+        end: v.number(),
+        textDecoration: v.string(),
+        textDecorationStyle: v.string(),
+        textDecorationThickness: OracleLength,
+        textDecorationColor: OracleDecorationColor
+      })
+    )
+  })
+)
 
-function readOracle(): RichTextOracle {
-  return JSON.parse(
+function readOracle() {
+  return v.parse(
+    RichTextOracleJSON,
     readFileSync('tests/fixtures/figma-oracles/rich-text-decoration.json', 'utf8')
-  ) as RichTextOracle
+  )
 }
 
 function oracleColorToPaint(color: OracleDecorationColor): Paint {
@@ -53,7 +58,7 @@ function oracleColorToPaint(color: OracleDecorationColor): Paint {
   }
 }
 
-function styleIdsForOracle(oracle: RichTextOracle): number[] {
+function styleIdsForOracle(oracle: ReturnType<typeof readOracle>): number[] {
   const ids = Array.from({ length: oracle.characters.length }, () => 0)
   const secondRange = oracle.ranges[1]
   if (!secondRange) return ids

@@ -1,5 +1,6 @@
 import { type RequestOptions, request as httpRequest } from 'node:http'
 
+import * as v from 'valibot'
 import { WebSocket } from 'ws'
 
 import {
@@ -31,8 +32,27 @@ export interface MockBrowser {
   close: () => void
 }
 
-/** Read the next WebSocket JSON message with a timeout. */
-export function readWsJSON<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
+/** A `register` broadcast: the browser bridge announcing its token. */
+export const RegisterMessage = v.object({
+  type: v.string(),
+  token: v.optional(v.nullable(v.string()))
+})
+
+/** A tool response relayed through the browser bridge. */
+export const ResponseMessage = v.object({
+  type: v.string(),
+  id: v.string(),
+  ok: v.optional(v.boolean()),
+  result: v.optional(v.looseObject({ name: v.optional(v.string()) })),
+  error: v.optional(v.string())
+})
+
+/** Read the next WebSocket JSON message with a timeout, checked against `schema`. */
+export function readWsJSON<T>(
+  ws: WebSocket,
+  schema: v.GenericSchema<unknown, T>,
+  timeoutMs = 1000
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const cleanup = () => {
       clearTimeout(timer)
@@ -42,7 +62,7 @@ export function readWsJSON<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
     const onMessage = (raw: WebSocket.RawData) => {
       cleanup()
       try {
-        resolve(JSON.parse(raw.toString()) as T)
+        resolve(v.parse(v.pipe(v.string(), v.parseJson(), schema), raw.toString()))
       } catch (error) {
         reject(error)
       }
@@ -78,13 +98,17 @@ export function openWs(url: string, authToken?: string | null): Promise<WebSocke
 }
 
 /** Read the next WebSocket JSON message, skipping any 'register' broadcasts. */
-export async function readNextResponse<T>(ws: WebSocket, timeoutMs = 5000): Promise<T> {
+export async function readNextResponse<T>(
+  ws: WebSocket,
+  schema: v.GenericSchema<unknown, T>,
+  timeoutMs = 5000
+): Promise<T> {
   const start = Date.now()
   for (let i = 0; ; i++) {
     const remaining = timeoutMs - (Date.now() - start)
     if (remaining <= 0) throw new Error(`Timed out after reading ${i} register messages`)
-    const msg = await readWsJSON<T & { type: string }>(ws, remaining)
-    if (msg.type !== 'register') return msg
+    const msg = await readWsJSON(ws, v.looseObject({ type: v.string() }), remaining)
+    if (msg.type !== 'register') return v.parse(schema, msg)
   }
 }
 

@@ -7,6 +7,7 @@ import { captureGraphOracle, figmaOracleScript } from '#visual/capture/scene'
 import { summarizePathDiagnostics } from '#visual/path-diagnostics'
 import { compareSceneOracle, type SceneOracleNode } from '#visual/scene-oracle'
 import { $ } from 'bun'
+import * as v from 'valibot'
 
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { InstancePathDiagnostic } from '@open-pencil/fig/instance-overrides'
@@ -26,7 +27,28 @@ if (!values.file || !values.node || !values['figma-key'] || !values.output) {
 await mkdir(values.output, { recursive: true })
 const script = figmaOracleScript(values['figma-key'], values.node)
 const capture = await $`figma-use eval ${script} --json`.quiet().text()
-const oracle = JSON.parse(capture) as { fileKey: string; rootId: string; nodes: SceneOracleNode[] }
+const SceneOracleNodeSchema: v.GenericSchema<unknown, SceneOracleNode> = v.object({
+  path: v.array(v.number()),
+  type: v.string(),
+  name: v.string(),
+  visible: v.boolean(),
+  x: v.number(),
+  y: v.number(),
+  width: v.number(),
+  height: v.number(),
+  text: v.nullable(v.string()),
+  main: v.nullable(v.string()),
+  fills: v.array(v.string()),
+  strokes: v.array(v.string())
+})
+const oracle = v.parse(
+  v.pipe(
+    v.string(),
+    v.parseJson(),
+    v.object({ fileKey: v.string(), rootId: v.string(), nodes: v.array(SceneOracleNodeSchema) })
+  ),
+  capture
+)
 if (
   oracle.fileKey !== values['figma-key'] ||
   oracle.rootId !== values.node ||

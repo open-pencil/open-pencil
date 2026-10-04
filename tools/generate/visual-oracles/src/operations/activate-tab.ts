@@ -1,5 +1,7 @@
 import { parseArgs } from 'node:util'
 
+import * as v from 'valibot'
+
 /**
  * Bring a Figma desktop tab to the front by its title. `figma-use` and the oracle captures
  * target the active document, so a reopened export must be the visible tab first. The tab
@@ -22,6 +24,14 @@ const shell = targets.find((t) => t.type === 'page' && t.url.endsWith('shell.htm
 if (!shell)
   throw new Error('Figma desktop shell page not found; is Figma running with remote debugging?')
 
+const EvaluateResponseJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    result: v.optional(v.object({ result: v.optional(v.object({ value: v.unknown() })) }))
+  })
+)
+
 const socket = new WebSocket(shell.webSocketDebuggerUrl)
 await new Promise<void>((resolve, reject) => {
   socket.onopen = () => resolve()
@@ -39,9 +49,7 @@ socket.send(
 )
 const result = await new Promise<unknown>((resolve) => {
   socket.onmessage = (message) => {
-    const payload = JSON.parse(String(message.data)) as {
-      result?: { result?: { value?: unknown } }
-    }
+    const payload = v.parse(EvaluateResponseJSON, String(message.data))
     resolve(payload.result?.result?.value)
   }
 })

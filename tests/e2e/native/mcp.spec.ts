@@ -1,12 +1,15 @@
 import { strict as assert } from 'node:assert'
 import { readFileSync, renameSync } from 'node:fs'
 
+import * as v from 'valibot'
+
 import { invokeNative } from '#tests/helpers/tauri/invoke'
 
-interface DiscoveryFile {
-  httpPort: number
-  authToken: string
-}
+const DiscoveryFileJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ httpPort: v.number(), authToken: v.string() })
+)
 
 const NOT_INSTALLED = 'MCP automation is not installed'
 
@@ -144,7 +147,7 @@ describe('native MCP server lifecycle', () => {
     await waitForStatus('Running')
     const discoveryPath = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
     assert.ok(discoveryPath, 'discovery path missing from the wdio configuration')
-    const discovery = JSON.parse(readFileSync(discoveryPath, 'utf8')) as DiscoveryFile
+    const discovery = v.parse(DiscoveryFileJSON, readFileSync(discoveryPath, 'utf8'))
     assert.ok(discovery.authToken, 'discovery file omitted the auth token')
 
     // The spawned server serves the app: real port, real token.

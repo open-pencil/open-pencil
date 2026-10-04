@@ -1,7 +1,15 @@
+import * as v from 'valibot'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 
 const editor = useEditorSetup()
+
+const ObservedShortcutJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ defaultPrevented: v.boolean(), shiftKey: v.boolean() })
+)
 
 function getActiveTool() {
   return editor.page.evaluate(() => {
@@ -344,11 +352,12 @@ test.describe('zoom shortcuts', () => {
 
       await editor.page.keyboard.press(shortcut)
       await editor.canvas.waitForRender()
-      const event = await editor.page.evaluate(() => {
+      const observed = await editor.page.evaluate(() => {
         const observed = document.documentElement.dataset.observedShortcut
         if (!observed) throw new Error('Expected shortcut keydown event')
-        return JSON.parse(observed) as { defaultPrevented: boolean; shiftKey: boolean }
+        return observed
       })
+      const event = v.parse(ObservedShortcutJSON, observed)
       return { event, zoom: await getZoom() }
     }
 
