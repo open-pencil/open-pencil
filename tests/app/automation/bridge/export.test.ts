@@ -7,13 +7,13 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { handleExport } from '@/app/automation/bridge/export-handlers'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
-import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
 
 const RED = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+const { handleTargetCommand } = createAutomationCommandHandlers(makeFigmaFromStore)
 
 let stores: EditorStore[] = []
 
@@ -36,6 +36,27 @@ async function storeWithCanvas(graph?: SceneGraph): Promise<EditorStore> {
   if (!surface) throw new Error('Failed to create CanvasKit surface')
   store.setCanvasKit(ck, new SkiaRenderer(ck, surface))
   return store
+}
+
+/** A `.fig` opened like the app does: only the first page has its layers. */
+async function storeWithUnshownPage(): Promise<{ store: EditorStore; pageId: string }> {
+  const source = new SceneGraph()
+  source.createNode('FRAME', source.getPages()[0].id, { width: 10, height: 10, fills: [RED] })
+  const second = source.addPage('Second')
+  source.createNode('FRAME', second.id, {
+    name: 'Second frame',
+    width: 70,
+    height: 35,
+    fills: [RED]
+  })
+  const written = await new IORegistry(BUILTIN_IO_FORMATS).writeDocument('fig', source)
+  const bytes = written.data as Uint8Array
+  const graph = await parseFigFile(bytes.slice().buffer, { populate: 'first-page' })
+  const store = await storeWithCanvas(graph)
+  const page = graph.getPages().find((candidate) => candidate.name === 'Second')
+  if (!page) throw new Error('Missing second page')
+  expect(graph.getChildren(page.id)).toHaveLength(0)
+  return { store, pageId: page.id }
 }
 
 function target(store: EditorStore, pageId: string): AutomationTarget {
@@ -66,9 +87,8 @@ describe('automation export of a page that is not on screen', () => {
     const shown = store.state.currentPageId
     const other = store.graph.addPage('Other').id
     const frame = store.graph.createNode('FRAME', other, { width: 40, height: 30, fills: [RED] })
-    const handleTool = createAutomationToolHandler(makeFigmaFromStore)
 
-    const response = await handleTool(target(store, shown), {
+    const response = await handleTargetCommand(target(store, shown), 'tool', {
       name: 'export_image',
       args: { ids: [frame.id] }
     })
@@ -82,9 +102,11 @@ describe('automation export of a page that is not on screen', () => {
     const shown = store.state.currentPageId
     const other = store.graph.addPage('Other').id
     store.graph.createNode('FRAME', other, { width: 50, height: 20, fills: [RED] })
-    const handleTool = createAutomationToolHandler(makeFigmaFromStore)
 
-    const response = await handleTool(target(store, other), { name: 'export_image', args: {} })
+    const response = await handleTargetCommand(target(store, other), 'tool', {
+      name: 'export_image',
+      args: {}
+    })
 
     expect(pngSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
     expect(store.state.currentPageId).toBe(shown)
@@ -98,30 +120,33 @@ describe('automation export of a page that is not on screen', () => {
     const other = store.graph.addPage('Other').id
     store.graph.createNode('FRAME', other, { width: 60, height: 25, fills: [RED] })
 
-    const response = await handleExport(target(store, other), { scope: 'page', format: 'png' })
+    const response = await handleTargetCommand(target(store, other), 'export', {
+      scope: 'page',
+      format: 'png'
+    })
 
     expect(pngSize(resultBytes(response))).toEqual({ width: 60, height: 25 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
   test('a page export loads the layers of a .fig page that has not been shown', async () => {
-    const source = new SceneGraph()
-    source.createNode('FRAME', source.getPages()[0].id, { width: 10, height: 10, fills: [RED] })
-    const second = source.addPage('Second')
-    source.createNode('FRAME', second.id, { width: 70, height: 35, fills: [RED] })
-    const written = await new IORegistry(BUILTIN_IO_FORMATS).writeDocument('fig', source)
-    const bytes = written.data as Uint8Array
-    const graph = await parseFigFile(bytes.slice().buffer, { populate: 'first-page' })
-    const store = await storeWithCanvas(graph)
+    const { store, pageId } = await storeWithUnshownPage()
     const shown = store.state.currentPageId
-    const pending = graph.getPages().find((page) => page.name === 'Second')
-    if (!pending) throw new Error('Missing second page')
-    expect(graph.getChildren(pending.id)).toHaveLength(0)
 
-    const response = await handleExport(target(store, pending.id), { scope: 'page' })
+    const response = await handleTargetCommand(target(store, pageId), 'export', { scope: 'page' })
 
     expect(pngSize(resultBytes(response))).toEqual({ width: 70, height: 35 })
     expect(store.state.currentPageId).toBe(shown)
+  })
+
+  test('a JSX export lists the layers of a .fig page that has not been shown', async () => {
+    const { store, pageId } = await storeWithUnshownPage()
+
+    const response = (await handleTargetCommand(target(store, pageId), 'export_jsx', {})) as {
+      result: { jsx: string }
+    }
+
+    expect(response.result.jsx).toContain('Second frame')
   })
 
   test('a page export lays out the target page first', async () => {
@@ -140,7 +165,7 @@ describe('automation export of a page that is not on screen', () => {
     })
     store.graph.createNode('FRAME', row.id, { width: 80, height: 20, fills: [RED] })
 
-    const response = await handleExport(target(store, other), { scope: 'page' })
+    const response = await handleTargetCommand(target(store, other), 'export', { scope: 'page' })
 
     expect(pngSize(resultBytes(response))).toEqual({ width: 80, height: 20 })
     expect(store.state.currentPageId).toBe(shown)
