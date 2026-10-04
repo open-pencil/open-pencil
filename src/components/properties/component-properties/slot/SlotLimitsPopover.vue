@@ -6,6 +6,7 @@ import { useI18n, useRetainedPopup } from '@open-pencil/vue'
 import type { SlotLimit } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 const { limits } = defineProps<{ limits: SlotLimit[] }>()
@@ -31,9 +32,9 @@ function label(limit: SlotLimit): string {
     <PopoverTrigger
       :data-issues="issues > 0 || undefined"
       data-property="slot-limits"
-      class="flex h-5 shrink-0 cursor-pointer items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus data-issues:bg-warning-bg data-issues:text-warning-text"
+      class="flex h-5 shrink-0 cursor-pointer items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus data-issues:bg-issue-warning/15 data-issues:text-issue-warning"
     >
-      <icon-lucide-triangle-alert v-if="issues" class="size-3" />
+      <SeverityIcon v-if="issues" severity="warning" />
       <icon-lucide-check v-else class="size-3 text-success" />
       {{ panels.slotLimitCount(limits.length) }}
     </PopoverTrigger>
@@ -63,7 +64,7 @@ function label(limit: SlotLimit): string {
             class="grid grid-cols-[14px_minmax(0,1fr)] gap-x-2 text-xs text-surface"
           >
             <icon-lucide-check v-if="limit.met" class="mt-px size-3.5 text-success" />
-            <icon-lucide-triangle-alert v-else class="mt-px size-3.5 text-warning-text" />
+            <SeverityIcon v-else severity="warning" class="mt-px size-3.5" />
             <span>{{ label(limit) }}</span>
             <template v-if="limit.kind === 'preferred' && !limit.met">
               <span />

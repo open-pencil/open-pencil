@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import SlotSettings from './examples/Settings.vue'
 import SlotPropertyStates from './examples/States.vue'
@@ -34,8 +34,8 @@ export const LimitsPopover: Story = {
   play: async ({ canvasElement }) => {
     const { row, page } = slotRow(canvasElement, 'Items')
     await userEvent.click(row.getByText('3 limits'))
-    await expect(page.getByText('At most 3 layers')).toBeVisible()
-    await expect(page.getByText('1 layer is not preferred')).toBeVisible()
+    await waitFor(() => expect(page.getByText('At most 3 layers')).toBeVisible())
+    await waitFor(() => expect(page.getByText('1 layer is not preferred')).toBeVisible())
   }
 }
 
@@ -43,8 +43,8 @@ export const AddInstances: Story = {
   play: async ({ canvasElement }) => {
     const { row, page } = slotRow(canvasElement, 'Body')
     await userEvent.click(row.getByRole('button', { name: 'Add instances' }))
-    await expect(page.getByText('Preferred')).toBeVisible()
-    await expect(page.getByText('Avatar')).toBeVisible()
+    await waitFor(() => expect(page.getByText('Preferred')).toBeVisible())
+    await waitFor(() => expect(page.getByText('Avatar')).toBeVisible())
   }
 }
 
@@ -52,7 +52,7 @@ export const AddPreferredOnly: Story = {
   play: async ({ canvasElement }) => {
     const { row, page } = slotRow(canvasElement, 'Items')
     await userEvent.click(row.getByRole('button', { name: 'Add instances' }))
-    await expect(page.getByText('List item')).toBeVisible()
+    await waitFor(() => expect(page.getByText('List item')).toBeVisible())
     await expect(page.queryByText('Avatar')).toBeNull()
   }
 }

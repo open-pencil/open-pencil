@@ -13,12 +13,12 @@ import { useDesignCheckMessages } from '@open-pencil/vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
+import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import { designCheck } from '@/theme/design-check'
 
 import IssueRow from './IssueRow.vue'
-import SeverityIcon from './SeverityIcon.vue'
 import type { IssueGroupView, IssueRowView } from './types'
 
 /** Rows rendered before a group asks to show the rest. */

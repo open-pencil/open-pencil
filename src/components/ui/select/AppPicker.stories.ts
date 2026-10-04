@@ -54,6 +54,8 @@ export const CompactWithFooter: Story = {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Apply variable' }))
-    await expect(page.getByRole('button', { name: /Create number variable/ })).toBeVisible()
+    await waitFor(() =>
+      expect(page.getByRole('button', { name: /Create number variable/ })).toBeVisible()
+    )
   }
 }

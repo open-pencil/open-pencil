@@ -1,8 +1,13 @@
 import { tv } from 'tailwind-variants'
 
+import { motionStyles } from '@/theme/motion/styles'
+
 export const popover = tv({
   slots: {
-    content: 'z-[100] rounded-xl bg-panel shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
+    content: [
+      'z-[100] rounded-xl bg-panel shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
+      motionStyles.floating
+    ],
     header: '',
     body: '',
     footer: ''
