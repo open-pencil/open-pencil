@@ -5,10 +5,11 @@ import { BUILTIN_IO_FORMATS, IORegistry, parseFigFile } from '@open-pencil/core/
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
-import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
 
+const { handleTargetCommand } = createAutomationCommandHandlers(makeFigmaFromStore)
 let stores: EditorStore[] = []
 
 beforeEach(() => {
@@ -53,9 +54,8 @@ describe('automation tools on a page that has not been shown', () => {
   test('find_nodes sees the layers of the target page', async () => {
     const { store, pageId } = await storeWithUnshownPage()
     const shown = store.state.currentPageId
-    const handleTool = createAutomationToolHandler(makeFigmaFromStore)
 
-    const response = (await handleTool(target(store, pageId), {
+    const response = (await handleTargetCommand(target(store, pageId), 'tool', {
       name: 'find_nodes',
       args: { name: 'Second frame' }
     })) as { result: { count: number } }
@@ -66,9 +66,8 @@ describe('automation tools on a page that has not been shown', () => {
 
   test('a shape created there joins the existing layers', async () => {
     const { store, pageId } = await storeWithUnshownPage()
-    const handleTool = createAutomationToolHandler(makeFigmaFromStore)
 
-    await handleTool(target(store, pageId), {
+    await handleTargetCommand(target(store, pageId), 'tool', {
       name: 'create_shape',
       args: { type: 'RECTANGLE', x: 0, y: 0, width: 10, height: 10, name: 'Added' }
     })
@@ -92,9 +91,8 @@ describe('automation tools on a page that has not been shown', () => {
       counterAxisSizing: 'FIXED'
     })
     store.graph.createNode('FRAME', row.id, { width: 80, height: 20 })
-    const handleTool = createAutomationToolHandler(makeFigmaFromStore)
 
-    const response = (await handleTool(target(store, other), {
+    const response = (await handleTargetCommand(target(store, other), 'tool', {
       name: 'get_node',
       args: { id: row.id }
     })) as { result: { width: number } }
