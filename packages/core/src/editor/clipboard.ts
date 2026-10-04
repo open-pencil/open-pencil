@@ -18,7 +18,7 @@ import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboa
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
-import { prepareSlotEdits } from './components/slots'
+import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -319,6 +319,11 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   function deleteSelected() {
+    // One undo step for the delete and any slot it claims.
+    ctx.undo.runBatch('Delete', deleteSelectedLayers)
+  }
+
+  function deleteSelectedLayers() {
     const entries: Array<{
       id: string
       parentId: string
@@ -329,6 +334,8 @@ export function createClipboardActions(ctx: EditorContext) {
       const node = ctx.graph.getNode(id)
       if (!node || node.locked) continue
       const parentId = node.parentId ?? ctx.state.currentPageId
+      // As in Figma, layers of an instance outside its slots cannot be removed.
+      if (!acceptsChildren(ctx, parentId)) continue
       const parent = ctx.graph.getNode(parentId)
       const index = parent?.childIds.indexOf(id) ?? -1
       entries.push({ id, parentId, index, subtree: snapshotSubtree(ctx.graph, id) })
@@ -336,8 +343,7 @@ export function createClipboardActions(ctx: EditorContext) {
     if (entries.length === 0) return
     prepareSlotEdits(
       ctx,
-      entries.map((entry) => entry.parentId),
-      { allowLocked: true }
+      entries.map((entry) => entry.parentId)
     )
     for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 

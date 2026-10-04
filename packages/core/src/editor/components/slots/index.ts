@@ -18,15 +18,11 @@ type InstanceSlot = Extract<SlotScope, { kind: 'slot' }>
  * an instance; otherwise claims each untouched slot first, so the edit lands in content the
  * instance owns. Call it before mutating, inside the edit's undo batch.
  */
-export function prepareSlotEdits(
-  ctx: EditorContext,
-  parentIds: Iterable<string>,
-  { allowLocked = false }: { allowLocked?: boolean } = {}
-): boolean {
+export function prepareSlotEdits(ctx: EditorContext, parentIds: Iterable<string>): boolean {
   const slots = new Map<string, InstanceSlot>()
   for (const parentId of parentIds) {
     const scope = slotScope(ctx.graph, parentId)
-    if (scope.kind === 'locked' && !allowLocked) return false
+    if (scope.kind === 'locked') return false
     if (scope.kind === 'slot') slots.set(scope.frame.id, scope)
   }
   for (const scope of slots.values()) {

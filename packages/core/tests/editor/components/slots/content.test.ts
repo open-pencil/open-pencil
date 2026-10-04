@@ -115,4 +115,22 @@ describe('editing instance slots', () => {
     editor.undo.redo()
     expect([...editor.state.selectedIds]).toEqual([added])
   })
+  test('delete leaves the rest of an instance alone and claims a slot in one undo step', () => {
+    const { editor, instance, slot, title } = setup()
+    editor.select([title.id])
+    editor.deleteSelected()
+    expect(editor.graph.getNode(title.id)?.parentId).toBe(instance.id)
+
+    const [content] = editor.graph.getChildren(slot.id)
+    editor.select([content.id])
+    editor.deleteSelected()
+    expect(editor.graph.getChildren(slot.id)).toEqual([])
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({
+      'card:body': ''
+    })
+    editor.undo.undo()
+    const restored = editor.graph.getChildren(instance.id).find((child) => slotPropertyId(child))
+    expect(restored && names(editor, restored)).toEqual(['Default'])
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({})
+  })
 })

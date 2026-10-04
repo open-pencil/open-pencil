@@ -35,7 +35,7 @@ import type { FigmaFontName } from './fonts'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
-import { installSlotAccessors, prepareSlotMove } from './slots'
+import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slots'
 import * as TextProxy from './text'
 import * as Traversal from './traversal'
 import type { FigmaTransform } from './types'
@@ -312,6 +312,7 @@ export class FigmaNodeProxy {
 
   remove(): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    prepareSlotRemoval(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
   }
 

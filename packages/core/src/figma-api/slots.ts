@@ -88,6 +88,18 @@ export function prepareSlotMove(
   if (source?.kind === 'slot') claimSlotContent(g, source)
 }
 
+/**
+ * Ready removing a layer the way Figma's remove() does: the locked part of an instance,
+ * slot frames included, refuses it, and slot content becomes the instance's own first.
+ */
+export function prepareSlotRemoval(g: SceneGraph, nodeId: string): void {
+  const parentId = g.getNode(nodeId)?.parentId
+  if (!parentId) return
+  const scope = slotScope(g, parentId)
+  if (scope.kind === 'locked') throw new Error('in remove: Removing this node is not allowed')
+  if (scope.kind === 'slot') claimSlotContent(g, scope)
+}
+
 function host(target: ProxyThis, internals: NodeProxyInternals): NodeProxyHost {
   return target[internals.api] as NodeProxyHost
 }

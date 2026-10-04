@@ -61,6 +61,24 @@ describe('slots', () => {
     expect(reset?.children.map((child) => child.name)).toEqual(['Default'])
   })
 
+  // Recorded in live Figma: an instance's own layers and its slot frames refuse removal;
+  // slot content can be removed, which makes the slot the instance's own.
+  test('remove() only takes layers out of the slots of an instance', () => {
+    const { api, component } = setup()
+    component.appendChild(Object.assign(api.createFrame(), { name: 'Locked' }))
+    component.createSlot().appendChild(Object.assign(api.createRectangle(), { name: 'Default' }))
+    const instance = component.createInstance()
+    const locked = instance.children.find((child) => child.name === 'Locked')
+    const slot = instance.children.find((child) => child.type === 'SLOT')
+    if (!locked || !slot) throw new Error('Missing instance layers')
+
+    expect(() => locked.remove()).toThrow('in remove: Removing this node is not allowed')
+    expect(() => slot.remove()).toThrow('in remove: Removing this node is not allowed')
+    slot.children[0]?.remove()
+    expect(slot.children).toEqual([])
+    expect(Object.values(instance.componentProperties)).toHaveLength(1)
+  })
+
   // Recorded in live Figma: resetting a main component's slot neither throws nor changes it.
   test('resetSlot on a main component slot keeps its content', () => {
     const { api, component } = setup()
