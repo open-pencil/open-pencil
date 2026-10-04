@@ -53,6 +53,8 @@ openpencil redo --document-id tab-123 --json
 
 When there is nothing to undo or redo, the command says so and `result.applied` is `false`.
 
+Edits made through the CLI and MCP are undoable like your own, one step per command. An `eval` script is recorded against its target page: if it switches `figma.currentPage` and edits another page, those edits are not part of the undo step.
+
 ## Settings
 
 Read and change editor settings by dotted key:

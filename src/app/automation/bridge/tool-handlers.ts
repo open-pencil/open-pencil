@@ -23,11 +23,14 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
   ): Promise<unknown> {
     const store = target.store
     const tree = toolArgs.tree as Parameters<typeof renderTree>[1]
-    const result = await executeWithPageUndo(store, target.pageId, 'Agent: render', () =>
+    const parentId = (toolArgs.parent_id as string | undefined) ?? target.pageId
+    // A parent on another page puts the new layers there, so that page's history records them.
+    const undoPageId = pageIdOf(store.graph, parentId) ?? target.pageId
+    const result = await executeWithPageUndo(store, undoPageId, 'Agent: render', () =>
       store.runMutationWithLayout(
         () =>
           renderTree(store.graph, tree, {
-            parentId: (toolArgs.parent_id as string | undefined) ?? target.pageId,
+            parentId,
             x: toolArgs.x as number | undefined,
             y: toolArgs.y as number | undefined
           }),
@@ -89,6 +92,13 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     }
     return { ok: true, result }
   }
+}
+
+function pageIdOf(graph: AutomationTarget['store']['graph'], nodeId: string): string | null {
+  let node = graph.getNode(nodeId)
+  while (node && node.type !== 'CANVAS')
+    node = node.parentId ? graph.getNode(node.parentId) : undefined
+  return node?.id ?? null
 }
 
 function extractNodeIds(result: unknown): string[] {

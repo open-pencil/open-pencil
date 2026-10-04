@@ -187,6 +187,8 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `undo` | Undo the last change in a document, like Edit → Undo |
 | `redo` | Redo the last undone change in a document, like Edit → Redo |
 
+Each editing tool call is one undo step. An `eval` script is recorded against its target page, so edits it makes after switching `figma.currentPage` are not undoable.
+
 ### Settings
 
 | Tool | Description |
