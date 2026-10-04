@@ -49,6 +49,13 @@ describe('calc tool', () => {
     expect((run('{"a": 1}') as { error: string }).error).toContain('Unexpected "{"')
   })
 
+  test('rejects a JSON array that contains anything but expressions', () => {
+    expect(run('["2 + 2", 3]')).toEqual({
+      expr: '["2 + 2", 3]',
+      error: 'A JSON array of expressions must contain only strings'
+    })
+  })
+
   test('advertises exactly the functions it supports', () => {
     const { description } = getTool('calc')
     for (const name of ['min', 'max', 'floor', 'ceil', 'round', 'abs', 'sqrt', 'pow']) {

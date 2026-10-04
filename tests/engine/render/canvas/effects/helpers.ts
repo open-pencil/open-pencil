@@ -91,6 +91,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     },
     strokePaint: {
       setColor: mock(() => undefined),
+      setShader: mock(() => undefined),
       setStrokeWidth: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setPathEffect: mock(() => undefined),

@@ -1,14 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  MODE_CONDITIONS_PLUGIN_KEY,
-  OPEN_PENCIL_PLUGIN_ID,
-  readModeConditions,
-  readVariableToken,
-  TOKEN_PLUGIN_KEY
-} from '#fig/node-change/index'
+import { readModeConditions, readVariableToken } from '#fig/node-change/index'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { OPEN_PENCIL_PLUGIN_DATA, OPEN_PENCIL_PLUGIN_ID } from '@open-pencil/scene-graph'
 
 function record(key: string, value: string): NodeChange {
   return { pluginData: [{ pluginID: OPEN_PENCIL_PLUGIN_ID, key, value }] }
@@ -16,21 +11,29 @@ function record(key: string, value: string): NodeChange {
 
 describe('token plugin data', () => {
   test('a malformed or wrongly shaped entry reads as no token data', () => {
-    expect(readVariableToken(record(TOKEN_PLUGIN_KEY, '{not json'), { m: 8 })).toEqual({
+    expect(
+      readVariableToken(record(OPEN_PENCIL_PLUGIN_DATA.token.key, '{not json'), { m: 8 })
+    ).toEqual({
       unit: undefined,
       expressions: undefined
     })
-    expect(readVariableToken(record(TOKEN_PLUGIN_KEY, '{"unit":"furlong"}'), { m: 8 })).toEqual({
+    expect(
+      readVariableToken(record(OPEN_PENCIL_PLUGIN_DATA.token.key, '{"unit":"furlong"}'), { m: 8 })
+    ).toEqual({
       unit: undefined,
       expressions: undefined
     })
-    expect(readModeConditions(record(MODE_CONDITIONS_PLUGIN_KEY, '{"m":42}'))).toEqual({})
-    expect(readModeConditions(record(MODE_CONDITIONS_PLUGIN_KEY, '{"m":"  "}'))).toEqual({})
+    expect(
+      readModeConditions(record(OPEN_PENCIL_PLUGIN_DATA.modeConditions.key, '{"m":42}'))
+    ).toEqual({})
+    expect(
+      readModeConditions(record(OPEN_PENCIL_PLUGIN_DATA.modeConditions.key, '{"m":"  "}'))
+    ).toEqual({})
   })
 
   test('keep expressions only for modes whose value still matches', () => {
     const nc = record(
-      TOKEN_PLUGIN_KEY,
+      OPEN_PENCIL_PLUGIN_DATA.token.key,
       JSON.stringify({
         unit: 'rem',
         expressions: {
@@ -47,7 +50,7 @@ describe('token plugin data', () => {
 
   test('match a mode value stored at float32 precision', () => {
     const nc = record(
-      TOKEN_PLUGIN_KEY,
+      OPEN_PENCIL_PLUGIN_DATA.token.key,
       JSON.stringify({ expressions: { a: { css: 'calc(100vw / 3)', resolved: 1234.567 } } })
     )
     // What .fig hands back for 1234.567 after storing it as float32.

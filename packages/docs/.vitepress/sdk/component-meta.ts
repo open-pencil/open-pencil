@@ -40,13 +40,17 @@ export interface SdkComponentMeta {
   exposed: SdkComponentExposeMeta[]
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 function findWorkspaceRoot(start: string): string {
   let directory = start
   while (true) {
     const packagePath = join(directory, 'package.json')
     if (existsSync(packagePath)) {
-      const packageJSON = JSON.parse(readFileSync(packagePath, 'utf8')) as { workspaces?: unknown }
-      if (Array.isArray(packageJSON.workspaces)) return directory
+      const packageJSON: unknown = JSON.parse(readFileSync(packagePath, 'utf8'))
+      if (isObject(packageJSON) && Array.isArray(packageJSON.workspaces)) return directory
     }
     const parent = dirname(directory)
     if (parent === directory) throw new Error('Unable to locate workspace root')

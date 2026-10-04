@@ -45,6 +45,7 @@ const styles = computed(() =>
     dragging: chrome.draggingId === node.id,
     visible: node.visible,
     component: COMPONENT_TYPES.has(node.type),
+    slot: node.slot,
     childDropTarget:
       chrome.instructionTargetId === node.id && chrome.instruction?.type === 'make-child'
   })

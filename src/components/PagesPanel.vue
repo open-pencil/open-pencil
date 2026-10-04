@@ -34,7 +34,7 @@ const pageInput = templateRef<HTMLInputElement>('pageInput')
 const rename = useInlineRename((id, name) => pageActions.value?.rename(id, name))
 const { panels, pages: pageMessages } = useI18n()
 const menuCls = useMenuUI({
-  content: 'min-w-36 shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
+  content: 'min-w-36',
   item: 'justify-start gap-2'
 })
 const pageListStyles = tv(pageListTheme)

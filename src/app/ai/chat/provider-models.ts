@@ -1,23 +1,38 @@
+import * as v from 'valibot'
+
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
 
-type OpenRouterModel = {
-  id?: unknown
-  name?: unknown
-  supported_parameters?: unknown
-  architecture?: {
-    input_modalities?: unknown
-  }
-  top_provider?: {
-    max_completion_tokens?: unknown
-  }
-}
+const CachedModelOptions = v.array(
+  v.object({
+    id: v.string(),
+    name: v.string(),
+    tag: v.optional(v.string()),
+    capabilities: v.optional(v.array(v.picklist(['tools', 'vision']))),
+    recommendedMaxOutputTokens: v.optional(v.number()),
+    releaseDate: v.optional(v.string()),
+    status: v.optional(v.picklist(['active', 'beta', 'deprecated']))
+  })
+) satisfies v.GenericSchema<unknown, ModelOption[]>
 
-type OpenRouterModelsResponse = {
-  data?: OpenRouterModel[]
-}
+const OpenRouterModelSchema = v.looseObject({
+  id: v.optional(v.unknown()),
+  name: v.optional(v.unknown()),
+  supported_parameters: v.optional(v.unknown()),
+  architecture: v.nullish(v.looseObject({ input_modalities: v.optional(v.unknown()) })),
+  top_provider: v.nullish(v.looseObject({ max_completion_tokens: v.optional(v.unknown()) }))
+})
+
+type OpenRouterModel = v.InferOutput<typeof OpenRouterModelSchema>
+
+// Entries are checked one by one in `fetchOpenRouterModels`, so one odd model keeps the rest.
+const OpenRouterModelsResponseJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ data: v.optional(v.array(v.unknown())) })
+)
 
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models'
 const OPENROUTER_MODELS_CACHE_KEY = 'openrouter/models'
@@ -57,14 +72,18 @@ export function normalizeOpenRouterModel(model: OpenRouterModel): ModelOption | 
 async function fetchOpenRouterModels(fetcher: typeof fetch): Promise<ModelOption[]> {
   const response = await fetcher(OPENROUTER_MODELS_URL)
   if (!response.ok) throw new Error(`OpenRouter models request failed: ${response.status}`)
-  const json = (await response.json()) as OpenRouterModelsResponse
-  return json.data?.map(normalizeOpenRouterModel).filter((model) => model !== null) ?? []
+  const json = v.parse(OpenRouterModelsResponseJSON, await response.text())
+  return (json.data ?? []).flatMap((entry) => {
+    const model = v.is(OpenRouterModelSchema, entry) ? normalizeOpenRouterModel(entry) : null
+    return model ? [model] : []
+  })
 }
 
 async function listOpenRouterModels(fetcher: typeof fetch = fetch): Promise<ModelOption[]> {
   modelsPromise ??= (async () => {
-    const cached = await readCacheJSON<ModelOption[]>(
+    const cached = await readCacheJSON(
       OPENROUTER_MODELS_CACHE_KEY,
+      CachedModelOptions,
       OPENROUTER_MODELS_CACHE_TTL_MS
     )
     if (cached?.length) return cached

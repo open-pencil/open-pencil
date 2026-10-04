@@ -2,7 +2,8 @@
 import { parseArgs } from 'node:util'
 
 import { captureDocumentOracle } from '#visual/capture/document'
-import { compareSceneOracle, type SceneOracleNode } from '#visual/scene-oracle'
+import { compareSceneOracle, SceneOracleNodeSchema } from '#visual/scene-oracle'
+import * as v from 'valibot'
 
 import { materializeFigArchive } from '@open-pencil/fig'
 
@@ -33,7 +34,10 @@ if (!values.baseline) {
     JSON.stringify({ nodes: nodes.length, pages: graph.getPages().length, unresolved }, null, 2)
   )
 } else {
-  const baseline = (await Bun.file(values.baseline).json()) as SceneOracleNode[]
+  const baseline = v.parse(
+    v.pipe(v.string(), v.parseJson(), v.array(SceneOracleNodeSchema)),
+    await Bun.file(values.baseline).text()
+  )
   const differences = compareSceneOracle(baseline, nodes)
   const counts: Record<string, number> = {}
   for (const difference of differences)

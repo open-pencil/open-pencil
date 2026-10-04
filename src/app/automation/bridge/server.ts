@@ -4,11 +4,25 @@
  * Connects to the bridge via WebSocket, receives RPC requests,
  * executes them against the live EditorStore, and sends results back.
  */
+import * as v from 'valibot'
+
 import { randomHex } from '@open-pencil/core/random'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { EditorStore } from '@/app/editor/active-store'
+
+/** Requests from the MCP bridge; other message types (such as the register prompt) are ignored. */
+const AutomationRequestJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    type: v.literal('request'),
+    id: v.pipe(v.string(), v.nonEmpty()),
+    command: v.string(),
+    args: v.optional(v.unknown())
+  })
+)
 
 export function connectAutomation(
   getStore: () => EditorStore,
@@ -48,13 +62,13 @@ export function connectAutomation(
 
     socket.onmessage = async (event) => {
       try {
-        const msg = JSON.parse(event.data) as {
-          type: string
-          id: string
-          command: string
-          args?: unknown
+        const parsed = v.safeParse(AutomationRequestJSON, event.data)
+        if (!parsed.success) {
+          if (parsed.issues.some((issue) => issue.type === 'parse_json'))
+            console.warn('Failed to parse WebSocket message:', v.summarize(parsed.issues))
+          return
         }
-        if (msg.type !== 'request' || !msg.id) return
+        const msg = parsed.output
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
           if (socket.readyState !== WebSocket.OPEN) return

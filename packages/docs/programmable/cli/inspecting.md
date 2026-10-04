@@ -160,13 +160,13 @@ openpencil variables design.fig
 When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas:
 
 ```sh
-openpencil documents         # list open document/page IDs
+openpencil documents list    # list open document/page IDs
 openpencil tree              # inspect the active live document
 openpencil tree --document-id tab-123 --page-id 0:1
 openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-Use `openpencil documents --json` in agent workflows, then pass `--document-id` and `--page-id` explicitly instead of relying on the visible active tab/page.
+Use `openpencil documents list --json` in agent workflows, then pass `--document-id` and `--page-id` explicitly instead of relying on the visible active tab/page. To open, save, switch, and close documents, undo, change settings, or call any editor tool, see [Controlling the App](/programmable/cli/app-control).
 
 ## Lint Designs
 

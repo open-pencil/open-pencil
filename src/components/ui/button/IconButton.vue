@@ -16,7 +16,8 @@ const {
 } = defineProps<{
   active?: boolean
   disabled?: boolean
-  label?: string
+  /** Accessible name and tooltip; every icon-only button needs one. */
+  label: string
   side?: 'top' | 'bottom' | 'left' | 'right'
   size?: ControlSize
   type?: 'button' | 'submit' | 'reset'
@@ -37,7 +38,7 @@ const cls = computed(() =>
 </script>
 
 <template>
-  <Tip as-child :label="label" :side="side" :disabled="disabled || !label">
+  <Tip as-child :label="label" :side="side" :disabled="disabled">
     <button
       v-bind="buttonAttrs"
       data-slot="icon-button"

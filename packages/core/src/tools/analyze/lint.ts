@@ -91,8 +91,9 @@ export const lintFix = defineTool({
   description:
     'Apply lint fixes: bind colors to the variable they match and round geometry to whole pixels. ' +
     'With suggestions: true, also apply each finding’s first suggestion (snap radius and spacing to the scale, ' +
-    'raise text to the minimum size). Returns what was applied and what remains.',
-  execution: { kind: 'sync', mutation: 'properties' },
+    'raise text to the minimum size, convert groups to frames, delete hidden layers). ' +
+    'Returns what was applied and what remains.',
+  execution: { kind: 'sync', mutation: 'document' },
   input: v.object({
     ...lintScopeInput,
     suggestions: v.optional(

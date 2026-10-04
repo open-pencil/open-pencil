@@ -4,6 +4,7 @@ import {
   TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
   findInstanceAncestor,
   rescaleNodeTree,
+  slotPropertyId,
   type SceneNode
 } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
@@ -59,8 +60,9 @@ export function installBasicNodeProxyAccessors(
       }
     },
     type: {
-      get(this: ProxyThis): SceneNode['type'] {
-        return raw(this, internals).type
+      get(this: ProxyThis): SceneNode['type'] | 'SLOT' {
+        const node = raw(this, internals)
+        return slotPropertyId(node) ? 'SLOT' : node.type
       }
     },
     name: {

@@ -207,18 +207,13 @@ export function createFillPaints(context: SceneNodeToKiwiContext, node: SceneNod
   )
 }
 
+/** A stroke is a paint, so it writes the same way a fill does, gradients and images included. */
 export function createStrokePaints(context: SceneNodeToKiwiContext, node: SceneNode): Paint[] {
   return node.strokes.map((stroke, index) =>
     applyColorVariableBinding(
       context,
       node,
-      {
-        type: 'SOLID',
-        color: context.safeColor(stroke.color),
-        opacity: stroke.opacity,
-        visible: stroke.visible,
-        blendMode: 'NORMAL'
-      },
+      context.fillToKiwiPaint(stroke),
       `strokes/${index}/color`
     )
   )

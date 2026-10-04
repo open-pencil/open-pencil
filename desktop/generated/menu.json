@@ -371,6 +371,10 @@
         "label": "Create Instance"
       },
       {
+        "id": "selection.createSlot",
+        "label": "Create Slot"
+      },
+      {
         "id": "selection.goToMainComponent",
         "label": "Go to Main Component"
       },

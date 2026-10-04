@@ -51,9 +51,26 @@ export function useVariantAuthoring() {
     return componentSetId ? editor.getComponentSetVariantConflicts(componentSetId) : []
   })
 
-  function addProperty(name: string, initialValue: string) {
+  /**
+   * Add a variant property, by default named Property 1, Property 2, … with the value Default,
+   * as Figma does; returns its id so the caller can start renaming it.
+   */
+  function addProperty(name?: string, initialValue = 'Default'): string | undefined {
     const componentSetId = componentSet.value?.id
-    if (componentSetId) editor.addPropertyDefinition(componentSetId, name, 'VARIANT', initialValue)
+    if (!componentSetId) return undefined
+    return editor.addPropertyDefinition(
+      componentSetId,
+      name ?? nextPropertyName(),
+      'VARIANT',
+      initialValue
+    )
+  }
+
+  function nextPropertyName(): string {
+    const taken = new Set(definitions.value.map((definition) => definition.name))
+    let index = 1
+    while (taken.has(`Property ${index}`)) index++
+    return `Property ${index}`
   }
 
   function renameProperty(propertyId: string, name: string) {

@@ -2,6 +2,7 @@ export { BUILT_IN_COLOR_FORMATS, useColorModel } from '#vue/controls/color-model
 export {
   applySolidFillColor,
   applySolidStrokeColor,
+  applyStrokePaint,
   fromPercent,
   toPercent
 } from '#vue/controls/color-model/model'

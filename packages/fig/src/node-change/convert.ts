@@ -2,6 +2,7 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
+  OPEN_PENCIL_PLUGIN_DATA,
   styleToWeight
 } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
@@ -21,10 +22,7 @@ import {
   extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
-  getOpenPencilPluginValue,
-  LAYOUT_DIRECTION_PLUGIN_KEY,
-  NODE_TYPE_PLUGIN_KEY,
-  TEXT_DIRECTION_PLUGIN_KEY
+  readNodeChangePluginData
 } from './plugin-data'
 import { importStyleRuns } from './style/runs'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
@@ -373,10 +371,7 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     fontVariations: convertFontVariations(nc),
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
-    textDirection:
-      (getOpenPencilPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
-        | SceneNode['textDirection']
-        | null) || 'AUTO',
+    textDirection: readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.textDirection) ?? 'AUTO',
     derivedLayout: nc.derivedTextData?.layoutSize
       ? {
           width: nc.derivedTextData.layoutSize.x,
@@ -486,9 +481,7 @@ function convertLayoutProps(
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean,
     layoutDirection:
-      (getOpenPencilPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
-        | SceneNode['layoutDirection']
-        | null) || 'AUTO',
+      readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
     ...(derivedLayout ? { derivedLayout } : {})
   }
 }
@@ -591,7 +584,7 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
-    getOpenPencilPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
   }

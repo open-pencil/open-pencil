@@ -102,6 +102,12 @@ const states: Array<{
   { label: 'Hidden', node: node('Hidden', { visible: false }), selected: false, chrome: chrome() },
   { label: 'Locked', node: node('Locked', { locked: true }), selected: false, chrome: chrome() },
   {
+    label: 'Slot',
+    node: node('Slot', { type: 'FRAME', layoutMode: 'VERTICAL', slot: true }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
     label: 'Component',
     node: node('Component', { type: 'COMPONENT' }),
     selected: false,

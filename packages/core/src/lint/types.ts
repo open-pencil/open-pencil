@@ -40,6 +40,10 @@ export type LintFixProperty =
 export type LintFix =
   | { kind: 'bind-variable'; path: string; variableId: string; variableName: string }
   | { kind: 'set'; changes: Readonly<Partial<Record<LintFixProperty, number>>> }
+  /** Turns a group into a frame in place, keeping its children, bounds and look. */
+  | { kind: 'convert-to-frame' }
+  /** Deletes the layer with its children. */
+  | { kind: 'delete' }
 
 export interface LintMessage {
   ruleId: string

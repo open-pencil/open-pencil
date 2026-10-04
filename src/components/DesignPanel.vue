@@ -12,6 +12,7 @@ import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
 import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
+import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
 import VariantAuthoringSection from './properties/component-properties/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
@@ -159,6 +160,8 @@ const { panels } = useI18n()
             store.graph.getNode(node.parentId)?.type === 'COMPONENT_SET')
         "
       />
+
+      <SlotAuthoringSection />
 
       <FramePresetSelect v-if="node.type === 'FRAME'" />
 

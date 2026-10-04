@@ -1,9 +1,10 @@
 import { tv } from 'tailwind-variants'
 
+import { tooltipSurface } from '@/theme/overlay'
+
 export const tooltip = tv({
   slots: {
-    content:
-      'z-50 rounded-md bg-panel px-2 py-1 text-[11px] text-surface shadow-[0_8px_30px_rgb(0_0_0/0.4)]'
+    content: ['z-50 px-2 py-1 text-[11px]', tooltipSurface]
   }
 })
 

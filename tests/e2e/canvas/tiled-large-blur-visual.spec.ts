@@ -1,13 +1,30 @@
 import { readFileSync } from 'node:fs'
 
+import * as v from 'valibot'
+
 import type { RecordedWheelSample } from '@open-pencil/core/profiler'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup('/?test&no-chrome&no-rulers&renderer=tiled&navigation-benchmark')
-const reversal = JSON.parse(
+const WheelSample: v.GenericSchema<unknown, RecordedWheelSample> = v.object({
+  timeMs: v.number(),
+  deltaX: v.number(),
+  deltaY: v.number(),
+  deltaMode: v.number(),
+  ctrlKey: v.optional(v.boolean(), false),
+  metaKey: v.optional(v.boolean(), false),
+  shiftKey: v.optional(v.boolean(), false),
+  clientX: v.number(),
+  clientY: v.number(),
+  cancelable: v.optional(v.boolean(), true),
+  directionInvertedFromDevice: v.optional(v.boolean())
+})
+const GestureJSON = v.pipe(v.string(), v.parseJson(), v.object({ wheel: v.array(WheelSample) }))
+const reversal = v.parse(
+  GestureJSON,
   readFileSync('tests/fixtures/navigation/gestures/synthetic-repeated-pinch-reversal.json', 'utf8')
-) as { wheel: RecordedWheelSample[] }
+)
 
 async function waitForTiledSettlement() {
   await editor.page.evaluate(() => window.openPencil?.test?.navigation?.waitForSettlement())

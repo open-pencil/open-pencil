@@ -9,10 +9,9 @@ import {
   type DesignIssueCounts,
   type DesignIssueSeverity
 } from '@/app/editor/design-check/issues'
+import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import { designCheck } from '@/theme/design-check'
-
-import SeverityIcon from './SeverityIcon.vue'
 
 const { counts } = defineProps<{ counts: DesignIssueCounts }>()
 /** Severities whose issues are listed; toggling one hides or shows its issues. */

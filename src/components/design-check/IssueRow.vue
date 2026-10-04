@@ -74,6 +74,16 @@ const styles = designCheck()
           class="size-3"
           aria-hidden="true"
         />
+        <icon-lucide-frame
+          v-else-if="row.action.kind === 'convert-to-frame'"
+          class="size-3"
+          aria-hidden="true"
+        />
+        <icon-lucide-trash-2
+          v-else-if="row.action.kind === 'delete'"
+          class="size-3"
+          aria-hidden="true"
+        />
         <icon-lucide-wand-sparkles v-else class="size-3" aria-hidden="true" />
       </button>
     </Tip>

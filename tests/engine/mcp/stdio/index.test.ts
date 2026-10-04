@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 import type { Client } from '@modelcontextprotocol/client'
 import type { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
+import * as v from 'valibot'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -116,6 +117,11 @@ function textContent(content: unknown): string {
   ).text
 }
 
+/** The JSON a tool returned as text, checked against the shape the test expects. */
+function parseTextContent<T>(content: unknown, schema: v.GenericSchema<unknown, T>): T {
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), textContent(content))
+}
+
 describe('MCP stdio transport', () => {
   let handle: ServerHandle | undefined
   let graph: SceneGraph | undefined
@@ -218,11 +224,10 @@ describe('MCP stdio transport', () => {
       arguments: { type: 'FRAME', x: 10, y: 20, width: 200, height: 100, name: 'StdioFrame' }
     })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(textContent(result.content)) as {
-      id: string
-      name: string
-      type: string
-    }
+    const data = parseTextContent(
+      result.content,
+      v.object({ id: v.string(), name: v.string(), type: v.string() })
+    )
     expect(data.type).toBe('FRAME')
     expect(data.name).toBe('StdioFrame')
 
@@ -268,9 +273,12 @@ describe('MCP stdio transport', () => {
   test('list_documents via stdio returns open documents', async () => {
     const result = await client.callTool({ name: 'list_documents', arguments: {} })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(textContent(result.content)) as {
-      documents: Array<{ id: string; current_page_id: string }>
-    }
+    const data = parseTextContent(
+      result.content,
+      v.object({
+        documents: v.array(v.object({ id: v.string(), current_page_id: v.string() }))
+      })
+    )
     expect(data.documents[0].id).toBe('doc-1')
     expect(data.documents[0].current_page_id).toBe(browser?.graph.getPages()[0].id)
   })
@@ -278,14 +286,14 @@ describe('MCP stdio transport', () => {
   test('save_file via stdio succeeds', async () => {
     const result = await requireClient().callTool({ name: 'save_file', arguments: {} })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(textContent(result.content)) as { saved: boolean }
+    const data = parseTextContent(result.content, v.object({ saved: v.boolean() }))
     expect(data.saved).toBe(true)
   }, 10000)
 
   test('get_codegen_prompt via stdio returns prompt', async () => {
     const result = await requireClient().callTool({ name: 'get_codegen_prompt', arguments: {} })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(textContent(result.content)) as { prompt: string }
+    const data = parseTextContent(result.content, v.object({ prompt: v.string() }))
     expect(data.prompt.length).toBeGreaterThan(100)
   }, 10000)
 
@@ -295,7 +303,7 @@ describe('MCP stdio transport', () => {
       arguments: { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }
     })
     expect(create.isError).not.toBe(true)
-    const { id } = JSON.parse(textContent(create.content)) as { id: string }
+    const { id } = parseTextContent(create.content, v.object({ id: v.string() }))
 
     expect(getNodeOrThrow(requireGraph(), id)).toBeDefined()
 

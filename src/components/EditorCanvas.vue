@@ -38,6 +38,8 @@ import { appRuntimeConfig } from '@/app/runtime/config'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
+import { motionStyles } from '@/theme/motion/styles'
+import { floatingSurface } from '@/theme/overlay'
 
 import CanvasMenu from './canvas/CanvasMenu.vue'
 import CanvasLabelEditor from './canvas/labels/CanvasLabelEditor.vue'
@@ -256,7 +258,7 @@ const cursor = computed(() =>
               :side-offset="AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y"
               :align-offset="AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X"
               :collision-padding="8"
-              class="z-50 w-20 rounded-md bg-panel p-1 shadow-lg"
+              :class="['z-50 w-20 p-1', floatingSurface, motionStyles.floating]"
               data-test-id="auto-layout-padding-editor"
               @keydown.escape.prevent="cancelAutoLayoutPaddingEdit"
               @open-auto-focus.prevent

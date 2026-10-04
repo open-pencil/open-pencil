@@ -73,6 +73,8 @@ export const designCheckMessageDefaults = {
   fixRoundPixels: 'Round to whole pixels',
   fixUseValue: params('Change to {value}'),
   fixFullRadius: 'Use full radius',
+  fixConvertToFrame: 'Convert to frame',
+  fixDeleteLayer: 'Delete layer',
   fixAll: params('Fix all {count}'),
   ruleNoDefaultNames: 'Default layer name',
   ruleNoDefaultNamesHelp: 'Descriptive names make layers easier to find, hand off and reuse.',

@@ -332,6 +332,11 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.createInstance'
       },
       {
+        id: 'selection.createSlot',
+        label: 'Create Slot',
+        command: 'selection.createSlot'
+      },
+      {
         id: 'selection.goToMainComponent',
         label: 'Go to Main Component',
         command: 'selection.goToMainComponent'

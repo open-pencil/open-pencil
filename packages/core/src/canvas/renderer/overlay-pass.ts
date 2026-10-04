@@ -7,6 +7,7 @@ import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
+import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { RULER_SIZE } from '#core/constants'
 
@@ -91,6 +92,8 @@ export function drawOverlayPass(
       ? null
       : overlays.hoveredNodeId
   drawCodeFocus(r, canvas, graph, overlays.codeFocusNodeId, overlays.rotationPreview)
+  if (!measuring)
+    drawSlotOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays.rotationPreview)
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)

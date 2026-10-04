@@ -159,38 +159,47 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
       editor.setDropTarget(null)
       return
     }
-    for (const id of d.originals.keys()) {
-      editor.reorderInAutoLayout(id, indicator.parentId, indicator.index)
-    }
+    // Claiming a slot records its own step; the batch makes it one undo with the reorder.
+    editor.undo.runBatch('Reorder', () => {
+      for (const id of d.originals.keys()) {
+        editor.reorderInAutoLayout(id, indicator.parentId, indicator.index)
+      }
+    })
     editor.setDropTarget(null)
     return
   }
 
   const moved = hasMoved(d, editor)
 
-  if (moved) {
-    restoreOriginalPositions(d, editor)
-    applyFinalPositions(d, editor)
-    const dropId = editor.state.dropTargetId
-    if (dropId) {
-      editor.reparentNodes([...editor.state.selectedIds], dropId)
-    } else {
-      reparentOutsideNodes(editor)
-    }
+  if (d.duplicated && !moved) {
+    const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
+    for (const id of [...d.originals.keys()].toReversed()) editor.graph.deleteNode(id)
+    editor.select([...previousSelection])
+    editor.requestRender()
+    editor.setDropTarget(null)
+    return
   }
 
-  if (d.duplicated) {
-    const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
-    if (!moved) {
-      for (const id of [...d.originals.keys()].toReversed()) editor.graph.deleteNode(id)
-      editor.select([...previousSelection])
-      editor.requestRender()
-      editor.setDropTarget(null)
-      return
+  // The batch keeps a slot claim in the same undo step; it carries the edit's own name.
+  editor.undo.runBatch(d.duplicated ? 'Duplicate' : 'Move', () => {
+    if (moved) {
+      restoreOriginalPositions(d, editor)
+      applyFinalPositions(d, editor)
+      const dropId = editor.state.dropTargetId
+      if (dropId) {
+        editor.reparentNodes([...editor.state.selectedIds], dropId)
+      } else {
+        reparentOutsideNodes(editor)
+      }
     }
-    editor.commitDuplicateMove([...d.originals.keys()], previousSelection)
-  } else if (moved) {
-    editor.commitMoveWithReparent(d.originals)
-  }
+    if (d.duplicated) {
+      editor.commitDuplicateMove(
+        [...d.originals.keys()],
+        d.duplicatedPreviousSelection ?? new Set<string>()
+      )
+    } else if (moved) {
+      editor.commitMoveWithReparent(d.originals)
+    }
+  })
   editor.setDropTarget(null)
 }

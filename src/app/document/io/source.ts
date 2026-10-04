@@ -151,6 +151,35 @@ export function createDocumentSourceActions({
     state.documentName = documentNameFromFigPath(downloadName)
   }
 
+  /** Save to a new path; when the write fails, the document keeps the source it had. */
+  async function saveFigFileToPath(path: string): Promise<boolean> {
+    const previous = {
+      filePath: getFilePath(),
+      fileHandle: getFileHandle(),
+      storageBinding: getStorageBinding(),
+      downloadName: getDownloadName(),
+      documentName: state.documentName
+    }
+    const restore = () => {
+      setStorageBinding(previous.storageBinding)
+      setFileHandle(previous.fileHandle)
+      setFilePath(previous.filePath)
+      setDownloadName(previous.downloadName)
+      state.documentName = previous.documentName
+      if (previous.filePath || previous.fileHandle) void startWatchingFile()
+    }
+    setPlannedFilePath(path)
+    try {
+      const saved = await saveAndTrack(saveFigFile)
+      if (saved) void startWatchingFile()
+      else restore()
+      return saved
+    } catch (error) {
+      restore()
+      throw error
+    }
+  }
+
   function startWatchingCurrentFile() {
     void startWatchingFile()
   }
@@ -166,6 +195,7 @@ export function createDocumentSourceActions({
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,
+    saveFigFileToPath,
     startWatchingCurrentFile,
     disposeDocumentIO,
     saveFigFile: () => saveAndTrack(saveFigFile),

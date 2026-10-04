@@ -10,13 +10,14 @@ import { toolNumber } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer } from '#mcp/server'
-import type { DiscoveryInfo } from '#mcp/transport/discovery'
+import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 import { DESKTOP_APP_ORIGINS, parseCORSOrigins, resolveCORSOrigins } from '#mcp/transport/origins'
 
+import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
-  waitForBrowserRegistration,
-  type HealthResponse
+  readHealth,
+  waitForBrowserRegistration
 } from '#tests/helpers/mcp/server'
 
 const isUnix = process.platform !== 'win32'
@@ -170,7 +171,7 @@ describe('MCP server auto-generated auth token', () => {
 
       // /health should show authRequired: true
       const healthResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
-      const health = (await healthResp.json()) as HealthResponse
+      const health = await readHealth(healthResp)
       expect(health.authRequired).toBe(true)
       expect(health.tools).toBeUndefined()
     } finally {
@@ -204,7 +205,7 @@ describe('MCP server /rpc auth skip', () => {
     try {
       // /health should show authRequired: false
       const healthResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
-      const health = (await healthResp.json()) as HealthResponse
+      const health = await readHealth(healthResp)
       expect(health.authRequired).toBe(false)
 
       // Connect a browser
@@ -354,9 +355,7 @@ describe('MCP auth boundary', () => {
     }
 
     try {
-      const healthResp = (await (
-        await fetch(`http://127.0.0.1:${httpPort}/health`)
-      ).json()) as HealthResponse
+      const healthResp = await readHealth(await fetch(`http://127.0.0.1:${httpPort}/health`))
       expect(healthResp.authRequired).toBe(false)
 
       const mcpResp = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
@@ -463,7 +462,10 @@ describe('Discovery PID liveness', () => {
     })
     try {
       const discoveryPath = await getDiscoveryPath()
-      const raw = (await Bun.file(discoveryPath).json()) as Pick<DiscoveryInfo, 'pid'>
+      const raw = expectDefined(
+        parseDiscoveryInfo(await Bun.file(discoveryPath).text()),
+        'discovery file'
+      )
       expect(raw.pid).toBe(process.pid)
     } finally {
       await handle.close()
