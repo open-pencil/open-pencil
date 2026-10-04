@@ -1,10 +1,11 @@
 import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
 
-import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
 import { arrowLinesSegments, equilateralArrowPoints } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
 
@@ -133,7 +134,6 @@ export function drawArrowHeads(
       const path = builder.detachAndDelete()
       r.fillPaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
       r.fillPaint.setAlphaf(opacity)
-      r.fillPaint.setShader(null)
       canvas.drawPath(path, r.fillPaint)
       path.delete()
     } else {
@@ -142,7 +142,6 @@ export function drawArrowHeads(
       r.strokePaint.setStrokeWidth(weight)
       r.strokePaint.setStrokeCap(r.ck.StrokeCap.Butt)
       r.strokePaint.setPathEffect(null)
-      r.strokePaint.setShader(null)
       for (const wing of arrowLinesSegments(endpoint.x, endpoint.y, endpoint.angle, weight)) {
         canvas.drawLine(wing.from.x, wing.from.y, wing.to.x, wing.to.y, r.strokePaint)
       }
@@ -150,6 +149,52 @@ export function drawArrowHeads(
   }
 }
 
+/**
+ * A gradient or image stroke paints through a shader, the way the same paint does as a fill.
+ * Both paints get it: a vector stroke's outline and an arrowhead are filled shapes drawn with
+ * `fillPaint`, so the shader has to be on whichever paint the draw helper reaches for.
+ * Returns false for a solid stroke, which paints through the paint's color instead.
+ */
+export function applyStrokeShader(
+  r: SkiaRenderer,
+  stroke: Stroke,
+  strokeIndex: number,
+  node: SceneNode,
+  graph: SceneGraph
+): boolean {
+  r.strokePaint.setShader(null)
+  r.fillPaint.setShader(null)
+  if (stroke.type.startsWith('GRADIENT') && stroke.gradientStops && stroke.gradientTransform) {
+    for (const paint of [r.strokePaint, r.fillPaint]) {
+      applyGradientFill(
+        r,
+        stroke,
+        node,
+        graph,
+        paint,
+        // Every stop resolves against this stroke's own binding, not the stop's position.
+        (color) =>
+          r.resolveStrokeColorInfo(
+            { ...stroke, type: 'SOLID', color, opacity: color.a, visible: true },
+            strokeIndex,
+            node,
+            graph
+          ).color
+      )
+    }
+    return true
+  }
+  if (stroke.type === 'IMAGE' && stroke.imageHash) {
+    let applied = false
+    for (const paint of [r.strokePaint, r.fillPaint]) {
+      applied = applyImageFill(r, stroke, node, graph, paint) || applied
+    }
+    return applied
+  }
+  return false
+}
+
+/** Leaves any shader in place: a shaded stroke's color is unused, but its alpha still applies. */
 export function configureStrokePaint(
   r: SkiaRenderer,
   node: SceneNode,

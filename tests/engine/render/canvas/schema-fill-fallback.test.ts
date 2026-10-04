@@ -7,8 +7,10 @@ import { applyFill } from '#core/canvas/fills'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
 function createRenderer() {
+  // A real CanvasKit shader is a WASM handle the caller deletes once the paint holds it.
+  const patternShader = { id: 'pattern-shader', delete: mock(() => undefined) }
   const picture = {
-    makeShader: mock(() => 'pattern-shader'),
+    makeShader: mock(() => patternShader),
     delete: mock(() => undefined)
   }
   const recorder = {
@@ -74,7 +76,9 @@ describe('schema fill fallback rendering', () => {
     }
 
     expect(applyFill(renderer, fill, node, graph)).toBe(true)
-    expect(renderer.fillPaint.setShader).toHaveBeenLastCalledWith('pattern-shader')
+    expect(renderer.fillPaint.setShader).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'pattern-shader' })
+    )
     expect(renderer.fillPaint.setColor).not.toHaveBeenCalledWith(['color', 0.2, 0.3, 0.4, 0.8])
   })
 

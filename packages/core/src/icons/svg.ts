@@ -407,10 +407,15 @@ export function scalePathInfos(
     }
     if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
     const scaledD = transformedPath.round(2).toString()
+    const fill = normalizeSVGPaint(path.fill)
+    const stroke = normalizeSVGPaint(path.stroke)
     return {
-      vectorNetwork: parseSVGPath(scaledD, path.fillRule),
-      fill: normalizeSVGPaint(path.fill),
-      stroke: normalizeSVGPaint(path.stroke),
+      // A stroke would also trace the closing edge of an open subpath in the fill region.
+      vectorNetwork: parseSVGPath(scaledD, path.fillRule, {
+        includeOpenRegions: fill !== null && stroke === null
+      }),
+      fill,
+      stroke,
       strokeWidth:
         path.strokeWidth * transformStrokeScale(path.transform) * Math.min(scaleX, scaleY),
       strokeCap: path.strokeCap,
