@@ -1,11 +1,15 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import type { AgentPresence, PersonPoint } from '@/app/presence/types'
+
 export interface RemotePeer {
   clientId: number
   name: string
   color: Color
-  cursor?: { x: number; y: number; pageId: string }
+  cursor?: PersonPoint
   selection?: string[]
+  /** Agents this person runs, as they publish them. */
+  agents: AgentPresence[]
 }
 
 export interface CollabState {

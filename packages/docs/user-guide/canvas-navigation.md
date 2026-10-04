@@ -65,7 +65,7 @@ Select a layer, hold <kbd>Option</kbd> on macOS or <kbd>Alt</kbd> on Windows/Lin
 
 Press <kbd>⌘</kbd><kbd>K</kbd> on macOS or <kbd>Ctrl</kbd> + <kbd>K</kbd> on Windows/Linux to search editor and application actions. Select a result to run it; unavailable actions remain subject to the current selection and document state.
 
-The palette also moves between pages. Before you type, it lists the pages you visited recently in this tab, most recent first, and **Go to page…** opens a list of every page. Typing a page name finds it too.
+The palette also moves between pages. Before you type, it lists the pages you visited recently in this tab, most recent first, and **Go to page…** opens a list of every page. Typing a page name finds it too. Pages where collaborators or AI agents are working list their names; the Pages panel marks the same pages with their colors.
 
 ## Tips
 

@@ -4,13 +4,10 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { componentDependencies } from '../document/component/dependencies'
 import { linkComponentPropertyValues } from '../document/component/values'
 import { createResourceResolver } from '../document/resource-reference'
-import {
-  createOccurrenceInterpreter,
-  type InstanceOccurrence,
-  type InterpretInstanceOptions
-} from './interpret'
+import { createOccurrenceInterpreter } from './interpret'
 import { materializeInstance } from './materialize-instance'
-import { occurrences } from './occurrence-path'
+import { occurrences } from './occurrence/path'
+import type { InstanceOccurrence, InterpretInstanceOptions } from './occurrence/types'
 import {
   linkInstanceSourceChildren,
   mapInstanceSourceChildren,

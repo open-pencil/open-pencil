@@ -1,9 +1,12 @@
-import type { Ref } from 'vue'
+import { watch, type Ref } from 'vue'
 import type { Awareness } from 'y-protocols/awareness'
 
-import { buildRemotePeers, remotePeersToCursors } from '@/app/collab/awareness'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { buildRemotePeers } from '@/app/collab/awareness'
 import type { CollabState } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'
+import { presenceOf, setOwnerColor, setPeers } from '@/app/presence/registry'
 
 type LocalAwarenessOptions = {
   state: Ref<CollabState>
@@ -50,8 +53,7 @@ export function createLocalAwarenessActions({
     )
 
     state.value.peers = peers
-    store.state.remoteCursors = remotePeersToCursors(peers, store.state.currentPageId)
-    store.requestRender()
+    setPeers(store, peers)
   }
 
   function setLocalName(name: string) {
@@ -61,4 +63,22 @@ export function createLocalAwarenessActions({
   }
 
   return { broadcastAwareness, updateCursor, updateSelection, updatePeersList, setLocalName }
+}
+
+/** Publish our agents to the room while connected; they take our collaborator color. */
+export function publishLocalAgents(
+  store: EditorStore,
+  getAwareness: () => Awareness | null,
+  color: Color
+): () => void {
+  setOwnerColor(store, color)
+  const stop = watch(
+    presenceOf(store).agents,
+    (agents) => getAwareness()?.setLocalStateField('agents', agents),
+    { immediate: true }
+  )
+  return () => {
+    stop()
+    setOwnerColor(store, null)
+  }
 }

@@ -1,7 +1,5 @@
 {
   "inThisRoom": "In diesem Raum",
-  "followingPeerStop": "Folge {name} (zum Stoppen klicken)",
-  "clickToFollowPeer": "Klicken, um {name} zu folgen",
   "yourName": "Dein Name",
   "enterYourName": "Deinen Namen eingeben",
   "shareThisFile": "Diese Datei teilen",
@@ -13,5 +11,17 @@
   "pasteRoomLinkOrId": "Raumlink oder ID einfügen",
   "connected": "Verbunden",
   "disconnect": "Verbindung trennen",
-  "share": "Teilen"
+  "share": "Teilen",
+  "follow": "{name} folgen",
+  "stopFollowing": "{name} nicht mehr folgen",
+  "followingPerson": "Du folgst {name}",
+  "followingAgent": "Du folgst {agent} ({owner})",
+  "stopFollowingShort": "Nicht mehr folgen",
+  "leaveRoom": "Raum verlassen",
+  "morePeople": "{count} weitere",
+  "renameAgent": "{name} umbenennen",
+  "agentName": "Agentenname",
+  "agentThinking": "Denkt nach",
+  "agentEditing": "Bearbeitet",
+  "agentIdle": "Inaktiv"
 }

@@ -74,6 +74,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 10,
               visible: true,
               align: 'OUTSIDE' as const,
@@ -100,6 +101,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 100,
               visible: false,
               align: 'OUTSIDE' as const,
@@ -125,6 +127,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 10,
               visible: true,
               align: 'CENTER' as const,
@@ -151,6 +154,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 10,
               visible: true,
               align: 'INSIDE' as const,
@@ -262,6 +266,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 5,
               visible: true,
               align: 'OUTSIDE' as const,
@@ -309,6 +314,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 2,
               visible: true,
               align: 'OUTSIDE' as const,
@@ -316,6 +322,7 @@ describe('computeVisualBounds', () => {
               opacity: 1
             },
             {
+              type: 'SOLID',
               weight: 8,
               visible: true,
               align: 'CENTER' as const,
@@ -323,6 +330,7 @@ describe('computeVisualBounds', () => {
               opacity: 1
             },
             {
+              type: 'SOLID',
               weight: 4,
               visible: true,
               align: 'INSIDE' as const,
@@ -357,6 +365,7 @@ describe('computeVisualBounds', () => {
         visible: true,
         strokes: [
           {
+            type: 'SOLID',
             weight: 1,
             visible: true,
             align: 'INSIDE' as const,
@@ -375,6 +384,7 @@ describe('computeVisualBounds', () => {
         visible: true,
         strokes: [
           {
+            type: 'SOLID',
             weight: 1,
             visible: true,
             align: 'OUTSIDE' as const,
@@ -419,7 +429,7 @@ describe('computeVisualBounds', () => {
         height: 0,
         visible: true,
         strokeCap: 'ARROW_EQUILATERAL' as const,
-        strokes: [{ weight: 4, visible: true, align: 'CENTER' as const }],
+        strokes: [{ type: 'SOLID', weight: 4, visible: true, align: 'CENTER' as const }],
         childIds: []
       }
     }

@@ -87,7 +87,7 @@ export async function renderRoots<Artwork>(
 
   const nodes: SceneNode[] = []
   for (const root of roots) {
-    const node = await renderNode(services, graph, root, parentId)
+    const node = await renderNode(services, graph, root, parentId, options.onNode)
     if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
     if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
     nodes.push(node)
@@ -511,22 +511,20 @@ async function renderArtworkNode<Artwork>(
   return node
 }
 
-async function renderNode<Artwork>(
-  services: DesignJSXServices<Artwork>,
+export interface ElementOverrides {
+  overrides: Partial<SceneNode>
+  /** Variable IDs by bound field, such as `fills/0/color`. */
+  bindings: Record<string, string>
+}
+
+/** The fields and variable bindings an element's props set on a `nodeType` node under `parentId`. */
+export function elementOverrides(
   graph: SceneGraph,
+  nodeType: NodeType,
   tree: TreeNode,
   parentId: string
-): Promise<SceneNode> {
-  if (tree.type === 'icon' || tree.type === 'svg')
-    return renderArtworkNode(services, graph, tree, parentId)
-  if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
-
-  const nodeType = TYPE_MAP[tree.type]
-  if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
-
-  const parent = graph.getNode(parentId)
-  const parentLayout = parent?.layoutMode ?? 'NONE'
-
+): ElementOverrides {
+  const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const isText = nodeType === 'TEXT'
   const { props, bindings } = preparePropsForRender(graph, tree.props, isText, parentId)
   const overrides = {
@@ -541,14 +539,43 @@ async function renderNode<Artwork>(
     if (childText) overrides.text = childText
     else if (typeof propText === 'string') overrides.text = propText
   }
+  return { overrides, bindings }
+}
 
+async function renderNode<Artwork>(
+  services: DesignJSXServices<Artwork>,
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  onNode?: RenderOptions['onNode']
+): Promise<SceneNode> {
+  const node = await renderNodeContent(services, graph, tree, parentId, onNode)
+  onNode?.(tree, node)
+  return node
+}
+
+async function renderNodeContent<Artwork>(
+  services: DesignJSXServices<Artwork>,
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  onNode?: RenderOptions['onNode']
+): Promise<SceneNode> {
+  if (tree.type === 'icon' || tree.type === 'svg')
+    return renderArtworkNode(services, graph, tree, parentId)
+  if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
+
+  const nodeType = TYPE_MAP[tree.type]
+  if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
+
+  const { overrides, bindings } = elementOverrides(graph, nodeType, tree, parentId)
   const node = graph.createNode(nodeType, parentId, overrides)
   applyBindings(graph, node.id, bindings)
 
   for (const child of tree.children) {
     if (typeof child === 'string') continue
     if (isTreeNode(child)) {
-      await renderNode(services, graph, child, node.id)
+      await renderNode(services, graph, child, node.id, onNode)
     }
   }
 

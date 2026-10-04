@@ -32,8 +32,12 @@ function codeEditor() {
   return editor.page.locator('[data-slot="code-editor"] .cm-content')
 }
 
+/** Opens the editor; with nothing selected that means choosing to write new Design JSX. */
 async function openCodePanel() {
   await codeTab().click()
+  const writeJSX = codePanel().getByRole('button', { name: 'Write JSX' })
+  await expect(codeEditor().or(writeJSX)).toBeVisible()
+  if (await writeJSX.isVisible()) await writeJSX.click()
   await expect(codeEditor()).toBeVisible()
 }
 
@@ -204,7 +208,8 @@ test('Tailwind JSX is generated read-only in the same editor', async () => {
   await openCodePanel()
   await selectSource('Tailwind JSX')
   await expect(editor.page.getByTestId('code-panel-status')).toContainText('Generated, read only')
-  await expect(codeEditor()).toHaveAttribute('contenteditable', 'false')
+  // It still takes a cursor, which marks the layer of the element around it.
+  await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
 })
 
 test('copy button works and shows confirmation', async () => {

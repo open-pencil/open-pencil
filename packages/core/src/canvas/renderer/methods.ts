@@ -13,7 +13,7 @@ import * as Overlays from '#core/canvas/overlays'
 import * as AIOverlays from '#core/canvas/overlays/ai'
 import * as PenOverlay from '#core/canvas/pen-overlay'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import type { RenderOverlays } from '#core/canvas/renderer/types'
+import type { PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
 import * as Rulers from '#core/canvas/rulers'
 import * as SceneRender from '#core/canvas/scene'
 import { renderEffects as renderShadowEffects } from '#core/canvas/shadows'
@@ -162,12 +162,8 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     PenOverlay.drawPenOverlay(this, canvas, penState)
   },
 
-  drawRemoteCursors(
-    canvas: Canvas,
-    graph: SceneGraph,
-    cursors?: RenderOverlays['remoteCursors']
-  ): void {
-    PenOverlay.drawRemoteCursors(this, canvas, graph, cursors)
+  drawPresenceCursors(canvas: Canvas, graph: SceneGraph, cursors?: PresenceCursor[]): void {
+    Overlays.drawPresenceCursors(this, canvas, graph, cursors)
   },
 
   drawRulers(

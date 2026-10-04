@@ -33,5 +33,5 @@ export function gradient(stops: GradientStop[]): Fill {
 }
 
 export function thinStroke(color: Color): Stroke[] {
-  return [{ color, weight: 1, opacity: 1, visible: true, align: 'INSIDE' as const }]
+  return [{ type: 'SOLID', color, weight: 1, opacity: 1, visible: true, align: 'INSIDE' as const }]
 }

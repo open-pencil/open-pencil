@@ -1,7 +1,5 @@
 {
   "inThisRoom": "このルーム内",
-  "followingPeerStop": "{name} をフォロー中 (クリックして停止)",
-  "clickToFollowPeer": "クリックして {name} をフォロー",
   "yourName": "お名前",
   "enterYourName": "名前を入力してください",
   "shareThisFile": "このファイルを共有",
@@ -13,5 +11,17 @@
   "pasteRoomLinkOrId": "ルームのリンクまたはIDを貼り付け",
   "connected": "接続済み",
   "disconnect": "切断",
-  "share": "共有"
+  "share": "共有",
+  "follow": "{name}をフォロー",
+  "stopFollowing": "{name}のフォローを解除",
+  "followingPerson": "{name}をフォロー中",
+  "followingAgent": "{agent}（{owner}）をフォロー中",
+  "stopFollowingShort": "フォローを解除",
+  "leaveRoom": "ルームを退出",
+  "morePeople": "他{count}人",
+  "renameAgent": "{name}の名前を変更",
+  "agentName": "エージェント名",
+  "agentThinking": "考え中",
+  "agentEditing": "編集中",
+  "agentIdle": "待機中"
 }

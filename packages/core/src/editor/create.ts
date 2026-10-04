@@ -29,6 +29,7 @@ import { createComponentActions } from './components'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
+import { createDesignIssueActions } from './issues'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createSelectionActions } from './selection'
@@ -218,6 +219,7 @@ export function createEditor(options?: EditorOptions) {
   const selection = createSelectionActions(ctx)
   const pages = createPageActions(ctx)
   const guides = createGuideActions(ctx)
+  const designIssues = createDesignIssueActions(ctx)
   const shapes = createShapeActions(ctx)
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
@@ -331,6 +333,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Canvas and frame guides
     ...guides,
+    ...designIssues,
 
     // Shapes & tools
     ...shapes,

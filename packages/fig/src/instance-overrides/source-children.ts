@@ -1,8 +1,8 @@
 import { setInstanceOverride, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import type { InstanceOccurrence } from './interpret'
 import type { MaterializedInstance } from './materialize-instance'
-import { occurrences } from './occurrence-path'
+import { occurrences } from './occurrence/path'
+import type { InstanceOccurrence } from './occurrence/types'
 
 export interface MaterializedComponentOccurrence {
   occurrence: InstanceOccurrence
@@ -88,6 +88,8 @@ export function linkInstanceSourceChildren(
         throw new Error(`Missing materialized correspondence for ${child.sourceId}`)
       }
       links.push({ owner, target: targetNode, source: sourceNode })
+      // Slot content is the instance's own; its instances are owners in their own right.
+      if (child.slotContentId) continue
       if (child.mainComponentId === counterpart.mainComponentId) {
         match(child, counterpart, owner, sourceNodes)
       }
@@ -136,6 +138,7 @@ export function mapInstanceSourceChildren(
       if (!node) throw new Error(`Unmaterialized source child ${counterpart.sourceId}`)
       result.set(child, node.id)
       if (child.mainComponentId !== null) expand(child)
+      else if (child.slotContentId) for (const content of child.children) visit(content)
       else matchChildren(child, counterpart, nodes)
     }
   }

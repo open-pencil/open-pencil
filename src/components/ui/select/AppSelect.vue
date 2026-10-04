@@ -76,6 +76,7 @@ const selectedLabel = computed(
               <icon-lucide-check class="size-3 text-accent" />
             </SelectItemIndicator>
             <SelectItemText>{{ opt.label }}</SelectItemText>
+            <slot name="option-end" :option="opt" />
           </SelectItem>
         </SelectViewport>
         <SelectScrollDownButton class="flex items-center justify-center py-0.5 text-muted">

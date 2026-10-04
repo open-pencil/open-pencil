@@ -29,7 +29,11 @@ export function codeEditorTheme(dark: boolean) {
           fontSize: '12px'
         },
         '&.cm-focused': { outline: 'none' },
-        '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)', lineHeight: '1.65' },
+        '.cm-scroller': {
+          overflow: 'auto',
+          fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)',
+          lineHeight: '1.65'
+        },
         '.cm-content': { padding: '10px 0', caretColor: 'var(--color-accent)' },
         '.cm-line': { padding: '0 8px' },
         '.cm-gutters': {
@@ -97,3 +101,12 @@ export function codeEditorTheme(dark: boolean) {
     )
   ]
 }
+
+/** Compact read-only code in chat tool calls, layered over `codeEditorTheme`. */
+export const codeViewerTheme = EditorView.theme({
+  '&': { maxHeight: '16rem', fontSize: '10.5px', backgroundColor: 'var(--color-input)' },
+  '.cm-scroller': { lineHeight: '1.55' },
+  '.cm-content': { padding: '6px 0' },
+  '.cm-line': { padding: '0 6px' },
+  '.cm-gutters': { backgroundColor: 'var(--color-input)' }
+})

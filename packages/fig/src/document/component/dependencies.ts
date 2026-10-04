@@ -1,4 +1,5 @@
 import {
+  assignedSlotContent,
   forEachOverrideRecord,
   symbolDataOf,
   type ComponentPropAssignment
@@ -33,8 +34,9 @@ export function componentDependencies(
     add(override?.overriddenSymbolID)
     for (const definition of (source.componentPropDefs as DependencyDefinition[] | undefined) ??
       []) {
-      if (definition.type === 'INSTANCE_SWAP') {
+      if (definition.type === 'INSTANCE_SWAP')
         assignment({ value: definition.initialValue, varValue: definition.varValue })
+      if (definition.type === 'INSTANCE_SWAP' || definition.type === 'SLOT') {
         for (const preferred of definition.preferredValues?.instanceSwapValues ?? []) {
           if (!preferred.key) continue
           const id = resolveReference?.({
@@ -54,6 +56,20 @@ export function componentDependencies(
       | ComponentPropAssignment[]
       | undefined) ?? [])
       assignment(value)
+  })
+  return dependencies
+}
+
+/** Content frames that instance slot assignments name; they live on the internal canvas. */
+export function slotContentDependencies(node: NodeChange): ReadonlySet<string> {
+  const dependencies = new Set<string>()
+  forEachOverrideRecord(node, (source) => {
+    for (const value of (source.componentPropAssignments as
+      | ComponentPropAssignment[]
+      | undefined) ?? []) {
+      const content = assignedSlotContent(value.varValue?.value)
+      if (content) dependencies.add(guidToString(content))
+    }
   })
   return dependencies
 }

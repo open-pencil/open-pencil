@@ -15,17 +15,16 @@ import {
   listAutomationDocuments,
   resolveAutomationTarget,
   responseWithTarget,
-  stripAutomationTargetArgs
+  stripAutomationTargetArgs,
+  type AutomationTarget,
+  type UnknownRecord
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
 
 type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 
-type CommandHandler = (
-  target: ReturnType<typeof resolveAutomationTarget>,
-  args: unknown
-) => Promise<unknown>
+type CommandHandler = (target: AutomationTarget, args: unknown) => Promise<unknown>
 
 export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
   const handleEval = createAutomationEvalHandler(makeFigma)
@@ -41,6 +40,22 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     close_file: handleCloseFile,
     new_document: handleNewDocument,
     open_file: handleOpenFile
+  }
+
+  /** Runs a command on a resolved document page, loading the page first if it was never shown. */
+  async function handleTargetCommand(
+    target: AutomationTarget,
+    command: string,
+    args: UnknownRecord
+  ): Promise<unknown> {
+    if (!(await target.store.preparePageNodes(target.pageId))) {
+      throw new Error(`Page "${target.pageId}" was closed before it finished loading`)
+    }
+    const handler = commandHandlers[command]
+    const result = handler
+      ? await handler(target, args)
+      : await handleRPCFallback(target, command, args)
+    return responseWithTarget(result, target)
   }
 
   async function handleRequest(
@@ -59,13 +74,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
 
     const rawArgs = isUnknownRecord(args) ? args : {}
     const target = resolveAutomationTarget(store, rawArgs)
-    const targetArgs = stripAutomationTargetArgs(rawArgs)
-    const handler = commandHandlers[command]
-    const result = handler
-      ? await handler(target, targetArgs)
-      : await handleRPCFallback(target, command, targetArgs)
-    return responseWithTarget(result, target)
+    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs))
   }
 
-  return { handleRequest }
+  return { handleRequest, handleTargetCommand }
 }

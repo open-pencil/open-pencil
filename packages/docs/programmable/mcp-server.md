@@ -306,13 +306,18 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `analyze_typography` | Analyze font/size/weight distribution |
 | `analyze_spacing` | Analyze gap and padding values |
 | `analyze_clusters` | Detect repeated patterns (potential components) |
+| `lint` | Check accessibility and consistency issues, with fixes and suggestions |
+| `lint_fix` | Apply safe lint fixes, and optionally the first suggestion of each finding |
 
 ### Diff
 
 | Tool | Description |
 |------|-------------|
-| `diff_create` | Create a snapshot of the current document state |
-| `diff_show` | Show differences between the current state and a snapshot |
+| `diff_create` | Patch that turns one node tree into another, as JSX attribute changes |
+| `diff_jsx` | Structural diff between two nodes as design JSX |
+| `diff_show` | Preview the patch that setting JSX attributes on a node would produce |
+| `diff_apply` | Apply a patch after checking the nodes still match its old values |
+| `diff_visual` | Pixel diff between two rendered nodes, returned as an image |
 
 ### Navigation
 

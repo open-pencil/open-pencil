@@ -1,12 +1,12 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
-import { componentDependencies } from './component/dependencies'
+import { componentDependencies, slotContentDependencies } from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
 import { styleDependencies } from './style-dependencies'
 
 export interface SceneDependencyClosure {
-  /** Live page trees plus explicitly referenced component trees. */
+  /** Live page trees plus explicitly referenced component and slot content trees. */
   contentIds: ReadonlySet<string>
   /** Required ownership containers, without automatically including their siblings. */
   ancestorIds: ReadonlySet<string>
@@ -14,6 +14,8 @@ export interface SceneDependencyClosure {
   missingIds: ReadonlySet<string>
   /** Components instances or defaults reference that Figma has since deleted. */
   missingComponentIds: ReadonlySet<string>
+  /** Slot content frames instance assignments name that the archive does not contain. */
+  missingSlotContentIds: ReadonlySet<string>
   externalPreferredKeys: ReadonlySet<string>
 }
 
@@ -67,6 +69,8 @@ export function collectSceneDependencies(
   const missingIds = new Set<string>()
   const missingComponentIds = new Set<string>()
   const componentReferences = new Set<string>()
+  const slotContentReferences = new Set<string>()
+  const missingSlotContentIds = new Set<string>()
   validatePageSelection(sources, pageIds)
   const pending = changes
     .filter(
@@ -81,6 +85,7 @@ export function collectSceneDependencies(
     const node = sources.get(id)
     if (!node) {
       if (componentReferences.has(id)) missingComponentIds.add(id)
+      else if (slotContentReferences.has(id)) missingSlotContentIds.add(id)
       else missingIds.add(id)
       continue
     }
@@ -89,12 +94,22 @@ export function collectSceneDependencies(
       externalPreferredKeys.add(key)
     )
     for (const component of components) componentReferences.add(component)
+    const slotContent = slotContentDependencies(node)
+    for (const content of slotContent) slotContentReferences.add(content)
     pending.push(
       ...(children.get(id) ?? []).flatMap((child) => idOf(child) ?? []),
       ...styleDependencies(node, resolveReference, availableIds),
-      ...components
+      ...components,
+      ...slotContent
     )
   }
   collectAncestors(sources, contentIds, ancestorIds, missingIds)
-  return { contentIds, ancestorIds, missingIds, missingComponentIds, externalPreferredKeys }
+  return {
+    contentIds,
+    ancestorIds,
+    missingIds,
+    missingComponentIds,
+    missingSlotContentIds,
+    externalPreferredKeys
+  }
 }

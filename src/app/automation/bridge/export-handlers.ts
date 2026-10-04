@@ -9,20 +9,17 @@ import type { AutomationTarget } from '@/app/automation/bridge/target'
 type ExportArgs = { nodeIds?: string[]; scope?: 'page'; scale?: number; format?: string }
 
 /** The requested layers, every layer of the target page for a page export, or the selection. */
-async function exportNodeIds(target: AutomationTarget, args: ExportArgs | undefined) {
+function exportNodeIds(target: AutomationTarget, args: ExportArgs | undefined): string[] {
   const store = target.store
   if (args?.nodeIds) return args.nodeIds
   if (args?.scope !== 'page') return [...store.state.selectedIds]
-  // A `.fig` page gets its layers, fonts and layout when first shown; prepare them without
-  // showing it, so text and auto layout render as they do on screen.
-  await store.preparePageNodes(target.pageId)
   return store.graph.getChildren(target.pageId).map((node) => node.id)
 }
 
 export async function handleExport(target: AutomationTarget, args: unknown): Promise<unknown> {
   const store = target.store
   const exportArgs = args as ExportArgs | undefined
-  const nodeIds = await exportNodeIds(target, exportArgs)
+  const nodeIds = exportNodeIds(target, exportArgs)
   if (nodeIds.length === 0) throw new Error('No nodes to export')
   const data = await store.renderExportImage(
     nodeIds,

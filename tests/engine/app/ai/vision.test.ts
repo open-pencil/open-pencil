@@ -33,7 +33,7 @@ describe('isolated visual inspection', () => {
           model: {} as LanguageModel,
           role: {
             requestedRole: 'vision',
-            profile: { maxOutputTokens: 8000, reasoningEffort: 'low' },
+            profile: { maxOutputTokens: 8000, thinkingLevel: 'low' },
             connection: { providerID: 'openrouter' }
           }
         }) as never,
