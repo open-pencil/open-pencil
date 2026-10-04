@@ -20,6 +20,7 @@ import { fontResolver } from '#core/text/resolver'
 import { createAlignmentActions } from './alignment'
 import { createClipboardBridge } from './bridges/clipboard'
 import { createComponentBridge } from './bridges/components'
+import { createLintFixBridge } from './bridges/lint'
 import { createStructureBridge } from './bridges/structure'
 import { createUndoBridge } from './bridges/undo'
 import { createClipboardActions } from './clipboard'
@@ -29,6 +30,7 @@ import { createComponentActions } from './components'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
+import { createDesignIssueActions } from './issues'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createSelectionActions } from './selection'
@@ -218,6 +220,7 @@ export function createEditor(options?: EditorOptions) {
   const selection = createSelectionActions(ctx)
   const pages = createPageActions(ctx)
   const guides = createGuideActions(ctx)
+  const designIssues = createDesignIssueActions(ctx)
   const shapes = createShapeActions(ctx)
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
@@ -233,6 +236,7 @@ export function createEditor(options?: EditorOptions) {
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
   const undoBridge = createUndoBridge(undoActions, selection)
+  const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
 
   function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
     _ck = ck
@@ -331,6 +335,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Canvas and frame guides
     ...guides,
+    ...designIssues,
 
     // Shapes & tools
     ...shapes,
@@ -368,7 +373,10 @@ export function createEditor(options?: EditorOptions) {
     ...componentBridge,
 
     // Structure — bridge functions that need selectedNodes
-    ...structureBridge
+    ...structureBridge,
+
+    // Lint fixes, which touch nodes, structure and deletion in one undo step
+    ...lintFixBridge
   }
 }
 

@@ -12,6 +12,8 @@ import { nextTick, ref, watch } from 'vue'
 import { useEditorCommands, useI18n, formatShortcut } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { setDesignIssuesOnCanvas } from '@/app/settings/preferences/apply'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -164,6 +166,16 @@ watch(open, (v) => {
             class="absolute left-2 size-3.5"
           />
           <span class="flex-1">{{ panels.multiplayerCursors }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          :class="itemCls"
+          @select.prevent="setDesignIssuesOnCanvas(!appPreferences.designCheck.showOnCanvas)"
+        >
+          <icon-lucide-check
+            v-if="appPreferences.designCheck.showOnCanvas"
+            class="absolute left-2 size-3.5"
+          />
+          <span class="flex-1">{{ menuText.designIssues }}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenuPortal>

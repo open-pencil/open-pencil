@@ -1,4 +1,5 @@
 import type { EditorState } from '@open-pencil/core/editor'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { PresentationColorSpace } from '#vue/canvas/surface/color-space'
 
@@ -24,6 +25,11 @@ export interface UseCanvasOptions {
    * When omitted, the composable falls back to viewport and URL-param logic.
    */
   showRulers?: boolean
+  /**
+   * Screen rectangles of UI floating over this canvas, in canvas CSS pixels, read every frame.
+   * Overlays that pin to the viewport edge, such as issue edge pins, keep clear of them.
+   */
+  getOverlayObstacles?: () => readonly Rect[]
   /**
    * Keeps the drawing buffer after presenting frames.
    *

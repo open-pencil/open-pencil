@@ -84,6 +84,8 @@ export const SIZE_PILL_TEXT_OFFSET_Y = 13
 
 export const MARQUEE_FILL_ALPHA = 0.08
 export const SELECTION_DASH_ALPHA = 0.6
+/** Tint inside the layer of the code element around the cursor, under its hover outline. */
+export const CODE_FOCUS_FILL_ALPHA = 0.1
 export const DROP_HIGHLIGHT_ALPHA = 0.8
 export const DROP_HIGHLIGHT_STROKE = 2
 
@@ -134,6 +136,27 @@ export const FLASH_STROKE_WIDTH = 2
 export const FLASH_PADDING = 5
 export const FLASH_OVERSHOOT = 30
 export const FLASH_RADIUS = 4
+
+export const ISSUE_ERROR_COLOR = { r: 0.949, g: 0.282, b: 0.133, a: 1 } satisfies Color // #F24822
+export const ISSUE_WARNING_COLOR = { r: 1, g: 0.702, b: 0.078, a: 1 } satisfies Color // #FFB314
+export const ISSUE_INFO_COLOR = { r: 0.55, g: 0.55, b: 0.55, a: 1 } satisfies Color
+export const ISSUE_MARKER_HEIGHT = 16
+export const ISSUE_MARKER_PADDING_X = 5
+/** Gap between a layer's corner and its marker; clears the 8px selection handle. */
+export const ISSUE_MARKER_OFFSET = 4
+/** Markers closer than this merge into one. */
+export const ISSUE_MARKER_GAP = 2
+export const ISSUE_MARKER_VIEWPORT_INSET = 4
+/** Layers smaller than this on screen pass their marker to an ancestor. */
+export const ISSUE_MARKER_MIN_TARGET = 24
+export const ISSUE_MARKER_MAX_COUNT = 99
+/** Edge pins closer than this along the viewport edge merge into one. */
+export const ISSUE_EDGE_MERGE_GAP = 24
+/** Length of the chevron an edge pin points with, beyond its ring. */
+export const ISSUE_EDGE_ARROW = 5
+export const ISSUE_MARKER_RING_WIDTH = 1.5
+export const ISSUE_HIGHLIGHT_STROKE_WIDTH = 1.5
+export const ISSUE_HIGHLIGHT_FILL_ALPHA = 0.08
 
 export const AI_ACTIVE_COLOR = { r: 0.26, g: 0.52, b: 0.96 }
 export const AI_DONE_COLOR = { r: 0.16, g: 0.73, b: 0.36 }
@@ -229,30 +252,30 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'OpenRouter',
     keyPlaceholder: 'sk-or-…',
     keyURL: 'https://openrouter.ai/keys',
-    defaultModel: 'anthropic/claude-sonnet-5',
+    defaultModel: 'anthropic/claude-sonnet-5.5',
     supportsCustomModel: true,
     models: [
       {
-        id: 'anthropic/claude-sonnet-5',
-        name: 'Claude Sonnet 5',
+        id: 'anthropic/claude-sonnet-5.5',
+        name: 'Claude Sonnet 5.5',
         tag: 'Best for design',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'anthropic/claude-opus-5',
-        name: 'Claude Opus 5',
-        tag: 'Smartest',
+        id: 'anthropic/claude-opus-5.5',
+        name: 'Claude Opus 5.5',
+        tag: 'Deep reasoning',
         capabilities: ['tools', 'vision']
       },
       {
         id: 'anthropic/claude-fable-5.1',
         name: 'Claude Fable 5.1',
-        tag: 'Latest Anthropic',
+        tag: 'Most capable',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'openai/gpt-5.6',
-        name: 'GPT-5.6',
+        id: 'openai/gpt-6.1-sol',
+        name: 'GPT-6.1 Sol',
         tag: 'Latest OpenAI',
         capabilities: ['tools', 'vision']
       },
@@ -275,8 +298,18 @@ export const AI_PROVIDERS: AIProviderDef[] = [
         tag: 'Vision + code',
         capabilities: ['tools', 'vision']
       },
-      { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', tag: 'Free' },
-      { id: 'openai/gpt-oss-120b:free', name: 'GPT-OSS 120B', tag: 'Free' }
+      {
+        id: 'qwen/qwen3.8-27b:free',
+        name: 'Qwen3.8 27B',
+        tag: 'Free',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'google/gemma-4-31b-it:free',
+        name: 'Gemma 4 31B',
+        tag: 'Free',
+        capabilities: ['tools', 'vision']
+      }
     ]
   },
   {
@@ -284,24 +317,24 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'Anthropic',
     keyPlaceholder: 'sk-ant-…',
     keyURL: 'https://console.anthropic.com/settings/keys',
-    defaultModel: 'claude-sonnet-5',
+    defaultModel: 'claude-sonnet-5-5',
     models: [
       {
-        id: 'claude-sonnet-5',
-        name: 'Claude Sonnet 5',
+        id: 'claude-sonnet-5-5',
+        name: 'Claude Sonnet 5.5',
         tag: 'Best for design',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'claude-opus-5',
-        name: 'Claude Opus 5',
-        tag: 'Smartest',
+        id: 'claude-opus-5-5',
+        name: 'Claude Opus 5.5',
+        tag: 'Deep reasoning',
         capabilities: ['tools', 'vision']
       },
       {
         id: 'claude-fable-5-1',
         name: 'Claude Fable 5.1',
-        tag: 'Latest',
+        tag: 'Most capable',
         capabilities: ['tools', 'vision']
       }
     ]
@@ -311,12 +344,16 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'OpenAI',
     keyPlaceholder: 'sk-…',
     keyURL: 'https://platform.openai.com/api-keys',
-    defaultModel: 'gpt-5.6',
+    defaultModel: 'gpt-6.1-sol',
     models: [
-      { id: 'gpt-5.6', name: 'GPT-5.6', tag: 'Best', capabilities: ['tools', 'vision'] },
-      { id: 'gpt-5.5', name: 'GPT-5.5', capabilities: ['tools', 'vision'] },
-      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', tag: 'Fast', capabilities: ['tools', 'vision'] },
-      { id: 'gpt-5.4-nano', name: 'GPT-5.4 nano', tag: 'Cheap', capabilities: ['tools', 'vision'] }
+      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', tag: 'Best', capabilities: ['tools', 'vision'] },
+      {
+        id: 'gpt-6-astra',
+        name: 'GPT-6 Astra',
+        tag: 'Smartest',
+        capabilities: ['tools', 'vision']
+      },
+      { id: 'gpt-6-luna', name: 'GPT-6 Luna', tag: 'Fast', capabilities: ['tools', 'vision'] }
     ]
   },
   {
@@ -488,6 +525,7 @@ export const SECTION_DEFAULT_FILL: Fill = {
 }
 
 export const SECTION_DEFAULT_STROKE: Stroke = {
+  type: 'SOLID',
   color: { r: 0.55, g: 0.55, b: 0.55, a: 1 },
   weight: 1,
   opacity: 1,

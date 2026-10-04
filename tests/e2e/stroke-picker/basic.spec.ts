@@ -102,6 +102,7 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
     }
     if (owner && owner.id !== store.state.currentPageId) await store.switchPage(owner.id)
     const stroke = {
+      type: 'SOLID',
       color: { r: 0.9, g: 0.9, b: 0.92, a: 1 },
       weight: 1,
       opacity: 1,

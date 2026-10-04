@@ -177,9 +177,10 @@ openpencil lint design.fig
 openpencil lint design.pen --preset strict
 openpencil lint design.fig --rule color-contrast
 openpencil lint design.fig --list-rules
+openpencil lint design.fig --fix -o fixed.fig
 ```
 
-Use `--json` for machine-readable output.
+Use `--json` for machine-readable output; each message carries its `fix` and `suggestions` as data. `--fix` applies the safe fixes — binding colors to the color variable they match and rounding geometry to whole pixels — and writes the result to the `.fig` file given with `-o`.
 
 ## JSON Output
 

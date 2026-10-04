@@ -56,6 +56,11 @@ Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
 - Viewport culling skips off-screen nodes; unclipped parents are not culled because children may extend beyond bounds.
 - Overscan images accelerate navigation; settled scenes rasterize existing retained pictures at the live viewport size and origin. Pixel-grid alignment alone does not guarantee Skia anti-aliasing parity. Keep settlement pending until the viewport pass completes; do not add a second viewport image cache.
 
+### Paints
+
+- A gradient or image paint builds a Skia shader through `applyGradientFill` and `applyImageFill` (`packages/core/src/canvas/fills.ts`), which take the target `Paint`, so a stroke reuses them instead of a second shader path.
+- `forVisibleStrokes` (`packages/core/src/canvas/scene.ts`) is where a stroke's shader is set and cleared; stroke draw helpers take an already-configured `strokePaint` and must not reset its shader.
+
 ### Caches
 
 - Bounded rendering caches share `packages/core/src/cache/resource.ts` for recency, count/weight accounting, and removal disposal. Domain adapters own keys, font/page/dependency invalidation, and sizing units; use non-touching `peek()` for FIFO or planning reads. Rejected insertions leave ownership with the caller.

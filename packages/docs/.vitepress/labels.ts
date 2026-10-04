@@ -15,6 +15,7 @@ export interface SidebarLabels {
   autoLayout: string
   components: string
   variables: string
+  checkingDesigns: string
   overview: string
   gettingStarted: string
   features: string
@@ -165,6 +166,7 @@ export const EN: SidebarLabels = {
   autoLayout: 'Auto Layout',
   components: 'Components',
   variables: 'Variables',
+  checkingDesigns: 'Checking Designs',
   overview: 'Overview',
   gettingStarted: 'Getting Started',
   features: 'Features',
@@ -190,6 +192,7 @@ export const DE: SidebarLabels = {
   autoLayout: 'Auto-Layout',
   components: 'Komponenten',
   variables: 'Variablen',
+  checkingDesigns: 'Designs prüfen',
   overview: 'Überblick',
   gettingStarted: 'Erste Schritte',
   features: 'Funktionen',
@@ -215,6 +218,7 @@ export const IT: SidebarLabels = {
   autoLayout: 'Auto-layout',
   components: 'Componenti',
   variables: 'Variabili',
+  checkingDesigns: 'Verificare i design',
   overview: 'Panoramica',
   gettingStarted: 'Per iniziare',
   features: 'Funzionalità',
@@ -240,6 +244,7 @@ export const FR: SidebarLabels = {
   autoLayout: 'Mise en page auto',
   components: 'Composants',
   variables: 'Variables',
+  checkingDesigns: 'Vérifier les designs',
   overview: 'Vue d’ensemble',
   gettingStarted: 'Premiers pas',
   features: 'Fonctionnalités',
@@ -265,6 +270,7 @@ export const ES: SidebarLabels = {
   autoLayout: 'Auto-layout',
   components: 'Componentes',
   variables: 'Variables',
+  checkingDesigns: 'Revisar diseños',
   overview: 'Resumen',
   gettingStarted: 'Primeros pasos',
   features: 'Características',
@@ -290,6 +296,7 @@ export const PL: SidebarLabels = {
   autoLayout: 'Auto-layout',
   components: 'Komponenty',
   variables: 'Zmienne',
+  checkingDesigns: 'Sprawdzanie projektów',
   overview: 'Przegląd',
   gettingStarted: 'Rozpoczęcie pracy',
   features: 'Funkcje',
@@ -315,6 +322,7 @@ export const RU: SidebarLabels = {
   autoLayout: 'Авто-раскладка',
   components: 'Компоненты',
   variables: 'Переменные',
+  checkingDesigns: 'Проверка дизайна',
   overview: 'Обзор',
   gettingStarted: 'Начало работы',
   features: 'Возможности',

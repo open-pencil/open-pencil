@@ -33,6 +33,7 @@ export function isStrokeCapValue(value: string): value is StrokeCap {
   return (STROKE_CAP_VALUES as string[]).includes(value)
 }
 export const DEFAULT_STROKE: Stroke = {
+  type: 'SOLID',
   color: BLACK,
   weight: 1,
   opacity: 1,
