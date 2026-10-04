@@ -61,6 +61,16 @@ describe('slots', () => {
     expect(reset?.children.map((child) => child.name)).toEqual(['Default'])
   })
 
+  // Recorded in live Figma: resetting a main component's slot neither throws nor changes it.
+  test('resetSlot on a main component slot keeps its content', () => {
+    const { api, component } = setup()
+    const slot = component.createSlot()
+    slot.appendChild(Object.assign(api.createText(), { name: 'Main' }))
+    slot.resetSlot()
+    expect(slot.children.map((child) => child.name)).toEqual(['Main'])
+    expect(Object.keys(component.componentPropertyDefinitions)).toHaveLength(1)
+  })
+
   test('addComponentProperty takes a SLOT description and settings, unset counts reading null', () => {
     const { component } = setup()
     const key = component.addComponentProperty('Added', 'SLOT', '', {
