@@ -176,6 +176,7 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'view-rulers', label: 'Rulers', checkbox: true },
       { id: 'view-multiplayer-cursors', label: 'Multiplayer Cursors', checkbox: true },
+      { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
       { type: 'separator' },
       {
         id: 'theme',

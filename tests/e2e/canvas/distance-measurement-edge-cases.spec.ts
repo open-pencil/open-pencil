@@ -33,6 +33,7 @@ test('renders containment, multi-selection, rotation, and overlap edge cases', a
       fills: fill(1, 1, 1),
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0.7, g: 0.7, b: 0.7, a: 1 },
           weight: 1,
           opacity: 1,

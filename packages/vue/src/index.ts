@@ -23,6 +23,8 @@ export type { PresentationColorSpace } from '#vue/canvas/surface/color-space'
 export { useCanvas } from '#vue/canvas/surface/use'
 export type { UseCanvasOptions } from '#vue/canvas/surface/use'
 export { useCanvasInput } from '#vue/canvas/useCanvasInput'
+export { useCanvasIssueMarkers } from '#vue/canvas/issues/use'
+export type { CanvasIssueMarkerOptions } from '#vue/canvas/issues/use'
 export type { CanvasLabelEdit, CanvasLabelKind } from '#vue/canvas/labels/edit'
 export { useCanvasVirtualReference } from '#vue/canvas/overlays/useCanvasVirtualReference'
 export { useTextEdit } from '#vue/canvas/text-edit/use'
@@ -124,6 +126,7 @@ export { isStrokeCapValue } from '#vue/controls/stroke/helpers'
 export {
   applySolidFillColor,
   applySolidStrokeColor,
+  applyStrokePaint,
   BUILT_IN_COLOR_FORMATS,
   fromPercent,
   toPercent,

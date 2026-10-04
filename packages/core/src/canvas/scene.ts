@@ -33,6 +33,7 @@ import { makeSmoothRRectPath, nodeHasRadius, nodeHasSmoothCorners } from './shap
 import {
   configureStrokePaint,
   drawArrowHeads,
+  applyStrokeShader,
   drawDashedRRectWithSolidCorners,
   drawStyledRRectStroke,
   getStrokeCapEntity,
@@ -406,6 +407,10 @@ function makeNodeRRect(r: SkiaRenderer, node: SceneNode, radius: number): Float3
   return r.ck.RRectXY(rect, radius, radius)
 }
 
+/**
+ * Every stroke a node draws passes through here, so a gradient or image stroke gets its shader
+ * here rather than in each draw helper, and the shader is cleared before the next stroke.
+ */
 function forVisibleStrokes(
   r: SkiaRenderer,
   node: SceneNode,
@@ -415,7 +420,13 @@ function forVisibleStrokes(
   for (let index = 0; index < node.strokes.length; index++) {
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
-    draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+    applyStrokeShader(r, stroke, index, node, graph)
+    try {
+      draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+    } finally {
+      r.strokePaint.setShader(null)
+      r.fillPaint.setShader(null)
+    }
   }
 }
 
@@ -614,7 +625,6 @@ function drawVectorStrokeGeometry(
 ): void {
   r.fillPaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
   r.fillPaint.setAlphaf(opacity)
-  r.fillPaint.setShader(null)
   for (const p of sg) canvas.drawPath(p, r.fillPaint)
 }
 
@@ -672,7 +682,6 @@ function drawVectorPathStrokes(
     r.strokePaint.setStrokeCap(getStrokeCapEntity(r, stroke.cap ?? 'NONE'))
     r.strokePaint.setStrokeJoin(getStrokeJoinEntity(r, stroke.join ?? 'MITER'))
     r.strokePaint.setStrokeMiter(miterLimit)
-    r.strokePaint.setShader(null)
     const effect = r.ck.PathEffect.MakeDash(dash, 0)
     r.strokePaint.setPathEffect(effect)
     for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
@@ -688,7 +697,6 @@ function drawVectorPathStrokes(
   }
   r.fillPaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
   r.fillPaint.setAlphaf(stroke.opacity)
-  r.fillPaint.setShader(null)
 
   let outlines = outlineCacheKey ? r.vectorStrokeOutlineCache.get(outlineCacheKey) : undefined
   if (!outlines) {

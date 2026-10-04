@@ -342,6 +342,7 @@ test('smoothed corners with blended shadow', async () => {
       ],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 1, g: 1, b: 1, a: 0.8 },
           weight: 2,
           visible: true,

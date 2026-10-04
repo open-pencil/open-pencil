@@ -12,7 +12,8 @@ export default defineRule({
       context.report({
         node,
         message: 'Text layer has mixed font styles',
-        suggest: 'Split into separate text layers or unify the text style'
+        suggest: 'Split into separate text layers or unify the text style',
+        data: { styleRuns: node.styleRunCount }
       })
     }
   }

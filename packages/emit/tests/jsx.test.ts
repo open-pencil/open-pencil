@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { jsx } from '#codegen/index'
+import { jsx } from '#emit/index'
 
 const card = (attributes: ReturnType<typeof jsx.attribute>[], children = [jsx.text('Hi')]) =>
   jsx.printJSX(jsx.element('Card', attributes, children, 0, true))

@@ -58,7 +58,7 @@ export function prepareVariableTransfer(
   }
   return {
     collections: collections.map((collection) => ({
-      ...collection,
+      ...structuredClone(collection),
       id: mapped(references.collections, collection.id, 'collection'),
       defaultModeId: mapped(references.modes, collection.defaultModeId, 'mode'),
       modes: collection.modes.map((mode) => ({
@@ -68,7 +68,7 @@ export function prepareVariableTransfer(
       variableIds: collection.variableIds.map((id) => mapped(references.variables, id, 'variable'))
     })),
     variables: variables.map((variable) => ({
-      ...variable,
+      ...structuredClone(variable),
       id: mapped(references.variables, variable.id, 'variable'),
       collectionId: mapped(references.collections, variable.collectionId, 'collection'),
       valuesByMode: Object.fromEntries(
