@@ -86,6 +86,51 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       enabled: true
     },
     {
+      name: 'activate_document',
+      description:
+        'Bring an open document tab to the front in the app, optionally switching it to a page.',
+      effect: 'read',
+      availability: 'default',
+      capabilities: ['document:read'],
+      enabled: true
+    },
+    {
+      name: 'undo',
+      description:
+        'Undo the last change in a document, like Edit → Undo. Reports whether anything was undone.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['document:write'],
+      enabled: true
+    },
+    {
+      name: 'redo',
+      description:
+        'Redo the last undone change in a document, like Edit → Redo. Reports whether anything was redone.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['document:write'],
+      enabled: true
+    },
+    {
+      name: 'get_settings',
+      description:
+        'Read editor settings: appearance (theme, language, animations), snapping, canvas rendering, recovery, and AI chat preferences.',
+      effect: 'read',
+      availability: 'default',
+      capabilities: ['settings:read'],
+      enabled: true
+    },
+    {
+      name: 'update_settings',
+      description:
+        'Change editor settings with a partial object shaped like get_settings output. Returns the updated settings. Credentials, models, MCP connections, storage, and tool access are not exposed.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['settings:write'],
+      enabled: true
+    },
+    {
       name: 'get_codegen_prompt',
       description:
         'Get design-to-code generation guidelines. Call before generating frontend code.',

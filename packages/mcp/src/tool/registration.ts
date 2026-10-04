@@ -37,6 +37,22 @@ function splitAutomationTarget(args: Record<string, unknown>): {
   return { target, args: rest }
 }
 
+type RPCResponse = { ok?: boolean; result?: unknown; target?: unknown; error?: string }
+
+async function sendCommand(
+  sendRPC: RPCSender,
+  command: string,
+  args: Record<string, unknown>
+): Promise<RPCResponse> {
+  const res = (await sendRPC({ command, args })) as RPCResponse
+  if (res.ok === false) throw new Error(res.error)
+  return res
+}
+
+function withTarget<T extends object>(body: T, res: RPCResponse): T & { target?: unknown } {
+  return res.target ? { ...body, target: res.target } : body
+}
+
 export interface RegisterToolsOptions {
   policy: ToolPolicy
   mcpRoot?: string | null
@@ -60,7 +76,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const register = <InputArgs extends v.GenericSchema>(
     name: string,
-    toolOptions: { description: string; inputSchema: InputArgs },
+    toolOptions: { description?: string; inputSchema: InputArgs },
     handler: ToolCallback<ReturnType<typeof toStandardJSONSchema<InputArgs>>>
   ) => {
     const descriptor = descriptors.get(name)
@@ -69,7 +85,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     mcpServer.registerTool(
       name,
       {
-        ...toolOptions,
+        description: toolOptions.description ?? descriptor.description,
         inputSchema: toStandardJSONSchema(toolOptions.inputSchema),
         annotations: toolAnnotations(descriptor.effect),
         _meta: { 'openpencil/capabilities': descriptor.capabilities }
@@ -285,6 +301,68 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         }
         if (res.target) response.target = res.target
         return ok(response)
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  register(
+    'activate_document',
+    {
+      inputSchema: v.object({
+        document_id: v.pipe(v.string(), v.description('Document/tab ID from list_documents')),
+        page_id: automationTargetSchema.page_id
+      })
+    },
+    async (args: { document_id: string; page_id?: string }) => {
+      try {
+        const { target } = splitAutomationTarget(args)
+        const res = await sendCommand(sendRPC, 'activate_document', target)
+        return ok(withTarget({ activated: true }, res))
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  for (const command of ['undo', 'redo'] as const) {
+    register(command, { inputSchema: v.object({ ...automationTargetSchema }) }, async (args) => {
+      try {
+        const { target } = splitAutomationTarget(args)
+        const res = await sendCommand(sendRPC, command, target)
+        return ok(withTarget({ ...(res.result as RPCJSONObject | undefined) }, res))
+      } catch (e) {
+        return fail(e)
+      }
+    })
+  }
+
+  register('get_settings', { inputSchema: v.object({}) }, async () => {
+    try {
+      const res = await sendCommand(sendRPC, 'get_settings', {})
+      return ok(res.result ?? {})
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  register(
+    'update_settings',
+    {
+      inputSchema: v.object({
+        settings: v.pipe(
+          v.record(v.string(), v.unknown()),
+          v.description(
+            'Partial settings, e.g. {"appearance":{"theme":"light"},"editing":{"snapping":{"pixelGrid":false}}}. Unknown keys and invalid values are rejected.'
+          )
+        )
+      })
+    },
+    async (args: { settings: Record<string, unknown> }) => {
+      try {
+        const res = await sendCommand(sendRPC, 'update_settings', { settings: args.settings })
+        return ok(res.result ?? {})
       } catch (e) {
         return fail(e)
       }

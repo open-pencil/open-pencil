@@ -184,6 +184,11 @@ describe('MCP server', () => {
     expect(byName.get('close_file')?.effect).toBe('read')
     expect(byName.get('update_node')?.effect).toBe('write')
     expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
+    expect(byName.get('activate_document')?.effect).toBe('read')
+    expect(byName.get('undo')?.capabilities).toEqual(['document:write'])
+    expect(byName.get('redo')?.effect).toBe('write')
+    expect(byName.get('get_settings')?.capabilities).toEqual(['settings:read'])
+    expect(byName.get('update_settings')?.capabilities).toEqual(['settings:write'])
     expect(byName.get('eval')?.availability).toBe('eval')
     expect(byName.get('eval')?.capabilities).toContain('code:execute')
   })
@@ -380,6 +385,39 @@ describe('MCP server with mcpRoot', () => {
       expect(browser.requests.find((item) => item.command === 'close_file')?.args).toEqual({
         document_id: 'doc-1'
       })
+    })
+  })
+
+  test('forwards document activation and history steps with their target', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const activated = await client.callTool({
+        name: 'activate_document',
+        arguments: { document_id: 'doc-2', page_id: '0:5' }
+      })
+      expect(activated.isError).not.toBe(true)
+      expect(browser.requests.find((item) => item.command === 'activate_document')?.args).toEqual({
+        document_id: 'doc-2',
+        page_id: '0:5'
+      })
+
+      const undone = await client.callTool({ name: 'undo', arguments: { document_id: 'doc-2' } })
+      expect(undone.isError).not.toBe(true)
+      expect(JSON.stringify(undone.content)).toContain('Mock change')
+      expect(browser.requests.find((item) => item.command === 'undo')?.args).toEqual({
+        document_id: 'doc-2'
+      })
+    })
+  })
+
+  test('forwards settings updates and returns the resulting settings', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const settings = { appearance: { theme: 'light' } }
+      const result = await client.callTool({ name: 'update_settings', arguments: { settings } })
+      expect(result.isError).not.toBe(true)
+      expect(browser.requests.find((item) => item.command === 'update_settings')?.args).toEqual({
+        settings
+      })
+      expect(JSON.stringify(result.content)).toContain('light')
     })
   })
 
