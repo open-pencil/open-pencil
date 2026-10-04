@@ -11,5 +11,11 @@
   "updatedLive": "已实时更新",
   "previewFailed": "预览失败",
   "generatedReadOnly": "已生成，只读",
-  "reset": "重置"
+  "reset": "重置",
+  "noSelection": "选择图层以查看其代码",
+  "noSelectionDesignJSX": "也可以编写 Design JSX，向页面添加新图层。",
+  "noSelectionTailwindJSX": "Tailwind JSX 会为所选图层生成。",
+  "writeJSX": "编写 JSX",
+  "canvasChangedExpression": "画布上现在是 {value}；表达式保持原样。",
+  "canvasChangedOrder": "画布上这些图层的顺序已改变；代码保持原样。"
 }

@@ -34,3 +34,4 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 - [Auto Layout](./auto-layout) — flexbox-based automatic positioning
 - [Components](./components) — reusable components, instances, and overrides
 - [Variables](./variables) — design variables, collections, modes, and fill bindings
+- [Checking Designs](./checking-designs) — the Check panel, canvas issue markers, and lint rules

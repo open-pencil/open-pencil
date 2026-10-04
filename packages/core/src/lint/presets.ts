@@ -5,24 +5,30 @@ export interface Preset {
   rules: Record<string, RuleConfig>
 }
 
+/**
+ * Errors and warnings mean a layer is likely wrong for people using the design: low contrast,
+ * small targets or text, spacing off the scale. Token adoption and structure hygiene are
+ * suggestions, which interfaces can list without marking every layer that has one.
+ */
 export const recommended: Preset = {
   rules: {
-    'no-hardcoded-colors': 'warning',
+    'no-hardcoded-colors': 'info',
     'no-default-names': 'info',
     'prefer-auto-layout': 'info',
-    'consistent-spacing': 'warning',
+    'consistent-spacing': 'info',
     'consistent-radius': 'info',
     'color-contrast': 'error',
-    'touch-target-size': 'warning',
+    // WCAG 2.2 AA minimum; Strict and Accessibility keep the rule's 44×44 (AAA).
+    'touch-target-size': { severity: 'warning', options: { minSize: 24 } },
     'text-style-required': 'info',
     'min-text-size': 'warning',
     'no-hidden-layers': 'info',
-    'no-deeply-nested': 'warning',
+    'no-deeply-nested': 'info',
     'no-empty-frames': 'info',
     'pixel-perfect': 'info',
     'no-groups': 'info',
     'effect-style-required': 'info',
-    'no-mixed-styles': 'warning',
+    'no-mixed-styles': 'info',
     'no-detached-instances': 'off'
   }
 }

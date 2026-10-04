@@ -84,6 +84,8 @@ export const SIZE_PILL_TEXT_OFFSET_Y = 13
 
 export const MARQUEE_FILL_ALPHA = 0.08
 export const SELECTION_DASH_ALPHA = 0.6
+/** Tint inside the layer of the code element around the cursor, under its hover outline. */
+export const CODE_FOCUS_FILL_ALPHA = 0.1
 export const DROP_HIGHLIGHT_ALPHA = 0.8
 export const DROP_HIGHLIGHT_STROKE = 2
 
@@ -134,6 +136,27 @@ export const FLASH_STROKE_WIDTH = 2
 export const FLASH_PADDING = 5
 export const FLASH_OVERSHOOT = 30
 export const FLASH_RADIUS = 4
+
+export const ISSUE_ERROR_COLOR = { r: 0.949, g: 0.282, b: 0.133, a: 1 } satisfies Color // #F24822
+export const ISSUE_WARNING_COLOR = { r: 1, g: 0.702, b: 0.078, a: 1 } satisfies Color // #FFB314
+export const ISSUE_INFO_COLOR = { r: 0.55, g: 0.55, b: 0.55, a: 1 } satisfies Color
+export const ISSUE_MARKER_HEIGHT = 16
+export const ISSUE_MARKER_PADDING_X = 5
+/** Gap between a layer's corner and its marker; clears the 8px selection handle. */
+export const ISSUE_MARKER_OFFSET = 4
+/** Markers closer than this merge into one. */
+export const ISSUE_MARKER_GAP = 2
+export const ISSUE_MARKER_VIEWPORT_INSET = 4
+/** Layers smaller than this on screen pass their marker to an ancestor. */
+export const ISSUE_MARKER_MIN_TARGET = 24
+export const ISSUE_MARKER_MAX_COUNT = 99
+/** Edge pins closer than this along the viewport edge merge into one. */
+export const ISSUE_EDGE_MERGE_GAP = 24
+/** Length of the chevron an edge pin points with, beyond its ring. */
+export const ISSUE_EDGE_ARROW = 5
+export const ISSUE_MARKER_RING_WIDTH = 1.5
+export const ISSUE_HIGHLIGHT_STROKE_WIDTH = 1.5
+export const ISSUE_HIGHLIGHT_FILL_ALPHA = 0.08
 
 export const AI_ACTIVE_COLOR = { r: 0.26, g: 0.52, b: 0.96 }
 export const AI_DONE_COLOR = { r: 0.16, g: 0.73, b: 0.36 }
