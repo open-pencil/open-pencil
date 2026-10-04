@@ -3,7 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { SkiaRenderer } from '@open-pencil/core'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io'
+import {
+  exportFigFile,
+  initCanvasKit,
+  parseFigFile,
+  renderNodesToImage
+} from '@open-pencil/core/io'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
@@ -20,6 +25,27 @@ function insertIcon(graph: SceneGraph, body: string, viewBox = 24, size = 24) {
 }
 
 describe('createIconFromPaths', () => {
+  test('keeps round stroke caps and joins after a .fig round trip', async () => {
+    const graph = new SceneGraph()
+    insertIcon(
+      graph,
+      '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9l6 6l6-6"/>'
+    )
+
+    const bytes = await exportFigFile(graph)
+    const reopened = await parseFigFile(bytes.buffer as ArrayBuffer)
+    const vector = expectDefined(
+      [...reopened.nodes.values()].find((node) => node.type === 'VECTOR'),
+      'reopened icon vector'
+    )
+
+    expect(vector.strokeCap).toBe('ROUND')
+    expect(vector.strokeJoin).toBe('ROUND')
+    expect(vector.strokes.map(({ cap, join }) => ({ cap, join }))).toEqual([
+      { cap: 'ROUND', join: 'ROUND' }
+    ])
+  })
+
   test('fills open subpaths of a filled path together with its closed subpaths', async () => {
     const graph = new SceneGraph()
     // An open outer square around a closed, counter-wound inner square: a 24 px ring.
