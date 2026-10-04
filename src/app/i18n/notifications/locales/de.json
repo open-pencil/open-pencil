@@ -26,5 +26,6 @@
   "deepLinkPickerDismissed": "Link abgebrochen: Es wurde keine Datei ausgewählt.",
   "deepLinkCancelled": "Link abgebrochen: Erwartet wurde eine Datei mit der Endung „{file}“.",
   "deepLinkNodeNotFound": "Ebene „{node}“ wurde in „{file}“ nicht gefunden.",
-  "openQueuedFilesFailed": "Die an OpenPencil übergebenen Dateien konnten nicht geöffnet werden: {error}"
+  "openQueuedFilesFailed": "Die an OpenPencil übergebenen Dateien konnten nicht geöffnet werden: {error}",
+  "tokensLeftOut": "Nicht im Stylesheet enthalten: {names}."
 }

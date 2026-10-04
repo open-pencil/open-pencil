@@ -11,7 +11,9 @@ export const variablesMessageDefaults = {
   renameMode: 'Rename mode',
   duplicateMode: 'Duplicate mode',
   deleteMode: 'Delete mode',
-  setDefaultMode: 'Set as default'
+  setDefaultMode: 'Set as default',
+  copyAsCSS: 'Copy as CSS',
+  copyAsTailwindTheme: 'Copy as Tailwind theme'
 } as const
 
 export const variablesMessages = i18n('variables', variablesMessageDefaults)

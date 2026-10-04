@@ -21,6 +21,7 @@ import query from './commands/query'
 import selection from './commands/selection'
 import settings from './commands/settings'
 import tool from './commands/tool'
+import tokens from './commands/tokens'
 import tree from './commands/tree'
 import variables from './commands/variables'
 
@@ -54,6 +55,7 @@ const main = defineCommand({
     selection,
     settings,
     tool,
+    tokens,
     tree,
     undo,
     variables

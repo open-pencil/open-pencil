@@ -9,5 +9,7 @@
   "renameMode": "Zmień nazwę trybu",
   "duplicateMode": "Duplikuj tryb",
   "deleteMode": "Usuń tryb",
-  "setDefaultMode": "Ustaw jako domyślny"
+  "setDefaultMode": "Ustaw jako domyślny",
+  "copyAsCSS": "Kopiuj jako CSS",
+  "copyAsTailwindTheme": "Kopiuj jako motyw Tailwind"
 }
