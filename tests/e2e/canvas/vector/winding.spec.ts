@@ -22,6 +22,7 @@ test('mixed vector regions keep open stroke segments', async () => {
       ],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0.95, g: 0.25, b: 0.15, a: 1 },
           weight: 8,
           opacity: 1,

@@ -98,6 +98,7 @@ export const createVector = defineTool({
       figma.graph.updateNode(node.id, {
         strokes: [
           {
+            type: 'SOLID',
             color: parseColor(args.stroke),
             weight: args.stroke_weight ?? 1,
             opacity: 1,

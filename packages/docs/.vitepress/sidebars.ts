@@ -46,6 +46,8 @@ export const userGuideSidebar = (
       { text: labels.autoLayout, link: `${prefix}/user-guide/auto-layout` },
       { text: labels.components, link: `${prefix}/user-guide/components` },
       { text: labels.variables, link: `${prefix}/user-guide/variables` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
     ],
   },
 ]
@@ -62,6 +64,7 @@ export const programmableSidebar = (
       { text: labels.inspecting, link: `${prefix}/programmable/cli/inspecting` },
       { text: labels.exporting, link: `${prefix}/programmable/cli/exporting` },
       { text: labels.analyzing, link: `${prefix}/programmable/cli/analyzing` },
+      { text: labels.comparing, link: '/programmable/cli/comparing' },
       { text: labels.scripting, link: `${prefix}/programmable/cli/scripting` },
       { text: labels.jsxRenderer, link: `${prefix}/programmable/jsx-renderer` },
       { text: 'Native JavaScript APIs', link: '/programmable/native-api' },

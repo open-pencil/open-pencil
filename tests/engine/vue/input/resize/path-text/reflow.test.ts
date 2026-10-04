@@ -22,6 +22,7 @@ const BLACK: Fill = {
 }
 
 const WHITE_STROKE: Stroke = {
+  type: 'SOLID',
   color: { r: 1, g: 1, b: 1, a: 1 },
   weight: 4,
   opacity: 1,

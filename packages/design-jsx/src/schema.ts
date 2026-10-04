@@ -60,6 +60,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'top',
   'left',
   'position',
+  'constraints',
   'p',
   'padding',
   'px',
@@ -80,6 +81,11 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'borderWidth',
   'strokeAlign',
   'strokeDash',
+  'strokeCap',
+  'strokeJoin',
+  'dashPattern',
+  'strokes',
+  'strokeWeights',
   'rounded',
   'borderRadius',
   'roundedTL',
@@ -93,6 +99,9 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'rotate',
   'rotation',
   'overflow',
+  'mask',
+  'visible',
+  'locked',
   'shadow',
   'blur',
   'effects',
@@ -102,6 +111,7 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'fontFamily',
   'weight',
   'fontWeight',
+  'italic',
   'color',
   'text',
   'characters',
@@ -143,6 +153,66 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
 ] as const
 
 export const DESIGN_JSX_SUPPORTED_PROPERTIES = new Set<string>(DESIGN_JSX_SUPPORTED_PROPERTY_NAMES)
+
+/**
+ * Properties accepted under more than one name, keyed by the name Design JSX writes. The
+ * renderer reads the first one set, in this order; editors use it to find a value written
+ * under any of its names.
+ */
+export const DESIGN_JSX_PROPERTY_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  w: ['width'],
+  h: ['height'],
+  bg: ['fill', 'background', 'backgroundColor'],
+  stroke: ['border', 'borderColor'],
+  rounded: ['cornerRadius', 'borderRadius'],
+  rotate: ['rotation'],
+  p: ['padding'],
+  colStart: ['col'],
+  rowStart: ['row'],
+  justify: ['justifyContent'],
+  items: ['align', 'alignItems'],
+  size: ['fontSize'],
+  font: ['fontFamily'],
+  weight: ['fontWeight'],
+  textAlign: ['textAlignHorizontal', 'textHorizontalAlignment'],
+  textAlignVertical: ['textVerticalAlignment']
+}
+
+/** A CSS-style key read from the `style` prop; `px` values like `'320px'` become numbers. */
+export interface DesignJSXStyleKey {
+  key: string
+  px?: boolean
+}
+
+/**
+ * Properties also read from `style={{ … }}`, keyed by the name Design JSX writes, in the order
+ * the renderer reads them. An attribute under any of the property's names wins over `style`.
+ */
+export const DESIGN_JSX_STYLE_KEYS: Readonly<Record<string, readonly DesignJSXStyleKey[]>> = {
+  bg: [{ key: 'background' }, { key: 'backgroundColor' }],
+  color: [{ key: 'color' }],
+  stroke: [{ key: 'borderColor' }],
+  strokeWidth: [{ key: 'borderWidth', px: true }],
+  rounded: [{ key: 'borderRadius', px: true }],
+  size: [{ key: 'fontSize', px: true }],
+  weight: [{ key: 'fontWeight' }],
+  w: [{ key: 'width', px: true }],
+  h: [{ key: 'height', px: true }],
+  opacity: [{ key: 'opacity' }]
+}
+
+/** Every name a property is accepted under, the written name first. */
+export function designJSXPropertyNames(name: string): readonly string[] {
+  return [name, ...(DESIGN_JSX_PROPERTY_ALIASES[name] ?? [])]
+}
+
+/** The value of a property under the first of its names that is set. */
+export function designJSXProp(props: Readonly<Record<string, unknown>>, name: string): unknown {
+  for (const key of designJSXPropertyNames(name)) {
+    if (props[key] !== undefined && props[key] !== null) return props[key]
+  }
+  return undefined
+}
 
 export const DESIGN_JSX_PROPERTIES: DesignJSXPropertyDefinition[] =
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES.map((name) => ({

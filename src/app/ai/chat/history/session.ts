@@ -1,6 +1,8 @@
 import { watchThrottled } from '@vueuse/core'
 import { watch } from 'vue'
 
+import { toolChangesVersion } from '@/app/ai/tools/changes/store'
+
 import type { HistoryChat } from './types'
 
 /** Owns live subscriptions; a failed final save deliberately leaves the session attached. */
@@ -30,9 +32,12 @@ export function createHistorySession(reset: () => Promise<void>) {
         save()
       }
     )
+    // Change previews render after their message settles; save them when they arrive.
+    const stopChanges = watchThrottled(toolChangesVersion, save, { throttle: 500, trailing: true })
     stopWatch = () => {
       stopMessages()
       stopStatus()
+      stopChanges()
     }
   }
 

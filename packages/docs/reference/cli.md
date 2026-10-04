@@ -216,3 +216,84 @@ openpencil analyze clusters [file] [options]
 | `--min-size` | Min node size in px (default: 30) |
 | `--min-count` | Min instances to form a cluster (default: 2) |
 | `--json` | Output as JSON |
+
+## diff create
+
+Patch that turns one node tree into another, as JSX attribute changes plus moved, added, and removed children. Children match by name; see [Comparing designs](/programmable/cli/comparing) for the format.
+
+```sh
+openpencil diff create [file] --from <id> --to <id> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--from` | Source node ID |
+| `--to` | Target node ID |
+| `--depth` | Max tree depth (default: 10) |
+| `--json` | Output as JSON |
+
+## diff jsx
+
+Structural diff between two nodes as design JSX.
+
+```sh
+openpencil diff jsx [file] --from <id> --to <id> [--json]
+```
+
+## diff show
+
+Preview the patch that setting JSX attributes on a node would produce, without changing it.
+
+```sh
+openpencil diff show <id> [file] --attributes '<jsx attributes>' [--json]
+```
+
+`--attributes` takes attributes as the JSX export writes them, such as `'w={200} bg="#FF0000"'`.
+
+## diff apply
+
+Apply a patch from `diff create`, `diff show`, or `diff files`. Every node must still match the patch's old values unless `--force` is set, and nothing changes unless every hunk applies.
+
+```sh
+openpencil diff apply <patch> [file] [options]
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--dry-run` | | Validate and list changes without applying |
+| `--force` | | Apply even when current values differ from the patch |
+| `--write` | `-w` | Write changes back to the input file |
+| `--output` | `-o` | Write to a different file |
+| `--json` | | Output as JSON |
+
+Pass `-` as the patch path to read it from stdin.
+
+## diff visual
+
+Pixel diff between two rendered nodes, written as a PNG with changed pixels in red.
+
+```sh
+openpencil diff visual [file] --from <id> --to <id> --output <png> [options]
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--output` | `-o` | Diff PNG path |
+| `--scale` | | Render scale before the max-edge limit (default: 1) |
+| `--max-edge` | | Maximum image width or height (default: 1280) |
+| `--threshold` | | Color tolerance 0–1; smaller is stricter (default: 0.1) |
+| `--json` | | Output as JSON |
+
+## diff files
+
+Structural diff of two documents, page by page. Pages match by name and nodes by name path, so two versions of a file compare even though their node IDs differ. Exits with status 1 when the documents differ and 2 when the options are invalid, such as a `--page` neither document has.
+
+```sh
+openpencil diff files <before> <after> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--page` | Compare only the page with this name |
+| `--depth` | Max tree depth below each page (default: unlimited) |
+| `--json` | Output as JSON |

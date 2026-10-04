@@ -1,7 +1,7 @@
 import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { forEachInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import { forEachInstanceOverride, ownsSlotContent, type SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { instanceExportAddress } from '../instance/geometry'
@@ -17,6 +17,7 @@ import {
   type SceneNodeToKiwiContext,
   type StyleReference
 } from './context'
+import { nodeWithResolvedBindings } from './resolved-bindings'
 
 function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
@@ -138,11 +139,15 @@ function bindingClaim(
 }
 
 function overrideClaim(
-  input: ClaimInput,
+  claimed: ClaimInput,
   field: string,
   path: GUID[],
   counter: { value: number }
 ): KiwiSymbolOverridePayload | undefined {
+  const input = {
+    ...claimed,
+    target: nodeWithResolvedBindings(claimed.context.graph, claimed.target)
+  }
   if (field === 'componentId')
     return exportedSwapOverride(input.context, input.target, path, counter)
   const claim = field.startsWith('boundVariables/')
@@ -180,6 +185,8 @@ export function serializeRuntimePropertyOverrides(
         )
         if (claim) result.push(claim)
       })
+    // Slot content the instance owns carries its own values; it has no component address.
+    if (ownsSlotContent(context.graph, node)) return
     for (const child of context.graph.getChildren(node.id)) visit(child)
   }
   visit(instance)
