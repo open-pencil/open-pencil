@@ -200,7 +200,7 @@
   },
   "dependencies": {
     "culori": "^4.0.2",
-    "es-toolkit": "^1.51.0",
+    "es-toolkit": "^1.52.0",
     "nanoevents": "^9.1.0",
     "svgpath": "^2.6.0"
   },

@@ -185,6 +185,8 @@ function fixLabel(fix: LintFix, messages: Messages): string {
   if (fix.kind === 'bind-variable') {
     return messages.bindVariable({ variable: fix.variableName })
   }
+  if (fix.kind === 'convert-to-frame') return messages.fixConvertToFrame
+  if (fix.kind === 'delete') return messages.fixDeleteLayer
   const changes = Object.entries(fix.changes)
   // Geometry changes only come from rounding to whole pixels.
   if (changes.length !== 1 || changes.some(([property]) => property in GEOMETRY_LABELS)) {

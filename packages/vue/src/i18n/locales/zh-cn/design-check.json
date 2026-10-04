@@ -65,6 +65,8 @@
   "fixRoundPixels": "取整到整像素",
   "fixUseValue": "改为 {value}",
   "fixFullRadius": "使用完全圆角",
+  "fixConvertToFrame": "转换为画框",
+  "fixDeleteLayer": "删除图层",
   "fixAll": "全部修复（{count}）",
   "ruleNoDefaultNames": "默认图层名称",
   "ruleNoDefaultNamesHelp": "描述性的名称让图层更易查找、交付和复用。",

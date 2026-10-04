@@ -183,3 +183,116 @@ describe('editor.applyLintFixes', () => {
     expect(restored.boundVariables['fills/0/color']).toBeUndefined()
   })
 })
+
+function suggestionRequests(messages: readonly LintMessage[]) {
+  return messages.flatMap((m) => (m.suggestions ?? []).map((fix) => ({ nodeId: m.nodeId, fix })))
+}
+
+describe('structure suggestions', () => {
+  test('convert a group to a frame in place, keeping its layers and look', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const group = graph.createNode('GROUP', pageId, { x: 40, y: 20, width: 30, height: 30 })
+    const dot = graph.createNode('ELLIPSE', group.id, { width: 10, height: 10 })
+
+    const messages = lint(graph, 'no-groups')
+    expect(messages[0]?.suggestions).toEqual([{ kind: 'convert-to-frame' }])
+    expect(safeFixes(messages)).toEqual([])
+
+    expect(applyLintFixes(graphFixTarget(graph), suggestionRequests(messages))).toBe(1)
+    const frame = getNodeOrThrow(graph, group.id)
+    expect(frame).toMatchObject({ type: 'FRAME', x: 40, y: 20, width: 30, height: 30 })
+    expect(frame.childIds).toEqual([dot.id])
+    expect(frame.fills).toEqual([])
+    expect(frame.clipsContent).toBe(false)
+    expect(lint(graph, 'no-groups')).toEqual([])
+  })
+
+  test('delete hidden layers once, together with hidden layers inside them', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const panel = graph.createNode('FRAME', pageId, { visible: false })
+    const inner = graph.createNode('RECTANGLE', panel.id, { visible: false })
+    const shown = graph.createNode('RECTANGLE', pageId)
+
+    const messages = lint(graph, 'no-hidden-layers')
+    expect(messages.map((m) => m.suggestions)).toEqual([[{ kind: 'delete' }], [{ kind: 'delete' }]])
+
+    expect(applyLintFixes(graphFixTarget(graph), suggestionRequests(messages))).toBe(2)
+    expect(graph.getNode(panel.id)).toBeUndefined()
+    expect(graph.getNode(inner.id)).toBeUndefined()
+    expect(graph.getNode(shown.id)).toBeDefined()
+  })
+
+  test('keep a layer shown again since the check', () => {
+    const graph = new SceneGraph()
+    const layer = graph.createNode('RECTANGLE', graph.getPages()[0].id, { visible: false })
+    const messages = lint(graph, 'no-hidden-layers')
+
+    graph.updateNode(layer.id, { visible: true })
+
+    expect(applyLintFixes(graphFixTarget(graph), suggestionRequests(messages))).toBe(0)
+    expect(graph.getNode(layer.id)).toBeDefined()
+  })
+
+  test('leave locked layers and the structure of components and instances alone', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const lockedGroup = graph.createNode('GROUP', pageId, { locked: true })
+    const lockedHidden = graph.createNode('RECTANGLE', pageId, { visible: false, locked: true })
+    const button = graph.createNode('COMPONENT', pageId)
+    const icon = graph.createNode('GROUP', button.id)
+    const badge = graph.createNode('RECTANGLE', button.id, { visible: false })
+    const instance = graph.createNode('INSTANCE', pageId, { componentId: button.id })
+    const copy = graph.createNode('RECTANGLE', instance.id, { visible: false })
+
+    const messages = [...lint(graph, 'no-groups'), ...lint(graph, 'no-hidden-layers')]
+    // The linter does not look inside instances, so the copy is only checked when applying.
+    const reported = [lockedGroup, lockedHidden, icon, badge].map((node) => node.id)
+    expect(reported.every((id) => messages.some((m) => m.nodeId === id))).toBe(true)
+    expect(messages.every((m) => m.suggestions === undefined)).toBe(true)
+
+    // Requests built elsewhere are checked against the graph as well.
+    const requests = [
+      { nodeId: lockedGroup.id, fix: { kind: 'convert-to-frame' } as const },
+      { nodeId: icon.id, fix: { kind: 'convert-to-frame' } as const },
+      { nodeId: lockedHidden.id, fix: { kind: 'delete' } as const },
+      { nodeId: copy.id, fix: { kind: 'delete' } as const }
+    ]
+    expect(applyLintFixes(graphFixTarget(graph), requests)).toBe(0)
+    expect(getNodeOrThrow(graph, icon.id).type).toBe('GROUP')
+    expect(graph.getNode(copy.id)).toBeDefined()
+  })
+})
+
+describe('editor structure fixes', () => {
+  test('convert and delete as one undo step that restores layers and selection', () => {
+    const editor = createEditor()
+    const pageId = editor.graph.getPages()[0].id
+    const group = editor.graph.createNode('GROUP', pageId, { width: 30, height: 30 })
+    editor.graph.createNode('ELLIPSE', group.id, { width: 10, height: 10 })
+    const hidden = editor.graph.createNode('RECTANGLE', pageId, { visible: false })
+    editor.select([hidden.id, group.id])
+
+    const messages = createLinter({
+      rules: ['no-groups', 'no-hidden-layers'],
+      config: { rules: { 'no-groups': 'warning', 'no-hidden-layers': 'warning' } }
+    }).lintGraph(editor.graph).messages
+
+    expect(editor.applyLintFixes(suggestionRequests(messages))).toBe(2)
+    expect(getNodeOrThrow(editor.graph, group.id).type).toBe('FRAME')
+    expect(editor.graph.getNode(hidden.id)).toBeUndefined()
+    expect([...editor.state.selectedIds]).toEqual([group.id])
+
+    editor.undoAction()
+
+    expect(getNodeOrThrow(editor.graph, group.id).type).toBe('GROUP')
+    expect(getNodeOrThrow(editor.graph, hidden.id).visible).toBe(false)
+    expect(new Set(editor.state.selectedIds)).toEqual(new Set([hidden.id, group.id]))
+
+    editor.redoAction()
+
+    expect(getNodeOrThrow(editor.graph, group.id).type).toBe('FRAME')
+    expect(editor.graph.getNode(hidden.id)).toBeUndefined()
+  })
+})
