@@ -25,7 +25,8 @@ export function wrapSelectionInContainer(
 
   const parent = ctx.graph.getNode(parentId)
   if (!parent) return null
-  prepareSlotEdits(ctx, [parentId], { allowLocked: true })
+  // The locked part of an instance takes no new containers.
+  if (!prepareSlotEdits(ctx, [parentId])) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const nodeIds = selectedNodes.map((n) => n.id)

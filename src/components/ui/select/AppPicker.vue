@@ -57,7 +57,7 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useRetainedPopup } from '@open-pencil/vue'
 
@@ -83,6 +83,10 @@ const slots = defineSlots<AppPickerSlots>()
 const open = defineModel<boolean>('open', { default: false })
 const { portalActive } = useRetainedPopup(open, () => close())
 const query = ref('')
+// However the list closes, by the user or from outside through v-model, it reopens unfiltered.
+watch(open, (isOpen) => {
+  if (!isOpen) query.value = ''
+})
 const styles = computed(() => tv(theme)({ density }))
 
 const index = computed(
@@ -108,7 +112,6 @@ const groups = computed(() => {
 
 function close() {
   open.value = false
-  query.value = ''
 }
 
 function select(value: AcceptableValue) {
@@ -119,7 +122,7 @@ function select(value: AcceptableValue) {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="open" @update:open="!$event && (query = '')">
+  <PopoverRoot v-model:open="open">
     <Tip as-child :label="tooltip" :disabled="!tooltip">
       <PopoverTrigger as-child>
         <slot name="trigger" />

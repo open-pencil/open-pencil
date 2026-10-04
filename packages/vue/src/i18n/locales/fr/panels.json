@@ -220,6 +220,7 @@
   "selectLayers": "Sélectionner les calques",
   "resetSlot": "Réinitialiser le slot",
   "deleteSlotContents": "Supprimer le contenu",
+  "slotActions": "Actions de {name}",
   "slots": "Slots",
   "createSlot": "Créer un slot",
   "removeSlot": "Supprimer le slot",

@@ -10,7 +10,8 @@ import { computeLayout } from '#core/layout'
 export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[]): string | null {
   const parentId = sharedParentId(ctx, selectedNodes)
   if (!parentId) return null
-  prepareSlotEdits(ctx, [parentId], { allowLocked: true })
+  // The locked part of an instance takes no new containers.
+  if (!prepareSlotEdits(ctx, [parentId])) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const origPositions = selectedNodes.map((n) => ({ id: n.id, x: n.x, y: n.y, parentId }))

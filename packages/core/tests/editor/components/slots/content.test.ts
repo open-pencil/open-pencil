@@ -97,4 +97,22 @@ describe('editing instance slots', () => {
     editor.undo.undo()
     expect(names(editor, current())).toEqual([])
   })
+  test('layers in the rest of an instance cannot be grouped or wrapped', () => {
+    const { editor, instance, title } = setup()
+    editor.select([title.id])
+    editor.groupSelected()
+    editor.wrapInAutoLayout()
+    expect(editor.graph.getNode(title.id)?.parentId).toBe(instance.id)
+  })
+
+  test('undoing an added instance restores the selection', () => {
+    const { editor, item, slot, free } = setup()
+    editor.select([free.id])
+    const added = editor.addInstanceToSlot(slot.id, item.id)
+    expect([...editor.state.selectedIds]).toEqual([added])
+    editor.undo.undo()
+    expect([...editor.state.selectedIds]).toEqual([free.id])
+    editor.undo.redo()
+    expect([...editor.state.selectedIds]).toEqual([added])
+  })
 })

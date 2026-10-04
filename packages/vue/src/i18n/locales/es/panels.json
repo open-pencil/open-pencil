@@ -237,6 +237,7 @@
   "selectLayers": "Seleccionar capas",
   "resetSlot": "Restablecer slot",
   "deleteSlotContents": "Eliminar contenido",
+  "slotActions": "Acciones de {name}",
   "slots": "Slots",
   "createSlot": "Crear slot",
   "removeSlot": "Quitar slot",

@@ -57,7 +57,9 @@ function commitLimits() {
 }
 
 function commitDescription() {
-  if (description.value !== slot.description) emit('describe', description.value.trim())
+  const next = description.value.trim()
+  description.value = next
+  if (next !== slot.description) emit('describe', next)
 }
 
 const candidates = computed<AppPickerItem[]>(() =>

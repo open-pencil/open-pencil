@@ -220,6 +220,7 @@
   "selectLayers": "Seleziona livelli",
   "resetSlot": "Ripristina slot",
   "deleteSlotContents": "Elimina contenuto",
+  "slotActions": "Azioni di {name}",
   "slots": "Slot",
   "createSlot": "Crea slot",
   "removeSlot": "Rimuovi slot",

@@ -214,6 +214,7 @@
   "selectLayers": "选择图层",
   "resetSlot": "重置插槽",
   "deleteSlotContents": "删除内容",
+  "slotActions": "{name} 操作",
   "slots": "插槽",
   "createSlot": "创建插槽",
   "removeSlot": "移除插槽",

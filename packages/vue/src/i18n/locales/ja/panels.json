@@ -231,6 +231,7 @@
   "selectLayers": "レイヤーを選択",
   "resetSlot": "スロットをリセット",
   "deleteSlotContents": "内容を削除",
+  "slotActions": "{name} の操作",
   "slots": "スロット",
   "createSlot": "スロットを作成",
   "removeSlot": "スロットを削除",

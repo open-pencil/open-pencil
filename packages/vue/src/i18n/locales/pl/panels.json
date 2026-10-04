@@ -226,6 +226,7 @@
   "selectLayers": "Zaznacz warstwy",
   "resetSlot": "Resetuj slot",
   "deleteSlotContents": "Usuń zawartość",
+  "slotActions": "Akcje: {name}",
   "slots": "Sloty",
   "createSlot": "Utwórz slot",
   "removeSlot": "Usuń slot",

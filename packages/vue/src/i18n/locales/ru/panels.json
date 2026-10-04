@@ -226,6 +226,7 @@
   "selectLayers": "Выделить слои",
   "resetSlot": "Сбросить слот",
   "deleteSlotContents": "Удалить содержимое",
+  "slotActions": "Действия: {name}",
   "slots": "Слоты",
   "createSlot": "Создать слот",
   "removeSlot": "Удалить слот",

@@ -77,12 +77,23 @@ export function createSlotActions(ctx: EditorContext) {
   function addInstanceToSlot(frameId: string, componentId: string): string | null {
     const scope = slotAt(frameId)
     if (!scope || ctx.graph.getNode(componentId)?.type !== 'COMPONENT') return null
+    const previousSelection = new Set(ctx.state.selectedIds)
     const created: { id: string | null } = { id: null }
-    recordSubtreeEdit(ctx, 'Add instance', scope.instance.id, () => {
-      claimSlotContent(ctx.graph, scope)
-      created.id = ctx.graph.createInstance(componentId, frameId)?.id ?? null
+    ctx.undo.runBatch('Add instance', () => {
+      recordSubtreeEdit(ctx, 'Add instance', scope.instance.id, () => {
+        claimSlotContent(ctx.graph, scope)
+        created.id = ctx.graph.createInstance(componentId, frameId)?.id ?? null
+      })
+      const id = created.id
+      if (!id) return
+      // Undo removes the new instance, so it must not stay selected.
+      ctx.setSelectedIds(new Set([id]))
+      ctx.undo.push({
+        label: 'Add instance',
+        forward: () => ctx.setSelectedIds(new Set([id])),
+        inverse: () => ctx.setSelectedIds(new Set(previousSelection))
+      })
     })
-    if (created.id) ctx.setSelectedIds(new Set([created.id]))
     return created.id
   }
 

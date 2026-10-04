@@ -34,23 +34,22 @@ export function createStructureActions(ctx: EditorContext) {
   /** Moves layers under a new parent; refuses the locked part of an instance. */
   function reparentNodes(nodeIds: string[], newParentId: string): boolean {
     const parent = ctx.graph.getNode(newParentId)
+    // Sections only go into pages and other sections.
+    const movable = nodeIds.filter(
+      (id) =>
+        ctx.graph.getNode(id)?.type !== 'SECTION' ||
+        !parent ||
+        parent.type === 'CANVAS' ||
+        parent.type === 'SECTION'
+    )
+    if (movable.length === 0) return true
     const parents = new Set([newParentId])
-    for (const id of nodeIds) {
+    for (const id of movable) {
       const current = ctx.graph.getNode(id)?.parentId
       if (current && current !== newParentId) parents.add(current)
     }
     if (!prepareSlotEdits(ctx, parents)) return false
-    for (const id of nodeIds) {
-      const node = ctx.graph.getNode(id)
-      if (
-        node?.type === 'SECTION' &&
-        parent &&
-        parent.type !== 'CANVAS' &&
-        parent.type !== 'SECTION'
-      )
-        continue
-      ctx.graph.reparentNode(id, newParentId)
-    }
+    for (const id of movable) ctx.graph.reparentNode(id, newParentId)
     return true
   }
 

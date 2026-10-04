@@ -140,12 +140,9 @@ export function createClipboardActions(ctx: EditorContext) {
   async function pasteFromHTML(html: string, cursorPos?: Vector, options: PasteOptions = {}) {
     const openPencil = parseOpenPencilClipboard(html)
     if (openPencil) {
-      const created = pasteOpenPencilNodes(
-        openPencil.nodes,
-        openPencil.images,
-        [],
-        cursorPos,
-        options
+      // One undo step for the paste and any slot it claims.
+      const created = ctx.undo.runBatch('Paste', () =>
+        pasteOpenPencilNodes(openPencil.nodes, openPencil.images, [], cursorPos, options)
       )
       await fontActions.loadFontsForNodes(created)
       return
@@ -153,39 +150,45 @@ export function createClipboardActions(ctx: EditorContext) {
 
     const figma = await parseFigmaClipboard(html)
     if (figma) {
-      const prevSelection = new Set(ctx.state.selectedIds)
-      const replacementTargets = options.replaceSelection ? selectedReplacementTargets(ctx) : []
-      const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
-      if (!prepareSlotEdits(ctx, [pasteTarget])) return
-      const operation = prepareClipboardImport(figma.nodes, ctx.graph, pasteTarget, figma.blobs)
-      let deliveryError: CommittedGraphEventError | undefined
-      try {
-        operation.commit()
-      } catch (error) {
-        if (!(error instanceof CommittedGraphEventError)) throw error
-        deliveryError = error
-      }
-      const created = operation.plan.rootIds
-      if (created.length === 0) return
+      // One undo step for the paste and any slot it claims.
+      const pasted = ctx.undo.runBatch('Paste', () => {
+        const prevSelection = new Set(ctx.state.selectedIds)
+        const replacementTargets = options.replaceSelection ? selectedReplacementTargets(ctx) : []
+        const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+        if (!prepareSlotEdits(ctx, [pasteTarget])) return null
+        const operation = prepareClipboardImport(figma.nodes, ctx.graph, pasteTarget, figma.blobs)
+        let deliveryError: CommittedGraphEventError | undefined
+        try {
+          operation.commit()
+        } catch (error) {
+          if (!(error instanceof CommittedGraphEventError)) throw error
+          deliveryError = error
+        }
+        const created = operation.plan.rootIds
+        if (created.length === 0) return null
 
-      if (replacementTargets.length > 0) {
-        replaceTargetsWithCreated(
-          ctx,
-          placementActions.centerNodesAt,
-          created,
-          replacementTargets,
-          prevSelection,
-          operation
-        )
-      } else {
-        const { width: viewW, height: viewH } = ctx.getViewportSize()
-        const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
-        const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
-        placementActions.centerNodesAt(created, cx, cy)
-        computeAllLayouts(ctx.graph, ctx.state.currentPageId)
-        ctx.setSelectedIds(new Set(created))
-        pushCreatedNodesUndo(created, prevSelection, 'Paste', operation)
-      }
+        if (replacementTargets.length > 0) {
+          replaceTargetsWithCreated(
+            ctx,
+            placementActions.centerNodesAt,
+            created,
+            replacementTargets,
+            prevSelection,
+            operation
+          )
+        } else {
+          const { width: viewW, height: viewH } = ctx.getViewportSize()
+          const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
+          const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
+          placementActions.centerNodesAt(created, cx, cy)
+          computeAllLayouts(ctx.graph, ctx.state.currentPageId)
+          ctx.setSelectedIds(new Set(created))
+          pushCreatedNodesUndo(created, prevSelection, 'Paste', operation)
+        }
+        return { created, deliveryError }
+      })
+      if (!pasted) return
+      const { created, deliveryError } = pasted
 
       if (deliveryError) throw deliveryError
       await Promise.all([

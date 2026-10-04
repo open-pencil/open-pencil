@@ -183,6 +183,7 @@ export const panelMessageDefaults = {
   selectLayers: 'Select layers',
   resetSlot: 'Reset slot',
   deleteSlotContents: 'Delete contents',
+  slotActions: params('{name} actions'),
   slots: 'Slots',
   createSlot: 'Create slot',
   removeSlot: 'Remove slot',

@@ -57,7 +57,7 @@ function alignInstanceWorldBounds(
 }
 
 export function createComponentInstanceActions(ctx: EditorContext) {
-  function createInstanceFromComponent(
+  function createInstance(
     componentId: string,
     x?: number,
     y?: number,
@@ -94,6 +94,16 @@ export function createComponentInstanceActions(ctx: EditorContext) {
       }
     })
     return instanceId
+  }
+
+  /** Place an instance of a component; claiming a slot it lands in is part of the same undo step. */
+  function createInstanceFromComponent(
+    componentId: string,
+    x?: number,
+    y?: number,
+    parentId = ctx.state.currentPageId
+  ) {
+    return ctx.undo.runBatch('Create instance', () => createInstance(componentId, x, y, parentId))
   }
 
   function detachInstance(selectedNode: SceneNode | undefined) {

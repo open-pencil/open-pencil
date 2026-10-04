@@ -220,6 +220,7 @@
   "selectLayers": "Ebenen auswählen",
   "resetSlot": "Slot zurücksetzen",
   "deleteSlotContents": "Inhalt löschen",
+  "slotActions": "Aktionen für {name}",
   "slots": "Slots",
   "createSlot": "Slot erstellen",
   "removeSlot": "Slot entfernen",

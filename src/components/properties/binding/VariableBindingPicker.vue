@@ -20,7 +20,7 @@ export interface VariableBindingPickerProps {
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useBindableValue } from '@open-pencil/vue'
+import { useBindableValue, useI18n } from '@open-pencil/vue'
 
 import { BindingTrigger, useBindingFieldUI } from '@/components/ui/binding'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -31,7 +31,7 @@ const {
   searchPlaceholder,
   emptyLabel,
   detachLabel,
-  closeLabel = 'Close',
+  closeLabel,
   createLabel,
   createNamePlaceholder = 'Variable name',
   createSubmitLabel = 'Create',
@@ -42,6 +42,7 @@ const {
 } = defineProps<VariableBindingPickerProps>()
 
 const binding = useBindableValue<unknown>()
+const { common } = useI18n()
 const creating = ref(false)
 const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
@@ -102,7 +103,7 @@ defineOptions({ inheritAttrs: false })
       density="compact"
       :search-placeholder="searchPlaceholder"
       :empty-label="emptyLabel"
-      :close-label="closeLabel"
+      :close-label="closeLabel ?? common.close"
       :tooltip="triggerLabel"
       @select="binding.actions.bind($event)"
     >

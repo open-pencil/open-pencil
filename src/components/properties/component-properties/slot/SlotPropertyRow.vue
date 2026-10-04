@@ -73,7 +73,7 @@ const item = menuItem({ justify: 'start' })
       </AddInstancesPopover>
       <DropdownMenuRoot>
         <DropdownMenuTrigger as-child>
-          <IconButton :label="`${name} actions`">
+          <IconButton :label="panels.slotActions({ name })">
             <icon-lucide-ellipsis class="size-3.5" />
           </IconButton>
         </DropdownMenuTrigger>
