@@ -59,7 +59,7 @@ export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
   '#fig/': 'packages/fig/',
   '#fig-tests/': 'packages/fig/tests/',
   '#vue/': 'packages/vue/src/',
-  '#cli/': 'packages/cli/src/',
+  '#cli/': 'packages/cli/',
   '#mcp/': 'packages/mcp/src/'
 }
 

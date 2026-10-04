@@ -6,10 +6,20 @@ import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/export'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 
+type ExportArgs = { nodeIds?: string[]; scope?: 'page'; scale?: number; format?: string }
+
+/** The requested layers, every layer of the target page for a page export, or the selection. */
+function exportNodeIds(target: AutomationTarget, args: ExportArgs | undefined): string[] {
+  const store = target.store
+  if (args?.nodeIds) return args.nodeIds
+  if (args?.scope !== 'page') return [...store.state.selectedIds]
+  return store.graph.getChildren(target.pageId).map((node) => node.id)
+}
+
 export async function handleExport(target: AutomationTarget, args: unknown): Promise<unknown> {
   const store = target.store
-  const exportArgs = args as { nodeIds?: string[]; scale?: number; format?: string } | undefined
-  const nodeIds = exportArgs?.nodeIds ?? [...store.state.selectedIds]
+  const exportArgs = args as ExportArgs | undefined
+  const nodeIds = exportNodeIds(target, exportArgs)
   if (nodeIds.length === 0) throw new Error('No nodes to export')
   const data = await store.renderExportImage(
     nodeIds,
