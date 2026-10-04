@@ -75,4 +75,15 @@ describe('SceneGraph ID generator', () => {
   test('throws instead of hanging when the generator only returns IDs in use', () => {
     expect(() => new SceneGraph(() => 'same')).toThrow('IDs in a row that are in use')
   })
+
+  test('gives modes added to a collection IDs from the injected generator', () => {
+    const graph = new SceneGraph(sequence('7'))
+    const collection = graph.createCollection('Colors')
+    const variable = graph.createVariable('Primary', 'COLOR', collection.id)
+    const dark = graph.createMode(collection.id, 'Dark')
+    expect(dark).toBe('7:6')
+    expect(collection.modes.map((mode) => mode.modeId)).toEqual(['7:4', '7:6'])
+    expect(Object.keys(variable.valuesByMode)).toContain('7:6')
+    expect(graph.createMode('missing', 'Dark')).toBeUndefined()
+  })
 })

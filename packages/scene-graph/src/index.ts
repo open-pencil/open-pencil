@@ -223,6 +223,16 @@ export class SceneGraph {
     return Variables.createCollection(this, () => this.generateEntityId(issued), name)
   }
 
+  createMode(collectionId: string, name: string, sourceModeId?: string): string | undefined {
+    return Variables.createMode(
+      this,
+      () => this.generateEntityId(),
+      collectionId,
+      name,
+      sourceModeId
+    )
+  }
+
   removeCollection(id: string): void {
     Variables.removeCollection(this, id)
   }
