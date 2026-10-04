@@ -127,7 +127,7 @@ function createVectorChild(
   const inFrame = offsetVectorNetwork(path.vectorNetwork, placement.offsetX, placement.offsetY)
   const normalized = normalizeVectorToNodeBounds(inFrame)
   if (!normalized) return
-  const [stroke] = path.strokes
+  const stroke = path.strokes.at(0)
   createNormalizedVectorChild(graph, frameId, normalized, index, {
     fillGeometry: [],
     fills: path.fills,
