@@ -12,6 +12,7 @@ import {
 } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { presenceByPage, type PagePresenceEntry } from '@/app/presence/registry'
 import { activeTab } from '@/app/tabs'
 
 /** How many recent pages the unfiltered palette lists. */
@@ -19,12 +20,16 @@ const PALETTE_RECENT_PAGES = 5
 
 function pageItem(
   store: EditorStore,
+  presence: Map<string, PagePresenceEntry[]>,
   page: SceneNode,
-  extra: Partial<CommandPaletteItem> = {}
+  { note, ...extra }: Partial<CommandPaletteItem> & { note?: string } = {}
 ): CommandPaletteItem {
+  // Who works on the page follows the note, so "Recent · Fern, Ana".
+  const people = (presence.get(page.id) ?? []).map((entry) => entry.name).join(', ')
   return {
     id: `page:${page.id}`,
     label: page.name,
+    description: [note, people].filter(Boolean).join(' · ') || undefined,
     icon: IconFile,
     onSelect: () => void store.switchPage(page.id),
     ...extra
@@ -52,24 +57,30 @@ export function usePagePaletteGroup() {
       compact(without(store.recentPages.value, current).map((id) => byId[id])),
       PALETTE_RECENT_PAGES
     )
+    const presence = presenceByPage(store)
     const others = without(difference(pages, recent), byId[current])
 
     return {
       id: 'pages',
       label: messages.value.pages,
       items: [
-        ...recent.map((page) => pageItem(store, page, { description: messages.value.recentPage })),
+        ...recent.map((page) =>
+          pageItem(store, presence, page, { note: messages.value.recentPage })
+        ),
         {
           id: 'pages:go-to',
           label: messages.value.goToPage,
           icon: IconFiles,
           children: pages.map((page) =>
             page.id === current
-              ? pageItem(store, page, { description: messages.value.currentPage, disabled: true })
-              : pageItem(store, page)
+              ? pageItem(store, presence, page, {
+                  note: messages.value.currentPage,
+                  disabled: true
+                })
+              : pageItem(store, presence, page)
           )
         },
-        ...others.map((page) => pageItem(store, page, { searchOnly: true }))
+        ...others.map((page) => pageItem(store, presence, page, { searchOnly: true }))
       ]
     }
   })

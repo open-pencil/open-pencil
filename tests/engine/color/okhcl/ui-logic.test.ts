@@ -32,7 +32,14 @@ describe('OkHCL metadata toggling', () => {
     const page = graph.getPages()[0]
     const node = graph.createNode('FRAME', page.id, {
       strokes: [
-        { color: { r: 0, g: 0, b: 1, a: 1 }, weight: 1, opacity: 1, visible: true, align: 'INSIDE' }
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 1, a: 1 },
+          weight: 1,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE'
+        }
       ]
     })
 

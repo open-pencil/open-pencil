@@ -81,10 +81,34 @@ export function orderKeyBetween(lo: string | null, hi: string | null): string | 
   return hi.slice(0, i + 1) + (orderKeyBetween(null, rest) ?? '')
 }
 
+/** Indices of the longest strictly increasing run of keys, so a moved layer re-keys alone. */
+function increasingKeyIndices(sourceKeys: ReadonlyArray<string | null | undefined>): Set<number> {
+  const tails: number[] = []
+  const previous = new Map<number, number>()
+  for (let index = 0; index < sourceKeys.length; index++) {
+    const key = sourceKeys[index]
+    if (!key) continue
+    let low = 0
+    let high = tails.length
+    while (low < high) {
+      const mid = (low + high) >> 1
+      if ((sourceKeys[tails[mid]] ?? '') < key) low = mid + 1
+      else high = mid
+    }
+    // A key with nothing below it cannot start the run once a sibling has to precede it.
+    if (low === 0 && index > 0 && orderKeyBetween(null, key) === null) continue
+    if (low > 0) previous.set(index, tails[low - 1])
+    tails[low] = index
+  }
+  const kept = new Set<number>()
+  for (let index = tails.at(-1); index !== undefined; index = previous.get(index)) kept.add(index)
+  return kept
+}
+
 /**
- * Order keys for siblings in their current order. Imported keys are kept while they still
- * increase; siblings without a usable key get the index key when it fits between its
- * neighbours, and otherwise a key between them, so no two siblings share a key.
+ * Order keys for siblings in their current order. The longest increasing run of imported keys
+ * is kept; other siblings get the index key when it fits between their neighbours, and
+ * otherwise a key between them, so no two siblings share a key.
  */
 export function siblingOrderKeys(sourceKeys: ReadonlyArray<string | null | undefined>): string[] {
   const keys: string[] = []
@@ -107,9 +131,10 @@ export function siblingOrderKeys(sourceKeys: ReadonlyArray<string | null | undef
     return filled
   }
 
+  const kept = increasingKeyIndices(sourceKeys)
   for (let index = 0; index < sourceKeys.length; index++) {
     const key = sourceKeys[index]
-    const filled = key && (prev === null || key > prev) ? fill(key) : null
+    const filled = key && kept.has(index) ? fill(key) : null
     if (key && filled) {
       pending.forEach((pendingIndex, i) => (keys[pendingIndex] = filled[i]))
       keys[index] = key

@@ -11,5 +11,11 @@
   "updatedLive": "Обновлено в реальном времени",
   "previewFailed": "Ошибка предпросмотра",
   "generatedReadOnly": "Сгенерировано, только чтение",
-  "reset": "Сбросить"
+  "reset": "Сбросить",
+  "noSelection": "Выделите слой, чтобы увидеть его код",
+  "noSelectionDesignJSX": "Или напишите Design JSX, чтобы добавить на страницу новые слои.",
+  "noSelectionTailwindJSX": "Tailwind JSX создаётся для выделенных слоёв.",
+  "writeJSX": "Написать JSX",
+  "canvasChangedExpression": "На холсте теперь {value}; выражение оставлено как написано.",
+  "canvasChangedOrder": "На холсте эти слои теперь в другом порядке; код оставлен как написан."
 }

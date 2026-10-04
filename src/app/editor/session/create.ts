@@ -181,7 +181,12 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       }
       succeeded = true
     } catch (error) {
-      if (preparation.signal.aborted) throw error
+      if (preparation.signal.aborted) {
+        // Another switch took over; its page is the one to show, so this one ends quietly.
+        // A caller's own preparation reports its cancellation itself.
+        if (ownsPreparation) return
+        throw error
+      }
       if (ownsPreparation) {
         const presentationTimedOut =
           error instanceof Error && error.message === 'The operation was timed out'

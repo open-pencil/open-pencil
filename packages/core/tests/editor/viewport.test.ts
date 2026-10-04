@@ -24,3 +24,19 @@ describe('zoomToLevel', () => {
     expect(center(editor)).toEqual(before)
   })
 })
+
+describe('centerOn', () => {
+  test('puts the point at the center at the given zoom', () => {
+    const editor = createEditor({ getViewportSize: () => VIEWPORT })
+    editor.centerOn(300, 200, 2)
+    expect(editor.state.zoom).toBe(2)
+    expect(center(editor)).toEqual({ x: 300, y: 200 })
+  })
+
+  test('leaves the view alone for a point too far away to represent', () => {
+    const editor = createEditor({ getViewportSize: () => VIEWPORT })
+    const before = { ...center(editor), zoom: editor.state.zoom }
+    editor.centerOn(1e308, 0, 256)
+    expect({ ...center(editor), zoom: editor.state.zoom }).toEqual(before)
+  })
+})

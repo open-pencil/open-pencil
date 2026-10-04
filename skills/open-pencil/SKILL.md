@@ -124,7 +124,10 @@ openpencil analyze spacing design.fig --grid 8
 openpencil analyze clusters design.fig --min-count 3
 openpencil lint design.fig
 openpencil lint design.fig --json
+openpencil lint design.fig --fix -o fixed.fig     # bind matching color variables, round to whole pixels
 ```
+
+In MCP and AI chat, `lint` lists findings with their `fix` and `suggestions`; `lint_fix` applies the safe fixes, and the first suggestion of each finding with `suggestions: true`.
 
 ### Eval (Figma Plugin API)
 
@@ -151,6 +154,20 @@ openpencil eval design.fig -o modified.fig -c '...'
 
 # Read code from stdin
 echo 'figma.currentPage.children.map(n => n.name)' | openpencil eval design.fig --stdin
+```
+
+### Diff
+
+Compare nodes and documents, and apply patches:
+
+```bash
+openpencil diff create design.fig --from 1:23 --to 1:87       # JSX attribute patch
+openpencil diff jsx design.fig --from 1:23 --to 1:87          # JSX structure
+openpencil diff show 1:24 design.fig --attributes 'rounded={8}' > fix.diff
+openpencil diff apply fix.diff design.fig --dry-run           # fails on stale values
+openpencil diff apply fix.diff design.fig --write
+openpencil diff visual design.fig --from 1:23 --to 1:87 -o diff.png
+openpencil diff files before.fig after.fig                    # exit 1 when different
 ```
 
 Every command that reports structured data supports `--json` when appropriate.
@@ -202,7 +219,7 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 
 1. **Open/create a document** — `open_file { path }` within the effective filesystem root, or `new_document {}`.
 2. **Query** — `get_page_tree`, `find_nodes`, `query_nodes`, `get_node`, `list_pages`, `get_current_page`.
-3. **Inspect** — `get_jsx`, `diff_jsx`, `describe`, `export_image`, `export_svg`, `export_pdf`.
+3. **Inspect** — `get_jsx`, `diff_jsx`, `diff_create`, `diff_visual`, `describe`, `export_image`, `export_svg`, `export_pdf`.
 4. **Modify** — `render`, `batch_update`, `update_node`, `set_fill`, `set_layout`, `create_shape`, `import_svg`, etc.
 5. **Navigate** — after creating or editing visible canvas content, call `select_nodes` and `viewport_zoom_to_fit { id }` (or `node_bounds` + `viewport_set`) so the user can see the result in the running editor.
 6. **Save/export** — `save_file`, `export_image`, `export_svg`, `export_pdf`, or CLI `export`.
@@ -226,7 +243,8 @@ Discover available tools and their arguments from the connected server or browse
 
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
 - **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
-- **`diff_jsx`** — compare two nodes structurally before editing.
+- **`diff_jsx` / `diff_create`** — compare two nodes as a JSX line diff or as an appliable patch of JSX attributes; `diff_show` previews setting attributes and `diff_apply` applies a patch only if the nodes still match it.
+- **`diff_visual`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
 - **`batch_update`** — apply multiple node updates efficiently.
 - **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.

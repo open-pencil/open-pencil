@@ -1,8 +1,8 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { LAYOUT_DISTANCE_FIELDS } from '../fields'
-import type { InstanceOccurrence } from '../interpret'
-import { occurrences } from '../occurrence-path'
+import { occurrences } from '../occurrence/path'
+import type { InstanceOccurrence } from '../occurrence/types'
 import { uniformScaleOf } from '../types'
 import { scaleTextLayout } from './text'
 

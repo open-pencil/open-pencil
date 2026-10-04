@@ -2,6 +2,7 @@ import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import type { ToolChange } from '@/app/ai/tools/changes/types'
 
 import type { ChatDocumentEditor } from './document'
 
@@ -32,6 +33,8 @@ export interface ConversationMessage {
   message: UIMessage
   displayText?: string
   attachments: AttachmentPresentation[]
+  /** Absent in conversations saved before changes were recorded. */
+  toolChanges?: ToolChange[]
 }
 
 export interface Conversation extends ConversationMeta {

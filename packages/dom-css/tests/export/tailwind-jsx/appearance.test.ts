@@ -11,6 +11,7 @@ describe('Tailwind JSX appearance classes', () => {
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 1, g: 0, b: 0, a: 1 },
           weight: 2,
           opacity: 1,

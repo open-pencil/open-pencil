@@ -4,7 +4,9 @@ import { computed } from 'vue'
 
 import type { LayerNode } from '@open-pencil/vue'
 
+import type { LayerIssueMark as LayerIssueMarkData } from '@/app/editor/design-check/layers'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
+import LayerIssueMark from '@/components/design-check/LayerIssueMark.vue'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import LayerTreeActions from './LayerTreeActions.vue'
@@ -14,16 +16,19 @@ import LayerTreeRowShell from './LayerTreeRowShell.vue'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
 import { useLayerTreeUI } from './ui'
 
-const { node, level, hasChildren, selected, padLeft, expanded, actions, chrome } = defineProps<{
-  node: LayerNode
-  level: number
-  hasChildren: boolean
-  selected: boolean
-  padLeft: string
-  expanded: boolean
-  actions: LayerTreeItemActions
-  chrome: LayerTreeChrome
-}>()
+const { node, level, hasChildren, selected, padLeft, expanded, actions, chrome, issue } =
+  defineProps<{
+    node: LayerNode
+    level: number
+    hasChildren: boolean
+    selected: boolean
+    padLeft: string
+    expanded: boolean
+    actions: LayerTreeItemActions
+    chrome: LayerTreeChrome
+    /** Design issues on the layer, or inside it, shown while it is collapsed. */
+    issue?: LayerIssueMarkData | null
+  }>()
 
 const emit = defineEmits<{
   renameStart: [id: string, name: string]
@@ -76,6 +81,7 @@ const styles = computed(() =>
 
     <component :is="nodeIcon(node)" data-slot="icon" :class="styles.icon({ class: ui?.icon })" />
     <span data-slot="label" :class="styles.label({ class: ui?.label })">{{ node.name }}</span>
+    <LayerIssueMark v-if="issue && (issue.own || !expanded)" :mark="issue" />
 
     <LayerTreeActions
       :node="node"

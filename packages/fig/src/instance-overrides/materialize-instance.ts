@@ -10,7 +10,8 @@ import {
   occurrenceScale
 } from './bindings/variables'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
-import { resolveOccurrencePath, type InstanceOccurrence } from './interpret'
+import { resolveOccurrencePath } from './interpret'
+import type { InstanceOccurrence } from './occurrence/types'
 import { symbolDataOf } from './types'
 
 function occurrenceMetadata(
@@ -18,6 +19,8 @@ function occurrenceMetadata(
   converted: ReturnType<typeof nodeChangeToProps>
 ) {
   const metadata = createDefaultSourceMetadata()
+  // Figma's own sibling key, so re-export keeps the order Figma saved.
+  metadata.orderKey = current.properties.parentIndex?.position ?? null
   metadata.fig.layout = converted.source?.fig.layout ?? null
   metadata.fig.uniformScaleFactor = symbolDataOf(current.properties)?.uniformScaleFactor ?? null
   return metadata
