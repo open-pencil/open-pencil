@@ -6,13 +6,20 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { runCommand } from 'citty'
+import * as v from 'valibot'
 
 import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 import { removeDiscoveryFile, writeDiscoveryFile } from '@open-pencil/mcp/discovery'
 
 import exportCommand from '#cli/commands/export'
 
-type RPCRequest = { command: string; args: Record<string, unknown> }
+const RPCRequestJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ command: v.string(), args: v.record(v.string(), v.unknown()) })
+)
+
+type RPCRequest = v.InferOutput<typeof RPCRequestJSON>
 
 const DOCUMENT: AutomationDocumentSummary = {
   id: 'tab-1',
@@ -46,7 +53,7 @@ beforeAll(async () => {
     const chunks: Buffer[] = []
     request.on('data', (chunk: Buffer) => chunks.push(chunk))
     request.on('end', () => {
-      const body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as RPCRequest
+      const body = v.parse(RPCRequestJSON, Buffer.concat(chunks).toString('utf-8'))
       requests.push(body)
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ ok: true, result: reply(body.command) }))
