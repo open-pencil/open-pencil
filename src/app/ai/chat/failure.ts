@@ -1,4 +1,4 @@
-import { APICallError } from 'ai'
+import { APICallError, StreamProviderError } from 'ai'
 
 export type AIChatFailureReason =
   | 'authentication'
@@ -113,6 +113,10 @@ export function classifyAIChatError(error: unknown): AIChatFailure {
     reason: failureReason(error),
     detail: errorText(error),
     statusCode: providerErrorStatus(error) ?? undefined,
-    retryable: APICallError.isInstance(error) ? error.isRetryable : undefined
+    // A provider error after the stream starts arrives as StreamProviderError, not APICallError.
+    retryable:
+      APICallError.isInstance(error) || StreamProviderError.isInstance(error)
+        ? error.isRetryable
+        : undefined
   }
 }

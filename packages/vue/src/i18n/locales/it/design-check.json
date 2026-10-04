@@ -65,6 +65,8 @@
   "fixRoundPixels": "Arrotonda a pixel interi",
   "fixUseValue": "Cambia in {value}",
   "fixFullRadius": "Usa raggio completo",
+  "fixConvertToFrame": "Converti in frame",
+  "fixDeleteLayer": "Elimina livello",
   "fixAll": "Correggi tutti ({count})",
   "ruleNoDefaultNames": "Nome del livello predefinito",
   "ruleNoDefaultNamesHelp": "Nomi descrittivi rendono i livelli più facili da trovare, consegnare e riutilizzare.",

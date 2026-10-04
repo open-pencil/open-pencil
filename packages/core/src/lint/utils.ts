@@ -52,3 +52,26 @@ export function getNodePath(node: LintPathNode): string[] {
 }
 
 export const SPACING_SCALE = [0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96, 128]
+
+const COMPONENT_TREE_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
+
+/** Layer types whose descendants' structure belongs to a component. */
+export function ownsComponentTree(type: string): boolean {
+  return COMPONENT_TREE_TYPES.has(type)
+}
+
+interface LintTreeNode {
+  type: string
+  parent?: LintTreeNode
+}
+
+/**
+ * Whether a layer sits inside a component or an instance, whose structure belongs to the
+ * component: instance layers cannot be removed, and a component property may show a hidden one.
+ */
+export function inComponentTree(node: LintTreeNode): boolean {
+  for (let current = node.parent; current; current = current.parent) {
+    if (ownsComponentTree(current.type)) return true
+  }
+  return false
+}

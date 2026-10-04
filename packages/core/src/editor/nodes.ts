@@ -9,7 +9,6 @@ import {
 } from '@open-pencil/scene-graph'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
-import { applyLintFixes as applyFixes, type LintFixRequest } from '#core/lint/fixes'
 
 import { createLayoutModeActions } from './layout-mode'
 import { createNodePreviewActions } from './node-preview'
@@ -111,23 +110,8 @@ export function createNodeActions(ctx: EditorContext) {
     )
   }
 
-  /** Applies lint fixes that still hold as one undo step; returns how many applied. */
-  function applyLintFixes(requests: readonly LintFixRequest[]): number {
-    return ctx.undo.runBatch('Fix design issues', () =>
-      applyFixes(
-        {
-          graph: ctx.graph,
-          updateNode: (id, changes) => updateNodeWithUndo(id, changes, 'Fix design issue'),
-          bindVariable: variableBindingActions.bindVariable
-        },
-        requests
-      )
-    )
-  }
-
   return {
     updateNode,
-    applyLintFixes,
     ...createNodePreviewActions(ctx, updateNode),
     updateNodeWithUndo,
     setOpacity,
