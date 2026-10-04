@@ -19,6 +19,7 @@
 
 ### Added
 
+- Import `resolvePasteTarget` from `@open-pencil/core/editor` to place ordinary pasted or dropped content in an embedding app in the same container the editor would choose. It takes the editor `createEditor` returns. Replacement paste is not covered: it inserts into the selected target's parent.
 - Import `flattenNodesToVectorProps`, `outlineStrokeNodesToVectorProps`, and the `VectorFlattenProps` type from `@open-pencil/core/canvas` to compute Flatten and Outline stroke geometry in an embedding app without going through the editor's own write path.
 - Check designs from the new Lint tab in the right panel: issues on the page, in the selection, or across the document are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and one-click fixes bind colors to the variable they match and round subpixel geometry for a row or a whole group, and snap radius, spacing, and small text to the scale, convert groups to frames, and delete hidden layers one row at a time. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
 - See which layer the code is about in the Code tab's Design JSX and Tailwind JSX: the element around the cursor marks its opening and closing tag and shows its layer on the canvas as a tinted box, apart from canvas hover, and design issues are underlined on the property that causes them, including while you edit Design JSX live.
