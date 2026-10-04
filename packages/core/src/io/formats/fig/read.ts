@@ -37,7 +37,10 @@ function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}
   return reader.graph
 }
 
-function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Promise<SceneGraph> {
+export function parseFigFileViaWorker(
+  buffer: ArrayBuffer,
+  options: ParseFigFileOptions
+): Promise<SceneGraph> {
   return new Promise((resolve, reject) => {
     options.signal?.throwIfAborted()
     const worker = createFigSessionWorker()
@@ -131,7 +134,7 @@ export async function parseFigFile(
   if (typeof Worker !== 'undefined' && IS_BROWSER) {
     const copy = buffer.slice(0)
     try {
-      return await parseViaWorker(buffer, options)
+      return await parseFigFileViaWorker(buffer, options)
     } catch (error) {
       if (options.signal?.aborted || error instanceof ReaderSemanticError) throw error
       console.warn('Worker parsing failed, falling back to main thread:', error)
