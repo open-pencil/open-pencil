@@ -279,28 +279,54 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     )
   }
 
+  const closeEntries = {
+    unsaved: v.optional(
+      v.pipe(
+        v.picklist(['error', 'save', 'discard']),
+        v.description(
+          'What to do with unsaved changes: "error" (default) fails, "save" saves first, "discard" drops them'
+        )
+      )
+    ),
+    ...automationTargetSchema
+  }
+
   register(
     'close_file',
     {
-      description: 'Close an open document tab, prompting to save unsaved changes.',
-      inputSchema: v.object({ ...automationTargetSchema })
+      inputSchema: resolvedRoot
+        ? v.object({
+            ...closeEntries,
+            path: v.optional(
+              v.pipe(
+                v.string(),
+                v.minLength(1),
+                v.description(
+                  'With unsaved "save": .fig path for a document never saved, inside the MCP root'
+                )
+              )
+            )
+          })
+        : v.object(closeEntries)
     },
-    async (args: { document_id?: string; page_id?: string }) => {
+    async (args: {
+      unsaved?: 'error' | 'save' | 'discard'
+      path?: string
+      document_id?: string
+      page_id?: string
+    }) => {
       try {
+        const safePath =
+          args.path !== undefined && resolvedRoot
+            ? await resolveSafePath(args.path, resolvedRoot)
+            : undefined
         const { target } = splitAutomationTarget(args)
-        const result = await sendRPC({ command: 'close_file', args: target })
-        const res = result as {
-          ok?: boolean
-          result?: { closed?: boolean }
-          target?: unknown
-          error?: string
-        }
-        if (res.ok === false) return fail(new Error(res.error))
-        const response: { closed: boolean; target?: unknown } = {
-          closed: res.result?.closed === true
-        }
-        if (res.target) response.target = res.target
-        return ok(response)
+        const rpcArgs: Record<string, unknown> = { ...target }
+        if (args.unsaved) rpcArgs.unsaved = args.unsaved
+        if (safePath) rpcArgs.path = safePath.realPath
+        const res = await sendCommand(sendRPC, 'close_file', rpcArgs)
+        const closed = (res.result as { closed?: boolean } | undefined)?.closed === true
+        return ok(withTarget({ closed }, res))
       } catch (e) {
         return fail(e)
       }

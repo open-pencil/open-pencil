@@ -92,13 +92,22 @@ describe('documents CLI', () => {
 
   test('saves, closes, and activates a targeted document', async () => {
     await cli(['documents', 'save', '--document-id', 'doc-2', '--path', 'out.fig'])
-    await cli(['documents', 'close', '--document-id', 'doc-2'])
+    await cli(['documents', 'close', '--document-id', 'doc-2', '--discard'])
     await cli(['documents', 'activate', 'doc-2', '--page-id', '0:1'])
     expect(requests).toEqual([
       { command: 'save_file', args: { document_id: 'doc-2', path: resolve('out.fig') } },
-      { command: 'close_file', args: { document_id: 'doc-2' } },
+      { command: 'close_file', args: { document_id: 'doc-2', unsaved: 'discard' } },
       { command: 'activate_document', args: { document_id: 'doc-2', page_id: '0:1' } }
     ])
+  })
+
+  test('close --save forwards the save choice and an absolute path', async () => {
+    await cli(['documents', 'close', '--save', '--path', 'draft.fig'])
+    expect(requests).toEqual([
+      { command: 'close_file', args: { unsaved: 'save', path: resolve('draft.fig') } }
+    ])
+    const both = await cli(['documents', 'close', '--save', '--discard'])
+    expect(both.exitCode).toBe(1)
   })
 })
 

@@ -4,7 +4,7 @@ import { defineCommand } from 'citty'
 
 import { runAppCommand } from '#cli/app/command'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
-import { ok } from '#cli/format'
+import { ok, printError } from '#cli/format'
 
 const json = { type: 'boolean', description: 'Output as JSON' } as const
 
@@ -58,14 +58,34 @@ export const save = defineCommand({
 })
 
 export const close = defineCommand({
-  meta: { description: 'Close a document tab, prompting in the app to save unsaved changes' },
-  args: { ...appTargetOptions, json },
-  run: ({ args }) =>
-    runAppCommand('close_file', appTargetRPCArgs(args), {
+  meta: {
+    description:
+      'Close a document tab; with unsaved changes, pass --save or --discard (it never prompts in the app)'
+  },
+  args: {
+    save: { type: 'boolean', description: 'Save unsaved changes first' },
+    discard: { type: 'boolean', description: 'Close without saving, losing unsaved changes' },
+    path: { type: 'string', description: 'With --save: .fig path for a document never saved' },
+    ...appTargetOptions,
+    json
+  },
+  run: ({ args }) => {
+    if (args.save && args.discard) {
+      printError('Pass either --save or --discard, not both')
+      process.exit(1)
+    }
+    const rpcArgs: Record<string, unknown> = {
+      ...appTargetRPCArgs(args),
+      ...absolutePath(args.path)
+    }
+    if (args.save) rpcArgs.unsaved = 'save'
+    if (args.discard) rpcArgs.unsaved = 'discard'
+    return runAppCommand('close_file', rpcArgs, {
       json: args.json,
       message: (result) =>
         (result as { closed?: boolean }).closed ? ok('Closed document') : 'Document stayed open'
     })
+  }
 })
 
 export const activate = defineCommand({

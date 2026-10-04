@@ -5,7 +5,7 @@ import * as layoutModule from '@open-pencil/core/layout'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
-import { createTab, getActiveStore, getActiveTabId, getTabsSnapshot } from '@/app/tabs'
+import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot } from '@/app/tabs'
 
 function setupGlobals() {
   globalThis.window = {
@@ -133,5 +133,37 @@ describe('undo and redo', () => {
     const tab = createTab()
     await request('eval', { document_id: tab.id, code: 'return figma.currentPage.name' })
     expect(tab.store.undo.canUndo).toBe(false)
+  })
+})
+
+describe('close_file and save_file never prompt', () => {
+  function dirtyTab() {
+    const tab = createTab()
+    tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
+    return tab
+  }
+
+  test('closing unsaved changes fails unless the caller chooses', async () => {
+    const tab = dirtyTab()
+    await expect(request('close_file', { document_id: tab.id })).rejects.toThrow(
+      'has unsaved changes'
+    )
+    expect(getTabById(tab.id)).toBeDefined()
+
+    const closed = await request('close_file', { document_id: tab.id, unsaved: 'discard' })
+    expect(closed.result).toEqual({ closed: true })
+    expect(getTabById(tab.id)).toBeUndefined()
+  })
+
+  test('saving a document that has no file asks for a path instead of a dialog', async () => {
+    const tab = dirtyTab()
+    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow(
+      'has not been saved to a file yet'
+    )
+    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
+      'has not been saved to a file yet'
+    )
+    expect(getTabById(tab.id)).toBeDefined()
   })
 })

@@ -181,7 +181,7 @@ describe('MCP server', () => {
     expect(byName.get('save_file')?.effect).toBe('write')
     expect(byName.get('open_file')?.effect).toBe('read')
     expect(byName.get('open_file')?.capabilities).toEqual(['filesystem:read', 'document:read'])
-    expect(byName.get('close_file')?.effect).toBe('read')
+    expect(byName.get('close_file')?.effect).toBe('write')
     expect(byName.get('update_node')?.effect).toBe('write')
     expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
     expect(byName.get('activate_document')?.effect).toBe('read')
@@ -371,20 +371,32 @@ describe('MCP server with mcpRoot', () => {
     })
   })
 
-  test('registers close_file as read-only and forwards its document target', async () => {
+  test('registers close_file as destructive and forwards its unsaved choice and target', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const { tools } = await client.listTools()
       const closeFile = tools.find((tool) => tool.name === 'close_file')
-      expect(closeFile?.annotations?.readOnlyHint).toBe(true)
+      expect(closeFile?.annotations?.destructiveHint).toBe(true)
 
       const result = await client.callTool({
         name: 'close_file',
-        arguments: { document_id: 'doc-1' }
+        arguments: { document_id: 'doc-1', unsaved: 'discard' }
       })
       expect(result.isError).not.toBe(true)
       expect(browser.requests.find((item) => item.command === 'close_file')?.args).toEqual({
-        document_id: 'doc-1'
+        document_id: 'doc-1',
+        unsaved: 'discard'
       })
+    })
+  })
+
+  test('close_file keeps a save path inside mcpRoot', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const outside = await client.callTool({
+        name: 'close_file',
+        arguments: { unsaved: 'save', path: '/etc/escape.fig' }
+      })
+      expect(outside.isError).toBe(true)
+      expect(browser.requests.some((item) => item.command === 'close_file')).toBe(false)
     })
   })
 

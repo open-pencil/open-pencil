@@ -77,6 +77,11 @@ export function createDocumentIOActions(
     getDocumentFilePath: sourceState.getFilePath,
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
+    /** Whether saving writes in place rather than asking for a location. */
+    hasWritableSource: () =>
+      !!sourceState.getFilePath() ||
+      !!sourceState.getFileHandle() ||
+      !!sourceState.getStorageBinding(),
     getRecoveryId: sourceActions.getRecoveryId,
     adoptRecoverySnapshot: sourceActions.adoptRecoverySnapshot,
     persistRecoveryNow: sourceActions.persistRecoveryNow,

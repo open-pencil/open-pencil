@@ -79,10 +79,11 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       : []),
     {
       name: 'close_file',
-      description: 'Close an open document tab, prompting to save unsaved changes.',
-      effect: 'read',
+      description:
+        'Close an open document tab. With unsaved changes it fails unless unsaved is "save" or "discard"; it never prompts in the app.',
+      effect: 'write',
       availability: 'default',
-      capabilities: ['document:read'],
+      capabilities: ['document:write', 'filesystem:write'],
       enabled: true
     },
     {
