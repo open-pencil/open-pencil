@@ -93,25 +93,47 @@ describe('activate_document', () => {
 })
 
 describe('undo and redo', () => {
-  test('step the targeted document history and report the change label', async () => {
+  test('step through automation changes and report their labels', async () => {
+    const tab = createTab()
+    const store = tab.store
+    const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
+    await request('tool', {
+      document_id: tab.id,
+      name: 'set_opacity',
+      args: { id: node, value: 0.5 }
+    })
+
+    const undone = await request('undo', { document_id: tab.id })
+    expect(undone.result).toEqual({ applied: true, label: 'Agent: set_opacity' })
+    expect(store.graph.getNode(node)?.opacity).toBe(1)
+
+    const redone = await request('redo', { document_id: tab.id })
+    expect(redone.result).toEqual({ applied: true, label: 'Agent: set_opacity' })
+    expect(store.graph.getNode(node)?.opacity).toBe(0.5)
+  })
+
+  test('refuse to undo or redo a change made in the editor', async () => {
     const tab = createTab()
     const store = tab.store
     const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
     store.updateNodeWithUndo(node, { opacity: 0.5 }, 'Set opacity')
 
-    const undone = await request('undo', { document_id: tab.id })
-    expect(undone.result).toEqual({ applied: true, label: 'Set opacity', scope: 'document' })
-    expect(store.graph.getNode(node)?.opacity).toBe(1)
-
-    const redone = await request('redo', { document_id: tab.id })
-    expect(redone.result).toEqual({ applied: true, label: 'Set opacity', scope: 'document' })
+    await expect(request('undo', { document_id: tab.id })).rejects.toThrow(
+      'The last change ("Set opacity") was made in the editor'
+    )
     expect(store.graph.getNode(node)?.opacity).toBe(0.5)
+
+    store.undoAction()
+    await expect(request('redo', { document_id: tab.id })).rejects.toThrow(
+      'The last undone change ("Set opacity") was made in the editor'
+    )
+    expect(store.graph.getNode(node)?.opacity).toBe(1)
   })
 
   test('report nothing to redo on a fresh history', async () => {
     const tab = createTab()
     const response = await request('redo', { document_id: tab.id })
-    expect(response.result).toEqual({ applied: false, label: null, scope: 'document' })
+    expect(response.result).toEqual({ applied: false, label: null })
   })
 
   test('undo reverts a layer an automation tool created', async () => {

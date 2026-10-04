@@ -414,7 +414,7 @@ describe('MCP server with mcpRoot', () => {
 
       const undone = await client.callTool({ name: 'undo', arguments: { document_id: 'doc-2' } })
       expect(undone.isError).not.toBe(true)
-      expect(JSON.stringify(undone.content)).toContain('Mock change')
+      expect(JSON.stringify(undone.content)).toContain('Agent: mock')
       expect(browser.requests.find((item) => item.command === 'undo')?.args).toEqual({
         document_id: 'doc-2'
       })

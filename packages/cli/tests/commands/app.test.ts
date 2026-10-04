@@ -113,10 +113,10 @@ describe('documents CLI', () => {
 
 describe('history CLI', () => {
   test('reports the undone change', async () => {
-    responses.set('undo', { applied: true, label: 'Set opacity', scope: 'document' })
+    responses.set('undo', { applied: true, label: 'Agent: set_opacity' })
     const undone = await cli(['undo', '--document-id', 'doc-2'])
     expect(undone.exitCode).toBe(0)
-    expect(undone.stdout).toContain('Undid: Set opacity')
+    expect(undone.stdout).toContain('Undid: Agent: set_opacity')
     expect(requests).toEqual([{ command: 'undo', args: { document_id: 'doc-2' } }])
   })
 })

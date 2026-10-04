@@ -1,4 +1,5 @@
 import type { AutomationTarget } from '@/app/automation/bridge/target'
+import { isAutomationUndoLabel } from '@/app/automation/execution/editor'
 import { readAutomationSettings, updateAutomationSettings } from '@/app/settings/automation'
 import { switchTab } from '@/app/tabs'
 
@@ -15,19 +16,25 @@ export async function handleActivateDocument(
 
 type HistoryDirection = 'undo' | 'redo'
 
-// Mirrors the Edit menu: vector edit mode keeps its own session history.
+// The history is shared with the person in the editor, so automation steps back only
+// through its own changes, and only while they are on top.
 function stepHistory(target: AutomationTarget, direction: HistoryDirection) {
   const store = target.store
   if (store.state.nodeEditState) {
-    const applied = direction === 'undo' ? store.nodeEditUndo() : store.nodeEditRedo()
-    return { applied, label: null, scope: 'vector-edit' }
+    throw new Error('The document is in vector edit mode; finish editing in the app first')
   }
   const available = direction === 'undo' ? store.undo.canUndo : store.undo.canRedo
-  if (!available) return { applied: false, label: null, scope: 'document' }
+  if (!available) return { applied: false, label: null }
   const label = direction === 'undo' ? store.undo.undoLabel : store.undo.redoLabel
+  if (!isAutomationUndoLabel(label)) {
+    const change = direction === 'undo' ? 'last change' : 'last undone change'
+    throw new Error(
+      `The ${change}${label ? ` ("${label}")` : ''} was made in the editor, not through automation; ${direction} it there`
+    )
+  }
   if (direction === 'undo') store.undoAction()
   else store.redoAction()
-  return { applied: true, label, scope: 'document' }
+  return { applied: true, label }
 }
 
 export async function handleUndo(target: AutomationTarget, _args: unknown): Promise<unknown> {

@@ -62,7 +62,7 @@ Common commands:
 - `eval` — execute JavaScript with the Figma Plugin API
 - `tool` — list, describe, and call any MCP tool from the shell, in app or headless mode
 - `documents` — list, open, create, save, close, and activate documents in the running app
-- `undo` / `redo` — step a document's history in the running app
+- `undo` / `redo` — step back through your own (automation) changes in the running app
 - `settings` — read and change editor settings in the running app
 
 ### Inspect
@@ -252,7 +252,7 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 6. **Save/export** — `save_file`, `export_image`, `export_svg`, `export_pdf`, or CLI `export`.
 7. **Close** — `close_file { document_id, unsaved }` closes a document tab after the workflow. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; automation never prompts in the app.
 
-Use `undo` / `redo { document_id }` to step back a change, exactly like Edit → Undo. `get_settings` and `update_settings { settings }` read and change editor preferences such as theme, language, and snapping; they never expose credentials, models, or tool access.
+Use `undo` / `redo { document_id }` to step back your own changes. They refuse when the newest step was made by the user in the editor; never work around that. `get_settings` and `update_settings { settings }` read and change editor preferences such as theme, language, and snapping; they never expose credentials, models, or tool access.
 
 ### Browser-native WebMCP (experimental)
 
@@ -279,7 +279,7 @@ Discover available tools and their arguments from the connected server or browse
 - **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.
 - **`viewport_zoom_to_fit` / `viewport_set` / `viewport_get`** — keep the live editor focused on the created or edited design.
 - **`get_codegen_prompt`** — retrieve OpenPencil's current JSX/codegen guidance.
-- **`undo` / `redo`** — revert or reapply the last change in a document, like Edit → Undo/Redo.
+- **`undo` / `redo`** — revert or reapply your newest change; they refuse to touch the user's edits.
 - **`list_documents` / `activate_document`** — discover open tabs and show the one you worked on.
 
 ## JSX Rendering

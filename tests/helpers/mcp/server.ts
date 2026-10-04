@@ -181,8 +181,8 @@ const FIXED_MOCK_RESULTS: Partial<Record<string, object>> = {
   open_file: {},
   close_file: { closed: true },
   activate_document: { activated: true },
-  undo: { applied: true, label: 'Mock change', scope: 'document' },
-  redo: { applied: true, label: 'Mock change', scope: 'document' }
+  undo: { applied: true, label: 'Agent: mock' },
+  redo: { applied: true, label: 'Agent: mock' }
 }
 
 async function handleMockCommand(

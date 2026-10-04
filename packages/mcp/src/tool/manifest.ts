@@ -98,7 +98,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'undo',
       description:
-        'Undo the last change in a document, like Edit → Undo. Reports whether anything was undone.',
+        "Undo the newest change made through MCP or the CLI in a document. Fails if the newest change was made in the editor, so the user's work is never reverted.",
       effect: 'write',
       availability: 'default',
       capabilities: ['document:write'],
@@ -107,7 +107,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'redo',
       description:
-        'Redo the last undone change in a document, like Edit → Redo. Reports whether anything was redone.',
+        'Redo the newest change undone through MCP or the CLI. Fails if the newest undone change was made in the editor.',
       effect: 'write',
       availability: 'default',
       capabilities: ['document:write'],
@@ -116,7 +116,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'get_settings',
       description:
-        'Read editor settings: appearance (theme, language, animations), snapping, canvas rendering, recovery, and AI chat preferences.',
+        'Read editor settings: appearance (theme, language, animations), snapping, canvas rendering, recovery, AI chat, and design check preferences.',
       effect: 'read',
       availability: 'default',
       capabilities: ['settings:read'],

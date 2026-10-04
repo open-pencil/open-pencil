@@ -322,7 +322,7 @@ openpencil documents activate <document-id> [--page-id <id>] [--json]
 
 ## undo / redo
 
-Step a document's history in the running app, like Edit → Undo and Edit → Redo.
+Undo or redo the newest change made through the CLI or MCP in the running app. Fails when the newest change was made in the editor; see [Controlling the App](/programmable/cli/app-control#undo-and-redo).
 
 ```sh
 openpencil undo [--document-id <id>] [--json]

@@ -7,12 +7,13 @@ import { ok } from '#cli/format'
 interface HistoryResult {
   applied: boolean
   label: string | null
-  scope: 'document' | 'vector-edit'
 }
 
 function historyCommand(command: 'undo' | 'redo', verb: string) {
   return defineCommand({
-    meta: { description: `${verb} the last change in a document open in the running app` },
+    meta: {
+      description: `${verb} the last change made through automation in a document open in the running app`
+    },
     args: {
       ...appTargetOptions,
       json: { type: 'boolean', description: 'Output as JSON' }
@@ -24,8 +25,7 @@ function historyCommand(command: 'undo' | 'redo', verb: string) {
           const result = response as HistoryResult
           if (!result.applied) return `Nothing to ${command}`
           const label = result.label ? `: ${result.label}` : ''
-          const scope = result.scope === 'vector-edit' ? ' (vector edit)' : ''
-          return ok(`${verb === 'Undo' ? 'Undid' : 'Redid'}${label}${scope}`)
+          return ok(`${verb === 'Undo' ? 'Undid' : 'Redid'}${label}`)
         }
       })
   })

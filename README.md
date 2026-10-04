@@ -164,7 +164,7 @@ openpencil export -f png                      # Screenshot the current canvas
 openpencil eval -c "figma.currentPage.name"   # Query the editor
 openpencil documents list                     # Open tabs; also open/new/save/close/activate
 openpencil tool call set_fill --args '{"id":"0:5","color":"#2563eb"}'  # Any MCP tool
-openpencil undo                               # Step the active document's history
+openpencil undo                               # Undo the newest automation change
 openpencil settings set appearance.theme light
 ```
 

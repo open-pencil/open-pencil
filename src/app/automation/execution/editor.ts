@@ -7,6 +7,17 @@ import type { ToolDef } from '@open-pencil/core/tools'
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 
+/** Undo steps made through the automation bridge (MCP, CLI) start with this label. */
+export const AUTOMATION_UNDO_LABEL = 'Agent'
+
+export function automationUndoLabel(operation: string): string {
+  return `${AUTOMATION_UNDO_LABEL}: ${operation}`
+}
+
+export function isAutomationUndoLabel(label: string | null): boolean {
+  return label?.startsWith(`${AUTOMATION_UNDO_LABEL}: `) === true
+}
+
 /** Commit first; asynchronous font availability is presentation work, not a transaction. */
 export async function executeAtomicEditorTool(
   store: EditorStore,

@@ -37,7 +37,7 @@ openpencil documents activate tab-123 --page-id 0:4
 
 ## Undo and redo
 
-Step a document's history exactly like **Edit → Undo** and **Edit → Redo**, including vector edit mode's own history:
+Step back through changes made through the CLI and MCP, like **Edit → Undo** and **Edit → Redo**:
 
 ```sh
 openpencil undo --document-id tab-123
@@ -53,7 +53,9 @@ openpencil redo --document-id tab-123 --json
 
 When there is nothing to undo or redo, the command says so and `result.applied` is `false`.
 
-Edits made through the CLI and MCP are undoable like your own, one step per command. An `eval` script is recorded against its target page: if it switches `figma.currentPage` and edits another page, those edits are not part of the undo step.
+The editor has one history, shared by you and every automation client, so **Edit → Undo** in the app steps back through any change, newest first. Automation is narrower: `undo` and `redo` only act on a step that the CLI or MCP made, and only while it is the newest one. If the newest change was made in the editor, the command fails and leaves it alone, so an agent can't revert your work. They also fail while the document is in vector edit mode, whose history belongs to the editing session.
+
+Each CLI or MCP command that edits the document is one undo step. An `eval` script is recorded against its target page: if it switches `figma.currentPage` and edits another page, those edits are not part of the undo step.
 
 ## Settings
 
@@ -82,6 +84,9 @@ Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain 
 | `chat.reasoningDisplay` | `collapsed`, `while-thinking`, `expanded` |
 | `chat.maxAgentSteps` | integer 1–1000 |
 | `chat.changePreviewSize` | `off`, `small`, `medium`, `large` |
+| `designCheck.showOnCanvas` | `true`, `false` |
+| `designCheck.preset` | `recommended`, `strict`, `accessibility` |
+| `designCheck.disabledRules` | JSON array of rule IDs, e.g. `["no-default-names"]`; see `openpencil lint --list-rules` |
 
 Credentials, AI models, MCP connections, storage, and tool access are deliberately not available here: an automation client can't read secrets or grant itself access.
 

@@ -44,32 +44,28 @@ export function createVectorEditHistoryActions(editor: Editor, state: VectorEdit
     editor.requestRender()
   }
 
-  /** Steps back through vector edit history; false when there is nothing to undo. */
-  function nodeEditUndo(): boolean {
+  function nodeEditUndo() {
     const es = state.nodeEditState
-    if (!es) return false
+    if (!es) return
     const current = snapshot(es)
     invalidateStaleFuture(es, current)
     // Drag-start snapshots can be no-ops (click without move) — skip those
     let entry = es.history.pop()
     while (entry && vectorNetworksEqual(entry, current)) entry = es.history.pop()
-    if (!entry) return false
+    if (!entry) return
     es.future.push(current)
     restore(es, entry)
-    return true
   }
 
-  /** Steps forward through vector edit history; false when there is nothing to redo. */
-  function nodeEditRedo(): boolean {
+  function nodeEditRedo() {
     const es = state.nodeEditState
-    if (!es) return false
+    if (!es) return
     const current = snapshot(es)
     invalidateStaleFuture(es, current)
     const next = es.future.pop()
-    if (!next) return false
+    if (!next) return
     es.history.push(current)
     restore(es, next)
-    return true
   }
 
   return { nodeEditPushHistory, nodeEditUndo, nodeEditRedo }

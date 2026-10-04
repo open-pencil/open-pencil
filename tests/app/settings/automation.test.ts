@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, test } from 'bun:test'
 
 import { toRaw } from 'vue'
 
+import { allRules } from '@open-pencil/core/lint'
 import { locale, setLocale } from '@open-pencil/vue'
 
 import { readAutomationSettings, updateAutomationSettings } from '@/app/settings/automation'
@@ -56,11 +57,25 @@ test('applies a nested partial update and keeps sibling settings', () => {
   expect(getAppTheme()).toBe('auto')
 })
 
+test('changes design check settings and lists them', () => {
+  const rule = Object.keys(allRules)[0]
+  const after = updateAutomationSettings({
+    designCheck: { preset: 'strict', disabledRules: [rule], showOnCanvas: false }
+  })
+  expect(after.designCheck).toEqual({
+    preset: 'strict',
+    disabledRules: [rule],
+    showOnCanvas: false
+  })
+  expect(appPreferences.value.designCheck.disabledRules).toEqual([rule])
+})
+
 test.each([
   [{ appearance: { theme: 'sepia' } }, 'appearance.theme'],
   [{ chat: { maxAgentSteps: 0 } }, 'chat.maxAgentSteps'],
   [{ editing: { snapping: { grid: true } } }, 'editing.snapping.grid'],
-  [{ credentials: {} }, 'credentials']
+  [{ credentials: {} }, 'credentials'],
+  [{ designCheck: { disabledRules: ['not-a-rule'] } }, 'designCheck.disabledRules.0']
 ])('rejects %p without changing anything', (patch, path) => {
   const before = readAutomationSettings()
   expect(() => updateAutomationSettings(patch)).toThrow(`Invalid settings at "${path}"`)

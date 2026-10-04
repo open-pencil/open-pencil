@@ -1,15 +1,18 @@
 import * as v from 'valibot'
 
+import { allRules } from '@open-pencil/core/lint'
 import { AVAILABLE_LOCALES, locale, setLocale, type Locale } from '@open-pencil/vue'
 
 import { agentStepLimitSchema } from '@/app/ai/chat/step-limit'
-import { applySnappingPreferences } from '@/app/settings/preferences/apply'
+import { applySnappingPreferences, setDesignIssuesOnCanvas } from '@/app/settings/preferences/apply'
 import {
   ANIMATION_PREFERENCES,
   appPreferences,
   CANVAS_RENDERING_MODES,
   CHANGE_PREVIEW_SIZES,
+  DESIGN_CHECK_PRESETS,
   REASONING_DISPLAYS,
+  updateDesignCheckPreferences,
   type AppPreferences
 } from '@/app/settings/preferences/store'
 import { APP_THEMES, getAppTheme, setAppTheme, type AppTheme } from '@/app/shell/theme'
@@ -29,6 +32,7 @@ export interface AutomationSettings {
   rendering: AppPreferences['rendering']
   recovery: AppPreferences['recovery']
   chat: AppPreferences['chat']
+  designCheck: AppPreferences['designCheck']
 }
 
 const optionalBoolean = v.optional(v.boolean())
@@ -62,6 +66,13 @@ export const automationSettingsPatchSchema = v.strictObject({
       maxAgentSteps: v.optional(agentStepLimitSchema),
       changePreviewSize: v.optional(v.picklist(CHANGE_PREVIEW_SIZES))
     })
+  ),
+  designCheck: v.optional(
+    v.strictObject({
+      showOnCanvas: optionalBoolean,
+      preset: v.optional(v.picklist(DESIGN_CHECK_PRESETS)),
+      disabledRules: v.optional(v.array(v.picklist(Object.keys(allRules))))
+    })
   )
 })
 
@@ -79,7 +90,11 @@ export function readAutomationSettings(): AutomationSettings {
     editing: { snapping: { ...preferences.editing.snapping } },
     rendering: { ...preferences.rendering },
     recovery: { ...preferences.recovery },
-    chat: { ...preferences.chat }
+    chat: { ...preferences.chat },
+    designCheck: {
+      ...preferences.designCheck,
+      disabledRules: [...preferences.designCheck.disabledRules]
+    }
   }
 }
 
@@ -106,6 +121,10 @@ export function updateAutomationSettings(input: unknown): AutomationSettings {
     chat: { ...current.chat, ...patch.chat }
   }
   if (patch.editing?.snapping) applySnappingPreferences(patch.editing.snapping)
+  const { showOnCanvas, ...designCheck } = patch.designCheck ?? {}
+  if (Object.keys(designCheck).length > 0) updateDesignCheckPreferences(designCheck)
+  // Through the menu's setter, so the native View menu checkmark follows.
+  if (showOnCanvas !== undefined) setDesignIssuesOnCanvas(showOnCanvas)
 
   return readAutomationSettings()
 }

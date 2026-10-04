@@ -151,7 +151,7 @@ Endpoints are available over both active transports:
 7. **Save** — `save_file` to write back to `.fig`
 8. **Close** — `close_file` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
 
-`undo` and `redo` step a document's history, and `activate_document` brings a tab to the front when the user should see it.
+`undo` and `redo` step back through the agent's own changes, and `activate_document` brings a tab to the front when the user should see it.
 
 Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
@@ -184,16 +184,16 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 
 | Tool | Description |
 |------|-------------|
-| `undo` | Undo the last change in a document, like Edit → Undo |
-| `redo` | Redo the last undone change in a document, like Edit → Redo |
+| `undo` | Undo the newest change made through MCP or the CLI |
+| `redo` | Redo the newest change undone through MCP or the CLI |
 
-Each editing tool call is one undo step. An `eval` script is recorded against its target page, so edits it makes after switching `figma.currentPage` are not undoable.
+The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call is one undo step. An `eval` script is recorded against its target page, so edits it makes after switching `figma.currentPage` are not undoable.
 
 ### Settings
 
 | Tool | Description |
 |------|-------------|
-| `get_settings` | Read editor settings: appearance, snapping, canvas rendering, recovery, and AI chat preferences |
+| `get_settings` | Read editor settings: appearance, snapping, canvas rendering, recovery, AI chat, and design check preferences |
 | `update_settings` | Change settings with a partial object shaped like `get_settings` output; invalid keys and values are rejected |
 
 Settings tools never expose credentials, AI models, MCP connections, storage, or tool access. The available keys are listed in [Controlling the App](/programmable/cli/app-control#settings).
