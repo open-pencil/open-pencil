@@ -359,7 +359,7 @@ function renderPageChildren(
   }
 }
 
-function recordScenePicture(
+export function recordScenePicture(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
@@ -368,7 +368,22 @@ function recordScenePicture(
   r.scenePicture?.delete()
   r.scenePicture = null
   const prevViewport = r.worldViewport
-  r.worldViewport = { x: -1e6, y: -1e6, w: 2e6, h: 2e6 }
+  // Record against a finite viewport (the real viewport plus one viewport of margin on
+  // every side) instead of an effectively-infinite one. The old -1e6..1e6 viewport made
+  // `isCulled` never filter, so the fallback scene picture recorded *every* node on the
+  // page and its memory scaled with the whole canvas; for documents with large bounds or
+  // many off-screen nodes this blew up memory. A 3x3 viewport box still covers small pans
+  // while bounding the picture by what is actually on screen.
+  const vpWorldWidth = r.viewportWidth / r.zoom
+  const vpWorldHeight = r.viewportHeight / r.zoom
+  const vpWorldX = -r.panX / r.zoom
+  const vpWorldY = -r.panY / r.zoom
+  r.worldViewport = {
+    x: vpWorldX - vpWorldWidth,
+    y: vpWorldY - vpWorldHeight,
+    w: vpWorldWidth * 3,
+    h: vpWorldHeight * 3
+  }
   const recorder = new r.ck.PictureRecorder()
   try {
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
