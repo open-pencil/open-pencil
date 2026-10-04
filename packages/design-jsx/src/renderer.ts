@@ -511,22 +511,20 @@ async function renderArtworkNode<Artwork>(
   return node
 }
 
-async function renderNode<Artwork>(
-  services: DesignJSXServices<Artwork>,
+export interface ElementOverrides {
+  overrides: Partial<SceneNode>
+  /** Variable IDs by bound field, such as `fills/0/color`. */
+  bindings: Record<string, string>
+}
+
+/** The fields and variable bindings an element's props set on a `nodeType` node under `parentId`. */
+export function elementOverrides(
   graph: SceneGraph,
+  nodeType: NodeType,
   tree: TreeNode,
   parentId: string
-): Promise<SceneNode> {
-  if (tree.type === 'icon' || tree.type === 'svg')
-    return renderArtworkNode(services, graph, tree, parentId)
-  if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
-
-  const nodeType = TYPE_MAP[tree.type]
-  if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
-
-  const parent = graph.getNode(parentId)
-  const parentLayout = parent?.layoutMode ?? 'NONE'
-
+): ElementOverrides {
+  const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const isText = nodeType === 'TEXT'
   const { props, bindings } = preparePropsForRender(graph, tree.props, isText, parentId)
   const overrides = {
@@ -541,7 +539,23 @@ async function renderNode<Artwork>(
     if (childText) overrides.text = childText
     else if (typeof propText === 'string') overrides.text = propText
   }
+  return { overrides, bindings }
+}
 
+async function renderNode<Artwork>(
+  services: DesignJSXServices<Artwork>,
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string
+): Promise<SceneNode> {
+  if (tree.type === 'icon' || tree.type === 'svg')
+    return renderArtworkNode(services, graph, tree, parentId)
+  if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
+
+  const nodeType = TYPE_MAP[tree.type]
+  if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
+
+  const { overrides, bindings } = elementOverrides(graph, nodeType, tree, parentId)
   const node = graph.createNode(nodeType, parentId, overrides)
   applyBindings(graph, node.id, bindings)
 

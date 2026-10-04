@@ -19,7 +19,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 import { IS_BROWSER } from '#core/constants'
-import type { RasterExportFormat } from '#core/io/formats/raster'
+import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
@@ -47,11 +47,13 @@ import {
   type FigmaFontName,
   type NodeProxyHost
 } from './proxy'
+import type { ExportImageOptions } from './types'
 
 const noop = () => undefined
 
 export { FigmaNodeProxy } from './proxy'
 export type { FigmaEffect } from './effects'
+export type { ExportImageOptions } from './types'
 export type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -596,8 +598,8 @@ export class FigmaAPI implements NodeProxyHost {
     return undefined
   }
 
-  exportImage?: (
-    nodeIds: string[],
-    options: { scale?: number; format?: RasterExportFormat; quality?: number }
-  ) => Promise<Uint8Array | null>
+  exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
+  rasterCodec?: RasterCodec
+  /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
+  changeBaseline?: (pageId: string) => SceneGraph | null
 }

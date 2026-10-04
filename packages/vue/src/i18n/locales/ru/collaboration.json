@@ -1,7 +1,5 @@
 {
   "inThisRoom": "В этой комнате",
-  "followingPeerStop": "Следите за {name} (нажмите, чтобы остановить)",
-  "clickToFollowPeer": "Нажмите, чтобы следить за {name}",
   "yourName": "Ваше имя",
   "enterYourName": "Введите ваше имя",
   "shareThisFile": "Поделиться файлом",
@@ -13,5 +11,17 @@
   "pasteRoomLinkOrId": "Вставьте ссылку на комнату или ID",
   "connected": "Подключено",
   "disconnect": "Отключиться",
-  "share": "Поделиться"
+  "share": "Поделиться",
+  "follow": "Следовать за {name}",
+  "stopFollowing": "Перестать следовать за {name}",
+  "followingPerson": "Вы следуете за {name}",
+  "followingAgent": "Вы следуете за {agent} ({owner})",
+  "stopFollowingShort": "Перестать следовать",
+  "leaveRoom": "Покинуть комнату",
+  "morePeople": "Ещё {count}",
+  "renameAgent": "Переименовать {name}",
+  "agentName": "Имя агента",
+  "agentThinking": "Думает",
+  "agentEditing": "Редактирует",
+  "agentIdle": "Неактивен"
 }

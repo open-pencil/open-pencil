@@ -1,8 +1,8 @@
-import { createTwoFilesPatch } from 'diff'
 import * as v from 'valibot'
 
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 
+import { jsxPatch } from '#core/tools/analyze/diff/jsx'
 import { nodeIdInput, nodeComparisonInput } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
 
@@ -46,7 +46,6 @@ export const diffJSX = defineTool({
   description:
     'Structural diff between two nodes in JSX format. Shows added/removed children, changed props.',
   execution: { kind: 'sync', mutation: 'none' },
-  exposure: { webmcp: false },
   input: nodeComparisonInput,
   execute: (figma, { from, to }) => {
     const fromNode = figma.getNodeById(from)
@@ -54,20 +53,12 @@ export const diffJSX = defineTool({
     const toNode = figma.getNodeById(to)
     if (!toNode) return { error: `Node "${to}" not found` }
 
-    const fromJSX = sceneNodeToJSX(from, figma.graph)
-    const toJSX = sceneNodeToJSX(to, figma.graph)
-
-    if (fromJSX === toJSX) return { diff: null, message: 'No differences' }
-
-    const patch = createTwoFilesPatch(
+    const patch = jsxPatch(
       fromNode.name,
       toNode.name,
-      fromJSX,
-      toJSX,
-      'source',
-      'target',
-      { context: 3 }
+      sceneNodeToJSX(from, figma.graph),
+      sceneNodeToJSX(to, figma.graph)
     )
-    return { diff: patch }
+    return patch === null ? { diff: null, message: 'No differences' } : { diff: patch }
   }
 })

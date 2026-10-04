@@ -85,7 +85,7 @@ test('stop condition, warnings and limit detection share the budget captured per
       model,
       effectiveModelID: 'test',
       maxOutputTokens: 100,
-      reasoningEffort: ''
+      thinkingLevel: () => 'default'
     })
     async function send() {
       const stream = await transport.sendMessages({

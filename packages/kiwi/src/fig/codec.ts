@@ -387,6 +387,10 @@ export interface NodeChange {
   variableResolvedType?: string
   variableDataValues?: { entries?: VariableDataValuesEntry[] }
   variableScopes?: string[]
+  codeSyntax?: { entries?: Array<{ platform: string; value: string }> }
+  description?: string
+  symbolDescription?: string
+  isPublishable?: boolean
   documentColorProfile?: 'SRGB' | 'DISPLAY_P3'
   pluginData?: PluginData[]
   pluginRelaunchData?: PluginRelaunchData[]

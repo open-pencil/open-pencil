@@ -15,6 +15,17 @@ export interface RulerTheme {
 
 export type MeasurementMode = 'off' | 'shallow' | 'deep'
 
+/** Where a collaborator or an agent is working, in world coordinates. */
+export interface PresenceCursor {
+  kind: 'person' | 'agent'
+  name: string
+  /** A person's color, or the color of the person who runs the agent. */
+  color: Color
+  x: number
+  y: number
+  selection?: string[]
+}
+
 export interface RenderOverlays {
   hoveredNodeId?: string | null
   measurementMode?: MeasurementMode
@@ -67,11 +78,5 @@ export interface RenderOverlays {
     selectedHandles?: Set<number>
     hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
   } | null
-  remoteCursors?: Array<{
-    name: string
-    color: Color
-    x: number
-    y: number
-    selection?: string[]
-  }>
+  presenceCursors?: PresenceCursor[]
 }

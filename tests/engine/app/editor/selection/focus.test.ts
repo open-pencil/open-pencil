@@ -4,6 +4,7 @@ import {
   findNodesByName,
   focusNodes,
   focusNodesByName,
+  focusNodesOnTheirPage,
   type FocusStore
 } from '@/app/editor/selection/focus'
 
@@ -141,4 +142,16 @@ test('ignores ids that are no longer in the document', () => {
   expect(selected).toEqual([])
   expect(focusNodes(store, [stale.id, live.id])).toBe(true)
   expect(selected).toEqual([[live.id]])
+})
+
+test('focuses nodes on their own page, switching to it first', async () => {
+  const { graph, pageId, store, selected } = harness()
+  const other = graph.addPage('Run page')
+  const frame = graph.createNode('FRAME', other.id, { name: 'Hero' })
+  const elsewhere = graph.createNode('FRAME', pageId, { name: 'Here' })
+
+  expect(await focusNodesOnTheirPage(store, ['missing', frame.id, elsewhere.id])).toBe(true)
+  expect(store.state.currentPageId).toBe(other.id)
+  expect(selected).toEqual([[frame.id]])
+  expect(await focusNodesOnTheirPage(store, ['missing'])).toBe(false)
 })

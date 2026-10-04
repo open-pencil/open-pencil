@@ -76,7 +76,14 @@ export {
 } from './schema'
 export { transformDesignJSXExpression } from './transform'
 
-export { sceneNodeToJSX, selectionToJSX } from './export'
+export {
+  sceneNodeAttributes,
+  sceneNodeToJSX,
+  selectionToJSX,
+  type JSXAttributeSource
+} from './export'
+export { parseJSXAttributes } from './attributes'
+export { jsxNodeFields, type JSXNodeFields } from './fields'
 export { JSX_REFERENCE, AUTHORING_EXAMPLES, type AuthoringExample } from './reference'
 export {
   createStreamingJSXParser,

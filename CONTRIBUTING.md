@@ -66,6 +66,14 @@ Pull requests must be reviewable without guessing the author's intent.
 - Complete the AI assistance section. If an LLM materially helped create or modify the PR, list the model names you know. Write `None` otherwise. This is review context, not authorship attribution; prompts and transcripts are not required.
 - Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
 
+### Stacked pull requests
+
+A stack is a chain of pull requests: the bottom one targets `master`, each one above targets the branch below. CI and branch protection treat every layer as targeting `master`.
+
+- Manage stacks with [`gh stack`](https://github.com/github/gh-stack) (`init`, `add`, `submit`, `sync`; add `--remote origin` with several remotes); a stacked pull request's base cannot be edited.
+- Keep it linear: rebase the layers when `master` or a lower branch moves; never merge `master` in.
+- Merge from the top layer through the merge queue; it lands every layer below too. Auto-merge is unavailable for stacks.
+
 ### Reviewability
 
 Do not submit placeholder PRs. Remove template comments before opening a PR. Do not leave dangling issue references such as `Fixes #`, `TODO`, `TBD`, empty headings, unfilled sections, or similar unfinished text.
