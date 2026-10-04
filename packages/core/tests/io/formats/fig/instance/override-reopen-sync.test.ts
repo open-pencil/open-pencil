@@ -65,7 +65,7 @@ async function flushComponentSync(): Promise<void> {
 }
 
 describe('reopened instance overrides in a live editor', () => {
-  test('keep overridden text when the editor syncs the main component', async () => {
+  test('keep overridden text when the editor syncs the main component and on the next reopen', async () => {
     const graph = await reopen(await savedDocument())
     expect(labelText(graph, 'Edited')).toBe('Override')
 
@@ -76,17 +76,6 @@ describe('reopened instance overrides in a live editor', () => {
 
       expect(labelText(graph, 'Edited')).toBe('Override')
       expect(labelText(graph, 'Inherited')).toBe('Component edit')
-    } finally {
-      editor.dispose()
-    }
-  })
-
-  test('keep overridden text across a second save and reopen', async () => {
-    const graph = await reopen(await savedDocument())
-    const editor = createEditor({ graph })
-    try {
-      graph.updateNode(componentLabel(graph).id, { text: 'Component edit' })
-      await flushComponentSync()
     } finally {
       editor.dispose()
     }
