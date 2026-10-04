@@ -54,11 +54,11 @@ openpencil variables design.fig
 ## Geöffnetes Dokument
 
 ```sh
-openpencil documents
+openpencil documents list
 openpencil tree --document-id tab-123 --page-id 0:1
 ```
 
-Für automatisierte Abläufe zuerst `openpencil documents --json` aufrufen und anschließend `--document-id` und `--page-id` ausdrücklich übergeben.
+Für automatisierte Abläufe zuerst `openpencil documents list --json` aufrufen und anschließend `--document-id` und `--page-id` ausdrücklich übergeben. Dokumente öffnen, speichern, wechseln und schließen, Rückgängig machen, Einstellungen ändern und beliebige Editor-Werkzeuge aufrufen: siehe [Controlling the App](/programmable/cli/app-control).
 
 ## Qualitätsprüfung
 

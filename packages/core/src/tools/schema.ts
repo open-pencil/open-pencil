@@ -18,6 +18,8 @@ export type ToolCapability =
   | 'filesystem:write'
   | 'network:access'
   | 'code:execute'
+  | 'settings:read'
+  | 'settings:write'
 
 export type ToolExecution =
   | { kind: 'sync'; mutation: 'none' | 'view' | 'properties' | 'document' }

@@ -33,7 +33,9 @@ const TOOL_CAPABILITIES: ReadonlySet<string> = new Set<ToolCapability>([
   'filesystem:read',
   'filesystem:write',
   'network:access',
-  'code:execute'
+  'code:execute',
+  'settings:read',
+  'settings:write'
 ])
 
 export function parseToolDescriptor(value: unknown): ToolDescriptor | null {

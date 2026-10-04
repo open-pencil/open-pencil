@@ -20,7 +20,7 @@ import {
   type StorybookFramework
 } from '@open-pencil/dom-css'
 
-import { requireFile } from '#cli/app-client'
+import { requireFile } from '#cli/app/client'
 import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'

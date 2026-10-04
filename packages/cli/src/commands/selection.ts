@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 
-import { rpc } from '#cli/app-client'
-import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
+import { rpc } from '#cli/app/client'
+import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { bold, entity, fmtList, formatType, printError } from '#cli/format'
 
 interface SelectionNode {

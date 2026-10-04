@@ -81,6 +81,7 @@ export function createEditorStoreModules(
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
+    hasWritableSource: documentIO.hasWritableSource,
     getSourceIdentity: documentIO.getSourceIdentity,
     getStorageBinding: documentIO.getStorageBinding,
     getRecoveryId: documentIO.getRecoveryId,
@@ -90,6 +91,7 @@ export function createEditorStoreModules(
     setDocumentSource: documentIO.setDocumentSource,
     setStorageDocumentSource: documentIO.setStorageDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
+    saveFigFileToPath: documentIO.saveFigFileToPath,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
     designCheck,
     dispose: () => {
