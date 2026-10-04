@@ -2,13 +2,13 @@ import { promiseTimeout } from '@vueuse/core'
 import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { randomHex } from '@open-pencil/core/random'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 import {
   parseToolDescriptor,
   serializeDisabledTools,
   type ToolDescriptor
 } from '@open-pencil/mcp/tools'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'

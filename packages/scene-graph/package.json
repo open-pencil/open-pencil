@@ -167,6 +167,12 @@
       "import": "./dist/resize.js",
       "default": "./dist/resize.js"
     },
+    "./random": {
+      "types": "./dist/random.d.ts",
+      "bun": "./src/random.ts",
+      "import": "./dist/random.js",
+      "default": "./dist/random.js"
+    },
     "./parse-path": {
       "types": "./dist/parse-path.d.ts",
       "bun": "./src/parse-path.ts",

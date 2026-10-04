@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `randomHex`, `randomInt`, and `randomIndex` moved from `@open-pencil/core/random` and the `@open-pencil/core` barrel to `@open-pencil/scene-graph/random`.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
 - The editor state's `remoteCursors` is now `presenceCursors`, typed `PresenceCursor[]` from `@open-pencil/core/canvas`, and each cursor has a `kind` of `'person'` or `'agent'`.
 - `VariableBinding` and the `colorVariableBinding` paint field are gone from `@open-pencil/core`, `@open-pencil/core/kiwi`, and the Kiwi `Paint` type. `fig.kiwi` never defined the field, so only `.fig` files OpenPencil itself wrote before `colorVar` contain one; reopening such a file leaves the paint's colour unbound, and binding it again records it the way Figma does.
@@ -19,7 +20,7 @@
 
 ### Added
 
-- Pass an ID generator to `new SceneGraph()` from `@open-pencil/scene-graph` to choose the IDs of the nodes, variables, collections, and default modes the graph creates; generated IDs skip any node, variable, collection, or mode ID already in the graph.
+- Pass an ID generator to `new SceneGraph()` from `@open-pencil/scene-graph` to choose the IDs of the nodes, variables, collections, and modes the graph creates, including modes added later with `createMode`; generated IDs skip any node, variable, collection, or mode ID already in the graph, and an exhausted generator throws instead of hanging. `createComponentPropertyId` gives new component properties the `prop:` IDs the editor, plugin API, and design JSX share.
 - Import `resolvePasteTarget` from `@open-pencil/core/editor` to place ordinary pasted or dropped content in an embedding app in the same container the editor would choose. It takes the editor `createEditor` returns. Replacement paste is not covered: it inserts into the selected target's parent.
 - Import `flattenNodesToVectorProps`, `outlineStrokeNodesToVectorProps`, and the `VectorFlattenProps` type from `@open-pencil/core/canvas` to compute Flatten and Outline stroke geometry in an embedding app without going through the editor's own write path.
 - Check designs from the new Lint tab in the right panel: issues on the page, in the selection, or across the document are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and one-click fixes bind colors to the variable they match and round subpixel geometry for a row or a whole group, and snap radius, spacing, and small text to the scale, convert groups to frames, and delete hidden layers one row at a time. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
