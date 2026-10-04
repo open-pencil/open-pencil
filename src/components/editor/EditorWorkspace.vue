@@ -2,15 +2,13 @@
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { formatShortcut, useI18n, useViewportKind } from '@open-pencil/vue'
+import { formatShortcut, useViewportKind } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
-import { resolvedAppTheme } from '@/app/shell/theme'
 import { activeTab } from '@/app/tabs'
-import BrandMark from '@/components/brand/BrandMark.vue'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
 import CollabPanel from '@/components/collab-panel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -19,12 +17,12 @@ import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
 import splitterTheme from '@/theme/splitter'
+
+import WorkspacePill from './WorkspacePill.vue'
 
 const showChrome = appRuntimeConfig.showChrome
 const store = useEditorStore()
-const { editor } = useI18n()
 const { isMobile } = useViewportKind()
 const initialEditorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
@@ -96,23 +94,13 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
   >
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
-      <div
+      <WorkspacePill
         v-if="!isMobile"
-        class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
-      >
-        <BrandMark variant="app-icon" :appearance="resolvedAppTheme" class="size-6" />
-        <span data-test-id="editor-document-name" class="text-xs text-surface">{{
-          store.state.documentName
-        }}</span>
-        <IconButton
-          :label="editor.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })"
-          data-test-id="editor-show-ui"
-          class="ml-1"
-          @click="store.state.showUI = true"
-        >
-          <icon-lucide-sidebar class="size-3.5" />
-        </IconButton>
-      </div>
+        mode="collapsed"
+        :document-name="store.state.documentName"
+        :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
+        @show-ui="store.state.showUI = true"
+      />
     </div>
   </div>
 

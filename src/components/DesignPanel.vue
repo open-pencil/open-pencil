@@ -10,6 +10,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 
 import AppearanceSection from './properties/AppearanceSection.vue'
+import BehaviourPanel from './properties/component-properties/behaviour/BehaviourPanel.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
 import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
 import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
@@ -162,6 +163,7 @@ const { panels } = useI18n()
       />
 
       <SlotAuthoringSection />
+      <BehaviourPanel v-if="node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'" />
 
       <FramePresetSelect v-if="node.type === 'FRAME'" />
 

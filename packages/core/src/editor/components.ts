@@ -3,6 +3,7 @@ import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-p
 
 import { randomHex } from '#core/random'
 
+import { createBehaviourActions } from './components/behaviours'
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
@@ -89,6 +90,7 @@ export function createComponentActions(ctx: EditorContext) {
     ...variantActions,
     ...componentPropertyActions,
     ...createSlotActions(ctx),
-    ...createSlotAuthoringActions(ctx)
+    ...createSlotAuthoringActions(ctx),
+    ...createBehaviourActions(ctx)
   }
 }

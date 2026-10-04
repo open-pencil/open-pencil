@@ -52,6 +52,11 @@
       "import": "./dist/figma-api/index.js",
       "default": "./dist/figma-api/index.js"
     },
+    "./behaviours": {
+      "types": "./dist/behaviours/index.d.ts",
+      "import": "./dist/behaviours/index.js",
+      "default": "./dist/behaviours/index.js"
+    },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js",

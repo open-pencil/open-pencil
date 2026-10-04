@@ -1,0 +1,21 @@
+<script setup lang="ts">
+import { useBehaviour } from '@open-pencil/vue'
+
+import BehaviourSection from './BehaviourSection.vue'
+
+/** The Behaviour section connected to the selected main component or component set. */
+const behaviour = useBehaviour()
+</script>
+
+<template>
+  <BehaviourSection
+    v-if="behaviour.active.value"
+    :behaviour="behaviour.behaviour.value"
+    @add="behaviour.add"
+    @remove="behaviour.remove"
+    @bind-value="behaviour.bindValue"
+    @map-value="behaviour.mapValue"
+    @set-number="behaviour.setNumber"
+    @bind-part="behaviour.bindPart"
+  />
+</template>

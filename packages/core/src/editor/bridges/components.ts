@@ -36,6 +36,7 @@ export function createComponentBridge(
     convertToSlot: components.convertToSlot,
     updateSlot: components.updateSlot,
     removeSlot: components.removeSlot,
+    setBehaviour: components.setBehaviour,
     addPropertyDefinition: components.addPropertyDefinition,
     removePropertyDefinition: components.removePropertyDefinition,
     renamePropertyDefinition: components.renamePropertyDefinition,

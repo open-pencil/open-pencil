@@ -248,6 +248,15 @@ export {
   useSlotProperties,
   useVariantAuthoring
 } from '#vue/controls/component-props'
+export { useBehaviour } from '#vue/controls/behaviour'
+export type {
+  BehaviourBooleanControl,
+  BehaviourControl,
+  BehaviourNumberControl,
+  BehaviourPartControl,
+  BehaviourPropertyOption,
+  BehaviourValueControl
+} from '#vue/controls/behaviour'
 export type {
   ComponentPropertyControl,
   ComponentPropertyOption,
