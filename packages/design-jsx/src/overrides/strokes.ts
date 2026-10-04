@@ -57,6 +57,7 @@ function dashValue(value: unknown): number[] | undefined {
 function toStroke(value: StrokeValue): Stroke {
   const color = typeof value.color === 'string' ? parseColor(value.color) : value.color
   const stroke: Stroke = {
+    type: 'SOLID',
     color,
     opacity: typeof value.opacity === 'number' ? value.opacity : color.a,
     visible: value.visible ?? true,

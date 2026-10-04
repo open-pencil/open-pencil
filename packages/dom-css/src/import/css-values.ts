@@ -37,7 +37,7 @@ export function colorToStrokeFromCSS(
   const color = parseCSSColor(colorValue)
   const weight = parseCSSNumber(weightValue)
   if (!color || weight === null || weight <= 0) return []
-  return [{ color, weight, opacity: color.a, visible: true, align: 'INSIDE' }]
+  return [{ type: 'SOLID', color, weight, opacity: color.a, visible: true, align: 'INSIDE' }]
 }
 
 function firstShadowLayerNodes(value: string): ParsedNode[] {

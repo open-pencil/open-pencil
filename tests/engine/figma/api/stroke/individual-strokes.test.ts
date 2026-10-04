@@ -10,6 +10,7 @@ function pageId(graph: SceneGraph) {
 
 function rectWithStroke(graph: SceneGraph, name: string, strokeOverrides: Partial<Stroke> = {}) {
   const stroke: Stroke = {
+    type: 'SOLID',
     color: { r: 0, g: 0, b: 0, a: 1 },
     weight: 2,
     opacity: 1,
@@ -48,7 +49,11 @@ describe('Stroke align', () => {
 
   test('updating stroke align preserves other stroke properties', () => {
     const graph = new SceneGraph()
-    const node = rectWithStroke(graph, 'R', { weight: 5, align: 'CENTER' })
+    const node = rectWithStroke(graph, 'R', {
+      type: 'SOLID',
+      weight: 5,
+      align: 'CENTER'
+    })
     const strokes = [...node.strokes]
     strokes[0] = { ...strokes[0], align: 'INSIDE' }
     graph.updateNode(node.id, { strokes })
@@ -157,6 +162,7 @@ describe('Instance sync with stroke weights', () => {
       name: 'Comp',
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 1, g: 0, b: 0, a: 1 },
           weight: 2,
           opacity: 1,
@@ -276,6 +282,7 @@ describe('FigmaAPI stroke properties', () => {
     const rect = api.createRectangle()
     rect.strokes = [
       {
+        type: 'SOLID',
         color: { r: 0, g: 0, b: 0, a: 1 },
         weight: 2,
         opacity: 1,
@@ -302,6 +309,7 @@ describe('FigmaAPI stroke properties', () => {
     const rect = api.createRectangle()
     rect.strokes = [
       {
+        type: 'SOLID',
         color: { r: 0, g: 0, b: 0, a: 1 },
         weight: 2,
         opacity: 1,
@@ -317,6 +325,7 @@ describe('FigmaAPI stroke properties', () => {
     const rect = api.createRectangle()
     rect.strokes = [
       {
+        type: 'SOLID',
         color: { r: 0, g: 0, b: 0, a: 1 },
         weight: 2,
         opacity: 1,

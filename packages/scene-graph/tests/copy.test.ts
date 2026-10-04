@@ -49,6 +49,7 @@ describe('copy helpers — mutation isolation', () => {
 
   test('copyStroke: dash pattern is independent', () => {
     const original: Stroke = {
+      type: 'SOLID',
       color: { r: 0, g: 0, b: 0, a: 1 },
       weight: 1,
       opacity: 1,

@@ -57,6 +57,7 @@ describe('Figma export colour variable bindings', () => {
       fills: [{ type: 'SOLID', color, opacity: 1, visible: true }],
       strokes: [
         {
+          type: 'SOLID',
           color,
           weight: 1,
           opacity: 1,
