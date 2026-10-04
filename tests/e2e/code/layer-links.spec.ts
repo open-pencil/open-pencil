@@ -352,3 +352,22 @@ test('a reorder that cannot move the code still writes layers added with it', as
     'Frame'
   )
 })
+
+test('a canvas edit right after replacing all the code survives its preview', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  const code = (await codeText(editor.page)).replace(/(name="Card"[^>]*?) h=\{160\}/, '$1 h={170}')
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(code)
+  // Before the preview runs, the replaced code has no links to patch.
+  await editLayer(editor.page, 'Card', { width: 400 })
+
+  await expect.poll(() => cardSize(editor.page)).toBe('400x170')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={170}')
+
+  // The edit applied again belongs to the code's undo step, which leaves the canvas edit.
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await expect.poll(() => cardSize(editor.page)).toBe('400x160')
+})
