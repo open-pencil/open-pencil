@@ -24,9 +24,10 @@ openpencil documents new --path designs/draft.fig  # empty document, saved to th
 openpencil documents save --document-id tab-123
 openpencil documents save --document-id tab-123 --path designs/copy.fig
 openpencil documents close --document-id tab-123
+openpencil documents close --document-id tab-123 --save      # or --discard
 ```
 
-Relative paths resolve against the shell's working directory. `close` asks in the app to save unsaved changes and reports whether the tab actually closed. Each command prints the document and page it acted on; with `--json` it prints `{ "result", "target" }`, so a script can read the new document's ID from `target.documentId`.
+Relative paths resolve against the shell's working directory. These commands never open a dialog in the app, because nobody may be there to answer it. Closing a document with unsaved changes fails unless you pass `--save` or `--discard`, and saving a document that has never been saved needs `--path`. Each command prints the document and page it acted on; with `--json` it prints `{ "result", "target" }`, so a script can read the new document's ID from `target.documentId`.
 
 To bring a tab to the front, optionally on a specific page:
 

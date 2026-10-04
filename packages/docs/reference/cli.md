@@ -307,13 +307,15 @@ openpencil documents list [--json]
 openpencil documents open <file> [--json]
 openpencil documents new [--path <file>] [--json]
 openpencil documents save [--path <file>] [--document-id <id>] [--json]
-openpencil documents close [--document-id <id>] [--json]
+openpencil documents close [--save | --discard] [--path <file>] [--document-id <id>] [--json]
 openpencil documents activate <document-id> [--page-id <id>] [--json]
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--path` | `.fig` path to create or save to; relative to the current directory |
+| `--save` | `close`: save unsaved changes first |
+| `--discard` | `close`: close without saving; unsaved changes are lost |
 | `--document-id` | Target document; defaults to the active tab |
 | `--page-id` | Page to switch the activated document to |
 | `--json` | Output the result and target document as JSON |

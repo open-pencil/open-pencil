@@ -149,7 +149,7 @@ Endpoints are available over both active transports:
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
 6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
 7. **Save** — `save_file` to write back to `.fig`
-8. **Close** — `close_file` to close an open document tab; it prompts to save unsaved changes.
+8. **Close** — `close_file` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
 
 `undo` and `redo` step a document's history, and `activate_document` brings a tab to the front when the user should see it.
 
@@ -174,7 +174,7 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | Tool | Description |
 |------|-------------|
 | `open_file` | Open a `.fig` file for editing |
-| `close_file` | Close an open document tab, prompting to save unsaved changes |
+| `close_file` | Close an open document tab; `unsaved: "save"` or `"discard"` decides what happens to unsaved changes |
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
 | `list_documents` | List open app documents/tabs and their pages |
