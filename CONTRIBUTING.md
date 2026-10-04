@@ -68,11 +68,11 @@ Pull requests must be reviewable without guessing the author's intent.
 
 ### Stacked pull requests
 
-A stack splits one large change into pull requests that build on each other: the bottom one targets `master`, and each one above targets the branch of the one below it. Reviewers read each layer on its own, and GitHub runs CI and branch protection for every layer as if it targeted `master`. Manage stacks with the [`gh stack`](https://github.com/github/gh-stack) extension rather than by retargeting pull requests by hand; GitHub does not allow changing the base of a stacked pull request.
+A stack is a chain of pull requests: the bottom one targets `master`, each one above targets the branch below. CI and branch protection treat every layer as targeting `master`.
 
-- Start or adopt a stack with `gh stack init <bottom> <next> …`, add a layer with `gh stack add <branch>`, and push every branch and open or update the pull requests with `gh stack submit`. Pass `--remote origin` when the checkout has more than one remote.
-- Keep the history linear: when `master` moves or a lower branch changes, rebase the layers above it (`gh stack sync`, or `git rebase --onto <new parent> <old parent>` per layer) and push them all. Do not merge `master` into a stacked branch.
-- Merging a pull request in a stack lands it together with every unmerged pull request below it, one squashed commit each; the next layer then targets `master`. Merge through the merge queue (**Merge when ready**, or `gh pr merge`) from the top pull request you want to land. Auto-merge is not available for stacks.
+- Manage stacks with [`gh stack`](https://github.com/github/gh-stack) (`init`, `add`, `submit`, `sync`; add `--remote origin` with several remotes); a stacked pull request's base cannot be edited.
+- Keep it linear: rebase the layers when `master` or a lower branch moves; never merge `master` in.
+- Merge from the top layer through the merge queue; it lands every layer below too. Auto-merge is unavailable for stacks.
 
 ### Reviewability
 
