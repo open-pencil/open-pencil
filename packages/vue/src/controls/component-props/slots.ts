@@ -1,6 +1,8 @@
 import {
   canCreateSlot,
   instanceSlotFrames,
+  isPreferredComponent,
+  nonPreferredLayers,
   ownsSlotContent,
   slotOwner,
   slotPropertyId
@@ -44,15 +46,6 @@ export interface SlotPropertyControl {
   offendingIds: string[]
 }
 
-function isPreferred(component: SceneNode | undefined, preferred: ReadonlySet<string>): boolean {
-  if (!component) return false
-  return (
-    preferred.has(component.id) ||
-    preferred.has(component.componentKey ?? '') ||
-    preferred.has(component.sourceLibraryKey ?? '')
-  )
-}
-
 /** A slot's limits, measured against the content the instance shows. */
 export function slotLimits(
   graph: SceneGraph,
@@ -76,14 +69,7 @@ export function slotLimits(
       met: content.length <= settings.maxChildren
     })
   if (settings.allowPreferredValuesOnly) {
-    const preferred = new Set(definition.preferredValues)
-    offendingIds = content
-      .filter(
-        (node) =>
-          node.type !== 'INSTANCE' ||
-          !isPreferred(node.componentId ? graph.getNode(node.componentId) : undefined, preferred)
-      )
-      .map((node) => node.id)
+    offendingIds = nonPreferredLayers(graph, definition, content).map((node) => node.id)
     limits.push({
       kind: 'preferred',
       met: offendingIds.length === 0,
@@ -105,13 +91,12 @@ export function slotInstanceOptions(
   graph: SceneGraph,
   definition: ComponentPropertyDefinition
 ): SlotInstanceOption[] {
-  const preferred = new Set(definition.preferredValues)
   return [...graph.getAllNodes()]
     .filter((node) => node.type === 'COMPONENT')
     .map((node) => ({
       id: node.id,
       name: node.name,
-      preferred: isPreferred(node, preferred),
+      preferred: isPreferredComponent(node, definition.preferredValues),
       source: pageName(graph, node)
     }))
     .sort(

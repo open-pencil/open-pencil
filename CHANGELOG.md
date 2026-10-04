@@ -35,6 +35,7 @@
 - Let AI and MCP agents verify and replay their edits with diff tools: `diff_visual` returns a pixel diff of two rendered nodes with the changed region, and `diff_apply` applies a `diff_create` or `diff_show` patch, including moved, added, and removed children, only when every node still matches it. The built-in AI chat enables `diff_create`, `diff_jsx`, and `diff_visual` by default.
 - Compare designs from the terminal with `openpencil diff`: `create`, `jsx`, `show`, `apply`, and `visual` work on a file or the running app, and `diff files` compares two documents page by page and exits with status 1 when they differ.
 - Create and fill slots as in Figma. **Create slot** turns a frame of a main component into a slot, or wraps other selected layers in a new one, and the Slots section sets its name, description, layer limits, and preferred components or removes it. In instances, drop, paste, or move layers into a slot, or add components from **Add instances** in the properties panel, which shows each slot as Default or Modified with its item count and limits; **Reset slot** brings back the component content and **Delete contents** empties it. Slots are outlined in pink on the canvas and marked in the layers panel, and parts of an instance outside its slots refuse drops.
+- Create and inspect slots from scripts run through `eval` and from AI and MCP tools, as in Figma: `component.createSlot()` adds a slot frame and its `SLOT` property, slot frames read `type: 'SLOT'` with `resetSlot()` and `limitViolations`, and `addComponentProperty` and `editComponentProperty` take a `description` and `slotSettings`.
 
 ### Changed
 
@@ -48,6 +49,7 @@
 
 ### Fixed
 
+- Read and set `componentPropertyReferences` in the plugin API with property keys such as `Label#prop:1a2b`, as `componentPropertyDefinitions` lists them and Figma uses them, instead of internal property ids.
 - Open Figma files that use slots with each instance's own slot content instead of its component's default, keep slot properties, their settings, and instance content when saving back to `.fig`, and keep an instance's slot content when you switch its variant.
 - Stop showing a “signal is aborted without reason” error when you switch pages again before the previous page has finished loading.
 - Export layers with two shadows as one `effects` prop instead of repeating the `shadow` attribute, background blurs as `backgroundBlur` instead of a layer blur, hidden children with `visible={false}` instead of leaving them out, and per-corner radii even when the uniform radius is 0.
