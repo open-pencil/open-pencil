@@ -46,7 +46,7 @@ test('canonical destinations are registered before they hold files', async () =>
     'kiwi',
     'dom-css',
     'design-jsx',
-    'codegen',
+    'emit',
     'pen',
     'cli',
     'mcp'

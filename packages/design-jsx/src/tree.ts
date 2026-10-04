@@ -7,6 +7,8 @@ export interface TreeNode {
   type: string
   props: Record<string, unknown>
   children: (TreeNode | string)[]
+  /** Where the element was written, when the source is known. */
+  source?: { line: number }
 }
 
 /** A fragment (`<>…</>`) groups siblings without creating a node of its own. */

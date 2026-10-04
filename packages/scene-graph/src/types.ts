@@ -655,6 +655,19 @@ export type VariableScope = (typeof VARIABLE_SCOPES)[number]
 export const CODE_SYNTAX_PLATFORMS = ['WEB', 'ANDROID', 'iOS'] as const
 export type CodeSyntaxPlatform = (typeof CODE_SYNTAX_PLATFORMS)[number]
 
+/**
+ * The CSS unit a numeric token is written in. Lengths (`px`, `rem`) stay in canvas pixels in
+ * the document and convert only when written as CSS; the other units store the number as written.
+ */
+export const TOKEN_UNITS = ['none', 'px', 'rem', '%', 'ms', 's', 'deg'] as const
+export type TokenUnit = (typeof TOKEN_UNITS)[number]
+
+/** A mode value authored as raw CSS. `resolved` is the number the canvas drew for it. */
+export interface TokenExpression {
+  css: string
+  resolved: number
+}
+
 export interface Variable {
   id: string
   name: string
@@ -665,8 +678,15 @@ export interface Variable {
   hiddenFromPublishing: boolean
   /** Absent means every scope. */
   scopes?: VariableScope[]
-  /** Per-platform code name; `WEB` is the CSS custom property. */
+  /**
+   * Per-platform code snippets, as Figma's Dev Mode shows them. A `WEB` snippet of `--x` or
+   * `var(--x)` names the token's CSS custom property; otherwise the name is derived.
+   */
   codeSyntax?: Partial<Record<CodeSyntaxPlatform, string>>
+  /** FLOAT only. Absent means inferred when written as CSS. */
+  unit?: TokenUnit
+  /** Raw CSS by mode id, for values a number cannot express (`clamp()`, `calc()`). */
+  expressions?: Record<string, TokenExpression>
   pluginData?: PluginDataEntry[]
   /** Published library key (from NodeChange.key). Used for assetRef resolution in colorVar. */
   key?: string
@@ -682,6 +702,11 @@ export type NumericNodeProperty = {
 export interface VariableCollectionMode {
   modeId: string
   name: string
+  /**
+   * Where the mode applies in CSS: a selector (`[data-theme="dark"]`, `.compact`) or an
+   * at-rule prelude (`@media (max-width: 640px)`). Absent means the default for its axis.
+   */
+  condition?: string
 }
 
 export interface VariableCollection {
