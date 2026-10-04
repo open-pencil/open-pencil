@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 
 import { defineCommand } from 'citty'
+import { isUndefined, omitBy } from 'es-toolkit'
 import { toUint8Array } from 'js-base64'
 
 import type { Rect } from '@open-pencil/scene-graph/primitives'
@@ -40,14 +41,15 @@ export default defineCommand({
     }
   },
   async run({ args }) {
-    const toolArgs = Object.fromEntries(
-      Object.entries({
+    const toolArgs = omitBy(
+      {
         from: args.from,
         to: args.to,
         scale: optionalNumber(args.scale),
         maxEdge: optionalNumber(args['max-edge']),
         threshold: optionalNumber(args.threshold)
-      }).filter(([, value]) => value !== undefined)
+      },
+      isUndefined
     )
     const data = await runToolData(args.file, 'diff_visual', toolArgs, args)
     const result = data.result as VisualDiffResult

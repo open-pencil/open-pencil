@@ -8,7 +8,7 @@ import { linearVariableExpression } from '#fig/node-change/variable/expression'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { setInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
 
-import type { InstanceOccurrence } from '../interpret'
+import type { InstanceOccurrence } from '../occurrence/types'
 import { uniformScaleOf } from '../types'
 
 export function occurrenceScale(occurrence: InstanceOccurrence): number {

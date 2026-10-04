@@ -1,7 +1,8 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { setSnappingPreference } from '@/app/settings/preferences/apply'
+import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
+import { appPreferences } from '@/app/settings/preferences/store'
 
 type TextFormatUpdates = {
   fontWeight?: number
@@ -63,6 +64,8 @@ export function createSharedEditorMenuActions(
       store.state.showRemoteCursors = !store.state.showRemoteCursors
       store.requestRepaint()
     },
+    'view-design-issues': () =>
+      setDesignIssuesOnCanvas(!appPreferences.value.designCheck.showOnCanvas),
     'snap-geometry': () =>
       setSnappingPreference('geometry', !store.state.snappingPreferences.geometry),
     'snap-objects': () =>

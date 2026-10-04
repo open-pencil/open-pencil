@@ -7,14 +7,23 @@ import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@open-pencil/core'
 import { expectDefined } from '#tests/helpers/assert'
 
 type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
+type SDKTool = {
+  execute(args: Record<string, unknown>, call: { toolCallId: string }): Promise<unknown>
+  description: string
+}
 
 interface PageTreeToolResult {
   page: unknown
   children: unknown[]
 }
 
+/** Calls a tool as the AI SDK does, with the call's options. */
 function adapterTool(tools: Record<string, unknown>, name: string): AdapterTool {
-  return tools[name] as AdapterTool
+  const sdkTool = tools[name] as SDKTool
+  return {
+    description: sdkTool.description,
+    execute: (args) => sdkTool.execute(args, { toolCallId: `${name}-call` })
+  }
 }
 
 function setup() {

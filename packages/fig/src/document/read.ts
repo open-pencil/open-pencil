@@ -2,10 +2,8 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import { parseFigBuffer } from '../archive'
-import {
-  createOccurrenceInterpreter,
-  type InterpretInstanceOptions
-} from '../instance-overrides/interpret'
+import { createOccurrenceInterpreter } from '../instance-overrides/interpret'
+import type { InterpretInstanceOptions } from '../instance-overrides/occurrence/types'
 import {
   bySavedPosition,
   createSourceIndex,
@@ -152,7 +150,10 @@ function createScopedReader(
     bindingDiagnostics,
     readPage(id: string, options: InterpretInstanceOptions = {}) {
       if (!knownPageIds.has(id)) throw new Error(`Unknown page ${id}`)
-      return interpreter.page(id, options)
+      const page = interpreter.page(id, options)
+      // A slot content frame is read through the instance assigning it, never as a layer.
+      page.children = page.children.filter((child) => child.properties.isSlotContent !== true)
+      return page
     },
     planComponents(
       roots: readonly ReturnType<typeof interpreter.page>[],

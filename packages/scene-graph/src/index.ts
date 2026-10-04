@@ -1,6 +1,8 @@
 /* eslint-disable max-lines -- SceneGraph exposes a stable facade over domain modules */
 export * from './mutation-impact'
 export * from './variables/bindings'
+export type { VariableModeFallback } from './variables'
+export { modesDefaultFirst } from './variables'
 export { rescaleNodeTree, scaleNodeChanges } from './scaling'
 import { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'
 export { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'
@@ -9,6 +11,7 @@ export * from './transfer'
 export * from './instance-overrides'
 export * from './images'
 export * from './components/properties'
+export * from './components/slots'
 export * from './copy'
 export { createDefaultNode } from './node-defaults'
 export {
@@ -56,6 +59,7 @@ import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
 import { GLYPH_AFFECTING_KEYS, invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
+import type { VariableModeFallback } from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
 export type { GUID, Color, Size, Vector } from './primitives'
@@ -250,12 +254,20 @@ export class SceneGraph {
     return Variables.resolveNumberVariable(this, variableId)
   }
 
-  resolveColorVariableForNode(nodeId: string, variableId: string): Color | undefined {
-    return Variables.resolveColorVariableForNode(this, nodeId, variableId)
+  resolveColorVariableForNode(
+    nodeId: string,
+    variableId: string,
+    fallback?: VariableModeFallback
+  ): Color | undefined {
+    return Variables.resolveColorVariableForNode(this, nodeId, variableId, fallback)
   }
 
-  resolveNumberVariableForNode(nodeId: string, variableId: string): number | undefined {
-    return Variables.resolveNumberVariableForNode(this, nodeId, variableId)
+  resolveNumberVariableForNode(
+    nodeId: string,
+    variableId: string,
+    fallback?: VariableModeFallback
+  ): number | undefined {
+    return Variables.resolveNumberVariableForNode(this, nodeId, variableId, fallback)
   }
 
   resolveStringVariableForNode(nodeId: string, variableId: string): string | undefined {

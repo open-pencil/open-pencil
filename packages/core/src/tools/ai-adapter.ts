@@ -6,9 +6,7 @@
 
 // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
-import type { ToolSet, tool as createTool } from 'ai'
-
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 
 import type { FigmaAPI } from '#core/figma-api'
 
@@ -50,7 +48,12 @@ export interface StepBudget {
 export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
   onBeforeExecute?: (def: ToolDef) => void
-  executeTool?: (def: ToolDef, figma: FigmaAPI, args: Record<string, unknown>) => Promise<unknown>
+  executeTool?: (
+    def: ToolDef,
+    figma: FigmaAPI,
+    args: Record<string, unknown>,
+    call: { toolCallId: string }
+  ) => Promise<unknown>
   onAfterExecute?: (def: ToolDef) => Promise<void> | void
   onFlashNodes?: (nodeIds: string[]) => void
   onToolLog?: (entry: ToolLogEntry) => void
@@ -167,7 +170,7 @@ export function toolsToAI(
     const toolOpts: Record<string, unknown> = {
       description: def.description,
       inputSchema: toStandardJSONSchema(def.input),
-      execute: async (args: Record<string, unknown>) => {
+      execute: async (args: Record<string, unknown>, { toolCallId }: { toolCallId: string }) => {
         const startTime = Date.now()
         const figma = options.getFigma()
         const nodeBefore =
@@ -176,7 +179,7 @@ export function toolsToAI(
         options.onBeforeExecute?.(def)
         try {
           let execResult = options.executeTool
-            ? await options.executeTool(def, figma, args)
+            ? await options.executeTool(def, figma, args, { toolCallId })
             : await def.execute(figma, args)
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
@@ -197,19 +200,24 @@ export function toolsToAI(
       }
     }
 
-    // Image results reach the model as media, with their metadata as text.
-    toolOpts.toModelOutput = ({ output }: { output: unknown }) => {
+    // Image results reach the model as files, with their metadata as text. Typed against the
+    // SDK, because a shape it does not know fails the next step's prompt validation.
+    toolOpts.toModelOutput = ({ output }: { output: unknown }): ToolResultPart['output'] => {
       if (isImageOutput(output)) {
         const { base64, mimeType, ...metadata } = output
-        const media = { type: 'media' as const, mediaType: mimeType, data: base64 }
+        const image = {
+          type: 'file' as const,
+          mediaType: mimeType,
+          data: { type: 'data' as const, data: base64 }
+        }
         return Object.keys(metadata).length > 0
           ? {
-              type: 'content' as const,
-              value: [{ type: 'text' as const, text: JSON.stringify(metadata) }, media]
+              type: 'content',
+              value: [{ type: 'text', text: JSON.stringify(metadata) }, image]
             }
-          : { type: 'content' as const, value: [media] }
+          : { type: 'content', value: [image] }
       }
-      return { type: 'json' as const, value: output as JSONObject }
+      return { type: 'json', value: output as JSONValue }
     }
 
     result[def.name] = tool(toolOpts as never)

@@ -180,6 +180,7 @@ test('gradients and image fill modes', async () => {
         ],
         strokes: [
           {
+            type: 'SOLID',
             color: { r: 1, g: 1, b: 1, a: 0.9 },
             weight: 2,
             visible: true,

@@ -6,6 +6,7 @@ import { toUint8Array } from 'js-base64'
 import { compressFigDataSync } from '@open-pencil/fig'
 import {
   buildComponentPropIndex,
+  placeSlotContent,
   exportCanvasGuides,
   importCanvasGuides,
   stringToGuid
@@ -13,7 +14,7 @@ import {
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { ownsSlotContent, type SceneGraph } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -204,7 +205,11 @@ function buildCanvasEntries(
   }
 
   const hasSharedStyles = [...graph.nodes.values()].some((node) => node.sharedStyleType !== null)
-  if ((graph.variableCollections.size > 0 || hasSharedStyles) && internalCanvasGuid === null) {
+  const hasSlotContent = [...graph.nodes.values()].some((node) => ownsSlotContent(graph, node))
+  if (
+    (graph.variableCollections.size > 0 || hasSharedStyles || hasSlotContent) &&
+    internalCanvasGuid === null
+  ) {
     internalCanvasGuid = { sessionID: 0, localID: localIdCounter.value++ }
     assignedGuidValues.add(`${internalCanvasGuid.sessionID}:${internalCanvasGuid.localID}`)
     canvasEntries.push({
@@ -430,6 +435,7 @@ export async function exportFigFile(
     ...canvasEntries.filter((entry) => entry.page.internalOnly),
     ...canvasEntries.filter((entry) => !entry.page.internalOnly)
   ]
+  const slotContentRecords: KiwiNodeChange[] = []
   for (const { page, canvasGuid } of orderedCanvasEntries) {
     const children = graph
       .getChildren(page.id)
@@ -446,10 +452,16 @@ export async function exportFigFile(
           assignedGuidValues,
           componentPropertyDefinitionsById,
           modeIdToGuid,
-          propertyIdToGuid
+          propertyIdToGuid,
+          slotContentRecords
         })
       )
     }
+  }
+  if (internalCanvasGuid) {
+    const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
+    placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
+    nodeChanges.push(...slotContentRecords)
   }
 
   const msg: Record<string, unknown> = {

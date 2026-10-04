@@ -1,6 +1,12 @@
+import { pluginDataNodeChange, variableMetadataNodeChange } from '@open-pencil/fig/node-change'
 import type { GUID, NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, SceneNode, VariableValue } from '@open-pencil/scene-graph'
+import {
+  modesDefaultFirst,
+  type SceneGraph,
+  type SceneNode,
+  type VariableValue
+} from '@open-pencil/scene-graph'
 
 import { fractionalPosition, safeColor } from '#core/kiwi/fig/node-change/serialize'
 
@@ -132,11 +138,12 @@ export function appendVariableNodeChanges(
       phase: 'CREATED',
       strokeAlign: 'CENTER',
       strokeJoin: 'BEVEL',
-      variableSetModes: collection.modes.map((mode, i) => ({
+      variableSetModes: modesDefaultFirst(collection).map((mode, i) => ({
         id: modes.get(mode.modeId) ?? stringToGuid(mode.modeId),
         name: mode.name,
         sortPosition: fractionalPosition(i)
-      }))
+      })),
+      pluginData: pluginDataNodeChange(collection.pluginData)
     })
     for (const id of collection.variableIds) {
       const variable = graph.variables.get(id)
@@ -157,7 +164,7 @@ export function appendVariableNodeChanges(
             variableData: variableValueToKiwi(value, variable.type, ids)
           }))
         },
-        variableScopes: ['ALL_SCOPES'],
+        ...variableMetadataNodeChange(variable),
         key: variable.key,
         version: variable.version
       })

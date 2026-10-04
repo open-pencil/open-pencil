@@ -170,6 +170,7 @@ export function convertStrokes(
   return paints.map((p) => {
     const { color, opacity } = resolvedPaintColor(p)
     return {
+      type: 'SOLID',
       color,
       weight: weight ?? 1,
       opacity,

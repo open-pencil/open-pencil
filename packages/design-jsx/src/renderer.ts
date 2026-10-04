@@ -87,7 +87,7 @@ export async function renderRoots<Artwork>(
 
   const nodes: SceneNode[] = []
   for (const root of roots) {
-    const node = await renderNode(services, graph, root, parentId)
+    const node = await renderNode(services, graph, root, parentId, options.onNode)
     if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
     if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
     nodes.push(node)
@@ -546,7 +546,20 @@ async function renderNode<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
   tree: TreeNode,
-  parentId: string
+  parentId: string,
+  onNode?: RenderOptions['onNode']
+): Promise<SceneNode> {
+  const node = await renderNodeContent(services, graph, tree, parentId, onNode)
+  onNode?.(tree, node)
+  return node
+}
+
+async function renderNodeContent<Artwork>(
+  services: DesignJSXServices<Artwork>,
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  onNode?: RenderOptions['onNode']
 ): Promise<SceneNode> {
   if (tree.type === 'icon' || tree.type === 'svg')
     return renderArtworkNode(services, graph, tree, parentId)
@@ -562,7 +575,7 @@ async function renderNode<Artwork>(
   for (const child of tree.children) {
     if (typeof child === 'string') continue
     if (isTreeNode(child)) {
-      await renderNode(services, graph, child, node.id)
+      await renderNode(services, graph, child, node.id, onNode)
     }
   }
 

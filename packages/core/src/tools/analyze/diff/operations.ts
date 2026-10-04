@@ -1,3 +1,4 @@
+import { union } from 'es-toolkit'
 import type { Delta } from 'jsondiffpatch'
 
 import type { ProjectedNode } from './projection'
@@ -33,7 +34,7 @@ function childPath(parentPath: string, node: ProjectedNode): string {
 }
 
 function attributeChanges(before: ProjectedNode, after: ProjectedNode) {
-  const names = new Set([...Object.keys(before.attributes), ...Object.keys(after.attributes)])
+  const names = union(Object.keys(before.attributes), Object.keys(after.attributes))
   const removed: string[] = []
   const added: string[] = []
   for (const name of names) {

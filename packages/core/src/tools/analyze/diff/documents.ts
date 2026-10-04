@@ -1,3 +1,5 @@
+import { union } from 'es-toolkit'
+
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -55,7 +57,7 @@ export function diffDocuments(
   const project = { match: 'path' as const, depth: options.depth }
   const beforePages = new Map(before.getPages().map((page) => [page.name, page]))
   const afterPages = new Map(after.getPages().map((page) => [page.name, page]))
-  const names = [...new Set([...beforePages.keys(), ...afterPages.keys()])].filter(
+  const names = union([...beforePages.keys()], [...afterPages.keys()]).filter(
     (name) => options.page === undefined || name === options.page
   )
 
