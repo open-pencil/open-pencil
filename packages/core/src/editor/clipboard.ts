@@ -310,14 +310,18 @@ export function createClipboardActions(ctx: EditorContext) {
     return missingImageHashes(nodeIds).length > 0
   }
 
-  function deleteSelected() {
+  /**
+   * Deletes layers with their children as one undo step, skipping locked ones. Deleted layers
+   * leave the selection, and undo restores the selection from before.
+   */
+  function deleteNodes(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
     const entries: Array<{
       id: string
       parentId: string
       index: number
       subtree: Map<string, SceneNode>
     }> = []
-    for (const id of ctx.state.selectedIds) {
+    for (const id of nodeIds) {
       const node = ctx.graph.getNode(id)
       if (!node || node.locked) continue
       const parentId = node.parentId ?? ctx.state.currentPageId
@@ -336,13 +340,15 @@ export function createClipboardActions(ctx: EditorContext) {
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
     relayoutParents()
+    const selectionAfter =
+      nextSelection ?? new Set([...prevSelection].filter((id) => ctx.graph.getNode(id)))
 
     ctx.undo.push({
       label: 'Delete',
       forward: () => {
         for (const { id } of entries) ctx.graph.deleteNode(id)
         relayoutParents()
-        ctx.setSelectedIds(new Set())
+        ctx.setSelectedIds(new Set(selectionAfter))
       },
       inverse: () => {
         restoreDeletedEntries(ctx, entries)
@@ -350,7 +356,11 @@ export function createClipboardActions(ctx: EditorContext) {
         ctx.setSelectedIds(prevSelection)
       }
     })
-    ctx.setSelectedIds(new Set())
+    ctx.setSelectedIds(new Set(selectionAfter))
+  }
+
+  function deleteSelected() {
+    deleteNodes(ctx.state.selectedIds, new Set())
   }
 
   const copyActions = createClipboardCopyActions(ctx)
@@ -368,6 +378,7 @@ export function createClipboardActions(ctx: EditorContext) {
     pasteSnapshot,
     pasteFromHTML,
     warnMissingImages,
+    deleteNodes,
     deleteSelected,
     ...assetActions,
     ...exportActions

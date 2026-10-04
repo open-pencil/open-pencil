@@ -65,6 +65,8 @@
   "fixRoundPixels": "整数ピクセルに丸める",
   "fixUseValue": "{value} に変更",
   "fixFullRadius": "最大の角丸を使う",
+  "fixConvertToFrame": "フレームに変換",
+  "fixDeleteLayer": "レイヤーを削除",
   "fixAll": "{count} 件すべて修正",
   "ruleNoDefaultNames": "デフォルトのレイヤー名",
   "ruleNoDefaultNamesHelp": "わかりやすい名前を付けると、レイヤーを探しやすく、受け渡しや再利用もしやすくなります。",
