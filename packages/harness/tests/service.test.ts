@@ -161,4 +161,22 @@ describe('HarnessSessionService', () => {
     expect(await service.createSession('session-1', configuration)).toEqual({ isResume: false })
     expect(store.states.has('session-1')).toBeFalse()
   })
+
+  test("rejects another backend's state without deleting it for a live-process backend", async () => {
+    const store = new MemoryStore()
+    store.states.set('session-1', {
+      type: 'resume-session',
+      harnessId: 'other',
+      specificationVersion: 'harness-v1',
+      data: {}
+    })
+    const service = new HarnessSessionService(
+      new Map([['pi', new FakeBackend('live-process')]]),
+      store
+    )
+    await expect(service.createSession('session-1', configuration)).rejects.toThrow(
+      'belongs to other'
+    )
+    expect(store.states.has('session-1')).toBeTrue()
+  })
 })
