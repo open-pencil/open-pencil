@@ -1,4 +1,4 @@
-import valueParser, { type ParsedNode } from 'postcss-value-parser'
+import valueParser, { type Node } from 'postcss-value-parser'
 
 import type { Effect, Fill, Stroke } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
@@ -40,8 +40,8 @@ export function colorToStrokeFromCSS(
   return [{ type: 'SOLID', color, weight, opacity: color.a, visible: true, align: 'INSIDE' }]
 }
 
-function firstShadowLayerNodes(value: string): ParsedNode[] {
-  const nodes: ParsedNode[] = []
+function firstShadowLayerNodes(value: string): Node[] {
+  const nodes: Node[] = []
   for (const node of valueParser(value).nodes) {
     if (node.type === 'div' && node.value === ',') return nodes
     nodes.push(node)
@@ -49,7 +49,7 @@ function firstShadowLayerNodes(value: string): ParsedNode[] {
   return nodes
 }
 
-function shadowColorFromNodes(nodes: ParsedNode[]): Color | null {
+function shadowColorFromNodes(nodes: Node[]): Color | null {
   for (const node of nodes) {
     if (node.type === 'function') {
       const color = parseCSSColor(valueParser.stringify(node))
@@ -64,7 +64,7 @@ function shadowColorFromNodes(nodes: ParsedNode[]): Color | null {
   return null
 }
 
-function shadowNumbersFromNodes(nodes: ParsedNode[]): number[] {
+function shadowNumbersFromNodes(nodes: Node[]): number[] {
   return nodes
     .filter((node) => node.type === 'word' && valueParser.unit(node.value) !== false)
     .map((node) => parseCSSNumber(node.value))

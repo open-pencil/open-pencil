@@ -1,5 +1,6 @@
-import type { Fill, GridTrack, LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
+import { parseCSSGridTracks } from '@open-pencil/scene-graph/css'
 import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { applyEffectOverrides } from './overrides/effects'
@@ -258,51 +259,6 @@ function hasAutoLayoutTriggerProps(props: Record<string, unknown>): boolean {
   return AUTO_LAYOUT_TRIGGER_KEYS.some((k) => props[k] !== undefined)
 }
 
-/** Top-level tokens of a track list; spaces inside `repeat(…)` or `minmax(…)` do not split. */
-function trackTokens(value: string): string[] {
-  const tokens: string[] = []
-  let depth = 0
-  let current = ''
-  for (const char of value.trim()) {
-    if (char === '(') depth++
-    if (char === ')') depth = Math.max(0, depth - 1)
-    if (depth === 0 && /\s/.test(char)) {
-      if (current) tokens.push(current)
-      current = ''
-    } else {
-      current += char
-    }
-  }
-  if (current) tokens.push(current)
-  return tokens
-}
-
-const REPEAT_TRACKS = /^repeat\(\s*(\d+)\s*,(.*)\)$/s
-const MINMAX_TRACK = /^minmax\([^,]*,(.*)\)$/s
-const FIXED_TRACK = /^\d+(?:\.\d+)?(?:px)?$/
-/** Bounds a `repeat()` count, which a typo could make huge. */
-const MAX_REPEATED_TRACKS = 100
-
-function parseTrack(token: string): GridTrack[] {
-  const repeat = REPEAT_TRACKS.exec(token)
-  if (repeat) {
-    const tracks = parseTrackList(repeat[2])
-    const count = Math.min(Number(repeat[1]), MAX_REPEATED_TRACKS)
-    return Array.from({ length: count }, () => tracks).flat()
-  }
-  // The maximum decides how a `minmax()` track grows, as `minmax(0, 1fr)` is a 1fr column.
-  const minmax = MINMAX_TRACK.exec(token)
-  if (minmax) return parseTrack(minmax[1].trim())
-  if (token.endsWith('fr')) return [{ sizing: 'FR', value: Number.parseFloat(token) || 1 }]
-  if (FIXED_TRACK.test(token)) return [{ sizing: 'FIXED', value: Number.parseFloat(token) }]
-  // `auto`, and lengths the grid cannot express, size to their content rather than to 0.
-  return [{ sizing: 'AUTO', value: 0 }]
-}
-
-function parseTrackList(value: string): GridTrack[] {
-  return trackTokens(value).flatMap(parseTrack)
-}
-
 function applyGridOverrides(
   props: Record<string, unknown>,
   o: Partial<SceneNode>,
@@ -315,7 +271,7 @@ function applyGridOverrides(
   if (typeof h === 'number') o.height = h
 
   if (typeof props.columns === 'string') {
-    o.gridTemplateColumns = parseTrackList(props.columns)
+    o.gridTemplateColumns = parseCSSGridTracks(props.columns)
   } else if (typeof props.columns === 'number') {
     o.gridTemplateColumns = Array.from({ length: props.columns }, () => ({
       sizing: 'FR' as const,
@@ -324,7 +280,7 @@ function applyGridOverrides(
   }
 
   if (typeof props.rows === 'string') {
-    o.gridTemplateRows = parseTrackList(props.rows)
+    o.gridTemplateRows = parseCSSGridTracks(props.rows)
   } else if (typeof props.rows === 'number') {
     o.gridTemplateRows = Array.from({ length: props.rows }, () => ({
       sizing: 'FR' as const,
