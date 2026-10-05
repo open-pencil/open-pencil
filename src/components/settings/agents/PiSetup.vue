@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import type { PiSetupState } from '@/app/ai/agents/setup'
+import { piSetupView, type CompanionCheck, type PiSetupState } from '@/app/ai/agents/setup'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -13,63 +13,31 @@ import { NODE_DOWNLOAD_URL } from '@/constants'
 import theme from '@/theme/settings/agents'
 
 import AgentSetupItem from './AgentSetupItem.vue'
+import { useSetupProblemMessage } from './problem'
 
 const { setup } = defineProps<{ setup: PiSetupState }>()
 const emit = defineEmits<{ check: []; installCompanion: []; installBridge: [] }>()
 const { ai, common } = useI18n()
 const styles = tv(theme)()
+const setupProblemMessage = useSetupProblemMessage()
 const { copy, copied, text } = useClipboard({ copiedDuring: 1500 })
 
-/** Keeps showing results during a later check instead of flashing back to a spinner. */
-const checked = ref(false)
-watch(
-  () => setup.scanning,
-  (scanning) => {
-    if (!scanning) checked.value = true
-  },
-  { immediate: true }
-)
+const view = computed(() => piSetupView(setup))
+const problemMessage = computed(() => setupProblemMessage(view.value.problem))
 
-const busy = computed(() => setup.installingCompanion || setup.installingBridge)
-const companionReady = computed(() => setup.companion && !setup.companionOutdated)
-const bridgeReady = computed(() => setup.bridge && !setup.bridgeOutdated)
-const needsNpm = computed(
-  () => checked.value && !setup.npm && (!companionReady.value || !bridgeReady.value)
-)
-/** Manual commands are for where one-click installation cannot help. */
-const manualCommands = computed(() => {
-  const manual = !setup.npm || setup.error === 'harness-install' || setup.error === 'canvas-install'
-  if (!manual) return []
-  return [
-    ...(companionReady.value ? [] : [setup.companionCommand]),
-    ...(bridgeReady.value ? [] : [setup.bridgeCommand])
-  ]
-})
-const errorMessage = computed(() => {
-  if (setup.error === 'npm' || needsNpm.value) return ai.value.aiSetupAgentNeedsNpm
-  if (setup.error === 'harness-install' || setup.error === 'canvas-install') {
-    return ai.value.aiSetupAgentInstallFailed
-  }
-  if (setup.error === 'canvas-start') return ai.value.aiSetupAgentMCPStartFailed
-  if (setup.error === 'lookup') return ai.value.aiSetupAgentLookupFailed
-  return null
-})
-
-function state(installed: boolean, outdated: boolean): string {
-  if (outdated) return ai.value.aiSetupAgentOutdated
-  return installed ? ai.value.aiSetupAgentInstalled : ai.value.aiSetupAgentNotFound
+function state(check: CompanionCheck): string {
+  if (check.outdated) return ai.value.aiSetupAgentOutdated
+  return check.ready ? ai.value.aiSetupAgentInstalled : ai.value.aiSetupAgentNotFound
 }
 
 /** The button that installs or updates a companion, while one-click installation can help. */
 function actionLabel(
-  ready: boolean,
-  installing: boolean,
-  outdated: boolean,
+  check: CompanionCheck,
   labels: { install: string; update: string }
 ): string | undefined {
-  if (ready || !setup.npm) return undefined
-  if (installing) return ai.value.aiSetupAgentInstalling
-  return outdated ? labels.update : labels.install
+  if (!check.action) return undefined
+  if (check.installing) return ai.value.aiSetupAgentInstalling
+  return check.action === 'update' ? labels.update : labels.install
 }
 
 function copiedLabel(value: string): string {
@@ -80,38 +48,38 @@ function copiedLabel(value: string): string {
 <template>
   <p :class="styles.help()">{{ ai.aiSetupPiDescription }}</p>
 
-  <p v-if="setup.scanning && !checked" role="status" :class="styles.status()">
+  <p v-if="setup.scanning && !setup.checked" role="status" :class="styles.status()">
     <icon-lucide-loader-2 :class="styles.spinner()" aria-hidden="true" />
     {{ ai.aiSetupAgentChecking }}
   </p>
   <ul v-else :class="styles.list()">
     <AgentSetupItem
-      :ready="companionReady"
+      :ready="view.companion.ready"
       :action="
-        actionLabel(companionReady, setup.installingCompanion, setup.companionOutdated, {
+        actionLabel(view.companion, {
           install: ai.aiSetupPiInstallCompanion,
           update: ai.aiSetupPiUpdateCompanion
         })
       "
-      :loading="setup.installingCompanion"
-      :disabled="busy"
+      :loading="view.companion.installing"
+      :disabled="view.busy"
       @action="emit('installCompanion')"
     >
-      {{ ai.aiSetupPiCompanion }} · {{ state(setup.companion, setup.companionOutdated) }}
+      {{ ai.aiSetupPiCompanion }} · {{ state(view.companion) }}
     </AgentSetupItem>
     <AgentSetupItem
-      :ready="bridgeReady"
+      :ready="view.bridge.ready"
       :action="
-        actionLabel(bridgeReady, setup.installingBridge, setup.bridgeOutdated, {
+        actionLabel(view.bridge, {
           install: ai.aiSetupAgentInstallMCP,
           update: ai.aiSetupAgentUpdateMCP
         })
       "
-      :loading="setup.installingBridge"
-      :disabled="busy"
+      :loading="view.bridge.installing"
+      :disabled="view.busy"
       @action="emit('installBridge')"
     >
-      {{ ai.aiSetupAgentMCP }} · {{ state(setup.bridge, setup.bridgeOutdated) }}
+      {{ ai.aiSetupAgentMCP }} · {{ state(view.bridge) }}
     </AgentSetupItem>
     <AgentSetupItem :ready="Boolean(setup.defaultModel)">
       {{
@@ -119,15 +87,15 @@ function copiedLabel(value: string): string {
       }}
     </AgentSetupItem>
   </ul>
-  <AppAlert v-if="errorMessage" tone="warning" :heading="errorMessage">
-    <template v-if="setup.error === 'npm' || needsNpm" #actions>
+  <AppAlert v-if="problemMessage" tone="warning" :heading="problemMessage">
+    <template v-if="view.problem === 'needs-npm'" #actions>
       <SettingsLink :href="NODE_DOWNLOAD_URL">Node.js</SettingsLink>
     </template>
   </AppAlert>
 
-  <template v-if="manualCommands.length">
+  <template v-if="view.manualCommands.length">
     <p :class="styles.help()">{{ ai.aiSetupAgentInstall }}</p>
-    <div v-for="command in manualCommands" :key="command" :class="styles.command()">
+    <div v-for="command in view.manualCommands" :key="command" :class="styles.command()">
       <code>{{ command }}</code>
       <AppButton size="xs" @click="copy(command)">{{ copiedLabel(command) }}</AppButton>
     </div>
@@ -135,7 +103,7 @@ function copiedLabel(value: string): string {
 
   <p :class="styles.help()">{{ ai.aiSetupPiSignIn }}</p>
   <div :class="styles.actions()">
-    <AppButton size="xs" :disabled="busy || setup.scanning" @click="emit('check')">
+    <AppButton size="xs" :disabled="view.busy || setup.scanning" @click="emit('check')">
       {{ ai.aiSetupAgentCheckAgain }}
     </AppButton>
   </div>
