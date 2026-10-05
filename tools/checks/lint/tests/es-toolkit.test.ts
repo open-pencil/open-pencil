@@ -27,6 +27,11 @@ describe('prefer-es-toolkit', () => {
     'Array.from(new Set(items), (item) => item * 2)',
     '[...new Set(items.map((item) => item)), 4]',
     'items.filter((item) => item > 0)',
+    // An iterator's filter is not an array's, and compact takes arrays only.
+    'declare const map: Map<string, number>; map.values().filter(Boolean)',
+    // Playwright serializes evaluate callbacks into the page, where imports do not exist.
+    'declare const page: { evaluate(fn: () => unknown): unknown }; page.evaluate(() => items.filter(Boolean))',
+    'declare const page: { $$eval(selector: string, fn: () => unknown): unknown }; page.$$eval("p", () => [...new Set(items.map((item) => item))])',
     'const Boolean = (value: number) => value > 1; items.filter(Boolean)',
     'class Set<T> { constructor(_values: T[]) {} }; [...(new Set(items.map((item) => item)) as unknown as number[])]'
   ])('accepts %s', async (source) => {
