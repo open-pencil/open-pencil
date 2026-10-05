@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, setIdSession } from '@open-pencil/scene-graph'
 
 import { pageId } from './helpers'
 
@@ -62,6 +62,24 @@ describe('SceneGraph ID generator', () => {
 
     for (const id of ids) expect(id).toMatch(/^0:\d+$/)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  test('the ID session prefixes every ID minted afterwards', () => {
+    try {
+      setIdSession(4_000_000_000)
+      const graph = new SceneGraph()
+      const ids = [graph.rootId, pageId(graph), graph.createCollection('Colors').id]
+      for (const id of ids) expect(id).toMatch(/^4000000000:\d+$/)
+    } finally {
+      setIdSession(0)
+    }
+    expect(new SceneGraph().rootId).toMatch(/^0:\d+$/)
+  })
+
+  test('rejects an ID session that is not an unsigned 32-bit integer', () => {
+    for (const value of [-1, 1.5, 2 ** 32, Number.NaN]) {
+      expect(() => setIdSession(value)).toThrow(RangeError)
+    }
   })
 
   test('gives a new collection and its default mode different IDs even if the generator repeats', () => {

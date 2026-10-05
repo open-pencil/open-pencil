@@ -102,10 +102,26 @@ export {
   vectorNetworksEqual
 } from './vector-network'
 
+const MAX_ID_SESSION = 0xffffffff
+
+let idSession = 0
 let nextLocalID = 1
 
+/**
+ * Sets the session part of the IDs this process mints, as in Figma's `sessionID:localID` GUIDs.
+ * Headless tools keep session 0, so a file's layers get the same IDs on every run. The editor
+ * picks a random session at startup, as Yjs picks each document's `clientID`, so peers editing
+ * one shared room never mint the same ID. Call it before creating any graph.
+ */
+export function setIdSession(sessionId: number): void {
+  if (!Number.isInteger(sessionId) || sessionId < 0 || sessionId > MAX_ID_SESSION) {
+    throw new RangeError('sessionId must be an unsigned 32-bit integer')
+  }
+  idSession = sessionId
+}
+
 export function generateId(): string {
-  return `0:${nextLocalID++}`
+  return `${idSession}:${nextLocalID++}`
 }
 
 function stripUndefinedProps<T extends object>(obj: T): T {
