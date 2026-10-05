@@ -12,6 +12,11 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 const DERIVED_NODE_FIELDS = new Set<keyof SceneNode>(['textPicture'])
+/**
+ * The layer tree syncs as parent entries and order keys (`src/app/collab/shared-tree.ts`), so a
+ * layer's own fields leave out its place in the tree, and decoding skips the tree's fields.
+ */
+const TREE_FIELDS = new Set<string>(['parentId', 'childIds', 'parents', 'orderKey'])
 const FILL_TYPES = new Set<FillType>([
   'SOLID',
   'GRADIENT_LINEAR',
@@ -32,7 +37,7 @@ type YjsNodeLike = {
 export function encodeNodeForYjs(node: SceneNode): Record<string, unknown> {
   const encoded: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(node)) {
-    if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode)) continue
+    if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode) || TREE_FIELDS.has(key)) continue
     encoded[key] = structuredClone(value)
   }
   return encoded
@@ -58,7 +63,7 @@ export function syncEncodedNodeToYMap(
 export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
   const props: Record<string, unknown> = {}
   for (const [key, value] of ynode.entries()) {
-    if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode)) continue
+    if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode) || TREE_FIELDS.has(key)) continue
     props[key] = structuredClone(value)
   }
 

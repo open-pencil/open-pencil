@@ -39,7 +39,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
       getAwareness: () => runtime.awareness
     })
 
-  const { syncNodeToYjs, syncAllNodesToYjs, applyYjsToGraph } = createYjsGraphSync({
+  const { syncLocalEdit, syncAllNodesToYjs, applyYjsToGraph } = createYjsGraphSync({
     getStore: getActiveStore,
     getYdoc: () => runtime.ydoc,
     getYnodes: () => runtime.ynodes,
@@ -55,7 +55,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     updatePeersList,
     broadcastAwareness,
     applyYjsToGraph,
-    syncNodeToYjs
+    syncLocalEdit
   })
 
   function shareCurrentDoc(): string {

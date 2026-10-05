@@ -1,13 +1,28 @@
-import { omit, pick } from 'es-toolkit/object'
 import * as Y from 'yjs'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
-import { applySyncedTree, type SyncedTree } from '@/app/collab/tree'
+import {
+  markTreeFormat,
+  writeOrderKey,
+  writeParentEntry,
+  writeRootEntries,
+  type YNodes
+} from '@/app/collab/shared-tree/fields'
+import {
+  applySharedTree,
+  createLocalEdit,
+  createSharedTree,
+  isLocalEditEmpty,
+  recordLocalLayers,
+  writeLocalPlacement,
+  type LocalEdit,
+  type SharedTree
+} from '@/app/collab/shared-tree/sync'
 import type { EditorStore } from '@/app/editor/active-store'
 
-type YNodes = Y.Map<Y.Map<unknown>>
 type YImages = Y.Map<Uint8Array>
 
 type GraphBindingOptions = {
@@ -15,14 +30,13 @@ type GraphBindingOptions = {
   getYdoc: () => Y.Doc | null
   getYnodes: () => YNodes | null
   getSuppressGraphSync: () => boolean
-  setSuppressYjsEvents: (value: boolean) => void
-  syncNodeToYjs: (nodeId: string) => void
+  syncLocalEdit: (edit: LocalEdit) => void
 }
 
 type YjsObserverOptions = {
   store: EditorStore
-  ynodes: Y.Map<Y.Map<unknown>>
-  yimages: Y.Map<Uint8Array>
+  ynodes: YNodes
+  yimages: YImages
   getSuppressYjsEvents: () => boolean
   setSuppressGraphSync: (value: boolean) => void
   applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
@@ -36,106 +50,68 @@ type YjsGraphSyncOptions = {
   setSuppressYjsEvents: (value: boolean) => void
 }
 
-const LOCAL_TRANSFORM_FIELDS = ['x', 'y', 'rotation', 'flipX', 'flipY'] as const
-type LocalTransform = Pick<SceneNode, (typeof LOCAL_TRANSFORM_FIELDS)[number]>
-
-function syncedTreeOf(ynodes: YNodes): SyncedTree {
-  return {
-    parentOf(nodeId) {
-      const ynode = ynodes.get(nodeId)
-      if (!ynode) return undefined
-      const parentId = ynode.get('parentId')
-      return typeof parentId === 'string' ? parentId : null
-    },
-    childOrderOf(nodeId) {
-      const childIds = ynodes.get(nodeId)?.get('childIds')
-      return Array.isArray(childIds)
-        ? childIds.filter((id): id is string => typeof id === 'string')
-        : []
-    }
-  }
-}
-
 function logCollabSyncError(context: string, error: unknown) {
   console.error(`[Collab] ${context}:`, error)
 }
 
+/**
+ * Collects the graph events of one edit and syncs them once, after the edit, in one Yjs
+ * transaction, so a move writes its parent entry and order key against the final layer order.
+ */
 export function bindCollabGraphEvents({
   store,
   getYdoc,
   getYnodes,
   getSuppressGraphSync,
-  setSuppressYjsEvents,
-  syncNodeToYjs
+  syncLocalEdit
 }: GraphBindingOptions) {
-  function onGraphMutation(nodeId: string) {
-    if (!getSuppressGraphSync() && getYdoc() && getYnodes()) {
-      syncNodeToYjs(nodeId)
-    }
-  }
-
-  // A parent's child list syncs once per edit, after every layer the edit touches has moved.
-  const staleParents = new Set<string>()
+  let edit = createLocalEdit()
   let bound = true
 
-  function onChildrenChanged(...parentIds: (string | null | undefined)[]) {
+  function record(update: (pending: LocalEdit) => void) {
     if (getSuppressGraphSync() || !getYdoc() || !getYnodes()) return
-    if (staleParents.size === 0) queueMicrotask(syncStaleParents)
-    for (const parentId of parentIds) if (parentId) staleParents.add(parentId)
+    if (isLocalEditEmpty(edit)) queueMicrotask(flush)
+    update(edit)
   }
 
-  function syncStaleParents() {
-    const parentIds = [...staleParents]
-    staleParents.clear()
-    const ydoc = getYdoc()
-    if (!bound || !ydoc || !getYnodes()) return
-    setSuppressYjsEvents(true)
-    try {
-      ydoc.transact(() => {
-        for (const parentId of parentIds) syncNodeToYjs(parentId)
-      })
-    } catch (error) {
-      logCollabSyncError('Failed to sync layer order', error)
-    } finally {
-      setSuppressYjsEvents(false)
-    }
+  function flush() {
+    const pending = edit
+    edit = createLocalEdit()
+    if (bound && getYdoc() && getYnodes()) syncLocalEdit(pending)
   }
 
   const unbinds = [
-    store.onEditorEvent('node:updated', (id) => onGraphMutation(id)),
-    store.onEditorEvent('node:created', (node) => {
-      onGraphMutation(node.id)
-      onChildrenChanged(node.parentId)
-    }),
-    store.onEditorEvent('node:reparented', (nodeId, oldParentId, newParentId) => {
-      onGraphMutation(nodeId)
-      onChildrenChanged(oldParentId, newParentId)
-    }),
-    store.onEditorEvent('node:reordered', (nodeId, parentId, _index, previousParentId) => {
-      onGraphMutation(nodeId)
-      onChildrenChanged(parentId, previousParentId)
-    }),
-    store.onEditorEvent('node:deleted', (id, parentId) => {
-      const ydoc = getYdoc()
-      const ynodes = getYnodes()
-      if (!getSuppressGraphSync() && ydoc && ynodes) {
-        setSuppressYjsEvents(true)
-        try {
-          ydoc.transact(() => {
-            ynodes.delete(id)
-          })
-        } catch (error) {
-          logCollabSyncError('Failed to delete synced node', error)
-        } finally {
-          setSuppressYjsEvents(false)
-        }
-      }
-      onChildrenChanged(parentId)
-    })
+    store.onEditorEvent('node:updated', (id, changes) =>
+      record((pending) => {
+        // A direct parentId write, as a checkpoint restore makes, syncs as a move when it
+        // differs from the shared tree; a childIds write re-keys the children out of order.
+        pending.changed.add(id)
+        if ('childIds' in changes) pending.reordered.add(id)
+      })
+    ),
+    store.onEditorEvent('node:created', (node) =>
+      record((pending) => {
+        pending.changed.add(node.id)
+        pending.placed.add(node.id)
+      })
+    ),
+    store.onEditorEvent('node:reparented', (nodeId, oldParentId) =>
+      record((pending) => {
+        pending.changed.add(nodeId)
+        pending.placed.add(nodeId)
+        if (oldParentId) pending.previousParents.add(oldParentId)
+      })
+    ),
+    store.onEditorEvent('node:reordered', (nodeId, _parentId, _index, previousParentId) =>
+      record((pending) => {
+        pending.placed.add(nodeId)
+        if (previousParentId) pending.previousParents.add(previousParentId)
+      })
+    ),
+    store.onEditorEvent('node:deleted', (id) => record((pending) => pending.deleted.add(id)))
   ]
   return () => {
     bound = false
-    staleParents.clear()
     for (const unbind of unbinds) unbind()
   }
 }
@@ -187,69 +163,112 @@ export function createYjsGraphSync({
   setSuppressYjsEvents
 }: YjsGraphSyncOptions) {
   let pendingPageSwitch: { store: EditorStore; pageId: string } | undefined
+  let shared: SharedTree | null = null
 
-  function syncNodeToYjs(nodeId: string) {
-    const store = getStore()
+  function sharedTreeOf(ydoc: Y.Doc): SharedTree {
+    if (shared?.ydoc !== ydoc) shared = createSharedTree(ydoc, () => getStore().graph)
+    return shared
+  }
+
+  function writeNode(graph: SceneGraph, ynodes: YNodes, nodeId: string): void {
+    const node = graph.getNode(nodeId)
+    if (!node) return
+    let ynode = ynodes.get(nodeId)
+    if (!ynode) {
+      ynode = new Y.Map()
+      ynodes.set(nodeId, ynode)
+    }
+    syncEncodedNodeToYMap(node, ynode)
+
+    const localYimages = getYimages()
+    if (!localYimages) return
+    for (const fill of node.fills) {
+      if (fill.imageHash && !localYimages.has(fill.imageHash)) {
+        const data = graph.images.get(fill.imageHash)
+        if (data) localYimages.set(fill.imageHash, data)
+      }
+    }
+  }
+
+  /** Writes one local edit: changed layers' fields, deletions, and where layers now sit. */
+  function syncLocalEdit(edit: LocalEdit) {
+    const graph = getStore().graph
     const ydoc = getYdoc()
     const ynodes = getYnodes()
     if (!ydoc || !ynodes) return
-    const node = store.graph.getNode(nodeId)
-    if (!node) return
-
-    const localYimages = getYimages()
+    const tree = sharedTreeOf(ydoc)
     setSuppressYjsEvents(true)
     try {
       ydoc.transact(() => {
-        let ynode = ynodes.get(nodeId)
-        if (!ynode) {
-          ynode = new Y.Map()
-          ynodes.set(nodeId, ynode)
-        }
-        syncEncodedNodeToYMap(node, ynode)
-
-        if (localYimages) {
-          for (const fill of node.fills) {
-            if (fill.imageHash && !localYimages.has(fill.imageHash)) {
-              const data = store.graph.images.get(fill.imageHash)
-              if (data) localYimages.set(fill.imageHash, data)
-            }
+        for (const id of edit.deleted) {
+          if (graph.getNode(id)) {
+            // Deleted and restored within the edit, as an undo can.
+            edit.changed.add(id)
+            edit.placed.add(id)
+            continue
           }
+          ynodes.delete(id)
+          tree.tree.deleteLayer(id)
         }
+        for (const id of edit.changed) writeNode(graph, ynodes, id)
+        for (const id of edit.placed) if (!ynodes.has(id)) writeNode(graph, ynodes, id)
+        shareAncestors(graph, ynodes, edit)
+        writeLocalPlacement(tree, graph, ynodes, ydoc.getMap('meta'), edit)
       })
     } catch (error) {
-      logCollabSyncError(`Failed to sync node ${nodeId}`, error)
+      logCollabSyncError('Failed to sync local edit', error)
     } finally {
       setSuppressYjsEvents(false)
     }
   }
 
+  /**
+   * Writes the ancestors of the edit's layers that the room does not hold yet, such as the root
+   * above a page added before anyone shared the document, so other peers can place the layers.
+   */
+  function shareAncestors(graph: SceneGraph, ynodes: YNodes, edit: LocalEdit) {
+    for (const id of [...edit.changed, ...edit.placed]) {
+      let parentId = graph.getNode(id)?.parentId
+      for (let steps = 0; parentId && !ynodes.has(parentId) && steps < graph.nodes.size; steps++) {
+        writeNode(graph, ynodes, parentId)
+        edit.changed.add(parentId)
+        parentId = graph.getNode(parentId)?.parentId
+      }
+    }
+  }
+
+  function syncNodeToYjs(nodeId: string) {
+    const edit = createLocalEdit()
+    edit.changed.add(nodeId)
+    syncLocalEdit(edit)
+  }
+
+  /** Shares this peer's whole document: every layer, its parent with counter 0, and its order. */
   function syncAllNodesToYjs() {
-    const store = getStore()
+    const graph = getStore().graph
     const ydoc = getYdoc()
     const ynodes = getYnodes()
     if (!ydoc || !ynodes) return
-    const localYimages = getYimages()
     setSuppressYjsEvents(true)
     try {
       ydoc.transact(() => {
-        for (const node of store.graph.getAllNodes()) {
-          let ynode = ynodes.get(node.id)
-          if (!ynode) {
-            ynode = new Y.Map()
-            ynodes.set(node.id, ynode)
-          }
-          syncEncodedNodeToYMap(node, ynode)
+        for (const node of graph.getAllNodes()) writeNode(graph, ynodes, node.id)
+        for (const node of graph.getAllNodes()) {
+          const ynode = ynodes.get(node.id)
+          if (!ynode) continue
+          if (node.parentId === null) writeRootEntries(ynode)
+          const children = node.childIds.filter((id) => graph.getNode(id)?.parentId === node.id)
+          const keys = siblingOrderKeys(children.map(() => undefined))
+          children.forEach((childId, index) => {
+            const child = ynodes.get(childId)
+            if (!child) return
+            writeParentEntry(child, node.id, 0)
+            writeOrderKey(child, keys[index])
+          })
         }
+        markTreeFormat(ydoc.getMap('meta'))
       })
-      if (localYimages) {
-        ydoc.transact(() => {
-          for (const [hash, data] of store.graph.images) {
-            if (!localYimages.has(hash)) {
-              localYimages.set(hash, data)
-            }
-          }
-        })
-      }
+      recordLocalLayers(sharedTreeOf(ydoc), ynodes, ynodes.keys())
     } catch (error) {
       logCollabSyncError('Failed to sync document', error)
     } finally {
@@ -259,8 +278,9 @@ export function createYjsGraphSync({
 
   function applyYjsToGraph(events: Y.YEvent<Y.Map<unknown>>[]) {
     const store = getStore()
+    const ydoc = getYdoc()
     const ynodes = getYnodes()
-    if (!ynodes) return
+    if (!ydoc || !ynodes) return
     const changed = new Set<string>()
     const deleted = new Set<string>()
     for (const event of events) {
@@ -269,70 +289,34 @@ export function createYjsGraphSync({
           if (change.action === 'delete') deleted.add(key)
           else changed.add(key)
         }
-      } else if (event.target.parent === ynodes) {
-        const nodeId = findNodeIdForYMap(event.target)
-        if (nodeId) changed.add(nodeId)
+        continue
       }
+      // The path from the nodes map starts with the layer's id, whether its own field changed
+      // or an entry of its nested parents map did.
+      const [nodeId] = event.path
+      if (typeof nodeId === 'string') changed.add(nodeId)
     }
 
-    const transforms = new Map<string, LocalTransform>()
     for (const nodeId of changed) {
       const ynode = ynodes.get(nodeId)
-      if (ynode) applyYnodeToGraph(nodeId, ynode, transforms)
+      if (ynode) applyYnodeToGraph(store.graph, nodeId, ynode)
     }
+    const gone = [...deleted].filter((nodeId) => !ynodes.has(nodeId))
     // Moves go first, so a layer moved out of a deleted parent survives the deletion.
-    const rejected = applySyncedTree(store.graph, syncedTreeOf(ynodes), changed)
-    for (const nodeId of deleted) {
-      if (!ynodes.has(nodeId)) store.graph.deleteNode(nodeId)
-    }
-    for (const nodeId of rejected) restoreRejectedParent(nodeId, transforms.get(nodeId))
+    applySharedTree(sharedTreeOf(ydoc), store.graph, ynodes, changed, gone)
+    for (const nodeId of gone) store.graph.deleteNode(nodeId)
     ensureCurrentPageExists(store)
   }
 
-  /**
-   * A move that would make a layer its own ancestor keeps the layer where it was, and the layer's
-   * parent and position are written back so every peer settles on that tree.
-   */
-  function restoreRejectedParent(nodeId: string, transform: LocalTransform | undefined) {
-    const store = getStore()
-    if (!store.graph.getNode(nodeId)?.parentId) return
-    if (transform) store.graph.updateNode(nodeId, transform)
-    syncNodeToYjs(nodeId)
-  }
-
-  function findNodeIdForYMap(ymap: Y.Map<unknown>): string | null {
-    const ynodes = getYnodes()
-    if (!ynodes) return null
-    for (const [key, value] of ynodes.entries()) {
-      if (value === ymap) return key
-    }
-    return null
-  }
-
-  /** Applies a layer's own properties; `applySyncedTree` places it in the tree afterwards. */
-  function applyYnodeToGraph(
-    nodeId: string,
-    ynode: Y.Map<unknown>,
-    transforms: Map<string, LocalTransform>
-  ) {
-    const store = getStore()
-    const existing = store.graph.getNode(nodeId)
+  /** Applies a layer's own fields; `applySharedTree` places it in the tree afterwards. */
+  function applyYnodeToGraph(graph: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
     const props = decodeNodeFromYjs(ynode)
-    const parentId = typeof props.parentId === 'string' ? props.parentId : null
-    const own = omit(props, ['parentId', 'childIds'])
-
-    if (existing) {
-      // Kept until the move is known to be accepted: a rejected move keeps the old position.
-      if (parentId !== null && parentId !== existing.parentId) {
-        transforms.set(nodeId, pick(existing, LOCAL_TRANSFORM_FIELDS))
-      }
-      store.graph.updateNode(nodeId, own)
-    } else {
-      const type = props.type
-      if (!type) return
-      store.graph.createNodeWithId(nodeId, type, null, { ...own, childIds: [] })
+    if (graph.getNode(nodeId)) {
+      graph.updateNode(nodeId, props)
+      return
     }
-    if (parentId === null) store.graph.rootId = nodeId
+    const type = props.type
+    if (type) graph.createNodeWithId(nodeId, type, null, { ...props, childIds: [] })
   }
 
   function ensureCurrentPageExists(store: EditorStore) {
@@ -354,5 +338,5 @@ export function createYjsGraphSync({
       })
   }
 
-  return { syncNodeToYjs, syncAllNodesToYjs, applyYjsToGraph }
+  return { syncNodeToYjs, syncLocalEdit, syncAllNodesToYjs, applyYjsToGraph }
 }

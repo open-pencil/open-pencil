@@ -9,6 +9,7 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
 import { connectCollabRoom } from '@/app/collab/room'
 import type { CollabRoomTransport } from '@/app/collab/transport'
+import type { LocalEdit } from '@/app/collab/shared-tree/sync'
 import type { CollabState } from '@/app/collab/types'
 import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -40,7 +41,7 @@ type ConnectCollabSessionOptions = {
   updatePeersList: () => void
   broadcastAwareness: () => void
   applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncNodeToYjs: (nodeId: string) => void
+  syncLocalEdit: (edit: LocalEdit) => void
 }
 
 type CollabConnectionActionsOptions = {
@@ -50,7 +51,7 @@ type CollabConnectionActionsOptions = {
   updatePeersList: () => void
   broadcastAwareness: () => void
   applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncNodeToYjs: (nodeId: string) => void
+  syncLocalEdit: (edit: LocalEdit) => void
 }
 
 type CollabSessionResources = {
@@ -98,7 +99,7 @@ export function createCollabConnectionActions({
   updatePeersList,
   broadcastAwareness,
   applyYjsToGraph,
-  syncNodeToYjs
+  syncLocalEdit
 }: CollabConnectionActionsOptions) {
   function connect(roomId: string) {
     connectCollabSession({
@@ -110,7 +111,7 @@ export function createCollabConnectionActions({
       updatePeersList,
       broadcastAwareness,
       applyYjsToGraph,
-      syncNodeToYjs
+      syncLocalEdit
     })
   }
 
@@ -155,7 +156,7 @@ export function connectCollabSession({
   updatePeersList,
   broadcastAwareness,
   applyYjsToGraph,
-  syncNodeToYjs
+  syncLocalEdit
 }: ConnectCollabSessionOptions) {
   if (runtime.room) disconnect()
 
@@ -202,10 +203,7 @@ export function connectCollabSession({
     getYdoc: () => runtime.ydoc,
     getYnodes: () => runtime.ynodes,
     getSuppressGraphSync: () => runtime.suppressGraphSync,
-    setSuppressYjsEvents: (value) => {
-      runtime.suppressYjsEvents = value
-    },
-    syncNodeToYjs
+    syncLocalEdit
   })
 }
 

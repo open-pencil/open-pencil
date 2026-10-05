@@ -24,7 +24,7 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 - ACP transport lives under `src/app/ai/acp/**`; provider definitions in `packages/core/src/constants.ts`; profiles in `src/app/ai/models/**`. Keep provider connections, reusable profiles, and role assignments separate, and resolve credentials lazily. ACP process changes require checking `desktop/capabilities/**`.
 - Browser-native WebMCP registration lives under `src/app/automation/webmcp/`, consumes per-tool exposure metadata, and is feature-detected through `document.modelContext`. App completion under `src/app/automation/execution/` loads fonts after commit.
 - Collaboration lives under `src/app/collab/**` on Trystero, Yjs, and awareness; preserve crypto-safe room IDs and peer cleanup.
-- Remote layer-tree changes go through `applySyncedTree` in `src/app/collab/tree.ts`, never a plain `parentId` or `childIds` assignment. It skips a move that would make a layer its own ancestor and keeps every parent's `childIds` matching its children (`tests/app/collab/tree.test.ts`).
+- A shared document records each layer's parent history and order key, never `parentId` or `childIds`; local edits are written by `writeLocalPlacement` and remote changes applied by `applySharedTree` in `src/app/collab/shared-tree/sync.ts`, which resolve the tree with `LayerTree` from `src/app/collab/tree/` (`tests/app/collab/random-edits.test.ts`).
 
 ## Browser baseline
 

@@ -122,12 +122,159 @@ describe('collab concurrent edits', () => {
       (stores, pageId) => {
         const layers = expectSameLayerTree(stores, [pageId])
         expect([...layers]).toEqual(expect.arrayContaining(['frame:a', 'frame:b']))
-        const ynodes = stores.hostDoc.getMap<Y.Map<unknown>>('nodes')
-        for (const id of ['frame:a', 'frame:b']) {
-          expect(ynodes.get(id)?.get('parentId')).toBe(
-            getNodeOrThrow(stores.hostStore.graph, id).parentId
-          )
+        // Both moves share a counter, so the move of the higher layer id is the one undone.
+        const host = stores.hostStore.graph
+        expect(getNodeOrThrow(host, 'frame:a').parentId).toBe('frame:b')
+        expect(getNodeOrThrow(host, 'frame:b').parentId).toBe(pageId)
+      }
+    )
+  })
+
+  test('concurrent moves of one layer settle on one parent on both peers', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        for (const id of ['frame:a', 'frame:b', 'rect:1']) {
+          graph.createNode(id === 'rect:1' ? 'RECTANGLE' : 'FRAME', pageId, { id })
         }
+      },
+      ({ hostStore, peerStore }) => {
+        hostStore.graph.reparentNode('rect:1', 'frame:a')
+        peerStore.graph.reparentNode('rect:1', 'frame:b')
+      },
+      (stores, pageId) => {
+        expectSameLayerTree(stores, [pageId])
+        // Equal counters: the higher parent id wins.
+        expect(getNodeOrThrow(stores.hostStore.graph, 'rect:1').parentId).toBe('frame:b')
+        expect(getNodeOrThrow(stores.hostStore.graph, 'frame:a').childIds).toEqual([])
+      }
+    )
+  })
+
+  test('three layers moved into a loop by two peers drop only the latest move', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        for (const id of ['frame:a', 'frame:b', 'frame:c']) graph.createNode('FRAME', pageId, { id })
+      },
+      ({ hostStore, peerStore }) => {
+        hostStore.graph.reparentNode('frame:a', 'frame:b')
+        peerStore.graph.reparentNode('frame:b', 'frame:c')
+        peerStore.graph.reparentNode('frame:c', 'frame:a')
+      },
+      (stores, pageId) => {
+        const layers = expectSameLayerTree(stores, [pageId])
+        expect([...layers]).toEqual(expect.arrayContaining(['frame:a', 'frame:b', 'frame:c']))
+        const host = stores.hostStore.graph
+        expect(getNodeOrThrow(host, 'frame:a').parentId).toBe('frame:b')
+        expect(getNodeOrThrow(host, 'frame:b').parentId).toBe('frame:c')
+        expect(getNodeOrThrow(host, 'frame:c').parentId).toBe(pageId)
+      }
+    )
+  })
+
+  test('a layer moved into a parent deleted at the same time returns to its previous parent', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        graph.createNode('FRAME', pageId, { id: 'frame:1' })
+        graph.createNode('FRAME', pageId, { id: 'frame:2' })
+        graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:1' })
+      },
+      ({ hostStore, peerStore }) => {
+        hostStore.graph.reparentNode('rect:1', 'frame:2')
+        peerStore.graph.deleteNode('frame:2')
+      },
+      (stores, pageId) => {
+        expectSameLayerTree(stores, [pageId])
+        for (const graph of [stores.hostStore.graph, stores.peerStore.graph]) {
+          expect(graph.getNode('frame:2')).toBeUndefined()
+          expect(getNodeOrThrow(graph, 'rect:1').parentId).toBe('frame:1')
+        }
+      }
+    )
+  })
+
+  test('a layer whose parents were all deleted goes to its page', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        graph.createNode('FRAME', pageId, { id: 'frame:1' })
+      },
+      ({ hostStore, peerStore }) => {
+        hostStore.graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:1' })
+        peerStore.graph.deleteNode('frame:1')
+      },
+      (stores, pageId) => {
+        expectSameLayerTree(stores, [pageId])
+        for (const graph of [stores.hostStore.graph, stores.peerStore.graph]) {
+          expect(getNodeOrThrow(graph, 'rect:1').parentId).toBe(pageId)
+        }
+      }
+    )
+  })
+
+  test('inserts at the same spot keep both layers in one order with distinct keys', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        graph.createNode('RECTANGLE', pageId, { id: 'rect:1' })
+        graph.createNode('RECTANGLE', pageId, { id: 'rect:2' })
+      },
+      ({ hostStore, peerStore }, pageId) => {
+        const host = hostStore.graph.createNode('RECTANGLE', pageId, { id: 'host:1' })
+        hostStore.graph.reorderChild(host.id, pageId, 1)
+        const peer = peerStore.graph.createNode('RECTANGLE', pageId, { id: 'peer:1' })
+        peerStore.graph.reorderChild(peer.id, pageId, 1)
+      },
+      (stores, pageId) => {
+        expectSameLayerTree(stores, [pageId])
+        const order = getNodeOrThrow(stores.hostStore.graph, pageId).childIds
+        expect(order[0]).toBe('rect:1')
+        expect(order[3]).toBe('rect:2')
+        expect(order.slice(1, 3)).toEqual(expect.arrayContaining(['host:1', 'peer:1']))
+        const ynodes = stores.hostDoc.getMap<Y.Map<unknown>>('nodes')
+        const keys = order.map((id) => ynodes.get(id)?.get('orderKey'))
+        expect(new Set(keys).size).toBe(4)
+      }
+    )
+  })
+
+  test('concurrent reorders of one parent converge on one order', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        for (const id of ['rect:1', 'rect:2', 'rect:3', 'rect:4']) {
+          graph.createNode('RECTANGLE', pageId, { id })
+        }
+      },
+      ({ hostStore, peerStore }, pageId) => {
+        hostStore.graph.reorderChild('rect:4', pageId, 0)
+        peerStore.graph.reorderChild('rect:1', pageId, 3)
+        peerStore.graph.reorderChild('rect:4', pageId, 2)
+      },
+      (stores, pageId) => {
+        const layers = expectSameLayerTree(stores, [pageId])
+        expect([...layers]).toEqual(
+          expect.arrayContaining(['rect:1', 'rect:2', 'rect:3', 'rect:4'])
+        )
+      }
+    )
+  })
+
+  test('a layer kept out of a loop stays put when the other layer moves away', async () => {
+    await withConcurrentEdits(
+      (graph, pageId) => {
+        graph.createNode('FRAME', pageId, { id: 'frame:a' })
+        graph.createNode('FRAME', pageId, { id: 'frame:b' })
+      },
+      ({ hostStore, peerStore }) => {
+        hostStore.graph.reparentNode('frame:a', 'frame:b')
+        peerStore.graph.reparentNode('frame:b', 'frame:a')
+      },
+      (stores, pageId) => {
+        const host = stores.hostStore.graph
+        expect(getNodeOrThrow(host, 'frame:b').parentId).toBe(pageId)
+        // frame:b's newest entry is frame:a; moving frame:a out of frame:b must not revive it.
+        host.reparentNode('frame:a', pageId)
+        stores.hostSync.syncNodeToYjs('frame:a')
+        expectSameLayerTree(stores, [pageId])
+        expect(getNodeOrThrow(host, 'frame:b').parentId).toBe(pageId)
+        expect(getNodeOrThrow(stores.peerStore.graph, 'frame:b').parentId).toBe(pageId)
       }
     )
   })

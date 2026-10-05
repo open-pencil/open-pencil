@@ -86,20 +86,14 @@ export function createSyncedStores(options: SyncedStoreOptions = {}) {
           getYdoc: () => hostDoc,
           getYnodes: () => hostNodes,
           getSuppressGraphSync: () => hostSuppressGraphSync,
-          setSuppressYjsEvents: (value) => {
-            hostSuppressYjsEvents = value
-          },
-          syncNodeToYjs: hostSync.syncNodeToYjs
+          syncLocalEdit: hostSync.syncLocalEdit
         }),
         bindCollabGraphEvents({
           store: peerStore,
           getYdoc: () => peerDoc,
           getYnodes: () => peerNodes,
           getSuppressGraphSync: () => peerSuppressGraphSync,
-          setSuppressYjsEvents: (value) => {
-            peerSuppressYjsEvents = value
-          },
-          syncNodeToYjs: peerSync.syncNodeToYjs
+          syncLocalEdit: peerSync.syncLocalEdit
         })
       ]
     : []
@@ -144,7 +138,7 @@ export async function withSyncedStores(
   }
 }
 
-/** Lets graph-event syncs a local edit schedules, such as its parents' child lists, run. */
+/** Lets the sync a local edit schedules after its graph events run. */
 export async function settleGraphSync() {
   await Promise.resolve()
 }
