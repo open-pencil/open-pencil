@@ -41,13 +41,18 @@ describe('combine as variants', () => {
   test('the plugin API wraps the components exactly', () => {
     const editor = createEditor()
     try {
-      const [a, b] = components(editor)
       const figma = new FigmaAPI(editor.graph)
       figma.currentPage = figma.wrapNode(editor.state.currentPageId)
-      const set = figma.combineAsVariants(
-        [a, b].map((node) => figma.wrapNode(node.id)),
-        figma.currentPage
-      )
+      const a = figma.createComponent()
+      a.name = 'v=a'
+      a.resize(60, 60)
+      a.x = 200
+      const b = figma.createComponent()
+      b.name = 'v=b'
+      b.resize(60, 60)
+      b.x = 300
+      b.y = 50
+      const set = figma.combineAsVariants([a, b], figma.currentPage)
       expect([set.x, set.y, set.width, set.height]).toEqual([200, 0, 160, 110])
       expect(set.fills).toEqual([])
       expect(set.strokes).toEqual([])

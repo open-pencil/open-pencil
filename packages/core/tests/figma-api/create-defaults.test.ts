@@ -60,7 +60,8 @@ describe('new layer defaults', () => {
   test('a stroke a script adds takes the 1 px default weight', () => {
     const rect = api().createRectangle()
     expect(rect.strokeWeight).toBe(1)
-    rect.strokes = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }]
+    // Scripts pass Figma paints, which carry no weight.
+    Reflect.set(rect, 'strokes', [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }])
     expect(rect.strokeWeight).toBe(1)
   })
 
