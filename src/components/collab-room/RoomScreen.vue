@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import { useCollaborationMessages } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { roomScreen } from '@/theme/collaboration/room-screen'
 
+import RoomNameLine from './RoomNameLine.vue'
+
 /**
- * What a room tab shows instead of its canvas until the room's document arrives: briefly that it
+ * What a room tab shows instead of the editor until the room's document arrives: briefly that it
  * is joining, then why nothing is here yet and what to do. Nothing on it can edit the document.
  */
 const {
   status,
   name,
   copied = false,
-  nameHint = null,
   desktopLink = null,
   downloadURL = null
 } = defineProps<{
@@ -23,8 +22,6 @@ const {
   /** The person's name in the room, generated until they set one. */
   name: string
   copied?: boolean
-  /** Shown while the person is in the room under a generated name. */
-  nameHint?: string | null
   /** An `openpencil://join` link, offered in desktop browsers. */
   desktopLink?: string | null
   /** Where to get the desktop app, offered beside `desktopLink`. */
@@ -38,94 +35,100 @@ const emit = defineEmits<{
 }>()
 
 const messages = useCollaborationMessages()
-const nameDraft = ref('')
-
-function rename() {
-  const next = nameDraft.value.trim()
-  if (next && next !== name) emit('rename', next)
-}
 const ui = roomScreen()
 </script>
 
 <template>
-  <div :class="ui.root()" data-test-id="room-screen" :data-status="status">
-    <section
-      :class="ui.card()"
-      role="status"
-      aria-live="polite"
-      :aria-busy="status === 'joining'"
-      aria-labelledby="room-screen-title"
+  <div
+    :class="ui.root()"
+    data-test-id="room-screen"
+    :data-status="status"
+    role="status"
+    aria-live="polite"
+    :aria-busy="status === 'joining'"
+  >
+    <AppPlaceholder
+      v-if="status === 'joining'"
+      size="page"
+      label-as="h2"
+      :label="messages.joiningTitle"
+      :description="messages.joiningDescription"
+      :ui="{ label: ui.title(), description: ui.description() }"
     >
-      <icon-lucide-loader-circle
-        v-if="status === 'joining'"
-        :class="ui.spinner()"
-        aria-hidden="true"
-      />
-      <icon-lucide-users v-else :class="ui.icon()" aria-hidden="true" />
-
-      <template v-if="status === 'joining'">
-        <h2 id="room-screen-title" :class="ui.title()">{{ messages.joiningTitle }}</h2>
-        <p :class="ui.body()">{{ messages.joiningDescription }}</p>
+      <template #icon>
+        <icon-lucide-loader-circle :class="ui.spinner()" />
       </template>
-
-      <template v-else>
-        <h2 id="room-screen-title" :class="ui.title()">{{ messages.waitingTitle }}</h2>
-        <p :class="ui.body()">{{ messages.waitingDescription }}</p>
-        <ul :class="ui.steps()">
-          <li>{{ messages.waitingAskSharer }}</li>
-          <li>{{ messages.waitingCheckLink }}</li>
-        </ul>
-        <p :class="ui.body()">{{ messages.waitingOpensAutomatically }}</p>
-      </template>
-
-      <div :class="ui.name()">
-        <label for="room-screen-name-input" :class="ui.label()">{{ messages.yourName }}</label>
-        <AppInput
-          id="room-screen-name-input"
-          v-model="nameDraft"
-          data-test-id="room-screen-name-input"
-          :placeholder="name"
-          @enter="rename"
-          @change="rename"
-        />
-        <p v-if="nameHint" :class="ui.hint()" data-test-id="room-name-hint">{{ nameHint }}</p>
-      </div>
-
-      <div :class="ui.actions()">
+      <template #action>
         <AppButton
-          color="primary"
-          variant="solid"
-          data-test-id="room-screen-copy-link"
-          @click="emit('copyLink')"
+          color="neutral"
+          variant="ghost"
+          data-test-id="room-screen-leave"
+          @click="emit('leave')"
         >
-          <template #leading>
-            <icon-lucide-check v-if="copied" class="size-3" />
-            <icon-lucide-copy v-else class="size-3" />
-          </template>
-          {{ copied ? messages.linkCopied : messages.copyLink }}
-        </AppButton>
-        <AppButton variant="outline" data-test-id="room-screen-leave" @click="emit('leave')">
           {{ messages.leave }}
         </AppButton>
-        <a
-          v-if="desktopLink"
-          :href="desktopLink"
-          :class="ui.link()"
-          data-test-id="room-screen-open-desktop"
-        >
-          {{ messages.openInDesktopApp }}
-        </a>
-        <a
-          v-if="desktopLink && downloadURL"
-          :href="downloadURL"
-          target="_blank"
-          rel="noopener noreferrer"
-          :class="ui.download()"
-          data-test-id="room-screen-download-desktop"
-        >
-          {{ messages.downloadDesktopApp }}
-        </a>
-      </div>
-    </section>
+      </template>
+    </AppPlaceholder>
+
+    <AppPlaceholder
+      v-else
+      size="page"
+      label-as="h2"
+      :label="messages.waitingTitle"
+      :description="`${messages.waitingDescription} ${messages.waitingOpensAutomatically}`"
+      :ui="{ label: ui.title(), description: ui.description() }"
+    >
+      <template #icon>
+        <icon-lucide-users class="size-5" />
+      </template>
+      <ul :class="ui.steps()">
+        <li>{{ messages.waitingAskSharer }}</li>
+        <li>{{ messages.waitingCheckLink }}</li>
+      </ul>
+      <template #action>
+        <div :class="ui.actions()">
+          <div :class="ui.buttons()">
+            <AppButton
+              color="neutral"
+              variant="outline"
+              data-test-id="room-screen-copy-link"
+              @click="emit('copyLink')"
+            >
+              <template #leading>
+                <icon-lucide-check v-if="copied" class="size-3" />
+                <icon-lucide-copy v-else class="size-3" />
+              </template>
+              {{ copied ? messages.linkCopied : messages.copyLink }}
+            </AppButton>
+            <AppButton
+              color="neutral"
+              variant="ghost"
+              data-test-id="room-screen-leave"
+              @click="emit('leave')"
+            >
+              {{ messages.leave }}
+            </AppButton>
+          </div>
+          <RoomNameLine :name="name" @rename="emit('rename', $event)" />
+          <p v-if="desktopLink" :class="ui.footnote()">
+            <a :href="desktopLink" :class="ui.link()" data-test-id="room-screen-open-desktop">
+              {{ messages.openInDesktopApp }}
+            </a>
+            <template v-if="downloadURL">
+              <span aria-hidden="true">·</span>
+              <a
+                :href="downloadURL"
+                target="_blank"
+                rel="noopener noreferrer"
+                :class="ui.link()"
+                data-test-id="room-screen-download-desktop"
+              >
+                {{ messages.downloadDesktopApp }}
+              </a>
+            </template>
+          </p>
+        </div>
+      </template>
+    </AppPlaceholder>
   </div>
 </template>

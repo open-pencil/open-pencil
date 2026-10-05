@@ -13,7 +13,6 @@ const room = useRoomActions()
     :status="room.state.value.status === 'joining' ? 'joining' : 'waiting'"
     :name="room.state.value.localName"
     :copied="room.copied.value"
-    :name-hint="room.nameHint.value"
     :desktop-link="room.desktopLink.value"
     :downloadURL="room.downloadURL.value"
     @copy-link="room.copyLink"

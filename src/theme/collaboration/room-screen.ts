@@ -1,22 +1,21 @@
 import { tv } from 'tailwind-variants'
 
-/** The screen a room tab shows instead of its canvas while the room's document is on its way. */
+/**
+ * The room tab's screen while its document is on the way, centred like the app's other empty
+ * states (`AppPlaceholder`) over the whole tab.
+ */
 export const roomScreen = tv({
   slots: {
-    root: 'absolute inset-0 z-20 flex items-center justify-center overflow-y-auto bg-canvas p-4',
-    card: 'flex w-full max-w-sm flex-col gap-3 rounded-lg border border-border bg-panel p-5 shadow-sm',
-    icon: 'size-5 text-muted',
-    spinner: 'size-5 animate-spin text-muted motion-reduce:animate-none',
-    title: 'text-sm font-semibold text-surface',
-    body: 'text-xs leading-relaxed text-muted',
-    steps: 'flex list-disc flex-col gap-1 pl-4 text-xs leading-relaxed text-surface',
-    name: 'flex flex-col gap-1',
-    label: 'text-xs text-muted',
-    hint: 'text-[11px] leading-relaxed text-muted',
-    actions: 'mt-1 flex flex-wrap items-center gap-2',
-    link: 'text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none',
-    download:
-      'text-[11px] text-muted underline-offset-2 hover:text-surface hover:underline focus-visible:underline focus-visible:outline-none'
+    root: 'absolute inset-0 z-20 flex overflow-y-auto bg-canvas',
+    title: 'text-sm font-semibold',
+    description: 'mt-1.5 text-balance',
+    spinner: 'size-5 animate-spin motion-reduce:animate-none',
+    steps:
+      'mx-auto flex w-fit list-disc flex-col gap-1 pl-4 text-left text-xs leading-relaxed text-muted',
+    actions: 'flex flex-col items-center gap-3',
+    buttons: 'flex items-center justify-center gap-2',
+    footnote: 'flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted',
+    link: 'text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none'
   }
 })
 

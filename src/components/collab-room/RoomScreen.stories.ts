@@ -7,7 +7,6 @@ type Args = {
   status: 'joining' | 'waiting'
   name: string
   copied: boolean
-  nameHint: string | null
   desktopLink: string | null
   downloadURL: string | null
   onCopyLink: () => void
@@ -23,7 +22,6 @@ const meta = {
     status: 'waiting',
     name: 'Teal Fox',
     copied: false,
-    nameHint: null,
     desktopLink: null,
     downloadURL: null,
     onCopyLink: fn(),
@@ -45,12 +43,6 @@ export const Joining: Story = {
 }
 
 export const Waiting: Story = {}
-
-export const WaitingWithGeneratedName: Story = {
-  args: {
-    nameHint: 'You’re Teal Fox in this room. Set your name so others know who you are.'
-  }
-}
 
 export const WaitingInDesktopBrowser: Story = {
   args: {
@@ -76,7 +68,11 @@ export const Actions: Story = {
 export const Rename: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await userEvent.type(canvas.getByLabelText('Your name'), 'Dana{Enter}')
+    await userEvent.click(canvas.getByRole('button', { name: 'Change' }))
+    const body = within(canvasElement.ownerDocument.body)
+    const input = await body.findByLabelText('Your name')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Dana{Enter}')
     await expect(args.onRename).toHaveBeenCalledWith('Dana')
   }
 }

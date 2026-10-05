@@ -1,7 +1,7 @@
 import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { useCollaborationMessages, useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@open-pencil/vue'
 
 import { roomLinkURL } from '@/app/collab/room/links'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
@@ -12,7 +12,6 @@ import { DESKTOP_DOWNLOAD_URL, getShareURL, IS_BROWSER, IS_TAURI } from '@/const
 /** What the room screens offer for the active tab's room: its link, a desktop handoff, Leave. */
 export function useRoomActions() {
   const collab = useCollabInjected()
-  const messages = useCollaborationMessages()
   const notifications = useNotificationMessages()
   const { isMobile } = useViewportKind()
   const { copy, copied } = useClipboard({ copiedDuring: 2000 })
@@ -22,9 +21,6 @@ export function useRoomActions() {
   /** Whether the room's document has yet to arrive, so its screen shows instead of the editor. */
   const pending = computed(
     () => state.value.status === 'joining' || state.value.status === 'waiting'
-  )
-  const nameHint = computed(() =>
-    state.value.hasChosenName ? null : messages.value.nameHint({ name: state.value.localName })
   )
   // Browsers on a computer can hand the room to the desktop app; phones and the app cannot.
   const desktopLink = computed(() => {
@@ -59,7 +55,6 @@ export function useRoomActions() {
     leftRoom,
     pending,
     copied,
-    nameHint,
     desktopLink,
     downloadURL,
     copyLink,

@@ -60,32 +60,39 @@ const statusText = computed(() =>
     @enter="collab.saveName"
     @change="collab.saveName"
   />
-  <p v-if="room.nameHint.value" class="mt-1 text-[11px] text-muted" data-test-id="collab-name-hint">
-    {{ room.nameHint.value }}
-  </p>
 
-  <div class="mt-3 flex items-center justify-between gap-2">
-    <div v-if="room.desktopLink.value" class="flex min-w-0 flex-col gap-0.5">
+  <div class="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+    <p
+      v-if="room.desktopLink.value"
+      class="flex shrink-0 items-center gap-1.5 text-[11px] whitespace-nowrap text-muted"
+    >
       <a
         :href="room.desktopLink.value"
-        class="text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+        class="text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
         data-test-id="collab-open-desktop"
       >
         {{ collab.messages.openInDesktopApp }}
       </a>
-      <a
-        v-if="room.downloadURL.value"
-        :href="room.downloadURL.value"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="text-[11px] text-muted underline-offset-2 hover:text-surface hover:underline focus-visible:underline focus-visible:outline-none"
-        data-test-id="collab-download-desktop"
-      >
-        {{ collab.messages.downloadDesktopApp }}
-      </a>
-    </div>
+      <template v-if="room.downloadURL.value">
+        <span aria-hidden="true">·</span>
+        <a
+          :href="room.downloadURL.value"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+          data-test-id="collab-download-desktop"
+        >
+          {{ collab.messages.downloadDesktopApp }}
+        </a>
+      </template>
+    </p>
     <span v-else />
-    <AppButton variant="outline" data-test-id="collab-leave" @click="collab.disconnect">
+    <AppButton
+      color="neutral"
+      variant="ghost"
+      data-test-id="collab-leave"
+      @click="collab.disconnect"
+    >
       {{ collab.messages.leaveRoom }}
     </AppButton>
   </div>

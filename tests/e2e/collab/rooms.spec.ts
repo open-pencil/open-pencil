@@ -54,7 +54,7 @@ test('a share link opens the room in its own tab, waiting until someone with it 
       'href',
       `openpencil://join?room=${ROOM_ID}`
     )
-    await expect(guest.page.getByRole('link', { name: 'Don’t have it? Download' })).toHaveAttribute(
+    await expect(guest.page.getByRole('link', { name: 'Download' })).toHaveAttribute(
       'href',
       'https://github.com/open-pencil/open-pencil/releases/latest'
     )

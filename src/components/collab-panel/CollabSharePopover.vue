@@ -37,6 +37,7 @@ const connection = computed(() => {
         :side-offset="8"
         side="bottom"
         align="end"
+        @open-auto-focus.prevent
       >
         <ConnectedRoom v-if="collab.state.inRoom" />
         <ShareOrJoinRoom v-else />
