@@ -5,7 +5,7 @@ import {
   type Variable
 } from '@open-pencil/scene-graph'
 
-import { variableCSSNames, variableNamespace } from './names'
+import { collectionVariables, variableCSSNames, variableNamespace } from './names'
 import { modeAttribute } from './stylesheet'
 import { variableUnit } from './values'
 
@@ -48,13 +48,10 @@ const LENGTH_UNITS = new Set(['px', 'rem'])
 /** Color channels are stored as floats; a bound paint copies them, so this only absorbs rounding. */
 const CHANNEL_TOLERANCE = 1 / 512
 
+const CHANNELS = ['r', 'g', 'b', 'a'] as const
+
 function sameColor(a: Color, b: Color): boolean {
-  return (
-    Math.abs(a.r - b.r) <= CHANNEL_TOLERANCE &&
-    Math.abs(a.g - b.g) <= CHANNEL_TOLERANCE &&
-    Math.abs(a.b - b.b) <= CHANNEL_TOLERANCE &&
-    Math.abs(a.a - b.a) <= CHANNEL_TOLERANCE
-  )
+  return CHANNELS.every((channel) => Math.abs(a[channel] - b[channel]) <= CHANNEL_TOLERANCE)
 }
 
 function isColor(value: unknown): value is Color {
@@ -91,14 +88,7 @@ export class DesignTokens {
 
   constructor(graph: SceneGraph) {
     this.#graph = graph
-    this.names = variableCSSNames(
-      [...graph.variableCollections.values()].flatMap((collection) =>
-        collection.variableIds.flatMap((id) => {
-          const variable = graph.variables.get(id)
-          return variable ? [variable] : []
-        })
-      )
-    )
+    this.names = variableCSSNames(collectionVariables(graph))
   }
 
   /** The modes CSS applies outside the exported nodes: every collection's default. */

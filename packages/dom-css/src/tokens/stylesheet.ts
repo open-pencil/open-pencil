@@ -7,7 +7,7 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import { cssColor } from '../export/css'
-import { tokenSlug, variableCSSNames, variableNamespace } from './names'
+import { collectionVariables, tokenSlug, variableCSSNames, variableNamespace } from './names'
 import { createTokenValidator, parseWithBrowser, type TokenValidator } from './validate'
 import { tokenNumberToCSS, variableUnit } from './values'
 
@@ -155,12 +155,7 @@ export function buildTokenStylesheet(
 ): TokenStylesheet {
   const issues: TokenStylesheetIssue[] = []
   const collections = [...source.variableCollections.values()]
-  const all = collections.flatMap((collection) =>
-    collection.variableIds.flatMap((id) => {
-      const variable = source.variables.get(id)
-      return variable ? [variable] : []
-    })
-  )
+  const all = collectionVariables(source)
   const names = variableCSSNames(all)
   const variables = all.filter(include)
   const defaultModeOf = (variable: Variable) =>

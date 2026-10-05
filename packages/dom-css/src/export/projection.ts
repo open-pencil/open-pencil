@@ -116,16 +116,11 @@ function addStroke(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS
   style['border-left-width'] = css('borderLeftWeight', px(node.borderLeftWeight))
 }
 
+const PADDING_FIELDS = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'] as const
+
 /** Sides compare by their CSS, so a token and a literal of the same size stay separate. */
 function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  const side = (field: 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft') =>
-    css(field, px(node[field]))
-  const [top, right, bottom, left] = [
-    side('paddingTop'),
-    side('paddingRight'),
-    side('paddingBottom'),
-    side('paddingLeft')
-  ]
+  const [top, right, bottom, left] = PADDING_FIELDS.map((field) => css(field, px(node[field])))
   const zero = px(0)
   if ([top, right, bottom, left].every((value) => value === zero)) return
 
