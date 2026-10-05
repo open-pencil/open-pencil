@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
@@ -241,5 +241,29 @@ export function useAgentSetup(
     installAgent,
     refreshAgents,
     setupCanvasBridge: () => discovery.setupCanvasBridge()
+  }
+}
+
+/**
+ * Pi's setup while `active`, checked each time it becomes active. Undefined outside the desktop
+ * app, where Pi cannot run and there is nothing to check.
+ */
+export function usePiSetup(active: MaybeRefOrGetter<boolean>, setup = useAgentSetup()) {
+  const state = computed(() => {
+    const pi = toValue(active) ? setup.piSetup('harness:pi') : undefined
+    return pi?.supported ? pi : undefined
+  })
+  watch(
+    () => toValue(active),
+    (on) => {
+      if (on) void setup.refreshAgents()
+    },
+    { immediate: true }
+  )
+  return {
+    state,
+    refresh: setup.refreshAgents,
+    installCompanion: () => setup.installAgent('harness:pi'),
+    installBridge: setup.setupCanvasBridge
   }
 }

@@ -17,8 +17,10 @@ import { existingOnboardingConnection, useOnboardingConnections } from './connec
 import { currentOnboardingModels } from './current'
 import {
   isOnboardingAccess,
+  ONBOARDING_GOALS,
   planOnboarding,
   type OnboardingAccess,
+  type OnboardingGoal,
   type OnboardingAnswers,
   type PlannedModel,
   uncoveredGoals
@@ -91,6 +93,13 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
     }
     return true
   })
+
+  /** Keeps goals in their canonical order however they were picked. */
+  function setGoal(goal: OnboardingGoal, wanted: boolean): void {
+    answers.goals = ONBOARDING_GOALS.filter((candidate) =>
+      candidate === goal ? wanted : answers.goals.includes(candidate)
+    )
+  }
 
   function next(): void {
     const index = AI_SETUP_STEPS.indexOf(step.value)
@@ -165,6 +174,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
     ...connections,
     ...signIn,
     ...agents,
+    setGoal,
     next,
     back,
     apply

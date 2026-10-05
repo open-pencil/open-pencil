@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
-import { useAgentSetup } from '@/app/ai/agents/setup'
+import { usePiSetup } from '@/app/ai/agents/setup'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
@@ -58,16 +58,10 @@ const {
   clearKey,
   testConnection: runConnectionTest
 } = profile
-const piAgents = useAgentSetup()
-const piSetup = computed(() => {
-  const setup = isHarness.value ? piAgents.piSetup('harness:pi') : undefined
-  // Pi runs only in the desktop app, where its companion can be checked.
-  return setup?.supported ? setup : undefined
-})
+const pi = usePiSetup(isHarness)
 const customModelPlaceholder = computed(() =>
-  isHarness.value ? (piSetup.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
+  isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
 )
-watch(isHarness, (harness) => harness && piAgents.refreshAgents(), { immediate: true })
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
@@ -145,12 +139,12 @@ async function remove() {
             />
           </ProviderSettingsField>
 
-          <div v-if="piSetup" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
+          <div v-if="pi.state.value" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
             <PiSetup
-              :setup="piSetup"
-              @check="piAgents.refreshAgents()"
-              @install-companion="piAgents.installAgent('harness:pi')"
-              @install-bridge="piAgents.setupCanvasBridge()"
+              :setup="pi.state.value"
+              @check="pi.refresh()"
+              @install-companion="pi.installCompanion()"
+              @install-bridge="pi.installBridge()"
             />
           </div>
 

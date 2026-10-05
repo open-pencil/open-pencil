@@ -5,13 +5,8 @@ import { computed, ref } from 'vue'
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
-import type { OnboardingConnectionPatch } from '@/app/ai/models/settings/onboarding/connections'
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
-import {
-  ONBOARDING_GOALS,
-  type OnboardingAccess,
-  type OnboardingGoal
-} from '@/app/ai/models/settings/onboarding/plan'
+import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_SETUP_STEPS, useAIOnboarding } from '@/app/ai/models/settings/onboarding/use'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -76,17 +71,6 @@ const header = computed(() => {
   }
 })
 
-function toggleGoal(goal: OnboardingGoal, checked: boolean): void {
-  answers.goals = ONBOARDING_GOALS.filter((candidate) =>
-    candidate === goal ? checked : answers.goals.includes(candidate)
-  )
-}
-
-function updateConnection(providerID: OnboardingAccess, patch: OnboardingConnectionPatch): void {
-  Object.assign(onboarding.connection(providerID), patch)
-  onboarding.resetTest(providerID)
-}
-
 /** Runs in the click handler, so the browser allows the sign-in popup. */
 function signIn(providerID: OnboardingAccess): void {
   onboarding.signIn(providerID, { keyLabel: 'OpenPencil' })
@@ -134,7 +118,7 @@ async function finish(): Promise<void> {
           :label="goal.label"
           :description="goal.description"
           :model-value="answers.goals.includes(goal.id)"
-          @update:model-value="toggleGoal(goal.id, $event)"
+          @update:model-value="onboarding.setGoal(goal.id, $event)"
         />
       </template>
 
@@ -185,7 +169,7 @@ async function finish(): Promise<void> {
           :pi-setup="onboarding.piSetup(providerID)"
           :recommended="!answers.access.includes(providerID)"
           :disabled="busy"
-          @update="updateConnection(providerID, $event)"
+          @update="onboarding.updateConnection(providerID, $event)"
           @test="onboarding.testConnection(providerID)"
           @sign-in="signIn(providerID)"
           @reopen-sign-in="onboarding.reopenSignIn(providerID)"

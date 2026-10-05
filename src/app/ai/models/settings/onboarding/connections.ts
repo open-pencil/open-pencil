@@ -156,6 +156,12 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
     state.reason = null
   }
 
+  /** Applies what the person typed; a changed connection needs a new test. */
+  function updateConnection(providerID: OnboardingAccess, patch: OnboardingConnectionPatch): void {
+    Object.assign(connection(providerID), patch)
+    resetTest(providerID)
+  }
+
   async function testConnection(providerID: OnboardingAccess): Promise<void> {
     const request = (testVersions.get(providerID) ?? 0) + 1
     testVersions.set(providerID, request)
@@ -191,5 +197,14 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
     keyStatuses[connectionId] = 'configured'
   }
 
-  return { connection, hasSavedKey, ready, resetTest, testConnection, clearKeys, markKeySaved }
+  return {
+    connection,
+    hasSavedKey,
+    ready,
+    resetTest,
+    updateConnection,
+    testConnection,
+    clearKeys,
+    markKeySaved
+  }
 }

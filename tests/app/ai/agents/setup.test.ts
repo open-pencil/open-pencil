@@ -1,5 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { nextTick, ref } from 'vue'
+
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 
 import { createAgentDiscovery, type DetectedAgent } from '@/app/ai/agents/discovery'
@@ -8,6 +10,7 @@ import {
   agentSetupView,
   piSetupView,
   useAgentSetup,
+  usePiSetup,
   type AgentSetupState,
   type PiSetupState
 } from '@/app/ai/agents/setup'
@@ -171,5 +174,44 @@ describe('piSetupView', () => {
     const failed = { error: 'harness-install' as const }
     expect(piSetupView(piState({ ...failed, companion: false })).problem).toBe('install-failed')
     expect(agentSetupView(agent('codex'), agentState(failed)).problem).toBeNull()
+  })
+})
+
+describe('usePiSetup', () => {
+  test('checks Pi each time the editor switches to it', async () => {
+    const scan = mock(async () => lookup('npm', 'openpencil-harness'))
+    const discovery = createAgentDiscovery({
+      enabled: true,
+      lookup: scan,
+      install: async () => undefined
+    })
+    const active = ref(false)
+    const pi = usePiSetup(
+      active,
+      useAgentSetup(discovery, async () => null)
+    )
+    expect(pi.state.value).toBeUndefined()
+    expect(scan).not.toHaveBeenCalled()
+
+    active.value = true
+    await nextTick()
+    expect(scan).toHaveBeenCalledTimes(1)
+    await scan.mock.results[0]?.value
+    await nextTick()
+    expect(pi.state.value?.companion).toBe(true)
+  })
+
+  test('has nothing to check outside the desktop app', () => {
+    const discovery = createAgentDiscovery({
+      enabled: false,
+      lookup: async () => lookup(),
+      install: async () => undefined
+    })
+    expect(
+      usePiSetup(
+        true,
+        useAgentSetup(discovery, async () => null)
+      ).state.value
+    ).toBeUndefined()
   })
 })
