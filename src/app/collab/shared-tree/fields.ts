@@ -6,13 +6,15 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
 /**
  * How a shared document records the layer tree. Each layer's map holds `parents`, a nested map
  * from every parent the layer has been moved under to the move counter, and `orderKey`, its
- * fractional position among siblings; `parentId` and `childIds` are derived on each peer
+ * fractional position among siblings, and `page`, the page this peer last placed it on, where it
+ * goes once no recorded parent is left; `parentId` and `childIds` are derived on each peer
  * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the move clock and
  * the tree format.
  */
 export const TREE_FORMAT = 2
 export const PARENTS_FIELD = 'parents'
 export const ORDER_KEY_FIELD = 'orderKey'
+export const PAGE_FIELD = 'page'
 
 const CLOCK_KEY = 'clock'
 const FORMAT_KEY = 'treeFormat'
@@ -31,6 +33,7 @@ const orderKeySchema = v.pipe(
   v.maxLength(MAX_ORDER_KEY_LENGTH),
   v.regex(/^[\x20-\x7e]+$/)
 )
+const pageSchema = v.pipe(v.string(), v.minLength(1))
 
 export function readCounter(value: unknown): number | undefined {
   const result = v.safeParse(counterSchema, value)
@@ -54,6 +57,11 @@ export function readOrderKey(ynode: Y.Map<unknown>): string | undefined {
   return result.success ? result.output : undefined
 }
 
+export function readPage(ynode: Y.Map<unknown>): string | undefined {
+  const result = v.safeParse(pageSchema, ynode.get(PAGE_FIELD))
+  return result.success ? result.output : undefined
+}
+
 export function writeParentEntry(ynode: Y.Map<unknown>, parentId: string, counter: number): void {
   let parents = ynode.get(PARENTS_FIELD)
   if (!(parents instanceof Y.Map)) {
@@ -70,6 +78,10 @@ export function writeRootEntries(ynode: Y.Map<unknown>): void {
 
 export function writeOrderKey(ynode: Y.Map<unknown>, orderKey: string): void {
   if (ynode.get(ORDER_KEY_FIELD) !== orderKey) ynode.set(ORDER_KEY_FIELD, orderKey)
+}
+
+export function writePage(ynode: Y.Map<unknown>, pageId: string): void {
+  if (ynode.get(PAGE_FIELD) !== pageId) ynode.set(PAGE_FIELD, pageId)
 }
 
 /** Random printable characters for an order key, so concurrent inserts do not share a key. */

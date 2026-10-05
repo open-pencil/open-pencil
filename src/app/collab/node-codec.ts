@@ -11,12 +11,20 @@ import { copyFills } from '@open-pencil/scene-graph/copy'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { ORDER_KEY_FIELD, PAGE_FIELD, PARENTS_FIELD } from '@/app/collab/shared-tree/fields'
+
 const DERIVED_NODE_FIELDS = new Set<keyof SceneNode>(['textPicture'])
 /**
- * The layer tree syncs as parent entries and order keys (`src/app/collab/shared-tree.ts`), so a
+ * The layer tree syncs as parent entries, order keys and pages (`src/app/collab/shared-tree/fields.ts`), so a
  * layer's own fields leave out its place in the tree, and decoding skips the tree's fields.
  */
-const TREE_FIELDS = new Set<string>(['parentId', 'childIds', 'parents', 'orderKey'])
+const TREE_FIELDS = new Set<string>([
+  'parentId',
+  'childIds',
+  PARENTS_FIELD,
+  ORDER_KEY_FIELD,
+  PAGE_FIELD
+])
 const FILL_TYPES = new Set<FillType>([
   'SOLID',
   'GRADIENT_LINEAR',

@@ -39,7 +39,7 @@ function parents(tree: LayerTree, ids: Iterable<string>): Record<string, string 
 function expectAcyclic(tree: LayerTree, ids: Iterable<string>) {
   for (const id of ids) {
     const seen = new Set<string>()
-    for (let current: string | null | undefined = id; current != null; ) {
+    for (let current: string | null | undefined = id; current != null;) {
       expect(seen.has(current)).toBe(false)
       seen.add(current)
       current = tree.parentOf(current)
@@ -176,7 +176,7 @@ function cloneState(state: TreeState): TreeState {
 
 function isUnder(tree: LayerTree, id: string, ancestorId: string): boolean {
   const seen = new Set<string>()
-  for (let current: string | null | undefined = id; current != null; ) {
+  for (let current: string | null | undefined = id; current != null;) {
     if (current === ancestorId) return true
     if (seen.has(current)) return false
     seen.add(current)

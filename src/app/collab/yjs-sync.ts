@@ -7,6 +7,7 @@ import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-code
 import {
   markTreeFormat,
   writeOrderKey,
+  writePage,
   writeParentEntry,
   writeRootEntries,
   type YNodes
@@ -17,6 +18,7 @@ import {
   createLocalEdit,
   createSharedTree,
   isLocalEditEmpty,
+  pageOf,
   recordLocalLayers,
   writeLocalPlacement,
   type LocalEdit,
@@ -168,7 +170,9 @@ export function createYjsGraphSync({
   let shared: SharedTree | null = null
 
   function sharedTreeOf(ydoc: Y.Doc): SharedTree {
-    if (shared?.ydoc !== ydoc) shared = createSharedTree(ydoc, () => getStore().graph)
+    if (shared?.ydoc !== ydoc) {
+      shared = createSharedTree(ydoc, () => getStore().graph, getYnodes)
+    }
     return shared
   }
 
@@ -245,7 +249,10 @@ export function createYjsGraphSync({
     syncLocalEdit(edit)
   }
 
-  /** Shares this peer's whole document: every layer, its parent with counter 0, and its order. */
+  /**
+   * Shares this peer's whole document: every layer, its parent with counter 0, its order, and
+   * its page.
+   */
   function syncAllNodesToYjs() {
     const graph = getStore().graph
     const ydoc = getYdoc()
@@ -259,6 +266,8 @@ export function createYjsGraphSync({
           const ynode = ynodes.get(node.id)
           if (!ynode) continue
           if (node.parentId === null) writeRootEntries(ynode)
+          const pageId = pageOf(graph, node.id)
+          if (pageId !== undefined) writePage(ynode, pageId)
           const children = node.childIds.filter((id) => graph.getNode(id)?.parentId === node.id)
           const keys = siblingOrderKeys(children.map(() => undefined))
           children.forEach((childId, index) => {

@@ -39,6 +39,10 @@ async function withConcurrentEdits(
   )
 }
 
+function secondPageOf(graph: SceneGraph): string {
+  return expectDefined(graph.getPages()[1], 'second page').id
+}
+
 describe('collab concurrent edits', () => {
   test('concurrent additions to one parent keep both nodes on both peers', async () => {
     await withConcurrentEdits(
@@ -153,7 +157,8 @@ describe('collab concurrent edits', () => {
   test('three layers moved into a loop by two peers drop only the latest move', async () => {
     await withConcurrentEdits(
       (graph, pageId) => {
-        for (const id of ['frame:a', 'frame:b', 'frame:c']) graph.createNode('FRAME', pageId, { id })
+        for (const id of ['frame:a', 'frame:b', 'frame:c'])
+          graph.createNode('FRAME', pageId, { id })
       },
       ({ hostStore, peerStore }) => {
         hostStore.graph.reparentNode('frame:a', 'frame:b')
@@ -192,19 +197,21 @@ describe('collab concurrent edits', () => {
     )
   })
 
-  test('a layer whose parents were all deleted goes to its page', async () => {
+  test('a layer whose parents were all deleted goes back to its own page', async () => {
     await withConcurrentEdits(
-      (graph, pageId) => {
-        graph.createNode('FRAME', pageId, { id: 'frame:1' })
+      (graph) => {
+        graph.addPage('Second')
+        graph.createNode('FRAME', secondPageOf(graph), { id: 'frame:1' })
       },
       ({ hostStore, peerStore }) => {
         hostStore.graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:1' })
         peerStore.graph.deleteNode('frame:1')
       },
       (stores, pageId) => {
-        expectSameLayerTree(stores, [pageId])
+        const secondPageId = secondPageOf(stores.hostStore.graph)
+        expectSameLayerTree(stores, [pageId, secondPageId])
         for (const graph of [stores.hostStore.graph, stores.peerStore.graph]) {
-          expect(getNodeOrThrow(graph, 'rect:1').parentId).toBe(pageId)
+          expect(getNodeOrThrow(graph, 'rect:1').parentId).toBe(secondPageId)
         }
       }
     )

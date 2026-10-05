@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import type * as Y from 'yjs'
+
 import { captureGraphCheckpoint } from '@open-pencil/scene-graph'
+
+import { readPage } from '@/app/collab/shared-tree/fields'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import {
@@ -193,6 +197,27 @@ describe('collab layer tree', () => {
         expect(peerStore.graph.getPages().map((entry) => entry.id)).toContain(page.id)
       },
       { bindGraphEvents: true }
+    )
+  })
+
+  test('moving a frame to another page records that page for the layers inside it', async () => {
+    await withLiveEdit(
+      ({ hostStore }, pageId) => {
+        hostStore.graph.addPage('Second')
+        hostStore.graph.createNode('FRAME', pageId, { id: 'frame:1' })
+        hostStore.graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:1' })
+      },
+      ({ hostStore }) => {
+        const secondPageId = expectDefined(hostStore.graph.getPages()[1], 'second page').id
+        hostStore.graph.reparentNode('frame:1', secondPageId)
+      },
+      ({ hostStore, peerDoc }) => {
+        const secondPageId = expectDefined(hostStore.graph.getPages()[1], 'second page').id
+        const ynodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
+        for (const id of ['frame:1', 'rect:1']) {
+          expect(readPage(expectDefined(ynodes.get(id), id))).toBe(secondPageId)
+        }
+      }
     )
   })
 })

@@ -204,7 +204,7 @@ export class LayerTree {
     for (const id of work) assignOne(id)
     const parentOf = (id: string) => (assigned.has(id) ? assigned.get(id) : this.resolved.get(id))
 
-    for (let loops = this.findLoops(work, parentOf); loops.length; ) {
+    for (let loops = this.findLoops(work, parentOf); loops.length;) {
       for (const loop of loops) {
         for (const id of loop) {
           if (work.has(id)) continue

@@ -5,7 +5,12 @@ import * as Y from 'yjs'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { encodeNodeForYjs } from '@/app/collab/node-codec'
-import { readOrderKey, readParentEntries, TREE_FORMAT } from '@/app/collab/shared-tree/fields'
+import {
+  readOrderKey,
+  readPage,
+  readParentEntries,
+  TREE_FORMAT
+} from '@/app/collab/shared-tree/fields'
 import { migrateLegacyLayers } from '@/app/collab/shared-tree/migration'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
@@ -57,6 +62,7 @@ function sharedTreeFields(doc: Y.Doc) {
     fields[id] = {
       parents: Object.fromEntries(readParentEntries(ynode) ?? []),
       orderKey: readOrderKey(ynode),
+      page: readPage(ynode),
       legacy: ynode.has('parentId') || ynode.has('childIds')
     }
   }
@@ -77,7 +83,13 @@ describe('collab tree format migration', () => {
       expect(hostStore.graph.rootId).toBe(legacy.graph.rootId)
       expect(hostDoc.getMap('meta').get('treeFormat')).toBe(TREE_FORMAT)
       const fields = sharedTreeFields(hostDoc)
-      expect(fields['rect:2']).toMatchObject({ parents: { 'frame:1': 0 }, legacy: false })
+      expect(fields['rect:2']).toMatchObject({
+        parents: { 'frame:1': 0 },
+        page: legacy.pageId,
+        legacy: false
+      })
+      expect(fields['rect:3']).toMatchObject({ page: legacy.pageId })
+      expect(fields[legacy.pageId]).toMatchObject({ page: undefined })
       expect(fields[legacy.graph.rootId]).toMatchObject({ parents: {}, legacy: false })
       const first = expectDefined(readOrderKey(getYnode(hostDoc, 'rect:2')), 'first key')
       const second = expectDefined(readOrderKey(getYnode(hostDoc, 'rect:1')), 'second key')

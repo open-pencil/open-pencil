@@ -3,12 +3,15 @@ import * as Y from 'yjs'
 
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
+import { topEdge } from '@/app/collab/tree/entries'
+
 import {
   markTreeFormat,
   PARENTS_FIELD,
   readOrderKey,
   readParentEntries,
   writeOrderKey,
+  writePage,
   writeParentEntry,
   writeRootEntries,
   type YMeta,
@@ -40,7 +43,8 @@ function legacyChildIdsOf(ynode: Y.Map<unknown> | undefined): string[] {
 /**
  * Converts layers a format 1 document recorded to format 2: each layer's synced parent becomes
  * its only entry, with counter 0, and its position in that parent's synced `childIds` becomes an
- * order key; siblings already converted keep theirs. The result depends only on the document, so
+ * order key, and the page its synced ancestors reach becomes its page; siblings already converted
+ * keep theirs. The result depends only on the document, so
  * peers that convert the same layers at once write the same values. Returns the converted ids.
  */
 export function migrateLegacyLayers(
@@ -66,6 +70,9 @@ export function migrateLegacyLayers(
     }
     siblings.add(id)
   }
+
+  // Pages are found before any layer drops its synced parent.
+  const pages = new Map(legacy.map((id) => [id, legacyPageOf(ynodes, id)]))
 
   ydoc.transact(() => {
     for (const [parentId, migrating] of byParent) {
@@ -93,6 +100,8 @@ export function migrateLegacyLayers(
         if (!ynode || !migrating.has(id)) return
         writeParentEntry(ynode, parentId, 0)
         writeOrderKey(ynode, keys[index])
+        const pageId = pages.get(id)
+        if (pageId !== undefined) writePage(ynode, pageId)
       })
     }
     for (const id of legacy) {
@@ -109,4 +118,21 @@ export function migrateLegacyLayers(
 function legacyParentOrEntry(ynodes: YNodes, id: string, parentId: string): boolean {
   const ynode = ynodes.get(id)
   return ynode !== undefined && readParentEntries(ynode)?.has(parentId) === true
+}
+
+/**
+ * The nearest page above a layer, following each ancestor's synced parent, or its newest entry
+ * once it has been converted. Undefined for the root and the pages themselves.
+ */
+function legacyPageOf(ynodes: YNodes, id: string): string | undefined {
+  if (ynodes.get(id)?.get('type') === 'CANVAS') return undefined
+  let current = ynodes.get(id)
+  for (let steps = 0; current && steps < ynodes.size; steps++) {
+    const entries = readParentEntries(current)
+    const parentId = entries ? topEdge(entries)?.parentId : legacyParentOf(current)
+    if (!parentId) return undefined
+    current = ynodes.get(parentId)
+    if (current?.get('type') === 'CANVAS') return parentId
+  }
+  return undefined
 }

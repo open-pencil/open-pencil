@@ -4,19 +4,22 @@ import type * as Y from 'yjs'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
+import { LayerTree, type TreeMove } from '@/app/collab/tree/layer-tree'
+
 import {
   createMoveClock,
   markTreeFormat,
   randomKeySuffix,
   readOrderKey,
+  readPage,
   readParentEntries,
   writeOrderKey,
+  writePage,
   writeParentEntry,
   writeRootEntries,
   type YMeta,
   type YNodes
 } from './fields'
-import { LayerTree, type TreeMove } from '@/app/collab/tree/layer-tree'
 
 /** What one local edit changed, collected from graph events and written in one transaction. */
 export interface LocalEdit {
@@ -48,17 +51,27 @@ export function isLocalEditEmpty(edit: LocalEdit): boolean {
 /** The resolved layer tree of one shared document, kept beside the scene graph it mirrors. */
 export type SharedTree = ReturnType<typeof createSharedTree>
 
-export function createSharedTree(ydoc: Y.Doc, getGraph: () => SceneGraph) {
+export function createSharedTree(
+  ydoc: Y.Doc,
+  getGraph: () => SceneGraph,
+  getYnodes: () => YNodes | null
+) {
   let rootId: string | null = null
   const clock = createMoveClock()
   const tree: LayerTree = new LayerTree({
     orphanParentOf(layerId: string): string | null {
       if (rootId === null || layerId === rootId) return null
+      const root = rootId
       const graph = getGraph()
-      if (graph.getNode(layerId)?.type === 'CANVAS') return rootId
-      // The first page in the shared order, so every peer picks the same one.
-      const pages = tree.childrenOf(rootId)
-      return pages.find((id: string) => graph.getNode(id)?.type === 'CANVAS') ?? rootId
+      if (graph.getNode(layerId)?.type === 'CANVAS') return root
+      const isPage = (id: string) =>
+        tree.parentOf(id) === root && graph.getNode(id)?.type === 'CANVAS'
+      // The page the layer was last placed on; failing that, the first page in the shared
+      // order, so every peer picks the same one.
+      const ynode = getYnodes()?.get(layerId)
+      const recorded = ynode ? readPage(ynode) : undefined
+      if (recorded !== undefined && isPage(recorded)) return recorded
+      return tree.childrenOf(root).find(isPage) ?? root
     }
   })
   return {
@@ -77,8 +90,9 @@ export function createSharedTree(ydoc: Y.Doc, getGraph: () => SceneGraph) {
 /**
  * Writes where this peer put the layers an edit placed: a parent entry with a new counter for
  * each layer whose parent changed, the same for displaced layers on the paths the moves touched
- * (so a move cannot pull another layer back into a parent it was kept out of), and order keys
- * between each placed layer's neighbours. Call inside the edit's transaction.
+ * (so a move cannot pull another layer back into a parent it was kept out of), the page of each
+ * moved layer and of the layers under it, and order keys between each placed layer's
+ * neighbours. Call inside the edit's transaction.
  */
 export function writeLocalPlacement(
   shared: SharedTree,
@@ -89,6 +103,7 @@ export function writeLocalPlacement(
 ): void {
   const { moved, pathStarts } = findMoves(shared, graph, ynodes, edit)
   recordMoves(shared, graph, ynodes, meta, moved, pathStarts)
+  writePages(graph, ynodes, moved)
 
   const keyed = new Set([...edit.placed, ...moved])
   const parents = new Set(edit.reordered)
@@ -160,6 +175,27 @@ function recordMoves(
   markTreeFormat(meta)
 }
 
+/** The page a layer sits on, or undefined for the root and the pages themselves. */
+export function pageOf(graph: SceneGraph, layerId: string): string | undefined {
+  if (graph.getNode(layerId)?.type === 'CANVAS') return undefined
+  return graph.closest(layerId, (node) => node.type === 'CANVAS')?.id
+}
+
+/** Records the page of each moved layer and, when it changed, of every layer under it. */
+function writePages(graph: SceneGraph, ynodes: YNodes, moved: readonly string[]): void {
+  for (const id of moved) {
+    const pageId = pageOf(graph, id)
+    if (pageId === undefined) continue
+    const stack = [id]
+    for (let layerId = stack.pop(); layerId !== undefined; layerId = stack.pop()) {
+      const ynode = ynodes.get(layerId)
+      if (!ynode || readPage(ynode) === pageId) continue
+      writePage(ynode, pageId)
+      stack.push(...(graph.getNode(layerId)?.childIds ?? []))
+    }
+  }
+}
+
 /** Keys a parent's children in their local order, re-keying only the layers that need it. */
 function writeSiblingKeys(
   tree: LayerTree,
@@ -206,11 +242,7 @@ export function applySharedTree(
     if (!ynode || !entries || !graph.getNode(id)) continue
     const orderKey = readOrderKey(ynode)
     // Most changes edit a layer's own fields; its place and its siblings stay as they are.
-    if (
-      tree.has(id) &&
-      tree.orderKeyOf(id) === orderKey &&
-      isEqual(tree.entriesOf(id), entries)
-    ) {
+    if (tree.has(id) && tree.orderKeyOf(id) === orderKey && isEqual(tree.entriesOf(id), entries)) {
       continue
     }
     const previousParent = tree.parentOf(id)
@@ -253,7 +285,7 @@ function applyMoves(graph: SceneGraph, moves: TreeMove[], touched: Set<string>):
     else pending.set(move.layerId, move.to)
   }
   // The resolved tree has no loops, but reaching it can need one move before another.
-  for (let progressed = true; progressed && pending.size > 0; ) {
+  for (let progressed = true; progressed && pending.size > 0;) {
     progressed = false
     for (const [id, parentId] of pending) {
       const node = graph.getNode(id)
@@ -280,9 +312,7 @@ function applyMoves(graph: SceneGraph, moves: TreeMove[], touched: Set<string>):
 function sortChildren(graph: SceneGraph, tree: LayerTree, parentId: string): void {
   const parent = graph.getNode(parentId)
   if (!parent) return
-  const shared = tree
-    .childrenOf(parentId)
-    .filter((id) => graph.getNode(id)?.parentId === parentId)
+  const shared = tree.childrenOf(parentId).filter((id) => graph.getNode(id)?.parentId === parentId)
   const sharedIds = new Set(shared)
   const desired = [...shared, ...parent.childIds.filter((id) => !sharedIds.has(id))]
   desired.forEach((id, index) => {
