@@ -60,6 +60,7 @@
 
 ### Changed
 
+- In scripts, children of groups and booleans report `x`, `y`, and `relativeTransform` in their container's space, as in Figma, and a group refits whenever a script moves, resizes, rotates, adds, or removes one of its children; a group left without children is removed. The canvas and the plugin API share the refit.
 - Combine as variants matches Figma: the set pads its variants by 20 px and has a dashed purple stroke instead of a grey fill and 40 px of padding, and `figma.combineAsVariants()` in scripts wraps the components exactly with no fill or stroke, as Figma's plugin API does. Both share one implementation.
 - New layers start as in Figma, whether drawn or created by a script: frames are white and clip their content, components are white, shapes are #D9D9D9, and lines and vectors get a black 1 px stroke, which lines drawn with the Line tool were missing. A stroke a script adds through the plugin API now gets Figma's 1 px default weight instead of none.
 - Name the tool and list every invalid argument with where it is when AI chat, the CLI, or WebMCP calls a tool wrongly, as MCP clients already saw, as in `Invalid arguments for create_shape:` followed by `× Invalid type: Expected ("FRAME" | …) but received "CIRCLE"` and `→ at type`. Design JSX component properties and gradient stops report their problems the same way. Previously only the first problem was named, without the tool or the argument.

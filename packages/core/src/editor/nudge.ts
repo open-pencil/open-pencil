@@ -1,7 +1,7 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { collectNodePositions, pushPositionUndo } from './history/position'
-import { fitEnclosingGroups } from './structure/group-bounds'
+import { fitEnclosingGroupsWithUndo } from './structure/group-bounds'
 import type { EditorContext } from './types'
 
 const NUDGE_COMMIT_DELAY = 300
@@ -21,7 +21,7 @@ export function createNudgeActions(ctx: EditorContext) {
     // Groups and booleans fit their nudged children, in the same undo step.
     ctx.undo.runBatch('Nudge', () => {
       pushPositionUndo(ctx, 'Nudge', originals, finals)
-      fitEnclosingGroups(ctx, parentIds)
+      fitEnclosingGroupsWithUndo(ctx, parentIds)
     })
     ctx.requestRender()
   }

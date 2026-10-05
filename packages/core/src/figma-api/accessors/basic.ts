@@ -1,16 +1,21 @@
 import {
   getNodeLocalMatrix,
+  getParentToContainerMatrix,
   getWorldMatrix,
+  FITTED_CONTAINER_TYPES,
   TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
   findInstanceAncestor,
   rescaleNodeTree,
   slotPropertyId,
+  type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
+  fitGroupsAround,
   graph,
   nodeId,
   raw,
@@ -49,6 +54,37 @@ function figmaTransform(matrix: number[]): FigmaTransform {
   ]
 }
 
+function inGroup(node: SceneNode, scene: SceneGraph): boolean {
+  const parent = node.parentId ? scene.getNode(node.parentId) : undefined
+  return parent !== undefined && FITTED_CONTAINER_TYPES.has(parent.type)
+}
+
+/** Where Figma's plugin API places a node: in its container's space, looking through groups. */
+function containerPosition(node: SceneNode, scene: SceneGraph): Vector {
+  const [x, y] = Matrix.mapPoints(getParentToContainerMatrix(node, scene), [node.x, node.y])
+  return { x, y }
+}
+
+function setPosition(
+  target: ProxyThis,
+  internals: NodeProxyInternals,
+  axis: 'x' | 'y',
+  value: number
+) {
+  assertEditable(target, internals)
+  const scene = graph(target, internals)
+  const node = raw(target, internals)
+  if (!inGroup(node, scene)) {
+    scene.updateNode(node.id, { [axis]: value })
+    return
+  }
+  const desired = { ...containerPosition(node, scene), [axis]: value }
+  const toParent = Matrix.invert(getParentToContainerMatrix(node, scene)) ?? Matrix.identity()
+  const [x, y] = Matrix.mapPoints(toParent, [desired.x, desired.y])
+  scene.updateNode(node.id, { x, y })
+  fitGroupsAround(scene, node.parentId)
+}
+
 export function installBasicNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals
@@ -80,20 +116,18 @@ export function installBasicNodeProxyAccessors(
     },
     x: {
       get(this: ProxyThis): number {
-        return raw(this, internals).x
+        return containerPosition(raw(this, internals), graph(this, internals)).x
       },
       set(this: ProxyThis, value: number) {
-        assertEditable(this, internals)
-        graph(this, internals).updateNode(nodeId(this, internals), { x: value })
+        setPosition(this, internals, 'x', value)
       }
     },
     y: {
       get(this: ProxyThis): number {
-        return raw(this, internals).y
+        return containerPosition(raw(this, internals), graph(this, internals)).y
       },
       set(this: ProxyThis, value: number) {
-        assertEditable(this, internals)
-        graph(this, internals).updateNode(nodeId(this, internals), { y: value })
+        setPosition(this, internals, 'y', value)
       }
     },
     width: {
@@ -117,12 +151,21 @@ export function installBasicNodeProxyAccessors(
       },
       set(this: ProxyThis, value: number) {
         assertEditable(this, internals)
-        graph(this, internals).updateNode(nodeId(this, internals), { rotation: value })
+        const scene = graph(this, internals)
+        scene.updateNode(nodeId(this, internals), { rotation: value })
+        fitGroupsAround(scene, raw(this, internals).parentId)
       }
     },
     relativeTransform: {
       get(this: ProxyThis): FigmaTransform {
         const node = raw(this, internals)
+        const scene = graph(this, internals)
+        // Children of groups report a transform into the container, as Figma does.
+        if (inGroup(node, scene)) {
+          return figmaTransform(
+            Matrix.multiply(getParentToContainerMatrix(node, scene), getNodeLocalMatrix(node))
+          )
+        }
         const sourceTransform = node.source.fig.rawTransform
         if (sourceTransform && preservesRawTransform(node)) {
           return figmaTransform([
