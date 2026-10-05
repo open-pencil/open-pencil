@@ -4,6 +4,7 @@ import type { Variable } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
+import { fuzzyFilter } from '#vue/shared/search/fuzzy'
 import { createVariableCollectionActions, createVariableValueActions } from '#vue/variables/helpers'
 
 export function useVariables() {
@@ -33,9 +34,7 @@ export function useVariables() {
   const variables = useSceneComputed(() => {
     if (!activeCollectionId.value) return [] as Variable[]
     const all = editor.getVariablesForCollection(activeCollectionId.value)
-    if (!searchTerm.value) return all
-    const q = searchTerm.value.toLowerCase()
-    return all.filter((v) => v.name.toLowerCase().includes(q))
+    return fuzzyFilter(all, ['name', 'description'], searchTerm.value)
   })
 
   const collectionActions = createVariableCollectionActions(editor, activeCollectionId)

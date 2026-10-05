@@ -49,7 +49,7 @@ Variablen sind nach den Ordnern in ihren Namen gruppiert (`Brand/Primary` ersche
 
 - **Variable erstellen:** auf **Variable erstellen** (oder **+**) klicken und einen Typ wählen; die neue Variable wird zur Bearbeitung geöffnet
 - **Auswählen:** auf eine Zeile klicken oder mit den Pfeiltasten navigieren und die Eingabetaste drücken. Shift-Klick wählt einen Bereich aus, Cmd-Klick (Strg-Klick unter Windows und Linux) fügt eine Zeile hinzu oder entfernt sie
-- **Filtern:** in das Suchfeld tippen, um nach Namen zu filtern, in der Seitenleiste auf eine Gruppe klicken, um nur diese Gruppe und die darin enthaltenen Gruppen anzuzeigen, oder über die Filter-Schaltfläche (**Nach Typ filtern**) nur bestimmte Typen anzeigen
+- **Filtern:** in das Suchfeld tippen, um nach Namen, CSS-Name, Beschreibung oder Wert zu filtern, etwa `--color-brand`, einer Hex-Farbe oder der Variable, auf die ein Alias verweist, mit derselben fehlertoleranten Suche wie die Befehlspalette; in der Seitenleiste auf eine Gruppe klicken, um nur diese Gruppe und die darin enthaltenen Gruppen anzuzeigen, oder über die Filter-Schaltfläche (**Nach Typ filtern**) nur bestimmte Typen anzeigen
 - **Umbenennen oder direkt bearbeiten:** auf einen Namen oder einen Zahlen- oder Textwert in der Liste doppelklicken
 - **Rechtsklick:** die ausgewählten Variablen umbenennen, duplizieren (**Duplizieren**), in eine Gruppe oder eine neue Gruppe verschieben (**In Gruppe verschieben**, **Neue Gruppe…**) oder löschen (**Variablen löschen**); auch Delete oder Backspace löscht sie
 - **Neu anordnen:** eine Zeile ziehen; die Reihenfolge wird in der Datei gespeichert

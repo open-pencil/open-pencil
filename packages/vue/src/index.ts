@@ -84,6 +84,7 @@ export {
   useToolbarState
 } from '#vue/primitives/Toolbar/useToolbarState'
 export { useNodeFontStatus } from '#vue/shared/font-status/use'
+export { fuzzyFilter, fuzzySearch } from '#vue/shared/search/fuzzy'
 export { usePropScrub } from '#vue/controls/prop-scrub/use'
 export { toolCursor } from '#vue/editor/tool-cursor'
 export {

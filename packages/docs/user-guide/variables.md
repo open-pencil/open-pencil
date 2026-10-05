@@ -49,7 +49,7 @@ Variables are grouped by the folders in their names (`Brand/Primary` appears as 
 
 - **Create variable** — click **Create variable** (or **+**) and pick a type; the new variable opens for editing
 - **Select** — click a row, or move with the arrow keys and press Enter. Shift-click selects a range, and Cmd-click (Ctrl-click on Windows and Linux) adds or removes one
-- **Filter** — type in the search bar to filter by name, click a group in the sidebar to show only that group and the groups inside it, or use the filter button to show only some types
+- **Filter** — type in the search bar to filter by name, CSS name, description, or value, such as `--color-brand`, a hex color, or the variable an alias points at, forgiving typos as the command palette does; click a group in the sidebar to show only that group and the groups inside it, or use the filter button to show only some types
 - **Rename or edit in place** — double-click a name, or a number or text value, in the list
 - **Right-click** — rename, duplicate, move to a group (or a new one), or delete the selected variables; Delete or Backspace deletes them too
 - **Reorder** — drag a row; the order is kept in the file

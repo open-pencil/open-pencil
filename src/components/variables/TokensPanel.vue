@@ -12,6 +12,7 @@ import {
   aliasCandidates,
   groupTree,
   inGroup,
+  searchTokenIds,
   tokenGroups,
   type TokenGroup
 } from '@/app/editor/tokens/model'
@@ -94,17 +95,26 @@ const allGroups = computed(() =>
 )
 const groupEntries = computed(() => groupTree(allGroups.value))
 
-/** What the list shows: the search, then the sidebar's group and the type filter. */
-const groups = computed<TokenGroup[]>(() => {
-  if (!collection.value) return []
-  return tokenGroups(editor.graph, collection.value, ctx.variables.value).flatMap((group) => {
+/** Tokens the search matches, or null when there is no search. */
+const searchMatches = computed(() =>
+  searchTokenIds(
+    allGroups.value.flatMap((group) => group.rows),
+    ctx.searchTerm.value
+  )
+)
+
+/** What the list shows: the search, then the sidebar's group and the type filter, in list order. */
+const groups = computed<TokenGroup[]>(() =>
+  allGroups.value.flatMap((group) => {
     if (groupFilter.value !== null && !inGroup(group.path, groupFilter.value)) return []
     const rows = group.rows.filter(
-      (row) => typeFilter.value.length === 0 || typeFilter.value.includes(row.variable.type)
+      (row) =>
+        (searchMatches.value?.has(row.variable.id) ?? true) &&
+        (typeFilter.value.length === 0 || typeFilter.value.includes(row.variable.type))
     )
     return rows.length > 0 ? [{ ...group, rows }] : []
   })
-})
+)
 
 function rowFor(id: string | null | undefined) {
   return allGroups.value.flatMap((group) => group.rows).find((row) => row.variable.id === id)

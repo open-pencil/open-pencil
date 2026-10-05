@@ -305,3 +305,23 @@ test('a field with pending text keeps its own undo, and menus hold undo back', a
   await editor.page.keyboard.press('Escape')
   editor.canvas.assertNoErrors()
 })
+
+test('search finds variables by CSS name and by value', async () => {
+  const search = editor.page.getByTestId('variables-search-input')
+  const cssName = await variableRows()
+    .filter({ hasText: 'gap-spacing' })
+    .getByText(/^--/)
+    .first()
+    .textContent()
+
+  await search.fill(cssName ?? '')
+  await expect(variableRows()).toHaveCount(1)
+  await expect(variableRows()).toContainText('gap-spacing')
+
+  await search.fill('#FF0000')
+  await expect(variableRows().filter({ hasText: 'brand-color' })).toHaveCount(1)
+  await expect(variableRows().filter({ hasNotText: '#FF0000' })).toHaveCount(0)
+
+  await search.fill('')
+  editor.canvas.assertNoErrors()
+})

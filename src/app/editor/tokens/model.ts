@@ -1,4 +1,4 @@
-import { groupBy } from 'es-toolkit/array'
+import { compact, groupBy } from 'es-toolkit/array'
 
 import {
   collectionVariables,
@@ -17,6 +17,7 @@ import {
   type VariableValue
 } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { fuzzyFilter } from '@open-pencil/vue'
 
 /** One mode's value as the stylesheet writes it, with what the panel previews beside it. */
 export interface TokenModeValue {
@@ -126,6 +127,36 @@ export function tokenValueText(variable: Variable, value: VariableValue | undefi
 /** The group paths a collection's tokens use, in list order, for "Move to group". */
 export function groupPaths(groups: readonly TokenGroup[]): string[] {
   return groups.flatMap((group) => (group.path ? [group.path] : []))
+}
+
+/** What a token is found by: its name, its CSS name with `--`, its description, and its values. */
+interface TokenSearchEntry {
+  id: string
+  name: string
+  css: string
+  description: string
+  values: string[]
+}
+
+const TOKEN_SEARCH_KEYS = ['name', 'css', 'description', 'values'] satisfies Array<
+  keyof TokenSearchEntry
+>
+
+/**
+ * The tokens a search matches, with the same fuzzy matching as the command palette, so
+ * `--spacing`, `brand primary`, a hex color or an alias name all find what they name. Null when
+ * there is nothing to search for, so the list stays whole.
+ */
+export function searchTokenIds(rows: readonly TokenRow[], query: string): Set<string> | null {
+  if (!query.trim()) return null
+  const entries = rows.map((row): TokenSearchEntry => ({
+    id: row.variable.id,
+    name: row.variable.name,
+    css: `--${row.cssName}`,
+    description: row.variable.description,
+    values: row.values.flatMap((value) => compact([value.css, value.alias, value.expression]))
+  }))
+  return new Set(fuzzyFilter(entries, TOKEN_SEARCH_KEYS, query).map((entry) => entry.id))
 }
 
 /** One group in the sidebar: its path, its last segment, how deep it sits, and its tokens. */

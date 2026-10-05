@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Fuse from 'fuse.js'
 import {
   ComboboxAnchor,
   ComboboxContent,
@@ -18,7 +17,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue'
+import { fuzzySearch, useRetainedPopup } from '@open-pencil/vue'
 
 import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/combobox'
@@ -64,21 +63,13 @@ const { portalActive } = useRetainedPopup(open, () => updateOpen(false))
 const styles = tv(theme)()
 
 const selectedOption = computed(() => options.find((option) => option.value === modelValue.value))
-const searchIndex = computed(
-  () =>
-    new Fuse(options, {
-      keys: ['label', 'value', 'description', 'meta'],
-      threshold: 0.2,
-      ignoreLocation: true
-    })
-)
 const filteredOptions = computed(() => {
   const query = searchTerm.value.trim()
   if (!query) return options.slice(0, resultLimit)
-  return searchIndex.value
-    .search(query)
-    .slice(0, resultLimit)
-    .map((result) => result.item)
+  return fuzzySearch(options, ['label', 'value', 'description', 'meta'], query).slice(
+    0,
+    resultLimit
+  )
 })
 const groupedOptions = computed(() => {
   const groups = new Map<string, AppComboboxOption[]>()

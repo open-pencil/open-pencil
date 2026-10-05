@@ -49,7 +49,7 @@ Zmienne są grupowane według folderów w ich nazwach (`Brand/Primary` jest wido
 
 - **Tworzenie zmiennej:** kliknij **Utwórz zmienną** (lub **+**) i wybierz typ; nowa zmienna otworzy się do edycji
 - **Zaznaczanie:** kliknij wiersz albo poruszaj się strzałkami i naciśnij Enter. Kliknięcie z Shift zaznacza zakres, a kliknięcie z Cmd (Ctrl w Windows i Linuksie) dodaje wiersz lub usuwa go z zaznaczenia
-- **Filtrowanie:** wpisz tekst w pasku wyszukiwania, aby filtrować według nazwy, kliknij grupę na pasku bocznym, aby pokazać tylko ją i grupy w niej zawarte, albo użyj przycisku filtra (**Filtruj według typu**), aby pokazać tylko niektóre typy
+- **Filtrowanie:** wpisz tekst w pasku wyszukiwania, aby filtrować według nazwy, nazwy CSS, opisu lub wartości, np. `--color-brand`, koloru szesnastkowego albo zmiennej, na którą wskazuje alias, z tolerancją literówek jak w palecie poleceń; kliknij grupę na pasku bocznym, aby pokazać tylko ją i grupy w niej zawarte, albo użyj przycisku filtra (**Filtruj według typu**), aby pokazać tylko niektóre typy
 - **Zmiana nazwy lub edycja w miejscu:** kliknij dwukrotnie nazwę albo wartość liczbową lub tekstową na liście
 - **Prawy przycisk myszy:** zmień nazwę, zduplikuj (**Duplikuj**), przenieś do grupy lub nowej grupy (**Przenieś do grupy**, **Nowa grupa…**) albo usuń (**Usuń zmienne**) zaznaczone zmienne; usuwa je też Delete lub Backspace
 - **Zmiana kolejności:** przeciągnij wiersz; kolejność jest zapisywana w pliku

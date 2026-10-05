@@ -49,7 +49,7 @@ Las variables se agrupan según las carpetas de sus nombres (`Brand/Primary` apa
 
 - **Crear una variable:** haz clic en **Crear variable** (o en **+**) y elige un tipo; la nueva variable se abre para editarla
 - **Seleccionar:** haz clic en una fila, o muévete con las flechas y pulsa Intro. Con Shift y clic seleccionas un rango, y con Cmd y clic (Ctrl y clic en Windows y Linux) añades o quitas una fila
-- **Filtrar:** escribe en la barra de búsqueda para filtrar por nombre, haz clic en un grupo de la barra lateral para ver solo ese grupo y los grupos que contiene, o usa el botón de filtro (**Filtrar por tipo**) para ver solo algunos tipos
+- **Filtrar:** escribe en la barra de búsqueda para filtrar por nombre, nombre CSS, descripción o valor, como `--color-brand`, un color hexadecimal o la variable a la que apunta un alias, tolerando erratas como la paleta de comandos; haz clic en un grupo de la barra lateral para ver solo ese grupo y los grupos que contiene, o usa el botón de filtro (**Filtrar por tipo**) para ver solo algunos tipos
 - **Renombrar o editar en el lugar:** haz doble clic en un nombre, o en un valor numérico o de texto, de la lista
 - **Clic derecho:** renombra, duplica (**Duplicar**), mueve a un grupo o a uno nuevo (**Mover al grupo**, **Nuevo grupo…**) o elimina (**Eliminar variables**) las variables seleccionadas; Delete o Backspace también las elimina
 - **Reordenar:** arrastra una fila; el orden se conserva en el archivo

@@ -49,7 +49,7 @@ Le variabili sono raggruppate in base alle cartelle nei loro nomi (`Brand/Primar
 
 - **Creare una variabile:** fai clic su **Crea variabile** (o su **+**) e scegli un tipo; la nuova variabile si apre per la modifica
 - **Selezionare:** fai clic su una riga, oppure spostati con le frecce e premi Invio. Maiusc-clic seleziona un intervallo, e Cmd-clic (Ctrl-clic su Windows e Linux) aggiunge o rimuove una riga
-- **Filtrare:** digita nella barra di ricerca per filtrare per nome, fai clic su un gruppo nella barra laterale per mostrare solo quel gruppo e quelli al suo interno, oppure usa il pulsante del filtro (**Filtra per tipo**) per mostrare solo alcuni tipi
+- **Filtrare:** digita nella barra di ricerca per filtrare per nome, nome CSS, descrizione o valore, come `--color-brand`, un colore esadecimale o la variabile a cui punta un alias, tollerando gli errori di battitura come la tavolozza dei comandi; fai clic su un gruppo nella barra laterale per mostrare solo quel gruppo e quelli al suo interno, oppure usa il pulsante del filtro (**Filtra per tipo**) per mostrare solo alcuni tipi
 - **Rinominare o modificare sul posto:** fai doppio clic su un nome, o su un valore numerico o di testo, nell’elenco
 - **Clic destro:** rinomina, duplica (**Duplica**), sposta in un gruppo o in uno nuovo (**Sposta nel gruppo**, **Nuovo gruppo…**) oppure elimina (**Elimina variabili**) le variabili selezionate; anche Delete o Backspace le elimina
 - **Riordinare:** trascina una riga; l’ordine viene conservato nel file

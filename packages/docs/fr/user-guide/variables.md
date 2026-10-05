@@ -49,7 +49,7 @@ Les variables sont regroupées selon les dossiers de leurs noms (`Brand/Primary`
 
 - **Créer une variable :** cliquez sur **Créer une variable** (ou sur **+**) et choisissez un type ; la nouvelle variable s’ouvre pour modification
 - **Sélectionner :** cliquez sur une ligne, ou déplacez-vous avec les flèches et appuyez sur Entrée. Maj-clic sélectionne une plage, et Cmd-clic (Ctrl-clic sous Windows et Linux) ajoute ou retire une ligne
-- **Filtrer :** saisissez du texte dans la barre de recherche pour filtrer par nom, cliquez sur un groupe dans la barre latérale pour n’afficher que ce groupe et ceux qu’il contient, ou utilisez le bouton de filtre (**Filtrer par type**) pour n’afficher que certains types
+- **Filtrer :** saisissez du texte dans la barre de recherche pour filtrer par nom, nom CSS, description ou valeur, comme `--color-brand`, une couleur hexadécimale ou la variable visée par un alias, en tolérant les fautes de frappe comme la palette de commandes ; cliquez sur un groupe dans la barre latérale pour n’afficher que ce groupe et ceux qu’il contient, ou utilisez le bouton de filtre (**Filtrer par type**) pour n’afficher que certains types
 - **Renommer ou modifier sur place :** double-cliquez sur un nom, ou sur une valeur numérique ou textuelle, dans la liste
 - **Clic droit :** renommer, dupliquer (**Dupliquer**), déplacer vers un groupe ou un nouveau groupe (**Déplacer vers le groupe**, **Nouveau groupe…**) ou supprimer (**Supprimer les variables**) les variables sélectionnées ; Delete ou Backspace les supprime aussi
 - **Réorganiser :** faites glisser une ligne ; l’ordre est conservé dans le fichier

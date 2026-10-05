@@ -9,6 +9,8 @@ import {
   nameInGroup,
   parseTokenValueText,
   reorderedVariableIds,
+  searchTokenIds,
+  tokenGroups,
   tokenValueText,
   type TokenGroup
 } from '@/app/editor/tokens/model'
@@ -105,6 +107,41 @@ describe('typed values', () => {
     expect(tokenValueText(gutter, 24)).toBe('1.5')
     expect(parseTokenValueText(gutter, '2')).toBe(32)
     expect(parseTokenValueText(gutter, 'wide')).toBeUndefined()
+  })
+})
+
+describe('token search', () => {
+  function rows() {
+    const graph = graphWith([
+      ['primary', 'COLOR', { r: 0.23, g: 0.51, b: 0.96, a: 1 }],
+      ['link', 'COLOR', { aliasId: 'primary' }],
+      ['gutter', 'FLOAT', 24]
+    ])
+    const brand = graph.variables.get('primary')
+    if (brand) {
+      brand.name = 'Brand/Primary'
+      brand.description = 'Buttons and focus rings'
+    }
+    const collection = graph.variableCollections.get('c')
+    if (!collection) throw new Error('missing collection')
+    return tokenGroups(graph, collection, [...graph.variables.values()]).flatMap(
+      (group) => group.rows
+    )
+  }
+
+  test.each<[string, string[]]>([
+    ['brand primary', ['primary', 'link']],
+    ['--color-brand', ['primary']],
+    ['#3B82F5', ['primary']],
+    ['focus rings', ['primary']],
+    ['Brand/Primary', ['primary', 'link']],
+    ['gutter', ['gutter']]
+  ])('%s finds %o', (query, ids) => {
+    expect([...(searchTokenIds(rows(), query) ?? [])].sort()).toEqual([...ids].sort())
+  })
+
+  test('an empty search filters nothing', () => {
+    expect(searchTokenIds(rows(), '  ')).toBeNull()
   })
 })
 
