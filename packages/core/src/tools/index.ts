@@ -21,7 +21,13 @@ export { isAtomicTool, isToolExposed, type ToolInterface, type ToolExposure } fr
 export { toolNumber } from './input'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './ai-adapter'
-export { calcClusterConfidence, diffDocuments, diffPageLayersJSX, wrapEvalCode } from './analyze'
+export {
+  calcClusterConfidence,
+  compileScript,
+  diffDocuments,
+  diffPageLayersJSX,
+  wrapEvalCode
+} from './analyze'
 export type { DocumentDiff, DocumentDiffOptions, LayerJSXChange } from './analyze'
 export {
   VALID_OVERLAP_CATEGORIES,

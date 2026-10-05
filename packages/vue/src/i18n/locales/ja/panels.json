@@ -459,6 +459,7 @@
   "behaviourList": "リスト",
   "behaviourTrigger": "トリガー",
   "behaviourContent": "コンテンツ",
+  "behaviourPanels": "パネル",
   "behaviourChooseProperty": "プロパティを選択",
   "behaviourChooseSlot": "スロットを選択",
   "behaviourNoSlots": "スロットはまだありません。「スロットを作成」で作成できます",

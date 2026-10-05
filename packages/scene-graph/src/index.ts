@@ -21,6 +21,7 @@ export * from './slots/authoring'
 export * from './slots/limits'
 export * from './behaviours/kinds'
 export * from './behaviours/model'
+export * from './behaviours/spec'
 export * from './copy'
 export { createDefaultNode } from './node-defaults'
 export {

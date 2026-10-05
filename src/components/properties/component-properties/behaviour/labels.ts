@@ -49,6 +49,7 @@ export function useBehaviourLabels() {
       list: p.behaviourList,
       trigger: p.behaviourTrigger,
       content: p.behaviourContent,
+      panels: p.behaviourPanels,
       items: p.behaviourItems,
       increment: p.behaviourIncrement,
       decrement: p.behaviourDecrement

@@ -201,8 +201,7 @@ function part({ island, role, base }: RoleContext<Extract<IslandRole, { type: 'p
       base({ style: { width: `${Math.min(1, Math.max(0, ratio)) * 100}%` } })
     )
   }
-  if (control.kind === 'tabs' && (role.part === 'list' || role.part === 'trigger'))
-    return asChild(TabsList, {}, () => base())
+  if (control.kind === 'tabs' && role.part === 'list') return asChild(TabsList, {}, () => base())
   if (control.kind === 'collapsible') return disclosurePart(island, role, base)
   return fieldRole(island, role, base) ?? base()
 }

@@ -55,6 +55,11 @@ export interface BehaviourPartContract {
    * radio, a toggle, a collapsible), which the control turns on and off.
    */
   items?: boolean
+  /**
+   * The Reka UI part each child of the slot is, when the slot holds repeated parts: a tab list's
+   * triggers, the tabs' content panels, or a group's items.
+   */
+  children?: string
 }
 
 export interface BehaviourContract {
@@ -128,11 +133,11 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
   },
   radioGroup: {
     values: [{ id: 'disabled', type: 'boolean', required: false }],
-    parts: [{ id: 'items', required: true, items: true }]
+    parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   },
   toggleGroup: {
     values: [{ id: 'disabled', type: 'boolean', required: false }],
-    parts: [{ id: 'items', required: true, items: true }]
+    parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   },
   slider: {
     values: [
@@ -148,9 +153,8 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
   tabs: {
     values: [{ id: 'value', type: 'choice', required: false }],
     parts: [
-      { id: 'list', required: true },
-      { id: 'trigger', required: true },
-      { id: 'content', required: false }
+      { id: 'list', required: true, children: 'trigger' },
+      { id: 'panels', required: false, children: 'content' }
     ]
   },
   progress: {
@@ -172,7 +176,7 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
   },
   accordion: {
     values: [{ id: 'disabled', type: 'boolean', required: false }],
-    parts: [{ id: 'items', required: true, items: true }]
+    parts: [{ id: 'items', required: true, items: true, children: 'item' }]
   }
 }
 

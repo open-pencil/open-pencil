@@ -465,6 +465,7 @@
   "behaviourList": "Liste",
   "behaviourTrigger": "Auslöser",
   "behaviourContent": "Inhalt",
+  "behaviourPanels": "Bereiche",
   "behaviourChooseProperty": "Eigenschaft wählen",
   "behaviourChooseSlot": "Slot wählen",
   "behaviourNoSlots": "Noch keine Slots; erstelle einen mit „Slot erstellen“",

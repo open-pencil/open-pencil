@@ -459,6 +459,7 @@
   "behaviourList": "列表",
   "behaviourTrigger": "触发器",
   "behaviourContent": "内容",
+  "behaviourPanels": "面板",
   "behaviourChooseProperty": "选择属性",
   "behaviourChooseSlot": "选择插槽",
   "behaviourNoSlots": "暂无插槽；使用“创建插槽”创建一个",

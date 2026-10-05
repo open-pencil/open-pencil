@@ -471,6 +471,7 @@
   "behaviourList": "Lista",
   "behaviourTrigger": "Wyzwalacz",
   "behaviourContent": "Zawartość",
+  "behaviourPanels": "Panele",
   "behaviourChooseProperty": "Wybierz właściwość",
   "behaviourChooseSlot": "Wybierz slot",
   "behaviourNoSlots": "Brak slotów; utwórz je poleceniem Utwórz slot",

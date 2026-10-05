@@ -17,7 +17,13 @@ function switchSet() {
   const set = graph.createNode('COMPONENT_SET', pageId, {
     name: 'Switch',
     componentPropertyDefinitions: [
-      { id: 'state', name: 'State', type: 'VARIANT', defaultValue: 'Off', variantOptions: ['On', 'Off'] }
+      {
+        id: 'state',
+        name: 'State',
+        type: 'VARIANT',
+        defaultValue: 'Off',
+        variantOptions: ['On', 'Off']
+      }
     ]
   })
   const on = graph.createNode('COMPONENT', set.id, {
@@ -42,7 +48,10 @@ describe('behaviour model', () => {
     expect(readBehaviour(set)).toEqual(behaviour)
     expect(missingBindings(graph, set, behaviour)).toEqual(['value'])
 
-    const bound = { ...behaviour, booleans: { value: { propertyId: 'state', on: 'On', off: 'Off' } } }
+    const bound = {
+      ...behaviour,
+      booleans: { value: { propertyId: 'state', on: 'On', off: 'Off' } }
+    }
     expect(missingBindings(graph, set, bound)).toEqual([])
     expect(missingBindings(graph, set, { ...bound, parts: { thumb: 'state' } })).toEqual([])
 
@@ -55,9 +64,9 @@ describe('behaviour model', () => {
     const slider = emptyBehaviour('slider')
     expect(slider.numbers.value).toEqual({ min: 0, max: 100, step: 1, default: 50 })
     expect(missingBindings(graph, set, slider)).toEqual(['track', 'thumb'])
-    expect(missingBindings(graph, set, { ...slider, parts: { track: 'state', thumb: 'thumb' } })).toEqual([
-      'track'
-    ])
+    expect(
+      missingBindings(graph, set, { ...slider, parts: { track: 'state', thumb: 'thumb' } })
+    ).toEqual(['track'])
   })
 
   test('unreadable plugin data reads as no behaviour', () => {

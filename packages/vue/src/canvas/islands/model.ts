@@ -154,7 +154,7 @@ function controlModel(graph: SceneGraph, rootId: string, instance: SceneNode): C
     frames.find((item) => slotPropertyId(item) === behaviour.parts[partId])
   const childPaths = (frame: SceneNode | undefined) =>
     (frame ? graph.getChildren(frame.id) : []).map((child) => layerPath(graph, rootId, child.id))
-  const panels = behaviour.kind === 'tabs' ? childPaths(frameOf('content')) : []
+  const panels = behaviour.kind === 'tabs' ? childPaths(frameOf('panels')) : []
   const content = behaviour.kind === 'collapsible' ? frameOf('content') : undefined
   return {
     path,
@@ -167,7 +167,7 @@ function controlModel(graph: SceneGraph, rootId: string, instance: SceneNode): C
     items,
     reveal: content ? [layerPath(graph, rootId, content.id)] : panels,
     panels,
-    triggers: behaviour.kind === 'tabs' ? childPaths(frameOf('trigger')) : []
+    triggers: behaviour.kind === 'tabs' ? childPaths(frameOf('list')) : []
   }
 }
 

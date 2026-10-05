@@ -162,6 +162,22 @@ openpencil eval design.fig -o modified.fig -c '...'
 echo 'figma.currentPage.children.map(n => n.name)' | openpencil eval design.fig --stdin
 ```
 
+Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma API, in its style. A main component can behave as a Reka UI control, by its own property and slot names:
+
+```bash
+openpencil eval design.fig -w -c '
+  const set = figma.currentPage.findOne(n => n.type === "COMPONENT_SET" && n.name === "Switch");
+  const thumb = set.findOne(n => n.name === "Thumb");
+  const behaviour = openpencil.setBehaviour(set, "switch")
+    .bindValue("value", "State")      // On/Off guessed from the variant values
+    .bindPart("thumb", thumb);        // the frame becomes a slot
+  behaviour.states = "Interaction";
+  behaviour.missing                    // [] when the control is complete
+'
+```
+
+`openpencil.behaviourKinds` lists every kind with its values and parts; `openpencil.getBehaviour(node)` reads one (a variant reads its set's); `openpencil.createSlot(frame)` makes a frame a slot. The `set_behaviour`, `get_behaviour`, and `create_slot` tools do the same over MCP, and design JSX writes controls with Reka's element names (`Switch.Root`, `Switch.Thumb`).
+
 ### Diff
 
 Compare nodes and documents, and apply patches:

@@ -471,6 +471,7 @@
   "behaviourList": "Список",
   "behaviourTrigger": "Триггер",
   "behaviourContent": "Содержимое",
+  "behaviourPanels": "Панели",
   "behaviourChooseProperty": "Выберите свойство",
   "behaviourChooseSlot": "Выберите слот",
   "behaviourNoSlots": "Слотов пока нет; создайте их командой «Создать слот»",

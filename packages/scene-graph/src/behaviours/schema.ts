@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { BEHAVIOUR_KINDS } from './kinds'
+import { BEHAVIOUR_KINDS, type InteractionState } from './kinds'
 
 const BooleanBinding = v.object({
   propertyId: v.string(),
@@ -20,14 +20,16 @@ const NumberSettings = v.object({
  * The variant property that draws interaction states, and the value that means each state.
  * A state without a value shows the rest value, or the instance's own when that is unset too.
  */
-const InteractionStates = v.object({
-  propertyId: v.string(),
+/** Each interaction state's variant value, by state; a state left out shows the rest value. */
+export const interactionStateValues = {
   rest: v.optional(v.string()),
   hover: v.optional(v.string()),
   pressed: v.optional(v.string()),
   focus: v.optional(v.string()),
   disabled: v.optional(v.string())
-})
+} satisfies Record<InteractionState, unknown>
+
+const InteractionStates = v.object({ propertyId: v.string(), ...interactionStateValues })
 
 export const behaviourSchema = v.object({
   kind: v.picklist(BEHAVIOUR_KINDS),

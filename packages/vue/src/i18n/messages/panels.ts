@@ -240,6 +240,7 @@ export const panelMessageDefaults = {
   behaviourList: 'List',
   behaviourTrigger: 'Trigger',
   behaviourContent: 'Content',
+  behaviourPanels: 'Panels',
   behaviourChooseProperty: 'Choose property',
   behaviourChooseSlot: 'Choose slot',
   behaviourNoSlots: 'No slots yet; make one with Create slot',

@@ -465,6 +465,7 @@
   "behaviourList": "Elenco",
   "behaviourTrigger": "Attivatore",
   "behaviourContent": "Contenuto",
+  "behaviourPanels": "Pannelli",
   "behaviourChooseProperty": "Scegli proprietà",
   "behaviourChooseSlot": "Scegli slot",
   "behaviourNoSlots": "Ancora nessuno slot; creane uno con Crea slot",
