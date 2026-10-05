@@ -213,7 +213,7 @@ function done(event: KeyboardEvent) {
           </DropdownMenuPortal>
         </DropdownMenuRoot>
       </div>
-      <label :class="ui.field()">
+      <label v-if="collection.modes.length > 1" :class="ui.field()">
         <span :class="ui.label()">{{ variables.modeAttribute }}</span>
         <AppInput
           v-model="draft.attribute"
