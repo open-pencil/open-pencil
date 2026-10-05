@@ -68,7 +68,7 @@ export function filteredToRealIndex(
   parentId: string,
   insertIndex: number,
   editor: Editor,
-  movingIds = editor.state.selectedIds
+  movingIds: ReadonlySet<string> = editor.state.selectedIds
 ): number {
   const allChildren = editor.graph.getChildren(parentId)
   let realIndex = 0
@@ -86,18 +86,17 @@ export function filteredToRealIndex(
   return realIndex
 }
 
-export function computeAutoLayoutIndicatorForFrame(
+function autoLayoutInsertion(
   parent: SceneNode,
   cx: number,
   cy: number,
   editor: Editor,
-  movingIds = editor.state.selectedIds
+  movingIds: ReadonlySet<string>
 ) {
   const children = editor.graph
     .getChildren(parent.id)
     .filter((c) => c.layoutPositioning !== 'ABSOLUTE' && !movingIds.has(c.id))
 
-  const parentAbs = editor.graph.getAbsolutePosition(parent.id)
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const rtlRow = isRTLRow(parent, isRow, editor)
 
@@ -114,6 +113,35 @@ export function computeAutoLayoutIndicatorForFrame(
   }
 
   const realIndex = filteredToRealIndex(parent.id, insertIndex, editor, movingIds)
+  return { children, insertIndex, realIndex, isRow }
+}
+
+/** Where layers dropped at the cursor go among an auto layout frame's children. */
+export function autoLayoutInsertIndex(
+  parent: SceneNode,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  movingIds: ReadonlySet<string>
+) {
+  return autoLayoutInsertion(parent, cx, cy, editor, movingIds).realIndex
+}
+
+export function computeAutoLayoutIndicatorForFrame(
+  parent: SceneNode,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  movingIds: ReadonlySet<string> = editor.state.selectedIds
+) {
+  const { children, insertIndex, realIndex, isRow } = autoLayoutInsertion(
+    parent,
+    cx,
+    cy,
+    editor,
+    movingIds
+  )
+  const parentAbs = editor.graph.getAbsolutePosition(parent.id)
   if (movingIds.size === 1) {
     const movingId = [...movingIds][0]
     const movingNode = editor.graph.getNode(movingId)

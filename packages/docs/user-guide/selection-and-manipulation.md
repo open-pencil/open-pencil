@@ -26,6 +26,16 @@ Selected nodes show 8 resize handles (4 corners + 4 edge midpoints). Drag any ha
 
 - <kbd>Shift</kbd> + drag a corner handle to constrain proportions
 
+## Moving into and out of frames
+
+A dragged node lands in the frame under the cursor when you release it, however little of it is inside, and leaves its frame as soon as the cursor does. Groups, component sets, and locked frames never take dropped nodes; a node inside a group stays in it unless you drop it on a different frame.
+
+- <kbd>Shift</kbd> + drag — lock the move to one axis
+- Hold <kbd>Space</kbd> while dragging — keep the nodes in their current parents
+- <kbd>⌃</kbd> + drag (<kbd>Ctrl</kbd> + drag on Windows and Linux) — turn off snapping; dropped into an auto-layout frame, the node is positioned absolutely
+
+Locked nodes in a selection stay where they are when the rest of it moves.
+
 ## Rotating
 
 Hover just outside a corner handle to see the rotation cursor. Drag to rotate.
@@ -35,7 +45,11 @@ Hover just outside a corner handle to see the rotation cursor. Drag to rotate.
 ## Duplicating
 
 - <kbd>Alt</kbd> + drag (<kbd>⌥</kbd> + drag on Mac) — duplicate the selected node and move the copy
-- <kbd>⌘</kbd><kbd>D</kbd> — duplicate in place
+- <kbd>⌘</kbd><kbd>D</kbd> — duplicate in place; a top-level frame's copy goes into the first free space to its right
+
+## Pasting
+
+<kbd>⌘</kbd><kbd>V</kbd> keeps the copied position. Pasted into a selected frame, nodes keep their offset from the frame they were copied from, and are centered along any axis where they don't fit; nodes that would land out of view are centered in it. Use **Paste here** in the [context menu](./context-menu) to paste at the cursor.
 
 ## Deleting
 
@@ -59,7 +73,7 @@ Move selected nodes to a different page via the [context menu](./context-menu). 
 
 ## Sections
 
-Drawing a section on the canvas automatically adopts overlapping sibling nodes as children of the new section.
+A section takes in the sibling nodes it fully covers when you draw it, move it, or resize it over them.
 
 ## Keyboard Shortcuts
 
@@ -68,6 +82,9 @@ Drawing a section on the canvas automatically adopts overlapping sibling nodes a
 | Select all | <kbd>⌘</kbd><kbd>A</kbd> | <kbd>Ctrl</kbd> + <kbd>A</kbd> |
 | Duplicate | <kbd>⌘</kbd><kbd>D</kbd> | <kbd>Ctrl</kbd> + <kbd>D</kbd> |
 | Duplicate + move | <kbd>⌥</kbd> + drag | <kbd>Alt</kbd> + drag |
+| Move along one axis | <kbd>⇧</kbd> + drag | <kbd>Shift</kbd> + drag |
+| Keep current parent | <kbd>Space</kbd> while dragging | <kbd>Space</kbd> while dragging |
+| Move without snapping | <kbd>⌃</kbd> + drag | <kbd>Ctrl</kbd> + drag |
 | Delete | <kbd>⌫</kbd> / Delete | <kbd>Backspace</kbd> / Delete |
 | Nudge 1 px | <kbd>Arrow keys</kbd> | Arrow keys |
 | Nudge 10 px | <kbd>⇧</kbd> + Arrow keys | <kbd>Shift</kbd> + <kbd>Arrow</kbd> keys |

@@ -4,8 +4,20 @@ import type { DragOriginal as MoveOriginal } from '#vue/shared/input/drag-origin
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import type { DragState } from '#vue/shared/input/types'
 
+function isLockedInTree(id: string, editor: Editor) {
+  for (
+    let node = editor.graph.getNode(id);
+    node;
+    node = editor.graph.getNode(node.parentId ?? '')
+  ) {
+    if (node.locked) return true
+  }
+  return false
+}
+
+/** Whether nothing selected can move: locked layers, and layers inside locked ones, stay put. */
 export function selectionIsLocked(editor: Editor) {
-  return [...editor.state.selectedIds].every((id) => editor.graph.getNode(id)?.locked)
+  return [...editor.state.selectedIds].every((id) => isLockedInTree(id, editor))
 }
 
 function autoLayoutMoveTarget(id: string, editor: Editor): string {
@@ -31,6 +43,7 @@ function autoLayoutMoveTarget(id: string, editor: Editor): string {
 function collectMoveOriginals(editor: Editor) {
   const originals = new Map<string, MoveOriginal>()
   for (const selectedId of editor.state.selectedIds) {
+    if (isLockedInTree(selectedId, editor)) continue
     const id = autoLayoutMoveTarget(selectedId, editor)
     const node = editor.graph.getNode(id)
     if (node) {

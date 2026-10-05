@@ -17,8 +17,11 @@ export type CornerPosition = 'nw' | 'ne' | 'se' | 'sw'
 
 export interface DragDraw {
   type: 'draw'
+  /** Start point in the parent's axes. */
   startX: number
   startY: number
+  /** Maps a canvas point into the parent's axes. */
+  toLocal: (x: number, y: number) => Vector
   nodeId: string
   update: (changes: Partial<SceneNode>) => void
   commit: () => void
@@ -41,6 +44,12 @@ export interface DragMove {
   duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
+  /** Space is held: layers keep their parents wherever they are dropped. */
+  keepParents?: boolean
+  /** Control is held: auto layout frames take the layers as absolute-positioned children. */
+  ignoreAutoLayout?: boolean
+  /** Where Control drops layers among an auto layout frame's children. */
+  absoluteInsertIndex?: number
 }
 
 export interface DragPan {

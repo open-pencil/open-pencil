@@ -1,6 +1,7 @@
 import { CommittedGraphEventError } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseFigmaClipboard, parseOpenPencilClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
@@ -36,14 +37,15 @@ export function createClipboardActions(ctx: EditorContext) {
     const newRootIds: string[] = []
     const allSnapshots = new Map<string, SceneNode>()
 
+    const placed: Rect[] = []
     for (const node of topLevel) {
       const parentId = node.parentId ?? ctx.state.currentPageId
       const clone = ctx.graph.cloneTree(node.id, parentId, {
         name: node.name + ' copy',
-        x: node.x + 20,
-        y: node.y + 20
+        ...placementActions.duplicatePosition(node, placed)
       })
       if (!clone) continue
+      placed.push(getAxisAlignedBoundsInParent([clone], parentId, ctx.graph))
       newRootIds.push(clone.id)
       const subtree = snapshotSubtree(ctx.graph, clone.id)
       for (const [id, snap] of subtree) allSnapshots.set(id, snap)
@@ -216,8 +218,6 @@ export function createClipboardActions(ctx: EditorContext) {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
       const node = ctx.graph.createNode(source.type, parentId, {
         ...structuredClone(rest),
-        x: source.x + 20,
-        y: source.y + 20,
         childIds: []
       })
       copiedIds.set(source.id, node.id)
@@ -267,7 +267,8 @@ export function createClipboardActions(ctx: EditorContext) {
       return created
     }
 
-    if (cursorPos) placementActions.centerNodesAt(created, cursorPos.x, cursorPos.y)
+    if (cursorPos) placementActions.centerNodesAtCanvasPoint(created, pasteTarget, cursorPos)
+    else placementActions.placePasted(created, nodes[0]?.parentId ?? undefined, pasteTarget)
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     ctx.setSelectedIds(new Set(created))
 

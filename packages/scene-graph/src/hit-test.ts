@@ -160,46 +160,56 @@ export function hitTestDeep(
   return hitTestChildren(graph, px, py, scope, true)
 }
 
-function hitTestFrameChildren(
+/** Layers that take a dropped or drawn layer, as in Figma. */
+const DROP_TARGET_TYPES = new Set<NodeType>(['FRAME', 'SECTION', 'COMPONENT', 'INSTANCE'])
+/** Layers whose children can take a drop although they never take one themselves. */
+const DROP_PASS_THROUGH_TYPES = new Set<NodeType>(['GROUP', 'COMPONENT_SET'])
+
+function dropTargetIn(
   graph: SceneGraph,
   px: number,
   py: number,
-  parentId: string,
-  offsetX: number,
-  offsetY: number,
-  excludeIds: Set<string>
+  parent: SceneNode,
+  excludeIds: ReadonlySet<string>,
+  transformCache: Map<string, boolean>
 ): SceneNode | null {
-  const parent = graph.nodes.get(parentId)
-  if (!parent) return null
+  // A clipped-away part of a child is not under the cursor.
+  if (
+    parent.type !== 'CANVAS' &&
+    parent.clipsContent &&
+    !containsPoint(px, py, parent, graph, transformCache)
+  )
+    return null
 
-  let best: SceneNode | null = null
-
-  for (const childId of parent.childIds) {
+  for (let i = parent.childIds.length - 1; i >= 0; i--) {
+    const childId = parent.childIds[i]
     if (excludeIds.has(childId)) continue
     const child = graph.nodes.get(childId)
-    if (!child || child.internalOnly || !child.visible) continue
+    if (!child || child.internalOnly || !child.visible || child.locked) continue
+    const target = DROP_TARGET_TYPES.has(child.type)
+    if (!target && !DROP_PASS_THROUGH_TYPES.has(child.type)) continue
 
-    const ax = offsetX + child.x
-    const ay = offsetY + child.y
-
-    if (!CONTAINER_TYPES.has(child.type)) continue
-    if (px < ax || px > ax + child.width || py < ay || py > ay + child.height) continue
-
-    best = child
-
-    const deeper = hitTestFrameChildren(graph, px, py, childId, ax, ay, excludeIds)
-    if (deeper) best = deeper
+    const deeper = dropTargetIn(graph, px, py, child, excludeIds, transformCache)
+    if (deeper) return deeper
+    if (target && containsPoint(px, py, child, graph, transformCache)) return child
   }
 
-  return best
+  return null
 }
 
-export function hitTestFrame(
+/**
+ * The topmost unlocked frame, section, component, or instance under the point, in its rotated
+ * shape and inside its clipping ancestors. Groups and component sets are looked through but never
+ * returned; locked layers and their contents are skipped.
+ */
+export function hitTestDropTarget(
   graph: SceneGraph,
   px: number,
   py: number,
-  excludeIds: Set<string>,
+  excludeIds: ReadonlySet<string>,
   scopeId?: string
 ): SceneNode | null {
-  return hitTestFrameChildren(graph, px, py, scopeId ?? graph.rootId, 0, 0, excludeIds)
+  const scope = graph.nodes.get(scopeId ?? graph.rootId)
+  if (!scope) return null
+  return dropTargetIn(graph, px, py, scope, excludeIds, new Map())
 }

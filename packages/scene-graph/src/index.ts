@@ -700,13 +700,13 @@ export class SceneGraph {
     return HitTest.hitTestDeep(this, px, py, scopeId)
   }
 
-  hitTestFrame(
+  hitTestDropTarget(
     px: number,
     py: number,
-    excludeIds: Set<string>,
+    excludeIds: ReadonlySet<string>,
     scopeId?: string
   ): SceneNode | null {
-    return HitTest.hitTestFrame(this, px, py, excludeIds, scopeId)
+    return HitTest.hitTestDropTarget(this, px, py, excludeIds, scopeId)
   }
 
   cloneTree(

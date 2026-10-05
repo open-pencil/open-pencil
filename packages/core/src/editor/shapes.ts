@@ -8,9 +8,10 @@ import {
   SECTION_DEFAULT_STROKE
 } from '#core/constants'
 
+import { acceptingParent, prepareSlotEdits } from './components/slots'
+import { adoptCoveredLayers } from './shapes/adopt'
 import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions } from './shapes/pen'
-import { adoptNodesIntoSection as adoptNodesIntoSectionImpl } from './shapes/section-adopt'
 import type { EditorContext } from './types'
 export type { PenDragOptions } from './shapes/pen'
 
@@ -43,7 +44,9 @@ export function createShapeActions(ctx: EditorContext) {
     name?: string
   ): string {
     const fill = DEFAULT_FILLS[type] ?? DEFAULT_FILLS.RECTANGLE
-    const pid = parentId ?? ctx.state.currentPageId
+    // A new layer inside an instance lands in a slot, which the instance claims first.
+    const pid = acceptingParent(ctx, parentId ?? ctx.state.currentPageId)
+    prepareSlotEdits(ctx, [pid])
     const overrides: Partial<SceneNode> = {
       x,
       y,
@@ -92,7 +95,7 @@ export function createShapeActions(ctx: EditorContext) {
     createShape,
     ...penActions,
     ...framePresetActions,
-    adoptNodesIntoSection: (sectionId: string) => adoptNodesIntoSectionImpl(ctx, sectionId),
+    adoptCoveredLayers: (containerId: string) => adoptCoveredLayers(ctx, containerId),
     setTool
   }
 }
