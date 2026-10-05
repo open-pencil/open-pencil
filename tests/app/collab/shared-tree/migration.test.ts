@@ -9,6 +9,7 @@ import {
   readOrderKey,
   readPage,
   readParentEntries,
+  readRoot,
   TREE_FORMAT
 } from '@/app/collab/shared-tree/fields'
 import { migrateLegacyLayers } from '@/app/collab/shared-tree/migration'
@@ -81,6 +82,7 @@ describe('collab tree format migration', () => {
 
       expectMatchesLegacy(hostStore.graph, legacy.graph)
       expect(hostStore.graph.rootId).toBe(legacy.graph.rootId)
+      expect(readRoot(hostDoc.getMap('meta'))).toBe(legacy.graph.rootId)
       expect(hostDoc.getMap('meta').get('treeFormat')).toBe(TREE_FORMAT)
       const fields = sharedTreeFields(hostDoc)
       expect(fields['rect:2']).toMatchObject({

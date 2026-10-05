@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, setSystemTime, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
@@ -13,6 +13,7 @@ import {
   type SyncedStores,
   withSyncedStores
 } from '#tests/helpers/collab/synced-stores'
+import { connectYDocs } from '#tests/helpers/yjs'
 
 /** Seeds layers on the host page, syncs them, and runs a live edit on connected peers. */
 async function withLiveEdit(
@@ -188,16 +189,72 @@ describe('collab layer tree', () => {
     )
   })
 
-  test('a page added before anyone shared the document reaches the other peer', async () => {
+  test("a joiner's edit to its own earlier document leaves the room's pages alone", async () => {
     await withSyncedStores(
-      async ({ hostStore, peerStore }) => {
-        const page = hostStore.graph.addPage('Checkout')
+      async ({ hostStore, peerStore, hostSync }) => {
+        const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
+        const hostPages = hostStore.graph.getPages().map((page) => page.id)
+        hostSync.syncAllNodesToYjs()
         await settleGraphSync()
         expect(peerStore.graph.rootId).toBe(hostStore.graph.rootId)
-        expect(peerStore.graph.getPages().map((entry) => entry.id)).toContain(page.id)
+
+        // An undo of an edit made before joining can still reach the joiner's own page.
+        peerStore.graph.createNode('RECTANGLE', peerOwnPage, { id: 'rect:1' })
+        await settleGraphSync()
+        for (const graph of [hostStore.graph, peerStore.graph]) {
+          expect(graph.rootId).toBe(hostStore.graph.rootId)
+          expect(graph.getPages().map((page) => page.id)).toEqual(hostPages)
+        }
+        expect(hostStore.graph.getNode('rect:1')).toBeUndefined()
       },
       { bindGraphEvents: true }
     )
+  })
+
+  test('the first edit in a room nobody has shared yet shares the whole document', async () => {
+    await withSyncedStores(
+      async ({ hostStore, peerStore }) => {
+        const pageId = expectDefined(hostStore.graph.getPages()[0], 'first page').id
+        const checkout = hostStore.graph.addPage('Checkout')
+        await settleGraphSync()
+        hostStore.graph.createNode('RECTANGLE', pageId, { id: 'rect:1' })
+        await settleGraphSync()
+        expect(peerStore.graph.rootId).toBe(hostStore.graph.rootId)
+        expect(peerStore.graph.getPages().map((page) => page.id)).toEqual([pageId, checkout.id])
+        expect(getNodeOrThrow(peerStore.graph, 'rect:1').parentId).toBe(pageId)
+      },
+      { bindGraphEvents: true }
+    )
+  })
+
+  test("a joiner who edits before the room reaches them keeps the sharer's root", async () => {
+    try {
+      await withSyncedStores(
+        async ({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
+          const hostPages = hostStore.graph.getPages().map((page) => page.id)
+          setSystemTime(new Date(1_000))
+          hostSync.syncAllNodesToYjs()
+          setSystemTime(new Date(2_000))
+          const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
+          peerStore.graph.createNode('RECTANGLE', peerOwnPage, { id: 'rect:1' })
+          await settleGraphSync()
+
+          const disconnect = connectYDocs(hostDoc, peerDoc)
+          try {
+            await settleGraphSync()
+            for (const graph of [hostStore.graph, peerStore.graph]) {
+              expect(graph.rootId).toBe(hostStore.graph.rootId)
+              expect(graph.getPages().map((page) => page.id)).toEqual(hostPages)
+            }
+          } finally {
+            disconnect()
+          }
+        },
+        { bindGraphEvents: true, connectImmediately: false }
+      )
+    } finally {
+      setSystemTime()
+    }
   })
 
   test('moving a frame to another page records that page for the layers inside it', async () => {

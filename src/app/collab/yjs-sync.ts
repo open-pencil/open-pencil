@@ -5,7 +5,9 @@ import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
 import {
+  claimRoot,
   markTreeFormat,
+  readRoot,
   writeOrderKey,
   writePage,
   writeParentEntry,
@@ -18,6 +20,7 @@ import {
   createLocalEdit,
   createSharedTree,
   isLocalEditEmpty,
+  keepSharedLayers,
   pageOf,
   recordLocalLayers,
   writeLocalPlacement,
@@ -203,6 +206,11 @@ export function createYjsGraphSync({
     const ynodes = getYnodes()
     if (!ydoc || !ynodes) return
     const tree = sharedTreeOf(ydoc)
+    // The first edit in a room nobody has shared yet shares the whole document, as Share does.
+    if (tree.rootId === null && readRoot(ydoc.getMap('meta')) === undefined) {
+      syncAllNodesToYjs()
+      return
+    }
     setSuppressYjsEvents(true)
     try {
       ydoc.transact(() => {
@@ -216,30 +224,15 @@ export function createYjsGraphSync({
           ynodes.delete(id)
           tree.tree.deleteLayer(id)
         }
+        keepSharedLayers(tree, graph, edit)
         for (const id of edit.changed) writeNode(graph, ynodes, id)
         for (const id of edit.placed) if (!ynodes.has(id)) writeNode(graph, ynodes, id)
-        shareAncestors(graph, ynodes, edit)
         writeLocalPlacement(tree, graph, ynodes, ydoc.getMap('meta'), edit)
       })
     } catch (error) {
       logCollabSyncError('Failed to sync local edit', error)
     } finally {
       setSuppressYjsEvents(false)
-    }
-  }
-
-  /**
-   * Writes the ancestors of the edit's layers that the room does not hold yet, such as the root
-   * above a page added before anyone shared the document, so other peers can place the layers.
-   */
-  function shareAncestors(graph: SceneGraph, ynodes: YNodes, edit: LocalEdit) {
-    for (const id of [...edit.changed, ...edit.placed]) {
-      let parentId = graph.getNode(id)?.parentId
-      for (let steps = 0; parentId && !ynodes.has(parentId) && steps < graph.nodes.size; steps++) {
-        writeNode(graph, ynodes, parentId)
-        edit.changed.add(parentId)
-        parentId = graph.getNode(parentId)?.parentId
-      }
     }
   }
 
@@ -251,7 +244,7 @@ export function createYjsGraphSync({
 
   /**
    * Shares this peer's whole document: every layer, its parent with counter 0, its order, and
-   * its page.
+   * its page, with its root as the room's.
    */
   function syncAllNodesToYjs() {
     const graph = getStore().graph
@@ -277,9 +270,10 @@ export function createYjsGraphSync({
             writeOrderKey(child, keys[index])
           })
         }
+        claimRoot(ydoc.getMap('meta'), graph.rootId, Date.now())
         markTreeFormat(ydoc.getMap('meta'))
       })
-      recordLocalLayers(sharedTreeOf(ydoc), ynodes, ynodes.keys())
+      recordLocalLayers(sharedTreeOf(ydoc), ynodes, ydoc.getMap('meta'), ynodes.keys())
     } catch (error) {
       logCollabSyncError('Failed to sync document', error)
     } finally {
@@ -315,7 +309,7 @@ export function createYjsGraphSync({
     }
     const gone = [...deleted].filter((nodeId) => !ynodes.has(nodeId))
     // Moves go first, so a layer moved out of a deleted parent survives the deletion.
-    applySharedTree(sharedTreeOf(ydoc), store.graph, ynodes, changed, gone)
+    applySharedTree(sharedTreeOf(ydoc), store.graph, ynodes, ydoc.getMap('meta'), changed, gone)
     for (const nodeId of gone) store.graph.deleteNode(nodeId)
     ensureCurrentPageExists(store)
   }

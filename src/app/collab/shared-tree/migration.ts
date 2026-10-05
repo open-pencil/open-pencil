@@ -6,10 +6,12 @@ import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import { topEdge } from '@/app/collab/tree/entries'
 
 import {
+  claimRoot,
   markTreeFormat,
   PARENTS_FIELD,
   readOrderKey,
   readParentEntries,
+  readRoot,
   writeOrderKey,
   writePage,
   writeParentEntry,
@@ -44,7 +46,7 @@ function legacyChildIdsOf(ynode: Y.Map<unknown> | undefined): string[] {
  * Converts layers a format 1 document recorded to format 2: each layer's synced parent becomes
  * its only entry, with counter 0, and its position in that parent's synced `childIds` becomes an
  * order key, and the page its synced ancestors reach becomes its page; siblings already converted
- * keep theirs. The result depends only on the document, so
+ * keep theirs. The root with the most children becomes the room's root. The result depends only on the document, so
  * peers that convert the same layers at once write the same values. Returns the converted ids.
  */
 export function migrateLegacyLayers(
@@ -81,6 +83,7 @@ export function migrateLegacyLayers(
           const ynode = ynodes.get(id)
           if (ynode) writeRootEntries(ynode)
         }
+        claimLegacyRoot(ynodes, meta, migrating)
         continue
       }
       const listed = legacyChildIdsOf(ynodes.get(parentId)).filter(
@@ -135,4 +138,20 @@ function legacyPageOf(ynodes: YNodes, id: string): string | undefined {
     if (current?.get('type') === 'CANVAS') return parentId
   }
   return undefined
+}
+
+/**
+ * Claims the room's root for a converted document. Format 1 rooms could hold several parentless
+ * layers, such as a joiner's own document; the one with the most children, then the lowest id,
+ * is the room's, so every converting peer claims the same one.
+ */
+function claimLegacyRoot(ynodes: YNodes, meta: YMeta, roots: ReadonlySet<string>): void {
+  if (readRoot(meta) !== undefined) return
+  // Sorting is stable, so roots with as many children stay in id order.
+  const ranked = [...roots]
+    .sort()
+    .map((id) => ({ id, children: legacyChildIdsOf(ynodes.get(id)).length }))
+    .sort((a, b) => b.children - a.children)
+  const root = ranked.at(0)
+  if (root) claimRoot(meta, root.id, 0)
 }

@@ -8,14 +8,15 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
  * from every parent the layer has been moved under to the move counter, and `orderKey`, its
  * fractional position among siblings, and `page`, the page this peer last placed it on, where it
  * goes once no recorded parent is left; `parentId` and `childIds` are derived on each peer
- * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the move clock and
- * the tree format.
+ * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the claims on the
+ * room's root, the move clock, and the tree format.
  */
 export const TREE_FORMAT = 2
 export const PARENTS_FIELD = 'parents'
 export const ORDER_KEY_FIELD = 'orderKey'
 export const PAGE_FIELD = 'page'
 
+const ROOT_CLAIM_PREFIX = 'root:'
 const CLOCK_KEY = 'clock'
 const FORMAT_KEY = 'treeFormat'
 const KEY_SUFFIX_LENGTH = 3
@@ -26,7 +27,7 @@ const MAX_ORDER_KEY_LENGTH = 4096
 export type YNodes = Y.Map<Y.Map<unknown>>
 export type YMeta = Y.Map<unknown>
 
-const counterSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
+const counterSchema = v.pipe(v.number(), v.safeInteger(), v.minValue(0))
 const orderKeySchema = v.pipe(
   v.string(),
   v.minLength(1),
@@ -60,6 +61,31 @@ export function readOrderKey(ynode: Y.Map<unknown>): string | undefined {
 export function readPage(ynode: Y.Map<unknown>): string | undefined {
   const result = v.safeParse(pageSchema, ynode.get(PAGE_FIELD))
   return result.success ? result.output : undefined
+}
+
+/**
+ * The room's root: the earliest of the claims `meta` records as `root:<id>`, each the time a peer
+ * shared that root, ties broken by id. A guest who edits before the room reaches them claims it
+ * too, so the earliest claim, normally the sharer's, keeps every peer on the same root. Each claim
+ * is its own key, so concurrent claims all survive.
+ */
+export function readRoot(meta: YMeta): string | undefined {
+  let root: { id: string; claimedAt: number } | undefined
+  for (const [key, value] of meta.entries()) {
+    if (!key.startsWith(ROOT_CLAIM_PREFIX)) continue
+    const id = key.slice(ROOT_CLAIM_PREFIX.length)
+    const claimedAt = readCounter(value)
+    if (claimedAt === undefined || id.length === 0) continue
+    if (!root || claimedAt < root.claimedAt || (claimedAt === root.claimedAt && id < root.id)) {
+      root = { id, claimedAt }
+    }
+  }
+  return root?.id
+}
+
+export function claimRoot(meta: YMeta, rootId: string, claimedAt: number): void {
+  const key = ROOT_CLAIM_PREFIX + rootId
+  if (!meta.has(key)) meta.set(key, claimedAt)
 }
 
 export function writeParentEntry(ynode: Y.Map<unknown>, parentId: string, counter: number): void {

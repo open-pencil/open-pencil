@@ -13,10 +13,10 @@ import {
   readOrderKey,
   readPage,
   readParentEntries,
+  readRoot,
   writeOrderKey,
   writePage,
   writeParentEntry,
-  writeRootEntries,
   type YMeta,
   type YNodes
 } from './fields'
@@ -125,23 +125,13 @@ function findMoves(shared: SharedTree, graph: SceneGraph, ynodes: YNodes, edit: 
   const pathStarts: (string | null | undefined)[] = [...edit.previousParents]
   for (const id of candidates) {
     const parentId = graph.getNode(id)?.parentId
-    const ynode = ynodes.get(id)
-    if (parentId === undefined || !ynode) continue
-    if (parentId === null) {
-      if (!tree.has(id)) recordRoot(shared, ynode, id)
-    } else if (!tree.has(id) || tree.parentOf(id) !== parentId) {
+    if (!parentId || !ynodes.has(id)) continue
+    if (!tree.has(id) || tree.parentOf(id) !== parentId) {
       moved.push(id)
       pathStarts.push(tree.parentOf(id), parentId)
     }
   }
   return { moved, pathStarts }
-}
-
-function recordRoot(shared: SharedTree, ynode: Y.Map<unknown>, id: string): void {
-  writeRootEntries(ynode)
-  shared.setRoot(id)
-  shared.tree.setLayer(id, new Map(), undefined)
-  shared.tree.resolve()
 }
 
 /**
@@ -230,6 +220,7 @@ export function applySharedTree(
   shared: SharedTree,
   graph: SceneGraph,
   ynodes: YNodes,
+  meta: YMeta,
   changed: Iterable<string>,
   deleted: Iterable<string>
 ): void {
@@ -249,12 +240,9 @@ export function applySharedTree(
     if (previousParent) touched.add(previousParent)
     tree.setLayer(id, entries, orderKey)
     placed.push(id)
-    if (entries.size === 0) {
-      shared.setRoot(id)
-      graph.rootId = id
-    }
   }
   for (const id of deleted) tree.deleteLayer(id)
+  adoptRoot(shared, graph, meta)
 
   // A second pass places layers whose page was itself placed in the first.
   const moves = [...tree.resolve(), ...tree.resolve()]
@@ -266,16 +254,46 @@ export function applySharedTree(
   for (const parentId of touched) sortChildren(graph, tree, parentId)
 }
 
+/**
+ * Removes the layers outside the room's tree from an edit, so they stay local: a peer that joined
+ * a room keeps its own earlier document, which undo can still reach.
+ */
+export function keepSharedLayers(shared: SharedTree, graph: SceneGraph, edit: LocalEdit): void {
+  const rootId = shared.rootId
+  const isShared = (id: string) =>
+    rootId !== null && graph.closest(id, (node) => node.id === rootId) !== undefined
+  for (const ids of [edit.changed, edit.placed, edit.reordered, edit.previousParents]) {
+    for (const id of ids) if (!isShared(id)) ids.delete(id)
+  }
+}
+
 /** Records layers this peer wrote itself, such as when sharing its document. */
-export function recordLocalLayers(shared: SharedTree, ynodes: YNodes, layerIds: Iterable<string>) {
+export function recordLocalLayers(
+  shared: SharedTree,
+  ynodes: YNodes,
+  meta: YMeta,
+  layerIds: Iterable<string>
+) {
   for (const id of layerIds) {
     const ynode = ynodes.get(id)
     const entries = ynode ? readParentEntries(ynode) : undefined
     if (!ynode || !entries) continue
-    if (entries.size === 0) shared.setRoot(id)
     shared.tree.setLayer(id, entries, readOrderKey(ynode))
   }
+  const rootId = readRoot(meta)
+  if (rootId !== undefined) shared.setRoot(rootId)
   shared.tree.resolve()
+}
+
+/**
+ * Follows the root the room records. Layers under any other root, such as a joiner's own earlier
+ * document, stay in the shared tree but out of the graph's pages.
+ */
+function adoptRoot(shared: SharedTree, graph: SceneGraph, meta: YMeta): void {
+  const rootId = readRoot(meta)
+  if (rootId === undefined || rootId === shared.rootId || !shared.tree.has(rootId)) return
+  shared.setRoot(rootId)
+  graph.rootId = rootId
 }
 
 function applyMoves(graph: SceneGraph, moves: TreeMove[], touched: Set<string>): void {
