@@ -56,6 +56,13 @@ describe('token CSS names', () => {
     expect(tokenSlug('M3')).toBe('m3')
   })
 
+  test('say a group once when the next segment repeats it, as Tailwind-class names do', () => {
+    expect(deriveCSSName(token('Gap/gap-1'))).toBe('gap-1')
+    expect(deriveCSSName(token('Gap/gap-1', { scopes: ['GAP'] }))).toBe('spacing-gap-1')
+    expect(deriveCSSName(token('Blue/Blue', { type: 'COLOR' }))).toBe('color-blue')
+    expect(deriveCSSName(token('Gap/gapless'))).toBe('gap-gapless')
+  })
+
   test('read custom property names from code snippets only', () => {
     expect(parseCSSName('var(--color-primary)')).toBe('color-primary')
     expect(parseCSSName('var(--ui-bg, #fff)')).toBe('ui-bg')
