@@ -1,6 +1,6 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import type { UIMessage } from 'ai'
-import type { Ref } from 'vue'
+import { toRaw, type Ref } from 'vue'
 
 import { appendRevertedTurnContext } from '@/app/ai/chat/context'
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
@@ -26,8 +26,10 @@ export function useRevertRecords(options: RevertRecordOptions) {
   function mark(chat: ChatInstance, ids: readonly string[], revert: Revert | null): void {
     if (ids.length === 0) return
     const marked = new Set(ids)
+    // The chat's messages are reactive; a copy of one would carry its proxied parts, which
+    // saving the conversation cannot clone.
     chat.messages = chat.messages.map((message) =>
-      marked.has(message.id) ? withRevert(message, revert) : message
+      marked.has(message.id) ? withRevert(toRaw(message), revert) : message
     )
   }
 

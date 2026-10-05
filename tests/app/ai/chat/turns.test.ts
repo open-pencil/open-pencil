@@ -2,11 +2,12 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
 
 import type { ToolExecutionOptions, UIMessage } from 'ai'
-import { shallowRef, toRaw } from 'vue'
+import { ref, shallowRef, toRaw } from 'vue'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { REVERTED_TURN_CONTEXT_MARKER } from '@/app/ai/chat/context'
+import { snapshotMessages } from '@/app/ai/chat/history/messages'
 import { changePreviewSize } from '@/app/ai/chat/preferences'
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
@@ -48,15 +49,22 @@ type Tools = ReturnType<typeof createAITools>
 
 /**
  * A chat whose every send is one agent run that resizes `nodeId` to the next width, then runs
- * `finish`, such as a view change, before the reply ends.
+ * `finish`, such as a view change, before the reply ends. Like `@ai-sdk/vue`'s Chat, it keeps
+ * its messages in a deep `ref`, so each message and part is a reactive proxy.
  */
 function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
   const tools = createAITools(store)
   const widths = [200, 300, 400]
   let replies = 0
+  const messages = ref<UIMessage[]>([])
   const chat = {
     status: 'ready' as const,
-    messages: [] as UIMessage[],
+    get messages(): UIMessage[] {
+      return messages.value
+    },
+    set messages(value: UIMessage[]) {
+      messages.value = value
+    },
     async reply() {
       startRun(store, 10)
       const width = widths[replies] ?? 500
@@ -98,7 +106,13 @@ function submission(chat: ReturnType<typeof fakeChat>) {
     getEditor: () => store,
     messages: shallowRef({ openSettings: '', requestFailed: '', visionUnavailable: '' }),
     reportError: () => undefined,
-    openModelSettings: () => undefined
+    openModelSettings: () => undefined,
+    // Like the history's flush, this snapshots the messages synchronously, so a message that
+    // cannot be cloned throws here instead of becoming a rejected promise.
+    flush: () => {
+      snapshotMessages(chat.messages)
+      return Promise.resolve()
+    }
   })
 }
 
