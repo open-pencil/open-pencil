@@ -225,6 +225,7 @@ function done(event: KeyboardEvent) {
           :ui="{ input: 'font-mono' }"
           data-test-id="variables-mode-attribute"
           @change="commitAttribute"
+          @enter="done"
         />
         <p v-if="attributeInvalid" :id="attributeErrorId" :class="ui.error()" role="alert">
           {{ variables.modeAttributeInvalid }}
