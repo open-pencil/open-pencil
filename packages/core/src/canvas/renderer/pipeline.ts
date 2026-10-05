@@ -112,10 +112,32 @@ function scenePictureMissReason(
   if (sceneVersion !== r.scenePictureVersion) return 'scene-version'
   if (r.fontGeneration !== r.scenePictureFontGeneration) return 'font-generation'
   if (r.pageId !== r.scenePicturePageId) return 'page'
+  if (!scenePictureCoversViewport(r)) return 'viewport'
   return 'unknown'
 }
 
-function canUseScenePicture(
+/**
+ * Whether the recorded scene picture still covers the current viewport. The picture is a
+ * finite 3x3-viewport box (see `recordScenePicture`), so once the camera moves outside it
+ * the picture must be re-recorded instead of reused, otherwise panned-in content stays
+ * missing (notably when the retained backing is unavailable).
+ */
+function scenePictureCoversViewport(r: SkiaRenderer): boolean {
+  const box = r.scenePictureWorldViewport
+  if (!box) return false
+  const liveW = r.viewportWidth / r.zoom
+  const liveH = r.viewportHeight / r.zoom
+  const liveX = -r.panX / r.zoom
+  const liveY = -r.panY / r.zoom
+  return (
+    liveX >= box.x &&
+    liveY >= box.y &&
+    liveX + liveW <= box.x + box.w &&
+    liveY + liveH <= box.y + box.h
+  )
+}
+
+export function canUseScenePicture(
   r: SkiaRenderer,
   graph: SceneGraph,
   sceneVersion: number,
@@ -127,7 +149,8 @@ function canUseScenePicture(
     graph.positionPreviewVersion === r.scenePicturePositionPreviewVersion &&
     sceneVersion === r.scenePictureVersion &&
     r.fontGeneration === r.scenePictureFontGeneration &&
-    r.pageId === r.scenePicturePageId
+    r.pageId === r.scenePicturePageId &&
+    scenePictureCoversViewport(r)
   )
 }
 
@@ -420,6 +443,7 @@ export function recordScenePicture(
     r.scenePictureFontGeneration = r.fontGeneration
     r.scenePicturePositionPreviewVersion = graph.positionPreviewVersion
     r.scenePicturePageId = r.pageId
+    r.scenePictureWorldViewport = { ...r.worldViewport }
     canvas.drawPicture(r.scenePicture)
   } finally {
     recorder.delete()

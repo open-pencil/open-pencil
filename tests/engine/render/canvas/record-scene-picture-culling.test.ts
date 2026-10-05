@@ -4,7 +4,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { recordScenePicture } from '#core/canvas/renderer/pipeline'
+import { canUseScenePicture, recordScenePicture } from '#core/canvas/renderer/pipeline'
 import { renderNode } from '#core/canvas/scene'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -101,7 +101,8 @@ function createRenderer() {
     scenePictureVersion: 0,
     scenePictureFontGeneration: 0,
     scenePicturePositionPreviewVersion: 0,
-    scenePicturePageId: null
+    scenePicturePageId: null,
+    scenePictureWorldViewport: null
   }
   return {
     renderer: renderer as SkiaRenderer,
@@ -180,5 +181,48 @@ describe('recordScenePicture viewport culling', () => {
     expect(rendered).not.toContain(farOffscreen.id)
     expect(renderer._nodeCount).toBe(3)
     expect(renderer._culledCount).toBe(1)
+  })
+})
+
+describe('canUseScenePicture viewport coverage guard', () => {
+  function coveredRenderer(
+    viewport: { x: number; y: number; w: number; h: number }
+  ) {
+    const { renderer } = createRenderer()
+    renderer.scenePicture = {} as SkiaRenderer['scenePicture']
+    renderer.scenePictureWorldViewport = { ...viewport }
+    renderer.scenePictureVersion = 1
+    renderer.scenePicturePositionPreviewVersion = graph.positionPreviewVersion
+    renderer.pageId = 'page'
+    renderer.scenePicturePageId = 'page'
+    return renderer
+  }
+
+  const graph = new SceneGraph()
+
+  test('reuses the picture while the viewport stays inside the recorded box', () => {
+    const renderer = coveredRenderer({ x: -800, y: -600, w: 2400, h: 1800 })
+    // Viewport 0..800 is well inside the -800..1600 recorded box.
+    expect(canUseScenePicture(renderer, graph, 1, false)).toBe(true)
+  })
+
+  test('re-records after panning beyond the recorded box', () => {
+    const renderer = coveredRenderer({ x: -800, y: -600, w: 2400, h: 1800 })
+    renderer.panX = -1e6
+    // Live viewport starts at x=1e6, far outside the recorded box.
+    expect(canUseScenePicture(renderer, graph, 1, false)).toBe(false)
+  })
+
+  test('re-records after zooming out beyond the recorded box', () => {
+    const renderer = coveredRenderer({ x: -800, y: -600, w: 2400, h: 1800 })
+    renderer.zoom = 0.1
+    // Live viewport is 8000x6000 world units, larger than the 2400x1800 box.
+    expect(canUseScenePicture(renderer, graph, 1, false)).toBe(false)
+  })
+
+  test('requires a recorded box (no coverage without one)', () => {
+    const renderer = coveredRenderer({ x: -800, y: -600, w: 2400, h: 1800 })
+    renderer.scenePictureWorldViewport = null
+    expect(canUseScenePicture(renderer, graph, 1, false)).toBe(false)
   })
 })
