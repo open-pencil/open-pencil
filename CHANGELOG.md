@@ -4,6 +4,8 @@
 
 ### Breaking changes
 
+- `sceneNodeToDesignDocument` from `@open-pencil/dom-css` takes an options object, `{ includeSourceIds, tokens }`, instead of a boolean third argument; `tokens: false` writes literal values instead of variable references.
+- `randomHex`, `randomInt`, and `randomIndex` moved from `@open-pencil/core/random` and the `@open-pencil/core` barrel to `@open-pencil/scene-graph/random`.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied. Rendering, `.fig` round-trips, and the stroke panel still handle solid strokes only.
 - The `design_to_tokens` AI and MCP tool writes a stylesheet of CSS custom properties built from the document's variables. Its `tailwind` format is a Tailwind v4 `@theme` instead of a JavaScript object, and the `json` format is removed. Names come from the variable's code syntax or from Tailwind namespaces (`--color-gray-50`) instead of the collection name, aliases stay `var()` references instead of resolving through the first mode, and non-default modes go under their condition (`[data-theme="dark"]` by default) instead of a class named after the mode. The result lists the tokens it left out under `issues`.
@@ -22,6 +24,8 @@
 
 ### Added
 
+- Pass an ID generator to `new SceneGraph()` from `@open-pencil/scene-graph` to choose the IDs of the nodes, variables, collections, and modes the graph creates, including modes added later with `createMode`; generated IDs skip any node, variable, collection, or mode ID already in the graph, and an exhausted generator throws instead of hanging. `createComponentPropertyId` gives new component properties the `prop:` IDs the editor, plugin API, and design JSX share.
+- Diagnose failures from Settings → Diagnostics. Uncaught errors, unhandled rejections, component errors, failed AI chats, and AI tool calls that broke inside OpenPencil are recorded with their message and stack, and other failed tool calls as warnings. Messages and stacks are scrubbed of URL queries and credentials, API keys and tokens, email addresses, and home folder names, and provider errors keep no message. Each event has a specific label, such as *Tool: render · 162 ms* or *Error: TypeError*, expands to its details, and can be filtered by level and category and paged; copied diagnostics include the app version and browser.
 - Import `resolvePasteTarget` from `@open-pencil/core/editor` to place ordinary pasted or dropped content in an embedding app in the same container the editor would choose. It takes the editor `createEditor` returns. Replacement paste is not covered: it inserts into the selected target's parent.
 - Import `flattenNodesToVectorProps`, `outlineStrokeNodesToVectorProps`, and the `VectorFlattenProps` type from `@open-pencil/core/canvas` to compute Flatten and Outline stroke geometry in an embedding app without going through the editor's own write path.
 - Check designs from the new Lint tab in the right panel: issues on the page, in the selection, or across the document are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and one-click fixes bind colors to the variable they match and round subpixel geometry for a row or a whole group, and snap radius, spacing, and small text to the scale, convert groups to frames, and delete hidden layers one row at a time. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
@@ -53,6 +57,7 @@
 
 ### Changed
 
+- HTML and Tailwind JSX export write variable-bound colors, spacing, radii, borders, sizes, type sizes, and opacity as the tokens they come from, such as `var(--color-primary)` or `bg-primary`, and put layers set to another mode in it with an attribute such as `data-theme="dark"`. Values CSS would not resolve as the canvas draws them stay literal, and standalone HTML includes the stylesheet for the tokens it uses.
 - Give popovers, menus, dropdowns, and pickers one look and motion: the same rounded panel with a thin outline that reads in light and dark themes, a short fade and grow from the side they open on, and an immediate close; with reduced motion they appear at once.
 - Add and remove items the same way across the properties panel: a section's + adds an item and a row's − removes it, now including grid columns and rows and variant properties. The + of a component set adds Property 1 ready to rename instead of showing a form, and a variant is removed with Delete like any layer.
 - Pick variables, shared styles, and swap components from one searchable list that groups preferred components first and works with the keyboard.
@@ -77,6 +82,7 @@
 - Report a failed MCP `save_file` or `new_document` save as an error instead of success, and ask for a path rather than opening a Save dialog when the document has never been saved.
 - Undo layers that MCP clients and the CLI create, delete, or rearrange in the running app, including `render` and `eval` changes, with Edit → Undo. Previously only their property edits were undoable.
 - Save a `.fig` file that was opened and not edited yet. In the app the save never finished, and MCP `save_file` timed out without writing the file.
+- Show the text, visibility, or swapped component an instance sets when the component gains that layer after the instance was placed, instead of the component's default ([#849](https://github.com/open-pencil/open-pencil/issues/849)).
 - Show `.fig` thumbnails in the desktop app's recent files, which the app was not permitted to read.
 - Give paints set through the plugin API, `eval`, and AI and MCP scripts an opacity of 1 and make them visible when the script leaves those out, as Figma does. Such paints were stored without them, which the Design panel could not show.
 - Keep a layer's other plugin data when you pick or clear a colour in OkHCL. Picking one rewrote every plugin-data entry on the layer, including other plugins' and its export settings, as OkHCL data.

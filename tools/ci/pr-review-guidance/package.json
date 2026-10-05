@@ -4,5 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "bun test tests"
+  },
+  "dependencies": {
+    "valibot": "^1.5.0"
   }
 }

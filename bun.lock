@@ -512,6 +512,9 @@
     },
     "tools/ci/pr-review-guidance": {
       "name": "@open-pencil/pr-review-guidance-tools",
+      "dependencies": {
+        "valibot": "^1.5.0",
+      },
     },
     "tools/dev/dev-server": {
       "name": "@open-pencil/dev-server-tools",
