@@ -2,7 +2,7 @@
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { formatShortcut, useI18n, useViewportKind } from '@open-pencil/vue'
+import { formatShortcut, provideEditor, useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
@@ -13,7 +13,6 @@ import { activeTab } from '@/app/tabs'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
 import CollabPanel from '@/components/collab-panel/CollabPanel.vue'
-import EditorTabScope from '@/components/editor/EditorTabScope.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
@@ -25,6 +24,11 @@ import splitterTheme from '@/theme/splitter'
 
 const showChrome = appRuntimeConfig.showChrome
 const store = useEditorStore()
+// WorkspaceView keys this view by tab, so the tab's own store is fixed for its lifetime. Its
+// editor UI stays bound to that document rather than the app-level editor, which follows the
+// active tab and would move these subscriptions to the next document when this tab closes.
+const tab = activeTab.value
+if (tab) provideEditor(tab.store)
 const { editor } = useI18n()
 const { isMobile } = useViewportKind()
 const initialEditorLayout = loadEditorLayout()
@@ -32,98 +36,94 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 </script>
 
 <template>
-  <EditorTabScope v-if="activeTab" :key="activeTab.id" :store="activeTab.store">
-    <SplitterGroup
-      v-if="!isMobile && showChrome && store.state.showUI"
-      :key="activeTab?.id"
-      direction="horizontal"
-      class="flex-1 overflow-hidden"
-      @layout="saveEditorLayout"
+  <SplitterGroup
+    v-if="!isMobile && showChrome && store.state.showUI"
+    :key="activeTab?.id"
+    direction="horizontal"
+    class="flex-1 overflow-hidden"
+    @layout="saveEditorLayout"
+  >
+    <SplitterPanel
+      id="layers"
+      :default-size="initialEditorLayout[0]"
+      :min-size="10"
+      :max-size="30"
+      class="flex"
     >
-      <SplitterPanel
-        id="layers"
-        :default-size="initialEditorLayout[0]"
-        :min-size="10"
-        :max-size="30"
-        class="flex"
-      >
-        <LayersPanel />
-      </SplitterPanel>
-      <SplitterResizeHandle
-        data-test-id="left-splitter-handle"
-        :class="horizontalSplitterStyles.handle()"
-      >
-        <div :class="horizontalSplitterStyles.divider()" />
-      </SplitterResizeHandle>
-      <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
-        <div class="relative flex min-w-0 flex-1">
-          <CanvasSplitRoot />
-          <Toolbar />
-        </div>
-      </SplitterPanel>
-      <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
-        <div :class="horizontalSplitterStyles.divider()" />
-      </SplitterResizeHandle>
-      <SplitterPanel
-        id="properties"
-        :default-size="initialEditorLayout[2]"
-        :min-size="10"
-        :max-size="30"
-        class="flex flex-col"
-      >
-        <div
-          class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
-        >
-          <CollabPanel />
-        </div>
-        <PropertiesPanel />
-      </SplitterPanel>
-    </SplitterGroup>
-
-    <div
-      v-else-if="isMobile && showChrome && store.state.showUI"
-      :key="'mobile-' + activeTab?.id"
-      class="flex flex-1 overflow-hidden"
+      <LayersPanel />
+    </SplitterPanel>
+    <SplitterResizeHandle
+      data-test-id="left-splitter-handle"
+      :class="horizontalSplitterStyles.handle()"
     >
+      <div :class="horizontalSplitterStyles.divider()" />
+    </SplitterResizeHandle>
+    <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-        <MobileHud />
+        <CanvasSplitRoot />
         <Toolbar />
       </div>
-      <MobileDrawer />
-    </div>
-
-    <div
-      v-else-if="showChrome"
-      :key="'collapsed-' + activeTab?.id"
-      class="flex flex-1 overflow-hidden"
+    </SplitterPanel>
+    <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+      <div :class="horizontalSplitterStyles.divider()" />
+    </SplitterResizeHandle>
+    <SplitterPanel
+      id="properties"
+      :default-size="initialEditorLayout[2]"
+      :min-size="10"
+      :max-size="30"
+      class="flex flex-col"
     >
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-        <div
-          v-if="!isMobile"
-          class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
-        >
-          <BrandMark variant="app-icon" :appearance="resolvedAppTheme" class="size-6" />
-          <span data-test-id="editor-document-name" class="text-xs text-surface">{{
-            store.state.documentName
-          }}</span>
-          <IconButton
-            :label="editor.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })"
-            data-test-id="editor-show-ui"
-            class="ml-1"
-            @click="store.state.showUI = true"
-          >
-            <icon-lucide-sidebar class="size-3.5" />
-          </IconButton>
-        </div>
+      <div class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5">
+        <CollabPanel />
       </div>
-    </div>
+      <PropertiesPanel />
+    </SplitterPanel>
+  </SplitterGroup>
 
-    <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
+  <div
+    v-else-if="isMobile && showChrome && store.state.showUI"
+    :key="'mobile-' + activeTab?.id"
+    class="flex flex-1 overflow-hidden"
+  >
+    <div class="relative flex min-w-0 flex-1">
+      <EditorCanvas />
+      <MobileHud />
+      <Toolbar />
+    </div>
+    <MobileDrawer />
+  </div>
+
+  <div
+    v-else-if="showChrome"
+    :key="'collapsed-' + activeTab?.id"
+    class="flex flex-1 overflow-hidden"
+  >
+    <div class="relative flex min-w-0 flex-1">
+      <EditorCanvas />
+      <div
+        v-if="!isMobile"
+        class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
+      >
+        <BrandMark variant="app-icon" :appearance="resolvedAppTheme" class="size-6" />
+        <span data-test-id="editor-document-name" class="text-xs text-surface">{{
+          store.state.documentName
+        }}</span>
+        <IconButton
+          :label="editor.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })"
+          data-test-id="editor-show-ui"
+          class="ml-1"
+          @click="store.state.showUI = true"
+        >
+          <icon-lucide-sidebar class="size-3.5" />
+        </IconButton>
       </div>
     </div>
-  </EditorTabScope>
+  </div>
+
+  <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
+    <div class="relative flex min-w-0 flex-1">
+      <EditorCanvas />
+    </div>
+  </div>
 </template>
