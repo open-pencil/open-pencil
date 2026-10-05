@@ -7,7 +7,7 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import { cssColor } from '../export/css'
-import { tokenSlug, variableCSSNames, variableNamespace } from './names'
+import { collectionVariables, tokenSlug, variableCSSNames, variableNamespace } from './names'
 import { createTokenValidator, parseWithBrowser, type TokenValidator } from './validate'
 import { tokenNumberToCSS, variableUnit } from './values'
 
@@ -66,12 +66,21 @@ function modeSlug(collection: VariableCollection, mode: VariableCollectionMode):
   return plainSlug(mode)
 }
 
+/** The attribute that puts an element in a mode with no condition of its own: `data-theme`. */
+export function modeAttribute(
+  collection: VariableCollection,
+  mode: VariableCollectionMode
+): { name: string; value: string } {
+  return { name: `data-${tokenSlug(collection.name) || 'mode'}`, value: modeSlug(collection, mode) }
+}
+
 /** The scope a mode applies in when it names none: `[data-theme="dark"]` for Theme / Dark. */
 export function defaultModeCondition(
   collection: VariableCollection,
   mode: VariableCollectionMode
 ): string {
-  return `[data-${tokenSlug(collection.name) || 'mode'}="${modeSlug(collection, mode)}"]`
+  const { name, value } = modeAttribute(collection, mode)
+  return `[${name}="${value}"]`
 }
 
 function quoteString(value: string): string {
@@ -146,12 +155,7 @@ export function buildTokenStylesheet(
 ): TokenStylesheet {
   const issues: TokenStylesheetIssue[] = []
   const collections = [...source.variableCollections.values()]
-  const all = collections.flatMap((collection) =>
-    collection.variableIds.flatMap((id) => {
-      const variable = source.variables.get(id)
-      return variable ? [variable] : []
-    })
-  )
+  const all = collectionVariables(source)
   const names = variableCSSNames(all)
   const variables = all.filter(include)
   const defaultModeOf = (variable: Variable) =>

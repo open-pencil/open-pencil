@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#fig-tests/helpers/assert'
+import { componentPropDefsOf, componentPropRefsOf } from '#fig-tests/helpers/component-props'
+import { symbolDataOf } from '#fig/instance-overrides/types'
 import {
   buildComponentPropIndex,
   fractionalPosition,
@@ -58,31 +61,32 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       overrideKey: '2:20',
       text: 'Default'
     })
-    const instance = graph.createInstance(component.id, page.id)
-    expect(instance).toBeDefined()
-    const targetText = graph.getChildren(instance?.id ?? '')[0]
+    const created = graph.createInstance(component.id, page.id)
+    expect(created).toBeDefined()
+    const instance = expectDefined(created, 'instance')
+    const targetText = graph.getChildren(instance.id)[0]
     expect(targetText).toBeDefined()
     const originalOverride = {
       guidPath: { guids: [{ sessionID: 2, localID: 20 }] },
       textData: { characters: 'Stale' },
       opacity: 0.5
     }
-    graph.updateNode(instance?.id ?? '', {
+    graph.updateNode(instance.id, {
       instanceOverrides: {
         self: new Map(),
-        descendants: new Map([[targetText?.id ?? '', new Map([['text', 'Edited']])]])
+        descendants: new Map([[targetText.id, new Map([['text', 'Edited']])]])
       },
       source: {
-        ...instance?.source,
+        ...instance.source,
         fig: {
-          ...instance?.source.fig,
+          ...instance.source.fig,
           symbolOverrides: [originalOverride]
         }
       }
     })
 
     const [change] = sceneNodeToKiwi(
-      graph.getNode(instance?.id ?? '') ?? instance,
+      graph.getNode(instance.id) ?? instance,
       { sessionID: 1, localID: 1 },
       0,
       { value: 2 },
@@ -91,7 +95,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     )
 
     expect(sourceText.overrideKey).toBe('2:20')
-    expect(change.symbolData?.symbolOverrides).toEqual([
+    expect(symbolDataOf(change)?.symbolOverrides).toEqual([
       {
         ...originalOverride,
         textData: { characters: 'Edited' }
@@ -161,10 +165,10 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     )
 
     expect(change.componentPropDefs).toHaveLength(1)
-    expect(change.componentPropDefs?.[0].id).toEqual(
+    expect(componentPropDefsOf(change)?.[0].id).toEqual(
       expect.objectContaining({ sessionID: expect.any(Number), localID: expect.any(Number) })
     )
-    expect(change.componentPropDefs?.[0].name).toBe('Style')
+    expect(componentPropDefsOf(change)?.[0].name).toBe('Style')
   })
 
   test('reuses the same synthetic GUID for a def and the ref that points at it', () => {
@@ -191,13 +195,18 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       [],
       { nodeIdToGuid, propertyIdToGuid }
     )
-    const slotChange = sceneNodeToKiwi(slot, componentChange.guid, 0, localIdCounter, graph, [], {
-      nodeIdToGuid,
-      propertyIdToGuid
-    })[0]
+    const slotChange = sceneNodeToKiwi(
+      slot,
+      expectDefined(componentChange.guid, 'component guid'),
+      0,
+      localIdCounter,
+      graph,
+      [],
+      { nodeIdToGuid, propertyIdToGuid }
+    )[0]
 
-    expect(componentChange.componentPropDefs?.[0].id).toEqual(
-      slotChange.componentPropRefs?.[0].defID
+    expect(componentPropDefsOf(componentChange)?.[0].id).toEqual(
+      componentPropRefsOf(slotChange)?.[0].defID
     )
   })
 
@@ -236,8 +245,10 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       { nodeIdToGuid, propertyIdToGuid }
     )
 
-    expect(buttonChange.componentPropDefs?.[0].initialValue).toEqual({ guidValue: iconChange.guid })
-    expect(buttonChange.componentPropDefs?.[0].preferredValues).toBeUndefined()
+    expect(componentPropDefsOf(buttonChange)?.[0].initialValue).toEqual({
+      guidValue: iconChange.guid
+    })
+    expect(componentPropDefsOf(buttonChange)?.[0].preferredValues).toBeUndefined()
   })
 
   test('exports INSTANCE_SWAP preferred values as component keys', () => {
@@ -268,7 +279,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       []
     )
 
-    expect(buttonChange.componentPropDefs?.[0].preferredValues?.instanceSwapValues).toEqual([
+    expect(componentPropDefsOf(buttonChange)?.[0].preferredValues?.instanceSwapValues).toEqual([
       { type: 'COMPONENT', key: 'icon-tune-key' },
       { type: 'COMPONENT', key: 'external-library-key' }
     ])
@@ -292,7 +303,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       []
     )
 
-    expect(change.componentPropDefs?.[0].initialValue).toEqual({
+    expect(componentPropDefsOf(change)?.[0].initialValue).toEqual({
       guidValue: { sessionID: 70, localID: 1 }
     })
   })
@@ -318,7 +329,9 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       []
     )
 
-    expect(changes[0].componentPropDefs?.[0].id).toEqual(changes[1].componentPropRefs?.[0].defID)
+    expect(componentPropDefsOf(changes[0])?.[0].id).toEqual(
+      componentPropRefsOf(changes[1])?.[0].defID
+    )
   })
 
   test('keeps colorVar bindings on imported nodes with stale raw paints', () => {

@@ -8,6 +8,8 @@ import { renderNode } from '#core/canvas/scene'
 
 import { expectDefined } from '#tests/helpers/assert'
 
+import { asCanvas, asRenderer } from './helpers'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -58,20 +60,11 @@ function createRenderer() {
     renderComponentSet: mock((_canvas, node) => {
       rendered.push(node.id)
     }),
-    renderNode(canvas, graph, nodeId, overlays, parentAbsX, parentAbsY, hasTransformedAncestor) {
-      renderNode(
-        this as SkiaRenderer,
-        canvas,
-        graph,
-        nodeId,
-        overlays,
-        parentAbsX,
-        parentAbsY,
-        hasTransformedAncestor
-      )
+    renderNode(...args: Parameters<SkiaRenderer['renderNode']>) {
+      renderNode(asRenderer(this), ...args)
     }
   }
-  return { renderer: renderer as SkiaRenderer, rendered }
+  return { renderer: asRenderer(renderer), rendered }
 }
 
 describe('canvas culling', () => {
@@ -92,7 +85,7 @@ describe('canvas culling', () => {
     })
     const { renderer, rendered } = createRenderer()
 
-    renderNode(renderer, createCanvas(), graph, frame.id, {})
+    renderNode(renderer, asCanvas(createCanvas()), graph, frame.id, {})
 
     expect(rendered).toContain(frame.id)
     expect(rendered).toContain(text.id)
@@ -117,7 +110,7 @@ describe('canvas culling', () => {
     const { renderer, rendered } = createRenderer()
     renderer.worldViewport = { x: 700, y: 1300, w: 300, h: 300 }
 
-    renderNode(renderer, createCanvas(), graph, instance.id, {})
+    renderNode(renderer, asCanvas(createCanvas()), graph, instance.id, {})
 
     expect(rendered).toContain(connector.id)
     expect(renderer._culledCount).toBe(0)
@@ -139,7 +132,7 @@ describe('canvas culling', () => {
     })
     const { renderer, rendered } = createRenderer()
     renderer.worldViewport = { x: 700, y: 1300, w: 300, h: 300 }
-    renderNode(renderer, createCanvas(), graph, instance.id, {
+    renderNode(renderer, asCanvas(createCanvas()), graph, instance.id, {
       rotationPreview: { nodeId: instance.id, angle: 90 }
     })
     expect(rendered).toContain(connector.id)
@@ -157,7 +150,7 @@ describe('canvas culling', () => {
     const { renderer } = createRenderer()
     renderer.worldViewport = { x: -100, y: -100, w: 300, h: 300 }
     const canvas = createCanvas()
-    renderNode(renderer, canvas, graph, vector.id, {})
+    renderNode(renderer, asCanvas(canvas), graph, vector.id, {})
 
     const matrix = expectDefined(canvas.concat.mock.calls[0]?.[0], 'drawing transform')
     const start = Matrix.mapPoint(matrix, { x: 0, y: 0 })

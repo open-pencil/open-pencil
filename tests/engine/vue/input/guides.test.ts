@@ -7,6 +7,8 @@ import { createEditor } from '@open-pencil/core/editor'
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
 import type { DragState } from '#vue/shared/input/types'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function setup() {
   const editor = createEditor()
   Object.assign(editor.state, { showRulers: true })
@@ -56,7 +58,7 @@ describe('guide canvas input', () => {
   test('Option-drag duplicates an existing guide and preserves the source', () => {
     const { editor, input, getDrag } = setup()
     const pageId = editor.state.currentPageId
-    const sourceId = editor.addGuide(pageId, 'x', 40)
+    const sourceId = expectDefined(editor.addGuide(pageId, 'x', 40), 'source guide id')
     editor.undo.clear()
 
     expect(input.tryStartExisting(40, 100, true)).toBe(true)
@@ -75,7 +77,7 @@ describe('guide canvas input', () => {
   test('discarding an Option-drag on the ruler preserves the source guide', () => {
     const { editor, input, getDrag } = setup()
     const pageId = editor.state.currentPageId
-    const sourceId = editor.addGuide(pageId, 'x', 40)
+    const sourceId = expectDefined(editor.addGuide(pageId, 'x', 40), 'source guide id')
     input.tryStartExisting(40, 100, true)
     const drag = getDrag()
     if (drag?.type !== 'guide') throw new Error('Expected guide drag')

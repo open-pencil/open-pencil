@@ -8,17 +8,7 @@ import {
   parseSchema,
   validateSchema
 } from '../src/schema-runtime'
-
-interface RuntimeMessage {
-  [name: string]:
-    | boolean
-    | number
-    | string
-    | bigint
-    | Uint8Array
-    | RuntimeMessage
-    | RuntimeMessage[]
-}
+import type { RuntimeMessage } from '../src/schema-runtime/interpreter'
 
 test('rejects malformed byte fields without corrupting buffer length', () => {
   const buffer = new ByteBuffer()
@@ -58,16 +48,13 @@ describe('Kiwi schema runtime', () => {
 
   test('compiles schemas and round-trips messages', () => {
     const schema = parseSchema(schemaText)
-    interface ItemCodec {
-      encodeItem(value: unknown): Uint8Array
-      decodeItem(value: Uint8Array): unknown
-    }
+    const codec = compileSchema(schema)
+    const encodeItem = codec.encodeItem as (value: RuntimeMessage) => Uint8Array
+    const decodeItem = codec.decodeItem as (value: Uint8Array) => RuntimeMessage
 
-    const codec = compileSchema(schema) as ItemCodec
-
-    const encoded = codec.encodeItem({ id: 42, name: 'OpenPencil', kind: 'CARD', tags: ['kiwi'] })
+    const encoded = encodeItem({ id: 42, name: 'OpenPencil', kind: 'CARD', tags: ['kiwi'] })
     expect(encoded.length).toBeGreaterThan(0)
-    expect(codec.decodeItem(encoded)).toEqual({
+    expect(decodeItem(encoded)).toEqual({
       id: 42,
       name: 'OpenPencil',
       kind: 'CARD',
@@ -86,12 +73,11 @@ describe('Kiwi schema runtime', () => {
     })
 
     try {
-      const codec = compileSchema(parseSchema(schemaText)) as {
-        encodeItem(value: unknown): Uint8Array
-        decodeItem(value: Uint8Array): unknown
-      }
-      const encoded = codec.encodeItem({ id: 7, name: 'CSP-safe', kind: 'BADGE', tags: [] })
-      expect(codec.decodeItem(encoded)).toEqual({
+      const codec = compileSchema(parseSchema(schemaText))
+      const encodeItem = codec.encodeItem as (value: RuntimeMessage) => Uint8Array
+      const decodeItem = codec.decodeItem as (value: Uint8Array) => RuntimeMessage
+      const encoded = encodeItem({ id: 7, name: 'CSP-safe', kind: 'BADGE', tags: [] })
+      expect(decodeItem(encoded)).toEqual({
         id: 7,
         name: 'CSP-safe',
         kind: 'BADGE',

@@ -1,4 +1,5 @@
 import { embedClipboardImages, encodeFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { randomInt } from '@open-pencil/scene-graph/random'
 export { parseFigmaClipboard, figmaNodesBounds } from '@open-pencil/fig/clipboard'
 import { placeSlotContent } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
@@ -20,7 +21,6 @@ import {
   buildFontDigestMap,
   fractionalPosition
 } from './kiwi/fig/node-change/serialize'
-import { randomInt } from './random'
 import { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 
 export async function prefetchFigmaSchema(): Promise<void> {

@@ -27,6 +27,8 @@ async function evalCode(
 
 const RecordJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 
+const SolidFills = v.array(v.object({ color: v.object({ r: v.number() }) }))
+
 function parseRecord(stdout: string): Record<string, unknown> {
   return v.parse(RecordJSON, stdout)
 }
@@ -59,8 +61,9 @@ heavy('CLI tool operations via eval', () => {
     `)
     expect(exitCode).toBe(0)
     const result = parseRecord(stdout)
-    expect(result.fills.length).toBe(1)
-    expect(result.fills[0].color.r).toBe(1)
+    const fills = v.parse(SolidFills, result.fills)
+    expect(fills.length).toBe(1)
+    expect(fills[0].color.r).toBe(1)
   })
 
   test('set layout on a frame', async () => {

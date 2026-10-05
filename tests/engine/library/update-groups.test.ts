@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createEditorStore } from '@/app/editor/session'
 import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
 
 describe('library update page scopes', () => {
@@ -12,7 +12,7 @@ describe('library update page scopes', () => {
     const secondPage = graph.addPage('Second')
     const first = graph.createNode('INSTANCE', firstPage.id)
     const second = graph.createNode('INSTANCE', secondPage.id)
-    const editor = createEditor({ graph })
+    const editor = createEditorStore(graph)
     editor.state.currentPageId = firstPage.id
     const groups = [
       {

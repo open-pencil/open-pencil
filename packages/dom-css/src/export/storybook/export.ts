@@ -72,7 +72,9 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     props: group.props,
     variants: group.variants.map((variant) => ({
       values: variant.values,
-      html: serializeHTML(sceneNodeToDesignDocument(context.graph, variant.node.id, false))
+      html: serializeHTML(
+        sceneNodeToDesignDocument(context.graph, variant.node.id, { includeSourceIds: false })
+      )
     })),
     metaDesign: designLink(context, group.linkNode),
     images: context.images,

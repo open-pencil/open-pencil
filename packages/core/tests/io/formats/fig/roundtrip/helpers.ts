@@ -156,6 +156,9 @@ function verifyComponentPropertyDefinitions(ctx: VerifierContext): boolean {
   })
 }
 
+/** `SceneNode.componentPropertyAssignments`: property id to assigned value. */
+type ComponentPropertyAssignments = Record<string, string>
+
 function isComponentPropertyAssignments(value: unknown): value is ComponentPropertyAssignments {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   return Object.values(value).every((entry) => typeof entry === 'string')

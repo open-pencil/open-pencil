@@ -43,7 +43,7 @@ async function expectCanvas(canvas: CanvasHelper, name: string): Promise<void> {
   await canvas.page.evaluate(
     () =>
       new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve))
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       })
   )
   canvas.assertNoErrors()

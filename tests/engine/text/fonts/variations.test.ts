@@ -46,7 +46,7 @@ function nameTable(names: string[]): Uint8Array {
   )
   const header = words([0, names.length, 6 + names.length * 12], 2)
   let offset = 0
-  const records = names.map((name, index) => {
+  const records = names.map((_name, index) => {
     const record = words([3, 1, 0x409, 256 + index, strings[index].length, offset], 2)
     offset += strings[index].length
     return record

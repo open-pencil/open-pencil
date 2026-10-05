@@ -91,6 +91,14 @@ During implementation, run the affected unit files or one representative browser
 
 Visual changes require inspection and committed coverage. Update only a justified affected snapshot, then rerun that test without update mode. Never relax tolerances or regenerate unrelated baselines to turn a failed run green. Browser GPU parity and real glyph coverage complement CPU rendering tests; they are not redundant merely because both compare pixels.
 
+### When a run disagrees with the code
+
+Two environment faults look exactly like a code regression, and both have cost real debugging time.
+
+Browser suites resolve `@open-pencil/*` through each package's built `dist`, which Vite then pre-bundles. Rebuilding a package does not invalidate that cache, so a Playwright run can execute code from before your change — including throwing on a field you just added. If a browser run contradicts the source you are reading, delete `node_modules/.vite` and run again before believing it.
+
+Heavier `.fig` suites are sensitive to machine load. A full run alongside other work has reported failures that vanish on a quiet re-run, with the same suite taking three times as long. Re-run a failing heavy test alone before concluding anything, and compare against the same test on `master` under the same load rather than against a remembered baseline. Raising its timeout is still never the fix.
+
 ## Server ownership and worktrees
 
 The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:real-llm` and `test:figma` scripts select only the app server; `test:storybook` selects Storybook on port `6017`. Direct Playwright commands start both servers by default. Set `OPENPENCIL_TEST_SERVER=app`, `storybook` or `all`; `--project` selects tests, not servers.

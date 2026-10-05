@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI, type FigmaNodeProxy, type FigmaSlotNode } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+/** Figma's typings only expose the slot members on `SlotNode`, so narrow before reading them. */
+const isSlot = (node: FigmaNodeProxy): node is FigmaSlotNode => node.type === 'SLOT'
+
+/** `createInstance()` is typed as a bare proxy; the instance surface lives on `InstanceNode`. */
+const isInstance = (node: FigmaNodeProxy): node is FigmaNodeProxy & InstanceNode =>
+  node.type === 'INSTANCE'
 
 // Defaults, names, read-back values, and limit reports were recorded by running the same
 // script against a component in live Figma through figma-use.
@@ -28,7 +35,10 @@ describe('slots', () => {
       type: 'SLOT',
       preferredValues: []
     })
-    expect(slot.componentPropertyReferences).toEqual({ slotContentId: key })
+    // Figma's typings list only `visible`, `characters` and `mainComponent`; a slot frame also
+    // reports the property it is bound to under `slotContentId`.
+    const references: Record<string, string | undefined> | null = slot.componentPropertyReferences
+    expect(references).toEqual({ slotContentId: key })
 
     expect(component.createSlot().name).toBe('Slot 2')
   })
@@ -48,7 +58,7 @@ describe('slots', () => {
     })
 
     const instance = component.createInstance()
-    const instanceSlot = instance.children.find((child) => child.type === 'SLOT')
+    const instanceSlot = instance.children.find(isSlot)
     if (!instanceSlot) throw new Error('Missing instance slot')
     expect(instanceSlot.children.map((child) => child.name)).toEqual(['Default'])
     expect(instanceSlot.limitViolations).toEqual(['BELOW_MIN'])
@@ -57,7 +67,7 @@ describe('slots', () => {
 
     instanceSlot.appendChild(Object.assign(api.createFrame(), { name: 'Inner' }))
     instanceSlot.resetSlot()
-    const reset = instance.children.find((child) => child.type === 'SLOT')
+    const reset = instance.children.find(isSlot)
     expect(reset?.children.map((child) => child.name)).toEqual(['Default'])
   })
 
@@ -68,8 +78,9 @@ describe('slots', () => {
     component.appendChild(Object.assign(api.createFrame(), { name: 'Locked' }))
     component.createSlot().appendChild(Object.assign(api.createRectangle(), { name: 'Default' }))
     const instance = component.createInstance()
+    if (!isInstance(instance)) throw new Error('Missing instance')
     const locked = instance.children.find((child) => child.name === 'Locked')
-    const slot = instance.children.find((child) => child.type === 'SLOT')
+    const slot = instance.children.find(isSlot)
     if (!locked || !slot) throw new Error('Missing instance layers')
 
     expect(() => locked.remove()).toThrow('in remove: Removing this node is not allowed')
@@ -139,8 +150,7 @@ describe('swapping an instance', () => {
       return component
     }
     const instance = outer('Outer A', 'Card').createInstance()
-    const nestedSlot = () =>
-      instance.children[0]?.children.find((child) => child.type === 'SLOT')
+    const nestedSlot = () => instance.children[0]?.children.find(isSlot)
     nestedSlot()?.appendChild(Object.assign(api.createText(), { name: 'Filled' }))
     return { instance, nestedSlot, same: outer('Outer B', 'Card'), other: outer('Outer C', innerName) }
   }

@@ -18,23 +18,31 @@ import {
 } from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function setupGlobals() {
-  globalThis.window = {
-    innerWidth: 1024,
-    innerHeight: 768,
-    requestAnimationFrame: (callback: FrameRequestCallback) => {
-      callback(0)
-      return 0
+  Reflect.defineProperty(globalThis, 'window', {
+    value: {
+      innerWidth: 1024,
+      innerHeight: 768,
+      requestAnimationFrame: (callback: FrameRequestCallback) => {
+        callback(0)
+        return 0
+      },
+      cancelAnimationFrame: vi.fn(),
+      openPencil: {},
+      location: { href: 'http://localhost/' },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn()
     },
-    cancelAnimationFrame: vi.fn(),
-    openPencil: {},
-    location: { href: 'http://localhost/' } as Location,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn()
-  } as Window & typeof globalThis
-  globalThis.document = {
-    fonts: { add: vi.fn(), ready: Promise.resolve() }
-  } as Document
+    configurable: true,
+    writable: true
+  })
+  Reflect.defineProperty(globalThis, 'document', {
+    value: { fonts: { add: vi.fn(), ready: Promise.resolve() } },
+    configurable: true,
+    writable: true
+  })
   globalThis.requestAnimationFrame = window.requestAnimationFrame
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
 }
@@ -173,7 +181,7 @@ describe('openFileInNewTab deduplication', () => {
     const document = createDocumentInCurrentTab()
 
     expect(tabCount()).toBe(count)
-    expect(document.id).toBe(home?.id)
+    expect(document.id).toBe(expectDefined(home, 'home tab').id)
     expect(document.kind).toBe('document')
   })
 

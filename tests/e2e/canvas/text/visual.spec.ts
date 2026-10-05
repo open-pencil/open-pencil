@@ -40,6 +40,7 @@ test('complex text fills preserve native paragraph layout', async () => {
       fills: [
         {
           type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 1 },
           opacity: 1,
           visible: true,
           gradientStops: [

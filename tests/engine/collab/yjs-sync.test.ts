@@ -10,11 +10,9 @@ import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
-import { createYjsGraphSync, registerYjsObservers } from '@/app/collab/yjs-sync'
-import { createEditorStore } from '@/app/editor/session'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-import { connectYDocs } from '#tests/helpers/yjs'
+import { withSyncedStores } from '#tests/helpers/collab/synced-stores'
 
 // Test copy of the private apply path.
 function applyYnodeToGraph(peer: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
@@ -45,107 +43,6 @@ function seedHostIntoYjs(host: SceneGraph): Y.Map<Y.Map<unknown>> {
 
 function firstPage(graph: SceneGraph): SceneNode {
   return expectDefined(graph.getPages()[0], 'first page')
-}
-
-type SyncedStores = ReturnType<typeof createSyncedStores>
-
-type SyncedStoreOptions = {
-  hostDoc?: Y.Doc
-  peerDoc?: Y.Doc
-  connectImmediately?: boolean
-}
-
-function createSyncedStores(options: SyncedStoreOptions = {}) {
-  const hostStore = createEditorStore(new SceneGraph())
-  const peerStore = createEditorStore(new SceneGraph())
-  const hostDoc = options.hostDoc ?? new Y.Doc()
-  const peerDoc = options.peerDoc ?? new Y.Doc()
-  const hostNodes = hostDoc.getMap<Y.Map<unknown>>('nodes')
-  const peerNodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
-  const hostImages = hostDoc.getMap<Uint8Array>('images')
-  const peerImages = peerDoc.getMap<Uint8Array>('images')
-  let hostSuppressYjsEvents = false
-  let peerSuppressYjsEvents = false
-  let hostSuppressGraphSync = false
-  let peerSuppressGraphSync = false
-
-  const hostSync = createYjsGraphSync({
-    getStore: () => hostStore,
-    getYdoc: () => hostDoc,
-    getYnodes: () => hostNodes,
-    getYimages: () => hostImages,
-    setSuppressYjsEvents: (value) => {
-      hostSuppressYjsEvents = value
-    }
-  })
-  const peerSync = createYjsGraphSync({
-    getStore: () => peerStore,
-    getYdoc: () => peerDoc,
-    getYnodes: () => peerNodes,
-    getYimages: () => peerImages,
-    setSuppressYjsEvents: (value) => {
-      peerSuppressYjsEvents = value
-    }
-  })
-
-  registerYjsObservers({
-    store: hostStore,
-    ynodes: hostNodes,
-    yimages: hostImages,
-    getSuppressYjsEvents: () => hostSuppressYjsEvents,
-    setSuppressGraphSync: (value) => {
-      hostSuppressGraphSync = value
-    },
-    applyYjsToGraph: hostSync.applyYjsToGraph
-  })
-  registerYjsObservers({
-    store: peerStore,
-    ynodes: peerNodes,
-    yimages: peerImages,
-    getSuppressYjsEvents: () => peerSuppressYjsEvents,
-    setSuppressGraphSync: (value) => {
-      peerSuppressGraphSync = value
-    },
-    applyYjsToGraph: peerSync.applyYjsToGraph
-  })
-
-  const disconnectYDocs =
-    options.connectImmediately === false ? undefined : connectYDocs(hostDoc, peerDoc)
-
-  return {
-    hostStore,
-    peerStore,
-    hostSync,
-    peerSync,
-    hostDoc,
-    peerDoc,
-    disconnectYDocs,
-    get hostSuppressGraphSync() {
-      return hostSuppressGraphSync
-    },
-    get peerSuppressGraphSync() {
-      return peerSuppressGraphSync
-    },
-    cleanup: () => {
-      hostStore.preparationController.dispose()
-      peerStore.preparationController.dispose()
-      disconnectYDocs?.()
-      hostDoc.destroy()
-      peerDoc.destroy()
-    }
-  }
-}
-
-async function withSyncedStores(
-  run: (stores: SyncedStores) => void | Promise<void>,
-  options: SyncedStoreOptions = {}
-) {
-  const stores = createSyncedStores(options)
-  try {
-    await run(stores)
-  } finally {
-    stores.cleanup()
-  }
 }
 
 describe('collab yjs-sync', () => {

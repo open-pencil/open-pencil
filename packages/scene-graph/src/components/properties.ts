@@ -2,6 +2,7 @@ import type { SceneGraph } from '../index'
 import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
 import { findInstanceAncestor } from '../instances'
 import { instanceMainComponent } from '../instances/main-component'
+import { randomHex } from '../random'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -248,4 +249,9 @@ export function removeComponentProperty(
   ]
   for (const node of nodes) removePropertyFromNode(graph, node, propertyId)
   return true
+}
+
+/** A new component property ID, in the `prop:` form the editor, plugin API, and design JSX share. */
+export function createComponentPropertyId(): string {
+  return `prop:${randomHex(8)}`
 }

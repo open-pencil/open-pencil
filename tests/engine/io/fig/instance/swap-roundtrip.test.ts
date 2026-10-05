@@ -40,9 +40,9 @@ describe('INSTANCE_SWAP component property round trip', () => {
     const exported = await exportFigFile(graph)
     const reloaded = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const reloadedButton = reloaded
-      .getAllNodes()
-      .find((n) => n.type === 'COMPONENT' && n.name === 'Button')
+    const reloadedButton = [...reloaded.getAllNodes()].find(
+      (n) => n.type === 'COMPONENT' && n.name === 'Button'
+    )
     expect(reloadedButton).toBeDefined()
 
     const def = reloadedButton?.componentPropertyDefinitions[0]

@@ -13,9 +13,7 @@ import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
 const INTER_ASSETS = resolve(import.meta.dir, '../../../../../assets')
 
 function countGlyphBlobs(bytes: Uint8Array) {
-  const parsed = parseFigBuffer(
-    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-  )
+  const parsed = parseFigBuffer(new Uint8Array(bytes).buffer)
   let glyphs = 0
   let glyphsWithBlob = 0
   const uniqueGlyphBlobs = new Set<number>()
@@ -55,7 +53,6 @@ describe('roundtrip: text glyph blobs', () => {
 
   test(
     'preserves imported Figma glyph blobs for fallback rendering',
-    { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {
       const fixtureBytes = new Uint8Array(readFileSync(resolve(FIXTURES, 'gold-preview.fig')))
       const input = countGlyphBlobs(fixtureBytes)
@@ -72,7 +69,8 @@ describe('roundtrip: text glyph blobs', () => {
       expect(input.glyphsWithBlob).toBeGreaterThan(0)
       expect(output.glyphsWithBlob).toBe(input.glyphsWithBlob)
       expect(output.uniqueGlyphBlobs).toBeLessThanOrEqual(input.uniqueGlyphBlobs)
-    }
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 
   test('deduplicates generated glyph blobs across repeated text', async () => {

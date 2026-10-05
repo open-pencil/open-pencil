@@ -1,11 +1,11 @@
 de:ai.chatSettings
 de:ai.completions
-de:ai.thinkingMinimal
 de:ai.modelAgentConnection
 de:ai.modelCapabilityVisionShort
 de:ai.modelName
 de:ai.modelRoleVision
 de:ai.responses
+de:ai.thinkingMinimal
 de:automation.mcpFailureDetails
 de:automation.port
 de:automation.status
@@ -15,6 +15,9 @@ de:code.sourceDesignJSX
 de:code.sourceHTMLCSS
 de:code.sourceTailwindJSX
 de:common.ok
+de:diagnostics.categoryMCP
+de:diagnostics.categoryRenderer
+de:diagnostics.durationMs
 de:menu.text
 de:panels.alpha
 de:panels.blendModeNormal
@@ -63,6 +66,9 @@ es:code.sourceDesignJSX
 es:code.sourceHTMLCSS
 es:code.sourceTailwindJSX
 es:common.tokens
+es:diagnostics.categoryMCP
+es:diagnostics.durationMs
+es:diagnostics.runtimeError
 es:panels.auto
 es:panels.blendModeColor
 es:panels.blendModeNormal
@@ -86,11 +92,11 @@ es:storage.providerBackblaze
 es:storage.providerR2
 es:variableTypes.color
 fr:ai.completions
-fr:ai.thinkingMinimal
 fr:ai.modelAgentConnection
 fr:ai.modelCapabilityVisionShort
 fr:ai.modelRoleVision
 fr:ai.responses
+fr:ai.thinkingMinimal
 fr:automation.port
 fr:automation.version
 fr:code.editorDesignLabel
@@ -98,6 +104,9 @@ fr:code.sourceDesignJSX
 fr:code.sourceHTMLCSS
 fr:code.sourceTailwindJSX
 fr:common.ok
+fr:diagnostics.categoryDocument
+fr:diagnostics.categoryMCP
+fr:diagnostics.durationMs
 fr:designCheck.scopeDocument
 fr:designCheck.scopePage
 fr:designCheck.suggestions
@@ -157,6 +166,10 @@ it:code.sourceDesignJSX
 it:code.sourceHTMLCSS
 it:code.sourceTailwindJSX
 it:common.ok
+it:diagnostics.categoryMCP
+it:diagnostics.categoryRenderer
+it:diagnostics.categoryRuntime
+it:diagnostics.durationMs
 it:menu.file
 it:panels.ai
 it:panels.auto
@@ -182,6 +195,9 @@ ja:code.editorDesignLabel
 ja:code.sourceDesignJSX
 ja:code.sourceHTMLCSS
 ja:code.sourceTailwindJSX
+ja:diagnostics.categoryAI
+ja:diagnostics.categoryMCP
+ja:diagnostics.durationMs
 ja:panels.ai
 ja:panels.colorFormatHsb
 ja:panels.colorFormatHsl
@@ -202,6 +218,10 @@ pl:code.sourceDesignJSX
 pl:code.sourceHTMLCSS
 pl:code.sourceTailwindJSX
 pl:common.ok
+pl:diagnostics.categoryAI
+pl:diagnostics.categoryMCP
+pl:diagnostics.categoryRenderer
+pl:diagnostics.durationMs
 pl:panels.ai
 pl:panels.auto
 pl:panels.chroma
@@ -225,6 +245,7 @@ ru:code.editorDesignLabel
 ru:code.sourceDesignJSX
 ru:code.sourceHTMLCSS
 ru:code.sourceTailwindJSX
+ru:diagnostics.categoryMCP
 ru:panels.ai
 ru:panels.colorFormatHsb
 ru:panels.colorFormatHsl
@@ -241,6 +262,8 @@ zh-cn:code.editorDesignLabel
 zh-cn:code.sourceDesignJSX
 zh-cn:code.sourceHTMLCSS
 zh-cn:code.sourceTailwindJSX
+zh-cn:diagnostics.categoryAI
+zh-cn:diagnostics.categoryMCP
 zh-cn:panels.ai
 zh-cn:panels.colorFormatHsb
 zh-cn:panels.colorFormatHsl

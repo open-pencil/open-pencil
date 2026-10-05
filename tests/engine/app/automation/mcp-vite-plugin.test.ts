@@ -12,6 +12,8 @@ import {
 } from '@/app/automation/bridge/vite-plugin'
 import { parseDevMCPConfiguration } from '@/app/automation/mcp/dev-control'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 describe('MCP Vite development server', () => {
   test('passes an explicit empty auth token when authentication is disabled', () => {
     const env = createAutomationEnvironment({
@@ -88,10 +90,13 @@ describe('MCP Vite development server', () => {
   test('waits through transient Portless responses until MCP is healthy', async () => {
     const statuses = [404, 404, 200]
     const requests: string[] = []
-    await waitForAutomationHealth('wss://feature.mcp.open-pencil.localhost', async (input) => {
-      requests.push(String(input))
-      return new Response(null, { status: statuses.shift() ?? 500 })
-    })
+    await waitForAutomationHealth(
+      'wss://feature.mcp.open-pencil.localhost',
+      fetchStub(async (input) => {
+        requests.push(String(input))
+        return new Response(null, { status: statuses.shift() ?? 500 })
+      })
+    )
 
     expect(requests).toEqual([
       'https://feature.mcp.open-pencil.localhost/health',
@@ -101,10 +106,13 @@ describe('MCP Vite development server', () => {
   })
 
   test('health probes do not send credentials', async () => {
-    await waitForAutomationHealth('ws://localhost:7682', async (_input, init) => {
-      expect(new Headers(init?.headers).has('authorization')).toBe(false)
-      return new Response(null)
-    })
+    await waitForAutomationHealth(
+      'ws://localhost:7682',
+      fetchStub(async (_input, init) => {
+        expect(new Headers(init?.headers).has('authorization')).toBe(false)
+        return new Response(null)
+      })
+    )
   })
 
   test('propagates child exit while the request is in flight', async () => {
@@ -112,10 +120,10 @@ describe('MCP Vite development server', () => {
     await expect(
       waitForAutomationHealth(
         'ws://localhost:7682',
-        async () => {
+        fetchStub(async () => {
           running = false
           return new Response(null)
-        },
+        }),
         {
           assertRunning() {
             if (!running) throw new Error('child exited in flight')
@@ -130,10 +138,10 @@ describe('MCP Vite development server', () => {
     await expect(
       waitForAutomationHealth(
         'ws://localhost:7682',
-        async () => {
+        fetchStub(async () => {
           requested = true
           return new Response(null)
-        },
+        }),
         {
           assertRunning() {
             throw new Error('child exited')

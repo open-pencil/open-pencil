@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
@@ -124,14 +125,12 @@ function modelIDCandidates(providerKey: string, modelID: string): string[] {
   const unprefixed = modelID.startsWith(`${providerKey}/`)
     ? modelID.slice(providerKey.length + 1)
     : modelID
-  return [
-    ...new Set([
-      modelID,
-      unprefixed,
-      unprefixed.replace(/-\d{8}$/, ''),
-      unprefixed.replace(/:[a-z0-9-]+$/, '')
-    ])
-  ]
+  return uniq([
+    modelID,
+    unprefixed,
+    unprefixed.replace(/-\d{8}$/, ''),
+    unprefixed.replace(/:[a-z0-9-]+$/, '')
+  ])
 }
 
 function curatedProviderModels(providerID: AIProviderID): ModelOption[] {

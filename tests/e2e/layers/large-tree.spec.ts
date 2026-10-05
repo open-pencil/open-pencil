@@ -13,7 +13,8 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
 
-    const Graph = store.graph.constructor as new () => typeof store.graph
+    const activeGraph = store.graph
+    const Graph = activeGraph.constructor as new () => typeof activeGraph
     const graph = new Graph()
     const pageId = graph.getPages()[0]?.id
     if (!pageId) throw new Error('Page not initialized')
@@ -117,7 +118,8 @@ test('layer tree supports range and additive selection', async ({ page }) => {
   await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const Graph = store.graph.constructor as new () => typeof store.graph
+    const activeGraph = store.graph
+    const Graph = activeGraph.constructor as new () => typeof activeGraph
     const graph = new Graph()
     const pageId = graph.getPages()[0]?.id
     if (!pageId) throw new Error('Page not initialized')

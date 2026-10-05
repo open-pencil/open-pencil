@@ -128,6 +128,7 @@ describe('AI model profiles and role assignments', () => {
       modelID: 'text-only',
       customModelID: '',
       maxOutputTokens: 4096,
+      thinkingLevel: 'default',
       capabilities: []
     })
 
@@ -270,6 +271,7 @@ describe('AI model profiles and role assignments', () => {
         modelID: 'text-only',
         customModelID: '',
         maxOutputTokens: 4096,
+        thinkingLevel: 'default',
         capabilities: []
       }
     ]

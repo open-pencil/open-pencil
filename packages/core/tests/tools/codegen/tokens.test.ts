@@ -3,10 +3,18 @@ import { describe, expect, test } from 'bun:test'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { designToTokens } from '#core/tools/codegen/tokens'
+import { designToTokens, type TokenExport } from '#core/tools/codegen/tokens'
 
-const run = (figma: FigmaAPI, args: Parameters<typeof designToTokens.execute>[1]) =>
-  designToTokens.execute(figma, args)
+/** `defineTool` erases a tool's result to `unknown`; this tool returns its stylesheet as `output`. */
+interface TokensToolResult extends Omit<TokenExport, 'css'> {
+  output: string
+}
+
+const run = async (
+  figma: FigmaAPI,
+  args: Parameters<typeof designToTokens.execute>[1]
+): Promise<TokensToolResult> =>
+  (await designToTokens.execute(figma, args)) as TokensToolResult
 
 function themeTokens() {
   const graph = new SceneGraph()

@@ -17,6 +17,8 @@ import {
 
 import { expectDefined } from '#tests/helpers/assert'
 
+import { expectRgbaPixels } from '../helpers'
+
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {
@@ -29,7 +31,7 @@ function color(r: number, g: number, b: number) {
 
 function pixels(image: ReturnType<typeof ck.MakeImageFromEncoded>, width: number, height: number) {
   if (!image) throw new Error('Expected image')
-  return expectDefined(
+  return expectRgbaPixels(
     image.readPixels(0, 0, {
       width,
       height,
@@ -177,6 +179,7 @@ function createParityGraph() {
         type: 'IMAGE',
         imageHash,
         imageScaleMode: 'FILL',
+        color: { r: 0, g: 0, b: 0, a: 1 },
         opacity: 1,
         visible: true
       }

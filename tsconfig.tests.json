@@ -1,0 +1,129 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "#vite-config/*": [
+        "./vite/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ],
+      "#vue/*": [
+        "./packages/vue/src/*",
+        "./packages/vue/src/*.vue"
+      ],
+      "#core/*": [
+        "./packages/core/src/*"
+      ],
+      "#fig/*": [
+        "./packages/fig/src/*"
+      ],
+      "#cli/*": [
+        "./packages/cli/src/*"
+      ],
+      "#mcp/*": [
+        "./packages/mcp/src/*"
+      ],
+      "@open-pencil/harness": [
+        "./packages/harness/src/index.ts"
+      ],
+      "#dom-css/*": [
+        "./packages/dom-css/src/*"
+      ],
+      "#tests/*": [
+        "./tests/*"
+      ],
+      "#docs-config/*": [
+        "./packages/docs/.vitepress/*"
+      ],
+      "tinykeys": [
+        "./node_modules/tinykeys/dist/tinykeys.d.ts"
+      ],
+      "@open-pencil/cli/library": [
+        "./packages/cli/src/library/index.ts"
+      ],
+      "@open-pencil/vue": [
+        "./packages/vue/src/index.ts"
+      ],
+      "@open-pencil/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@open-pencil/core/*": [
+        "./packages/core/src/*"
+      ],
+      "@open-pencil/dom-css": [
+        "./packages/dom-css/src/index.ts"
+      ],
+      "#scene-graph/*": [
+        "./packages/scene-graph/src/*"
+      ],
+      "@open-pencil/scene-graph": [
+        "./packages/scene-graph/src/index.ts"
+      ],
+      "@open-pencil/scene-graph/*": [
+        "./packages/scene-graph/src/*"
+      ],
+      "#emit/*": [
+        "./packages/emit/src/*"
+      ],
+      "@open-pencil/emit": [
+        "./packages/emit/src/index.ts"
+      ],
+      "#design-jsx/*": [
+        "./packages/design-jsx/src/*"
+      ],
+      "@open-pencil/design-jsx": [
+        "./packages/design-jsx/src/index.ts"
+      ],
+      "#pen/*": [
+        "./packages/pen/src/*"
+      ],
+      "@open-pencil/pen": [
+        "./packages/pen/src/index.ts"
+      ],
+      "@open-pencil/pen/*": [
+        "./packages/pen/src/*"
+      ],
+      "#cli-tests/*": [
+        "./packages/cli/tests/*"
+      ]
+    },
+    "types": [
+      "bun"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "packages/core/src/global.d.ts",
+    "packages/vue/src/global.d.ts",
+    "packages/dom-css/src/cssom.d.ts",
+    "packages/dom-css/src/postcss-value-parser.d.ts",
+    "packages/design-jsx/src/global.d.ts",
+    "tests/**/*.ts",
+    "packages/*/tests/**/*.ts",
+    "tests/helpers/tauri/native-global.d.ts"
+  ],
+  "exclude": [
+    "tests/e2e/native/**"
+  ]
+}

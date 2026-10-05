@@ -1,22 +1,29 @@
 import { expect, test } from 'bun:test'
 
-import { confirmDocumentClose, type CloseChoice } from '@/app/document/close/controller'
+import {
+  confirmDocumentClose,
+  type CloseChoice,
+  type CloseResult
+} from '@/app/document/close/controller'
 
-test.each<CloseChoice>(['cancel', 'discard'])('%s does not save the document', async (choice) => {
-  let saves = 0
-  const result = await confirmDocumentClose(
-    {
-      hasUnsavedChanges: () => true,
-      saveFigFile: async () => {
-        saves++
-        return true
-      }
-    },
-    async () => choice
-  )
-  expect(result).toBe(choice)
-  expect(saves).toBe(0)
-})
+test.each<Extract<CloseChoice, CloseResult>>(['cancel', 'discard'])(
+  '%s does not save the document',
+  async (choice) => {
+    let saves = 0
+    const result = await confirmDocumentClose(
+      {
+        hasUnsavedChanges: () => true,
+        saveFigFile: async () => {
+          saves++
+          return true
+        }
+      },
+      async () => choice
+    )
+    expect(result).toBe(choice)
+    expect(saves).toBe(0)
+  }
+)
 
 test('clean documents close without prompting', async () => {
   expect(

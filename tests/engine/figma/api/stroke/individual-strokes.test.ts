@@ -4,6 +4,8 @@ import { SceneGraph, FigmaAPI, sceneNodeToKiwi, type Stroke } from '@open-pencil
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
+import { solidStroke } from '../helpers'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -280,16 +282,7 @@ describe('FigmaAPI stroke properties', () => {
   test('strokeTopWeight sets independentStrokeWeights', () => {
     const api = new FigmaAPI(new SceneGraph())
     const rect = api.createRectangle()
-    rect.strokes = [
-      {
-        type: 'SOLID',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        weight: 2,
-        opacity: 1,
-        visible: true,
-        align: 'CENTER'
-      }
-    ]
+    rect.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'CENTER' })]
     rect.strokeTopWeight = 5
 
     const raw = getNodeOrThrow(api.graph, rect.id)
@@ -307,32 +300,14 @@ describe('FigmaAPI stroke properties', () => {
   test('strokeAlign getter returns first stroke align', () => {
     const api = new FigmaAPI(new SceneGraph())
     const rect = api.createRectangle()
-    rect.strokes = [
-      {
-        type: 'SOLID',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        weight: 2,
-        opacity: 1,
-        visible: true,
-        align: 'INSIDE'
-      }
-    ]
+    rect.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'INSIDE' })]
     expect(rect.strokeAlign).toBe('INSIDE')
   })
 
   test('strokeAlign setter updates stroke', () => {
     const api = new FigmaAPI(new SceneGraph())
     const rect = api.createRectangle()
-    rect.strokes = [
-      {
-        type: 'SOLID',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        weight: 2,
-        opacity: 1,
-        visible: true,
-        align: 'CENTER'
-      }
-    ]
+    rect.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'CENTER' })]
     rect.strokeAlign = 'OUTSIDE'
 
     const raw = getNodeOrThrow(api.graph, rect.id)

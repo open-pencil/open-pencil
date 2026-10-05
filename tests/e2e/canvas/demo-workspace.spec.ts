@@ -68,6 +68,7 @@ test('an abandoned demo build leaves the document as it was', async ({ page }) =
   const documentState = () =>
     page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
       const pages = store.graph.getPages()
       return {
         pages: pages.length,
@@ -90,6 +91,7 @@ test('an abandoned demo build leaves the document as it was', async ({ page }) =
   })
   await page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
     await store.switchPage(store.graph.getPages()[0].id)
   })
 

@@ -3,6 +3,8 @@ import { existsSync } from 'node:fs'
 
 import { initCanvasKit } from '#cli/headless'
 
+import { expectRgbaPixels } from '../helpers'
+
 const MATRIX_PATH = '/tmp/open-pencil-boolean-matrix.png'
 const CELL_W = 180
 const CELL_H = 150
@@ -53,13 +55,16 @@ describe('boolean visual matrix', () => {
     expect(imageWidth).toBe(720)
     expect(imageHeight).toBe(1200)
 
-    const pixels = image.readPixels(0, 0, {
-      width: imageWidth,
-      height: imageHeight,
-      colorType: ck.ColorType.RGBA_8888,
-      alphaType: ck.AlphaType.Unpremul,
-      colorSpace: ck.ColorSpace.SRGB
-    })
+    const pixels = expectRgbaPixels(
+      image.readPixels(0, 0, {
+        width: imageWidth,
+        height: imageHeight,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'boolean matrix pixels'
+    )
     image.delete()
 
     let coloredPixels = 0

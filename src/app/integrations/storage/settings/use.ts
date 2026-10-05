@@ -1,5 +1,5 @@
 import { tryOnMounted, tryOnScopeDispose } from '@vueuse/core'
-import { isEqual } from 'es-toolkit'
+import { isEqual, uniq } from 'es-toolkit'
 import { computed, ref, watch, type Ref } from 'vue'
 
 import {
@@ -107,7 +107,7 @@ export function useStorageSettings(
   function clearCredential(field: string) {
     if (busy.value || !provider.value.credentialFields.some((item) => item.id === field)) return
     credentialDrafts.value = { ...credentialDrafts.value, [field]: '' }
-    cleared.value = [...new Set([...cleared.value, field])]
+    cleared.value = uniq([...cleared.value, field])
   }
 
   async function save(): Promise<SettingsSaveResult> {

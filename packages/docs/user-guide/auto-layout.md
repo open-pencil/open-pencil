@@ -61,7 +61,9 @@ Each child in an auto-layout frame can have its own sizing mode:
 
 ## Drag Reordering
 
-Within an auto-layout frame, drag a child to reorder it among its siblings. A visual insertion indicator shows where the child will be dropped.
+Within an auto-layout frame, drag a child to reorder it among its siblings. A visual insertion indicator shows where the child will be dropped. Dragging a node from elsewhere into an auto-layout frame inserts it the same way; in a wrapping frame, it goes into the line under the cursor. Drawing inside an auto-layout frame adds the new node to the end of its flow.
+
+Hold <kbd>⌃</kbd> (<kbd>Ctrl</kbd> on Windows and Linux) while dragging to ignore auto layout: the node is dropped where you release it as an absolute-positioned child.
 
 ## Properties Panel
 

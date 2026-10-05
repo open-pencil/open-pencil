@@ -4,6 +4,8 @@ import { exportFigFile, initCodec } from '@open-pencil/core'
 import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
+
 describe('Figma component property roundtrip', () => {
   beforeAll(async () => {
     await initCodec()
@@ -33,9 +35,7 @@ describe('Figma component property roundtrip', () => {
     component.source.id = '50:1'
 
     const bytes = await exportFigFile(graph)
-    const parsed = parseFigBuffer(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = parseFigBuffer(uint8ArrayToArrayBuffer(bytes))
     const imported = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
     expect(imported.enabledLibraries.get('design-system')).toEqual({
       libraryId: 'design-system',
@@ -93,9 +93,7 @@ describe('Figma component property roundtrip', () => {
     }
 
     const bytes = await exportFigFile(graph)
-    const parsed = parseFigBuffer(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = parseFigBuffer(uint8ArrayToArrayBuffer(bytes))
     const imported = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
     const importedSet = [...imported.getAllNodes()].find(
       (node) => node.type === 'COMPONENT_SET' && node.name === 'Button'
@@ -138,9 +136,7 @@ describe('Figma component property roundtrip', () => {
     instance.source.id = '20:1'
 
     const bytes = await exportFigFile(graph)
-    const parsed = parseFigBuffer(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = parseFigBuffer(uint8ArrayToArrayBuffer(bytes))
     const imported = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
     const importedComponent = [...imported.getAllNodes()].find((node) => node.name === 'Card')
     const importedInstance = [...imported.getAllNodes()].find(

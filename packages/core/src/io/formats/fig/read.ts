@@ -1,5 +1,6 @@
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { IS_BROWSER } from '#core/constants'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
@@ -14,7 +15,6 @@ import {
 } from '#core/kiwi/fig/session/document-state'
 import type { FigSessionOpenRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
-import { randomHex } from '#core/random'
 
 export interface ParseFigFileOptions {
   populate?: 'all' | 'first-page' | 'none'

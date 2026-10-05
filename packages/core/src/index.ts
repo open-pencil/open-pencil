@@ -1,7 +1,5 @@
 export { CODEGEN_PROMPT } from './tools/prompts'
 
-export { randomHex, randomInt, randomIndex } from './random'
-
 export * from './constants'
 
 export { createDefaultEditorState, createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS } from './editor'

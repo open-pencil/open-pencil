@@ -1,4 +1,4 @@
-import { randomIndex } from '@open-pencil/core/random'
+import { randomIndex } from '@open-pencil/scene-graph/random'
 
 /** Short, distinct names that are easy to say: "ask Fern to align the cards". */
 const CALLSIGNS = [

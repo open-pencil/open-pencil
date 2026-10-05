@@ -1,10 +1,13 @@
 import { expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 test('nested component swap changes descendants through source instance chains', () => {
   const guid = (localID: number) => ({ sessionID: 1, localID })
-  const { graph, sources } = materializeDocument([
+  const changes = [
     { guid: guid(0), type: 'DOCUMENT' },
     { guid: guid(1), type: 'CANVAS', parentIndex: { guid: guid(0), position: '!' } },
     { guid: guid(2), type: 'SYMBOL', parentIndex: { guid: guid(1), position: '!' } },
@@ -43,12 +46,13 @@ test('nested component swap changes descendants through source instance chains',
       parentIndex: { guid: guid(1), position: '%' },
       symbolData: { symbolID: guid(8) }
     }
-  ])
+  ] as NodeChange[]
+  const { graph, sources } = materializeDocument(changes)
   for (const id of ['1:8', '1:9']) {
     const root = sources.get(id)
     if (!root) throw new Error('Missing source instance')
     const nested = graph.getChildren(root)[0]
-    expect(nested.componentId).toBe(sources.get('1:2'))
+    expect(nested.componentId).toBe(expectDefined(sources.get('1:2'), 'source component 1:2'))
     expect(graph.getChildren(nested.id).map((node) => node.text)).toEqual(['Source'])
     expect(graph.getChildren(nested.id)[0].componentId).toBe(
       graph.getChildren(sources.get('1:2') ?? '')[0].id
