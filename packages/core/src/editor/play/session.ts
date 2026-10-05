@@ -4,6 +4,7 @@ import {
   behaviourOwner,
   behaviourProperties,
   booleanBinding,
+  findComponentPropertyTargets,
   instanceMainComponent,
   instanceSlotFrames,
   numberSettings,
@@ -12,6 +13,7 @@ import {
   slotPropertyId,
   textBinding,
   type Behaviour,
+  type ComponentPropertyDefinition,
   type InteractionState,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -233,16 +235,14 @@ export function createPlaySession(source: SceneGraph) {
     for (const valueId of Object.keys(target.behaviour.texts)) {
       const text = texts.get(`${target.instance.id}:${valueId}`)
       const definition = textDefinition(target, valueId)
-      if (text !== undefined && definition)
-        applyComponentPropertyValue(copies, copy.id, definition, text)
+      if (text !== undefined && definition) applyProperty(copy, definition, text)
     }
     for (const [valueId, binding] of Object.entries(target.behaviour.booleans)) {
       const on = booleans.get(`${target.instance.id}:${valueId}`)
       const definition = behaviourProperties(source, target.owner).find(
         (item) => item.id === binding.propertyId && item.type === 'BOOLEAN'
       )
-      if (on !== undefined && definition)
-        applyComponentPropertyValue(copies, copy.id, definition, String(on))
+      if (on !== undefined && definition) applyProperty(copy, definition, String(on))
     }
   }
 
@@ -282,7 +282,7 @@ export function createPlaySession(source: SceneGraph) {
     const copy = touch(target)
     if (!binding || !definition || !copy) return
     if (definition.type === 'BOOLEAN') {
-      applyComponentPropertyValue(copies, copy.id, definition, String(on))
+      applyProperty(copy, definition, String(on))
     } else {
       const value = on ? binding.on : binding.off
       const property = statesProperty(target)
@@ -323,7 +323,7 @@ export function createPlaySession(source: SceneGraph) {
     const definition = textDefinition(target, valueId)
     const copy = touch(target)
     if (!definition || !copy) return
-    applyComponentPropertyValue(copies, copy.id, definition, text)
+    applyProperty(copy, definition, text)
     computeLayout(copies, copy.id)
   }
 
@@ -333,6 +333,25 @@ export function createPlaySession(source: SceneGraph) {
     return propertyId
       ? instanceSlotFrames(copies, copy).find((frame) => slotPropertyId(frame) === propertyId)
       : undefined
+  }
+
+  /**
+   * Let auto layout size a changed layer's copied ancestors again. Layers from a `.fig` file keep
+   * the sizes Figma computed, which no longer hold once preview shows, hides, or retypes a layer.
+   */
+  function reflow(nodeId: string): void {
+    let current = copies.getNode(nodeId)
+    while (current) {
+      if (current.derivedLayout) copies.updateNode(current.id, { derivedLayout: null })
+      current = current.parentId ? copies.getNode(current.parentId) : undefined
+    }
+  }
+
+  /** Set a component property on the copy, letting the layers it changes resize their parents. */
+  function applyProperty(copy: SceneNode, definition: ComponentPropertyDefinition, value: string) {
+    for (const item of findComponentPropertyTargets(copies, copy, definition.id))
+      reflow(item.node.id)
+    applyComponentPropertyValue(copies, copy.id, definition, value)
   }
 
   /**
@@ -399,6 +418,7 @@ export function createPlaySession(source: SceneGraph) {
   return {
     substitutes,
     edit,
+    reflow,
     isDisabled,
     setInteraction,
     partFrame,

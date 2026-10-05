@@ -26,7 +26,9 @@ const open: PlayChecked = {
     session.setBoolean(target, 'open', on)
     session.edit(target, (graph, copy) => {
       const content = session.partFrame(target, copy, 'content')
-      if (content) graph.updateNode(content.id, { visible: on })
+      if (!content) return
+      graph.updateNode(content.id, { visible: on })
+      session.reflow(content.id)
     })
   },
   stored: ({ session, target }) => session.changedBoolean(target, 'open')

@@ -10,6 +10,7 @@ function choose({ session, target }: PlayControl, index: number): void {
     if (!content) return
     for (const [position, child] of graph.getChildren(content.id).entries())
       graph.updateNode(child.id, { visible: position === index })
+    session.reflow(content.id)
   })
 }
 

@@ -138,4 +138,48 @@ describe('preview interactions', () => {
     editor.playKey('Enter')
     expect(copied('Content')?.visible).toBe(true)
   })
+
+  test('an opened collapsible grows even when a .fig file recorded its closed size', async () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const component = editor.graph.createNode('COMPONENT', pageId, {
+      name: 'Details',
+      width: 200,
+      height: 20,
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'FIXED'
+    })
+    const trigger = editor.graph.createNode('FRAME', component.id, {
+      name: 'Trigger',
+      width: 200,
+      height: 20,
+      fills: [fill]
+    })
+    const content = editor.graph.createNode('FRAME', component.id, {
+      name: 'Content',
+      width: 200,
+      height: 30,
+      fills: [fill],
+      visible: false
+    })
+    editor.setBehaviour(component.id, {
+      ...emptyBehaviour('collapsible'),
+      parts: {
+        trigger: editor.convertToSlot(trigger.id) ?? '',
+        content: editor.convertToSlot(content.id) ?? ''
+      }
+    })
+    const instance = editor.graph.createInstance(component.id, pageId, { x: 300, y: 100 })
+    if (!instance) throw new Error('No instance')
+    await Promise.resolve()
+    // Figma's own layout result, as an imported file keeps it.
+    editor.graph.updateNode(instance.id, { derivedLayout: { width: 200, height: 20 } })
+    editor.startPlay()
+
+    editor.playPointerDown(310, 105)
+    const copy = editor.state.play?.substitutes.get(instance.id)?.graph.getNode(instance.id)
+    expect(copy?.height).toBe(50)
+    expect(editor.graph.getNode(instance.id)?.derivedLayout).toEqual({ width: 200, height: 20 })
+  })
 })
