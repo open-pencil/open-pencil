@@ -152,6 +152,7 @@
 
 ### Security
 
+- Limit the programs the desktop app may start to the exact command lines of the supported coding agents, the MCP server, and the Harness companion. On Windows the app could run any command through `cmd /c`, so any code running in the editor's webview could start arbitrary programs.
 - Update the desktop app to Tauri 2.12, which binds large IPC channel responses to the webview that requested them instead of letting another webview fetch them (GHSA-w28w-mhc8-qvjv).
 - Install a desktop update only when its signature names the version the update server announces, so a tampered update manifest cannot pair a newer version number with an older signed build.
 - Update `@xmldom/xmldom` to 0.9.12, which fixes quadratic-time and quadratic-memory parsing of crafted SVG and XML and reports malformed end tags instead of accepting them.
