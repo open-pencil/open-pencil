@@ -23,14 +23,33 @@ describe('collab room root claims', () => {
     expect(readRoot(claims)).toBe('a')
   })
 
-  test('a claim replaces an invalid value and keeps a stronger one', () => {
+  test('a malformed claim is ignored, and claiming the root records it', () => {
     const claims = meta()
-    claims.set('root:a', 'bogus')
+    claims.set('root:shared:a', 'bogus')
+    claims.set('root:owner:b', true)
     expect(readRoot(claims)).toBeUndefined()
     claimRoot(claims, 'a', 'shared')
-    claimRoot(claims, 'a', 'edited')
-    expect(claims.get('root:a')).toBe('shared')
     expect(readRoot(claims)).toBe('a')
+  })
+
+  test('one root claimed both ways at once keeps its shared claim after the merge', () => {
+    // Yjs settles concurrent writes to one key by client id, so try both orders.
+    for (const [leftId, rightId] of [
+      [1, 2],
+      [2, 1]
+    ]) {
+      const left = new Y.Doc()
+      const right = new Y.Doc()
+      left.clientID = leftId
+      right.clientID = rightId
+      claimRoot(left.getMap('meta'), 'z', 'shared')
+      claimRoot(right.getMap('meta'), 'z', 'edited')
+      claimRoot(right.getMap('meta'), 'a', 'edited')
+      Y.applyUpdate(left, Y.encodeStateAsUpdate(right))
+      Y.applyUpdate(right, Y.encodeStateAsUpdate(left))
+      expect(readRoot(left.getMap('meta'))).toBe('z')
+      expect(readRoot(right.getMap('meta'))).toBe('z')
+    }
   })
 
   test('concurrent claims from two documents both survive the merge', () => {

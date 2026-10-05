@@ -193,16 +193,17 @@ describe('collab layer tree', () => {
     await withSyncedStores(
       async ({ hostStore, peerStore, hostSync }) => {
         const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
+        const hostRoot = hostStore.graph.rootId
         const hostPages = hostStore.graph.getPages().map((page) => page.id)
         hostSync.syncAllNodesToYjs()
         await settleGraphSync()
-        expect(peerStore.graph.rootId).toBe(hostStore.graph.rootId)
+        expect(peerStore.graph.rootId).toBe(hostRoot)
 
         // An undo of an edit made before joining can still reach the joiner's own page.
         peerStore.graph.createNode('RECTANGLE', peerOwnPage, { id: 'rect:1' })
         await settleGraphSync()
         for (const graph of [hostStore.graph, peerStore.graph]) {
-          expect(graph.rootId).toBe(hostStore.graph.rootId)
+          expect(graph.rootId).toBe(hostRoot)
           expect(graph.getPages().map((page) => page.id)).toEqual(hostPages)
         }
         expect(hostStore.graph.getNode('rect:1')).toBeUndefined()
@@ -230,6 +231,7 @@ describe('collab layer tree', () => {
   test("a joiner who edits before the room reaches them keeps the sharer's root", async () => {
     await withSyncedStores(
       async ({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
+        const hostRoot = hostStore.graph.rootId
         const hostPages = hostStore.graph.getPages().map((page) => page.id)
         const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
         // The joiner's claim comes first, so neither order nor clocks favour the sharer.
@@ -241,7 +243,7 @@ describe('collab layer tree', () => {
         try {
           await settleGraphSync()
           for (const graph of [hostStore.graph, peerStore.graph]) {
-            expect(graph.rootId).toBe(hostStore.graph.rootId)
+            expect(graph.rootId).toBe(hostRoot)
             expect(graph.getPages().map((page) => page.id)).toEqual(hostPages)
           }
         } finally {

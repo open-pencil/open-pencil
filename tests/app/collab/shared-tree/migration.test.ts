@@ -6,6 +6,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { encodeNodeForYjs } from '@/app/collab/node-codec'
 import {
+  claimRoot,
   readOrderKey,
   readPage,
   readParentEntries,
@@ -147,6 +148,17 @@ describe('collab tree format migration', () => {
       expect(migrated).toEqual([])
       expect(updates).toBe(0)
     })
+  })
+
+  test("a converted room outranks a guest's earlier edited claim", () => {
+    const legacy = legacyDocument()
+    const doc = new Y.Doc()
+    const meta = doc.getMap('meta')
+    claimRoot(meta, 'a', 'edited')
+    Y.applyUpdate(doc, legacy.update)
+    const ynodes = doc.getMap<Y.Map<unknown>>('nodes')
+    migrateLegacyLayers(doc, ynodes, meta, ynodes.keys())
+    expect(readRoot(meta)).toBe(legacy.graph.rootId)
   })
 })
 
