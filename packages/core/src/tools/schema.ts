@@ -70,8 +70,9 @@ export function defineTool<P extends v.ObjectEntries, R>(
 }
 
 /**
- * Every tool call goes through here, from AI chat, MCP, the CLI, and WebMCP, so a wrong call
- * names the tool and lists each problem with its argument, as `v.summarize` formats them.
+ * Every tool run goes through here, so a wrong call from AI chat, the CLI, or WebMCP names the
+ * tool and lists each problem with its argument, as `v.summarize` formats them. MCP clients get
+ * the MCP SDK's own report, which validates the same schema before the handler runs.
  */
 export function parseToolArgs<S extends v.GenericSchema>(
   name: string,
