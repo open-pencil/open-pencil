@@ -77,12 +77,11 @@ async function main() {
 
   if (data && data.length > 2000) {
     console.warn(`✅ Generated scratch/text-inner-shadow-verification.png (${data.length} bytes)`)
-  } else {
-    console.error(`❌ Failed to generate useful image (size: ${data?.length ?? 0} bytes)`)
-    if (data) {
-      await Bun.write('scratch/failed.png', data)
-    }
+    return
   }
+  if (data) await Bun.write('scratch/failed.png', data)
+  // Throwing, rather than logging, is what gives the verification command a failing exit status.
+  throw new Error(`Failed to generate a useful image (size: ${data?.length ?? 0} bytes)`)
 }
 
-main()
+await main()

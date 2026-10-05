@@ -47,7 +47,6 @@ test('reads pages independently through one index with cross-page component expa
   expect(reader.readPage('1:2').children[0].sourceId).toBe('1:4')
   const roots = [page, reader.readPage('1:2')]
   const reused = planComponentConstruction(
-    changes,
     roots,
     () => {
       throw new Error('Unexpected component re-expansion')

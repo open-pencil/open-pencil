@@ -10,12 +10,29 @@
  */
 import { $ } from 'bun'
 
+/** `path/to/file.ts(12,5): error TS1234: …` — a diagnostic about a file in the program. */
+const FILE_DIAGNOSTIC = /^(?<file>\S[^(]*)\(\d+,\d+\): error TS/
 const TEST_FILE = /^(tests|packages\/[^/]+\/tests)\//
 
-const output = await $`bunx tsgo --noEmit -p tsconfig.tests.json`.nothrow().text()
-const failures = output
-  .split('\n')
-  .filter((line) => line.includes('error TS') && TEST_FILE.test(line))
+const result = await $`bunx tsgo --noEmit -p tsconfig.tests.json`.nothrow().quiet()
+const lines = `${result.stdout.toString()}${result.stderr.toString()}`.split('\n')
+
+const failures: string[] = []
+/** A diagnostic naming no file is the compiler or the config failing, not a typed program. */
+const unscoped: string[] = []
+
+for (const line of lines) {
+  if (!line.includes('error TS')) continue
+  const file = FILE_DIAGNOSTIC.exec(line)?.groups?.file
+  if (file === undefined) unscoped.push(line)
+  else if (TEST_FILE.test(file)) failures.push(line)
+}
+
+if (unscoped.length > 0) {
+  console.error(unscoped.join('\n'))
+  console.error('\nThe test type check could not run.')
+  process.exit(1)
+}
 
 if (failures.length > 0) {
   console.error(failures.join('\n'))
@@ -24,4 +41,15 @@ if (failures.length > 0) {
   )
   process.exit(1)
 }
+
+if (
+  result.exitCode !== 0 &&
+  failures.length === 0 &&
+  lines.every((line) => !line.includes('error TS'))
+) {
+  console.error(lines.join('\n').trim() || `tsgo exited with ${result.exitCode}`)
+  console.error('\nThe test type check could not run.')
+  process.exit(1)
+}
+
 console.log('Test type check passed.')
