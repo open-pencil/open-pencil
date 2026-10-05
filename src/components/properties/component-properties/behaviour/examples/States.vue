@@ -7,6 +7,11 @@ import BehaviourSection from '../BehaviourSection.vue'
 
 const stateProperty = { id: 'state', name: 'State', values: ['On', 'Off'] }
 const sizeProperty = { id: 'size', name: 'Size', values: ['Small', 'Large'] }
+const interactionProperty = {
+  id: 'interaction',
+  name: 'Interaction',
+  values: ['Default', 'Hover', 'Pressed', 'Disabled']
+}
 const thumbSlot = { id: 'thumb', name: 'Thumb', values: [] }
 const trackSlot = { id: 'track', name: 'Track', values: [] }
 const rangeSlot = { id: 'range', name: 'Range', values: [] }
@@ -32,7 +37,12 @@ const switchComplete = ref<BehaviourControl>({
       options: [stateProperty, sizeProperty]
     }
   ],
-  parts: [{ id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot] }]
+  parts: [{ id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot] }],
+  states: {
+    propertyId: 'interaction',
+    values: { rest: 'Default', hover: 'Hover', pressed: 'Pressed', disabled: 'Disabled' },
+    options: [stateProperty, sizeProperty, interactionProperty]
+  }
 })
 const sliderIncomplete = ref<BehaviourControl>({
   kind: 'slider',
@@ -50,7 +60,8 @@ const sliderIncomplete = ref<BehaviourControl>({
     },
     { id: 'range', required: false, propertyId: null, options: [trackSlot, rangeSlot, thumbSlot] },
     { id: 'thumb', required: true, propertyId: null, options: [trackSlot, rangeSlot, thumbSlot] }
-  ]
+  ],
+  states: { propertyId: null, values: {}, options: [interactionProperty] }
 })
 const log = ref<string[]>([])
 const record = (entry: string) => {
@@ -76,6 +87,8 @@ const record = (entry: string) => {
             record(`${value}: ${settings.min}..${settings.max} by ${settings.step}`)
         "
         @bind-part="(part, property) => record(`bind ${part} → ${property}`)"
+        @bind-states="(property) => record(`states → ${property}`)"
+        @map-state="(state, value) => record(`${state} → ${value || 'default'}`)"
       />
     </div>
     <ul class="text-xs text-muted" aria-label="Events">

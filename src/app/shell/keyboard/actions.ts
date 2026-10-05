@@ -59,7 +59,7 @@ export function createKeyboardActions({
 
   function escapeOrDeselect() {
     if (store.state.play) {
-      store.stopPlay()
+      if (!store.playBlur()) store.stopPlay()
       return
     }
     if (store.state.rotationPreview) {

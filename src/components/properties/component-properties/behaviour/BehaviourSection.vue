@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 
-import type { BehaviourKind } from '@open-pencil/scene-graph'
+import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 import type {
   BehaviourBooleanControl,
@@ -19,6 +19,7 @@ import AppPickerField from '@/components/ui/select/AppPickerField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import AddBehaviourPicker from './AddBehaviourPicker.vue'
+import BehaviourStates from './BehaviourStates.vue'
 import { useBehaviourLabels } from './labels'
 
 /**
@@ -33,6 +34,8 @@ const emit = defineEmits<{
   mapValue: [valueId: string, mapping: { on: string; off: string }]
   setNumber: [valueId: string, settings: Omit<BehaviourNumberControl, 'id' | 'type'>]
   bindPart: [partId: string, propertyId: string]
+  bindStates: [propertyId: string]
+  mapState: [state: InteractionState, value: string]
 }>()
 const { panels, common } = useI18n()
 const labels = useBehaviourLabels()
@@ -176,7 +179,7 @@ const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : nul
         </PanelFieldGroup>
       </div>
 
-      <div class="flex flex-col gap-1.5">
+      <div v-if="behaviour.parts.length" class="flex flex-col gap-1.5">
         <div class="text-[11px] text-muted">{{ panels.behaviourParts }}</div>
         <PanelFieldGroup
           v-for="part in behaviour.parts"
@@ -197,6 +200,12 @@ const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : nul
           />
         </PanelFieldGroup>
       </div>
+
+      <BehaviourStates
+        :states="behaviour.states"
+        @bind="emit('bindStates', $event)"
+        @map="(state, value) => emit('mapState', state, value)"
+      />
     </div>
   </PanelSection>
 </template>

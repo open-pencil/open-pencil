@@ -47,6 +47,7 @@ de:panels.slots
 de:panels.behaviourTabs
 de:panels.behaviourMin
 de:panels.behaviourMax
+de:panels.behaviourStateHover
 de:settings.mcp
 de:storage.bucket
 de:storage.providerAmazonS3
@@ -151,6 +152,7 @@ fr:panels.slots
 fr:panels.slotDescription
 fr:panels.behaviourMin
 fr:panels.behaviourMax
+fr:panels.behaviourStateFocus
 fr:settings.animations
 fr:settings.diagnostics
 fr:settings.mcp
@@ -190,6 +192,8 @@ it:panels.framePresetCategoryTablet
 it:panels.layout
 it:panels.behaviourMin
 it:panels.behaviourMax
+it:panels.behaviourStateHover
+it:panels.behaviourStateFocus
 it:rendering.settingsTitle
 it:settings.mcp
 it:settings.media

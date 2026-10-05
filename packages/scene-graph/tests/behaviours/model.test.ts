@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   behaviourOwner,
   emptyBehaviour,
+  guessInteractionStates,
   missingBindings,
   readBehaviour,
   SceneGraph,
@@ -65,5 +66,17 @@ describe('behaviour model', () => {
       pluginData: [{ pluginId: 'open-pencil', key: 'behaviour', value: '{"kind":"dial"}' }]
     })
     expect(readBehaviour(set)).toBeNull()
+  })
+
+  test('interaction states are guessed from variant value names', () => {
+    expect(
+      guessInteractionStates('interaction', ['Idle', 'Hovered', 'Active', 'Focus visible', 'Big'])
+    ).toEqual({
+      propertyId: 'interaction',
+      rest: 'Idle',
+      hover: 'Hovered',
+      pressed: 'Active',
+      focus: 'Focus visible'
+    })
   })
 })

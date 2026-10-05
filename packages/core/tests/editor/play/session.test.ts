@@ -44,8 +44,8 @@ describe('preview session', () => {
     const { editor, on, off, instance } = setup()
     const undoLabel = editor.undo.undoLabel
     editor.startPlay()
-    expect(editor.playHitsControl(310, 110)).toBe(true)
-    expect(editor.playHitsControl(10, 10)).toBe(false)
+    expect(editor.playPointerMove(310, 110)).toBe(true)
+    expect(editor.playPointerMove(10, 10)).toBe(false)
 
     expect(editor.playPointerDown(310, 110)).toBe(true)
     const substitute = editor.state.play?.substitutes.get(instance.id)

@@ -70,6 +70,14 @@ describe('preview interactions', () => {
     editor.playPointerUp()
     editor.playPointerMove(310, 104)
     expect(copied('Thumb')?.x).toBe(180)
+
+    // The press focused the slider: arrows step it, Shift by ten steps, Home to the start.
+    expect(editor.playKey('ArrowLeft')).toBe(true)
+    expect(copied('Thumb')?.x).toBeCloseTo(178.2)
+    editor.playKey('ArrowLeft', true)
+    expect(copied('Thumb')?.x).toBeCloseTo(160.2)
+    editor.playKey('Home')
+    expect(copied('Thumb')?.x).toBe(0)
   })
 
   test('pressing a tab trigger shows the content at the same position', async () => {
@@ -97,6 +105,13 @@ describe('preview interactions', () => {
 
     expect(editor.playPointerDown(360, 110)).toBe(true)
     expect(copied('First panel')?.visible).toBe(false)
+    expect(copied('Second panel')?.visible).toBe(true)
+
+    // Arrows move along the tabs and wrap around.
+    expect(editor.playKey('ArrowRight')).toBe(true)
+    expect(copied('First panel')?.visible).toBe(true)
+    expect(copied('Second panel')?.visible).toBe(false)
+    editor.playKey('ArrowLeft')
     expect(copied('Second panel')?.visible).toBe(true)
   })
 })

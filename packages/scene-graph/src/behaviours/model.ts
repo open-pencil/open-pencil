@@ -2,10 +2,25 @@ import type { SceneGraph } from '../index'
 import { readPluginData, withPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
-import { behaviourContract, type BehaviourKind } from './kinds'
-import type { Behaviour, BehaviourBooleanBinding, BehaviourNumberSettings } from './schema'
+import {
+  behaviourContract,
+  INTERACTION_STATES,
+  type BehaviourKind,
+  type InteractionState
+} from './kinds'
+import type {
+  Behaviour,
+  BehaviourBooleanBinding,
+  BehaviourInteractionStates,
+  BehaviourNumberSettings
+} from './schema'
 
-export type { Behaviour, BehaviourBooleanBinding, BehaviourNumberSettings } from './schema'
+export type {
+  Behaviour,
+  BehaviourBooleanBinding,
+  BehaviourInteractionStates,
+  BehaviourNumberSettings
+} from './schema'
 
 export const DEFAULT_NUMBER_SETTINGS: BehaviourNumberSettings = {
   min: 0,
@@ -84,7 +99,7 @@ export function behaviourProperties(
 
 /**
  * Required values and parts that are unbound, or bound to a property the component no longer
- * has, by value or part id.
+ * has, by value or part id; `states` when the interaction states lost their variant property.
  */
 export function missingBindings(
   graph: SceneGraph,
@@ -106,5 +121,32 @@ export function missingBindings(
   const parts = contract.parts
     .filter((part) => part.required && !bound(behaviour.parts[part.id], ['SLOT']))
     .map((part) => part.id)
-  return [...values, ...parts]
+  const states =
+    behaviour.states && !bound(behaviour.states.propertyId, ['VARIANT']) ? ['states'] : []
+  return [...values, ...parts, ...states]
+}
+
+/** Variant value names that usually mean each interaction state, compared case-insensitively. */
+const STATE_NAMES: Record<InteractionState, readonly string[]> = {
+  rest: ['default', 'rest', 'idle', 'normal', 'enabled'],
+  hover: ['hover', 'hovered', 'hovering'],
+  pressed: ['pressed', 'active', 'down', 'pressing'],
+  focus: ['focus', 'focused', 'focus visible', 'focus-visible'],
+  disabled: ['disabled', 'inactive']
+}
+
+/**
+ * Interaction states for a variant property, each mapped to the value whose name means it, such
+ * as `Hover` or `Pressed`; states without such a value are left unset.
+ */
+export function guessInteractionStates(
+  propertyId: string,
+  values: readonly string[]
+): BehaviourInteractionStates {
+  const states: BehaviourInteractionStates = { propertyId }
+  for (const state of INTERACTION_STATES) {
+    const match = values.find((value) => STATE_NAMES[state].includes(value.trim().toLowerCase()))
+    if (match) states[state] = match
+  }
+  return states
 }

@@ -1,11 +1,10 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { numberSettings } from '@open-pencil/scene-graph'
+import { numberSettings, type SceneNode } from '@open-pencil/scene-graph'
 
 import { documentPartFrame } from './parts'
-import type { PlayInteraction, PlayPointer } from './types'
+import type { PlayControl, PlayInteraction, PlayKey, PlayPointer } from './types'
 
 /** The value under a canvas x, from the track's position and the thumb's width. */
-function valueAt({ graph, target }: Omit<PlayPointer, 'hitId'>, x: number): number | null {
+function valueAt({ graph, target }: PlayControl, x: number): number | null {
   const settings = numberSettings(target.behaviour, 'value')
   const track = documentPartFrame(graph, target, 'track')
   const thumb = documentPartFrame(graph, target, 'thumb')
@@ -16,13 +15,10 @@ function valueAt({ graph, target }: Omit<PlayPointer, 'hitId'>, x: number): numb
   return settings.min + ratio * (settings.max - settings.min)
 }
 
-/** Set the value: the thumb moves along the track and the range fills up to it. */
-function slide(pointer: Omit<PlayPointer, 'hitId'>): void {
-  const { session, target } = pointer
-  const requested = valueAt(pointer, pointer.x)
+/** Draw a value: the thumb moves along the track and the range fills up to it. */
+function draw({ session, target }: PlayControl, value: number): void {
   const settings = numberSettings(target.behaviour, 'value')
-  const value = requested === null ? null : session.setNumber(target, 'value', requested)
-  if (value === null || !settings) return
+  if (!settings) return
   const span = settings.max - settings.min
   const ratio = span > 0 ? (value - settings.min) / span : 0
   session.edit(target, (graph, copy) => {
@@ -42,11 +38,47 @@ function slide(pointer: Omit<PlayPointer, 'hitId'>): void {
   })
 }
 
-/** Slider: a press jumps to the pointer, and dragging follows it. */
+function set(control: PlayControl, requested: number): void {
+  const value = control.session.setNumber(control.target, 'value', requested)
+  if (value !== null) draw(control, value)
+}
+
+function slide(pointer: Omit<PlayPointer, 'hitId'>): void {
+  const value = valueAt(pointer, pointer.x)
+  if (value !== null) set(pointer, value)
+}
+
+/** Arrows step the value, by ten steps with Shift; Home and End go to the ends. */
+function step(control: PlayKey): boolean {
+  const settings = numberSettings(control.target.behaviour, 'value')
+  if (!settings) return false
+  const current = control.session.getNumber(control.target, 'value')
+  const by =
+    (settings.step > 0 ? settings.step : (settings.max - settings.min) / 100) *
+    (control.shift ? 10 : 1)
+  const next = {
+    ArrowRight: current + by,
+    ArrowUp: current + by,
+    ArrowLeft: current - by,
+    ArrowDown: current - by,
+    Home: settings.min,
+    End: settings.max
+  }[control.key as string]
+  if (next === undefined) return false
+  set(control, next)
+  return true
+}
+
+/** Slider: a press jumps to the pointer, dragging follows it, and arrows step it. */
 export const slider: PlayInteraction = {
   press(pointer) {
     slide(pointer)
     return true
   },
-  drag: slide
+  drag: slide,
+  key: step,
+  restore(control) {
+    const value = control.session.changed(control.target, 'value')
+    if (value !== undefined) draw(control, value)
+  }
 }

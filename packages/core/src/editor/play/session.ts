@@ -10,6 +10,7 @@ import {
   SceneGraph,
   slotPropertyId,
   type Behaviour,
+  type InteractionState,
   type SceneNode
 } from '@open-pencil/scene-graph'
 
@@ -110,25 +111,96 @@ export function createPlaySession(source: SceneGraph) {
     return copies.getNode(id)
   }
 
-  /** The component of the set whose values match the instance's but for one property. */
+  /**
+   * The variant of the instance's set with `property` set to `value` and every other value kept.
+   * A property in `loose` may change when no variant keeps it: to its fallback value if one
+   * exists, else to any, so turning a switch on while hovered still works when the set has no
+   * hovered On variant.
+   */
   function variantWith(
     instance: SceneNode,
     property: string,
-    value: string
+    value: string,
+    loose: Record<string, string | undefined> = {}
   ): SceneNode | undefined {
     const current = instanceMainComponent(copies, instance)
     const set = current?.parentId ? copies.getNode(current.parentId) : undefined
     if (!current || set?.type !== 'COMPONENT_SET') return undefined
-    const wanted = { ...current.componentPropertyValues, [property]: value }
-    return copies
+    const values = current.componentPropertyValues
+    const candidates = copies
       .getChildren(set.id)
-      .find(
+      .filter(
         (variant) =>
           variant.type === 'COMPONENT' &&
-          Object.entries(wanted).every(
-            ([key, item]) => variant.componentPropertyValues[key] === item
+          variant.componentPropertyValues[property] === value &&
+          Object.entries(values).every(
+            ([key, item]) =>
+              key === property ||
+              Object.hasOwn(loose, key) ||
+              variant.componentPropertyValues[key] === item
           )
       )
+    const keeps = (variant: SceneNode, wanted: Record<string, string | undefined>) =>
+      Object.keys(loose).every((key) => variant.componentPropertyValues[key] === wanted[key])
+    return (
+      candidates.find((variant) => keeps(variant, values)) ??
+      candidates.find((variant) => keeps(variant, loose)) ??
+      candidates[0]
+    )
+  }
+
+  /** The variant property that draws the instance's interaction states, if the behaviour has one. */
+  function statesProperty(target: PlayTarget) {
+    const states = target.behaviour.states
+    const definition = states
+      ? behaviourProperties(source, target.owner).find(
+          (item) => item.id === states.propertyId && item.type === 'VARIANT'
+        )
+      : undefined
+    if (!states || !definition) return null
+    const authored = instanceMainComponent(source, target.instance)?.componentPropertyValues[
+      definition.name
+    ]
+    return { name: definition.name, states, authored, rest: states.rest ?? authored }
+  }
+
+  /** Whether the instance is disabled: its disabled value is on, or it is drawn disabled. */
+  function isDisabled(target: PlayTarget): boolean {
+    if (getBoolean(target, 'disabled')) return true
+    const property = statesProperty(target)
+    return !!property?.states.disabled && property.authored === property.states.disabled
+  }
+
+  /**
+   * Show the instance in an interaction state by switching its copy's variant; a state the
+   * behaviour has no value for shows the rest value. Returns whether the copy changed variant.
+   */
+  function setInteraction(target: PlayTarget, state: InteractionState): boolean {
+    const property = statesProperty(target)
+    const value = property ? (property.states[state] ?? property.rest) : undefined
+    if (!property || !value) return false
+    if (state === 'rest' && !substitutes.has(target.instance.id)) return false
+    const copy = touch(target)
+    const current = copy && instanceMainComponent(copies, copy)
+    if (!copy || current?.componentPropertyValues[property.name] === value) return false
+    const variant = variantWith(copy, property.name, value)
+    if (!variant) return false
+    copies.swapInstanceComponent(copy.id, variant.id)
+    reapplyBooleans(target, copy)
+    computeLayout(copies, copy.id)
+    return true
+  }
+
+  /** Boolean properties set in preview, set again after a variant switch rebuilt the copy. */
+  function reapplyBooleans(target: PlayTarget, copy: SceneNode): void {
+    for (const [valueId, binding] of Object.entries(target.behaviour.booleans)) {
+      const on = booleans.get(`${target.instance.id}:${valueId}`)
+      const definition = behaviourProperties(source, target.owner).find(
+        (item) => item.id === binding.propertyId && item.type === 'BOOLEAN'
+      )
+      if (on !== undefined && definition)
+        applyComponentPropertyValue(copies, copy.id, definition, String(on))
+    }
   }
 
   function getBoolean(target: PlayTarget, valueId: string): boolean {
@@ -165,11 +237,14 @@ export function createPlaySession(source: SceneGraph) {
       applyComponentPropertyValue(copies, copy.id, definition, String(on))
     } else {
       const value = on ? binding.on : binding.off
-      const variant = value ? variantWith(copy, definition.name, value) : undefined
+      const property = statesProperty(target)
+      const loose = property ? { [property.name]: property.rest } : {}
+      const variant = value ? variantWith(copy, definition.name, value, loose) : undefined
       if (variant) copies.swapInstanceComponent(copy.id, variant.id)
     }
-    computeLayout(copies, copy.id)
     booleans.set(`${target.instance.id}:${valueId}`, on)
+    if (definition.type !== 'BOOLEAN') reapplyBooleans(target, copy)
+    computeLayout(copies, copy.id)
   }
 
   /** The copy's slot frame bound to a part of the behaviour. */
@@ -212,6 +287,12 @@ export function createPlaySession(source: SceneGraph) {
     return clamped
   }
 
+  /** A number or choice value set in preview, or undefined while it is still as designed. */
+  function changed(target: PlayTarget, valueId: string): number | undefined {
+    const key = `${target.instance.id}:${valueId}`
+    return numbers.get(key) ?? choices.get(key)
+  }
+
   function getChoice(target: PlayTarget, valueId: string): number {
     return choices.get(`${target.instance.id}:${valueId}`) ?? 0
   }
@@ -232,9 +313,12 @@ export function createPlaySession(source: SceneGraph) {
   return {
     substitutes,
     edit,
+    isDisabled,
+    setInteraction,
     partFrame,
     getBoolean,
     setBoolean,
+    changed,
     getNumber,
     setNumber,
     getChoice,

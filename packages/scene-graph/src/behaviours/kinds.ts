@@ -1,7 +1,15 @@
 /** The controls a main component can behave as, in the order the picker lists them. */
-export const BEHAVIOUR_KINDS = ['switch', 'checkbox', 'slider', 'tabs'] as const
+export const BEHAVIOUR_KINDS = ['button', 'switch', 'checkbox', 'slider', 'tabs'] as const
 
 export type BehaviourKind = (typeof BEHAVIOUR_KINDS)[number]
+
+/**
+ * The interaction states a control can show, each drawn as a value of one variant property:
+ * at rest, under the pointer, while pressed, focused from the keyboard, and disabled.
+ */
+export const INTERACTION_STATES = ['rest', 'hover', 'pressed', 'focus', 'disabled'] as const
+
+export type InteractionState = (typeof INTERACTION_STATES)[number]
 
 /**
  * How a behaviour value is held. A boolean is a variant or boolean property of the component.
@@ -38,6 +46,10 @@ export interface BehaviourContract {
  * component's slots, and the component itself is the control's root.
  */
 export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContract>> = {
+  button: {
+    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    parts: []
+  },
   switch: {
     values: [
       { id: 'value', type: 'boolean', required: true },

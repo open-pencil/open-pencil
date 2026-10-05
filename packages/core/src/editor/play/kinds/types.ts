@@ -14,9 +14,22 @@ export interface PlayPointer {
   y: number
 }
 
-/** How one kind of control answers the pointer in preview. */
+/** The control preview is acting on, without a pointer: for keys and restoring. */
+export type PlayControl = Pick<PlayPointer, 'graph' | 'session' | 'target'>
+
+/** A key pressed while a control has keyboard focus. */
+export interface PlayKey extends PlayControl {
+  key: 'Enter' | ' ' | 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown' | 'Home' | 'End'
+  shift: boolean
+}
+
+/** How one kind of control answers the pointer and keyboard in preview. */
 export interface PlayInteraction {
   /** Handle a press; return true to keep receiving `drag` until release. */
-  press(pointer: PlayPointer): boolean
+  press?(pointer: PlayPointer): boolean
   drag?(pointer: Omit<PlayPointer, 'hitId'>): void
+  /** Handle a key; return whether the control used it. */
+  key?(key: PlayKey): boolean
+  /** Draw values set in preview again after a variant switch rebuilt the copy. */
+  restore?(control: PlayControl): void
 }

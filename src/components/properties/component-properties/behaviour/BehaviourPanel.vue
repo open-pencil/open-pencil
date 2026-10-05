@@ -17,5 +17,7 @@ const behaviour = useBehaviour()
     @map-value="behaviour.mapValue"
     @set-number="behaviour.setNumber"
     @bind-part="behaviour.bindPart"
+    @bind-states="behaviour.bindStates"
+    @map-state="behaviour.mapState"
   />
 </template>

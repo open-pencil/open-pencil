@@ -16,6 +16,19 @@ const NumberSettings = v.object({
   default: v.number()
 })
 
+/**
+ * The variant property that draws interaction states, and the value that means each state.
+ * A state without a value shows the rest value, or the instance's own when that is unset too.
+ */
+const InteractionStates = v.object({
+  propertyId: v.string(),
+  rest: v.optional(v.string()),
+  hover: v.optional(v.string()),
+  pressed: v.optional(v.string()),
+  focus: v.optional(v.string()),
+  disabled: v.optional(v.string())
+})
+
 export const behaviourSchema = v.object({
   kind: v.picklist(BEHAVIOUR_KINDS),
   /** Boolean values, by value id, bound to component properties. */
@@ -23,10 +36,12 @@ export const behaviourSchema = v.object({
   /** Number values, by value id: the range the behaviour keeps itself. */
   numbers: v.record(v.string(), NumberSettings),
   /** Parts, by part id, bound to slot properties. */
-  parts: v.record(v.string(), v.string())
+  parts: v.record(v.string(), v.string()),
+  states: v.optional(InteractionStates)
 })
 
 /** How a main component behaves as a control, as kept in its plugin data. */
 export type Behaviour = v.InferOutput<typeof behaviourSchema>
 export type BehaviourBooleanBinding = v.InferOutput<typeof BooleanBinding>
 export type BehaviourNumberSettings = v.InferOutput<typeof NumberSettings>
+export type BehaviourInteractionStates = v.InferOutput<typeof InteractionStates>

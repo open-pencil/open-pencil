@@ -278,8 +278,7 @@ export function useCanvasInput(
     }
 
     if (editor.state.play && !drag.value) {
-      if (playDragging.value) editor.playPointerMove(coords.cx, coords.cy)
-      cursorOverride.value = editor.playHitsControl(coords.cx, coords.cy) ? 'pointer' : null
+      cursorOverride.value = editor.playPointerMove(coords.cx, coords.cy) ? 'pointer' : null
       return
     }
 
@@ -492,6 +491,7 @@ export function useCanvasInput(
     cancelPointerInteraction()
   })
   useEventListener(canvasRef, 'mouseleave', () => {
+    if (editor.state.play) editor.playPointerLeave()
     pointerInside.value = false
     if (!isEnabled()) return
     editor.setMeasurementMode('off')

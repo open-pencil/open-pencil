@@ -9,6 +9,7 @@ import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { isButtonActivation, isEditing } from '@/app/shell/keyboard/focus'
+import { bindPreviewKeys } from '@/app/shell/keyboard/preview'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
   KeyboardShortcutOptions,
@@ -108,6 +109,7 @@ function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRun
 }
 
 export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
+  bindPreviewKeys(options.inputFocused, options.store)
   const spaceTool = bindSpaceHandTool(options.inputFocused, options.store)
   const runOptions = (event: KeyboardEvent): KeyboardShortcutRunOptions => ({
     ...options,

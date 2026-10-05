@@ -5,11 +5,14 @@ import {
   booleanBinding,
   DEFAULT_NUMBER_SETTINGS,
   emptyBehaviour,
+  guessInteractionStates,
+  INTERACTION_STATES,
   missingBindings,
   readBehaviour,
   type Behaviour,
   type BehaviourKind,
-  type BehaviourNumberSettings
+  type BehaviourNumberSettings,
+  type InteractionState
 } from '@open-pencil/scene-graph'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
@@ -78,6 +81,16 @@ export function useBehaviour() {
         propertyId: current.parts[part.id] ?? null,
         options: options(['SLOT'])
       })),
+      states: {
+        propertyId: current.states?.propertyId ?? null,
+        values: Object.fromEntries(
+          INTERACTION_STATES.flatMap((state) => {
+            const value = current.states?.[state]
+            return value ? [[state, value]] : []
+          })
+        ),
+        options: options(['VARIANT'])
+      },
       missing: missingBindings(editor.graph, target, current).length
     }
   })
@@ -123,6 +136,27 @@ export function useBehaviour() {
     bindPart: (partId: string, propertyId: string) =>
       update((current) => {
         current.parts[partId] = propertyId
+        return current
+      }),
+    /**
+     * Draw interaction states with a variant property, its values named like states (Hover,
+     * Pressed, …) mapped to them; an empty id stops drawing states.
+     */
+    bindStates: (propertyId: string) =>
+      update((current) => {
+        const target = owner.value
+        const definition = target
+          ? behaviourProperties(editor.graph, target).find((item) => item.id === propertyId)
+          : undefined
+        if (!definition) delete current.states
+        else current.states = guessInteractionStates(propertyId, definition.variantOptions ?? [])
+        return current
+      }),
+    /** Choose the variant value of one interaction state; an empty value unsets it. */
+    mapState: (state: InteractionState, value: string) =>
+      update((current) => {
+        if (!current.states) return current
+        current.states = { ...current.states, [state]: value || undefined }
         return current
       })
   }

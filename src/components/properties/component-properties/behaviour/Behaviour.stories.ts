@@ -31,3 +31,13 @@ export const AddBehaviour: Story = {
     await waitFor(() => expect(canvas.getByText('add slider')).toBeVisible())
   }
 }
+
+export const MapState: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(canvas.getByRole('combobox', { name: 'Pressed state' }))
+    await userEvent.click(await page.findByRole('option', { name: 'As default' }))
+    await waitFor(() => expect(canvas.getByText('pressed → default')).toBeVisible())
+  }
+}

@@ -1,4 +1,4 @@
-import type { BehaviourKind } from '@open-pencil/scene-graph'
+import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
 
@@ -37,10 +37,20 @@ export interface BehaviourPartControl {
   options: VariantDefinitionControl[]
 }
 
+/** The variant property that draws interaction states, and the value of each state. */
+export interface BehaviourStatesControl {
+  /** The bound variant property, if any. */
+  propertyId: string | null
+  values: Partial<Record<InteractionState, string>>
+  /** The component's variant properties. */
+  options: VariantDefinitionControl[]
+}
+
 export interface BehaviourControl {
   kind: BehaviourKind
   values: BehaviourValueControl[]
   parts: BehaviourPartControl[]
+  states: BehaviourStatesControl
   /** Required values and parts that are still unbound. */
   missing: number
 }
