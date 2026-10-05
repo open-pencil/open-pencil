@@ -1,4 +1,5 @@
 import { tryOnScopeDispose } from '@vueuse/core'
+import { uniq } from 'es-toolkit/array'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import {
@@ -36,7 +37,7 @@ export function useRecentDiagnostics(
     if (!disposed && request === version) events.value = listed
   }
 
-  const categories = computed(() => [...new Set(events.value.map((event) => event.category))])
+  const categories = computed(() => uniq(events.value.map((event) => event.category)))
   const matching = computed(() =>
     events.value.filter(
       (event) =>

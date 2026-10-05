@@ -4,5 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "bun test tests"
+  },
+  "dependencies": {
+    "es-toolkit": "^1.52.0"
   }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compact } from 'es-toolkit/array'
 import { computed, useId } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -20,9 +21,8 @@ const control = computed(() => ({
   id: inputID.value,
   'aria-invalid': Boolean(error),
   'aria-describedby':
-    [error && `${inputID.value}-error`, hint && `${inputID.value}-hint`]
-      .filter(Boolean)
-      .join(' ') || undefined,
+    compact([error && `${inputID.value}-error`, hint && `${inputID.value}-hint`]).join(' ') ||
+    undefined,
   state: error ? ('invalid' as const) : ('idle' as const)
 }))
 

@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit/array'
 export function isDefaultName(name: string): boolean {
   return /^(Frame|Rectangle|Ellipse|Line|Text|Group|Vector|Polygon|Star|Section|Component|Instance|Slice)\s*\d*$/i.test(
     name
@@ -10,12 +11,13 @@ export function isDefaultName(name: string): boolean {
  * `button`, `2`, and "Rectangle" does not contain `cta`.
  */
 export function nameWords(name: string): string[] {
-  return name
-    .replaceAll(/([a-z\d])([A-Z])/g, '$1 $2')
-    .replaceAll(/([a-z])(\d)/gi, '$1 $2')
-    .toLowerCase()
-    .split(/[^a-z\d]+/)
-    .filter(Boolean)
+  return compact(
+    name
+      .replaceAll(/([a-z\d])([A-Z])/g, '$1 $2')
+      .replaceAll(/([a-z])(\d)/gi, '$1 $2')
+      .toLowerCase()
+      .split(/[^a-z\d]+/)
+  )
 }
 
 export function isMultipleOf(value: number, base: number, tolerance = 0.01): boolean {

@@ -382,6 +382,7 @@
         "@open-pencil/design-jsx": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@valibot/to-json-schema": "^1.8.0",
+        "es-toolkit": "^1.52.0",
         "hono": "^4.13.13",
         "js-base64": "^3.9.3",
         "package-manager-detector": "^1.8.0",
@@ -433,6 +434,7 @@
         "@open-pencil/scene-graph": "workspace:*",
         "@tanstack/vue-table": "^8.21.3",
         "@vueuse/core": "^14.4.0",
+        "es-toolkit": "^1.52.0",
         "fuse.js": "^7.5.0",
         "nanostores": "^1.5.4",
         "reka-ui": "^2.10.5",
@@ -473,9 +475,15 @@
     },
     "tools/checks/i18n": {
       "name": "@open-pencil/i18n-tools",
+      "dependencies": {
+        "es-toolkit": "^1.52.0",
+      },
     },
     "tools/checks/lint": {
       "name": "@open-pencil/lint-tools",
+      "dependencies": {
+        "es-toolkit": "^1.52.0",
+      },
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
       },
@@ -500,6 +508,9 @@
     },
     "tools/checks/type-shapes": {
       "name": "@open-pencil/type-shapes-tools",
+      "dependencies": {
+        "es-toolkit": "^1.52.0",
+      },
     },
     "tools/ci/images": {
       "name": "@open-pencil/ci-images-tools",
@@ -526,6 +537,7 @@
       "name": "@open-pencil/unit-tests-tools",
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
+        "es-toolkit": "^1.52.0",
       },
     },
     "tools/generate/authoring-reference": {
@@ -557,6 +569,9 @@
     },
     "tools/generate/tauri-menu": {
       "name": "@open-pencil/tauri-menu-tools",
+      "dependencies": {
+        "es-toolkit": "^1.52.0",
+      },
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/vue": "workspace:*",
