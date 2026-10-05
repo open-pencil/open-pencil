@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { randomHex, randomIndex, randomInt } from '@open-pencil/core/random'
+import { randomHex, randomIndex, randomInt } from '@open-pencil/scene-graph/random'
 
 describe('random helpers', () => {
   test('randomHex returns requested byte length as hex', () => {

@@ -1,6 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
 
+import { recordRuntimeError } from '@/app/diagnostics'
 import { isTauri } from '@/app/tauri/env'
 import type { ToastProgress, ToastVariant } from '@/components/ui/feedback/toast'
 
@@ -131,9 +132,11 @@ function setupGlobalErrorHandler() {
   errorHandlersInitialized = true
 
   useEventListener(window, 'error', (e) => {
+    recordRuntimeError(e.error ?? e.message, 'window')
     error(e.message || 'An unexpected error occurred')
   })
   useEventListener(window, 'unhandledrejection', (e) => {
+    recordRuntimeError(e.reason, 'rejection')
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
     error(msg || 'An unexpected error occurred')
   })

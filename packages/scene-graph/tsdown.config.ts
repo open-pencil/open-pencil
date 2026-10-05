@@ -28,6 +28,7 @@ export default defineConfig({
     'layout-guides': './src/layout-guides.ts',
     resize: './src/resize.ts',
     'parse-path': './src/parse-path.ts',
+    random: './src/random.ts',
     color: './src/color/index.ts',
     'text-direction': './src/text-direction.ts'
   },

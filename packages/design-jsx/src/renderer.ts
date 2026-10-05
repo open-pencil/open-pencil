@@ -1,6 +1,7 @@
 import { compact } from 'es-toolkit/array'
 
 import {
+  createComponentPropertyId,
   setInstanceOverride,
   type Color,
   type ComponentPropertyDefinition,
@@ -65,11 +66,6 @@ export interface RenderResult {
 }
 
 /** Component property ids only need to be unique within a document. */
-function randomHex(bytes: number): string {
-  return Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (byte) =>
-    byte.toString(16).padStart(2, '0')
-  ).join('')
-}
 
 /** The nodes a tree renders as: a fragment's children, or the tree itself. */
 function treeRoots(tree: TreeNode): TreeNode[] {
@@ -333,7 +329,7 @@ function inferComponentSetProperties(graph: SceneGraph, componentSetId: string):
     .map(([name, values]) => {
       const variantOptions = [...values]
       return {
-        id: `prop:${randomHex(8)}`,
+        id: createComponentPropertyId(),
         name,
         type: 'VARIANT',
         defaultValue: variantOptions[0] ?? '',
