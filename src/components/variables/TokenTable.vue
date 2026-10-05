@@ -13,7 +13,7 @@ import tokensPanelTheme from '@/theme/tokens-panel'
 const { collection, groups, labels, modeIds } = defineProps<{
   collection: VariableCollection
   groups: TokenGroup[]
-  labels: { name: string; cssName: string }
+  labels: { name: string; cssName: string; empty: string }
   /** Modes to show values for; every mode by default. */
   modeIds?: readonly string[]
 }>()
@@ -94,6 +94,7 @@ function shown<T extends { modeId: string }>(values: readonly T[]) {
           </span>
         </ListboxItem>
       </ListboxGroup>
+      <p v-if="groups.length === 0" :class="ui.empty()">{{ labels.empty }}</p>
     </ListboxContent>
   </ListboxRoot>
 </template>

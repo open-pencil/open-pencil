@@ -67,7 +67,7 @@ async function restoreFocus() {
     >
       <div v-if="open" data-slot="detail" :class="styles.detail({ class: ui?.detail })">
         <div data-slot="header" :class="styles.header({ class: ui?.header })">
-          <AppButton variant="ghost" size="sm" data-test-id="drill-in-back" @click="emit('back')">
+          <AppButton variant="ghost" size="sm" data-slot="back" @click="emit('back')">
             <template #leading><icon-lucide-chevron-left class="size-4" /></template>
             <span class="sr-only">{{ back }}:</span>
             {{ parent }}

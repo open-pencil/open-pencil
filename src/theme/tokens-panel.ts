@@ -1,17 +1,18 @@
+/** Below this panel width (40rem) the inspector opens over the list instead of beside it. */
+export const TOKENS_PANEL_COMPACT_WIDTH = 640
+
 /**
  * The list is its own `tokens-list` container, so its columns follow the space left beside the
  * inspector. Below 42rem (`@2xl`) the CSS name moves under the token name; the value columns
  * repeat `--token-modes` times.
  */
-/** Below this panel width (40rem) the inspector opens over the list instead of beside it. */
-export const TOKENS_PANEL_COMPACT_WIDTH = 640
-
 const COLUMNS =
   'grid-cols-[minmax(0,1.4fr)_repeat(var(--token-modes),minmax(6rem,1fr))] @2xl/tokens-list:grid-cols-[minmax(8rem,1.1fr)_minmax(8rem,1fr)_repeat(var(--token-modes),minmax(7rem,1fr))]'
 
 export default {
   slots: {
     root: '@container/tokens flex min-h-0 flex-1 flex-col',
+    toolbar: 'flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5',
     list: '@container/tokens-list flex min-w-0 flex-1 flex-col overflow-auto',
     inspector: 'flex shrink-0 flex-col gap-4 overflow-y-auto p-4',
     output: 'flex shrink-0 flex-col border-t border-border',
@@ -34,8 +35,7 @@ export default {
     field: 'flex flex-col gap-1',
     label: 'text-[11px] text-muted',
     hint: 'text-[10px] text-muted',
-    backBar:
-      'flex shrink-0 items-center gap-2 border-b border-border px-2 py-1.5 text-xs text-surface'
+    empty: 'px-4 py-8 text-center text-xs text-muted'
   },
   variants: {
     /** Beside the token list on desktop; the whole panel, behind a back button, on mobile. */

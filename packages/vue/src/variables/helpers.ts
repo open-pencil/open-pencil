@@ -107,9 +107,10 @@ export function createVariableValueActions(
     return 'New text'
   }
 
-  function addVariable(type: VariableType = 'COLOR') {
+  /** Adds a variable to the active collection and returns its id. */
+  function addVariable(type: VariableType = 'COLOR'): string | undefined {
     const col = getActiveCollection()
-    if (!col) return
+    if (!col) return undefined
 
     const id = `var:${randomHex(8)}`
     const valuesByMode: Record<string, VariableValue> = {}
@@ -126,6 +127,7 @@ export function createVariableValueActions(
       description: '',
       hiddenFromPublishing: false
     })
+    return id
   }
 
   function removeVariable(id: string) {

@@ -22,6 +22,7 @@ import type { TokenRow } from '@/app/editor/tokens/model'
 import { SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import BindingPill from '@/components/ui/binding/BindingPill.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -42,6 +43,7 @@ const emit = defineEmits<{
   rename: [name: string]
   updateToken: [patch: Partial<VariableTokenFields>]
   updateValue: [modeId: string, value: VariableValue]
+  remove: []
 }>()
 
 const { variables } = useI18n()
@@ -111,7 +113,25 @@ function resetDraft(current: Variable) {
     draft.expressions[mode.modeId] = current.expressions?.[mode.modeId]?.css ?? ''
   }
 }
-watch(variable, resetDraft, { immediate: true })
+/**
+ * Drafts reset when the token's stored fields change, by edit or undo, not whenever the list is
+ * re-read, so a scene change does not discard what is being typed.
+ */
+watch(
+  () => {
+    const { id, name, description, valuesByMode, expressions } = variable.value
+    return JSON.stringify([
+      id,
+      name,
+      explicitCSSName(variable.value),
+      description,
+      valuesByMode,
+      expressions
+    ])
+  },
+  () => resetDraft(variable.value),
+  { immediate: true }
+)
 
 function commitName() {
   const name = draft.name.trim()
@@ -261,6 +281,20 @@ function color(modeId: string): Color | undefined {
     <section :class="ui.section()">
       <h3 :class="ui.sectionTitle()">{{ variables.description }}</h3>
       <AppTextarea v-model="draft.description" :rows="2" @change="commitDescription" />
+    </section>
+
+    <section :class="ui.section()">
+      <AppButton
+        variant="ghost"
+        color="error"
+        size="sm"
+        class="self-start"
+        data-test-id="variables-delete-variable"
+        @click="emit('remove')"
+      >
+        <template #leading><icon-lucide-trash-2 class="size-3.5" /></template>
+        {{ variables.deleteVariable }}
+      </AppButton>
     </section>
   </aside>
 </template>

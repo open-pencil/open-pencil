@@ -1,3 +1,5 @@
+import { params } from '@nanostores/i18n'
+
 import { i18n } from '#vue/i18n/create'
 
 export const variablesMessageDefaults = {
@@ -12,8 +14,12 @@ export const variablesMessageDefaults = {
   duplicateMode: 'Duplicate mode',
   deleteMode: 'Delete mode',
   setDefaultMode: 'Set as default',
-  copyAsCSS: 'Copy as CSS',
-  copyAsTailwindTheme: 'Copy as Tailwind theme',
+  copyAsCSS: 'Copy all variables as CSS',
+  copyAsTailwindTheme: 'Copy all variables as a Tailwind theme',
+  deleteVariable: 'Delete variable',
+  modeActions: params('{mode} actions'),
+  collectionSettings: 'Collection settings',
+  noVariables: 'No variables in this collection',
   name: 'Name',
   cssName: 'CSS name',
   cssNameHint: 'Leave empty to derive it from the name and scopes.',

@@ -283,3 +283,11 @@ zh-cn:updates.unavailable
 zh-cn:updates.upToDate
 zh-cn:variables.copyAsCSS
 zh-cn:variables.copyAsTailwindTheme
+ja:variables.cssName
+ja:variables.expression
+ja:variables.expressionHint
+ja:variables.conditionHint
+zh-cn:variables.cssName
+zh-cn:variables.expression
+zh-cn:variables.expressionHint
+zh-cn:variables.conditionHint

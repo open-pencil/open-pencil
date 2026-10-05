@@ -5,11 +5,13 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { VariableTokenFields } from '@open-pencil/core/editor'
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
-import type { VariableValue } from '@open-pencil/scene-graph'
+import type { VariableType, VariableValue } from '@open-pencil/scene-graph'
 import { useI18n, useVariables } from '@open-pencil/vue'
 
 import { tokenGroups } from '@/app/editor/tokens/model'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -17,6 +19,7 @@ import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
 import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
 import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 import CollectionInspector from '@/components/variables/CollectionInspector.vue'
+import TokenAddMenu from '@/components/variables/TokenAddMenu.vue'
 import TokenInspector from '@/components/variables/TokenInspector.vue'
 import TokenOutput from '@/components/variables/TokenOutput.vue'
 import TokenTable from '@/components/variables/TokenTable.vue'
@@ -35,6 +38,7 @@ const ui = tv(tokensPanelTheme)()
 const root = useTemplateRef('root')
 const { width } = useElementSize(root)
 const compact = computed(() => width.value > 0 && width.value < TOKENS_PANEL_COMPACT_WIDTH)
+
 const ctx = useVariables()
 const { editor } = ctx
 const selectedId = ref<string | null>(null)
@@ -43,7 +47,7 @@ const selectedId = ref<string | null>(null)
  * What the compact detail view shows. It stays set while the view slides out, so Back animates
  * the view that was open instead of switching its content first.
  */
-type CompactDetail = { kind: 'token'; id: string } | { kind: 'modes' } | { kind: 'stylesheet' }
+type CompactDetail = { kind: 'token'; id: string } | { kind: 'collection' } | { kind: 'stylesheet' }
 const compactDetail = ref<CompactDetail | null>(null)
 const detailOpen = ref(false)
 /** The mode whose values the single compact column shows. */
@@ -78,6 +82,12 @@ const modeOptions = computed(() =>
   (collection.value?.modes ?? []).map((mode) => ({ value: mode.modeId, label: mode.name }))
 )
 
+const tableLabels = computed(() => ({
+  name: messages.value.name,
+  cssName: messages.value.cssName,
+  empty: messages.value.noVariables
+}))
+
 watch(
   collection,
   (current) => {
@@ -87,10 +97,7 @@ watch(
   { immediate: true }
 )
 
-watch(ctx.activeCollectionId, () => {
-  selectedId.value = null
-  detailOpen.value = false
-})
+watch(ctx.activeCollectionId, closeDetail)
 
 watch(selectedId, (id) => {
   if (compact.value && id) openDetail({ kind: 'token', id })
@@ -101,9 +108,21 @@ function openDetail(detail: CompactDetail) {
   detailOpen.value = true
 }
 
-function back() {
+function closeDetail() {
   detailOpen.value = false
   selectedId.value = null
+}
+
+/** A new token is selected, so its name is ready to edit beside the list or behind Back. */
+function addToken(type: VariableType) {
+  ctx.searchTerm.value = ''
+  const id = ctx.addVariable(type)
+  if (id) selectedId.value = id
+}
+
+function removeToken() {
+  if (editedId.value) ctx.removeVariable(editedId.value)
+  closeDetail()
 }
 
 function updateToken(patch: Partial<VariableTokenFields>) {
@@ -114,8 +133,16 @@ function updateValue(modeId: string, value: VariableValue) {
   if (editedId.value) editor.updateVariableValue(editedId.value, modeId, value)
 }
 
-function rename(name: string) {
+function renameToken(name: string) {
   if (editedId.value) editor.renameVariable(editedId.value, name)
+}
+
+function renameCollection(name: string) {
+  if (collection.value) ctx.renameCollection(collection.value.id, name)
+}
+
+function removeCollection() {
+  if (collection.value) ctx.removeCollection(collection.value.id)
 }
 
 function setCondition(modeId: string, condition: string) {
@@ -124,29 +151,61 @@ function setCondition(modeId: string, condition: string) {
 </script>
 
 <template>
-  <div v-if="collection" ref="root" :class="ui.root()" data-test-id="tokens-panel">
-    <!-- Compact: the list, with a token, the modes, or the stylesheet opening over it. -->
+  <div ref="root" :class="ui.root()" data-test-id="tokens-panel">
+    <template v-if="!collection">
+      <div :class="ui.toolbar()">
+        <span class="flex-1" />
+        <slot name="actions" />
+      </div>
+      <AppPlaceholder :label="messages.noVariableCollections">
+        <template #icon>
+          <icon-lucide-folder class="size-5" />
+        </template>
+        <template #action>
+          <AppButton
+            variant="soft"
+            data-test-id="variables-create-collection"
+            @click="ctx.addCollection"
+          >
+            {{ messages.createCollection }}
+          </AppButton>
+        </template>
+      </AppPlaceholder>
+    </template>
+
+    <!-- Compact: the list, with a token, the collection, or the stylesheet opening over it. -->
     <PanelDrillIn
-      v-if="compact"
+      v-else-if="compact"
       :open="detailOpen"
       :back="common.back"
       :parent="collection.name"
-      @back="back"
+      @back="closeDetail"
     >
+      <template #actions>
+        <slot name="actions" />
+      </template>
       <template #detail>
         <TokenInspector
           v-if="compactDetail?.kind === 'token' && editedRow"
           :row="editedRow"
           :collection="collection"
           layout="full"
-          @rename="rename"
+          @rename="renameToken"
           @update-token="updateToken"
           @update-value="updateValue"
+          @remove="removeToken"
         />
         <CollectionInspector
-          v-else-if="compactDetail?.kind === 'modes'"
+          v-else-if="compactDetail?.kind === 'collection'"
           :collection="collection"
           layout="full"
+          @rename="renameCollection"
+          @remove="removeCollection"
+          @add-mode="ctx.addMode"
+          @rename-mode="ctx.renameMode"
+          @duplicate-mode="ctx.duplicateMode"
+          @set-default-mode="ctx.setDefaultMode"
+          @remove-mode="ctx.removeMode"
           @set-condition="setCondition"
         />
         <TokenOutput
@@ -158,12 +217,24 @@ function setCondition(modeId: string, condition: string) {
       </template>
 
       <div class="flex shrink-0 flex-col gap-2 border-b border-border p-3">
-        <AppSelect
-          v-model="ctx.activeCollectionId.value"
-          :options="collectionOptions"
-          :label="messages.collection"
-          :ui="{ trigger: 'w-full' }"
-        />
+        <div class="flex items-center gap-1">
+          <AppSelect
+            v-model="ctx.activeCollectionId.value"
+            :options="collectionOptions"
+            :label="messages.collection"
+            :ui="{ trigger: 'min-w-0 flex-1' }"
+          />
+          <TokenAddMenu @add="addToken" />
+          <IconButton
+            size="sm"
+            :label="messages.createCollection"
+            data-test-id="variables-add-collection"
+            @click="ctx.addCollection"
+          >
+            <icon-lucide-folder-plus class="size-4" />
+          </IconButton>
+          <slot name="actions" />
+        </div>
         <div class="flex items-center gap-2">
           <AppInput
             v-model="ctx.searchTerm.value"
@@ -181,8 +252,12 @@ function setCondition(modeId: string, condition: string) {
             :label="messages.mode"
             :ui="{ trigger: 'w-28 shrink-0' }"
           />
-          <IconButton :label="messages.modes" @click="openDetail({ kind: 'modes' })">
-            <icon-lucide-layers class="size-4" />
+          <IconButton
+            :label="messages.collectionSettings"
+            data-test-id="variables-collection-settings"
+            @click="openDetail({ kind: 'collection' })"
+          >
+            <icon-lucide-settings-2 class="size-4" />
           </IconButton>
           <IconButton :label="messages.stylesheet" @click="openDetail({ kind: 'stylesheet' })">
             <icon-lucide-braces class="size-4" />
@@ -193,19 +268,20 @@ function setCondition(modeId: string, condition: string) {
         v-model:selected-id="selectedId"
         :collection="collection"
         :groups="groups"
-        :labels="{ name: messages.name, cssName: messages.cssName }"
+        :labels="tableLabels"
         :mode-ids="[shownModeId]"
       />
     </PanelDrillIn>
 
     <template v-else>
-      <div class="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
+      <div :class="ui.toolbar()">
         <AppTabsRoot v-model="ctx.activeCollectionId.value" class="min-w-0 flex-1">
           <AppTabsList :label="messages.collection">
             <AppTabsTrigger
               v-for="candidate in ctx.collections.value"
               :key="candidate.id"
               :value="candidate.id"
+              data-test-id="variables-collection-tab"
             >
               {{ candidate.name }}
             </AppTabsTrigger>
@@ -220,6 +296,15 @@ function setCondition(modeId: string, condition: string) {
           :aria-label="common.search"
           data-test-id="variables-search-input"
         />
+        <TokenAddMenu @add="addToken" />
+        <IconButton
+          size="sm"
+          :label="messages.createCollection"
+          data-test-id="variables-add-collection"
+          @click="ctx.addCollection"
+        >
+          <icon-lucide-folder-plus class="size-4" />
+        </IconButton>
         <slot name="actions" />
       </div>
       <div class="flex min-h-0 flex-1 overflow-hidden">
@@ -227,7 +312,7 @@ function setCondition(modeId: string, condition: string) {
           v-model:selected-id="selectedId"
           :collection="collection"
           :groups="groups"
-          :labels="{ name: messages.name, cssName: messages.cssName }"
+          :labels="tableLabels"
         />
         <Transition v-bind="swapTransition" mode="out-in">
           <TokenInspector
@@ -235,14 +320,22 @@ function setCondition(modeId: string, condition: string) {
             :key="editedRow.variable.id"
             :row="editedRow"
             :collection="collection"
-            @rename="rename"
+            @rename="renameToken"
             @update-token="updateToken"
             @update-value="updateValue"
+            @remove="removeToken"
           />
           <CollectionInspector
             v-else
             key="collection"
             :collection="collection"
+            @rename="renameCollection"
+            @remove="removeCollection"
+            @add-mode="ctx.addMode"
+            @rename-mode="ctx.renameMode"
+            @duplicate-mode="ctx.duplicateMode"
+            @set-default-mode="ctx.setDefaultMode"
+            @remove-mode="ctx.removeMode"
             @set-condition="setCondition"
           />
         </Transition>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core/editor'
-import type { Variable, VariableValue } from '@open-pencil/scene-graph'
+import { shallowReactive } from 'vue'
+
+import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
+import { SceneGraph, type Variable, type VariableValue } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { provideEditor } from '@open-pencil/vue'
 
@@ -9,8 +11,12 @@ import TokensPanel from '@/components/variables/TokensPanel.vue'
 /** The frame width in pixels, capped by the window; the panel lays out by this. */
 const { width = 1040 } = defineProps<{ width?: number }>()
 
-const editor = createEditor()
-const { graph } = editor
+/** Reactive state, as the app session gives it, so edits re-render the panel. */
+const graph = new SceneGraph()
+const editor = createEditor({
+  graph,
+  state: shallowReactive(createDefaultEditorState(graph.getPages()[0].id))
+})
 
 function addVariable(
   collectionId: string,

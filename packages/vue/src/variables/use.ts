@@ -14,7 +14,13 @@ export function useVariables() {
     searchTerm.value = term
   }
 
-  const collections = useSceneComputed(() => editor.getCollections())
+  /**
+   * Snapshots, not the graph's own objects: the editor edits collections in place, so a component
+   * given the same object again would not see a mode added, renamed, or given a condition.
+   */
+  const collections = useSceneComputed(() =>
+    editor.getCollections().map((collection) => structuredClone(collection))
+  )
 
   const activeCollectionId = ref(collections.value[0]?.id ?? '')
   watch(collections, (cols) => {

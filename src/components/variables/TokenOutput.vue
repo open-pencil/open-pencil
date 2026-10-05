@@ -63,6 +63,7 @@ function setFormat(value: string) {
       <span class="flex-1" />
       <IconButton
         :label="format === 'css' ? variables.copyAsCSS : variables.copyAsTailwindTheme"
+        data-test-id="variables-copy-stylesheet"
         @click="emit('copy', format)"
       >
         <icon-lucide-copy class="size-3.5" />
