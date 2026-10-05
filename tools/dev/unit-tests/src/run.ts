@@ -3,7 +3,7 @@
 import { listHeavyUnitTests, listUnitTests, type UnitTestGroup, unitTestGroupNames } from './shards'
 
 /**
- * Runs `bun test` over one shard group.
+ * Runs `bun test` over one shard group: quick files in one process, heavy files one per process.
  *
  *   bun tools/dev/unit-tests/src/run.ts [group] [--include-heavy | --heavy-only] [-- <bun test args>]
  *
@@ -25,17 +25,32 @@ if (!unitTestGroupNames().includes(group)) {
 
 const heavyOnly = flags.has('--heavy-only')
 const includeHeavy = heavyOnly || flags.has('--include-heavy')
-const files = heavyOnly
-  ? await listHeavyUnitTests(group)
-  : await listUnitTests(group, { includeHeavy })
+const lightFiles = heavyOnly ? [] : await listUnitTests(group)
+const heavyFiles = includeHeavy ? await listHeavyUnitTests(group) : []
 
-if (files.length === 0) {
+if (lightFiles.length === 0 && heavyFiles.length === 0) {
   console.log(`No unit tests found for shard ${group}`)
   process.exit(0)
 }
 
-const child = Bun.spawn([process.execPath, 'test', ...bunTestArgs, ...files], {
-  stdio: ['inherit', 'inherit', 'inherit'],
-  env: { ...process.env, BUN_HEAVY_TESTS: includeHeavy ? 'true' : 'false' }
-})
-process.exit(await child.exited)
+async function runBunTest(files: string[]): Promise<number> {
+  const child = Bun.spawn([process.execPath, 'test', ...bunTestArgs, ...files], {
+    stdio: ['inherit', 'inherit', 'inherit'],
+    env: { ...process.env, BUN_HEAVY_TESTS: includeHeavy ? 'true' : 'false' }
+  })
+  return child.exited
+}
+
+// Light files share one process. Each heavy file gets its own, because one alone can take
+// several gigabytes and a shared process would keep what earlier files left behind. Coverage
+// is collected per process, so a coverage run keeps every file in one.
+const coverage = bunTestArgs.some((arg) => arg.startsWith('--coverage'))
+const batches = coverage
+  ? [[...lightFiles, ...heavyFiles]]
+  : [...(lightFiles.length > 0 ? [lightFiles] : []), ...heavyFiles.map((file) => [file])]
+const failed: string[] = []
+for (const files of batches) {
+  if ((await runBunTest(files)) !== 0) failed.push(files.length === 1 ? files[0] : 'quick tests')
+}
+if (failed.length > 0) console.error(`\nFailed: ${failed.join(', ')}`)
+process.exit(failed.length > 0 ? 1 : 0)
