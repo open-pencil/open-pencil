@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { recordDiagnostic } from '../recorder'
-import type { DiagnosticEvent } from '../types'
+import type { DiagnosticEventInput } from '../types'
 
 const mcpFailureSchema = v.object({
   operation: v.picklist(['connect', 'request', 'disconnect']),
@@ -25,7 +25,7 @@ export function recordMCPConnectionFailure(input: v.InferOutput<typeof mcpFailur
     level: 'error',
     name: 'mcp.connection.failed',
     attributes: parsed.output
-  } satisfies Omit<DiagnosticEvent, 'id' | 'timestamp'>)
+  } satisfies DiagnosticEventInput)
 }
 
 export function recordACPTransportFailure(input: v.InferOutput<typeof acpFailureSchema>): void {
@@ -36,5 +36,5 @@ export function recordACPTransportFailure(input: v.InferOutput<typeof acpFailure
     level: 'error',
     name: 'acp.transport.failed',
     attributes: parsed.output
-  } satisfies Omit<DiagnosticEvent, 'id' | 'timestamp'>)
+  } satisfies DiagnosticEventInput)
 }

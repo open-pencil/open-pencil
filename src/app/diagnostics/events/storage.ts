@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { recordDiagnostic } from '../recorder'
-import type { DiagnosticEvent } from '../types'
+import type { DiagnosticEventInput } from '../types'
 
 const storageFailureSchema = v.object({
   operation: v.picklist(['upload', 'download', 'delete', 'list']),
@@ -18,5 +18,5 @@ export function recordStorageFailure(input: v.InferOutput<typeof storageFailureS
     level: 'error',
     name: 'storage.operation.failed',
     attributes: parsed.output
-  } satisfies Omit<DiagnosticEvent, 'id' | 'timestamp'>)
+  } satisfies DiagnosticEventInput)
 }

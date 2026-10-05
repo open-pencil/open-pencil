@@ -9,5 +9,7 @@
   "renameMode": "モードの名前を変更",
   "duplicateMode": "モードを複製",
   "deleteMode": "モードを削除",
-  "setDefaultMode": "デフォルトに設定"
+  "setDefaultMode": "デフォルトに設定",
+  "copyAsCSS": "CSSとしてコピー",
+  "copyAsTailwindTheme": "Tailwindテーマとしてコピー"
 }

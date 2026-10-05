@@ -6,17 +6,18 @@ import * as v from 'valibot'
 const CODE_RABBIT_AUTHORS = new Set(['coderabbitai[bot]', 'coderabbitai'])
 const REVIEW_GUIDANCE_PREFIXES = ['pr hygiene', 'pr readability', 'pr description']
 
+// Webhook payloads send `null` for absent fields, such as the body of a review left without one.
 const GitHubEventJSON = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
-    sender: v.optional(v.object({ login: v.optional(v.string()) })),
-    review: v.optional(v.object({ state: v.optional(v.string()), body: v.optional(v.string()) })),
-    pull_request: v.optional(v.object({ number: v.optional(v.number()) })),
-    issue: v.optional(
-      v.object({ number: v.optional(v.number()), pull_request: v.optional(v.unknown()) })
+    sender: v.nullish(v.object({ login: v.nullish(v.string()) })),
+    review: v.nullish(v.object({ state: v.nullish(v.string()), body: v.nullish(v.string()) })),
+    pull_request: v.nullish(v.object({ number: v.nullish(v.number()) })),
+    issue: v.nullish(
+      v.object({ number: v.nullish(v.number()), pull_request: v.nullish(v.unknown()) })
     ),
-    comment: v.optional(v.object({ body: v.optional(v.string()) }))
+    comment: v.nullish(v.object({ body: v.nullish(v.string()) }))
   })
 )
 
@@ -37,7 +38,7 @@ const PullRequestSummarySchema: v.GenericSchema<unknown, PullRequestSummary> = v
 })
 
 interface EventContext {
-  issueNumber?: number
+  issueNumber?: number | null
   shouldInspect: boolean
   text: string
 }

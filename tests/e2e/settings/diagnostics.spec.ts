@@ -1,9 +1,25 @@
 import type { Page } from '@playwright/test'
-
-import type { DiagnosticEvent } from '@/app/diagnostics/types'
+import * as v from 'valibot'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '#tests/helpers/chat/fixture'
+
+/** The JSON that Copy diagnostics puts on the clipboard, as far as these tests read it. */
+const ReportJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    environment: v.object({ app: v.string(), shell: v.string() }),
+    events: v.array(
+      v.object({
+        name: v.string(),
+        sessionId: v.optional(v.string()),
+        runId: v.optional(v.string()),
+        attributes: v.record(v.string(), v.unknown())
+      })
+    )
+  })
+)
 
 test('Settings exports correlated chat telemetry without conversation content', async ({
   configuredChat: chat,
@@ -21,7 +37,8 @@ test('Settings exports correlated chat telemetry without conversation content', 
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   await expect(page.getByText('Diagnostics copied to clipboard.', { exact: true })).toBeVisible()
   const text = await page.evaluate(() => navigator.clipboard.readText())
-  const events: DiagnosticEvent[] = JSON.parse(text)
+  const { environment, events } = v.parse(ReportJSON, text)
+  expect(environment).toMatchObject({ app: expect.any(String), shell: 'browser' })
   const completed = events.filter((event) => event.name === 'chat.completed')
   expect(completed).toHaveLength(2)
   expect(completed[0].sessionId).toEqual(expect.any(String))
@@ -81,4 +98,44 @@ test('diagnostics retention offers presets and accepts a bounded custom value', 
   await reloadAndOpenDiagnostics(page)
   await expect(retention).toHaveText('1000')
   await expect(row.getByRole('spinbutton')).toHaveCount(0)
+})
+
+test('uncaught errors are listed with their stack and can be filtered and copied', async ({
+  configuredChat: chat,
+  page,
+  context
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await chat.submit('A request that records info events')
+  await expect(chat.assistantMessage()).toBeVisible()
+  await page.evaluate(() => {
+    setTimeout(() => {
+      throw new TypeError('Attempting to define property on object that is not extensible.')
+    })
+  })
+  await openDiagnostics(page)
+
+  const events = page.locator('[data-slot="diagnostics-events"]')
+  const failure = events.getByRole('button', { name: /Error: TypeError/ })
+  await expect(failure).toContainText(
+    'Attempting to define property on object that is not extensible.'
+  )
+  await failure.click()
+  await expect(events.locator('pre')).toContainText('TypeError')
+  // Events recorded before Settings opened are counted.
+  await expect(page.getByText(/^[1-9]\d* events · /)).toBeVisible()
+
+  // Info events such as the completed chat drop out when only problems are shown.
+  await expect(events.getByRole('button', { name: /AI chat completed/ })).toBeVisible()
+  await events.getByRole('button', { name: 'Errors and warnings' }).click()
+  await expect(events.getByRole('button', { name: /AI chat completed/ })).toHaveCount(0)
+  await expect(failure).toBeVisible()
+
+  await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
+  // The clipboard outlives the test's page, so read it only once this copy has finished.
+  await expect(page.getByText('Diagnostics copied to clipboard.', { exact: true })).toBeVisible()
+  const report = v.parse(ReportJSON, await page.evaluate(() => navigator.clipboard.readText()))
+  const runtime = report.events.find((event) => event.name === 'runtime.error')
+  expect(runtime?.attributes).toMatchObject({ source: 'window', errorName: 'TypeError' })
+  expect(String(runtime?.attributes.stack)).toContain('TypeError')
 })
