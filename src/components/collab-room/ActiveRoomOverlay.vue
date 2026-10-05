@@ -11,11 +11,13 @@ const room = useRoomActions()
   <RoomScreen
     v-if="room.pending.value && room.state.value.status"
     :status="room.state.value.status === 'joining' ? 'joining' : 'waiting'"
+    :name="room.state.value.localName"
     :copied="room.copied.value"
     :name-hint="room.nameHint.value"
     :desktop-link="room.desktopLink.value"
     @copy-link="room.copyLink"
     @leave="room.leave"
+    @rename="room.rename"
   />
   <LeftRoomNotice v-else-if="room.leftRoom.value" @dismiss="room.dismissLeftRoomNote" />
 </template>

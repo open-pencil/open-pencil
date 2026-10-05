@@ -10,6 +10,8 @@ export const roomScreen = tv({
     title: 'text-sm font-semibold text-surface',
     body: 'text-xs leading-relaxed text-muted',
     steps: 'flex list-disc flex-col gap-1 pl-4 text-xs leading-relaxed text-surface',
+    name: 'flex flex-col gap-1',
+    label: 'text-xs text-muted',
     hint: 'text-[11px] leading-relaxed text-muted',
     actions: 'mt-1 flex flex-wrap items-center gap-2',
     link: 'text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none'

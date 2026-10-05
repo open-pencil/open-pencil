@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 import { useCollaborationMessages } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 import { roomScreen } from '@/theme/collaboration/room-screen'
 
 /**
@@ -10,11 +13,14 @@ import { roomScreen } from '@/theme/collaboration/room-screen'
  */
 const {
   status,
+  name,
   copied = false,
   nameHint = null,
   desktopLink = null
 } = defineProps<{
   status: 'joining' | 'waiting'
+  /** The person's name in the room, generated until they set one. */
+  name: string
   copied?: boolean
   /** Shown while the person is in the room under a generated name. */
   nameHint?: string | null
@@ -25,9 +31,16 @@ const {
 const emit = defineEmits<{
   copyLink: []
   leave: []
+  rename: [name: string]
 }>()
 
 const messages = useCollaborationMessages()
+const nameDraft = ref('')
+
+function rename() {
+  const next = nameDraft.value.trim()
+  if (next && next !== name) emit('rename', next)
+}
 const ui = roomScreen()
 </script>
 
@@ -62,7 +75,18 @@ const ui = roomScreen()
         <p :class="ui.body()">{{ messages.waitingOpensAutomatically }}</p>
       </template>
 
-      <p v-if="nameHint" :class="ui.hint()" data-test-id="room-name-hint">{{ nameHint }}</p>
+      <div :class="ui.name()">
+        <label for="room-screen-name-input" :class="ui.label()">{{ messages.yourName }}</label>
+        <AppInput
+          id="room-screen-name-input"
+          v-model="nameDraft"
+          data-test-id="room-screen-name-input"
+          :placeholder="name"
+          @enter="rename"
+          @change="rename"
+        />
+        <p v-if="nameHint" :class="ui.hint()" data-test-id="room-name-hint">{{ nameHint }}</p>
+      </div>
 
       <div :class="ui.actions()">
         <AppButton

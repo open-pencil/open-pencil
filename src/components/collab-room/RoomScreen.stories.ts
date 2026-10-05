@@ -5,11 +5,13 @@ import RoomScreen from './RoomScreen.vue'
 
 type Args = {
   status: 'joining' | 'waiting'
+  name: string
   copied: boolean
   nameHint: string | null
   desktopLink: string | null
   onCopyLink: () => void
   onLeave: () => void
+  onRename: (name: string) => void
 }
 
 const meta = {
@@ -18,11 +20,13 @@ const meta = {
   tags: ['autodocs'],
   args: {
     status: 'waiting',
+    name: 'Teal Fox',
     copied: false,
     nameHint: null,
     desktopLink: null,
     onCopyLink: fn(),
-    onLeave: fn()
+    onLeave: fn(),
+    onRename: fn()
   },
   render: (args) => ({
     components: { RoomScreen },
@@ -61,5 +65,13 @@ export const Actions: Story = {
     await expect(args.onCopyLink).toHaveBeenCalledOnce()
     await userEvent.click(canvas.getByRole('button', { name: 'Leave' }))
     await expect(args.onLeave).toHaveBeenCalledOnce()
+  }
+}
+
+export const Rename: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByLabelText('Your name'), 'Dana{Enter}')
+    await expect(args.onRename).toHaveBeenCalledWith('Dana')
   }
 }

@@ -44,6 +44,10 @@ export function useRoomActions() {
     collab?.disconnect()
   }
 
+  function rename(name: string) {
+    collab?.setLocalName(name)
+  }
+
   function dismissLeftRoomNote() {
     collab?.dismissLeftRoomNote()
   }
@@ -57,6 +61,7 @@ export function useRoomActions() {
     desktopLink,
     copyLink,
     leave,
+    rename,
     dismissLeftRoomNote
   }
 }
