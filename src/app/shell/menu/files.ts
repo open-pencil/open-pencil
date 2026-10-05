@@ -1,4 +1,5 @@
 import { useFileDialog } from '@vueuse/core'
+import { uniq } from 'es-toolkit/array'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
@@ -18,12 +19,10 @@ import { IS_BROWSER } from '@/constants'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const DOM_DOCUMENT_EXTENSIONS = ['html', 'htm', 'xhtml'] as const
-const READABLE_DOCUMENT_EXTENSIONS = [
-  ...new Set([
-    ...io.listReadableFormats().flatMap((format) => format.extensions),
-    ...DOM_DOCUMENT_EXTENSIONS
-  ])
-]
+const READABLE_DOCUMENT_EXTENSIONS = uniq([
+  ...io.listReadableFormats().flatMap((format) => format.extensions),
+  ...DOM_DOCUMENT_EXTENSIONS
+])
 const DESIGN_FILE_ACCEPT = READABLE_DOCUMENT_EXTENSIONS.map((extension) => `.${extension}`).join(
   ','
 )

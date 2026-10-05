@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type {
   ComponentPropertyReferenceField,
   ComponentPropertyDefinition,
@@ -76,7 +78,7 @@ export function exposeInstanceSwap(
     )
   )
     throw new Error('Candidates must be COMPONENT or COMPONENT_SET nodes')
-  const candidateIds = [...new Set(candidateNodes.map((node) => node.id))]
+  const candidateIds = uniq(candidateNodes.map((node) => node.id))
   if (candidateIds.length !== candidateNodes.length) throw new Error('Candidates must be distinct')
   const host = findPropertyHost(graph, slotNodes[0].parentId)
   if (!host) throw new Error('Instance must be nested inside a COMPONENT or COMPONENT_SET')

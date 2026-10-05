@@ -1,4 +1,5 @@
 <script lang="ts">
+import { compact } from 'es-toolkit/array'
 import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 
@@ -38,7 +39,7 @@ const {
 const styles = computed(() =>
   useBindingFieldUI(
     { state, open, disabled, derived },
-    { ...ui, trigger: [ui?.trigger, normalizeClass(className)].filter(Boolean).join(' ') }
+    { ...ui, trigger: compact([ui?.trigger, normalizeClass(className)]).join(' ') }
   )
 )
 

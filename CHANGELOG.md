@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `sceneNodeToDesignDocument` from `@open-pencil/dom-css` takes an options object, `{ includeSourceIds, tokens }`, instead of a boolean third argument; `tokens: false` writes literal values instead of variable references.
 - `randomHex`, `randomInt`, and `randomIndex` moved from `@open-pencil/core/random` and the `@open-pencil/core` barrel to `@open-pencil/scene-graph/random`.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied. Rendering, `.fig` round-trips, and the stroke panel still handle solid strokes only.
@@ -56,6 +57,7 @@
 
 ### Changed
 
+- HTML and Tailwind JSX export write variable-bound colors, spacing, radii, borders, sizes, type sizes, and opacity as the tokens they come from, such as `var(--color-primary)` or `bg-primary`, and put layers set to another mode in it with an attribute such as `data-theme="dark"`. Values CSS would not resolve as the canvas draws them stay literal, and standalone HTML includes the stylesheet for the tokens it uses.
 - Give popovers, menus, dropdowns, and pickers one look and motion: the same rounded panel with a thin outline that reads in light and dark themes, a short fade and grow from the side they open on, and an immediate close; with reduced motion they appear at once.
 - Add and remove items the same way across the properties panel: a section's + adds an item and a row's − removes it, now including grid columns and rows and variant properties. The + of a component set adds Property 1 ready to rename instead of showing a form, and a variant is removed with Delete like any layer.
 - Pick variables, shared styles, and swap components from one searchable list that groups preferred components first and works with the keyboard.
@@ -80,6 +82,7 @@
 - Report a failed MCP `save_file` or `new_document` save as an error instead of success, and ask for a path rather than opening a Save dialog when the document has never been saved.
 - Undo layers that MCP clients and the CLI create, delete, or rearrange in the running app, including `render` and `eval` changes, with Edit → Undo. Previously only their property edits were undoable.
 - Save a `.fig` file that was opened and not edited yet. In the app the save never finished, and MCP `save_file` timed out without writing the file.
+- Show the text, visibility, or swapped component an instance sets when the component gains that layer after the instance was placed, instead of the component's default ([#849](https://github.com/open-pencil/open-pencil/issues/849)).
 - Show `.fig` thumbnails in the desktop app's recent files, which the app was not permitted to read.
 - Give paints set through the plugin API, `eval`, and AI and MCP scripts an opacity of 1 and make them visible when the script leaves those out, as Figma does. Such paints were stored without them, which the Design panel could not show.
 - Keep a layer's other plugin data when you pick or clear a colour in OkHCL. Picking one rewrote every plugin-data entry on the layer, including other plugins' and its export settings, as OkHCL data.

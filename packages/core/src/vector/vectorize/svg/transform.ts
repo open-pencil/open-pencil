@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit/array'
 import svgpath from 'svgpath'
 
 import type { Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
@@ -31,7 +32,7 @@ export function resolveSVGViewportMapping(
 
   const value =
     parseSVGDocument(svg)?.documentElement?.getAttribute('preserveAspectRatio')?.trim() ?? ''
-  const tokens = value.split(/\s+/).filter(Boolean)
+  const tokens = compact(value.split(/\s+/))
   if (tokens.includes('none')) return { space, scaleX, scaleY, offsetX: 0, offsetY: 0 }
   const align = tokens.find((token) => token.startsWith('x')) ?? 'xMidYMid'
 
