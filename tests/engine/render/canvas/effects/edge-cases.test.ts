@@ -1,11 +1,12 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas, Path } from 'canvaskit-wasm'
+import type { Path } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { renderEffects } from '#core/canvas/shadows'
 
+import { asCanvas } from '../helpers'
 import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 
 describe('Edge cases and bug fixes', () => {
@@ -27,13 +28,22 @@ describe('Edge cases and bug fixes', () => {
           spread: 0
         }
       ],
-      strokes: [{ visible: true, weight: 2, opacity: 1 }],
-      strokeGeometry: [{} as Path],
+      strokes: [
+        {
+          type: 'SOLID',
+          visible: true,
+          weight: 2,
+          opacity: 1,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          align: 'CENTER'
+        }
+      ],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array() }],
       childIds: []
     }
     r.getStrokeGeometry = mock(() => [{} as Path])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
 
     expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
     expect(canvas.drawPath).toHaveBeenCalled()
@@ -58,13 +68,22 @@ describe('Edge cases and bug fixes', () => {
           showShadowBehindNode: false
         }
       ],
-      strokes: [{ visible: true, weight: 1, opacity: 1 }],
-      strokeGeometry: [{} as Path],
+      strokes: [
+        {
+          type: 'SOLID',
+          visible: true,
+          weight: 1,
+          opacity: 1,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          align: 'CENTER'
+        }
+      ],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array() }],
       childIds: ['header']
     }
     r.getStrokeGeometry = mock(() => [{} as Path])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), true, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), true, 'behind')
 
     expect(r.getStrokeGeometry).not.toHaveBeenCalled()
     expect(canvas.drawRRect).toHaveBeenCalled()
@@ -103,7 +122,7 @@ describe('Edge cases and bug fixes', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array(4),
       false,
@@ -155,7 +174,7 @@ describe('Edge cases and bug fixes', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array(4),
       false,
@@ -202,7 +221,7 @@ describe('Edge cases and bug fixes', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array(4),
       false,
@@ -255,7 +274,7 @@ describe('Edge cases and bug fixes', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array(4),
       false,
@@ -292,7 +311,7 @@ describe('Edge cases and bug fixes', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array([0, 0, 100, 100]),
       false,
@@ -333,7 +352,7 @@ describe('Edge cases and bug fixes', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array([0, 0, 100, 100]),
       true,
@@ -371,7 +390,7 @@ describe('Edge cases and bug fixes', () => {
     }
 
     expect(() =>
-      renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+      renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
     ).toThrow('draw failed')
 
     expect(canvas.restore).toHaveBeenCalled()
@@ -404,7 +423,7 @@ describe('Edge cases and bug fixes', () => {
     }
 
     expect(() =>
-      renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'front')
+      renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'front')
     ).toThrow('text failed')
 
     expect(mockCalls(canvas.restore).length).toBe(2)

@@ -121,11 +121,12 @@ test('an assignment of the wrong type names the prop and the property', async ()
 test('invalid assignments remove the new instance and do not edit its source', async () => {
   const { graph, component } = await setup()
   const count = graph.nodes.size
-  for (const assignments of [
+  const invalidAssignments: Record<string, string>[] = [
     { missing: 'value' },
     { visible: 'yes' },
     { message: 'Changed', missing: 'value' }
-  ]) {
+  ]
+  for (const assignments of invalidAssignments) {
     await expect(
       renderTree(graph, Instance({ of: component.id, properties: assignments }))
     ).rejects.toThrow()

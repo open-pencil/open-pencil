@@ -30,7 +30,7 @@ describe('roundtrip: GROUP survives export → re-import', () => {
     })
 
     const bytes = await exportFigFile(graph)
-    const reImported = await parseFigFile(bytes)
+    const reImported = await parseFigFile(bytes.buffer as ArrayBuffer)
     const nodes = collectAllNodes(reImported)
 
     const roundTripped = nodes.find((n) => n.name === 'My Group')

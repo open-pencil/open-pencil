@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compact } from 'es-toolkit/array'
 import {
   SelectContent,
   SelectGroup,
@@ -51,7 +52,7 @@ function profileMetadata(profile: AIModelProfile): string {
   const provider = AI_PROVIDERS.find((candidate) => candidate.id === connection?.providerID)
   const modelID = profile.customModelID || profile.modelID
   const modelName = provider?.models.find((model) => model.id === modelID)?.name || modelID
-  return [modelName, provider?.name ?? connection?.providerID].filter(Boolean).join(' · ')
+  return compact([modelName, provider?.name ?? connection?.providerID]).join(' · ')
 }
 
 function manageModels(): void {

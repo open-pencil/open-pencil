@@ -3,6 +3,7 @@ import process from 'node:process'
 import { test, type Page } from '@playwright/test'
 
 import type { DesignDocument } from '@open-pencil/dom-css'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 const BROWSER_RUNTIME_MODULE = `/@fs${process.cwd()}/packages/dom-css/src/runtime/browser.ts`
 const DOM_CSS_BROWSER_MODULE = '/@id/@open-pencil/dom-css/browser'
@@ -203,7 +204,7 @@ export async function publicBrowserTextNode(page: Page, html: string, cssText: s
     async ({ sourceHTML, css, modulePath }) => {
       const { browserHTMLToSceneGraph } = await import(modulePath)
       const graph = await browserHTMLToSceneGraph(sourceHTML, { cssText: css })
-      return graph.getAllNodes().find((node) => node.type === 'TEXT')
+      return graph.getAllNodes().find((node: SceneNode) => node.type === 'TEXT')
     },
     { sourceHTML: html, css: cssText, modulePath: DOM_CSS_BROWSER_MODULE }
   )

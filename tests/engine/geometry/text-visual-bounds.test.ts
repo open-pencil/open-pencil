@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBoundsNode } from '@open-pencil/scene-graph/geometry'
 import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 describe('text visual bounds', () => {
   test('includes decoration overflow below text nodes', () => {
-    const base = {
+    const base: VisualBoundsNode = {
       id: 'text',
       type: 'TEXT',
       visible: true,
@@ -23,7 +23,7 @@ describe('text visual bounds', () => {
       textDecoration: 'NONE',
       textUnderlineOffset: null,
       textDecorationThickness: null
-    } as SceneNode
+    }
 
     const normal = nodeVisualBounds(base, () => ({ x: 10, y: 20 }))
     const decorated = nodeVisualBounds(

@@ -2,6 +2,8 @@ import { describe, it, expect } from 'bun:test'
 
 import { DrawCallCounter } from '@open-pencil/core'
 
+import { asDouble } from '#tests/helpers/doubles'
+
 describe('DrawCallCounter', () => {
   it('handles null GL context', () => {
     const counter = new DrawCallCounter(null)
@@ -12,12 +14,12 @@ describe('DrawCallCounter', () => {
 
   it('wraps draw calls only while enabled', () => {
     let rawDrawCalls = 0
-    const gl = {
+    const gl = asDouble<WebGL2RenderingContext>({
       drawArrays: () => rawDrawCalls++,
       drawElements: () => rawDrawCalls++,
       drawArraysInstanced: () => rawDrawCalls++,
       drawElementsInstanced: () => rawDrawCalls++
-    } as WebGL2RenderingContext
+    })
     const originalDrawArrays = gl.drawArrays
 
     const counter = new DrawCallCounter(gl)

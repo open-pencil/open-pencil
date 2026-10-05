@@ -28,6 +28,18 @@ class MemoryObjects implements LibraryObjectStore {
   }
 }
 
+type CatalogDatabaseName = NonNullable<ConstructorParameters<typeof LocalLibraryCatalog>[0]>
+
+/**
+ * `LocalLibraryCatalog` infers its database-name parameter from the app's single default name, so
+ * the parameter reads as that one literal even though any name opens a database. Each case needs
+ * its own, so the widening happens here once, with the reason written down.
+ */
+function isolatedCatalog(): LocalLibraryCatalog {
+  const databaseName: string = `library-cache-${crypto.randomUUID()}`
+  return new LocalLibraryCatalog(databaseName as CatalogDatabaseName)
+}
+
 function graph() {
   const result = new SceneGraph()
   result.createNode('COMPONENT', result.getPages()[0].id, {
@@ -41,7 +53,7 @@ describe('routed library catalog', () => {
   test('caches remote revisions for offline retrieval', async () => {
     const objects = new MemoryObjects()
     const remote = new StorageLibraryCatalog(objects)
-    const local = new LocalLibraryCatalog(`library-cache-${crypto.randomUUID()}`)
+    const local = isolatedCatalog()
     const routed = new RoutedLibraryCatalog(local)
     routed.useStorage(remote)
     const published = await routed.publishRevision({
@@ -61,7 +73,7 @@ describe('routed library catalog', () => {
   test('does not replace corrupted remote revisions with cached data', async () => {
     const objects = new MemoryObjects()
     const remote = new StorageLibraryCatalog(objects)
-    const local = new LocalLibraryCatalog(`library-cache-${crypto.randomUUID()}`)
+    const local = isolatedCatalog()
     const routed = new RoutedLibraryCatalog(local)
     routed.useStorage(remote)
     const published = await routed.publishRevision({

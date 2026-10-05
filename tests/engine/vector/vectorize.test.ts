@@ -40,12 +40,13 @@ function countTransparentPixels(
 
 function createPNG(width: number, height: number, alpha = 255): Uint8Array {
   const pixels = ck.Malloc(Uint8Array, width * height * 4)
+  const view = pixels.toTypedArray()
   for (let i = 0; i < width * height; i++) {
     const offset = i * 4
-    pixels[offset] = 80
-    pixels[offset + 1] = 120
-    pixels[offset + 2] = 200
-    pixels[offset + 3] = alpha
+    view[offset] = 80
+    view[offset + 1] = 120
+    view[offset + 2] = 200
+    view[offset + 3] = alpha
   }
   const surface = ck.MakeRasterDirectSurface(
     {

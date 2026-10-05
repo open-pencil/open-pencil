@@ -1,10 +1,13 @@
+import type * as AppTabs from '@/app/tabs'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup('/?test')
 
 test('shows preparation status in an inactive tab without covering the active canvas', async () => {
   await editor.page.evaluate(async () => {
-    const tabs = await import('/src/app/tabs/index.ts')
+    const tabsURL = '/src/app/tabs/index.ts'
+    const tabs: typeof AppTabs = await import(tabsURL)
     const first = tabs.getActiveStore()
     first.state.documentName = 'Preparing file'
     tabs.createTab()

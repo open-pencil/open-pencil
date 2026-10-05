@@ -4,7 +4,9 @@ import { FigmaAPI, SceneGraph } from '@open-pencil/core'
 import {
   analyzeOverlaps,
   computeOverlaps,
-  type OverlapScope
+  type AnalyzeOverlapsResult,
+  type OverlapScope,
+  type OverlapSeverity
 } from '@open-pencil/core/tools/analyze/overlaps'
 
 import { frame, pageId, rect, text } from './helpers'
@@ -340,7 +342,7 @@ describe('analyze overlaps', () => {
     rect(graph, 'B', page2.id, 50, 50, 100, 100)
 
     const api = new FigmaAPI(graph)
-    const result = analyzeOverlaps.execute(api, {})
+    const result = analyzeOverlaps.execute(api, {}) as AnalyzeOverlapsResult
     expect(result.summary.overlapCount).toBe(0)
     expect(result.overlaps).toHaveLength(0)
   })
@@ -353,7 +355,7 @@ describe('analyze overlaps', () => {
     rect(graph, 'B', page2.id, 50, 50, 100, 100)
 
     const api = new FigmaAPI(graph)
-    const result = analyzeOverlaps.execute(api, { page: 'Page 2' })
+    const result = analyzeOverlaps.execute(api, { page: 'Page 2' }) as AnalyzeOverlapsResult
     expect(result.summary.overlapCount).toBeGreaterThan(0)
   })
 

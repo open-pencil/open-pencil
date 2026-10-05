@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 const BLUE = { r: 64 / 255, g: 148 / 255, b: 208 / 255, a: 1 }
 
 function parseVariableDocument(prefix: string, children: PenNode[]) {
@@ -70,8 +72,9 @@ describe.each(['', '--'])('parsePenFile — $%sname references (#563)', (prefix)
         }
       ])
       const node = graph.getNode('bound')
-      const variable = [...graph.variables.values()].find(
-        (candidate) => candidate.name === `${prefix}merk-blauw`
+      const variable = expectDefined(
+        [...graph.variables.values()].find((candidate) => candidate.name === `${prefix}merk-blauw`),
+        'brand colour variable'
       )
 
       expect(variable).toBeDefined()
@@ -79,8 +82,8 @@ describe.each(['', '--'])('parsePenFile — $%sname references (#563)', (prefix)
       expect(node?.fills[0]?.color).toEqual(BLUE)
       expect(node?.strokes[0]?.color).toEqual(BLUE)
       expect(node?.boundVariables).toEqual({
-        'fills[0]': variable?.id,
-        'strokes[0]': variable?.id
+        'fills[0]': variable.id,
+        'strokes[0]': variable.id
       })
       expect(graph.getNode('literal')?.boundVariables).toEqual({})
     }

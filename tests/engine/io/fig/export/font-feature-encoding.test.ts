@@ -21,7 +21,6 @@ describe('OpenType feature encoding', () => {
 
   test(
     'exports and reimports text with disabled numeric features',
-    { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {
       const graph = new SceneGraph()
       const page = graph.getPages()[0]
@@ -52,6 +51,7 @@ describe('OpenType feature encoding', () => {
         { tag: 'CALT', enabled: true },
         { tag: 'TNUM', enabled: true }
       ])
-    }
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 })

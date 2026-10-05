@@ -42,11 +42,7 @@ describe('set_image_fill tool', () => {
     expect(result.imageHash).toBeTruthy()
     expect(result.scaleMode).toBe('FILL')
 
-    const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills as Array<{
-      type: string
-      imageHash: string
-      imageScaleMode: string
-    }>
+    const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
     expect(fills).toHaveLength(1)
     expect(fills[0].type).toBe('IMAGE')
     expect(fills[0].imageHash).toBe(result.imageHash)
@@ -100,9 +96,7 @@ describe('set_image_fill tool', () => {
       }) as { scaleMode: string }
       expect(result.scaleMode).toBe(mode)
 
-      const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills as Array<{
-        imageScaleMode: string
-      }>
+      const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
       expect(fills[0].imageScaleMode).toBe(mode)
     }
   })

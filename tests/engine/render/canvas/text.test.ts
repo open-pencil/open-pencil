@@ -22,6 +22,8 @@ import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text
 import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
 
+import { asDouble, expectRgbaPixels } from './helpers'
+
 function createMockCanvas() {
   return {
     drawParagraph: mock(() => undefined),
@@ -49,7 +51,7 @@ function createMockPicture() {
 
 function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
   const paragraph = createMockParagraph()
-  return {
+  return asDouble<SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }>({
     fontsLoaded: true,
     fontProvider: {},
     textFont: {},
@@ -86,7 +88,7 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     buildParagraph: mock(() => paragraph),
     _paragraph: paragraph,
     ...overrides
-  } as SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }
+  })
 }
 
 function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
@@ -167,6 +169,7 @@ describe('renderText', () => {
       type: 'GRADIENT_LINEAR',
       visible: true,
       opacity: 1,
+      color: { r: 0, g: 0, b: 0, a: 1 },
       gradientStops: [],
       gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     })
@@ -195,6 +198,7 @@ describe('renderText', () => {
         type: 'GRADIENT_LINEAR',
         visible: true,
         opacity: 1,
+        color: { r: 0, g: 0, b: 0, a: 1 },
         gradientStops: [],
         gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       }
@@ -367,9 +371,9 @@ describe('renderText headless visual', () => {
     const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', interData)
-    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
-    const originalFallbacks = [...manager.cjkFallbackFamilies]
-    manager.cjkFallbackFamilies = []
+    const fallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFallbacks = [...fallbackFamilies]
+    fallbackFamilies.length = 0
     const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
 
     try {
@@ -385,7 +389,7 @@ describe('renderText headless visual', () => {
       expect(missingGlyphCharacters('A𠀀B', paragraph.getShapedLines())).toEqual(['𠀀'])
       paragraph.delete()
     } finally {
-      manager.cjkFallbackFamilies = originalFallbacks
+      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
       surface.delete()
     }
   })
@@ -396,9 +400,9 @@ describe('renderText headless visual', () => {
     fontManager.attachProvider(ck, fontProvider)
     const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', interData)
-    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
-    const originalFallbacks = [...manager.cjkFallbackFamilies]
-    manager.cjkFallbackFamilies = []
+    const fallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFallbacks = [...fallbackFamilies]
+    fallbackFamilies.length = 0
     const fallbackPack = spyOn(fontManager, 'ensureFallbackPack').mockResolvedValue({})
     const face = fontFaceDemand('Undrawable Sans', 'Regular')
     fontResolver.exhaust(face)
@@ -417,7 +421,7 @@ describe('renderText headless visual', () => {
     } finally {
       fallbackPack.mockRestore()
       fontResolver.reset(face)
-      manager.cjkFallbackFamilies = originalFallbacks
+      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
       surface.delete()
     }
   })
@@ -426,9 +430,9 @@ describe('renderText headless visual', () => {
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
     const notoData = await Bun.file(notoPath).arrayBuffer()
     fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
-    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
-    const originalFallbacks = [...manager.cjkFallbackFamilies]
-    manager.cjkFallbackFamilies = []
+    const fallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFallbacks = [...fallbackFamilies]
+    fallbackFamilies.length = 0
 
     try {
       const loaded = isNodeFontLoaded(
@@ -438,7 +442,7 @@ describe('renderText headless visual', () => {
 
       expect(loaded).toBe(true)
     } finally {
-      manager.cjkFallbackFamilies = originalFallbacks
+      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
     }
   })
 
@@ -491,13 +495,16 @@ describe('renderText headless visual', () => {
     expect(encoded.length).toBeGreaterThan(200)
 
     const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
-    const pixels = decodedImage.readPixels(0, 0, {
-      width: 200,
-      height: 50,
-      colorType: ck.ColorType.RGBA_8888,
-      alphaType: ck.AlphaType.Unpremul,
-      colorSpace: ck.ColorSpace.SRGB
-    })
+    const pixels = expectRgbaPixels(
+      decodedImage.readPixels(0, 0, {
+        width: 200,
+        height: 50,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'decoded CJK pixels'
+    )
     decodedImage.delete()
 
     let darkPixels = 0
@@ -534,6 +541,7 @@ describe('renderText headless visual', () => {
           type: 'GRADIENT_LINEAR',
           opacity: 1,
           visible: true,
+          color: { r: 1, g: 0, b: 0, a: 1 },
           gradientStops: [
             { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
             { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
@@ -557,13 +565,16 @@ describe('renderText headless visual', () => {
     surface.flush()
 
     const image = surface.makeImageSnapshot()
-    const pixels = image.readPixels(0, 0, {
-      width: 220,
-      height: 80,
-      colorType: ck.ColorType.RGBA_8888,
-      alphaType: ck.AlphaType.Unpremul,
-      colorSpace: ck.ColorSpace.SRGB
-    })
+    const pixels = expectRgbaPixels(
+      image.readPixels(0, 0, {
+        width: 220,
+        height: 80,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'gradient text pixels'
+    )
     image.delete()
     surface.delete()
 
@@ -633,13 +644,16 @@ describe('renderText headless visual', () => {
     expect(encoded.length).toBeGreaterThan(200)
 
     const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
-    const pixels = decodedImage.readPixels(0, 0, {
-      width: 220,
-      height: 60,
-      colorType: ck.ColorType.RGBA_8888,
-      alphaType: ck.AlphaType.Unpremul,
-      colorSpace: ck.ColorSpace.SRGB
-    })
+    const pixels = expectRgbaPixels(
+      decodedImage.readPixels(0, 0, {
+        width: 220,
+        height: 60,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
+      'decoded text pixels'
+    )
     decodedImage.delete()
 
     let darkPixels = 0

@@ -69,8 +69,7 @@ describe('AI adapter', () => {
 
   test('each tool has description and execute', () => {
     const { tools } = setup()
-    for (const t of Object.values(tools)) {
-      const aiTool = t as AdapterTool
+    for (const aiTool of Object.values(tools)) {
       expect(aiTool.description).toBeTruthy()
       expect(typeof aiTool.execute).toBe('function')
     }
@@ -159,7 +158,9 @@ describe('AI adapter', () => {
       {
         getFigma: () => figma,
         onBeforeExecute: () => calls.push('before'),
-        onAfterExecute: () => calls.push('after')
+        onAfterExecute: () => {
+          calls.push('after')
+        }
       },
       { tool }
     )

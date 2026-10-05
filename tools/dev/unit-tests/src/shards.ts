@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 
+import { uniq } from 'es-toolkit/array'
+
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
@@ -116,7 +118,7 @@ export async function listHeavyUnitTests(group: UnitTestGroup = 'all'): Promise<
 
 async function listTestFiles(paths: string[]): Promise<string[]> {
   const files = await Promise.all(paths.map((path) => listTestFilesInPath(path)))
-  return [...new Set(files.flat())].sort()
+  return uniq(files.flat()).sort()
 }
 
 async function listTestFilesInPath(path: string): Promise<string[]> {

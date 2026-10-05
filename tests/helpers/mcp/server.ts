@@ -11,6 +11,7 @@ import {
   executeRPCCommand
 } from '@open-pencil/core'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 const ToolDescriptorShape = v.looseObject({ name: v.string(), enabled: v.boolean() })
 
@@ -203,15 +204,6 @@ export function socketRequest(
   headers?: Record<string, string>
 ): Promise<{ status: number; data: unknown }> {
   return nodeHttpRequest({ socketPath, path, method, headers: headers ?? {} })
-}
-
-/** Generate a random hex string of the given byte length using crypto.getRandomValues(). */
-function randomHex(bytes: number): string {
-  const buf = new Uint8Array(bytes)
-  globalThis.crypto.getRandomValues(buf)
-  return Array.from(buf)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
 }
 
 // App commands whose mock result does not depend on the graph or arguments.

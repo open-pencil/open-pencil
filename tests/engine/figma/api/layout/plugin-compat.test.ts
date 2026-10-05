@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { expectDefined } from '#tests/helpers/assert'
+
+import { solidStroke } from '../helpers'
 
 function setup() {
   const graph = new SceneGraph()
@@ -11,7 +15,7 @@ function setup() {
 describe('Figma Plugin API layout compatibility', () => {
   test('rescale scales geometry, visual properties, and descendants from the root top-left', () => {
     const { api, graph } = setup()
-    const frame = api.createFrame()
+    const frame: FigmaNodeProxy = api.createFrame()
     frame.x = 30
     frame.y = 40
     frame.resize(100, 80)
@@ -21,16 +25,7 @@ describe('Figma Plugin API layout compatibility', () => {
     frame.paddingBottom = 8
     frame.itemSpacing = 5
     frame.cornerRadius = 7
-    frame.strokes = [
-      {
-        type: 'SOLID',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        weight: 3,
-        opacity: 1,
-        visible: true,
-        align: 'CENTER'
-      }
-    ]
+    frame.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 3, align: 'CENTER' })]
     frame.effects = [
       {
         type: 'DROP_SHADOW',
@@ -43,7 +38,7 @@ describe('Figma Plugin API layout compatibility', () => {
       }
     ]
 
-    const text = api.createText()
+    const text: FigmaNodeProxy = api.createText()
     text.characters = 'Hi'
     text.fontSize = 10
     text.letterSpacing = 2
@@ -65,9 +60,11 @@ describe('Figma Plugin API layout compatibility', () => {
     expect(frame.itemSpacing).toBe(10)
     expect(frame.cornerRadius).toBe(14)
     expect(frame.strokeWeight).toBe(6)
-    expect(frame.effects[0]?.offset).toEqual({ x: 10, y: -6 })
-    expect(frame.effects[0]?.radius).toBe(4)
-    expect(frame.effects[0]?.spread).toBe(2)
+    const shadow = frame.effects[0]
+    if (shadow?.type !== 'DROP_SHADOW') throw new Error('expected a scaled drop shadow')
+    expect(shadow.offset).toEqual({ x: 10, y: -6 })
+    expect(shadow.radius).toBe(4)
+    expect(shadow.spread).toBe(2)
     expect(text.x).toBe(22)
     expect(text.y).toBe(26)
     expect(text.fontSize).toBe(20)
@@ -84,7 +81,7 @@ describe('Figma Plugin API layout compatibility', () => {
     const outer = graph.createNode('COMPONENT', page.id)
     const definition = graph.createInstance(inner.id, outer.id)
     if (!definition) throw new Error('Missing definition instance')
-    api.getNodeById(definition.id).rescale(2)
+    expectDefined(api.getNodeById(definition.id)).rescale(2)
     expect(graph.getChildren(definition.id)[0].width).toBe(40)
     const owner = graph.createInstance(outer.id, page.id)
     if (!owner) throw new Error('Missing placed owner')
@@ -92,7 +89,7 @@ describe('Figma Plugin API layout compatibility', () => {
     const rectangle = graph.getChildren(nested.id)[0]
     for (const target of [nested, rectangle]) {
       const before = structuredClone(target)
-      expect(() => api.getNodeById(target.id).rescale(1)).toThrow(
+      expect(() => expectDefined(api.getNodeById(target.id)).rescale(1)).toThrow(
         'cannot be overridden in an instance: size'
       )
       expect(target).toEqual(before)
@@ -153,16 +150,7 @@ describe('Figma Plugin API layout compatibility', () => {
     rect.x = 3
     rect.y = 4
     rect.resize(10, 20)
-    rect.strokes = [
-      {
-        type: 'SOLID',
-        color: { r: 1, g: 0, b: 0, a: 1 },
-        weight: 4,
-        opacity: 1,
-        visible: true,
-        align: 'OUTSIDE'
-      }
-    ]
+    rect.strokes = [solidStroke({ r: 1, g: 0, b: 0, a: 1 }, { weight: 4, align: 'OUTSIDE' })]
     rect.effects = [
       {
         type: 'DROP_SHADOW',

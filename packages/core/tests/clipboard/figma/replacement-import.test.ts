@@ -3,9 +3,9 @@ import { expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
-import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureObject('nested-binding-ownership-records.json')
+const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 
 test('replacement clipboard preparation imports real nested component bindings', () => {

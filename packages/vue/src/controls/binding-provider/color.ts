@@ -1,7 +1,7 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { randomHex } from '@open-pencil/core/random'
 import type { VariableCollection } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'

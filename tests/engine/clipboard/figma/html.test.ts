@@ -115,7 +115,7 @@ describe('buildFigmaClipboardHTML', () => {
     const html = await buildFigmaClipboardHTML([text], graph)
     expect(html).toContain('figmeta')
 
-    const parsed = await parseFigmaClipboard(html)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     if (!textNode) throw new Error('Expected text node')
     expectFigmaEditableTextDefaults(textNode)
@@ -145,7 +145,7 @@ describe('buildFigmaClipboardHTML', () => {
     })
 
     const html = await buildFigmaClipboardHTML(graph.getChildren(page.id), graph)
-    const parsed = await parseFigmaClipboard(html)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     const baseline = textNode?.derivedTextData?.baselines?.[0]
 

@@ -5,21 +5,30 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
+import * as v from 'valibot'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-const oracle = readFixtureObject('nested-binding-authoring.json')
+/** Only the component-edit measurements this file asserts against are read from the oracle. */
+const AuthoringOracle = v.looseObject({
+  componentEdit: v.looseObject({
+    sourcePaddingTop: v.number(),
+    paddingTop: v.number(),
+    height: v.number()
+  })
+})
 
-const fixture = readFixtureObject('nested-binding-ownership-records.json')
+const oracle = readFixture('nested-binding-authoring.json', AuthoringOracle)
+
+const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 function document(inherited = false) {
   const changes = inherited
     ? inheritedNestedBindingRecords()
-    : (structuredClone(fixture.nodeChanges) as NodeChange[])
+    : structuredClone(fixture.nodeChanges)
   const result = materializeDocument(
     changes,
     fixture.blobs.map((value) => Uint8Array.fromBase64(value)),
@@ -51,7 +60,7 @@ for (const caller of ['editor', 'api'] as const) {
       derivedBounds: true
     }).graph
     const restored = expectDefined(
-      reopened.getAllNodes().find((node) => node.name === 'Authored binding'),
+      [...reopened.getAllNodes()].find((node) => node.name === 'Authored binding'),
       'reopened root'
     )
     const child = expectDefined(reopened.getChildren(restored.id)[0], 'reopened child')
@@ -107,7 +116,7 @@ test('saved inherited multiplication stays live through token edits and edited e
     derivedBounds: true
   }).graph
   const restored = expectDefined(
-    reopened.getAllNodes().find((node) => node.name === 'Expression round-trip'),
+    [...reopened.getAllNodes()].find((node) => node.name === 'Expression round-trip'),
     'root'
   )
   const child = expectDefined(reopened.getChildren(restored.id)[0], 'nested')

@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
@@ -49,9 +51,7 @@ function componentSetGroup(graph: SceneGraph, page: SceneNode, set: SceneNode): 
     }))
   const props = definitions.map((def, index) => ({
     name: def.name,
-    options: [
-      ...new Set([...(def.variantOptions ?? []), ...variants.map((v) => v.values[index] ?? '')])
-    ]
+    options: uniq([...(def.variantOptions ?? []), ...variants.map((v) => v.values[index] ?? '')])
   }))
   return distinctVariants({
     page,

@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
 import {
   createLibraryRevision,
   materializeLibraryAsset,
@@ -8,6 +7,7 @@ import {
 } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createEditorStore } from '@/app/editor/session'
 import { LibraryService } from '@/app/libraries/service'
 
 function source(width: number) {
@@ -47,7 +47,7 @@ describe('library update discovery', () => {
       previousRevisionId: first.manifest.revisionId,
       publishedAt: '2026-01-02T00:00:00Z'
     })
-    const editor = createEditor({ graph: consumer })
+    const editor = createEditorStore(consumer)
     const service = new LibraryService(catalog)
     await service.listLibraries()
     const before = [...consumer.getAllNodes()].map((node) => node.id)

@@ -36,6 +36,7 @@ async function send(transport: ReturnType<typeof createToolLoopTransport>): Prom
     trigger: 'submit-message',
     chatId: 'thinking-level',
     messageId: undefined,
+    abortSignal: undefined,
     messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }]
   })
   const reader = stream.getReader()

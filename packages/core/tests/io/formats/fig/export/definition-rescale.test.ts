@@ -8,9 +8,9 @@ import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureObject('nested-binding-ownership-records.json')
+const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 test('a placed binding does not freeze an unrelated inherited binding', async () => {
   const { graph, sources } = materializeDocument(
@@ -49,12 +49,12 @@ test('definition rescale preserves an explicit placed binding in its declaring u
   const nested = graph.getChildren(root.id)[0]
   const api = new FigmaAPI(graph)
   createEditor({ graph })
-  api.getNodeById(root.id).rescale(0.5)
-  api.getNodeById(template.id).rescale(2)
+  expectDefined(api.getNodeById(root.id)).rescale(0.5)
+  expectDefined(api.getNodeById(template.id)).rescale(2)
   await Promise.resolve()
   api.bindVariable(nested.id, 'paddingLeft', '293742:7')
   expect([root.width, nested.width, nested.paddingLeft]).toEqual([20.5, 10.5, 3])
-  api.getNodeById(template.id).rescale(2)
+  expectDefined(api.getNodeById(template.id)).rescale(2)
   await Promise.resolve()
   expect([
     root.width,
@@ -78,7 +78,7 @@ test('definition rescale preserves an explicit placed binding in its declaring u
     derivedBounds: true
   }).graph
   const restored = expectDefined(
-    reopened.getAllNodes().find((node) => node.name === 'Protected rescale acceptance')
+    [...reopened.getAllNodes()].find((node) => node.name === 'Protected rescale acceptance')
   )
   const child = reopened.getChildren(restored.id)[0]
   expect([
@@ -103,9 +103,9 @@ test('definition rescale propagates occurrence units through editor sync and exp
   const nested = graph.getChildren(root.id)[0]
   const api = new FigmaAPI(graph)
   createEditor({ graph })
-  api.getNodeById(root.id).rescale(0.5)
+  expectDefined(api.getNodeById(root.id)).rescale(0.5)
   await Promise.resolve()
-  api.getNodeById(template.id).rescale(2)
+  expectDefined(api.getNodeById(template.id)).rescale(2)
   await Promise.resolve()
   expect([
     root.width,
@@ -141,7 +141,7 @@ test('definition rescale propagates occurrence units through editor sync and exp
     derivedBounds: true
   }).graph
   const restored = expectDefined(
-    reopened.getAllNodes().find((node) => node.name === 'Definition rescale acceptance')
+    [...reopened.getAllNodes()].find((node) => node.name === 'Definition rescale acceptance')
   )
   const child = reopened.getChildren(restored.id)[0]
   expect([

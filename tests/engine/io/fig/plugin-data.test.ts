@@ -13,7 +13,7 @@ import { materializeDocument } from '@open-pencil/fig'
 import { deduplicateNodeChangePluginData } from '#core/kiwi'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { parseFixture } from '#tests/helpers/fig/fixtures'
+import { parseFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 function doc(): NodeChange {
   return {
@@ -97,9 +97,7 @@ describe('plugin data', () => {
     frame.setSharedPluginData('tokens', 'accent', '{"ref":"brand/500"}')
 
     const bytes = await exportFigFile(graph)
-    const parsed = await parseFigFile(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = await parseFigFile(uint8ArrayToArrayBuffer(bytes))
     const parsedFrame = [...parsed.getAllNodes()].find((node) => node.name === 'Plugin data frame')
 
     expect(parsedFrame).toBeDefined()
@@ -318,9 +316,7 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     proxy.setSharedPluginData('tokens', 'accent', 'v2')
 
     const bytes = await exportFigFile(graph)
-    const parsed = await parseFigFile(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = await parseFigFile(uint8ArrayToArrayBuffer(bytes))
     const parsedPage = parsed.getPages()[0]
     const parsedFrame = parsed.getChildren(parsedPage.id)[0]
 
@@ -354,9 +350,7 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     proxy.setSharedPluginData('tokens', 'accent', '')
 
     const bytes = await exportFigFile(graph)
-    const parsed = await parseFigFile(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = await parseFigFile(uint8ArrayToArrayBuffer(bytes))
     const parsedPage = parsed.getPages()[0]
     const parsedFrame = parsed.getChildren(parsedPage.id)[0]
 
