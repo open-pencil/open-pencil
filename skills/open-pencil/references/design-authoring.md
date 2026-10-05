@@ -41,6 +41,24 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 - Reuse existing local or library components before recreating them. Keep meaningful text, visibility, and swap properties exposed rather than hand-editing cloned child nodes.
 - Explicit instance `w` / `h` replace the inherited sizing mode on that axis; omitted dimensions retain the main component's sizing. Authored overrides survive component synchronization. Distinguish those placement constraints from the main component's default size, and verify actual bounds in narrower parents. Do not compensate for a sizing mismatch with guessed heights, clipping, or manually positioned siblings.
 
+## Controls
+
+- A main component can behave as a Reka UI control in preview and code. Write it with Reka's names: `Switch.Root` is the component (a component set when its children are `Component` variants), and each Reka part is the slot that draws it, such as `Switch.Thumb`, `Slider.Track`, `Slider.Range`, `Slider.Thumb`, `Tabs.List`, `Collapsible.Trigger`, or `NumberField.Increment`. Parts in different variants share one slot.
+- The root names the properties that hold its values: `modelValue` (`open` on `Collapsible.Root`), `disabled`, and, for text fields, `filled`, as a variant or boolean property name, or `{ property, on, off }` when the variant values are not named like On and Off. `states` names the variant property that draws default, hover, pressed, focus, and disabled; a slider, progress bar, or number field takes `min`, `max`, `step`, and `defaultValue`.
+- `TextField.Input`, `Textarea.Input`, and `NumberField.Input` are the text layers whose text becomes the field's text property. `Tabs.Trigger` goes in `Tabs.List`; `Tabs.Content` panels may sit directly under `Tabs.Root`, the first showing.
+- A group's item component is written on its own (`RadioGroup.Item`, `ToggleGroup.Item`, `Accordion.Item` with its `Accordion.Trigger` and `Accordion.Content`); the group's root then lists items as `<RadioGroup.Item of={radioId} />`.
+
+```tsx
+<Switch.Root name="Switch" modelValue="State" states="Interaction">
+  <Component name="State=Off, Interaction=Default" w={44} h={24} rounded={12} bg="#D0D4DA">
+    <Switch.Thumb x={2} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" />
+  </Component>
+  <Component name="State=On, Interaction=Default" w={44} h={24} rounded={12} bg="#3B6CF6">
+    <Switch.Thumb x={22} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" />
+  </Component>
+</Switch.Root>
+```
+
 ## Verification
 
 Inspect structure and actual rendered output. Node counts and `describe` diagnostics do not establish visual fidelity. Check wrapping with longer content, narrower containers, component edits, and relevant modes. Resolve overflow and contrast problems at their source. Reuse IDs returned by creation tools rather than repeatedly searching for the same nodes.
@@ -68,8 +86,8 @@ The examples below are executed by the authoring-reference tests. Create the nam
 
 Generated from the renderer metadata. This inventory lists accepted names, not arbitrary browser CSS support.
 
-**Elements:** `Frame`, `Text`, `Rectangle`, `Ellipse`, `Line`, `Star`, `Polygon`, `Vector`, `Group`, `Section`, `Component`, `ComponentSet`, `Instance`, `View`, `Rect`, `Icon`.
+**Elements:** `Frame`, `Text`, `Rectangle`, `Ellipse`, `Line`, `Star`, `Polygon`, `Vector`, `Group`, `Section`, `Component`, `ComponentSet`, `Instance`, `View`, `Rect`, `Icon`, `Button.Root`, `Toggle.Root`, `Switch.Root`, `Switch.Thumb`, `Checkbox.Root`, `Checkbox.Indicator`, `RadioGroup.Root`, `RadioGroup.Item`, `RadioGroup.Indicator`, `ToggleGroup.Root`, `ToggleGroup.Item`, `Slider.Root`, `Slider.Track`, `Slider.Range`, `Slider.Thumb`, `Progress.Root`, `Progress.Indicator`, `Tabs.Root`, `Tabs.List`, `Tabs.Trigger`, `Tabs.Content`, `Collapsible.Root`, `Collapsible.Trigger`, `Collapsible.Content`, `Accordion.Root`, `Accordion.Item`, `Accordion.Header`, `Accordion.Trigger`, `Accordion.Content`, `NumberField.Root`, `NumberField.Input`, `NumberField.Increment`, `NumberField.Decrement`, `TextField.Root`, `TextField.Input`, `Textarea.Root`, `Textarea.Input`.
 
 **Helpers:** `solid`, `gradient`, `linearGradient`, `radialGradient`, `angularGradient`, `diamondGradient`, `dropShadow`, `innerShadow`, `layerBlur`, `backgroundBlur`, `foregroundBlur`, `designVar`, `defineVars`.
 
-**Properties:** `name`, `key`, `flex`, `flow`, `dir`, `gap`, `wrap`, `rowGap`, `columnGap`, `justify`, `justifyContent`, `items`, `align`, `alignItems`, `grow`, `w`, `h`, `width`, `height`, `minW`, `maxW`, `minH`, `maxH`, `x`, `y`, `top`, `left`, `position`, `constraints`, `p`, `padding`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `bg`, `fill`, `fills`, `background`, `backgroundColor`, `stroke`, `border`, `borderColor`, `strokeWidth`, `borderWidth`, `strokeAlign`, `strokeDash`, `strokeCap`, `strokeJoin`, `dashPattern`, `strokes`, `strokeWeights`, `rounded`, `borderRadius`, `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`, `cornerRadius`, `cornerSmoothing`, `opacity`, `blendMode`, `rotate`, `rotation`, `overflow`, `mask`, `visible`, `locked`, `shadow`, `blur`, `effects`, `size`, `fontSize`, `font`, `fontFamily`, `weight`, `fontWeight`, `italic`, `color`, `text`, `characters`, `content`, `value`, `title`, `textAlign`, `textAlignHorizontal`, `textHorizontalAlignment`, `textAlignVertical`, `textVerticalAlignment`, `textAutoResize`, `lineHeight`, `letterSpacing`, `textDecoration`, `textCase`, `maxLines`, `truncate`, `grid`, `columns`, `rows`, `colStart`, `rowStart`, `col`, `row`, `colSpan`, `rowSpan`, `points`, `pointCount`, `innerRadius`, `label`, `style`, `bind`, `component`, `componentId`, `properties`, `propertyRefs`, `of`.
+**Properties:** `name`, `key`, `flex`, `flow`, `dir`, `gap`, `wrap`, `rowGap`, `columnGap`, `justify`, `justifyContent`, `items`, `align`, `alignItems`, `grow`, `w`, `h`, `width`, `height`, `minW`, `maxW`, `minH`, `maxH`, `x`, `y`, `top`, `left`, `position`, `constraints`, `p`, `padding`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `bg`, `fill`, `fills`, `background`, `backgroundColor`, `stroke`, `border`, `borderColor`, `strokeWidth`, `borderWidth`, `strokeAlign`, `strokeDash`, `strokeCap`, `strokeJoin`, `dashPattern`, `strokes`, `strokeWeights`, `rounded`, `borderRadius`, `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`, `cornerRadius`, `cornerSmoothing`, `opacity`, `blendMode`, `rotate`, `rotation`, `overflow`, `mask`, `visible`, `locked`, `shadow`, `blur`, `effects`, `size`, `fontSize`, `font`, `fontFamily`, `weight`, `fontWeight`, `italic`, `color`, `text`, `characters`, `content`, `value`, `title`, `textAlign`, `textAlignHorizontal`, `textHorizontalAlignment`, `textAlignVertical`, `textVerticalAlignment`, `textAutoResize`, `lineHeight`, `letterSpacing`, `textDecoration`, `textCase`, `maxLines`, `truncate`, `grid`, `columns`, `rows`, `colStart`, `rowStart`, `col`, `row`, `colSpan`, `rowSpan`, `points`, `pointCount`, `innerRadius`, `label`, `style`, `bind`, `component`, `componentId`, `properties`, `propertyRefs`, `of`, `modelValue`, `open`, `disabled`, `filled`, `states`, `min`, `max`, `step`, `defaultValue`.
