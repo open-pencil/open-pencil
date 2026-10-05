@@ -9,6 +9,7 @@ import { useEditor, useI18n, useSceneComputed } from '@open-pencil/vue'
 import CodeViewer from '@/components/code-editor/CodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import { swapTransition } from '@/theme/motion/styles'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
 const { collectionId, layout = 'side' } = defineProps<{
@@ -67,12 +68,15 @@ function setFormat(value: string) {
         <icon-lucide-copy class="size-3.5" />
       </IconButton>
     </div>
-    <CodeViewer
-      class="min-h-0 flex-1"
-      :code="stylesheet"
-      language="css"
-      :label="variables.stylesheet"
-      :fill="layout === 'full'"
-    />
+    <Transition v-bind="swapTransition" mode="out-in">
+      <CodeViewer
+        :key="format"
+        class="min-h-0 flex-1"
+        :code="stylesheet"
+        language="css"
+        :label="variables.stylesheet"
+        :fill="layout === 'full'"
+      />
+    </Transition>
   </section>
 </template>
