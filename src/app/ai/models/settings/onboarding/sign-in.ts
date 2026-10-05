@@ -70,7 +70,7 @@ export function useOnboardingSignIn({ connection, resetTest }: OnboardingSignInO
   /** Call directly from the click that starts sign-in, so the browser allows its popup. */
   function signIn(
     providerID: OnboardingAccess,
-    labels: Pick<OpenRouterSignInOptions, 'keyLabel' | 'page'>
+    labels: Pick<OpenRouterSignInOptions, 'keyLabel'>
   ): void {
     if (providerID !== 'openrouter') return
     attempts.get(providerID)?.controller.abort()

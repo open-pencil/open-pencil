@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "El inicio de sesión tardó demasiado. Vuelve a intentarlo.",
   "aiSetupOpenRouterFailed": "No se pudo iniciar sesión en OpenRouter. Vuelve a intentarlo o pega una clave de API.",
   "aiSetupOpenRouterSignedInTitle": "Sesión iniciada en OpenRouter",
-  "aiSetupOpenRouterSignedInMessage": "Puedes cerrar esta pestaña y volver a OpenPencil.",
   "aiSetupSavedKeyHint": "Déjalo en blanco para conservar la clave guardada.",
   "aiSetupOpenRouterKeyLabel": "· clave «{label}»",
   "aiSetupOpenRouterVerifying": "Comprobando tu clave de OpenRouter…",

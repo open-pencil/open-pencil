@@ -23,7 +23,6 @@ ja:ai.aiSetupOpenRouterFailed
 ja:ai.aiSetupOpenRouterNoCredits
 ja:ai.aiSetupOpenRouterOrKey
 ja:ai.aiSetupOpenRouterSignIn
-ja:ai.aiSetupOpenRouterSignedInMessage
 ja:ai.aiSetupOpenRouterSignedInTitle
 ja:ai.aiSetupOpenRouterVerifying
 ja:ai.aiSetupOpenRouterWaiting
@@ -212,7 +211,6 @@ zh-cn:ai.aiSetupOpenRouterFailed
 zh-cn:ai.aiSetupOpenRouterNoCredits
 zh-cn:ai.aiSetupOpenRouterOrKey
 zh-cn:ai.aiSetupOpenRouterSignIn
-zh-cn:ai.aiSetupOpenRouterSignedInMessage
 zh-cn:ai.aiSetupOpenRouterSignedInTitle
 zh-cn:ai.aiSetupOpenRouterVerifying
 zh-cn:ai.aiSetupOpenRouterWaiting

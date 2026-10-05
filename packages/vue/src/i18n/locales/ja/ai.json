@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "サインインに時間がかかりすぎました。もう一度お試しください。",
   "aiSetupOpenRouterFailed": "OpenRouter にサインインできませんでした。もう一度試すか、API キーを貼り付けてください。",
   "aiSetupOpenRouterSignedInTitle": "OpenRouter にサインインしました",
-  "aiSetupOpenRouterSignedInMessage": "このタブを閉じて OpenPencil に戻ってください。",
   "aiSetupSavedKeyHint": "保存済みのキーを使う場合は空欄のままにしてください。",
   "aiSetupOpenRouterKeyLabel": "・キー「{label}」",
   "aiSetupOpenRouterVerifying": "OpenRouter のキーを確認しています…",

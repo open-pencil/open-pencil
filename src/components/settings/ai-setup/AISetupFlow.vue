@@ -90,13 +90,7 @@ function updateConnection(providerID: OnboardingAccess, patch: OnboardingConnect
 
 /** Runs in the click handler, so the browser allows the sign-in popup. */
 function signIn(providerID: OnboardingAccess): void {
-  onboarding.signIn(providerID, {
-    keyLabel: 'OpenPencil',
-    page: {
-      title: ai.value.aiSetupOpenRouterSignedInTitle,
-      message: ai.value.aiSetupOpenRouterSignedInMessage
-    }
-  })
+  onboarding.signIn(providerID, { keyLabel: 'OpenPencil' })
 }
 
 function back(): void {

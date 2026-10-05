@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "Вход занял слишком много времени. Попробуйте снова.",
   "aiSetupOpenRouterFailed": "Не удалось войти в OpenRouter. Попробуйте снова или вставьте ключ API.",
   "aiSetupOpenRouterSignedInTitle": "Вход в OpenRouter выполнен",
-  "aiSetupOpenRouterSignedInMessage": "Можно закрыть эту вкладку и вернуться в OpenPencil.",
   "aiSetupSavedKeyHint": "Оставьте поле пустым, чтобы использовать сохранённый ключ.",
   "aiSetupOpenRouterKeyLabel": "· ключ «{label}»",
   "aiSetupOpenRouterVerifying": "Проверяем ключ OpenRouter…",

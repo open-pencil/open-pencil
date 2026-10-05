@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "Die Anmeldung hat zu lange gedauert. Versuche es erneut.",
   "aiSetupOpenRouterFailed": "Die Anmeldung bei OpenRouter ist fehlgeschlagen. Versuche es erneut oder füge einen API-Schlüssel ein.",
   "aiSetupOpenRouterSignedInTitle": "Bei OpenRouter angemeldet",
-  "aiSetupOpenRouterSignedInMessage": "Du kannst diesen Tab schließen und zu OpenPencil zurückkehren.",
   "aiSetupSavedKeyHint": "Leer lassen, um den gespeicherten Schlüssel zu behalten.",
   "aiSetupOpenRouterKeyLabel": "· Schlüssel „{label}“",
   "aiSetupOpenRouterVerifying": "Dein OpenRouter-Schlüssel wird geprüft…",

@@ -2,6 +2,7 @@ import { IS_TAURI } from '@open-pencil/core/constants'
 
 import { createDeferred } from '@/app/runtime/deferred'
 import { openExternalLink } from '@/app/shell/ui'
+import { WEB_APP_ORIGIN } from '@/constants'
 
 import {
   createOpenRouterPKCE,
@@ -15,6 +16,10 @@ import {
 /** Served from `public/`; it relays the redirect to the editor over this channel. */
 export const OPENROUTER_CALLBACK_PATH = '/oauth/openrouter.html'
 export const OPENROUTER_CALLBACK_CHANNEL = 'open-pencil:openrouter-oauth'
+/** Served from `public/` on the web app; it hands the redirect to the desktop app's deep link. */
+export const OPENROUTER_DESKTOP_CALLBACK_PATH = '/oauth/openrouter-desktop.html'
+/** Emitted by the desktop shell for an `openpencil://oauth/<provider>?…` link. */
+const OAUTH_CALLBACK_EVENT = 'oauth-callback'
 const POPUP_NAME = 'open-pencil-openrouter'
 const POPUP_FEATURES = 'popup,width=520,height=720'
 
@@ -27,8 +32,11 @@ export interface OpenRouterSignInOptions {
   signal: AbortSignal
   /** Prefills the name of the key OpenRouter creates. */
   keyLabel: string
-  /** Shown in the browser tab the desktop app's localhost callback answers with. */
-  page: { title: string; message: string }
+}
+
+interface OAuthCallbackEvent {
+  provider: string
+  query: string
 }
 
 export interface OpenRouterSignIn {
@@ -119,38 +127,41 @@ function browserSignIn({ signal, keyLabel }: OpenRouterSignInOptions): OpenRoute
   return { reopen, result }
 }
 
-/** Opens OpenRouter in the system browser and receives the redirect on a localhost port. */
-function desktopSignIn({ signal, keyLabel, page }: OpenRouterSignInOptions): OpenRouterSignIn {
+/**
+ * Listens for the `openpencil://oauth/openrouter` link the hosted callback page opens; the
+ * desktop shell forwards its query as an `oauth-callback` event.
+ */
+async function listenForDesktopCallback() {
+  const { listen } = await import('@tauri-apps/api/event')
+  const received = createDeferred<string | null>()
+  const timer = setTimeout(() => received.resolve(null), OPENROUTER_CODE_LIFETIME_MS)
+  const unlisten = await listen<OAuthCallbackEvent>(OAUTH_CALLBACK_EVENT, (event) => {
+    if (event.payload.provider === 'openrouter') received.resolve(event.payload.query)
+  })
+  return {
+    query: (signal: AbortSignal) => abortable(received.promise, signal),
+    stop: () => {
+      clearTimeout(timer)
+      unlisten()
+    }
+  }
+}
+
+/** Opens OpenRouter in the system browser, which returns to the app through a deep link. */
+function desktopSignIn({ signal, keyLabel }: OpenRouterSignInOptions): OpenRouterSignIn {
   let authorizationURL = ''
   const reopen = () => {
     if (authorizationURL) void openExternalLink(authorizationURL)
   }
   const result = settle(async () => {
-    const { invoke } = await import('@tauri-apps/api/core')
-    const [pkce, port] = await Promise.all([
-      createOpenRouterPKCE(),
-      invoke<number>('oauth_loopback_start')
-    ])
-    const cancel = () => void invoke('oauth_loopback_cancel', { port })
-    signal.addEventListener('abort', cancel, { once: true })
+    const [pkce, callback] = await Promise.all([createOpenRouterPKCE(), listenForDesktopCallback()])
     try {
-      authorizationURL = openRouterAuthorizationURL(
-        `http://localhost:${port}/callback`,
-        pkce,
-        keyLabel
-      )
+      const callbackURL = new URL(OPENROUTER_DESKTOP_CALLBACK_PATH, WEB_APP_ORIGIN).href
+      authorizationURL = openRouterAuthorizationURL(callbackURL, pkce, keyLabel)
       await openExternalLink(authorizationURL)
-      const query = await invoke<string>('oauth_loopback_wait', { port, pageContent: page }).catch(
-        (error: unknown) => {
-          if (signal.aborted || error === 'cancelled') throw new SignInAbortedError()
-          if (error === 'timeout') return null
-          throw error
-        }
-      )
-      return await finish(query, pkce, signal)
+      return await finish(await callback.query(signal), pkce, signal)
     } finally {
-      signal.removeEventListener('abort', cancel)
-      cancel()
+      callback.stop()
     }
   })
   return { reopen, result }

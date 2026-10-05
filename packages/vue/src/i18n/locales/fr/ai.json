@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "La connexion a pris trop de temps. Réessayez.",
   "aiSetupOpenRouterFailed": "Impossible de se connecter à OpenRouter. Réessayez ou collez une clé API.",
   "aiSetupOpenRouterSignedInTitle": "Connecté à OpenRouter",
-  "aiSetupOpenRouterSignedInMessage": "Vous pouvez fermer cet onglet et revenir à OpenPencil.",
   "aiSetupSavedKeyHint": "Laissez vide pour conserver la clé enregistrée.",
   "aiSetupOpenRouterKeyLabel": "· clé « {label} »",
   "aiSetupOpenRouterVerifying": "Vérification de votre clé OpenRouter…",

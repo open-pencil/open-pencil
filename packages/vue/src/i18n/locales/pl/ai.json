@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "Logowanie trwało zbyt długo. Spróbuj ponownie.",
   "aiSetupOpenRouterFailed": "Nie udało się zalogować do OpenRouter. Spróbuj ponownie lub wklej klucz API.",
   "aiSetupOpenRouterSignedInTitle": "Zalogowano do OpenRouter",
-  "aiSetupOpenRouterSignedInMessage": "Możesz zamknąć tę kartę i wrócić do OpenPencil.",
   "aiSetupSavedKeyHint": "Pozostaw puste, aby zachować zapisany klucz.",
   "aiSetupOpenRouterKeyLabel": "· klucz „{label}”",
   "aiSetupOpenRouterVerifying": "Sprawdzanie klucza OpenRouter…",

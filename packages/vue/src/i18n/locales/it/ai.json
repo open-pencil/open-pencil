@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "L’accesso ha richiesto troppo tempo. Riprova.",
   "aiSetupOpenRouterFailed": "Impossibile accedere a OpenRouter. Riprova o incolla una chiave API.",
   "aiSetupOpenRouterSignedInTitle": "Accesso a OpenRouter eseguito",
-  "aiSetupOpenRouterSignedInMessage": "Puoi chiudere questa scheda e tornare a OpenPencil.",
   "aiSetupSavedKeyHint": "Lascia vuoto per mantenere la chiave salvata.",
   "aiSetupOpenRouterKeyLabel": "· chiave «{label}»",
   "aiSetupOpenRouterVerifying": "Verifica della chiave OpenRouter…",

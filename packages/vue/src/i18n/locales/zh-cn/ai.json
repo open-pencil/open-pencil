@@ -220,7 +220,6 @@
   "aiSetupOpenRouterExpired": "登录耗时过长，请重试。",
   "aiSetupOpenRouterFailed": "无法登录 OpenRouter。请重试或粘贴 API 密钥。",
   "aiSetupOpenRouterSignedInTitle": "已登录 OpenRouter",
-  "aiSetupOpenRouterSignedInMessage": "你可以关闭此标签页并返回 OpenPencil。",
   "aiSetupSavedKeyHint": "留空即可继续使用已保存的密钥。",
   "aiSetupOpenRouterKeyLabel": "· 密钥“{label}”",
   "aiSetupOpenRouterVerifying": "正在检查你的 OpenRouter 密钥…",

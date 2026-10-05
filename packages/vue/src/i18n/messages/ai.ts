@@ -298,7 +298,6 @@ export const aiMessageDefaults = {
   aiSetupOpenRouterExpired: 'Sign-in took too long. Try again.',
   aiSetupOpenRouterFailed: 'Couldn’t sign in to OpenRouter. Try again or paste an API key.',
   aiSetupOpenRouterSignedInTitle: 'Signed in to OpenRouter',
-  aiSetupOpenRouterSignedInMessage: 'You can close this tab and return to OpenPencil.',
   aiSetupOpenRouterKeyLabel: params('· key “{label}”'),
   aiSetupOpenRouterVerifying: 'Checking your OpenRouter key…',
   aiSetupOpenRouterNoCredits:
