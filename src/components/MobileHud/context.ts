@@ -1,7 +1,6 @@
 import { useClipboard } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
-import { useRouter } from 'vue-router'
 import IconFilePlus from '~icons/lucide/file-plus'
 import IconFolderOpen from '~icons/lucide/folder-open'
 import IconImageDown from '~icons/lucide/image-down'
@@ -16,13 +15,13 @@ import { toolIcons } from '@/app/editor/icons'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
+import { roomStatusText } from '@/components/collab-room/statusText'
 import type { ToolbarActionItem } from '@/components/Toolbar/types'
 import { getShareURL } from '@/constants'
 
 type MenuAction = ToolbarActionItem
 
 function createMobileHudContext() {
-  const router = useRouter()
   const collab = useCollabInjected()
   const store = useEditorStore()
   const { copy } = useClipboard()
@@ -57,18 +56,23 @@ function createMobileHudContext() {
     getCommand('edit.redo').run()
   }
 
+  const statusText = computed(() =>
+    collabState.value.status
+      ? roomStatusText(collaboration.value, collabState.value.status, collabPeers.value.length)
+      : ''
+  )
+
+  /** Copies the room's link; a tab not in a room is shared first, never a room it opened. */
   function share() {
     if (!collab) return
-    const roomId = collab.shareCurrentDoc()
-    void router.push(`/share/${roomId}`)
+    const roomId = collabState.value.roomId ?? collab.shareCurrentDoc()
+    if (!roomId) return
     void copy(getShareURL(roomId))
     toast.info(notifications.value.linkCopied)
   }
 
   function disconnect() {
-    if (!collab) return
-    collab.disconnect()
-    void router.push('/')
+    collab?.disconnect()
   }
 
   function toggleFollowPeer(clientId: number) {
@@ -83,6 +87,7 @@ function createMobileHudContext() {
     collabPeers,
     followingPeer,
     onlineCount,
+    statusText,
     activeToolIcon,
     actionToast,
     menuItems,

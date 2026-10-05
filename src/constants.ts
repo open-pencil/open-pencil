@@ -72,6 +72,8 @@ export const COLLAB_APP_ID = 'openpencil/2'
 // bearer credential and must resist offline enumeration from public signaling topics.
 export const ROOM_ID_LENGTH = 32
 export const ROOM_ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+/** How long a room tab says it is joining before it says nobody with the room is online. */
+export const ROOM_JOIN_GRACE_MS = 5000
 
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 

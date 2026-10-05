@@ -19,7 +19,7 @@ function peerAvatarClass(following: boolean) {
 </script>
 
 <template>
-  <PopoverRoot v-if="hud.collabState.connected">
+  <PopoverRoot v-if="hud.collabState.inRoom">
     <PopoverTrigger as-child>
       <HudButton :label="`Online: ${hud.onlineCount}`">
         <template #leading><span :class="styles.dot()" /></template>
@@ -33,6 +33,9 @@ function peerAvatarClass(following: boolean) {
         align="center"
         :class="styles.content()"
       >
+        <p class="mb-2 text-xs text-surface" data-test-id="mobile-room-status">
+          {{ hud.statusText }}
+        </p>
         <div class="mb-2 text-[11px] tracking-wider text-muted uppercase">
           {{ hud.messages.inThisRoom }}
         </div>

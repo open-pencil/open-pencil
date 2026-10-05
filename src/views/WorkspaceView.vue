@@ -4,9 +4,13 @@ import { useEventListener } from '@vueuse/core'
 import { onMounted, onUnmounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { useI18n } from '@open-pencil/vue'
+
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { useJoinRoom } from '@/app/collab/join'
+import { syncRoomRoute } from '@/app/collab/route'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { createDemoShapes } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
@@ -26,7 +30,8 @@ import {
   createTab,
   getActiveStore,
   getTabsSnapshot,
-  tabCount
+  tabCount,
+  type Tab
 } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
@@ -47,8 +52,20 @@ const shouldCreateHome =
   !appRuntimeConfig.test &&
   !route.meta.demo &&
   (isTauri() || appRuntimeConfig.recentFiles)
-let firstTab = activeTab.value
-if (!firstTab) firstTab = shouldCreateHome ? createHomeTab() : createTab()
+const { collaboration } = useI18n()
+const joinRoomFromInput = useJoinRoom()
+
+/** A share link opens its room in a tab of its own, so nothing editable shows before it. */
+function openFirstTab(): Tab {
+  const roomId = typeof route.params.roomId === 'string' ? route.params.roomId : null
+  if (roomId) {
+    if (joinRoomFromInput(roomId) && activeTab.value) return activeTab.value
+    toast.error(collaboration.value.invalidRoomLink)
+  }
+  return shouldCreateHome ? createHomeTab() : createTab()
+}
+
+const firstTab = activeTab.value ?? openFirstTab()
 
 if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
   void createDemoShapes(firstTab.store)
@@ -59,9 +76,10 @@ useKeyboard()
 useEditorMenu()
 useDocumentDrop()
 
-const collab = useCollab(getActiveStore)
+const collab = useCollab()
 provide(COLLAB_KEY, collab)
-exposeCollaborationActions(collab)
+exposeCollaborationActions(collab, joinRoomFromInput)
+syncRoomRoute(router, route)
 
 useEventListener(
   document,

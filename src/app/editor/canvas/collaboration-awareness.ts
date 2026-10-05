@@ -1,16 +1,15 @@
-import type { useCollabInjected } from '@/app/collab/use'
+import { roomForStore } from '@/app/collab/rooms'
 import type { EditorStore } from '@/app/editor/active-store'
 
-type Collaboration = ReturnType<typeof useCollabInjected>
-
-export function useCanvasCollaborationAwareness(store: EditorStore, collab: Collaboration) {
+/** Publishes a canvas's cursor and selection to the room its own tab is in, and no other. */
+export function useCanvasCollaborationAwareness(store: EditorStore) {
   function updateCursor(cx: number, cy: number) {
     store.state.cursorCanvasX = cx
     store.state.cursorCanvasY = cy
-    collab?.updateCursor(cx, cy, store.state.currentPageId)
+    roomForStore(store)?.updateCursor(cx, cy, store.state.currentPageId)
   }
 
-  store.onEditorEvent('selection:changed', (ids) => collab?.updateSelection(ids))
+  store.onEditorEvent('selection:changed', (ids) => roomForStore(store)?.updateSelection(ids))
 
   return { updateCursor }
 }

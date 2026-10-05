@@ -59,6 +59,8 @@
 - Create and fill slots as in Figma. **Create slot** turns a frame of a main component into a slot, or wraps other selected layers in a new one, and the Slots section sets its name, description, layer limits, and preferred components or removes it. In instances, drop, paste, or move layers into a slot, or add components from **Add instances** in the properties panel, which shows each slot as Default or Modified with its item count and limits; **Reset slot** brings back the component content and **Delete contents** empties it. Slots are outlined in pink on the canvas and marked in the layers panel, and parts of an instance outside its slots cannot be dropped into, grouped, wrapped, or deleted, as in Figma.
 - Create and inspect slots from scripts run through `eval` and from AI and MCP tools, as in Figma: `component.createSlot()` adds a slot frame and its `SLOT` property, slot frames read `type: 'SLOT'` with `resetSlot()` and `limitViolations`, `appendChild`, `insertChild`, and `remove()` work inside slots and refuse the rest of an instance, and `addComponentProperty` and `editComponentProperty` take a `description` and `slotSettings`.
 - Control the running app from the CLI and MCP: `openpencil documents` opens, creates, saves, closes, and brings documents to the front, `openpencil undo` and `redo` step back through changes made through the CLI and MCP, refusing to revert edits made in the editor, and `openpencil settings get` and `set` read and change theme, language, animations, snapping, canvas rendering, recovery, chat, and design check settings. MCP clients get the same through `activate_document`, `undo`, `redo`, `get_settings`, and `update_settings`; credentials, models, MCP connections, storage, and tool access stay out of reach. `openpencil tool list`, `describe`, and `call` run any MCP tool from the shell, against the running app or headlessly on a file.
+- Be in several shared rooms at once, each in its own tab and syncing in the background.
+- Join a shared room right away under a generated name such as *Teal Fox*, and set the one name every room shows in Settings or the share panel.
 
 ### Changed
 
@@ -79,6 +81,7 @@
 - `openpencil://` and web `?node=` links select the layer on another page when the current page has none, switching to that page.
 - Generate Tailwind JSX with the same class mapping as Tailwind HTML export, so both describe a design the same way, and write opaque colors as hex in HTML, CSS, and Tailwind output. `openpencil export -f jsx --style tailwind` now exports a whole page when no `--node` is given.
 - Show download progress with a percentage and transferred size while installing a desktop update, instead of an indeterminate message that lasted until the restart.
+- Opening a share link or joining a room opens it in a tab of its own, so a document you already have open is never changed. Until the room's file arrives the tab says it is joining or, when nobody who has the file is online, explains why it is waiting; reloading rejoins, and leaving a room you joined keeps its file as a local unsaved copy.
 
 ### Fixed
 
@@ -148,6 +151,7 @@
 - Work with pages other than the one on screen through MCP, `eval`, and the CLI against the running app without switching to them: `openpencil export --page` and `--page-id` export that page instead of the selection, `export_image` and `openpencil export --node` export layers from any page instead of failing with "Raster export selection must stay on a single page", and a `.fig` page that has not been shown yet gets its layers, fonts, and layout before a command reads or changes it.
 - Fill the open subpaths of filled, unstroked SVG paths as if they were closed, as SVG does, in icons from `insert_icon` and Design JSX `<Icon>`, inline Design JSX `<svg>`, SVG from `import_svg` or dropped and pasted files, and SVG clip paths. Icons that cut holes with open subpaths, such as some Font Awesome icons, no longer render with those holes filled in, and filled `<polyline>` elements render filled instead of not at all.
 - Keep round and other stroke caps and joins after saving and reopening the file on icons from `insert_icon` and Design JSX `<Icon>`, and on vectors from inline Design JSX `<svg>`, `import_svg`, and dropped or pasted SVG files. They were set only on the stroke paint, which `.fig` does not store, so outline icons such as Lucide's reopened with butt caps and miter joins and showed gaps where their strokes meet.
+- Join the right room from a pasted link that ends in a query, `#`, or `/`, and say so when pasted text is not a room link instead of joining an empty room.
 
 ### Performance
 

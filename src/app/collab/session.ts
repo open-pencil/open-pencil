@@ -1,240 +1,219 @@
-import { shallowRef, type Ref, type ShallowRef } from 'vue'
+import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
-import type { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
-import { randomIndex } from '@open-pencil/scene-graph/random'
-
+import { buildRemotePeers } from '@/app/collab/awareness'
+import { useCollabIdentity } from '@/app/collab/identity'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
-import { connectCollabRoom } from '@/app/collab/room'
-import type { LocalEdit } from '@/app/collab/shared-tree/sync'
-import type { CollabRoomTransport } from '@/app/collab/transport'
-import type { CollabState } from '@/app/collab/types'
-import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
+import { connectCollabRoom } from '@/app/collab/room/connection'
+import { deriveRoomStatus, type RoomStatus } from '@/app/collab/room/status'
+import {
+  readRoomName,
+  readRoot,
+  TREE_FORMAT,
+  writeRoomName,
+  type YNodes
+} from '@/app/collab/shared-tree/fields'
+import type { JoinCollabRoom } from '@/app/collab/transport'
+import type { RemotePeer } from '@/app/collab/types'
+import {
+  bindCollabGraphEvents,
+  createYjsGraphSync,
+  registerYjsObservers
+} from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
 import { setPeers } from '@/app/presence/registry'
-import { PEER_COLORS } from '@/constants'
+import { ROOM_JOIN_GRACE_MS } from '@/constants'
 
-export type CollabRuntime = {
-  ydoc: Y.Doc | null
-  awareness: awarenessProtocol.Awareness | null
-  ynodes: Y.Map<Y.Map<unknown>> | null
-  yimages: Y.Map<Uint8Array> | null
-  room: CollabRoomTransport | null
-  persistence: IndexeddbPersistence | null
-  /** Reactive, so what depends on the room's document follows connects and disconnects. */
-  connectedStore: ShallowRef<EditorStore | null>
-  suppressGraphSync: boolean
-  suppressYjsEvents: boolean
-  unbindGraphEvents: (() => void) | null
-  stopZoomWatch: (() => void) | null
-  stopAgentSync: (() => void) | null
+/** How a tab came to be in a room: by sharing its own document, or by joining someone's. */
+export type RoomOrigin = 'shared' | 'joined'
+
+/** One room, live in one tab: its document, presence, connection, and saved copy. */
+export interface RoomSession {
+  readonly roomId: string
+  readonly store: EditorStore
+  readonly origin: RoomOrigin
+  readonly peers: Readonly<Ref<RemotePeer[]>>
+  readonly status: ComputedRef<RoomStatus>
+  /** Whether the room's document has reached this tab, from a peer or the saved copy. */
+  readonly hasDocument: Readonly<Ref<boolean>>
+  updateCursor(x: number, y: number, pageId: string): void
+  updateSelection(ids: string[]): void
+  /** Writes the tab's whole document into the room and makes its root the room's. */
+  shareDocument(): void
+  /** Leaves the room and releases its connection, presence, and saved-copy handle. */
+  dispose(): void
 }
 
-type ConnectCollabSessionOptions = {
+/** This device's saved copy of a room, so it opens before anyone else is online. */
+export interface RoomSavedCopy {
+  whenSynced: Promise<unknown>
+  destroy(): unknown
+}
+
+export interface RoomSessionOptions {
   roomId: string
-  runtime: CollabRuntime
-  state: Ref<CollabState>
   store: EditorStore
-  disconnect: () => void
-  updatePeersList: () => void
-  broadcastAwareness: () => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncLocalEdit: (edit: LocalEdit) => void
+  origin: RoomOrigin
+  joinRoom?: JoinCollabRoom
+  openSavedCopy?: (roomId: string, ydoc: Y.Doc) => RoomSavedCopy
+  /** How long the tab says it is joining before it says nobody with the room is online. */
+  graceMs?: number
 }
 
-type CollabConnectionActionsOptions = {
-  runtime: CollabRuntime
-  state: Ref<CollabState>
-  getStore: () => EditorStore
-  updatePeersList: () => void
-  broadcastAwareness: () => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncLocalEdit: (edit: LocalEdit) => void
+function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
+  return new IndexeddbPersistence(`op-room-${roomId}`, ydoc)
 }
 
-type CollabSessionResources = {
-  store: EditorStore
-  room: CollabRoomTransport | null
-  awareness: awarenessProtocol.Awareness | null
-  persistence: IndexeddbPersistence | null
-  ydoc: Y.Doc | null
-  unbindGraphEvents: (() => void) | null
-  stopZoomWatch: (() => void) | null
-  stopAgentSync: (() => void) | null
-}
+type CursorState = { x: number; y: number; pageId: string; zoom: number }
 
-export function createCollabRuntime(): CollabRuntime {
-  return {
-    ydoc: null,
-    awareness: null,
-    ynodes: null,
-    yimages: null,
-    room: null,
-    persistence: null,
-    connectedStore: shallowRef<EditorStore | null>(null),
-    suppressGraphSync: false,
-    suppressYjsEvents: false,
-    unbindGraphEvents: null,
-    stopZoomWatch: null,
-    stopAgentSync: null
-  }
-}
+export function openRoomSession({
+  roomId,
+  store,
+  origin,
+  joinRoom,
+  openSavedCopy = openIndexedDBCopy,
+  graceMs = ROOM_JOIN_GRACE_MS
+}: RoomSessionOptions): RoomSession {
+  const identity = useCollabIdentity()
+  const ydoc = new Y.Doc()
+  const awareness = new awarenessProtocol.Awareness(ydoc)
+  const ynodes: YNodes = ydoc.getMap('nodes')
+  const yimages = ydoc.getMap<Uint8Array>('images')
+  const meta = ydoc.getMap<unknown>('meta')
+  const persistence = openSavedCopy(roomId, ydoc)
 
-export function createInitialCollabState(localName: string): CollabState {
-  return {
-    connected: false,
-    roomId: null,
-    peers: [],
-    localName,
-    localColor: PEER_COLORS[randomIndex(PEER_COLORS.length)]
-  }
-}
+  const peers = shallowRef<RemotePeer[]>([])
+  const hasDocument = ref(false)
+  const savedCopyLoaded = ref(false)
+  const waitedLong = ref(false)
+  let suppressYjsEvents = false
+  let suppressGraphSync = false
+  let disposed = false
 
-export function createCollabConnectionActions({
-  runtime,
-  state,
-  getStore,
-  updatePeersList,
-  broadcastAwareness,
-  applyYjsToGraph,
-  syncLocalEdit
-}: CollabConnectionActionsOptions) {
-  function connect(roomId: string) {
-    connectCollabSession({
-      roomId,
-      runtime,
-      state,
-      store: getStore(),
-      disconnect,
-      updatePeersList,
-      broadcastAwareness,
-      applyYjsToGraph,
-      syncLocalEdit
+  const status = computed(() =>
+    deriveRoomStatus({
+      hasDocument: hasDocument.value,
+      savedCopyLoaded: savedCopyLoaded.value,
+      waitedLong: waitedLong.value,
+      peerCount: peers.value.length
     })
-  }
+  )
 
-  function disconnect() {
-    const store = runtime.connectedStore.value ?? getStore()
-    disposeCollabSessionResources({
-      store,
-      room: runtime.room,
-      awareness: runtime.awareness,
-      persistence: runtime.persistence,
-      ydoc: runtime.ydoc,
-      unbindGraphEvents: runtime.unbindGraphEvents,
-      stopZoomWatch: runtime.stopZoomWatch,
-      stopAgentSync: runtime.stopAgentSync
-    })
-    resetCollabRuntime(runtime)
-    resetCollabConnectionState(state)
-  }
-
-  return { connect, disconnect }
-}
-
-export function watchAwarenessZoom(store: EditorStore, getAwareness: () => Awareness | null) {
-  return store.onEditorEvent('viewport:changed', (viewport) => {
-    const awareness = getAwareness()
-    if (!awareness) return
-    const prev = awareness.getLocalState()?.cursor as
-      | { x: number; y: number; pageId: string; zoom: number }
-      | undefined
-    if (prev) {
-      awareness.setLocalStateField('cursor', { ...prev, zoom: viewport.zoom })
+  const sync = createYjsGraphSync({
+    getStore: () => store,
+    getYdoc: () => (disposed ? null : ydoc),
+    getYnodes: () => (disposed ? null : ynodes),
+    getYimages: () => (disposed ? null : yimages),
+    setSuppressYjsEvents: (value) => {
+      suppressYjsEvents = value
     }
   })
-}
 
-export function connectCollabSession({
-  roomId,
-  runtime,
-  state,
-  store,
-  disconnect,
-  updatePeersList,
-  broadcastAwareness,
-  applyYjsToGraph,
-  syncLocalEdit
-}: ConnectCollabSessionOptions) {
-  if (runtime.room) disconnect()
+  function refreshDocument() {
+    const rootId = readRoot(meta)
+    hasDocument.value = rootId !== undefined && store.graph.rootId === rootId
+    const name = readRoomName(meta)
+    if (hasDocument.value && name && origin === 'joined') store.state.documentName = name
+  }
 
-  runtime.connectedStore.value = store
-  state.value.roomId = roomId
-  runtime.ydoc = new Y.Doc()
-  runtime.awareness = new awarenessProtocol.Awareness(runtime.ydoc)
-  runtime.ynodes = runtime.ydoc.getMap('nodes')
-  runtime.yimages = runtime.ydoc.getMap('images')
-  runtime.persistence = new IndexeddbPersistence(`op-room-${roomId}`, runtime.ydoc)
+  function updatePeers() {
+    const next = buildRemotePeers(
+      awareness.getStates() as Map<number, Record<string, unknown>>,
+      awareness.clientID
+    )
+    peers.value = next
+    setPeers(store, next)
+  }
 
-  // Peer updates also move the view of anyone following them.
-  runtime.awareness.on('change', updatePeersList)
+  function broadcastIdentity() {
+    awareness.setLocalStateField('user', { name: identity.name.value, color: identity.color })
+    awareness.setLocalStateField('treeFormat', TREE_FORMAT)
+  }
 
   registerYjsObservers({
     store,
-    ynodes: runtime.ynodes,
-    yimages: runtime.yimages,
-    getSuppressYjsEvents: () => runtime.suppressYjsEvents,
+    ynodes,
+    yimages,
+    getSuppressYjsEvents: () => suppressYjsEvents,
     setSuppressGraphSync: (value) => {
-      runtime.suppressGraphSync = value
+      suppressGraphSync = value
     },
-    applyYjsToGraph
+    applyYjsToGraph: (events) => {
+      sync.applyYjsToGraph(events)
+      refreshDocument()
+    }
   })
+  meta.observe(refreshDocument)
+  awareness.on('change', updatePeers)
 
-  const roomConnection = connectCollabRoom({
+  const connection = connectCollabRoom({
     roomId,
-    ydoc: runtime.ydoc,
-    awareness: runtime.awareness,
-    setConnected: () => {
-      state.value.connected = true
-    },
-    updatePeersList
+    ydoc,
+    awareness,
+    updatePeersList: updatePeers,
+    joinRoom
   })
-  runtime.room = roomConnection.room
-  state.value.connected = true
-  broadcastAwareness()
+  broadcastIdentity()
 
-  runtime.stopZoomWatch = watchAwarenessZoom(store, () => runtime.awareness)
-  runtime.stopAgentSync = publishLocalAgents(store, () => runtime.awareness, state.value.localColor)
+  void persistence.whenSynced.then(() => {
+    if (disposed) return undefined
+    savedCopyLoaded.value = true
+    refreshDocument()
+    return undefined
+  })
+  const graceTimer = setTimeout(() => {
+    waitedLong.value = true
+  }, graceMs)
 
-  runtime.unbindGraphEvents = bindCollabGraphEvents({
+  const stopNameWatch = watch(identity.name, broadcastIdentity)
+  const stopZoomWatch = store.onEditorEvent('viewport:changed', (viewport) => {
+    const cursor = awareness.getLocalState()?.cursor as CursorState | undefined
+    if (cursor) awareness.setLocalStateField('cursor', { ...cursor, zoom: viewport.zoom })
+  })
+  const stopAgentSync = publishLocalAgents(store, () => awareness, identity.color)
+  const unbindGraphEvents = bindCollabGraphEvents({
     store,
-    getYdoc: () => runtime.ydoc,
-    getYnodes: () => runtime.ynodes,
-    getSuppressGraphSync: () => runtime.suppressGraphSync,
-    syncLocalEdit
+    getYdoc: () => (disposed ? null : ydoc),
+    getYnodes: () => (disposed ? null : ynodes),
+    getSuppressGraphSync: () => suppressGraphSync,
+    syncLocalEdit: sync.syncLocalEdit
   })
-}
 
-export function resetCollabRuntime(runtime: CollabRuntime) {
-  runtime.unbindGraphEvents = null
-  runtime.stopZoomWatch = null
-  runtime.stopAgentSync = null
-  runtime.room = null
-  runtime.awareness = null
-  runtime.persistence = null
-  runtime.ydoc = null
-  runtime.ynodes = null
-  runtime.yimages = null
-  runtime.connectedStore.value = null
-}
-
-export function resetCollabConnectionState(state: Ref<CollabState>) {
-  state.value.connected = false
-  state.value.roomId = null
-  state.value.peers = []
-}
-
-export function disposeCollabSessionResources(resources: CollabSessionResources) {
-  resources.unbindGraphEvents?.()
-  resources.stopZoomWatch?.()
-  void resources.room?.leave()
-  resources.awareness?.destroy()
-  if (resources.persistence) {
-    void resources.persistence.destroy()
+  return {
+    roomId,
+    store,
+    origin,
+    peers,
+    status,
+    hasDocument,
+    updateCursor(x, y, pageId) {
+      awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
+    },
+    updateSelection(ids) {
+      awareness.setLocalStateField('selection', ids)
+    },
+    shareDocument() {
+      sync.syncAllNodesToYjs()
+      writeRoomName(meta, store.state.documentName)
+      refreshDocument()
+    },
+    dispose() {
+      if (disposed) return
+      // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
+      unbindGraphEvents()
+      disposed = true
+      clearTimeout(graceTimer)
+      stopNameWatch()
+      stopZoomWatch()
+      stopAgentSync()
+      meta.unobserve(refreshDocument)
+      void connection.room.leave()
+      awareness.destroy()
+      void persistence.destroy()
+      ydoc.destroy()
+      setPeers(store, [])
+    }
   }
-  resources.ydoc?.destroy()
-  resources.stopAgentSync?.()
-  setPeers(resources.store, [])
 }

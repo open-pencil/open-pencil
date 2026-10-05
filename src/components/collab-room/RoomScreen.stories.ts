@@ -1,0 +1,65 @@
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
+
+import RoomScreen from './RoomScreen.vue'
+
+type Args = {
+  status: 'joining' | 'waiting'
+  copied: boolean
+  nameHint: string | null
+  desktopLink: string | null
+  onCopyLink: () => void
+  onLeave: () => void
+}
+
+const meta = {
+  title: 'Collaboration/Room Screen',
+  component: RoomScreen,
+  tags: ['autodocs'],
+  args: {
+    status: 'waiting',
+    copied: false,
+    nameHint: null,
+    desktopLink: null,
+    onCopyLink: fn(),
+    onLeave: fn()
+  },
+  render: (args) => ({
+    components: { RoomScreen },
+    setup: () => ({ args }),
+    template: '<div class="relative h-[480px] bg-canvas"><RoomScreen v-bind="args" /></div>'
+  })
+} satisfies Meta<Args>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Joining: Story = {
+  args: { status: 'joining' }
+}
+
+export const Waiting: Story = {}
+
+export const WaitingWithGeneratedName: Story = {
+  args: {
+    nameHint: 'You’re Teal Fox in this room. Set your name so others know who you are.'
+  }
+}
+
+export const WaitingInDesktopBrowser: Story = {
+  args: { desktopLink: 'openpencil://join?room=abcdefghijklmnopqrstuvwxyz012345' }
+}
+
+export const LinkCopied: Story = {
+  args: { copied: true }
+}
+
+export const Actions: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Copy link' }))
+    await expect(args.onCopyLink).toHaveBeenCalledOnce()
+    await userEvent.click(canvas.getByRole('button', { name: 'Leave' }))
+    await expect(args.onLeave).toHaveBeenCalledOnce()
+  }
+}

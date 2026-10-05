@@ -29,12 +29,16 @@ const MAX_PEERS = 3
 const {
   rows,
   following,
-  connected = false
+  connected = false,
+  inRoom = false
 } = defineProps<{
   /** Ourselves first, then everyone else in the room. */
   rows: PresencePersonRow[]
   following: FollowTarget | null
+  /** Whether someone else in the room answered, so the room is live. */
   connected?: boolean
+  /** Whether we are in a room at all, so we can leave it. */
+  inRoom?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -106,7 +110,7 @@ function toggleFollow(clientId: number) {
             @rename="(id, name) => emit('rename', id, name)"
           />
           <AppButton
-            v-if="connected"
+            v-if="inRoom"
             variant="outline"
             :class="ui.leave()"
             data-test-id="collab-leave-room"

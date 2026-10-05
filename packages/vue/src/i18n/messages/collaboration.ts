@@ -27,7 +27,31 @@ export const collaborationMessageDefaults = {
   agentName: 'Agent name',
   agentThinking: 'Thinking',
   agentEditing: 'Editing',
-  agentIdle: 'Idle'
+  agentIdle: 'Idle',
+  sharedFile: 'Shared file',
+  invalidRoomLink: 'That isn’t a room link or ID.',
+  joiningTitle: 'Joining the room…',
+  joiningDescription: 'Connecting to the people in this room.',
+  waitingTitle: 'Waiting for someone who has this file',
+  waitingDescription:
+    'Rooms aren’t stored on a server. The file lives on the devices of the people who’ve been in the room, so it can only open while one of them is online.',
+  waitingAskSharer: 'Ask the person who shared the link to open it.',
+  waitingCheckLink: 'Check that the link is complete.',
+  waitingOpensAutomatically: 'The file opens here as soon as someone with it joins.',
+  copyLink: 'Copy link',
+  linkCopied: 'Copied',
+  leave: 'Leave',
+  statusLive: params('Live · {count} here'),
+  statusAlone: 'Only you here — changes sync when others join',
+  leftRoomTitle: 'You left this room',
+  leftRoomDescription: 'This is now a local copy. Save it to keep it.',
+  dismiss: 'Dismiss',
+  openInDesktopApp: 'Open in desktop app',
+  nameHint: params('You’re {name} in this room. Set your name so others know who you are.'),
+  joinRoomEllipsis: 'Join room…',
+  joinRoomDescription: 'Paste a room link or ID to open a file someone shared with you.',
+  nameSettingTitle: 'Your name',
+  nameSettingDescription: 'Others see this name next to your cursor in shared rooms.'
 } as const
 
 export const collaborationMessages = i18n('collaboration', collaborationMessageDefaults)

@@ -14,7 +14,12 @@ const crowd: PresencePersonRow[] = [
   { clientId: 6, name: 'Fay', color: colors.ana, agents: [] }
 ]
 
-type Args = { rows: PresencePersonRow[]; following: FollowTarget | null; connected: boolean }
+type Args = {
+  rows: PresencePersonRow[]
+  following: FollowTarget | null
+  connected: boolean
+  inRoom: boolean
+}
 
 const meta = {
   title: 'Collaboration/Presence Avatars',
@@ -24,6 +29,7 @@ const meta = {
     rows: room,
     following: null,
     connected: true,
+    inRoom: true,
     onFollow: fn(),
     onRename: fn(),
     onLeave: fn()
@@ -60,5 +66,5 @@ export const ManyPeople: Story = {
 }
 
 export const Alone: Story = {
-  args: { rows: room.slice(0, 1), connected: false }
+  args: { rows: room.slice(0, 1), connected: false, inRoom: false }
 }

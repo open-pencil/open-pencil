@@ -8,8 +8,8 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
  * from every parent the layer has been moved under to the move counter, and `orderKey`, its
  * fractional position among siblings, and `page`, the page this peer last placed it on, where it
  * goes once no recorded parent is left; `parentId` and `childIds` are derived on each peer
- * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the room's root, the
- * move clock, and the tree format.
+ * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the room's root and
+ * name, the move clock, and the tree format.
  */
 export const TREE_FORMAT = 2
 export const PARENTS_FIELD = 'parents'
@@ -17,6 +17,7 @@ export const ORDER_KEY_FIELD = 'orderKey'
 export const PAGE_FIELD = 'page'
 
 const ROOT_KEY = 'root'
+const NAME_KEY = 'name'
 const CLOCK_KEY = 'clock'
 const FORMAT_KEY = 'treeFormat'
 const KEY_SUFFIX_LENGTH = 3
@@ -35,6 +36,8 @@ const orderKeySchema = v.pipe(
   v.regex(/^[\x20-\x7e]+$/)
 )
 const layerIdSchema = v.pipe(v.string(), v.minLength(1))
+const MAX_ROOM_NAME_LENGTH = 256
+const roomNameSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(MAX_ROOM_NAME_LENGTH))
 
 export function readCounter(value: unknown): number | undefined {
   const result = v.safeParse(counterSchema, value)
@@ -76,6 +79,16 @@ export function readRoot(meta: YMeta): string | undefined {
 
 export function claimRoot(meta: YMeta, rootId: string): void {
   if (readRoot(meta) === undefined) meta.set(ROOT_KEY, rootId)
+}
+
+/** The name of the document shared into the room, so joiners' tabs show it. */
+export function readRoomName(meta: YMeta): string | undefined {
+  const result = v.safeParse(roomNameSchema, meta.get(NAME_KEY))
+  return result.success ? result.output : undefined
+}
+
+export function writeRoomName(meta: YMeta, name: string): void {
+  if (name.length > 0 && meta.get(NAME_KEY) !== name) meta.set(NAME_KEY, name)
 }
 
 export function writeParentEntry(ynode: Y.Map<unknown>, parentId: string, counter: number): void {
