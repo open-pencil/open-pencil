@@ -174,10 +174,23 @@ export function createPlaySession(source: SceneGraph) {
     booleans.set(`${target.instance.id}:${valueId}`, on)
   }
 
-  function slotFrame(copy: SceneNode, propertyId: string | undefined): SceneNode | undefined {
+  /** The copy's slot frame bound to a part of the behaviour. */
+  function partFrame(target: PlayTarget, copy: SceneNode, partId: string): SceneNode | undefined {
+    const propertyId = target.behaviour.parts[partId]
     return propertyId
       ? instanceSlotFrames(copies, copy).find((frame) => slotPropertyId(frame) === propertyId)
       : undefined
+  }
+
+  /**
+   * Change the instance's copy: `change` gets the copies' graph and the copy, made on first use,
+   * and the copy's layout is recomputed afterwards.
+   */
+  function edit(target: PlayTarget, change: (graph: SceneGraph, copy: SceneNode) => void): void {
+    const copy = touch(target)
+    if (!copy) return
+    change(copies, copy)
+    computeLayout(copies, copy.id)
   }
 
   function getNumber(target: PlayTarget, valueId: string): number {
@@ -188,49 +201,25 @@ export function createPlaySession(source: SceneGraph) {
     )
   }
 
-  /** Set a number value: the thumb moves along the track and the range fills up to it. */
-  function setNumber(target: PlayTarget, valueId: string, value: number): void {
+  /** Remember a number value, stepped and clamped to its range, and return what was kept. */
+  function setNumber(target: PlayTarget, valueId: string, value: number): number | null {
     const settings = numberSettings(target.behaviour, valueId)
-    const copy = touch(target)
-    if (!settings || !copy) return
+    if (!settings) return null
     const stepped =
       settings.step > 0
         ? Math.round((value - settings.min) / settings.step) * settings.step + settings.min
         : value
     const clamped = Math.min(settings.max, Math.max(settings.min, stepped))
     numbers.set(`${target.instance.id}:${valueId}`, clamped)
-    const track = slotFrame(copy, target.behaviour.parts.track)
-    const thumb = slotFrame(copy, target.behaviour.parts.thumb)
-    const range = slotFrame(copy, target.behaviour.parts.range)
-    if (!track || !thumb) return
-    const span = settings.max - settings.min
-    const ratio = span > 0 ? (clamped - settings.min) / span : 0
-    // The thumb and range sit either inside the track or beside it in the same parent.
-    const originOf = (node: SceneNode) => (node.parentId === track.id ? 0 : track.x)
-    copies.updateNode(thumb.id, {
-      x: originOf(thumb) + ratio * Math.max(0, track.width - thumb.width)
-    })
-    if (range)
-      copies.updateNode(range.id, {
-        x: originOf(range),
-        width: Math.max(0, ratio * (track.width - thumb.width) + thumb.width / 2)
-      })
+    return clamped
   }
 
   function getChoice(target: PlayTarget, valueId: string): number {
     return choices.get(`${target.instance.id}:${valueId}`) ?? 0
   }
 
-  /** Show one item of the content slot, as tabs do, and remember which. */
   function setChoice(target: PlayTarget, valueId: string, index: number): void {
-    const copy = touch(target)
-    if (!copy) return
     choices.set(`${target.instance.id}:${valueId}`, index)
-    const content = slotFrame(copy, target.behaviour.parts.content)
-    if (!content) return
-    for (const [position, child] of copies.getChildren(content.id).entries())
-      copies.updateNode(child.id, { visible: position === index })
-    computeLayout(copies, copy.id)
   }
 
   /** Forget every copy and state; the canvas draws the document again. */
@@ -244,6 +233,8 @@ export function createPlaySession(source: SceneGraph) {
 
   return {
     substitutes,
+    edit,
+    partFrame,
     getBoolean,
     setBoolean,
     getNumber,

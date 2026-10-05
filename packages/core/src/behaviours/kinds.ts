@@ -1,5 +1,7 @@
-/** The controls a main component can behave as. */
-export type BehaviourKind = 'switch' | 'checkbox' | 'slider' | 'tabs'
+/** The controls a main component can behave as, in the order the picker lists them. */
+export const BEHAVIOUR_KINDS = ['switch', 'checkbox', 'slider', 'tabs'] as const
+
+export type BehaviourKind = (typeof BEHAVIOUR_KINDS)[number]
 
 /**
  * How a behaviour value is held. A boolean is a variant or boolean property of the component.
@@ -26,7 +28,6 @@ export interface BehaviourPartContract {
 }
 
 export interface BehaviourContract {
-  kind: BehaviourKind
   values: BehaviourValueContract[]
   parts: BehaviourPartContract[]
 }
@@ -36,25 +37,22 @@ export interface BehaviourContract {
  * component's variants and properties; their subcomponents (thumb, range, trigger, …) are the
  * component's slots, and the component itself is the control's root.
  */
-export const BEHAVIOUR_CONTRACTS: readonly BehaviourContract[] = [
-  {
-    kind: 'switch',
+export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContract>> = {
+  switch: {
     values: [
       { id: 'value', type: 'boolean', required: true },
       { id: 'disabled', type: 'boolean', required: false }
     ],
     parts: [{ id: 'thumb', required: false }]
   },
-  {
-    kind: 'checkbox',
+  checkbox: {
     values: [
       { id: 'value', type: 'boolean', required: true },
       { id: 'disabled', type: 'boolean', required: false }
     ],
     parts: [{ id: 'indicator', required: false }]
   },
-  {
-    kind: 'slider',
+  slider: {
     values: [
       { id: 'value', type: 'number', required: false },
       { id: 'disabled', type: 'boolean', required: false }
@@ -65,8 +63,7 @@ export const BEHAVIOUR_CONTRACTS: readonly BehaviourContract[] = [
       { id: 'thumb', required: true }
     ]
   },
-  {
-    kind: 'tabs',
+  tabs: {
     values: [{ id: 'value', type: 'choice', required: false }],
     parts: [
       { id: 'list', required: true },
@@ -74,8 +71,8 @@ export const BEHAVIOUR_CONTRACTS: readonly BehaviourContract[] = [
       { id: 'content', required: false }
     ]
   }
-]
+}
 
-export function behaviourContract(kind: BehaviourKind): BehaviourContract | undefined {
-  return BEHAVIOUR_CONTRACTS.find((contract) => contract.kind === kind)
+export function behaviourContract(kind: BehaviourKind): BehaviourContract {
+  return BEHAVIOUR_CONTRACTS[kind]
 }

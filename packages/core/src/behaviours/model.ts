@@ -4,7 +4,7 @@ import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-p
 
 import { getPluginData, OPEN_PENCIL_PLUGIN_DATA_NAMESPACE } from '#core/figma-api/plugin-data'
 
-import { behaviourContract, type BehaviourKind } from './kinds'
+import { BEHAVIOUR_KINDS, behaviourContract, type BehaviourKind } from './kinds'
 
 /** The plugin-data key a component's behaviour is kept under, in OpenPencil's namespace. */
 export const BEHAVIOUR_PLUGIN_DATA_KEY = 'behaviour'
@@ -24,7 +24,7 @@ const NumberSettings = v.object({
 })
 
 const BehaviourSchema = v.object({
-  kind: v.picklist(['switch', 'checkbox', 'slider', 'tabs'] satisfies BehaviourKind[]),
+  kind: v.picklist(BEHAVIOUR_KINDS),
   /** Boolean values, by value id, bound to component properties. */
   booleans: v.record(v.string(), BooleanBinding),
   /** Number values, by value id: the range the behaviour keeps itself. */
@@ -65,7 +65,7 @@ export function numberSettings(
 export function emptyBehaviour(kind: BehaviourKind): Behaviour {
   const contract = behaviourContract(kind)
   const numbers = Object.fromEntries(
-    (contract?.values ?? [])
+    contract.values
       .filter((value) => value.type === 'number')
       .map((value) => [value.id, { ...DEFAULT_NUMBER_SETTINGS }])
   )
@@ -145,7 +145,6 @@ export function missingBindings(
   behaviour: Behaviour
 ): string[] {
   const contract = behaviourContract(behaviour.kind)
-  if (!contract) return []
   const properties = new Map(
     behaviourProperties(graph, owner).map((definition) => [definition.id, definition])
   )

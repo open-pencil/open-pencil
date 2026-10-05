@@ -14,7 +14,7 @@ import BehaviourPanel from './properties/component-properties/behaviour/Behaviou
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
 import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
 import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
-import VariantAuthoringSection from './properties/component-properties/VariantAuthoringSection.vue'
+import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'

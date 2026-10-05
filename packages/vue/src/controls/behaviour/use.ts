@@ -12,7 +12,7 @@ import {
   type BehaviourNumberSettings
 } from '@open-pencil/core/behaviours'
 
-import type { VariantDefinitionControl } from '#vue/controls/component-props/authoring'
+import type { VariantDefinitionControl } from '#vue/controls/variants'
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
@@ -33,8 +33,8 @@ export function useBehaviour() {
   const control = useSceneComputed<BehaviourControl | null>(() => {
     const current = behaviour.value
     const target = owner.value
-    const contract = current && behaviourContract(current.kind)
-    if (!current || !target || !contract) return null
+    if (!current || !target) return null
+    const contract = behaviourContract(current.kind)
     const properties = behaviourProperties(editor.graph, target)
     const options = (types: string[]): VariantDefinitionControl[] =>
       properties

@@ -241,13 +241,15 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
+  useComponentProperties
+} from '#vue/controls/component-props'
+export {
   slotInstanceOptions,
   slotLimits,
-  useComponentProperties,
   useSlotAuthoring,
-  useSlotProperties,
-  useVariantAuthoring
-} from '#vue/controls/component-props'
+  useSlotProperties
+} from '#vue/controls/slots'
+export { useVariantAuthoring } from '#vue/controls/variants'
 export { useBehaviour } from '#vue/controls/behaviour'
 export type {
   BehaviourBooleanControl,
@@ -258,13 +260,15 @@ export type {
 } from '#vue/controls/behaviour'
 export type {
   ComponentPropertyControl,
-  ComponentPropertyOption,
+  ComponentPropertyOption
+} from '#vue/controls/component-props'
+export type {
   SlotDefinitionControl,
   SlotInstanceOption,
   SlotLimit,
-  SlotPropertyControl,
-  VariantDefinitionControl
-} from '#vue/controls/component-props'
+  SlotPropertyControl
+} from '#vue/controls/slots'
+export type { VariantDefinitionControl } from '#vue/controls/variants'
 export type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 export { isPageDivider, PageListRoot, PAGE_DIVIDER_PATTERN } from '#vue/primitives/PageList'
 export { PositionControlsRoot } from '#vue/primitives/PositionControls'

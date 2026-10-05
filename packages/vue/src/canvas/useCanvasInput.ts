@@ -278,7 +278,7 @@ export function useCanvasInput(
     }
 
     if (editor.state.play && !drag.value) {
-      if (playDragging.value) editor.playPointerMove(coords.cx)
+      if (playDragging.value) editor.playPointerMove(coords.cx, coords.cy)
       cursorOverride.value = editor.playHitsControl(coords.cx, coords.cy) ? 'pointer' : null
       return
     }

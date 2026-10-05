@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { BEHAVIOUR_CONTRACTS, type BehaviourKind } from '@open-pencil/core/behaviours'
+import { BEHAVIOUR_KINDS, type BehaviourKind } from '@open-pencil/core/behaviours'
 import { useI18n } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -15,16 +15,16 @@ const { panels, common } = useI18n()
 const labels = useBehaviourLabels()
 
 const items = computed<AppPickerItem[]>(() =>
-  BEHAVIOUR_CONTRACTS.map((contract) => ({
-    value: contract.kind,
-    label: labels.value.kind(contract.kind).label,
-    description: labels.value.kind(contract.kind).description
+  BEHAVIOUR_KINDS.map((kind) => ({
+    value: kind,
+    label: labels.value.kind(kind).label,
+    description: labels.value.kind(kind).description
   }))
 )
 
 function add(value: string) {
-  const contract = BEHAVIOUR_CONTRACTS.find((item) => item.kind === value)
-  if (contract) emit('add', contract.kind)
+  const kind = BEHAVIOUR_KINDS.find((item) => item === value)
+  if (kind) emit('add', kind)
 }
 </script>
 

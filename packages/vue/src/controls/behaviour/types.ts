@@ -1,6 +1,6 @@
 import type { BehaviourKind } from '@open-pencil/core/behaviours'
 
-import type { VariantDefinitionControl } from '#vue/controls/component-props/authoring'
+import type { VariantDefinitionControl } from '#vue/controls/variants'
 
 /** A boolean value of the behaviour: the variant or boolean property that holds it. */
 export interface BehaviourBooleanControl {
