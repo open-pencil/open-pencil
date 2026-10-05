@@ -46,11 +46,12 @@ const shouldCreateHome =
   !appRuntimeConfig.test &&
   !route.meta.demo &&
   (isTauri() || appRuntimeConfig.recentFiles)
-let firstTab = activeTab.value
-if (!firstTab) firstTab = shouldCreateHome ? createHomeTab() : createTab()
-
-if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
-  void createDemoShapes(firstTab.store)
+// Block-scoped so the view does not keep the first tab's store after that tab closes.
+{
+  const firstTab = activeTab.value ?? (shouldCreateHome ? createHomeTab() : createTab())
+  if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
+    void createDemoShapes(firstTab.store)
+  }
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
