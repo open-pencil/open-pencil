@@ -88,7 +88,8 @@ export async function spawnHarnessProcess(options: {
   })
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     const text = typeof raw === 'string' ? raw : decoder.decode(new Uint8Array(raw))
-    console.error('[Harness]', text)
+    // Diagnostics only: the companion reports failures as protocol errors.
+    console.warn('[Harness]', text)
   })
   command.on('close', () => {
     controller?.close()

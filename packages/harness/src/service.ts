@@ -29,7 +29,7 @@ export class HarnessSessionService {
       throw new Error(`Harness session already active: ${sessionId}`)
     const backend = this.backends.get(configuration.adapter)
     if (!backend) throw new Error(`Harness adapter is unavailable: ${configuration.adapter}`)
-    const resumeState = await this.store.load(sessionId)
+    const resumeState = await this.loadResumeState(sessionId, backend)
     if (resumeState && resumeState.harnessId !== backend.id) {
       throw new Error(`Harness state belongs to ${resumeState.harnessId}, not ${backend.id}`)
     }
@@ -73,6 +73,16 @@ export class HarnessSessionService {
     const state = await session.stop()
     await this.store.save(sessionId, state)
     this.sessions.delete(sessionId)
+  }
+
+  /**
+   * A backend that resumes only within its live process (Pi's in-memory just-bash sandbox)
+   * cannot use saved state, and passing it makes every later session with that ID fail.
+   */
+  private async loadResumeState(sessionId: string, backend: HarnessBackend) {
+    if (backend.capabilities.sessionResume === 'persistent') return this.store.load(sessionId)
+    await this.store.remove(sessionId)
+    return undefined
   }
 
   async destroySession(sessionId: string): Promise<void> {
