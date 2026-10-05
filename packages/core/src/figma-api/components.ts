@@ -12,7 +12,7 @@ import {
   createComponentPropertyId
 } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
-import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+import { deriveVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
@@ -530,7 +530,7 @@ export function combineComponentsAsVariants(
   for (const component of components) graph.reparentNode(component.id, componentSet.id)
   if (index !== undefined) graph.reorderChild(componentSet.id, parentId, index)
 
-  const derived = deriveSlashVariantProperties(components, createComponentPropertyId)
+  const derived = deriveVariantProperties(components, createComponentPropertyId)
   if (derived) {
     for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
     graph.updateNode(componentSet.id, { componentPropertyDefinitions: derived.definitions })

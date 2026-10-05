@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { createComponentPropertyId } from '@open-pencil/scene-graph'
-import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+import { deriveVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import { createBehaviourActions } from './components/behaviours'
 import { createComponentFocusActions } from './components/focus'
@@ -64,7 +64,7 @@ export function createComponentActions(ctx: EditorContext) {
     const containerId = wrapSelectionInContainer('COMPONENT_SET', selectedNodes)
     if (!containerId) return
 
-    const derived = deriveSlashVariantProperties(selectedNodes, createComponentPropertyId)
+    const derived = deriveVariantProperties(selectedNodes, createComponentPropertyId)
     if (!derived) return
 
     for (const [nodeId, changes] of derived.variants) {
