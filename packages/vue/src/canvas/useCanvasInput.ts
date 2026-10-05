@@ -150,7 +150,7 @@ export function useCanvasInput(
     handleRotateMove,
     handleTextSelectMove,
     handleMarqueeMove
-  } = createCanvasTransformInput(editor, canvasToLocal, setDrag)
+  } = createCanvasTransformInput(editor, setDrag)
 
   function paddingValue(node: SceneNode, side: 'top' | 'right' | 'bottom' | 'left') {
     if (side === 'top') return node.paddingTop
