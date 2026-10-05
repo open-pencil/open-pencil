@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `SceneNode.booleanOperation` is a required key whose value may be `undefined`, like every other scene node field, so code that builds `SceneNode` objects itself must include it.
 - `sceneNodeToDesignDocument` from `@open-pencil/dom-css` takes an options object, `{ includeSourceIds, tokens }`, instead of a boolean third argument; `tokens: false` writes literal values instead of variable references.
 - `randomHex`, `randomInt`, and `randomIndex` moved from `@open-pencil/core/random` and the `@open-pencil/core` barrel to `@open-pencil/scene-graph/random`.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
@@ -135,7 +136,7 @@
 
 ### Performance
 
-- Open large `.fig` files with about a quarter less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary. A fully loaded 55 MB Material 3 file drops from 3.7 GB to 2.8 GB.
+- Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.
 - Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, each page resolves only the layers it adds instead of rescanning the whole document, placing an instance no longer re-synchronises every other instance of its component, and archive records are copied directly rather than through `structuredClone`. A 33-page file loads about a fifth quicker, and a page of repeated components opens three to four times faster once a document is already open.
 
 ### Security

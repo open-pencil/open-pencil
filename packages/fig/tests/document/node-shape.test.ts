@@ -11,10 +11,12 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 test('imported nodes carry exactly the default scene node fields', () => {
   const session = createFigDocumentSession(readFixtureArrayBuffer('gold-preview.fig'))
   for (const page of session.pages) if (!page.internalOnly) session.loadPage(page.id)
-  const fields = Object.keys(createDefaultNode(() => 'node', 'FRAME')).sort()
+  // Insertion order matters too: JavaScriptCore lays out the same keys added in another order
+  // as a different shape.
+  const fields = Object.keys(createDefaultNode(() => 'node', 'FRAME'))
   const shapes = new Map<string, string>()
   for (const node of session.graph.nodes.values()) {
-    const keys = Object.keys(node).sort().join(',')
+    const keys = Object.keys(node).join(',')
     if (!shapes.has(keys)) shapes.set(keys, node.id)
   }
   expect([...shapes.keys()].map((keys) => keys.split(','))).toEqual([fields])
