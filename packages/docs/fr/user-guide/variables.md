@@ -19,7 +19,7 @@ Les variables sont organisées en collections, affichées sous forme d’onglets
 
 - **Changer de collection :** cliquez sur un onglet
 - **Créer une collection :** cliquez sur le bouton en forme de dossier dans la barre d’outils (**Créer une collection**)
-- **Renommer ou supprimer :** sans variable sélectionnée, la partie droite modifie la collection : changez son nom ou supprimez-la (**Supprimer la collection**)
+- **Renommer ou supprimer :** sans variable sélectionnée, la partie droite modifie la collection : changez son nom, ou supprimez-la depuis le menu **⋯** à côté du nom (**Supprimer la collection**)
 
 ## Modes
 
@@ -28,7 +28,20 @@ Chaque collection peut avoir plusieurs modes (par exemple Clair et Sombre). Les 
 - **Ajouter un mode :** cliquez sur **+** à côté de **Modes**
 - **Renommer :** modifiez le nom du mode
 - **Dupliquer, définir par défaut, supprimer :** utilisez le menu **⋯** à côté du mode (**Dupliquer le mode**, **Définir par défaut**, **Supprimer le mode**)
-- **Condition :** le sélecteur CSS ou la requête `@media`, `@supports` ou `@container` qui active le mode dans la feuille de style. Si elle est vide, c’est un attribut nommé d’après la collection et le mode, comme `[data-theme="dark"]` pour le mode Sombre d’une collection Theme. Le mode par défaut va toujours dans `:root`.
+
+Le mode par défaut est **Toujours actif** et va dans `:root`. Chaque autre mode a **S’applique quand**, qui indique quand le mode prend le relais dans la feuille de style exportée ; le CSS qu’il produit s’affiche en dessous :
+
+| S’applique quand | CSS |
+| --- | --- |
+| **il est activé manuellement** | un attribut nommé d’après la collection et le mode, comme `[data-theme="dark"]` pour le mode Sombre d’une collection Theme |
+| **le système est en mode sombre** / **le système est en mode clair** | `@media (prefers-color-scheme: dark)` / `light` |
+| **le contraste élevé est activé** | `@media (prefers-contrast: more)` |
+| **la réduction des animations est activée** | `@media (prefers-reduced-motion: reduce)` |
+| **l’écran est plus étroit que** / **l’écran est plus large que** une largeur | `@media (max-width: 640px)` / `min-width` |
+| **le conteneur est plus étroit que** / **le conteneur est plus large que** une largeur | `@container (max-width: 640px)` / `min-width` |
+| **CSS personnalisé** | n’importe quel sélecteur, ou une requête `@media`, `@supports` ou `@container` |
+
+Sur le canevas, un calque affiche un mode lorsque vous l’y réglez, quelle que soit la condition. Dans le code exporté, un mode activé manuellement s’active en ajoutant son attribut à un élément ; les calques réglés dessus sont donc exportés avec cet attribut. Les calques réglés sur un mode ayant une autre condition, sélecteurs personnalisés compris, sont exportés avec des valeurs littérales plutôt que des tokens, car c’est la feuille de style, et non le calque, qui décide quand ce mode s’applique.
 
 ## Gérer les variables
 

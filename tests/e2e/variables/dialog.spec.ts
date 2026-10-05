@@ -129,14 +129,28 @@ test('deleting a variable removes its row', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('adding a mode adds a value column and a condition', async () => {
+test('a new mode is switched manually until a condition is picked', async () => {
   const inspector = editor.page.getByTestId('collection-inspector')
   await inspector.getByTestId('variables-add-mode').click()
 
-  await expect(inspector.getByTestId('variables-mode')).toHaveCount(2)
-  await expect(inspector.getByRole('textbox', { name: 'Mode 2 Condition' })).toBeVisible()
+  const modes = inspector.getByTestId('variables-mode')
+  await expect(modes).toHaveCount(2)
+  const added = modes.nth(1)
+  await expect(added.getByTestId('variables-mode-css')).toHaveText(
+    '[data-test-collection="mode-2"]'
+  )
   await expect(editor.page.getByTestId('token-list')).toContainText(
     'Mode 2[data-test-collection="mode-2"]'
+  )
+
+  await added.getByRole('combobox', { name: 'Mode 2: Applies when' }).click()
+  await editor.page.getByRole('option', { name: 'Screen is narrower than' }).click()
+  await expect(added.getByTestId('variables-mode-css')).toHaveText('@media (max-width: 640px)')
+  await added.getByRole('spinbutton', { name: 'Mode 2: Width' }).fill('480')
+  await added.getByRole('spinbutton', { name: 'Mode 2: Width' }).press('Enter')
+  await expect(added.getByTestId('variables-mode-css')).toHaveText('@media (max-width: 480px)')
+  await expect(editor.page.getByTestId('token-list')).toContainText(
+    'Mode 2Screen is narrower than 480px'
   )
   editor.canvas.assertNoErrors()
 })

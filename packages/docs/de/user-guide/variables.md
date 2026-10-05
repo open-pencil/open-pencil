@@ -19,7 +19,7 @@ Variablen sind in Sammlungen organisiert, die als Registerkarten erscheinen (auf
 
 - **Sammlung wechseln:** auf eine Registerkarte klicken
 - **Sammlung erstellen:** in der Werkzeugleiste auf die Ordner-Schaltfläche (**Sammlung erstellen**) klicken
-- **Umbenennen oder löschen:** Ist keine Variable ausgewählt, bearbeitet die rechte Seite die Sammlung: Dort lässt sich der Name ändern oder die Sammlung löschen (**Sammlung löschen**)
+- **Umbenennen oder löschen:** Ist keine Variable ausgewählt, bearbeitet die rechte Seite die Sammlung: Dort lässt sich der Name ändern oder die Sammlung über das Menü **⋯** neben dem Namen löschen (**Sammlung löschen**)
 
 ## Modi
 
@@ -28,7 +28,20 @@ Jede Sammlung kann mehrere Modi enthalten (z. B. Hell und Dunkel). Die Modi ersc
 - **Modus hinzufügen:** auf **+** neben **Modi** klicken
 - **Umbenennen:** den Namen des Modus bearbeiten
 - **Duplizieren, als Standard festlegen, löschen:** das Menü **⋯** neben dem Modus verwenden (**Modus duplizieren**, **Als Standard festlegen**, **Modus löschen**)
-- **Bedingung:** der CSS-Selektor oder die Abfrage mit `@media`, `@supports` oder `@container`, die den Modus im Stylesheet aktiviert. Bleibt sie leer, ist es ein Attribut, das nach Sammlung und Modus benannt ist, etwa `[data-theme="dark"]` für den Modus Dunkel einer Sammlung Theme. Der Standardmodus steht immer in `:root`.
+
+Der Standardmodus ist **Immer aktiv** und steht in `:root`. Jeder andere Modus hat **Gilt wenn**; das legt fest, wann der Modus im exportierten Stylesheet greift, und das CSS, das daraus entsteht, steht darunter:
+
+| Gilt wenn | CSS |
+| --- | --- |
+| **manuell umgeschaltet wird** | ein Attribut, das nach Sammlung und Modus benannt ist, etwa `[data-theme="dark"]` für den Modus Dunkel einer Sammlung Theme |
+| **das System im Dunkelmodus ist** / **das System im Hellmodus ist** | `@media (prefers-color-scheme: dark)` / `light` |
+| **hoher Kontrast aktiv ist** | `@media (prefers-contrast: more)` |
+| **reduzierte Bewegung aktiv ist** | `@media (prefers-reduced-motion: reduce)` |
+| **der Bildschirm schmaler ist als** / **der Bildschirm breiter ist als** eine Breite | `@media (max-width: 640px)` / `min-width` |
+| **der Container schmaler ist als** / **der Container breiter ist als** eine Breite | `@container (max-width: 640px)` / `min-width` |
+| **Benutzerdefiniertes CSS** | ein beliebiger Selektor oder eine Abfrage mit `@media`, `@supports` oder `@container` |
+
+Auf der Arbeitsfläche zeigt eine Ebene einen Modus, sobald sie auf ihn gesetzt ist, unabhängig von der Bedingung. Im exportierten Code wird ein manuell umgeschalteter Modus aktiviert, indem sein Attribut an ein Element gesetzt wird; Ebenen, die auf ihn gesetzt sind, werden daher mit diesem Attribut exportiert. Ebenen, die auf einen Modus mit einer anderen Bedingung gesetzt sind, auch mit benutzerdefinierten Selektoren, werden mit festen Werten statt Tokens exportiert, weil das Stylesheet und nicht die Ebene entscheidet, wann dieser Modus gilt.
 
 ## Variablen verwalten
 

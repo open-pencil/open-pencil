@@ -19,7 +19,7 @@ Variables are organized into collections, shown as tabs (a menu on narrow screen
 
 - **Switch collection** — click a tab
 - **Create collection** — click the folder button in the toolbar
-- **Rename or delete** — with no variable selected, the right side edits the collection: change its name or delete it
+- **Rename or delete** — with no variable selected, the right side edits the collection: change its name, or delete it from the **⋯** menu next to the name
 
 ## Modes
 
@@ -28,7 +28,20 @@ Each collection can have multiple modes (e.g., Light and Dark). Modes appear as 
 - **Add mode** — click **+** next to Modes
 - **Rename** — edit the mode's name
 - **Duplicate, set as default, delete** — use the **⋯** menu next to the mode
-- **Condition** — the CSS selector or `@media`, `@supports`, or `@container` query that turns the mode on in the stylesheet. Left empty, it is an attribute named after the collection and mode, such as `[data-theme="dark"]` for a Theme collection's Dark mode. The default mode always goes in `:root`.
+
+The default mode is **Always on** and goes in `:root`. Every other mode has **Applies when**, which says when the mode takes over in the exported stylesheet; the CSS it writes is shown underneath:
+
+| Applies when | CSS |
+| --- | --- |
+| **Switched manually** | an attribute named after the collection and mode, such as `[data-theme="dark"]` for a Theme collection's Dark mode |
+| **System is in dark mode** / **System is in light mode** | `@media (prefers-color-scheme: dark)` / `light` |
+| **High contrast is on** | `@media (prefers-contrast: more)` |
+| **Reduced motion is on** | `@media (prefers-reduced-motion: reduce)` |
+| **Screen is narrower than** / **Screen is wider than** a width | `@media (max-width: 640px)` / `min-width` |
+| **Container is narrower than** / **Container is wider than** a width | `@container (max-width: 640px)` / `min-width` |
+| **Custom CSS** | any selector, or a `@media`, `@supports`, or `@container` query |
+
+On the canvas, a layer shows a mode when you set the layer to it, whatever the condition. In exported code, a manually switched mode is turned on by adding its attribute to an element, so layers set to it export with that attribute. Layers set to a mode with any other condition, custom selectors included, export with literal values instead of tokens, because the stylesheet, not the layer, decides when that mode applies.
 
 ## Managing Variables
 

@@ -13,12 +13,21 @@ import { computed, reactive, watch } from 'vue'
 import type { VariableCollection } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
+import {
+  changeConditionKind,
+  isAutomaticCondition,
+  modeConditionCSS,
+  parseModeCondition,
+  type ConditionKind,
+  type ModeCondition
+} from '@/app/editor/tokens/conditions'
 import { modeConditionPlaceholder } from '@/app/editor/tokens/model'
-import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import { useConditionLabels } from '@/components/variables/useConditionLabels'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
 const { collection, layout = 'side' } = defineProps<{
@@ -38,6 +47,7 @@ const emit = defineEmits<{
 }>()
 
 const { variables } = useI18n()
+const { kindOptions } = useConditionLabels()
 const ui = computed(() => tv(tokensPanelTheme)({ layout }))
 const menu = useMenuUI({ content: 'w-44', item: 'justify-start gap-2' })
 const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
@@ -46,7 +56,8 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
 const draft = reactive({
   name: '',
   modeNames: {} as Record<string, string>,
-  conditions: {} as Record<string, string>
+  custom: {} as Record<string, string>,
+  widths: {} as Record<string, string>
 })
 /**
  * Drafts reset when the stored names or conditions change, not whenever the collection is
@@ -61,8 +72,10 @@ watch(
   () => {
     draft.name = collection.name
     for (const mode of collection.modes) {
+      const condition = parseModeCondition(mode.condition)
       draft.modeNames[mode.modeId] = mode.name
-      draft.conditions[mode.modeId] = mode.condition ?? ''
+      draft.custom[mode.modeId] = mode.condition ?? ''
+      draft.widths[mode.modeId] = 'width' in condition ? String(condition.width) : ''
     }
   },
   { immediate: true }
@@ -85,24 +98,87 @@ function commitModeName(modeId: string) {
   else draft.modeNames[modeId] = current
 }
 
-function commitCondition(modeId: string) {
-  if ((draft.conditions[modeId] ?? '') !== (mode(modeId)?.condition ?? ''))
-    emit('setCondition', modeId, draft.conditions[modeId] ?? '')
+function condition(modeId: string): ModeCondition {
+  return parseModeCondition(mode(modeId)?.condition)
+}
+
+function save(modeId: string, next: ModeCondition) {
+  const css = modeConditionCSS(next) ?? ''
+  if (css !== (mode(modeId)?.condition ?? '')) emit('setCondition', modeId, css)
+}
+
+/** Custom CSS starts from what the mode writes now, the attribute selector when manual. */
+function setKind(modeId: string, kind: ConditionKind) {
+  const next = changeConditionKind(condition(modeId), kind)
+  if (next.kind === 'custom' && !next.css)
+    save(modeId, { kind: 'custom', css: modeConditionPlaceholder(collection, modeId) ?? '' })
+  else save(modeId, next)
+}
+
+function commitWidth(modeId: string) {
+  const current = condition(modeId)
+  const width = Number(draft.widths[modeId])
+  if ('width' in current && Number.isFinite(width) && width > 0) save(modeId, { ...current, width })
+  else draft.widths[modeId] = 'width' in current ? String(current.width) : ''
+}
+
+function commitCustom(modeId: string) {
+  save(modeId, { kind: 'custom', css: draft.custom[modeId] ?? '' })
+}
+
+/** The CSS a mode is written under, for developers, under the words designers pick. */
+function writtenAs(modeId: string): string {
+  return modeConditionCSS(condition(modeId)) ?? modeConditionPlaceholder(collection, modeId) ?? ''
+}
+
+/** What a designer needs to know about where the mode applies on the canvas and in code. */
+function hint(modeId: string): string {
+  const current = condition(modeId)
+  if (current.kind === 'manual')
+    return variables.value.conditionManualHint({
+      attribute: (modeConditionPlaceholder(collection, modeId) ?? '').replace(/^\[|\]$/g, '')
+    })
+  if (isAutomaticCondition(current)) return variables.value.conditionAutomaticHint
+  return variables.value.conditionHint
 }
 </script>
 
 <template>
   <aside :class="ui.inspector()" data-test-id="collection-inspector">
     <section :class="ui.section()">
-      <label :class="ui.field()">
-        <span :class="ui.label()">{{ variables.collection }}</span>
+      <span :class="ui.label()">{{ variables.collection }}</span>
+      <div class="flex items-center gap-1">
         <AppInput
           v-model="draft.name"
           size="sm"
+          class="min-w-0 flex-1"
+          :aria-label="variables.collection"
           data-test-id="variables-collection-name"
           @change="commitName"
         />
-      </label>
+        <DropdownMenuRoot>
+          <DropdownMenuTrigger as-child>
+            <IconButton
+              :label="variables.collectionActions"
+              data-test-id="variables-collection-menu"
+            >
+              <icon-lucide-ellipsis class="size-3.5" />
+            </IconButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuContent side="bottom" :side-offset="4" align="end" :class="menu.content">
+              <DropdownMenuItem
+                :class="dangerItem"
+                data-test-id="variables-delete-collection"
+                @select="emit('remove')"
+              >
+                <icon-lucide-trash-2 :class="menu.icon" />
+                {{ variables.deleteCollection }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenuPortal>
+        </DropdownMenuRoot>
+      </div>
     </section>
 
     <section :class="ui.section()">
@@ -119,7 +195,7 @@ function commitCondition(modeId: string) {
       <div
         v-for="item in collection.modes"
         :key="item.modeId"
-        :class="ui.field()"
+        :class="ui.mode()"
         data-test-id="variables-mode"
       >
         <div class="flex items-center gap-1">
@@ -166,32 +242,47 @@ function commitCondition(modeId: string) {
             </DropdownMenuPortal>
           </DropdownMenuRoot>
         </div>
-        <span v-if="item.modeId === collection.defaultModeId" :class="ui.cssName()">:root</span>
-        <AppInput
-          v-else
-          v-model="draft.conditions[item.modeId]"
-          size="sm"
-          :aria-label="`${item.name} ${variables.condition}`"
-          :placeholder="modeConditionPlaceholder(collection, item.modeId)"
-          :ui="{ input: 'font-mono' }"
-          @change="commitCondition(item.modeId)"
-        />
-      </div>
-      <span :class="ui.hint()">{{ variables.conditionHint }}</span>
-    </section>
 
-    <section :class="ui.section()">
-      <AppButton
-        variant="ghost"
-        color="error"
-        size="sm"
-        class="self-start"
-        data-test-id="variables-delete-collection"
-        @click="emit('remove')"
-      >
-        <template #leading><icon-lucide-trash-2 class="size-3.5" /></template>
-        {{ variables.deleteCollection }}
-      </AppButton>
+        <template v-if="item.modeId === collection.defaultModeId">
+          <span :class="ui.label()">{{ variables.alwaysOn }}</span>
+          <code :class="ui.modeCSS()">:root</code>
+        </template>
+        <template v-else>
+          <span :class="ui.label()">{{ variables.appliesWhen }}</span>
+          <AppSelect
+            :model-value="condition(item.modeId).kind"
+            :options="kindOptions"
+            :label="`${item.name}: ${variables.appliesWhen}`"
+            :ui="{ trigger: 'w-full' }"
+            data-test-id="variables-mode-condition"
+            @update:model-value="setKind(item.modeId, $event)"
+          />
+          <AppInput
+            v-if="'width' in condition(item.modeId)"
+            v-model="draft.widths[item.modeId]"
+            type="number"
+            size="sm"
+            :aria-label="`${item.name}: ${variables.conditionWidth}`"
+            data-test-id="variables-mode-width"
+            @change="commitWidth(item.modeId)"
+          >
+            <template #trailing><span :class="ui.hint()">px</span></template>
+          </AppInput>
+          <AppInput
+            v-if="condition(item.modeId).kind === 'custom'"
+            v-model="draft.custom[item.modeId]"
+            size="sm"
+            :aria-label="`${item.name}: ${variables.condition}`"
+            :placeholder="modeConditionPlaceholder(collection, item.modeId)"
+            :ui="{ input: 'font-mono' }"
+            @change="commitCustom(item.modeId)"
+          />
+          <code v-else :class="ui.modeCSS()" data-test-id="variables-mode-css">{{
+            writtenAs(item.modeId)
+          }}</code>
+          <span :class="ui.hint()">{{ hint(item.modeId) }}</span>
+        </template>
+      </div>
     </section>
   </aside>
 </template>

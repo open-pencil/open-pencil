@@ -29,10 +29,16 @@ export default {
       'flex min-w-0 animate-in items-center gap-1.5 truncate font-mono text-[11px] fade-in duration-150 motion-reduce:animate-none',
     expression: 'truncate font-mono text-[11px] text-accent',
     modeHeader: 'flex min-w-0 flex-col gap-0.5',
-    modeCondition: 'truncate font-mono text-[10px] font-normal text-muted/80',
+    /** When a mode applies: words in the UI font, a selector or query in the code font. */
+    modeCondition:
+      'truncate text-[11px] font-normal text-muted data-[code]:font-mono data-[code]:text-[10px] data-[code]:text-muted/80',
     section: 'flex flex-col gap-2',
     sectionTitle: 'text-[11px] font-semibold text-muted',
     field: 'flex flex-col gap-1',
+    /** One mode in the collection inspector: its name, when it applies, and the CSS it writes. */
+    /** The CSS a mode is written under, wrapped rather than cut so it reads in full. */
+    modeCSS: 'font-mono text-[11px] break-all text-muted',
+    mode: 'flex flex-col gap-1.5 border-b border-border pb-3 last:border-b-0 last:pb-0',
     label: 'text-[11px] text-muted',
     hint: 'text-[10px] text-muted',
     empty: 'px-4 py-8 text-center text-xs text-muted'

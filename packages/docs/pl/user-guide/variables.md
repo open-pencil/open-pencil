@@ -19,7 +19,7 @@ Zmienne są łączone w kolekcje, wyświetlane jako karty (na wąskich ekranach 
 
 - **Przejście do kolekcji:** kliknij kartę
 - **Tworzenie kolekcji:** kliknij przycisk z folderem na pasku narzędzi (**Utwórz kolekcję**)
-- **Zmiana nazwy lub usuwanie:** gdy żadna zmienna nie jest zaznaczona, prawa strona edytuje kolekcję: zmień jej nazwę albo usuń ją (**Usuń kolekcję**)
+- **Zmiana nazwy lub usuwanie:** gdy żadna zmienna nie jest zaznaczona, prawa strona edytuje kolekcję: zmień jej nazwę albo usuń ją z menu **⋯** obok nazwy (**Usuń kolekcję**)
 
 ## Tryby
 
@@ -28,7 +28,20 @@ Każda kolekcja może zawierać kilka trybów (na przykład Light i Dark). Tryby
 - **Dodawanie trybu:** kliknij **+** obok pozycji **Tryby**
 - **Zmiana nazwy:** edytuj nazwę trybu
 - **Duplikowanie, ustawianie jako domyślnego, usuwanie:** użyj menu **⋯** obok trybu (**Duplikuj tryb**, **Ustaw jako domyślny**, **Usuń tryb**)
-- **Warunek:** selektor CSS lub zapytanie `@media`, `@supports` albo `@container`, które włącza tryb w arkuszu stylów. Jeśli pole jest puste, warunkiem jest atrybut nazwany od kolekcji i trybu, na przykład `[data-theme="dark"]` dla trybu Dark kolekcji Theme. Tryb domyślny zawsze trafia do `:root`.
+
+Tryb domyślny jest **Zawsze włączony** i trafia do `:root`. Każdy inny tryb ma pole **Obowiązuje, gdy**, które określa, kiedy tryb przejmuje kontrolę w wyeksportowanym arkuszu stylów; wygenerowany CSS jest pokazany poniżej:
+
+| Obowiązuje, gdy | CSS |
+| --- | --- |
+| **przełączono ręcznie** | atrybut nazwany od kolekcji i trybu, na przykład `[data-theme="dark"]` dla trybu Dark kolekcji Theme |
+| **system jest w trybie ciemnym** / **system jest w trybie jasnym** | `@media (prefers-color-scheme: dark)` / `light` |
+| **włączony jest wysoki kontrast** | `@media (prefers-contrast: more)` |
+| **włączone jest ograniczenie ruchu** | `@media (prefers-reduced-motion: reduce)` |
+| **ekran jest węższy niż** / **ekran jest szerszy niż** szerokość | `@media (max-width: 640px)` / `min-width` |
+| **kontener jest węższy niż** / **kontener jest szerszy niż** szerokość | `@container (max-width: 640px)` / `min-width` |
+| **Własny CSS** | dowolny selektor albo zapytanie `@media`, `@supports` lub `@container` |
+
+Na płótnie warstwa pokazuje tryb, gdy ustawisz ją na ten tryb, niezależnie od warunku. W wyeksportowanym kodzie tryb przełączany ręcznie włącza się przez dodanie jego atrybutu do elementu, więc warstwy ustawione na ten tryb są eksportowane z tym atrybutem. Warstwy ustawione na tryb z dowolnym innym warunkiem, także z własnymi selektorami, są eksportowane z wartościami dosłownymi zamiast tokenów, ponieważ o tym, kiedy tryb obowiązuje, decyduje arkusz stylów, a nie warstwa.
 
 ## Praca ze zmiennymi
 

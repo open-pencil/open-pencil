@@ -19,7 +19,7 @@ Le variabili sono organizzate in raccolte, mostrate come schede (un menu sugli s
 
 - **Cambiare raccolta:** fai clic su una scheda
 - **Creare una raccolta:** fai clic sul pulsante a forma di cartella nella barra degli strumenti (**Crea raccolta**)
-- **Rinominare o eliminare:** senza alcuna variabile selezionata, la parte destra modifica la raccolta: cambia il nome o eliminala (**Elimina raccolta**)
+- **Rinominare o eliminare:** senza alcuna variabile selezionata, la parte destra modifica la raccolta: cambia il nome, oppure eliminala dal menu **⋯** accanto al nome (**Elimina raccolta**)
 
 ## Modalità
 
@@ -28,7 +28,20 @@ Ogni raccolta può avere più modalità (per esempio Chiaro e Scuro). Le modalit
 - **Aggiungere una modalità:** fai clic su **+** accanto a **Modalità**
 - **Rinominare:** modifica il nome della modalità
 - **Duplicare, impostare come predefinita, eliminare:** usa il menu **⋯** accanto alla modalità (**Duplica modalità**, **Imposta come predefinita**, **Elimina modalità**)
-- **Condizione:** il selettore CSS o la query `@media`, `@supports` o `@container` che attiva la modalità nel foglio di stile. Se è vuota, è un attributo che prende il nome dalla raccolta e dalla modalità, come `[data-theme="dark"]` per la modalità Scuro di una raccolta Theme. La modalità predefinita va sempre in `:root`.
+
+La modalità predefinita è **Sempre attivo** e va in `:root`. Ogni altra modalità ha **Si applica quando**, che indica quando la modalità subentra nel foglio di stile esportato; il CSS che scrive è mostrato sotto:
+
+| Si applica quando | CSS |
+| --- | --- |
+| **viene attivata manualmente** | un attributo che prende il nome dalla raccolta e dalla modalità, come `[data-theme="dark"]` per la modalità Scuro di una raccolta Theme |
+| **il sistema è in modalità scura** / **il sistema è in modalità chiara** | `@media (prefers-color-scheme: dark)` / `light` |
+| **il contrasto elevato è attivo** | `@media (prefers-contrast: more)` |
+| **la riduzione del movimento è attiva** | `@media (prefers-reduced-motion: reduce)` |
+| **lo schermo è più stretto di** / **lo schermo è più largo di** una larghezza | `@media (max-width: 640px)` / `min-width` |
+| **il contenitore è più stretto di** / **il contenitore è più largo di** una larghezza | `@container (max-width: 640px)` / `min-width` |
+| **CSS personalizzato** | qualsiasi selettore, oppure una query `@media`, `@supports` o `@container` |
+
+Sulla tela, un livello mostra una modalità quando lo imposti su di essa, qualunque sia la condizione. Nel codice esportato, una modalità attivata manualmente si attiva aggiungendo il suo attributo a un elemento, quindi i livelli impostati su di essa vengono esportati con quell’attributo. I livelli impostati su una modalità con qualsiasi altra condizione, selettori personalizzati compresi, vengono esportati con valori letterali invece dei token, perché è il foglio di stile, non il livello, a decidere quando quella modalità si applica.
 
 ## Gestire le variabili
 

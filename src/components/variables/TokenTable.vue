@@ -5,9 +5,10 @@ import { computed } from 'vue'
 
 import type { VariableCollection } from '@open-pencil/scene-graph'
 
-import { modeConditionPlaceholder, type TokenGroup } from '@/app/editor/tokens/model'
+import type { TokenGroup } from '@/app/editor/tokens/model'
 import BindingPill from '@/components/ui/binding/BindingPill.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import { useConditionLabels } from '@/components/variables/useConditionLabels'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
 const { collection, groups, labels, modeIds } = defineProps<{
@@ -36,9 +37,11 @@ const modes = computed(() =>
 /** The grid itself follows the panel's container width; only the mode count comes from here. */
 const columns = computed(() => ({ '--token-modes': modes.value.length }))
 
+const { summary } = useConditionLabels()
+
+/** When a mode applies, in words, under its name in the column header. */
 function condition(modeId: string) {
-  const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
-  return mode?.condition ?? modeConditionPlaceholder(collection, modeId)
+  return summary(collection, modeId)
 }
 
 function shown<T extends { modeId: string }>(values: readonly T[]) {
@@ -59,8 +62,12 @@ function shown<T extends { modeId: string }>(values: readonly T[]) {
       <span :class="ui.cssColumn()">{{ labels.cssName }}</span>
       <span v-for="mode in modes" :key="mode.modeId" :class="ui.modeHeader()">
         <span class="text-surface">{{ mode.name }}</span>
-        <span v-if="condition(mode.modeId)" :class="ui.modeCondition()">
-          {{ condition(mode.modeId) }}
+        <span
+          v-if="condition(mode.modeId)"
+          :class="ui.modeCondition()"
+          :data-code="condition(mode.modeId)?.code || undefined"
+        >
+          {{ condition(mode.modeId)?.text }}
         </span>
       </span>
     </div>
