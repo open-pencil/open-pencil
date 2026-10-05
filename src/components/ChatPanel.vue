@@ -52,9 +52,11 @@ const submission = useChatSubmission({
   openSetup: () => openAISetup()
 })
 
-const chatInput = useTemplateRef<{ restoreDraft: (text: string) => void }>('chatInput')
+const chatInput = useTemplateRef<{ restoreDraft: (submission: ChatSubmission) => void }>(
+  'chatInput'
+)
 async function submitMessage(message: ChatSubmission) {
-  if (!(await submission.submit(message))) chatInput.value?.restoreDraft(message.displayText)
+  if (!(await submission.submit(message))) chatInput.value?.restoreDraft(message)
 }
 
 let viewGeneration = 0

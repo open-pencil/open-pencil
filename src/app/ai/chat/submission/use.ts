@@ -123,26 +123,31 @@ export function useChatSubmission(options: SubmissionOptions) {
     options.reportError(options.messages.value.requestFailed)
   }
 
-  /** Resolves to false when the message never reached the chat, so the composer can keep it. */
+  /**
+   * Resolves to false when the message never reached the chat. The composer then takes the
+   * submission back, attachments included, so their previews stay alive until it decides.
+   */
   async function submit(submission: ChatSubmission): Promise<boolean> {
     const status = options.chat.value?.status ?? 'ready'
     if (status === 'streaming' || status === 'submitted' || isPreparingAttachments.value) {
-      for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
       if (submission.images.length > 0) options.reportError(options.messages.value.requestFailed)
       return false
     }
 
     const version = ++operationVersion
+    // Whether the message reached the chat: after that, a failure must not hand it back.
+    let sent = () => false
     isPreparingAttachments.value = submission.images.length > 0
     options.clearFailure()
     try {
       const currentChat = await options.ensureChat()
       if (currentChat && version === operationVersion) options.chat.value = markRaw(currentChat)
       if (!currentChat || version !== operationVersion) {
-        for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
         if (submission.images.length > 0) options.reportError(options.messages.value.requestFailed)
         return false
       }
+      const before = currentChat.messages.length
+      sent = () => currentChat.messages.length > before
       if (submission.images.length === 0 && submission.nodes.length === 0) {
         await sendText(currentChat, submission)
       } else {
@@ -151,7 +156,7 @@ export function useChatSubmission(options: SubmissionOptions) {
       return true
     } catch (error) {
       reportSubmissionError(error)
-      return false
+      return sent()
     } finally {
       await options.flush?.().catch(() => undefined)
       if (version === operationVersion) isPreparingAttachments.value = false
