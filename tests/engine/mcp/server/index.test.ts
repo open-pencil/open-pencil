@@ -9,7 +9,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { startServer } from '#mcp/server'
+import { startServer, type ServerHandle } from '#mcp/server'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
@@ -506,7 +506,7 @@ describe('MCP server lifecycle', () => {
   test('close() removes the unix socket file from disk', async () => {
     if (!isUnix) return
     await mkdir(SOCKET_DIR, { recursive: true })
-    const socketPath = testSocketPath()
+    const socketPath = expectDefined(testSocketPath(), 'socket path')
     expect(socketPath).toBeTruthy()
 
     const handle = await startServer({
@@ -529,7 +529,7 @@ describe('MCP server lifecycle', () => {
   test('close() removes socket file when no replacement server is listening', async () => {
     if (!isUnix) return
     await mkdir(SOCKET_DIR, { recursive: true })
-    const socketPath = testSocketPath()
+    const socketPath = expectDefined(testSocketPath(), 'socket path')
 
     const handle1 = await startServer({
       httpPort: 0,
@@ -647,7 +647,9 @@ describe('MCP server concurrent startServer', () => {
       expect(await file.exists()).toBe(true)
       const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.pid).toBe(process.pid)
-      expect(['token-a', 'token-b']).toContain(info.authToken)
+      expect(['token-a', 'token-b']).toContain(
+        expectDefined(info.authToken, 'discovery auth token')
+      )
     } finally {
       await a.close()
       await b.close()

@@ -58,6 +58,7 @@ import { BufferedSceneEmitter } from './buffered-events'
 import { cloneNodeProps } from './copy'
 import { bindNodeEvents } from './events'
 import * as HitTest from './hit-test'
+export type { DropTargetOptions } from './hit-test'
 import * as Instances from './instances'
 import Matrix, { type Mat3 } from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
@@ -700,13 +701,35 @@ export class SceneGraph {
     return HitTest.hitTestDeep(this, px, py, scopeId)
   }
 
-  hitTestFrame(
+  hitTestSelectable(
     px: number,
     py: number,
-    excludeIds: Set<string>,
-    scopeId?: string
+    scopeId: string,
+    selectedIds: ReadonlySet<string>
   ): SceneNode | null {
-    return HitTest.hitTestFrame(this, px, py, excludeIds, scopeId)
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds)
+  }
+
+  hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {
+    return HitTest.hitTestOpenContainer(this, px, py, scopeId)
+  }
+
+  isOpenContainer(nodeId: string): boolean {
+    return HitTest.isOpenContainer(this, nodeId)
+  }
+
+  isPointInNode(nodeId: string, px: number, py: number): boolean {
+    return HitTest.isPointInNode(this, nodeId, px, py)
+  }
+
+  hitTestDropTarget(
+    px: number,
+    py: number,
+    excludeIds: ReadonlySet<string>,
+    scopeId?: string,
+    options?: HitTest.DropTargetOptions
+  ): SceneNode | null {
+    return HitTest.hitTestDropTarget(this, px, py, excludeIds, scopeId, options)
   }
 
   cloneTree(

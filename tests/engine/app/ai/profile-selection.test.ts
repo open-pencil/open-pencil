@@ -6,32 +6,37 @@ import { createModelProfileDraft } from '@/app/ai/models'
 import { resetModelsDevCatalogForTests } from '@/app/ai/models/catalog'
 import { useProfileModelSelection } from '@/app/ai/models/settings/profile-editor/selection'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 const labels = ref({
   recommendedModels: 'Recommended',
   latestModels: 'Latest',
   allModels: 'All',
   latest: 'New',
+  customModelGroup: 'Custom model',
   customModel: 'Custom'
 })
 
 test('selection immediately applies loaded catalog metadata and display name', async () => {
   const originalFetch = globalThis.fetch
-  globalThis.fetch = (async () =>
-    new Response(
-      JSON.stringify({
-        openai: {
-          models: {
-            'catalog-model': {
-              name: 'Catalog model',
-              tool_call: true,
-              attachment: true,
-              modalities: { output: ['text'] },
-              limit: { output: 32000 }
+  globalThis.fetch = fetchStub(
+    async () =>
+      new Response(
+        JSON.stringify({
+          openai: {
+            models: {
+              'catalog-model': {
+                name: 'Catalog model',
+                tool_call: true,
+                attachment: true,
+                modalities: { output: ['text'] },
+                limit: { output: 32000 }
+              }
             }
           }
-        }
-      })
-    )) as typeof fetch
+        })
+      )
+  )
   resetModelsDevCatalogForTests()
   const scope = effectScope()
   try {

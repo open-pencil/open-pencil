@@ -18,7 +18,7 @@ afterEach(async () => {
 
 describe('Tauri process helpers', () => {
   test('spawns ACP processes and streams stdout/stdin through plugin-shell', async () => {
-    let onEvent: ((event: unknown) => void) | null = null
+    const spawned: { onEvent: ((event: unknown) => void) | null } = { onEvent: null }
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
@@ -28,7 +28,9 @@ describe('Tauri process helpers', () => {
           args: ['--stdio'],
           options: { encoding: 'raw', env: {} }
         })
-        onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
+        spawned.onEvent = (
+          args as { onEvent: { onmessage: (event: unknown) => void } }
+        ).onEvent.onmessage
         return 42
       }
       return null
@@ -43,7 +45,7 @@ describe('Tauri process helpers', () => {
     })
 
     const reader = process.output.getReader()
-    onEvent?.({ event: 'Stdout', payload: [1, 2, 3] })
+    spawned.onEvent?.({ event: 'Stdout', payload: [1, 2, 3] })
     await expect(reader.read()).resolves.toEqual({ done: false, value: new Uint8Array([1, 2, 3]) })
 
     const writer = process.input.getWriter()
@@ -87,11 +89,13 @@ describe('Tauri process helpers', () => {
   })
 
   test('signals unexpected ACP process close to the output stream', async () => {
-    let onEvent: ((event: unknown) => void) | null = null
+    const spawned: { onEvent: ((event: unknown) => void) | null } = { onEvent: null }
     const onUnexpectedClose = vi.fn()
     await mockTauriIPC((cmd, args) => {
       if (cmd === 'plugin:shell|spawn') {
-        onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
+        spawned.onEvent = (
+          args as { onEvent: { onmessage: (event: unknown) => void } }
+        ).onEvent.onmessage
         return 43
       }
       return null
@@ -106,7 +110,7 @@ describe('Tauri process helpers', () => {
     })
     const reader = process.output.getReader()
 
-    onEvent?.({ event: 'Terminated', payload: { code: 1, signal: null } })
+    spawned.onEvent?.({ event: 'Terminated', payload: { code: 1, signal: null } })
 
     await expect(reader.read()).rejects.toThrow('Agent process exited unexpectedly.')
     expect(onUnexpectedClose).toHaveBeenCalled()

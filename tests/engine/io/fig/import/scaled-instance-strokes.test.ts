@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
+import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { canvas, doc, node } from './legacy/helpers'
@@ -8,6 +9,10 @@ import { canvas, doc, node } from './legacy/helpers'
 for (const uniformScale of [false, true]) {
   test(`uses recorded uniform scale rather than root stroke weight (scaled=${uniformScale})`, () => {
     const guid = (localID: number) => ({ sessionID: 1, localID })
+    const symbolData = {
+      symbolID: guid(2),
+      uniformScaleFactor: uniformScale ? 2 / 3 : 1
+    } satisfies SymbolData
     const { graph, sources } = materializeDocument([
       { guid: guid(0), type: 'DOCUMENT' },
       { guid: guid(1), type: 'CANVAS', parentIndex: { guid: guid(0), position: '!' } },
@@ -33,7 +38,7 @@ for (const uniformScale of [false, true]) {
         parentIndex: { guid: guid(1), position: '"' },
         size: { x: 16, y: 16 },
         strokeWeight: 2 / 3,
-        symbolData: { symbolID: guid(2), uniformScaleFactor: uniformScale ? 2 / 3 : 1 }
+        symbolData
       }
     ])
     const id = sources.get('1:4')

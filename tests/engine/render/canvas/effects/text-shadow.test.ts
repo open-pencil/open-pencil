@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { renderEffects } from '#core/canvas/shadows'
 
-import { createMockCanvas, createMockRenderer } from './helpers'
+import { asCanvas } from '../helpers'
+import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 
 describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
   test('drop shadow has TEXT-specific branch', () => {
@@ -31,7 +30,7 @@ describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'behind')
 
     expect(r.getCachedDropShadow).toHaveBeenCalled()
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
@@ -61,7 +60,7 @@ describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'front')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'front')
 
     // 4-layer saveLayer stack: Master, SrcIn/Tint, Blur, DstOut/Punch
     expect(canvas.saveLayer).toHaveBeenCalledTimes(4)
@@ -101,9 +100,9 @@ describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'front')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'front')
 
-    const calls = r.effectLayerPaint.setColorFilter.mock.calls
+    const calls = mockCalls(r.effectLayerPaint.setColorFilter)
     // The final call must be null (exit guard cleans up)
     const lastCall = calls[calls.length - 1]
     expect(lastCall[0]).toBeNull()

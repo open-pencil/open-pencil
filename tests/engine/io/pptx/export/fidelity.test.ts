@@ -74,7 +74,7 @@ describe('PPTX fidelity fallbacks', () => {
       effects: [shadow(), shadow({ offset: { x: -8, y: 8 } })]
     })
     const calls: string[][] = []
-    let stats: PPTXExportStats | null = null
+    const captured: { stats: PPTXExportStats | null } = { stats: null }
 
     await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
       rasterize: (ids) => {
@@ -82,12 +82,15 @@ describe('PPTX fidelity fallbacks', () => {
         return Promise.resolve(TINY_PNG)
       },
       onStats: (value) => {
-        stats = value
+        captured.stats = value
       }
     })
 
     expect(calls).toEqual([[corners.id], [shadows.id]])
-    expect(stats?.fallbackReasons).toEqual({ 'asymmetric corners': 1, 'multiple shadows': 1 })
+    expect(captured.stats?.fallbackReasons).toEqual({
+      'asymmetric corners': 1,
+      'multiple shadows': 1
+    })
   })
 
   test('rotates solid shadow offsets with their shape', async () => {

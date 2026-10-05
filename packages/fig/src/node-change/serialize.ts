@@ -193,7 +193,7 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
 function serializeTextProps(
   node: SceneNode,
   nc: KiwiNodeChange,
-  graph: SceneGraph,
+  _graph: SceneGraph,
   fontDigestMap: Map<string, Uint8Array> | undefined,
   blobs: Uint8Array[],
   glyphBlobMap: Map<string, number> | undefined,

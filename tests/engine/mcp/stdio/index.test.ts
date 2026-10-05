@@ -235,7 +235,7 @@ describe('MCP stdio transport', () => {
   }, 10000)
 
   test('tool target fields are sent in the app RPC envelope', async () => {
-    const result = await client.callTool({
+    const result = await requireClient().callTool({
       name: 'create_shape',
       arguments: {
         document_id: 'doc-1',
@@ -271,7 +271,7 @@ describe('MCP stdio transport', () => {
   })
 
   test('list_documents via stdio returns open documents', async () => {
-    const result = await client.callTool({ name: 'list_documents', arguments: {} })
+    const result = await requireClient().callTool({ name: 'list_documents', arguments: {} })
     expect(result.isError).not.toBe(true)
     const data = parseTextContent(
       result.content,
@@ -280,7 +280,9 @@ describe('MCP stdio transport', () => {
       })
     )
     expect(data.documents[0].id).toBe('doc-1')
-    expect(data.documents[0].current_page_id).toBe(browser?.graph.getPages()[0].id)
+    expect(data.documents[0].current_page_id).toBe(
+      expectDefined(browser, 'mock browser').graph.getPages()[0].id
+    )
   })
 
   test('save_file via stdio succeeds', async () => {

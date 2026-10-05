@@ -15,7 +15,13 @@ function card() {
     type: 'SLOT',
     defaultValue: '',
     preferredValues: ['item-key'],
-    slotSettings: { minChildren: 1, maxChildren: 2, allowPreferredValuesOnly: true }
+    slotSettings: {
+      minChildren: 1,
+      maxChildren: 2,
+      allowPreferredValuesOnly: true,
+      displayEmptyByDefault: false,
+      stretchChildOnInsert: false
+    }
   }
   const component = graph.createNode('COMPONENT', pageId, {
     name: 'Card',

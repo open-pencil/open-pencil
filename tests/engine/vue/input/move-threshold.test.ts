@@ -74,7 +74,7 @@ describe('selection move drag threshold', () => {
   test('Control bypasses object and pixel snapping during movement', () => {
     const { editor, drag, nodeId } = setupMoveDrag()
 
-    handleMoveMove(drag, 16.25, 27.75, 110, 200, editor, true)
+    handleMoveMove(drag, 16.25, 27.75, 110, 200, editor, { ctrlKey: true })
     handleMoveUp(drag, editor)
 
     expect(editor.graph.getNode(nodeId)).toMatchObject({ x: 16.25, y: 27.75 })
@@ -101,7 +101,7 @@ describe('selection move drag threshold', () => {
     const drag = createSelectionMoveDrag(0, 0, 0, 0, editor, false)
     if (drag.type !== 'move') throw new Error('Expected move drag')
 
-    handleMoveMove(drag, 74, 43, 100, 100, editor, true)
+    handleMoveMove(drag, 74, 43, 100, 100, editor, { ctrlKey: true })
 
     const angle = (-30 * Math.PI) / 180
     expect(drag.appliedDx).toBeCloseTo(74 * Math.cos(angle) - 43 * Math.sin(angle), 3)

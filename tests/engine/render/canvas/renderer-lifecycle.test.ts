@@ -8,6 +8,8 @@ import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
 import { createGlyphSilhouetteCache } from '#core/canvas/text/derived'
 import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
 
+import { asDouble, asRenderer } from './helpers'
+
 function deletable<T>() {
   return { delete: mock() } as T & { delete: ReturnType<typeof mock> }
 }
@@ -60,13 +62,13 @@ function createRenderer() {
     scenePicture: null,
     sceneBacking: null,
     sceneBackingBuild: null,
-    tiledScene: { destroy: mock() } as SkiaRenderer['tiledScene'],
-    labelParagraphCache: { clear: mock() } as SkiaRenderer['labelParagraphCache'],
+    tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
+    labelParagraphCache: asDouble<SkiaRenderer['labelParagraphCache']>({ clear: mock() }),
     _flashPaint: null,
     profiler: { destroy: mock() } as Partial<SkiaRenderer['profiler']> as SkiaRenderer['profiler'],
     surface: deletable<Surface>()
   }
-  return renderer as SkiaRenderer
+  return asRenderer(renderer)
 }
 
 test('destroyRenderer releases tiled resources before deleting the main surface', () => {

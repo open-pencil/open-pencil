@@ -23,6 +23,9 @@ const oxlintSettingsSchema = v.object({
 const tsconfigLibSchema = v.object({
   compilerOptions: v.object({ lib: v.array(v.string()) })
 })
+const tsconfigTypesSchema = v.object({
+  compilerOptions: v.object({ types: v.array(v.string()) })
+})
 
 /** tsconfigs whose output ships to browsers and must stay on the baseline lib. */
 const BROWSER_TSCONFIGS = [
@@ -57,6 +60,16 @@ describe('browser baseline', () => {
   test.each(BROWSER_TSCONFIGS)('%s pins the baseline ECMAScript lib', async (path) => {
     const { compilerOptions } = await readJSON(tsconfigLibSchema, path)
     expect(compilerOptions.lib[0]).toBe(BASELINE_ECMASCRIPT_LIB)
+  })
+
+  /**
+   * The app program is what `src/**` is judged by, so its global types decide which platform the
+   * app is written against. Bun's disagree with the browser's — its `fetch` carries a `preconnect`
+   * the DOM one does not — and leaving `types` unpinned lets any root `@types` package change that.
+   */
+  test('the app tsconfig pins global types and excludes Bun', async () => {
+    const { compilerOptions } = await readJSON(tsconfigTypesSchema, 'tsconfig.json')
+    expect(compilerOptions.types).not.toContain('bun')
   })
 
   test.each(BROWSERS)('no sentinel demands more than the %s baseline', (browser) => {

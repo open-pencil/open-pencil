@@ -8,6 +8,8 @@ import {
 import { appCredentialRefs } from '@/app/settings/credentials/persistence'
 import { credentialKey } from '@/app/settings/credentials/reference'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 describe('vectorization providers', () => {
   test('extracts supported nested SVG response URLs', () => {
     expect(extractVectorizedSVGURL({ image: { url: 'https://cdn.recraft.ai/a.svg' } })).toBe(
@@ -36,17 +38,19 @@ describe('vectorization providers', () => {
 
   test('rejects redirects from trusted asset hosts to untrusted hosts', async () => {
     let requestCount = 0
-    const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      requestCount += 1
-      if (requestCount === 1) {
-        return Response.json({ image: { url: 'https://cdn.recraft.ai/result.svg' } })
-      }
-      const response = new Response('<svg xmlns="http://www.w3.org/2000/svg"/>', {
-        headers: { 'content-type': 'image/svg+xml' }
+    const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async () => {
+        requestCount += 1
+        if (requestCount === 1) {
+          return Response.json({ image: { url: 'https://cdn.recraft.ai/result.svg' } })
+        }
+        const response = new Response('<svg xmlns="http://www.w3.org/2000/svg"/>', {
+          headers: { 'content-type': 'image/svg+xml' }
+        })
+        Object.defineProperty(response, 'url', { value: 'https://example.com/result.svg' })
+        return response
       })
-      Object.defineProperty(response, 'url', { value: 'https://example.com/result.svg' })
-      return response
-    })
+    )
 
     try {
       await expect(

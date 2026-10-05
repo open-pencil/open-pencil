@@ -87,7 +87,7 @@ test('large blur remains seamless after tiled mutation and zoom reversal', async
     const store = window.openPencil?.getStore?.()
     return (
       store != null &&
-      !store.state.loading &&
+      store.state.preparation === null &&
       [...store.graph.getAllNodes()].some(
         (node) =>
           node.name === 'Group' &&

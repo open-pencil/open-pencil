@@ -1,6 +1,6 @@
 import { expect, mock, spyOn, test } from 'bun:test'
 
-import type { Canvas, Image as CKImage, ImageInfo, Surface } from 'canvaskit-wasm'
+import type { Canvas, Image as CKImage, ImageInfo, Paint, Surface } from 'canvaskit-wasm'
 
 import { getAbsolutePositionFull, SceneGraph } from '@open-pencil/scene-graph'
 
@@ -10,9 +10,11 @@ import {
   renderSceneBacking
 } from '#core/canvas/renderer/retained-backing'
 
+import { asCanvas, asCanvasKit, asDouble, asRenderer } from './helpers'
+
 function createRenderer(surfaceFactory: (info: ImageInfo) => Surface | null) {
   const renderer: Partial<SkiaRenderer> = {
-    ck: {
+    ck: asCanvasKit({
       AlphaType: { Premul: 'Premul' },
       ColorSpace: { SRGB: 'SRGB' },
       ColorType: { RGBA_8888: 'RGBA_8888' },
@@ -25,20 +27,20 @@ function createRenderer(surfaceFactory: (info: ImageInfo) => Surface | null) {
       ]),
       FilterMode: { Linear: 'Linear', Nearest: 'Nearest' },
       MipmapMode: { None: 'None' }
-    } as SkiaRenderer['ck'],
-    surface: {
+    }),
+    surface: asDouble<Surface>({
       makeSurface: mock(surfaceFactory)
-    } as SkiaRenderer['surface'],
-    opacityPaint: {
+    }),
+    opacityPaint: asDouble<Paint>({
       setAlphaf: mock()
-    } as SkiaRenderer['opacityPaint'],
+    }),
     panX: 0,
     panY: 0,
     zoom: 1,
     dpr: 1,
     viewportWidth: 100,
     viewportHeight: 100,
-    pageColor: { r: 1, g: 1, b: 1 },
+    pageColor: { r: 1, g: 1, b: 1, a: 1 },
     pageId: 'page',
     navigationPhase: 'idle',
     sceneBacking: null,
@@ -58,7 +60,7 @@ function createRenderer(surfaceFactory: (info: ImageInfo) => Surface | null) {
     worldViewport: { x: 0, y: 0, w: 0, h: 0 },
     renderNode: mock()
   }
-  return renderer as SkiaRenderer
+  return asRenderer(renderer)
 }
 
 function createCanvas() {
@@ -70,11 +72,11 @@ function createCanvas() {
     translate: mock(),
     scale: mock()
   }
-  return canvas as Canvas
+  return asCanvas(canvas)
 }
 
 function createGraph(positionPreviewVersion = 0) {
-  const graph: Partial<SceneGraph> = {
+  return asDouble<SceneGraph>({
     rootId: 'root',
     positionPreviewVersion,
     getNode: mock((id: string) => {
@@ -82,8 +84,7 @@ function createGraph(positionPreviewVersion = 0) {
       return null
     }),
     getAbsolutePosition: mock(() => ({ x: 0, y: 0 }))
-  }
-  return graph as SceneGraph
+  })
 }
 
 test('retained subtree bounds include descendants transformed by rotated ancestors', () => {
@@ -222,7 +223,7 @@ test('retained scene backing filters cross-zoom previews instead of falling back
     anchorPanY: 0,
     marginDeviceX: 0,
     marginDeviceY: 0,
-    image: { delete: mock() } as CKImage,
+    image: asDouble<CKImage>({ delete: mock() }),
     pageId: 'page',
     sceneVersion: 1,
     positionPreviewVersion: 0,
@@ -260,7 +261,7 @@ test('retained scene backing allows same-zoom previews while panning', () => {
     anchorPanY: 0,
     marginDeviceX: 0,
     marginDeviceY: 0,
-    image: { delete: mock() } as CKImage,
+    image: asDouble<CKImage>({ delete: mock() }),
     pageId: 'page',
     sceneVersion: 1,
     positionPreviewVersion: 0,
@@ -296,7 +297,7 @@ test('retained scene backing invalidates stale position-preview metadata', () =>
     anchorPanY: 0,
     marginDeviceX: 0,
     marginDeviceY: 0,
-    image: { delete: mock() } as CKImage,
+    image: asDouble<CKImage>({ delete: mock() }),
     pageId: 'page',
     sceneVersion: 1,
     positionPreviewVersion: 1,

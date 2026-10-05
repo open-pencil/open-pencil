@@ -9,6 +9,8 @@ import { renderSceneBacking } from '#core/canvas/renderer/retained-backing'
 
 import { expectDefined } from '#tests/helpers/assert'
 
+import { expectRgbaPixels } from './helpers'
+
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {
@@ -74,7 +76,7 @@ function pixels(renderer: SkiaRenderer) {
   renderer.surface.flush()
   const image = renderer.surface.makeImageSnapshot()
   try {
-    return expectDefined(
+    return expectRgbaPixels(
       image.readPixels(0, 0, {
         width: 200,
         height: 220,

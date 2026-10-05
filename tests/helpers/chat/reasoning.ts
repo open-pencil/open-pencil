@@ -3,7 +3,9 @@ import type { Page } from '@playwright/test'
 /** Hold reasoning open until the test explicitly completes the turn. */
 export async function installReasoningTransport(page: Page): Promise<void> {
   await page.evaluate(() => {
-    window.openPencil?.setChatTransport(() => ({
+    const bridge = window.openPencil
+    if (!bridge?.setChatTransport) throw new Error('Chat transport hook is not installed')
+    bridge.setChatTransport(() => ({
       async sendMessages() {
         return new ReadableStream({
           start(controller) {
