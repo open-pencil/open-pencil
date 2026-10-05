@@ -22,6 +22,8 @@ export interface DragDraw {
   startY: number
   /** Maps a canvas point into the parent's axes. */
   toLocal: (x: number, y: number) => Vector
+  /** A line is drawn by its length and angle, as in Figma, not as a box. */
+  line?: boolean
   nodeId: string
   update: (changes: Partial<SceneNode>) => void
   commit: () => void
