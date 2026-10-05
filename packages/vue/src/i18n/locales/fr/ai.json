@@ -32,6 +32,7 @@
   "copyResponse": "Copier la réponse",
   "revertTurn": "Annuler les modifications",
   "turnReverted": "Modifications annulées",
+  "restoreTurn": "Rétablir les modifications",
   "regenerate": "Régénérer",
   "revertAndRegenerate": "Annuler et régénérer",
   "editMessage": "Modifier le message",

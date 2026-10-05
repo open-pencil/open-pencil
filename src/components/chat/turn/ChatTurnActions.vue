@@ -16,11 +16,12 @@ const {
   /** The reply's edits were reverted; it stays in the chat, marked. */
   reverted?: boolean
 }>()
-const emit = defineEmits<{ regenerate: []; revert: [] }>()
+const emit = defineEmits<{ regenerate: []; revert: []; restore: [] }>()
 const { ai } = useI18n()
 
 const edits = computed(() => turnEdits(messageId))
 const revertable = computed(() => edits.value?.revertable === true)
+const restorable = computed(() => edits.value?.restorable === true)
 </script>
 
 <template>
@@ -29,8 +30,19 @@ const revertable = computed(() => edits.value?.revertable === true)
     class="flex flex-wrap items-center gap-1"
     data-slot="chat-turn-actions"
   >
+    <AppButton
+      v-if="reverted && restorable"
+      size="xs"
+      variant="ghost"
+      data-test-id="chat-restore-turn"
+      @click="emit('restore')"
+    >
+      <template #leading><icon-lucide-redo-2 aria-hidden="true" /></template>
+      {{ ai.restoreTurn }}
+    </AppButton>
+    <!-- Edits made since the revert closed Redo; the reply stays marked. -->
     <span
-      v-if="reverted"
+      v-else-if="reverted"
       class="inline-flex items-center gap-1 px-2 text-[11px] text-muted"
       data-slot="chat-turn-reverted"
     >

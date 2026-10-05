@@ -35,7 +35,7 @@ const {
   /** The last user message without attachments, when the chat is idle. */
   canEdit?: boolean
 }>()
-const emit = defineEmits<{ regenerate: []; revert: []; edit: [text: string] }>()
+const emit = defineEmits<{ regenerate: []; revert: []; restore: []; edit: [text: string] }>()
 const editing = ref(false)
 const { ai } = useI18n()
 const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
@@ -141,6 +141,7 @@ function groupKey(group: MessagePartGroup): string {
           :reverted="revertOf(message) !== null"
           @regenerate="emit('regenerate')"
           @revert="emit('revert')"
+          @restore="emit('restore')"
         />
       </template>
 

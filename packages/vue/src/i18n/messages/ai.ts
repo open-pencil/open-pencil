@@ -76,6 +76,7 @@ export const aiMessageDefaults = {
   copyResponse: 'Copy response',
   revertTurn: 'Revert changes',
   turnReverted: 'Changes reverted',
+  restoreTurn: 'Restore changes',
   regenerate: 'Regenerate',
   revertAndRegenerate: 'Revert and regenerate',
   editMessage: 'Edit message',

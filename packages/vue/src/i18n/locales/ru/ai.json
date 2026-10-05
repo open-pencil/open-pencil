@@ -32,6 +32,7 @@
   "copyResponse": "Копировать ответ",
   "revertTurn": "Отменить изменения",
   "turnReverted": "Изменения отменены",
+  "restoreTurn": "Вернуть изменения",
   "regenerate": "Сгенерировать заново",
   "revertAndRegenerate": "Отменить и сгенерировать заново",
   "editMessage": "Изменить сообщение",

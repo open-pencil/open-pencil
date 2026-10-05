@@ -32,6 +32,7 @@
   "copyResponse": "复制回答",
   "revertTurn": "撤销更改",
   "turnReverted": "已撤销更改",
+  "restoreTurn": "恢复更改",
   "regenerate": "重新生成",
   "revertAndRegenerate": "撤销并重新生成",
   "editMessage": "编辑消息",

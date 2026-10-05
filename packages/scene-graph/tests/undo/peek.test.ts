@@ -18,3 +18,20 @@ test('peeks entries from the top of the undo stack without changing it', () => {
   undo.undo()
   expect(undo.peekUndo()).toBe(first)
 })
+
+test('peeks entries from the top of the redo stack, the next Redo first', () => {
+  const undo = new UndoManager()
+  const noop = () => undefined
+  const first = { label: 'First', forward: noop, inverse: noop }
+  const second = { label: 'Second', forward: noop, inverse: noop }
+  undo.push(first)
+  undo.push(second)
+  undo.undo()
+  undo.undo()
+
+  expect(undo.peekRedo()).toBe(first)
+  expect(undo.peekRedo(1)).toBe(second)
+  expect(undo.peekRedo(2)).toBeUndefined()
+  undo.redo()
+  expect(undo.peekRedo()).toBe(second)
+})

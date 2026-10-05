@@ -132,11 +132,11 @@ test('reverts a turn while its edits are the newest on the undo stack', async ()
   const { card, actions } = setup()
   await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })
   expect(width(card.id)).toBe(200)
-  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: true })
+  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: true, restorable: false })
 
   expect(revertTurn('reply-1')).toBe(true)
   expect(width(card.id)).toBe(100)
-  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: false })
+  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: false, restorable: true })
 })
 
 test('a turn that ends with a view change, such as zoom to fit, stays revertable', async () => {
@@ -156,7 +156,7 @@ test('an edit made after the turn closes the revert, so it never undoes other wo
   await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })
   store.pushUndoEntry({ label: 'User edit', forward: () => undefined, inverse: () => undefined })
 
-  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: false })
+  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: false, restorable: false })
   expect(revertTurn('reply-1')).toBe(false)
   expect(width(card.id)).toBe(200)
 })
@@ -259,4 +259,27 @@ test('an older reply reverted after later requests is still reported', async () 
   expect(lastRequest(chat)).toContain(
     'The user reverted every document edit from 2 of your earlier replies.'
   )
+})
+
+test('restoring a reverted reply redoes its edits and removes the mark', async () => {
+  const { card, chat, actions } = setup()
+  await actions.submit(send('Wider'))
+  await actions.revert('reply-1')
+  await actions.restore('reply-1')
+
+  expect(width(card.id)).toBe(200)
+  expect(mark(chat, 'reply-1')).toBeNull()
+  expect(turnEdits('reply-1')).toEqual({ count: 1, revertable: true, restorable: false })
+})
+
+test('an edit made after the revert closes the restore, and the reply stays marked', async () => {
+  const { card, chat, actions } = setup()
+  await actions.submit(send('Wider'))
+  await actions.revert('reply-1')
+  store.pushUndoEntry({ label: 'User edit', forward: () => undefined, inverse: () => undefined })
+
+  expect(turnEdits('reply-1')?.restorable).toBe(false)
+  await actions.restore('reply-1')
+  expect(width(card.id)).toBe(100)
+  expect(mark(chat, 'reply-1')).toEqual({ reportedIn: undefined })
 })

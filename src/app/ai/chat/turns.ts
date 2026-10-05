@@ -36,6 +36,11 @@ function historyVersion(store: EditorStore): number {
 const turns = shallowReactive(new Map<string, TurnRecord>())
 const restoredListeners = new Set<(messageId: string) => void>()
 
+/** Whether a reverted turn's entries are the next ones Redo applies, oldest first. */
+function nextToRedo({ entries, store }: TurnRecord): boolean {
+  return entries.every((entry, index) => store.undo.peekRedo(index) === entry)
+}
+
 /** Whether the turn's entries are the newest on its store's undo stack, oldest deepest. */
 function onTopOfUndo({ entries, store }: TurnRecord): boolean {
   return entries.every((entry, index) => store.undo.peekUndo(entries.length - 1 - index) === entry)
@@ -68,6 +73,8 @@ export interface TurnEdits {
   count: number
   /** Whether the turn's edits are still the newest on the undo stack, so undoing them touches nothing else. */
   revertable: boolean
+  /** Whether the turn was reverted and Redo would bring back exactly its edits next. */
+  restorable: boolean
 }
 
 /** Reactive: follows both the recorded turns and the store's undo stack. */
@@ -75,7 +82,11 @@ export function turnEdits(messageId: string): TurnEdits | null {
   const turn = turns.get(messageId)
   if (!turn) return null
   historyVersion(turn.store)
-  return { count: turn.entries.length, revertable: onTopOfUndo(turn) }
+  return {
+    count: turn.entries.length,
+    revertable: onTopOfUndo(turn),
+    restorable: turn.reverted && nextToRedo(turn)
+  }
 }
 
 /** Undoes the turn's edits when nothing has been pushed on top of them. */
@@ -86,6 +97,18 @@ export function revertTurn(messageId: string): boolean {
   for (const _entry of turn.entries) turn.store.undoAction()
   // Kept, so that Redo restoring the edits can be noticed.
   turns.set(messageId, { ...turn, reverted: true })
+  return true
+}
+
+/**
+ * Redoes a reverted turn's edits while nothing has been edited since the revert. Listeners of
+ * `onTurnRestored` hear about it as about any Redo that brings the edits back.
+ */
+export function restoreTurn(messageId: string): boolean {
+  const turn = turns.get(messageId)
+  if (!turn || !turnEdits(messageId)?.restorable) return false
+  // Each step redoes one of the turn's entries, oldest first.
+  for (const _entry of turn.entries) turn.store.redoAction()
   return true
 }
 

@@ -135,6 +135,11 @@ export class UndoManager {
     return this.undoStack.at(-1 - depth)
   }
 
+  /** The entry `depth` steps below the top of the redo stack, the next one Redo applies at 0. */
+  peekRedo(depth = 0): UndoEntry | undefined {
+    return this.redoStack.at(-1 - depth)
+  }
+
   get undoLabel(): string | null {
     return this.undoStack.at(-1)?.label ?? null
   }

@@ -196,6 +196,7 @@ function handleStop() {
         :interactive="chat !== null"
         @regenerate="submission.regenerate()"
         @revert="(messageId) => submission.revert(messageId)"
+        @restore="(messageId) => submission.restore(messageId)"
         @edit="(messageId, text) => submission.resend(messageId, text)"
         @continue="
           submission.submit({

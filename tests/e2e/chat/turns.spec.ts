@@ -22,7 +22,12 @@ test('reverting a reply undoes its edits, marks it, saves the chat, and tells th
   expect(await cardCount(page)).toBe(1)
 
   await chat.assistantMessage().getByTestId('chat-revert-turn').click()
-  await expect(chat.assistantMessage().locator('[data-slot="chat-turn-reverted"]')).toBeVisible()
+  expect(await cardCount(page)).toBe(0)
+
+  // Restore redoes the edits, then reverting again leaves the reply marked.
+  await chat.assistantMessage().getByTestId('chat-restore-turn').click()
+  expect(await cardCount(page)).toBe(1)
+  await chat.assistantMessage().getByTestId('chat-revert-turn').click()
   expect(await cardCount(page)).toBe(0)
 
   await chat.submit('Try something else')
@@ -34,6 +39,10 @@ test('reverting a reply undoes its edits, marks it, saves the chat, and tells th
   )
   // The note is for the model only.
   await expect(chat.userMessage()).toHaveText('Try something else')
+  // The second reply's edits closed Redo, so the first reply is marked instead.
+  await expect(
+    page.getByTestId('chat-message-assistant').first().locator('[data-slot="chat-turn-reverted"]')
+  ).toBeVisible()
 
   // Saving the conversation, which every send and the revert trigger, must not fail.
   canvas.assertNoErrors()

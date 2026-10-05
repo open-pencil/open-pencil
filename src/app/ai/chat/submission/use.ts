@@ -15,7 +15,7 @@ import { setMessageAttachments } from '@/app/ai/attachment/presentation/store'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
 import { useRevertRecords } from '@/app/ai/chat/submission/reverts'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
-import { recordTurn, revertTurn } from '@/app/ai/chat/turns'
+import { recordTurn, restoreTurn, revertTurn } from '@/app/ai/chat/turns'
 import { runUndoEntries } from '@/app/ai/tools'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -45,6 +45,12 @@ export function useChatSubmission(options: SubmissionOptions) {
   }
 
   const reverts = useRevertRecords({ chat: options.chat, flush: options.flush })
+
+  /** Redoes a reverted reply's edits; Redo noticing them removes the mark. */
+  async function restore(messageId: string): Promise<void> {
+    if (!readyChat() || !restoreTurn(messageId)) return
+    await options.flush?.().catch(() => undefined)
+  }
 
   /** Undoes a reply's edits and marks it, so the chat and the next request both say so. */
   async function revert(messageId: string): Promise<void> {
@@ -236,6 +242,7 @@ export function useChatSubmission(options: SubmissionOptions) {
     submit,
     regenerate,
     resend,
-    revert
+    revert,
+    restore
   }
 }
