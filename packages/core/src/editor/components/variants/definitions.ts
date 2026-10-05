@@ -1,10 +1,10 @@
 import { omit } from 'es-toolkit/object'
 
 import type { ComponentPropertyDefinition, ComponentPropertyType } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
-import { randomHex } from '#core/random'
 
 import {
   assertComponentSetEditable,
@@ -115,7 +115,7 @@ export function addPropertyDefinition(
 
   const before = captureVariantSnapshot(ctx, componentSetId)
   if (!before) return undefined
-  const id = `prop:${randomHex(8)}`
+  const id = createComponentPropertyId()
   const definition: ComponentPropertyDefinition = {
     id,
     name: normalizedName,

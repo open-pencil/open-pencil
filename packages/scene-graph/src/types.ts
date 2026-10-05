@@ -404,6 +404,14 @@ export interface EnabledLibraryBinding {
   enabled: boolean
 }
 
+/** The library a document publishes as. */
+export interface SourceLibraryPublication {
+  libraryId: string
+  revisionId: string
+  name: string
+  catalogSource?: string
+}
+
 export interface SceneNode {
   id: string
   type: NodeType

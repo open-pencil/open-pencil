@@ -25,6 +25,7 @@ import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
 import { createAITools, endRun, recordStep, runPageId, startRun } from '@/app/ai/tools'
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
+import { diagnosticErrorDetails } from '@/app/diagnostics'
 import {
   recordChatCompleted,
   recordChatFailed,
@@ -345,12 +346,8 @@ export function createChatSessionManager({
           const reportedError = activeProviderError ?? error
           activeProviderError = null
           failure.value = classifyAIChatError(reportedError)
-          recordChatFailed(
-            {
-              errorName: reportedError instanceof Error ? reportedError.name : 'unknown'
-            },
-            diagnosticContext
-          )
+          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
+          recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },
         onFinish: (event) => handleChatFinish(diagnosticContext, event)
       })
