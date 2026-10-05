@@ -72,17 +72,19 @@ test.describe.serial('large-document performance', () => {
         const lastPosition = graph.getAbsolutePosition(lastNode.id)
 
         const hitTestMissMs = average(() => {
-          graph.hitTest(
+          graph.hitTestSelectable(
             profile.worldWidth + 100,
             profile.worldHeight + 100,
-            store.state.currentPageId
+            store.state.currentPageId,
+            store.state.selectedIds
           )
         })
         const hitTestHitMs = average(() => {
-          graph.hitTest(
+          graph.hitTestSelectable(
             lastPosition.x + lastNode.width / 2,
             lastPosition.y + lastNode.height / 2,
-            store.state.currentPageId
+            store.state.currentPageId,
+            store.state.selectedIds
           )
         })
         const cachedFrameMs = average(() => {

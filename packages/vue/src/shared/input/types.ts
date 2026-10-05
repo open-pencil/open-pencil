@@ -85,6 +85,8 @@ export interface DragMarquee {
   type: 'marquee'
   startX: number
   startY: number
+  /** The open frame or section the marquee started in, whose layers it selects. */
+  containerId?: string
 }
 
 export interface DragRotate {

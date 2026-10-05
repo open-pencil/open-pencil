@@ -83,10 +83,12 @@ export function createTextEditInput(options: TextEditInputOptions) {
     cx: number,
     cy: number
   ): SceneNode | null {
-    const hit = editor.graph.hitTestDeep(cx, cy, editor.state.currentPageId)
-    if (!hit) return null
-    if (hit.id === containerId || editor.graph.isDescendant(hit.id, containerId)) return hit
-    return null
+    // Double-clicking goes one level into the container, as in Figma.
+    const hit = editor.graph.hitTestSelectable(cx, cy, containerId, new Set())
+    if (hit) return hit
+    return editor.graph.isPointInNode(containerId, cx, cy)
+      ? (editor.graph.getNode(containerId) ?? null)
+      : null
   }
 
   function startSectionTitleRename(cx: number, cy: number): boolean {

@@ -16,8 +16,7 @@ export function handleMarqueeMove(
   const maxX = Math.max(d.startX, cx)
   const maxY = Math.max(d.startY, cy)
 
-  const scopeId = editor.state.enteredContainerId
-  const parentId = scopeId ?? editor.state.currentPageId
+  const scopeId = d.containerId ?? editor.state.enteredContainerId
   const localMin = scopeId ? canvasToLocal(minX, minY, scopeId) : { lx: minX, ly: minY }
   const localMax = scopeId ? canvasToLocal(maxX, maxY, scopeId) : { lx: maxX, ly: maxY }
   const localMinX = Math.min(localMin.lx, localMax.lx)
@@ -26,16 +25,20 @@ export function handleMarqueeMove(
   const localMaxY = Math.max(localMin.ly, localMax.ly)
 
   const hits: string[] = []
-  for (const node of editor.graph.getChildren(parentId)) {
+  for (const node of editor.graph.getChildren(scopeId ?? editor.state.currentPageId)) {
     if (!node.visible || node.locked) continue
-    if (
-      node.x + node.width > localMinX &&
-      node.x < localMaxX &&
-      node.y + node.height > localMinY &&
-      node.y < localMaxY
-    ) {
-      hits.push(node.id)
-    }
+    // As in Figma, on the page a frame or section holding layers needs to be fully enclosed.
+    const enclose = !scopeId && editor.graph.isOpenContainer(node.id)
+    const hit = enclose
+      ? node.x >= localMinX &&
+        node.x + node.width <= localMaxX &&
+        node.y >= localMinY &&
+        node.y + node.height <= localMaxY
+      : node.x + node.width > localMinX &&
+        node.x < localMaxX &&
+        node.y + node.height > localMinY &&
+        node.y < localMaxY
+    if (hit) hits.push(node.id)
   }
 
   editor.select(hits)

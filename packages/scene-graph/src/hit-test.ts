@@ -160,6 +160,83 @@ export function hitTestDeep(
   return hitTestChildren(graph, px, py, scope, true)
 }
 
+/**
+ * A container a click looks into by itself, as in Figma: a top-level frame (on the page or in a
+ * section) or a section that holds layers, and a component set.
+ */
+function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
+  if (node.type === 'COMPONENT_SET') return true
+  if (node.childIds.length === 0) return false
+  if (node.type === 'SECTION') return true
+  const parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
+  return node.type === 'FRAME' && (parent?.type === 'CANVAS' || parent?.type === 'SECTION')
+}
+
+/**
+ * The layer a click selects, as in Figma. It walks from the scope down to the deepest layer under
+ * the point and stops at the first layer that is not open. Top-level frames and sections with
+ * layers and component sets are open, and so is every ancestor of the selection, so clicks reach
+ * the siblings of selected layers. Where every layer under the point is open, a container opened
+ * by the selection is selected, and a top-level frame or section is not.
+ */
+export function hitTestSelectable(
+  graph: SceneGraph,
+  px: number,
+  py: number,
+  scopeId: string,
+  selectedIds: ReadonlySet<string>
+): SceneNode | null {
+  const deepest = hitTestChildren(graph, px, py, scopeId, true)
+  if (!deepest) return null
+
+  const chain: SceneNode[] = []
+  for (let node: SceneNode | undefined = deepest; node && node.id !== scopeId;) {
+    chain.unshift(node)
+    node = node.parentId ? graph.nodes.get(node.parentId) : undefined
+  }
+
+  const openedBySelection = new Set<string>()
+  for (const id of selectedIds) {
+    let parentId = graph.nodes.get(id)?.parentId
+    while (parentId && parentId !== scopeId && !openedBySelection.has(parentId)) {
+      openedBySelection.add(parentId)
+      parentId = graph.nodes.get(parentId)?.parentId
+    }
+  }
+
+  for (const node of chain) {
+    // A locked layer stands in for everything inside it.
+    if (node.locked) return node
+    if (!openedBySelection.has(node.id) && !opensByItself(graph, node)) return node
+  }
+  const last = chain.at(-1)
+  return last && openedBySelection.has(last.id) && !opensByItself(graph, last) ? last : null
+}
+
+/** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */
+export function isOpenContainer(graph: SceneGraph, nodeId: string): boolean {
+  const node = graph.nodes.get(nodeId)
+  return node !== undefined && opensByItself(graph, node)
+}
+
+/**
+ * The innermost open container under the point when every layer there is open: a marquee starting
+ * here selects that container's layers, as in Figma.
+ */
+export function hitTestOpenContainer(
+  graph: SceneGraph,
+  px: number,
+  py: number,
+  scopeId: string
+): SceneNode | null {
+  const deepest = hitTestChildren(graph, px, py, scopeId, true)
+  for (let node: SceneNode | undefined = deepest ?? undefined; node && node.id !== scopeId;) {
+    if (!opensByItself(graph, node)) return null
+    node = node.parentId ? graph.nodes.get(node.parentId) : undefined
+  }
+  return deepest
+}
+
 /** Whether the point lies inside the node's rotated and flipped bounds. */
 export function isPointInNode(graph: SceneGraph, nodeId: string, px: number, py: number): boolean {
   const node = graph.nodes.get(nodeId)

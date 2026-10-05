@@ -22,6 +22,13 @@ export interface HitTestFns {
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
 }
 
+/** Clears the selection and starts a marquee in the open frame or section under the press. */
+function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragState) => void) {
+  editor.clearSelection()
+  const container = editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
+  setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id })
+}
+
 export function handleSelectDown(
   e: MouseEvent,
   cx: number,
@@ -52,12 +59,9 @@ export function handleSelectDown(
     return
   }
 
-  const hit = resolveHit(cx, cy, editor, fns)
+  const hit = resolveHit(cx, cy, editor, fns, e.metaKey || e.ctrlKey)
   if (!hit) {
-    if (!editor.state.enteredContainerId) {
-      editor.clearSelection()
-      setDrag({ type: 'marquee', startX: cx, startY: cy })
-    }
+    if (!editor.state.enteredContainerId) startMarquee(cx, cy, editor, setDrag)
     return
   }
 

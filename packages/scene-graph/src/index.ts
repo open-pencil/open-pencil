@@ -701,6 +701,23 @@ export class SceneGraph {
     return HitTest.hitTestDeep(this, px, py, scopeId)
   }
 
+  hitTestSelectable(
+    px: number,
+    py: number,
+    scopeId: string,
+    selectedIds: ReadonlySet<string>
+  ): SceneNode | null {
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds)
+  }
+
+  hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {
+    return HitTest.hitTestOpenContainer(this, px, py, scopeId)
+  }
+
+  isOpenContainer(nodeId: string): boolean {
+    return HitTest.isOpenContainer(this, nodeId)
+  }
+
   isPointInNode(nodeId: string, px: number, py: number): boolean {
     return HitTest.isPointInNode(this, nodeId, px, py)
   }
