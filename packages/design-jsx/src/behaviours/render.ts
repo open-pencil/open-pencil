@@ -1,5 +1,6 @@
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import type { TreeNode } from '../tree'
 import {
   BEHAVIOUR_PROPS,
   bindInput,
@@ -11,8 +12,7 @@ import {
   rekaRole,
   wrapRepeatedParts,
   type RekaScope
-} from './behaviours'
-import type { TreeNode } from './tree'
+} from './index'
 
 export type RenderChild = (
   tree: TreeNode,

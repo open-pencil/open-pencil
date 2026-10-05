@@ -18,6 +18,7 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 ## Preview islands
 
 - Preview runs controls as real components, never as canvas simulations: `packages/vue/src/canvas/islands/` renders each top-level layer that holds an instance with a behaviour as DOM in a shadow root over the canvas, projected through `@open-pencil/dom-css`, and mounts each behaviour's Reka UI primitives on its layers. Typing, focus, and keyboard handling belong to the browser and Reka.
+- The concept, the pipeline from state to DOM, and how to add a kind are in `packages/docs/development/behaviours-and-preview.md`.
 - Variants draw control states: Core's `resolvePlayState` shows instances in a state on a private graph, and controls are keyed by layer path so a variant switch keeps their DOM, including a focused input. The document is never changed (`packages/core/tests/editor/play/states.test.ts`, `tests/e2e/components/behaviours.spec.ts`).
 
 ## Commands, menus, i18n

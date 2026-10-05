@@ -10,7 +10,7 @@ import {
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import type { RekaScope } from './behaviours'
-import { renderRekaNode } from './behaviours-render'
+import { renderRekaNode } from './behaviours/render'
 import {
   assignComponentProperties,
   componentMetadata,

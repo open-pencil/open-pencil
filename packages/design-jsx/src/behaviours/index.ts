@@ -9,7 +9,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 
-import { node, type TreeNode } from './tree'
+import { node, type TreeNode } from '../tree'
 
 /** What a Reka UI element is to the component it builds. */
 export type RekaRole =
