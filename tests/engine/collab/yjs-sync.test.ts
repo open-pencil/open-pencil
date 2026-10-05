@@ -338,6 +338,7 @@ describe('collab yjs-sync', () => {
   test('image fills sync image bytes', async () => {
     await withSyncedStores(({ hostStore, peerStore, hostSync }) => {
       const hostPage = firstPage(hostStore.graph)
+      hostSync.syncAllNodesToYjs()
       const imageHash = 'image-hash'
       const imageFill: Fill = {
         type: 'IMAGE',

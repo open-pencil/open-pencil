@@ -8,15 +8,15 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
  * from every parent the layer has been moved under to the move counter, and `orderKey`, its
  * fractional position among siblings, and `page`, the page this peer last placed it on, where it
  * goes once no recorded parent is left; `parentId` and `childIds` are derived on each peer
- * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the claims on the
- * room's root, the move clock, and the tree format.
+ * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the room's root, the
+ * move clock, and the tree format.
  */
 export const TREE_FORMAT = 2
 export const PARENTS_FIELD = 'parents'
 export const ORDER_KEY_FIELD = 'orderKey'
 export const PAGE_FIELD = 'page'
 
-const ROOT_CLAIM_PREFIX = 'root:'
+const ROOT_KEY = 'root'
 const CLOCK_KEY = 'clock'
 const FORMAT_KEY = 'treeFormat'
 const KEY_SUFFIX_LENGTH = 3
@@ -34,7 +34,7 @@ const orderKeySchema = v.pipe(
   v.maxLength(MAX_ORDER_KEY_LENGTH),
   v.regex(/^[\x20-\x7e]+$/)
 )
-const pageSchema = v.pipe(v.string(), v.minLength(1))
+const layerIdSchema = v.pipe(v.string(), v.minLength(1))
 
 export function readCounter(value: unknown): number | undefined {
   const result = v.safeParse(counterSchema, value)
@@ -59,55 +59,23 @@ export function readOrderKey(ynode: Y.Map<unknown>): string | undefined {
 }
 
 export function readPage(ynode: Y.Map<unknown>): string | undefined {
-  const result = v.safeParse(pageSchema, ynode.get(PAGE_FIELD))
+  const result = v.safeParse(layerIdSchema, ynode.get(PAGE_FIELD))
   return result.success ? result.output : undefined
 }
 
 /**
- * How a peer claimed a room's root: `shared` by Share or by converting a saved room, `edited` by
- * the first edit in a room nobody had shared. Earlier kinds outrank later ones.
- */
-export const ROOT_CLAIM_KINDS = ['shared', 'edited'] as const
-export type RootClaimKind = (typeof ROOT_CLAIM_KINDS)[number]
-
-const rootClaimKindSchema = v.picklist(ROOT_CLAIM_KINDS)
-
-/** The claims `meta` records as `root:<kind>:<id>`, each set to true. */
-function readRootClaims(meta: YMeta): { id: string; kind: RootClaimKind }[] {
-  const claims: { id: string; kind: RootClaimKind }[] = []
-  for (const [key, value] of meta.entries()) {
-    if (!key.startsWith(ROOT_CLAIM_PREFIX) || value !== true) continue
-    const rest = key.slice(ROOT_CLAIM_PREFIX.length)
-    const separator = rest.indexOf(':')
-    const kind = v.safeParse(rootClaimKindSchema, rest.slice(0, separator))
-    const id = rest.slice(separator + 1)
-    if (separator > 0 && kind.success && id.length > 0) claims.push({ id, kind: kind.output })
-  }
-  return claims
-}
-
-/**
- * The room's root, from its claims: a shared root outranks one claimed by an edit, and the lower
- * id breaks a tie. A guest who edits before the room reaches them claims it by edit, so the
- * sharer's root still wins on every peer whatever their clocks say. Each claim, kind included,
- * is its own key, so concurrent claims all survive.
+ * The room's root: the root of the document someone shared into it, or the one a saved room's
+ * conversion picked. Only Share and conversion write it, and a fresh room has one sharer while
+ * converting peers pick the same root, so it never has two values; peers that joined never write
+ * their own document into a room.
  */
 export function readRoot(meta: YMeta): string | undefined {
-  let root: { id: string; rank: number } | undefined
-  for (const { id, kind } of readRootClaims(meta)) {
-    const rank = ROOT_CLAIM_KINDS.indexOf(kind)
-    if (!root || rank < root.rank || (rank === root.rank && id < root.id)) root = { id, rank }
-  }
-  return root?.id
+  const result = v.safeParse(layerIdSchema, meta.get(ROOT_KEY))
+  return result.success ? result.output : undefined
 }
 
-export function hasRootClaim(meta: YMeta, kind: RootClaimKind): boolean {
-  return readRootClaims(meta).some((claim) => claim.kind === kind)
-}
-
-export function claimRoot(meta: YMeta, rootId: string, kind: RootClaimKind): void {
-  const key = `${ROOT_CLAIM_PREFIX}${kind}:${rootId}`
-  if (meta.get(key) !== true) meta.set(key, true)
+export function claimRoot(meta: YMeta, rootId: string): void {
+  if (readRoot(meta) === undefined) meta.set(ROOT_KEY, rootId)
 }
 
 export function writeParentEntry(ynode: Y.Map<unknown>, parentId: string, counter: number): void {

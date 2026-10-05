@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   collaborationErrors,
   connect,
+  share,
   createPeer,
   startRelay,
   type Peer
@@ -45,7 +46,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
     const guest = await createPeer(browser, 'Guest', relay.url)
     guestToClose = guest
 
-    await connect(host)
+    await share(host)
     await connect(guest)
     await expect
       .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))

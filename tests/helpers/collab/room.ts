@@ -131,3 +131,12 @@ export async function connect(peer: Peer) {
     collab.connect(roomId)
   }, ROOM_ID)
 }
+
+/** Shares the peer's document into the test room, as Share does. */
+export async function share(peer: Peer) {
+  await peer.page.evaluate((roomId) => {
+    const collab = window.openPencil?.test?.collab
+    if (!collab) throw new Error('Collaboration bridge unavailable')
+    collab.share(roomId)
+  }, ROOM_ID)
+}

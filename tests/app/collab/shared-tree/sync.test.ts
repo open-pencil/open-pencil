@@ -212,17 +212,14 @@ describe('collab layer tree', () => {
     )
   })
 
-  test('the first edit in a room nobody has shared yet shares the whole document', async () => {
+  test('edits in a room nobody has shared stay local', async () => {
     await withSyncedStores(
-      async ({ hostStore, peerStore }) => {
+      async ({ hostStore, peerStore, hostDoc }) => {
         const pageId = expectDefined(hostStore.graph.getPages()[0], 'first page').id
-        const checkout = hostStore.graph.addPage('Checkout')
-        await settleGraphSync()
         hostStore.graph.createNode('RECTANGLE', pageId, { id: 'rect:1' })
         await settleGraphSync()
-        expect(peerStore.graph.rootId).toBe(hostStore.graph.rootId)
-        expect(peerStore.graph.getPages().map((page) => page.id)).toEqual([pageId, checkout.id])
-        expect(getNodeOrThrow(peerStore.graph, 'rect:1').parentId).toBe(pageId)
+        expect(hostDoc.getMap('nodes').size).toBe(0)
+        expect(peerStore.graph.getNode('rect:1')).toBeUndefined()
       },
       { bindGraphEvents: true }
     )
@@ -234,7 +231,7 @@ describe('collab layer tree', () => {
         const hostRoot = hostStore.graph.rootId
         const hostPages = hostStore.graph.getPages().map((page) => page.id)
         const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
-        // The joiner's claim comes first, so neither order nor clocks favour the sharer.
+        // The joiner edits first; with nobody's root known yet, the edit stays on their device.
         peerStore.graph.createNode('RECTANGLE', peerOwnPage, { id: 'rect:1' })
         await settleGraphSync()
         hostSync.syncAllNodesToYjs()

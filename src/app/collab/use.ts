@@ -58,8 +58,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     syncLocalEdit
   })
 
-  function shareCurrentDoc(): string {
-    const roomId = generateRoomId()
+  function shareCurrentDoc(roomId = generateRoomId()): string {
     connect(roomId)
     syncAllNodesToYjs()
     return roomId

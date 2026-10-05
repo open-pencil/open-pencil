@@ -7,12 +7,10 @@ import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-code
 import {
   claimRoot,
   markTreeFormat,
-  readRoot,
   writeOrderKey,
   writePage,
   writeParentEntry,
   writeRootEntries,
-  type RootClaimKind,
   type YNodes
 } from '@/app/collab/shared-tree/fields'
 import { migrateLegacyLayers, TREE_MIGRATION_ORIGIN } from '@/app/collab/shared-tree/migration'
@@ -118,6 +116,8 @@ export function bindCollabGraphEvents({
     store.onEditorEvent('node:deleted', (id) => record((pending) => pending.deleted.add(id)))
   ]
   return () => {
+    // An edit made just before leaving still reaches the room.
+    if (!isLocalEditEmpty(edit)) flush()
     bound = false
     for (const unbind of unbinds) unbind()
   }
@@ -207,11 +207,6 @@ export function createYjsGraphSync({
     const ynodes = getYnodes()
     if (!ydoc || !ynodes) return
     const tree = sharedTreeOf(ydoc)
-    // The first edit in a room nobody has shared yet shares the whole document, as Share does.
-    if (tree.rootId === null && readRoot(ydoc.getMap('meta')) === undefined) {
-      shareDocument('edited')
-      return
-    }
     setSuppressYjsEvents(true)
     try {
       ydoc.transact(() => {
@@ -243,16 +238,11 @@ export function createYjsGraphSync({
     syncLocalEdit(edit)
   }
 
-  /** Shares this peer's whole document, as Share does. */
-  function syncAllNodesToYjs() {
-    shareDocument('shared')
-  }
-
   /**
-   * Writes this peer's whole document: every layer, its parent with counter 0, its order, and
-   * its page, and claims the room's root with its own.
+   * Shares this peer's whole document, as Share does: every layer, its parent with counter 0, its
+   * order, and its page, with its root as the room's.
    */
-  function shareDocument(claim: RootClaimKind) {
+  function syncAllNodesToYjs() {
     const graph = getStore().graph
     const ydoc = getYdoc()
     const ynodes = getYnodes()
@@ -276,7 +266,7 @@ export function createYjsGraphSync({
             writeOrderKey(child, keys[index])
           })
         }
-        claimRoot(ydoc.getMap('meta'), graph.rootId, claim)
+        claimRoot(ydoc.getMap('meta'), graph.rootId)
         markTreeFormat(ydoc.getMap('meta'))
       })
       recordLocalLayers(sharedTreeOf(ydoc), ynodes, ydoc.getMap('meta'), ynodes.keys())

@@ -8,58 +8,20 @@ function meta(): Y.Map<unknown> {
   return new Y.Doc().getMap('meta')
 }
 
-describe('collab room root claims', () => {
-  test('a shared root outranks a root claimed by an edit, whatever their ids', () => {
+describe('collab room root', () => {
+  test('the first claim sets the root and later claims leave it', () => {
     const claims = meta()
-    claimRoot(claims, 'a', 'edited')
-    claimRoot(claims, 'z', 'shared')
+    expect(readRoot(claims)).toBeUndefined()
+    claimRoot(claims, 'z')
+    claimRoot(claims, 'a')
     expect(readRoot(claims)).toBe('z')
   })
 
-  test('claims of one kind fall back to the lower id', () => {
+  test('a malformed root is ignored and replaced by the next claim', () => {
     const claims = meta()
-    claimRoot(claims, 'z', 'edited')
-    claimRoot(claims, 'a', 'edited')
-    expect(readRoot(claims)).toBe('a')
-  })
-
-  test('a malformed claim is ignored, and claiming the root records it', () => {
-    const claims = meta()
-    claims.set('root:shared:a', 'bogus')
-    claims.set('root:owner:b', true)
+    claims.set('root', 7)
     expect(readRoot(claims)).toBeUndefined()
-    claimRoot(claims, 'a', 'shared')
+    claimRoot(claims, 'a')
     expect(readRoot(claims)).toBe('a')
-  })
-
-  test('one root claimed both ways at once keeps its shared claim after the merge', () => {
-    // Yjs settles concurrent writes to one key by client id, so try both orders.
-    for (const [leftId, rightId] of [
-      [1, 2],
-      [2, 1]
-    ]) {
-      const left = new Y.Doc()
-      const right = new Y.Doc()
-      left.clientID = leftId
-      right.clientID = rightId
-      claimRoot(left.getMap('meta'), 'z', 'shared')
-      claimRoot(right.getMap('meta'), 'z', 'edited')
-      claimRoot(right.getMap('meta'), 'a', 'edited')
-      Y.applyUpdate(left, Y.encodeStateAsUpdate(right))
-      Y.applyUpdate(right, Y.encodeStateAsUpdate(left))
-      expect(readRoot(left.getMap('meta'))).toBe('z')
-      expect(readRoot(right.getMap('meta'))).toBe('z')
-    }
-  })
-
-  test('concurrent claims from two documents both survive the merge', () => {
-    const left = new Y.Doc()
-    const right = new Y.Doc()
-    claimRoot(left.getMap('meta'), 'z', 'shared')
-    claimRoot(right.getMap('meta'), 'a', 'edited')
-    Y.applyUpdate(left, Y.encodeStateAsUpdate(right))
-    Y.applyUpdate(right, Y.encodeStateAsUpdate(left))
-    expect(readRoot(left.getMap('meta'))).toBe('z')
-    expect(readRoot(right.getMap('meta'))).toBe('z')
   })
 })

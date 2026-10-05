@@ -18,6 +18,7 @@ export interface OpenPencilTestHooks {
   > & {
     peerCount: () => number
     peerSelections: () => Array<string[] | undefined>
+    share: (roomId: string) => void
   }
 }
 
@@ -60,7 +61,10 @@ export function exposeCollaborationActions(collab: CollabReturn) {
     updateSelection: collab.updateSelection,
     setLocalName: collab.setLocalName,
     peerCount: () => collab.remotePeers.value.length,
-    peerSelections: () => collab.remotePeers.value.map((peer) => peer.selection)
+    peerSelections: () => collab.remotePeers.value.map((peer) => peer.selection),
+    share: (roomId: string) => {
+      collab.shareCurrentDoc(roomId)
+    }
   }
 }
 

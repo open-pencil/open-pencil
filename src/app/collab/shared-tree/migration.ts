@@ -7,11 +7,11 @@ import { topEdge } from '@/app/collab/tree/entries'
 
 import {
   claimRoot,
-  hasRootClaim,
   markTreeFormat,
   PARENTS_FIELD,
   readOrderKey,
   readParentEntries,
+  readRoot,
   writeOrderKey,
   writePage,
   writeParentEntry,
@@ -146,13 +146,12 @@ function legacyPageOf(ynodes: YNodes, id: string): string | undefined {
  * is the room's, so every converting peer claims the same one.
  */
 function claimLegacyRoot(ynodes: YNodes, meta: YMeta, roots: ReadonlySet<string>): void {
-  // A guest's edit may have claimed the room first; only Share outranks the saved room.
-  if (hasRootClaim(meta, 'shared')) return
+  if (readRoot(meta) !== undefined) return
   // Sorting is stable, so roots with as many children stay in id order.
   const ranked = [...roots]
     .sort()
     .map((id) => ({ id, children: legacyChildIdsOf(ynodes.get(id)).length }))
     .sort((a, b) => b.children - a.children)
   const root = ranked.at(0)
-  if (root) claimRoot(meta, root.id, 'shared')
+  if (root) claimRoot(meta, root.id)
 }

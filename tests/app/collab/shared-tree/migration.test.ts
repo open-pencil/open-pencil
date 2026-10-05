@@ -150,15 +150,15 @@ describe('collab tree format migration', () => {
     })
   })
 
-  test("a converted room outranks a guest's earlier edited claim", () => {
+  test('converting a room keeps a root already shared into it', () => {
     const legacy = legacyDocument()
     const doc = new Y.Doc()
     const meta = doc.getMap('meta')
-    claimRoot(meta, 'a', 'edited')
+    claimRoot(meta, 'shared-root')
     Y.applyUpdate(doc, legacy.update)
     const ynodes = doc.getMap<Y.Map<unknown>>('nodes')
     migrateLegacyLayers(doc, ynodes, meta, ynodes.keys())
-    expect(readRoot(meta)).toBe(legacy.graph.rootId)
+    expect(readRoot(meta)).toBe('shared-root')
   })
 })
 
