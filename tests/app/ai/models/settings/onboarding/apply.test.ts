@@ -8,7 +8,7 @@ import {
 import { currentOnboardingModels } from '@/app/ai/models/settings/onboarding/current'
 import { planOnboarding, type OnboardingAnswers } from '@/app/ai/models/settings/onboarding/plan'
 
-import { defaultModel, fastModel } from '#tests/helpers/ai/model-catalog'
+import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
 
 function freshInstall(): AIModelSettings {
   return {
@@ -101,12 +101,9 @@ describe('applyOnboardingPlan', () => {
         modelID: defaultModel('openrouter'),
         capabilities: ['tools', 'vision']
       }),
-      expect.objectContaining({
-        id: 'model-id-3',
-        connectionId: 'connection-id-1',
-        modelID: fastModel('openrouter')
-      })
+      expect.objectContaining({ id: 'model-id-3', connectionId: 'connection-id-1' })
     ])
+    expect(isFastToolModel('openrouter', settings.models[1]?.modelID ?? '')).toBe(true)
     expect(settings.connections.map((connection) => connection.id)).toEqual(['connection-id-1'])
     expect(settings.assignments).toEqual({
       design: 'model-id-2',

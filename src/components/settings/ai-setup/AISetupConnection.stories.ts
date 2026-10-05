@@ -98,16 +98,14 @@ export const OpenRouterSignIn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Sign in with OpenRouter' })).toBeVisible()
-    await expect(canvas.getByText('Or paste an API key')).toBeVisible()
+    await expect(canvas.getByLabelText('API Key')).toBeVisible()
   }
 }
 export const OpenRouterWaiting: Story = {
   args: { signInStatus: 'waiting' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('status')).toHaveTextContent(
-      'Finish signing in to OpenRouter in your browser.'
-    )
+    await expect(canvas.getByRole('status')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: 'Sign in with OpenRouter' })).toBeNull()
   }
 }
@@ -213,7 +211,6 @@ export const PiNeedsNpm: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/npm i -g @open-pencil\/harness@/)).toBeVisible()
-    await expect(canvas.getByText('No default model set in Pi')).toBeVisible()
   }
 }
 export const PiOutdatedMCPFromBun: Story = {

@@ -157,19 +157,24 @@ test('guided setup signs in with OpenRouter without pasting a key', async ({ pag
   expect(keyChecks).toEqual(['Bearer sk-or-e2e-key'])
 
   await next.click()
+  // Role choices read "<model> · <provider>"; the catalog decides which models those are.
+  const design = setup.getByRole('combobox', { name: 'Design agent' })
   const fast = setup.getByRole('combobox', { name: 'Fast tasks' })
-  await expect(fast).toHaveText(/Gemini 3.8 Flash/)
+  const designModel = (await design.textContent())?.split(' · ')[0]?.trim() ?? ''
+  const recommendedFast = (await fast.textContent())?.trim() ?? ''
+  expect(recommendedFast).not.toMatch(/Same as Design/)
   await fast.click()
   await page.getByRole('option', { name: 'Same as Design' }).click()
   await expect(fast).toHaveText(/Same as Design/)
   await setup.getByRole('button', { name: 'Use recommended setup' }).click()
-  await expect(fast).toHaveText(/Gemini 3.8 Flash/)
+  await expect(fast).toHaveText(recommendedFast)
+  const fastModel = recommendedFast.split(' · ')[0]?.trim() ?? ''
   await setup.getByRole('button', { name: 'Finish setup' }).click()
   await expect(setup.getByRole('heading', { name: 'AI is ready' })).toBeVisible()
   await setup.getByRole('button', { name: 'Done' }).click()
 
   const models = page.getByTestId('settings-model-list')
-  for (const name of ['Claude Sonnet 5', 'Gemini 3.8 Flash']) {
+  for (const name of [designModel, fastModel]) {
     const model = models.locator('[data-model-id]', { hasText: name })
     await expect(model.getByText('Connected', { exact: true })).toBeVisible()
   }

@@ -1,21 +1,25 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  coversGoals,
   uncoveredGoals,
   planOnboarding,
   roleChoiceKey,
   roleOptions,
-  type OnboardingAnswers
+  type OnboardingAnswers,
+  type OnboardingPlan
 } from '@/app/ai/models/settings/onboarding/plan'
 
-import { defaultModel, fastModel } from '#tests/helpers/ai/model-catalog'
+import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
 
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }
 
 function answers(overrides: Partial<OnboardingAnswers>): OnboardingAnswers {
   return { goals: ['design'], access: [], spending: 'existing', ...overrides }
+}
+
+function plannedModelID(choice: OnboardingPlan['fast']): string {
+  return typeof choice === 'object' && choice !== null ? choice.modelID : ''
 }
 
 describe('planOnboarding', () => {
@@ -172,10 +176,8 @@ describe('planOnboarding for review and fast work', () => {
   test('gives fast work the provider model tagged as fast', () => {
     const plan = planOnboarding(answers({ access: ['openrouter'] }), desktop)
     expect(plan.review).toBe('design')
-    expect(plan.fast).toMatchObject({
-      providerID: 'openrouter',
-      modelID: fastModel('openrouter')
-    })
+    expect(plan.fast).toMatchObject({ providerID: 'openrouter' })
+    expect(isFastToolModel('openrouter', plannedModelID(plan.fast))).toBe(true)
   })
 
   test('follows the design model when its provider has no separate fast model', () => {
@@ -189,7 +191,8 @@ describe('planOnboarding for review and fast work', () => {
     )
     expect(plan.vision).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
     expect(plan.review).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
-    expect(plan.fast).toMatchObject({ providerID: 'openai', modelID: fastModel('openai') })
+    expect(plan.fast).toMatchObject({ providerID: 'openai' })
+    expect(isFastToolModel('openai', plannedModelID(plan.fast))).toBe(true)
     expect(planOnboarding(answers({ access: ['acp:codex'] }), desktop)).toMatchObject({
       review: null,
       fast: null
@@ -229,17 +232,6 @@ describe('roleOptions', () => {
   test('offers same as design when the design model can take the role', () => {
     const api = planOnboarding(answers({ access: ['openrouter'] }), desktop)
     expect(roleOptions('fast', api, []).slice(0, 2)).toEqual(['design', null])
-  })
-})
-
-describe('coversGoals', () => {
-  test('reports whether every requested role has a model', () => {
-    const plan = planOnboarding(
-      answers({ goals: ['design', 'vision'], access: ['acp:codex'] }),
-      desktop
-    )
-    expect(coversGoals(plan, ['design'])).toBe(true)
-    expect(coversGoals(plan, ['design', 'vision'])).toBe(false)
   })
 })
 

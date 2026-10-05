@@ -36,8 +36,8 @@ type Story = StoryObj<typeof meta>
 export const RecommendedOpenRouter: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('combobox', { name: 'Fast tasks' })).toHaveTextContent(
-      'Gemini 3.8 Flash'
+    await expect(canvas.getByRole('combobox', { name: 'Fast tasks' })).not.toHaveTextContent(
+      'Same as Design'
     )
     await expect(canvas.queryByRole('button', { name: 'Use recommended setup' })).toBeNull()
   }

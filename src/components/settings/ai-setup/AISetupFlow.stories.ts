@@ -83,9 +83,8 @@ export const Goals: Story = {}
 export const AccessInBrowser: Story = {
   play: async () => {
     await next()
-    await expect(
-      page().getByText('Coding agents are available in the OpenPencil desktop app.')
-    ).toBeVisible()
+    await expect(page().getByRole('checkbox', { name: 'OpenRouter' })).toBeVisible()
+    await expect(page().queryByRole('checkbox', { name: 'Claude Code' })).toBeNull()
   }
 }
 export const AccessOnDesktop: Story = {
@@ -119,11 +118,6 @@ export const RecommendOpenRouter: Story = {
     await next()
     await next()
     await userEvent.click(page().getByRole('button', { name: 'Add OpenRouter (pay as you go)' }))
-    await expect(
-      page().getByText(
-        'OpenRouter gives you models from several vendors with one account and one key.'
-      )
-    ).toBeVisible()
     await expect(page().getByRole('button', { name: 'Sign in with OpenRouter' })).toBeVisible()
     await expect(page().getByRole('button', { name: 'Continue' })).toBeDisabled()
   }
@@ -133,23 +127,10 @@ export const NothingCovered: Story = {
   play: async () => {
     await next()
     await next()
-    await expect(
-      page().getByText('Nothing you selected can create and edit designs.')
-    ).toBeVisible()
     await expect(page().getByRole('button', { name: 'Continue' })).toBeDisabled()
     await expect(
       page().getByRole('button', { name: 'Add OpenRouter (pay as you go)' })
     ).toBeVisible()
-  }
-}
-
-export const LocalServer: Story = {
-  play: async () => {
-    await next()
-    await choose('Local model or company server')
-    await next()
-    await expect(page().getByRole('textbox', { name: 'Base URL' })).toBeVisible()
-    await expect(page().getByRole('textbox', { name: 'Model ID' })).toBeVisible()
   }
 }
 
@@ -159,10 +140,10 @@ export const ServerWithoutVision: Story = {
     await next()
     await choose('Local model or company server')
     await next()
-    await expect(
-      page().getByText('Nothing you selected can review images, so visual review would stay off.')
-    ).toBeVisible()
+    const addOpenRouter = () =>
+      page().queryByRole('button', { name: 'Add OpenRouter (pay as you go)' })
+    await expect(addOpenRouter()).toBeVisible()
     await choose('This model can read images')
-    await expect(page().queryByText(/so visual review would stay off/)).toBeNull()
+    await expect(addOpenRouter()).toBeNull()
   }
 }

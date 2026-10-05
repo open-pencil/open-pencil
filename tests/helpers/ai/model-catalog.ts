@@ -5,11 +5,10 @@ export function defaultModel(providerID: string): string {
   return AI_PROVIDERS.find((provider) => provider.id === providerID)?.defaultModel ?? ''
 }
 
-/** The catalog model tagged as fast that can call tools. */
-export function fastModel(providerID: string): string {
-  const provider = AI_PROVIDERS.find((candidate) => candidate.id === providerID)
-  return (
-    provider?.models.find((model) => model.tag === 'Fast' && model.capabilities?.includes('tools'))
-      ?.id ?? ''
+/** Whether the catalog offers `modelID` as a fast model that can call tools. */
+export function isFastToolModel(providerID: string, modelID: string): boolean {
+  const model = AI_PROVIDERS.find((provider) => provider.id === providerID)?.models.find(
+    (candidate) => candidate.id === modelID
   )
+  return model?.tag === 'Fast' && model.capabilities?.includes('tools') === true
 }

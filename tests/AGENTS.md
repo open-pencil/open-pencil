@@ -13,6 +13,7 @@
 ## Writing specs
 
 - Test contracts and observable behavior, not source text. Specs use domain drivers and probes, not scattered Window/store traversal or unrestricted evaluator wrappers.
+- Assert state and outcomes, never copy, prompts, or constants: a test must not fail on rewording, a catalog update, or a list it restates. Name controls by role to reach them, assert what they do, and never recompute an expected value with the rule under test (`tests/app/ai/models/settings/onboarding/plan.test.ts`).
 - Locate behavior by accessible role and name, then label, then visible text. Scope repeated controls to a named region. Use scoped `data-slot` anatomy or semantic attributes (`data-property`, `data-command`, `data-node-id`) when needed; reserve `data-test-id` for integration boundaries and never add test-hook props or compound IDs.
 - Prefer test-runner-owned fixtures and request/route counters over browser globals. For in-page performance instrumentation, return a scoped `JSHandle` from `evaluateHandle()`, restore patched methods and listeners, and dispose the handle in `finally`; handles do not survive navigation. Assert transient DOM state with locators before the interaction ends.
 - Do not create a catch-all test Window interface or ad-hoc counter properties on `window`. Native-test declarations live in `tests/helpers/tauri/native-global.d.ts`; never expand production Window declarations for fixtures.
