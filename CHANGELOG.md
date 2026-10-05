@@ -74,6 +74,7 @@
 
 ### Fixed
 
+- Release a document's memory when its tab closes. Every closed tab kept its scene, canvas, and editor panels alive until reload, so memory grew with each document opened and closed. Menus and shortcuts now also follow the active document, so Undo and Redo are offered according to its history rather than the first document opened.
 - Report what `linearGradient`, `radialGradient`, `angularGradient`, and `diamondGradient` expect when design JSX passes them something other than an array of stops, such as `linearGradient('#3b82f6')`, instead of failing with `stops.map is not a function`, so an AI agent can correct the call.
 - Keep the canvas context menu open when you right-click again right after closing it, which could close it again at once, especially with reduced motion.
 - Show and edit the component properties of an instance nested inside another instance; they were missing because the nested instance was read as its own component.
