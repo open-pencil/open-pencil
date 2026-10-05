@@ -333,12 +333,20 @@ export class SceneGraph {
   }
 
   isDescendant(childId: string, ancestorId: string): boolean {
-    let current = this.nodes.get(childId)
-    while (current) {
-      if (current.id === ancestorId) return true
+    return this.closest(childId, (node) => node.id === ancestorId) !== undefined
+  }
+
+  /**
+   * The node itself or its nearest ancestor that matches. The walk visits at most as many nodes
+   * as the graph holds, so a parent cycle in bad data cannot hang it.
+   */
+  closest(id: string, match: (node: SceneNode) => boolean): SceneNode | undefined {
+    let current = this.nodes.get(id)
+    for (let steps = 0; current && steps < this.nodes.size; steps++) {
+      if (match(current)) return current
       current = current.parentId ? this.nodes.get(current.parentId) : undefined
     }
-    return false
+    return undefined
   }
 
   clearAbsPosCache(): void {

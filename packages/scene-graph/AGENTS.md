@@ -3,6 +3,7 @@
 Framework-neutral document model. Owns node types, primitives, geometry, matrices, copy/snap/undo helpers, variables, instances, hit testing, and checkpoint recovery.
 
 - Nodes live in a flat `Map<string, SceneNode>`; runtime hierarchy uses `parentId` and `childIds`. Frames do not clip by default.
+- Walk up the tree with `SceneGraph.closest()` or `isDescendant()`, which stop on a parent cycle in bad data, rather than a hand-written `parentId` loop (`packages/scene-graph/tests/basic/graph.test.ts`).
 - Geometry is built on the matrices in `packages/scene-graph/src/matrix.ts` and `packages/scene-graph/src/coordinate.ts` (`getWorldMatrix`, `getAxisAlignedWorldBounds`, `getNodeLocalMatrix`). Add new transform, bounds, or inverse helpers here beside them; do not interpret ancestor rotations or reflections independently elsewhere. LINE pivots remain at the origin; other nodes rotate around their centers.
 - Bounds accumulation goes through the helpers in `packages/scene-graph/src/geometry.ts` (`computeBounds`, `computeAbsoluteBounds`, `computeVisualBounds`); do not add another min/max loop.
 - Reparenting preserves child world positions; groups preserve them too. Sort children geometrically before creating auto-layout. Consumers such as layer trees must react to reparenting rather than retaining stale child references.
