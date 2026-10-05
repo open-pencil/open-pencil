@@ -137,7 +137,6 @@
     "@openrouter/ai-sdk-provider": "^3.1.0",
     "@stream-markdown/code": "2.0.0-beta.5",
     "@tailwindcss/vite": "^4.3.3",
-    "@tanstack/vue-table": "^8.21.3",
     "@tauri-apps/api": "^2.12.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.4.1",
     "@tauri-apps/plugin-dialog": "^2.8.1",

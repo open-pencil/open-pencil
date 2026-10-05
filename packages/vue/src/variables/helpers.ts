@@ -2,13 +2,7 @@ import type { Ref } from 'vue'
 
 import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import type {
-  Variable,
-  VariableCollection,
-  VariableType,
-  VariableValue
-} from '@open-pencil/scene-graph'
-import { colorToHexRaw, parseColor } from '@open-pencil/scene-graph/color'
+import type { VariableCollection, VariableType, VariableValue } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
@@ -142,38 +136,10 @@ export function createVariableValueActions(
     editor.updateVariableValue(id, modeId, value)
   }
 
-  function formatModeValue(variable: Variable, modeId: string): string {
-    const value = variable.valuesByMode[modeId]
-    if (typeof value === 'object' && 'r' in value) return colorToHexRaw(value)
-    if (typeof value === 'object' && 'aliasId' in value) {
-      const aliased = editor.getVariable(value.aliasId)
-      return aliased ? `→ ${aliased.name}` : '→ ?'
-    }
-    return String(value)
-  }
-
-  function parseVariableValue(variable: Variable, raw: string): VariableValue | undefined {
-    if (variable.type === 'COLOR') return parseColor(raw.startsWith('#') ? raw : `#${raw}`)
-    if (variable.type === 'FLOAT') {
-      const num = Number.parseFloat(raw)
-      return Number.isNaN(num) ? undefined : num
-    }
-    if (variable.type === 'BOOLEAN') return raw.toLowerCase() === 'true'
-    return raw
-  }
-
-  function shortName(variable: Variable): string {
-    const parts = variable.name.split('/')
-    return parts[parts.length - 1] ?? variable.name
-  }
-
   return {
     addVariable,
     removeVariable,
     renameVariable,
-    updateVariableValue,
-    formatModeValue,
-    parseVariableValue,
-    shortName
+    updateVariableValue
   }
 }

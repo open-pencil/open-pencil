@@ -6,6 +6,7 @@
 
 - `SceneNode.booleanOperation` is a required key whose value may be `undefined`, like every other scene node field, so code that builds `SceneNode` objects itself must include it.
 - `useVariables().collections` from `@open-pencil/vue` returns copies of the document's collections instead of the graph's own objects, so components see modes added or renamed in place; change collections through the editor's actions rather than by mutating the returned objects. `addVariable` returns the new variable's ID.
+- `useVariablesEditor`, `useVariablesTable`, and `useVariablesDialogState` are removed from `@open-pencil/vue`, together with the `formatModeValue`, `parseVariableValue`, and `shortName` helpers `useVariables()` returned for them, and the package no longer depends on `@tanstack/vue-table`. Build variable editors on `useVariables()` and the editor's variable actions.
 - `sceneNodeToDesignDocument` from `@open-pencil/dom-css` takes an options object, `{ includeSourceIds, tokens }`, instead of a boolean third argument; `tokens: false` writes literal values instead of variable references.
 - `randomHex`, `randomInt`, and `randomIndex` moved from `@open-pencil/core/random` and the `@open-pencil/core` barrel to `@open-pencil/scene-graph/random`.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
