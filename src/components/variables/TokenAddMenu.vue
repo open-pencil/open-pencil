@@ -36,7 +36,8 @@ const items = computed(() => {
 
 <template>
   <DropdownMenuRoot>
-    <DropdownMenuTrigger as-child>
+    <!-- Reka anchors the menu to the element it mounted with, so a new button needs a new trigger. -->
+    <DropdownMenuTrigger :key="String(labelled)" as-child>
       <AppButton v-if="labelled" variant="soft" size="sm" data-test-id="variables-add-variable">
         <template #leading><icon-lucide-plus class="size-3.5" /></template>
         {{ panels.createVariable }}

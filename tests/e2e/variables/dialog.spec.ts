@@ -325,3 +325,25 @@ test('search finds variables by CSS name and by value', async () => {
   await search.fill('')
   editor.canvas.assertNoErrors()
 })
+
+test('the add menu opens under its button after the dialog changes width', async () => {
+  const viewport = editor.page.viewportSize()
+  if (!viewport) throw new Error('viewport size is not set')
+  const add = editor.page.getByTestId('variables-add-variable')
+  await editor.page.setViewportSize({ width: 800, height: viewport.height })
+  await expect(add).toHaveText('')
+  await editor.page.setViewportSize({ width: 1600, height: viewport.height })
+  await expect(add).toHaveText('Create variable')
+
+  await add.click()
+  const menu = editor.page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  const button = await add.boundingBox()
+  const opened = await menu.boundingBox()
+  expect(opened?.y).toBeGreaterThan(button?.y ?? Infinity)
+  expect(opened?.x).toBeGreaterThan((button?.x ?? 0) - (opened?.width ?? 0))
+
+  await editor.page.keyboard.press('Escape')
+  await editor.page.setViewportSize(viewport)
+  editor.canvas.assertNoErrors()
+})
