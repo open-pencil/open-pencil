@@ -66,13 +66,12 @@ function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
         { id: `reply-${replies}`, role: 'assistant', parts: [{ type: 'text', text: 'Done' }] }
       ]
     },
-    async sendMessage(message: { text: string; messageId?: string }) {
-      const index = chat.messages.findIndex((candidate) => candidate.id === message.messageId)
+    // Like Chat's, the message is optional; only its ID matters here.
+    async sendMessage(message?: { messageId?: string }) {
+      const messageId = message?.messageId
+      const index = chat.messages.findIndex((candidate) => candidate.id === messageId)
       const kept = index === -1 ? chat.messages : chat.messages.slice(0, index)
-      chat.messages = [
-        ...kept,
-        { id: message.messageId ?? `request-${replies}`, role: 'user', parts: [] }
-      ]
+      chat.messages = [...kept, { id: messageId ?? `request-${replies}`, role: 'user', parts: [] }]
       await chat.reply()
     },
     async regenerate() {
