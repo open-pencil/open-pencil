@@ -1,6 +1,6 @@
 import type { Fill, LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
-import { parseCSSGridTracks } from '@open-pencil/scene-graph/css'
+import { parseCSSGridTracks, parseCSSNumber } from '@open-pencil/scene-graph/css'
 import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { applyEffectOverrides } from './overrides/effects'
@@ -68,11 +68,7 @@ function parseDirection(value: unknown): SceneNode['textDirection'] | undefined 
 
 function numberFromPx(value: unknown): number | undefined {
   if (typeof value === 'number') return value
-  if (typeof value !== 'string') return undefined
-  const trimmed = value.trim()
-  if (!trimmed.endsWith('px')) return undefined
-  const parsed = Number.parseFloat(trimmed.slice(0, -2))
-  return Number.isFinite(parsed) ? parsed : undefined
+  return typeof value === 'string' ? (parseCSSNumber(value) ?? undefined) : undefined
 }
 
 function normalizeStyleProps(props: Record<string, unknown>): Record<string, unknown> {

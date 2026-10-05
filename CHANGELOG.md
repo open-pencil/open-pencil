@@ -74,6 +74,8 @@
 
 ### Fixed
 
+- Import HTML and CSS with the right shadow and border colors. A shadow whose color follows its lengths, as CSS usually writes it, and a `border` with a color function such as `rgb(226, 232, 240)` came in black. Every layer of a `box-shadow` list now imports, `inset` ones as inner shadows, and lengths in `%`, `em`, or `vh` are no longer read as pixels.
+- Accept a CSS `box-shadow` list in design JSX's `shadow` prop: the color may come first, a fourth length sets the spread, several layers add several shadows, and `inset` makes an inner shadow. A color before the lengths or a spread made the shadow black.
 - Read `repeat()` and `minmax()` in design JSX grid tracks, such as `columns="repeat(7, 1fr)"`, which collapsed the grid to near-zero columns. A track the grid cannot express sizes to its content instead of to 0.
 - Lay out text set to fill its container the way Figma does: fill text in an auto-layout row now shares the free space with its siblings instead of keeping its old width and overflowing the row.
 - Report what `linearGradient`, `radialGradient`, `angularGradient`, and `diamondGradient` expect when design JSX passes them something other than an array of stops, such as `linearGradient('#3b82f6')`, instead of failing with `stops.map is not a function`, so an AI agent can correct the call.

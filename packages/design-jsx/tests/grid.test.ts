@@ -34,6 +34,6 @@ describe('grid track lists', () => {
   })
 
   test('sizes a track the grid cannot express to its content, not to zero', () => {
-    expect(columns('10rem 1fr')).toEqual([{ sizing: 'AUTO', value: 0 }, FR])
+    expect(columns('10em 1fr')).toEqual([{ sizing: 'AUTO', value: 0 }, FR])
   })
 })
