@@ -13,13 +13,13 @@ function tagName(node: DesignElement): string {
   return node.sourceSceneNode?.type === 'TEXT' ? 'p' : node.tagName
 }
 
-function attributes(node: DesignElement): SyntaxNode[] {
+function attributes(node: DesignElement, themeVariables: readonly string[]): SyntaxNode[] {
   const { class: className, ...attrs } = node.attrs
   const name = node.sourceSceneNode?.name
   const entries: [string, string | undefined][] = [
     ['data-name', name && name !== node.sourceSceneNode?.type ? name : undefined],
     ...Object.entries(attrs),
-    ['className', mergeClassNames(className, serializeTailwindClasses(node))]
+    ['className', mergeClassNames(className, serializeTailwindClasses(node, themeVariables))]
   ]
   return entries.flatMap(([key, value]) =>
     value === undefined
@@ -28,20 +28,27 @@ function attributes(node: DesignElement): SyntaxNode[] {
   )
 }
 
-function element(node: DesignElement, depth: number): SyntaxNode {
-  const children = node.children.map((child) => jsxNode(child, depth + 1))
+function element(
+  node: DesignElement,
+  depth: number,
+  themeVariables: readonly string[]
+): SyntaxNode {
+  const children = node.children.map((child) => jsxNode(child, depth + 1, themeVariables))
   // A lone text child stays on the element's line.
   const inline = children.length === 1 && node.children[0]?.type === 'text'
-  return jsx.element(tagName(node), attributes(node), children, depth, inline)
+  return jsx.element(tagName(node), attributes(node, themeVariables), children, depth, inline)
 }
 
-function jsxNode(node: DesignNode, depth: number): SyntaxNode {
-  return node.type === 'text' ? jsx.text(node.text) : element(node, depth)
+function jsxNode(node: DesignNode, depth: number, themeVariables: readonly string[]): SyntaxNode {
+  return node.type === 'text' ? jsx.text(node.text) : element(node, depth, themeVariables)
 }
 
 /** Print a design document as Tailwind JSX, one top-level element per block. */
 export function designDocumentToTailwindJSX(document: DesignDocument): string {
-  return document.children.map((node) => jsx.printJSX(jsxNode(node, 0))).join('\n\n')
+  const themeVariables = document.tokens?.themeVariables() ?? []
+  return document.children
+    .map((node) => jsx.printJSX(jsxNode(node, 0, themeVariables)))
+    .join('\n\n')
 }
 
 /** Tailwind JSX for scene nodes, separated by blank lines. */
@@ -69,7 +76,7 @@ export function sceneNodesToTailwindJSXWithLayers(
   const layerIds: Array<string | null> = []
   const blocks: string[] = []
   for (const id of nodeIds) {
-    const document = sceneNodeToDesignDocument(graph, id, false)
+    const document = sceneNodeToDesignDocument(graph, id, { includeSourceIds: false })
     const code = designDocumentToTailwindJSX(document)
     if (!code) continue
     blocks.push(code)

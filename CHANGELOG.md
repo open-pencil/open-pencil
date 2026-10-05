@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `sceneNodeToDesignDocument` from `@open-pencil/dom-css` takes an options object, `{ includeSourceIds, tokens }`, instead of a boolean third argument; `tokens: false` writes literal values instead of variable references.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied. Rendering, `.fig` round-trips, and the stroke panel still handle solid strokes only.
 - The `design_to_tokens` AI and MCP tool writes a stylesheet of CSS custom properties built from the document's variables. Its `tailwind` format is a Tailwind v4 `@theme` instead of a JavaScript object, and the `json` format is removed. Names come from the variable's code syntax or from Tailwind namespaces (`--color-gray-50`) instead of the collection name, aliases stay `var()` references instead of resolving through the first mode, and non-default modes go under their condition (`[data-theme="dark"]` by default) instead of a class named after the mode. The result lists the tokens it left out under `issues`.
@@ -53,6 +54,7 @@
 
 ### Changed
 
+- HTML and Tailwind JSX export write variable-bound colors, spacing, radii, borders, sizes, type sizes, and opacity as the tokens they come from, such as `var(--color-primary)` or `bg-primary`, and put layers set to another mode in it with an attribute such as `data-theme="dark"`. Values CSS would not resolve as the canvas draws them stay literal, and standalone HTML includes the stylesheet for the tokens it uses.
 - Give popovers, menus, dropdowns, and pickers one look and motion: the same rounded panel with a thin outline that reads in light and dark themes, a short fade and grow from the side they open on, and an immediate close; with reduced motion they appear at once.
 - Add and remove items the same way across the properties panel: a section's + adds an item and a row's − removes it, now including grid columns and rows and variant properties. The + of a component set adds Property 1 ready to rename instead of showing a form, and a variant is removed with Delete like any layer.
 - Pick variables, shared styles, and swap components from one searchable list that groups preferred components first and works with the keyboard.

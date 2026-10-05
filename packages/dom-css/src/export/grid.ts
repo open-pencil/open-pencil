@@ -15,14 +15,18 @@ function tracksToCSS(tracks: GridTrack[]): string {
   return tracks.map(trackToCSS).join(' ')
 }
 
-export function addGridContainer(style: DesignStyleDeclaration, node: SceneNode): void {
+export function addGridContainer(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  css: (field: string, literal: string) => string
+): void {
   style.display = 'grid'
   if (node.gridTemplateColumns.length > 0)
     style['grid-template-columns'] = tracksToCSS(node.gridTemplateColumns)
   if (node.gridTemplateRows.length > 0)
     style['grid-template-rows'] = tracksToCSS(node.gridTemplateRows)
-  if (node.gridColumnGap > 0) style['column-gap'] = `${node.gridColumnGap}px`
-  if (node.gridRowGap > 0) style['row-gap'] = `${node.gridRowGap}px`
+  if (node.gridColumnGap > 0) style['column-gap'] = css('gridColumnGap', `${node.gridColumnGap}px`)
+  if (node.gridRowGap > 0) style['row-gap'] = css('gridRowGap', `${node.gridRowGap}px`)
 }
 
 /** A span sets the whole placement, so the start follows it. */

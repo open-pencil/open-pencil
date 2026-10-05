@@ -66,12 +66,21 @@ function modeSlug(collection: VariableCollection, mode: VariableCollectionMode):
   return plainSlug(mode)
 }
 
+/** The attribute that puts an element in a mode with no condition of its own: `data-theme`. */
+export function modeAttribute(
+  collection: VariableCollection,
+  mode: VariableCollectionMode
+): { name: string; value: string } {
+  return { name: `data-${tokenSlug(collection.name) || 'mode'}`, value: modeSlug(collection, mode) }
+}
+
 /** The scope a mode applies in when it names none: `[data-theme="dark"]` for Theme / Dark. */
 export function defaultModeCondition(
   collection: VariableCollection,
   mode: VariableCollectionMode
 ): string {
-  return `[data-${tokenSlug(collection.name) || 'mode'}="${modeSlug(collection, mode)}"]`
+  const { name, value } = modeAttribute(collection, mode)
+  return `[${name}="${value}"]`
 }
 
 function quoteString(value: string): string {
