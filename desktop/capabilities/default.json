@@ -47,6 +47,7 @@
     {
       "identifier": "fs:allow-exists",
       "allow": [
+        { "path": "$HOME/.pi/agent/auth.json" },
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
         { "path": "$LOCALDATA/OpenPencil/mcp.json" },
         { "path": "$RUNTIME/openpencil/mcp.json" },
