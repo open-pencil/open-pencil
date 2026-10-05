@@ -17,7 +17,7 @@ import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { MeasurementMode, PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
-import type { PlaySession } from '#core/editor/play/session'
+import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
@@ -98,7 +98,7 @@ export interface EditorViewState {
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
   /** This canvas's preview, or null while it edits. */
-  play: PlaySession | null
+  play: PlayState | null
 }
 
 export type NavigationPhase = 'idle' | 'pan' | 'zoom' | 'momentum' | 'settling'

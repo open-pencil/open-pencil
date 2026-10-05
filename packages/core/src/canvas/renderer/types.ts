@@ -4,7 +4,6 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { PlaySubstitute } from '#core/editor/play/session'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -32,7 +31,8 @@ export interface RenderOverlays {
   /** Whether the canvas previews: it draws the design without labels or editing outlines. */
   playing?: boolean
   /** Nodes a previewing canvas draws from its preview session instead of the document. */
-  playSubstitutes?: ReadonlyMap<string, PlaySubstitute>
+  /** Layers a previewing canvas leaves to its live islands. */
+  playIslands?: ReadonlySet<string>
   hoveredNodeId?: string | null
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null

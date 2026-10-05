@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { emitNavigationTrace } from '#core/profiler'
 
@@ -62,7 +63,7 @@ export function renderFromEditorState(
     previewing ? new Set<string>() : state.selectedIds,
     {
       playing: previewing,
-      playSubstitutes: state.play?.substitutes,
+      playIslands: previewing ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: previewing ? null : state.hoveredNodeId,
       measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,

@@ -298,30 +298,14 @@ function nodeIsolationLayerBounds(
     : r.ck.LTRBRect(0, 0, node.width, node.height)
 }
 
-/** Draw a previewing canvas's copy of a node, and everything below it, from the play session's graph. */
-function renderPlaySubstitute(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  nodeId: string,
-  overlays: RenderOverlays,
-  parentAbsX: number,
-  parentAbsY: number,
-  hasTransformedAncestor: boolean
-): boolean {
-  const substitute = overlays.playSubstitutes?.get(nodeId)
-  if (!substitute || substitute.graph === graph) return false
-  renderNode(
-    r,
-    canvas,
-    substitute.graph,
-    substitute.nodeId,
-    overlays,
-    parentAbsX,
-    parentAbsY,
-    hasTransformedAncestor
-  )
-  return true
+/**
+ * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
+ * node-edit mode, or left to a live island while the canvas previews.
+ */
+function drawsNode(node: SceneNode, overlays: RenderOverlays): boolean {
+  if (node.internalOnly || !node.visible || node.isMask || fontManager.isNodeBlocked(node.id))
+    return false
+  return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
 }
 
 export function renderNode(
@@ -334,32 +318,8 @@ export function renderNode(
   parentAbsY = 0,
   hasTransformedAncestor = false
 ): void {
-  if (
-    renderPlaySubstitute(
-      r,
-      canvas,
-      graph,
-      nodeId,
-      overlays,
-      parentAbsX,
-      parentAbsY,
-      hasTransformedAncestor
-    )
-  )
-    return
   const node = graph.getNode(nodeId)
-  if (
-    !node ||
-    node.internalOnly ||
-    !node.visible ||
-    node.isMask ||
-    fontManager.isNodeBlocked(nodeId)
-  ) {
-    return
-  }
-
-  // Hide the node being edited in node-edit mode (overlay draws it live)
-  if (overlays.nodeEditState?.nodeId === nodeId) return
+  if (!node || !drawsNode(node, overlays)) return
 
   r._nodeCount++
 

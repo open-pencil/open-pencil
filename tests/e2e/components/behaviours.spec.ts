@@ -1,7 +1,19 @@
+import { colorToCSS } from '@open-pencil/scene-graph/color'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { propertySection } from '#tests/helpers/properties'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
+
+/** The live island a previewing canvas runs for a top-level layer. */
+function island(layerId: string) {
+  return editor.page.locator(`[data-island="${layerId}"]`)
+}
+
+async function startPreview() {
+  await editor.page.keyboard.press('Meta+Alt+Enter')
+  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
+}
 
 /** A Switch set whose State=On and State=Off variants differ, and an Off instance below it. */
 async function createSwitch() {
@@ -70,22 +82,17 @@ test('a Switch behaviour flips in preview and leaves the document alone', async 
   await editor.page.getByRole('option', { name: 'State' }).click()
   await expect(section.getByText('Ready', { exact: true })).toBeVisible()
 
-  await editor.page.keyboard.press('Meta+Alt+Enter')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
-  const point = await editor.page.evaluate(() => {
-    const state = window.openPencil?.getStore?.()?.state
-    if (!state) throw new Error('OpenPencil store not initialized')
-    return { x: 148 * state.zoom + state.panX, y: 276 * state.zoom + state.panY }
-  })
-  const box = await editor.canvas.canvas.boundingBox()
-  if (!box) throw new Error('Canvas has no bounding box')
-  await editor.page.mouse.click(box.x + point.x, box.y + point.y)
-  await editor.canvas.waitForRender()
-  editor.canvas.assertNoErrors()
-  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('switch-previewed-on.png', {
-    maxDiffPixelRatio: 0,
-    threshold: 0
-  })
+  await startPreview()
+  // The instance runs as Reka UI's Switch, drawn by the set's variants.
+  const control = island(ids.instanceId).getByRole('switch')
+  await expect(control).toHaveAttribute('aria-checked', 'false')
+  await control.click()
+  await expect(control).toHaveAttribute('aria-checked', 'true')
+  await editor.page.mouse.move(4, 400)
+  await expect(island(ids.instanceId)).toHaveScreenshot('switch-island-on.png')
+  await control.press('Space')
+  await expect(control).toHaveAttribute('aria-checked', 'false')
+  await control.click()
 
   const document = await editor.page.evaluate((instanceId) => {
     const store = window.openPencil?.getStore?.()
@@ -161,36 +168,20 @@ test('a Button behaviour maps its states and shows them in preview', async () =>
   await expect(section.getByRole('combobox', { name: 'Pressed state' })).toHaveText(/Pressed/)
   await expect(section.getByRole('combobox', { name: 'Disabled state' })).toHaveText(/Disabled/)
 
-  const shown = () =>
-    editor.page.evaluate((instanceId) => {
-      const store = window.openPencil?.getStore?.()
-      const copy = store?.state.play?.substitutes.get(instanceId)
-      return copy?.graph.getNode(instanceId)?.componentId
-    }, ids.instanceId)
-
-  await editor.page.keyboard.press('Meta+Alt+Enter')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
-  const point = await editor.page.evaluate(() => {
-    const state = window.openPencil?.getStore?.()?.state
-    if (!state) throw new Error('OpenPencil store not initialized')
-    return { x: 160 * state.zoom + state.panX, y: 276 * state.zoom + state.panY }
-  })
-  const box = await editor.canvas.canvas.boundingBox()
-  if (!box) throw new Error('Canvas has no bounding box')
-  await editor.page.mouse.move(box.x + point.x, box.y + point.y)
-  await expect.poll(shown).toBe(ids.byValue.Hover)
+  await startPreview()
+  // Each state shows its variant's fill: the components are filled by index, as created above.
+  const fill = (index: number) =>
+    colorToCSS({ r: 0.2 + index * 0.15, g: 0.4, b: 0.9 - index * 0.15, a: 1 })
+  const button = island(ids.instanceId).getByRole('button')
+  await expect(button).toHaveCSS('background-color', fill(0))
+  await button.hover()
+  await expect(button).toHaveCSS('background-color', fill(1))
   await editor.page.mouse.down()
-  await expect.poll(shown).toBe(ids.byValue.Pressed)
+  await expect(button).toHaveCSS('background-color', fill(2))
   await editor.page.mouse.up()
-  await editor.page.mouse.move(box.x + 4, box.y + 4)
-  await expect.poll(shown).toBe(ids.byValue.Default)
-
-  await editor.page.keyboard.press('Tab')
-  await expect.poll(shown).toBe(ids.byValue.Focus)
-  // The first Escape takes focus off the button; the second leaves preview.
-  await editor.page.keyboard.press('Escape')
-  await expect.poll(shown).toBe(ids.byValue.Default)
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
+  await expect(button).toHaveCSS('background-color', fill(1))
+  await editor.page.mouse.move(4, 400)
+  await expect(button).toHaveCSS('background-color', fill(0))
   await editor.page.keyboard.press('Escape')
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toHaveCount(0)
 })
@@ -237,35 +228,23 @@ test('a Text field takes typing in preview without triggering shortcuts', async 
   })
   await editor.canvas.waitForRender()
 
-  await editor.page.keyboard.press('Meta+Alt+Enter')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
-  const point = await editor.page.evaluate(() => {
-    const state = window.openPencil?.getStore?.()?.state
-    if (!state) throw new Error('OpenPencil store not initialized')
-    return { x: 160 * state.zoom + state.panX, y: 238 * state.zoom + state.panY }
-  })
-  const box = await editor.canvas.canvas.boundingBox()
-  if (!box) throw new Error('Canvas has no bounding box')
-  await editor.page.mouse.click(box.x + point.x, box.y + point.y)
+  await startPreview()
+  // A real input: typing, the caret, and selection are the browser's.
+  const input = island(instanceId).locator('input')
+  await expect(input).toHaveValue('Name')
+  await input.click()
+  await editor.page.keyboard.press('End')
   // R, T, and V are tool shortcuts while editing.
-  await editor.page.keyboard.type('Vera T')
-
-  const state = () =>
-    editor.page.evaluate((id) => {
-      const store = window.openPencil?.getStore?.()
-      const copy = store?.state.play?.substitutes.get(id)?.graph
-      return {
-        text: copy?.getChildren(id).find((child) => child.type === 'TEXT')?.text,
-        tool: store?.state.activeTool
-      }
-    }, instanceId)
-  // Without a Filled value drawing a placeholder, the designed text is the field's value.
-  await expect.poll(state).toEqual({ text: 'NameVera T', tool: 'SELECT' })
-
-  await editor.page.keyboard.press('Escape')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
-  await editor.page.keyboard.press('Escape')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toHaveCount(0)
+  await editor.page.keyboard.type(' Vera T')
+  await editor.page.keyboard.press('Home')
+  await editor.page.keyboard.press('Shift+ArrowRight')
+  await editor.page.keyboard.type('S')
+  await expect(input).toHaveValue('Same Vera T')
+  expect(await editor.page.evaluate(() => window.openPencil?.getStore?.()?.state.activeTool)).toBe(
+    'SELECT'
+  )
+  await editor.page.getByRole('button', { name: /Leave preview/ }).click()
+  await expect(island(instanceId)).toHaveCount(0)
 })
 
 test('a rectangle made a Textarea gets its text layer from the panel and takes typing', async () => {
@@ -304,25 +283,12 @@ test('a rectangle made a Textarea gets its text layer from the panel and takes t
     const instance = store?.graph.createInstance(id, store.state.currentPageId, { x: 120, y: 300 })
     return instance?.id ?? ''
   }, componentId)
-  await editor.page.keyboard.press('Meta+Alt+Enter')
-  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
-  const point = await editor.page.evaluate(() => {
-    const state = window.openPencil?.getStore?.()?.state
-    if (!state) throw new Error('OpenPencil store not initialized')
-    return { x: 200 * state.zoom + state.panX, y: 360 * state.zoom + state.panY }
-  })
-  const box = await editor.canvas.canvas.boundingBox()
-  if (!box) throw new Error('Canvas has no bounding box')
-  await editor.page.mouse.click(box.x + point.x, box.y + point.y)
+  await startPreview()
+  const field = island(instanceId).locator('textarea')
+  await field.click()
+  await editor.page.keyboard.press('End')
   await editor.page.keyboard.type(' typed')
-
-  await expect
-    .poll(() =>
-      editor.page.evaluate((id) => {
-        const store = window.openPencil?.getStore?.()
-        const copy = store?.state.play?.substitutes.get(id)?.graph
-        return copy?.getChildren(id).find((child) => child.type === 'TEXT')?.text
-      }, instanceId)
-    )
-    .toBe('Text typed')
+  await editor.page.keyboard.press('Enter')
+  await editor.page.keyboard.type('second line')
+  await expect(field).toHaveValue('Text typed\nsecond line')
 })

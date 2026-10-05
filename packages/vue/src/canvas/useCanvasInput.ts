@@ -48,7 +48,6 @@ export function useCanvasInput(
   const canvasLabelEdit = createCanvasLabelEdit(editor)
   const cursorOverride = ref<string | null>(null)
   /** Whether the primary button is held on a preview control, such as a slider thumb. */
-  const playDragging = ref(false)
   const autoLayoutPaddingEdit = ref<{
     nodeId: string
     side: 'top' | 'right' | 'bottom' | 'left'
@@ -222,11 +221,8 @@ export function useCanvasInput(
   function onMouseDown(e: MouseEvent) {
     onActivate?.()
     if (!isEnabled()) return
-    // Preview: the primary button uses controls; panning (Space, middle button, Hand) still works.
+    // Preview: controls live in islands above the canvas; the canvas itself only pans.
     if (editor.state.play && e.button === 0 && editor.state.activeTool !== 'HAND') {
-      if (!editor.state.editingTextId) canvasRef.value?.focus()
-      const { cx, cy } = getCoords(e)
-      playDragging.value = editor.playPointerDown(cx, cy)
       e.preventDefault()
       return
     }
@@ -277,10 +273,7 @@ export function useCanvasInput(
       onCursorMove(coords.cx, coords.cy)
     }
 
-    if (editor.state.play && !drag.value) {
-      cursorOverride.value = editor.playPointerMove(coords.cx, coords.cy) ? 'pointer' : null
-      return
-    }
+    if (editor.state.play && !drag.value) return
 
     if (!drag.value) {
       const { cx, cy } = coords
@@ -367,10 +360,6 @@ export function useCanvasInput(
   }
 
   function onMouseUp() {
-    if (playDragging.value) {
-      playDragging.value = false
-      editor.playPointerUp()
-    }
     if (!drag.value) return
     const d = drag.value
 
@@ -491,7 +480,6 @@ export function useCanvasInput(
     cancelPointerInteraction()
   })
   useEventListener(canvasRef, 'mouseleave', () => {
-    if (editor.state.play) editor.playPointerLeave()
     pointerInside.value = false
     if (!isEnabled()) return
     editor.setMeasurementMode('off')
