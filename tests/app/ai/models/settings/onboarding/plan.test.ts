@@ -9,7 +9,7 @@ import {
   type OnboardingAnswers
 } from '@/app/ai/models/settings/onboarding/plan'
 
-import { defaultModel, fastModel } from './catalog'
+import { defaultModel, fastModel } from '#tests/helpers/ai/model-catalog'
 
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }

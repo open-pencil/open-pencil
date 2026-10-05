@@ -8,7 +8,7 @@ import {
 import { currentOnboardingModels } from '@/app/ai/models/settings/onboarding/current'
 import { planOnboarding, type OnboardingAnswers } from '@/app/ai/models/settings/onboarding/plan'
 
-import { defaultModel, fastModel } from './catalog'
+import { defaultModel, fastModel } from '#tests/helpers/ai/model-catalog'
 
 function freshInstall(): AIModelSettings {
   return {
