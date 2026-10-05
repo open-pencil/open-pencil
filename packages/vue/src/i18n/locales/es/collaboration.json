@@ -42,6 +42,7 @@
   "leftRoomDescription": "Ahora es una copia local. Guárdala para conservarla.",
   "dismiss": "Cerrar",
   "openInDesktopApp": "Abrir en la app de escritorio",
+  "downloadDesktopApp": "¿No la tienes? Descárgala",
   "nameHint": "En esta sala eres {name}. Pon tu nombre para que los demás sepan quién eres.",
   "joinRoomEllipsis": "Unirse a una sala…",
   "joinRoomDescription": "Pega un enlace o ID de sala para abrir un archivo que alguien compartió contigo.",

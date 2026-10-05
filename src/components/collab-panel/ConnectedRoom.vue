@@ -65,14 +65,25 @@ const statusText = computed(() =>
   </p>
 
   <div class="mt-3 flex items-center justify-between gap-2">
-    <a
-      v-if="room.desktopLink.value"
-      :href="room.desktopLink.value"
-      class="text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
-      data-test-id="collab-open-desktop"
-    >
-      {{ collab.messages.openInDesktopApp }}
-    </a>
+    <div v-if="room.desktopLink.value" class="flex min-w-0 flex-col gap-0.5">
+      <a
+        :href="room.desktopLink.value"
+        class="text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+        data-test-id="collab-open-desktop"
+      >
+        {{ collab.messages.openInDesktopApp }}
+      </a>
+      <a
+        v-if="room.downloadURL.value"
+        :href="room.downloadURL.value"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-[11px] text-muted underline-offset-2 hover:text-surface hover:underline focus-visible:underline focus-visible:outline-none"
+        data-test-id="collab-download-desktop"
+      >
+        {{ collab.messages.downloadDesktopApp }}
+      </a>
+    </div>
     <span v-else />
     <AppButton variant="outline" data-test-id="collab-leave" @click="collab.disconnect">
       {{ collab.messages.leaveRoom }}

@@ -49,6 +49,15 @@ test('a share link opens the room in its own tab, waiting until someone with it 
     await expect(
       guest.page.getByRole('heading', { name: 'Waiting for someone who has this file' })
     ).toBeVisible()
+    // A browser on a computer can hand the room to the desktop app, or point to its download.
+    await expect(guest.page.getByRole('link', { name: 'Open in desktop app' })).toHaveAttribute(
+      'href',
+      `openpencil://join?room=${ROOM_ID}`
+    )
+    await expect(guest.page.getByRole('link', { name: 'Don’t have it? Download' })).toHaveAttribute(
+      'href',
+      'https://github.com/open-pencil/open-pencil/releases/latest'
+    )
 
     host = await createPeer(browser, 'Host', relay.url)
     const nodeId = await addRectangle(host.page, 'Shared card')

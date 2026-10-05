@@ -47,6 +47,7 @@ export const collaborationMessageDefaults = {
   leftRoomDescription: 'This is now a local copy. Save it to keep it.',
   dismiss: 'Dismiss',
   openInDesktopApp: 'Open in desktop app',
+  downloadDesktopApp: 'Don’t have it? Download',
   nameHint: params('You’re {name} in this room. Set your name so others know who you are.'),
   joinRoomEllipsis: 'Join room…',
   joinRoomDescription: 'Paste a room link or ID to open a file someone shared with you.',

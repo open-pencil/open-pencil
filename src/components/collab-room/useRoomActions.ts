@@ -7,7 +7,7 @@ import { roomLinkURL } from '@/app/collab/room/links'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
-import { getShareURL, IS_BROWSER, IS_TAURI } from '@/constants'
+import { DESKTOP_DOWNLOAD_URL, getShareURL, IS_BROWSER, IS_TAURI } from '@/constants'
 
 /** What the room screens offer for the active tab's room: its link, a desktop handoff, Leave. */
 export function useRoomActions() {
@@ -32,6 +32,8 @@ export function useRoomActions() {
     if (!roomId || !IS_BROWSER || IS_TAURI || isMobile.value) return null
     return roomLinkURL(roomId)
   })
+  /** Offered beside the desktop link, for people without the app. */
+  const downloadURL = computed(() => (desktopLink.value ? DESKTOP_DOWNLOAD_URL : null))
 
   function copyLink() {
     const roomId = state.value.roomId
@@ -59,6 +61,7 @@ export function useRoomActions() {
     copied,
     nameHint,
     desktopLink,
+    downloadURL,
     copyLink,
     leave,
     rename,

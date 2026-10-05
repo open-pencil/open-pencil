@@ -14,7 +14,9 @@ export const roomScreen = tv({
     label: 'text-xs text-muted',
     hint: 'text-[11px] leading-relaxed text-muted',
     actions: 'mt-1 flex flex-wrap items-center gap-2',
-    link: 'text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none'
+    link: 'text-xs text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none',
+    download:
+      'text-[11px] text-muted underline-offset-2 hover:text-surface hover:underline focus-visible:underline focus-visible:outline-none'
   }
 })
 

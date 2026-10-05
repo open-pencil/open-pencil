@@ -76,6 +76,8 @@ export const ROOM_ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
 export const ROOM_JOIN_GRACE_MS = 5000
 
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
+/** Where the desktop app's installers are published. */
+export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
 
 export function getShareURL(roomId: string): string {
   const base = IS_TAURI || !IS_BROWSER ? WEB_APP_ORIGIN : window.location.origin

@@ -42,6 +42,7 @@
   "leftRoomDescription": "Das ist jetzt eine lokale Kopie. Speichere sie, um sie zu behalten.",
   "dismiss": "Schließen",
   "openInDesktopApp": "In der Desktop-App öffnen",
+  "downloadDesktopApp": "Noch nicht installiert? Herunterladen",
   "nameHint": "Du bist in diesem Raum {name}. Lege deinen Namen fest, damit andere wissen, wer du bist.",
   "joinRoomEllipsis": "Raum beitreten…",
   "joinRoomDescription": "Füge einen Raumlink oder eine Raum-ID ein, um eine Datei zu öffnen, die jemand mit dir geteilt hat.",

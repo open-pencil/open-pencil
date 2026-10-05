@@ -42,6 +42,7 @@
   "leftRoomDescription": "To jest teraz lokalna kopia. Zapisz ją, aby ją zachować.",
   "dismiss": "Zamknij",
   "openInDesktopApp": "Otwórz w aplikacji na komputer",
+  "downloadDesktopApp": "Nie masz jej? Pobierz",
   "nameHint": "W tym pokoju jesteś {name}. Ustaw swoje imię, aby inni wiedzieli, kim jesteś.",
   "joinRoomEllipsis": "Dołącz do pokoju…",
   "joinRoomDescription": "Wklej link lub identyfikator pokoju, aby otworzyć plik, który ktoś Ci udostępnił.",

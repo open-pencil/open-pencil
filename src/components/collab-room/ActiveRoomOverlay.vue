@@ -15,6 +15,7 @@ const room = useRoomActions()
     :copied="room.copied.value"
     :name-hint="room.nameHint.value"
     :desktop-link="room.desktopLink.value"
+    :downloadURL="room.downloadURL.value"
     @copy-link="room.copyLink"
     @leave="room.leave"
     @rename="room.rename"

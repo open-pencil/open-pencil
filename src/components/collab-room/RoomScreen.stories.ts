@@ -9,6 +9,7 @@ type Args = {
   copied: boolean
   nameHint: string | null
   desktopLink: string | null
+  downloadURL: string | null
   onCopyLink: () => void
   onLeave: () => void
   onRename: (name: string) => void
@@ -24,6 +25,7 @@ const meta = {
     copied: false,
     nameHint: null,
     desktopLink: null,
+    downloadURL: null,
     onCopyLink: fn(),
     onLeave: fn(),
     onRename: fn()
@@ -51,7 +53,10 @@ export const WaitingWithGeneratedName: Story = {
 }
 
 export const WaitingInDesktopBrowser: Story = {
-  args: { desktopLink: 'openpencil://join?room=abcdefghijklmnopqrstuvwxyz012345' }
+  args: {
+    desktopLink: 'openpencil://join?room=abcdefghijklmnopqrstuvwxyz012345',
+    downloadURL: 'https://github.com/open-pencil/open-pencil/releases/latest'
+  }
 }
 
 export const LinkCopied: Story = {

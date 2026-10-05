@@ -42,6 +42,7 @@
   "leftRoomDescription": "これはローカルのコピーです。残すには保存してください。",
   "dismiss": "閉じる",
   "openInDesktopApp": "デスクトップアプリで開く",
+  "downloadDesktopApp": "お持ちでない場合はダウンロード",
   "nameHint": "このルームでのあなたの名前は「{name}」です。ほかの人に分かるよう名前を設定してください。",
   "joinRoomEllipsis": "ルームに参加…",
   "joinRoomDescription": "共有されたファイルを開くには、ルームのリンクまたはIDを貼り付けてください。",

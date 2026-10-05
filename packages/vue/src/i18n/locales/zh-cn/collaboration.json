@@ -42,6 +42,7 @@
   "leftRoomDescription": "这现在是本地副本。保存即可保留。",
   "dismiss": "关闭",
   "openInDesktopApp": "在桌面应用中打开",
+  "downloadDesktopApp": "还没有安装？下载",
   "nameHint": "你在此房间中的名字是 {name}。设置你的名字，让其他人知道你是谁。",
   "joinRoomEllipsis": "加入房间…",
   "joinRoomDescription": "粘贴房间链接或 ID，打开别人与你共享的文件。",

@@ -16,7 +16,8 @@ const {
   name,
   copied = false,
   nameHint = null,
-  desktopLink = null
+  desktopLink = null,
+  downloadURL = null
 } = defineProps<{
   status: 'joining' | 'waiting'
   /** The person's name in the room, generated until they set one. */
@@ -26,6 +27,8 @@ const {
   nameHint?: string | null
   /** An `openpencil://join` link, offered in desktop browsers. */
   desktopLink?: string | null
+  /** Where to get the desktop app, offered beside `desktopLink`. */
+  downloadURL?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -111,6 +114,16 @@ const ui = roomScreen()
           data-test-id="room-screen-open-desktop"
         >
           {{ messages.openInDesktopApp }}
+        </a>
+        <a
+          v-if="desktopLink && downloadURL"
+          :href="downloadURL"
+          target="_blank"
+          rel="noopener noreferrer"
+          :class="ui.download()"
+          data-test-id="room-screen-download-desktop"
+        >
+          {{ messages.downloadDesktopApp }}
         </a>
       </div>
     </section>
