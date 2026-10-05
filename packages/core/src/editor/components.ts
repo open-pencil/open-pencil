@@ -90,6 +90,6 @@ export function createComponentActions(ctx: EditorContext) {
     ...componentPropertyActions,
     ...createSlotActions(ctx),
     ...createSlotAuthoringActions(ctx),
-    ...createBehaviourActions(ctx)
+    ...createBehaviourActions(ctx, variantActions)
   }
 }

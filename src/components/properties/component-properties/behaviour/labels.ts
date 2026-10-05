@@ -60,10 +60,22 @@ export function useBehaviourLabels() {
       focus: p.behaviourStateFocus,
       disabled: p.behaviourStateDisabled
     }
+    /** What a control's main value is called, which code calls its `value`. */
+    const mainValue: Partial<Record<BehaviourKind, string>> = {
+      switch: p.behaviourOnValue,
+      checkbox: p.behaviourChecked,
+      radio: p.behaviourChecked,
+      toggle: p.behaviourPressed,
+      textField: p.behaviourText,
+      textarea: p.behaviourText
+    }
     return {
       state: (state: InteractionState) => states[state],
+      /** A value's name for this kind of control. */
+      valueOf: (kind: BehaviourKind, id: string) =>
+        (id === 'value' ? mainValue[kind] : undefined) ??
+        (Object.hasOwn(values, id) ? values[id] : id),
       kind: (kind: BehaviourKind) => kinds[kind],
-      value: (id: string) => values[id] ?? id,
       part: (id: string) => parts[id] ?? id
     }
   })

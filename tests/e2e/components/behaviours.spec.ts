@@ -66,7 +66,7 @@ test('a Switch behaviour flips in preview and leaves the document alone', async 
   const section = propertySection(editor.page, 'Behaviour')
   await section.getByRole('button', { name: 'Add behaviour' }).click()
   await editor.page.getByRole('option', { name: /Switch/ }).click()
-  await section.getByRole('combobox', { name: 'Value' }).click()
+  await section.getByRole('combobox', { name: 'On' }).click()
   await editor.page.getByRole('option', { name: 'State' }).click()
   await expect(section.getByText('Ready', { exact: true })).toBeVisible()
 
@@ -266,4 +266,63 @@ test('a Text field takes typing in preview without triggering shortcuts', async 
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
   await editor.page.keyboard.press('Escape')
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toHaveCount(0)
+})
+
+test('a rectangle made a Textarea gets its text layer from the panel and takes typing', async () => {
+  const componentId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const component = store.graph.createNode('COMPONENT', store.state.currentPageId, {
+      name: 'Component',
+      x: 120,
+      y: 120,
+      width: 220,
+      height: 120,
+      fills: [
+        {
+          type: 'SOLID' as const,
+          color: { r: 0.85, g: 0.85, b: 0.85, a: 1 },
+          opacity: 1,
+          visible: true
+        }
+      ]
+    })
+    store.select([component.id])
+    return component.id
+  })
+  await editor.canvas.waitForRender()
+
+  const section = propertySection(editor.page, 'Behaviour')
+  await section.getByRole('button', { name: 'Add behaviour' }).click()
+  await editor.page.getByRole('option', { name: /Textarea/ }).click()
+  await expect(section.getByRole('button', { name: 'Needs Text' })).toBeVisible()
+  await section.getByRole('button', { name: 'Add text layer' }).click()
+  await expect(section.getByText('Ready', { exact: true })).toBeVisible()
+
+  const instanceId = await editor.page.evaluate((id) => {
+    const store = window.openPencil?.getStore?.()
+    const instance = store?.graph.createInstance(id, store.state.currentPageId, { x: 120, y: 300 })
+    return instance?.id ?? ''
+  }, componentId)
+  await editor.page.keyboard.press('Meta+Alt+Enter')
+  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
+  const point = await editor.page.evaluate(() => {
+    const state = window.openPencil?.getStore?.()?.state
+    if (!state) throw new Error('OpenPencil store not initialized')
+    return { x: 200 * state.zoom + state.panX, y: 360 * state.zoom + state.panY }
+  })
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas has no bounding box')
+  await editor.page.mouse.click(box.x + point.x, box.y + point.y)
+  await editor.page.keyboard.type(' typed')
+
+  await expect
+    .poll(() =>
+      editor.page.evaluate((id) => {
+        const store = window.openPencil?.getStore?.()
+        const copy = store?.state.play?.substitutes.get(id)?.graph
+        return copy?.getChildren(id).find((child) => child.type === 'TEXT')?.text
+      }, instanceId)
+    )
+    .toBe('Text typed')
 })

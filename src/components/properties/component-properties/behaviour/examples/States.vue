@@ -14,11 +14,10 @@ const interactionProperty = {
 }
 const thumbSlot = { id: 'thumb', name: 'Thumb', values: [] }
 const trackSlot = { id: 'track', name: 'Track', values: [] }
-const rangeSlot = { id: 'range', name: 'Range', values: [] }
 
 const switchComplete = ref<BehaviourControl>({
   kind: 'switch',
-  missing: 0,
+  missing: [],
   values: [
     {
       id: 'value',
@@ -27,17 +26,21 @@ const switchComplete = ref<BehaviourControl>({
       propertyId: 'state',
       on: 'On',
       off: 'Off',
-      options: [stateProperty, sizeProperty]
+      options: [stateProperty, sizeProperty],
+      creatable: true
     },
     {
       id: 'disabled',
       type: 'boolean',
       required: false,
       propertyId: null,
-      options: [stateProperty, sizeProperty]
+      options: [stateProperty, sizeProperty],
+      creatable: true
     }
   ],
-  parts: [{ id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot] }],
+  parts: [
+    { id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot], creatable: false }
+  ],
   states: {
     propertyId: 'interaction',
     values: { rest: 'Default', hover: 'Hover', pressed: 'Pressed', disabled: 'Disabled' },
@@ -46,22 +49,50 @@ const switchComplete = ref<BehaviourControl>({
 })
 const sliderIncomplete = ref<BehaviourControl>({
   kind: 'slider',
-  missing: 1,
+  missing: ['thumb'],
   values: [
     { id: 'value', type: 'number', min: 0, max: 100, step: 1, default: 50 },
-    { id: 'disabled', type: 'boolean', required: false, propertyId: null, options: [stateProperty] }
+    {
+      id: 'disabled',
+      type: 'boolean',
+      required: false,
+      propertyId: null,
+      options: [stateProperty],
+      creatable: false
+    }
   ],
   parts: [
-    {
-      id: 'track',
-      required: true,
-      propertyId: 'track',
-      options: [trackSlot, rangeSlot, thumbSlot]
-    },
-    { id: 'range', required: false, propertyId: null, options: [trackSlot, rangeSlot, thumbSlot] },
-    { id: 'thumb', required: true, propertyId: null, options: [trackSlot, rangeSlot, thumbSlot] }
+    { id: 'track', required: true, propertyId: 'track', options: [trackSlot], creatable: true },
+    { id: 'range', required: false, propertyId: null, options: [trackSlot], creatable: true },
+    { id: 'thumb', required: true, propertyId: null, options: [], creatable: true }
   ],
   states: { propertyId: null, values: {}, options: [interactionProperty] }
+})
+/** A plain rectangle made a component and given a Textarea behaviour: nothing to bind yet. */
+const textareaBare = ref<BehaviourControl>({
+  kind: 'textarea',
+  missing: ['value'],
+  values: [
+    { id: 'value', type: 'text', required: true, propertyId: null, options: [], creatable: true },
+    {
+      id: 'filled',
+      type: 'boolean',
+      required: false,
+      propertyId: null,
+      options: [],
+      creatable: false
+    },
+    {
+      id: 'disabled',
+      type: 'boolean',
+      required: false,
+      propertyId: null,
+      options: [],
+      creatable: false
+    }
+  ],
+  parts: [],
+  states: { propertyId: null, values: {}, options: [] }
 })
 const log = ref<string[]>([])
 const record = (entry: string) => {
@@ -72,7 +103,7 @@ const record = (entry: string) => {
 <template>
   <div class="flex items-start gap-6">
     <div
-      v-for="(state, index) in [null, switchComplete, sliderIncomplete]"
+      v-for="(state, index) in [null, textareaBare, switchComplete, sliderIncomplete]"
       :key="index"
       class="w-[240px] overflow-hidden rounded-lg border border-border bg-panel"
     >
@@ -89,6 +120,9 @@ const record = (entry: string) => {
         @bind-part="(part, property) => record(`bind ${part} → ${property}`)"
         @bind-states="(property) => record(`states → ${property}`)"
         @map-state="(state, value) => record(`${state} → ${value || 'default'}`)"
+        @create-text="(value, name) => record(`create text ${name} for ${value}`)"
+        @create-variant="(value, name) => record(`create ${name} variants for ${value}`)"
+        @create-part="(part, name) => record(`create ${name} slot for ${part}`)"
       />
     </div>
     <ul class="text-xs text-muted" aria-label="Events">

@@ -59,7 +59,8 @@ export function useBehaviour() {
             propertyId: binding?.propertyId ?? null,
             on: binding?.on,
             off: binding?.off,
-            options: options(['VARIANT', 'BOOLEAN'])
+            options: options(['VARIANT', 'BOOLEAN']),
+            creatable: target.type === 'COMPONENT_SET'
           }
         ]
       }
@@ -70,7 +71,8 @@ export function useBehaviour() {
             type: 'text',
             required: value.required,
             propertyId: textBinding(current, value.id) ?? null,
-            options: options(['TEXT'])
+            options: options(['TEXT']),
+            creatable: true
           }
         ]
       if (value.type === 'number')
@@ -90,7 +92,8 @@ export function useBehaviour() {
         id: part.id,
         required: part.required,
         propertyId: current.parts[part.id] ?? null,
-        options: options(['SLOT'])
+        options: options(['SLOT']),
+        creatable: target.type === 'COMPONENT'
       })),
       states: {
         propertyId: current.states?.propertyId ?? null,
@@ -102,7 +105,7 @@ export function useBehaviour() {
         ),
         options: options(['VARIANT'])
       },
-      missing: missingBindings(editor.graph, target, current).length
+      missing: missingBindings(editor.graph, target, current)
     }
   })
 
@@ -155,6 +158,18 @@ export function useBehaviour() {
         current.parts[partId] = propertyId
         return current
       }),
+    /** Add a text layer and text property for a text value, named `name`, and bind it. */
+    createText: (valueId: string, name: string) => {
+      if (owner.value) editor.addBehaviourText(owner.value.id, valueId, name)
+    },
+    /** Add an Off/On variant property named `name` for a boolean value, and bind it. */
+    createVariant: (valueId: string, name: string) => {
+      if (owner.value) editor.addBehaviourVariant(owner.value.id, valueId, name)
+    },
+    /** Add a slot frame named `name` for a part, and bind it. */
+    createPart: (partId: string, name: string) => {
+      if (owner.value) editor.addBehaviourPart(owner.value.id, partId, name)
+    },
     /**
      * Draw interaction states with a variant property, its values named like states (Hover,
      * Pressed, …) mapped to them; an empty id stops drawing states.

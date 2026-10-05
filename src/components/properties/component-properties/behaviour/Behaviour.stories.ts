@@ -41,3 +41,12 @@ export const MapState: Story = {
     await waitFor(() => expect(canvas.getByText('pressed → default')).toBeVisible())
   }
 }
+
+export const CreateMissing: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Needs Text' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Add text layer' }))
+    await waitFor(() => expect(canvas.getByText('create text Text for value')).toBeVisible())
+  }
+}

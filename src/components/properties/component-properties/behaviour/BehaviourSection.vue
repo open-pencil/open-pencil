@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 import type {
-  BehaviourBooleanControl,
   BehaviourControl,
-  BehaviourNumberControl
+  BehaviourNumberControl,
+  BehaviourPartControl,
+  BehaviourValueControl
 } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
-import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import type { AppPickerItem } from '@/components/ui/select/AppPicker.vue'
-import AppPickerField from '@/components/ui/select/AppPickerField.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import AddBehaviourPicker from './AddBehaviourPicker.vue'
+import BehaviourRow from './BehaviourRow.vue'
 import BehaviourStates from './BehaviourStates.vue'
 import { useBehaviourLabels } from './labels'
 
 /**
- * The behaviour of the selected main component: which control it acts as, which of its
- * properties hold the control's values, and which of its slots are the control's parts.
+ * The behaviour of the selected main component: which control it acts as, the properties that
+ * hold its values, and the slots that are its parts. Rows it needs, or already uses, come
+ * first; the optional rest folds under More options. An empty row offers to create what it
+ * needs.
  */
 const { behaviour } = defineProps<{ behaviour: BehaviourControl | null }>()
 const emit = defineEmits<{
@@ -37,63 +37,71 @@ const emit = defineEmits<{
   bindPart: [partId: string, propertyId: string]
   bindStates: [propertyId: string]
   mapState: [state: InteractionState, value: string]
+  createText: [valueId: string, name: string]
+  createVariant: [valueId: string, name: string]
+  createPart: [partId: string, name: string]
 }>()
-const { panels, common } = useI18n()
+const { panels } = useI18n()
 const labels = useBehaviourLabels()
 
-function propertyItems(control: { options: { id: string; name: string }[] }): AppPickerItem[] {
-  return control.options.map((option) => ({ value: option.id, label: option.name }))
+type Row = { part: BehaviourPartControl } | { value: BehaviourValueControl }
+
+/** A row comes first when the control needs it, uses it, or keeps its own settings. */
+function first(row: BehaviourValueControl | BehaviourPartControl): boolean {
+  return !('required' in row) || row.required || !!row.propertyId
 }
-
-/** Variant values of the bound property, for choosing which mean on and off. */
-function variantValues(value: BehaviourBooleanControl) {
-  const option = value.options.find((item) => item.id === value.propertyId)
-  return (option?.values ?? []).map((name) => ({ value: name, label: name }))
-}
-
-function setMapping(value: BehaviourBooleanControl, side: 'on' | 'off', choice: string) {
-  emit('mapValue', value.id, {
-    on: side === 'on' ? choice : (value.on ?? ''),
-    off: side === 'off' ? choice : (value.off ?? '')
-  })
-}
-
-const NUMBER_FIELDS = ['min', 'max', 'step', 'default'] as const
-
-/** Number fields being typed in, by value id and field, reset whenever the behaviour changes. */
-const drafts = reactive<Record<string, string | number>>({})
-watch(
-  () => behaviour,
-  (current) => {
-    for (const value of current?.values ?? [])
-      if (value.type === 'number')
-        for (const field of NUMBER_FIELDS) drafts[`${value.id}:${field}`] = value[field]
-  },
-  { immediate: true, deep: true }
+const rows = computed<Row[]>(() => [
+  ...(behaviour?.values.map((value) => ({ value })) ?? []),
+  ...(behaviour?.parts.map((part) => ({ part })) ?? [])
+])
+const rowOf = (row: Row) => ('part' in row ? row.part : row.value)
+const mainRows = computed(() => rows.value.filter((row) => first(rowOf(row))))
+const moreRows = computed(() => rows.value.filter((row) => !first(rowOf(row))))
+/** States come first once drawn, or when there is nothing else to set up, as on a button. */
+const statesFirst = computed(
+  () =>
+    !!behaviour?.states.propertyId ||
+    !rows.value.some((row) => {
+      const control = rowOf(row)
+      return 'required' in control && control.required
+    })
 )
+const moreOpen = ref(false)
 
-function setNumberField(
-  value: BehaviourNumberControl,
-  field: (typeof NUMBER_FIELDS)[number],
-  input: string | number
-) {
-  const parsed = typeof input === 'number' ? input : Number.parseFloat(input)
-  if (!Number.isFinite(parsed)) return
-  const { id: _id, type: _type, ...settings } = value
-  emit('setNumber', value.id, { ...settings, [field]: parsed })
+function bind(row: Row, propertyId: string) {
+  if ('part' in row) emit('bindPart', row.part.id, propertyId)
+  else if (row.value.type === 'text') emit('bindText', row.value.id, propertyId)
+  else emit('bindValue', row.value.id, propertyId)
 }
 
-function numberLabel(field: (typeof NUMBER_FIELDS)[number]) {
-  const p = panels.value
-  return {
-    min: p.behaviourMin,
-    max: p.behaviourMax,
-    step: p.behaviourStep,
-    default: p.behaviourDefault
-  }[field]
+function create(row: Row, name: string) {
+  if ('part' in row) emit('createPart', row.part.id, name)
+  else if (row.value.type === 'text') emit('createText', row.value.id, name)
+  else emit('createVariant', row.value.id, name)
 }
 
 const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : null))
+
+/** What the missing chip says: the one row missing, or how many are. */
+const missingLabel = computed(() => {
+  const missing = behaviour?.missing ?? []
+  const [only] = missing
+  if (!behaviour || missing.length !== 1 || !only)
+    return panels.value.behaviourMissingCount(missing.length)
+  const isPart = behaviour.parts.some((row) => row.id === only)
+  return panels.value.behaviourNeeds({
+    name: isPart ? labels.value.part(only) : labels.value.valueOf(behaviour.kind, only)
+  })
+})
+
+const root = useTemplateRef<HTMLElement>('root')
+/** Bring the first missing row into view and focus its control. */
+function showMissing() {
+  const [missing] = behaviour?.missing ?? []
+  const row = missing ? root.value?.querySelector<HTMLElement>(`[data-row="${missing}"]`) : null
+  row?.scrollIntoView({ block: 'nearest' })
+  row?.querySelector<HTMLElement>('button, input')?.focus()
+}
 </script>
 
 <template>
@@ -105,18 +113,20 @@ const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : nul
       </IconButton>
     </template>
 
-    <div v-if="behaviour && kind" class="flex flex-col gap-2" data-property="behaviour">
+    <div v-if="behaviour && kind" ref="root" class="flex flex-col gap-2" data-property="behaviour">
       <div class="flex items-center gap-1.5 text-xs text-surface">
         <icon-lucide-mouse-pointer-click class="size-3.5 shrink-0 text-component" />
         <span class="min-w-0 flex-1 truncate font-medium">{{ kind.label }}</span>
-        <span
-          v-if="behaviour.missing"
-          class="flex h-5 shrink-0 items-center gap-1 rounded bg-issue-warning/15 px-1.5 text-[10px] text-issue-warning"
+        <button
+          v-if="behaviour.missing.length"
+          type="button"
+          class="flex h-5 shrink-0 items-center gap-1 rounded bg-issue-warning/15 px-1.5 text-[10px] text-issue-warning hover:bg-issue-warning/25"
           data-property="behaviour-missing"
+          @click="showMissing"
         >
           <SeverityIcon severity="warning" />
-          {{ panels.behaviourMissingCount(behaviour.missing) }}
-        </span>
+          {{ missingLabel }}
+        </button>
         <span
           v-else
           class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted"
@@ -126,100 +136,48 @@ const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : nul
         </span>
       </div>
 
-      <div class="flex flex-col gap-1.5">
-        <div class="text-[11px] text-muted">{{ panels.behaviourValues }}</div>
-        <PanelFieldGroup
-          v-for="value in behaviour.values"
-          :key="value.id"
-          :label="labels.value(value.id)"
-        >
-          <template v-if="value.type === 'boolean'">
-            <AppPickerField
-              :model-value="value.propertyId ?? ''"
-              :items="propertyItems(value)"
-              :label="labels.value(value.id)"
-              :placeholder="panels.behaviourChooseProperty"
-              :search-placeholder="panels.searchComponentProperties"
-              :empty-label="panels.noComponentProperties"
-              :close-label="common.close"
-              :data-property="`behaviour-value-${value.id}`"
-              :data-missing="(value.required && !value.propertyId) || undefined"
-              @update:model-value="emit('bindValue', value.id, $event)"
-            />
-            <div
-              v-if="value.propertyId && variantValues(value).length"
-              class="mt-1 grid grid-cols-2 gap-1"
-            >
-              <AppSelect
-                :label="panels.behaviourOnValue"
-                :model-value="value.on ?? ''"
-                :options="variantValues(value)"
-                @update:model-value="setMapping(value, 'on', $event)"
-              />
-              <AppSelect
-                :label="panels.behaviourOffValue"
-                :model-value="value.off ?? ''"
-                :options="variantValues(value)"
-                @update:model-value="setMapping(value, 'off', $event)"
-              />
-            </div>
-          </template>
-          <AppPickerField
-            v-else-if="value.type === 'text'"
-            :model-value="value.propertyId ?? ''"
-            :items="propertyItems(value)"
-            :label="labels.value(value.id)"
-            :placeholder="panels.behaviourChooseProperty"
-            :search-placeholder="panels.searchComponentProperties"
-            :empty-label="panels.noComponentProperties"
-            :close-label="common.close"
-            :data-property="`behaviour-value-${value.id}`"
-            :data-missing="(value.required && !value.propertyId) || undefined"
-            @update:model-value="emit('bindText', value.id, $event)"
-          />
-          <div v-else class="grid grid-cols-4 gap-1" :data-property="`behaviour-value-${value.id}`">
-            <AppInput
-              v-for="field in NUMBER_FIELDS"
-              :key="field"
-              v-model="drafts[`${value.id}:${field}`]"
-              type="number"
-              size="sm"
-              tone="panel"
-              :aria-label="numberLabel(field)"
-              :placeholder="numberLabel(field)"
-              @change="setNumberField(value, field, drafts[`${value.id}:${field}`] ?? '')"
-            />
-          </div>
-        </PanelFieldGroup>
-      </div>
-
-      <div v-if="behaviour.parts.length" class="flex flex-col gap-1.5">
-        <div class="text-[11px] text-muted">{{ panels.behaviourParts }}</div>
-        <PanelFieldGroup
-          v-for="part in behaviour.parts"
-          :key="part.id"
-          :label="labels.part(part.id)"
-        >
-          <AppPickerField
-            :model-value="part.propertyId ?? ''"
-            :items="propertyItems(part)"
-            :label="labels.part(part.id)"
-            :placeholder="panels.behaviourChooseSlot"
-            :search-placeholder="panels.searchComponentProperties"
-            :empty-label="panels.behaviourNoSlots"
-            :close-label="common.close"
-            :data-property="`behaviour-part-${part.id}`"
-            :data-missing="(part.required && !part.propertyId) || undefined"
-            @update:model-value="emit('bindPart', part.id, $event)"
-          />
-        </PanelFieldGroup>
-      </div>
-
+      <BehaviourRow
+        v-for="row in mainRows"
+        :key="rowOf(row).id"
+        :kind="behaviour.kind"
+        :row="row"
+        @bind="bind(row, $event)"
+        @create="create(row, $event)"
+        @map-value="emit('mapValue', rowOf(row).id, $event)"
+        @set-number="emit('setNumber', rowOf(row).id, $event)"
+      />
       <BehaviourStates
+        v-if="statesFirst"
         :states="behaviour.states"
         @bind="emit('bindStates', $event)"
         @map="(state, value) => emit('mapState', state, value)"
       />
+
+      <AppCollapsible
+        v-if="moreRows.length || !statesFirst"
+        v-model:open="moreOpen"
+        :label="panels.behaviourMoreOptions"
+        :ui="{ trigger: 'text-[11px] text-muted hover:text-surface', icon: 'size-3' }"
+        data-property="behaviour-more"
+      >
+        <div class="flex flex-col gap-2 pt-2">
+          <BehaviourRow
+            v-for="row in moreRows"
+            :key="rowOf(row).id"
+            :kind="behaviour.kind"
+            :row="row"
+            @bind="bind(row, $event)"
+            @create="create(row, $event)"
+            @map-value="emit('mapValue', rowOf(row).id, $event)"
+          />
+          <BehaviourStates
+            v-if="!statesFirst"
+            :states="behaviour.states"
+            @bind="emit('bindStates', $event)"
+            @map="(state, value) => emit('mapState', state, value)"
+          />
+        </div>
+      </AppCollapsible>
     </div>
   </PanelSection>
 </template>

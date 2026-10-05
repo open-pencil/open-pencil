@@ -20,5 +20,8 @@ const behaviour = useBehaviour()
     @bind-part="behaviour.bindPart"
     @bind-states="behaviour.bindStates"
     @map-state="behaviour.mapState"
+    @create-text="behaviour.createText"
+    @create-variant="behaviour.createVariant"
+    @create-part="behaviour.createPart"
   />
 </template>

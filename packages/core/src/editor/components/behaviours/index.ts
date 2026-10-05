@@ -2,12 +2,16 @@ import { readBehaviour, withBehaviour, type Behaviour } from '@open-pencil/scene
 
 import type { EditorContext } from '#core/editor/types'
 
+import { createBehaviourCompletionActions } from './complete'
+
+type VariantActions = Parameters<typeof createBehaviourCompletionActions>[2]
+
 function behaviourEditLabel(before: Behaviour | null, after: Behaviour | null): string {
   if (!after) return 'Remove behaviour'
   return before ? 'Edit behaviour' : 'Add behaviour'
 }
 
-export function createBehaviourActions(ctx: EditorContext) {
+export function createBehaviourActions(ctx: EditorContext, variants: VariantActions) {
   /**
    * Set the behaviour a component or component set keeps, or remove it with null, as one undo
    * step. The panel composes the new behaviour; this only stores it.
@@ -26,5 +30,5 @@ export function createBehaviourActions(ctx: EditorContext) {
     ctx.undo.push({ label, forward: () => apply(after), inverse: () => apply(before) })
   }
 
-  return { setBehaviour }
+  return { setBehaviour, ...createBehaviourCompletionActions(ctx, setBehaviour, variants) }
 }
