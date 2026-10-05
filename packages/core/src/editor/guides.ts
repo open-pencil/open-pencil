@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 
 import type { EditorContext } from './types'
@@ -13,7 +15,7 @@ function replaceGuides(ctx: EditorContext, ownerId: string, guides: CanvasGuide[
   const node = ctx.graph.getNode(ownerId)
   if (!node) return
   ctx.graph.updateNode(ownerId, { guides: structuredClone(guides) })
-  node.source.editedFields = [...new Set([...node.source.editedFields, 'guides'])]
+  node.source.editedFields = uniq([...node.source.editedFields, 'guides'])
   ctx.emitEditorEvent('guides:changed', ownerId, structuredClone(guides))
   ctx.requestRender()
 }

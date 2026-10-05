@@ -1,4 +1,5 @@
 import { promiseTimeout } from '@vueuse/core'
+import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
@@ -512,9 +513,11 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
         `MCP server exited before startup completed (code ${earlyExit.code ?? 'null'}, signal ${earlyExit.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
         mcpFailure(
           'exited',
-          [`code=${earlyExit.code ?? 'null'}`, `signal=${earlyExit.signal ?? 'null'}`, details]
-            .filter(Boolean)
-            .join(' ')
+          compact([
+            `code=${earlyExit.code ?? 'null'}`,
+            `signal=${earlyExit.signal ?? 'null'}`,
+            details
+          ]).join(' ')
         )
       )
     )

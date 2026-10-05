@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import type {
   SceneNode,
   VectorNetwork,
@@ -251,7 +253,7 @@ export function roundedRectPath(node: SceneNode): string {
   br = Math.min(br, w / 2, h / 2)
   bl = Math.min(bl, w / 2, h / 2)
 
-  return [
+  return compact([
     `M${round(tl)} 0`,
     `L${round(w - tr)} 0`,
     tr > 0 ? `A${round(tr)} ${round(tr)} 0 0 1 ${round(w)} ${round(tr)}` : '',
@@ -262,9 +264,7 @@ export function roundedRectPath(node: SceneNode): string {
     `L0 ${round(tl)}`,
     tl > 0 ? `A${round(tl)} ${round(tl)} 0 0 1 ${round(tl)} 0` : '',
     'Z'
-  ]
-    .filter(Boolean)
-    .join('')
+  ]).join('')
 }
 
 export function arcPath(node: SceneNode): string {

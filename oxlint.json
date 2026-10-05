@@ -420,11 +420,18 @@
     "no-loop-func": "error",
     "typescript/no-dynamic-delete": "error",
     "open-pencil/no-hand-rolled-base64": "error",
+    "open-pencil/prefer-es-toolkit": "error",
     "open-pencil/no-module-mocking": "error",
     "open-pencil/no-reduce-accumulator-copy": "error",
     "open-pencil/no-widen-then-assert": "error"
   },
   "overrides": [
+    {
+      "files": ["tools/ci/policy/src/**/*.ts"],
+      "rules": {
+        "open-pencil/prefer-es-toolkit": "off"
+      }
+    },
     {
       "files": ["tools/checks/lint/src/rules/quality/widen-then-assert.ts"],
       "rules": {

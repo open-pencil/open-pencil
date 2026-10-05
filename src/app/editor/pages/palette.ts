@@ -29,7 +29,7 @@ function pageItem(
   return {
     id: `page:${page.id}`,
     label: page.name,
-    description: [note, people].filter(Boolean).join(' · ') || undefined,
+    description: compact([note, people]).join(' · ') || undefined,
     icon: IconFile,
     onSelect: () => void store.switchPage(page.id),
     ...extra

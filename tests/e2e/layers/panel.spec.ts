@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup('/demo')
@@ -34,7 +36,7 @@ async function getSceneTree(): Promise<SceneTreeNode> {
       return {
         name: node.name,
         type: node.type,
-        children: node.childIds.map((cid: string) => nodeTree(cid)).filter(Boolean)
+        children: compact(node.childIds.map((cid: string) => nodeTree(cid)))
       }
     }
     const tree = nodeTree(store.state.currentPageId)

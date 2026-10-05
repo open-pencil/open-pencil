@@ -1,15 +1,10 @@
+import { compact, uniq } from 'es-toolkit/array'
+
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
 
 export function parseDisabledTools(value: string | undefined): string[] {
   if (!value) return []
-  return [
-    ...new Set(
-      value
-        .split(',')
-        .map((name) => name.trim())
-        .filter(Boolean)
-    )
-  ]
+  return uniq(compact(value.split(',').map((name) => name.trim())))
 }
 
 export function isToolEnabled(descriptor: ToolDescriptor, policy: ToolPolicy): boolean {

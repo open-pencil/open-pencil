@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compact } from 'es-toolkit/array'
 import {
   TooltipContent,
   TooltipPortal,
@@ -72,7 +73,7 @@ const items = computed(() =>
       id: issue.id,
       severity: issue.severity,
       title: ruleTitle(issue.ruleId, messages.value),
-      detail: [layer, detail].filter(Boolean).join(' · ')
+      detail: compact([layer, detail]).join(' · ')
     }
   })
 )
