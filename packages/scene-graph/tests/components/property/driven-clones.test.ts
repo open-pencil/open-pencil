@@ -2,6 +2,13 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+/** `createInstance` returns null when the component cannot be placed; these fixtures require one. */
+function placeInstance(graph: SceneGraph, componentId: string, parentId: string) {
+  const instance = graph.createInstance(componentId, parentId)
+  if (!instance) throw new Error(`Could not place an instance of ${componentId}`)
+  return instance
+}
+
 /**
  * A component can gain a property-driven child after an instance of it exists. Cloning that
  * child into the instance must honour the assignment the instance already made, not the
@@ -16,7 +23,7 @@ function graphWithLateChild() {
       { id: '207:1', name: 'Label', type: 'TEXT', defaultValue: 'Default' }
     ]
   })
-  const instance = graph.createInstance(component.id, page.id)
+  const instance = placeInstance(graph, component.id, page.id)
   graph.updateNode(instance.id, { componentPropertyAssignments: { '207:1': 'Assigned' } })
   return { graph, component, instance, page }
 }
@@ -44,7 +51,7 @@ test('an instance that assigns nothing still takes the component default', () =>
       { id: '207:1', name: 'Label', type: 'TEXT', defaultValue: 'Default' }
     ]
   })
-  const instance = graph.createInstance(component.id, page.id)
+  const instance = placeInstance(graph, component.id, page.id)
 
   graph.createNode('TEXT', component.id, {
     name: 'Label',
@@ -101,9 +108,9 @@ test('a nested component that defines the id keeps an outer assignment out', () 
       { id: 'shared', name: 'Caption', type: 'TEXT', defaultValue: 'Outer default' }
     ]
   })
-  graph.createInstance(inner.id, outer.id)
+  placeInstance(graph, inner.id, outer.id)
 
-  const placed = graph.createInstance(outer.id, page.id)
+  const placed = placeInstance(graph, outer.id, page.id)
   graph.updateNode(placed.id, { componentPropertyAssignments: { shared: 'Outer assigned' } })
 
   // Inner gains a layer its own property drives, after everything above exists.
@@ -141,9 +148,9 @@ test('a component nested in a component does not own the outer property', () => 
   })
   // A plain COMPONENT nested inside another COMPONENT, defining nothing of its own.
   const nested = graph.createNode('COMPONENT', outer.id, { name: 'Nested' })
-  const nestedInstance = graph.createInstance(nested.id, outer.id)
+  const nestedInstance = placeInstance(graph, nested.id, outer.id)
 
-  const placed = graph.createInstance(outer.id, page.id)
+  const placed = placeInstance(graph, outer.id, page.id)
   graph.updateNode(placed.id, { componentPropertyAssignments: { '207:1': 'Assigned' } })
 
   graph.createNode('TEXT', nested.id, {
