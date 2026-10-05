@@ -10,7 +10,13 @@ export function scopedStoreFactory<Args extends unknown[], Store extends { dispo
 ): (...args: Args) => Store {
   return (...args) => {
     const scope = effectScope(true)
-    const store = scope.run(() => build(...args))
+    let store: Store | undefined
+    try {
+      store = scope.run(() => build(...args))
+    } catch (error) {
+      scope.stop()
+      throw error
+    }
     if (!store) throw new Error('Editor store scope is inactive')
     const dispose = store.dispose.bind(store)
     store.dispose = () => {
