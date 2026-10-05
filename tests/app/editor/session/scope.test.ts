@@ -1,20 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getCurrentScope, ref, watch, type EffectScope } from 'vue'
+import { getCurrentScope, type EffectScope } from 'vue'
 
 import { scopedStoreFactory } from '@/app/editor/session/scope'
 
 describe('scopedStoreFactory', () => {
-  test('stops the store scope on dispose', () => {
+  test('stops the store scope after the store disposes', () => {
     let scope: EffectScope | undefined
+    let disposed = 0
     const create = scopedStoreFactory(() => {
       scope = getCurrentScope()
-      watch(ref(0), () => {})
-      return { dispose() {} }
+      return { dispose: () => disposed++ }
     })
 
     create().dispose()
 
+    expect(disposed).toBe(1)
     expect(scope?.active).toBe(false)
   })
 
@@ -22,7 +23,6 @@ describe('scopedStoreFactory', () => {
     let scope: EffectScope | undefined
     const create = scopedStoreFactory((): { dispose(): void } => {
       scope = getCurrentScope()
-      watch(ref(0), () => {})
       throw new Error('build failed')
     })
 
