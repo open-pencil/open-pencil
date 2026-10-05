@@ -9,16 +9,16 @@ Zmienne przechowują tokeny projektu przeznaczone do ponownego użycia: kolory, 
 
 ## Otwieranie okna zmiennych
 
-Gdy żaden obiekt nie jest zaznaczony, karta „Projekt” pokazuje właściwości strony, w tym sekcję „Zmienne” z liczbą kolekcji i zmiennych. Kliknij ikonę ustawień, aby otworzyć okno.
+Otwórz je z **Widok → Zmienne…**, wyszukując „Zmienne” w palecie poleceń albo, gdy żaden obiekt nie jest zaznaczony, z sekcji „Zmienne” na karcie „Projekt”. Przycisk **Rozwiń** w rogu okna daje mu większą część okna aplikacji.
 
 Okno wyświetla po lewej zmienne aktywnej kolekcji, po prawej umożliwia edycję zaznaczonej zmiennej lub kolekcji, a poniżej pokazuje arkusz stylów, który z nich powstaje. W wąskim oknie lub na telefonie pokazuje jeden tryb naraz, a zmienna, ustawienia kolekcji albo arkusz stylów otwierają się nad listą z przyciskiem powrotu.
 
 ## Kolekcje
 
-Zmienne są łączone w kolekcje, wyświetlane jako karty (na wąskich ekranach jako menu).
+Zmienne są łączone w kolekcje. W szerokim oknie są wypisane na pasku bocznym wraz z liczbą zmiennych w każdej; w węższym są kartami, a na telefonie menu.
 
-- **Przejście do kolekcji:** kliknij kartę
-- **Tworzenie kolekcji:** kliknij przycisk z folderem na pasku narzędzi (**Utwórz kolekcję**)
+- **Przejście do kolekcji:** kliknij ją na pasku bocznym lub jej kartę
+- **Tworzenie kolekcji:** kliknij **+** obok **Kolekcje** albo przycisk z folderem na pasku narzędzi (**Utwórz kolekcję**)
 - **Zmiana nazwy lub usuwanie:** gdy żadna zmienna nie jest zaznaczona, prawa strona edytuje kolekcję: zmień jej nazwę albo usuń ją z menu **⋯** obok nazwy (**Usuń kolekcję**)
 
 ## Tryby
@@ -47,23 +47,27 @@ Na płótnie warstwa pokazuje tryb, gdy ustawisz ją na ten tryb, niezależnie o
 
 Zmienne są grupowane według folderów w ich nazwach (`Brand/Primary` jest widoczna jako *Primary* w folderze *Brand*) i pokazują nazwę CSS oraz jedną wartość dla każdego trybu.
 
-- **Tworzenie zmiennej:** kliknij **+** na pasku narzędzi i wybierz typ; nowa zmienna otworzy się do edycji
-- **Zaznaczanie:** kliknij wiersz albo poruszaj się strzałkami i naciśnij Enter
-- **Wyszukiwanie:** wpisz tekst w pasku wyszukiwania, aby filtrować zmienne według nazwy
-- **Usuwanie:** kliknij **Usuń zmienną** na dole jej ustawień
+- **Tworzenie zmiennej:** kliknij **Utwórz zmienną** (lub **+**) i wybierz typ; nowa zmienna otworzy się do edycji
+- **Zaznaczanie:** kliknij wiersz albo poruszaj się strzałkami i naciśnij Enter. Kliknięcie z Shift zaznacza zakres, a kliknięcie z Cmd (Ctrl w Windows i Linuksie) dodaje wiersz lub usuwa go z zaznaczenia
+- **Filtrowanie:** wpisz tekst w pasku wyszukiwania, aby filtrować według nazwy, kliknij grupę na pasku bocznym, aby pokazać tylko ją i grupy w niej zawarte, albo użyj przycisku filtra (**Filtruj według typu**), aby pokazać tylko niektóre typy
+- **Zmiana nazwy lub edycja w miejscu:** kliknij dwukrotnie nazwę albo wartość liczbową lub tekstową na liście
+- **Prawy przycisk myszy:** zmień nazwę, zduplikuj (**Duplikuj**), przenieś do grupy lub nowej grupy (**Przenieś do grupy**, **Nowa grupa…**) albo usuń (**Usuń zmienne**) zaznaczone zmienne; usuwa je też Delete lub Backspace
+- **Zmiana kolejności:** przeciągnij wiersz; kolejność jest zapisywana w pliku
+- **Zaznaczonych kilka:** prawa strona przenosi je do grupy, duplikuje albo usuwa
 
 Zaznaczenie zmiennej pozwala edytować:
 
-- **Nazwa** i **Nazwa CSS:** pozostaw nazwę CSS pustą, aby utworzyć ją z nazwy i zakresów, na przykład `--color-brand-primary`
+- **Nazwa** i **Nazwa CSS:** pozostaw nazwę CSS pustą, aby utworzyć ją z nazwy i zakresów, na przykład `--color-brand-primary`. Wpisz nazwę bez `--`; nazwa, której CSS nie może użyć, jest oznaczana i nie jest zapisywana
 - **Jednostka:** dla liczb `px`, `rem`, `%`, `ms`, `s`, `deg` albo brak; wartości wpisuje się w tej jednostce
-- **Wartości:** po jednej dla każdego trybu; kolor otwiera wybór koloru, a alias pokazuje zmienną, do której prowadzi
+- **Wartość** lub **Wartości:** po jednej dla każdego trybu; kolor otwiera wybór koloru. Przycisk zmiennej (**Użyj zmiennej**) obok wartości kieruje ją do innej zmiennej tego samego typu, czyli aliasu, który podąża za tą zmienną; **Odłącz zmienną** przywraca wartość, którą pokazywał
 - **Wyrażenie CSS:** dla liczb wartość taka jak `clamp(1rem, 4vw, 1.5rem)` zapisywana w CSS zamiast liczby, podczas gdy kanwa nadal rysuje liczbę
 - **Zakresy:** dla jakich właściwości zmienna jest proponowana
 - **Opis**
+- **Ukryj przy publikowaniu:** pliki, które używają tego jako biblioteki, nie widzą zmiennej
 
 ## Arkusz stylów
 
-Dół okna pokazuje aktywną kolekcję jako właściwości niestandardowe CSS albo motyw Tailwind v4. Przycisk kopiowania (**Kopiuj wszystkie zmienne jako CSS**) kopiuje zmienne całego dokumentu w tym formacie, dzięki czemu aliasy do innych kolekcji są rozwiązywane.
+Dół okna pokazuje aktywną kolekcję jako właściwości niestandardowe CSS. Przycisk kopiowania (**Kopiuj wszystkie zmienne jako CSS**) kopiuje zmienne całego dokumentu jako CSS albo motyw Tailwind v4 (**Kopiuj wszystkie zmienne jako motyw Tailwind**), dzięki czemu aliasy do innych kolekcji są rozwiązywane.
 
 ## Powiązywanie zmiennych z zalewami
 

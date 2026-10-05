@@ -9,16 +9,16 @@ Variablen speichern wiederverwendbare Designtoken wie Farben, Abstände und ande
 
 ## Variablen-Dialog öffnen
 
-Wenn kein Objekt ausgewählt ist, zeigt der Bereich Design die Seiteneigenschaften, darunter einen Bereich Variablen mit der Anzahl der Sammlungen und Variablen. Das Einstellungssymbol öffnet den Dialog.
+Der Dialog öffnet sich über **Ansicht → Variablen…**, über die Suche nach „Variablen“ in der Befehlspalette oder, wenn kein Objekt ausgewählt ist, im Bereich Variablen des Bereichs Design. **Erweitern** in der Ecke des Dialogs gibt ihm den größten Teil des Fensters.
 
 Der Dialog listet links die Variablen der aktiven Sammlung auf, bearbeitet rechts die ausgewählte Variable oder die Sammlung und zeigt darunter das daraus entstehende Stylesheet. In einem schmalen Fenster oder auf dem Smartphone zeigt er jeweils einen Modus an. Eine Variable, die Sammlungseinstellungen oder das Stylesheet öffnen sich dann über der Liste mit einer Zurück-Schaltfläche.
 
 ## Sammlungen
 
-Variablen sind in Sammlungen organisiert, die als Registerkarten erscheinen (auf schmalen Bildschirmen als Menü).
+Variablen sind in Sammlungen organisiert. In einem breiten Dialog stehen sie in einer Seitenleiste mit der Anzahl der Variablen je Sammlung; schmaler erscheinen sie als Registerkarten, auf dem Smartphone als Menü.
 
-- **Sammlung wechseln:** auf eine Registerkarte klicken
-- **Sammlung erstellen:** in der Werkzeugleiste auf die Ordner-Schaltfläche (**Sammlung erstellen**) klicken
+- **Sammlung wechseln:** in der Seitenleiste oder auf der Registerkarte darauf klicken
+- **Sammlung erstellen:** neben **Sammlungen** auf **+** oder in der Werkzeugleiste auf die Ordner-Schaltfläche (**Sammlung erstellen**) klicken
 - **Umbenennen oder löschen:** Ist keine Variable ausgewählt, bearbeitet die rechte Seite die Sammlung: Dort lässt sich der Name ändern oder die Sammlung über das Menü **⋯** neben dem Namen löschen (**Sammlung löschen**)
 
 ## Modi
@@ -47,23 +47,27 @@ Auf der Arbeitsfläche zeigt eine Ebene einen Modus, sobald sie auf ihn gesetzt 
 
 Variablen sind nach den Ordnern in ihren Namen gruppiert (`Brand/Primary` erscheint als *Primary* unter *Brand*) und zeigen ihren CSS-Namen sowie einen Wert pro Modus.
 
-- **Variable erstellen:** in der Werkzeugleiste auf **+** klicken und einen Typ wählen; die neue Variable wird zur Bearbeitung geöffnet
-- **Auswählen:** auf eine Zeile klicken oder mit den Pfeiltasten navigieren und die Eingabetaste drücken
-- **Suchen:** in das Suchfeld tippen, um Variablen nach Namen zu filtern
-- **Löschen:** unten in den Einstellungen der Variable auf **Variable löschen** klicken
+- **Variable erstellen:** auf **Variable erstellen** (oder **+**) klicken und einen Typ wählen; die neue Variable wird zur Bearbeitung geöffnet
+- **Auswählen:** auf eine Zeile klicken oder mit den Pfeiltasten navigieren und die Eingabetaste drücken. Shift-Klick wählt einen Bereich aus, Cmd-Klick (Strg-Klick unter Windows und Linux) fügt eine Zeile hinzu oder entfernt sie
+- **Filtern:** in das Suchfeld tippen, um nach Namen zu filtern, in der Seitenleiste auf eine Gruppe klicken, um nur diese Gruppe und die darin enthaltenen Gruppen anzuzeigen, oder über die Filter-Schaltfläche (**Nach Typ filtern**) nur bestimmte Typen anzeigen
+- **Umbenennen oder direkt bearbeiten:** auf einen Namen oder einen Zahlen- oder Textwert in der Liste doppelklicken
+- **Rechtsklick:** die ausgewählten Variablen umbenennen, duplizieren (**Duplizieren**), in eine Gruppe oder eine neue Gruppe verschieben (**In Gruppe verschieben**, **Neue Gruppe…**) oder löschen (**Variablen löschen**); auch Delete oder Backspace löscht sie
+- **Neu anordnen:** eine Zeile ziehen; die Reihenfolge wird in der Datei gespeichert
+- **Mehrere ausgewählt:** die rechte Seite verschiebt sie in eine Gruppe, dupliziert sie oder löscht sie
 
 Die Auswahl einer Variable bearbeitet:
 
-- **Name** und **CSS-Name:** den CSS-Namen leer lassen, damit er aus Name und Geltungsbereichen abgeleitet wird, etwa `--color-brand-primary`
+- **Name** und **CSS-Name:** den CSS-Namen leer lassen, damit er aus Name und Geltungsbereichen abgeleitet wird, etwa `--color-brand-primary`. Den Namen ohne `--` eingeben; ein Name, den CSS nicht verwenden kann, wird markiert und nicht gespeichert
 - **Einheit:** bei Zahlen `px`, `rem`, `%`, `ms`, `s`, `deg` oder keine; Werte werden in dieser Einheit eingegeben
-- **Werte:** pro Modus; eine Farbe öffnet die Farbauswahl, ein Alias zeigt die Variable, auf die er verweist
+- **Wert** oder **Werte:** einer pro Modus; eine Farbe öffnet die Farbauswahl. Die Variablen-Schaltfläche (**Variable verwenden**) neben einem Wert lässt ihn auf eine andere Variable desselben Typs verweisen, ein Alias, der dieser Variable folgt; **Variable lösen** macht daraus wieder den Wert, den er zeigte
 - **CSS-Ausdruck:** bei Zahlen ein Wert wie `clamp(1rem, 4vw, 1.5rem)`, der in CSS anstelle der Zahl geschrieben wird, während die Arbeitsfläche weiterhin die Zahl zeichnet
 - **Geltungsbereiche:** für welche Eigenschaften die Variable angeboten wird
 - **Beschreibung**
+- **Von Veröffentlichung ausblenden:** Dateien, die diese Datei als Bibliothek verwenden, sehen die Variable nicht
 
 ## Stylesheet
 
-Unten im Dialog wird die aktive Sammlung als CSS-Custom-Properties oder als Tailwind-v4-Theme angezeigt. Die Kopieren-Schaltfläche (**Alle Variablen als CSS kopieren**) kopiert die Variablen des gesamten Dokuments in diesem Format, sodass Aliase auf andere Sammlungen aufgelöst werden.
+Unten im Dialog wird die aktive Sammlung als CSS-Custom-Properties angezeigt. Die Kopieren-Schaltfläche (**Alle Variablen als CSS kopieren**) kopiert die Variablen des gesamten Dokuments als CSS oder als Tailwind-v4-Theme (**Alle Variablen als Tailwind-Theme kopieren**), sodass Aliase auf andere Sammlungen aufgelöst werden.
 
 ## Variablen an Füllungen binden
 

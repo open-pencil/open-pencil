@@ -80,4 +80,48 @@ describe('variable token undo', () => {
     editor.undo.undo()
     expect(dark()?.condition).toBeUndefined()
   })
+
+  test('hiding from publishing is a token field and undoes with the others', () => {
+    const editor = themeEditor()
+
+    editor.updateVariableToken('gutter', { hiddenFromPublishing: true })
+    expect(editor.graph.variables.get('gutter')?.hiddenFromPublishing).toBe(true)
+
+    editor.undo.undo()
+    expect(editor.graph.variables.get('gutter')?.hiddenFromPublishing).toBe(false)
+  })
+
+  test('a duplicate copies every field, sits after the original, and undoes', () => {
+    const editor = themeEditor()
+    editor.updateVariableToken('gutter', { unit: 'rem', scopes: ['GAP'] })
+
+    const copyId = editor.duplicateVariable('gutter', 'Gutter copy')
+    if (!copyId) throw new Error('the variable was not duplicated')
+    const copy = editor.graph.variables.get(copyId)
+
+    expect(copy).toMatchObject({
+      name: 'Gutter copy',
+      unit: 'rem',
+      scopes: ['GAP'],
+      valuesByMode: { light: 24, dark: 24 }
+    })
+    expect(editor.graph.variableCollections.get('theme')?.variableIds).toEqual(['gutter', copyId])
+
+    editor.undo.undo()
+    expect(editor.graph.variables.has(copyId)).toBe(false)
+    editor.undo.redo()
+    expect(editor.graph.variableCollections.get('theme')?.variableIds).toEqual(['gutter', copyId])
+  })
+
+  test('reordering variables is one undo step', () => {
+    const editor = themeEditor()
+    const other = editor.graph.createVariable('Other', 'FLOAT', 'theme', 4)
+    const order = () => editor.graph.variableCollections.get('theme')?.variableIds
+
+    editor.setVariableOrder('theme', [other.id, 'gutter'])
+    expect(order()).toEqual([other.id, 'gutter'])
+
+    editor.undo.undo()
+    expect(order()).toEqual(['gutter', other.id])
+  })
 })

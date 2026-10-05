@@ -1,30 +1,48 @@
 <script setup lang="ts">
 import { DialogTitle } from 'reka-ui'
+import { computed, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTokenCopy } from '@/app/editor/tokens/copy'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppDialogClose, AppDialogRoot } from '@/components/ui/dialog'
 import TokensPanel from '@/components/variables/TokensPanel.vue'
 
-const open = defineModel<boolean>('open', { default: false })
+const store = useEditorStore()
+const open = computed({
+  get: () => store.state.variablesOpen,
+  set: (value: boolean) => {
+    store.state.variablesOpen = value
+  }
+})
 
 const { variables, common } = useI18n()
-const copyTokens = createTokenCopy(useEditorStore())
+/** Expanding gives a large design system most of the window; it is kept for this session. */
+const expanded = ref(false)
+const copyTokens = createTokenCopy(store)
 </script>
 
 <template>
   <AppDialogRoot
     v-model:open="open"
-    size="xl"
-    height="full"
+    :size="expanded ? 'screen' : 'xl'"
+    :height="expanded ? 'screen' : 'full'"
     data-test-id="variables-dialog"
     :aria-describedby="undefined"
   >
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
     <TokensPanel @copy="copyTokens">
       <template #actions>
+        <IconButton
+          :label="expanded ? variables.collapse : variables.expand"
+          data-test-id="variables-expand"
+          @click="expanded = !expanded"
+        >
+          <icon-lucide-minimize-2 v-if="expanded" class="size-3.5" />
+          <icon-lucide-maximize-2 v-else class="size-3.5" />
+        </IconButton>
         <AppDialogClose :ariaLabel="common.close" />
       </template>
     </TokensPanel>

@@ -7,12 +7,14 @@ import {
   variableCSSNames,
   variableUnit
 } from '@open-pencil/dom-css/export'
-import type {
-  Color,
-  SceneGraph,
-  Variable,
-  VariableCollection,
-  VariableValue
+import {
+  tokenNumberFromUnit,
+  tokenNumberInUnit,
+  type Color,
+  type SceneGraph,
+  type Variable,
+  type VariableCollection,
+  type VariableValue
 } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
@@ -99,4 +101,127 @@ export function modeConditionPlaceholder(
   if (modeId === collection.defaultModeId) return undefined
   const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
   return mode && defaultModeCondition(collection, mode)
+}
+
+/**
+ * A number or text value typed for a token, numbers in the token's unit (`1.5` for 24px in a
+ * `rem` token). Undefined when the text is not a number for a number token.
+ */
+export function parseTokenValueText(variable: Variable, text: string): VariableValue | undefined {
+  if (variable.type === 'STRING') return text
+  if (variable.type !== 'FLOAT') return undefined
+  const number = Number(text)
+  return text.trim() && Number.isFinite(number)
+    ? tokenNumberFromUnit(number, variableUnit(variable))
+    : undefined
+}
+
+/** A number or text value as it is typed back, numbers in the token's unit. */
+export function tokenValueText(variable: Variable, value: VariableValue | undefined): string {
+  if (typeof value === 'number')
+    return String(Number(tokenNumberInUnit(value, variableUnit(variable)).toFixed(6)))
+  return typeof value === 'object' ? '' : String(value ?? '')
+}
+
+/** The group paths a collection's tokens use, in list order, for "Move to group". */
+export function groupPaths(groups: readonly TokenGroup[]): string[] {
+  return groups.flatMap((group) => (group.path ? [group.path] : []))
+}
+
+/** One group in the sidebar: its path, its last segment, how deep it sits, and its tokens. */
+export interface GroupEntry {
+  path: string
+  label: string
+  depth: number
+  /** Tokens in the group and every group inside it. */
+  count: number
+}
+
+/** Every group and the groups that contain it, in list order, with counts that include nesting. */
+export function groupTree(groups: readonly TokenGroup[]): GroupEntry[] {
+  const entries = new Map<string, GroupEntry>()
+  for (const group of groups) {
+    if (!group.path) continue
+    const segments = group.path.split('/')
+    segments.forEach((segment, index) => {
+      const path = segments.slice(0, index + 1).join('/')
+      const entry = entries.get(path) ?? { path, label: segment, depth: index, count: 0 }
+      entry.count += group.rows.length
+      entries.set(path, entry)
+    })
+  }
+  return [...entries.values()]
+}
+
+/** Whether a token's group is `group` or sits inside it. */
+export function inGroup(path: string, group: string): boolean {
+  return path === group || path.startsWith(`${group}/`)
+}
+
+/** A token's name moved into `group`, keeping its own last segment: `Brand/Primary`. */
+export function nameInGroup(name: string, group: string): string {
+  const label = name.slice(name.lastIndexOf('/') + 1)
+  return group ? `${group}/${label}` : label
+}
+
+/**
+ * A collection's order after moving `sourceId` to `targetIndex` among the `visible` rows. Rows a
+ * search or filter hides keep their places, so dragging a filtered list never shuffles them.
+ */
+export function reorderedVariableIds(
+  order: readonly string[],
+  visible: readonly string[],
+  sourceId: string,
+  targetIndex: number
+): string[] {
+  const moved = visible.filter((id) => id !== sourceId)
+  moved.splice(targetIndex, 0, sourceId)
+  const shown = new Set(visible)
+  let next = 0
+  return order.map((id) => (shown.has(id) ? (moved[next++] ?? id) : id))
+}
+
+/** A variable a token can alias, labelled for the picker and grouped by its collection. */
+export interface AliasCandidate {
+  id: string
+  name: string
+  collection: string
+  color?: Color
+}
+
+/** Whether `fromId` reaches `targetId` through aliases in any mode. */
+function aliasesTo(
+  graph: SceneGraph,
+  fromId: string,
+  targetId: string,
+  seen = new Set<string>()
+): boolean {
+  if (fromId === targetId) return true
+  if (seen.has(fromId)) return false
+  seen.add(fromId)
+  const from = graph.variables.get(fromId)
+  return Object.values(from?.valuesByMode ?? {}).some(
+    (value) =>
+      typeof value === 'object' &&
+      'aliasId' in value &&
+      aliasesTo(graph, value.aliasId, targetId, seen)
+  )
+}
+
+/**
+ * Variables of the same type a token can point at: never itself, and never one that already
+ * points back at it, which would make the two resolve to nothing.
+ */
+export function aliasCandidates(graph: SceneGraph, variable: Variable): AliasCandidate[] {
+  return [...graph.variables.values()].flatMap((candidate) => {
+    if (candidate.type !== variable.type || aliasesTo(graph, candidate.id, variable.id)) return []
+    return [
+      {
+        id: candidate.id,
+        name: candidate.name,
+        collection: graph.variableCollections.get(candidate.collectionId)?.name ?? '',
+        color: variable.type === 'COLOR' ? graph.resolveColorVariable(candidate.id) : undefined
+      }
+    ]
+  })
 }

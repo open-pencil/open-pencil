@@ -9,16 +9,16 @@ Les variables stockent des tokens de design réutilisables, comme des couleurs, 
 
 ## Ouvrir la boîte de dialogue des variables
 
-Lorsqu’aucun objet n’est sélectionné, l’onglet **Design** affiche les propriétés de la page, dont une section Variables indiquant le nombre de collections et de variables. L’icône des réglages ouvre la boîte de dialogue.
+Ouvrez-la depuis **Affichage → Variables…**, en recherchant « Variables » dans la palette de commandes ou, lorsqu’aucun objet n’est sélectionné, depuis la section Variables de l’onglet **Design**. **Développer**, dans le coin de la boîte de dialogue, lui donne la majeure partie de la fenêtre.
 
 La boîte de dialogue liste à gauche les variables de la collection active, modifie à droite la variable sélectionnée ou la collection, et affiche en dessous la feuille de style qu’elles produisent. Dans une fenêtre étroite ou sur téléphone, elle n’affiche qu’un mode à la fois, et une variable, les paramètres de la collection ou la feuille de style s’ouvrent par-dessus la liste avec un bouton de retour.
 
 ## Collections
 
-Les variables sont organisées en collections, affichées sous forme d’onglets (un menu sur les écrans étroits).
+Les variables sont organisées en collections. Dans une boîte de dialogue large, elles sont listées dans une barre latérale avec le nombre de variables de chacune ; plus étroite, elles s’affichent sous forme d’onglets, ou d’un menu sur un téléphone.
 
-- **Changer de collection :** cliquez sur un onglet
-- **Créer une collection :** cliquez sur le bouton en forme de dossier dans la barre d’outils (**Créer une collection**)
+- **Changer de collection :** cliquez dessus dans la barre latérale ou sur son onglet
+- **Créer une collection :** cliquez sur **+** à côté de **Collections**, ou sur le bouton en forme de dossier dans la barre d’outils (**Créer une collection**)
 - **Renommer ou supprimer :** sans variable sélectionnée, la partie droite modifie la collection : changez son nom, ou supprimez-la depuis le menu **⋯** à côté du nom (**Supprimer la collection**)
 
 ## Modes
@@ -47,23 +47,27 @@ Sur le canevas, un calque affiche un mode lorsque vous l’y réglez, quelle que
 
 Les variables sont regroupées selon les dossiers de leurs noms (`Brand/Primary` apparaît comme *Primary* sous *Brand*), avec leur nom CSS et une valeur par mode.
 
-- **Créer une variable :** cliquez sur **+** dans la barre d’outils et choisissez un type ; la nouvelle variable s’ouvre pour modification
-- **Sélectionner :** cliquez sur une ligne, ou déplacez-vous avec les flèches et appuyez sur Entrée
-- **Rechercher :** saisissez du texte dans la barre de recherche pour filtrer les variables par nom
-- **Supprimer :** cliquez sur **Supprimer la variable** en bas de ses paramètres
+- **Créer une variable :** cliquez sur **Créer une variable** (ou sur **+**) et choisissez un type ; la nouvelle variable s’ouvre pour modification
+- **Sélectionner :** cliquez sur une ligne, ou déplacez-vous avec les flèches et appuyez sur Entrée. Maj-clic sélectionne une plage, et Cmd-clic (Ctrl-clic sous Windows et Linux) ajoute ou retire une ligne
+- **Filtrer :** saisissez du texte dans la barre de recherche pour filtrer par nom, cliquez sur un groupe dans la barre latérale pour n’afficher que ce groupe et ceux qu’il contient, ou utilisez le bouton de filtre (**Filtrer par type**) pour n’afficher que certains types
+- **Renommer ou modifier sur place :** double-cliquez sur un nom, ou sur une valeur numérique ou textuelle, dans la liste
+- **Clic droit :** renommer, dupliquer (**Dupliquer**), déplacer vers un groupe ou un nouveau groupe (**Déplacer vers le groupe**, **Nouveau groupe…**) ou supprimer (**Supprimer les variables**) les variables sélectionnées ; Delete ou Backspace les supprime aussi
+- **Réorganiser :** faites glisser une ligne ; l’ordre est conservé dans le fichier
+- **Plusieurs sélectionnées :** la partie droite les déplace vers un groupe, les duplique ou les supprime
 
 La sélection d’une variable permet de modifier :
 
-- **Nom** et **Nom CSS** : laissez le nom CSS vide pour le déduire du nom et des portées, par exemple `--color-brand-primary`
+- **Nom** et **Nom CSS** : laissez le nom CSS vide pour le déduire du nom et des portées, par exemple `--color-brand-primary`. Saisissez le nom sans son `--` ; un nom que CSS ne peut pas utiliser est signalé et n’est pas enregistré
 - **Unité** : pour les nombres, `px`, `rem`, `%`, `ms`, `s`, `deg` ou aucune ; les valeurs sont saisies dans cette unité
-- **Valeurs** : une par mode ; une couleur ouvre le sélecteur de couleur, et un alias affiche la variable vers laquelle il pointe
+- **Valeur** ou **Valeurs** : une par mode ; une couleur ouvre le sélecteur de couleur. Le bouton de variable (**Utiliser une variable**) à côté d’une valeur la fait pointer vers une autre variable du même type, un alias qui suit cette variable ; **Détacher la variable** la ramène à la valeur qu’elle affichait
 - **Expression CSS** : pour les nombres, une valeur comme `clamp(1rem, 4vw, 1.5rem)` écrite en CSS à la place du nombre, tandis que le canevas continue de dessiner le nombre
 - **Portées** : les propriétés pour lesquelles la variable est proposée
 - **Description**
+- **Masquer de la publication** : les fichiers qui utilisent celui-ci comme bibliothèque ne voient pas la variable
 
 ## Feuille de style
 
-Le bas de la boîte de dialogue affiche la collection active sous forme de propriétés personnalisées CSS ou de thème Tailwind v4. Le bouton de copie (**Copier toutes les variables en CSS**) copie les variables de tout le document dans ce format, de sorte que les alias vers d’autres collections sont résolus.
+Le bas de la boîte de dialogue affiche la collection active sous forme de propriétés personnalisées CSS. Le bouton de copie (**Copier toutes les variables en CSS**) copie les variables de tout le document en CSS ou sous forme de thème Tailwind v4 (**Copier toutes les variables en thème Tailwind**), de sorte que les alias vers d’autres collections sont résolus.
 
 ## Lier des variables aux remplissages
 

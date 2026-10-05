@@ -176,3 +176,90 @@ test('color swatch opens color picker', async () => {
   await expect(editor.page.locator('[data-picker-content]')).toBeVisible({ timeout: 5000 })
   editor.canvas.assertNoErrors()
 })
+
+function inspectorName() {
+  return editor.page
+    .getByTestId('token-inspector')
+    .getByRole('textbox', { name: 'Name', exact: true })
+}
+
+test('the View menu opens the variables dialog', async () => {
+  const dialog = editor.page.getByTestId('variables-dialog')
+  // The color picker from the previous test takes the first Escape.
+  await editor.page.keyboard.press('Escape')
+  await expect(editor.page.locator('[data-picker-content]')).toBeHidden()
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(dialog).toBeHidden()
+
+  await editor.page.locator('[role="menubar"] [role="menuitem"]', { hasText: 'View' }).click()
+  await editor.page.locator('[role="menu"] [role="menuitem"]', { hasText: 'Variables…' }).click()
+
+  await expect(dialog).toBeVisible()
+  editor.canvas.assertNoErrors()
+})
+
+test('a value points at another variable and detaches to what it showed', async () => {
+  await variableRows().filter({ hasText: 'SwatchVar' }).click()
+  await expect(inspectorName()).toHaveValue('SwatchVar')
+
+  await editor.page
+    .getByTestId('token-inspector')
+    .getByTestId('variables-use-variable')
+    .first()
+    .click()
+  await editor.page
+    .getByRole('dialog', { name: 'Use a variable' })
+    .getByRole('option', { name: /brand-color/ })
+    .click()
+  await expect(variableRows().filter({ hasText: 'SwatchVar' })).toContainText('brand-color')
+
+  await editor.page.getByTestId('variables-detach-variable').first().click()
+  await expect(variableRows().filter({ hasText: 'SwatchVar' })).toContainText('#FF0000')
+  editor.canvas.assertNoErrors()
+})
+
+test('a name is edited in place and a CSS name CSS cannot use is refused', async () => {
+  await variableRows().filter({ hasText: 'SwatchVar' }).getByText('SwatchVar').dblclick()
+  const cell = editor.page.getByTestId('variables-cell-input')
+  await cell.fill('Accent')
+  await cell.press('Enter')
+  await expect(variableRows().filter({ hasText: 'Accent' })).toHaveCount(1)
+
+  await expect(inspectorName()).toHaveValue('Accent')
+  const cssName = editor.page.getByTestId('variables-css-name')
+  await cssName.fill('not valid')
+  await expect(cssName).toHaveAttribute('aria-invalid', 'true')
+  await cssName.press('Enter')
+  await expect(editor.page.getByTestId('token-output')).not.toContainText('not valid')
+  editor.canvas.assertNoErrors()
+})
+
+test('several tokens are duplicated, grouped, and deleted together', async () => {
+  const before = await variableRows().count()
+  await variableRows().filter({ hasText: 'Accent' }).click()
+  await variableRows()
+    .filter({ hasText: 'brand-color' })
+    .click({ modifiers: ['ControlOrMeta'] })
+  await expect(editor.page.getByTestId('token-bulk-inspector')).toContainText(
+    '2 variables selected'
+  )
+
+  await variableRows().filter({ hasText: 'Accent' }).click({ button: 'right' })
+  await editor.page.getByTestId('variables-duplicate').click()
+  await expect(variableRows()).toHaveCount(before + 2)
+
+  await editor.page.getByTestId('variables-group-name').fill('Copies')
+  await editor.page.getByTestId('variables-group-name').press('Enter')
+  const group = editor.page.getByTestId('variables-group').filter({ hasText: 'Copies' })
+  await expect(group).toContainText('2')
+
+  await group.click()
+  await expect(variableRows()).toHaveCount(2)
+  await variableRows().first().click()
+  await variableRows()
+    .last()
+    .click({ modifiers: ['Shift'] })
+  await editor.page.keyboard.press('Delete')
+  await expect(group).toHaveCount(0)
+  editor.canvas.assertNoErrors()
+})

@@ -12,13 +12,20 @@ import type { EditorContext } from './types'
 /** What a variable means as a design token beyond its values: how CSS and code read it. */
 export type VariableTokenFields = Pick<
   Variable,
-  'unit' | 'expressions' | 'scopes' | 'codeSyntax' | 'description'
+  'unit' | 'expressions' | 'scopes' | 'codeSyntax' | 'description' | 'hiddenFromPublishing'
 >
 
 /** Every token field, unset ones included, so restoring it also clears what was added. */
 function tokenFields(variable: Variable): VariableTokenFields {
-  const { unit, expressions, scopes, codeSyntax, description } = variable
-  return structuredClone({ unit, expressions, scopes, codeSyntax, description })
+  const { unit, expressions, scopes, codeSyntax, description, hiddenFromPublishing } = variable
+  return structuredClone({
+    unit,
+    expressions,
+    scopes,
+    codeSyntax,
+    description,
+    hiddenFromPublishing
+  })
 }
 
 export function createVariableActions(ctx: EditorContext) {
@@ -156,6 +163,66 @@ export function createVariableActions(ctx: EditorContext) {
       }
     })
     refreshVariables()
+  }
+
+  /** Puts a collection's variables in `order`; ids it does not hold are ignored. */
+  function placeVariables(collectionId: string, order: readonly string[]) {
+    const collection = ctx.graph.variableCollections.get(collectionId)
+    if (!collection) return
+    const held = new Set(collection.variableIds)
+    const placed = order.filter((id) => held.has(id))
+    const rest = collection.variableIds.filter((id) => !placed.includes(id))
+    collection.variableIds = [...placed, ...rest]
+  }
+
+  /** Reorders a collection's variables in one undo step; the order is what files and lists show. */
+  function setVariableOrder(collectionId: string, order: readonly string[]) {
+    const collection = ctx.graph.variableCollections.get(collectionId)
+    if (!collection) return
+    const previous = [...collection.variableIds]
+    const next = [...order]
+    placeVariables(collectionId, next)
+    if (previous.join('\n') === collection.variableIds.join('\n')) return
+    ctx.undo.push({
+      label: 'Reorder variables',
+      forward: () => {
+        placeVariables(collectionId, next)
+        refreshVariables()
+      },
+      inverse: () => {
+        placeVariables(collectionId, previous)
+        refreshVariables()
+      }
+    })
+    refreshVariables()
+  }
+
+  /** Copies a variable, values and token fields included, right after the original. */
+  function duplicateVariable(id: string, name: string): string | undefined {
+    const source = ctx.graph.variables.get(id)
+    const collection = source && ctx.graph.variableCollections.get(source.collectionId)
+    if (!source || !collection) return undefined
+    const created = ctx.graph.createVariable(name, source.type, source.collectionId)
+    const copy: Variable = { ...structuredClone(source), id: created.id, name }
+    ctx.graph.addVariable(copy)
+    const before = [...collection.variableIds]
+    const order = before.filter((candidate) => candidate !== copy.id)
+    order.splice(order.indexOf(id) + 1, 0, copy.id)
+    placeVariables(collection.id, order)
+    ctx.undo.push({
+      label: 'Duplicate variable',
+      forward: () => {
+        ctx.graph.addVariable(structuredClone(copy))
+        placeVariables(collection.id, order)
+        refreshVariables()
+      },
+      inverse: () => {
+        ctx.graph.removeVariable(copy.id)
+        refreshVariables()
+      }
+    })
+    refreshVariables()
+    return copy.id
   }
 
   function renameVariable(id: string, newName: string) {
@@ -385,6 +452,8 @@ export function createVariableActions(ctx: EditorContext) {
   return {
     updateVariableToken,
     setModeCondition,
+    duplicateVariable,
+    setVariableOrder,
     getVariablesByType,
     getVariable,
     resolveColorVariable,

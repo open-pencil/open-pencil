@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { computedAsync } from '@vueuse/core'
 import { omit } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, useId, watch } from 'vue'
 
 import type { VariableTokenFields } from '@open-pencil/core/editor'
-import { cssNameCodeSyntax, explicitCSSName, variableUnit } from '@open-pencil/dom-css/export'
+import {
+  cssNameCodeSyntax,
+  explicitCSSName,
+  loadTokenValidator,
+  variableUnit
+} from '@open-pencil/dom-css/export'
 import {
   TOKEN_UNITS,
   tokenNumberFromUnit,
@@ -18,24 +24,29 @@ import {
 } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
-import type { TokenRow } from '@/app/editor/tokens/model'
+import type { AliasCandidate, TokenRow } from '@/app/editor/tokens/model'
 import { SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import BindingPill from '@/components/ui/binding/BindingPill.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
+import TokenAliasPicker from '@/components/variables/TokenAliasPicker.vue'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
 const {
   row,
   collection,
+  aliasCandidates,
   layout = 'side'
 } = defineProps<{
   row: TokenRow
   collection: VariableCollection
+  /** Variables of the same type a mode's value can point at. */
+  aliasCandidates: AliasCandidate[]
   /** `full` fills the panel behind a back button on narrow screens. */
   layout?: 'side' | 'full'
 }>()
@@ -43,12 +54,18 @@ const emit = defineEmits<{
   rename: [name: string]
   updateToken: [patch: Partial<VariableTokenFields>]
   updateValue: [modeId: string, value: VariableValue]
+  alias: [modeId: string, variableId: string]
+  detach: [modeId: string]
   remove: []
 }>()
 
 const { variables } = useI18n()
 const ui = computed(() => tv(tokensPanelTheme)({ layout }))
-const variable = computed(() => row.variable)
+/**
+ * A copy per list refresh: the graph edits a variable in place, so the same object coming back
+ * would not tell the fields an inline rename or an undo changed it.
+ */
+const variable = computed(() => ({ ...row.variable }))
 
 const SCOPE_MESSAGES: Partial<Record<VariableScope, () => string>> = {
   ALL_FILLS: () => variables.value.scopeAllFills,
@@ -139,9 +156,18 @@ function commitName() {
   else draft.name = variable.value.name
 }
 
+/** The browser's CSS parser decides what a custom property name may be. */
+const validator = computedAsync(loadTokenValidator, null)
+const cssNameErrorId = `${useId()}-css-name`
+const cssNameInvalid = computed(() => {
+  const name = draft.cssName.trim().replace(/^--/, '')
+  return name !== '' && validator.value !== null && !validator.value.name(name)
+})
+
 function commitCSSName() {
   const name = draft.cssName.trim().replace(/^--/, '')
-  if (name === (explicitCSSName(variable.value) ?? '')) return
+  draft.cssName = name
+  if (cssNameInvalid.value || name === (explicitCSSName(variable.value) ?? '')) return
   emit('updateToken', {
     codeSyntax: { ...variable.value.codeSyntax, WEB: name ? cssNameCodeSyntax(name) : undefined }
   })
@@ -190,6 +216,14 @@ function alias(modeId: string) {
   return row.values.find((value) => value.modeId === modeId)?.alias
 }
 
+function aliasId(modeId: string): string | undefined {
+  const value = variable.value.valuesByMode[modeId]
+  return typeof value === 'object' && 'aliasId' in value ? value.aliasId : undefined
+}
+
+/** With one mode the value needs no mode name above it. */
+const singleMode = computed(() => collection.modes.length === 1)
+
 function color(modeId: string): Color | undefined {
   const value = variable.value.valuesByMode[modeId]
   return typeof value === 'object' && 'r' in value ? value : undefined
@@ -208,10 +242,19 @@ function color(modeId: string): Color | undefined {
         <AppInput
           v-model="draft.cssName"
           size="sm"
-          :placeholder="`--${row.cssName}`"
-          :ui="{ input: 'font-mono' }"
+          :placeholder="row.cssName"
+          :state="cssNameInvalid ? 'invalid' : 'idle'"
+          :aria-invalid="cssNameInvalid"
+          :aria-describedby="cssNameInvalid ? cssNameErrorId : undefined"
+          :ui="{ input: 'font-mono pl-7' }"
+          data-test-id="variables-css-name"
           @change="commitCSSName"
-        />
+        >
+          <template #leading><span :class="ui.prefix()">--</span></template>
+        </AppInput>
+        <p v-if="cssNameInvalid" :id="cssNameErrorId" :class="ui.error()" role="alert">
+          {{ variables.cssNameInvalid }}
+        </p>
         <span :class="ui.hint()">{{ variables.cssNameHint }}</span>
       </label>
       <label v-if="variable.type === 'FLOAT'" :class="ui.field()">
@@ -221,33 +264,50 @@ function color(modeId: string): Color | undefined {
     </section>
 
     <section :class="ui.section()">
-      <h3 :class="ui.sectionTitle()">{{ variables.values }}</h3>
+      <h3 :class="ui.sectionTitle()">{{ singleMode ? variables.value : variables.values }}</h3>
       <div v-for="mode in collection.modes" :key="mode.modeId" :class="ui.field()">
-        <span :class="ui.label()">{{ mode.name }}</span>
-        <BindingPill v-if="alias(mode.modeId)" :label="alias(mode.modeId) ?? ''" />
-        <ColorInput
-          v-else-if="color(mode.modeId)"
-          :color="color(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }"
-          editable
-          @update="emit('updateValue', mode.modeId, $event)"
-        />
-        <AppCheckbox
-          v-else-if="variable.type === 'BOOLEAN'"
-          :model-value="variable.valuesByMode[mode.modeId] === true"
-          :ariaLabel="mode.name"
-          @update:model-value="emit('updateValue', mode.modeId, $event)"
-        />
-        <AppInput
-          v-else
-          v-model="draft.values[mode.modeId]"
-          :type="variable.type === 'FLOAT' ? 'number' : 'text'"
-          size="sm"
-          @change="commitValue(mode.modeId)"
-        >
-          <template v-if="variable.type === 'FLOAT' && numberUnit !== 'none'" #trailing>
-            <span :class="ui.hint()">{{ numberUnit }}</span>
-          </template>
-        </AppInput>
+        <span v-if="!singleMode" :class="ui.label()">{{ mode.name }}</span>
+        <div :class="ui.valueRow()">
+          <div v-if="alias(mode.modeId)" :class="ui.valueControl()">
+            <BindingPill :label="alias(mode.modeId) ?? ''" />
+            <IconButton
+              :label="variables.detachVariable"
+              data-test-id="variables-detach-variable"
+              @click="emit('detach', mode.modeId)"
+            >
+              <icon-lucide-unlink class="size-3.5" />
+            </IconButton>
+          </div>
+          <ColorInput
+            v-else-if="color(mode.modeId)"
+            :color="color(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }"
+            editable
+            @update="emit('updateValue', mode.modeId, $event)"
+          />
+          <AppCheckbox
+            v-else-if="variable.type === 'BOOLEAN'"
+            :model-value="variable.valuesByMode[mode.modeId] === true"
+            :ariaLabel="mode.name"
+            @update:model-value="emit('updateValue', mode.modeId, $event)"
+          />
+          <AppInput
+            v-else
+            v-model="draft.values[mode.modeId]"
+            :type="variable.type === 'FLOAT' ? 'number' : 'text'"
+            size="sm"
+            @change="commitValue(mode.modeId)"
+          >
+            <template v-if="variable.type === 'FLOAT' && numberUnit !== 'none'" #trailing>
+              <span :class="ui.hint()">{{ numberUnit }}</span>
+            </template>
+          </AppInput>
+          <TokenAliasPicker
+            :candidates="aliasCandidates"
+            :selected="aliasId(mode.modeId)"
+            :label="singleMode ? variables.useVariable : `${mode.name}: ${variables.useVariable}`"
+            @select="emit('alias', mode.modeId, $event)"
+          />
+        </div>
         <AppInput
           v-if="variable.type === 'FLOAT' && !alias(mode.modeId)"
           v-model="draft.expressions[mode.modeId]"
@@ -281,6 +341,19 @@ function color(modeId: string): Color | undefined {
     <section :class="ui.section()">
       <h3 :class="ui.sectionTitle()">{{ variables.description }}</h3>
       <AppTextarea v-model="draft.description" :rows="2" @change="commitDescription" />
+    </section>
+
+    <section :class="ui.section()">
+      <label class="flex items-center gap-2 text-xs text-surface">
+        <AppCheckbox
+          :model-value="variable.hiddenFromPublishing"
+          :ariaLabel="variables.hiddenFromPublishing"
+          data-test-id="variables-hidden-from-publishing"
+          @update:model-value="emit('updateToken', { hiddenFromPublishing: $event })"
+        />
+        {{ variables.hiddenFromPublishing }}
+      </label>
+      <span :class="ui.hint()">{{ variables.hiddenFromPublishingHint }}</span>
     </section>
 
     <section :class="ui.section()">

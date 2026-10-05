@@ -9,16 +9,16 @@ Variables store reusable design tokens — colors, spacing values, and other pro
 
 ## Opening the Variables Dialog
 
-With no nodes selected, the Design tab shows page-level properties including a Variables section with collection and variable counts. Click the settings icon to open the variables dialog.
+Open it from **View → Variables…**, by searching "Variables" in the command palette, or, with no nodes selected, from the Variables section of the Design tab. **Expand** in the dialog's corner gives it most of the window.
 
 The dialog lists the active collection's variables on the left, edits the selected variable or the collection on the right, and shows the stylesheet they produce below. In a narrow window or on a phone it shows one mode at a time, and a variable, the collection settings, or the stylesheet opens over the list with a back button.
 
 ## Collections
 
-Variables are organized into collections, shown as tabs (a menu on narrow screens).
+Variables are organized into collections. In a wide dialog they are listed in a sidebar with how many variables each holds; narrower, they are tabs, or a menu on a phone.
 
-- **Switch collection** — click a tab
-- **Create collection** — click the folder button in the toolbar
+- **Switch collection** — click it in the sidebar or its tab
+- **Create collection** — click **+** next to Collections, or the folder button in the toolbar
 - **Rename or delete** — with no variable selected, the right side edits the collection: change its name, or delete it from the **⋯** menu next to the name
 
 ## Modes
@@ -47,23 +47,27 @@ On the canvas, a layer shows a mode when you set the layer to it, whatever the c
 
 Variables are grouped by the folders in their names (`Brand/Primary` appears as *Primary* under *Brand*), with their CSS name and one value per mode.
 
-- **Create variable** — click **+** in the toolbar and pick a type; the new variable opens for editing
-- **Select** — click a row, or move with the arrow keys and press Enter
-- **Search** — type in the search bar to filter variables by name
-- **Delete** — click **Delete variable** at the bottom of its settings
+- **Create variable** — click **Create variable** (or **+**) and pick a type; the new variable opens for editing
+- **Select** — click a row, or move with the arrow keys and press Enter. Shift-click selects a range, and Cmd-click (Ctrl-click on Windows and Linux) adds or removes one
+- **Filter** — type in the search bar to filter by name, click a group in the sidebar to show only that group and the groups inside it, or use the filter button to show only some types
+- **Rename or edit in place** — double-click a name, or a number or text value, in the list
+- **Right-click** — rename, duplicate, move to a group (or a new one), or delete the selected variables; Delete or Backspace deletes them too
+- **Reorder** — drag a row; the order is kept in the file
+- **Several selected** — the right side moves them into a group, duplicates them, or deletes them
 
 Selecting a variable edits:
 
-- **Name** and **CSS name** — leave the CSS name empty to derive it from the name and scopes, such as `--color-brand-primary`
+- **Name** and **CSS name** — leave the CSS name empty to derive it from the name and scopes, such as `--color-brand-primary`. Type the name without its `--`; a name CSS cannot use is flagged and not saved
 - **Unit** — for numbers, `px`, `rem`, `%`, `ms`, `s`, `deg`, or none; values are entered in that unit
-- **Values** — per mode; a color opens the color picker, and an alias shows the variable it points to
+- **Value** (or **Values**, one per mode) — a color opens the color picker. The variable button next to a value points it at another variable of the same type, an alias that follows that variable; **Detach variable** turns it back into the value it showed
 - **CSS expression** — for numbers, a value such as `clamp(1rem, 4vw, 1.5rem)` written instead of the number in CSS, while the canvas keeps drawing the number
 - **Scopes** — which properties the variable is offered for
 - **Description**
+- **Hide from publishing** — files that use this one as a library do not see the variable
 
 ## Stylesheet
 
-The bottom of the dialog shows the active collection as CSS custom properties or a Tailwind v4 theme. The copy button copies the whole document's variables in that format, so aliases to other collections resolve.
+The bottom of the dialog shows the active collection as CSS custom properties. The copy button copies the whole document's variables as CSS or as a Tailwind v4 theme, so aliases to other collections resolve.
 
 ## Binding Variables to Fills
 

@@ -9,16 +9,16 @@ Le variabili memorizzano token di design riutilizzabili, come colori, spaziature
 
 ## Aprire la finestra delle variabili
 
-Quando non è selezionato alcun oggetto, la scheda **Design** mostra le proprietà della pagina, tra cui una sezione Variabili con il numero di raccolte e variabili. L’icona delle impostazioni apre la finestra.
+Aprila da **Visualizza → Variabili…**, cercando «Variabili» nella palette dei comandi oppure, quando non è selezionato alcun oggetto, dalla sezione Variabili della scheda **Design**. **Espandi**, nell’angolo della finestra, le dà gran parte dello spazio disponibile.
 
 La finestra elenca a sinistra le variabili della raccolta attiva, modifica a destra la variabile selezionata o la raccolta e mostra sotto il foglio di stile che producono. In una finestra stretta o su telefono mostra una modalità alla volta, e una variabile, le impostazioni della raccolta o il foglio di stile si aprono sopra l’elenco con un pulsante per tornare indietro.
 
 ## Raccolte
 
-Le variabili sono organizzate in raccolte, mostrate come schede (un menu sugli schermi stretti).
+Le variabili sono organizzate in raccolte. In una finestra larga sono elencate in una barra laterale con il numero di variabili di ciascuna; più stretta, diventano schede, oppure un menu su telefono.
 
-- **Cambiare raccolta:** fai clic su una scheda
-- **Creare una raccolta:** fai clic sul pulsante a forma di cartella nella barra degli strumenti (**Crea raccolta**)
+- **Cambiare raccolta:** fai clic su di essa nella barra laterale o sulla sua scheda
+- **Creare una raccolta:** fai clic su **+** accanto a **Raccolte**, oppure sul pulsante a forma di cartella nella barra degli strumenti (**Crea raccolta**)
 - **Rinominare o eliminare:** senza alcuna variabile selezionata, la parte destra modifica la raccolta: cambia il nome, oppure eliminala dal menu **⋯** accanto al nome (**Elimina raccolta**)
 
 ## Modalità
@@ -47,23 +47,27 @@ Sulla tela, un livello mostra una modalità quando lo imposti su di essa, qualun
 
 Le variabili sono raggruppate in base alle cartelle nei loro nomi (`Brand/Primary` compare come *Primary* sotto *Brand*), con il nome CSS e un valore per modalità.
 
-- **Creare una variabile:** fai clic su **+** nella barra degli strumenti e scegli un tipo; la nuova variabile si apre per la modifica
-- **Selezionare:** fai clic su una riga, oppure spostati con le frecce e premi Invio
-- **Cercare:** digita nella barra di ricerca per filtrare le variabili per nome
-- **Eliminare:** fai clic su **Elimina variabile** in fondo alle sue impostazioni
+- **Creare una variabile:** fai clic su **Crea variabile** (o su **+**) e scegli un tipo; la nuova variabile si apre per la modifica
+- **Selezionare:** fai clic su una riga, oppure spostati con le frecce e premi Invio. Maiusc-clic seleziona un intervallo, e Cmd-clic (Ctrl-clic su Windows e Linux) aggiunge o rimuove una riga
+- **Filtrare:** digita nella barra di ricerca per filtrare per nome, fai clic su un gruppo nella barra laterale per mostrare solo quel gruppo e quelli al suo interno, oppure usa il pulsante del filtro (**Filtra per tipo**) per mostrare solo alcuni tipi
+- **Rinominare o modificare sul posto:** fai doppio clic su un nome, o su un valore numerico o di testo, nell’elenco
+- **Clic destro:** rinomina, duplica (**Duplica**), sposta in un gruppo o in uno nuovo (**Sposta nel gruppo**, **Nuovo gruppo…**) oppure elimina (**Elimina variabili**) le variabili selezionate; anche Delete o Backspace le elimina
+- **Riordinare:** trascina una riga; l’ordine viene conservato nel file
+- **Più selezionate:** la parte destra le sposta in un gruppo, le duplica o le elimina
 
 La selezione di una variabile permette di modificare:
 
-- **Nome** e **Nome CSS:** lascia vuoto il nome CSS per ricavarlo da nome e ambiti, ad esempio `--color-brand-primary`
+- **Nome** e **Nome CSS:** lascia vuoto il nome CSS per ricavarlo da nome e ambiti, ad esempio `--color-brand-primary`. Digita il nome senza `--`; un nome che CSS non può usare viene segnalato e non viene salvato
 - **Unità:** per i numeri, `px`, `rem`, `%`, `ms`, `s`, `deg` o nessuna; i valori si inseriscono in quell’unità
-- **Valori:** uno per modalità; un colore apre il selettore colore, e un alias mostra la variabile a cui punta
+- **Valore** o **Valori:** uno per modalità; un colore apre il selettore colore. Il pulsante della variabile (**Usa una variabile**) accanto a un valore lo fa puntare a un’altra variabile dello stesso tipo, un alias che segue quella variabile; **Scollega variabile** lo riporta al valore che mostrava
 - **Espressione CSS:** per i numeri, un valore come `clamp(1rem, 4vw, 1.5rem)` scritto in CSS al posto del numero, mentre il canvas continua a disegnare il numero
 - **Ambiti:** per quali proprietà viene proposta la variabile
 - **Descrizione**
+- **Nascondi dalla pubblicazione:** i file che usano questo come libreria non vedono la variabile
 
 ## Foglio di stile
 
-La parte inferiore della finestra mostra la raccolta attiva come proprietà personalizzate CSS o come tema Tailwind v4. Il pulsante di copia (**Copia tutte le variabili come CSS**) copia le variabili dell’intero documento in quel formato, così gli alias verso altre raccolte vengono risolti.
+La parte inferiore della finestra mostra la raccolta attiva come proprietà personalizzate CSS. Il pulsante di copia (**Copia tutte le variabili come CSS**) copia le variabili dell’intero documento come CSS o come tema Tailwind v4 (**Copia tutte le variabili come tema Tailwind**), così gli alias verso altre raccolte vengono risolti.
 
 ## Collegare le variabili ai riempimenti
 

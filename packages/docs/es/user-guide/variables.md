@@ -9,16 +9,16 @@ Las variables almacenan tokens de diseño reutilizables, como colores, espaciado
 
 ## Abrir el diálogo de variables
 
-Sin objetos seleccionados, la pestaña **Diseño** muestra las propiedades de la página, incluida una sección Variables con el número de colecciones y variables. El icono de ajustes abre el diálogo.
+Ábrelo desde **Ver → Variables…**, buscando «Variables» en la paleta de comandos o, sin objetos seleccionados, desde la sección Variables de la pestaña **Diseño**. **Expandir** en la esquina del diálogo le da la mayor parte de la ventana.
 
 El diálogo muestra a la izquierda las variables de la colección activa, edita a la derecha la variable seleccionada o la colección, y muestra debajo la hoja de estilos que producen. En una ventana estrecha o en un teléfono muestra un modo a la vez, y una variable, los ajustes de la colección o la hoja de estilos se abren sobre la lista con un botón para volver.
 
 ## Colecciones
 
-Las variables se organizan en colecciones, que aparecen como pestañas (un menú en pantallas estrechas).
+Las variables se organizan en colecciones. En un diálogo ancho aparecen en una barra lateral con el número de variables de cada una; si es más estrecho, como pestañas, o como menú en el móvil.
 
-- **Cambiar de colección:** haz clic en una pestaña
-- **Crear una colección:** haz clic en el botón de carpeta de la barra de herramientas (**Crear colección**)
+- **Cambiar de colección:** haz clic en ella en la barra lateral o en su pestaña
+- **Crear una colección:** haz clic en **+** junto a **Colecciones** o en el botón de carpeta de la barra de herramientas (**Crear colección**)
 - **Renombrar o eliminar:** sin ninguna variable seleccionada, la parte derecha edita la colección: cambia su nombre o elimínala desde el menú **⋯** junto al nombre (**Eliminar colección**)
 
 ## Modos
@@ -47,23 +47,27 @@ En el lienzo, una capa muestra un modo cuando la estableces en él, sea cual sea
 
 Las variables se agrupan según las carpetas de sus nombres (`Brand/Primary` aparece como *Primary* dentro de *Brand*), con su nombre CSS y un valor por modo.
 
-- **Crear una variable:** haz clic en **+** en la barra de herramientas y elige un tipo; la nueva variable se abre para editarla
-- **Seleccionar:** haz clic en una fila, o muévete con las flechas y pulsa Intro
-- **Buscar:** escribe en la barra de búsqueda para filtrar las variables por nombre
-- **Eliminar:** haz clic en **Eliminar variable** al final de sus ajustes
+- **Crear una variable:** haz clic en **Crear variable** (o en **+**) y elige un tipo; la nueva variable se abre para editarla
+- **Seleccionar:** haz clic en una fila, o muévete con las flechas y pulsa Intro. Con Shift y clic seleccionas un rango, y con Cmd y clic (Ctrl y clic en Windows y Linux) añades o quitas una fila
+- **Filtrar:** escribe en la barra de búsqueda para filtrar por nombre, haz clic en un grupo de la barra lateral para ver solo ese grupo y los grupos que contiene, o usa el botón de filtro (**Filtrar por tipo**) para ver solo algunos tipos
+- **Renombrar o editar en el lugar:** haz doble clic en un nombre, o en un valor numérico o de texto, de la lista
+- **Clic derecho:** renombra, duplica (**Duplicar**), mueve a un grupo o a uno nuevo (**Mover al grupo**, **Nuevo grupo…**) o elimina (**Eliminar variables**) las variables seleccionadas; Delete o Backspace también las elimina
+- **Reordenar:** arrastra una fila; el orden se conserva en el archivo
+- **Varias seleccionadas:** la parte derecha las mueve a un grupo, las duplica o las elimina
 
 Al seleccionar una variable se editan:
 
-- **Nombre** y **Nombre CSS:** deja el nombre CSS vacío para derivarlo del nombre y los ámbitos, por ejemplo `--color-brand-primary`
+- **Nombre** y **Nombre CSS:** deja el nombre CSS vacío para derivarlo del nombre y los ámbitos, por ejemplo `--color-brand-primary`. Escribe el nombre sin `--`; un nombre que CSS no puede usar se marca y no se guarda
 - **Unidad:** para números, `px`, `rem`, `%`, `ms`, `s`, `deg` o ninguna; los valores se introducen en esa unidad
-- **Valores:** uno por modo; un color abre el selector de color y un alias muestra la variable a la que apunta
+- **Valor** o **Valores:** uno por modo; un color abre el selector de color. El botón de variable (**Usar una variable**) junto a un valor lo hace apuntar a otra variable del mismo tipo, un alias que sigue a esa variable; **Desvincular variable** lo devuelve al valor que mostraba
 - **Expresión CSS:** para números, un valor como `clamp(1rem, 4vw, 1.5rem)` que se escribe en CSS en lugar del número, mientras el lienzo sigue dibujando el número
 - **Ámbitos:** para qué propiedades se ofrece la variable
 - **Descripción**
+- **Ocultar al publicar:** los archivos que usan este como biblioteca no ven la variable
 
 ## Hoja de estilos
 
-La parte inferior del diálogo muestra la colección activa como propiedades personalizadas de CSS o como un tema de Tailwind v4. El botón de copiar (**Copiar todas las variables como CSS**) copia las variables de todo el documento en ese formato, de modo que los alias a otras colecciones se resuelven.
+La parte inferior del diálogo muestra la colección activa como propiedades personalizadas de CSS. El botón de copiar (**Copiar todas las variables como CSS**) copia las variables de todo el documento como CSS o como un tema de Tailwind v4 (**Copiar todas las variables como tema de Tailwind**), de modo que los alias a otras colecciones se resuelven.
 
 ## Vincular variables a rellenos
 

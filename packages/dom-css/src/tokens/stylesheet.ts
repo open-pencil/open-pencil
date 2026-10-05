@@ -276,7 +276,7 @@ export function buildTokenStylesheet(
  * object model package loads on first use; its browser build exports nothing, so it is never
  * the browser path.
  */
-async function tokenValidator(): Promise<TokenValidator> {
+export async function loadTokenValidator(): Promise<TokenValidator> {
   if (typeof CSSStyleSheet === 'function') return createTokenValidator(parseWithBrowser)
   const headless = await import('./cssom-validator')
   return headless.tokenValidator
@@ -286,5 +286,5 @@ export async function tokenStylesheet(
   source: TokenSource,
   options: TokenStylesheetOptions
 ): Promise<TokenStylesheet> {
-  return buildTokenStylesheet(source, options, await tokenValidator())
+  return buildTokenStylesheet(source, options, await loadTokenValidator())
 }

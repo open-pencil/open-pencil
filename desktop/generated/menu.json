@@ -180,6 +180,13 @@
         "type": "separator"
       },
       {
+        "id": "variables",
+        "label": "Variables…"
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "view-rulers",
         "label": "Rulers",
         "checkbox": true
