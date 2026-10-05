@@ -2,6 +2,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
+import * as v from 'valibot'
+
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
@@ -14,6 +16,7 @@ import { hasMixedLatinAndCjk, placeholders } from './quality'
 
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
 const LOCALE_FILE_NAMES: Record<string, string> = {
+  designCheck: 'design-check',
   variableTypes: 'variable-types'
 }
 const REQUIRED_INDEX_FILE = 'index.ts'
@@ -37,8 +40,10 @@ function localeFileName(namespace: string) {
   return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
+const JSONObjectText = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+
 function readJSONObject(path: string): JSONObject {
-  return JSON.parse(readFileSync(path, 'utf-8')) as JSONObject
+  return v.parse(JSONObjectText, readFileSync(path, 'utf-8'))
 }
 
 function report(message: string) {

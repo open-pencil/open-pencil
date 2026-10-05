@@ -3,6 +3,8 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import * as v from 'valibot'
+
 import { CLI_ENTRY, FIXTURES } from '#cli-tests/helpers/paths'
 
 setDefaultTimeout(60_000)
@@ -47,7 +49,10 @@ describe('diff CLI', () => {
     const files = await cli(['diff', 'files', FIXTURE, outPath, '--json'])
     // Like diff(1), a difference exits 1.
     expect(files.exitCode).toBe(1)
-    const result = JSON.parse(files.stdout) as { diff: string }
+    const result = v.parse(
+      v.pipe(v.string(), v.parseJson(), v.object({ diff: v.string() })),
+      files.stdout
+    )
     expect(result.diff).toContain(`/Logo #${LOGO} removed`)
     expect(result.diff).toContain('opacity={0.5}')
 

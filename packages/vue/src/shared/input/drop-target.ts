@@ -19,6 +19,11 @@ export function findMoveDropTarget(cx: number, cy: number, editor: Editor): Scen
   ) {
     dropTarget = null
   }
+  // Only an instance's slots take layers; anywhere else in it drops into its parent.
+  if (dropTarget) {
+    const accepting = editor.graph.getNode(editor.acceptingParent(dropTarget.id))
+    dropTarget = accepting && accepting.type !== 'CANVAS' ? accepting : null
+  }
   return dropTarget
 }
 
@@ -32,7 +37,7 @@ export function reparentOutsideNodes(editor: Editor) {
     const outsideY = node.y + node.height < 0 || node.y > parent.height
     if (outsideX || outsideY) {
       const grandparentId = parent.parentId ?? editor.state.currentPageId
-      editor.graph.reparentNode(id, grandparentId)
+      editor.reparentNodes([id], editor.acceptingParent(grandparentId))
     }
   }
 }

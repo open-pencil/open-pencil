@@ -1,4 +1,4 @@
-import { groupBy, isEqual } from 'es-toolkit'
+import { difference, groupBy, isEqual, pickBy, uniq } from 'es-toolkit'
 
 import {
   buildComponent,
@@ -112,18 +112,13 @@ function nodeUpdate(
   const parentId = node.parentId ?? ''
   const from = jsxNodeFields(graph, node.type, before, parentId)
   const to = jsxNodeFields(graph, node.type, after, parentId)
-  const fields = Object.fromEntries(
-    Object.entries(to.fields).filter(
-      ([key, value]) => !isEqual(from.fields[key as keyof SceneNode], value)
-    )
-  )
   return {
     id: node.id,
-    fields,
+    fields: pickBy(to.fields, (value, key) => !isEqual(from.fields[key], value)),
     bind: Object.fromEntries(
       Object.entries(to.bindings).filter(([field, id]) => from.bindings[field] !== id)
     ),
-    unbind: Object.keys(from.bindings).filter((field) => !(field in to.bindings))
+    unbind: difference(Object.keys(from.bindings), Object.keys(to.bindings))
   }
 }
 
@@ -150,7 +145,7 @@ function planUpdate(
     const toSources = (map: Map<string, string>) =>
       [...map].map(([name, source]) => ({ name, source }))
     const update = nodeUpdate(graph, node, attributes, toSources(target))
-    const changes = [...new Set([...removed, ...added].map((attribute) => attribute.name))]
+    const changes = uniq([...removed, ...added].map((attribute) => attribute.name))
     const empty =
       Object.keys(update.fields).length === 0 &&
       Object.keys(update.bind).length === 0 &&

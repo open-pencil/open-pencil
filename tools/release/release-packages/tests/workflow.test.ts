@@ -12,6 +12,7 @@ import {
   validatePublicationArtifacts
 } from '#release/workflow'
 import { createTarGzip } from 'nanotar'
+import * as v from 'valibot'
 
 import { readTarball } from '@open-pencil/package-artifacts-tools/tarball'
 
@@ -29,12 +30,15 @@ async function listFiles(directory: string, base = directory): Promise<string[]>
   return nested.flat().sort()
 }
 
+const ManifestJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ name: v.string(), version: v.string() })
+)
+
 /** Packs a prepared directory the way npm lays out a tarball, without starting npm. */
 async function packInProcess(directory: string, destination: string): Promise<string> {
-  const manifest = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as {
-    name: string
-    version: string
-  }
+  const manifest = v.parse(ManifestJSON, await readFile(join(directory, 'package.json'), 'utf8'))
   const files = await Promise.all(
     (await listFiles(directory)).map(async (name) => ({
       name: `package/${name}`,

@@ -212,9 +212,10 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
+    // SVG fills a polyline as if it were closed, so both flatten into one filled vector.
     const children = graph.getChildren(result.id)
-    expect(children).toHaveLength(2)
-    expect(children.every(({ vectorNetwork }) => vectorNetwork !== null)).toBe(true)
+    expect(children).toHaveLength(1)
+    expect(expectDefined(children[0].vectorNetwork).regions).toHaveLength(2)
   })
 
   test('applies nested transforms through the XML tree', async () => {

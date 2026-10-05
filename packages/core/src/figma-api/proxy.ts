@@ -1,4 +1,4 @@
-import { recordInstanceOverride } from '@open-pencil/scene-graph'
+import { recordInstanceOverride, slotPropertyId } from '@open-pencil/scene-graph'
 import type {
   SceneGraph,
   SceneNode,
@@ -35,6 +35,7 @@ import type { FigmaFontName } from './fonts'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
+import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slots'
 import * as TextProxy from './text'
 import * as Traversal from './traversal'
 import type { FigmaTransform } from './types'
@@ -60,7 +61,8 @@ export class FigmaNodeProxy {
   [INTERNAL_API]: NodeProxyHost
 
   declare readonly id: string
-  declare readonly type: NodeType
+  /** A slot frame reads as `'SLOT'`, as Figma's `SlotNode` does. */
+  declare readonly type: NodeType | 'SLOT'
   declare name: string
   declare readonly removed: boolean
   declare x: number
@@ -280,12 +282,14 @@ export class FigmaNodeProxy {
   appendChild(child: FigmaNodeProxy): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
+    prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'appendChild')
     this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
   }
 
   insertChild(index: number, child: FigmaNodeProxy): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
+    prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'insertChild')
     this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].reorderChild(child[INTERNAL_ID], this[INTERNAL_ID], index)
   }
@@ -296,11 +300,19 @@ export class FigmaNodeProxy {
     const parentId = n.parentId ?? this[INTERNAL_API].currentPageId
     const cloned = this[INTERNAL_GRAPH].cloneTree(this[INTERNAL_ID], parentId)
     if (!cloned) throw new Error(`Failed to clone node ${this[INTERNAL_ID]}`)
+    // A slot's copy is a plain frame: the slot binding belongs to the original alone.
+    if (slotPropertyId(cloned))
+      this[INTERNAL_GRAPH].updateNode(cloned.id, {
+        componentPropertyReferences: cloned.componentPropertyReferences.filter(
+          (reference) => reference.field !== 'SLOT_CONTENT'
+        )
+      })
     return this[INTERNAL_API].wrapNode(cloned.id)
   }
 
   remove(): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    prepareSlotRemoval(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
   }
 
@@ -432,3 +444,4 @@ installTextNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installVariableModeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installComponentPropertyAccessors(FigmaNodeProxy.prototype, proxyInternals)
+installSlotAccessors(FigmaNodeProxy.prototype, proxyInternals)

@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test'
+import * as v from 'valibot'
+
+const ModeValuesJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.number()))
 
 test('missing definitions retain identity and remain explicitly detachable', async ({ page }) => {
   await page.goto('/iframe.html?id=vue-sdk-primitives-bindablevalue--mode-editing&viewMode=story')
@@ -19,7 +22,7 @@ for (const outcome of ['Cancel', 'Commit']) {
   test(`captured variable modes survive target changes: ${outcome}`, async ({ page }) => {
     await page.goto('/iframe.html?id=vue-sdk-primitives-bindablevalue--mode-editing&viewMode=story')
     const values = async () =>
-      JSON.parse(await page.getByLabel('Mode values').innerText()) as Record<string, number>
+      v.parse(ModeValuesJSON, await page.getByLabel('Mode values').innerText())
     const before = await values()
     await page.getByRole('button', { name: 'Begin edit', exact: true }).click()
     await page.getByRole('button', { name: 'Set 12', exact: true }).click()

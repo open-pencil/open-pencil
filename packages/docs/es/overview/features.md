@@ -19,7 +19,7 @@ OpenPencil abre y guarda archivos `.fig` directamente. La importación y exporta
 
 ## Panel de propiedades
 
-Las pestañas Diseño, Código e AI se adaptan a la selección:
+Las pestañas Diseño, Código, IA y Revisar se adaptan a la selección:
 
 - **Apariencia:** opacidad, radio uniforme o por esquina y visibilidad.
 - **Relleno:** color sólido, degradados lineal, radial, angular y diamante, e imágenes.
@@ -28,6 +28,8 @@ Las pestañas Diseño, Código e AI se adaptan a la selección:
 - **Tipografía:** selector de fuentes con búsqueda y desplazamiento virtual, estilo, tamaño, alineación y formato.
 - **Disposición:** controles de la disposición automática.
 - **Exportación:** escala, PNG/JPG/WEBP/SVG y vista previa.
+- **Código:** Design JSX y Tailwind JSX de la selección, con edición bidireccional en vivo de Design JSX que actualiza tu código a medida que cambian las capas; el elemento bajo el cursor resalta su capa en el lienzo y los problemas de diseño se subrayan en la propiedad que los causa.
+- **Revisar:** revisión de diseño en vivo de la página o la selección (bajo contraste, áreas táctiles pequeñas, colores sin variable, espaciados fuera de escala), con marcadores de problemas en el lienzo y enlace a variables con un clic ([Revisar diseños](/user-guide/checking-designs)).
 
 ## Renderizado
 

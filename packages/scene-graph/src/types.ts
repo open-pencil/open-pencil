@@ -206,11 +206,9 @@ export interface SharedStyle {
   type: SharedStyleType
 }
 
-export interface Stroke {
-  color: Color
+/** A stroke is a paint with the geometry that decides where it is drawn. */
+export interface Stroke extends Fill {
   weight: number
-  opacity: number
-  visible: boolean
   align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
   cap?: StrokeCap
   join?: StrokeJoin
@@ -406,6 +404,14 @@ export interface EnabledLibraryBinding {
   enabled: boolean
 }
 
+/** The library a document publishes as. */
+export interface SourceLibraryPublication {
+  libraryId: string
+  revisionId: string
+  name: string
+  catalogSource?: string
+}
+
 export interface SceneNode {
   id: string
   type: NodeType
@@ -587,15 +593,30 @@ export interface SceneNode {
   textPathBox: Rect | null
 }
 
-export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP'
+export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP' | 'SLOT'
 
-export type ComponentPropertyReferenceField = 'VISIBLE' | 'TEXT' | 'INSTANCE_SWAP'
+/** `SLOT_CONTENT` marks a frame whose children are the slot's content. */
+export type ComponentPropertyReferenceField = 'VISIBLE' | 'TEXT' | 'INSTANCE_SWAP' | 'SLOT_CONTENT'
 
 export interface ComponentPropertyReference {
   propertyId: string
   field: ComponentPropertyReferenceField
 }
 
+/** Guidance for a slot property; Figma reports a breach but still accepts the content. */
+export interface SlotSettings {
+  minChildren?: number
+  maxChildren?: number
+  allowPreferredValuesOnly: boolean
+  displayEmptyByDefault: boolean
+  /** Content added to the slot fills its counter axis. */
+  stretchChildOnInsert: boolean
+}
+
+/**
+ * For a `SLOT` property, an instance assignment (whatever its value) means the instance owns
+ * that slot's content: the slot frame's children in the instance, which component sync keeps.
+ */
 export interface ComponentPropertyDefinition {
   id: string
   name: string
@@ -603,11 +624,57 @@ export interface ComponentPropertyDefinition {
   defaultValue: string
   variantOptions?: string[]
   preferredValues?: string[]
+  description?: string
+  slotSettings?: SlotSettings
 }
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
 export type VariableValue = Color | number | string | boolean | { aliasId: string }
 export type VariableModeMap = Record<string, string>
+
+/** Property pickers a variable is offered in, as Figma names them. */
+export const VARIABLE_SCOPES = [
+  'ALL_SCOPES',
+  'TEXT_CONTENT',
+  'CORNER_RADIUS',
+  'WIDTH_HEIGHT',
+  'GAP',
+  'ALL_FILLS',
+  'FRAME_FILL',
+  'SHAPE_FILL',
+  'TEXT_FILL',
+  'STROKE',
+  'STROKE_FLOAT',
+  'EFFECT_FLOAT',
+  'EFFECT_COLOR',
+  'OPACITY',
+  'FONT_STYLE',
+  'FONT_FAMILY',
+  'FONT_SIZE',
+  'LINE_HEIGHT',
+  'LETTER_SPACING',
+  'PARAGRAPH_SPACING',
+  'PARAGRAPH_INDENT',
+  'FONT_VARIATIONS',
+  'TRANSFORM'
+] as const
+export type VariableScope = (typeof VARIABLE_SCOPES)[number]
+
+export const CODE_SYNTAX_PLATFORMS = ['WEB', 'ANDROID', 'iOS'] as const
+export type CodeSyntaxPlatform = (typeof CODE_SYNTAX_PLATFORMS)[number]
+
+/**
+ * The CSS unit a numeric token is written in. Lengths (`px`, `rem`) stay in canvas pixels in
+ * the document and convert only when written as CSS; the other units store the number as written.
+ */
+export const TOKEN_UNITS = ['none', 'px', 'rem', '%', 'ms', 's', 'deg'] as const
+export type TokenUnit = (typeof TOKEN_UNITS)[number]
+
+/** A mode value authored as raw CSS. `resolved` is the number the canvas drew for it. */
+export interface TokenExpression {
+  css: string
+  resolved: number
+}
 
 export interface Variable {
   id: string
@@ -617,6 +684,18 @@ export interface Variable {
   valuesByMode: Record<string, VariableValue>
   description: string
   hiddenFromPublishing: boolean
+  /** Absent means every scope. */
+  scopes?: VariableScope[]
+  /**
+   * Per-platform code snippets, as Figma's Dev Mode shows them. A `WEB` snippet of `--x` or
+   * `var(--x)` names the token's CSS custom property; otherwise the name is derived.
+   */
+  codeSyntax?: Partial<Record<CodeSyntaxPlatform, string>>
+  /** FLOAT only. Absent means inferred when written as CSS. */
+  unit?: TokenUnit
+  /** Raw CSS by mode id, for values a number cannot express (`clamp()`, `calc()`). */
+  expressions?: Record<string, TokenExpression>
+  pluginData?: PluginDataEntry[]
   /** Published library key (from NodeChange.key). Used for assetRef resolution in colorVar. */
   key?: string
   /** Published library version (from NodeChange.version). Used for assetRef resolution in colorVar. */
@@ -631,12 +710,19 @@ export type NumericNodeProperty = {
 export interface VariableCollectionMode {
   modeId: string
   name: string
+  /**
+   * Where the mode applies in CSS: a selector (`[data-theme="dark"]`, `.compact`) or an
+   * at-rule prelude (`@media (max-width: 640px)`). Absent means the default for its axis.
+   */
+  condition?: string
 }
 
 export interface VariableCollection {
   id: string
   name: string
+  /** The default mode comes first, as in Figma. */
   modes: VariableCollectionMode[]
   defaultModeId: string
   variableIds: string[]
+  pluginData?: PluginDataEntry[]
 }

@@ -15,7 +15,8 @@ export default defineRule({
     context.report({
       node,
       message: `Default layer name "${node.name}" is not descriptive`,
-      suggest: 'Rename to describe the layer purpose'
+      suggest: 'Rename to describe the layer purpose',
+      data: { name: node.name }
     })
   }
 })

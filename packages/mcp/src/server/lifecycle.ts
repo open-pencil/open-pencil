@@ -9,6 +9,7 @@ import type { Hono } from 'hono'
 import type { WebSocketServer } from 'ws'
 
 import {
+  parseDiscoveryInfo,
   removeDiscoveryFile,
   removeStaleSocket,
   writeDiscoveryFile
@@ -269,15 +270,8 @@ export async function cleanupDiscovery(
   // millisecond is extremely unlikely.
   const discoveryPath = await getDiscoveryPath()
   try {
-    const raw = await readFile(discoveryPath, 'utf-8')
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object') return
-    const info = parsed as {
-      authToken: string | null
-      socketPath?: string | null
-      httpPort?: number
-      startedAt?: string
-    }
+    const info = parseDiscoveryInfo(await readFile(discoveryPath, 'utf-8'))
+    if (!info) return
     if (info.authToken !== ownAuthToken) return
     if (info.socketPath !== ownSocketPath) return
     if (info.httpPort !== ownHttpPort) return

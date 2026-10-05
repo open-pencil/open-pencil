@@ -1,4 +1,4 @@
-import type { InstanceOccurrence } from '#fig/instance-overrides/interpret'
+import type { InstanceOccurrence } from '#fig/instance-overrides/occurrence/types'
 import type { MaterializedComponentOccurrence } from '#fig/instance-overrides/source-children'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'

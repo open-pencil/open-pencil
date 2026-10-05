@@ -43,7 +43,7 @@ export const UNIT_TEST_GROUPS = {
     'tests/engine/vector'
   ],
   dom: [
-    'packages/codegen/tests',
+    'packages/emit/tests',
     'packages/design-jsx/tests',
     'packages/dom-css/tests',
     'packages/pen/tests',

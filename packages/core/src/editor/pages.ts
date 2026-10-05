@@ -1,5 +1,6 @@
 import { limitAsync } from 'es-toolkit/promise'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { getPageColor, setPageBackgrounds } from '#core/figma-api/page-backgrounds'
@@ -53,6 +54,9 @@ export function createPageActions(ctx: EditorContext) {
   let populationWorkerInstance: ReturnType<typeof createFigPopulationWorker> | undefined
   let populationWorkerGeneration = 0
   let pageSwitchGeneration = 0
+  // Off-screen preparations per document, shared by concurrent callers and kept once they
+  // succeed. Later edits lay out their own scope, as they do on the page on screen.
+  const offscreenPreparations = new WeakMap<SceneGraph, Map<string, Promise<boolean>>>()
 
   function populationWorker() {
     if (!canUseFigPopulationWorker(ctx.graph)) return null
@@ -200,6 +204,48 @@ export function createPageActions(ctx: EditorContext) {
     if (ctx.graph.getNode(pageId)?.type === 'CANVAS') await populatePage(pageId, null)
   }
 
+  async function prepareOffscreenPage(graph: SceneGraph, page: SceneNode): Promise<boolean> {
+    const populated = await populatePage(page.id, null)
+    if (populated === null || graph !== ctx.graph) return false
+    await resolvePageFonts(page.id, page.name, {})
+    if (graph !== ctx.graph) return false
+    computeAllLayouts(graph, page.id)
+    return true
+  }
+
+  /**
+   * Loads a page's layers with their fonts and layout, ready to render, without switching to
+   * it or superseding a page switch in progress. False when the document was closed or
+   * replaced first. The page on screen already was prepared, when it was shown.
+   */
+  function preparePageNodes(pageId: string): Promise<boolean> {
+    const graph = ctx.graph
+    const page = graph.getNode(pageId)
+    if (page?.type !== 'CANVAS') return Promise.resolve(false)
+    if (pageId === ctx.state.currentPageId) return Promise.resolve(true)
+    let preparations = offscreenPreparations.get(graph)
+    if (!preparations) {
+      preparations = new Map()
+      offscreenPreparations.set(graph, preparations)
+    }
+    const pending = preparations.get(pageId)
+    if (pending) return pending
+    // A failed or superseded preparation is retried by the next caller.
+    const forget = () => preparations.delete(pageId)
+    const preparation = prepareOffscreenPage(graph, page).then(
+      (ready) => {
+        if (!ready) forget()
+        return ready
+      },
+      (error: unknown) => {
+        forget()
+        throw error
+      }
+    )
+    preparations.set(pageId, preparation)
+    return preparation
+  }
+
   async function switchPage(pageId: string, options: SwitchPageOptions = {}): Promise<void> {
     const prepared = await preparePage(pageId, options)
     if (prepared) commitPageSwitch(prepared)
@@ -266,6 +312,7 @@ export function createPageActions(ctx: EditorContext) {
 
   return {
     loadPageNodes,
+    preparePageNodes,
     pageSwitchCount,
     preparePage,
     commitPageSwitch,

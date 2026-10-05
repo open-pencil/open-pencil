@@ -9,5 +9,7 @@
   "renameMode": "重命名模式",
   "duplicateMode": "复制模式",
   "deleteMode": "删除模式",
-  "setDefaultMode": "设为默认"
+  "setDefaultMode": "设为默认",
+  "copyAsCSS": "复制为 CSS",
+  "copyAsTailwindTheme": "复制为 Tailwind 主题"
 }

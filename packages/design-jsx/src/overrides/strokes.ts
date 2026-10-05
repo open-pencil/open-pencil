@@ -1,3 +1,5 @@
+import { designJSXProp } from '#design-jsx/schema'
+
 import type { SceneNode, Stroke, StrokeCap, StrokeJoin } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -57,6 +59,7 @@ function dashValue(value: unknown): number[] | undefined {
 function toStroke(value: StrokeValue): Stroke {
   const color = typeof value.color === 'string' ? parseColor(value.color) : value.color
   const stroke: Stroke = {
+    type: 'SOLID',
     color,
     opacity: typeof value.opacity === 'number' ? value.opacity : color.a,
     visible: value.visible ?? true,
@@ -115,7 +118,7 @@ export function applyStrokeOverrides(props: Record<string, unknown>, o: Partial<
     return
   }
 
-  const color = props.stroke ?? props.border ?? props.borderColor
+  const color = designJSXProp(props, 'stroke')
   if (typeof color !== 'string' && !isColor(color)) return
   o.strokes = [
     toStroke({

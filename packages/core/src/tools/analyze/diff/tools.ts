@@ -114,10 +114,13 @@ export const diffShow = defineTool({
 export const diffApply = defineTool({
   name: 'diff_apply',
   description:
-    "Apply a patch from diff_create or diff_show. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
+    "Apply a patch from diff_create, diff_show, or diff_changes. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
   execution: { kind: 'async', mutation: 'document' },
   input: v.object({
-    patch: v.pipe(v.string(), v.description('Patch text from diff_create or diff_show')),
+    patch: v.pipe(
+      v.string(),
+      v.description('Patch text from diff_create, diff_show, or diff_changes')
+    ),
     dryRun: v.optional(
       v.pipe(v.boolean(), v.description('Check and report changes without applying')),
       false

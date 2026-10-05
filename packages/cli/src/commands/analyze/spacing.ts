@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 

@@ -1,7 +1,7 @@
 import { expect } from 'bun:test'
 
-import type { InstancePathDiagnostic } from '#fig/instance-overrides/interpret'
-import { InstancePathError } from '#fig/instance-overrides/occurrence-path'
+import { InstancePathError } from '#fig/instance-overrides/occurrence/path'
+import type { InstancePathDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
 /**
  * Assert why a path failed to resolve rather than how the message reads. A count of

@@ -132,6 +132,7 @@ test("the agent's switch_page moves the run and the user's view", async () => {
 
     expect(runPageId(store)).toBe(b)
     expect(store.graph.getChildren(b)).toHaveLength(1)
+    expect(presenceOf(store).agents.value[0]?.pageId).toBe(b)
     expect(store.state.currentPageId).toBe(b)
   })
 })

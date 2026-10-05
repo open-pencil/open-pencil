@@ -9,7 +9,11 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_MITER_LIMIT } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_STROKE_MITER_LIMIT,
+  OPEN_PENCIL_PLUGIN_DATA,
+  withPluginData
+} from '@open-pencil/scene-graph'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
@@ -22,9 +26,7 @@ import {
   applyLibrarySourcePluginData,
   applyTextPathBoxPluginData,
   mergePluginData,
-  NODE_TYPE_PLUGIN_KEY,
-  serializePluginRelaunchData,
-  upsertPluginData
+  serializePluginRelaunchData
 } from '../plugin-data'
 import {
   applyColorVariableBinding,
@@ -40,6 +42,8 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
+import { nodeWithResolvedBindings } from './resolved-bindings'
+import { slotContentAssignment, slotDefinitionFields } from './slots'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -535,7 +539,10 @@ function componentPropertyPreferredValues(
   definition: ComponentPropertyDefinition,
   context: SceneNodeToKiwiContext
 ) {
-  if (definition.type === 'INSTANCE_SWAP' && definition.preferredValues?.length) {
+  if (
+    (definition.type === 'INSTANCE_SWAP' || definition.type === 'SLOT') &&
+    definition.preferredValues?.length
+  ) {
     return {
       instanceSwapValues: definition.preferredValues.map((value) => {
         const target = context.graph.getNode(value)
@@ -553,6 +560,7 @@ function componentPropertyPreferredValues(
 function componentPropertyNodeField(field: ComponentPropertyReferenceField): string {
   if (field === 'TEXT') return 'TEXT_DATA'
   if (field === 'INSTANCE_SWAP') return 'OVERRIDDEN_SYMBOL_ID'
+  if (field === 'SLOT_CONTENT') return 'SLOT_CONTENT_ID'
   return 'VISIBLE'
 }
 
@@ -612,7 +620,8 @@ function applyParameterReferences(nc: KiwiNodeChange, refs: ExportedPropertyRefe
   const types: Record<string, string> = {
     VISIBLE: 'BOOLEAN',
     TEXT_DATA: 'STRING',
-    OVERRIDDEN_SYMBOL_ID: 'SYMBOL_ID'
+    OVERRIDDEN_SYMBOL_ID: 'SYMBOL_ID',
+    SLOT_CONTENT_ID: 'SLOT_CONTENT_ID'
   }
   for (const ref of refs)
     entries.push({
@@ -646,31 +655,60 @@ function applyComponentMetadata(
   }
   if (node.symbolDescription) nc.symbolDescription = node.symbolDescription
   if (node.symbolLinks.length > 0) nc.symbolLinks = structuredClone(node.symbolLinks)
-  const componentPropDefs = node.componentPropertyDefinitions.map((def) => ({
-    id: getOrCreatePropertyGuid(context, def.id, localIdCounter),
-    name: def.name,
-    type: componentPropertyTypeForKiwi(def.type),
-    initialValue: componentPropertyValue(def.type, def.defaultValue, context, localIdCounter),
-    varValue: componentPropertyVariableValue(def.type, def.defaultValue, context, localIdCounter),
-    preferredValues: componentPropertyPreferredValues(def, context)
-  }))
+  const componentPropDefs = node.componentPropertyDefinitions.map((def) => {
+    const record: Record<string, unknown> = {
+      id: getOrCreatePropertyGuid(context, def.id, localIdCounter),
+      name: def.name,
+      type: componentPropertyTypeForKiwi(def.type),
+      preferredValues: componentPropertyPreferredValues(def, context)
+    }
+    if (def.type === 'SLOT') Object.assign(record, slotDefinitionFields(def))
+    else {
+      record.initialValue = componentPropertyValue(
+        def.type,
+        def.defaultValue,
+        context,
+        localIdCounter
+      )
+      record.varValue = componentPropertyVariableValue(
+        def.type,
+        def.defaultValue,
+        context,
+        localIdCounter
+      )
+    }
+    if (def.description) record.description = def.description
+    return record
+  })
   if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0)) {
     nc.componentPropDefs = componentPropDefs
   }
 
-  const componentPropRefs = node.componentPropertyReferences.map((ref) => ({
+  const parameterRefs = node.componentPropertyReferences.map((ref) => ({
     defID: getOrCreatePropertyGuid(context, ref.propertyId, localIdCounter),
     componentPropNodeField: componentPropertyNodeField(ref.field)
   }))
+  // Figma binds a slot frame only through its parameter map, never a legacy property ref.
+  const componentPropRefs = parameterRefs.filter(
+    (ref) => ref.componentPropNodeField !== 'SLOT_CONTENT_ID'
+  )
   if (shouldSerializeRawBackedField(node, 'componentPropRefs', componentPropRefs.length > 0)) {
     nc.componentPropRefs = componentPropRefs
   }
 
-  applyParameterReferences(nc, componentPropRefs)
+  applyParameterReferences(nc, parameterRefs)
   const componentPropAssignments = Object.entries(node.componentPropertyAssignments)
     .map(([propertyId, value]) => {
       const definition = context.componentPropertyDefinitionsById.get(propertyId)
       if (!definition) return null
+      if (definition.type === 'SLOT')
+        return slotContentAssignment(
+          context,
+          node,
+          propertyId,
+          getOrCreatePropertyGuid(context, propertyId, localIdCounter),
+          localIdCounter
+        )
       return {
         defID: getOrCreatePropertyGuid(context, propertyId, localIdCounter),
         value: componentPropertyValue(definition.type, value, context, localIdCounter),
@@ -848,12 +886,13 @@ function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): s
 }
 
 export function sceneNodeToKiwiWithContext(
-  node: SceneNode,
+  source: SceneNode,
   parentGuid: GUID,
   childIndex: number,
   localIdCounter: { value: number },
   context: SceneNodeToKiwiContext
 ): KiwiNodeChange[] {
+  const node = nodeWithResolvedBindings(context.graph, source)
   const guid = getOrCreateNodeGuid(context, node.id, localIdCounter) ?? {
     sessionID: 1,
     localID: localIdCounter.value++
@@ -894,7 +933,8 @@ export function sceneNodeToKiwiWithContext(
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
-  if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
+  if (node.type === 'COMPONENT_SET')
+    node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)

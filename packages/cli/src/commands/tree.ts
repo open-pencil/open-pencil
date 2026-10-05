@@ -3,7 +3,7 @@ import { defineCommand } from 'citty'
 
 import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { fmtTree, printError, entity, formatType } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 

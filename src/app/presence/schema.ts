@@ -8,33 +8,38 @@ import { AGENT_KINDS, AGENT_STATUSES } from './types'
 /** Bounds on what a peer can publish, so a broken or hostile peer cannot flood rendering. */
 export const MAX_AGENTS_PER_PEER = 16
 const MAX_SELECTION = 256
-const MAX_NAME = 40
+export const MAX_NAME_LENGTH = 40
 const MAX_ID = 64
 
 const finite = v.pipe(v.number(), v.finite())
 const unit = v.pipe(finite, v.minValue(0), v.maxValue(1))
 const id = v.pipe(v.string(), v.maxLength(MAX_ID))
-const name = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(MAX_NAME))
+const name = v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(MAX_NAME_LENGTH))
 /** Optional fields fall back to absent instead of discarding the whole peer. */
 const lenient = <T extends v.GenericSchema>(schema: T) => v.fallback(v.optional(schema), undefined)
 
 const color = v.object({ r: unit, g: unit, b: unit, a: v.fallback(unit, 1) })
 const point = v.object({ x: finite, y: finite, pageId: id })
+const personPoint = v.object({
+  ...point.entries,
+  zoom: lenient(v.pipe(finite, v.minValue(0.02), v.maxValue(256)))
+})
 const selection = v.pipe(v.array(id), v.maxLength(MAX_SELECTION))
 
 const agent = v.object({
   id,
   name,
   kind: v.picklist(AGENT_KINDS),
-  model: lenient(v.pipe(v.string(), v.maxLength(MAX_NAME))),
+  model: lenient(v.pipe(v.string(), v.maxLength(MAX_NAME_LENGTH))),
   status: v.picklist(AGENT_STATUSES),
+  pageId: lenient(id),
   cursor: lenient(point),
   selection: lenient(selection)
 })
 
 const peerState = v.object({
   user: v.object({ name: lenient(name), color: lenient(color) }),
-  cursor: lenient(point),
+  cursor: lenient(personPoint),
   selection: lenient(selection),
   agents: v.fallback(
     v.optional(

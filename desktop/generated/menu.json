@@ -190,6 +190,11 @@
         "checkbox": true
       },
       {
+        "id": "view-design-issues",
+        "label": "Design Issues",
+        "checkbox": true
+      },
+      {
         "type": "separator"
       },
       {
@@ -364,6 +369,10 @@
       {
         "id": "selection.createInstance",
         "label": "Create Instance"
+      },
+      {
+        "id": "selection.createSlot",
+        "label": "Create Slot"
       },
       {
         "id": "selection.goToMainComponent",

@@ -24,6 +24,11 @@ function styleReference(
   }
 }
 
+/** Figma treats a paint's `opacity` and `visible` as optional, defaulting to 1 and `true`. */
+function paintDefaults(paint: Partial<Pick<Fill, 'opacity' | 'visible'>>) {
+  return { opacity: paint.opacity ?? 1, visible: paint.visible ?? true }
+}
+
 export function installVisualNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals,
@@ -38,6 +43,7 @@ export function installVisualNodeProxyAccessors(
         updateNode(this, internals, {
           fills: value.map((fill) => ({
             ...fill,
+            ...paintDefaults(fill),
             color: normalizeColor(fill.color),
             gradientStops: fill.gradientStops?.map((stop) => ({
               ...stop,
@@ -53,7 +59,11 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly Stroke[]) {
         updateNode(this, internals, {
-          strokes: value.map((stroke) => ({ ...stroke, color: normalizeColor(stroke.color) }))
+          strokes: value.map((stroke) => ({
+            ...stroke,
+            ...paintDefaults(stroke),
+            color: normalizeColor(stroke.color)
+          }))
         })
       }
     },

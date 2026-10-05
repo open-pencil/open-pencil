@@ -33,6 +33,16 @@ Il token è conservato nell’archivio sicuro delle credenziali, non nelle norma
 
 Gli strumenti coprono lettura, creazione, modifica, struttura, variabili, vettori, analisi, descrizione, generazione di codice e immagini stock. Ogni chiamata agisce sull’editor attivo e partecipa alla cronologia quando applicabile.
 
+Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_create` e `diff_jsx` i confronti strutturali, `diff_visual` i confronti pixel per pixel e `describe` il ruolo semantico e il rilevamento dei problemi di design.
+
+## Verifica visiva
+
+L’assistente può verificare visivamente il proprio lavoro. Con `export_image` abilitato, cattura un’immagine dopo aver creato o modificato un design e controlla il risultato rispetto alla richiesta, individuando problemi di disposizione, elementi mancanti e colori sbagliati che una risposta solo testuale non rileverebbe. `diff_visual`, abilitato per impostazione predefinita, confronta un oggetto modificato con una copia di riferimento e restituisce i pixel e l’area cambiati, così l’assistente può confermare che la modifica sia rimasta nel bersaglio previsto.
+
+## Lavorare su altre pagine
+
+Mentre una risposta è in corso puoi esplorare altre pagine: l’assistente continua a lavorare sulla pagina in cui è partito il messaggio e le sue anteprime compaiono al tuo ritorno. Quando non sei su quella pagina, la chat indica su quale sta lavorando, con **Vai alla pagina** per tornarci. Se è l’assistente a cambiare pagina, la tua vista lo segue.
+
 ## Privacy e costi
 
 Le richieste vanno al provider configurato. Verifica condizioni, politica dei dati e prezzi prima di inviare documenti sensibili. OpenPencil non include crediti per i modelli.

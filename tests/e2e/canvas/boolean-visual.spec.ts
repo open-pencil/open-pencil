@@ -32,6 +32,7 @@ test('boolean operations', async () => {
         fills: [{ type: 'SOLID', color: colors[index], visible: true, opacity: 1 }],
         strokes: [
           {
+            type: 'SOLID',
             color: { r: 0.08, g: 0.1, b: 0.18, a: 0.32 },
             weight: 2,
             visible: true,
