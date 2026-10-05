@@ -10,6 +10,7 @@ import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
 import { useJoinRoom } from '@/app/collab/join'
+import { bindDesktopRoomLinks } from '@/app/collab/room/links'
 import { syncRoomRoute } from '@/app/collab/route'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { createDemoShapes } from '@/app/demo/document'
@@ -91,6 +92,7 @@ useEventListener(
 )
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
+const roomLinksCleanup = ref<(() => void) | null>(null)
 
 /**
  * A drain that fails wholesale — the `take_pending_open` invoke, the event binding —
@@ -173,6 +175,14 @@ onMounted(async () => {
     reportOpenFailure(error)
   }
 
+  try {
+    roomLinksCleanup.value = await bindDesktopRoomLinks((roomId) => {
+      if (!joinRoomFromInput(roomId)) toast.error(collaboration.value.invalidRoomLink)
+    })
+  } catch (error) {
+    console.error('[Room link]', error)
+  }
+
   // The browser twin of the deep link: the desktop build takes its links through the
   // deep-link plugin above, so only a real browser reads them off the address bar.
   if (IS_BROWSER && !isTauri()) {
@@ -191,6 +201,7 @@ onUnmounted(() => {
   stopWebMCP?.()
   void stopMCPRuntime()
   fileAssociationCleanup.value?.()
+  roomLinksCleanup.value?.()
 })
 </script>
 
