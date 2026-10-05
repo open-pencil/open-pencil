@@ -243,7 +243,7 @@ describe('set_font_range', () => {
       style: 'Bold'
     })
 
-    const node = getNodeOrThrow(graph, created.id)
+    const node = getNodeOrThrow(graph, expectDefined(created.id, 'created node id'))
     expect(node.styleRuns.length).toBeGreaterThan(0)
     for (const run of node.styleRuns) {
       expect(run.style).toBeDefined()
@@ -272,7 +272,7 @@ describe('set_font_range', () => {
     setText.execute(figma, { id: created.id, text: 'Red text' })
     setFontRange.execute(figma, { id: created.id, start: 0, end: 3, color: '#ff0000' })
 
-    const node = getNodeOrThrow(graph, created.id)
+    const node = getNodeOrThrow(graph, expectDefined(created.id, 'created node id'))
     const colorRun = node.styleRuns.find((r) => r.style.fills?.length)
     expect(colorRun).toBeDefined()
     expect(

@@ -11,6 +11,8 @@ import {
 
 import { expectDefined } from '#tests/helpers/assert'
 
+import { expectRgbaPixels } from './helpers'
+
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {
@@ -68,7 +70,7 @@ function renderPixels(renderer: SkiaRenderer, graph: SceneGraph): Uint8Array {
     colorSpace: ck.ColorSpace.SRGB
   })
   image.delete()
-  return expectDefined(pixels, 'retained backing pixels')
+  return expectRgbaPixels(pixels, 'retained backing pixels')
 }
 
 function differingChannels(a: Uint8Array, b: Uint8Array, tolerance: number): number {
@@ -143,7 +145,7 @@ describe('retained effect raster integration', () => {
       direct.renderSceneToCanvas(direct.surface.getCanvas(), graph, pageId)
       direct.surface.flush()
       const directImage = direct.surface.makeImageSnapshot()
-      const directPixels = expectDefined(
+      const directPixels = expectRgbaPixels(
         directImage.readPixels(0, 0, {
           width: 256,
           height: 192,

@@ -1,5 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import type { DesignTokens } from './tokens/references'
+
 export type DesignNode = DesignElement | DesignText
 
 export interface DesignDocument {
@@ -7,6 +9,8 @@ export interface DesignDocument {
   children: DesignNode[]
   stylesheets?: DesignStyleSheet[]
   sourceGraph?: SceneGraph
+  /** Variable references the projection wrote, for Tailwind names and the token stylesheet. */
+  tokens?: DesignTokens
 }
 
 export interface DesignElement {

@@ -70,7 +70,7 @@ afterEach(() => {
 describe('useDocumentWorkspace', () => {
   test('shares an in-flight refresh and responds to source events', async () => {
     const firstRefresh = deferred<DocumentWorkspaceItem[]>()
-    let sourceListener: (() => void) | null = null
+    const source: { listener: (() => void) | null } = { listener: null }
     const refresh = vi
       .fn<() => Promise<DocumentWorkspaceItem[]>>()
       .mockImplementationOnce(() => firstRefresh.promise)
@@ -79,9 +79,9 @@ describe('useDocumentWorkspace', () => {
       refresh,
       loadPreview: async () => null,
       subscribe(listener) {
-        sourceListener = listener
+        source.listener = listener
         return () => {
-          sourceListener = null
+          source.listener = null
         }
       }
     })
@@ -91,8 +91,8 @@ describe('useDocumentWorkspace', () => {
     expect(inFlightA).toBe(inFlightB)
     expect(refresh).toHaveBeenCalledTimes(1)
 
-    sourceListener?.()
-    sourceListener?.()
+    source.listener?.()
+    source.listener?.()
     firstRefresh.resolve([{ id: 'first', name: 'First', updatedAt: '2026-08-09' }])
     await inFlightA
     await flushTasks()
@@ -100,7 +100,7 @@ describe('useDocumentWorkspace', () => {
     expect(mounted.workspace.documents.value.map(({ id }) => id)).toEqual(['second'])
 
     mounted.unmount()
-    expect(sourceListener).toBeNull()
+    expect(source.listener).toBeNull()
   })
 
   test('invalidates an in-flight preview when the document changes', async () => {

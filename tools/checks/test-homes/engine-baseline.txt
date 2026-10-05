@@ -353,7 +353,6 @@ tests/engine/profiler/frame-stats.test.ts
 tests/engine/profiler/gpu-timer.test.ts
 tests/engine/profiler/phase-timer.test.ts
 tests/engine/profiler/speedscope.test.ts
-tests/engine/random/basic.test.ts
 tests/engine/render/canvas/arrow-heads-draw.test.ts
 tests/engine/render/canvas/blend.test.ts
 tests/engine/render/canvas/boolean.test.ts

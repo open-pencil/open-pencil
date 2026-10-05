@@ -33,7 +33,7 @@ test('undo after option-drag duplicate removes the copy', async () => {
 
   await editor.canvas.altDrag(180, 165, 340, 165)
   await expect.poll(rectangleCount).toBe(2)
-  await expect.poll(layerItems).toEqual(['Rectangle', 'Rectangle copy'])
+  await expect.poll(layerItems).toEqual(['Rectangle', 'Rectangle'])
 
   await editor.canvas.undo()
   await expect.poll(rectangleCount).toBe(1)
@@ -52,12 +52,12 @@ test('undo after option-drag duplicate removes the copy', async () => {
   await editor.page.keyboard.up('Meta')
   await editor.canvas.waitForRender()
   await expect.poll(rectangleCount).toBe(2)
-  await expect.poll(layerItems).toEqual(['Rectangle', 'Rectangle copy'])
+  await expect.poll(layerItems).toEqual(['Rectangle', 'Rectangle'])
   await expect.poll(historyState).toMatchObject({ canUndo: true, undoLabel: 'Duplicate' })
 
   await editor.page.waitForTimeout(1500)
   await expect.poll(rectangleCount).toBe(2)
-  await expect.poll(layerItems).toEqual(['Rectangle', 'Rectangle copy'])
+  await expect.poll(layerItems).toEqual(['Rectangle', 'Rectangle'])
   await expect.poll(historyState).toMatchObject({ canUndo: true, undoLabel: 'Duplicate' })
   editor.canvas.assertNoErrors()
 })

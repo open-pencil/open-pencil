@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import type { Vector } from '@open-pencil/core'
+import type { Vector } from '@open-pencil/scene-graph'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 

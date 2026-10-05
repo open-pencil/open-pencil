@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": [

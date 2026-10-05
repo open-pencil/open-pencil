@@ -182,6 +182,20 @@ export function addMode(
   }
 }
 
+/** Add a mode with a new ID from `generateId`; undo and redo replay it with `addMode`. */
+export function createMode(
+  graph: SceneGraph,
+  generateId: () => string,
+  collectionId: string,
+  name: string,
+  sourceMode?: string
+): string | undefined {
+  if (!graph.variableCollections.has(collectionId)) return undefined
+  const modeId = generateId()
+  addMode(graph, collectionId, modeId, name, sourceMode)
+  return modeId
+}
+
 export function removeMode(graph: SceneGraph, collectionId: string, modeId: string): void {
   const collection = graph.variableCollections.get(collectionId)
   if (!collection || collection.modes.length <= 1) return

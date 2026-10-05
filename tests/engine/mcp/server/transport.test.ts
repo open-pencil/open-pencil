@@ -22,6 +22,7 @@ import {
   socketRequest,
   tcpRequest,
   waitForBrowserRegistration,
+  type HealthResponse,
   type MockBrowser
 } from '#tests/helpers/mcp/server'
 

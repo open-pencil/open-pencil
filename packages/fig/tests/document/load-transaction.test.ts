@@ -32,6 +32,8 @@ test('failed page mutation restores changed existing instance indexes and object
         contentIds: new Set(['instance']),
         ancestorIds: new Set(),
         missingIds: new Set(),
+        missingComponentIds: new Set(),
+        missingSlotContentIds: new Set(),
         externalPreferredKeys: new Set()
       },
       () => {

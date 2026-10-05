@@ -36,7 +36,7 @@ describe('Tauri font helpers', () => {
     const buffer = await loadFont('System UI', 'Bold Italic')
 
     expect([...new Uint8Array(buffer ?? new ArrayBuffer(0))]).toEqual([1, 2, 3, 4])
-    expect(fontManager.isLoaded('System UI', 'Bold Italic')).toBe(true)
+    expect(fontManager.isStyleLoaded('System UI', 'Bold Italic')).toBe(true)
   })
 
   test('records installed faces whose outlines cannot be drawn', async () => {

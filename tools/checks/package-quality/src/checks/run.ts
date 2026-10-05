@@ -1,4 +1,4 @@
-import { mapAsync } from 'es-toolkit'
+import { compact, mapAsync } from 'es-toolkit'
 
 import { CommandError, runCommand, type CommandRequest } from '@open-pencil/package-artifacts-tools'
 
@@ -16,7 +16,7 @@ export async function runPackageChecks(
         return undefined
       } catch (error) {
         if (error instanceof CommandError) {
-          return new Error([error.message, error.stdout, error.stderr].filter(Boolean).join('\n'))
+          return new Error(compact([error.message, error.stdout, error.stderr]).join('\n'))
         }
         return error instanceof Error ? error : new Error(String(error))
       }

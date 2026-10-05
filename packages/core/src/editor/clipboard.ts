@@ -1,6 +1,7 @@
 import { CommittedGraphEventError } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseFigmaClipboard, parseOpenPencilClipboard } from '#core/clipboard'
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
@@ -25,6 +26,23 @@ type PasteOptions = {
   replaceSelection?: boolean
 }
 
+/**
+ * A copy of the layer under the same parent, keeping its name as Figma does. A main component
+ * outside a component set duplicates as an instance of itself.
+ */
+export function duplicateNode(
+  ctx: Pick<EditorContext, 'graph'>,
+  node: SceneNode,
+  parentId: string,
+  position: Vector
+): SceneNode | null {
+  const parent = ctx.graph.getNode(parentId)
+  if (node.type === 'COMPONENT' && parent?.type !== 'COMPONENT_SET') {
+    return ctx.graph.createInstance(node.id, parentId, { name: node.name, ...position })
+  }
+  return ctx.graph.cloneTree(node.id, parentId, { name: node.name, ...position })
+}
+
 export function createClipboardActions(ctx: EditorContext) {
   function duplicateSelected(selectedNodes: SceneNode[]) {
     const prevSelection = new Set(ctx.state.selectedIds)
@@ -36,14 +54,16 @@ export function createClipboardActions(ctx: EditorContext) {
     const newRootIds: string[] = []
     const allSnapshots = new Map<string, SceneNode>()
 
+    const placed: Rect[] = []
     for (const node of topLevel) {
       const parentId = node.parentId ?? ctx.state.currentPageId
-      const clone = ctx.graph.cloneTree(node.id, parentId, {
-        name: node.name + ' copy',
-        x: node.x + 20,
-        y: node.y + 20
-      })
+      const position =
+        topLevel.length === 1
+          ? placementActions.duplicatePosition(node, placed)
+          : { x: node.x, y: node.y }
+      const clone = duplicateNode(ctx, node, parentId, position)
       if (!clone) continue
+      placed.push(getAxisAlignedBoundsInParent([clone], parentId, ctx.graph))
       newRootIds.push(clone.id)
       const subtree = snapshotSubtree(ctx.graph, clone.id)
       for (const [id, snap] of subtree) allSnapshots.set(id, snap)
@@ -216,8 +236,6 @@ export function createClipboardActions(ctx: EditorContext) {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
       const node = ctx.graph.createNode(source.type, parentId, {
         ...structuredClone(rest),
-        x: source.x + 20,
-        y: source.y + 20,
         childIds: []
       })
       copiedIds.set(source.id, node.id)
@@ -267,7 +285,8 @@ export function createClipboardActions(ctx: EditorContext) {
       return created
     }
 
-    if (cursorPos) placementActions.centerNodesAt(created, cursorPos.x, cursorPos.y)
+    if (cursorPos) placementActions.centerNodesAtCanvasPoint(created, pasteTarget, cursorPos)
+    else placementActions.placePasted(created, nodes[0]?.parentId ?? undefined, pasteTarget)
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     ctx.setSelectedIds(new Set(created))
 
@@ -394,6 +413,8 @@ export function createClipboardActions(ctx: EditorContext) {
     ...placementActions,
     ...fontActions,
     duplicateSelected,
+    duplicateNode: (node: SceneNode, parentId: string, position: Vector) =>
+      duplicateNode(ctx, node, parentId, position),
     ...copyActions,
     pasteSnapshot,
     pasteFromHTML,

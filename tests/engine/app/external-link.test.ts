@@ -14,7 +14,11 @@ describe('openExternalLink', () => {
 
   beforeEach(() => {
     mockOpen = vi.fn().mockReturnValue(null)
-    globalThis.window = { open: mockOpen } as Window & typeof globalThis
+    Reflect.defineProperty(globalThis, 'window', {
+      value: { open: mockOpen },
+      configurable: true,
+      writable: true
+    })
   })
 
   afterEach(async () => {

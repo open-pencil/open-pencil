@@ -1,24 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
+import { createDefaultNode } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { drawLayoutGrids } from '#core/canvas/layout-grids'
 
 import { createMockCanvas, createMockRenderer, mockCalls } from './effects/helpers'
+import { asCanvas } from './helpers'
 
 function nodeWithLayoutGrids(layoutGrids: unknown[]): SceneNode {
-  return {
-    type: 'FRAME',
-    width: 240,
-    height: 160,
-    source: {
-      fig: {
-        rawNodeFields: { layoutGrids }
-      }
-    }
-  } as SceneNode
+  const node = createDefaultNode(() => 'frame', 'FRAME', { width: 240, height: 160 })
+  node.source.fig.rawNodeFields = { layoutGrids }
+  return node
 }
 
 describe('layout grid rendering', () => {
@@ -38,7 +31,7 @@ describe('layout grid rendering', () => {
       }
     ])
 
-    drawLayoutGrids(r, canvas as Canvas, node)
+    drawLayoutGrids(r, asCanvas(canvas), node)
 
     expect(mockCalls(canvas.drawRect)).toHaveLength(4)
     expect(mockCalls(r.ck.LTRBRect)[0]).toEqual([16, 0, 64, 160])
@@ -60,7 +53,7 @@ describe('layout grid rendering', () => {
       }
     ])
 
-    drawLayoutGrids(r, canvas as Canvas, node)
+    drawLayoutGrids(r, asCanvas(canvas), node)
 
     expect(mockCalls(canvas.drawRect)).toHaveLength(3)
     expect(mockCalls(r.ck.LTRBRect)).toEqual([
@@ -87,7 +80,7 @@ describe('layout grid rendering', () => {
       }
     ])
 
-    drawLayoutGrids(r, canvas as Canvas, node)
+    drawLayoutGrids(r, asCanvas(canvas), node)
 
     expect(mockCalls(canvas.drawRect)).toHaveLength(2)
     expect(mockCalls(r.ck.LTRBRect)).toEqual([
@@ -101,7 +94,7 @@ describe('layout grid rendering', () => {
     const canvas = createMockCanvas()
     const node = nodeWithLayoutGrids([{ pattern: 'GRID', alignment: 'STRETCH', sectionSize: 0 }])
 
-    drawLayoutGrids(r, canvas as Canvas, node)
+    drawLayoutGrids(r, asCanvas(canvas), node)
 
     expect(canvas.drawRect).not.toHaveBeenCalled()
   })
@@ -111,7 +104,7 @@ describe('layout grid rendering', () => {
     const canvas = createMockCanvas()
     const node = nodeWithLayoutGrids([{ visible: false, sectionSize: 20, count: 2 }])
 
-    drawLayoutGrids(r, canvas as Canvas, node)
+    drawLayoutGrids(r, asCanvas(canvas), node)
 
     expect(canvas.drawRect).not.toHaveBeenCalled()
   })

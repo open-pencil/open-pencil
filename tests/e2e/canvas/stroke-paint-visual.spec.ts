@@ -1,3 +1,5 @@
+import type { StrokeCap } from '@open-pencil/scene-graph'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
@@ -78,7 +80,11 @@ test('gradient strokes', async () => {
       align: 'CENTER' as const,
       ...extra
     })
-    const lines = [{}, { dashPattern: [24, 12] }, { cap: 'ARROW_EQUILATERAL' }]
+    const lines: Array<{ dashPattern?: number[]; cap?: StrokeCap }> = [
+      {},
+      { dashPattern: [24, 12] },
+      { cap: 'ARROW_EQUILATERAL' }
+    ]
     for (const [index, extra] of lines.entries()) {
       store.graph.createNode('VECTOR', pageId, {
         name: `vector gradient stroke ${index}`,

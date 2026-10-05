@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectPathError } from '#fig-tests/helpers/errors'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
+import { symbolDataOf } from '#fig/instance-overrides/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
@@ -61,8 +62,9 @@ describe('instance addressing contracts', () => {
   test('retains explicit equal-to-default claims without treating inherited fields as overrides', () => {
     const input = fixture()
     const placedSource = input.find((node) => node.guid === placed)
-    if (!placedSource?.symbolData) throw new Error('Missing placed source')
-    placedSource.symbolData.symbolOverrides = [
+    const placedSymbolData = placedSource && symbolDataOf(placedSource)
+    if (!placedSymbolData) throw new Error('Missing placed source')
+    placedSymbolData.symbolOverrides = [
       { guidPath: { guids: [second, alias] }, textData: { characters: 'Default' } }
     ]
     const result = interpretInstance(input, '4:1')

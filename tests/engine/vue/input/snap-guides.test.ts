@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
-import { computeSnap } from '@open-pencil/scene-graph'
+import { computeSnap, createDefaultNode } from '@open-pencil/scene-graph'
 
 import { computePixelGridSnap, resolveObjectPixelSnap } from '#vue/shared/input/snap'
 
@@ -43,8 +43,14 @@ describe('move snap guide presentation', () => {
 
   test('multiple moving nodes are excluded from object targets', () => {
     const nodes = [
-      { id: 'first', x: 0, y: 0, width: 50, height: 50, rotation: 0 },
-      { id: 'second', x: 50, y: 0, width: 50, height: 50, rotation: 0 }
+      createDefaultNode(() => 'first', 'FRAME', { x: 0, y: 0, width: 50, height: 50, rotation: 0 }),
+      createDefaultNode(() => 'second', 'FRAME', {
+        x: 50,
+        y: 0,
+        width: 50,
+        height: 50,
+        rotation: 0
+      })
     ]
     expect(
       computeSnap(

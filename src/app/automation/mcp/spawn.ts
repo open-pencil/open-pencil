@@ -1,14 +1,15 @@
 import { promiseTimeout } from '@vueuse/core'
+import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { randomHex } from '@open-pencil/core/random'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 import {
   parseToolDescriptor,
   serializeDisabledTools,
   type ToolDescriptor
 } from '@open-pencil/mcp/tools'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
@@ -512,9 +513,11 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
         `MCP server exited before startup completed (code ${earlyExit.code ?? 'null'}, signal ${earlyExit.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
         mcpFailure(
           'exited',
-          [`code=${earlyExit.code ?? 'null'}`, `signal=${earlyExit.signal ?? 'null'}`, details]
-            .filter(Boolean)
-            .join(' ')
+          compact([
+            `code=${earlyExit.code ?? 'null'}`,
+            `signal=${earlyExit.signal ?? 'null'}`,
+            details
+          ]).join(' ')
         )
       )
     )

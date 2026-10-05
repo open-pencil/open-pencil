@@ -1,8 +1,41 @@
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
+import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 
+import { findDrawParent } from '#vue/shared/input/drop-target'
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'
+
+/** Maps canvas points into the axes of the parent a layer is drawn in. */
+function parentSpace(editor: Editor, parentId: string): DragDraw['toLocal'] {
+  const parent = editor.graph.getNode(parentId)
+  if (!parent || parent.type === 'CANVAS') return (x, y) => ({ x, y })
+  const toLocal = Matrix.invert(getWorldMatrix(parent, editor.graph)) ?? Matrix.identity()
+  return (x, y) => {
+    const [lx, ly] = Matrix.mapPoints(toLocal, [x, y])
+    return { x: lx, y: ly }
+  }
+}
+
+function startDraw(
+  type: NodeType,
+  label: string,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  setDrag: (d: DragState) => void
+) {
+  editor.undo.beginBatch(label)
+  const parentId = findDrawParent(cx, cy, type, editor)
+  const toLocal = parentSpace(editor, parentId)
+  const start = toLocal(cx, cy)
+  const nodeId = editor.createShape(type, start.x, start.y, 0, 0, parentId)
+  if (type === 'TEXT') editor.graph.updateNode(nodeId, { text: '' })
+  editor.select([nodeId])
+  setDrag(createDraw(editor, nodeId, start.x, start.y, toLocal))
+}
 
 export function startTextDraw(
   cx: number,
@@ -10,11 +43,7 @@ export function startTextDraw(
   editor: Editor,
   setDrag: (d: DragState) => void
 ) {
-  editor.undo.beginBatch('Create text')
-  const nodeId = editor.createShape('TEXT', cx, cy, 0, 0)
-  editor.graph.updateNode(nodeId, { text: '' })
-  editor.select([nodeId])
-  setDrag(createDraw(editor, nodeId, cx, cy))
+  startDraw('TEXT', 'Create text', cx, cy, editor, setDrag)
 }
 
 export function startShapeDraw(
@@ -26,15 +55,13 @@ export function startShapeDraw(
   const nodeType = TOOL_TO_NODE[editor.state.activeTool]
   if (!nodeType) return
 
-  editor.undo.beginBatch('Create shape')
-  const nodeId = editor.createShape(nodeType, cx, cy, 0, 0)
-  editor.select([nodeId])
-  setDrag(createDraw(editor, nodeId, cx, cy))
+  startDraw(nodeType, 'Create shape', cx, cy, editor, setDrag)
 }
 
 export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean) {
-  let w = cx - d.startX
-  let h = cy - d.startY
+  const point = d.toLocal(cx, cy)
+  let w = point.x - d.startX
+  let h = point.y - d.startY
 
   if (shiftKey) {
     const size = Math.max(Math.abs(w), Math.abs(h))
@@ -50,7 +77,28 @@ export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: bo
   })
 }
 
-function createDraw(editor: Editor, nodeId: string, startX: number, startY: number): DragDraw {
+/** Gives a layer made by a click its default size; returns whether it was only clicked. */
+function settleDrawnSize(preview: ReturnType<Editor['beginNodePreview']>, node: SceneNode) {
+  const clicked = node.width < 2 && node.height < 2
+  if (node.type === 'TEXT') {
+    preview.update(node.id, {
+      width: clicked ? DEFAULT_TEXT_WIDTH : node.width,
+      height: clicked ? DEFAULT_TEXT_HEIGHT : node.height,
+      textAutoResize: clicked ? 'WIDTH_AND_HEIGHT' : 'NONE'
+    })
+  } else if (clicked) {
+    preview.update(node.id, { width: 100, height: 100 })
+  }
+  return clicked
+}
+
+function createDraw(
+  editor: Editor,
+  nodeId: string,
+  startX: number,
+  startY: number,
+  toLocal: DragDraw['toLocal']
+): DragDraw {
   const graph = editor.graph
   const preview = editor.beginNodePreview('Draw dimensions')
   let finished = false
@@ -72,18 +120,15 @@ function createDraw(editor: Editor, nodeId: string, startX: number, startY: numb
     finished = true
     const node = graph.getNode(nodeId)
     try {
-      if (node?.type === 'TEXT') {
-        const isPointText = node.width < 2 && node.height < 2
-        preview.update(nodeId, {
-          width: isPointText ? DEFAULT_TEXT_WIDTH : node.width,
-          height: isPointText ? DEFAULT_TEXT_HEIGHT : node.height,
-          textAutoResize: isPointText ? 'WIDTH_AND_HEIGHT' : 'NONE'
-        })
-      } else if (node && node.width < 2 && node.height < 2) {
-        preview.update(nodeId, { width: 100, height: 100 })
-      }
+      const clicked = node ? settleDrawnSize(preview, node) : false
       preview.commit()
-      if (node?.type === 'SECTION') editor.adoptNodesIntoSection(node.id)
+      // Drawn into auto layout, the layer joins the flow at the end.
+      const parent = graph.getNode(node?.parentId ?? '')
+      if (parent && parent.layoutMode !== 'NONE') editor.runLayoutForNode(parent.id)
+      // A frame made by a click, not drawn over anything, takes nothing in.
+      if (node?.type === 'SECTION' || (node?.type === 'FRAME' && !clicked)) {
+        editor.adoptCoveredLayers(node.id)
+      }
       editor.undo.commitBatch()
     } catch (error) {
       preview.cancel()
@@ -106,6 +151,7 @@ function createDraw(editor: Editor, nodeId: string, startX: number, startY: numb
     type: 'draw',
     startX,
     startY,
+    toLocal,
     nodeId,
     update: (changes) => {
       if (!finished) preview.update(nodeId, changes)

@@ -12,7 +12,7 @@ async function openTypographyForText(page: Page) {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('TEXT', 120, 120, 240, 40)
-    store.updateNode(id, { characters: 'Font picker smoke' })
+    store.updateNode(id, { text: 'Font picker smoke' })
     store.select([id])
     return id
   })

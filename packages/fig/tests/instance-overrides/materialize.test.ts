@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#fig-tests/helpers/assert'
 import { guid } from '#fig-tests/helpers/guid'
 import { interpretComponent, interpretInstance } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
@@ -33,15 +34,15 @@ test('materializes separate occurrence nodes with direct component identities an
   const { occurrence, graph, page, components } = setup()
   const result = materializeInstance(graph, page.id, occurrence, components)
   expect(result.root.type).toBe('INSTANCE')
-  expect(result.root.componentId).toBe(components.get('7:186'))
+  expect(result.root.componentId).toBe(expectDefined(components.get('7:186')))
   const labels = [...result.nodes].filter(([source]) => source.sourceId === '4:483')
   expect(labels).toHaveLength(2)
   expect(labels.map(([, node]) => node.text)).toEqual(['Is it styled?', 'Is it animated?'])
   expect(labels[0][1].id).not.toBe(labels[1][1].id)
   expect(graph.getChildren(result.root.id).map((node) => node.componentId)).toEqual([
-    components.get('7:251'),
-    components.get('7:156'),
-    components.get('7:156')
+    expectDefined(components.get('7:251')),
+    expectDefined(components.get('7:156')),
+    expectDefined(components.get('7:156'))
   ])
   for (const node of result.nodes.values()) expect(node.source.id).toBeNull()
 })

@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { waitForDemo } from '#tests/helpers/demo'
 import { propertyItems, propertySection } from '#tests/helpers/properties'
@@ -96,12 +98,12 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
       nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT') ??
       nodes.find((node) => node.name === 'Card')
     if (!card) throw new Error('Card not found')
-    let owner = card
+    let owner: SceneNode | undefined = card
     while (owner && owner.type !== 'CANVAS') {
       owner = owner.parentId ? store.graph.getNode(owner.parentId) : undefined
     }
     if (owner && owner.id !== store.state.currentPageId) await store.switchPage(owner.id)
-    const stroke = {
+    const stroke: Stroke = {
       type: 'SOLID',
       color: { r: 0.9, g: 0.9, b: 0.92, a: 1 },
       weight: 1,

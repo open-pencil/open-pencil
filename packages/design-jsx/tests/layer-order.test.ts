@@ -25,7 +25,11 @@ describe('Design JSX layer order', () => {
     // Hidden layers are written with `visible={false}`, so they have elements too.
     expect(result.layerIds).toEqual([card.id, title.id, hidden.id, row.id, dot.id, badge.id])
     expect(openingTagNames(result.code)).toEqual(
-      result.layerIds.map((id) => graph.getNode(id)?.name)
+      result.layerIds.map((id) => {
+        const node = graph.getNode(id)
+        if (!node) throw new Error(`Missing layer ${id}`)
+        return node.name
+      })
     )
     expect(result.code).toBe(selectionToJSX([card.id, badge.id], graph))
   })

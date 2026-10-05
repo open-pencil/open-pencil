@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type {
   ComponentPropertyReferenceField,
   ComponentPropertyDefinition,
@@ -8,12 +10,11 @@ import type {
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
-  removeComponentProperty
+  removeComponentProperty,
+  createComponentPropertyId
 } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
-
-import { randomHex } from '#core/random'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
@@ -77,7 +78,7 @@ export function exposeInstanceSwap(
     )
   )
     throw new Error('Candidates must be COMPONENT or COMPONENT_SET nodes')
-  const candidateIds = [...new Set(candidateNodes.map((node) => node.id))]
+  const candidateIds = uniq(candidateNodes.map((node) => node.id))
   if (candidateIds.length !== candidateNodes.length) throw new Error('Candidates must be distinct')
   const host = findPropertyHost(graph, slotNodes[0].parentId)
   if (!host) throw new Error('Instance must be nested inside a COMPONENT or COMPONENT_SET')
@@ -86,7 +87,7 @@ export function exposeInstanceSwap(
   if (!slotNodes.every((node) => findPropertyHost(graph, node.parentId)?.id === host.id))
     throw new Error('All instances must belong to the same component or component set')
   const definition: ComponentPropertyDefinition = {
-    id: `prop:${randomHex(8)}`,
+    id: createComponentPropertyId(),
     name,
     type: 'INSTANCE_SWAP',
     defaultValue: slotNodes[0].componentId ?? candidateIds[0],
@@ -447,7 +448,7 @@ export function installComponentPropertyAccessors(
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('addComponentProperty() can only be called on components')
         const definition: ComponentPropertyDefinition = {
-          id: `prop:${randomHex(8)}`,
+          id: createComponentPropertyId(),
           name: name.trim(),
           type,
           defaultValue:
@@ -531,7 +532,7 @@ export function combineComponentsAsVariants(
   for (const component of components) graph.reparentNode(component.id, componentSet.id)
   if (index !== undefined) graph.reorderChild(componentSet.id, parentId, index)
 
-  const derived = deriveSlashVariantProperties(components, () => `prop:${randomHex(8)}`)
+  const derived = deriveSlashVariantProperties(components, createComponentPropertyId)
   if (derived) {
     for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
     graph.updateNode(componentSet.id, { componentPropertyDefinitions: derived.definitions })

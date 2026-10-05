@@ -114,7 +114,7 @@ describe('Figma rich text oracle', () => {
     expect(props.textDecoration).toBe('UNDERLINE')
     expect(props.textDecorationStyle).toBe('WAVY')
     expect(props.textDecorationThickness).toBe(2)
-    expect(props.textDecorationFills[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(props.textDecorationFills?.[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
     expect(props.textUnderlineOffset).toBe(5)
     expect(props.textDecorationSkipInk).toBe(false)
     expect(props.leadingTrim).toBe('CAP_HEIGHT')

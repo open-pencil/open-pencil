@@ -10,12 +10,14 @@ import {
   type TilePlanOptions
 } from '#core/canvas/renderer/tiles'
 
+import { asDouble } from '../helpers'
+
 function renderedTile(key: TileKey): RenderedTile {
-  const image: Pick<CKImage, 'width' | 'height' | 'delete'> = {
+  const image = asDouble<CKImage>({
     width: () => 256,
     height: () => 256,
     delete: mock()
-  }
+  })
   return {
     key,
     image,

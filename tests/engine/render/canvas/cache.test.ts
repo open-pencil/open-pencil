@@ -17,6 +17,8 @@ import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
+import { expectRgbaPixels } from './helpers'
+
 setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
 let graph: SceneGraph
@@ -48,7 +50,7 @@ function renderPreview(renderer: SkiaRenderer, sceneVersion: number): Uint8Array
     colorSpace: ck.ColorSpace.SRGB
   })
   image.delete()
-  return expectDefined(pixels, 'rendered pixels')
+  return expectRgbaPixels(pixels, 'rendered pixels')
 }
 
 function childNamed(parent: SceneNode | undefined, name: string): SceneNode | undefined {
@@ -82,7 +84,7 @@ function pixelIndex(width: number, x: number, y: number): number {
 }
 
 function maskYCenter(
-  pixels: Uint8Array,
+  _pixels: Uint8Array,
   width: number,
   height: number,
   matches: (index: number) => boolean,
@@ -128,7 +130,7 @@ describe('render cache regressions', () => {
       })
       image.delete()
 
-      const renderedPixels = expectDefined(pixels, 'badge pixels')
+      const renderedPixels = expectRgbaPixels(pixels, 'badge pixels')
       const contentCenter = maskYCenter(
         renderedPixels,
         width,
@@ -141,9 +143,9 @@ describe('render cache regressions', () => {
         height,
         (i) =>
           renderedPixels[i + 3] > 128 &&
-          pixels[i] < 130 &&
-          pixels[i + 1] < 140 &&
-          pixels[i + 2] < 160,
+          renderedPixels[i] < 130 &&
+          renderedPixels[i + 1] < 140 &&
+          renderedPixels[i + 2] < 160,
         [0, width]
       )
       expect(Math.abs(textCenter - contentCenter)).toBeLessThanOrEqual(0.6)

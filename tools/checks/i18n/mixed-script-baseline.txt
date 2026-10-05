@@ -83,7 +83,7 @@ ja:diagnostics.chatFailed
 ja:diagnostics.description
 ja:diagnostics.eventCount
 ja:diagnostics.mcpFailed
-ja:diagnostics.modelStepCompleted
+ja:diagnostics.preparationDomImport
 ja:diagnostics.usageDescription
 ja:diagnostics.usageHistoryDescription
 ja:editor.showUI
@@ -227,7 +227,7 @@ zh-cn:diagnostics.chatFailed
 zh-cn:diagnostics.description
 zh-cn:diagnostics.eventCount
 zh-cn:diagnostics.mcpFailed
-zh-cn:diagnostics.modelStepCompleted
+zh-cn:diagnostics.preparationDomImport
 zh-cn:diagnostics.usageDescription
 zh-cn:diagnostics.usageHistoryDescription
 zh-cn:files.browserFileAPINotSupported

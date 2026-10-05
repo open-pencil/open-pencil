@@ -5,8 +5,18 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { nodeProxyToJSON } from '@open-pencil/core/figma-api/serialization'
 import { setInstanceOverride } from '@open-pencil/scene-graph'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
+
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
+}
+
+/** Narrows a serialized `nodeProxyToJSON` member, which the serializer types as `unknown`. */
+function asRecord(value: unknown, label: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error(`${label} was expected to be an object`)
+  }
+  return Object.fromEntries(Object.entries(value))
 }
 
 function setupColorVars(graph: SceneGraph, ...ids: string[]): void {
@@ -123,7 +133,7 @@ describe('INSTANCE_SYNC_PROPS includes boundVariables', () => {
         throw new Error('instance failed')
       })()
     const instanceChild = graph.getChildren(instance.id)[0]
-    const compChild = graph.getNode(child.id)
+    const compChild = getNodeOrThrow(graph, child.id)
 
     graph.syncInstances(component.id)
 
@@ -234,9 +244,9 @@ describe('unbindVariable', () => {
       fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, visible: true, opacity: 1 }]
     })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
-    expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBe('v1')
+    expect(getNodeOrThrow(graph, node.id).boundVariables['fills/0/color']).toBe('v1')
     graph.unbindVariable(node.id, 'fills/0/color')
-    expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBeUndefined()
+    expect(getNodeOrThrow(graph, node.id).boundVariables['fills/0/color']).toBeUndefined()
   })
 
   test('unbindVariable emits node:updated event', () => {
@@ -289,9 +299,11 @@ describe('nodeProxyToJSON boundVariables', () => {
     const api = new FigmaAPI(graph)
     const json = nodeProxyToJSON(graph, api, node.id)
     expect(json.boundVariables).toBeDefined()
-    expect(json.boundVariables['fills/0/color']).toBeDefined()
-    expect(json.boundVariables['fills/0/color'].variableId).toBe('v1')
-    expect(json.boundVariables['fills/0/color'].variableName).toBe('Var v1')
+    const bindings = asRecord(json.boundVariables, 'boundVariables')
+    expect(bindings['fills/0/color']).toBeDefined()
+    const binding = asRecord(bindings['fills/0/color'], 'fills/0/color binding')
+    expect(binding.variableId).toBe('v1')
+    expect(binding.variableName).toBe('Var v1')
   })
 
   test('nodeProxyToJSON omits boundVariables when none exist', () => {
@@ -373,7 +385,16 @@ describe('bindVariable out-of-range index validation', () => {
     const graph = setupGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), {
       name: 'Rect',
-      strokes: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          visible: true,
+          opacity: 1,
+          weight: 1,
+          align: 'INSIDE'
+        }
+      ]
     })
     // Node has 1 stroke. Index 3 is out of range.
     expect(() => {
@@ -403,7 +424,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
         { type: 'SOLID', color: { r: 0.2, g: 0.2, b: 0.2, a: 1 }, visible: true, opacity: 1 }
       ]
     })
-    const n = graph.getNode(node.id)
+    const n = getNodeOrThrow(graph, node.id)
     // Bind a hypothetical non-color sub-path at index 1
     n.boundVariables['fills/1/somethingElse'] = 'v1'
 
@@ -425,7 +446,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
 
     // Shrink fills to empty — fills/0/color must be removed (0 >= 0 is true)
     graph.updateNode(node.id, { fills: [] })
-    expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBeUndefined()
+    expect(getNodeOrThrow(graph, node.id).boundVariables['fills/0/color']).toBeUndefined()
   })
 
   test('malformed non-numeric indexed keys are cleaned up on fills change', () => {
@@ -435,7 +456,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
       name: 'Rect',
       fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
     })
-    const n = graph.getNode(node.id)
+    const n = getNodeOrThrow(graph, node.id)
     // Simulate a malformed binding key from legacy data — non-numeric index portion
     n.boundVariables['fills/blendMode'] = 'v1'
 
@@ -453,7 +474,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
       name: 'Rect',
       fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
     })
-    const n = graph.getNode(node.id)
+    const n = getNodeOrThrow(graph, node.id)
     // Simulate a malformed binding key from legacy data — negative index
     n.boundVariables['fills/-1/color'] = 'v1'
 
@@ -505,9 +526,9 @@ describe('bindVariable creates new boundVariables reference', () => {
       name: 'Rect',
       fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, visible: true, opacity: 1 }]
     })
-    const originalBV = graph.getNode(node.id).boundVariables
+    const originalBV = getNodeOrThrow(graph, node.id).boundVariables
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
-    const newBV = graph.getNode(node.id).boundVariables
+    const newBV = getNodeOrThrow(graph, node.id).boundVariables
     expect(newBV).not.toBe(originalBV)
   })
 })

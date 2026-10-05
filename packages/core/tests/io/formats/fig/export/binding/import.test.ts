@@ -4,14 +4,13 @@ import { createEditor } from '@open-pencil/core/editor'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureObject('nested-binding-ownership-records.json')
+const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 
 test('binding patches keep unrelated inherited fields in their original units', () => {
-  const changes = structuredClone(fixture.nodeChanges) as NodeChange[]
+  const changes = structuredClone(fixture.nodeChanges)
   const inner = changes.find((node) => node.guid?.sessionID === 1 && node.guid.localID === 2)
   if (!inner) throw new Error('Missing component')
   inner.variableConsumptionMap = {
@@ -41,7 +40,7 @@ test('binding patches keep unrelated inherited fields in their original units', 
 
 test('a direct nested binding retains its alias and declaring-owner units', async () => {
   const { graph, sources } = materializeDocument(
-    fixture.nodeChanges as NodeChange[],
+    fixture.nodeChanges,
     fixture.blobs.map((value) => Uint8Array.fromBase64(value)),
     { derivedBounds: true }
   )

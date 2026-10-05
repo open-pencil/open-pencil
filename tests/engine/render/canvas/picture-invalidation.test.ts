@@ -1,9 +1,10 @@
 import { expect, mock, test } from 'bun:test'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { invalidateAllPictures, invalidateNodePicture } from '#core/canvas/renderer/state'
 import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
+
+import { asRenderer } from './helpers'
 
 function deletable() {
   return { delete: mock() }
@@ -16,7 +17,7 @@ test('full picture invalidation resets tiled font-dependent resources', () => {
   const subtreePicture = deletable()
   const textPreparationCache = new TextPreparationCache()
   textPreparationCache.clear = mock()
-  const renderer = {
+  const renderer = asRenderer({
     textPreparationCache,
     scenePicture,
     scenePictureVersion: 1,
@@ -33,7 +34,7 @@ test('full picture invalidation resets tiled font-dependent resources', () => {
     subtreePictureCachePositionPreviewVersion: 1,
     subtreePictureCacheFontGeneration: 1,
     tiledScene: { invalidateStructure: mock() }
-  } as SkiaRenderer
+  })
 
   invalidateAllPictures(renderer)
 
@@ -50,7 +51,7 @@ test('node picture invalidation removes pictures that depend on a changed child'
   const childPicture = deletable()
   const textPreparationCache = new TextPreparationCache()
   textPreparationCache.deleteNode = mock()
-  const renderer = {
+  const renderer = asRenderer({
     textPreparationCache,
     nodePictureCache: new Map([
       ['parent', parentPicture],
@@ -66,7 +67,7 @@ test('node picture invalidation removes pictures that depend on a changed child'
     ]),
     effectRasterCache: new EffectRasterCache(),
     subtreePictureCache: new Map()
-  } as SkiaRenderer
+  })
 
   invalidateNodePicture(renderer, 'child')
 

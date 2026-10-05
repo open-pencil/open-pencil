@@ -17,6 +17,7 @@ function graphWithAssignedLabel() {
     componentPropertyReferences: [{ propertyId: '207:1', field: 'TEXT' }]
   })
   const instance = graph.createInstance(component.id, page.id)
+  if (!instance) throw new Error('Missing instance')
   return { graph, component, label, instance }
 }
 
@@ -75,6 +76,7 @@ test('a property id shared with an Object prototype key is not read as an assign
     componentPropertyReferences: [{ propertyId: 'toString', field: 'TEXT' }]
   })
   const instance = graph.createInstance(component.id, page.id)
+  if (!instance) throw new Error('Missing instance')
   const clone = graph.getChildren(instance.id)[0]
 
   graph.updateNode(label.id, { text: 'Edited default' })

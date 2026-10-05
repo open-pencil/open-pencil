@@ -10,9 +10,10 @@ import type { Color } from '../primitives'
 
 const toRGB = converter('rgb')
 
-export function parseColor(input: string): Color {
+/** A CSS color, or null when `input` is not one. */
+export function tryParseColor(input: string): Color | null {
   const parsed = parse(input)
-  if (!parsed) return { ...BLACK }
+  if (!parsed) return null
   const rgb = toRGB(parsed)
   return {
     r: rgb.r,
@@ -20,6 +21,11 @@ export function parseColor(input: string): Color {
     b: rgb.b,
     a: parsed.alpha ?? 1
   }
+}
+
+/** A CSS color, or black when `input` is not one. */
+export function parseColor(input: string): Color {
+  return tryParseColor(input) ?? { ...BLACK }
 }
 
 export function colorToHex(color: Color): string {

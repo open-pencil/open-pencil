@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
@@ -8,26 +8,28 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import { BLACK } from '#core/constants'
 
-import { createAPI } from '#tests/engine/figma/api/helpers'
+import { asPageNode, createAPI } from '#tests/engine/figma/api/helpers'
+
+import { asRenderer } from './helpers'
 
 async function createRenderer(): Promise<SkiaRenderer> {
   const ck = await initCanvasKit()
   const renderer = {
     ck,
     makeNodeShapePath(node, rect, hasRadius) {
-      return makeNodeShapePath(this, node, rect, hasRadius)
+      return makeNodeShapePath(asRenderer(this), node, rect, hasRadius)
     },
     makePolygonPath(node) {
-      return makePolygonPath(this, node)
+      return makePolygonPath(asRenderer(this), node)
     },
     makeRRect(node) {
-      return makeRRect(this, node)
+      return makeRRect(asRenderer(this), node)
     },
     getVectorPaths() {
       return null
     }
   } satisfies Partial<SkiaRenderer>
-  return renderer as SkiaRenderer
+  return asRenderer(renderer)
 }
 
 describe('boolean operation paths', () => {
@@ -40,7 +42,7 @@ describe('boolean operation paths', () => {
     second.resize(100, 100)
     second.x = 50
 
-    const booleanNode = api.union([first, second], api.currentPage)
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
@@ -59,7 +61,7 @@ describe('boolean operation paths', () => {
     second.resize(50, 100)
     second.x = 50
 
-    const booleanNode = api.subtract([first, second], api.currentPage)
+    const booleanNode = api.subtract([first, second], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
@@ -78,7 +80,7 @@ describe('boolean operation paths', () => {
     second.resize(100, 100)
     second.x = 50
 
-    const booleanNode = api.exclude([first, second], api.currentPage)
+    const booleanNode = api.exclude([first, second], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
@@ -96,9 +98,9 @@ describe('boolean operation paths', () => {
     first.resize(100, 100)
     second.resize(100, 100)
     second.x = 50
-    second.flipX = true
+    api.graph.updateNode(second.id, { flipX: true })
 
-    const booleanNode = api.intersect([first, second], api.currentPage)
+    const booleanNode = api.intersect([first, second], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
@@ -124,7 +126,7 @@ describe('boolean operation paths', () => {
     firstNode.arcData = { startingAngle: 0, endingAngle: Math.PI, innerRadius: 0 }
     secondNode.arcData = { startingAngle: 0, endingAngle: Math.PI, innerRadius: 0 }
 
-    const booleanNode = api.union([first, second], api.currentPage)
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
@@ -154,7 +156,7 @@ describe('boolean operation paths', () => {
       { type: 'SOLID', color: BLACK, opacity: 1, visible: true, weight: 12, align: 'CENTER' }
     ]
 
-    const booleanNode = api.union([first, second], api.currentPage)
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
@@ -172,12 +174,10 @@ describe('boolean operation paths', () => {
     importedPathBuilder.addRect(r.ck.LTRBRect(5, 6, 25, 36))
     const importedPath = importedPathBuilder.detachAndDelete()
     r.getFillGeometry = () => [importedPath]
-    const node = {
-      id: 'boolean',
-      type: 'BOOLEAN_OPERATION',
+    const node = createDefaultNode(() => 'boolean', 'BOOLEAN_OPERATION', {
       childIds: [],
       booleanOperation: 'UNION'
-    } as SceneNode
+    })
     const api = createAPI()
 
     const path = makeBooleanOperationPath(r, node, api.graph)
@@ -199,8 +199,8 @@ describe('boolean operation paths', () => {
     third.resize(50, 50)
     third.x = 125
 
-    const union = api.union([first, second], api.currentPage)
-    const booleanNode = api.union([union, third], api.currentPage)
+    const union = api.union([first, second], asPageNode(api.currentPage))
+    const booleanNode = api.union([union, third], asPageNode(api.currentPage))
     const node = api.graph.getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return

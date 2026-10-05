@@ -1,22 +1,29 @@
-export type EditorPreparationKind =
-  | 'document-open'
-  | 'document-reload'
-  | 'recovery-restore'
-  | 'storage-open'
-  | 'page-switch'
-  | 'font-retry'
-  | 'dom-import'
-  | 'demo-load'
+// Listed as values so diagnostics can validate recorded events against the same set.
+export const EDITOR_PREPARATION_KINDS = [
+  'document-open',
+  'document-reload',
+  'recovery-restore',
+  'storage-open',
+  'page-switch',
+  'font-retry',
+  'dom-import',
+  'demo-load'
+] as const
 
-export type EditorPreparationPhase =
-  | 'reading'
-  | 'decoding'
-  | 'materializing'
-  | 'populating-page'
-  | 'resolving-fonts'
-  | 'resolving-fallbacks'
-  | 'layout'
-  | 'preparing-render'
+export type EditorPreparationKind = (typeof EDITOR_PREPARATION_KINDS)[number]
+
+export const EDITOR_PREPARATION_PHASES = [
+  'reading',
+  'decoding',
+  'materializing',
+  'populating-page',
+  'resolving-fonts',
+  'resolving-fallbacks',
+  'layout',
+  'preparing-render'
+] as const
+
+export type EditorPreparationPhase = (typeof EDITOR_PREPARATION_PHASES)[number]
 
 export interface EditorPreparationProgress {
   completed: number
@@ -48,12 +55,22 @@ export interface EditorPreparationUpdate {
   unit?: EditorPreparationProgress['unit']
 }
 
-export type EditorPreparationCancelReason = 'superseded' | 'tab-closed' | 'user'
+export const EDITOR_PREPARATION_CANCEL_REASONS = ['superseded', 'tab-closed', 'user'] as const
+
+export type EditorPreparationCancelReason = (typeof EDITOR_PREPARATION_CANCEL_REASONS)[number]
+
+export const EDITOR_PREPARATION_FAILURE_CODES = [
+  'read-failed',
+  'decode-failed',
+  'font-failed',
+  'layout-failed',
+  'render-failed'
+] as const
 
 export interface EditorPreparationFailure {
   id: number
   kind: EditorPreparationKind
-  code: 'read-failed' | 'decode-failed' | 'font-failed' | 'layout-failed' | 'render-failed'
+  code: (typeof EDITOR_PREPARATION_FAILURE_CODES)[number]
   message: string
   retryable: boolean
 }

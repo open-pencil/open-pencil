@@ -23,9 +23,9 @@ heavy('fig component metadata import', () => {
   test('preserves remote library component identity fields', () => {
     const graph = importFixture('gold-preview.fig')
     const component = expectDefined(
-      graph
-        .getAllNodes()
-        .find((node) => node.componentKey === '26164e029c485511adfa634522024c7c23e7bb81'),
+      [...graph.getAllNodes()].find(
+        (node) => node.componentKey === '26164e029c485511adfa634522024c7c23e7bb81'
+      ),
       'remote component'
     )
 
@@ -39,7 +39,9 @@ heavy('fig component metadata import', () => {
   test('imports component set docs and variant property specs', () => {
     const graph = importFixture('material3.fig')
     const buttonSet = expectDefined(
-      graph.getAllNodes().find((node) => node.type === 'COMPONENT_SET' && node.name === 'Button'),
+      [...graph.getAllNodes()].find(
+        (node) => node.type === 'COMPONENT_SET' && node.name === 'Button'
+      ),
       'Button component set'
     )
 

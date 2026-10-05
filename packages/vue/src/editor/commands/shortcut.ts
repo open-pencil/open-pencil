@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit/array'
 export type ShortcutPlatform = 'mac' | 'windows' | 'linux'
 
 const MODIFIER_DISPLAY: Record<ShortcutPlatform, Record<string, string>> = {
@@ -44,7 +45,7 @@ export function formatShortcut(
   return shortcut
     .split(' ')
     .map((combo) => {
-      const parts = combo.split('+').filter(Boolean)
+      const parts = compact(combo.split('+'))
       const modifiers = parts.filter((part) => part in MODIFIER_DISPLAY[platform])
       const keys = parts.filter((part) => !(part in MODIFIER_DISPLAY[platform]))
       const formattedModifiers = sortModifiers(modifiers, platform).map(

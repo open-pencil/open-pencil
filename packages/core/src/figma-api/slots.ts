@@ -1,4 +1,5 @@
 import {
+  createComponentPropertyId,
   DEFAULT_SLOT_SETTINGS,
   claimSlotContent,
   componentPropertyDefinitions,
@@ -12,8 +13,6 @@ import {
   type SlotLimitViolation,
   type SlotSettings
 } from '@open-pencil/scene-graph'
-
-import { randomHex } from '#core/random'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { assertProxyEditable, graph, nodeId, raw } from './accessor-utils'
@@ -122,7 +121,7 @@ export function installSlotAccessors(prototype: object, internals: NodeProxyInte
         assertProxyEditable(this, internals)
         const g = graph(this, internals)
         const frame = g.createNode('FRAME', component.id, { name: 'Slot' })
-        const definition = createSlotProperty(g, frame.id, `prop:${randomHex(8)}`)
+        const definition = createSlotProperty(g, frame.id, createComponentPropertyId())
         if (!definition) throw new Error('Failed to create slot')
         g.updateNode(frame.id, { name: definition.name })
         return host(this, internals).wrapNode(frame.id)

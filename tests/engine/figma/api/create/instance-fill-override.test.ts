@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { getInstanceOverride } from '@open-pencil/scene-graph'
 
-import { createAPI } from '../helpers'
+import { createAPI, solidFill } from '../helpers'
 
 describe('setting fills on an instance descendant', () => {
   test('records an instance override so the change survives resync', () => {
@@ -16,9 +16,7 @@ describe('setting fills on an instance descendant', () => {
 
     const vectorProxy = api.getNodeById(vector.id)
     if (!vectorProxy) throw new Error('vector proxy not found')
-    vectorProxy.fills = [
-      { type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }
-    ]
+    vectorProxy.fills = [solidFill({ r: 0, g: 0, b: 1, a: 1 })]
 
     const raw = api.graph.getNode(instance.id)
     expect(
@@ -63,7 +61,7 @@ describe('setting fills on an instance descendant', () => {
   test('does not record an override for a node with no instance ancestor', () => {
     const api = createAPI()
     const frame = api.createFrame()
-    frame.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    frame.fills = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
 
     const raw = api.graph.getNode(frame.id)
     expect(raw?.instanceOverrides.self.size ?? 0).toBe(0)

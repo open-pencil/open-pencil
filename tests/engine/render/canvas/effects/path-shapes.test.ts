@@ -1,11 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { renderEffects } from '#core/canvas/shadows'
 
+import { asCanvas } from '../helpers'
 import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 
 const requiredNodeFields = { childIds: [] as string[], strokeGeometry: [] }
@@ -32,7 +31,7 @@ describe('path shape shadows', () => {
       ]
     }
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
 
     expect(r.makePolygonPath).toHaveBeenCalled()
     expect(canvas.drawPath).toHaveBeenCalled()
@@ -67,7 +66,7 @@ describe('path shape shadows', () => {
       ]
     }
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
 
     const makeFromOp = r.ck.Path.MakeFromOp as ReturnType<typeof mock>
     expect(makeFromOp).toHaveBeenCalledWith(cachedPath, ringPath, r.ck.PathOp.Union)
@@ -99,7 +98,7 @@ describe('path shape shadows', () => {
 
     renderEffects(
       r,
-      canvas as Canvas,
+      asCanvas(canvas),
       node as SceneNode,
       new Float32Array([0, 0, 100, 100]),
       false,

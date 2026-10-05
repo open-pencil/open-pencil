@@ -6,12 +6,12 @@ import {
   slotPropertyId,
   updateSlotProperty,
   type SceneNode,
-  type SlotPropertyPatch
+  type SlotPropertyPatch,
+  createComponentPropertyId
 } from '@open-pencil/scene-graph'
 
 import { wrapInAutoLayout } from '#core/editor/structure/auto-layout-wrap'
 import type { EditorContext } from '#core/editor/types'
-import { randomHex } from '#core/random'
 
 import { recordSubtreeEdit } from './history'
 
@@ -78,7 +78,7 @@ export function createSlotAuthoringActions(ctx: EditorContext) {
     const frame = ctx.graph.getNode(frameId)
     const owner = frame && canCreateSlot(ctx.graph, frame) ? slotOwner(ctx.graph, frame) : undefined
     if (!frame || !owner) return null
-    const id = `prop:${randomHex(8)}`
+    const id = createComponentPropertyId()
     recordDefinitionEdit(ctx, 'Create slot', [owner.id, frame.id], [], () => {
       createSlotProperty(ctx.graph, frame.id, id)
     })

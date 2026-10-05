@@ -3,9 +3,11 @@ import { describe, expect, mock, test } from 'bun:test'
 import { createIconifyAPIClient } from '#core/icons/api'
 
 function createMockFetch(responder: (request: Request) => Response) {
-  return mock(async (input: RequestInfo | URL, init?: RequestInit) =>
+  const fetcher = mock(async (input: RequestInfo | URL, init?: RequestInit) =>
     responder(new Request(input, init))
-  ) as typeof fetch
+  )
+  // The client takes `typeof globalThis.fetch`, which carries Bun's `preconnect` extension.
+  return Object.assign(fetcher, { preconnect: fetch.preconnect })
 }
 
 describe('Iconify API client', () => {

@@ -4,6 +4,8 @@ import type { Surface } from 'canvaskit-wasm'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 
+import { asDouble, asRenderer } from './helpers'
+
 function surface() {
   return { delete: mock() } as Surface & { delete: ReturnType<typeof mock> }
 }
@@ -21,13 +23,13 @@ describe('renderer surface replacement', () => {
       | 'replaceSurface'
     > = {
       surface: previous,
-      tiledScene: { destroy: mock() } as SkiaRenderer['tiledScene'],
+      tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
       sceneBackingAllocationFailed: true,
       invalidateScenePicture: mock(),
       replaceSurface: SkiaRenderer.prototype.replaceSurface
     }
 
-    renderer.replaceSurface.call(renderer as SkiaRenderer, next)
+    renderer.replaceSurface.call(asRenderer(renderer), next)
 
     expect(renderer.tiledScene.destroy).toHaveBeenCalledTimes(1)
     expect(previous.delete).toHaveBeenCalledTimes(1)
