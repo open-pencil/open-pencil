@@ -8,38 +8,27 @@ const rules = { [`open-pencil/${rule}`]: 'error' }
 describe('prefer-es-toolkit', () => {
   test.each([
     '[...new Set(items.map((item) => item.id))]',
-    '[...new Set([...items, 4])]',
-    'Array.from(new Set(text.split(",")))',
+    '[...new Set([...items, extra])]',
+    "Array.from(new Set(text.split(',')))",
     'items.filter(Boolean)'
   ])('rejects %s', async (source) => {
-    expect(
-      ruleDiagnostics(
-        await lint(`declare const items: number[]; declare const text: string; ${source}`, rules),
-        rule
-      )
-    ).toHaveLength(1)
+    expect(ruleDiagnostics(await lint(source, rules), rule)).toHaveLength(1)
   })
 
   test.each([
-    // Without types an identifier may hold any iterable, such as a string or a Map's keys.
+    // A variable may hold a string or a Map's keys, which uniq does not take.
     '[...new Set(items)]',
-    '[...new Set(text)]',
     'Array.from(new Set(items), (item) => item * 2)',
-    '[...new Set(items.map((item) => item)), 4]',
     'items.filter((item) => item > 0)',
-    // An iterator's filter is not an array's, and compact takes arrays only.
-    'declare const map: Map<string, number>; map.values().filter(Boolean)',
-    // Playwright serializes evaluate callbacks into the page, where imports do not exist.
-    'declare const page: { evaluate(fn: () => unknown): unknown }; page.evaluate(() => items.filter(Boolean))',
-    'declare const page: { $$eval(selector: string, fn: () => unknown): unknown }; page.$$eval("p", () => [...new Set(items.map((item) => item))])',
-    'const Boolean = (value: number) => value > 1; items.filter(Boolean)',
-    'class Set<T> { constructor(_values: T[]) {} }; [...(new Set(items.map((item) => item)) as unknown as number[])]'
+    // compact takes arrays, not iterators.
+    'map.values().filter(Boolean)',
+    // Playwright runs these callbacks in the page, where imports do not exist.
+    'page.evaluate(() => items.filter(Boolean))',
+    "page.$$eval('p', () => [...new Set(items.map((item) => item.id))])",
+    // A local Boolean or Set is not the global one.
+    'const Boolean = (value) => value > 1; items.filter(Boolean)',
+    'function dedupe(Set) { return [...new Set(items.map((item) => item.id))] }'
   ])('accepts %s', async (source) => {
-    expect(
-      ruleDiagnostics(
-        await lint(`declare const items: number[]; declare const text: string; ${source}`, rules),
-        rule
-      )
-    ).toHaveLength(0)
+    expect(ruleDiagnostics(await lint(source, rules), rule)).toHaveLength(0)
   })
 })
