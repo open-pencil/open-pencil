@@ -3,6 +3,13 @@
  * and the stylesheet still gets the exact CSS a developer expects. Presets only write the
  * condition string a mode already stores; anything they do not recognize stays custom CSS.
  */
+import { isEqual } from 'es-toolkit/predicate'
+
+import {
+  featureConditionCSS,
+  parseFeatureCondition,
+  type FeatureCondition
+} from '@open-pencil/dom-css/export'
 
 export const CONDITION_KINDS = [
   'manual',
@@ -35,52 +42,48 @@ export type ModeCondition =
 /** The width a new width preset starts at. */
 export const DEFAULT_CONDITION_WIDTH = 640
 
-const FIXED: Record<'dark' | 'light' | 'contrast' | 'reduced-motion', string> = {
-  dark: '@media (prefers-color-scheme: dark)',
-  light: '@media (prefers-color-scheme: light)',
-  contrast: '@media (prefers-contrast: more)',
-  'reduced-motion': '@media (prefers-reduced-motion: reduce)'
+type FixedConditionKind = 'dark' | 'light' | 'contrast' | 'reduced-motion'
+
+function keyword(feature: string, name: string): FeatureCondition {
+  return { rule: 'media', feature, value: { type: 'keyword', name } }
 }
 
-const WIDTH: Record<WidthConditionKind, { rule: '@media' | '@container'; feature: string }> = {
-  'screen-narrower': { rule: '@media', feature: 'max-width' },
-  'screen-wider': { rule: '@media', feature: 'min-width' },
-  'container-narrower': { rule: '@container', feature: 'max-width' },
-  'container-wider': { rule: '@container', feature: 'min-width' }
+const FIXED: Record<FixedConditionKind, FeatureCondition> = {
+  dark: keyword('prefers-color-scheme', 'dark'),
+  light: keyword('prefers-color-scheme', 'light'),
+  contrast: keyword('prefers-contrast', 'more'),
+  'reduced-motion': keyword('prefers-reduced-motion', 'reduce')
+}
+
+const WIDTH: Record<WidthConditionKind, Pick<FeatureCondition, 'rule' | 'feature'>> = {
+  'screen-narrower': { rule: 'media', feature: 'max-width' },
+  'screen-wider': { rule: 'media', feature: 'min-width' },
+  'container-narrower': { rule: 'container', feature: 'max-width' },
+  'container-wider': { rule: 'container', feature: 'min-width' }
 }
 
 function isWidthKind(kind: ConditionKind): kind is WidthConditionKind {
   return WIDTH_CONDITION_KINDS.some((candidate) => candidate === kind)
 }
 
-/** Spacing differences do not change a query: `@media(prefers-color-scheme:dark)` is dark. */
-function normalize(css: string): string {
-  return css
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\(\s*/g, ' (')
-    .replace(/\s*\)/g, ')')
-    .replace(/\s*:\s*/g, ': ')
-    .trim()
+/** The preset a parsed condition is, if any: spacing, case and comments do not matter. */
+function presetOf(query: FeatureCondition): ModeCondition | undefined {
+  const fixed = Object.entries(FIXED).find(([, preset]) => isEqual(preset, query))
+  if (fixed) return { kind: fixed[0] as FixedConditionKind }
+  if (query.value.type !== 'dimension' || query.value.unit !== 'px') return undefined
+  const kind = WIDTH_CONDITION_KINDS.find(
+    (candidate) =>
+      WIDTH[candidate].rule === query.rule && WIDTH[candidate].feature === query.feature
+  )
+  return kind && { kind, width: query.value.value }
 }
-
-const WIDTH_PATTERN = /^(@media|@container) \((max-width|min-width): (\d+(?:\.\d+)?)px\)$/
 
 /** Reads a stored condition back into the preset that writes it, or custom CSS. */
 export function parseModeCondition(condition: string | undefined): ModeCondition {
-  const css = normalize(condition ?? '')
+  const css = condition?.trim() ?? ''
   if (!css) return { kind: 'manual' }
-  for (const [kind, query] of Object.entries(FIXED))
-    if (css === query) return { kind: kind as keyof typeof FIXED }
-  const width = WIDTH_PATTERN.exec(css)
-  if (width) {
-    const [, rule, feature, value] = width
-    const kind = WIDTH_CONDITION_KINDS.find(
-      (candidate) => WIDTH[candidate].rule === rule && WIDTH[candidate].feature === feature
-    )
-    if (kind) return { kind, width: Number(value) }
-  }
-  return { kind: 'custom', css: condition?.trim() ?? '' }
+  const query = parseFeatureCondition(css)
+  return (query && presetOf(query)) ?? { kind: 'custom', css }
 }
 
 /** The condition to store; `undefined` keeps the mode switched manually by its attribute. */
@@ -94,11 +97,12 @@ export function modeConditionCSS(condition: ModeCondition): string | undefined {
     case 'light':
     case 'contrast':
     case 'reduced-motion':
-      return FIXED[condition.kind]
-    default: {
-      const { rule, feature } = WIDTH[condition.kind]
-      return `${rule} (${feature}: ${condition.width}px)`
-    }
+      return featureConditionCSS(FIXED[condition.kind])
+    default:
+      return featureConditionCSS({
+        ...WIDTH[condition.kind],
+        value: { type: 'dimension', value: condition.width, unit: 'px' }
+      })
   }
 }
 

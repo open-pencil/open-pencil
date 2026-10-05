@@ -42,6 +42,8 @@ describe('mode condition presets', () => {
       kind: 'custom',
       css: '[data-theme="dark"]'
     })
+    // A non-breaking space is not CSS whitespace, so this is not the dark preset.
+    expect(parseModeCondition('@media\u00A0(prefers-color-scheme: dark)').kind).toBe('custom')
   })
 
   test('an empty custom condition falls back to the manual attribute', () => {
