@@ -1,6 +1,7 @@
 import valueParser, { type FunctionNode, type Node } from 'postcss-value-parser'
 
 import type { GridTrack } from '../types'
+import { parseCSSNumber } from './values'
 
 /** Bounds a `repeat()` count, which a typo could make huge. */
 const MAX_REPEATED_TRACKS = 100
@@ -28,11 +29,11 @@ function argumentsOf(node: FunctionNode): Node[][] {
 
 function wordTrack(word: string): GridTrack {
   const dimension = valueParser.unit(word)
-  if (!dimension) return autoTrack()
-  const value = Number(dimension.number)
-  if (dimension.unit === 'fr') return { sizing: 'FR', value: value || 1 }
-  if (dimension.unit === '' || dimension.unit === 'px') return { sizing: 'FIXED', value }
-  return autoTrack()
+  if (dimension && dimension.unit.toLowerCase() === 'fr') {
+    return { sizing: 'FR', value: Number(dimension.number) || 1 }
+  }
+  const pixels = parseCSSNumber(word)
+  return pixels === null ? autoTrack() : { sizing: 'FIXED', value: pixels }
 }
 
 function functionTracks(node: FunctionNode): GridTrack[] {
