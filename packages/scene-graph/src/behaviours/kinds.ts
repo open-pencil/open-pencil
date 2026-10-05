@@ -1,5 +1,18 @@
 /** The controls a main component can behave as, in the order the picker lists them. */
-export const BEHAVIOUR_KINDS = ['button', 'switch', 'checkbox', 'slider', 'tabs'] as const
+export const BEHAVIOUR_KINDS = [
+  'button',
+  'toggle',
+  'switch',
+  'checkbox',
+  'radio',
+  'radioGroup',
+  'toggleGroup',
+  'slider',
+  'progress',
+  'tabs',
+  'collapsible',
+  'accordion'
+] as const
 
 export type BehaviourKind = (typeof BEHAVIOUR_KINDS)[number]
 
@@ -33,6 +46,11 @@ export interface BehaviourValueContract {
 export interface BehaviourPartContract {
   id: string
   required: boolean
+  /**
+   * Whether the slot holds the control's items, each an instance with its own behaviour (a
+   * radio, a toggle, a collapsible), which the control turns on and off.
+   */
+  items?: boolean
 }
 
 export interface BehaviourContract {
@@ -50,6 +68,13 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
     values: [{ id: 'disabled', type: 'boolean', required: false }],
     parts: []
   },
+  toggle: {
+    values: [
+      { id: 'value', type: 'boolean', required: true },
+      { id: 'disabled', type: 'boolean', required: false }
+    ],
+    parts: []
+  },
   switch: {
     values: [
       { id: 'value', type: 'boolean', required: true },
@@ -63,6 +88,21 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
       { id: 'disabled', type: 'boolean', required: false }
     ],
     parts: [{ id: 'indicator', required: false }]
+  },
+  radio: {
+    values: [
+      { id: 'value', type: 'boolean', required: true },
+      { id: 'disabled', type: 'boolean', required: false }
+    ],
+    parts: [{ id: 'indicator', required: false }]
+  },
+  radioGroup: {
+    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    parts: [{ id: 'items', required: true, items: true }]
+  },
+  toggleGroup: {
+    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    parts: [{ id: 'items', required: true, items: true }]
   },
   slider: {
     values: [
@@ -82,6 +122,27 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
       { id: 'trigger', required: true },
       { id: 'content', required: false }
     ]
+  },
+  progress: {
+    values: [{ id: 'value', type: 'number', required: false }],
+    parts: [
+      { id: 'track', required: true },
+      { id: 'indicator', required: true }
+    ]
+  },
+  collapsible: {
+    values: [
+      { id: 'open', type: 'boolean', required: false },
+      { id: 'disabled', type: 'boolean', required: false }
+    ],
+    parts: [
+      { id: 'trigger', required: true },
+      { id: 'content', required: true }
+    ]
+  },
+  accordion: {
+    values: [{ id: 'disabled', type: 'boolean', required: false }],
+    parts: [{ id: 'items', required: true, items: true }]
   }
 }
 

@@ -1,5 +1,6 @@
 import {
   applyComponentPropertyValue,
+  behaviourContract,
   behaviourOwner,
   behaviourProperties,
   booleanBinding,
@@ -29,22 +30,53 @@ export interface PlayTarget {
   behaviour: Behaviour
 }
 
+/** The control an instance itself behaves as, if its main component (or set) has a behaviour. */
+export function playControl(graph: SceneGraph, instance: SceneNode): PlayTarget | null {
+  if (instance.type !== 'INSTANCE') return null
+  const component = instanceMainComponent(graph, instance)
+  const owner = component && behaviourOwner(graph, component)
+  const behaviour = owner && readBehaviour(owner)
+  return owner && behaviour ? { instance, owner, behaviour } : null
+}
+
+/** Whether `node` lies in one of the control's item slots, such as a radio group's radios. */
+function holdsItem(graph: SceneGraph, control: PlayTarget, node: SceneNode): boolean {
+  const itemSlots = new Set(
+    behaviourContract(control.behaviour.kind)
+      .parts.filter((part) => part.items)
+      .flatMap((part) => control.behaviour.parts[part.id] ?? [])
+  )
+  if (itemSlots.size === 0) return false
+  const frameIds = new Set(
+    instanceSlotFrames(graph, control.instance)
+      .filter((frame) => itemSlots.has(slotPropertyId(frame) ?? ''))
+      .map((frame) => frame.id)
+  )
+  let current = node.parentId ? graph.getNode(node.parentId) : undefined
+  while (current && current.id !== control.instance.id) {
+    if (frameIds.has(current.id)) return true
+    current = current.parentId ? graph.getNode(current.parentId) : undefined
+  }
+  return false
+}
+
 /**
- * The control an instance behaves as: the nearest instance at or above `nodeId` whose main
- * component (or its set) has a behaviour.
+ * The control a node belongs to: the nearest instance at or above `nodeId` with a behaviour,
+ * unless it is an item of an enclosing group (a radio of a radio group, a collapsible of an
+ * accordion), in which case the group drives it.
  */
 export function playTarget(graph: SceneGraph, nodeId: string): PlayTarget | null {
+  let found: PlayTarget | null = null
   let current = graph.getNode(nodeId)
   while (current && current.type !== 'CANVAS') {
-    if (current.type === 'INSTANCE') {
-      const component = instanceMainComponent(graph, current)
-      const owner = component && behaviourOwner(graph, component)
-      const behaviour = owner && readBehaviour(owner)
-      if (owner && behaviour) return { instance: current, owner, behaviour }
+    const control = playControl(graph, current)
+    if (control) {
+      if (!found || holdsItem(graph, control, found.instance)) found = control
+      else return found
     }
     current = current.parentId ? graph.getNode(current.parentId) : undefined
   }
-  return null
+  return found
 }
 
 function subtreeIds(graph: SceneGraph, rootId: string): string[] {
@@ -203,7 +235,8 @@ export function createPlaySession(source: SceneGraph) {
     }
   }
 
-  function getBoolean(target: PlayTarget, valueId: string): boolean {
+  /** A boolean value: as set in preview, else as the instance draws it, else `fallback`. */
+  function getBoolean(target: PlayTarget, valueId: string, fallback = false): boolean {
     const key = `${target.instance.id}:${valueId}`
     const known = booleans.get(key)
     if (known !== undefined) return known
@@ -211,7 +244,7 @@ export function createPlaySession(source: SceneGraph) {
     const definition = behaviourProperties(source, target.owner).find(
       (item) => item.id === binding?.propertyId
     )
-    if (!binding || !definition) return false
+    if (!binding || !definition) return fallback
     if (definition.type === 'BOOLEAN') {
       const assignments = target.instance.componentPropertyAssignments
       const value = Object.hasOwn(assignments, definition.id)
@@ -225,8 +258,12 @@ export function createPlaySession(source: SceneGraph) {
     )
   }
 
-  /** Turn a boolean value on or off: switch the copy's variant, or set its boolean property. */
+  /**
+   * Turn a boolean value on or off: switch the copy's variant, or set its boolean property. An
+   * unbound value is still remembered, for controls that draw it themselves (a collapsible).
+   */
   function setBoolean(target: PlayTarget, valueId: string, on: boolean): void {
+    booleans.set(`${target.instance.id}:${valueId}`, on)
     const binding = booleanBinding(target.behaviour, valueId)
     const definition = behaviourProperties(source, target.owner).find(
       (item) => item.id === binding?.propertyId
@@ -242,7 +279,6 @@ export function createPlaySession(source: SceneGraph) {
       const variant = value ? variantWith(copy, definition.name, value, loose) : undefined
       if (variant) copies.swapInstanceComponent(copy.id, variant.id)
     }
-    booleans.set(`${target.instance.id}:${valueId}`, on)
     if (definition.type !== 'BOOLEAN') reapplyBooleans(target, copy)
     computeLayout(copies, copy.id)
   }
@@ -293,6 +329,11 @@ export function createPlaySession(source: SceneGraph) {
     return numbers.get(key) ?? choices.get(key)
   }
 
+  /** A boolean value set in preview, or undefined while it is still as designed. */
+  function changedBoolean(target: PlayTarget, valueId: string): boolean | undefined {
+    return booleans.get(`${target.instance.id}:${valueId}`)
+  }
+
   function getChoice(target: PlayTarget, valueId: string): number {
     return choices.get(`${target.instance.id}:${valueId}`) ?? 0
   }
@@ -319,6 +360,7 @@ export function createPlaySession(source: SceneGraph) {
     getBoolean,
     setBoolean,
     changed,
+    changedBoolean,
     getNumber,
     setNumber,
     getChoice,

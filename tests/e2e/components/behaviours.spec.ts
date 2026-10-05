@@ -68,7 +68,7 @@ test('a Switch behaviour flips in preview and leaves the document alone', async 
   await editor.page.getByRole('option', { name: /Switch/ }).click()
   await section.getByRole('combobox', { name: 'Value' }).click()
   await editor.page.getByRole('option', { name: 'State' }).click()
-  await expect(section.getByText('Ready to preview')).toBeVisible()
+  await expect(section.getByText('Ready', { exact: true })).toBeVisible()
 
   await editor.page.keyboard.press('Meta+Alt+Enter')
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()

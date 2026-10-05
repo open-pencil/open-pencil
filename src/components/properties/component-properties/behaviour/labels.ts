@@ -10,13 +10,27 @@ export function useBehaviourLabels() {
     const p = panels.value
     const kinds: Record<BehaviourKind, { label: string; description: string }> = {
       button: { label: p.behaviourButton, description: p.behaviourButtonDescription },
+      toggle: { label: p.behaviourToggle, description: p.behaviourToggleDescription },
       switch: { label: p.behaviourSwitch, description: p.behaviourSwitchDescription },
       checkbox: { label: p.behaviourCheckbox, description: p.behaviourCheckboxDescription },
+      radio: { label: p.behaviourRadio, description: p.behaviourRadioDescription },
+      radioGroup: { label: p.behaviourRadioGroup, description: p.behaviourRadioGroupDescription },
+      toggleGroup: {
+        label: p.behaviourToggleGroup,
+        description: p.behaviourToggleGroupDescription
+      },
       slider: { label: p.behaviourSlider, description: p.behaviourSliderDescription },
-      tabs: { label: p.behaviourTabs, description: p.behaviourTabsDescription }
+      progress: { label: p.behaviourProgress, description: p.behaviourProgressDescription },
+      tabs: { label: p.behaviourTabs, description: p.behaviourTabsDescription },
+      collapsible: {
+        label: p.behaviourCollapsible,
+        description: p.behaviourCollapsibleDescription
+      },
+      accordion: { label: p.behaviourAccordion, description: p.behaviourAccordionDescription }
     }
     const values: Record<string, string> = {
       value: p.behaviourValue,
+      open: p.behaviourOpen,
       disabled: p.behaviourDisabled
     }
     const parts: Record<string, string> = {
@@ -26,7 +40,8 @@ export function useBehaviourLabels() {
       indicator: p.behaviourIndicator,
       list: p.behaviourList,
       trigger: p.behaviourTrigger,
-      content: p.behaviourContent
+      content: p.behaviourContent,
+      items: p.behaviourItems
     }
     const states: Record<InteractionState, string> = {
       rest: p.behaviourStateRest,

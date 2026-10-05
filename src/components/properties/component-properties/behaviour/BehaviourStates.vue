@@ -13,7 +13,7 @@ import { useBehaviourLabels } from './labels'
 
 /**
  * Which variant property draws the control's interaction states, and which of its values is
- * each state. A state left unset shows the default value.
+ * each state. A state set to None shows the default value.
  */
 const { states } = defineProps<{ states: BehaviourStatesControl }>()
 const emit = defineEmits<{

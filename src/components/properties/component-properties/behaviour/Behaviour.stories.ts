@@ -37,7 +37,7 @@ export const MapState: Story = {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('combobox', { name: 'Pressed state' }))
-    await userEvent.click(await page.findByRole('option', { name: 'As default' }))
+    await userEvent.click(await page.findByRole('option', { name: 'None' }))
     await waitFor(() => expect(canvas.getByText('pressed → default')).toBeVisible())
   }
 }

@@ -35,3 +35,18 @@ export function partItemIndex(
     current = graph.getNode(current.parentId)
   return current?.parentId === frame.id ? frame.childIds.indexOf(current.id) : null
 }
+
+/** Whether a node is the frame or lies inside it. */
+export function withinFrame(
+  graph: SceneGraph,
+  frame: SceneNode | undefined,
+  nodeId: string
+): boolean {
+  if (!frame) return false
+  let current = graph.getNode(nodeId)
+  while (current) {
+    if (current.id === frame.id) return true
+    current = current.parentId ? graph.getNode(current.parentId) : undefined
+  }
+  return false
+}

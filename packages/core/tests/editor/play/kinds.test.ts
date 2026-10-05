@@ -114,4 +114,28 @@ describe('preview interactions', () => {
     editor.playKey('ArrowLeft')
     expect(copied('Second panel')?.visible).toBe(true)
   })
+
+  test('a progress bar fills its track up to the value under the pointer', async () => {
+    const { editor, copied } = await control('progress', [
+      { name: 'Track', width: 200, height: 8 },
+      { name: 'Indicator', width: 50, height: 8 }
+    ])
+    editor.playPointerDown(400, 104)
+    expect(copied('Indicator')?.width).toBe(100)
+    editor.playKey('End')
+    expect(copied('Indicator')?.width).toBe(200)
+  })
+
+  test('a collapsible shows and hides its content from its trigger only', async () => {
+    const { editor, copied } = await control('collapsible', [
+      { name: 'Trigger', width: 200, height: 20 },
+      { name: 'Content', y: 20, width: 200, height: 20 }
+    ])
+    editor.playPointerDown(310, 125)
+    expect(copied('Content')).toBeUndefined()
+    editor.playPointerDown(310, 105)
+    expect(copied('Content')?.visible).toBe(false)
+    editor.playKey('Enter')
+    expect(copied('Content')?.visible).toBe(true)
+  })
 })

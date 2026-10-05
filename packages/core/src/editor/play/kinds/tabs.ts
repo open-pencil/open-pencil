@@ -1,3 +1,4 @@
+import { arrowIndex } from './keys'
 import { documentPartFrame, partItemIndex } from './parts'
 import type { PlayControl, PlayInteraction } from './types'
 
@@ -23,14 +24,7 @@ export const tabs: PlayInteraction = {
     const count = documentPartFrame(control.graph, control.target, 'trigger')?.childIds.length ?? 0
     if (count === 0) return false
     const current = control.session.getChoice(control.target, 'value')
-    const next = {
-      ArrowRight: (current + 1) % count,
-      ArrowDown: (current + 1) % count,
-      ArrowLeft: (current - 1 + count) % count,
-      ArrowUp: (current - 1 + count) % count,
-      Home: 0,
-      End: count - 1
-    }[control.key as string]
+    const next = arrowIndex(control.key, current, count)
     if (next === undefined) return false
     choose(control, next)
     return true
