@@ -9,6 +9,8 @@ import {
   type OnboardingAnswers
 } from '@/app/ai/models/settings/onboarding/plan'
 
+import { defaultModel, fastModel } from './catalog'
+
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }
 
@@ -36,7 +38,7 @@ describe('planOnboarding', () => {
 
   test('ignores agents outside the desktop app', () => {
     const plan = planOnboarding(answers({ access: ['acp:claude-code', 'openai'] }), browser)
-    expect(plan.design).toMatchObject({ providerID: 'openai', modelID: 'gpt-5.6' })
+    expect(plan.design).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
   })
 
   test('reuses a vision-capable design model for visual review', () => {
@@ -44,7 +46,10 @@ describe('planOnboarding', () => {
       answers({ goals: ['design', 'vision'], access: ['anthropic'] }),
       desktop
     )
-    expect(plan.design).toMatchObject({ providerID: 'anthropic', modelID: 'claude-sonnet-5' })
+    expect(plan.design).toMatchObject({
+      providerID: 'anthropic',
+      modelID: defaultModel('anthropic')
+    })
     expect(plan.vision).toBe('design')
     expect(plan.connections).toEqual(['anthropic'])
   })
@@ -55,7 +60,7 @@ describe('planOnboarding', () => {
       desktop
     )
     expect(plan.design).toMatchObject({ providerID: 'acp:claude-code' })
-    expect(plan.vision).toMatchObject({ providerID: 'google', modelID: 'gemini-3.8-flash' })
+    expect(plan.vision).toMatchObject({ providerID: 'google', modelID: defaultModel('google') })
     expect(plan.connections).toEqual(['acp:claude-code', 'google'])
   })
 
@@ -76,7 +81,7 @@ describe('planOnboarding', () => {
     expect(plan.vision).toMatchObject({ providerID: 'openrouter' })
     expect(planOnboarding(answers({ spending: 'metered' }), browser).design).toMatchObject({
       providerID: 'openrouter',
-      modelID: 'anthropic/claude-sonnet-5'
+      modelID: defaultModel('openrouter')
     })
   })
 
@@ -169,7 +174,7 @@ describe('planOnboarding for review and fast work', () => {
     expect(plan.review).toBe('design')
     expect(plan.fast).toMatchObject({
       providerID: 'openrouter',
-      modelID: 'google/gemini-3.8-flash'
+      modelID: fastModel('openrouter')
     })
   })
 
@@ -182,9 +187,9 @@ describe('planOnboarding for review and fast work', () => {
       answers({ goals: ['design', 'vision'], access: ['acp:codex', 'openai'] }),
       desktop
     )
-    expect(plan.vision).toMatchObject({ providerID: 'openai', modelID: 'gpt-5.6' })
-    expect(plan.review).toMatchObject({ providerID: 'openai', modelID: 'gpt-5.6' })
-    expect(plan.fast).toMatchObject({ providerID: 'openai', modelID: 'gpt-5.4-mini' })
+    expect(plan.vision).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
+    expect(plan.review).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
+    expect(plan.fast).toMatchObject({ providerID: 'openai', modelID: fastModel('openai') })
     expect(planOnboarding(answers({ access: ['acp:codex'] }), desktop)).toMatchObject({
       review: null,
       fast: null

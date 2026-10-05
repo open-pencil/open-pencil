@@ -8,6 +8,8 @@ import {
 import { currentOnboardingModels } from '@/app/ai/models/settings/onboarding/current'
 import { planOnboarding, type OnboardingAnswers } from '@/app/ai/models/settings/onboarding/plan'
 
+import { defaultModel, fastModel } from './catalog'
+
 function freshInstall(): AIModelSettings {
   return {
     version: 1,
@@ -96,13 +98,13 @@ describe('applyOnboardingPlan', () => {
       expect.objectContaining({
         id: 'model-id-2',
         connectionId: 'connection-id-1',
-        modelID: 'anthropic/claude-sonnet-5',
+        modelID: defaultModel('openrouter'),
         capabilities: ['tools', 'vision']
       }),
       expect.objectContaining({
         id: 'model-id-3',
         connectionId: 'connection-id-1',
-        modelID: 'google/gemini-3.8-flash'
+        modelID: fastModel('openrouter')
       })
     ])
     expect(settings.connections.map((connection) => connection.id)).toEqual(['connection-id-1'])
@@ -179,7 +181,7 @@ describe('applyOnboardingPlan', () => {
       id: 'model-sonnet',
       name: 'Sonnet',
       connectionId: 'connection-anthropic',
-      modelID: 'claude-sonnet-5',
+      modelID: defaultModel('anthropic'),
       customModelID: '',
       maxOutputTokens: 64_000,
       thinkingLevel: 'low',
