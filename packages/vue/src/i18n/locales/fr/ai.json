@@ -151,6 +151,7 @@
   "saveChatTitle": "Enregistrer",
   "cancelChatAction": "Annuler",
   "deleteChatConfirmation": "Supprimer définitivement cette discussion ?",
+  "deleteChatDescription": "« {title} » et ses messages sont supprimés. Cette action est irréversible.",
   "chatDocumentHint": "Ouvrez le document de la discussion pour continuer.",
   "chatReadOnly": "Cette discussion appartient à un autre document. Ouvrez-le pour continuer.",
   "chatAgentReadOnly": "La conversation avec l’agent est enregistrée, mais sa session ne peut pas encore reprendre ici. Commencez une nouvelle discussion.",

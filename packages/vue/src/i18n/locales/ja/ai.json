@@ -151,6 +151,7 @@
   "saveChatTitle": "保存",
   "cancelChatAction": "キャンセル",
   "deleteChatConfirmation": "このチャットを完全に削除しますか？",
+  "deleteChatDescription": "「{title}」とそのメッセージは削除されます。元に戻すことはできません。",
   "chatDocumentHint": "続けるにはチャットのドキュメントを開いてください。",
   "chatReadOnly": "このチャットは別のドキュメントに属しています。続けるにはそのドキュメントを開いてください。",
   "chatAgentReadOnly": "エージェントとの会話は保存されていますが、ここではまだセッションを再開できません。新しいチャットを開始してください。",

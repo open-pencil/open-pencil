@@ -30,6 +30,7 @@ export const aiMessageDefaults = {
   saveChatTitle: 'Save',
   cancelChatAction: 'Cancel',
   deleteChatConfirmation: 'Delete this conversation permanently?',
+  deleteChatDescription: params('“{title}” and its messages are removed. This cannot be undone.'),
   chatDocumentHint: 'Open a chat’s document to continue it.',
   chatReadOnly: 'This conversation belongs to another document. Open its document to continue.',
   chatAgentReadOnly:

@@ -151,6 +151,7 @@
   "saveChatTitle": "保存",
   "cancelChatAction": "取消",
   "deleteChatConfirmation": "永久删除此聊天？",
+  "deleteChatDescription": "“{title}”及其消息将被删除，且无法撤销。",
   "chatDocumentHint": "打开聊天所属的文档以继续。",
   "chatReadOnly": "此聊天属于另一个文档。打开该文档以继续。",
   "chatAgentReadOnly": "与代理的对话已保存，但暂时无法在此恢复会话。请新建聊天。",

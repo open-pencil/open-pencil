@@ -151,6 +151,7 @@
   "saveChatTitle": "Salva",
   "cancelChatAction": "Annulla",
   "deleteChatConfirmation": "Eliminare definitivamente questa chat?",
+  "deleteChatDescription": "«{title}» e i suoi messaggi vengono eliminati. L’operazione non può essere annullata.",
   "chatDocumentHint": "Apri il documento della chat per continuare.",
   "chatReadOnly": "Questa chat appartiene a un altro documento. Aprilo per continuare.",
   "chatAgentReadOnly": "La conversazione con l’agente è salvata, ma non è ancora possibile riprendere la sessione qui. Avvia una nuova chat.",

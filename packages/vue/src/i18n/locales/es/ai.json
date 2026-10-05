@@ -151,6 +151,7 @@
   "saveChatTitle": "Guardar",
   "cancelChatAction": "Cancelar",
   "deleteChatConfirmation": "¿Eliminar este chat permanentemente?",
+  "deleteChatDescription": "«{title}» y sus mensajes se eliminan. Esta acción no se puede deshacer.",
   "chatDocumentHint": "Abre el documento del chat para continuar.",
   "chatReadOnly": "Este chat pertenece a otro documento. Ábrelo para continuar.",
   "chatAgentReadOnly": "La conversación del agente está guardada, pero todavía no se puede reanudar su sesión aquí. Inicia un nuevo chat.",

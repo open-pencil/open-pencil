@@ -23,7 +23,6 @@ export const chatHistoryTheme = tv({
     label: 'block truncate text-xs',
     empty: 'px-2 py-4 text-center text-xs text-muted',
     form: 'space-y-2 border-t border-border p-2',
-    actions: 'flex justify-end gap-1',
-    confirmation: 'text-xs text-surface'
+    actions: 'flex justify-end gap-1'
   }
 })

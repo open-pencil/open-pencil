@@ -151,6 +151,7 @@
   "saveChatTitle": "Speichern",
   "cancelChatAction": "Abbrechen",
   "deleteChatConfirmation": "Diesen Chat endgültig löschen?",
+  "deleteChatDescription": "„{title}“ und die Nachrichten darin werden entfernt. Das lässt sich nicht rückgängig machen.",
   "chatDocumentHint": "Öffne das Dokument des Chats, um fortzufahren.",
   "chatReadOnly": "Dieser Chat gehört zu einem anderen Dokument. Öffne es, um fortzufahren.",
   "chatAgentReadOnly": "Der Agentenverlauf wurde gespeichert, aber die Sitzung kann hier noch nicht fortgesetzt werden. Starte einen neuen Chat.",

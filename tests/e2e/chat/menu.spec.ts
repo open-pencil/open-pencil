@@ -29,3 +29,26 @@ test('mobile conversation menu stays attached to its trigger and inside the view
     })
     .toBe(true)
 })
+
+test('deleting a conversation asks in a confirmation dialog', async ({
+  configuredChat: chat,
+  page
+}) => {
+  await chat.submit('Conversation to delete')
+  await expect(chat.assistantMessage()).toBeVisible()
+  const actions = page.getByRole('button', { name: 'Conversation actions' })
+
+  await actions.click()
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  const dialog = page.getByRole('alertdialog', { name: 'Delete this conversation permanently?' })
+  await expect(dialog).toContainText('“Conversation to delete” and its messages are removed.')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(chat.userMessage()).toContainText('Conversation to delete')
+
+  await actions.click()
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  await dialog.getByRole('button', { name: 'Delete' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByTestId('chat-message-user')).toHaveCount(0)
+})
