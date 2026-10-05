@@ -75,6 +75,7 @@ export const aiMessageDefaults = {
   thoughtFor: params('Thought for {seconds}s'),
   copyResponse: 'Copy response',
   revertTurn: 'Revert changes',
+  turnReverted: 'Changes reverted',
   regenerate: 'Regenerate',
   revertAndRegenerate: 'Revert and regenerate',
   editMessage: 'Edit message',

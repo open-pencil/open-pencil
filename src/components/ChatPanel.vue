@@ -195,6 +195,7 @@ function handleStop() {
         :nodes-live="!history.readOnly.value"
         :interactive="chat !== null"
         @regenerate="submission.regenerate()"
+        @revert="(messageId) => submission.revert(messageId)"
         @edit="(messageId, text) => submission.resend(messageId, text)"
         @continue="
           submission.submit({

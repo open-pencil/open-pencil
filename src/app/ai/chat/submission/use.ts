@@ -1,5 +1,3 @@
-import type { Chat } from '@ai-sdk/vue'
-import type { UIMessage } from 'ai'
 import { computed, markRaw, ref, type Ref } from 'vue'
 
 import {
@@ -15,16 +13,11 @@ import {
 import { snapshotNode } from '@/app/ai/attachment/node/snapshot'
 import { setMessageAttachments } from '@/app/ai/attachment/presentation/store'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
-import type { ChatSubmission } from '@/app/ai/chat/submission/types'
+import { useRevertRecords } from '@/app/ai/chat/submission/reverts'
+import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { recordTurn, revertTurn } from '@/app/ai/chat/turns'
 import { runUndoEntries } from '@/app/ai/tools'
 import type { EditorStore } from '@/app/editor/active-store'
-
-/** The part of the AI SDK Chat that submissions drive. */
-export type ChatInstance = Pick<
-  Chat<UIMessage>,
-  'messages' | 'sendMessage' | 'stop' | 'regenerate' | 'status'
->
 
 interface SubmissionMessages {
   openSettings: string
@@ -49,6 +42,15 @@ export function useChatSubmission(options: SubmissionOptions) {
 
   function lastAssistantId(chat: ChatInstance): string | undefined {
     return chat.messages.findLast((message) => message.role === 'assistant')?.id
+  }
+
+  const reverts = useRevertRecords({ chat: options.chat, flush: options.flush })
+
+  /** Undoes a reply's edits and marks it, so the chat and the next request both say so. */
+  async function revert(messageId: string): Promise<void> {
+    const currentChat = readyChat()
+    if (!currentChat || !reverts.revert(currentChat, messageId)) return
+    await options.flush?.().catch(() => undefined)
   }
 
   /** Runs one message and keeps the undo entries its edits pushed, so the turn can be reverted. */
@@ -155,11 +157,18 @@ export function useChatSubmission(options: SubmissionOptions) {
         if (submission.images.length > 0) options.reportError(options.messages.value.requestFailed)
         return
       }
+      const note = reverts.note(submission.modelText, currentChat.messages)
+      const noted = { ...submission, modelText: note.text }
+      const previousIds = new Set(currentChat.messages.map((message) => message.id))
       if (submission.images.length === 0 && submission.nodes.length === 0) {
-        await sendText(currentChat, submission)
+        await sendText(currentChat, noted)
       } else {
-        await sendAttachments(currentChat, submission, version)
+        await sendAttachments(currentChat, noted, version)
       }
+      const request = currentChat.messages.find(
+        (message) => message.role === 'user' && !previousIds.has(message.id)
+      )
+      if (request) reverts.reported(currentChat, note.reverts, request.id)
     } catch (error) {
       reportSubmissionError(error)
     } finally {
@@ -200,11 +209,14 @@ export function useChatSubmission(options: SubmissionOptions) {
     if (index === -1 || later.some((message) => message.role === 'user')) return
     options.clearFailure()
     for (const message of later) if (message.role === 'assistant') revertTurn(message.id)
+    // Replies after the edited message are replaced; the reverts it reported need a new report.
+    const note = reverts.note(trimmed, currentChat.messages.slice(0, index))
     setVisibleMessageText(messageId, trimmed)
     try {
       await withTurn(currentChat, () =>
-        currentChat.sendMessage({ messageId, text: trimmed }).catch(() => undefined)
+        currentChat.sendMessage({ messageId, text: note.text }).catch(() => undefined)
       )
+      reverts.reported(currentChat, note.reverts, messageId)
     } finally {
       await options.flush?.().catch(() => undefined)
     }
@@ -223,6 +235,7 @@ export function useChatSubmission(options: SubmissionOptions) {
     stop: () => options.chat.value?.stop(),
     submit,
     regenerate,
-    resend
+    resend,
+    revert
   }
 }

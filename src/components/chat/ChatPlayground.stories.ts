@@ -124,5 +124,6 @@ export const Interaction: Story = {
 export const Empty: Story = { args: { initialChat: 'empty' } }
 export const Streaming: Story = { args: { initialChat: 'streaming' } }
 export const ToolError: Story = { args: { initialChat: 'error' } }
+export const RevertedReply: Story = { args: { initialChat: 'reverted' } }
 export const Narrow: Story = { args: { narrow: true } }
 export const LongTitle: Story = { args: { initialChat: 'long-title', narrow: true } }

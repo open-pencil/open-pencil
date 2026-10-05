@@ -31,6 +31,7 @@
   "thoughtFor": "{seconds}秒間思考",
   "copyResponse": "回答をコピー",
   "revertTurn": "変更を元に戻す",
+  "turnReverted": "変更を取り消しました",
   "regenerate": "再生成",
   "revertAndRegenerate": "元に戻して再生成",
   "editMessage": "メッセージを編集",

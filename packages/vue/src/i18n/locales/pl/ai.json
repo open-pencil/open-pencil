@@ -31,6 +31,7 @@
   "thoughtFor": "Rozumowanie: {seconds} s",
   "copyResponse": "Kopiuj odpowiedź",
   "revertTurn": "Cofnij zmiany",
+  "turnReverted": "Zmiany cofnięte",
   "regenerate": "Wygeneruj ponownie",
   "revertAndRegenerate": "Cofnij i wygeneruj ponownie",
   "editMessage": "Edytuj wiadomość",

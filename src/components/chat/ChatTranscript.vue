@@ -35,6 +35,7 @@ const {
 const emit = defineEmits<{
   continue: []
   regenerate: []
+  revert: [messageId: string]
   edit: [messageId: string, text: string]
 }>()
 const { ai } = useI18n()
@@ -97,6 +98,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           :can-regenerate="idle && msg.id === lastReplyId"
           :can-edit="idle && msg.id === editableRequestId"
           @regenerate="emit('regenerate')"
+          @revert="emit('revert', msg.id)"
           @edit="(text) => emit('edit', msg.id, text)"
         />
 

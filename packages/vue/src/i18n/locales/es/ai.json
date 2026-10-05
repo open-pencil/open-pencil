@@ -31,6 +31,7 @@
   "thoughtFor": "Razonó durante {seconds} s",
   "copyResponse": "Copiar respuesta",
   "revertTurn": "Revertir cambios",
+  "turnReverted": "Cambios revertidos",
   "regenerate": "Regenerar",
   "revertAndRegenerate": "Revertir y regenerar",
   "editMessage": "Editar mensaje",

@@ -11,6 +11,7 @@ import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/ty
 import { reasoningDisplay } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
+import { revertOf } from '@/app/ai/chat/turns'
 import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
@@ -34,7 +35,7 @@ const {
   /** The last user message without attachments, when the chat is idle. */
   canEdit?: boolean
 }>()
-const emit = defineEmits<{ regenerate: []; edit: [text: string] }>()
+const emit = defineEmits<{ regenerate: []; revert: []; edit: [text: string] }>()
 const editing = ref(false)
 const { ai } = useI18n()
 const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
@@ -137,7 +138,9 @@ function groupKey(group: MessagePartGroup): string {
           v-if="!streaming"
           :message-id="message.id"
           :can-regenerate="canRegenerate"
+          :reverted="revertOf(message) !== null"
           @regenerate="emit('regenerate')"
+          @revert="emit('revert')"
         />
       </template>
 

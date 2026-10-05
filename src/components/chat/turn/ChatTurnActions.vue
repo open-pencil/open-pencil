@@ -3,14 +3,20 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import { revertTurn, turnEdits } from '@/app/ai/chat/turns'
+import { turnEdits } from '@/app/ai/chat/turns'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
-const { messageId, canRegenerate = false } = defineProps<{
+const {
+  messageId,
+  canRegenerate = false,
+  reverted = false
+} = defineProps<{
   messageId: string
   canRegenerate?: boolean
+  /** The reply's edits were reverted; it stays in the chat, marked. */
+  reverted?: boolean
 }>()
-const emit = defineEmits<{ regenerate: [] }>()
+const emit = defineEmits<{ regenerate: []; revert: [] }>()
 const { ai } = useI18n()
 
 const edits = computed(() => turnEdits(messageId))
@@ -19,16 +25,24 @@ const revertable = computed(() => edits.value?.revertable === true)
 
 <template>
   <div
-    v-if="revertable || canRegenerate"
+    v-if="revertable || reverted || canRegenerate"
     class="flex flex-wrap items-center gap-1"
     data-slot="chat-turn-actions"
   >
+    <span
+      v-if="reverted"
+      class="inline-flex items-center gap-1 px-2 text-[11px] text-muted"
+      data-slot="chat-turn-reverted"
+    >
+      <icon-lucide-undo-2 class="size-3" aria-hidden="true" />
+      {{ ai.turnReverted }}
+    </span>
     <AppButton
-      v-if="revertable"
+      v-else-if="revertable"
       size="xs"
       variant="ghost"
       data-test-id="chat-revert-turn"
-      @click="revertTurn(messageId)"
+      @click="emit('revert')"
     >
       <template #leading><icon-lucide-undo-2 aria-hidden="true" /></template>
       {{ ai.revertTurn }}

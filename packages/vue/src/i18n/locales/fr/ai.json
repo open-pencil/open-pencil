@@ -31,6 +31,7 @@
   "thoughtFor": "Réflexion : {seconds} s",
   "copyResponse": "Copier la réponse",
   "revertTurn": "Annuler les modifications",
+  "turnReverted": "Modifications annulées",
   "regenerate": "Régénérer",
   "revertAndRegenerate": "Annuler et régénérer",
   "editMessage": "Modifier le message",

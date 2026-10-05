@@ -31,6 +31,7 @@
   "thoughtFor": "Рассуждал {seconds} с",
   "copyResponse": "Копировать ответ",
   "revertTurn": "Отменить изменения",
+  "turnReverted": "Изменения отменены",
   "regenerate": "Сгенерировать заново",
   "revertAndRegenerate": "Отменить и сгенерировать заново",
   "editMessage": "Изменить сообщение",
