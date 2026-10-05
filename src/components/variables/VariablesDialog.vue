@@ -6,7 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTokenCopy } from '@/app/editor/tokens/copy'
-import { DOCUMENT_EDITOR_ATTRIBUTE } from '@/app/shell/keyboard/document-editor'
+import { useDocumentShortcuts } from '@/app/shell/keyboard/document'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppDialogClose, AppDialogRoot } from '@/components/ui/dialog'
 import TokensPanel from '@/components/variables/TokensPanel.vue'
@@ -20,7 +20,7 @@ const open = computed({
 })
 
 /** Undo and redo reach the document from inside the dialog, as they do on the canvas. */
-const documentEditor = { [DOCUMENT_EDITOR_ATTRIBUTE]: '' }
+const onKeydown = useDocumentShortcuts()
 
 const { variables, common } = useI18n()
 /** Expanding gives a large design system most of the window; it is kept for this session. */
@@ -34,7 +34,7 @@ const copyTokens = createTokenCopy(store)
     :size="expanded ? 'screen' : 'xl'"
     :height="expanded ? 'screen' : 'full'"
     data-test-id="variables-dialog"
-    v-bind="documentEditor"
+    @keydown="onKeydown"
     :aria-describedby="undefined"
   >
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
