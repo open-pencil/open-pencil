@@ -122,9 +122,6 @@ function stripUndefinedProps<T extends object>(obj: T): T {
 
 export { captureGraphCheckpoint } from './checkpoint'
 
-/** How many taken IDs a generator may return in a row before it counts as exhausted. */
-const MAX_ID_ATTEMPTS = 1000
-
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
@@ -368,15 +365,28 @@ export class SceneGraph {
       height: node?.height ?? 0
     }
   }
-  /** An ID no entity uses; `issued` also excludes IDs handed out earlier in the same creation. */
+  /**
+   * An ID no entity uses; `issued` also excludes IDs handed out earlier in the same creation.
+   * A generator that returns more taken IDs than the graph holds must be repeating itself, so
+   * it counts as exhausted then; a fixed cap would reject a sequence walking past a large import.
+   */
   private generateEntityId(issued?: Set<string>): string {
-    for (let attempt = 0; attempt < MAX_ID_ATTEMPTS; attempt++) {
+    let limit = Infinity
+    for (let attempt = 0; attempt < limit; attempt++) {
       const id = this.idGenerator()
-      if (this.isEntityIdTaken(id) || issued?.has(id)) continue
+      if (this.isEntityIdTaken(id) || issued?.has(id)) {
+        if (limit === Infinity) limit = this.entityIdCount() + (issued?.size ?? 0) + 1
+        continue
+      }
       issued?.add(id)
       return id
     }
-    throw new Error(`The ID generator returned ${MAX_ID_ATTEMPTS} IDs in a row that are in use`)
+    throw new Error('The ID generator only returned IDs that are in use')
+  }
+  private entityIdCount(): number {
+    let count = this.nodes.size + this.variables.size + this.variableCollections.size
+    for (const collection of this.variableCollections.values()) count += collection.modes.length
+    return count
   }
   private isEntityIdTaken(id: string): boolean {
     if (this.nodes.has(id) || this.variables.has(id) || this.variableCollections.has(id))
