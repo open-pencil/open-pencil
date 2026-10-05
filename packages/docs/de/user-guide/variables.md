@@ -54,6 +54,7 @@ Variablen sind nach den Ordnern in ihren Namen gruppiert (`Brand/Primary` ersche
 - **Rechtsklick:** die ausgewählten Variablen umbenennen, duplizieren (**Duplizieren**), in eine Gruppe oder eine neue Gruppe verschieben (**In Gruppe verschieben**, **Neue Gruppe…**) oder löschen (**Variablen löschen**); auch Delete oder Backspace löscht sie
 - **Neu anordnen:** eine Zeile ziehen; die Reihenfolge wird in der Datei gespeichert
 - **Mehrere ausgewählt:** die rechte Seite verschiebt sie in eine Gruppe, dupliziert sie oder löscht sie
+- **Rückgängig und Wiederholen:** Cmd+Z und Cmd+Shift+Z oder Cmd+Y (Strg unter Windows und Linux) wirken im Dialog wie auf der Arbeitsfläche, ein Schritt pro Änderung. Die Eingabetaste übernimmt ein Feld und kehrt zur Liste zurück; solange ein Feld noch nicht übernommenen Text enthält, macht Cmd+Z das Tippen rückgängig
 
 Die Auswahl einer Variable bearbeitet:
 

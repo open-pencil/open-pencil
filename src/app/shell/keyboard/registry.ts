@@ -8,6 +8,7 @@ import type { EditorCommandId } from '@open-pencil/vue'
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
+import { documentEditorOnTop } from '@/app/shell/keyboard/document-editor'
 import { isButtonActivation, isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
@@ -24,6 +25,11 @@ type ShortcutDefinition = {
   run: ShortcutAction
   shouldPreventDefault?: (event: KeyboardEvent) => boolean
   global?: boolean
+  /**
+   * `document` shortcuts edit the document itself (undo, redo), so they also run in a dialog that
+   * edits it, such as the variables dialog, when that dialog is the topmost layer.
+   */
+  scope?: 'document'
 }
 
 function commandShortcut(
@@ -38,6 +44,10 @@ function commandShortcuts(...commands: EditorCommandId[]): ShortcutDefinition[] 
     const shortcut = commandShortcut(command)
     return shortcut ? [shortcut] : []
   })
+}
+
+function documentShortcuts(...commands: EditorCommandId[]): ShortcutDefinition[] {
+  return commandShortcuts(...commands).map((shortcut) => ({ ...shortcut, scope: 'document' }))
 }
 
 function zoomAtViewportCenter(delta: number): ShortcutAction {
@@ -67,6 +77,15 @@ function originatedInOverlay(event: KeyboardEvent) {
   return event
     .composedPath()
     .some((target) => target instanceof Element && target.matches(EDITOR_SHORTCUT_OVERLAY_SELECTOR))
+}
+
+/**
+ * A document shortcut runs where the canvas's would, and also in a document-editing dialog on top.
+ * A text field keeps its own undo while it has focus.
+ */
+function shouldIgnoreDocumentShortcut(event: KeyboardEvent, options: KeyboardShortcutOptions) {
+  if (documentEditorOnTop()) return isEditing(event)
+  return shouldIgnoreShortcut(event, options)
 }
 
 /** A popover, menu, or dialog that is open; one fading out after closing no longer counts. */
@@ -134,7 +153,8 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('save-as') ?? '$mod+Shift+KeyS',
       run: ({ store }) => void store.saveFigFileAs()
     },
-    ...commandShortcuts('selection.ungroup', 'edit.redo'),
+    ...commandShortcuts('selection.ungroup'),
+    ...documentShortcuts('edit.undo', 'edit.redo'),
     {
       id: 'toggle-ui',
       keys: appMenuTinykeysShortcut('toggle-ui') ?? '$mod+Backslash',
@@ -181,7 +201,6 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       run: ({ store }) => requestRenameSelection(store)
     },
     ...commandShortcuts(
-      'edit.undo',
       'view.zoom100',
       'view.zoomFit',
       'view.zoomSelection',
@@ -221,10 +240,16 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
 
   const bindings: KeyBindingMap = {}
   const globalBindings: KeyBindingMap = {}
+  const documentBindings: KeyBindingMap = {}
   bindToolShortcuts(bindings, runOptions(new KeyboardEvent('keydown')))
 
+  function bindingsFor(shortcut: ShortcutDefinition) {
+    if (shortcut.global) return globalBindings
+    return shortcut.scope === 'document' ? documentBindings : bindings
+  }
+
   for (const shortcut of shortcuts) {
-    bindShortcut(shortcut.global ? globalBindings : bindings, shortcut.keys, (event) => {
+    bindShortcut(bindingsFor(shortcut), shortcut.keys, (event) => {
       shortcut.run(runOptions(event))
       if (shortcut.shouldPreventDefault?.(event) ?? true) event.preventDefault()
     })
@@ -246,8 +271,23 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
 
   const unsubscribeGlobal = tinykeys(window, globalBindings, { capture: true })
 
+  const unsubscribeDocument = tinykeys(
+    window,
+    Object.fromEntries(
+      Object.entries(documentBindings).map(([keys, handler]) => [
+        keys,
+        (event: KeyboardEvent) => {
+          if (shouldIgnoreDocumentShortcut(event, options)) return
+          handler(event)
+        }
+      ])
+    ),
+    { capture: true }
+  )
+
   onScopeDispose(() => {
     unsubscribeEditor()
     unsubscribeGlobal()
+    unsubscribeDocument()
   })
 }

@@ -59,6 +59,7 @@ const { editor } = ctx
 const actions = useTokenActions(editor, (name) => messages.value.duplicateName({ name }))
 
 const selectedIds = ref<string[]>([])
+const table = useTemplateRef<{ focus: () => void }>('table')
 /** Tokens being put in a new group: the group name field opens for them. */
 const groupingIds = ref<string[] | null>(null)
 const groupFilter = ref<string | null>(null)
@@ -151,6 +152,34 @@ watch(
   { immediate: true }
 )
 
+/**
+ * Undo and redo change the document under the panel: selected tokens that no longer exist drop out
+ * of the selection, and a collection that no longer exists gives way to the first one left.
+ */
+watch(collectionVariables, (current) => {
+  const ids = new Set(current.map((variable) => variable.id))
+  if (selectedIds.value.some((id) => !ids.has(id)))
+    selectedIds.value = selectedIds.value.filter((id) => ids.has(id))
+  if (groupingIds.value?.some((id) => !ids.has(id)))
+    groupingIds.value = groupingIds.value.filter((id) => ids.has(id))
+  if (compactDetail.value?.kind === 'token' && !ids.has(compactDetail.value.id)) closeDetail()
+})
+
+/** A group filter lets go once its group is gone, whether deleted, emptied or undone. */
+watch(groupEntries, (entries) => {
+  if (groupFilter.value !== null && !entries.some((entry) => entry.path === groupFilter.value))
+    groupFilter.value = null
+})
+
+watch(ctx.collections, (current) => {
+  if (current.some((candidate) => candidate.id === ctx.activeCollectionId.value)) return
+  ctx.activeCollectionId.value = current[0]?.id ?? ''
+})
+
+function focusList() {
+  if (!compact.value) table.value?.focus()
+}
+
 watch(ctx.activeCollectionId, () => {
   groupFilter.value = null
   closeDetail()
@@ -220,11 +249,12 @@ const tokenInspector = computed(() => {
     onRename: (name: string) => id && editor.renameVariable(id, name),
     onUpdateToken: (patch: Partial<VariableTokenFields>) =>
       id && editor.updateVariableToken(id, patch),
-    onUpdateValue: (modeId: string, value: VariableValue) =>
-      id && editor.updateVariableValue(id, modeId, value),
+    onUpdateValue: (modeId: string, value: VariableValue, coalesceKey?: string) =>
+      id && editor.updateVariableValue(id, modeId, value, coalesceKey),
     onAlias: (modeId: string, aliasId: string) => id && actions.alias(id, modeId, aliasId),
     onDetach: (modeId: string) => id && actions.detach(id, modeId),
-    onRemove: () => id && removeTokens([id])
+    onRemove: () => id && removeTokens([id]),
+    onDone: focusList
   }
 })
 const bulkInspector = computed(() => {
@@ -247,7 +277,8 @@ const collectionInspector = computed(() => {
     onDuplicateMode: ctx.duplicateMode,
     onSetDefaultMode: ctx.setDefaultMode,
     onRemoveMode: ctx.removeMode,
-    onSetCondition: setCondition
+    onSetCondition: setCondition,
+    onDone: focusList
   }
 })
 const tableActions = {
@@ -432,6 +463,7 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
           @add-collection="ctx.addCollection"
         />
         <TokenTable
+          ref="table"
           v-model:selected-ids="selectedIds"
           v-bind="tableActions"
           :collection="collection"

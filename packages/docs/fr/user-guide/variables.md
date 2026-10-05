@@ -54,6 +54,7 @@ Les variables sont regroupées selon les dossiers de leurs noms (`Brand/Primary`
 - **Clic droit :** renommer, dupliquer (**Dupliquer**), déplacer vers un groupe ou un nouveau groupe (**Déplacer vers le groupe**, **Nouveau groupe…**) ou supprimer (**Supprimer les variables**) les variables sélectionnées ; Delete ou Backspace les supprime aussi
 - **Réorganiser :** faites glisser une ligne ; l’ordre est conservé dans le fichier
 - **Plusieurs sélectionnées :** la partie droite les déplace vers un groupe, les duplique ou les supprime
+- **Annuler et rétablir :** Cmd+Z et Cmd+Maj+Z ou Cmd+Y (Ctrl sous Windows et Linux) agissent dans la boîte de dialogue comme sur le canevas, une étape par modification. Entrée valide un champ et revient à la liste ; tant qu’un champ contient du texte non validé, Cmd+Z annule la saisie
 
 La sélection d’une variable permet de modifier :
 

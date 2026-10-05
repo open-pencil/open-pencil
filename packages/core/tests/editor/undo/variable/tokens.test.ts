@@ -124,4 +124,29 @@ describe('variable token undo', () => {
     editor.undo.undo()
     expect(order()).toEqual(['gutter', other.id])
   })
+
+  test('undoing a delete puts the variable back in its place', () => {
+    const editor = themeEditor()
+    const other = editor.graph.createVariable('Other', 'FLOAT', 'theme', 4)
+    const order = () => editor.graph.variableCollections.get('theme')?.variableIds
+
+    editor.removeVariable('gutter')
+    editor.undo.undo()
+
+    expect(order()).toEqual(['gutter', other.id])
+  })
+
+  test('value edits that share a coalesce key undo as one step', () => {
+    const editor = themeEditor()
+    const light = () => editor.graph.variables.get('gutter')?.valuesByMode.light
+
+    editor.updateVariableValue('gutter', 'light', 25, 'drag-1')
+    editor.updateVariableValue('gutter', 'light', 26, 'drag-1')
+    editor.updateVariableValue('gutter', 'light', 30, 'drag-2')
+
+    editor.undo.undo()
+    expect(light()).toBe(26)
+    editor.undo.undo()
+    expect(light()).toBe(24)
+  })
 })

@@ -36,6 +36,7 @@ const { collection, layout = 'side' } = defineProps<{
   layout?: 'side' | 'full'
 }>()
 const emit = defineEmits<{
+  done: []
   rename: [name: string]
   remove: []
   addMode: []
@@ -141,6 +142,12 @@ function hint(modeId: string): string {
   if (isAutomaticCondition(current)) return variables.value.conditionAutomaticHint
   return variables.value.conditionHint
 }
+
+/** Enter commits the field and hands the keyboard back to the list, so undo reaches the document. */
+function done(event: KeyboardEvent) {
+  if (event.target instanceof HTMLElement) event.target.blur()
+  emit('done')
+}
 </script>
 
 <template>
@@ -155,6 +162,7 @@ function hint(modeId: string): string {
           :aria-label="variables.collection"
           data-test-id="variables-collection-name"
           @change="commitName"
+          @enter="done"
         />
         <DropdownMenuRoot>
           <DropdownMenuTrigger as-child>
@@ -205,6 +213,7 @@ function hint(modeId: string): string {
             class="min-w-0 flex-1"
             :aria-label="variables.renameMode"
             @change="commitModeName(item.modeId)"
+            @enter="done"
           />
           <AppBadge v-if="item.modeId === collection.defaultModeId">
             {{ variables.defaultMode }}
@@ -265,6 +274,7 @@ function hint(modeId: string): string {
             :aria-label="`${item.name}: ${variables.conditionWidth}`"
             data-test-id="variables-mode-width"
             @change="commitWidth(item.modeId)"
+            @enter="done"
           >
             <template #trailing><span :class="ui.hint()">px</span></template>
           </AppInput>
@@ -276,6 +286,7 @@ function hint(modeId: string): string {
             :placeholder="modeConditionPlaceholder(collection, item.modeId)"
             :ui="{ input: 'font-mono' }"
             @change="commitCustom(item.modeId)"
+            @enter="done"
           />
           <code v-else :class="ui.modeCSS()" data-test-id="variables-mode-css">{{
             writtenAs(item.modeId)

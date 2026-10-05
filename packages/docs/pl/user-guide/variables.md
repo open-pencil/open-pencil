@@ -54,6 +54,7 @@ Zmienne są grupowane według folderów w ich nazwach (`Brand/Primary` jest wido
 - **Prawy przycisk myszy:** zmień nazwę, zduplikuj (**Duplikuj**), przenieś do grupy lub nowej grupy (**Przenieś do grupy**, **Nowa grupa…**) albo usuń (**Usuń zmienne**) zaznaczone zmienne; usuwa je też Delete lub Backspace
 - **Zmiana kolejności:** przeciągnij wiersz; kolejność jest zapisywana w pliku
 - **Zaznaczonych kilka:** prawa strona przenosi je do grupy, duplikuje albo usuwa
+- **Cofnij i ponów:** Cmd+Z oraz Cmd+Shift+Z lub Cmd+Y (Ctrl w systemach Windows i Linux) działają w oknie tak jak na kanwie, jeden krok na zmianę. Enter zatwierdza pole i wraca do listy; dopóki pole zawiera niezatwierdzony tekst, Cmd+Z cofa wpisywanie
 
 Zaznaczenie zmiennej pozwala edytować:
 

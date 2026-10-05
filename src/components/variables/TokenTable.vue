@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ListboxContent, ListboxGroup, ListboxGroupLabel, ListboxItem, ListboxRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, ref, type ComponentPublicInstance } from 'vue'
+import { computed, ref, useTemplateRef, type ComponentPublicInstance } from 'vue'
 
 import type { VariableCollection, VariableValue } from '@open-pencil/scene-graph'
 import { useFlatReorderDrag, useI18n } from '@open-pencil/vue'
@@ -65,6 +65,19 @@ function modeName(modeId: string) {
 function shown<T extends { modeId: string }>(values: readonly T[]) {
   return values.filter((value) => modes.value.some((mode) => mode.modeId === value.modeId))
 }
+
+const content = useTemplateRef<ComponentPublicInstance>('content')
+
+/**
+ * Takes the keyboard back after a field commits, so arrows, Delete and undo act on the list. The
+ * listbox root renders beside a hidden form input, so the focusable element is found from inside.
+ */
+function focus() {
+  const element = content.value?.$el
+  const listbox = element instanceof Element ? element.closest('[role="listbox"]') : null
+  if (listbox instanceof HTMLElement) listbox.focus({ preventScroll: true })
+}
+defineExpose({ focus })
 
 const rows = computed(() => groups.flatMap((group) => group.rows))
 const visibleIds = computed(() => rows.value.map((row) => row.variable.id))
@@ -195,7 +208,7 @@ function dropEdge(id: string) {
       @new-group="emit('newGroup', [...selectedIds])"
       @remove="emit('remove', [...selectedIds])"
     >
-      <ListboxContent @contextmenu.capture="onContextMenu">
+      <ListboxContent ref="content" @contextmenu.capture="onContextMenu">
         <ListboxGroup v-for="group in groups" :key="group.path">
           <ListboxGroupLabel v-if="group.path" :class="ui.group()">{{
             group.path

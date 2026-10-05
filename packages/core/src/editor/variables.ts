@@ -150,6 +150,7 @@ export function createVariableActions(ctx: EditorContext) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
     const snapshot = structuredClone(variable)
+    const order = [...(ctx.graph.variableCollections.get(variable.collectionId)?.variableIds ?? [])]
     ctx.graph.removeVariable(id)
     ctx.undo.push({
       label: 'Remove variable',
@@ -157,8 +158,10 @@ export function createVariableActions(ctx: EditorContext) {
         ctx.graph.removeVariable(id)
         refreshVariables()
       },
+      // Undo puts the variable back where it was, not at the end of its collection.
       inverse: () => {
-        ctx.graph.addVariable(snapshot)
+        ctx.graph.addVariable(structuredClone(snapshot))
+        placeVariables(snapshot.collectionId, order)
         refreshVariables()
       }
     })
@@ -380,7 +383,16 @@ export function createVariableActions(ctx: EditorContext) {
     refreshVariables()
   }
 
-  function updateVariableValue(id: string, modeId: string, value: VariableValue) {
+  /**
+   * Sets one mode's value. Calls that share a `coalesceKey`, such as the steps of one color picker
+   * drag, undo together.
+   */
+  function updateVariableValue(
+    id: string,
+    modeId: string,
+    value: VariableValue,
+    coalesceKey?: string
+  ) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
     const prevValue = structuredClone(variable.valuesByMode[modeId])
@@ -397,7 +409,8 @@ export function createVariableActions(ctx: EditorContext) {
         const v = ctx.graph.variables.get(id)
         if (v) v.valuesByMode[modeId] = structuredClone(prevValue)
         refreshVariables()
-      }
+      },
+      coalesceKey
     })
     refreshVariables()
   }

@@ -33,6 +33,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 - Browser and native menus share `src/app/shell/menu/schema.ts`; handle IDs in `use.ts` or editor commands, and regenerate `desktop/generated/menu.json` with `bun run generate:tauri-menu`.
 - Motion policy lives in `src/app/shell/motion/`: resolve the persisted System/Off preference and OS reduction once. The root `data-motion` attribute and the Tailwind `motion-safe`/`motion-reduce` variants represent the effective policy, including portalled content. Use the policy-aware Motion adapters rather than repeating preference conditionals in components.
+- Canvas shortcuts stop while a dialog, menu, or listbox is open. Shortcuts that edit the document itself (undo, redo) take `scope: 'document'` and also run in a dialog that edits the document, which marks its content with `DOCUMENT_EDITOR_ATTRIBUTE`; there is one history, the editor's (`src/app/shell/keyboard/document-editor.ts`, `src/components/variables/VariablesDialog.vue`).
 - Keep the app manifest in `vite/pwa.ts`; use `BrandMark` for in-app branding; never symlink web assets to desktop icons (`tools/AGENTS.md`, Brand assets).
 
 ## UI

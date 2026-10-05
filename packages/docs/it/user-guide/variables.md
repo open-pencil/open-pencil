@@ -54,6 +54,7 @@ Le variabili sono raggruppate in base alle cartelle nei loro nomi (`Brand/Primar
 - **Clic destro:** rinomina, duplica (**Duplica**), sposta in un gruppo o in uno nuovo (**Sposta nel gruppo**, **Nuovo gruppo…**) oppure elimina (**Elimina variabili**) le variabili selezionate; anche Delete o Backspace le elimina
 - **Riordinare:** trascina una riga; l’ordine viene conservato nel file
 - **Più selezionate:** la parte destra le sposta in un gruppo, le duplica o le elimina
+- **Annulla e ripeti:** Cmd+Z e Cmd+Maiusc+Z o Cmd+Y (Ctrl su Windows e Linux) funzionano nella finestra come sulla tela, un passaggio per modifica. Invio conferma un campo e torna all’elenco; finché un campo contiene testo non confermato, Cmd+Z annulla la digitazione
 
 La selezione di una variabile permette di modificare:
 

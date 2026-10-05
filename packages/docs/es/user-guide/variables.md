@@ -54,6 +54,7 @@ Las variables se agrupan según las carpetas de sus nombres (`Brand/Primary` apa
 - **Clic derecho:** renombra, duplica (**Duplicar**), mueve a un grupo o a uno nuevo (**Mover al grupo**, **Nuevo grupo…**) o elimina (**Eliminar variables**) las variables seleccionadas; Delete o Backspace también las elimina
 - **Reordenar:** arrastra una fila; el orden se conserva en el archivo
 - **Varias seleccionadas:** la parte derecha las mueve a un grupo, las duplica o las elimina
+- **Deshacer y rehacer:** Cmd+Z y Cmd+Mayús+Z o Cmd+Y (Ctrl en Windows y Linux) funcionan en el diálogo igual que en el lienzo, un paso por cambio. Intro confirma un campo y vuelve a la lista; mientras un campo tiene texto sin confirmar, Cmd+Z deshace lo escrito
 
 Al seleccionar una variable se editan:
 

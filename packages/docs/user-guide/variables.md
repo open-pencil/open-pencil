@@ -54,6 +54,7 @@ Variables are grouped by the folders in their names (`Brand/Primary` appears as 
 - **Right-click** — rename, duplicate, move to a group (or a new one), or delete the selected variables; Delete or Backspace deletes them too
 - **Reorder** — drag a row; the order is kept in the file
 - **Several selected** — the right side moves them into a group, duplicates them, or deletes them
+- **Undo and redo** — Cmd+Z and Cmd+Shift+Z or Cmd+Y (Ctrl on Windows and Linux) work in the dialog as on the canvas, one step per change. Enter commits a field and returns to the list; while a field has text you have not committed, Cmd+Z undoes the typing
 
 Selecting a variable edits:
 

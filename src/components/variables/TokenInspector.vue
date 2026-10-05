@@ -51,9 +51,10 @@ const {
   layout?: 'side' | 'full'
 }>()
 const emit = defineEmits<{
+  done: []
   rename: [name: string]
   updateToken: [patch: Partial<VariableTokenFields>]
-  updateValue: [modeId: string, value: VariableValue]
+  updateValue: [modeId: string, value: VariableValue, coalesceKey?: string]
   alias: [modeId: string, variableId: string]
   detach: [modeId: string]
   remove: []
@@ -221,12 +222,35 @@ function aliasId(modeId: string): string | undefined {
   return typeof value === 'object' && 'aliasId' in value ? value.aliasId : undefined
 }
 
+/**
+ * The modes whose color picker is open, each with the key its drag shares, so one picker session
+ * is one undo step however many colors it passes through.
+ */
+const colorSessions = new Map<string, string>()
+let sessionCount = 0
+
+function setPickerOpen(modeId: string, open: boolean) {
+  if (open)
+    colorSessions.set(modeId, `variable-color:${variable.value.id}:${modeId}:${++sessionCount}`)
+  else colorSessions.delete(modeId)
+}
+
+function colorGesture(modeId: string): string | undefined {
+  return colorSessions.get(modeId)
+}
+
 /** With one mode the value needs no mode name above it. */
 const singleMode = computed(() => collection.modes.length === 1)
 
 function color(modeId: string): Color | undefined {
   const value = variable.value.valuesByMode[modeId]
   return typeof value === 'object' && 'r' in value ? value : undefined
+}
+
+/** Enter commits the field and hands the keyboard back to the list, so undo reaches the document. */
+function done(event: KeyboardEvent) {
+  if (event.target instanceof HTMLElement) event.target.blur()
+  emit('done')
 }
 </script>
 
@@ -235,7 +259,7 @@ function color(modeId: string): Color | undefined {
     <section :class="ui.section()">
       <label :class="ui.field()">
         <span :class="ui.label()">{{ variables.name }}</span>
-        <AppInput v-model="draft.name" size="sm" @change="commitName" />
+        <AppInput v-model="draft.name" size="sm" @change="commitName" @enter="done" />
       </label>
       <label :class="ui.field()">
         <span :class="ui.label()">{{ variables.cssName }}</span>
@@ -249,6 +273,7 @@ function color(modeId: string): Color | undefined {
           :ui="{ input: 'font-mono pl-7' }"
           data-test-id="variables-css-name"
           @change="commitCSSName"
+          @enter="done"
         >
           <template #leading><span :class="ui.prefix()">--</span></template>
         </AppInput>
@@ -282,7 +307,8 @@ function color(modeId: string): Color | undefined {
             v-else-if="color(mode.modeId)"
             :color="color(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }"
             editable
-            @update="emit('updateValue', mode.modeId, $event)"
+            @update="emit('updateValue', mode.modeId, $event, colorGesture(mode.modeId))"
+            @open-change="setPickerOpen(mode.modeId, $event)"
           />
           <AppCheckbox
             v-else-if="variable.type === 'BOOLEAN'"
@@ -296,6 +322,7 @@ function color(modeId: string): Color | undefined {
             :type="variable.type === 'FLOAT' ? 'number' : 'text'"
             size="sm"
             @change="commitValue(mode.modeId)"
+            @enter="done"
           >
             <template v-if="variable.type === 'FLOAT' && numberUnit !== 'none'" #trailing>
               <span :class="ui.hint()">{{ numberUnit }}</span>
@@ -315,6 +342,7 @@ function color(modeId: string): Color | undefined {
           :placeholder="variables.expression"
           :ui="{ input: 'font-mono' }"
           @change="commitExpression(mode.modeId)"
+          @enter="done"
         />
       </div>
       <span v-if="variable.type === 'FLOAT'" :class="ui.hint()">{{

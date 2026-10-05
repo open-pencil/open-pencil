@@ -263,3 +263,45 @@ test('several tokens are duplicated, grouped, and deleted together', async () =>
   await expect(group).toHaveCount(0)
   editor.canvas.assertNoErrors()
 })
+
+test('undo and redo reach the document from inside the dialog', async () => {
+  // Deleting the last tokens of the filtered group above let the filter go.
+  await expect(variableRows().filter({ hasText: 'beta-spacing' })).toHaveCount(1)
+  await variableRows().filter({ hasText: 'beta-spacing' }).click()
+  await inspectorName().fill('gap-spacing')
+  await inspectorName().press('Enter')
+  // Enter commits and hands the keyboard back to the list, on the selected row.
+  await expect(variableRows().filter({ hasText: 'gap-spacing' })).toBeFocused()
+
+  await editor.page.keyboard.press('ControlOrMeta+KeyZ')
+  await expect(variableRows().filter({ hasText: 'beta-spacing' })).toHaveCount(1)
+  await editor.page.keyboard.press('ControlOrMeta+Shift+KeyZ')
+  await expect(variableRows().filter({ hasText: 'gap-spacing' })).toHaveCount(1)
+
+  const names = await variableRows().allTextContents()
+  await variableRows().filter({ hasText: 'gap-spacing' }).click()
+  await editor.page.keyboard.press('Delete')
+  await expect(variableRows().filter({ hasText: 'gap-spacing' })).toHaveCount(0)
+  await editor.page.keyboard.press('ControlOrMeta+KeyZ')
+  // The deleted variable comes back in its place, not at the end.
+  await expect(variableRows()).toHaveText(names)
+  editor.canvas.assertNoErrors()
+})
+
+test('a field with pending text keeps its own undo, and menus hold undo back', async () => {
+  await variableRows().filter({ hasText: 'gap-spacing' }).click()
+  await inspectorName().click()
+  await inspectorName().press('End')
+  await editor.page.keyboard.type('-draft')
+  await editor.page.keyboard.press('ControlOrMeta+KeyZ')
+  await expect(inspectorName()).toHaveValue('gap-spacing')
+  await expect(variableRows().filter({ hasText: 'gap-spacing' })).toHaveCount(1)
+  await inspectorName().blur()
+
+  await variableRows().filter({ hasText: 'gap-spacing' }).click({ button: 'right' })
+  await expect(editor.page.getByTestId('variables-row-menu')).toBeVisible()
+  await editor.page.keyboard.press('ControlOrMeta+KeyZ')
+  await expect(variableRows().filter({ hasText: 'gap-spacing' })).toHaveCount(1)
+  await editor.page.keyboard.press('Escape')
+  editor.canvas.assertNoErrors()
+})
