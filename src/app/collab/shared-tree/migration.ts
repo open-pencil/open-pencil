@@ -1,0 +1,112 @@
+import * as v from 'valibot'
+import * as Y from 'yjs'
+
+import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
+
+import {
+  markTreeFormat,
+  PARENTS_FIELD,
+  readOrderKey,
+  readParentEntries,
+  writeOrderKey,
+  writeParentEntry,
+  writeRootEntries,
+  type YMeta,
+  type YNodes
+} from './fields'
+
+/** Fields format 1 synced directly and format 2 derives. */
+const LEGACY_TREE_FIELDS = ['parentId', 'childIds'] as const
+const legacyParentSchema = v.nullable(v.string())
+const legacyChildIdsSchema = v.array(v.string())
+
+/** The origin of a migration this peer writes; the change that triggered it applies it. */
+export const TREE_MIGRATION_ORIGIN = Symbol('collab-tree-migration')
+
+export function isLegacyLayer(ynode: Y.Map<unknown>): boolean {
+  return !(ynode.get(PARENTS_FIELD) instanceof Y.Map) && ynode.has('parentId')
+}
+
+function legacyParentOf(ynode: Y.Map<unknown>): string | null | undefined {
+  const result = v.safeParse(legacyParentSchema, ynode.get('parentId'))
+  return result.success ? result.output : undefined
+}
+
+function legacyChildIdsOf(ynode: Y.Map<unknown> | undefined): string[] {
+  const result = v.safeParse(legacyChildIdsSchema, ynode?.get('childIds'))
+  return result.success ? result.output : []
+}
+
+/**
+ * Converts layers a format 1 document recorded to format 2: each layer's synced parent becomes
+ * its only entry, with counter 0, and its position in that parent's synced `childIds` becomes an
+ * order key; siblings already converted keep theirs. The result depends only on the document, so
+ * peers that convert the same layers at once write the same values. Returns the converted ids.
+ */
+export function migrateLegacyLayers(
+  ydoc: Y.Doc,
+  ynodes: YNodes,
+  meta: YMeta,
+  layerIds: Iterable<string>
+): string[] {
+  const legacy = [...new Set(layerIds)].filter((id) => {
+    const ynode = ynodes.get(id)
+    return ynode !== undefined && isLegacyLayer(ynode)
+  })
+  if (legacy.length === 0) return []
+
+  const byParent = new Map<string | null, Set<string>>()
+  for (const id of legacy) {
+    const parentId = legacyParentOf(ynodes.get(id) ?? new Y.Map())
+    if (parentId === undefined) continue
+    let siblings = byParent.get(parentId)
+    if (!siblings) {
+      siblings = new Set()
+      byParent.set(parentId, siblings)
+    }
+    siblings.add(id)
+  }
+
+  ydoc.transact(() => {
+    for (const [parentId, migrating] of byParent) {
+      if (parentId === null) {
+        for (const id of migrating) {
+          const ynode = ynodes.get(id)
+          if (ynode) writeRootEntries(ynode)
+        }
+        continue
+      }
+      const listed = legacyChildIdsOf(ynodes.get(parentId)).filter(
+        (id) => ynodes.get(id) && (migrating.has(id) || legacyParentOrEntry(ynodes, id, parentId))
+      )
+      const order = [...new Set(listed)]
+      const unlisted = [...migrating].filter((id) => !order.includes(id)).sort()
+      order.push(...unlisted)
+      const keys = siblingOrderKeys(
+        order.map((id) => {
+          const ynode = ynodes.get(id)
+          return ynode && !migrating.has(id) ? readOrderKey(ynode) : undefined
+        })
+      )
+      order.forEach((id, index) => {
+        const ynode = ynodes.get(id)
+        if (!ynode || !migrating.has(id)) return
+        writeParentEntry(ynode, parentId, 0)
+        writeOrderKey(ynode, keys[index])
+      })
+    }
+    for (const id of legacy) {
+      const ynode = ynodes.get(id)
+      if (!ynode || !(ynode.get(PARENTS_FIELD) instanceof Y.Map)) continue
+      for (const field of LEGACY_TREE_FIELDS) if (ynode.has(field)) ynode.delete(field)
+    }
+    markTreeFormat(meta)
+  }, TREE_MIGRATION_ORIGIN)
+  return legacy
+}
+
+/** Whether a converted sibling still lists `parentId` among its entries. */
+function legacyParentOrEntry(ynodes: YNodes, id: string, parentId: string): boolean {
+  const ynode = ynodes.get(id)
+  return ynode !== undefined && readParentEntries(ynode)?.has(parentId) === true
+}

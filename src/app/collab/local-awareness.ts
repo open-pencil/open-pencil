@@ -4,6 +4,7 @@ import type { Awareness } from 'y-protocols/awareness'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { buildRemotePeers } from '@/app/collab/awareness'
+import { TREE_FORMAT } from '@/app/collab/shared-tree/fields'
 import type { CollabState } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'
 import { presenceOf, setOwnerColor, setPeers } from '@/app/presence/registry'
@@ -28,6 +29,7 @@ export function createLocalAwarenessActions({
       name: state.value.localName,
       color: state.value.localColor
     })
+    awareness.setLocalStateField('treeFormat', TREE_FORMAT)
   }
 
   function updateCursor(x: number, y: number, pageId: string) {

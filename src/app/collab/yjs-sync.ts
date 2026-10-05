@@ -11,6 +11,7 @@ import {
   writeRootEntries,
   type YNodes
 } from '@/app/collab/shared-tree/fields'
+import { migrateLegacyLayers, TREE_MIGRATION_ORIGIN } from '@/app/collab/shared-tree/migration'
 import {
   applySharedTree,
   createLocalEdit,
@@ -124,8 +125,9 @@ export function registerYjsObservers({
   setSuppressGraphSync,
   applyYjsToGraph
 }: YjsObserverOptions) {
-  ynodes.observeDeep((events) => {
-    if (getSuppressYjsEvents()) return
+  ynodes.observeDeep((events, transaction) => {
+    // A migration this peer wrote was applied by the change that triggered it.
+    if (getSuppressYjsEvents() || transaction.origin === TREE_MIGRATION_ORIGIN) return
     setSuppressGraphSync(true)
     try {
       applyYjsToGraph(events)
@@ -297,6 +299,7 @@ export function createYjsGraphSync({
       if (typeof nodeId === 'string') changed.add(nodeId)
     }
 
+    migrateLegacyLayers(ydoc, ynodes, ydoc.getMap('meta'), changed)
     for (const nodeId of changed) {
       const ynode = ynodes.get(nodeId)
       if (ynode) applyYnodeToGraph(store.graph, nodeId, ynode)

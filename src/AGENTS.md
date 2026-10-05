@@ -25,6 +25,7 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 - Browser-native WebMCP registration lives under `src/app/automation/webmcp/`, consumes per-tool exposure metadata, and is feature-detected through `document.modelContext`. App completion under `src/app/automation/execution/` loads fonts after commit.
 - Collaboration lives under `src/app/collab/**` on Trystero, Yjs, and awareness; preserve crypto-safe room IDs and peer cleanup.
 - A shared document records each layer's parent history and order key, never `parentId` or `childIds`; local edits are written by `writeLocalPlacement` and remote changes applied by `applySharedTree` in `src/app/collab/shared-tree/sync.ts`, which resolve the tree with `LayerTree` from `src/app/collab/tree/` (`tests/app/collab/random-edits.test.ts`).
+- Changing how a shared document records data bumps `TREE_FORMAT` and `COLLAB_APP_ID` together, so mismatched builds never meet, and converts saved rooms in `src/app/collab/shared-tree/migration.ts` (`tests/app/collab/shared-tree/migration.test.ts`).
 
 ## Browser baseline
 

@@ -1,5 +1,5 @@
 import { appRuntimeConfig } from '@/app/runtime/config'
-import { IS_BROWSER } from '@/constants'
+import { COLLAB_APP_ID, IS_BROWSER } from '@/constants'
 
 import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
 
@@ -52,7 +52,8 @@ function relayURL(roomId: string): URL {
   const configured = appRuntimeConfig.collaborationRelayURL
   if (!configured) throw new Error('Test collaboration transport requires collabRelay')
   const url = new URL(configured)
-  url.searchParams.set('roomId', roomId)
+  // Namespaced like Trystero's rooms, so only builds with the same document format meet.
+  url.searchParams.set('roomId', `${COLLAB_APP_ID}:${roomId}`)
   return url
 }
 

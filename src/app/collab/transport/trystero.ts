@@ -1,13 +1,13 @@
 import { joinRoom as joinTrysteroRoom } from 'trystero/mqtt'
 
-import { TRYSTERO_APP_ID } from '@/constants'
+import { COLLAB_APP_ID } from '@/constants'
 
 import type { CollabAction, JoinCollabRoom } from './types'
 
 export const joinTrysteroCollabRoom: JoinCollabRoom = (roomId) => {
   const room = joinTrysteroRoom(
     {
-      appId: TRYSTERO_APP_ID,
+      appId: COLLAB_APP_ID,
       rtcConfig: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },

@@ -10,6 +10,8 @@ export interface RemotePeer {
   selection?: string[]
   /** Agents this person runs, as they publish them. */
   agents: AgentPresence[]
+  /** The layer tree format the peer's build syncs, when it says. */
+  treeFormat?: number
 }
 
 export interface CollabState {

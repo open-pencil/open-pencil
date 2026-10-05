@@ -63,7 +63,11 @@ export {
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-export const TRYSTERO_APP_ID = 'openpencil'
+/**
+ * The collaboration namespace. It names the shared document format, so builds that sync the layer
+ * tree differently never join each other's rooms; change it with the format.
+ */
+export const COLLAB_APP_ID = 'openpencil/2'
 // 32 base36 characters provide roughly 165 bits of entropy. The room ID is a
 // bearer credential and must resist offline enumeration from public signaling topics.
 export const ROOM_ID_LENGTH = 32
