@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { behaviourFromSpec, behaviourToSpec, SceneGraph } from '@open-pencil/scene-graph'
+import {
+  behaviourFromSpec,
+  behaviourToSpec,
+  guessOnOff,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 
 /** A switch set with State and Interaction variant properties and a Thumb slot. */
 function switchSet() {
@@ -50,6 +55,12 @@ describe('behaviour specs', () => {
     })
   })
 
+  test('on and off are guessed by name before order', () => {
+    expect(guessOnOff(['Off', 'On'])).toEqual({ on: 'On', off: 'Off' })
+    expect(guessOnOff(['False', 'True'])).toEqual({ on: 'True', off: 'False' })
+    expect(guessOnOff(['Small', 'Large'])).toEqual({ on: 'Small', off: 'Large' })
+  })
+
   test('a name or value the component lacks fails with what it has', () => {
     const { graph, set } = switchSet()
     expect(() =>
@@ -66,5 +77,8 @@ describe('behaviour specs', () => {
         values: { value: { property: 'State', on: 'Enabled' } }
       })
     ).toThrow('"State" has no value "Enabled"; it has Off, On')
+    expect(() =>
+      behaviourFromSpec(graph, set, { kind: 'slider', numbers: { value: { min: 10, max: 5 } } })
+    ).toThrow('"value" needs max above min and a positive step')
   })
 })

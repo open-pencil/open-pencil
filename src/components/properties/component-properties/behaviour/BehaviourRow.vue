@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 
-import type { BehaviourKind } from '@open-pencil/scene-graph'
+import { isNumberRange, type BehaviourKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 import type {
   BehaviourBooleanControl,
@@ -67,9 +67,10 @@ watch(
 function setNumberField(number: BehaviourNumberControl, field: (typeof NUMBER_FIELDS)[number]) {
   const input = drafts[field] ?? ''
   const parsed = typeof input === 'number' ? input : Number.parseFloat(input)
-  if (!Number.isFinite(parsed)) return
   const { id: _id, type: _type, ...settings } = number
-  emit('setNumber', { ...settings, [field]: parsed })
+  const next = { ...settings, [field]: parsed }
+  if (Number.isFinite(parsed) && isNumberRange(next)) emit('setNumber', next)
+  else drafts[field] = number[field]
 }
 
 function numberLabel(field: (typeof NUMBER_FIELDS)[number]) {

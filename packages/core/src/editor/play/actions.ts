@@ -31,5 +31,8 @@ export function createPlayActions(ctx: EditorContext) {
     if (ctx.state.play) ctx.state.play = { revision: ctx.state.play.revision + 1 }
   }
 
+  // Another document's layers start from their designed state, not from the old islands'.
+  ctx.onEditorEvent('graph:replaced', resetPlay)
+
   return { startPlay, stopPlay, togglePlay, resetPlay }
 }

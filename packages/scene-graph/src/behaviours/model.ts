@@ -21,6 +21,7 @@ export type {
   BehaviourInteractionStates,
   BehaviourNumberSettings
 } from './schema'
+export { isNumberRange } from './schema'
 
 export const DEFAULT_NUMBER_SETTINGS: BehaviourNumberSettings = {
   min: 0,
@@ -35,6 +36,11 @@ export function booleanBinding(
   valueId: string
 ): BehaviourBooleanBinding | undefined {
   return Object.hasOwn(behaviour.booleans, valueId) ? behaviour.booleans[valueId] : undefined
+}
+
+/** The slot property a part is bound to, if any. */
+export function partBinding(behaviour: Behaviour, partId: string): string | undefined {
+  return Object.hasOwn(behaviour.parts, partId) ? behaviour.parts[partId] : undefined
 }
 
 /** The text property a text value is bound to, if any. */
@@ -125,11 +131,11 @@ export function missingBindings(
       value.type === 'text'
         ? !bound(textBinding(behaviour, value.id), ['TEXT'])
         : value.type === 'boolean' &&
-          !bound(behaviour.booleans[value.id]?.propertyId, ['VARIANT', 'BOOLEAN'])
+          !bound(booleanBinding(behaviour, value.id)?.propertyId, ['VARIANT', 'BOOLEAN'])
     )
     .map((value) => value.id)
   const parts = contract.parts
-    .filter((part) => part.required && !bound(behaviour.parts[part.id], ['SLOT']))
+    .filter((part) => part.required && !bound(partBinding(behaviour, part.id), ['SLOT']))
     .map((part) => part.id)
   const states =
     behaviour.states && !bound(behaviour.states.propertyId, ['VARIANT']) ? ['states'] : []

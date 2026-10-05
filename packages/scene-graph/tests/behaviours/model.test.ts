@@ -69,6 +69,20 @@ describe('behaviour model', () => {
     ).toEqual(['track'])
   })
 
+  test('a number range that cannot be stepped through reads as no behaviour', () => {
+    const { graph, set } = switchSet()
+    const slider = emptyBehaviour('slider')
+    for (const range of [
+      { min: 100, max: 0, step: 1, default: 50 },
+      { min: 0, max: 100, step: 0, default: 50 }
+    ]) {
+      graph.updateNode(set.id, {
+        pluginData: withBehaviour(set, { ...slider, numbers: { value: range } })
+      })
+      expect(readBehaviour(set)).toBeNull()
+    }
+  })
+
   test('unreadable plugin data reads as no behaviour', () => {
     const { graph, set } = switchSet()
     graph.updateNode(set.id, {

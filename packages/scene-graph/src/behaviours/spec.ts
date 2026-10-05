@@ -12,7 +12,7 @@ import {
   type Behaviour,
   type BehaviourNumberSettings
 } from './model'
-import { interactionStateValues } from './schema'
+import { interactionStateValues, isNumberRange } from './schema'
 
 /**
  * A behaviour as scripts, tools, and JSX write it: component properties and slots by name, not
@@ -55,6 +55,19 @@ const OFF_NAMES = ['off', 'false', 'no', 'unchecked', 'closed', 'default', 'inac
 
 function named(names: readonly string[], options: readonly string[]): string | undefined {
   return options.find((option) => names.includes(option.trim().toLowerCase()))
+}
+
+/**
+ * The variant values that likely mean on and off: names such as On, True, or Checked first,
+ * then the values in order.
+ */
+export function guessOnOff(
+  options: readonly string[],
+  explicit: { on?: string; off?: string } = {}
+): { on?: string; off?: string } {
+  const on = explicit.on ?? named(ON_NAMES, options) ?? options[0]
+  const off = explicit.off ?? named(OFF_NAMES, options) ?? options.find((option) => option !== on)
+  return { on, off }
 }
 
 function findProperty(
@@ -106,8 +119,7 @@ function resolveValue(
   }
   const options = definition.variantOptions ?? []
   const explicit: { on?: string; off?: string } = typeof binding === 'string' ? {} : binding
-  const on = explicit.on ?? named(ON_NAMES, options) ?? options[0]
-  const off = explicit.off ?? named(OFF_NAMES, options) ?? options.find((option) => option !== on)
+  const { on, off } = guessOnOff(options, explicit)
   for (const choice of [on, off])
     if (choice !== undefined && !options.includes(choice))
       throw new Error(`"${definition.name}" has no value "${choice}"; it has ${options.join(', ')}`)
@@ -149,7 +161,10 @@ export function behaviourFromSpec(
   for (const [valueId, settings] of Object.entries(spec.numbers ?? {})) {
     if (!numbers.some((item) => item.id === valueId))
       throw new Error(`A ${spec.kind} has no number value "${valueId}"; it has ${listed(numbers)}`)
-    behaviour.numbers[valueId] = { ...behaviour.numbers[valueId], ...stripUndefined(settings) }
+    const range = { ...behaviour.numbers[valueId], ...stripUndefined(settings) }
+    if (!isNumberRange(range))
+      throw new Error(`"${valueId}" needs max above min and a positive step`)
+    behaviour.numbers[valueId] = range
   }
   for (const [partId, slotName] of Object.entries(spec.parts ?? {})) {
     if (!contract.parts.some((item) => item.id === partId))

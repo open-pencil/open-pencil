@@ -7,6 +7,7 @@ import {
   findComponentPropertyTargets,
   instanceMainComponent,
   instanceSlotFrames,
+  partBinding,
   readBehaviour,
   slotPropertyId,
   textBinding,
@@ -142,16 +143,16 @@ function controlModel(graph: SceneGraph, rootId: string, instance: SceneNode): C
         : []
     })
   )
+  const frameOf = (partId: string) => {
+    const propertyId = partBinding(behaviour, partId)
+    return propertyId ? frames.find((item) => slotPropertyId(item) === propertyId) : undefined
+  }
   const itemsPart = behaviourContract(behaviour.kind).parts.find((part) => part.items)
-  const itemsFrame = itemsPart
-    ? frames.find((item) => slotPropertyId(item) === behaviour.parts[itemsPart.id])
-    : undefined
+  const itemsFrame = itemsPart ? frameOf(itemsPart.id) : undefined
   const items = (itemsFrame ? graph.getChildren(itemsFrame.id) : []).flatMap((child) => {
     const item = controlModel(graph, rootId, child)
     return item ? [item] : []
   })
-  const frameOf = (partId: string) =>
-    frames.find((item) => slotPropertyId(item) === behaviour.parts[partId])
   const childPaths = (frame: SceneNode | undefined) =>
     (frame ? graph.getChildren(frame.id) : []).map((child) => layerPath(graph, rootId, child.id))
   const panels = behaviour.kind === 'tabs' ? childPaths(frameOf('panels')) : []

@@ -6,8 +6,11 @@ import {
   DEFAULT_NUMBER_SETTINGS,
   emptyBehaviour,
   guessInteractionStates,
+  guessOnOff,
   INTERACTION_STATES,
+  isNumberRange,
   missingBindings,
+  partBinding,
   readBehaviour,
   textBinding,
   type Behaviour,
@@ -91,7 +94,7 @@ export function useBehaviour() {
       parts: contract.parts.map((part) => ({
         id: part.id,
         required: part.required,
-        propertyId: current.parts[part.id] ?? null,
+        propertyId: partBinding(current, part.id) ?? null,
         options: options(['SLOT']),
         creatable: target.type === 'COMPONENT'
       })),
@@ -125,15 +128,17 @@ export function useBehaviour() {
     remove: () => {
       if (owner.value) editor.setBehaviour(owner.value.id, null)
     },
-    /** Bind a boolean value; a variant property starts with its first two values as on and off. */
+    /** Bind a boolean value; a variant property starts with the values that likely mean on and off. */
     bindValue: (valueId: string, propertyId: string) =>
       update((current) => {
         const target = owner.value
         const definition = target
           ? behaviourProperties(editor.graph, target).find((item) => item.id === propertyId)
           : undefined
-        const [on, off] = definition?.variantOptions ?? []
-        current.booleans[valueId] = { propertyId, on, off }
+        current.booleans[valueId] =
+          definition?.type === 'VARIANT'
+            ? { propertyId, ...guessOnOff(definition.variantOptions ?? []) }
+            : { propertyId }
         return current
       }),
     /** Show a text value through a text property. */
@@ -148,11 +153,14 @@ export function useBehaviour() {
         if (binding) current.booleans[valueId] = { ...binding, ...mapping }
         return current
       }),
-    setNumber: (valueId: string, settings: BehaviourNumberSettings) =>
+    /** Set a number value's range; a range that cannot be stepped through is ignored. */
+    setNumber: (valueId: string, settings: BehaviourNumberSettings) => {
+      if (!isNumberRange(settings)) return
       update((current) => {
         current.numbers[valueId] = settings
         return current
-      }),
+      })
+    },
     bindPart: (partId: string, propertyId: string) =>
       update((current) => {
         current.parts[partId] = propertyId

@@ -6,7 +6,7 @@ import {
   playIslandRoots,
   resolvePlayState
 } from '@open-pencil/core/editor'
-import { emptyBehaviour, instanceMainComponent } from '@open-pencil/scene-graph'
+import { emptyBehaviour, instanceMainComponent, SceneGraph } from '@open-pencil/scene-graph'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
 function switchCard() {
@@ -86,5 +86,13 @@ describe('preview islands', () => {
     const shown = resolvePlayState(graph, card.id, new Map([['Wifi', { reveal: ['Panel'] }]]))
     expect(shown.getNode(hidden.id)?.visible).toBe(true)
     expect(graph.getNode(hidden.id)?.visible).toBe(false)
+  })
+
+  test('a replaced document previews from its designed state', () => {
+    const editor = createEditor()
+    editor.startPlay()
+    editor.resetPlay()
+    editor.replaceGraph(new SceneGraph())
+    expect(editor.state.play).toEqual({ revision: 2 })
   })
 })

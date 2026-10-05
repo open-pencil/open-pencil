@@ -11,7 +11,7 @@ function island(layerId: string) {
 }
 
 async function startPreview() {
-  await editor.page.keyboard.press('Meta+Alt+Enter')
+  await editor.page.keyboard.press('ControlOrMeta+Alt+Enter')
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
 }
 

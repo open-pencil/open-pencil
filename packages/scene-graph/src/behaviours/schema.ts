@@ -9,17 +9,24 @@ const BooleanBinding = v.object({
   off: v.optional(v.string())
 })
 
-const NumberSettings = v.object({
-  min: v.number(),
-  max: v.number(),
-  step: v.number(),
-  default: v.number()
-})
+/** Whether a number value's range can be stepped through: `max` above `min`, a positive step. */
+export function isNumberRange(settings: { min: number; max: number; step: number }): boolean {
+  return settings.max > settings.min && settings.step > 0
+}
 
-/**
- * The variant property that draws interaction states, and the value that means each state.
- * A state without a value shows the rest value, or the instance's own when that is unset too.
- */
+const NumberSettings = v.pipe(
+  v.object({
+    min: v.pipe(v.number(), v.finite()),
+    max: v.pipe(v.number(), v.finite()),
+    step: v.pipe(v.number(), v.finite()),
+    default: v.pipe(v.number(), v.finite())
+  }),
+  v.check(
+    (settings) => isNumberRange(settings),
+    'A number value needs max above min and a positive step'
+  )
+)
+
 /** Each interaction state's variant value, by state; a state left out shows the rest value. */
 export const interactionStateValues = {
   rest: v.optional(v.string()),
