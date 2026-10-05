@@ -21,6 +21,7 @@
 - `openpencil documents` is now a command group: list open documents with `openpencil documents list`.
 - The MCP `close_file` tool no longer asks in the app whether to save unsaved changes, a question an agent could not answer and that left the call timing out. With unsaved changes it now fails unless `unsaved` is `"save"` or `"discard"`, and it is marked as a write tool.
 - OpenPencil's plugin-data keys are defined once in `OPEN_PENCIL_PLUGIN_DATA` from `@open-pencil/scene-graph`, each with the schema that reads and writes it, and read or replaced with `readPluginData` and `withPluginData`. `@open-pencil/fig/node-change` no longer exports `OPEN_PENCIL_PLUGIN_ID` (now in `@open-pencil/scene-graph`), the `*_PLUGIN_KEY` constants, `upsertPluginData`, `removePluginData`, or `getOpenPencilPluginValue`; read a `.fig` record's value with `readNodeChangePluginData`. `@open-pencil/core` no longer exports `SOURCE_LIBRARY_PUBLICATION_PLUGIN_KEY`, and `SourceLibraryPublication` moved to `@open-pencil/scene-graph`.
+- `fractionalPosition`, `orderKeyBetween`, and `siblingOrderKeys` moved from `@open-pencil/fig/node-change` to `@open-pencil/scene-graph/order-keys`; the `@open-pencil/core` root still exports `fractionalPosition`. `orderKeyBetween` now always returns a key: when no printable key sorts between its bounds it returns a key above `lo`, which `hasOrderKeyBetween` detects, and it takes an optional suffix that `siblingOrderKeys` can request through `{ suffix }`.
 
 ### Added
 

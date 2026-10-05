@@ -298,9 +298,9 @@ export {
   decompressFigKiwiDataAsync,
   buildFontDigestMap,
   sceneNodeToKiwi,
-  fractionalPosition,
   mapToFigmaType
 } from './kiwi/fig/node-change/serialize'
+export { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 export { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 
 export { renderJSX, renderTree } from './design-jsx'
