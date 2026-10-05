@@ -1,4 +1,4 @@
-import { cloneNodeProps, SceneGraph } from '@open-pencil/scene-graph'
+import { cloneNodeProps, contentPluginData, SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { contentHash } from './hash'
@@ -15,8 +15,7 @@ const VOLATILE_NODE_FIELDS = new Set([
   'textPicture',
   'derivedTextGlyphs',
   'derivedLayout',
-  'librarySource',
-  'pluginData'
+  'librarySource'
 ])
 
 function assetKey(node: SceneNode): string {
@@ -50,11 +49,11 @@ function addSnapshotNode(
 ): void {
   const node = source.getNode(sourceId)
   if (!node) return
-  const created = target.createNode(
-    node.type,
-    targetParentId,
-    cloneNodeProps(node, node.componentId)
-  )
+  const created = target.createNode(node.type, targetParentId, {
+    ...cloneNodeProps(node, node.componentId),
+    // A behaviour or other plugin content belongs to the asset; where it came from does not.
+    pluginData: contentPluginData(node.pluginData)
+  })
   mappedIds.set(sourceId, created.id)
   for (const childId of node.childIds)
     addSnapshotNode(source, target, childId, created.id, mappedIds)
@@ -172,7 +171,13 @@ export function canonicalLibraryNode(
           key !== 'name' &&
           key !== 'symbolDescription'
       )
-      .map(([key, value]) => [key, normalizedLibraryField(key, value)])
+      .map(([key, value]) => [
+        key,
+        // Plugin content such as a behaviour is part of the asset; its bookkeeping is not.
+        key === 'pluginData'
+          ? contentPluginData(node.pluginData)
+          : normalizedLibraryField(key, value)
+      ])
   )
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =
