@@ -20,6 +20,7 @@ import { buildGridTree, createGridChildNode } from './layout/grid'
 export {
   estimateTextSize,
   getTextMeasurer,
+  installTextMeasurer,
   setTextMeasurer,
   type TextMeasurer
 } from './layout/text-measurement'

@@ -27,6 +27,7 @@ import {
   createEditorStoreModules,
   defineEditorStoreAccessors
 } from '@/app/editor/session/modules'
+import { scopedStoreFactory } from '@/app/editor/session/scope'
 import { createInitialAppEditorState, type AppEditorState } from '@/app/editor/session/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -36,7 +37,7 @@ import { IS_BROWSER, IS_TAURI } from '@/constants'
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core/editor'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core/editor'
 
-export function createEditorStore(initialGraph?: SceneGraph) {
+function buildEditorStore(initialGraph?: SceneGraph) {
   const graph = initialGraph ?? new SceneGraph()
 
   const state = shallowReactive<AppEditorState>(createInitialAppEditorState(graph.getPages()[0].id))
@@ -251,6 +252,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
 
   return store
 }
+
+export const createEditorStore = scopedStoreFactory(buildEditorStore)
 
 export type EditorStore = ReturnType<typeof createEditorStore>
 
