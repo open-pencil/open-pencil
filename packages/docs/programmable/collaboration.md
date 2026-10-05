@@ -23,7 +23,7 @@ You join right away under a generated name such as *Teal Fox*; set your own in t
 
 Rooms are not stored on a server: the file lives on the devices of the people who have been in the room, so a room tab opens its document only while one of them is online. Until then it says it is waiting, explains why, and opens the file as soon as someone who has it joins. A room you have been in before opens from this device's copy right away and syncs your changes when others return.
 
-**Leave** in the share panel ends your part in the room. A tab that shared its document goes back to being that document; a tab that joined keeps the room's file as a local unsaved copy you can save. Each room tab keeps its own connection, so you can be in several rooms at once.
+**Leave room** in the share panel ends your part in the room. A tab that shared its document goes back to being that document; a tab that joined keeps the room's file as a local unsaved copy you can save. Each room tab keeps its own connection, so you can be in several rooms at once.
 
 ## What Syncs
 
