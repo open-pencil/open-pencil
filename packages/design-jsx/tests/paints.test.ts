@@ -22,13 +22,13 @@ describe('gradient helpers', () => {
     [circular, 'Object']
   ])('say what they expect when the stops are not an array (%p)', (stops, received) => {
     expect(() => linearGradient(stops as never)).toThrow(
-      `${expected}: Invalid type: Expected Array but received ${received}`
+      `${expected}:\n× Invalid type: Expected Array but received ${received}`
     )
   })
 
   test('name the stop that is wrong and what it was', () => {
     expect(() => radialGradient([['#000000', 0], ['#ffffff']] as never)).toThrow(
-      "radialGradient() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]: Expected [color, position] or { color, position } but received Array (stop 1)"
+      "radialGradient() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]:\n× Expected [color, position] or { color, position } but received Array\n  → at 1"
     )
   })
 })

@@ -30,9 +30,6 @@ export class HarnessSessionService {
     const backend = this.backends.get(configuration.adapter)
     if (!backend) throw new Error(`Harness adapter is unavailable: ${configuration.adapter}`)
     const resumeState = await this.loadResumeState(sessionId, backend)
-    if (resumeState && resumeState.harnessId !== backend.id) {
-      throw new Error(`Harness state belongs to ${resumeState.harnessId}, not ${backend.id}`)
-    }
     const session = await backend.createSession({
       sessionId,
       resumeState,
@@ -80,7 +77,12 @@ export class HarnessSessionService {
    * cannot use saved state, and passing it makes every later session with that ID fail.
    */
   private async loadResumeState(sessionId: string, backend: HarnessBackend) {
-    if (backend.capabilities.sessionResume === 'persistent') return this.store.load(sessionId)
+    const resumeState = await this.store.load(sessionId)
+    // State another backend saved stays for that backend to resume.
+    if (resumeState && resumeState.harnessId !== backend.id) {
+      throw new Error(`Harness state belongs to ${resumeState.harnessId}, not ${backend.id}`)
+    }
+    if (backend.capabilities.sessionResume === 'persistent') return resumeState
     await this.store.remove(sessionId)
     return undefined
   }

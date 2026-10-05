@@ -504,7 +504,7 @@ export interface SceneNode {
 
   vectorNetwork: VectorNetwork | null
   handleMirroring: HandleMirroring
-  booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
+  booleanOperation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | undefined
   fillGeometry: GeometryPath[]
   strokeGeometry: GeometryPath[]
 

@@ -12,6 +12,7 @@ import {
   tailwindHTMLToSceneGraph
 } from '@open-pencil/dom-css'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
 import {
   DOM_CSS_COLORS,
@@ -222,8 +223,11 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(card.paddingLeft).toBe(24)
     expect(card.fills[0]?.type).toBe('SOLID')
     expect(card.strokes[0]?.weight).toBe(1)
+    // A color function in the `border` shorthand, and a shadow color after its lengths.
+    expect(card.strokes[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slate200))
     expect(card.effects[0]?.type).toBe('DROP_SHADOW')
     expect(card.effects[0]?.radius).toBe(24)
+    expect(card.effects[0]?.color).toEqual(parseColor(DOM_CSS_COLORS.slateShadow))
 
     const [title, description] = graph.getChildren(card.id)
     expect(title?.type).toBe('TEXT')

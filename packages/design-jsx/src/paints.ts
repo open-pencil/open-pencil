@@ -11,6 +11,8 @@ import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { parseScriptInput } from './validation'
+
 export type PaintColor = string | Color
 export type PaintStop = readonly [PaintColor, number] | { color: PaintColor; position: number }
 
@@ -58,13 +60,10 @@ type GradientType = keyof typeof GRADIENT_HELPERS
  * and what was wrong, as Valibot describes it.
  */
 function parseStops(type: GradientType, stops: unknown): PaintStop[] {
-  const parsed = v.safeParse(stopsSchema, stops)
-  if (parsed.success) return parsed.output
-  const [issue] = parsed.issues
-  // Only the array's items are checked one level down, so a path is a stop's index.
-  const stop = v.getDotPath(issue)
-  throw new Error(
-    `${GRADIENT_HELPERS[type]}() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]: ${issue.message}${stop === null ? '' : ` (stop ${stop})`}`
+  return parseScriptInput(
+    `${GRADIENT_HELPERS[type]}() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]`,
+    stopsSchema,
+    stops
   )
 }
 
