@@ -9,6 +9,7 @@ import {
   INTERACTION_STATES,
   missingBindings,
   readBehaviour,
+  textBinding,
   type Behaviour,
   type BehaviourKind,
   type BehaviourNumberSettings,
@@ -62,6 +63,16 @@ export function useBehaviour() {
           }
         ]
       }
+      if (value.type === 'text')
+        return [
+          {
+            id: value.id,
+            type: 'text',
+            required: value.required,
+            propertyId: textBinding(current, value.id) ?? null,
+            options: options(['TEXT'])
+          }
+        ]
       if (value.type === 'number')
         return [
           {
@@ -120,6 +131,12 @@ export function useBehaviour() {
           : undefined
         const [on, off] = definition?.variantOptions ?? []
         current.booleans[valueId] = { propertyId, on, off }
+        return current
+      }),
+    /** Show a text value through a text property. */
+    bindText: (valueId: string, propertyId: string) =>
+      update((current) => {
+        current.texts[valueId] = { propertyId }
         return current
       }),
     mapValue: (valueId: string, mapping: { on: string; off: string }) =>

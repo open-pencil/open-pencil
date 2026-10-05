@@ -17,9 +17,9 @@ export interface PlayPointer {
 /** The control preview is acting on, without a pointer: for keys and restoring. */
 export type PlayControl = Pick<PlayPointer, 'graph' | 'session' | 'target'>
 
-/** A key pressed while a control has keyboard focus. */
+/** A key pressed while a control has keyboard focus, as `KeyboardEvent.key` names it. */
 export interface PlayKey extends PlayControl {
-  key: 'Enter' | ' ' | 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown' | 'Home' | 'End'
+  key: string
   shift: boolean
 }
 
@@ -30,6 +30,8 @@ export interface PlayInteraction {
   drag?(pointer: Omit<PlayPointer, 'hitId'>): void
   /** Handle a key; return whether the control used it. */
   key?(key: PlayKey): boolean
+  /** Whether a press shows focus too, as a text field shows it while it takes typing. */
+  focusOnPress?: boolean
   /** Draw values set in preview again after a variant switch rebuilt the copy. */
   restore?(control: PlayControl): void
 }

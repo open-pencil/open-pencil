@@ -1,6 +1,9 @@
 /** The controls a main component can behave as, in the order the picker lists them. */
 export const BEHAVIOUR_KINDS = [
   'button',
+  'textField',
+  'textarea',
+  'numberField',
   'toggle',
   'switch',
   'checkbox',
@@ -25,17 +28,18 @@ export const INTERACTION_STATES = ['rest', 'hover', 'pressed', 'focus', 'disable
 export type InteractionState = (typeof INTERACTION_STATES)[number]
 
 /**
- * How a behaviour value is held. A boolean is a variant or boolean property of the component.
- * Figma has no number property, so a number is the behaviour's own (min, max, step, default);
- * a choice is which item of a slot is active, the first by default.
+ * How a behaviour value is held. A boolean is a variant or boolean property of the component,
+ * and text is a text property. Figma has no number property, so a number is the behaviour's
+ * own (min, max, step, default); a choice is which item of a slot is active, the first by
+ * default.
  */
-export type BehaviourValueType = 'boolean' | 'number' | 'choice'
+export type BehaviourValueType = 'boolean' | 'text' | 'number' | 'choice'
 
 /** A value of the control: its state, which preview reads and changes. */
 export interface BehaviourValueContract {
   id: string
   type: BehaviourValueType
-  /** Whether a boolean value must be bound before the behaviour is complete. */
+  /** Whether a boolean or text value must be bound before the behaviour is complete. */
   required: boolean
 }
 
@@ -59,6 +63,19 @@ export interface BehaviourContract {
 }
 
 /**
+ * A text field or textarea: its text is a text property, and `filled`, when bound, draws the
+ * empty field with its placeholder.
+ */
+const TEXT_INPUT: BehaviourContract = {
+  values: [
+    { id: 'value', type: 'text', required: true },
+    { id: 'filled', type: 'boolean', required: false },
+    { id: 'disabled', type: 'boolean', required: false }
+  ],
+  parts: []
+}
+
+/**
  * The behaviours OpenPencil knows, after Reka UI's primitives. Their states are drawn as the
  * component's variants and properties; their subcomponents (thumb, range, trigger, …) are the
  * component's slots, and the component itself is the control's root.
@@ -67,6 +84,19 @@ export const BEHAVIOUR_CONTRACTS: Readonly<Record<BehaviourKind, BehaviourContra
   button: {
     values: [{ id: 'disabled', type: 'boolean', required: false }],
     parts: []
+  },
+  textField: TEXT_INPUT,
+  textarea: TEXT_INPUT,
+  numberField: {
+    values: [
+      { id: 'value', type: 'number', required: false },
+      { id: 'text', type: 'text', required: true },
+      { id: 'disabled', type: 'boolean', required: false }
+    ],
+    parts: [
+      { id: 'increment', required: false },
+      { id: 'decrement', required: false }
+    ]
   },
   toggle: {
     values: [

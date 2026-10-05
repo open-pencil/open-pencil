@@ -31,6 +31,7 @@ const emit = defineEmits<{
   add: [kind: BehaviourKind]
   remove: []
   bindValue: [valueId: string, propertyId: string]
+  bindText: [valueId: string, propertyId: string]
   mapValue: [valueId: string, mapping: { on: string; off: string }]
   setNumber: [valueId: string, settings: Omit<BehaviourNumberControl, 'id' | 'type'>]
   bindPart: [partId: string, propertyId: string]
@@ -163,6 +164,19 @@ const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : nul
               />
             </div>
           </template>
+          <AppPickerField
+            v-else-if="value.type === 'text'"
+            :model-value="value.propertyId ?? ''"
+            :items="propertyItems(value)"
+            :label="labels.value(value.id)"
+            :placeholder="panels.behaviourChooseProperty"
+            :search-placeholder="panels.searchComponentProperties"
+            :empty-label="panels.noComponentProperties"
+            :close-label="common.close"
+            :data-property="`behaviour-value-${value.id}`"
+            :data-missing="(value.required && !value.propertyId) || undefined"
+            @update:model-value="emit('bindText', value.id, $event)"
+          />
           <div v-else class="grid grid-cols-4 gap-1" :data-property="`behaviour-value-${value.id}`">
             <AppInput
               v-for="field in NUMBER_FIELDS"

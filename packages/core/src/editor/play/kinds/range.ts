@@ -47,7 +47,7 @@ export function rangeControl(draw: DrawRatio, thumb?: string): PlayInteraction {
     const by =
       (settings.step > 0 ? settings.step : (settings.max - settings.min) / 100) *
       (control.shift ? 10 : 1)
-    const next: Partial<Record<PlayKey['key'], number>> = {
+    const next: Partial<Record<string, number>> = {
       ArrowRight: current + by,
       ArrowUp: current + by,
       ArrowLeft: current - by,

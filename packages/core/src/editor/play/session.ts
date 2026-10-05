@@ -10,6 +10,7 @@ import {
   readBehaviour,
   SceneGraph,
   slotPropertyId,
+  textBinding,
   type Behaviour,
   type InteractionState,
   type SceneNode
@@ -101,6 +102,7 @@ export function createPlaySession(source: SceneGraph) {
   const substitutes = new Map<string, PlaySubstitute>()
   const booleans = new Map<string, boolean>()
   const numbers = new Map<string, number>()
+  const texts = new Map<string, string>()
   const choices = new Map<string, number>()
 
   function share(graph: SceneGraph) {
@@ -218,13 +220,22 @@ export function createPlaySession(source: SceneGraph) {
     const variant = variantWith(copy, property.name, value)
     if (!variant) return false
     copies.swapInstanceComponent(copy.id, variant.id)
-    reapplyBooleans(target, copy)
+    reapplyProperties(target, copy)
     computeLayout(copies, copy.id)
     return true
   }
 
-  /** Boolean properties set in preview, set again after a variant switch rebuilt the copy. */
-  function reapplyBooleans(target: PlayTarget, copy: SceneNode): void {
+  /**
+   * Boolean and text properties set in preview, set again after a variant switch rebuilt the
+   * copy.
+   */
+  function reapplyProperties(target: PlayTarget, copy: SceneNode): void {
+    for (const valueId of Object.keys(target.behaviour.texts)) {
+      const text = texts.get(`${target.instance.id}:${valueId}`)
+      const definition = textDefinition(target, valueId)
+      if (text !== undefined && definition)
+        applyComponentPropertyValue(copies, copy.id, definition, text)
+    }
     for (const [valueId, binding] of Object.entries(target.behaviour.booleans)) {
       const on = booleans.get(`${target.instance.id}:${valueId}`)
       const definition = behaviourProperties(source, target.owner).find(
@@ -279,7 +290,40 @@ export function createPlaySession(source: SceneGraph) {
       const variant = value ? variantWith(copy, definition.name, value, loose) : undefined
       if (variant) copies.swapInstanceComponent(copy.id, variant.id)
     }
-    if (definition.type !== 'BOOLEAN') reapplyBooleans(target, copy)
+    if (definition.type !== 'BOOLEAN') reapplyProperties(target, copy)
+    computeLayout(copies, copy.id)
+  }
+
+  /** The text property a text value is bound to. */
+  function textDefinition(target: PlayTarget, valueId: string) {
+    const propertyId = textBinding(target.behaviour, valueId)
+    return behaviourProperties(source, target.owner).find(
+      (item) => item.id === propertyId && item.type === 'TEXT'
+    )
+  }
+
+  /** A text value: as typed in preview, else as the instance shows it. */
+  function getText(target: PlayTarget, valueId: string): string {
+    return texts.get(`${target.instance.id}:${valueId}`) ?? designedText(target, valueId)
+  }
+
+  /** A text value as the instance shows it in the document. */
+  function designedText(target: PlayTarget, valueId: string): string {
+    const definition = textDefinition(target, valueId)
+    if (!definition) return ''
+    const assignments = target.instance.componentPropertyAssignments
+    return Object.hasOwn(assignments, definition.id)
+      ? assignments[definition.id]
+      : definition.defaultValue
+  }
+
+  /** Show text in the copy through its text property, and remember it. */
+  function setText(target: PlayTarget, valueId: string, text: string): void {
+    texts.set(`${target.instance.id}:${valueId}`, text)
+    const definition = textDefinition(target, valueId)
+    const copy = touch(target)
+    if (!definition || !copy) return
+    applyComponentPropertyValue(copies, copy.id, definition, text)
     computeLayout(copies, copy.id)
   }
 
@@ -347,6 +391,7 @@ export function createPlaySession(source: SceneGraph) {
     copies = share(new SceneGraph())
     substitutes.clear()
     booleans.clear()
+    texts.clear()
     numbers.clear()
     choices.clear()
   }
@@ -361,6 +406,9 @@ export function createPlaySession(source: SceneGraph) {
     setBoolean,
     changed,
     changedBoolean,
+    getText,
+    designedText,
+    setText,
     getNumber,
     setNumber,
     getChoice,

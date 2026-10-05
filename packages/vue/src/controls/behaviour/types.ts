@@ -25,7 +25,20 @@ export interface BehaviourNumberControl {
   default: number
 }
 
-export type BehaviourValueControl = BehaviourBooleanControl | BehaviourNumberControl
+/** A text value of the behaviour: the text property that shows it. */
+export interface BehaviourTextControl {
+  id: string
+  type: 'text'
+  required: boolean
+  /** The bound text property, if any. */
+  propertyId: string | null
+  options: VariantDefinitionControl[]
+}
+
+export type BehaviourValueControl =
+  | BehaviourBooleanControl
+  | BehaviourTextControl
+  | BehaviourNumberControl
 
 /** One part of the selected component's behaviour: the slot property that is that part. */
 export interface BehaviourPartControl {

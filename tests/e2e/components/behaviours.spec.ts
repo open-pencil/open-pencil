@@ -194,3 +194,76 @@ test('a Button behaviour maps its states and shows them in preview', async () =>
   await editor.page.keyboard.press('Escape')
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toHaveCount(0)
 })
+
+test('a Text field takes typing in preview without triggering shortcuts', async () => {
+  const instanceId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const graph = store.graph
+    const pageId = store.state.currentPageId
+    const component = graph.createNode('COMPONENT', pageId, {
+      name: 'Field',
+      x: 120,
+      y: 120,
+      width: 200,
+      height: 36,
+      cornerRadius: 6,
+      fills: [
+        { type: 'SOLID' as const, color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
+      ],
+      componentPropertyDefinitions: [
+        { id: 'value', name: 'Value', type: 'TEXT', defaultValue: 'Name' }
+      ]
+    })
+    graph.createNode('TEXT', component.id, {
+      name: 'Value',
+      x: 10,
+      y: 10,
+      width: 180,
+      height: 16,
+      text: 'Name',
+      componentPropertyReferences: [{ propertyId: 'value', field: 'TEXT' }]
+    })
+    store.setBehaviour(component.id, {
+      kind: 'textField',
+      booleans: {},
+      texts: { value: { propertyId: 'value' } },
+      numbers: {},
+      parts: {}
+    })
+    const instance = graph.createInstance(component.id, pageId, { x: 120, y: 220 })
+    if (!instance) throw new Error('Instance not created')
+    return instance.id
+  })
+  await editor.canvas.waitForRender()
+
+  await editor.page.keyboard.press('Meta+Alt+Enter')
+  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
+  const point = await editor.page.evaluate(() => {
+    const state = window.openPencil?.getStore?.()?.state
+    if (!state) throw new Error('OpenPencil store not initialized')
+    return { x: 160 * state.zoom + state.panX, y: 238 * state.zoom + state.panY }
+  })
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas has no bounding box')
+  await editor.page.mouse.click(box.x + point.x, box.y + point.y)
+  // R, T, and V are tool shortcuts while editing.
+  await editor.page.keyboard.type('Vera T')
+
+  const state = () =>
+    editor.page.evaluate((id) => {
+      const store = window.openPencil?.getStore?.()
+      const copy = store?.state.play?.substitutes.get(id)?.graph
+      return {
+        text: copy?.getChildren(id).find((child) => child.type === 'TEXT')?.text,
+        tool: store?.state.activeTool
+      }
+    }, instanceId)
+  // Without a Filled value drawing a placeholder, the designed text is the field's value.
+  await expect.poll(state).toEqual({ text: 'NameVera T', tool: 'SELECT' })
+
+  await editor.page.keyboard.press('Escape')
+  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
+  await editor.page.keyboard.press('Escape')
+  await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toHaveCount(0)
+})

@@ -1,15 +1,9 @@
-import type { PlayKey } from './types'
-
 /**
  * The item an arrow, Home, or End moves to among `count` items from `current`, wrapping around;
  * undefined for other keys.
  */
-export function arrowIndex(
-  key: PlayKey['key'],
-  current: number,
-  count: number
-): number | undefined {
-  const next: Partial<Record<PlayKey['key'], number>> = {
+export function arrowIndex(key: string, current: number, count: number): number | undefined {
+  const next: Partial<Record<string, number>> = {
     ArrowRight: (current + 1) % count,
     ArrowDown: (current + 1) % count,
     ArrowLeft: (current - 1 + count) % count,

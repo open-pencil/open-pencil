@@ -10,6 +10,12 @@ export function useBehaviourLabels() {
     const p = panels.value
     const kinds: Record<BehaviourKind, { label: string; description: string }> = {
       button: { label: p.behaviourButton, description: p.behaviourButtonDescription },
+      textField: { label: p.behaviourTextField, description: p.behaviourTextFieldDescription },
+      textarea: { label: p.behaviourTextarea, description: p.behaviourTextareaDescription },
+      numberField: {
+        label: p.behaviourNumberField,
+        description: p.behaviourNumberFieldDescription
+      },
       toggle: { label: p.behaviourToggle, description: p.behaviourToggleDescription },
       switch: { label: p.behaviourSwitch, description: p.behaviourSwitchDescription },
       checkbox: { label: p.behaviourCheckbox, description: p.behaviourCheckboxDescription },
@@ -31,6 +37,8 @@ export function useBehaviourLabels() {
     const values: Record<string, string> = {
       value: p.behaviourValue,
       open: p.behaviourOpen,
+      filled: p.behaviourFilled,
+      text: p.behaviourText,
       disabled: p.behaviourDisabled
     }
     const parts: Record<string, string> = {
@@ -41,7 +49,9 @@ export function useBehaviourLabels() {
       list: p.behaviourList,
       trigger: p.behaviourTrigger,
       content: p.behaviourContent,
-      items: p.behaviourItems
+      items: p.behaviourItems,
+      increment: p.behaviourIncrement,
+      decrement: p.behaviourDecrement
     }
     const states: Record<InteractionState, string> = {
       rest: p.behaviourStateRest,

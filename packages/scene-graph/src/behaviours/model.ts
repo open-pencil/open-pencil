@@ -37,6 +37,11 @@ export function booleanBinding(
   return Object.hasOwn(behaviour.booleans, valueId) ? behaviour.booleans[valueId] : undefined
 }
 
+/** The text property a text value is bound to, if any. */
+export function textBinding(behaviour: Behaviour, valueId: string): string | undefined {
+  return Object.hasOwn(behaviour.texts, valueId) ? behaviour.texts[valueId].propertyId : undefined
+}
+
 /** A number value's range, if the behaviour has one. */
 export function numberSettings(
   behaviour: Behaviour,
@@ -53,7 +58,7 @@ export function emptyBehaviour(kind: BehaviourKind): Behaviour {
       .filter((value) => value.type === 'number')
       .map((value) => [value.id, { ...DEFAULT_NUMBER_SETTINGS }])
   )
-  return { kind, booleans: {}, numbers, parts: {} }
+  return { kind, booleans: {}, texts: {}, numbers, parts: {} }
 }
 
 /**
@@ -115,8 +120,13 @@ export function missingBindings(
     return !!definition && type.includes(definition.type)
   }
   const values = contract.values
-    .filter((value) => value.type === 'boolean' && value.required)
-    .filter((value) => !bound(behaviour.booleans[value.id]?.propertyId, ['VARIANT', 'BOOLEAN']))
+    .filter((value) => value.required)
+    .filter((value) =>
+      value.type === 'text'
+        ? !bound(textBinding(behaviour, value.id), ['TEXT'])
+        : value.type === 'boolean' &&
+          !bound(behaviour.booleans[value.id]?.propertyId, ['VARIANT', 'BOOLEAN'])
+    )
     .map((value) => value.id)
   const parts = contract.parts
     .filter((part) => part.required && !bound(behaviour.parts[part.id], ['SLOT']))

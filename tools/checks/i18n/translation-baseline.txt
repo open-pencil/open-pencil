@@ -48,6 +48,7 @@ de:panels.behaviourTabs
 de:panels.behaviourMin
 de:panels.behaviourMax
 de:panels.behaviourStateHover
+de:panels.behaviourText
 de:settings.mcp
 de:storage.bucket
 de:storage.providerAmazonS3

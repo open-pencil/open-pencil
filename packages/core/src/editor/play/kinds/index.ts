@@ -5,6 +5,7 @@ import { itemGroup } from './group'
 import { progress } from './progress'
 import { slider } from './slider'
 import { tabs } from './tabs'
+import { numberField, textarea, textField } from './text'
 import { collapsible, radio, toggle } from './toggle'
 import type { PlayInteraction } from './types'
 
@@ -13,6 +14,9 @@ export type { PlayControl, PlayInteraction, PlayKey, PlayPointer } from './types
 /** How each kind of control answers the pointer and keyboard in preview. */
 export const PLAY_INTERACTIONS: Readonly<Record<BehaviourKind, PlayInteraction>> = {
   button,
+  textField,
+  textarea,
+  numberField,
   toggle,
   switch: toggle,
   checkbox: toggle,

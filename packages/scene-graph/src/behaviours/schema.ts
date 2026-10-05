@@ -33,6 +33,8 @@ export const behaviourSchema = v.object({
   kind: v.picklist(BEHAVIOUR_KINDS),
   /** Boolean values, by value id, bound to component properties. */
   booleans: v.record(v.string(), BooleanBinding),
+  /** Text values, by value id, bound to text properties. */
+  texts: v.optional(v.record(v.string(), v.object({ propertyId: v.string() })), {}),
   /** Number values, by value id: the range the behaviour keeps itself. */
   numbers: v.record(v.string(), NumberSettings),
   /** Parts, by part id, bound to slot properties. */

@@ -2,29 +2,13 @@ import type { InteractionState } from '@open-pencil/scene-graph'
 
 import type { EditorContext } from '#core/editor/types'
 
-import { PLAY_INTERACTIONS, type PlayInteraction, type PlayKey } from './kinds'
+import { PLAY_INTERACTIONS, type PlayInteraction } from './kinds'
 import { createPlaySession, playTarget, type PlayTarget } from './session'
 
 /** The control being dragged in preview, such as a slider thumb. */
 interface PlayDrag {
   target: PlayTarget
   interaction: PlayInteraction
-}
-
-/** Keys a focused control can use; Space only when a control has focus, else it pans. */
-const CONTROL_KEYS = new Set<string>([
-  'Enter',
-  ' ',
-  'ArrowLeft',
-  'ArrowRight',
-  'ArrowUp',
-  'ArrowDown',
-  'Home',
-  'End'
-] satisfies PlayKey['key'][])
-
-function isControlKey(key: string): key is PlayKey['key'] {
-  return CONTROL_KEYS.has(key)
 }
 
 export function createPlayActions(ctx: EditorContext) {
@@ -130,14 +114,14 @@ export function createPlayActions(ctx: EditorContext) {
     }
     const { target, hitId } = control
     const id = target.instance.id
+    const interaction = PLAY_INTERACTIONS[target.behaviour.kind]
     const previousFocus = focused
-    focusVisible = false
+    focusVisible = interaction.focusOnPress === true
     move(previousFocus, id, () => {
       focused = id
       hovered = id
       pressed = id
     })
-    const interaction = PLAY_INTERACTIONS[target.behaviour.kind]
     const pointer = { graph: ctx.graph, session, target, hitId, x: cx, y: cy }
     if (interaction.press?.(pointer)) drag = { target, interaction }
     ctx.requestRepaint()
@@ -207,15 +191,15 @@ export function createPlayActions(ctx: EditorContext) {
 
   /**
    * A key pressed while previewing: Tab moves keyboard focus between controls, and the focused
-   * control uses Space, Enter, arrows, Home, and End as its kind does. Returns whether the key
-   * was used, so an unused Space can still pan the canvas.
+   * control uses keys as its kind does: Space and Enter, arrows, Home and End, or typing in a
+   * text field. Returns whether the key was used, so an unused Space can still pan the canvas.
    */
   function playKey(key: string, shift = false): boolean {
     const session = ctx.state.play
     if (!session) return false
     let used = false
     if (key === 'Tab') used = focusNext(shift)
-    else if (isControlKey(key) && focused) {
+    else if (focused) {
       const target = playTarget(ctx.graph, focused)
       used =
         !!target &&

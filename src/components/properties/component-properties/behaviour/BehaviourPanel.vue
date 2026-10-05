@@ -14,6 +14,7 @@ const behaviour = useBehaviour()
     @add="behaviour.add"
     @remove="behaviour.remove"
     @bind-value="behaviour.bindValue"
+    @bind-text="behaviour.bindText"
     @map-value="behaviour.mapValue"
     @set-number="behaviour.setNumber"
     @bind-part="behaviour.bindPart"
