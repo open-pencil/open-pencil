@@ -121,6 +121,9 @@ function stripUndefinedProps<T extends object>(obj: T): T {
 
 export { captureGraphCheckpoint } from './checkpoint'
 
+/** How many taken IDs a generator may return in a row before it counts as exhausted. */
+const MAX_ID_ATTEMPTS = 1000
+
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
@@ -143,8 +146,8 @@ export class SceneGraph {
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
 
-  constructor() {
-    const root = createDefaultNode(generateId, 'FRAME', {
+  constructor(private readonly idGenerator: () => string = generateId) {
+    const root = createDefaultNode(this.idGenerator, 'FRAME', {
       name: 'Document',
       width: 0,
       height: 0
@@ -206,11 +209,30 @@ export class SceneGraph {
     collectionId: string,
     value?: VariableValue
   ): Variable {
-    return Variables.createVariable(this, generateId, name, type, collectionId, value)
+    return Variables.createVariable(
+      this,
+      () => this.generateEntityId(),
+      name,
+      type,
+      collectionId,
+      value
+    )
   }
 
   createCollection(name: string): VariableCollection {
-    return Variables.createCollection(this, generateId, name)
+    // The collection and its default mode are both created before either is registered.
+    const issued = new Set<string>()
+    return Variables.createCollection(this, () => this.generateEntityId(issued), name)
+  }
+
+  createMode(collectionId: string, name: string, sourceModeId?: string): string | undefined {
+    return Variables.createMode(
+      this,
+      () => this.generateEntityId(),
+      collectionId,
+      name,
+      sourceModeId
+    )
   }
 
   removeCollection(id: string): void {
@@ -345,10 +367,25 @@ export class SceneGraph {
       height: node?.height ?? 0
     }
   }
-  private generateNodeId(): string {
-    let id = generateId()
-    while (this.nodes.has(id)) id = generateId()
-    return id
+  /** An ID no entity uses; `issued` also excludes IDs handed out earlier in the same creation. */
+  private generateEntityId(issued?: Set<string>): string {
+    for (let attempt = 0; attempt < MAX_ID_ATTEMPTS; attempt++) {
+      const id = this.idGenerator()
+      if (this.isEntityIdTaken(id) || issued?.has(id)) continue
+      issued?.add(id)
+      return id
+    }
+    throw new Error(`The ID generator returned ${MAX_ID_ATTEMPTS} IDs in a row that are in use`)
+  }
+  private isEntityIdTaken(id: string): boolean {
+    if (this.nodes.has(id) || this.variables.has(id) || this.variableCollections.has(id))
+      return true
+    // Callers replace collection maps and edit `modes` in place (history snapshots, transfer,
+    // undo), so an index of mode IDs would go stale; walk them without allocating instead.
+    for (const collection of this.variableCollections.values()) {
+      for (const mode of collection.modes) if (mode.modeId === id) return true
+    }
+    return false
   }
   private registerNode(node: SceneNode, parentId: string | null): SceneNode {
     node.parentId = parentId
@@ -370,7 +407,7 @@ export class SceneGraph {
   }
 
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
+    const node = createDefaultNode(() => this.generateEntityId(), type, overrides)
     this.nodes.get(parentId)?.childIds.push(node.id)
     return this.registerNode(node, parentId)
   }

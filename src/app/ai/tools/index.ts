@@ -121,7 +121,8 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
             mutates: entry.mutates,
             failed: Boolean(entry.error)
           },
-          diagnosticContext
+          diagnosticContext,
+          entry.cause
         )
       },
       getStepBudget: () => stepBudget(store)

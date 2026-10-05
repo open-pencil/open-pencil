@@ -2,8 +2,8 @@ import { shallowRef, type ShallowRef } from 'vue'
 
 import type { PresenceCursor } from '@open-pencil/core/canvas'
 import { AI_ACTIVE_COLOR } from '@open-pencil/core/constants'
-import { randomHex } from '@open-pencil/core/random'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import type { RemotePeer } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'

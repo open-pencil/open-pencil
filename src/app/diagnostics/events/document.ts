@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { recordDiagnostic } from '../recorder'
-import type { DiagnosticEvent } from '../types'
+import type { DiagnosticEventInput } from '../types'
 
 const documentFailureSchema = v.object({
   operation: v.picklist(['open', 'save', 'import', 'export']),
@@ -19,5 +19,5 @@ export function recordDocumentFailure(input: v.InferOutput<typeof documentFailur
     level: 'error',
     name: 'document.operation.failed',
     attributes: parsed.output
-  } satisfies Omit<DiagnosticEvent, 'id' | 'timestamp'>)
+  } satisfies DiagnosticEventInput)
 }

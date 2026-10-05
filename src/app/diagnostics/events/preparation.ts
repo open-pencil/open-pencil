@@ -1,42 +1,27 @@
 import * as v from 'valibot'
 
-import type {
-  EditorPreparationCancelReason,
-  EditorPreparationFailure,
-  EditorPreparationKind,
-  EditorPreparationPhase
+import {
+  EDITOR_PREPARATION_CANCEL_REASONS,
+  EDITOR_PREPARATION_FAILURE_CODES,
+  EDITOR_PREPARATION_KINDS,
+  EDITOR_PREPARATION_PHASES,
+  type EditorPreparationCancelReason,
+  type EditorPreparationFailure,
+  type EditorPreparationKind,
+  type EditorPreparationPhase
 } from '@/app/editor/preparation/types'
 
 import { recordDiagnostic } from '../recorder'
-import type { DiagnosticEvent } from '../types'
+import type { DiagnosticEventInput } from '../types'
 
 const durationBuckets = ['under-100ms', '100ms-1s', '1s-5s', '5s-30s', 'over-30s'] as const
 
 const preparationSchema = v.object({
-  kind: v.picklist([
-    'document-open',
-    'document-reload',
-    'recovery-restore',
-    'storage-open',
-    'page-switch',
-    'font-retry',
-    'dom-import'
-  ]),
+  kind: v.picklist(EDITOR_PREPARATION_KINDS),
   outcome: v.picklist(['completed', 'cancelled', 'failed']),
-  cancellationReason: v.nullable(v.picklist(['superseded', 'tab-closed', 'user'])),
-  failureCode: v.nullable(
-    v.picklist(['read-failed', 'decode-failed', 'font-failed', 'layout-failed', 'render-failed'])
-  ),
-  terminalPhase: v.picklist([
-    'reading',
-    'decoding',
-    'materializing',
-    'populating-page',
-    'resolving-fonts',
-    'resolving-fallbacks',
-    'layout',
-    'preparing-render'
-  ]),
+  cancellationReason: v.nullable(v.picklist(EDITOR_PREPARATION_CANCEL_REASONS)),
+  failureCode: v.nullable(v.picklist(EDITOR_PREPARATION_FAILURE_CODES)),
+  terminalPhase: v.picklist(EDITOR_PREPARATION_PHASES),
   durationBucket: v.picklist(durationBuckets)
 })
 
@@ -68,5 +53,5 @@ export function recordPreparationOutcome(input: PreparationDiagnosticInput): voi
     level: input.outcome === 'failed' ? 'error' : 'info',
     name: 'editor.preparation.finished',
     attributes: parsed.output
-  } satisfies Omit<DiagnosticEvent, 'id' | 'timestamp'>)
+  } satisfies DiagnosticEventInput)
 }
