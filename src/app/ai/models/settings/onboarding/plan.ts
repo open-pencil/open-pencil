@@ -64,14 +64,6 @@ export interface PlannedModel {
 /** A model for a role, the design model (`'design'`), or nothing. */
 export type PlannedRole = PlannedModel | 'design' | null
 
-/** Roles in the order setup shows them. */
-export const ONBOARDING_ROLES = [
-  'design',
-  'vision',
-  'review',
-  'fast'
-] as const satisfies readonly AIModelRole[]
-
 export interface OnboardingPlan {
   /** `null` keeps the design model that is configured now. */
   design: PlannedModel | null

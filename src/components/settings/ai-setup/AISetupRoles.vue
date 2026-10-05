@@ -2,12 +2,11 @@
 import { useI18n } from '@open-pencil/vue'
 
 import {
-  ONBOARDING_ROLES,
   roleChoiceKey,
   type OnboardingPlan,
   type PlannedRole
 } from '@/app/ai/models/settings/onboarding/plan'
-import type { AIModelRole } from '@/app/ai/models/types'
+import { AI_MODEL_ROLES, type AIModelRole } from '@/app/ai/models/types'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -35,7 +34,7 @@ function selectOptions(role: AIModelRole) {
 <template>
   <SettingsGroup>
     <SettingsRow
-      v-for="role in ONBOARDING_ROLES"
+      v-for="role in AI_MODEL_ROLES"
       :key="role"
       class="max-sm:flex-col max-sm:items-stretch"
       :label="roleLabel(role).label"
