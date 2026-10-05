@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import {
   createComponentPropertyId,
   setInstanceOverride,
@@ -286,10 +288,7 @@ function renderSVGNode<Artwork>(
 }
 
 function parseVariantValues(name: string): Record<string, string> {
-  const entries = name
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
+  const entries = compact(name.split(',').map((part) => part.trim()))
   const values: Record<string, string> = {}
   for (const entry of entries) {
     const [key = '', ...rest] = entry.split('=')

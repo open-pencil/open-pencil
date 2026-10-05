@@ -28,7 +28,11 @@ export type { CanvasIssueMarkerOptions } from '#vue/canvas/issues/use'
 export type { CanvasLabelEdit, CanvasLabelKind } from '#vue/canvas/labels/edit'
 export { useCanvasVirtualReference } from '#vue/canvas/overlays/useCanvasVirtualReference'
 export { useTextEdit } from '#vue/canvas/text-edit/use'
-export { useCanvasDrop, extractImageFilesFromClipboard } from '#vue/canvas/drop/use'
+export {
+  useCanvasDrop,
+  extractImageFilesFromClipboard,
+  filterCanvasFiles
+} from '#vue/canvas/drop/use'
 
 /** Low-level selection, graph, and derived-state helpers. */
 export { useNodeProps, MIXED } from '#vue/controls/node-props/use'

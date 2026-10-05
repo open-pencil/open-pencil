@@ -7,7 +7,7 @@ import {
   initCanvasKit
 } from '@open-pencil/core/io/formats/raster'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Color } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { expectDefined } from '#core-tests/helpers/assert'
@@ -28,6 +28,9 @@ beforeAll(async () => {
   codec = createCanvasKitRasterCodec(await initCanvasKit())
 })
 
+const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }
+const BLUE: Color = { r: 0, g: 0, b: 1, a: 1 }
+
 function setup() {
   const graph = new SceneGraph()
   const figma = new FigmaAPI(graph)
@@ -37,12 +40,12 @@ function setup() {
 
   const card = figma.createFrame()
   card.resize(100, 60)
-  card.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+  card.fills = [{ type: 'SOLID', color: WHITE, opacity: 1, visible: true }]
   const swatch = figma.createRectangle()
   swatch.x = 60
   swatch.y = 20
   swatch.resize(20, 20)
-  swatch.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
+  swatch.fills = [{ type: 'SOLID', color: BLUE, opacity: 1, visible: true }]
   card.appendChild(swatch)
   return { figma, card }
 }

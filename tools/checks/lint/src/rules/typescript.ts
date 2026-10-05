@@ -1,5 +1,6 @@
 import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
+import { compact } from 'es-toolkit/array'
 
 type TypeNode = TSESTree.TypeNode
 
@@ -162,7 +163,9 @@ function canonicalMember(member: TSESTree.TypeElement): string | null {
 }
 
 function canonicalMembers(members: readonly TSESTree.TypeElement[] | undefined): string {
-  return (members ?? []).map(canonicalMember).filter(Boolean).sort().join(';')
+  return compact((members ?? []).map(canonicalMember))
+    .sort()
+    .join(';')
 }
 
 function namedTypeShape(
@@ -187,7 +190,7 @@ const noDuplicateTypeShapes = {
       'TSInterfaceDeclaration, TSTypeAliasDeclaration'(node) {
         const shape = namedTypeShape(node)
         if (!shape) return
-        const memberCount = shape ? shape.split(';').filter(Boolean).length : 0
+        const memberCount = shape ? compact(shape.split(';')).length : 0
         if (memberCount < 2) return
         const first = seen.get(shape)
         if (!first) {

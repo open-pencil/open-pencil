@@ -13,6 +13,8 @@ import {
 
 import { expectDefined } from '#tests/helpers/assert'
 
+import { asRenderer, expectRgbaPixels } from '../helpers'
+
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {
@@ -45,7 +47,7 @@ function renderPixels(renderer: SkiaRenderer, graph: SceneGraph, pageId: string,
     colorSpace: ck.ColorSpace.SRGB
   })
   image.delete()
-  return expectDefined(pixels, 'rendered chunk pixels')
+  return expectRgbaPixels(pixels, 'rendered chunk pixels')
 }
 
 function differenceRatio(a: Uint8Array, b: Uint8Array, tolerance = 8) {
@@ -82,7 +84,7 @@ describe('recorded render chunks', () => {
       finishRecordingAsPicture: mock(),
       delete: mock()
     }
-    const renderer = {
+    const renderer = asRenderer({
       ck: {
         PictureRecorder: function PictureRecorder() {
           return recorder
@@ -93,7 +95,7 @@ describe('recorded render chunks', () => {
       renderNode: mock(() => {
         throw new Error('render failed')
       })
-    } as SkiaRenderer
+    })
     const graph = new SceneGraph()
     const page = expectDefined(graph.getPages()[0], 'page')
     const node = graph.createNode('RECTANGLE', page.id)

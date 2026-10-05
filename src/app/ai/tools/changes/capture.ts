@@ -1,4 +1,5 @@
 import { diffLines, type ChangeObject } from 'diff'
+import { compact } from 'es-toolkit/array'
 
 import { graphFromPageSnapshot, type PageSnapshot } from '@open-pencil/core/editor'
 import { diffPageLayersJSX } from '@open-pencil/core/tools'
@@ -16,7 +17,7 @@ const MAX_JSX_LENGTH = 40_000
 const CLIP_CONTEXT = 2_000
 
 function joinJSX(sources: string[]): string {
-  return sources.filter(Boolean).join('\n\n')
+  return compact(sources).join('\n\n')
 }
 
 function lineStart(text: string, index: number): number {

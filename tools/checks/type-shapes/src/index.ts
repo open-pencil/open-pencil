@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit/array'
 import ts from 'typescript'
 
 import { discoverTypeShapeFiles } from './files'
@@ -77,7 +78,7 @@ for (const file of files) {
   function visit(node: ts.Node) {
     const collected = collectShape(node)
     if (collected) {
-      const memberCount = collected.shape.split(';').filter(Boolean).length
+      const memberCount = compact(collected.shape.split(';')).length
       if (memberCount >= 2) {
         const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile))
         const locations = shapes.get(collected.shape) ?? []

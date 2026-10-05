@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { LanguageModel } from 'ai'
+
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
@@ -7,6 +9,12 @@ import { normalizeOpenRouterModel } from '@/app/ai/chat/provider-models'
 import { createAnthropicCompatibleAdapter } from '@/app/ai/providers/compatible'
 import { modelProviderAdapter } from '@/app/ai/providers/registry'
 import type { ModelConfig } from '@/app/ai/providers/types'
+import type { FetchFunction } from '@/app/http/types'
+
+function languageModelInstance(model: LanguageModel): Exclude<LanguageModel, string> {
+  if (typeof model === 'string') throw new Error(`Expected a model instance, got ${model}`)
+  return model
+}
 
 describe('resolveLanguageModelID', () => {
   test('uses the selected OpenRouter model when no custom model is configured', () => {
@@ -40,7 +48,7 @@ describe('model provider registry', () => {
   test('sends MiniMax-M3 through the OpenAI-compatible chat endpoint', async () => {
     let requestURL = ''
     let requestBody = ''
-    const fetchSpy: typeof fetch = async (input, init) => {
+    const fetchSpy: FetchFunction = async (input, init) => {
       requestURL = String(input)
       requestBody = String(init?.body)
       throw new Error('stop')
@@ -54,10 +62,12 @@ describe('model provider registry', () => {
       customAPIType: 'completions'
     }
 
-    const model = modelProviderAdapter('minimax').create(config, { fetch: fetchSpy })
-    await model
-      .doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
-      .catch(() => undefined)
+    const model = languageModelInstance(
+      modelProviderAdapter('minimax').create(config, { fetch: fetchSpy })
+    )
+    await Promise.resolve(
+      model.doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
+    ).catch(() => undefined)
 
     expect(requestURL).toBe('https://api.minimax.io/v1/chat/completions')
     expect(requestBody).toContain('"model":"MiniMax-M3"')
@@ -86,15 +96,17 @@ describe('anthropic compatible adapter', () => {
 
   async function capturedHeaders(): Promise<Record<string, string>> {
     let captured: Record<string, string> = {}
-    const fetchSpy: typeof fetch = async (_input, init) => {
+    const fetchSpy: FetchFunction = async (_input, init) => {
       captured = Object.fromEntries(new Headers(init?.headers).entries())
       throw new Error('stop')
     }
 
-    const model = createAnthropicCompatibleAdapter().create(config, { fetch: fetchSpy })
-    await model
-      .doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
-      .catch(() => undefined)
+    const model = languageModelInstance(
+      createAnthropicCompatibleAdapter().create(config, { fetch: fetchSpy })
+    )
+    await Promise.resolve(
+      model.doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
+    ).catch(() => undefined)
 
     return captured
   }

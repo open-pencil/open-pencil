@@ -87,7 +87,7 @@ test('Pen creates VECTOR node with 3 vertices on Enter', async () => {
   const vectors = children.filter((n) => n.type === 'VECTOR')
   expect(vectors.length).toBeGreaterThan(0)
   const last = vectors[vectors.length - 1]
-  expect(last.vectorNetwork.vertices.length).toBe(3)
+  expect(last.vectorNetwork?.vertices.length).toBe(3)
   editor.canvas.assertNoErrors()
 })
 
@@ -125,7 +125,7 @@ test('Pen close path creates VECTOR with closed region', async () => {
 
   const vectors = (await getPageChildren(editor.page)).filter((n) => n.type === 'VECTOR')
   const last = vectors[vectors.length - 1]
-  expect(last.vectorNetwork.regions?.length).toBeGreaterThan(0)
+  expect(last.vectorNetwork?.regions?.length).toBeGreaterThan(0)
   editor.canvas.assertNoErrors()
 })
 

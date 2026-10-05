@@ -37,11 +37,13 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
 }) => {
   test.setTimeout(120_000)
   const relay = await startRelay()
-  let host: Peer | null = null
-  let guest: Peer | null = null
+  let hostToClose: Peer | null = null
+  let guestToClose: Peer | null = null
   try {
-    host = await createPeer(browser, 'Host', relay.url)
-    guest = await createPeer(browser, 'Guest', relay.url)
+    const host = await createPeer(browser, 'Host', relay.url)
+    hostToClose = host
+    const guest = await createPeer(browser, 'Guest', relay.url)
+    guestToClose = guest
 
     await connect(host)
     await connect(guest)
@@ -126,7 +128,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
 
     expect(collaborationErrors(guest)).toEqual([])
     await guest.context.close()
-    guest = null
+    guestToClose = null
     await expect
       .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
       .toBe(0)
@@ -163,10 +165,10 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
     expect(collaborationErrors(host)).toEqual([])
   } finally {
     try {
-      await guest?.context.close()
+      await guestToClose?.context.close()
     } finally {
       try {
-        await host?.context.close()
+        await hostToClose?.context.close()
       } finally {
         await relay.close()
       }

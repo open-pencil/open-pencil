@@ -3,6 +3,8 @@ import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { readBoundedBody } from '@/app/document/io/browser'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 const MIB = 1024 * 1024
 const originalFetch = globalThis.fetch
 
@@ -72,7 +74,7 @@ describe('readBoundedBody', () => {
 
 describe('openBrowserFileFromURL', () => {
   test('refuses a response with no body instead of opening an empty document', async () => {
-    globalThis.fetch = mock(async () => new Response(null, { status: 200 })) as typeof fetch
+    globalThis.fetch = fetchStub(async () => new Response(null, { status: 200 }))
 
     await expect(openBrowserFileFromURL(new URL('https://example.com/design.pen'))).rejects.toThrow(
       'carried no body'

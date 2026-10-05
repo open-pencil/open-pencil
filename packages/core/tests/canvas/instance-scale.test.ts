@@ -10,11 +10,16 @@ import { rescaleNodeTree } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '../helpers/assert'
 import { inheritedNestedBindingRecords } from '../helpers/fig/nested-binding'
-import { FIXTURES, readFixtureObject } from '../helpers/fig/fixtures'
+import {
+  CapturedFigRecords,
+  FIXTURES,
+  NestedLayoutScaleFixture,
+  readFixture
+} from '../helpers/fig/fixtures'
 
-const fixture = readFixtureObject('nested-layout-scale.json')
+const fixture = readFixture('nested-layout-scale.json', NestedLayoutScaleFixture)
 
-const declared = readFixtureObject('nested-binding-ownership-records.json')
+const declared = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 for (const edit of [
   'direct',

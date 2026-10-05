@@ -47,7 +47,7 @@ function resources(value: string): NodeChange[] {
 }
 
 function textOf(graph: ReturnType<typeof materializeDocument>['graph'], name: string): string {
-  const node = graph.getAllNodes().find((candidate) => candidate.name === name)
+  const node = [...graph.getAllNodes()].find((candidate) => candidate.name === name)
   if (!node) throw new Error(`Missing ${name}`)
   return node.text
 }
@@ -98,7 +98,7 @@ test('a bound layer keeps its variable value over an owner’s literal override'
     }
   ] as NodeChange[]
   const { graph } = materializeDocument(changes)
-  const instance = graph.getAllNodes().find((node) => node.name === 'Placed')
+  const instance = [...graph.getAllNodes()].find((node) => node.name === 'Placed')
   if (!instance) throw new Error('Missing instance')
   const child = graph.getChildren(instance.id)[0]
   expect(child.boundVariables.text).toBe('1:12')
@@ -130,7 +130,7 @@ test('an override that only binds a variable supplies the text', () => {
     }
   ] as NodeChange[]
   const { graph } = materializeDocument(changes)
-  const instance = graph.getAllNodes().find((node) => node.name === 'Placed')
+  const instance = [...graph.getAllNodes()].find((node) => node.name === 'Placed')
   if (!instance) throw new Error('Missing instance')
   expect(graph.getChildren(instance.id)[0].text).toBe('9+')
 })

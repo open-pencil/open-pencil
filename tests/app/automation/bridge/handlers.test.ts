@@ -7,8 +7,10 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot } from '@/app/tabs'
 
+import { asDouble } from '#tests/helpers/doubles'
+
 function setupGlobals() {
-  globalThis.window = {
+  globalThis.window = asDouble<Window & typeof globalThis>({
     innerWidth: 1024,
     innerHeight: 768,
     requestAnimationFrame: (callback: FrameRequestCallback) => {
@@ -20,10 +22,10 @@ function setupGlobals() {
     location: { href: 'http://localhost/' } as Location,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn()
-  } as Window & typeof globalThis
-  globalThis.document = {
+  })
+  globalThis.document = asDouble<Document>({
     fonts: { add: vi.fn(), ready: Promise.resolve() }
-  } as Document
+  })
   globalThis.requestAnimationFrame = window.requestAnimationFrame
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
 }

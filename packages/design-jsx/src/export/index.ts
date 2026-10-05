@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -150,13 +152,12 @@ export function selectionToJSXWithLayers(
   graph: SceneGraph
 ): DesignJSXWithLayers {
   const layerIds: string[] = []
-  const code = nodeIds
-    .map((id) => {
+  const code = compact(
+    nodeIds.map((id) => {
       const node = graph.getNode(id)
       const syntax = node ? nodeToJSX(node, graph, 0, layerIds).at(0) : undefined
       return syntax ? jsx.printJSX(syntax) : ''
     })
-    .filter(Boolean)
-    .join('\n\n')
+  ).join('\n\n')
   return { code, layerIds }
 }

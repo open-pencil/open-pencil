@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
@@ -73,16 +74,18 @@ const expectedLocaleDirs = new Map<TranslatedLocale, string>(
 const baselineLocaleId = (locale: TranslatedLocale): string => LOCALE_DIR_NAMES[locale]
 const expectedLocaleFiles = new Set(namespaces.map(localeFileName))
 const translationBaseline = new Set(
-  readFileSync(TRANSLATION_BASELINE_PATH, 'utf8')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  compact(
+    readFileSync(TRANSLATION_BASELINE_PATH, 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+  )
 )
 const mixedScriptBaseline = new Set(
-  readFileSync(MIXED_SCRIPT_BASELINE_PATH, 'utf8')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  compact(
+    readFileSync(MIXED_SCRIPT_BASELINE_PATH, 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+  )
 )
 const observedIdentical = new Set<string>()
 const observedMixedScript = new Set<string>()

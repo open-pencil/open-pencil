@@ -55,17 +55,25 @@ describe('clipboard derived text export', () => {
     )
 
     const derivedTextData = expectDefined(derived, 'derived text data')
-    const firstGlyph = expectDefined(derivedTextData.glyphs[0], 'first glyph')
-    const lastGlyph = expectDefined(derivedTextData.glyphs[4], 'last glyph')
-    const baseline = expectDefined(derivedTextData.baselines[0], 'first baseline')
-    const line = expectDefined(derivedTextData.derivedLines[0], 'first derived line')
+    const glyphs = expectDefined(derivedTextData.glyphs, 'glyphs')
+    const baselines = expectDefined(derivedTextData.baselines, 'baselines')
+    const fontMetaData = expectDefined(derivedTextData.fontMetaData, 'font metadata')
+    const offsetMap = expectDefined(
+      derivedTextData.logicalIndexToCharacterOffsetMap,
+      'character offset map'
+    )
+    const derivedLines = expectDefined(derivedTextData.derivedLines, 'derived lines')
+    const firstGlyph = expectDefined(glyphs[0], 'first glyph')
+    const lastGlyph = expectDefined(glyphs[4], 'last glyph')
+    const baseline = expectDefined(baselines[0], 'first baseline')
+    const line = expectDefined(derivedLines[0], 'first derived line')
 
-    expect(derivedTextData.fontMetaData.length).toBeGreaterThan(0)
-    expect(derivedTextData.fontMetaData[0].key.style).toBe('Regular')
-    expect(derivedTextData.glyphs.length).toBeGreaterThan(0)
-    expect(derivedTextData.baselines.length).toBeGreaterThan(0)
-    expect(derivedTextData.logicalIndexToCharacterOffsetMap.length).toBe(text.text.length + 1)
-    expect(derivedTextData.logicalIndexToCharacterOffsetMap[5]).toBe(42)
+    expect(fontMetaData.length).toBeGreaterThan(0)
+    expect(fontMetaData[0].key.style).toBe('Regular')
+    expect(glyphs.length).toBeGreaterThan(0)
+    expect(baselines.length).toBeGreaterThan(0)
+    expect(offsetMap.length).toBe(text.text.length + 1)
+    expect(offsetMap[5]).toBe(42)
     expect(line.directionality).toBe('LTR')
     expect(derivedTextData.truncationStartIndex).toBe(-1)
     expect(derivedTextData.truncatedHeight).toBe(-1)
@@ -128,15 +136,16 @@ describe('clipboard derived text export', () => {
           ],
           logicalIndexToCharacterOffsetMap: Array.from({ length: 19 }, () => 0)
         },
-        null
+        undefined
       ),
       'derived text'
     )
+    const baselines = expectDefined(derived.baselines, 'baselines')
 
-    expect(derived.baselines).toHaveLength(2)
-    expect(derived.baselines[0].endCharacter).toBe(10)
-    expect(derived.baselines[1].firstCharacter).toBe(10)
-    expect(derived.baselines[1].position.y).toBe(122.36)
+    expect(baselines).toHaveLength(2)
+    expect(baselines[0].endCharacter).toBe(10)
+    expect(baselines[1].firstCharacter).toBe(10)
+    expect(baselines[1].position.y).toBe(122.36)
     expect(derived.layoutSize).toEqual({ x: 360, y: 136 })
   })
 
@@ -165,11 +174,18 @@ describe('clipboard derived text export', () => {
       'derived text'
     )
 
-    expect(derived.fontMetaData[0].key.style).toBe('Semi Bold')
-    expect(derived.glyphs[0].commandsBlob).toBe(0)
+    const fontMetaData = expectDefined(derived.fontMetaData, 'font metadata')
+    const glyphs = expectDefined(derived.glyphs, 'glyphs')
+    const offsetMap = expectDefined(
+      derived.logicalIndexToCharacterOffsetMap,
+      'character offset map'
+    )
+
+    expect(fontMetaData[0].key.style).toBe('Semi Bold')
+    expect(glyphs[0].commandsBlob).toBe(0)
     expect(blobs[0].length).toBeGreaterThan(0)
-    expect(derived.glyphs[1].position.x).toBeGreaterThan(0)
-    expect(derived.glyphs[1].advance).toBeGreaterThan(0)
-    expect(derived.logicalIndexToCharacterOffsetMap[1]).toBeGreaterThan(0)
+    expect(glyphs[1].position.x).toBeGreaterThan(0)
+    expect(glyphs[1].advance).toBeGreaterThan(0)
+    expect(offsetMap[1]).toBeGreaterThan(0)
   })
 })

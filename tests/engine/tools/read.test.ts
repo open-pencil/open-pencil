@@ -2,7 +2,13 @@ import { describe, expect, test } from 'bun:test'
 
 import { DEFAULT_FONT_FAMILY, FigmaAPI, fontManager } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
+
+/** The `list_pages` tool answers with the document's pages. */
+interface ListPagesResult extends ToolResult {
+  pages: Array<{ id: string; name: string }>
+}
 
 describe('find_nodes', () => {
   test('finds by name', () => {
@@ -15,7 +21,7 @@ describe('find_nodes', () => {
     const tool = getTool('find_nodes')
     const result = tool.execute(figma, { name: 'button' }) as ToolResult
     expect(result.count).toBe(1)
-    expect(result.nodes[0].name).toBe('Button Primary')
+    expect(expectDefined(result.nodes, 'found nodes')[0].name).toBe('Button Primary')
   })
 
   test('finds by type', () => {
@@ -61,7 +67,7 @@ describe('query_nodes', () => {
       selector: '//RECTANGLE[@width < 200]'
     })) as ToolResult
     expect(result.count).toBe(1)
-    expect(result.nodes[0].name).toBe('Small')
+    expect(expectDefined(result.nodes, 'queried nodes')[0].name).toBe('Small')
   })
 
   test('finds by name with contains', async () => {
@@ -167,7 +173,7 @@ describe('page tools', () => {
   test('list_pages returns pages', () => {
     const { figma } = setupToolTest()
     const tool = getTool('list_pages')
-    const result = tool.execute(figma, {}) as ToolResult
+    const result = tool.execute(figma, {}) as ListPagesResult
     expect(result.pages.length).toBeGreaterThanOrEqual(1)
   })
 

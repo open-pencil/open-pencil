@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 
+import { uniq } from 'es-toolkit/array'
+
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 const REPO_ROOT = await resolveWorkspaceRoot(import.meta.dir)
@@ -72,12 +74,23 @@ export const UNIT_TEST_GROUPS = {
 
 export type UnitTestGroup = keyof typeof UNIT_TEST_GROUPS | 'all'
 
+/**
+ * Fixture corpora of tens of megabytes; parsing one takes gigabytes, so every test that reads
+ * them is heavy and runs in its own process.
+ */
+export const LARGE_FIXTURES = ['material3.fig', 'nuxtui.fig'] as const
+
+/**
+ * Tests that parse large fixtures. Quick runs skip them, and full runs give each its own
+ * process, since one alone can take several gigabytes.
+ */
 export const HEAVY_UNIT_TEST_PATTERNS = [
   'tests/engine/clipboard/fixtures/',
   'tests/engine/io/fig/heavy/',
   'packages/core/tests/io/formats/fig/roundtrip/exhaustive.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/variables.test.ts',
+  'packages/core/tests/io/formats/fig/import/stale-overrides.test.ts',
   'tests/engine/io/fig/export/text.test.ts',
   'tests/engine/io/fig/export/worker.test.ts',
   'tests/engine/io/fig/import/group-reclassify.test.ts',
@@ -116,7 +129,7 @@ export async function listHeavyUnitTests(group: UnitTestGroup = 'all'): Promise<
 
 async function listTestFiles(paths: string[]): Promise<string[]> {
   const files = await Promise.all(paths.map((path) => listTestFilesInPath(path)))
-  return [...new Set(files.flat())].sort()
+  return uniq(files.flat()).sort()
 }
 
 async function listTestFilesInPath(path: string): Promise<string[]> {

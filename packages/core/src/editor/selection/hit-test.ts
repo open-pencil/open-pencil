@@ -16,12 +16,14 @@ export function createSelectionHitTestActions(
       if (!scopeNode) {
         ctx.state.enteredContainerId = null
       } else {
-        return deep ? ctx.graph.hitTestDeep(cx, cy, scopeId) : ctx.graph.hitTest(cx, cy, scopeId)
+        return deep
+          ? ctx.graph.hitTestDeep(cx, cy, scopeId)
+          : ctx.graph.hitTestSelectable(cx, cy, scopeId, ctx.state.selectedIds)
       }
     }
     return deep
       ? ctx.graph.hitTestDeep(cx, cy, ctx.state.currentPageId)
-      : ctx.graph.hitTest(cx, cy, ctx.state.currentPageId)
+      : ctx.graph.hitTestSelectable(cx, cy, ctx.state.currentPageId, ctx.state.selectedIds)
   }
 
   function selectAtPoint(cx: number, cy: number) {

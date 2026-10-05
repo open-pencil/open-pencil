@@ -3,10 +3,11 @@ import { describe, expect, mock, test } from 'bun:test'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
 import { makeImageFillLocalMatrix, patternTileLayout } from '#core/canvas/fills'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+
+import { asRenderer } from './helpers'
 
 function createRenderer() {
-  return {
+  return asRenderer({
     ck: {
       Matrix: {
         identity: mock(() => ['identity']),
@@ -16,7 +17,7 @@ function createRenderer() {
         translated: mock((x, y) => ['translated', x, y])
       }
     }
-  } as SkiaRenderer
+  })
 }
 
 const node = {
@@ -77,7 +78,7 @@ describe('canvas image fills', () => {
     ({ width, height, scale, x, y }) => {
       const renderer = createRenderer()
       const fill = { type: 'IMAGE', imageScaleMode: 'FIT' } as Fill
-      expect(makeImageFillLocalMatrix(renderer, fill, node, width, height)).toEqual([
+      expect<unknown>(makeImageFillLocalMatrix(renderer, fill, node, width, height)).toEqual([
         'multiply',
         ['translated', x, y],
         ['scaled', scale, scale]
@@ -91,7 +92,7 @@ describe('canvas image fills', () => {
 
     const matrix = makeImageFillLocalMatrix(renderer, fill, node, 24, 16)
 
-    expect(matrix).toEqual(['identity'])
+    expect<unknown>(matrix).toEqual(['identity'])
     expect(renderer.ck.Matrix.identity).toHaveBeenCalled()
     expect(renderer.ck.Matrix.scaled).not.toHaveBeenCalled()
   })
@@ -110,7 +111,7 @@ describe('canvas image fills', () => {
     expect(renderer.ck.Matrix.invert).toHaveBeenCalledWith([
       0.5, 0.1, 0.25, -0.2, 0.25, 0.5, 0, 0, 1
     ])
-    expect(matrix).toEqual([
+    expect<unknown>(matrix).toEqual([
       'multiply',
       ['scaled', 120, 80],
       ['invert', [0.5, 0.1, 0.25, -0.2, 0.25, 0.5, 0, 0, 1]],

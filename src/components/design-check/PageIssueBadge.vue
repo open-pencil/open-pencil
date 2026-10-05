@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compact } from 'es-toolkit/array'
 import { computed } from 'vue'
 
 import { useDesignCheckMessages } from '@open-pencil/vue'
@@ -20,12 +21,10 @@ const total = computed(() => errors.value + warnings.value)
 const severity = computed(() => (errors.value > 0 ? 'error' : 'warning'))
 const styles = computed(() => pageIssueBadge({ severity: severity.value }))
 const label = computed(() =>
-  [
+  compact([
     errors.value > 0 ? `${messages.value.errors}: ${errors.value}` : null,
     warnings.value > 0 ? `${messages.value.warnings}: ${warnings.value}` : null
-  ]
-    .filter(Boolean)
-    .join(', ')
+  ]).join(', ')
 )
 </script>
 

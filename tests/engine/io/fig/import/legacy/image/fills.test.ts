@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { canvas, doc, node } from '../helpers'
 
@@ -8,6 +9,11 @@ describe('fig-import: image fills', () => {
   test('image fill with hash', () => {
     const hash: Record<string, number> = {}
     for (let i = 0; i < 20; i++) hash[String(i)] = i + 10
+    // Kiwi decodes a byte field into a numeric record; the codec type only models encoded hashes.
+    const image: { hash: string | Record<string, number>; name: string } = {
+      hash,
+      name: 'test-image'
+    }
 
     const graph = materializeDocument([
       doc(),
@@ -19,7 +25,7 @@ describe('fig-import: image fills', () => {
             opacity: 1,
             visible: true,
             blendMode: 'NORMAL',
-            image: { hash, name: 'test-image' },
+            image,
             imageScaleMode: 'FILL',
             transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
           }

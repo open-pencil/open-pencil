@@ -88,6 +88,12 @@ Standalone Tailwind output is compiled during export; it does not depend on the 
 
 HTML export is available in file mode.
 
+### Tokens in exported code
+
+HTML and Tailwind JSX write variable-bound properties as the design tokens they come from: a fill bound to `Primary` is `background-color: var(--color-primary)`, and in Tailwind `bg-primary`, or `bg-(--name)` for a token outside Tailwind's namespaces. A layer set to another mode gets that mode's attribute, such as `data-theme="dark"`, so the tokens resolve as the canvas draws them.
+
+A value stays literal where CSS would not reproduce it: the layer no longer draws the variable's value, the token is unitless where a length is needed, or the layer sits in a mode that only its own condition, such as a `@media` query, can select. Standalone HTML includes the stylesheet for the tokens it uses; for fragments and JSX, generate it with `openpencil tokens` (below).
+
 ## Design Tokens
 
 Write the document's variables as CSS custom properties:

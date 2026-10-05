@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { ComponentPropertyDefinition, SceneNode } from './types'
 import { buildVariantName, parseVariantName } from './variant-name'
 
@@ -59,9 +61,9 @@ export function deriveNamedVariantProperties(
 ): DerivedVariantProperties | null {
   const parsed = components.map((component) => parseVariantName(component.name))
   if (parsed.some((values) => Object.keys(values).length === 0)) return null
-  const names = [...new Set(parsed.flatMap((values) => Object.keys(values)))]
+  const names = uniq(parsed.flatMap((values) => Object.keys(values)))
   const definitions: ComponentPropertyDefinition[] = names.map((name) => {
-    const options = [...new Set(parsed.map((values) => values[name] ?? ''))]
+    const options = uniq(parsed.map((values) => values[name] ?? ''))
     return {
       id: createPropertyId(),
       name,

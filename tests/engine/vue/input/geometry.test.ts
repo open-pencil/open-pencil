@@ -31,9 +31,9 @@ for (const flipX of [false, true]) {
         const zoom = 2
         const handles = geometry.handles(frame, selectionHandleRect(frame))
         for (const [key, point] of Object.entries(handles)) {
-          expect(getHitHandleByMatrix(point.x, point.y, frame, editor.graph, zoom)?.handle).toBe(
-            key
-          )
+          expect<string | undefined>(
+            getHitHandleByMatrix(point.x, point.y, frame, editor.graph, zoom)?.handle
+          ).toBe(key)
         }
         const stalk = rotationHandleLayout(frame, geometry, zoom)
         expect(stalk.edge.y).toBe(flipY ? frame.height : 0)

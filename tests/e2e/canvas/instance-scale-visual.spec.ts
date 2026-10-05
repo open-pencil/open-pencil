@@ -26,7 +26,6 @@ const fields = [
   'height',
   'fills',
   'strokes',
-  'strokeWeight',
   'cornerRadius',
   'opacity',
   'visible'

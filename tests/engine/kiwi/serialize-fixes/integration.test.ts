@@ -80,10 +80,12 @@ describe('Integration: auto-layout component with all fixes', () => {
     )
 
     // Fix 1: children preserve their stored transform offsets
-    expect(titleNc.transform.m02).toBe(16)
-    expect(titleNc.transform.m12).toBe(16)
-    expect(valueNc.transform.m02).toBe(16)
-    expect(valueNc.transform.m12).toBe(44)
+    const titleTransform = expectDefined(titleNc.transform, 'Title transform')
+    const valueTransform = expectDefined(valueNc.transform, 'Value transform')
+    expect(titleTransform.m02).toBe(16)
+    expect(titleTransform.m12).toBe(16)
+    expect(valueTransform.m02).toBe(16)
+    expect(valueTransform.m12).toBe(44)
 
     // Fix 2: frameMaskDisabled is inverse of clipsContent
     expect(cardNc.frameMaskDisabled).toBe(false) // clipsContent=true → frameMaskDisabled=false
@@ -97,8 +99,8 @@ describe('Integration: auto-layout component with all fixes', () => {
     expect(valueNc.lineHeight).toEqual({ value: 40, units: 'PIXELS' })
 
     // Fix 5: font family normalized
-    expect(titleNc.fontName.family).toBe('DM Sans')
-    expect(valueNc.fontName.family).toBe('Inter')
+    expect(expectDefined(titleNc.fontName, 'Title fontName').family).toBe('DM Sans')
+    expect(expectDefined(valueNc.fontName, 'Value fontName').family).toBe('Inter')
 
     // Roundtrip through export/parse
     const exported = await exportFigFile(graph)

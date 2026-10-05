@@ -38,7 +38,8 @@ test('continuation omits unfinished tool calls without altering the saved transc
     chatId: 'chat',
     trigger: 'submit-message',
     messageId: undefined,
-    messages
+    messages,
+    abortSignal: undefined
   })
   expect(sent[0]?.parts).toHaveLength(2)
   expect(messages[0]?.parts).toHaveLength(3)

@@ -4,7 +4,8 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
 import { applyFill } from '#core/canvas/fills'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+
+import { asRenderer } from './helpers'
 
 function createRenderer() {
   // A real CanvasKit shader is a WASM handle the caller deletes once the paint holds it.
@@ -26,7 +27,7 @@ function createRenderer() {
     delete: mock(() => undefined)
   }
 
-  return {
+  return asRenderer({
     fillPaint: {
       setShader: mock(() => undefined),
       setColor: mock(() => undefined),
@@ -43,7 +44,7 @@ function createRenderer() {
     },
     resolveFillColor: mock((fill: Fill) => fill.color),
     makeRRect: mock(() => 'rrect')
-  } as SkiaRenderer
+  })
 }
 
 const node = { id: '1:2', source: { id: '' }, width: 100, height: 100 } as SceneNode

@@ -3,7 +3,8 @@ import { describe, test, expect } from 'bun:test'
 import {
   normalizeVectorNetwork,
   validateVectorNetwork,
-  type VectorNetwork
+  type VectorNetwork,
+  type VectorSegment
 } from '@open-pencil/core'
 
 describe('validateVectorNetwork', () => {
@@ -27,7 +28,7 @@ describe('validateVectorNetwork', () => {
       ],
       segments: [{ start: 0, end: 1 }],
       regions: []
-    } as VectorNetwork
+    }
     expect(validateVectorNetwork(network)).toEqual([])
   })
 
@@ -36,14 +37,14 @@ describe('validateVectorNetwork', () => {
       vertices: [{ x: 0, y: 0 }],
       segments: [{ start: 0, end: 5 }],
       regions: []
-    } as VectorNetwork
+    }
     const errors = validateVectorNetwork(network)
     expect(errors.length).toBe(1)
     expect(errors[0]).toContain('end index 5 out of range')
   })
 
   test('rejects missing vertices array', () => {
-    const network = { segments: [], regions: [] } as VectorNetwork
+    const network = { segments: [], regions: [] }
     const errors = validateVectorNetwork(network)
     expect(errors[0]).toContain('vertices must be an array')
   })
@@ -53,7 +54,7 @@ describe('validateVectorNetwork', () => {
       vertices: [{ x: 'a', y: 0 }],
       segments: [],
       regions: []
-    } as VectorNetwork
+    }
     const errors = validateVectorNetwork(network)
     expect(errors[0]).toContain('x and y must be finite numbers')
   })
@@ -69,7 +70,8 @@ describe('validateVectorNetwork', () => {
         { x: 0, y: 0 },
         { x: 10, y: 0 }
       ],
-      segments: [{ start: 0, end: 1 }]
+      // `normalizeVectorNetwork` is what supplies the tangents this segment omits.
+      segments: [{ start: 0, end: 1 } as VectorSegment]
     }
 
     expect(validateVectorNetwork(network)).toEqual([])
@@ -77,7 +79,7 @@ describe('validateVectorNetwork', () => {
   })
 
   test('rejects a non-array regions value', () => {
-    const errors = validateVectorNetwork({ vertices: [], segments: [], regions: {} } as never)
+    const errors = validateVectorNetwork({ vertices: [], segments: [], regions: {} })
     expect(errors).toContain('regions must be an array when provided')
   })
 
