@@ -6,6 +6,9 @@ import { provideEditor } from '@open-pencil/vue'
 
 import TokensPanel from '@/components/variables/TokensPanel.vue'
 
+/** The frame width in pixels, capped by the window; the panel lays out by this. */
+const { width = 1040 } = defineProps<{ width?: number }>()
+
 const editor = createEditor()
 const { graph } = editor
 
@@ -144,7 +147,8 @@ provideEditor(editor)
 
 <template>
   <div
-    class="flex h-[640px] w-[1040px] max-w-full flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
+    class="flex h-[640px] w-[min(var(--frame-width),calc(100vw-4rem))] flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
+    :style="{ '--frame-width': `${width}px` }"
   >
     <TokensPanel />
   </div>

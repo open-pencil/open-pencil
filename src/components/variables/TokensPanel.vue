@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { useElementSize } from '@vueuse/core'
+import { tv } from 'tailwind-variants'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { VariableTokenFields } from '@open-pencil/core/editor'
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
 import type { VariableValue } from '@open-pencil/scene-graph'
-import { useI18n, useVariables, useViewportKind } from '@open-pencil/vue'
+import { useI18n, useVariables } from '@open-pencil/vue'
 
 import { tokenGroups } from '@/app/editor/tokens/model'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -19,23 +21,32 @@ import TokenInspector from '@/components/variables/TokenInspector.vue'
 import TokenOutput from '@/components/variables/TokenOutput.vue'
 import TokenTable from '@/components/variables/TokenTable.vue'
 import { swapTransition } from '@/theme/motion/styles'
+import tokensPanelTheme, { TOKENS_PANEL_COMPACT_WIDTH } from '@/theme/tokens-panel'
 
 const emit = defineEmits<{ copy: [format: TokenStylesheetFormat] }>()
 
 const { variables: messages, common } = useI18n()
-const { isMobile } = useViewportKind()
+const ui = tv(tokensPanelTheme)()
+
+/**
+ * The panel lays out by its own width, not the window: inside a dialog, a split view, or a phone.
+ * Below the compact width the inspector no longer fits beside the list and opens over it instead.
+ */
+const root = useTemplateRef('root')
+const { width } = useElementSize(root)
+const compact = computed(() => width.value > 0 && width.value < TOKENS_PANEL_COMPACT_WIDTH)
 const ctx = useVariables()
 const { editor } = ctx
 const selectedId = ref<string | null>(null)
 
 /**
- * What the mobile detail view shows. It stays set while the view slides out, so Back animates
+ * What the compact detail view shows. It stays set while the view slides out, so Back animates
  * the view that was open instead of switching its content first.
  */
-type MobileDetail = { kind: 'token'; id: string } | { kind: 'modes' } | { kind: 'stylesheet' }
-const mobileDetail = ref<MobileDetail | null>(null)
-const mobileDetailOpen = ref(false)
-/** The mode whose values the single mobile column shows. */
+type CompactDetail = { kind: 'token'; id: string } | { kind: 'modes' } | { kind: 'stylesheet' }
+const compactDetail = ref<CompactDetail | null>(null)
+const detailOpen = ref(false)
+/** The mode whose values the single compact column shows. */
 const shownModeId = ref('')
 
 /** Read through the scene-computed list, so mode and condition edits re-render. */
@@ -52,10 +63,10 @@ function rowFor(id: string | null | undefined) {
   return groups.value.flatMap((group) => group.rows).find((row) => row.variable.id === id)
 }
 
-/** The token the inspector edits: the selection on desktop, the opened token on mobile. */
+/** The token the inspector edits: the selection beside the list, the opened token when compact. */
 const editedId = computed(() => {
-  if (!isMobile.value) return selectedId.value
-  return mobileDetail.value?.kind === 'token' ? mobileDetail.value.id : null
+  if (!compact.value) return selectedId.value
+  return compactDetail.value?.kind === 'token' ? compactDetail.value.id : null
 })
 const editedRow = computed(() => rowFor(editedId.value))
 
@@ -78,20 +89,20 @@ watch(
 
 watch(ctx.activeCollectionId, () => {
   selectedId.value = null
-  mobileDetailOpen.value = false
+  detailOpen.value = false
 })
 
 watch(selectedId, (id) => {
-  if (isMobile.value && id) openDetail({ kind: 'token', id })
+  if (compact.value && id) openDetail({ kind: 'token', id })
 })
 
-function openDetail(detail: MobileDetail) {
-  mobileDetail.value = detail
-  mobileDetailOpen.value = true
+function openDetail(detail: CompactDetail) {
+  compactDetail.value = detail
+  detailOpen.value = true
 }
 
 function back() {
-  mobileDetailOpen.value = false
+  detailOpen.value = false
   selectedId.value = null
 }
 
@@ -113,18 +124,18 @@ function setCondition(modeId: string, condition: string) {
 </script>
 
 <template>
-  <div v-if="collection" class="flex min-h-0 flex-1 flex-col" data-test-id="tokens-panel">
-    <!-- Mobile: the list, with a token, the modes, or the stylesheet opening over it. -->
+  <div v-if="collection" ref="root" :class="ui.root()" data-test-id="tokens-panel">
+    <!-- Compact: the list, with a token, the modes, or the stylesheet opening over it. -->
     <PanelDrillIn
-      v-if="isMobile"
-      :open="mobileDetailOpen"
+      v-if="compact"
+      :open="detailOpen"
       :back="common.back"
       :parent="collection.name"
       @back="back"
     >
       <template #detail>
         <TokenInspector
-          v-if="mobileDetail?.kind === 'token' && editedRow"
+          v-if="compactDetail?.kind === 'token' && editedRow"
           :row="editedRow"
           :collection="collection"
           layout="full"
@@ -133,7 +144,7 @@ function setCondition(modeId: string, condition: string) {
           @update-value="updateValue"
         />
         <CollectionInspector
-          v-else-if="mobileDetail?.kind === 'modes'"
+          v-else-if="compactDetail?.kind === 'modes'"
           :collection="collection"
           layout="full"
           @set-condition="setCondition"
@@ -184,7 +195,6 @@ function setCondition(modeId: string, condition: string) {
         :groups="groups"
         :labels="{ name: messages.name, cssName: messages.cssName }"
         :mode-ids="[shownModeId]"
-        stacked
       />
     </PanelDrillIn>
 

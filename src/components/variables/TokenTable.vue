@@ -10,20 +10,12 @@ import BindingPill from '@/components/ui/binding/BindingPill.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
-const {
-  collection,
-  groups,
-  labels,
-  modeIds,
-  stacked = false
-} = defineProps<{
+const { collection, groups, labels, modeIds } = defineProps<{
   collection: VariableCollection
   groups: TokenGroup[]
   labels: { name: string; cssName: string }
   /** Modes to show values for; every mode by default. */
   modeIds?: readonly string[]
-  /** One column for the name with the CSS name under it, for narrow screens. */
-  stacked?: boolean
 }>()
 const selectedId = defineModel<string | null>('selectedId', { default: null })
 
@@ -41,14 +33,8 @@ const modes = computed(() =>
   modeIds ? collection.modes.filter((mode) => modeIds.includes(mode.modeId)) : collection.modes
 )
 
-const columns = computed(() => {
-  const values = `repeat(${modes.value.length}, minmax(${stacked ? '6rem' : '8rem'}, 1fr))`
-  return {
-    gridTemplateColumns: stacked
-      ? `minmax(0, 1.4fr) ${values}`
-      : `minmax(9rem, 1.1fr) minmax(9rem, 1fr) ${values}`
-  }
-})
+/** The grid itself follows the panel's container width; only the mode count comes from here. */
+const columns = computed(() => ({ '--token-modes': modes.value.length }))
 
 function condition(modeId: string) {
   const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
@@ -70,7 +56,7 @@ function shown<T extends { modeId: string }>(values: readonly T[]) {
   >
     <div :class="ui.header()" :style="columns" aria-hidden="true">
       <span>{{ labels.name }}</span>
-      <span v-if="!stacked">{{ labels.cssName }}</span>
+      <span :class="ui.cssColumn()">{{ labels.cssName }}</span>
       <span v-for="mode in modes" :key="mode.modeId" :class="ui.modeHeader()">
         <span class="text-surface">{{ mode.name }}</span>
         <span v-if="condition(mode.modeId)" :class="ui.modeCondition()">
@@ -93,9 +79,9 @@ function shown<T extends { modeId: string }>(values: readonly T[]) {
         >
           <span :class="ui.name()">
             <span class="truncate">{{ row.label }}</span>
-            <span v-if="stacked" :class="ui.cssName()">--{{ row.cssName }}</span>
+            <span :class="ui.cssStacked()">--{{ row.cssName }}</span>
           </span>
-          <span v-if="!stacked" :class="ui.cssName()">--{{ row.cssName }}</span>
+          <span :class="ui.cssColumn()">--{{ row.cssName }}</span>
           <span v-for="value in shown(row.values)" :key="value.modeId" :class="ui.value()">
             <FillSwatch
               v-if="value.color"

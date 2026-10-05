@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { omit } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { computed, reactive, watch } from 'vue'
 
@@ -147,9 +148,9 @@ function commitValue(modeId: string) {
 function commitExpression(modeId: string) {
   const css = (draft.expressions[modeId] ?? '').trim()
   const resolved = variable.value.valuesByMode[modeId]
-  const expressions: Record<string, TokenExpression> = { ...variable.value.expressions }
-  if (css && typeof resolved === 'number') expressions[modeId] = { css, resolved }
-  else delete expressions[modeId]
+  const others = omit(variable.value.expressions ?? {}, [modeId])
+  const expressions: Record<string, TokenExpression> =
+    css && typeof resolved === 'number' ? { ...others, [modeId]: { css, resolved } } : others
   emit('updateToken', {
     expressions: Object.keys(expressions).length > 0 ? expressions : undefined
   })

@@ -48,6 +48,13 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - App dialogs compose the Reka-backed components under `src/components/ui/dialog/` and the typed theme in `src/theme/dialog.ts`. Do not repeat portal, overlay, content, header, or footer infrastructure in feature dialogs.
 - SDK property primitives, binding fields, commands, and i18n: `packages/vue/AGENTS.md`.
 
+### Layout
+
+- Lay a component out by the space it is given, not the window: panels, dialogs, and inspectors appear in docks, split views, and phones alike. Restyle with named Tailwind container queries (`@container/name`, `@2xl/name:`) on the element whose width matters, which for a list beside an inspector is the list itself (`src/theme/tokens-panel.ts`, `src/theme/panel/properties-tabs.ts`).
+- When the width changes structure, such as a side inspector becoming a drill-in, measure the container with VueUse `useElementSize` and keep the threshold beside the theme (`TOKENS_PANEL_COMPACT_WIDTH`).
+- Viewport breakpoints (`md:`, `useViewportKind`) are for app-shell decisions only: dock placement, sheets versus popovers, full-screen dialogs (`src/theme/dialog/index.ts`).
+- Stories for adaptive components render fixed container widths as separate stories rather than relying on the viewport toolbar (`src/components/variables/TokensPanel.stories.ts`).
+
 ### Settings
 
 - Compose Settings sections with `SettingsSection` and its `title`, `description`, `actions`, and default content slots. It owns heading association and internal spacing; `SettingsGroup` owns bordered row grouping. Do not repeat section, header, or spacing markup per feature.
