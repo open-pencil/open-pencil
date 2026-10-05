@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { jsxNodeFields, parseJSXAttributes } from '#design-jsx/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type GridTrack } from '@open-pencil/scene-graph'
 
 function columns(value: string) {
   const graph = new SceneGraph()
@@ -11,29 +11,23 @@ function columns(value: string) {
     .gridTemplateColumns
 }
 
-const FR = { sizing: 'FR', value: 1 }
+const fr = (value: number): GridTrack => ({ sizing: 'FR', value })
+const fixed = (value: number): GridTrack => ({ sizing: 'FIXED', value })
+const FR = fr(1)
+const AUTO: GridTrack = { sizing: 'AUTO', value: 0 }
 
 describe('grid track lists', () => {
-  test.each([
-    ['1fr 200px 1fr', [FR, { sizing: 'FIXED', value: 200 }, FR]],
+  test.each<[string, GridTrack[]]>([
+    ['1fr 200px 1fr', [FR, fixed(200), FR]],
     ['repeat(3, 1fr)', [FR, FR, FR]],
-    [
-      'repeat(2, 40px 1fr)',
-      [{ sizing: 'FIXED', value: 40 }, FR, { sizing: 'FIXED', value: 40 }, FR]
-    ],
-    ['minmax(0, 1fr) auto', [FR, { sizing: 'AUTO', value: 0 }]],
-    [
-      '2fr 64',
-      [
-        { sizing: 'FR', value: 2 },
-        { sizing: 'FIXED', value: 64 }
-      ]
-    ]
+    ['repeat(2, 40px 1fr)', [fixed(40), FR, fixed(40), FR]],
+    ['minmax(0, 1fr) auto', [FR, AUTO]],
+    ['2fr 64', [fr(2), fixed(64)]]
   ])('%p', (value, tracks) => {
     expect(columns(value)).toEqual(tracks)
   })
 
   test('sizes a track the grid cannot express to its content, not to zero', () => {
-    expect(columns('10em 1fr')).toEqual([{ sizing: 'AUTO', value: 0 }, FR])
+    expect(columns('10em 1fr')).toEqual([AUTO, FR])
   })
 })

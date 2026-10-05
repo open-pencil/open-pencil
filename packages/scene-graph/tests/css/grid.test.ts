@@ -1,15 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { GridTrack } from '@open-pencil/scene-graph'
 import { parseCSSGridTracks } from '@open-pencil/scene-graph/css'
 
-const FR = { sizing: 'FR', value: 1 }
-const AUTO = { sizing: 'AUTO', value: 0 }
-const fixed = (value: number) => ({ sizing: 'FIXED', value })
+const fr = (value: number): GridTrack => ({ sizing: 'FR', value })
+const fixed = (value: number): GridTrack => ({ sizing: 'FIXED', value })
+const FR = fr(1)
+const AUTO: GridTrack = { sizing: 'AUTO', value: 0 }
 
 describe('parseCSSGridTracks', () => {
-  test.each([
+  test.each<[string, GridTrack[]]>([
     ['1fr 200px 1fr', [FR, fixed(200), FR]],
-    ['2fr 64', [{ sizing: 'FR', value: 2 }, fixed(64)]],
+    ['2fr 64', [fr(2), fixed(64)]],
     ['repeat(3, 1fr)', [FR, FR, FR]],
     ['repeat(2, 40px 1fr)', [fixed(40), FR, fixed(40), FR]],
     ['minmax(0, 1fr) auto', [FR, AUTO]],
@@ -20,7 +22,7 @@ describe('parseCSSGridTracks', () => {
     expect(parseCSSGridTracks(value)).toEqual(tracks)
   })
 
-  test.each([
+  test.each<[string, string, GridTrack[]]>([
     ['a length relative to the font', '10em 1fr', [AUTO, FR]],
     ['a sizing function', 'fit-content(200px) 1fr', [AUTO, FR]],
     ['a repeat that depends on the container', 'repeat(auto-fill, 100px)', [AUTO]]

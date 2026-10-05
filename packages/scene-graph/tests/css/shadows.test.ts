@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { Color, Effect } from '@open-pencil/scene-graph'
 import { parseCSSShadows } from '@open-pencil/scene-graph/css'
 
-const RED = { r: 1, g: 0, b: 0, a: 1 }
+const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 
-function shadow(fields: Record<string, unknown>) {
+function shadow(fields: Partial<Effect>): Effect {
   return {
     type: 'DROP_SHADOW',
     color: { r: 0, g: 0, b: 0, a: 1 },
