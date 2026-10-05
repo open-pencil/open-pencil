@@ -4,6 +4,7 @@ import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
 import {
   isHeavyUnitTest,
+  LARGE_FIXTURES,
   listHeavyUnitTests,
   listUnitTests,
   pathsForUnitTestGroup,
@@ -91,4 +92,16 @@ test('heavy unit test listing contains only heavy tests', async () => {
   const heavyFiles = await listHeavyUnitTests()
   expect(heavyFiles).toContain('tests/engine/io/fig/heavy/fixtures.test.ts')
   expect(heavyFiles.every(isHeavyUnitTest)).toBe(true)
+})
+
+test('every test that reads a large fixture is heavy', async () => {
+  const quick = await listUnitTests('all')
+  const readers = await Promise.all(
+    quick.map(async (file) => {
+      const source = await Bun.file(`${REPO_ROOT}/${file}`).text()
+      return LARGE_FIXTURES.some((fixture) => source.includes(fixture)) ? [file] : []
+    })
+  )
+  // One of these can take several gigabytes; add it to HEAVY_UNIT_TEST_PATTERNS.
+  expect(readers.flat()).toEqual([])
 })

@@ -18,6 +18,10 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
 
 type EditorStore = ReturnType<typeof createEditorStore>
+type StreamChunk =
+  Awaited<ReturnType<MockLanguageModelV4['doStream']>>['stream'] extends ReadableStream<infer Chunk>
+    ? Chunk
+    : never
 type Step = { toolName: string; input: unknown } | ((store: EditorStore) => Promise<void>)
 
 /** Run one message whose model calls `steps` in order: a tool call, or a user action first. */
@@ -52,7 +56,11 @@ async function runMessage(store: EditorStore, steps: Step[]) {
             }
           ]
       return {
-        stream: simulateReadableStream({ initialDelayInMs: null, chunkDelayInMs: null, chunks })
+        stream: simulateReadableStream<StreamChunk>({
+          initialDelayInMs: null,
+          chunkDelayInMs: null,
+          chunks
+        })
       }
     }
   })
@@ -68,6 +76,7 @@ async function runMessage(store: EditorStore, steps: Step[]) {
     trigger: 'submit-message',
     chatId: 'run-page',
     messageId: undefined,
+    abortSignal: undefined,
     messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Draw' }] }]
   })
   const reader = stream.getReader()

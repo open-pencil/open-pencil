@@ -15,6 +15,7 @@ import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { useEditorMenu } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
@@ -57,6 +58,7 @@ const shouldCreateHome =
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
 useEditorMenu()
+useDocumentDrop()
 
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)

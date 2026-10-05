@@ -185,6 +185,12 @@
       "import": "./dist/color.js",
       "default": "./dist/color.js"
     },
+    "./css": {
+      "types": "./dist/css.d.ts",
+      "bun": "./src/css/index.ts",
+      "import": "./dist/css.js",
+      "default": "./dist/css.js"
+    },
     "./text-direction": {
       "types": "./dist/text-direction.d.ts",
       "bun": "./src/text-direction.ts",
@@ -208,6 +214,7 @@
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "nanoevents": "^9.1.0",
+    "postcss-value-parser": "^4.2.0",
     "svgpath": "^2.6.0",
     "valibot": "^1.5.0"
   },

@@ -19,7 +19,7 @@ const IPAD_DESKTOP_SAFARI =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15'
 
 describe('user agent detection', () => {
-  test.each([
+  test.each<[string, ReturnType<typeof parseUserAgent>]>([
     [MAC_SAFARI, { os: 'macos', browser: 'safari', browserVersion: 16.3 }],
     [MAC_WKWEBVIEW, { os: 'macos', browser: 'safari', browserVersion: undefined }],
     [WINDOWS_CHROME, { os: 'windows', browser: 'chrome', browserVersion: 105 }],
@@ -65,7 +65,7 @@ describe('user agent detection', () => {
     expect(env.os).toBe('linux')
   })
 
-  test.each([
+  test.each<[string, ReturnType<typeof baselineBrowserFor>]>([
     [WINDOWS_CHROME, 'chrome'],
     [LINUX_OPERA, 'chrome'],
     [WINDOWS_EDGE, 'edge'],

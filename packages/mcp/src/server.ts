@@ -123,7 +123,7 @@ function createHonoApp(options: {
     app.use(
       '*',
       cors({
-        origin: corsOrigin,
+        origin: typeof corsOrigin === 'string' ? corsOrigin : [...corsOrigin],
         allowMethods: MCP_CORS_METHODS,
         allowHeaders: MCP_CORS_HEADERS,
         exposeHeaders: MCP_EXPOSED_HEADERS

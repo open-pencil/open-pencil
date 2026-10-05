@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { parseToolArgs } from '@open-pencil/core/tools'
+
 import {
   resolveAutomationTarget,
   responseWithTarget,
@@ -31,7 +33,7 @@ async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string
 }
 
 export async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
-  const { path } = v.parse(saveArgsSchema, args)
+  const { path } = parseToolArgs('save_file', saveArgsSchema, args)
   await saveWithoutPrompt(target.store, path)
   return { ok: true, result: { saved: true } }
 }
@@ -48,7 +50,7 @@ export async function ensureTauriParentDirectory(path: string): Promise<void> {
 }
 
 export async function handleCloseFile(target: AutomationTarget, args: unknown): Promise<unknown> {
-  const { path, unsaved } = v.parse(closeArgsSchema, args)
+  const { path, unsaved } = parseToolArgs('close_file', closeArgsSchema, args)
   const store = target.store
   if (store.hasUnsavedChanges()) {
     if (unsaved === 'error') {
@@ -67,7 +69,7 @@ export async function handleNewDocument(
   _target: AutomationTarget,
   args: unknown
 ): Promise<unknown> {
-  const { path } = v.parse(saveArgsSchema, args)
+  const { path } = parseToolArgs('new_document', saveArgsSchema, args)
   const tab = createTab()
   if (path) {
     try {

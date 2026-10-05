@@ -36,7 +36,7 @@ async function createFigFixture() {
   rect.paddingRight = 16
   rect.paddingTop = 16
   rect.paddingBottom = 16
-  rect.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }]
+  rect.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
 
   const secondPage = graph.addPage('Second Page')
   const secondFrame = graph.createNode('FRAME', secondPage.id, {

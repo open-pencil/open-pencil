@@ -7,9 +7,9 @@ import { materializeFigFragment } from '@open-pencil/fig'
 import { CommittedGraphEventError } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureObject('nested-binding-ownership-records.json')
+const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 for (const failObserver of [false, true]) {
   for (const replaceSelection of [false, true]) {

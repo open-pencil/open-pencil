@@ -548,3 +548,5 @@ export const ROTATION_HANDLE_DISTANCE = 24
 export const DEFAULT_TEXT_WIDTH = 200
 export const DEFAULT_TEXT_HEIGHT = 24
 export const AUTO_LAYOUT_BREAK_THRESHOLD = 8
+/** Space Figma leaves between a duplicated top-level frame and the layers to its left. */
+export const DUPLICATE_FRAME_GAP = 40

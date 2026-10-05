@@ -1,6 +1,6 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { parseFigFile } from '@open-pencil/core'
+import { type NodeChange, parseFigFile, type SceneNode } from '@open-pencil/core'
 import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -504,31 +504,33 @@ describe('edge cases', () => {
     expect(thumb).toBeDefined()
 
     let overflows = 0
+    const parentOf = (node: SceneNode): SceneNode | null =>
+      node.parentId ? (graph.getNode(node.parentId) ?? null) : null
     function walk(id: string) {
       const node = graph.getNode(id)
       if (!node) return
       if (node.type === 'VECTOR') {
-        const parent = graph.getNode(node.parentId)
+        const parent = parentOf(node)
         if (parent?.type === 'INSTANCE' && parent.width > 0 && parent.height > 0) {
           // Check visibility
           let vis = true
-          let cur: typeof node | null = node
+          let cur: SceneNode | null = node
           while (cur) {
             if (!cur.visible) {
               vis = false
               break
             }
-            cur = cur.parentId ? (graph.getNode(cur.parentId) ?? null) : null
+            cur = parentOf(cur)
           }
           // Check clipping
           let clipped = false
-          cur = graph.getNode(parent.parentId)
+          cur = parentOf(parent)
           while (cur) {
             if (cur.clipsContent) {
               clipped = true
               break
             }
-            cur = cur.parentId ? (graph.getNode(cur.parentId) ?? null) : null
+            cur = parentOf(cur)
           }
           if (vis && !clipped && node.width > parent.width * 1.2) {
             overflows++

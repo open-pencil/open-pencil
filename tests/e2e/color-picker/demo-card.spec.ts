@@ -1,14 +1,9 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { waitForDemo } from '#tests/helpers/demo'
 
-async function dragSlider(
-  page: Parameters<typeof test>[0]['page'],
-  canvas: CanvasHelper,
-  testId: string,
-  ratio: number
-) {
+async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, ratio: number) {
   const slider = page.getByTestId(testId).getByRole('slider')
   const box = await slider.boundingBox()
   if (!box) throw new Error(`Missing slider: ${testId}`)
@@ -22,7 +17,7 @@ async function dragSlider(
   await canvas.waitForRender()
 }
 
-async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: CanvasHelper) {
+async function selectDemoCard(page: Page, canvas: CanvasHelper) {
   await page.goto('/demo')
   await canvas.waitForInit()
   await waitForDemo(page)
@@ -56,7 +51,7 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
   await expect(designPanel.getByRole('heading', { name: 'Card' })).toBeVisible()
 }
 
-async function getSelectedFill(page: Parameters<typeof test>[0]['page']) {
+async function getSelectedFill(page: Page) {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -73,7 +68,7 @@ async function getSelectedFill(page: Parameters<typeof test>[0]['page']) {
   })
 }
 
-async function getSelectedFillOrThrow(page: Parameters<typeof test>[0]['page']) {
+async function getSelectedFillOrThrow(page: Page) {
   const selectedFill = await getSelectedFill(page)
   if (!selectedFill?.fill?.color) throw new Error('Selected node has no color fill')
   return selectedFill

@@ -46,6 +46,6 @@ describe('node-scoped variable modes', () => {
       boundVariables: { 'fills/0/color': 'background' }
     })
 
-    expect(resolveFillColor(child.fills[0], 0, child, graph)).toEqual(DARK)
+    expect(resolveFillColor(child.fills[0], 0, child, graph, 'srgb')).toEqual(DARK)
   })
 })
