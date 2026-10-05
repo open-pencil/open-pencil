@@ -10,7 +10,7 @@ import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
-import { setTextMeasurer } from '#core/layout'
+import { installTextMeasurer } from '#core/layout'
 import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
@@ -66,6 +66,7 @@ export function createEditor(options?: EditorOptions) {
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
+  let uninstallTextMeasurer: (() => void) | null = null
   const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
@@ -243,11 +244,16 @@ export function createEditor(options?: EditorOptions) {
     _renderer = renderer
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
-    setTextMeasurer(
+    uninstallTextMeasurer?.()
+    uninstallTextMeasurer =
       typeof renderer.measureTextNode === 'function'
-        ? (node, maxWidth) => renderer.measureTextNode(node, maxWidth)
+        ? installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
         : null
-    )
+  }
+
+  function releaseTextMeasurer() {
+    uninstallTextMeasurer?.()
+    uninstallTextMeasurer = null
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {
@@ -255,6 +261,7 @@ export function createEditor(options?: EditorOptions) {
     if (_renderer === renderer) {
       _renderer = _renderers.values().next().value ?? null
     }
+    if (_renderers.size === 0) releaseTextMeasurer()
   }
 
   function replaceGraph(newGraph: SceneGraph) {
@@ -281,6 +288,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function dispose() {
+    releaseTextMeasurer()
     nodes.cancelNodePreviews()
     interactiveEdits.clear()
     stopFontResolutionEvents()
