@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { BEHAVIOUR_KINDS, type BehaviourKind } from '@open-pencil/core/behaviours'
+import { BEHAVIOUR_KINDS, type BehaviourKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'

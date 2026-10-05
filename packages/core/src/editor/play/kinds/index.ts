@@ -1,4 +1,4 @@
-import type { BehaviourKind } from '#core/behaviours'
+import type { BehaviourKind } from '@open-pencil/scene-graph'
 
 import { slider } from './slider'
 import { tabs } from './tabs'

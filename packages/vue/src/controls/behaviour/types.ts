@@ -1,4 +1,4 @@
-import type { BehaviourKind } from '@open-pencil/core/behaviours'
+import type { BehaviourKind } from '@open-pencil/scene-graph'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 
-import type { BehaviourKind } from '@open-pencil/core/behaviours'
+import type { BehaviourKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 import type {
   BehaviourBooleanControl,

@@ -10,7 +10,7 @@ import {
   type Behaviour,
   type BehaviourKind,
   type BehaviourNumberSettings
-} from '@open-pencil/core/behaviours'
+} from '@open-pencil/scene-graph'
 
 import type { VariantDefinitionControl } from '#vue/controls/variants'
 import { useEditor } from '#vue/editor/context'

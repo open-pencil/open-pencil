@@ -1,4 +1,5 @@
-import { readBehaviour, withBehaviour, type Behaviour } from '#core/behaviours'
+import { readBehaviour, withBehaviour, type Behaviour } from '@open-pencil/scene-graph'
+
 import type { EditorContext } from '#core/editor/types'
 
 function behaviourEditLabel(before: Behaviour | null, after: Behaviour | null): string {

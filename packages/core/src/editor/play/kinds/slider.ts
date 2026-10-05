@@ -1,6 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-
-import { numberSettings } from '#core/behaviours'
+import { numberSettings } from '@open-pencil/scene-graph'
 
 import { documentPartFrame } from './parts'
 import type { PlayInteraction, PlayPointer } from './types'

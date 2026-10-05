@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { emptyBehaviour } from '@open-pencil/core/behaviours'
+import { emptyBehaviour } from '@open-pencil/scene-graph'
 import { createEditor } from '@open-pencil/core/editor'
 
 /** A Switch set (State=On/Off) with a Switch behaviour, and an Off instance at (300, 100). */

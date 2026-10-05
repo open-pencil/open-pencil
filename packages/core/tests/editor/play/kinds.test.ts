@@ -1,8 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { emptyBehaviour, type BehaviourKind } from '@open-pencil/core/behaviours'
 import { createEditor } from '@open-pencil/core/editor'
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import {
+  emptyBehaviour,
+  type BehaviourKind,
+  type Fill,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 const fill: Fill = { type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, opacity: 1, visible: true }
 

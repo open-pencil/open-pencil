@@ -1,20 +1,18 @@
 import {
   applyComponentPropertyValue,
-  instanceMainComponent,
-  instanceSlotFrames,
-  SceneGraph,
-  slotPropertyId,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-
-import {
   behaviourOwner,
   behaviourProperties,
   booleanBinding,
+  instanceMainComponent,
+  instanceSlotFrames,
   numberSettings,
   readBehaviour,
-  type Behaviour
-} from '#core/behaviours'
+  SceneGraph,
+  slotPropertyId,
+  type Behaviour,
+  type SceneNode
+} from '@open-pencil/scene-graph'
+
 import { computeLayout } from '#core/layout'
 
 /** A node a previewing canvas draws in place of a document node, from the session's graph. */

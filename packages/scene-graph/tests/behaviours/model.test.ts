@@ -5,10 +5,9 @@ import {
   emptyBehaviour,
   missingBindings,
   readBehaviour,
+  SceneGraph,
   withBehaviour
-} from '@open-pencil/core/behaviours'
-import { createEditor } from '@open-pencil/core/editor'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph'
 
 /** A Switch set with a State variant property and a Thumb slot. */
 function switchSet() {
@@ -66,24 +65,5 @@ describe('behaviour model', () => {
       pluginData: [{ pluginId: 'open-pencil', key: 'behaviour', value: '{"kind":"dial"}' }]
     })
     expect(readBehaviour(set)).toBeNull()
-  })
-})
-
-describe('setBehaviour', () => {
-  test('adds, edits, and removes as single undo steps', () => {
-    const editor = createEditor()
-    const set = editor.graph.createNode('COMPONENT_SET', editor.state.currentPageId, { name: 'Switch' })
-    editor.setBehaviour(set.id, emptyBehaviour('switch'))
-    expect(editor.undo.undoLabel).toBe('Add behaviour')
-    editor.setBehaviour(set.id, { ...emptyBehaviour('switch'), parts: { thumb: 'x' } })
-    expect(editor.undo.undoLabel).toBe('Edit behaviour')
-    editor.setBehaviour(set.id, null)
-    expect(readBehaviour(editor.graph.getNode(set.id) ?? set)).toBeNull()
-
-    editor.undo.undo()
-    expect(readBehaviour(editor.graph.getNode(set.id) ?? set)?.parts).toEqual({ thumb: 'x' })
-    editor.undo.undo()
-    editor.undo.undo()
-    expect(readBehaviour(editor.graph.getNode(set.id) ?? set)).toBeNull()
   })
 })

@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { behaviourSchema } from '../behaviours/schema'
 import type { OkHCLPayload } from '../color/okhcl'
 import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
@@ -152,5 +153,7 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** Mode conditions by mode id, on each VARIABLE_SET. */
   modeConditions: jsonPluginDataField('modeConditions', v.record(v.string(), cssText)),
   /** One entry per paint picked in OkHCL, so the picker reopens on the same coordinates. */
-  okhcl: jsonPluginDataField('okhcl', okhcl)
+  okhcl: jsonPluginDataField('okhcl', okhcl),
+  /** How a main component or component set behaves as a control in preview. */
+  behaviour: jsonPluginDataField('behaviour', behaviourSchema)
 } satisfies Record<string, PluginDataKey>

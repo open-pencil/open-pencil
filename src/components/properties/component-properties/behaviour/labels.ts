@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { BehaviourKind } from '@open-pencil/core/behaviours'
+import type { BehaviourKind } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
 /** Translated names of behaviour kinds, values, and parts, by their contract ids. */
