@@ -5,9 +5,9 @@ import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { readFixtureJSON } from '#core-tests/helpers/fig/fixtures'
+import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-binding-ownership-records.json')
+const fixture = readFixtureObject('nested-binding-ownership-records.json')
 
 
 test('binding patches keep unrelated inherited fields in their original units', () => {

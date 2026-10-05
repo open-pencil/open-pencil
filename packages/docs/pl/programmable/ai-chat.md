@@ -41,16 +41,17 @@ Zdalny serwer musi używać HTTPS. W lokalnym środowisku programistycznym dozwo
 
 ## Możliwości
 
-Asystent korzysta z ponad 90 narzędzi do tworzenia, stylizowania, układu, komponentów, zmiennych, wyszukiwania, inspekcji, analizy, eksportu i operacji wektorowych.
+Asystent korzysta z ponad 90 narzędzi do tworzenia, stylizowania, układu, komponentów, zmiennych, wyszukiwania, inspekcji, analizy, eksportu i operacji wektorowych. Do inspekcji należą `get_jsx` (widok JSX w obie strony), `diff_create` i `diff_jsx` (różnice strukturalne), `diff_visual` (różnice pikseli) oraz `describe` (rola semantyczna i wykrywanie problemów projektowych).
 
 ## Kontrola wizualna
 
-Po utworzeniu lub zmianie projektu asystent może wywołać `export_image`, uzyskać obraz wyniku i porównać go z pierwotnym poleceniem. Pozwala to wykryć problemy z układem, brakujące elementy i nieprawidłowe kolory.
+Po utworzeniu lub zmianie projektu asystent może wywołać `export_image`, uzyskać obraz wyniku i porównać go z pierwotnym poleceniem. Pozwala to wykryć problemy z układem, brakujące elementy i nieprawidłowe kolory. Domyślnie włączone `diff_visual` porównuje zmieniony obiekt z kopią wzorcową i zwraca zmienione piksele oraz obszar, dzięki czemu asystent może sprawdzić, że zmiana nie wyszła poza cel.
 
 ## Wskazówki
 
 - Przed wysłaniem polecenia zaznacz odpowiednie obiekty: asystent widzi zaznaczenie.
 - Dokładnie podawaj kolory, rozmiary i położenie.
 - Jedna wiadomość może zmienić kilka obiektów.
+- Podczas odpowiedzi możesz przeglądać inne strony: asystent dalej pracuje na stronie, na której zaczęła się wiadomość, a jego podglądy pojawią się po powrocie. Gdy jesteś na innej stronie, czat pokazuje, nad którą pracuje asystent, i udostępnia przycisk **Przejdź do strony**. Jeśli asystent sam zmieni stronę, widok podąża za nim.
 - Wszystkie zmiany AI można cofnąć.
 - Po każdym wywołaniu narzędzia układ jest przeliczany automatycznie.

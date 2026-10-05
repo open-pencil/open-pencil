@@ -1,7 +1,15 @@
+import * as v from 'valibot'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 
 const editor = useEditorSetup()
+
+const ObservedShortcutJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ defaultPrevented: v.boolean(), shiftKey: v.boolean() })
+)
 
 function getActiveTool() {
   return editor.page.evaluate(() => {
@@ -149,6 +157,8 @@ test.describe('selection shortcuts', () => {
     await expect(dialog).toBeVisible()
     await dialog.getByLabel('Rename to').fill('Layer $n')
     await dialog.getByRole('button', { name: 'Rename', exact: true }).click()
+    // The next test's keys must reach the canvas, not the closing dialog.
+    await expect(dialog).toBeHidden()
     const renamed = (await getPageChildren()).filter((node) => ids.includes(node.id))
     expect(renamed.map((node) => node.name)).toEqual(['Layer 1', 'Layer 2'])
   })
@@ -344,11 +354,12 @@ test.describe('zoom shortcuts', () => {
 
       await editor.page.keyboard.press(shortcut)
       await editor.canvas.waitForRender()
-      const event = await editor.page.evaluate(() => {
+      const observed = await editor.page.evaluate(() => {
         const observed = document.documentElement.dataset.observedShortcut
         if (!observed) throw new Error('Expected shortcut keydown event')
-        return JSON.parse(observed) as { defaultPrevented: boolean; shiftKey: boolean }
+        return observed
       })
+      const event = v.parse(ObservedShortcutJSON, observed)
       return { event, zoom: await getZoom() }
     }
 

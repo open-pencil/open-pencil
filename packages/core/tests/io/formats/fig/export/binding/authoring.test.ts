@@ -10,11 +10,11 @@ import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-import { readFixtureJSON } from '#core-tests/helpers/fig/fixtures'
+import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
 
-const oracle = readFixtureJSON<Record<string, unknown>[]>('nested-binding-authoring.json')
+const oracle = readFixtureObject('nested-binding-authoring.json')
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-binding-ownership-records.json')
+const fixture = readFixtureObject('nested-binding-ownership-records.json')
 
 function document(inherited = false) {
   const changes = inherited

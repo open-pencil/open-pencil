@@ -1,5 +1,6 @@
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { IS_BROWSER } from '#core/constants'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
@@ -14,7 +15,6 @@ import {
 } from '#core/kiwi/fig/session/document-state'
 import type { FigSessionOpenRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
-import { randomHex } from '#core/random'
 
 export interface ParseFigFileOptions {
   populate?: 'all' | 'first-page' | 'none'
@@ -37,7 +37,10 @@ function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}
   return reader.graph
 }
 
-function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Promise<SceneGraph> {
+export function parseFigFileViaWorker(
+  buffer: ArrayBuffer,
+  options: ParseFigFileOptions
+): Promise<SceneGraph> {
   return new Promise((resolve, reject) => {
     options.signal?.throwIfAborted()
     const worker = createFigSessionWorker()
@@ -52,14 +55,16 @@ function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Prom
     options.signal?.addEventListener('abort', abort, { once: true })
     const cleanupAbort = () => options.signal?.removeEventListener('abort', abort)
 
+    // A listener of its own: registerFigPopulationWorker takes over port1.onmessage
+    // once the graph arrives, and archive requests are made after that.
+    channel.port1.addEventListener('message', (e: MessageEvent<FigSessionResponse>) => {
+      if (e.data.type !== 'original-archive-result') return
+      const resolveArchive = pendingArchives.get(e.data.requestId)
+      if (!resolveArchive) return
+      pendingArchives.delete(e.data.requestId)
+      resolveArchive(e.data.bytes)
+    })
     channel.port1.onmessage = (e: MessageEvent<FigSessionResponse>) => {
-      if (e.data.type === 'original-archive-result') {
-        const resolveArchive = pendingArchives.get(e.data.requestId)
-        if (!resolveArchive) return
-        pendingArchives.delete(e.data.requestId)
-        resolveArchive(e.data.bytes)
-        return
-      }
       if (e.data.type === 'page-manifest') {
         options.onPages?.(e.data.pages)
         return
@@ -129,7 +134,7 @@ export async function parseFigFile(
   if (typeof Worker !== 'undefined' && IS_BROWSER) {
     const copy = buffer.slice(0)
     try {
-      return await parseViaWorker(buffer, options)
+      return await parseFigFileViaWorker(buffer, options)
     } catch (error) {
       if (options.signal?.aborted || error instanceof ReaderSemanticError) throw error
       console.warn('Worker parsing failed, falling back to main thread:', error)

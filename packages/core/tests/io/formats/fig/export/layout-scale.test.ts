@@ -8,9 +8,9 @@ import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { hasInstanceOverride } from '@open-pencil/scene-graph'
-import { readFixtureJSON } from '#core-tests/helpers/fig/fixtures'
+import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-layout-scale.json')
+const fixture = readFixtureObject('nested-layout-scale.json')
 
 
 function assembly(phase: 'before' | 'edited') {

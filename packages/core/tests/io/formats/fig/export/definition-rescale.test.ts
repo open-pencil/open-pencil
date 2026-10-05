@@ -8,9 +8,9 @@ import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-import { readFixtureJSON } from '#core-tests/helpers/fig/fixtures'
+import { readFixtureObject } from '#core-tests/helpers/fig/fixtures'
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-binding-ownership-records.json')
+const fixture = readFixtureObject('nested-binding-ownership-records.json')
 
 test('a placed binding does not freeze an unrelated inherited binding', async () => {
   const { graph, sources } = materializeDocument(

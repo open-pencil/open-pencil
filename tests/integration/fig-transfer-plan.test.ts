@@ -3,9 +3,9 @@ import { expect, test } from 'bun:test'
 import { materializeFigFragment } from '@open-pencil/fig'
 import { prepareGraphTransfer, applyGraphTransfer, SceneGraph } from '@open-pencil/scene-graph'
 
-import { readFixtureJSON } from '#tests/helpers/fig/fixtures'
+import { readFixtureObject } from '#tests/helpers/fig/fixtures'
 
-const fixture = readFixtureJSON<Record<string, unknown>[]>('nested-binding-ownership-records.json')
+const fixture = readFixtureObject('nested-binding-ownership-records.json')
 
 test('prepares a real FIG fragment without mutating the destination', () => {
   const fragment = materializeFigFragment(

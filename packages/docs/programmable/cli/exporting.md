@@ -88,6 +88,40 @@ Standalone Tailwind output is compiled during export; it does not depend on the 
 
 HTML export is available in file mode.
 
+### Tokens in exported code
+
+HTML and Tailwind JSX write variable-bound properties as the design tokens they come from: a fill bound to `Primary` is `background-color: var(--color-primary)`, and in Tailwind `bg-primary`, or `bg-(--name)` for a token outside Tailwind's namespaces. A layer set to another mode gets that mode's attribute, such as `data-theme="dark"`, so the tokens resolve as the canvas draws them.
+
+A value stays literal where CSS would not reproduce it: the layer no longer draws the variable's value, the token is unitless where a length is needed, or the layer sits in a mode that only its own condition, such as a `@media` query, can select. Standalone HTML includes the stylesheet for the tokens it uses; for fragments and JSX, generate it with `openpencil tokens` (below).
+
+## Design Tokens
+
+Write the document's variables as CSS custom properties:
+
+```sh
+openpencil tokens design.fig > tokens.css
+openpencil tokens design.fig --format tailwind > theme.css
+openpencil tokens design.fig --collection Theme --type COLOR
+```
+
+Each collection's default mode goes in `:root`. Every other mode overrides the values that differ under its condition: `[data-theme="dark"]` for a Theme collection's Dark mode, or the selector or `@media` query the mode names. Aliases stay `var()` references and are declared again in each mode that changes what they point to, so switching `data-theme` on any element restyles everything built on it.
+
+```css
+:root {
+  --color-blue-500: #3B82F5;
+  --color-primary: var(--color-blue-500);
+}
+
+/* Theme: Dark */
+[data-theme="dark"] {
+  --color-primary: var(--color-blue-300);
+}
+```
+
+`--format tailwind` puts tokens with a Tailwind v4 namespace (`--color-*`, `--spacing-*`, `--radius-*`, `--text-*`, …) in `@theme`, so `bg-primary` and `rounded-card` work, and adds a `@custom-variant` per mode, so `dark:bg-surface` follows the same condition. Import the file after `@import "tailwindcss";`. Names come from the variable's code syntax when it names a custom property (`--x` or `var(--x)`), otherwise from its name and type: `Blue/500` as a color is `--color-blue-500`.
+
+Tokens that cannot be written, such as boolean variables or a condition that is not a selector or query, are listed on stderr and left out. The command works in file mode and against the running app.
+
 ## Storybook Export
 
 Generate one CSF3 `.stories.ts` file per component set or component:
@@ -122,7 +156,11 @@ Stories carry `parameters.design` entries for [`@storybook/addon-designs`](https
 Omit the file to export from the running app:
 
 ```sh
-openpencil export -f png    # export from the current document
+openpencil export -f png                       # export the selection in the active document
+openpencil export --page "Components" -f png   # export every layer of a page
+openpencil export --node 1:23 -f png           # export one layer, on any page
 ```
+
+`--page` takes a page name and `--page-id` a page ID from `openpencil documents list`; either exports that page without switching the app to it. Add `--document-id` to export from a document other than the active one.
 
 Live app mode supports PNG, JPG, WEBP, SVG, and PDF. PowerPoint, JSX, HTML, Storybook, and `.fig` exports require a file argument. File-mode thumbnail export is not currently supported.

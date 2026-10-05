@@ -4,6 +4,8 @@ import {
   noMixedCaseAcronymIdentifiers
 } from '#lint/rules/policy.ts'
 import { noHandRolledBase64Rule } from '#lint/rules/quality/base64.ts'
+import { preferEsToolkitRule } from '#lint/rules/quality/es-toolkit.ts'
+import { noUnvalidatedJSONParseRule } from '#lint/rules/quality/json-parse.ts'
 import { noModuleMockingRule } from '#lint/rules/quality/module-mocking.ts'
 import { noReduceAccumulatorCopyRule } from '#lint/rules/quality/reduce-accumulator-copy.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
@@ -492,6 +494,8 @@ const plugin = {
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
     'no-conditional-object-spreads': noConditionalObjectSpreads,
     'no-hand-rolled-base64': noHandRolledBase64Rule,
+    'no-unvalidated-json-parse': noUnvalidatedJSONParseRule,
+    'prefer-es-toolkit': preferEsToolkitRule,
     'no-module-mocking': noModuleMockingRule,
     'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
     'no-widen-then-assert': noWidenThenAssertRule,

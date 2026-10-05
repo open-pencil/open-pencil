@@ -143,15 +143,18 @@ function applySchemaPaintFields(fill: Fill, p: Paint): void {
   if (p.customEffectId?.guid) fill.customEffectId = guidToString(p.customEffectId.guid)
 }
 
+/** One Figma paint as a Scene Graph paint, whether it ends up a fill or a stroke. */
+function convertPaint(p: Paint): Fill {
+  const fill = convertBaseFill(p)
+  applyGradientPaintFields(fill, p)
+  applyImagePaintFields(fill, p)
+  applySchemaPaintFields(fill, p)
+  return fill
+}
+
 export function convertFills(paints?: Paint[]): Fill[] {
   if (!paints) return []
-  return paints.map((p) => {
-    const fill = convertBaseFill(p)
-    applyGradientPaintFields(fill, p)
-    applyImagePaintFields(fill, p)
-    applySchemaPaintFields(fill, p)
-    return fill
-  })
+  return paints.map(convertPaint)
 }
 
 export function convertStrokes(
@@ -167,19 +170,14 @@ export function convertStrokes(
   if (align === 'INSIDE') strokeAlign = 'INSIDE'
   else if (align === 'OUTSIDE') strokeAlign = 'OUTSIDE'
 
-  return paints.map((p) => {
-    const { color, opacity } = resolvedPaintColor(p)
-    return {
-      color,
-      weight: weight ?? 1,
-      opacity,
-      visible: p.visible ?? true,
-      align: strokeAlign,
-      cap: cap ?? 'NONE',
-      join: join ?? 'MITER',
-      dashPattern: dashPattern ?? []
-    }
-  })
+  return paints.map((p) => ({
+    ...convertPaint(p),
+    weight: weight ?? 1,
+    align: strokeAlign,
+    cap: cap ?? 'NONE',
+    join: join ?? 'MITER',
+    dashPattern: dashPattern ?? []
+  }))
 }
 
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {

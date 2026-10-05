@@ -38,7 +38,14 @@ describe('OkHCL metadata', () => {
     const api = new FigmaAPI(graph)
     const frame = api.createFrame()
     frame.strokes = [
-      { color: { r: 0, g: 0, b: 0, a: 1 }, weight: 1, opacity: 1, visible: true, align: 'INSIDE' }
+      {
+        type: 'SOLID',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        weight: 1,
+        opacity: 1,
+        visible: true,
+        align: 'INSIDE'
+      }
     ]
 
     frame.setStrokeOkHCL({ h: 20, c: 0.08, l: 0.6 })
@@ -70,7 +77,14 @@ describe('OkHCL metadata', () => {
     frame.name = 'OKHCL frame'
     frame.fills = [{ type: 'SOLID', visible: true, opacity: 1, color: { r: 0, g: 0, b: 0, a: 1 } }]
     frame.strokes = [
-      { color: { r: 0, g: 0, b: 0, a: 1 }, weight: 1, opacity: 1, visible: true, align: 'INSIDE' }
+      {
+        type: 'SOLID',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        weight: 1,
+        opacity: 1,
+        visible: true,
+        align: 'INSIDE'
+      }
     ]
     frame.setFillOkHCL({ h: 210, c: 0.1, l: 0.65 })
     frame.setStrokeOkHCL({ h: 320, c: 0.09, l: 0.55, a: 0.9 })

@@ -10,6 +10,7 @@ export const notificationMessageDefaults = {
   clipboardMissingDesignData: 'Clipboard does not contain design data.',
   clipboardAccessBlocked: 'Clipboard access is blocked in this browser context.',
   copiedAs: params('Copied as {format}.'),
+  tokensLeftOut: params('Left out of the stylesheet: {names}.'),
   nodeID: 'node ID',
   nodeIDs: 'node IDs',
   xPath: 'XPath',

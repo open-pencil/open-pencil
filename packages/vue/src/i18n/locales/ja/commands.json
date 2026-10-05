@@ -7,6 +7,7 @@
   "group": "グループ化",
   "ungroup": "グループ解除",
   "createComponent": "コンポーネントを作成",
+  "createSlot": "スロットを作成",
   "createComponentSet": "コンポーネントセットを作成",
   "createInstance": "インスタンスを作成",
   "detachInstance": "インスタンスの切り離し",

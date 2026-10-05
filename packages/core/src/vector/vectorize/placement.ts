@@ -8,6 +8,7 @@ import type {
 import { mergeVectorNetworks } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import { pathStrokeLineStyle } from '#core/icons/path-style'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 import { regenerateFillGeometry } from '#core/vector/fill-geometry'
 
@@ -28,7 +29,7 @@ interface NormalizedVectorGeometry {
 }
 
 type VectorChildPaints = Pick<SceneNode, 'fillGeometry' | 'fills' | 'strokes'> &
-  Partial<Pick<SceneNode, 'isMask' | 'maskType'>>
+  Partial<Pick<SceneNode, 'isMask' | 'maskType' | 'strokeCap' | 'strokeJoin'>>
 
 function shouldTightenToContent(
   node: Pick<SceneNode, 'width' | 'height' | 'rotation'>,
@@ -126,10 +127,12 @@ function createVectorChild(
   const inFrame = offsetVectorNetwork(path.vectorNetwork, placement.offsetX, placement.offsetY)
   const normalized = normalizeVectorToNodeBounds(inFrame)
   if (!normalized) return
+  const stroke = path.strokes.at(0)
   createNormalizedVectorChild(graph, frameId, normalized, index, {
     fillGeometry: [],
     fills: path.fills,
-    strokes: path.strokes
+    strokes: path.strokes,
+    ...(stroke ? pathStrokeLineStyle(stroke) : {})
   })
 }
 

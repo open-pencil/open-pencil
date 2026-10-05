@@ -79,6 +79,8 @@ export function renderFromEditorState(
         : null,
       nodeEditState: state.nodeEditState ?? null,
       presenceCursors: state.presenceCursors,
+      designIssues: state.designIssues,
+      codeFocusNodeId: state.codeFocusNodeId,
       autoLayoutHover: state.autoLayoutHover
     },
     state.sceneVersion,

@@ -1,11 +1,12 @@
 import { zipSync, type Zippable } from 'fflate'
 
 import type { Editor, EditorState } from '@open-pencil/core/editor'
-import type {
-  ExportRequest,
-  IOFormatAdapter,
-  IORegistry,
-  RasterExportFormat
+import {
+  findPageId,
+  type ExportRequest,
+  type IOFormatAdapter,
+  type IORegistry,
+  type RasterExportFormat
 } from '@open-pencil/core/io'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -97,6 +98,10 @@ export function getExportBytes(data: ExportData): Uint8Array {
 }
 
 export function createExportTargetActions(editor: Editor, state: EditorState, io: IORegistry) {
+  /**
+   * Renders `nodeIds` on the page that holds them, which need not be the page on screen;
+   * without IDs, renders every layer of `pageId`.
+   */
   async function renderExportImage(
     nodeIds: string[],
     scale: number,
@@ -107,7 +112,8 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     if (!renderer) return null
     const ids = nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(pageId).map((n) => n.id)
     if (ids.length === 0) return null
-    return renderNodesToImage(renderer.ck, renderer, editor.graph, pageId, ids, {
+    const ownerPageId = findPageId(editor.graph, ids[0]) ?? pageId
+    return renderNodesToImage(renderer.ck, renderer, editor.graph, ownerPageId, ids, {
       scale,
       format
     })

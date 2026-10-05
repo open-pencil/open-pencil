@@ -66,9 +66,13 @@ test('authors multiple variant dimensions and reports duplicate combinations', a
   await propertyRows.nth(1).getByRole('textbox', { name: 'Property name' }).blur()
   await canvas.waitForRender()
 
-  await section.getByRole('textbox', { name: 'Property name' }).last().fill('State')
-  await section.getByRole('textbox', { name: 'Initial value' }).fill('Enabled')
+  // The header + adds Property 1 with the value Default and selects its name for typing.
   await section.getByRole('button', { name: 'Add variant property' }).click()
+  const added = propertyRows.nth(2).getByRole('textbox', { name: 'Property name' })
+  await expect(added).toHaveValue('Property 1')
+  await expect(added).toBeFocused()
+  await page.keyboard.type('State')
+  await added.blur()
   await canvas.waitForRender()
 
   const definitions = await page.evaluate((componentSetId) => {
@@ -88,7 +92,7 @@ test('authors multiple variant dimensions and reports duplicate combinations', a
   const variantSection = propertySection(page, 'Variants')
   await expect(variantSection.getByRole('textbox', { name: 'Type' })).toHaveValue('Primary')
   await expect(variantSection.getByRole('textbox', { name: 'Size' })).toHaveValue('Large')
-  await expect(variantSection.getByRole('textbox', { name: 'State' })).toHaveValue('Enabled')
+  await expect(variantSection.getByRole('textbox', { name: 'State' })).toHaveValue('Default')
   await variantSection.getByRole('textbox', { name: 'Size' }).fill('Small')
   await variantSection.getByRole('textbox', { name: 'Size' }).blur()
   await expect(variantSection.getByRole('alert')).toContainText('Duplicate variant values')
@@ -103,9 +107,9 @@ test('authors multiple variant dimensions and reports duplicate combinations', a
       : null
   }, ids.primaryLargeId)
   expect(state).toEqual({
-    name: 'Type=Primary, Size=Large, State=Enabled',
-    values: { Type: 'Primary', Size: 'Large', State: 'Enabled' },
-    undoLabel: 'Add property'
+    name: 'Type=Primary, Size=Large, State=Default',
+    values: { Type: 'Primary', Size: 'Large', State: 'Default' },
+    undoLabel: 'Rename property'
   })
 
   await variantSection.getByRole('textbox', { name: 'Size' }).fill('Medium')

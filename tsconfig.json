@@ -80,11 +80,11 @@
       "@open-pencil/scene-graph/*": [
         "./packages/scene-graph/src/*"
       ],
-      "#codegen/*": [
-        "./packages/codegen/src/*"
+      "#emit/*": [
+        "./packages/emit/src/*"
       ],
-      "@open-pencil/codegen": [
-        "./packages/codegen/src/index.ts"
+      "@open-pencil/emit": [
+        "./packages/emit/src/index.ts"
       ],
       "#design-jsx/*": [
         "./packages/design-jsx/src/*"

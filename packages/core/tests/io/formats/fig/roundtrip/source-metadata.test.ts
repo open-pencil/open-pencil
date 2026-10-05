@@ -458,4 +458,27 @@ describe('fig roundtrip source metadata', () => {
     expect(typeof blobIndex).toBe('number')
     expect(decoded.blobs[blobIndex as number]).toEqual(rawVectorBlob)
   })
+
+  test('keeps saved GUIDs of reopened nodes when a sibling is inserted before them', async () => {
+    const graph = new SceneGraph()
+    graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Card' })
+    const saved = await exportFigFile(graph)
+    const savedGuidOf = (bytes: Uint8Array, name: string) => {
+      const nodeChange = decodeExport(bytes).nodeChanges.find((change) => change.name === name)
+      return nodeChange?.guid ? guidToString(nodeChange.guid) : undefined
+    }
+
+    const reopened = await parseFigFile(saved.slice().buffer)
+    const page = reopened.getPages()[0]
+    const inserted = reopened.createNode('RECTANGLE', page.id, { name: 'Inserted' })
+    reopened.reorderChild(inserted.id, page.id, 0)
+    const resaved = await exportFigFile(reopened)
+
+    const cardGuid = savedGuidOf(saved, 'Card')
+    expect(cardGuid).toBeDefined()
+    expect(savedGuidOf(resaved, 'Card')).toBe(cardGuid)
+    const insertedGuid = savedGuidOf(resaved, 'Inserted')
+    expect(insertedGuid).toBeDefined()
+    expect(insertedGuid).not.toBe(cardGuid)
+  })
 })

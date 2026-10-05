@@ -6,6 +6,7 @@ import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import type { FigmaAPI } from '#core/figma-api'
 import { toolNumber, nodeIdInput, nodeInput } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
+import { parseVectorNetworkJSON } from '#core/tools/vector/network'
 
 function getVectorNode(
   figma: FigmaAPI,
@@ -43,8 +44,9 @@ export const pathSet = defineTool({
   execute: (figma, args) => {
     const raw = figma.graph.getNode(args.id)
     if (!raw) return { error: `Node "${args.id}" not found` }
-    const network = JSON.parse(args.path)
-    figma.graph.updateNode(args.id, { vectorNetwork: network })
+    const parsed = parseVectorNetworkJSON(args.path)
+    if ('error' in parsed) return parsed
+    figma.graph.updateNode(args.id, { vectorNetwork: parsed.network })
     return { id: args.id }
   }
 })

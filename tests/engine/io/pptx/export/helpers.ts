@@ -22,7 +22,14 @@ export function solidFill(r: number, g: number, b: number, a = 1): Fill {
 }
 
 export function solidStroke(r: number, g: number, b: number, a = 1, weight = 2): Stroke {
-  return { color: { r, g, b, a }, weight, opacity: 1, visible: true, align: 'CENTER' }
+  return {
+    type: 'SOLID',
+    color: { r, g, b, a },
+    weight,
+    opacity: 1,
+    visible: true,
+    align: 'CENTER'
+  }
 }
 
 export function pageId(graph: SceneGraph): string {

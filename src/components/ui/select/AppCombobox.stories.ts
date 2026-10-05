@@ -6,14 +6,14 @@ import AppCombobox from './AppCombobox.vue'
 
 const models = [
   {
-    value: 'anthropic/claude-sonnet-5',
-    label: 'Claude Sonnet 5',
+    value: 'anthropic/claude-sonnet-5.5',
+    label: 'Claude Sonnet 5.5',
     meta: 'Recommended',
     group: 'Recommended'
   },
   {
-    value: 'openai/gpt-5.6',
-    label: 'GPT-5.6',
+    value: 'openai/gpt-6.1-sol',
+    label: 'GPT-6.1 Sol',
     meta: 'Latest',
     group: 'Latest'
   },
@@ -59,7 +59,7 @@ const meta = {
   render: (args) => ({
     components: { AppCombobox },
     setup() {
-      const value = ref('anthropic/claude-sonnet-5')
+      const value = ref('anthropic/claude-sonnet-5.5')
       return { args, value }
     },
     template: `

@@ -34,7 +34,9 @@ async function getSceneTree(): Promise<SceneTreeNode> {
       return {
         name: node.name,
         type: node.type,
-        children: node.childIds.map((cid: string) => nodeTree(cid)).filter(Boolean)
+        children: node.childIds
+          .map((cid: string) => nodeTree(cid))
+          .filter((child): child is SceneTreeNode => child !== null)
       }
     }
     const tree = nodeTree(store.state.currentPageId)

@@ -3,6 +3,8 @@ name: CI
 on:
   # Every base, so stacked pull requests are checked against the PR below them.
   pull_request:
+  # The merge queue checks each queued change on top of the ones ahead of it.
+  merge_group:
 
 permissions:
   contents: read
@@ -28,13 +30,13 @@ jobs:
 
       - name: Fetch comparison base
         env:
-          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: git fetch --no-tags --depth=1 origin "$CI_BASE_SHA"
 
       - name: Select validation scope
         id: classify
         env:
-          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: bun tools/ci/policy/src/classify.ts
 
   commit-messages:
@@ -49,8 +51,8 @@ jobs:
       - uses: ./.github/actions/setup-bun
       - name: Validate PR commit messages
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: |
           if ! bun run check:commits --from "$BASE_SHA" --to "$HEAD_SHA" --verbose; then
             echo '::error title=Commit messages::Check the messages listed above. Use type(scope): description, for example fix: preserve selection. See CONTRIBUTING.md#commit-messages.'
