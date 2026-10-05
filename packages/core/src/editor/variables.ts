@@ -29,6 +29,11 @@ function tokenFields(variable: Variable): VariableTokenFields {
 }
 
 export function createVariableActions(ctx: EditorContext) {
+  /**
+   * Re-resolves every bound layer, for changes to what variables resolve to. Adding, copying, or
+   * reordering variables changes no bound value, so those only request a render: re-resolving
+   * there would resize layers a file saved at a size their binding no longer gives.
+   */
   function refreshVariables() {
     reconcileVariableLayouts(ctx.graph)
     ctx.requestRender()
@@ -96,14 +101,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add collection',
       forward: () => {
         ctx.graph.addCollection(collection)
-        refreshVariables()
+        ctx.requestRender()
       },
       inverse: () => {
         ctx.graph.removeCollection(collection.id)
-        refreshVariables()
+        ctx.requestRender()
       }
     })
-    refreshVariables()
+    ctx.requestRender()
   }
 
   function removeCollection(id: string) {
@@ -136,14 +141,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add variable',
       forward: () => {
         ctx.graph.addVariable(variable)
-        refreshVariables()
+        ctx.requestRender()
       },
       inverse: () => {
         ctx.graph.removeVariable(variable.id)
-        refreshVariables()
+        ctx.requestRender()
       }
     })
-    refreshVariables()
+    ctx.requestRender()
   }
 
   function removeVariable(id: string) {
@@ -190,14 +195,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Reorder variables',
       forward: () => {
         placeVariables(collectionId, next)
-        refreshVariables()
+        ctx.requestRender()
       },
       inverse: () => {
         placeVariables(collectionId, previous)
-        refreshVariables()
+        ctx.requestRender()
       }
     })
-    refreshVariables()
+    ctx.requestRender()
   }
 
   /** Copies a variable, values and token fields included, right after the original. */
@@ -217,14 +222,14 @@ export function createVariableActions(ctx: EditorContext) {
       forward: () => {
         ctx.graph.addVariable(structuredClone(copy))
         placeVariables(collection.id, order)
-        refreshVariables()
+        ctx.requestRender()
       },
       inverse: () => {
         ctx.graph.removeVariable(copy.id)
-        refreshVariables()
+        ctx.requestRender()
       }
     })
-    refreshVariables()
+    ctx.requestRender()
     return copy.id
   }
 
