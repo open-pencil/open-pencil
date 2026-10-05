@@ -1,5 +1,6 @@
 // Design tokens as CSS custom properties: names, namespaces, units, and the stylesheet.
 export {
+  collectionVariables,
   cssNameCodeSyntax,
   deriveCSSName,
   explicitCSSName,

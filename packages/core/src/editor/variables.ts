@@ -9,6 +9,18 @@ import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import type { EditorContext } from './types'
 
+/** What a variable means as a design token beyond its values: how CSS and code read it. */
+export type VariableTokenFields = Pick<
+  Variable,
+  'unit' | 'expressions' | 'scopes' | 'codeSyntax' | 'description'
+>
+
+/** Every token field, unset ones included, so restoring it also clears what was added. */
+function tokenFields(variable: Variable): VariableTokenFields {
+  const { unit, expressions, scopes, codeSyntax, description } = variable
+  return structuredClone({ unit, expressions, scopes, codeSyntax, description })
+}
+
 export function createVariableActions(ctx: EditorContext) {
   function refreshVariables() {
     reconcileVariableLayouts(ctx.graph)
@@ -323,7 +335,55 @@ export function createVariableActions(ctx: EditorContext) {
     refreshVariables()
   }
 
+  /** Change token fields in one undo step; a field set to `undefined` is cleared. */
+  function updateVariableToken(id: string, patch: Partial<VariableTokenFields>) {
+    const variable = ctx.graph.variables.get(id)
+    if (!variable) return
+    const previous = tokenFields(variable)
+    const next = structuredClone(patch)
+    const apply = (values: Partial<VariableTokenFields>) => {
+      const target = ctx.graph.variables.get(id)
+      if (!target) return
+      Object.assign(target, structuredClone(values))
+      // Every variable has a description; clearing it leaves an empty one.
+      target.description ??= ''
+      ctx.requestRender()
+    }
+    apply(next)
+    ctx.undo.push({
+      label: 'Update variable token',
+      forward: () => apply(next),
+      inverse: () => apply(previous)
+    })
+  }
+
+  /** The selector or query a mode applies under; an empty condition restores the default. */
+  function setModeCondition(collectionId: string, modeId: string, condition: string | undefined) {
+    const mode = ctx.graph.variableCollections
+      .get(collectionId)
+      ?.modes.find((candidate) => candidate.modeId === modeId)
+    if (!mode) return
+    const previous = mode.condition
+    const next = condition?.trim() || undefined
+    if (next === previous) return
+    const apply = (value: string | undefined) => {
+      const target = ctx.graph.variableCollections
+        .get(collectionId)
+        ?.modes.find((candidate) => candidate.modeId === modeId)
+      if (target) target.condition = value
+      ctx.requestRender()
+    }
+    apply(next)
+    ctx.undo.push({
+      label: 'Set mode condition',
+      forward: () => apply(next),
+      inverse: () => apply(previous)
+    })
+  }
+
   return {
+    updateVariableToken,
+    setModeCondition,
     getVariablesByType,
     getVariable,
     resolveColorVariable,
