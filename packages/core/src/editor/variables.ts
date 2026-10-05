@@ -344,9 +344,10 @@ export function createVariableActions(ctx: EditorContext) {
     const apply = (values: Partial<VariableTokenFields>) => {
       const target = ctx.graph.variables.get(id)
       if (!target) return
-      Object.assign(target, structuredClone(values))
+      const { description, ...fields } = structuredClone(values)
+      Object.assign(target, fields)
       // Every variable has a description; clearing it leaves an empty one.
-      target.description ??= ''
+      if ('description' in values) target.description = description ?? ''
       ctx.requestRender()
     }
     apply(next)

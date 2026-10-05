@@ -14,10 +14,10 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof DesignSystem>
+} satisfies Meta<{ width?: number }>
 
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<{ width?: number }>
 
 /** From 56rem the CSS name has its own column and the inspector sits beside the list. */
 export const DesignSystemTokens: Story = {}
