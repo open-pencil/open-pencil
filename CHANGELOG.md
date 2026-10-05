@@ -80,6 +80,7 @@
 
 ### Fixed
 
+- Keep saving AI chat history in Safari Private Browsing after a message with an image or a reply that changed the document. Safari cannot store image data that way in a private window, so the conversation stopped saving from that point and showed "Chat history could not be saved".
 - Release a document's memory when its tab closes. Every closed tab kept its scene, canvas, and editor panels alive until reload, so memory grew with each document opened and closed. Menus and shortcuts now also follow the active document, so Undo and Redo are offered according to its history rather than the first document opened.
 - Start Pi chats with OpenPencil's MCP tools when the Harness companion runs on Node 22.15 or later; the companion now installs the dependency Pi's MCP adapter needs and loads its TypeScript sources. A reopened Pi session starts fresh instead of failing to resume its in-memory sandbox, and npm output from Pi no longer mixes into the companion's protocol.
 - Import HTML and CSS with the right shadow and border colors. A shadow whose color follows its lengths, as CSS usually writes it, and a `border` with a color function such as `rgb(226, 232, 240)` came in black. Every layer of a `box-shadow` list now imports, `inset` ones as inner shadows, and lengths in `%`, `em`, or `vh` are no longer read as pixels.
