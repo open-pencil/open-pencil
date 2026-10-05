@@ -2,6 +2,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { compact } from 'es-toolkit/array'
+import * as v from 'valibot'
+
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
@@ -14,6 +17,7 @@ import { hasMixedLatinAndCjk, placeholders } from './quality'
 
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
 const LOCALE_FILE_NAMES: Record<string, string> = {
+  designCheck: 'design-check',
   variableTypes: 'variable-types'
 }
 const REQUIRED_INDEX_FILE = 'index.ts'
@@ -37,8 +41,10 @@ function localeFileName(namespace: string) {
   return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
+const JSONObjectText = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+
 function readJSONObject(path: string): JSONObject {
-  return JSON.parse(readFileSync(path, 'utf-8')) as JSONObject
+  return v.parse(JSONObjectText, readFileSync(path, 'utf-8'))
 }
 
 function report(message: string) {
@@ -68,16 +74,18 @@ const expectedLocaleDirs = new Map<TranslatedLocale, string>(
 const baselineLocaleId = (locale: TranslatedLocale): string => LOCALE_DIR_NAMES[locale]
 const expectedLocaleFiles = new Set(namespaces.map(localeFileName))
 const translationBaseline = new Set(
-  readFileSync(TRANSLATION_BASELINE_PATH, 'utf8')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  compact(
+    readFileSync(TRANSLATION_BASELINE_PATH, 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+  )
 )
 const mixedScriptBaseline = new Set(
-  readFileSync(MIXED_SCRIPT_BASELINE_PATH, 'utf8')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  compact(
+    readFileSync(MIXED_SCRIPT_BASELINE_PATH, 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+  )
 )
 const observedIdentical = new Set<string>()
 const observedMixedScript = new Set<string>()

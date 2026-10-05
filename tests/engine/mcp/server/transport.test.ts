@@ -8,12 +8,17 @@ import type { WebSocket } from 'ws'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
+import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
+import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
   openWs,
+  readHealth,
   readNextResponse,
   readWsJSON,
+  RegisterMessage,
+  ResponseMessage,
   socketRequest,
   tcpRequest,
   waitForBrowserRegistration,
@@ -138,13 +143,7 @@ describe('MCP server unified transport', () => {
       const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
-      const info = (await file.json()) as {
-        pid: number
-        httpPort: number
-        socketPath: string | null
-        version: string
-        authToken: string | null
-      }
+      const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.pid).toBe(process.pid)
       expect(info.httpPort).toBe(handle?.httpPort ?? 0)
       expect(info.socketPath).toBe(handle?.socketPath ?? null)
@@ -233,7 +232,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       await waitForBrowserRegistration(httpPort)
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
-      const register = await readWsJSON<{ type: string; token?: string | null }>(clientWs)
+      const register = await readWsJSON(clientWs, RegisterMessage)
       expect(register.type).toBe('register')
       expect(register.token).toBeNull()
 
@@ -245,12 +244,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse<{
-        type: string
-        id: string
-        ok?: boolean
-        result?: { name: string }
-      }>(clientWs)
+      const response = await readNextResponse(clientWs, ResponseMessage)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-1')
@@ -283,7 +277,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
 
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
 
-      const register = await readWsJSON<{ type: string; token?: string | null }>(clientWs)
+      const register = await readWsJSON(clientWs, RegisterMessage)
       expect(register.type).toBe('register')
 
       clientWs.send(
@@ -294,12 +288,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse<{
-        type: string
-        id: string
-        ok?: boolean
-        error?: string
-      }>(clientWs, 15_000)
+      const response = await readNextResponse(clientWs, ResponseMessage, 15_000)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-no-app')
@@ -332,11 +321,11 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const graph = new SceneGraph()
 
-      const initialRegister = await readWsJSON<{ type: string; token?: string | null }>(clientWs)
+      const initialRegister = await readWsJSON(clientWs, RegisterMessage)
       expect(initialRegister.type).toBe('register')
       expect(initialRegister.token).toBeNull()
 
-      const broadcastPromise = readWsJSON<{ type: string; token?: string | null }>(clientWs, 3_000)
+      const broadcastPromise = readWsJSON(clientWs, RegisterMessage, 3_000)
       browser = await connectMockBrowser(httpPort, graph, authToken)
       const broadcastRegister = await broadcastPromise
       expect(broadcastRegister.type).toBe('register')
@@ -369,7 +358,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJSON<{ type: string; token?: string | null }>(ws)
+      const initReg = await readWsJSON(ws, RegisterMessage)
       expect(initReg.type).toBe('register')
 
       const requestPromise = (async () => {
@@ -381,12 +370,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
             args: { name: 'get_current_page', args: {} }
           })
         )
-        return readNextResponse<{
-          type: string
-          id: string
-          ok?: boolean
-          result?: { name: string }
-        }>(ws, 15_000)
+        return readNextResponse(ws, ResponseMessage, 15_000)
       })()
 
       await new Promise<void>((r) => {
@@ -437,7 +421,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
         let last: { status: string } = { status: 'unknown' }
         while (Date.now() - start < timeoutMs) {
           const r = await fetch(`http://127.0.0.1:${httpPort}/health`)
-          last = (await r.json()) as { status: string }
+          last = await readHealth(r)
           if (predicate(last.status)) return last
           await sleep(25)
         }
@@ -461,7 +445,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJSON<{ type: string; token?: string | null }>(ws)
+      const initReg = await readWsJSON(ws, RegisterMessage)
       expect(initReg.type).toBe('register')
       expect(initReg.token).toBeNull()
 
@@ -473,7 +457,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse<{ type: string; id: string; ok?: boolean }>(ws)
+      const response = await readNextResponse(ws, ResponseMessage)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-after-reconnect')

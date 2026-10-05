@@ -1,9 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { drawArrowHeads } from '#core/canvas/strokes'
+
+import { asCanvas, asRenderer } from './helpers'
 
 const SQRT3 = Math.sqrt(3)
 
@@ -40,7 +39,7 @@ function createHarness() {
     }
   }
 
-  const renderer = {
+  const renderer = asRenderer({
     ck: {
       PathBuilder: MockPathBuilder,
       Color4f: mock((r: number, g: number, b: number, a: number) => ['color', r, g, b, a]),
@@ -59,15 +58,15 @@ function createHarness() {
       setPathEffect: mock(() => undefined),
       setShader: mock(() => undefined)
     }
-  } as SkiaRenderer
+  })
 
   const drawPath = mock(() => undefined)
-  const canvas = {
+  const canvas = asCanvas({
     drawPath,
     drawLine: (x1: number, y1: number, x2: number, y2: number) => {
       drawLineCalls.push([x1, y1, x2, y2])
     }
-  } as Canvas
+  })
 
   return {
     renderer,

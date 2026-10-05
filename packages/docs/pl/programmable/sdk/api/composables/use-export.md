@@ -10,7 +10,7 @@ description: Ustawienia scale i format eksportu bieżącego selection.
 - ustawienia eksportu;
 - IDs zaznaczonych obiektów;
 - nazwę pliku wynikowego;
-- dostępne scales i formats.
+- dostępne scales i formats (identyfikatory `formats` i opisane `formatOptions`).
 
 ## Użycie
 
@@ -28,6 +28,7 @@ const {
   nodeName,
   scales,
   formats,
+  formatOptions,
   addSetting,
   updateScale,
   updateFormat,

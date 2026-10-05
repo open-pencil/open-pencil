@@ -1,4 +1,4 @@
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 
 /** The document and node pair every two-node diff command takes. */
 export const nodePairArgs = {

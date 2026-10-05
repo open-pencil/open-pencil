@@ -6,6 +6,8 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import { SceneGraph, setInstanceOverride, rescaleNodeTree } from '@open-pencil/scene-graph'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 test('serializes self size claims against the instance main component', async () => {
   await initCodec()
   const graph = new SceneGraph()
@@ -28,7 +30,7 @@ test('serializes self size claims against the instance main component', async ()
   expect(exported?.size).toEqual({ x: 16, y: 16 })
   expect(symbol.uniformScaleFactor).toBe(0.5)
   expect(symbol.symbolOverrides).toContainEqual({
-    guidPath: { guids: [symbol.symbolID] },
+    guidPath: { guids: [expectDefined(symbol.symbolID)] },
     size: { x: 32, y: 32 },
     stackHorizontalPadding: 20
   })

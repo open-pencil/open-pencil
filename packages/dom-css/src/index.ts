@@ -12,7 +12,12 @@ export {
 } from './import/html'
 export { designDocumentToSceneGraph } from './import/scene-graph'
 export { sceneGraphToDesignDocument, sceneNodeToDesignDocument } from './export/projection'
-export { designDocumentToTailwindJSX, sceneNodesToTailwindJSX } from './export/tailwind-jsx'
+export {
+  designDocumentToTailwindJSX,
+  sceneNodesToTailwindJSX,
+  sceneNodesToTailwindJSXWithLayers,
+  type TailwindJSXWithLayers
+} from './export/tailwind-jsx'
 export { compileTailwindCSS } from './import/tailwind'
 export {
   browserHTMLToDesignDocument,

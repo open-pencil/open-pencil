@@ -6,7 +6,6 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
-import { randomHex } from '#core/random'
 
 import type { EditorContext } from './types'
 
@@ -171,9 +170,9 @@ export function createVariableActions(ctx: EditorContext) {
   function addMode(collectionId: string, name?: string): string | undefined {
     const collection = ctx.graph.variableCollections.get(collectionId)
     if (!collection) return undefined
-    const modeId = `mode:${randomHex(8)}`
     const modeName = name ?? `Mode ${collection.modes.length + 1}`
-    ctx.graph.addMode(collectionId, modeId, modeName)
+    const modeId = ctx.graph.createMode(collectionId, modeName)
+    if (!modeId) return undefined
     ctx.undo.push({
       label: 'Add mode',
       forward: () => {
@@ -252,6 +251,7 @@ export function createVariableActions(ctx: EditorContext) {
     const collection = ctx.graph.variableCollections.get(collectionId)
     if (!collection) return
     const prevDefault = collection.defaultModeId
+    const prevModes = structuredClone(collection.modes)
     ctx.graph.setDefaultMode(collectionId, modeId)
     ctx.undo.push({
       label: 'Set default mode',
@@ -260,7 +260,13 @@ export function createVariableActions(ctx: EditorContext) {
         refreshVariables()
       },
       inverse: () => {
-        ctx.graph.setDefaultMode(collectionId, prevDefault)
+        // Setting a default moves it first; undo restores the column order too. Look the
+        // collection up again: undoing its removal in between restores a copy.
+        const current = ctx.graph.variableCollections.get(collectionId)
+        if (current) {
+          current.modes = structuredClone(prevModes)
+          current.defaultModeId = prevDefault
+        }
         refreshVariables()
       }
     })
@@ -272,9 +278,9 @@ export function createVariableActions(ctx: EditorContext) {
     if (!collection) return undefined
     const sourceMode = collection.modes.find((m) => m.modeId === sourceModeId)
     if (!sourceMode) return undefined
-    const modeId = `mode:${randomHex(8)}`
     const modeName = `${sourceMode.name} copy`
-    ctx.graph.addMode(collectionId, modeId, modeName, sourceModeId)
+    const modeId = ctx.graph.createMode(collectionId, modeName, sourceModeId)
+    if (!modeId) return undefined
     ctx.undo.push({
       label: 'Duplicate mode',
       forward: () => {

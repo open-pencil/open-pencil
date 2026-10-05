@@ -165,6 +165,7 @@ Common node properties are readable/writable through the proxy, including:
 - `figma.getNodeByIdAsync(id)` and `instance.getMainComponentAsync()` resolve to the same nodes as `figma.getNodeById(id)` and `instance.mainComponent`, for scripts written for Figma's dynamic-page mode
 - `figma.notify(message)` logs a warning in headless mode
 - `instance.swapComponent(component)` points an instance at another component
+- `component.createSlot()` adds a slot frame and its `SLOT` property; slot frames read `type: 'SLOT'`, `resetSlot()` brings back an instance slot's component content, and `limitViolations` lists the limits an instance slot breaks. `addComponentProperty` and `editComponentProperty` take a `description` and, for slots, `slotSettings`
 - `figma.viewport`
 
 ## Not yet Figma-compatible

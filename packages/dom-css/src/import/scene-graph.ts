@@ -8,17 +8,11 @@ import {
   type Stroke
 } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import { parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import {
-  colorToFillFromCSS,
-  colorToStrokeFromCSS,
-  dropShadowFromCSS,
-  mergedStyle,
-  parseCSSNumber,
-  pickStyle
-} from './css-values'
+import { colorToFillFromCSS, colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -307,7 +301,7 @@ function applyElementStyle(
     setBorderWeights(node, style, strokes[0])
   }
 
-  const effects = dropShadowFromCSS(pickStyle(style, 'box-shadow'))
+  const effects = parseCSSShadows(pickStyle(style, 'box-shadow'))
   if (effects.length > 0) node.effects = effects
 
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
@@ -353,7 +347,7 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
   if (opacity !== null) node.opacity = opacity
 
-  const effects = dropShadowFromCSS(pickStyle(style, 'text-shadow'))
+  const effects = parseCSSShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
   const fontFamily = pickStyle(style, 'font-family')

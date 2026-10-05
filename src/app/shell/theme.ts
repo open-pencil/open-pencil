@@ -7,7 +7,8 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { getActiveEditorStoreOrNull, useActiveEditorStoreRef } from '@/app/editor/active-store'
 
-export type AppTheme = 'dark' | 'light' | 'auto'
+export const APP_THEMES = ['dark', 'light', 'auto'] as const
+export type AppTheme = (typeof APP_THEMES)[number]
 
 const THEME_STORAGE_KEY = 'open-pencil:theme'
 const DEFAULT_THEME: AppTheme = 'dark'
@@ -38,6 +39,14 @@ function updateCanvasTheme(): void {
   store.requestRepaint()
 }
 
+export function getAppTheme(): AppTheme {
+  return theme.value
+}
+
+export function setAppTheme(value: AppTheme): void {
+  theme.value = value
+}
+
 function applyTheme(value: 'dark' | 'light', setting: AppTheme): void {
   if (!IS_BROWSER || !('document' in globalThis)) return
   document.documentElement.dataset.theme = value
@@ -58,15 +67,11 @@ export function useAppTheme() {
 
   const isLight = computed(() => resolvedAppTheme.value === 'light')
 
-  function setTheme(value: AppTheme): void {
-    theme.value = value
-  }
-
   function toggleTheme(): void {
     theme.value = isLight.value ? 'dark' : 'light'
   }
 
-  return { theme, resolvedTheme: resolvedAppTheme, isLight, setTheme, toggleTheme }
+  return { theme, resolvedTheme: resolvedAppTheme, isLight, setTheme: setAppTheme, toggleTheme }
 }
 
 applyTheme(resolvedAppTheme.value, theme.value)

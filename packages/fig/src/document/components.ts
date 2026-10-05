@@ -14,7 +14,6 @@ export interface ComponentConstruction {
 
 /** Resolve source ownership and dependency order without mutating a destination graph. */
 export function planComponentConstruction(
-  changes: readonly NodeChange[],
   roots: readonly InstanceOccurrence[],
   readComponent: (id: string) => InstanceOccurrence,
   index: ReadonlyMap<string, NodeChange>

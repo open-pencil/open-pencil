@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
+import { compact } from 'es-toolkit/array'
 import { computed, ref } from 'vue'
 
 import { useAutomationMessages } from '@open-pencil/vue'
@@ -73,9 +74,10 @@ const detail = computed(() =>
 )
 
 async function copyDetails(): Promise<void> {
-  const payload = [`code=${failure.code}`, failure.detail ? `detail=${failure.detail}` : null]
-    .filter(Boolean)
-    .join('\n')
+  const payload = compact([
+    `code=${failure.code}`,
+    failure.detail ? `detail=${failure.detail}` : null
+  ]).join('\n')
   // VueUse falls back to a legacy write and never rejects, so awaiting the write
   // is what keeps the confirmation honest.
   await copy(payload)

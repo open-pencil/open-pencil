@@ -9,7 +9,11 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_MITER_LIMIT } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_STROKE_MITER_LIMIT,
+  OPEN_PENCIL_PLUGIN_DATA,
+  withPluginData
+} from '@open-pencil/scene-graph'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
@@ -22,9 +26,7 @@ import {
   applyLibrarySourcePluginData,
   applyTextPathBoxPluginData,
   mergePluginData,
-  NODE_TYPE_PLUGIN_KEY,
-  serializePluginRelaunchData,
-  upsertPluginData
+  serializePluginRelaunchData
 } from '../plugin-data'
 import {
   applyColorVariableBinding,
@@ -40,6 +42,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
+import { nodeWithResolvedBindings } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
@@ -883,12 +886,13 @@ function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): s
 }
 
 export function sceneNodeToKiwiWithContext(
-  node: SceneNode,
+  source: SceneNode,
   parentGuid: GUID,
   childIndex: number,
   localIdCounter: { value: number },
   context: SceneNodeToKiwiContext
 ): KiwiNodeChange[] {
+  const node = nodeWithResolvedBindings(context.graph, source)
   const guid = getOrCreateNodeGuid(context, node.id, localIdCounter) ?? {
     sessionID: 1,
     localID: localIdCounter.value++
@@ -929,7 +933,8 @@ export function sceneNodeToKiwiWithContext(
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
-  if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
+  if (node.type === 'COMPONENT_SET')
+    node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)

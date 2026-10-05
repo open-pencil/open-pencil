@@ -6,6 +6,8 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 
+import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
+
 function serialize(graph: SceneGraph, nodeId: string) {
   const node = graph.getNode(nodeId)
   if (!node) throw new Error('Expected scene node')
@@ -67,9 +69,7 @@ describe('Figma shared style export', () => {
     graph.createNode('RECTANGLE', page.id, { name: 'Styled target', fillStyleId: '1:10' })
 
     const bytes = await exportFigFile(graph)
-    const parsed = parseFigBuffer(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    const parsed = parseFigBuffer(uint8ArrayToArrayBuffer(bytes))
     const definition = parsed.nodeChanges.find((change) => change.styleType === 'FILL')
     const target = parsed.nodeChanges.find((change) => change.name === 'Styled target')
 

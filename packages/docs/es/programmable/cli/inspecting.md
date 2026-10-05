@@ -54,6 +54,33 @@ bun open-pencil variables design.fig
 
 `formats` lista los formatos de documento registrados y sus capacidades de lectura y escritura.
 
+## Aplicación en ejecución
+
+Cuando la aplicación de escritorio está abierta, omite el archivo: la CLI se conecta por RPC y opera sobre el lienzo en vivo:
+
+```sh
+bun open-pencil documents list    # lista los ID de documentos y páginas abiertos
+bun open-pencil tree              # inspecciona el documento activo
+bun open-pencil tree --document-id tab-123 --page-id 0:1
+bun open-pencil eval --document-id tab-123 --page-id 0:1 -c "..."
+```
+
+En flujos con agentes, usa `bun open-pencil documents list --json` y pasa `--document-id` y `--page-id` de forma explícita en lugar de depender de la pestaña o página visible. Para abrir, guardar, cambiar y cerrar documentos, deshacer, modificar ajustes o llamar a cualquier herramienta del editor, consulta [Controlar la aplicación](/programmable/cli/app-control).
+
+## Lint
+
+`lint` revisa un diseño con reglas de accesibilidad y consistencia.
+
+```sh
+bun open-pencil lint design.fig
+bun open-pencil lint design.pen --preset strict
+bun open-pencil lint design.fig --rule color-contrast
+bun open-pencil lint design.fig --list-rules
+bun open-pencil lint design.fig --fix -o fixed.fig
+```
+
+Usa `--json` para una salida legible por máquinas; cada mensaje incluye su `fix` y sus `suggestions` como datos. `--fix` aplica las correcciones seguras —enlazar los colores a la variable de color que coincide y redondear la geometría a píxeles enteros— y escribe el resultado en el archivo `.fig` indicado con `-o`.
+
 ## Salida JSON
 
 Los comandos de consulta admiten `--json`, apropiado para `jq`, CI y programas que necesiten una salida estable y legible por máquinas.

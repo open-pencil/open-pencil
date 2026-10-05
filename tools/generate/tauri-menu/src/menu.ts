@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import { editorCommandMetadata } from '@open-pencil/vue'
 
 import { APP_MENU_APP_ITEMS, APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
@@ -25,7 +27,7 @@ function cleanEntry(entry: AppMenuEntry): unknown | null {
     label: entry.label,
     accelerator: entryAccelerator(entry),
     checkbox: entry.checkbox,
-    sub: entry.sub?.map(cleanEntry).filter(Boolean)
+    sub: entry.sub ? compact(entry.sub.map(cleanEntry)) : undefined
   }
 }
 
@@ -33,12 +35,12 @@ function cleanGroup(group: AppMenuGroupSchema): unknown | null {
   if (!isNativeVisible(group)) return null
   return {
     label: group.label,
-    items: group.items.map(cleanEntry).filter(Boolean)
+    items: compact(group.items.map(cleanEntry))
   }
 }
 
 export function renderMenu(): string {
-  const menu = APP_MENU_SCHEMA.map(cleanGroup).filter(Boolean)
+  const menu = compact(APP_MENU_SCHEMA.map(cleanGroup))
   return `${JSON.stringify(menu, null, 2)}\n`
 }
 

@@ -9,14 +9,9 @@ import {
 import { handleTextSelectMove as handleTextSelectMoveAction } from '#vue/canvas/transform/text-selection'
 import type { DragMarquee, DragPan, DragRotate, DragState } from '#vue/shared/input/types'
 
-type CanvasToLocal = (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
 type SetDrag = (drag: DragState) => void
 
-export function createTransformInputActions(
-  editor: Editor,
-  canvasToLocal: CanvasToLocal,
-  setDrag: SetDrag
-) {
+export function createTransformInputActions(editor: Editor, setDrag: SetDrag) {
   function tryStartRotation(cx: number, cy: number): boolean {
     return tryStartRotationAction(editor, setDrag, cx, cy)
   }
@@ -34,7 +29,7 @@ export function createTransformInputActions(
   }
 
   function handleMarqueeMove(d: DragMarquee, cx: number, cy: number) {
-    handleMarqueeMoveAction(editor, canvasToLocal, d, cx, cy)
+    handleMarqueeMoveAction(editor, d, cx, cy)
   }
 
   return {

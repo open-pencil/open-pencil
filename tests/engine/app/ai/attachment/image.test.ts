@@ -16,6 +16,8 @@ import {
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
 import type { EditorStore } from '@/app/editor/session/create'
 
+import { asDouble } from '#tests/helpers/doubles'
+
 const image: PreparedImageAttachment = {
   data: new Uint8Array([4, 5, 6]),
   blob: new Blob(),
@@ -56,11 +58,11 @@ describe('image attachment analysis', () => {
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, { width: 2560, height: 1600 })
     const requests: unknown[] = []
-    const store = {
+    const store = asDouble<EditorStore>({
       graph,
       state: { currentPageId: page.id, selectedIds: new Set([frame.id]) },
       renderExportImage: async () => new Uint8Array([1, 2, 3])
-    } as EditorStore
+    })
     const dependencies: ImageAnalysisDependencies = {
       createRuntime: async () =>
         ({

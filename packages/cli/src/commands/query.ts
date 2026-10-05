@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { QueryNodeResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { printNodeResults, printError } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 

@@ -32,14 +32,14 @@ describe('instance descendant fill override round trip', () => {
     const exported = await exportFigFile(graph)
     const reloaded = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const reloadedInstance = reloaded.getAllNodes().find((n) => n.type === 'INSTANCE')
+    const reloadedInstance = [...reloaded.getAllNodes()].find((n) => n.type === 'INSTANCE')
     expect(reloadedInstance).toBeDefined()
     const reloadedPath = reloadedInstance ? reloaded.getChildren(reloadedInstance.id)[0] : undefined
     expect(reloadedPath?.fills[0]?.color).toEqual({ r: 0, g: 0, b: 1, a: 1 })
 
-    const reloadedIcon = reloaded
-      .getAllNodes()
-      .find((n) => n.type === 'COMPONENT' && n.name === 'Icon')
+    const reloadedIcon = [...reloaded.getAllNodes()].find(
+      (n) => n.type === 'COMPONENT' && n.name === 'Icon'
+    )
     const reloadedIconPath = reloadedIcon ? reloaded.getChildren(reloadedIcon.id)[0] : undefined
     expect(reloadedIconPath?.fills[0]?.color).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })

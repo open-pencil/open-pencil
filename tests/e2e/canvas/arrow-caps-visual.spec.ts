@@ -21,7 +21,9 @@ test('arrow stroke caps', async () => {
       weight: number,
       dashPattern?: number[],
       align: 'INSIDE' | 'CENTER' | 'OUTSIDE' = 'CENTER'
-    ) => [{ color: ink, weight, visible: true, opacity: 1, align, dashPattern }]
+    ) => [
+      { type: 'SOLID' as const, color: ink, weight, visible: true, opacity: 1, align, dashPattern }
+    ]
 
     store.graph.createNode('LINE', pageId, {
       name: 'Equilateral line',

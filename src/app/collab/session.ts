@@ -4,7 +4,7 @@ import * as awarenessProtocol from 'y-protocols/awareness'
 import type { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
-import { randomIndex } from '@open-pencil/core/random'
+import { randomIndex } from '@open-pencil/scene-graph/random'
 
 import { publishLocalAgents } from '@/app/collab/local-awareness'
 import { connectCollabRoom } from '@/app/collab/room'

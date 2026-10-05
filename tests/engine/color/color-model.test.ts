@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { ref } from 'vue'
 
-import type { Color, OkHCLColor } from '@open-pencil/core'
+import type { OkHCLColor } from '@open-pencil/core'
+import type { Color } from '@open-pencil/scene-graph'
 import type { ColorFieldFormat } from '@open-pencil/vue'
 import { BUILT_IN_COLOR_FORMATS, fromPercent, toPercent, useColorModel } from '@open-pencil/vue'
 

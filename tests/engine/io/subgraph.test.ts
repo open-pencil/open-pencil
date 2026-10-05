@@ -3,9 +3,11 @@ import { describe, expect, test } from 'bun:test'
 import { exportFigFile, extractExportGraph, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
+import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 
 describe('export subgraph extraction', () => {
@@ -51,7 +53,7 @@ describe('export subgraph extraction', () => {
       width: 80,
       height: 20
     })
-    const instance = graph.createInstance(component.id, page.id)
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
 
     const extracted = extractExportGraph(graph, { scope: 'page', pageId: page.id })
 
@@ -105,9 +107,12 @@ describe('export subgraph extraction', () => {
       (node) => node.guid && guidToString(node.guid) === '1:3491'
     )
 
+    const inputSymbolData = input?.symbolData as SymbolData | undefined
+    const listsSymbolData = lists?.symbolData as SymbolData | undefined
+
     expect(input?.type).toBe('INSTANCE')
-    expect(input?.symbolData?.symbolOverrides?.length).toBe(9)
-    expect(input?.symbolData?.uniformScaleFactor).toBeCloseTo(0.8908441662788391)
-    expect(lists?.symbolData?.symbolOverrides?.length).toBe(5)
+    expect(inputSymbolData?.symbolOverrides?.length).toBe(9)
+    expect(inputSymbolData?.uniformScaleFactor).toBeCloseTo(0.8908441662788391)
+    expect(listsSymbolData?.symbolOverrides?.length).toBe(5)
   }, 15000)
 })

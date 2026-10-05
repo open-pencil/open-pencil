@@ -150,7 +150,7 @@ export function useCanvasInput(
     handleRotateMove,
     handleTextSelectMove,
     handleMarqueeMove
-  } = createCanvasTransformInput(editor, canvasToLocal, setDrag)
+  } = createCanvasTransformInput(editor, setDrag)
 
   function paddingValue(node: SceneNode, side: 'top' | 'right' | 'bottom' | 'left') {
     if (side === 'top') return node.paddingTop
@@ -315,7 +315,7 @@ export function useCanvasInput(
       return
     }
     if (d.type === 'move') {
-      handleMoveMove(d, cx, cy, sx, sy, editor, e.ctrlKey)
+      handleMoveMove(d, cx, cy, sx, sy, editor, { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey })
       return
     }
     if (d.type === 'text-select') {
@@ -466,6 +466,20 @@ export function useCanvasInput(
     },
     { capture: true }
   )
+  // Space during a move keeps layers in their parents, as in Figma, instead of switching to the hand.
+  function holdParentsDuringMove(event: KeyboardEvent, held: boolean) {
+    if (event.code !== 'Space' || drag.value?.type !== 'move' || !isEnabled()) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    drag.value.keepParents = held
+    if (held) editor.setDropTarget(null)
+  }
+  useEventListener(window, 'keydown', (event) => holdParentsDuringMove(event, true), {
+    capture: true
+  })
+  useEventListener(window, 'keyup', (event) => holdParentsDuringMove(event, false), {
+    capture: true
+  })
   useEventListener(window, 'blur', () => {
     resetMeasurementModifiers()
     cancelPointerInteraction()

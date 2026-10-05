@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '../helpers'
+import { asComponentNode, createAPI } from '../helpers'
 
 describe('combineAsVariants', () => {
   test('wraps components into a COMPONENT_SET', () => {
@@ -83,7 +83,8 @@ describe('combineAsVariants', () => {
   test('rejects non-component nodes', () => {
     const api = createAPI()
     const component = api.createComponent()
-    const frame = api.createFrame()
+    // A frame stands in for the wrongly typed argument the runtime guard rejects.
+    const frame = asComponentNode(api.createFrame())
     expect(() => api.combineAsVariants([component, frame], api.currentPage)).toThrow()
   })
 })

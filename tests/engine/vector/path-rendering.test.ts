@@ -5,6 +5,8 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 
+import { asDouble } from '#tests/helpers/doubles'
+
 interface RecordedPath {
   operations: string[]
   fillType: number | null
@@ -74,10 +76,10 @@ function createCanvasKit() {
   }
 
   return {
-    ck: {
+    ck: asDouble<CanvasKit>({
       PathBuilder: MockPathBuilder,
       FillType: { Winding: 0, EvenOdd: 1 }
-    } as CanvasKit,
+    }),
     paths
   }
 }

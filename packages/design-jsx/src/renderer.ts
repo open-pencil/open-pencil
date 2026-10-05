@@ -1,4 +1,7 @@
+import { compact } from 'es-toolkit/array'
+
 import {
+  createComponentPropertyId,
   setInstanceOverride,
   type Color,
   type ComponentPropertyDefinition,
@@ -63,11 +66,6 @@ export interface RenderResult {
 }
 
 /** Component property ids only need to be unique within a document. */
-function randomHex(bytes: number): string {
-  return Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (byte) =>
-    byte.toString(16).padStart(2, '0')
-  ).join('')
-}
 
 /** The nodes a tree renders as: a fragment's children, or the tree itself. */
 function treeRoots(tree: TreeNode): TreeNode[] {
@@ -87,7 +85,7 @@ export async function renderRoots<Artwork>(
 
   const nodes: SceneNode[] = []
   for (const root of roots) {
-    const node = await renderNode(services, graph, root, parentId)
+    const node = await renderNode(services, graph, root, parentId, options.onNode)
     if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
     if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
     nodes.push(node)
@@ -288,10 +286,7 @@ function renderSVGNode<Artwork>(
 }
 
 function parseVariantValues(name: string): Record<string, string> {
-  const entries = name
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
+  const entries = compact(name.split(',').map((part) => part.trim()))
   const values: Record<string, string> = {}
   for (const entry of entries) {
     const [key = '', ...rest] = entry.split('=')
@@ -334,7 +329,7 @@ function inferComponentSetProperties(graph: SceneGraph, componentSetId: string):
     .map(([name, values]) => {
       const variantOptions = [...values]
       return {
-        id: `prop:${randomHex(8)}`,
+        id: createComponentPropertyId(),
         name,
         type: 'VARIANT',
         defaultValue: variantOptions[0] ?? '',
@@ -546,7 +541,20 @@ async function renderNode<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
   tree: TreeNode,
-  parentId: string
+  parentId: string,
+  onNode?: RenderOptions['onNode']
+): Promise<SceneNode> {
+  const node = await renderNodeContent(services, graph, tree, parentId, onNode)
+  onNode?.(tree, node)
+  return node
+}
+
+async function renderNodeContent<Artwork>(
+  services: DesignJSXServices<Artwork>,
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  onNode?: RenderOptions['onNode']
 ): Promise<SceneNode> {
   if (tree.type === 'icon' || tree.type === 'svg')
     return renderArtworkNode(services, graph, tree, parentId)
@@ -562,7 +570,7 @@ async function renderNode<Artwork>(
   for (const child of tree.children) {
     if (typeof child === 'string') continue
     if (isTreeNode(child)) {
-      await renderNode(services, graph, child, node.id)
+      await renderNode(services, graph, child, node.id, onNode)
     }
   }
 

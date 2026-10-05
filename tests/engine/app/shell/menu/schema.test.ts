@@ -25,12 +25,12 @@ describe('APP_MENU_SCHEMA', () => {
   })
 
   test('exposes every menu-backed editor command to shared dispatch', () => {
-    const commandIds = actionItems(APP_MENU_SCHEMA.flatMap((group) => group.items)).flatMap(
-      (entry) => {
-        if ('type' in entry || !entry.command) return []
-        return [entry.command]
-      }
-    )
+    const commandIds = actionItems(
+      APP_MENU_SCHEMA.flatMap<AppMenuEntry>((group) => group.items)
+    ).flatMap((entry) => {
+      if ('type' in entry || !entry.command) return []
+      return [entry.command]
+    })
 
     expect(commandIds).toContain('selection.frameSelection')
     expect(commandIds).toContain('selection.toggleMask')
@@ -44,12 +44,13 @@ describe('APP_MENU_SCHEMA', () => {
   })
 
   test('marks route-neutral native actions for shell dispatch', () => {
-    const shellEntries = actionItems(APP_MENU_SCHEMA.flatMap((group) => group.items)).filter(
-      (entry) => !('type' in entry) && entry.handler === 'shell'
-    )
+    const shellEntries = actionItems(
+      APP_MENU_SCHEMA.flatMap<AppMenuEntry>((group) => group.items)
+    ).filter((entry) => !('type' in entry) && entry.handler === 'shell')
 
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
       'open-storage-workspace',
+      'view-design-issues',
       'theme-light',
       'theme-dark',
       'theme-auto',

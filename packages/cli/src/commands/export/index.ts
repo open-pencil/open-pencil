@@ -5,9 +5,10 @@ import { defineCommand } from 'citty'
 import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@open-pencil/core/io'
+import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 
-import { isAppMode, requireFile, rpc } from '#cli/app-client'
-import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
+import { isAppMode, requireFile, rpc } from '#cli/app/client'
+import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { ok, printError } from '#cli/format'
 import {
   loadDocument,
@@ -64,8 +65,37 @@ async function writeAndLog(path: string, content: string | Uint8Array) {
   console.log(ok(`Exported ${path} (${(size / 1024).toFixed(1)} KB)`))
 }
 
+/** The app addresses pages by ID, so look the `--page` name up in the target document. */
+async function appPageId(args: ExportArgs, pageName: string): Promise<string> {
+  const { documents } = await rpc<{ documents: AutomationDocumentSummary[] }>('list_documents')
+  const documentId = args['document-id']
+  const document = documents.find((doc) => (documentId ? doc.id === documentId : doc.active))
+  if (!document) {
+    printError(documentId ? `Document "${documentId}" not found.` : 'No active document.')
+    process.exit(1)
+  }
+  const page = document.pages.find((candidate) => candidate.name === pageName)
+  if (!page) {
+    const available = document.pages.map((candidate) => candidate.name).join(', ')
+    printError(`Page "${pageName}" not found. Available: ${available}`)
+    process.exit(1)
+  }
+  return page.id
+}
+
+async function appExportTarget(args: ExportArgs) {
+  const target = appTargetRPCArgs(args)
+  if (!args.page) return target
+  if (args.node || args['page-id']) {
+    printError(`--page and ${args.node ? '--node' : '--page-id'} cannot be used together.`)
+    process.exit(1)
+  }
+  target.page_id = await appPageId(args, args.page)
+  return target
+}
+
 async function exportViaApp(format: string, args: ExportArgs) {
-  const targetArgs = appTargetRPCArgs(args)
+  const targetArgs = await appExportTarget(args)
   if (format === 'SVG') {
     const result = await rpc<{ svg: string }>('tool', {
       ...targetArgs,
@@ -109,6 +139,8 @@ async function exportViaApp(format: string, args: ExportArgs) {
   const result = await rpc<{ base64: string }>('export', {
     ...targetArgs,
     nodeIds: args.node ? [args.node] : undefined,
+    // Without a node or a page the app exports the selection.
+    scope: !args.node && targetArgs.page_id ? 'page' : undefined,
     scale: Number(args.scale),
     format: format.toLowerCase()
   })

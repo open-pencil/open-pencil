@@ -4,6 +4,8 @@ import type { DesignDocument, DesignElement, DesignNode, DesignText } from '../t
 
 export interface SerializeHTMLOptions {
   style?: 'inline' | 'tailwind'
+  /** Custom properties declared in `@theme`; a `var()` naming one becomes its utility. */
+  themeVariables?: readonly string[]
 }
 
 const VOID_ELEMENTS = new Set([
@@ -58,10 +60,13 @@ function serializeStyle(node: DesignElement): string | undefined {
     .join('; ')
 }
 
-export function serializeTailwindClasses(node: DesignElement): string | undefined {
+export function serializeTailwindClasses(
+  node: DesignElement,
+  themeVariables: readonly string[] = []
+): string | undefined {
   const style = serializeStyle(node)
   if (!style) return undefined
-  const className = twirl(style)
+  const className = twirl(style, { theme: { variables: themeVariables } })
   return className.length > 0 ? className : undefined
 }
 
@@ -76,7 +81,10 @@ export function mergeClassNames(...values: Array<string | undefined>): string | 
 
 function serializeAttrs(node: DesignElement, options: SerializeHTMLOptions): string {
   const style = serializeStyle(node)
-  const tailwindClass = options.style === 'tailwind' ? serializeTailwindClasses(node) : undefined
+  const tailwindClass =
+    options.style === 'tailwind'
+      ? serializeTailwindClasses(node, options.themeVariables)
+      : undefined
   const attrsWithoutStyle = { ...node.attrs }
   delete attrsWithoutStyle.style
   const sourceAttrs = options.style === 'tailwind' && tailwindClass ? attrsWithoutStyle : node.attrs
@@ -106,5 +114,9 @@ export function serializeHTML(
   document: DesignDocument,
   options: SerializeHTMLOptions = {}
 ): string {
-  return document.children.map((node) => serializeNode(node, options)).join('')
+  const resolved: SerializeHTMLOptions = {
+    ...options,
+    themeVariables: options.themeVariables ?? document.tokens?.themeVariables()
+  }
+  return document.children.map((node) => serializeNode(node, resolved)).join('')
 }

@@ -7,13 +7,13 @@ import type {
   ComponentPropertyType,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph'
 import { buildVariantName, parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 import type { EditorContext } from '#core/editor/types'
-import { randomHex } from '#core/random'
 
 export type VariantConflict = {
   values: Record<string, string>
@@ -263,7 +263,7 @@ export function createVariantActions(ctx: EditorContext) {
 
     const before = captureVariantSnapshot(componentSetId)
     if (!before) return undefined
-    const id = `prop:${randomHex(8)}`
+    const id = createComponentPropertyId()
     const definition: ComponentPropertyDefinition = {
       id,
       name: normalizedName,

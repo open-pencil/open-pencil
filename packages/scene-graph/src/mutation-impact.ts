@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { SceneGraph } from './index'
 
 export interface SceneMutationImpact {
@@ -64,7 +66,5 @@ export async function collectSceneMutation<T>(
 }
 
 export function mutationLayoutScopeIds(impact: SceneMutationImpact): string[] {
-  return [
-    ...new Set([...impact.changedNodeIds, ...impact.previousParentIds, ...impact.currentParentIds])
-  ]
+  return uniq([...impact.changedNodeIds, ...impact.previousParentIds, ...impact.currentParentIds])
 }

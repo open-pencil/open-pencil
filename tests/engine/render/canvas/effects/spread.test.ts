@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { renderEffects } from '#core/canvas/shadows'
 
+import { asCanvas } from '../helpers'
 import { createMockCanvas, createMockRenderer } from './helpers'
 
 describe('Shadow spread support (Behavioral)', () => {
@@ -31,7 +30,7 @@ describe('Shadow spread support (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'behind')
 
     expect(canvas.drawRect).toHaveBeenCalled()
     expect(r.ltrb).toHaveBeenCalledWith(-4, -4, 104, 104)
@@ -59,7 +58,7 @@ describe('Shadow spread support (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, rect, true, 'behind')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, true, 'behind')
 
     expect(r.makeRRectWithSpread).toHaveBeenCalledWith(node, 4)
     expect(canvas.drawRRect).toHaveBeenCalled()
@@ -87,7 +86,7 @@ describe('Shadow spread support (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'front')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'front')
 
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(9, 9, 101, 101)
     expect(canvas.drawPath).toHaveBeenCalled()

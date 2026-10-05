@@ -5,8 +5,9 @@ import { parseArgs } from 'node:util'
 
 import { captureGraphOracle, figmaOracleScript } from '#visual/capture/scene'
 import { summarizePathDiagnostics } from '#visual/path-diagnostics'
-import { compareSceneOracle, type SceneOracleNode } from '#visual/scene-oracle'
+import { compareSceneOracle, SceneOracleNodeSchema } from '#visual/scene-oracle'
 import { $ } from 'bun'
+import * as v from 'valibot'
 
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { InstancePathDiagnostic } from '@open-pencil/fig/instance-overrides'
@@ -26,7 +27,14 @@ if (!values.file || !values.node || !values['figma-key'] || !values.output) {
 await mkdir(values.output, { recursive: true })
 const script = figmaOracleScript(values['figma-key'], values.node)
 const capture = await $`figma-use eval ${script} --json`.quiet().text()
-const oracle = JSON.parse(capture) as { fileKey: string; rootId: string; nodes: SceneOracleNode[] }
+const oracle = v.parse(
+  v.pipe(
+    v.string(),
+    v.parseJson(),
+    v.object({ fileKey: v.string(), rootId: v.string(), nodes: v.array(SceneOracleNodeSchema) })
+  ),
+  capture
+)
 if (
   oracle.fileKey !== values['figma-key'] ||
   oracle.rootId !== values.node ||

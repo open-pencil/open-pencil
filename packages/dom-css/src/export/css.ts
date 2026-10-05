@@ -1,4 +1,4 @@
-import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, Fill, Stroke } from '@open-pencil/scene-graph'
 import { colorToCSS, colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -17,12 +17,6 @@ export function fillToCSS(fill: Fill | undefined): string | undefined {
 export function strokeColorToCSS(stroke: Stroke | undefined): string | undefined {
   if (!stroke?.visible) return undefined
   return cssColor({ ...stroke.color, a: stroke.opacity })
-}
-
-export function strokeToCSS(stroke: Stroke | undefined): string | undefined {
-  const color = strokeColorToCSS(stroke)
-  if (!color || !stroke) return undefined
-  return `${stroke.weight}px solid ${color}`
 }
 
 function shadowToCSS(effect: Effect): string {
@@ -48,12 +42,5 @@ export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
       style.filter = `blur(${effect.radius}px)`
     if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = `blur(${effect.radius}px)`
   }
-  return style
-}
-
-export function sceneNodeSizeStyle(node: SceneNode): DesignStyleDeclaration {
-  const style: DesignStyleDeclaration = {}
-  if (node.width > 0) style.width = `${node.width}px`
-  if (node.height > 0) style.height = `${node.height}px`
   return style
 }

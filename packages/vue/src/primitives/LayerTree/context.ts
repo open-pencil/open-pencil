@@ -7,6 +7,8 @@ export interface LayerNode {
   name: string
   type: string
   layoutMode: string
+  /** Whether the layer is a slot frame holding a slot property's content. */
+  slot?: boolean
   visible: boolean
   locked: boolean
   children?: LayerNode[]

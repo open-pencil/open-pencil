@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { DownloadedFontCache } from '@open-pencil/core/text'
 
 import {
@@ -21,6 +23,21 @@ type FontCacheManifest = {
   version: 1
   entries: Partial<Record<string, FontCacheEntry>>
 }
+
+const CachedFontManifest = v.object({
+  version: v.literal(1),
+  entries: v.record(
+    v.string(),
+    v.object({
+      family: v.string(),
+      style: v.string(),
+      file: v.string(),
+      byteLength: v.number(),
+      sha256: v.string(),
+      updatedAt: v.number()
+    })
+  )
+}) satisfies v.GenericSchema<unknown, FontCacheManifest>
 
 export interface DownloadedFontCacheSummary {
   count: number
@@ -53,9 +70,7 @@ function hexDigest(data: ArrayBuffer) {
 }
 
 async function readManifest(): Promise<FontCacheManifest> {
-  const manifest = await readCacheJSON<Partial<FontCacheManifest>>(MANIFEST_PATH)
-  if (manifest?.version !== 1 || !manifest.entries) return EMPTY_MANIFEST
-  return { version: 1, entries: manifest.entries }
+  return (await readCacheJSON(MANIFEST_PATH, CachedFontManifest)) ?? EMPTY_MANIFEST
 }
 
 async function writeManifest(manifest: FontCacheManifest) {

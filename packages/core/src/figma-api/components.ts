@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type {
   ComponentPropertyReferenceField,
   ComponentPropertyDefinition,
@@ -8,16 +10,21 @@ import type {
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
-  removeComponentProperty
+  removeComponentProperty,
+  createComponentPropertyId
 } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
-import { randomHex } from '#core/random'
-
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
 import type { FigmaNodeProxy } from './proxy'
+import {
+  assertSlotSettings,
+  figmaSlotSettings,
+  mergeSlotSettings,
+  type FigmaSlotSettings
+} from './slots'
 
 type InstanceSwapPreferredValue = { type: 'COMPONENT' | 'COMPONENT_SET'; key: string }
 
@@ -28,6 +35,8 @@ interface FigmaComponentPropertyDefinition {
   defaultValue: string | boolean
   preferredValues?: InstanceSwapPreferredValue[]
   variantOptions?: string[]
+  description?: string
+  slotSettings?: FigmaSlotSettings
 }
 
 interface FigmaComponentProperty {
@@ -69,7 +78,7 @@ export function exposeInstanceSwap(
     )
   )
     throw new Error('Candidates must be COMPONENT or COMPONENT_SET nodes')
-  const candidateIds = [...new Set(candidateNodes.map((node) => node.id))]
+  const candidateIds = uniq(candidateNodes.map((node) => node.id))
   if (candidateIds.length !== candidateNodes.length) throw new Error('Candidates must be distinct')
   const host = findPropertyHost(graph, slotNodes[0].parentId)
   if (!host) throw new Error('Instance must be nested inside a COMPONENT or COMPONENT_SET')
@@ -78,7 +87,7 @@ export function exposeInstanceSwap(
   if (!slotNodes.every((node) => findPropertyHost(graph, node.parentId)?.id === host.id))
     throw new Error('All instances must belong to the same component or component set')
   const definition: ComponentPropertyDefinition = {
-    id: `prop:${randomHex(8)}`,
+    id: createComponentPropertyId(),
     name,
     type: 'INSTANCE_SWAP',
     defaultValue: slotNodes[0].componentId ?? candidateIds[0],
@@ -140,8 +149,16 @@ function propertyMetadata(
   internals: NodeProxyInternals,
   definition: ComponentPropertyDefinition,
   includeVariantOptions: boolean
-): Pick<FigmaComponentPropertyDefinition, 'preferredValues' | 'variantOptions'> {
-  const metadata: Pick<FigmaComponentPropertyDefinition, 'preferredValues' | 'variantOptions'> = {}
+): Pick<
+  FigmaComponentPropertyDefinition,
+  'preferredValues' | 'variantOptions' | 'description' | 'slotSettings'
+> {
+  const metadata: Pick<
+    FigmaComponentPropertyDefinition,
+    'preferredValues' | 'variantOptions' | 'description' | 'slotSettings'
+  > = {}
+  if (definition.description) metadata.description = definition.description
+  if (definition.slotSettings) metadata.slotSettings = figmaSlotSettings(definition.slotSettings)
   if (definition.preferredValues) {
     metadata.preferredValues = preferredValues(graph(target, internals), definition.preferredValues)
   }
@@ -219,6 +236,8 @@ function editPropertyDefinitions(
     name?: string
     defaultValue?: string | boolean
     preferredValues?: InstanceSwapPreferredValue[]
+    description?: string
+    slotSettings?: FigmaSlotSettings
   }
 ): string {
   const node = raw(target, internals)
@@ -245,6 +264,10 @@ function editPropertyDefinitions(
   if (changes.preferredValues) {
     updated.preferredValues = changes.preferredValues.map((value) => value.key)
   }
+  if (changes.description !== undefined) updated.description = changes.description
+  assertSlotSettings(definition.type, changes.slotSettings)
+  if (changes.slotSettings)
+    updated.slotSettings = mergeSlotSettings(definition.slotSettings, changes.slotSettings)
   updateNode(target, internals, {
     componentPropertyDefinitions: node.componentPropertyDefinitions.map((item) =>
       item.id === definition.id ? updated : item
@@ -256,6 +279,26 @@ function propertyReferenceField(field: string): ComponentPropertyReferenceField 
   if (field === 'mainComponent') return 'INSTANCE_SWAP'
   if (field === 'slotContentId') return 'SLOT_CONTENT'
   return field === 'characters' ? 'TEXT' : 'VISIBLE'
+}
+
+/**
+ * Definitions a layer's references can name: those of the component it is part of, or of the
+ * instance's component when it is a layer of an instance.
+ */
+function referableDefinitions(g: SceneGraph, node: SceneNode): ComponentPropertyDefinition[] {
+  let owner = node.parentId ? g.getNode(node.parentId) : undefined
+  while (owner && owner.type !== 'CANVAS') {
+    if (owner.type === 'INSTANCE') return sharedComponentPropertyDefinitions(g, owner)
+    if (owner.type === 'COMPONENT') {
+      const set = owner.parentId ? g.getNode(owner.parentId) : undefined
+      return [
+        ...owner.componentPropertyDefinitions,
+        ...(set?.type === 'COMPONENT_SET' ? set.componentPropertyDefinitions : [])
+      ]
+    }
+    owner = owner.parentId ? g.getNode(owner.parentId) : undefined
+  }
+  return []
 }
 
 /** Figma's names: `slotContentId` is what a slot frame reports for its slot property. */
@@ -302,11 +345,16 @@ export function installComponentPropertyAccessors(
           node.type !== 'TEXT'
         )
           return null
+        // References name properties by key, `Name#id`, as componentPropertyDefinitions does.
+        const definitions = referableDefinitions(graph(this, internals), node)
         return Object.fromEntries(
-          node.componentPropertyReferences.map((reference) => [
-            propertyReferenceName(reference.field),
-            reference.propertyId
-          ])
+          node.componentPropertyReferences.map((reference) => {
+            const definition = definitions.find((item) => item.id === reference.propertyId)
+            return [
+              propertyReferenceName(reference.field),
+              definition ? propertyName(definition) : reference.propertyId
+            ]
+          })
         )
       },
       set(this: ProxyThis, value: Record<string, string> | null) {
@@ -314,9 +362,11 @@ export function installComponentPropertyAccessors(
           updateNode(this, internals, { componentPropertyReferences: [] })
           return
         }
+        const definitions = referableDefinitions(graph(this, internals), raw(this, internals))
         updateNode(this, internals, {
-          componentPropertyReferences: Object.entries(value).map(([field, propertyId]) => ({
-            propertyId,
+          componentPropertyReferences: Object.entries(value).map(([field, key]) => ({
+            propertyId:
+              definitions.find((definition) => propertyName(definition) === key)?.id ?? key,
             field: propertyReferenceField(field)
           }))
         })
@@ -388,13 +438,17 @@ export function installComponentPropertyAccessors(
         name: string,
         type: ComponentPropertyType,
         defaultValue: string | boolean,
-        options?: { preferredValues?: InstanceSwapPreferredValue[] }
+        options?: {
+          preferredValues?: InstanceSwapPreferredValue[]
+          description?: string
+          slotSettings?: FigmaSlotSettings
+        }
       ) {
         const node = raw(this, internals)
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('addComponentProperty() can only be called on components')
         const definition: ComponentPropertyDefinition = {
-          id: `prop:${randomHex(8)}`,
+          id: createComponentPropertyId(),
           name: name.trim(),
           type,
           defaultValue:
@@ -404,6 +458,12 @@ export function installComponentPropertyAccessors(
         }
         if (options?.preferredValues) {
           definition.preferredValues = options.preferredValues.map((value) => value.key)
+        }
+        if (options?.description !== undefined) definition.description = options.description
+        assertSlotSettings(type, options?.slotSettings)
+        if (type === 'SLOT') {
+          definition.preferredValues ??= []
+          definition.slotSettings = mergeSlotSettings(undefined, options?.slotSettings ?? {})
         }
         updateNode(this, internals, {
           componentPropertyDefinitions: [...node.componentPropertyDefinitions, definition]
@@ -415,7 +475,13 @@ export function installComponentPropertyAccessors(
       value(
         this: ProxyThis,
         name: string,
-        changes: { name?: string; defaultValue?: string | boolean }
+        changes: {
+          name?: string
+          defaultValue?: string | boolean
+          preferredValues?: InstanceSwapPreferredValue[]
+          description?: string
+          slotSettings?: FigmaSlotSettings
+        }
       ) {
         return editPropertyDefinitions(this, internals, name, changes)
       }
@@ -466,7 +532,7 @@ export function combineComponentsAsVariants(
   for (const component of components) graph.reparentNode(component.id, componentSet.id)
   if (index !== undefined) graph.reorderChild(componentSet.id, parentId, index)
 
-  const derived = deriveSlashVariantProperties(components, () => `prop:${randomHex(8)}`)
+  const derived = deriveSlashVariantProperties(components, createComponentPropertyId)
   if (derived) {
     for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
     graph.updateNode(componentSet.id, { componentPropertyDefinitions: derived.definitions })

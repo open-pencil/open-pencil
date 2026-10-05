@@ -66,7 +66,7 @@ describe('fig ranged thumbnail extraction', () => {
     ])
     const bytes = zipSync({ 'thumbnail.png': png })
     const name = new TextEncoder().encode('thumbnail.png')
-    const nameOffset = bytes.findIndex((byte, index) =>
+    const nameOffset = bytes.findIndex((_byte, index) =>
       name.every((nameByte, nameIndex) => bytes[index + nameIndex] === nameByte)
     )
     const headerOffset = nameOffset - 30

@@ -157,7 +157,7 @@ describe('parsePenFile — text without a width', () => {
     const graph = parseLayoutDocument([
       { id: 'button', name: 'button', type: 'frame', padding: [12, 24], children: [text] }
     ])
-    const nodes = graph.getAllNodes()
+    const nodes = [...graph.getAllNodes()]
     return {
       button: nodes.find((node) => node.type === 'FRAME' && node.name === 'button'),
       label: nodes.find((node) => node.type === 'TEXT')
@@ -214,7 +214,7 @@ describe('parsePenFile — text without a width', () => {
         ]
       } satisfies PenDocument)
     )
-    expect(graph.getAllNodes().find((node) => node.type === 'TEXT')?.width).toBe(0)
+    expect([...graph.getAllNodes()].find((node) => node.type === 'TEXT')?.width).toBe(0)
   })
 
   test('keeps an explicit zero width', () => {
@@ -233,6 +233,6 @@ describe('parsePenFile — text without a width', () => {
         ]
       } satisfies PenDocument)
     )
-    expect(graph.getAllNodes().find((node) => node.type === 'TEXT')?.width).toBe(0)
+    expect([...graph.getAllNodes()].find((node) => node.type === 'TEXT')?.width).toBe(0)
   })
 })

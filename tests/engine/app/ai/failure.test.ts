@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { APICallError } from 'ai'
+import { APICallError, StreamProviderError } from 'ai'
 
 import {
   classifyAIChatError,
@@ -44,6 +44,19 @@ describe('AI chat failures', () => {
       statusCode: 404
     })
     expect(classifyAIChatError(apiError(429, 'Too many requests'))).toMatchObject({
+      reason: 'rate-limit',
+      statusCode: 429,
+      retryable: true
+    })
+  })
+
+  test('classifies provider errors reported after the stream started', () => {
+    const streamError = new StreamProviderError({
+      message: 'Too many requests',
+      statusCode: 429,
+      isRetryable: true
+    })
+    expect(classifyAIChatError(streamError)).toMatchObject({
       reason: 'rate-limit',
       statusCode: 429,
       retryable: true
