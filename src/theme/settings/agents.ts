@@ -10,8 +10,6 @@ export default {
     item: 'flex items-center gap-2 text-xs text-surface',
     readyIcon: 'size-3.5 shrink-0 text-success',
     missingIcon: 'size-3.5 shrink-0 text-muted',
-    actions: 'flex items-center gap-2',
-    command:
-      'flex items-center justify-between gap-2 rounded bg-input px-2.5 py-1.5 font-mono text-[11px] text-surface'
+    actions: 'flex items-center gap-2'
   }
 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
@@ -9,6 +8,7 @@ import { piSetupView, type CompanionCheck, type PiSetupState } from '@/app/ai/ag
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import { NODE_DOWNLOAD_URL } from '@/constants'
 import theme from '@/theme/settings/agents'
 
@@ -20,7 +20,6 @@ const emit = defineEmits<{ check: []; installCompanion: []; installBridge: [] }>
 const { ai, common } = useI18n()
 const styles = tv(theme)()
 const setupProblemMessage = useSetupProblemMessage()
-const { copy, copied, text } = useClipboard({ copiedDuring: 1500 })
 
 const view = computed(() => piSetupView(setup))
 const problemMessage = computed(() => setupProblemMessage(view.value.problem))
@@ -38,10 +37,6 @@ function actionLabel(
   if (!check.action) return undefined
   if (check.installing) return ai.value.aiSetupAgentInstalling
   return check.action === 'update' ? labels.update : labels.install
-}
-
-function copiedLabel(value: string): string {
-  return copied.value && text.value === value ? common.value.copied : common.value.copy
 }
 </script>
 
@@ -95,10 +90,13 @@ function copiedLabel(value: string): string {
 
   <template v-if="view.manualCommands.length">
     <p :class="styles.help()">{{ ai.aiSetupAgentInstall }}</p>
-    <div v-for="command in view.manualCommands" :key="command" :class="styles.command()">
-      <code>{{ command }}</code>
-      <AppButton size="xs" @click="copy(command)">{{ copiedLabel(command) }}</AppButton>
-    </div>
+    <AppCopyField
+      v-for="command in view.manualCommands"
+      :key="command"
+      :value="command"
+      :copy-label="common.copy"
+      :copied-label="common.copied"
+    />
   </template>
 
   <p :class="styles.help()">{{ ai.aiSetupPiSignIn }}</p>

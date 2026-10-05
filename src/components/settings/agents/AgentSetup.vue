@@ -11,6 +11,7 @@ import { agentSetupView, type AgentSetupState } from '@/app/ai/agents/setup'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import { NODE_DOWNLOAD_URL } from '@/constants'
 import theme from '@/theme/settings/agents'
 
@@ -22,7 +23,7 @@ const emit = defineEmits<{ check: []; installAgent: []; installBridge: [] }>()
 const { ai, common } = useI18n()
 const styles = tv(theme)()
 const setupProblemMessage = useSetupProblemMessage()
-const { copy, copied, text } = useClipboard({ copiedDuring: 1500 })
+const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 
 const detected = computed(() => setup.detected)
 const prompt = computed(() => codingAgentSetupPrompt(agent.id))
@@ -49,10 +50,6 @@ function agentState(): string {
   if (detected.value?.status === 'available') return ai.value.aiSetupAgentInstalled
   if (detected.value?.status === 'needs-adapter') return ai.value.aiSetupAgentNeedsAdapter
   return ai.value.aiSetupAgentNotFound
-}
-
-function copiedLabel(value: string, label: string): string {
-  return copied.value && text.value === value ? common.value.copied : label
 }
 </script>
 
@@ -98,28 +95,26 @@ function copiedLabel(value: string, label: string): string {
 
   <template v-if="view.manualAgentCommand">
     <p :class="styles.help()">{{ ai.aiSetupAgentInstall }}</p>
-    <div :class="styles.command()">
-      <code>{{ view.manualAgentCommand }}</code>
-      <AppButton size="xs" @click="copy(view.manualAgentCommand)">
-        {{ copiedLabel(view.manualAgentCommand, common.copy) }}
-      </AppButton>
-    </div>
+    <AppCopyField
+      :value="view.manualAgentCommand"
+      :copy-label="common.copy"
+      :copied-label="common.copied"
+    />
   </template>
   <template v-if="view.manualBridgeCommand">
     <p :class="styles.help()">{{ ai.aiSetupAgentMCPInstall }}</p>
-    <div :class="styles.command()">
-      <code>{{ view.manualBridgeCommand }}</code>
-      <AppButton size="xs" @click="copy(view.manualBridgeCommand)">
-        {{ copiedLabel(view.manualBridgeCommand, common.copy) }}
-      </AppButton>
-    </div>
+    <AppCopyField
+      :value="view.manualBridgeCommand"
+      :copy-label="common.copy"
+      :copied-label="common.copied"
+    />
   </template>
 
   <p :class="styles.help()">{{ ai.aiSetupAgentPromptHint({ agent: agent.name }) }}</p>
   <div :class="styles.actions()">
     <AppButton size="xs" variant="outline" @click="copy(prompt)">
       <template #leading><icon-lucide-clipboard-copy class="size-3" /></template>
-      {{ copiedLabel(prompt, ai.aiSetupAgentCopyPrompt) }}
+      {{ copied ? common.copied : ai.aiSetupAgentCopyPrompt }}
     </AppButton>
     <AppButton
       v-if="setup.supported"
