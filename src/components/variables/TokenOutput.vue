@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computedAsync } from '@vueuse/core'
-import { ref } from 'vue'
+import { tv } from 'tailwind-variants'
+import { computed, ref } from 'vue'
 
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
 import { useEditor, useI18n, useSceneComputed } from '@open-pencil/vue'
@@ -8,11 +9,17 @@ import { useEditor, useI18n, useSceneComputed } from '@open-pencil/vue'
 import CodeViewer from '@/components/code-editor/CodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import tokensPanelTheme from '@/theme/tokens-panel'
 
-const { collectionId } = defineProps<{ collectionId: string }>()
+const { collectionId, layout = 'side' } = defineProps<{
+  collectionId: string
+  /** `full` fills the panel behind a back button on narrow screens. */
+  layout?: 'side' | 'full'
+}>()
 const emit = defineEmits<{ copy: [format: TokenStylesheetFormat] }>()
 
 const { variables } = useI18n()
+const ui = computed(() => tv(tokensPanelTheme)({ layout }))
 const editor = useEditor()
 const format = ref<TokenStylesheetFormat>('css')
 const formats = [
@@ -41,9 +48,11 @@ function setFormat(value: string) {
 </script>
 
 <template>
-  <section class="flex h-56 shrink-0 flex-col border-t border-border" data-test-id="token-output">
+  <section :class="ui.output()" data-test-id="token-output">
     <div class="flex items-center gap-2 px-4 py-1.5">
-      <span class="text-[11px] font-semibold text-muted">{{ variables.stylesheet }}</span>
+      <span v-if="layout === 'side'" class="text-[11px] font-semibold text-muted">
+        {{ variables.stylesheet }}
+      </span>
       <SegmentedControl
         :model-value="format"
         :options="formats"
@@ -63,6 +72,7 @@ function setFormat(value: string) {
       :code="stylesheet"
       language="css"
       :label="variables.stylesheet"
+      :fill="layout === 'full'"
     />
   </section>
 </template>

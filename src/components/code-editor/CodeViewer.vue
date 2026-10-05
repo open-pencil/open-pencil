@@ -10,16 +10,24 @@ import { EditorView, highlightSpecialChars, keymap } from '@codemirror/view'
 import { useTemplateRef, watch } from 'vue'
 
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
-import { codeEditorTheme, codeViewerTheme } from '@/theme/code/editor'
+import { codeEditorTheme, codeViewerFillTheme, codeViewerTheme } from '@/theme/code/editor'
 
 export type CodeViewerLanguage = 'json' | 'design-jsx' | 'javascript' | 'css'
 
-const { code, language, label, original } = defineProps<{
+const {
+  code,
+  language,
+  label,
+  original,
+  fill = false
+} = defineProps<{
   code: string
   language: CodeViewerLanguage
   label: string
   /** Shows `code` as a unified diff against this text. Read at mount. */
   original?: string
+  /** Take the parent's height instead of the 16rem cap. Read at mount. */
+  fill?: boolean
 }>()
 
 function languageExtension(language: CodeViewerLanguage): Extension {
@@ -31,7 +39,8 @@ function languageExtension(language: CodeViewerLanguage): Extension {
 const view = useCodeMirror(useTemplateRef('host'), {
   doc: () => code,
   label: () => label,
-  theme: (dark) => [codeEditorTheme(dark), codeViewerTheme],
+  // Earlier extensions win in CodeMirror, so the fill theme goes before the 16rem cap.
+  theme: (dark) => [fill ? codeViewerFillTheme : [], codeEditorTheme(dark), codeViewerTheme],
   extensions: [
     EditorState.readOnly.of(true),
     highlightSpecialChars(),
@@ -67,6 +76,7 @@ watch(
   <div
     ref="host"
     data-slot="code-viewer"
-    class="max-h-64 overflow-hidden rounded border border-border [&_.cm-scroller]:scrollbar-thin"
+    :data-fill="fill || undefined"
+    class="max-h-64 overflow-hidden rounded border border-border data-[fill]:max-h-none [&_.cm-scroller]:scrollbar-thin"
   />
 </template>

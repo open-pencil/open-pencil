@@ -144,7 +144,7 @@ provideEditor(editor)
 
 <template>
   <div
-    class="flex h-[640px] w-[1040px] flex-col overflow-hidden rounded-lg border border-border bg-panel"
+    class="flex h-[640px] w-[1040px] max-w-full flex-col overflow-hidden rounded-lg border border-border bg-panel max-md:h-dvh max-md:w-full max-md:rounded-none max-md:border-0"
   >
     <TokensPanel />
   </div>

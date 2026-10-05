@@ -27,7 +27,16 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
-const { row, collection } = defineProps<{ row: TokenRow; collection: VariableCollection }>()
+const {
+  row,
+  collection,
+  layout = 'side'
+} = defineProps<{
+  row: TokenRow
+  collection: VariableCollection
+  /** `full` fills the panel behind a back button on narrow screens. */
+  layout?: 'side' | 'full'
+}>()
 const emit = defineEmits<{
   rename: [name: string]
   updateToken: [patch: Partial<VariableTokenFields>]
@@ -35,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const { variables } = useI18n()
-const ui = tv(tokensPanelTheme)()
+const ui = computed(() => tv(tokensPanelTheme)({ layout }))
 const variable = computed(() => row.variable)
 
 const SCOPE_MESSAGES: Partial<Record<VariableScope, () => string>> = {

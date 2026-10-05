@@ -29,6 +29,7 @@ export const variablesMessageDefaults = {
   condition: 'Condition',
   conditionHint: 'A selector, or a @media, @supports or @container query.',
   stylesheet: 'Stylesheet',
+  mode: 'Mode',
   scopeAllFills: 'All fills',
   scopeFrameFill: 'Frame fill',
   scopeShapeFill: 'Shape fill',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 
 import type { VariableCollection } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
@@ -10,11 +10,15 @@ import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
-const { collection } = defineProps<{ collection: VariableCollection }>()
+const { collection, layout = 'side' } = defineProps<{
+  collection: VariableCollection
+  /** `full` fills the panel behind a back button on narrow screens. */
+  layout?: 'side' | 'full'
+}>()
 const emit = defineEmits<{ setCondition: [modeId: string, condition: string] }>()
 
 const { variables } = useI18n()
-const ui = tv(tokensPanelTheme)()
+const ui = computed(() => tv(tokensPanelTheme)({ layout }))
 
 /** Conditions edit a draft and commit on change, like the token fields. */
 const conditions = reactive<Record<string, string>>({})
