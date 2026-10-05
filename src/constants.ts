@@ -69,6 +69,10 @@ export const TRYSTERO_APP_ID = 'openpencil'
 export const ROOM_ID_LENGTH = 32
 export const ROOM_ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
+/** The app's release version; tests and tools that run app code without the Vite define get a placeholder. */
+export const APP_VERSION =
+  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
+
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 /** Latest desktop release, for features that need the desktop app. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'

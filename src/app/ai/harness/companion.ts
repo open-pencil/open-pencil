@@ -1,5 +1,4 @@
-const APP_VERSION =
-  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
+import { APP_VERSION } from '@/constants'
 
 /** The Harness companion runs Pi; it is installed separately and must match the app version. */
 export const HARNESS_EXECUTABLE = 'openpencil-harness'
