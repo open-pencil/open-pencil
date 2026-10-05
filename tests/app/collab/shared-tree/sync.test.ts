@@ -1,4 +1,4 @@
-import { describe, expect, setSystemTime, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
 import type * as Y from 'yjs'
 
@@ -228,33 +228,28 @@ describe('collab layer tree', () => {
   })
 
   test("a joiner who edits before the room reaches them keeps the sharer's root", async () => {
-    try {
-      await withSyncedStores(
-        async ({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
-          const hostPages = hostStore.graph.getPages().map((page) => page.id)
-          setSystemTime(new Date(1_000))
-          hostSync.syncAllNodesToYjs()
-          setSystemTime(new Date(2_000))
-          const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
-          peerStore.graph.createNode('RECTANGLE', peerOwnPage, { id: 'rect:1' })
-          await settleGraphSync()
+    await withSyncedStores(
+      async ({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
+        const hostPages = hostStore.graph.getPages().map((page) => page.id)
+        const peerOwnPage = expectDefined(peerStore.graph.getPages()[0], 'peer page').id
+        // The joiner's claim comes first, so neither order nor clocks favour the sharer.
+        peerStore.graph.createNode('RECTANGLE', peerOwnPage, { id: 'rect:1' })
+        await settleGraphSync()
+        hostSync.syncAllNodesToYjs()
 
-          const disconnect = connectYDocs(hostDoc, peerDoc)
-          try {
-            await settleGraphSync()
-            for (const graph of [hostStore.graph, peerStore.graph]) {
-              expect(graph.rootId).toBe(hostStore.graph.rootId)
-              expect(graph.getPages().map((page) => page.id)).toEqual(hostPages)
-            }
-          } finally {
-            disconnect()
+        const disconnect = connectYDocs(hostDoc, peerDoc)
+        try {
+          await settleGraphSync()
+          for (const graph of [hostStore.graph, peerStore.graph]) {
+            expect(graph.rootId).toBe(hostStore.graph.rootId)
+            expect(graph.getPages().map((page) => page.id)).toEqual(hostPages)
           }
-        },
-        { bindGraphEvents: true, connectImmediately: false }
-      )
-    } finally {
-      setSystemTime()
-    }
+        } finally {
+          disconnect()
+        }
+      },
+      { bindGraphEvents: true, connectImmediately: false }
+    )
   })
 
   test('moving a frame to another page records that page for the layers inside it', async () => {

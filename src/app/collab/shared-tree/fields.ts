@@ -64,28 +64,44 @@ export function readPage(ynode: Y.Map<unknown>): string | undefined {
 }
 
 /**
- * The room's root: the earliest of the claims `meta` records as `root:<id>`, each the time a peer
- * shared that root, ties broken by id. A guest who edits before the room reaches them claims it
- * too, so the earliest claim, normally the sharer's, keeps every peer on the same root. Each claim
- * is its own key, so concurrent claims all survive.
+ * How a peer claimed a room's root: `shared` by Share or by converting a saved room, `edited` by
+ * the first edit in a room nobody had shared. Earlier kinds outrank later ones.
+ */
+export const ROOT_CLAIM_KINDS = ['shared', 'edited'] as const
+export type RootClaimKind = (typeof ROOT_CLAIM_KINDS)[number]
+
+const rootClaimSchema = v.picklist(ROOT_CLAIM_KINDS)
+
+/**
+ * The room's root, from the claims `meta` records as `root:<id>`: a shared root outranks one
+ * claimed by an edit, and the lower id breaks a tie. A guest who edits before the room reaches
+ * them claims it by edit, so the sharer's root still wins on every peer whatever their clocks say.
+ * Each claim is its own key, so concurrent claims all survive.
  */
 export function readRoot(meta: YMeta): string | undefined {
-  let root: { id: string; claimedAt: number } | undefined
+  let root: { id: string; rank: number } | undefined
   for (const [key, value] of meta.entries()) {
     if (!key.startsWith(ROOT_CLAIM_PREFIX)) continue
     const id = key.slice(ROOT_CLAIM_PREFIX.length)
-    const claimedAt = readCounter(value)
-    if (claimedAt === undefined || id.length === 0) continue
-    if (!root || claimedAt < root.claimedAt || (claimedAt === root.claimedAt && id < root.id)) {
-      root = { id, claimedAt }
-    }
+    const kind = v.safeParse(rootClaimSchema, value)
+    if (!kind.success || id.length === 0) continue
+    const rank = ROOT_CLAIM_KINDS.indexOf(kind.output)
+    if (!root || rank < root.rank || (rank === root.rank && id < root.id)) root = { id, rank }
   }
   return root?.id
 }
 
-export function claimRoot(meta: YMeta, rootId: string, claimedAt: number): void {
+/** Records a claim on the room's root, keeping a stronger claim on the same root. */
+export function claimRoot(meta: YMeta, rootId: string, kind: RootClaimKind): void {
   const key = ROOT_CLAIM_PREFIX + rootId
-  if (!meta.has(key)) meta.set(key, claimedAt)
+  const current = v.safeParse(rootClaimSchema, meta.get(key))
+  if (
+    current.success &&
+    ROOT_CLAIM_KINDS.indexOf(current.output) <= ROOT_CLAIM_KINDS.indexOf(kind)
+  ) {
+    return
+  }
+  meta.set(key, kind)
 }
 
 export function writeParentEntry(ynode: Y.Map<unknown>, parentId: string, counter: number): void {

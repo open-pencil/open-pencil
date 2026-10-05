@@ -153,5 +153,5 @@ function claimLegacyRoot(ynodes: YNodes, meta: YMeta, roots: ReadonlySet<string>
     .map((id) => ({ id, children: legacyChildIdsOf(ynodes.get(id)).length }))
     .sort((a, b) => b.children - a.children)
   const root = ranked.at(0)
-  if (root) claimRoot(meta, root.id, 0)
+  if (root) claimRoot(meta, root.id, 'shared')
 }

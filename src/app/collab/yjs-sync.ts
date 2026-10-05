@@ -12,6 +12,7 @@ import {
   writePage,
   writeParentEntry,
   writeRootEntries,
+  type RootClaimKind,
   type YNodes
 } from '@/app/collab/shared-tree/fields'
 import { migrateLegacyLayers, TREE_MIGRATION_ORIGIN } from '@/app/collab/shared-tree/migration'
@@ -208,7 +209,7 @@ export function createYjsGraphSync({
     const tree = sharedTreeOf(ydoc)
     // The first edit in a room nobody has shared yet shares the whole document, as Share does.
     if (tree.rootId === null && readRoot(ydoc.getMap('meta')) === undefined) {
-      syncAllNodesToYjs()
+      shareDocument('edited')
       return
     }
     setSuppressYjsEvents(true)
@@ -242,11 +243,16 @@ export function createYjsGraphSync({
     syncLocalEdit(edit)
   }
 
-  /**
-   * Shares this peer's whole document: every layer, its parent with counter 0, its order, and
-   * its page, with its root as the room's.
-   */
+  /** Shares this peer's whole document, as Share does. */
   function syncAllNodesToYjs() {
+    shareDocument('shared')
+  }
+
+  /**
+   * Writes this peer's whole document: every layer, its parent with counter 0, its order, and
+   * its page, and claims the room's root with its own.
+   */
+  function shareDocument(claim: RootClaimKind) {
     const graph = getStore().graph
     const ydoc = getYdoc()
     const ynodes = getYnodes()
@@ -270,7 +276,7 @@ export function createYjsGraphSync({
             writeOrderKey(child, keys[index])
           })
         }
-        claimRoot(ydoc.getMap('meta'), graph.rootId, Date.now())
+        claimRoot(ydoc.getMap('meta'), graph.rootId, claim)
         markTreeFormat(ydoc.getMap('meta'))
       })
       recordLocalLayers(sharedTreeOf(ydoc), ynodes, ydoc.getMap('meta'), ynodes.keys())
