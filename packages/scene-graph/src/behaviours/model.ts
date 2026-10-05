@@ -160,3 +160,27 @@ export function guessInteractionStates(
   }
   return states
 }
+
+/**
+ * The behaviour with every component property id it binds renamed by `rename`, for formats that
+ * give properties new ids on write, such as `.fig` with its GUIDs.
+ */
+export function renameBehaviourProperties(
+  behaviour: Behaviour,
+  rename: (propertyId: string) => string
+): Behaviour {
+  const mapValues = <T>(record: Record<string, T>, change: (value: T) => T) =>
+    Object.fromEntries(Object.entries(record).map(([key, value]) => [key, change(value)]))
+  return {
+    ...behaviour,
+    booleans: mapValues(behaviour.booleans, (binding) => ({
+      ...binding,
+      propertyId: rename(binding.propertyId)
+    })),
+    texts: mapValues(behaviour.texts, (binding) => ({ propertyId: rename(binding.propertyId) })),
+    parts: mapValues(behaviour.parts, rename),
+    ...(behaviour.states
+      ? { states: { ...behaviour.states, propertyId: rename(behaviour.states.propertyId) } }
+      : {})
+  }
+}
