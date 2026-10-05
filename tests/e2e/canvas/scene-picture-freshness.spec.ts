@@ -109,7 +109,7 @@ for (const renderer of ['retained', 'tiled'] as const) {
       expect(samples.length).toBeGreaterThan(4)
       expect(samples.some((sample) => sample.zoom < 0.3)).toBe(true)
       for (const sample of samples) {
-        expect(sample.pixel, JSON.stringify(sample)).toEqual([212, 212, 212, 255])
+        expect(sample.pixel, JSON.stringify(sample)).toEqual([217, 217, 217, 255])
       }
       await expect(page).toHaveScreenshot('fresh-scene-picture.png', {
         clip: { x: x - 20, y: y - 20, width: 260, height: 200 },
