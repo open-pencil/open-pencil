@@ -17,14 +17,13 @@ import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedb
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogBody, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
+import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import theme from '@/theme/settings/ai-setup/flow'
 
 import AISetupAccess from './AISetupAccess.vue'
 import AISetupConnection from './AISetupConnection.vue'
 import AISetupReview from './AISetupReview.vue'
 import AISetupRoles from './AISetupRoles.vue'
-import SetupChoice from './SetupChoice.vue'
 
 const { entry, agentsAvailable = IS_TAURI } = defineProps<{
   entry: AISetupEntry
@@ -129,18 +128,14 @@ async function finish(): Promise<void> {
       </template>
 
       <template v-else-if="step === 'goals'">
-        <SetupChoice
+        <AppCheckboxCard
           v-for="goal in goals"
           :key="goal.id"
           :label="goal.label"
           :description="goal.description"
-        >
-          <AppCheckbox
-            :model-value="answers.goals.includes(goal.id)"
-            :ariaLabel="goal.label"
-            @update:model-value="toggleGoal(goal.id, $event)"
-          />
-        </SetupChoice>
+          :model-value="answers.goals.includes(goal.id)"
+          @update:model-value="toggleGoal(goal.id, $event)"
+        />
       </template>
 
       <template v-else-if="step === 'access'">

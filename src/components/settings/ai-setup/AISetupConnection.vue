@@ -28,10 +28,8 @@ import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSet
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
+import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import theme from '@/theme/settings/ai-setup/flow'
-
-import SetupChoice from './SetupChoice.vue'
 
 const {
   providerID,
@@ -227,13 +225,11 @@ const keyHint = computed(() => {
             @update:model-value="emit('update', { customModelID: String($event) })"
           />
         </ProviderSettingsField>
-        <SetupChoice :label="ai.aiSetupServerVision">
-          <AppCheckbox
-            :model-value="serverVision"
-            :ariaLabel="ai.aiSetupServerVision"
-            @update:model-value="emit('serverVision', $event)"
-          />
-        </SetupChoice>
+        <AppCheckboxCard
+          :label="ai.aiSetupServerVision"
+          :model-value="serverVision"
+          @update:model-value="emit('serverVision', $event)"
+        />
       </template>
       <ProviderSettingsKeyField
         v-if="!state.account"

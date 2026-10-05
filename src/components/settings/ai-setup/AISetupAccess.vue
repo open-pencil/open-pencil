@@ -16,11 +16,9 @@ import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
+import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import { DESKTOP_DOWNLOAD_URL } from '@/constants'
 import theme from '@/theme/settings/ai-setup/flow'
-
-import SetupChoice from './SetupChoice.vue'
 
 const { agentsAvailable } = defineProps<{ agentsAvailable: boolean }>()
 const access = defineModel<OnboardingAccess[]>({ required: true })
@@ -42,18 +40,15 @@ function toggle(providerID: OnboardingAccess, checked: boolean): void {
     <h3 :class="styles.groupHeading()">{{ ai.aiSetupAccessAgents }}</h3>
     <template v-if="agentsAvailable">
       <p :class="styles.help()">{{ ai.aiSetupAccessAgentsDescription }}</p>
-      <SetupChoice
+      <AppCheckboxCard
         v-for="agent in ONBOARDING_AGENTS"
         :key="agent"
         :label="modelProviderName(agent)"
+        :model-value="access.includes(agent)"
+        @update:model-value="toggle(agent, $event)"
       >
-        <AppCheckbox
-          :model-value="access.includes(agent)"
-          :ariaLabel="modelProviderName(agent)"
-          @update:model-value="toggle(agent, $event)"
-        />
         <template #icon><ProviderLogo :provider="agent" /></template>
-      </SetupChoice>
+      </AppCheckboxCard>
     </template>
     <AppAlert v-else :heading="ai.aiSetupAccessAgentsDesktop">
       <template #actions>
@@ -63,47 +58,41 @@ function toggle(providerID: OnboardingAccess, checked: boolean): void {
   </section>
   <section :class="styles.group()">
     <h3 :class="styles.groupHeading()">{{ ai.aiSetupAccessAPI }}</h3>
-    <SetupChoice
+    <AppCheckboxCard
       v-for="provider in ONBOARDING_API_PROVIDERS"
       :key="provider"
       :label="modelProviderName(provider)"
+      :model-value="access.includes(provider)"
+      @update:model-value="toggle(provider, $event)"
     >
-      <AppCheckbox
-        :model-value="access.includes(provider)"
-        :ariaLabel="modelProviderName(provider)"
-        @update:model-value="toggle(provider, $event)"
-      />
       <template #icon><ProviderLogo :provider="provider" /></template>
-    </SetupChoice>
+    </AppCheckboxCard>
     <AppCollapsible
       v-model:open="moreOpen"
       :label="ai.aiSetupAccessMore"
       :ui="{ trigger: styles.moreTrigger() }"
     >
       <div :class="styles.moreGroup()">
-        <SetupChoice
+        <AppCheckboxCard
           v-for="provider in ONBOARDING_MORE_API_PROVIDERS"
           :key="provider"
           :label="modelProviderName(provider)"
+          :model-value="access.includes(provider)"
+          @update:model-value="toggle(provider, $event)"
         >
-          <AppCheckbox
-            :model-value="access.includes(provider)"
-            :ariaLabel="modelProviderName(provider)"
-            @update:model-value="toggle(provider, $event)"
-          />
           <template #icon><ProviderLogo :provider="provider" /></template>
-        </SetupChoice>
+        </AppCheckboxCard>
       </div>
     </AppCollapsible>
   </section>
   <section :class="styles.group()">
-    <SetupChoice :label="ai.aiSetupAccessServer" :description="ai.aiSetupAccessServerDescription">
-      <AppCheckbox
-        :model-value="access.includes(ONBOARDING_SERVER_PROVIDER)"
-        :ariaLabel="ai.aiSetupAccessServer"
-        @update:model-value="toggle(ONBOARDING_SERVER_PROVIDER, $event)"
-      />
+    <AppCheckboxCard
+      :label="ai.aiSetupAccessServer"
+      :description="ai.aiSetupAccessServerDescription"
+      :model-value="access.includes(ONBOARDING_SERVER_PROVIDER)"
+      @update:model-value="toggle(ONBOARDING_SERVER_PROVIDER, $event)"
+    >
       <template #icon><ProviderLogo :provider="ONBOARDING_SERVER_PROVIDER" /></template>
-    </SetupChoice>
+    </AppCheckboxCard>
   </section>
 </template>
