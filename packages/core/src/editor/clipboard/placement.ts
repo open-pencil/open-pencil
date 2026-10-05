@@ -26,14 +26,14 @@ export function createClipboardPlacementActions(ctx: EditorContext) {
   }
 
   /**
-   * Where Figma puts a duplicate: on top of the original, except that a top-level frame goes to
-   * the first free place on its right.
+   * Where Figma puts a lone duplicate: on top of the original, except that a top-level frame, on
+   * the page or in a section, goes to the first free place on its right.
    */
   function duplicatePosition(node: SceneNode, placed: readonly Rect[]): Vector {
     const parentId = node.parentId ?? ctx.state.currentPageId
     const parent = ctx.graph.getNode(parentId)
-    if (node.type !== 'FRAME' || (parent && parent.type !== 'CANVAS'))
-      return { x: node.x, y: node.y }
+    const topLevel = !parent || parent.type === 'CANVAS' || parent.type === 'SECTION'
+    if (node.type !== 'FRAME' || !topLevel) return { x: node.x, y: node.y }
 
     const box = getAxisAlignedBoundsInParent([node], parentId, ctx.graph)
     const others = [

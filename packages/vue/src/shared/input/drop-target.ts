@@ -1,8 +1,10 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { slotPropertyId, type NodeType, type SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 
 /** Parents a layer stays in while dragged until it lands on another frame. */
-const ENCLOSING_TYPES = new Set<NodeType>(['GROUP', 'BOOLEAN_OPERATION', 'COMPONENT_SET'])
+const ENCLOSING_TYPES = new Set<NodeType>(['GROUP', 'BOOLEAN_OPERATION'])
+/** Containers that never take a drawn layer. */
+const NOT_DRAWN_INTO = new Set<NodeType>(['GROUP', 'BOOLEAN_OPERATION', 'COMPONENT_SET'])
 
 function acceptingTarget(target: SceneNode | null, editor: Editor): SceneNode | null {
   if (!target) return null
@@ -18,8 +20,15 @@ export function findMoveDropTarget(
   editor: Editor,
   excludeIds: ReadonlySet<string> = editor.state.selectedIds
 ): SceneNode | null {
-  let dropTarget = editor.graph.hitTestDropTarget(cx, cy, excludeIds, editor.state.currentPageId)
-  const movingSection = [...excludeIds].some((id) => editor.graph.getNode(id)?.type === 'SECTION')
+  const moving = [...excludeIds].map((id) => editor.graph.getNode(id))
+  const components = moving.length > 0 && moving.every((node) => node?.type === 'COMPONENT')
+  const componentSetIds = components
+    ? new Set(moving.flatMap((node) => (node?.parentId ? [node.parentId] : [])))
+    : undefined
+  let dropTarget = editor.graph.hitTestDropTarget(cx, cy, excludeIds, editor.state.currentPageId, {
+    componentSetIds
+  })
+  const movingSection = moving.some((node) => node?.type === 'SECTION')
   if (movingSection && dropTarget && dropTarget.type !== 'SECTION') {
     dropTarget = null
   }
@@ -27,11 +36,9 @@ export function findMoveDropTarget(
 }
 
 function takesDrawnLayer(target: SceneNode, type: NodeType) {
-  if (ENCLOSING_TYPES.has(target.type)) return false
+  if (NOT_DRAWN_INTO.has(target.type)) return false
   // Sections only go into pages and other sections.
-  if (type === 'SECTION' && target.type !== 'SECTION') return false
-  // Auto layout only takes layers dropped into it, except in a slot.
-  return target.layoutMode === 'NONE' || slotPropertyId(target) !== undefined
+  return type !== 'SECTION' || target.type === 'SECTION'
 }
 
 /** The parent a new layer drawn from this point goes into. */

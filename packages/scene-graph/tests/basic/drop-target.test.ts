@@ -103,6 +103,28 @@ describe('hitTestDropTarget', () => {
     expect(dropAt(graph, 300, 100)).toBe(child.id)
   })
 
+  test('takes only a dragged variant back into its own component set', () => {
+    const graph = new SceneGraph()
+    const set = container(graph, 'COMPONENT_SET', pageId(graph), { width: 300 })
+    const variant = container(graph, 'COMPONENT', set.id, { width: 60, height: 60 })
+    const sibling = container(graph, 'COMPONENT', set.id, { x: 100, width: 100, height: 100 })
+    const own = { componentSetIds: new Set([set.id]) }
+    const foreign = { componentSetIds: new Set([pageId(graph)]) }
+    const drop = (x: number, y: number, options: typeof own) =>
+      graph.hitTestDropTarget(x, y, new Set([variant.id]), pageId(graph), options)?.id ?? null
+    expect(drop(150, 50, own)).toBe(set.id)
+    expect(drop(250, 150, own)).toBe(set.id)
+    expect(drop(150, 50, foreign)).toBeNull()
+    expect(dropAt(graph, 150, 50, [variant.id])).toBe(sibling.id)
+  })
+
+  test('isPointInNode follows rotation', () => {
+    const graph = new SceneGraph()
+    const frame = container(graph, 'FRAME', pageId(graph), { rotation: 45 })
+    expect(graph.isPointInNode(frame.id, 100, 100)).toBe(true)
+    expect(graph.isPointInNode(frame.id, 5, 5)).toBe(false)
+  })
+
   test('ignores shapes covering a frame', () => {
     const graph = new SceneGraph()
     const frame = container(graph, 'FRAME', pageId(graph))

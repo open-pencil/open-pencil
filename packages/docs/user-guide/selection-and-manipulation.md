@@ -28,7 +28,7 @@ Selected nodes show 8 resize handles (4 corners + 4 edge midpoints). Drag any ha
 
 ## Moving into and out of frames
 
-A dragged node lands in the frame under the cursor when you release it, however little of it is inside, and leaves its frame as soon as the cursor does. Groups, component sets, and locked frames never take dropped nodes; a node inside a group stays in it unless you drop it on a different frame.
+A dragged node lands in the frame under the cursor when you release it, however little of it is inside, and leaves its frame as soon as the cursor does. Groups and locked frames never take dropped nodes, and a component set takes back only its own variants; a node inside a group stays in it unless you drop it on a different frame, and the group resizes to fit what it holds. A group whose last node leaves is removed. Pressing inside a selected frame, group, or component set drags it rather than the node under the cursor.
 
 - <kbd>Shift</kbd> + drag — lock the move to one axis
 - Hold <kbd>Space</kbd> while dragging — keep the nodes in their current parents
@@ -45,7 +45,9 @@ Hover just outside a corner handle to see the rotation cursor. Drag to rotate.
 ## Duplicating
 
 - <kbd>Alt</kbd> + drag (<kbd>⌥</kbd> + drag on Mac) — duplicate the selected node and move the copy
-- <kbd>⌘</kbd><kbd>D</kbd> — duplicate in place; a top-level frame's copy goes into the first free space to its right
+- <kbd>⌘</kbd><kbd>D</kbd> — duplicate in place; a lone top-level frame's copy, on the page or in a section, goes into the first free space to its right
+
+Duplicates keep their names. Duplicating a main component this way creates an instance of it.
 
 ## Pasting
 

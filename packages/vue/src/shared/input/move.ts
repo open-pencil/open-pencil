@@ -172,9 +172,27 @@ function restoreOriginalPositions(d: DragMove, editor: Editor) {
   }
 }
 
+function isLeavingAutoLayout(d: DragMove, id: string, editor: Editor) {
+  const node = editor.graph.getNode(id)
+  const parent = editor.graph.getNode(node?.parentId ?? '')
+  if (d.keepParents || !parent || parent.layoutMode === 'NONE') return false
+  if (node?.layoutPositioning === 'ABSOLUTE') return false
+  return (editor.state.dropTargetId ?? editor.state.currentPageId) !== parent.id
+}
+
 function applyFinalPositions(d: DragMove, editor: Editor) {
   for (const [id, orig] of d.originals) {
-    editor.updateNode(id, { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy })
+    const position = { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy }
+    // Laying out now would snap the layer back into its slot before it leaves the frame.
+    if (isLeavingAutoLayout(d, id, editor)) editor.graph.updateNode(id, position)
+    else editor.updateNode(id, position)
+  }
+}
+
+/** Closes the gaps moved layers leave in auto layout frames. */
+function layOutOriginalParents(d: DragMove, editor: Editor) {
+  for (const parentId of new Set([...d.originals.values()].map((orig) => orig.parentId))) {
+    if (editor.graph.getNode(parentId)?.layoutMode !== 'NONE') editor.runLayoutForNode(parentId)
   }
 }
 
@@ -197,6 +215,16 @@ function dropMovedNodes(d: DragMove, editor: Editor) {
   }
 }
 
+function movedParentIds(d: DragMove, editor: Editor) {
+  const ids = new Set<string>()
+  for (const [id, orig] of d.originals) {
+    ids.add(orig.parentId)
+    const parentId = editor.graph.getNode(id)?.parentId
+    if (parentId) ids.add(parentId)
+  }
+  return ids
+}
+
 function placeAbsoluteDrop(d: DragMove, editor: Editor) {
   const targetId = editor.state.dropTargetId
   const index = d.absoluteInsertIndex
@@ -213,6 +241,7 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
     editor.setDropTarget(null)
+    if (d.selectOnClick) editor.select([d.selectOnClick])
     return
   }
 
@@ -253,6 +282,7 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
       restoreOriginalPositions(d, editor)
       applyFinalPositions(d, editor)
       if (!d.keepParents) dropMovedNodes(d, editor)
+      layOutOriginalParents(d, editor)
     }
     if (d.duplicated) {
       editor.commitDuplicateMove(
@@ -264,6 +294,8 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     }
     // After the move is recorded, so undo restores the order before taking the layers back out.
     if (moved && !d.keepParents) placeAbsoluteDrop(d, editor)
+    // Groups and booleans the layers left or moved inside fit their children again.
+    if (moved) editor.fitEnclosingGroups(movedParentIds(d, editor))
   })
   editor.setDropTarget(null)
 }

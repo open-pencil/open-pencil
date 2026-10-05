@@ -122,6 +122,9 @@ function createDraw(
     try {
       const clicked = node ? settleDrawnSize(preview, node) : false
       preview.commit()
+      // Drawn into auto layout, the layer joins the flow at the end.
+      const parent = graph.getNode(node?.parentId ?? '')
+      if (parent && parent.layoutMode !== 'NONE') editor.runLayoutForNode(parent.id)
       // A frame made by a click, not drawn over anything, takes nothing in.
       if (node?.type === 'SECTION' || (node?.type === 'FRAME' && !clicked)) {
         editor.adoptCoveredLayers(node.id)

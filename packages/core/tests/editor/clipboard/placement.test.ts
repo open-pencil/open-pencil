@@ -59,6 +59,43 @@ describe('duplicate placement', () => {
     editor.duplicateSelected()
     expect(selected()).toMatchObject({ x: 390, y: 0 })
   })
+
+  test('treats a frame in a section as top-level', () => {
+    const page = setup()
+    const section = node('SECTION', page, { width: 600, height: 300 })
+    node('FRAME', section.id, { x: 140, y: 50, width: 100, height: 100 })
+    const frame = node('FRAME', section.id, { x: 20, y: 50, width: 100, height: 100 })
+    editor.select([frame.id])
+    editor.duplicateSelected()
+    expect(selected()).toMatchObject({ parentId: section.id, x: 280, y: 50 })
+  })
+
+  test('duplicates a multi-selection in place, keeping names', () => {
+    const page = setup()
+    const a = node('FRAME', page, { name: 'A', width: 100, height: 100 })
+    const b = node('FRAME', page, { name: 'B', x: 140, width: 100, height: 100 })
+    editor.select([a.id, b.id])
+    editor.duplicateSelected()
+    const copies = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
+    expect(copies.map((n) => [n?.name, n?.x, n?.y])).toEqual([
+      ['A', 0, 0],
+      ['B', 140, 0]
+    ])
+  })
+
+  test('duplicates a main component as an instance, but a variant as a variant', () => {
+    const page = setup()
+    const component = node('COMPONENT', page, { name: 'C', width: 100, height: 100 })
+    editor.select([component.id])
+    editor.duplicateSelected()
+    expect(selected()).toMatchObject({ type: 'INSTANCE', componentId: component.id, name: 'C' })
+
+    const set = node('COMPONENT_SET', page, { y: 300, width: 300, height: 140 })
+    const variant = node('COMPONENT', set.id, { name: 'v=a', width: 60, height: 60 })
+    editor.select([variant.id])
+    editor.duplicateSelected()
+    expect(selected()).toMatchObject({ type: 'COMPONENT', parentId: set.id })
+  })
 })
 
 describe('paste placement', () => {

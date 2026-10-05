@@ -26,6 +26,23 @@ type PasteOptions = {
   replaceSelection?: boolean
 }
 
+/**
+ * A copy of the layer under the same parent, keeping its name as Figma does. A main component
+ * outside a component set duplicates as an instance of itself.
+ */
+export function duplicateNode(
+  ctx: Pick<EditorContext, 'graph'>,
+  node: SceneNode,
+  parentId: string,
+  position: Vector
+): SceneNode | null {
+  const parent = ctx.graph.getNode(parentId)
+  if (node.type === 'COMPONENT' && parent?.type !== 'COMPONENT_SET') {
+    return ctx.graph.createInstance(node.id, parentId, { name: node.name, ...position })
+  }
+  return ctx.graph.cloneTree(node.id, parentId, { name: node.name, ...position })
+}
+
 export function createClipboardActions(ctx: EditorContext) {
   function duplicateSelected(selectedNodes: SceneNode[]) {
     const prevSelection = new Set(ctx.state.selectedIds)
@@ -40,10 +57,11 @@ export function createClipboardActions(ctx: EditorContext) {
     const placed: Rect[] = []
     for (const node of topLevel) {
       const parentId = node.parentId ?? ctx.state.currentPageId
-      const clone = ctx.graph.cloneTree(node.id, parentId, {
-        name: node.name + ' copy',
-        ...placementActions.duplicatePosition(node, placed)
-      })
+      const position =
+        topLevel.length === 1
+          ? placementActions.duplicatePosition(node, placed)
+          : { x: node.x, y: node.y }
+      const clone = duplicateNode(ctx, node, parentId, position)
       if (!clone) continue
       placed.push(getAxisAlignedBoundsInParent([clone], parentId, ctx.graph))
       newRootIds.push(clone.id)
@@ -395,6 +413,8 @@ export function createClipboardActions(ctx: EditorContext) {
     ...placementActions,
     ...fontActions,
     duplicateSelected,
+    duplicateNode: (node: SceneNode, parentId: string, position: Vector) =>
+      duplicateNode(ctx, node, parentId, position),
     ...copyActions,
     pasteSnapshot,
     pasteFromHTML,

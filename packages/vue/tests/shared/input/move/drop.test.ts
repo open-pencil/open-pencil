@@ -1,44 +1,25 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core/editor'
 
-import { handleMoveMove, handleMoveUp, type MoveModifiers } from '#vue/shared/input/move'
-import { createSelectionMoveDrag } from '#vue/shared/input/select/move'
+import { createMoveHarness, type MoveHarness } from './harness'
 
 // Each case replays a drag observed in Figma desktop 126 with real pointer input.
 
+let h: MoveHarness
 let editor: Editor
 
 afterEach(() => editor.dispose())
 
 function setup() {
-  editor = createEditor()
-  return editor.state.currentPageId
+  h = createMoveHarness()
+  editor = h.editor
+  return h.page
 }
 
-function node(type: SceneNode['type'], parentId: string, props: Partial<SceneNode> = {}) {
-  return editor.graph.createNode(type, parentId, { width: 40, height: 40, ...props })
-}
-
-function drag(
-  ids: string[],
-  from: [number, number],
-  to: [number, number],
-  modifiers: MoveModifiers = {},
-  during?: (move: ReturnType<typeof createSelectionMoveDrag>) => void
-) {
-  editor.select(ids)
-  const move = createSelectionMoveDrag(from[0], from[1], from[0], from[1], editor, false)
-  if (move.type !== 'move') throw new Error('Expected a move drag')
-  during?.(move)
-  handleMoveMove(move, to[0], to[1], to[0], to[1], editor, modifiers)
-  handleMoveUp(move, editor)
-}
-
-function parentOf(id: string) {
-  return editor.graph.getNode(id)?.parentId
-}
+const node: MoveHarness['node'] = (...args) => h.node(...args)
+const drag: MoveHarness['drag'] = (...args) => h.drag(...args)
+const parentOf: MoveHarness['parentOf'] = (id) => h.parentOf(id)
 
 describe('dropping moved layers', () => {
   test('nests a layer when the cursor is inside a frame, however little of it is', () => {
@@ -98,8 +79,8 @@ describe('dropping moved layers', () => {
     const frame = node('FRAME', page, { width: 200, height: 200 })
     const other = node('FRAME', page, { x: 300, width: 200, height: 200 })
     const child = node('RECTANGLE', frame.id, { x: 80, y: 80 })
-    const keepParents = (move: ReturnType<typeof createSelectionMoveDrag>) => {
-      if (move.type === 'move') move.keepParents = true
+    const keepParents = (move: { keepParents?: boolean }) => {
+      move.keepParents = true
     }
     drag([child.id], [100, 100], [400, 100], {}, keepParents)
     expect(parentOf(child.id)).toBe(frame.id)

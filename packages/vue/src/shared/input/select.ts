@@ -6,7 +6,12 @@ import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { tryStartResize } from '#vue/shared/input/resize'
-import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'
+import {
+  createSelectionMoveDrag,
+  clickSelectsInside,
+  pressesSelection,
+  selectionIsLocked
+} from '#vue/shared/input/select/move'
 import type { DragState } from '#vue/shared/input/types'
 
 export interface HitTestFns {
@@ -56,7 +61,8 @@ export function handleSelectDown(
     return
   }
 
-  if (!editor.state.selectedIds.has(hit.id) && !e.shiftKey) {
+  const keepsSelection = !e.shiftKey && pressesSelection(hit, cx, cy, editor)
+  if (!editor.state.selectedIds.has(hit.id) && !e.shiftKey && !keepsSelection) {
     editor.select([hit.id])
   } else if (e.shiftKey) {
     editor.select([hit.id], true)
@@ -64,5 +70,10 @@ export function handleSelectDown(
 
   if (selectionIsLocked(editor)) return
 
-  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey))
+  const drag = createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey)
+  // A click without dragging still selects a layer inside a selected frame; groups need a double-click.
+  if (drag.type === 'move' && keepsSelection && !editor.state.selectedIds.has(hit.id)) {
+    drag.selectOnClick = clickSelectsInside(hit, editor) ? hit.id : undefined
+  }
+  setDrag(drag)
 }

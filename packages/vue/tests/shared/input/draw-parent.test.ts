@@ -45,11 +45,24 @@ describe('drawing into containers', () => {
     expect(rect).toMatchObject({ x: 150, y: 150, width: 150, height: 150 })
   })
 
-  test('skips auto layout, groups, and locked frames', () => {
+  test('adds the layer to the end of an auto layout flow', () => {
     const page = setup()
-    const outer = node('FRAME', page, { width: 400, height: 400 })
-    node('FRAME', outer.id, { width: 200, height: 100, layoutMode: 'HORIZONTAL' })
-    expect(draw('RECTANGLE', [50, 50], [80, 80]).parentId).toBe(outer.id)
+    const row = node('FRAME', page, {
+      width: 300,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      itemSpacing: 10,
+      paddingLeft: 10,
+      paddingTop: 10
+    })
+    node('RECTANGLE', row.id, { width: 60, height: 60 })
+    const rect = draw('RECTANGLE', [150, 20], [190, 60])
+    expect(rect.parentId).toBe(row.id)
+    expect(rect).toMatchObject({ x: 80, y: 10 })
+  })
+
+  test('skips groups and locked frames', () => {
+    const page = setup()
 
     node('GROUP', page, { x: 500, width: 200, height: 200 })
     expect(draw('RECTANGLE', [550, 50], [580, 80]).parentId).toBe(page)
