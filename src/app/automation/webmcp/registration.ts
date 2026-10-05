@@ -1,9 +1,8 @@
 // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
-import * as v from 'valibot'
 import type { WebMCP } from 'webmcp-types'
 
-import type { ToolDef } from '@open-pencil/core/tools'
+import { parseToolArgs, type ToolDef } from '@open-pencil/core/tools'
 
 import { getWebMCPTools, type WebMCPMode } from './policy'
 
@@ -45,7 +44,7 @@ export function registerWebMCPTools(
                 : lifetime.signal
               lifetime.signal.throwIfAborted()
               signal.throwIfAborted()
-              const args = v.parse(schema, input)
+              const args = parseToolArgs(def.name, schema, input)
               const target = getTarget()
               const result = await target.execute(def, args, signal)
               // A synchronous mutation has committed; a later abort cannot roll it back.

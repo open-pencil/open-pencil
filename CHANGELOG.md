@@ -54,6 +54,7 @@
 
 ### Changed
 
+- Name the tool and list every invalid argument with where it is when AI chat, an MCP client, the CLI, or WebMCP calls a tool wrongly, as in `Invalid arguments for create_shape:` followed by `× Invalid type: Expected ("FRAME" | …) but received "CIRCLE"` and `→ at type`. Design JSX component properties and gradient stops report their problems the same way. Previously only the first problem was named, without the tool or the argument.
 - Give popovers, menus, dropdowns, and pickers one look and motion: the same rounded panel with a thin outline that reads in light and dark themes, a short fade and grow from the side they open on, and an immediate close; with reduced motion they appear at once.
 - Add and remove items the same way across the properties panel: a section's + adds an item and a row's − removes it, now including grid columns and rows and variant properties. The + of a component set adds Property 1 ready to rename instead of showing a form, and a variant is removed with Delete like any layer.
 - Pick variables, shared styles, and swap components from one searchable list that groups preferred components first and works with the keyboard.

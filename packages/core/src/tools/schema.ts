@@ -65,8 +65,22 @@ export function defineTool<P extends v.ObjectEntries, R>(
     get mutates() {
       return def.execution.mutation !== 'none'
     },
-    execute: (figma, args) => def.execute(figma, v.parse(def.input, args))
+    execute: (figma, args) => def.execute(figma, parseToolArgs(def.name, def.input, args))
   }
+}
+
+/**
+ * Every tool call goes through here, from AI chat, MCP, the CLI, and WebMCP, so a wrong call
+ * names the tool and lists each problem with its argument, as `v.summarize` formats them.
+ */
+export function parseToolArgs<S extends v.GenericSchema>(
+  name: string,
+  schema: S,
+  args: unknown
+): v.InferOutput<S> {
+  const result = v.safeParse(schema, args)
+  if (result.success) return result.output
+  throw new Error(`Invalid arguments for ${name}:\n${v.summarize(result.issues)}`)
 }
 
 export function toolChangesDocument(def: Pick<ToolDef, 'execution'>): boolean {

@@ -109,6 +109,15 @@ test('variant selection ignores non-variant instance props', async () => {
   expect(graph.getChildren(instance.id)[0].text).toBe('Changed')
 })
 
+test('an assignment of the wrong type names the prop and the property', async () => {
+  const { graph, component } = await setup()
+  await expect(
+    renderTree(graph, Instance({ of: component.id, properties: { message: 42 } }))
+  ).rejects.toThrow(
+    'Invalid properties on <Instance>:\n× Invalid type: Expected string but received 42\n  → at message'
+  )
+})
+
 test('invalid assignments remove the new instance and do not edit its source', async () => {
   const { graph, component } = await setup()
   const count = graph.nodes.size
