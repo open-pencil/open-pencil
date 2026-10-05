@@ -32,6 +32,8 @@ import IconX from '~icons/lucide/x'
 import type { VariableType } from '@open-pencil/scene-graph'
 import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
 
+import { useEditorStore } from '@/app/editor/active-store'
+import { createTokenCopy } from '@/app/editor/tokens/copy'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -42,6 +44,7 @@ import variableTableTheme from '@/theme/variable-table'
 
 const open = defineModel<boolean>('open', { default: false })
 const menuCls = useMenuUI({ content: 'w-40', item: 'justify-start gap-2' })
+const collectionMenuCls = useMenuUI({ content: 'w-56', item: 'justify-start gap-2' })
 const addVariableMenuCls = useMenuUI({ content: 'w-48' })
 const variableTable = tv(variableTableTheme)
 const tableStyles = variableTable()
@@ -81,6 +84,8 @@ const variableTypes: Array<{
     description: () => variableTypeText.value.booleanHint
   }
 ]
+
+const copyTokens = createTokenCopy(useEditorStore())
 
 const ctx = useVariablesEditor({
   colorInput: ColorInput,
@@ -190,23 +195,40 @@ function resizeHandleClass(resizing: boolean) {
                   side="bottom"
                   :side-offset="4"
                   align="start"
-                  :class="menuCls.content"
+                  :class="collectionMenuCls.content"
                 >
                   <DropdownMenuItem
-                    :class="menuCls.item"
+                    :class="collectionMenuCls.item"
                     @select="ctx.startRenameCollection(ctx.activeCollectionId.value)"
                   >
-                    <icon-lucide-pencil :class="menuCls.icon" />
+                    <icon-lucide-pencil :class="collectionMenuCls.icon" />
                     {{ variables.renameCollection }}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator class="mx-1.5 my-1 h-px bg-border" />
                   <DropdownMenuItem
-                    :class="menuCls.item"
+                    :class="collectionMenuCls.item"
+                    data-test-id="variables-copy-css"
+                    @select="copyTokens('css')"
+                  >
+                    <icon-lucide-braces :class="collectionMenuCls.icon" />
+                    {{ variables.copyAsCSS }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    :class="collectionMenuCls.item"
+                    data-test-id="variables-copy-tailwind"
+                    @select="copyTokens('tailwind')"
+                  >
+                    <icon-lucide-wind :class="collectionMenuCls.icon" />
+                    {{ variables.copyAsTailwindTheme }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator class="mx-1.5 my-1 h-px bg-border" />
+                  <DropdownMenuItem
+                    :class="collectionMenuCls.item"
                     class="text-red-500"
                     data-test-id="variables-delete-collection"
                     @select="ctx.removeCollection(ctx.activeCollectionId.value)"
                   >
-                    <icon-lucide-trash-2 :class="menuCls.icon" />
+                    <icon-lucide-trash-2 :class="collectionMenuCls.icon" />
                     {{ variables.deleteCollection }}
                   </DropdownMenuItem>
                 </DropdownMenuContent>

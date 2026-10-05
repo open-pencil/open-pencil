@@ -1,4 +1,3 @@
-import { useClipboard } from '@vueuse/core'
 import type { Ref } from 'vue'
 
 import { nodeToXPath } from '@open-pencil/core/xpath'
@@ -6,11 +5,10 @@ import { nodeToXPath } from '@open-pencil/core/xpath'
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
+import { createTextClipboard } from '@/app/editor/clipboard/text'
 import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
-import { writeTauriClipboardText } from '@/app/tauri/clipboard'
-import { isTauri } from '@/app/tauri/env'
 
 function toArrayBuffer(data: Uint8Array): ArrayBuffer {
   const bytes = new Uint8Array(data.length)
@@ -19,7 +17,7 @@ function toArrayBuffer(data: Uint8Array): ArrayBuffer {
 }
 
 export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set<string>>) {
-  const { copy } = useClipboard()
+  const copyText = createTextClipboard()
 
   function ids() {
     return [...selectedIds.value]
@@ -35,13 +33,7 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
   }
 
   async function clipboardWrite(text: string | null, label: string) {
-    if (!text) return
-    if (isTauri()) {
-      await writeTauriClipboardText(text)
-    } else {
-      await copy(text)
-    }
-    toast.info(notificationMessages.get().copiedAs({ format: label }))
+    if (text) await copyText(text, label)
   }
 
   async function copyNodeId() {
