@@ -11,14 +11,14 @@ import {
   codingAgentSetupPrompt,
   MCP_INSTALL_COMMAND
 } from '@/app/ai/acp/setup-prompt'
-import type { AgentSetupState } from '@/app/ai/models/settings/onboarding/agents'
+import type { AgentSetupState } from '@/app/ai/agents/setup'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { NODE_DOWNLOAD_URL } from '@/constants'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/agents'
 
-import SetupInstallItem from './SetupInstallItem.vue'
+import AgentSetupItem from './AgentSetupItem.vue'
 
 const { agent, setup } = defineProps<{ agent: ACPAgentDef; setup: AgentSetupState }>()
 const emit = defineEmits<{ check: []; installAgent: []; installBridge: [] }>()
@@ -89,12 +89,12 @@ function copiedLabel(value: string, label: string): string {
   <p :class="styles.help()">{{ ai.aiSetupAgentDescription({ agent: agent.name }) }}</p>
 
   <template v-if="setup.supported">
-    <p v-if="setup.scanning && !detected" role="status" :class="styles.signInStatus()">
+    <p v-if="setup.scanning && !detected" role="status" :class="styles.status()">
       <icon-lucide-loader-2 :class="styles.spinner()" aria-hidden="true" />
       {{ ai.aiSetupAgentChecking }}
     </p>
-    <ul v-else-if="detected" :class="styles.installList()">
-      <SetupInstallItem
+    <ul v-else-if="detected" :class="styles.list()">
+      <AgentSetupItem
         :ready="detected.status === 'available'"
         :action="agentAction"
         :loading="setup.installingAgent"
@@ -107,8 +107,8 @@ function copiedLabel(value: string, label: string): string {
             {{ ai.aiSetupAgentGetCLI({ agent: agent.name }) }}
           </SettingsLink>
         </template>
-      </SetupInstallItem>
-      <SetupInstallItem
+      </AgentSetupItem>
+      <AgentSetupItem
         :ready="bridgeReady"
         :action="bridgeAction"
         :loading="setup.installingBridge"
@@ -116,7 +116,7 @@ function copiedLabel(value: string, label: string): string {
         @action="emit('installBridge')"
       >
         {{ ai.aiSetupAgentMCP }} · {{ bridgeState }}
-      </SetupInstallItem>
+      </AgentSetupItem>
     </ul>
     <AppAlert v-if="errorMessage" tone="warning" :heading="errorMessage">
       <template v-if="setup.error === 'npm' || needsNpm" #actions>
@@ -145,7 +145,7 @@ function copiedLabel(value: string, label: string): string {
   </template>
 
   <p :class="styles.help()">{{ ai.aiSetupAgentPromptHint({ agent: agent.name }) }}</p>
-  <div :class="styles.signInActions()">
+  <div :class="styles.actions()">
     <AppButton size="xs" variant="outline" @click="copy(prompt)">
       <template #leading><icon-lucide-clipboard-copy class="size-3" /></template>
       {{ copiedLabel(prompt, ai.aiSetupAgentCopyPrompt) }}

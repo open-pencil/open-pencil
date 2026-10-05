@@ -4,18 +4,18 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
-import { useOnboardingAgents } from '@/app/ai/models/settings/onboarding/agents'
+import { useAgentSetup } from '@/app/ai/agents/setup'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
-import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
-import AISetupPi from '@/components/settings/ai-setup/AISetupPi.vue'
+import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
+import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
@@ -58,7 +58,7 @@ const {
   clearKey,
   testConnection: runConnectionTest
 } = profile
-const piAgents = useOnboardingAgents()
+const piAgents = useAgentSetup()
 const piSetup = computed(() => {
   const setup = isHarness.value ? piAgents.piSetup('harness:pi') : undefined
   // Pi runs only in the desktop app, where its companion can be checked.
@@ -146,7 +146,7 @@ async function remove() {
           </ProviderSettingsField>
 
           <div v-if="piSetup" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
-            <AISetupPi
+            <PiSetup
               :setup="piSetup"
               @check="piAgents.refreshAgents()"
               @install-companion="piAgents.installAgent('harness:pi')"

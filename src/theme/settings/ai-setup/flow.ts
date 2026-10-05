@@ -21,11 +21,6 @@ export default {
     signInActions: 'flex items-center gap-2',
     signInDetail: 'ml-1 text-muted',
     signedInIcon: 'size-3.5 shrink-0 text-success',
-    missingIcon: 'size-3.5 shrink-0 text-muted',
-    installList: 'flex flex-col gap-1.5',
-    installItem: 'flex items-center gap-2 text-xs text-surface',
-    spinner: `size-3.5 shrink-0 ${motionStyles.spinner}`,
-    command:
-      'flex items-center justify-between gap-2 rounded bg-input px-2.5 py-1.5 font-mono text-[11px] text-surface'
+    spinner: `size-3.5 shrink-0 ${motionStyles.spinner}`
   }
 }

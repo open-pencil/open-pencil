@@ -1,13 +1,12 @@
 import { ref } from 'vue'
 
-import { agentDiscovery, type DetectedAgent } from '@/app/ai/agents/discovery'
 import { readPiAccount } from '@/app/ai/harness/pi-settings'
 
-import type { OnboardingAccess } from './plan'
+import { agentDiscovery, type DetectedAgent } from './discovery'
 
 type AgentDiscovery = typeof agentDiscovery
 
-/** What guided setup knows about one coding agent and the MCP server it needs. */
+/** What setup knows about one coding agent and the MCP server it needs. */
 export interface AgentSetupState {
   /** False where agents cannot run, so only manual instructions apply. */
   supported: boolean
@@ -26,7 +25,7 @@ export interface AgentSetupState {
   error: AgentDiscovery['error']['value']
 }
 
-/** What guided setup knows about Pi: the Harness companion that runs it and Pi's own settings. */
+/** What setup knows about Pi: the Harness companion that runs it and Pi's own settings. */
 export interface PiSetupState {
   supported: boolean
   scanning: boolean
@@ -45,19 +44,19 @@ export interface PiSetupState {
   error: AgentDiscovery['error']['value']
 }
 
-/** Coding agent setup in guided setup, backed by the desktop agent discovery. */
-export function useOnboardingAgents(
+/** Setup state of the coding agents and Pi, for guided setup and model settings. */
+export function useAgentSetup(
   discovery: AgentDiscovery = agentDiscovery,
   readPi: typeof readPiAccount = readPiAccount
 ) {
   const piDefaultModel = ref<string | null>(null)
   const readingPi = ref(false)
 
-  function agentID(providerID: OnboardingAccess) {
+  function agentID(providerID: string) {
     return providerID.startsWith('acp:') ? providerID.slice('acp:'.length) : null
   }
 
-  function agentSetup(providerID: OnboardingAccess): AgentSetupState {
+  function agentSetup(providerID: string): AgentSetupState {
     const id = agentID(providerID)
     return {
       supported: discovery.supported,
@@ -73,7 +72,7 @@ export function useOnboardingAgents(
     }
   }
 
-  function piSetup(providerID: OnboardingAccess): PiSetupState | undefined {
+  function piSetup(providerID: string): PiSetupState | undefined {
     if (providerID !== 'harness:pi') return undefined
     return {
       supported: discovery.supported,
@@ -92,7 +91,7 @@ export function useOnboardingAgents(
     }
   }
 
-  function installAgent(providerID: OnboardingAccess): Promise<void> {
+  function installAgent(providerID: string): Promise<void> {
     if (providerID === 'harness:pi') return discovery.setupHarness()
     const detected = agentSetup(providerID).detected
     return detected ? discovery.install(detected.definition.id) : Promise.resolve()

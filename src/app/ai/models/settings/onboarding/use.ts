@@ -2,6 +2,7 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 
+import { useAgentSetup } from '@/app/ai/agents/setup'
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
 import {
   aiModelSettings,
@@ -11,7 +12,6 @@ import {
 } from '@/app/ai/models'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
-import { useOnboardingAgents } from './agents'
 import { applyOnboardingPlan } from './apply'
 import { existingOnboardingConnection, useOnboardingConnections } from './connections'
 import { currentOnboardingModels } from './current'
@@ -78,7 +78,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
   const connections = useOnboardingConnections({ plannedModel })
   const { connection, ready, markKeySaved } = connections
   const signIn = useOnboardingSignIn(connections)
-  const agents = useOnboardingAgents()
+  const agents = useAgentSetup()
   // Look for installed agents when they are about to be connected, and again on return.
   watch(step, (current) => {
     if (current === 'connect') void agents.refreshAgents()

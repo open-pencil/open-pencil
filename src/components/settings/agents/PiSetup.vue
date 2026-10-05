@@ -5,14 +5,14 @@ import { computed, ref, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import type { PiSetupState } from '@/app/ai/models/settings/onboarding/agents'
+import type { PiSetupState } from '@/app/ai/agents/setup'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import { NODE_DOWNLOAD_URL } from '@/constants'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/agents'
 
-import SetupInstallItem from './SetupInstallItem.vue'
+import AgentSetupItem from './AgentSetupItem.vue'
 
 const { setup } = defineProps<{ setup: PiSetupState }>()
 const emit = defineEmits<{ check: []; installCompanion: []; installBridge: [] }>()
@@ -80,12 +80,12 @@ function copiedLabel(value: string): string {
 <template>
   <p :class="styles.help()">{{ ai.aiSetupPiDescription }}</p>
 
-  <p v-if="setup.scanning && !checked" role="status" :class="styles.signInStatus()">
+  <p v-if="setup.scanning && !checked" role="status" :class="styles.status()">
     <icon-lucide-loader-2 :class="styles.spinner()" aria-hidden="true" />
     {{ ai.aiSetupAgentChecking }}
   </p>
-  <ul v-else :class="styles.installList()">
-    <SetupInstallItem
+  <ul v-else :class="styles.list()">
+    <AgentSetupItem
       :ready="companionReady"
       :action="
         actionLabel(companionReady, setup.installingCompanion, setup.companionOutdated, {
@@ -98,8 +98,8 @@ function copiedLabel(value: string): string {
       @action="emit('installCompanion')"
     >
       {{ ai.aiSetupPiCompanion }} · {{ state(setup.companion, setup.companionOutdated) }}
-    </SetupInstallItem>
-    <SetupInstallItem
+    </AgentSetupItem>
+    <AgentSetupItem
       :ready="bridgeReady"
       :action="
         actionLabel(bridgeReady, setup.installingBridge, setup.bridgeOutdated, {
@@ -112,12 +112,12 @@ function copiedLabel(value: string): string {
       @action="emit('installBridge')"
     >
       {{ ai.aiSetupAgentMCP }} · {{ state(setup.bridge, setup.bridgeOutdated) }}
-    </SetupInstallItem>
-    <SetupInstallItem :ready="Boolean(setup.defaultModel)">
+    </AgentSetupItem>
+    <AgentSetupItem :ready="Boolean(setup.defaultModel)">
       {{
         setup.defaultModel ? ai.aiSetupPiModel({ model: setup.defaultModel }) : ai.aiSetupPiNoModel
       }}
-    </SetupInstallItem>
+    </AgentSetupItem>
   </ul>
   <AppAlert v-if="errorMessage" tone="warning" :heading="errorMessage">
     <template v-if="setup.error === 'npm' || needsNpm" #actions>
@@ -134,7 +134,7 @@ function copiedLabel(value: string): string {
   </template>
 
   <p :class="styles.help()">{{ ai.aiSetupPiSignIn }}</p>
-  <div :class="styles.signInActions()">
+  <div :class="styles.actions()">
     <AppButton size="xs" :disabled="busy || setup.scanning" @click="emit('check')">
       {{ ai.aiSetupAgentCheckAgain }}
     </AppButton>

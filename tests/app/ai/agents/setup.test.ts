@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import { createAgentDiscovery } from '@/app/ai/agents/discovery'
 import type { AgentLookup } from '@/app/ai/agents/native'
-import { useOnboardingAgents } from '@/app/ai/models/settings/onboarding/agents'
+import { useAgentSetup } from '@/app/ai/agents/setup'
 
 function lookup(...commands: string[]): AgentLookup {
   return {
@@ -12,7 +12,7 @@ function lookup(...commands: string[]): AgentLookup {
   }
 }
 
-describe('useOnboardingAgents', () => {
+describe('useAgentSetup', () => {
   test('installs the Harness companion for Pi and reads Pi’s default model', async () => {
     let installed = false
     const installHarness = mock(async () => {
@@ -24,7 +24,7 @@ describe('useOnboardingAgents', () => {
       install: async () => undefined,
       installHarness
     })
-    const agents = useOnboardingAgents(discovery, async () => ({
+    const agents = useAgentSetup(discovery, async () => ({
       agentDir: '/home/test/.pi/agent',
       defaultModel: 'openai-codex/gpt-5.6'
     }))

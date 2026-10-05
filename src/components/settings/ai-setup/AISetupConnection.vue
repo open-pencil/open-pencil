@@ -5,8 +5,8 @@ import { computed } from 'vue'
 import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
+import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup'
 import { modelProviderName } from '@/app/ai/models/provider-name'
-import type { AgentSetupState, PiSetupState } from '@/app/ai/models/settings/onboarding/agents'
 import {
   ONBOARDING_SERVER_PRESETS,
   type OnboardingConnectionPatch,
@@ -18,7 +18,9 @@ import {
   type OnboardingAccess
 } from '@/app/ai/models/settings/onboarding/plan'
 import type { OnboardingSignInStatus } from '@/app/ai/models/settings/onboarding/sign-in'
-import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
+import AgentSetup from '@/components/settings/agents/AgentSetup.vue'
+import PiSetup from '@/components/settings/agents/PiSetup.vue'
+import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
@@ -29,8 +31,6 @@ import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 import theme from '@/theme/settings/ai-setup/flow'
 
-import AISetupAgent from './AISetupAgent.vue'
-import AISetupPi from './AISetupPi.vue'
 import SetupChoice from './SetupChoice.vue'
 
 const {
@@ -123,7 +123,7 @@ const keyHint = computed(() => {
       {{ name }}
     </h3>
 
-    <AISetupAgent
+    <AgentSetup
       v-if="agent && agentSetup"
       :agent="agent"
       :setup="agentSetup"
@@ -131,7 +131,7 @@ const keyHint = computed(() => {
       @install-agent="emit('installAgent')"
       @install-bridge="emit('installBridge')"
     />
-    <AISetupPi
+    <PiSetup
       v-else-if="piSetup"
       :setup="piSetup"
       @check="emit('checkAgent')"
