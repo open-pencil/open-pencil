@@ -6,10 +6,21 @@ import { createAgentDiscovery, detectedAgents } from '@/app/ai/agents/discovery'
 import type { AgentLookup } from '@/app/ai/agents/native'
 import { createDeferred } from '@/app/runtime/deferred'
 
+// Installed companions report the version of the app under test, as matching ones do.
+const COMPANION_PACKAGES: Record<string, string> = {
+  'openpencil-mcp-http': '@open-pencil/mcp',
+  'openpencil-harness': '@open-pencil/harness'
+}
+
 function lookup(...commands: string[]): AgentLookup {
   return {
     searchPath: '/test/bin',
-    versions: {},
+    versions: Object.fromEntries(
+      commands.flatMap((command) => {
+        const name = COMPANION_PACKAGES[command]
+        return name ? [[name, '0.0.0']] : []
+      })
+    ),
     executables: Object.fromEntries(commands.map((command) => [command, `/test/bin/${command}`]))
   }
 }

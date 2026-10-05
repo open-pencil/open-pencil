@@ -9,14 +9,17 @@ describe('isOutdatedCompanion', () => {
     expect(isOutdatedCompanion('1.15.1', '0.15.1')).toBe(true)
   })
 
-  test('does not report a version it could not read', () => {
-    expect(isOutdatedCompanion(null, '0.15.1')).toBe(false)
+  test('treats an installed companion without a version as outdated', () => {
+    expect(isOutdatedCompanion(null, '0.15.1')).toBe(true)
   })
 })
 
 describe('globalInstallCommand', () => {
   test('uses the package manager that installed the program', () => {
     expect(globalInstallCommand('@open-pencil/mcp@0.15.1', '/Users/me/.bun/bin/x')).toBe(
+      'bun add -g @open-pencil/mcp@0.15.1'
+    )
+    expect(globalInstallCommand('@open-pencil/mcp@0.15.1', 'C:\\Users\\me\\.bun\\bin\\x.exe')).toBe(
       'bun add -g @open-pencil/mcp@0.15.1'
     )
     expect(globalInstallCommand('@open-pencil/mcp@0.15.1', '/usr/local/bin/x')).toBe(
