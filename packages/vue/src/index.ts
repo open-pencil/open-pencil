@@ -254,7 +254,6 @@ export type {
   BehaviourControl,
   BehaviourNumberControl,
   BehaviourPartControl,
-  BehaviourPropertyOption,
   BehaviourValueControl
 } from '#vue/controls/behaviour'
 export type {

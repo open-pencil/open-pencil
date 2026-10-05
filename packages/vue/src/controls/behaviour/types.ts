@@ -1,12 +1,6 @@
 import type { BehaviourKind } from '@open-pencil/core/behaviours'
 
-/** A component property a behaviour value can be bound to. */
-export interface BehaviourPropertyOption {
-  id: string
-  name: string
-  /** Variant values, for a variant property; booleans pick which of them mean on and off. */
-  values: string[]
-}
+import type { VariantDefinitionControl } from '#vue/controls/component-props/authoring'
 
 /** A boolean value of the behaviour: the variant or boolean property that holds it. */
 export interface BehaviourBooleanControl {
@@ -18,7 +12,7 @@ export interface BehaviourBooleanControl {
   /** For a variant property: the values meaning on and off. */
   on?: string
   off?: string
-  options: BehaviourPropertyOption[]
+  options: VariantDefinitionControl[]
 }
 
 /** A number value of the behaviour, which keeps its own range since Figma has no number property. */
@@ -40,7 +34,7 @@ export interface BehaviourPartControl {
   /** The bound slot property, if any. */
   propertyId: string | null
   /** The component's slot properties. */
-  options: BehaviourPropertyOption[]
+  options: VariantDefinitionControl[]
 }
 
 export interface BehaviourControl {
