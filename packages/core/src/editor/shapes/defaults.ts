@@ -1,4 +1,5 @@
 import type { Fill, NodeType, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import {
   BLACK,
@@ -20,27 +21,27 @@ const BLACK_STROKE: Stroke = { ...BLACK_FILL, weight: DEFAULT_STROKE_WEIGHT, ali
 export function newLayerDefaults(type: NodeType): Partial<SceneNode> {
   switch (type) {
     case 'FRAME':
-      return { fills: [{ ...DEFAULT_FRAME_FILL }], clipsContent: true }
+      return { fills: copyFills([DEFAULT_FRAME_FILL]), clipsContent: true }
     case 'COMPONENT':
-      return { fills: [{ ...DEFAULT_FRAME_FILL }] }
+      return { fills: copyFills([DEFAULT_FRAME_FILL]) }
     case 'SECTION':
       return {
-        fills: [{ ...SECTION_DEFAULT_FILL }],
-        strokes: [{ ...SECTION_DEFAULT_STROKE }],
+        fills: copyFills([SECTION_DEFAULT_FILL]),
+        strokes: copyStrokes([SECTION_DEFAULT_STROKE]),
         cornerRadius: 5
       }
     case 'RECTANGLE':
     case 'ELLIPSE':
-      return { fills: [{ ...DEFAULT_SHAPE_FILL }] }
+      return { fills: copyFills([DEFAULT_SHAPE_FILL]) }
     case 'POLYGON':
-      return { fills: [{ ...DEFAULT_SHAPE_FILL }], pointCount: 3 }
+      return { fills: copyFills([DEFAULT_SHAPE_FILL]), pointCount: 3 }
     case 'STAR':
-      return { fills: [{ ...DEFAULT_SHAPE_FILL }], pointCount: 5, starInnerRadius: 0.38 }
+      return { fills: copyFills([DEFAULT_SHAPE_FILL]), pointCount: 5, starInnerRadius: 0.38 }
     case 'LINE':
     case 'VECTOR':
-      return { fills: [], strokes: [{ ...BLACK_STROKE }] }
+      return { fills: [], strokes: copyStrokes([BLACK_STROKE]) }
     case 'TEXT':
-      return { fills: [{ ...BLACK_FILL }] }
+      return { fills: copyFills([BLACK_FILL]) }
     default:
       return {}
   }

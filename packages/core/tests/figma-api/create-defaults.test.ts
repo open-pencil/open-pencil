@@ -65,6 +65,20 @@ describe('new layer defaults', () => {
     expect(rect.strokeWeight).toBe(1)
   })
 
+  test('each layer gets its own copy of the default paints', () => {
+    const editor = createEditor()
+    try {
+      const page = editor.state.currentPageId
+      const first = editor.graph.getNode(editor.createShape('RECTANGLE', 0, 0, 10, 10, page))
+      const color = first?.fills[0]?.color
+      if (color) color.r = 1
+      const second = editor.graph.getNode(editor.createShape('RECTANGLE', 0, 0, 10, 10, page))
+      expect(solid(second?.fills ?? [])).toEqual([GREY])
+    } finally {
+      editor.dispose()
+    }
+  })
+
   test('the drawing tools use the same defaults', () => {
     const editor = createEditor()
     try {

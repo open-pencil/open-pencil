@@ -5,6 +5,7 @@ import {
   type Stroke
 } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import { copyStrokes } from '@open-pencil/scene-graph/copy'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 /**
@@ -41,7 +42,7 @@ export function variantSetProps(
     width: bounds.width + padding * 2,
     height: bounds.height + padding * 2,
     fills: [],
-    strokes: style === 'canvas' ? [{ ...CANVAS_STROKE, dashPattern: [10, 5] }] : [],
+    strokes: style === 'canvas' ? copyStrokes([CANVAS_STROKE]) : [],
     cornerRadius: style === 'canvas' ? 5 : 0
   }
 }
