@@ -69,6 +69,7 @@
 
 ### Fixed
 
+- Keep the desktop update prompt's buttons on screen by showing only the first lines of long release notes, which the native dialog cannot scroll.
 - Report what `linearGradient`, `radialGradient`, `angularGradient`, and `diamondGradient` expect when design JSX passes them something other than an array of stops, such as `linearGradient('#3b82f6')`, instead of failing with `stops.map is not a function`, so an AI agent can correct the call.
 - Keep the canvas context menu open when you right-click again right after closing it, which could close it again at once, especially with reduced motion.
 - Show and edit the component properties of an instance nested inside another instance; they were missing because the nested instance was read as its own component.

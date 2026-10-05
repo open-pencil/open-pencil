@@ -5,6 +5,8 @@ import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 
 const STARTUP_UPDATE_CHECK_DELAY_MS = 2500
+// Native dialogs cannot scroll, so long release notes push the buttons off screen.
+const MAX_RELEASE_NOTES_LINES = 12
 
 interface UpdaterMessages {
   upToDate: string
@@ -65,7 +67,7 @@ async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
 
     const details = [
       t.available({ version: update.version }),
-      update.body ? `\n${update.body}` : '',
+      update.body ? `\n${truncateReleaseNotes(update.body)}` : '',
       `\n${t.installPrompt}`
     ].join('')
 
@@ -128,6 +130,15 @@ async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
       )
     }
   }
+}
+
+export function truncateReleaseNotes(body: string, maxLines = MAX_RELEASE_NOTES_LINES) {
+  const lines = body
+    .trim()
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+  if (lines.length <= maxLines) return lines.join('\n')
+  return [...lines.slice(0, maxLines), '…'].join('\n')
 }
 
 function isMissingUpdateManifestError(message: string) {
