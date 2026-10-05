@@ -5,41 +5,65 @@ description: Crear variables, colecciones y modos, y vincularlas a propiedades d
 
 # Variables
 
-Las variables almacenan valores reutilizables, como colores y espaciados. Una propiedad vinculada se actualiza cuando cambia la variable.
+Las variables almacenan tokens de diseño reutilizables, como colores, espaciados y otras propiedades, que se pueden vincular a objetos. Si cambias el valor de una variable, se actualizan todos los objetos que la usan.
 
-## Abrir el editor
+## Abrir el diálogo de variables
 
-Sin objetos seleccionados, la pestaña **Diseño** muestra las propiedades de la página. El icono de ajustes de la sección Variables abre el editor.
+Sin objetos seleccionados, la pestaña **Diseño** muestra las propiedades de la página, incluida una sección Variables con el número de colecciones y variables. El icono de ajustes abre el diálogo.
 
-## Colecciones y modos
+El diálogo muestra a la izquierda las variables de la colección activa, edita a la derecha la variable seleccionada o la colección, y muestra debajo la hoja de estilos que producen. En una ventana estrecha o en un teléfono muestra un modo a la vez, y una variable, los ajustes de la colección o la hoja de estilos se abren sobre la lista con un botón para volver.
 
-Una colección agrupa variables relacionadas. Cada colección puede tener modos, por ejemplo Claro y Oscuro, con un valor distinto por variable.
+## Colecciones
 
-- Un clic cambia de colección.
-- Doble clic en el nombre permite renombrarla.
-- Los botones de la cabecera crean colecciones y modos.
+Las variables se organizan en colecciones, que aparecen como pestañas (un menú en pantallas estrechas).
 
-## Editar variables
+- **Cambiar de colección:** haz clic en una pestaña
+- **Crear una colección:** haz clic en el botón de carpeta de la barra de herramientas (**Crear colección**)
+- **Renombrar o eliminar:** sin ninguna variable seleccionada, la parte derecha edita la colección: cambia su nombre o elimínala (**Eliminar colección**)
 
-La tabla contiene el nombre, el tipo y una columna por modo. Haz clic en una celda para editarla.
+## Modos
 
-Tipos admitidos:
+Cada colección puede tener varios modos (por ejemplo, Claro y Oscuro). Los modos aparecen como columnas de valores en la lista, y una variable tiene un valor para cada modo. Se gestionan en los **Ajustes de la colección**:
 
-- color;
-- número;
-- texto;
-- booleano.
+- **Añadir un modo:** haz clic en **+** junto a **Modos**
+- **Renombrar:** edita el nombre del modo
+- **Duplicar, establecer como predeterminado, eliminar:** usa el menú **⋯** junto al modo (**Duplicar modo**, **Establecer como predeterminado**, **Eliminar modo**)
+- **Condición:** el selector CSS o la consulta `@media`, `@supports` o `@container` que activa el modo en la hoja de estilos. Si se deja vacía, es un atributo con el nombre de la colección y del modo, como `[data-theme="dark"]` para el modo Oscuro de una colección Theme. El modo predeterminado siempre va en `:root`.
 
-Los colores se editan con un campo y un selector. Los números pueden representar dimensiones y espaciados.
+## Gestionar variables
 
-## Enlazar rellenos y contornos
+Las variables se agrupan según las carpetas de sus nombres (`Brand/Primary` aparece como *Primary* dentro de *Brand*), con su nombre CSS y un valor por modo.
 
-Abre el selector de variables desde el control de color y elige una variable compatible. El control muestra el enlace en lugar de copiar el valor. Cambiar el valor manualmente elimina el enlace solo en la primera modificación real, no al enfocar el campo.
+- **Crear una variable:** haz clic en **+** en la barra de herramientas y elige un tipo; la nueva variable se abre para editarla
+- **Seleccionar:** haz clic en una fila, o muévete con las flechas y pulsa Intro
+- **Buscar:** escribe en la barra de búsqueda para filtrar las variables por nombre
+- **Eliminar:** haz clic en **Eliminar variable** al final de sus ajustes
 
-## Alias
+Al seleccionar una variable se editan:
 
-Una variable puede hacer referencia a otra. OpenPencil resuelve la cadena según el modo activo y detecta referencias circulares.
+- **Nombre** y **Nombre CSS:** deja el nombre CSS vacío para derivarlo del nombre y los ámbitos, por ejemplo `--color-brand-primary`
+- **Unidad:** para números, `px`, `rem`, `%`, `ms`, `s`, `deg` o ninguna; los valores se introducen en esa unidad
+- **Valores:** uno por modo; un color abre el selector de color y un alias muestra la variable a la que apunta
+- **Expresión CSS:** para números, un valor como `clamp(1rem, 4vw, 1.5rem)` que se escribe en CSS en lugar del número, mientras el lienzo sigue dibujando el número
+- **Ámbitos:** para qué propiedades se ofrece la variable
+- **Descripción**
 
-## Importación y exportación
+## Hoja de estilos
 
-Las variables se conservan al importar y exportar `.fig`. La CLI también puede listarlas y modificarlas mediante la API compatible con plugins de Figma.
+La parte inferior del diálogo muestra la colección activa como propiedades personalizadas de CSS o como un tema de Tailwind v4. El botón de copiar (**Copiar todas las variables como CSS**) copia las variables de todo el documento en ese formato, de modo que los alias a otras colecciones se resuelven.
+
+## Vincular variables a rellenos
+
+En la sección Relleno del panel de propiedades, usa el selector de variables para vincular una variable de color al relleno de un objeto.
+
+- **Vincular:** elige una variable de color en el selector. El relleno muestra una etiqueta morada con el nombre de la variable.
+- **Desvincular:** haz clic en el botón de desvincular de la etiqueta para quitar el vínculo. El relleno vuelve al valor de color resuelto.
+
+Cuando cambia el valor de la variable (o al cambiar de modo), todos los rellenos vinculados se actualizan automáticamente.
+
+## Consejos
+
+- Usa colecciones para agrupar tokens relacionados (por ejemplo, `Primitives` para colores base, `Semantic` para alias por función y `Spacing` para valores de maquetación).
+- Los modos son útiles para cambiar de tema: define valores Claro y Oscuro en la misma colección.
+- Las variables admiten alias: una colección `Semantic` puede hacer referencia a valores de una colección `Primitives`.
+- Consulta [Dibujar formas](./drawing-shapes) para ver cómo funcionan los rellenos y el selector de color.

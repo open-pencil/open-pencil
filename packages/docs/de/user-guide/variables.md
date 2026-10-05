@@ -5,34 +5,65 @@ description: Designvariablen, Sammlungen, Modi und Farbbindungen in OpenPencil.
 
 # Variablen
 
-Variablen speichern wiederverwendbare Designtoken wie Farben und Abstände. Objekteigenschaften können daran gebunden werden. Ändert sich ein Variablenwert, werden alle verbundenen Objekte aktualisiert.
+Variablen speichern wiederverwendbare Designtoken wie Farben, Abstände und andere Eigenschaften, die an Objekte gebunden werden können. Ändert sich ein Variablenwert, werden alle Objekte aktualisiert, die ihn verwenden.
 
-## Variablen öffnen
+## Variablen-Dialog öffnen
 
-Wenn kein Objekt ausgewählt ist, zeigt der Bereich Design die Seiteneigenschaften. Das Einstellungssymbol im Bereich Variablen öffnet den Dialog.
+Wenn kein Objekt ausgewählt ist, zeigt der Bereich Design die Seiteneigenschaften, darunter einen Bereich Variablen mit der Anzahl der Sammlungen und Variablen. Das Einstellungssymbol öffnet den Dialog.
 
-## Sammlungen und Modi
+Der Dialog listet links die Variablen der aktiven Sammlung auf, bearbeitet rechts die ausgewählte Variable oder die Sammlung und zeigt darunter das daraus entstehende Stylesheet. In einem schmalen Fenster oder auf dem Smartphone zeigt er jeweils einen Modus an. Eine Variable, die Sammlungseinstellungen oder das Stylesheet öffnen sich dann über der Liste mit einer Zurück-Schaltfläche.
 
-Variablen sind in Sammlungen organisiert. Jede Sammlung erscheint als Registerkarte und kann mehrere Modi wie Hell und Dunkel enthalten. Die Modi werden als Tabellenspalten dargestellt.
+## Sammlungen
 
-## Variablen bearbeiten
+Variablen sind in Sammlungen organisiert, die als Registerkarten erscheinen (auf schmalen Bildschirmen als Menü).
 
-- Variable erstellen;
-- Namen oder Wert durch Klick auf die Zelle ändern;
-- Liste über das Suchfeld filtern.
+- **Sammlung wechseln:** auf eine Registerkarte klicken
+- **Sammlung erstellen:** in der Werkzeugleiste auf die Ordner-Schaltfläche (**Sammlung erstellen**) klicken
+- **Umbenennen oder löschen:** Ist keine Variable ausgewählt, bearbeitet die rechte Seite die Sammlung: Dort lässt sich der Name ändern oder die Sammlung löschen (**Sammlung löschen**)
 
-Farbwerte werden direkt in der Tabelle mit einem Farbfeld und einer Farbauswahl bearbeitet.
+## Modi
 
-Die Typen `FLOAT`, `STRING` und `BOOLEAN` sind im Datenmodell vorhanden, besitzen aber noch keine vollständige Bearbeitungsoberfläche.
+Jede Sammlung kann mehrere Modi enthalten (z. B. Hell und Dunkel). Die Modi erscheinen als Wertespalten in der Liste, und eine Variable hat für jeden Modus einen Wert. Verwaltet werden sie in den **Sammlungseinstellungen**:
 
-## Bindungen für Füllungen und Konturen
+- **Modus hinzufügen:** auf **+** neben **Modi** klicken
+- **Umbenennen:** den Namen des Modus bearbeiten
+- **Duplizieren, als Standard festlegen, löschen:** das Menü **⋯** neben dem Modus verwenden (**Modus duplizieren**, **Als Standard festlegen**, **Modus löschen**)
+- **Bedingung:** der CSS-Selektor oder die Abfrage mit `@media`, `@supports` oder `@container`, die den Modus im Stylesheet aktiviert. Bleibt sie leer, ist es ein Attribut, das nach Sammlung und Modus benannt ist, etwa `[data-theme="dark"]` für den Modus Dunkel einer Sammlung Theme. Der Standardmodus steht immer in `:root`.
 
-Die Variablenauswahl in den Bereichen Füllung und Kontur verbindet eine Farbvariable mit der jeweiligen Farbeigenschaft.
+## Variablen verwalten
 
-Das Öffnen eines Feldes oder der Auswahl verändert die Bindung nicht. Erst eine tatsächliche Wertänderung kann sie abhängig vom verwendeten Steuerelement lösen oder die Variable selbst ändern.
+Variablen sind nach den Ordnern in ihren Namen gruppiert (`Brand/Primary` erscheint als *Primary* unter *Brand*) und zeigen ihren CSS-Namen sowie einen Wert pro Modus.
+
+- **Variable erstellen:** in der Werkzeugleiste auf **+** klicken und einen Typ wählen; die neue Variable wird zur Bearbeitung geöffnet
+- **Auswählen:** auf eine Zeile klicken oder mit den Pfeiltasten navigieren und die Eingabetaste drücken
+- **Suchen:** in das Suchfeld tippen, um Variablen nach Namen zu filtern
+- **Löschen:** unten in den Einstellungen der Variable auf **Variable löschen** klicken
+
+Die Auswahl einer Variable bearbeitet:
+
+- **Name** und **CSS-Name:** den CSS-Namen leer lassen, damit er aus Name und Geltungsbereichen abgeleitet wird, etwa `--color-brand-primary`
+- **Einheit:** bei Zahlen `px`, `rem`, `%`, `ms`, `s`, `deg` oder keine; Werte werden in dieser Einheit eingegeben
+- **Werte:** pro Modus; eine Farbe öffnet die Farbauswahl, ein Alias zeigt die Variable, auf die er verweist
+- **CSS-Ausdruck:** bei Zahlen ein Wert wie `clamp(1rem, 4vw, 1.5rem)`, der in CSS anstelle der Zahl geschrieben wird, während die Arbeitsfläche weiterhin die Zahl zeichnet
+- **Geltungsbereiche:** für welche Eigenschaften die Variable angeboten wird
+- **Beschreibung**
+
+## Stylesheet
+
+Unten im Dialog wird die aktive Sammlung als CSS-Custom-Properties oder als Tailwind-v4-Theme angezeigt. Die Kopieren-Schaltfläche (**Alle Variablen als CSS kopieren**) kopiert die Variablen des gesamten Dokuments in diesem Format, sodass Aliase auf andere Sammlungen aufgelöst werden.
+
+## Variablen an Füllungen binden
+
+Mit der Variablenauswahl im Bereich Füllung des Eigenschaftenbereichs lässt sich eine Farbvariable an die Füllung eines Objekts binden.
+
+- **Binden:** eine Farbvariable in der Auswahl wählen. Die Füllung zeigt ein violettes Etikett mit dem Variablennamen.
+- **Lösen:** auf die Schaltfläche zum Lösen am Etikett klicken, um die Bindung zu entfernen. Die Füllung kehrt zum aufgelösten Farbwert zurück.
+
+Ändert sich der Wert der Variable (oder wird der Modus gewechselt), werden alle gebundenen Füllungen automatisch aktualisiert.
 
 ## Hinweise
 
-- Sammlungen gruppieren zusammengehörige Token, etwa `Primitives` für Ausgangsfarben und `Semantic` für rollenbezogene Token.
-- Modi eignen sich für Themen wie Hell und Dunkel.
-- Aliase erlauben einer Variable, auf den Wert einer anderen Sammlung zu verweisen.
+- Sammlungen gruppieren zusammengehörige Token, etwa `Primitives` für Ausgangsfarben, `Semantic` für rollenbezogene Aliase und `Spacing` für Layoutwerte.
+- Modi eignen sich für Themen: Hell- und Dunkel-Werte lassen sich in derselben Sammlung definieren.
+- Variablen unterstützen Aliase: Eine Sammlung `Semantic` kann auf Werte einer Sammlung `Primitives` verweisen.
+- Wie Füllungen und die Farbauswahl funktionieren, steht unter [Formen zeichnen](./drawing-shapes).
