@@ -9,6 +9,8 @@ import {
   pkceChallenge
 } from '@/app/ai/providers/openrouter/oauth'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 describe('OpenRouter OAuth PKCE', () => {
   test('derives the S256 challenge from the RFC 7636 example verifier', async () => {
     expect(await pkceChallenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk')).toBe(
@@ -45,10 +47,11 @@ describe('OpenRouter OAuth PKCE', () => {
 
   test('exchanges the code and verifier for a key', async () => {
     const requests: { url: string; body: unknown }[] = []
-    const fetchImpl = (async (url: string, init?: RequestInit) => {
+    const fetchImpl = fetchStub(async (input, init) => {
+      const url = String(input)
       requests.push({ url, body: JSON.parse(String(init?.body)) })
       return Response.json({ key: 'sk-or-v1-test' })
-    }) as typeof fetch
+    })
     expect(await exchangeOpenRouterCode('abc', 'verifier', fetchImpl)).toBe('sk-or-v1-test')
     expect(requests).toEqual([
       {
@@ -59,12 +62,13 @@ describe('OpenRouter OAuth PKCE', () => {
   })
 
   test('reports a rejected or empty exchange', async () => {
-    const rejected = (async () =>
-      Response.json({ error: { message: 'Invalid code' } }, { status: 400 })) as typeof fetch
+    const rejected = fetchStub(async () =>
+      Response.json({ error: { message: 'Invalid code' } }, { status: 400 })
+    )
     await expect(exchangeOpenRouterCode('abc', 'v', rejected)).rejects.toBeInstanceOf(
       OpenRouterKeyExchangeError
     )
-    const empty = (async () => Response.json({})) as typeof fetch
+    const empty = fetchStub(async () => Response.json({}))
     await expect(exchangeOpenRouterCode('abc', 'v', empty)).rejects.toBeInstanceOf(
       OpenRouterKeyExchangeError
     )

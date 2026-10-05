@@ -6,13 +6,16 @@ import {
   OpenRouterKeyError
 } from '@/app/ai/providers/openrouter/key'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 describe('fetchOpenRouterKeyInfo', () => {
   test('reports the key label and free tier with the key as a bearer token', async () => {
     const requests: { url: string; authorization: string | null }[] = []
-    const fetchImpl = (async (url: string, init?: RequestInit) => {
+    const fetchImpl = fetchStub(async (input, init) => {
+      const url = String(input)
       requests.push({ url, authorization: new Headers(init?.headers).get('authorization') })
       return Response.json({ data: { label: 'OpenPencil', is_free_tier: true, usage: 0 } })
-    }) as typeof fetch
+    })
     expect(await fetchOpenRouterKeyInfo('sk-or-v1-test', fetchImpl)).toEqual({
       label: 'OpenPencil',
       freeTier: true
@@ -23,11 +26,9 @@ describe('fetchOpenRouterKeyInfo', () => {
   })
 
   test('rejects a key OpenRouter does not accept', async () => {
-    const rejected = (async () =>
-      Response.json(
-        { error: { code: 401, message: 'Invalid credentials' } },
-        { status: 401 }
-      )) as typeof fetch
+    const rejected = fetchStub(async () =>
+      Response.json({ error: { code: 401, message: 'Invalid credentials' } }, { status: 401 })
+    )
     await expect(fetchOpenRouterKeyInfo('sk-or-bad', rejected)).rejects.toBeInstanceOf(
       OpenRouterKeyError
     )

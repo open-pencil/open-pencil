@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 
 import { AgentSetupError } from '@/app/ai/agents/readiness'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
@@ -26,7 +26,7 @@ function submission(ensureChat: () => Promise<null>) {
   const reportError = mock(() => undefined)
   const openSetup = mock(() => undefined)
   const chat = useChatSubmission({
-    chat: ref<Chat<UIMessage> | null>(null),
+    chat: shallowRef<Chat<UIMessage> | null>(null),
     ensureChat,
     clearFailure: () => undefined,
     getEditor: () => ({}) as EditorStore,

@@ -1,5 +1,7 @@
 import { describe, expect, test, mock } from 'bun:test'
 
+import type { ACPAgentDef } from '@open-pencil/core/constants'
+
 import { createAgentDiscovery, detectedAgents } from '@/app/ai/agents/discovery'
 import type { AgentLookup } from '@/app/ai/agents/native'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -42,7 +44,7 @@ describe('local agent discovery', () => {
 
   test('retries bridge startup without reinstalling a successfully installed companion', async () => {
     const installBridge = mock(async () => undefined)
-    const restartBridge = mock(async () => {
+    const restartBridge = mock(async (): Promise<void> => {
       throw new Error('Cannot start')
     })
     const discovery = createAgentDiscovery({
@@ -102,7 +104,7 @@ describe('local agent discovery', () => {
   test('installs only on request, blocks duplicate installs, and rescans afterward', async () => {
     let installed = false
     const pending = createDeferred<undefined>()
-    const install = mock(async () => {
+    const install = mock(async (_agent: ACPAgentDef, _searchPath: string) => {
       await pending.promise
       installed = true
     })
