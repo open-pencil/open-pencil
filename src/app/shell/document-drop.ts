@@ -54,8 +54,10 @@ export function useDocumentDrop() {
     if (!event.dataTransfer || !hasFiles(event)) return
     // Without this the browser would navigate away to show the file.
     event.preventDefault()
-    const canvasFiles = new Set(filterCanvasFiles(event.dataTransfer.files))
-    const documents = droppedFiles(event.dataTransfer).filter(({ file }) => !canvasFiles.has(file))
+    // Classify each file itself: `getAsFile()` may return a new `File`, not one from `files`.
+    const documents = droppedFiles(event.dataTransfer).filter(
+      ({ file }) => filterCanvasFiles([file]).length === 0
+    )
     if (documents.length === 0) return
     void openDesignFileBatch(
       documents,

@@ -47,3 +47,18 @@ test('a dropped file that is neither a document nor an image reports that it can
   await expect(page.getByText('Could not open “notes.txt”', { exact: false })).toBeVisible()
   await expect(tabs.getByRole('tab')).toHaveCount(1)
 })
+
+test('an SVG dropped on the canvas is placed, not opened as a document', async ({ page }) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const tabs = page.getByRole('tablist').filter({ has: page.getByTestId('tabbar-tab') })
+  const tabName = (await tabs.getByRole('tab').first().textContent()) ?? ''
+  const svg = '<svg width="20" height="20"><rect width="20" height="20" fill="#f00"/></svg>'
+
+  await dropOnCanvas(page, [{ name: 'mark.svg', bytes: [...new TextEncoder().encode(svg)] }])
+
+  await expect(page.getByTestId('layers-item').filter({ hasText: 'mark' })).toHaveCount(1)
+  await expect(page.getByText('Could not open', { exact: false })).toHaveCount(0)
+  await expect(tabs.getByRole('tab')).toHaveCount(1)
+  await expect(tabs.getByRole('tab').first()).toHaveText(tabName)
+})
