@@ -19,6 +19,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 import { IS_BROWSER } from '#core/constants'
+import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
@@ -150,8 +151,12 @@ export class FigmaAPI implements NodeProxyHost {
 
   // --- Node Creation ---
 
+  /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
   private _createNode(type: NodeType): FigmaNodeProxy {
-    const node = this.graph.createNode(type, this._currentPageId)
+    const defaults = newLayerDefaults(type)
+    // Figma's plugin API makes a line 100 wide with no height.
+    if (type === 'LINE') defaults.height = 0
+    const node = this.graph.createNode(type, this._currentPageId, defaults)
     return this.wrapNode(node.id)
   }
 
