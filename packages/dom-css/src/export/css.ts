@@ -51,9 +51,25 @@ export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
   return style
 }
 
+/** Whether a layer sizes itself to its content along an axis, so CSS should too. */
+function hugs(node: SceneNode, axis: 'width' | 'height'): boolean {
+  if (node.type === 'TEXT')
+    return (
+      node.textAutoResize === 'WIDTH_AND_HEIGHT' ||
+      (axis === 'height' && node.textAutoResize === 'HEIGHT')
+    )
+  if (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL') return false
+  const primary = (node.layoutMode === 'HORIZONTAL') === (axis === 'width')
+  return (primary ? node.primaryAxisSizing : node.counterAxisSizing) === 'HUG'
+}
+
+/**
+ * A layer's size: fixed on the axes the design fixes, and left to the content where the layer
+ * hugs it (an auto layout frame set to Hug, or auto-sizing text), so the page grows with it.
+ */
 export function sceneNodeSizeStyle(node: SceneNode): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  if (node.width > 0) style.width = `${node.width}px`
-  if (node.height > 0) style.height = `${node.height}px`
+  if (node.width > 0 && !hugs(node, 'width')) style.width = `${node.width}px`
+  if (node.height > 0 && !hugs(node, 'height')) style.height = `${node.height}px`
   return style
 }

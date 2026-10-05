@@ -61,11 +61,26 @@ function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   return undefined
 }
 
-function addPositioning(style: DesignStyleDeclaration, node: SceneNode): void {
-  if (node.layoutPositioning !== 'ABSOLUTE') return
-  style.position = 'absolute'
-  style.left = `${node.x}px`
-  style.top = `${node.y}px`
+/**
+ * Place a layer at its coordinates when its parent does not lay it out: it is absolutely
+ * positioned, or its parent frame has no auto layout. A frame without auto layout becomes the
+ * containing block of the children it places.
+ */
+function addPositioning(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined
+): void {
+  const placed =
+    node.layoutPositioning === 'ABSOLUTE' ||
+    (parent !== undefined && parent.type !== 'CANVAS' && parent.layoutMode === 'NONE')
+  if (placed) {
+    style.position = 'absolute'
+    style.left = `${node.x}px`
+    style.top = `${node.y}px`
+  } else if (node.layoutMode === 'NONE' && node.type !== 'TEXT' && node.childIds.length > 0) {
+    style.position = 'relative'
+  }
 }
 
 function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode): void {
@@ -76,6 +91,10 @@ function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode): voi
 }
 
 function addCornerRadii(style: DesignStyleDeclaration, node: SceneNode): void {
+  if (node.type === 'ELLIPSE') {
+    style['border-radius'] = '50%'
+    return
+  }
   if (node.independentCorners) {
     if (node.topLeftRadius > 0) style['border-top-left-radius'] = `${node.topLeftRadius}px`
     if (node.topRightRadius > 0) style['border-top-right-radius'] = `${node.topRightRadius}px`
@@ -174,7 +193,7 @@ function styleFromSceneNode(
   parent: SceneNode | undefined
 ): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
-  addPositioning(style, node)
+  addPositioning(style, node, parent)
   addSizeConstraints(style, node)
   const fill = fillToCSS(node.fills.at(0))
   if (fill) style['background-color'] = fill
@@ -211,7 +230,7 @@ function styleFromSceneNode(
 
 function styleFromTextNode(node: SceneNode, parent: SceneNode | undefined): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
-  addPositioning(style, node)
+  addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
   style.color = fillToCSS(node.fills.at(0)) ?? cssColor(BLACK)
