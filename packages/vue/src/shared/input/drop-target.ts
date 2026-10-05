@@ -10,7 +10,9 @@ function acceptingTarget(target: SceneNode | null, editor: Editor): SceneNode | 
   if (!target) return null
   // Only an instance's slots take layers; anywhere else in it drops into its parent.
   const accepting = editor.graph.getNode(editor.acceptingParent(target.id))
-  return accepting && accepting.type !== 'CANVAS' ? accepting : null
+  if (!accepting || accepting.type === 'CANVAS' || !editor.acceptsChildren(accepting.id))
+    return null
+  return accepting
 }
 
 /** The frame a dragged layer lands in under the cursor; null is the page. */

@@ -8,7 +8,7 @@ import {
   SECTION_DEFAULT_STROKE
 } from '#core/constants'
 
-import { acceptingParent, prepareSlotEdits } from './components/slots'
+import { prepareSlotEdits } from './components/slots'
 import { adoptCoveredLayers } from './shapes/adopt'
 import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions } from './shapes/pen'
@@ -44,9 +44,11 @@ export function createShapeActions(ctx: EditorContext) {
     name?: string
   ): string {
     const fill = DEFAULT_FILLS[type] ?? DEFAULT_FILLS.RECTANGLE
-    // A new layer inside an instance lands in a slot, which the instance claims first.
-    const pid = acceptingParent(ctx, parentId ?? ctx.state.currentPageId)
-    prepareSlotEdits(ctx, [pid])
+    const pid = parentId ?? ctx.state.currentPageId
+    // Inside an instance only a slot takes new layers, and the instance claims it first.
+    if (!prepareSlotEdits(ctx, [pid])) {
+      throw new Error('Cannot add a layer to the locked part of an instance')
+    }
     const overrides: Partial<SceneNode> = {
       x,
       y,
