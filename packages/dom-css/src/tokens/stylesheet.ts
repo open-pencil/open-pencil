@@ -66,12 +66,20 @@ function modeSlug(collection: VariableCollection, mode: VariableCollectionMode):
   return plainSlug(mode)
 }
 
+/** The attribute a collection's manual modes are switched by, unless it names its own. */
+export function defaultModeAttributeName(collection: VariableCollection): string {
+  return `data-${tokenSlug(collection.name) || 'mode'}`
+}
+
 /** The attribute that puts an element in a mode with no condition of its own: `data-theme`. */
 export function modeAttribute(
   collection: VariableCollection,
   mode: VariableCollectionMode
 ): { name: string; value: string } {
-  return { name: `data-${tokenSlug(collection.name) || 'mode'}`, value: modeSlug(collection, mode) }
+  return {
+    name: collection.modeAttribute ?? defaultModeAttributeName(collection),
+    value: modeSlug(collection, mode)
+  }
 }
 
 /** The scope a mode applies in when it names none: `[data-theme="dark"]` for Theme / Dark. */

@@ -175,4 +175,20 @@ describe('variable token undo', () => {
     editor.undo.undo()
     expect(gutter()?.expressions).toEqual({ light: { css: clamp, resolved: 24 } })
   })
+
+  test('the mode attribute is set, ignored when invalid, cleared, and undone', () => {
+    const editor = themeEditor()
+    const attribute = () => editor.graph.variableCollections.get('theme')?.modeAttribute
+
+    editor.setModeAttribute('theme', '  data-scheme  ')
+    expect(attribute()).toBe('data-scheme')
+
+    editor.setModeAttribute('theme', 'data scheme"]')
+    expect(attribute()).toBeUndefined()
+
+    editor.undo.undo()
+    expect(attribute()).toBe('data-scheme')
+    editor.undo.undo()
+    expect(attribute()).toBeUndefined()
+  })
 })

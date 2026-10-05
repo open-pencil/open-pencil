@@ -20,6 +20,7 @@ Le variabili sono organizzate in raccolte. In una finestra larga sono elencate i
 - **Cambiare raccolta:** fai clic su di essa nella barra laterale o sulla sua scheda
 - **Creare una raccolta:** fai clic su **+** accanto a **Raccolte**, oppure sul pulsante a forma di cartella nella barra degli strumenti (**Crea raccolta**)
 - **Rinominare o eliminare:** senza alcuna variabile selezionata, la parte destra modifica la raccolta: cambia il nome, oppure eliminala dal menu **⋯** accanto al nome (**Elimina raccolta**)
+- **Attributo di attivazione:** l’attributo che attiva le modalità attivate manualmente, `data-theme` per impostazione predefinita per una raccolta chiamata Theme; scrivi un altro nome, come `data-color-scheme`, per adattarlo a un codice esistente
 
 ## Modalità
 

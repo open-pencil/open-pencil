@@ -8,9 +8,10 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, useId, watch } from 'vue'
 
-import type { VariableCollection } from '@open-pencil/scene-graph'
+import { defaultModeAttributeName } from '@open-pencil/dom-css/export'
+import { isModeAttributeName, type VariableCollection } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -39,6 +40,7 @@ const emit = defineEmits<{
   done: []
   rename: [name: string]
   remove: []
+  setModeAttribute: [name: string]
   addMode: []
   renameMode: [modeId: string, name: string]
   duplicateMode: [modeId: string]
@@ -56,6 +58,7 @@ const dangerItem = useMenuUI({ item: 'justify-start gap-2 text-error' }).item
 /** Text fields edit a draft and commit on change, like the token fields. */
 const draft = reactive({
   name: '',
+  attribute: '',
   modeNames: {} as Record<string, string>,
   custom: {} as Record<string, string>,
   widths: {} as Record<string, string>
@@ -68,10 +71,12 @@ watch(
   () =>
     JSON.stringify([
       collection.name,
+      collection.modeAttribute ?? '',
       collection.modes.map((mode) => [mode.modeId, mode.name, mode.condition ?? ''])
     ]),
   () => {
     draft.name = collection.name
+    draft.attribute = collection.modeAttribute ?? ''
     for (const mode of collection.modes) {
       const condition = parseModeCondition(mode.condition)
       draft.modeNames[mode.modeId] = mode.name
@@ -86,6 +91,27 @@ function commitName() {
   const name = draft.name.trim()
   if (name && name !== collection.name) emit('rename', name)
   else draft.name = collection.name
+}
+
+const attributeErrorId = `${useId()}-attribute`
+/** Blank restores the default; anything else must be an attribute a selector can name as is. */
+const attributeInvalid = computed(() => {
+  const name = draft.attribute.trim()
+  return name !== '' && !isModeAttributeName(name)
+})
+
+/** A manual mode's selector, so the hint shows what the attribute switches. */
+const attributeExample = computed(() => {
+  const manual = collection.modes.find(
+    (candidate) => candidate.modeId !== collection.defaultModeId && !candidate.condition
+  )
+  return (manual && modeConditionPlaceholder(collection, manual.modeId)) ?? ''
+})
+
+function commitAttribute() {
+  if (attributeInvalid.value) return
+  const name = draft.attribute.trim()
+  if (name !== (collection.modeAttribute ?? '')) emit('setModeAttribute', name)
 }
 
 function mode(modeId: string) {
@@ -187,6 +213,26 @@ function done(event: KeyboardEvent) {
           </DropdownMenuPortal>
         </DropdownMenuRoot>
       </div>
+      <label :class="ui.field()">
+        <span :class="ui.label()">{{ variables.modeAttribute }}</span>
+        <AppInput
+          v-model="draft.attribute"
+          size="sm"
+          :placeholder="defaultModeAttributeName(collection)"
+          :state="attributeInvalid ? 'invalid' : 'idle'"
+          :aria-invalid="attributeInvalid"
+          :aria-describedby="attributeInvalid ? attributeErrorId : undefined"
+          :ui="{ input: 'font-mono' }"
+          data-test-id="variables-mode-attribute"
+          @change="commitAttribute"
+        />
+        <p v-if="attributeInvalid" :id="attributeErrorId" :class="ui.error()" role="alert">
+          {{ variables.modeAttributeInvalid }}
+        </p>
+        <span v-else-if="attributeExample" :class="ui.hint()">{{
+          variables.modeAttributeHint({ example: attributeExample })
+        }}</span>
+      </label>
     </section>
 
     <section :class="ui.section()">

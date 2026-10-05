@@ -20,6 +20,7 @@ Variables are organized into collections. In a wide dialog they are listed in a 
 - **Switch collection** — click it in the sidebar or its tab
 - **Create collection** — click **+** next to Collections, or the folder button in the toolbar
 - **Rename or delete** — with no variable selected, the right side edits the collection: change its name, or delete it from the **⋯** menu next to the name
+- **Switch attribute** — the attribute that turns manually switched modes on, `data-theme` by default for a collection named Theme; type another name, such as `data-color-scheme`, to match an existing codebase
 
 ## Modes
 

@@ -155,6 +155,25 @@ test('a new mode is switched manually until a condition is picked', async () => 
   editor.canvas.assertNoErrors()
 })
 
+test('manual modes switch by the attribute the collection names', async () => {
+  const inspector = editor.page.getByTestId('collection-inspector')
+  await inspector.getByTestId('variables-add-mode').click()
+  const added = inspector.getByTestId('variables-mode').last()
+  await expect(added.getByTestId('variables-mode-css')).toHaveText(
+    '[data-test-collection="mode-3"]'
+  )
+
+  const attribute = inspector.getByTestId('variables-mode-attribute')
+  await attribute.fill('data scheme')
+  await expect(attribute).toHaveAttribute('aria-invalid', 'true')
+  await attribute.fill('data-scheme')
+  await attribute.press('Enter')
+
+  await expect(added.getByTestId('variables-mode-css')).toHaveText('[data-scheme="mode-3"]')
+  await expect(attribute).not.toHaveAttribute('aria-invalid', 'true')
+  editor.canvas.assertNoErrors()
+})
+
 test('color swatch opens color picker', async () => {
   await createColorVariable('SwatchVar')
   // close dialog if open from previous test

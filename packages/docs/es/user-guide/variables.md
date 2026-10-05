@@ -20,6 +20,7 @@ Las variables se organizan en colecciones. En un diálogo ancho aparecen en una 
 - **Cambiar de colección:** haz clic en ella en la barra lateral o en su pestaña
 - **Crear una colección:** haz clic en **+** junto a **Colecciones** o en el botón de carpeta de la barra de herramientas (**Crear colección**)
 - **Renombrar o eliminar:** sin ninguna variable seleccionada, la parte derecha edita la colección: cambia su nombre o elimínala desde el menú **⋯** junto al nombre (**Eliminar colección**)
+- **Atributo de cambio:** el atributo que activa los modos que se cambian manualmente, `data-theme` por defecto para una colección llamada Theme; escribe otro nombre, como `data-color-scheme`, para adaptarlo a un código existente
 
 ## Modos
 

@@ -12,6 +12,7 @@ export {
 } from './names'
 export {
   buildTokenStylesheet,
+  defaultModeAttributeName,
   defaultModeCondition,
   loadTokenValidator,
   modeAttribute,

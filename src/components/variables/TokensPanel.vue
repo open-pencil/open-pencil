@@ -255,6 +255,10 @@ function reorder(sourceId: string, targetIndex: number, visibleIds: string[]) {
   if (collection.value) actions.reorder(collection.value.id, sourceId, targetIndex, visibleIds)
 }
 
+function setModeAttribute(name: string) {
+  if (collection.value) editor.setModeAttribute(collection.value.id, name)
+}
+
 function setCondition(modeId: string, condition: string) {
   if (collection.value) editor.setModeCondition(collection.value.id, modeId, condition)
 }
@@ -296,7 +300,8 @@ const collectionInspector = computed(() => {
     onSetDefaultMode: ctx.setDefaultMode,
     onRemoveMode: ctx.removeMode,
     onSetCondition: setCondition,
-    onDone: focusList
+    onDone: focusList,
+    onSetModeAttribute: setModeAttribute
   }
 })
 const tableActions = {

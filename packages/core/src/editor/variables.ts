@@ -1,12 +1,13 @@
 import { omit, omitBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import type {
-  TokenExpression,
-  Variable,
-  VariableCollection,
-  VariableType,
-  VariableValue
+import {
+  isModeAttributeName,
+  type TokenExpression,
+  type Variable,
+  type VariableCollection,
+  type VariableType,
+  type VariableValue
 } from '@open-pencil/scene-graph'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -505,11 +506,33 @@ export function createVariableActions(ctx: EditorContext) {
     })
   }
 
+  /** Name the attribute manual modes are switched by; an empty or invalid name restores the default. */
+  function setModeAttribute(collectionId: string, name: string | undefined) {
+    const collection = ctx.graph.variableCollections.get(collectionId)
+    if (!collection) return
+    const previous = collection.modeAttribute
+    const trimmed = name?.trim() ?? ''
+    const next = trimmed && isModeAttributeName(trimmed) ? trimmed : undefined
+    if (next === previous) return
+    const apply = (value: string | undefined) => {
+      const target = ctx.graph.variableCollections.get(collectionId)
+      if (target) target.modeAttribute = value
+      ctx.requestRender()
+    }
+    apply(next)
+    ctx.undo.push({
+      label: 'Set mode attribute',
+      forward: () => apply(next),
+      inverse: () => apply(previous)
+    })
+  }
+
   return {
     updateVariableToken,
     setModeCondition,
     duplicateVariable,
     setVariableOrder,
+    setModeAttribute,
     getVariablesByType,
     getVariable,
     resolveColorVariable,

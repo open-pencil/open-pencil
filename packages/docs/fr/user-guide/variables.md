@@ -20,6 +20,7 @@ Les variables sont organisées en collections. Dans une boîte de dialogue large
 - **Changer de collection :** cliquez dessus dans la barre latérale ou sur son onglet
 - **Créer une collection :** cliquez sur **+** à côté de **Collections**, ou sur le bouton en forme de dossier dans la barre d’outils (**Créer une collection**)
 - **Renommer ou supprimer :** sans variable sélectionnée, la partie droite modifie la collection : changez son nom, ou supprimez-la depuis le menu **⋯** à côté du nom (**Supprimer la collection**)
+- **Attribut de bascule :** l’attribut qui active les modes activés manuellement, `data-theme` par défaut pour une collection nommée Theme ; saisissez un autre nom, comme `data-color-scheme`, pour correspondre à un code existant
 
 ## Modes
 
