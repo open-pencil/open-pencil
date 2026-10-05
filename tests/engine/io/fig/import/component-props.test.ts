@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
+import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 const documentGuid = { sessionID: 0, localID: 0 }
@@ -171,6 +172,15 @@ describe('Figma component property import', () => {
   })
 
   test('propagates nested instance swaps through clone chains', () => {
+    const sourceInstanceSymbolData = {
+      symbolID: componentGuid,
+      symbolOverrides: [
+        {
+          guidPath: { guids: [componentIconGuid, mailVectorGuid] },
+          styleIdForStrokeFill: { guid: strokeStyleGuid }
+        }
+      ]
+    } satisfies SymbolData
     const nodeChanges: NodeChange[] = [
       { guid: documentGuid, phase: 'CREATED', type: 'DOCUMENT', name: 'Document' },
       {
@@ -304,15 +314,7 @@ describe('Figma component property import', () => {
             varValue: { value: { symbolIdValue: { guid: userIconGuid } } }
           }
         ],
-        symbolData: {
-          symbolID: componentGuid,
-          symbolOverrides: [
-            {
-              guidPath: { guids: [componentIconGuid, mailVectorGuid] },
-              styleIdForStrokeFill: { guid: strokeStyleGuid }
-            }
-          ]
-        }
+        symbolData: sourceInstanceSymbolData
       },
       {
         guid: cloneInstanceGuid,

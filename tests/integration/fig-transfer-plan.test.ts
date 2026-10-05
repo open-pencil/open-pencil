@@ -1,11 +1,18 @@
 import { expect, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 import { materializeFigFragment } from '@open-pencil/fig'
 import { prepareGraphTransfer, applyGraphTransfer, SceneGraph } from '@open-pencil/scene-graph'
 
 import { readFixtureObject } from '#tests/helpers/fig/fixtures'
 
-const fixture = readFixtureObject('nested-binding-ownership-records.json')
+const FigRecords = v.object({
+  nodeChanges: v.array(v.record(v.string(), v.unknown())),
+  blobs: v.array(v.string())
+})
+
+const fixture = v.parse(FigRecords, readFixtureObject('nested-binding-ownership-records.json'))
 
 test('prepares a real FIG fragment without mutating the destination', () => {
   const fragment = materializeFigFragment(

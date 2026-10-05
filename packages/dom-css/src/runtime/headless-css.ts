@@ -5,6 +5,9 @@ import {
   type CSSStyleRuleLike
 } from '@acemir/cssom'
 
+import { tryParseColor } from '@open-pencil/scene-graph/color'
+import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 
 interface HeadlessCSSRule {
@@ -129,7 +132,7 @@ function expandBoxShorthand(style: DesignStyleDeclaration, property: 'margin' | 
   const value = style[property]
   if (!value) return
 
-  const parts = splitWhitespace(value)
+  const parts = splitCSSValue(value)
   const [top, right = top, bottom = top, left = right] = parts
   if (!top || !right || !bottom || !left) return
 
@@ -143,9 +146,9 @@ function expandBorderShorthand(style: DesignStyleDeclaration) {
   const value = style.border
   if (!value) return
 
-  const parts = splitWhitespace(value)
-  const color = parts.find(isLikelyColor)
-  const width = parts.find((part) => /^\d/.test(part))
+  const parts = splitCSSValue(value)
+  const color = parts.find(isColor)
+  const width = parts.find((part) => parseCSSNumber(part) !== null)
   if (color) style['border-color'] ??= color
   if (width) style['border-width'] ??= width
 }
@@ -154,24 +157,13 @@ function expandBackgroundShorthand(style: DesignStyleDeclaration) {
   const value = style.background
   if (!value || style['background-color']) return
 
-  const color = splitWhitespace(value).find(isLikelyColor)
+  const color = splitCSSValue(value).find(isColor)
   if (color) style['background-color'] = color
 }
 
-function splitWhitespace(value: string): string[] {
-  return value
-    .trim()
-    .split(/\s+/)
-    .filter((part) => part.length > 0)
-}
-
-function isLikelyColor(value: string): boolean {
-  return (
-    value.startsWith('#') ||
-    value.startsWith('rgb') ||
-    value.startsWith('hsl') ||
-    ['black', 'white', 'transparent', 'red', 'green', 'blue'].includes(value.toLowerCase())
-  )
+/** Any CSS color, including `transparent`, which a shorthand may set on purpose. */
+function isColor(value: string): boolean {
+  return tryParseColor(value) !== null
 }
 
 function classList(element: DesignElement): Set<string> {

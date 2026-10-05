@@ -55,12 +55,12 @@ export function hitTestInEditorScope(
     } else {
       return deep
         ? editor.graph.hitTestDeep(cx, cy, scopeId)
-        : editor.graph.hitTest(cx, cy, scopeId)
+        : editor.graph.hitTestSelectable(cx, cy, scopeId, editor.state.selectedIds)
     }
   }
   return deep
     ? editor.graph.hitTestDeep(cx, cy, editor.state.currentPageId)
-    : editor.graph.hitTest(cx, cy, editor.state.currentPageId)
+    : editor.graph.hitTestSelectable(cx, cy, editor.state.currentPageId, editor.state.selectedIds)
 }
 
 export function isInsideEditorContainerBounds(

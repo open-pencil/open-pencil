@@ -16,12 +16,12 @@ beforeAll(async () => {
   }
 })
 
-const networkTest: typeof test = (name, fn, timeout) =>
+const networkTest = (name: string, fn: () => Promise<void>, timeout?: number): void =>
   test(
     name,
     async () => {
       if (!hasNetwork) return
-      await (fn as () => Promise<void>)()
+      await fn()
     },
     timeout
   )

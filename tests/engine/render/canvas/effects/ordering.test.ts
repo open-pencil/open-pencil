@@ -1,12 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { renderShapeUncached } from '#core/canvas/scene'
 
+import { asCanvas } from '../helpers'
 import { createMockCanvas, createMockRenderer } from './helpers'
 
 describe('Renderer effect ordering (Behavioral)', () => {
@@ -41,7 +40,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
       callOrder.push('drawNodeFill')
     })
 
-    renderShapeUncached(r, canvas as Canvas, node, graph as SceneGraph)
+    renderShapeUncached(r, asCanvas(canvas), node, graph as SceneGraph)
 
     expect(callOrder).toEqual(['renderEffects:behind', 'drawNodeFill', 'renderEffects:front'])
   })
@@ -65,7 +64,14 @@ describe('Renderer effect ordering (Behavioral)', () => {
         }
       ],
       strokes: [
-        { type: 'SOLID', visible: true, weight: 1, opacity: 1, color: { r: 0, g: 0, b: 0, a: 1 } }
+        {
+          type: 'SOLID',
+          visible: true,
+          weight: 1,
+          opacity: 1,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          align: 'CENTER'
+        }
       ]
     })
     const graph: Partial<SceneGraph> = {
@@ -80,7 +86,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
       callOrder.push('drawStrokeWithAlign')
     })
 
-    renderShapeUncached(r, canvas as Canvas, node, graph as SceneGraph)
+    renderShapeUncached(r, asCanvas(canvas), node, graph as SceneGraph)
 
     const strokeIdx = callOrder.indexOf('drawStrokeWithAlign')
     const frontIdx = callOrder.indexOf('renderEffects:front')

@@ -26,9 +26,9 @@ interface SceneTreeNode {
 async function getSceneTree(): Promise<SceneTreeNode> {
   return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
-    if (!store) return null
+    if (!store) throw new Error('OpenPencil store not initialized')
 
-    function nodeTree(id: string): SceneTreeNode | null {
+    const nodeTree = (id: string): SceneTreeNode | null => {
       const node = store.graph.getNode(id)
       if (!node) return null
       return {

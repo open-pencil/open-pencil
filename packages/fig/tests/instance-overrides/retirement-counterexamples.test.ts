@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { test } from 'bun:test'
 
 import { expectPathError } from '#fig-tests/helpers/errors'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
@@ -18,7 +18,7 @@ for (const similarity of ['equal-values', 'equal-fields', 'matching-suffix'] as 
       'matching-suffix': { guidPath: { guids: [guid(3), guid(3)] }, opacity: 0.5 }
     }
     const live = liveBySimilarity[similarity]
-    const records: NodeChange[] = [
+    const records = [
       { guid: guid(1), type: 'SYMBOL' },
       { guid: guid(3), type: 'FRAME', parentIndex: { guid: guid(1), position: '!' } },
       {
@@ -26,7 +26,7 @@ for (const similarity of ['equal-values', 'equal-fields', 'matching-suffix'] as 
         type: 'INSTANCE',
         symbolData: { symbolID: guid(1), symbolOverrides: [common, live] }
       }
-    ]
+    ] as NodeChange[]
     expectPathError(() => interpretInstance(records, '1:4'), 'missing-target')
   })
 }

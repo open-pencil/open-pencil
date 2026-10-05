@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Vector } from '@open-pencil/core'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -85,7 +85,7 @@ describe('FIG text sizing import', () => {
       textNode(3, 2)
     ]).graph
 
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     if (!text) throw new Error('Expected text node')
 
     expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('NONE')
@@ -97,14 +97,14 @@ describe('FIG text sizing import', () => {
     const textRecord = textNode(3, 2)
     textRecord.textAutoResize = 'WIDTH_AND_HEIGHT'
     const { graph } = materializeDocument([documentNode(), canvasNode(), stackFrame(2), textRecord])
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
   })
 
   test('keeps fixed text outside auto-layout fixed', () => {
     const graph = materializeDocument([documentNode(), canvasNode(), textNode(3, 1)]).graph
 
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     if (!text) throw new Error('Expected text node')
 
     expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('NONE')
@@ -118,7 +118,7 @@ describe('FIG text sizing import', () => {
       textNode(3, 2, { size: { x: 120, y: 48 }, derivedSize: { x: 56, y: 22 } })
     ]).graph
 
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     if (!text) throw new Error('Expected text node')
 
     expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('NONE')

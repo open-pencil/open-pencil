@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import type { ExportSetting } from '@open-pencil/scene-graph'
+
 import { expectInViewport } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { propertyItems, propertySection } from '#tests/helpers/properties'
@@ -31,7 +33,7 @@ function exportButton() {
   return page.getByTestId('export-button')
 }
 
-async function createRectangles(count: number, settings: unknown[][] = []) {
+async function createRectangles(count: number, settings: ExportSetting[][] = []) {
   const ids = await page.evaluate(
     ({ count: nodeCount, settingsByNode }) => {
       const store = window.openPencil?.getStore?.()
@@ -182,7 +184,7 @@ async function forceBlobDownload() {
 // `createRectangles` makes fill-less rectangles, which have no visual bounds and
 // export to nothing. Use createShape so the rectangle has a real fill and is
 // actually exportable, then attach the export settings under test.
-async function createExportableRect(settings: { scale: number; format: string }[]) {
+async function createExportableRect(settings: ExportSetting[]) {
   await page.evaluate((nodeSettings) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')

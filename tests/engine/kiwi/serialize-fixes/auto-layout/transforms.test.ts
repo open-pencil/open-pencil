@@ -48,8 +48,9 @@ describe('Fix 1: auto-layout child transforms', () => {
       'child node change'
     )
     expect(childNc).toBeDefined()
-    expect(childNc.transform.m02).toBe(50)
-    expect(childNc.transform.m12).toBe(100)
+    const childTransform = expectDefined(childNc.transform, 'childNc transform')
+    expect(childTransform.m02).toBe(50)
+    expect(childTransform.m12).toBe(100)
   })
 
   test('absolute-positioned child inside auto-layout keeps its real x/y', () => {
@@ -88,8 +89,9 @@ describe('Fix 1: auto-layout child transforms', () => {
       'absolute child node change'
     )
     expect(absNc).toBeDefined()
-    expect(absNc.transform.m02).toBe(75)
-    expect(absNc.transform.m12).toBe(120)
+    const absTransform = expectDefined(absNc.transform, 'absNc transform')
+    expect(absTransform.m02).toBe(75)
+    expect(absTransform.m12).toBe(120)
   })
 
   test('child in non-auto-layout parent keeps its real x/y', () => {
@@ -126,8 +128,9 @@ describe('Fix 1: auto-layout child transforms', () => {
       'child node change'
     )
     expect(childNc).toBeDefined()
-    expect(childNc.transform.m02).toBe(30)
-    expect(childNc.transform.m12).toBe(45)
+    const childTransform = expectDefined(childNc.transform, 'childNc transform')
+    expect(childTransform.m02).toBe(30)
+    expect(childTransform.m12).toBe(45)
   })
 
   test('preserves imported Figma layout metadata for instance roundtrips', () => {
@@ -221,8 +224,9 @@ describe('Fix 1: auto-layout child transforms', () => {
       changes.find((nc) => nc.name === 'Item'),
       'item node change'
     )
-    expect(itemNc.transform.m02).toBe(200)
-    expect(itemNc.transform.m12).toBe(50)
+    const itemTransform = expectDefined(itemNc.transform, 'itemNc transform')
+    expect(itemTransform.m02).toBe(200)
+    expect(itemTransform.m12).toBe(50)
   })
 })
 

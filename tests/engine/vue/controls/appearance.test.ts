@@ -98,7 +98,7 @@ describe('appearance control state', () => {
       node: computed(() => graph.getNode(rect.id) ?? null),
       nodes: computed(() => []),
       isMulti: computed(() => false),
-      merged: () => MIXED
+      merged: <K extends keyof SceneNode>(): MixedValue<SceneNode[K]> => MIXED
     }
     const actions = createAppearanceActions(options)
     actions.toggleIndependentCorners()
@@ -182,7 +182,7 @@ describe('appearance control state', () => {
       node: computed(() => null),
       nodes,
       isMulti: computed(() => true),
-      merged: () => MIXED
+      merged: <K extends keyof SceneNode>(): MixedValue<SceneNode[K]> => MIXED
     })
 
     actions.updateCornerProp('cornerSmoothing', 1.4)

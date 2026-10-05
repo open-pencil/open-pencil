@@ -8,6 +8,8 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 
+import { parseScriptInput } from './validation'
+
 const definitionSchema = v.object({
   id: v.string(),
   name: v.string(),
@@ -31,7 +33,11 @@ export function componentMetadata(
   if (props.properties !== undefined && type !== 'INSTANCE') {
     if (type !== 'COMPONENT' && type !== 'COMPONENT_SET')
       throw new Error('Only components, component sets, and instances accept properties')
-    const definitions = v.parse(v.array(definitionSchema), props.properties)
+    const definitions = parseScriptInput(
+      'Invalid properties',
+      v.array(definitionSchema),
+      props.properties
+    )
     if (new Set(definitions.map((definition) => definition.id)).size !== definitions.length)
       throw new Error('Duplicate component property IDs')
     const variantNames = definitions
@@ -42,7 +48,11 @@ export function componentMetadata(
     result.componentPropertyDefinitions = definitions
   }
   if (props.propertyRefs !== undefined) {
-    const references = v.parse(v.array(referenceSchema), props.propertyRefs)
+    const references = parseScriptInput(
+      'Invalid propertyRefs',
+      v.array(referenceSchema),
+      props.propertyRefs
+    )
     for (const reference of references) {
       if (reference.field === 'TEXT' && type !== 'TEXT')
         throw new Error('TEXT properties require a text node')
@@ -88,7 +98,11 @@ export function assignComponentProperties(
   input: unknown
 ): void {
   if (input === undefined) return
-  const assignments = v.parse(v.record(v.string(), v.string()), input)
+  const assignments = parseScriptInput(
+    'Invalid properties on <Instance>',
+    v.record(v.string(), v.string()),
+    input
+  )
   const definitions = componentPropertyDefinitions(graph, instance)
   for (const [id, value] of Object.entries(assignments)) {
     const definition = definitions.find((item) => item.id === id)

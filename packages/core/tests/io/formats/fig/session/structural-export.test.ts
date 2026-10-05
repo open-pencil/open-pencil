@@ -16,7 +16,7 @@ async function sessionWithComponent() {
 
 test('loaded structural component edits can be checkpointed and exported', async () => {
   const session = await sessionWithComponent()
-  const component = session.graph.getAllNodes().find((node) => node.name === 'Component')
+  const component = [...session.graph.getAllNodes()].find((node) => node.name === 'Component')
   if (!component) throw new Error('Missing component')
   session.graph.deleteNode(session.graph.getChildren(component.id)[0].id)
   expect(() => session.checkpoint()).not.toThrow()

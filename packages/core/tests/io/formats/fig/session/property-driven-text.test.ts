@@ -5,6 +5,8 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import { createFigDocumentSession, materializeFigArchive } from '@open-pencil/fig'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 /**
  * The component lives on one page and the instance that assigns its properties on another, so
  * loading the second page alone has to interpret the assignments and keep them: the resumed
@@ -34,13 +36,13 @@ async function archiveWithCrossPageAssignment() {
     visible: true,
     componentPropertyReferences: [{ propertyId: '207:2', field: 'VISIBLE' }]
   })
-  const icon = source.createInstance(iconA.id, item.id)
+  const icon = expectDefined(source.createInstance(iconA.id, item.id), 'icon')
   source.updateNode(icon.id, {
     name: 'Icon',
     componentPropertyReferences: [{ propertyId: '207:3', field: 'INSTANCE_SWAP' }]
   })
   const page = source.addPage('Dashboard')
-  const instance = source.createInstance(item.id, page.id)
+  const instance = expectDefined(source.createInstance(item.id, page.id), 'instance')
   source.updateNode(instance.id, {
     componentPropertyAssignments: { '207:1': 'Assigned', '207:2': 'false', '207:3': iconB.id }
   })

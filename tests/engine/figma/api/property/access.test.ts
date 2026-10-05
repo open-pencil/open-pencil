@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '../helpers'
+import { createAPI, solidFill } from '../helpers'
 
 describe('property access', () => {
   test('name get/set', () => {
@@ -30,7 +30,7 @@ describe('property access', () => {
   test('fills get/set', () => {
     const api = createAPI()
     const rect = api.createRectangle()
-    rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    rect.fills = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
     expect(rect.fills.length).toBe(1)
     expect(rect.fills[0].color.r).toBe(1)
   })

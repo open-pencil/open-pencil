@@ -1,13 +1,13 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { BlendMode, Fill, SceneNode } from '@open-pencil/scene-graph'
 
 import { figmaBlendModeToSkia } from '#core/canvas/blend'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderNode, renderSection } from '#core/canvas/scene'
+
+import { asCanvas, asCanvasKit, asRenderer } from './helpers'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -44,7 +44,7 @@ function createCanvas() {
 }
 
 function createRenderer(overrides: Partial<SkiaRenderer> = {}) {
-  return {
+  return asRenderer({
     _nodeCount: 0,
     _culledCount: 0,
     worldViewport: { x: -100, y: -100, w: 1000, h: 1000 },
@@ -73,11 +73,11 @@ function createRenderer(overrides: Partial<SkiaRenderer> = {}) {
     renderShape: mock(() => undefined),
     renderSection: mock(() => undefined),
     renderComponentSet: mock(() => undefined),
-    renderNode(canvas, graph, nodeId, overlays, parentAbsX, parentAbsY) {
-      renderNode(this as SkiaRenderer, canvas, graph, nodeId, overlays, parentAbsX, parentAbsY)
+    renderNode(...args: Parameters<SkiaRenderer['renderNode']>) {
+      renderNode(asRenderer(this), ...args)
     },
     ...overrides
-  } as SkiaRenderer
+  })
 }
 
 function calls(fn: ReturnType<typeof mock>): unknown[][] {
@@ -86,7 +86,7 @@ function calls(fn: ReturnType<typeof mock>): unknown[][] {
 
 describe('canvas blend modes', () => {
   test('maps Figma blend modes to CanvasKit blend modes', () => {
-    const ck = { BlendMode: blendModes } as SkiaRenderer['ck']
+    const ck = asCanvasKit({ BlendMode: blendModes })
     const cases: Array<[BlendMode, string]> = [
       ['NORMAL', 'SrcOver'],
       ['PASS_THROUGH', 'SrcOver'],
@@ -108,7 +108,7 @@ describe('canvas blend modes', () => {
     ]
 
     for (const [figmaMode, skiaMode] of cases) {
-      expect(figmaBlendModeToSkia(ck, figmaMode)).toBe(skiaMode)
+      expect<unknown>(figmaBlendModeToSkia(ck, figmaMode)).toBe(skiaMode)
     }
   })
 
@@ -122,7 +122,7 @@ describe('canvas blend modes', () => {
     const renderer = createRenderer()
     const canvas = createCanvas()
 
-    renderNode(renderer, canvas as Canvas, graph, node.id, {})
+    renderNode(renderer, asCanvas(canvas), graph, node.id, {})
 
     expect(renderer.opacityPaint.setAlphaf).toHaveBeenCalledWith(1)
     expect(renderer.opacityPaint.setBlendMode).toHaveBeenCalledWith('Multiply')
@@ -149,7 +149,7 @@ describe('canvas blend modes', () => {
     const renderer = createRenderer()
     const canvas = createCanvas()
 
-    renderSection(renderer, canvas as Canvas, node, graph)
+    renderSection(renderer, asCanvas(canvas), node, graph)
 
     expect(calls(renderer.fillPaint.setBlendMode as ReturnType<typeof mock>)).toEqual([
       ['Screen'],
