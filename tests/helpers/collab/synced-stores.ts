@@ -1,3 +1,5 @@
+import { expect } from 'bun:test'
+
 import * as Y from 'yjs'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -9,6 +11,7 @@ import {
 } from '@/app/collab/yjs-sync'
 import { createEditorStore } from '@/app/editor/session'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
 import { connectYDocs } from '#tests/helpers/yjs'
 
 /** Host and peer editor stores whose Yjs documents sync through the app's collab code. */
@@ -139,4 +142,36 @@ export async function withSyncedStores(
   } finally {
     stores.cleanup()
   }
+}
+
+/** Lets graph-event syncs a local edit schedules, such as its parents' child lists, run. */
+export async function settleGraphSync() {
+  await Promise.resolve()
+}
+
+/**
+ * Both peers hold the same acyclic tree under `rootIds`, and every layer in it sits in its parent's
+ * `childIds`. Returns the layers the tree reaches.
+ */
+export function expectSameLayerTree(
+  { hostStore, peerStore }: SyncedStores,
+  rootIds: string[]
+): Set<string> {
+  const host = hostStore.graph
+  const peer = peerStore.graph
+  const visited = new Set<string>()
+  const pending = [...rootIds]
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    expect(visited.has(id)).toBe(false)
+    visited.add(id)
+    const hostNode = getNodeOrThrow(host, id)
+    const peerNode = getNodeOrThrow(peer, id)
+    expect(peerNode.parentId).toBe(hostNode.parentId)
+    expect(peerNode.childIds).toEqual(hostNode.childIds)
+    for (const childId of hostNode.childIds) {
+      expect(getNodeOrThrow(host, childId).parentId).toBe(id)
+      pending.push(childId)
+    }
+  }
+  return visited
 }

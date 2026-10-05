@@ -1,0 +1,89 @@
+import { describe, expect, test } from 'bun:test'
+
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import {
+  expectSameLayerTree,
+  settleGraphSync,
+  type SyncedStores,
+  withSyncedStores
+} from '#tests/helpers/collab/synced-stores'
+
+/** Seeds layers on the host page, syncs them, and runs a live edit on connected peers. */
+async function withLiveEdit(
+  seed: (stores: SyncedStores, pageId: string) => void,
+  edit: (stores: SyncedStores, pageId: string) => void,
+  check: (stores: SyncedStores, pageId: string) => void
+) {
+  await withSyncedStores(
+    async (stores) => {
+      const pageId = expectDefined(stores.hostStore.graph.getPages()[0], 'first page').id
+      seed(stores, pageId)
+      stores.hostSync.syncAllNodesToYjs()
+      await settleGraphSync()
+      edit(stores, pageId)
+      await settleGraphSync()
+      check(stores, pageId)
+    },
+    { bindGraphEvents: true }
+  )
+}
+
+describe('collab layer tree', () => {
+  test('moving a layer updates both parents on the other peer', async () => {
+    await withLiveEdit(
+      ({ hostStore }, pageId) => {
+        hostStore.graph.createNode('FRAME', pageId, { id: 'frame:1' })
+        hostStore.graph.createNode('RECTANGLE', pageId, { id: 'rect:1' })
+      },
+      ({ hostStore }) => {
+        hostStore.graph.reparentNode('rect:1', 'frame:1')
+      },
+      (stores, pageId) => {
+        const peer = stores.peerStore.graph
+        expect(getNodeOrThrow(peer, pageId).childIds).not.toContain('rect:1')
+        expect(getNodeOrThrow(peer, 'frame:1').childIds).toEqual(['rect:1'])
+        expectSameLayerTree(stores, [pageId])
+      }
+    )
+  })
+
+  test('reordering layers within a parent syncs their order', async () => {
+    await withLiveEdit(
+      ({ hostStore }, pageId) => {
+        for (const id of ['rect:1', 'rect:2', 'rect:3']) {
+          hostStore.graph.createNode('RECTANGLE', pageId, { id })
+        }
+      },
+      ({ hostStore }, pageId) => {
+        hostStore.graph.reorderChild('rect:3', pageId, 0)
+      },
+      (stores, pageId) => {
+        expect(getNodeOrThrow(stores.peerStore.graph, pageId).childIds).toEqual([
+          'rect:3',
+          'rect:1',
+          'rect:2'
+        ])
+        expectSameLayerTree(stores, [pageId])
+      }
+    )
+  })
+
+  test('layers created on the peer keep their order on the host', async () => {
+    await withLiveEdit(
+      () => undefined,
+      ({ peerStore }, pageId) => {
+        for (const id of ['rect:3', 'rect:1', 'rect:2']) {
+          peerStore.graph.createNode('RECTANGLE', pageId, { id })
+        }
+      },
+      (stores, pageId) => {
+        expect(getNodeOrThrow(stores.hostStore.graph, pageId).childIds).toEqual([
+          'rect:3',
+          'rect:1',
+          'rect:2'
+        ])
+        expectSameLayerTree(stores, [pageId])
+      }
+    )
+  })
+})
