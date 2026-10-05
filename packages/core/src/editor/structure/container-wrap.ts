@@ -35,30 +35,20 @@ export function wrapSelectionInContainer(
   const bounds = getAxisAlignedBoundsInParent(selectedNodes, parentId, ctx.graph)
   const firstIndex = Math.min(...nodeIds.map((id) => parent.childIds.indexOf(id)))
 
-  const padding = containerType === 'COMPONENT_SET' ? 40 : 0
   const containerNames: Record<string, string> = {
-    COMPONENT_SET: selectedNodes[0].name.split('/')[0]?.trim() || 'Component Set',
+    COMPONENT_SET: 'Component Set',
     COMPONENT: 'Component',
     GROUP: 'Group',
     FRAME: 'Frame'
   }
+  // A component set's padding and look come from its caller; see `variantSetProps`.
   const containerNode = ctx.graph.createNode(containerType, parentId, {
     name: containerNames[containerType] ?? containerType,
-    x: bounds.x - padding,
-    y: bounds.y - padding,
-    width: bounds.width + padding * 2,
-    height: bounds.height + padding * 2,
-    fills:
-      containerType === 'COMPONENT_SET'
-        ? [
-            {
-              type: 'SOLID',
-              color: { r: 0.96, g: 0.96, b: 0.96, a: 1 },
-              opacity: 1,
-              visible: true
-            }
-          ]
-        : [],
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    fills: [],
     ...extraProps
   })
   const containerId = containerNode.id

@@ -13,8 +13,8 @@ import {
   removeComponentProperty,
   createComponentPropertyId
 } from '@open-pencil/scene-graph'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
-import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+
+import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
@@ -27,8 +27,6 @@ import {
 } from './slots'
 
 type InstanceSwapPreferredValue = { type: 'COMPONENT' | 'COMPONENT_SET'; key: string }
-
-const COMPONENT_SET_PADDING = 40
 
 interface FigmaComponentPropertyDefinition {
   type: ComponentPropertyType
@@ -508,35 +506,16 @@ export function combineComponentsAsVariants(
   const parent = graph.getNode(parentId)
   if (!parent) throw new Error('Parent node not found')
 
-  const bounds = computeAbsoluteBounds(components, (id) => graph.getAbsolutePosition(id))
-  const parentPosition =
-    parentId === graph.rootId || parent.type === 'CANVAS'
-      ? { x: 0, y: 0 }
-      : graph.getAbsolutePosition(parentId)
-  const componentSet = graph.createNode('COMPONENT_SET', parentId, {
-    name: components[0].name.split('/')[0]?.trim() || 'Component Set',
-    x: bounds.x - parentPosition.x - COMPONENT_SET_PADDING,
-    y: bounds.y - parentPosition.y - COMPONENT_SET_PADDING,
-    width: bounds.width + COMPONENT_SET_PADDING * 2,
-    height: bounds.height + COMPONENT_SET_PADDING * 2,
-    fills: [
-      {
-        type: 'SOLID',
-        color: { r: 0.96, g: 0.96, b: 0.96, a: 1 },
-        opacity: 1,
-        visible: true
-      }
-    ]
-  })
+  // The plugin API wraps the variants exactly; see `variantSetProps`.
+  const componentSet = graph.createNode(
+    'COMPONENT_SET',
+    parentId,
+    variantSetProps(graph, components, parentId, 'script')
+  )
 
   for (const component of components) graph.reparentNode(component.id, componentSet.id)
   if (index !== undefined) graph.reorderChild(componentSet.id, parentId, index)
-
-  const derived = deriveSlashVariantProperties(components, createComponentPropertyId)
-  if (derived) {
-    for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
-    graph.updateNode(componentSet.id, { componentPropertyDefinitions: derived.definitions })
-  }
+  applyVariantProperties(graph, components, componentSet.id)
 
   return componentSet
 }

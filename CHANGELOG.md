@@ -60,6 +60,7 @@
 
 ### Changed
 
+- Combine as variants matches Figma: the set pads its variants by 20 px and has a dashed purple stroke instead of a grey fill and 40 px of padding, and `figma.combineAsVariants()` in scripts wraps the components exactly with no fill or stroke, as Figma's plugin API does. Both share one implementation.
 - New layers start as in Figma, whether drawn or created by a script: frames are white and clip their content, components are white, shapes are #D9D9D9, and lines and vectors get a black 1 px stroke, which lines drawn with the Line tool were missing. A stroke a script adds through the plugin API now gets Figma's 1 px default weight instead of none.
 - Name the tool and list every invalid argument with where it is when AI chat, the CLI, or WebMCP calls a tool wrongly, as MCP clients already saw, as in `Invalid arguments for create_shape:` followed by `× Invalid type: Expected ("FRAME" | …) but received "CIRCLE"` and `→ at type`. Design JSX component properties and gradient stops report their problems the same way. Previously only the first problem was named, without the tool or the argument.
 - HTML and Tailwind JSX export write variable-bound colors, spacing, radii, borders, sizes, type sizes, and opacity as the tokens they come from, such as `var(--color-primary)` or `bg-primary`, and put layers set to another mode in it with an attribute such as `data-theme="dark"`. Values CSS would not resolve as the canvas draws them stay literal, and standalone HTML includes the stylesheet for the tokens it uses.
