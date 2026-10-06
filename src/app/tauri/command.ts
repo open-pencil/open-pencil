@@ -6,8 +6,12 @@
  * `openpencil-mcp-http`) are `.cmd` shims. The Rust spawner behind
  * `@tauri-apps/plugin-shell` only resolves real executables, so launching a
  * `.cmd` directly fails with ENOENT. Routing through `cmd /c` lets the shell
- * resolve the shim via PATHEXT. `cmd` is allowlisted in
- * desktop/capabilities/default.json.
+ * resolve the shim via PATHEXT.
+ *
+ * `command` is the name of a shell scope entry in desktop/capabilities/default.json, and
+ * each scope entry pins the whole command line. On Windows the entry for `name` is
+ * `cmd-<name>`, which runs exactly `cmd /c <name> <args>`: a scope that let `cmd` take any
+ * arguments would let the webview run any command.
  *
  * The `userAgent` argument is injectable for testing; it defaults to the live
  * navigator value at runtime, falling back to an empty string in non-browser
@@ -24,7 +28,7 @@ export function resolvePlatformCommand(
   userAgent: string = detectUserAgent()
 ): { command: string; args: string[] } {
   if (userAgent.includes('Windows')) {
-    return { command: 'cmd', args: ['/c', command, ...args] }
+    return { command: `cmd-${command}`, args: ['/c', command, ...args] }
   }
   return { command, args }
 }

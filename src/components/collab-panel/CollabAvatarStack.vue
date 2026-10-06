@@ -10,7 +10,8 @@ const collab = useCollabPanelContext()
   <PresenceAvatars
     :rows="collab.presenceRows"
     :following="collab.following"
-    :connected="collab.state.connected"
+    :connected="collab.state.status === 'live'"
+    :in-room="collab.state.inRoom"
     @follow="collab.follow"
     @rename="collab.renameLocalAgent"
     @leave="collab.disconnect"

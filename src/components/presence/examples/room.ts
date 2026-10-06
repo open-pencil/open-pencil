@@ -1,4 +1,4 @@
-import type { PresencePersonRow } from '../presence'
+import type { PresencePersonRow } from '../rows'
 
 /** Sample collaborators for presence stories: you, then Ana with two agents, then Ben. */
 export const colors = {

@@ -1,10 +1,11 @@
 import { embedClipboardImages, encodeFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { randomInt } from '@open-pencil/scene-graph/random'
 export { parseFigmaClipboard, figmaNodesBounds } from '@open-pencil/fig/clipboard'
-import { placeSlotContent } from '@open-pencil/fig/node-change'
+import { placeSlotContent, type FigNodeChangeExportRuntime } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { ownsSlotContent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 
 import {
   appendVariableNodeChanges,
@@ -12,16 +13,14 @@ import {
   assignVariableGuids
 } from '#core/io/formats/fig/variable-export'
 
-import { shapeTextForClipboard } from './canvas/text/clipboard'
+import { withFigExportRuntime } from './canvas/text/shape'
 import { prepareClipboardImport } from './clipboard/fig-import'
 import {
   sceneNodeToKiwi,
   makeDocumentNodeChange,
   makeCanvasNodeChange,
-  buildFontDigestMap,
-  fractionalPosition
+  buildFontDigestMap
 } from './kiwi/fig/node-change/serialize'
-import { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 
 export async function prefetchFigmaSchema(): Promise<void> {
   await initCodec()
@@ -47,9 +46,19 @@ export function importClipboardNodes(
   return operation.plan.rootIds
 }
 
-export async function buildFigmaClipboardHTML(
+export function buildFigmaClipboardHTML(
   nodes: SceneNode[],
   graph: SceneGraph
+): Promise<string | null> {
+  return withFigExportRuntime(graph, undefined, (runtime) =>
+    writeFigmaClipboardHTML(nodes, graph, runtime)
+  )
+}
+
+async function writeFigmaClipboardHTML(
+  nodes: SceneNode[],
+  graph: SceneGraph,
+  runtime: FigNodeChangeExportRuntime
 ): Promise<string | null> {
   const fontDigestMap = await buildFontDigestMap(graph)
 
@@ -93,7 +102,8 @@ export async function buildFigmaClipboardHTML(
         varIdToGuid: variableIds,
         assignedGuidValues,
         modeIdToGuid: modeIds,
-        slotContentRecords
+        slotContentRecords,
+        runtime
       })
     )
   }
@@ -141,7 +151,8 @@ export async function buildFigmaClipboardHTML(
         varIdToGuid: variableIds,
         assignedGuidValues,
         modeIdToGuid: modeIds,
-        slotContentRecords
+        slotContentRecords,
+        runtime
       })
     )
   }
@@ -162,21 +173,17 @@ export async function buildFigmaClipboardHTML(
     const node = textById.get(id)
     if (node) sourceByGuid.set(`${guid.sessionID}:${guid.localID}`, node)
   }
-  await Promise.all(
-    nodeChanges.map(async (change) => {
-      if (change.type !== 'TEXT' || !change.guid) return
-      const source = sourceByGuid.get(`${change.guid.sessionID}:${change.guid.localID}`)
-      if (!source) return
-      change.textAutoResize = 'NONE'
-      change.textUserLayoutVersion = 5
-      change.lineHeight = {
-        value: source.lineHeight ?? 100,
-        units: source.lineHeight ? 'PIXELS' : 'PERCENT'
-      }
-      const shaped = await shapeTextForClipboard(source).catch(() => null)
-      change.derivedTextData = await buildDerivedTextDataV4(source, fontDigestMap, shaped, blobs)
-    })
-  )
+  for (const change of nodeChanges) {
+    if (change.type !== 'TEXT' || !change.guid) continue
+    const source = sourceByGuid.get(`${change.guid.sessionID}:${change.guid.localID}`)
+    if (!source) continue
+    change.textAutoResize = 'NONE'
+    change.textUserLayoutVersion = 5
+    change.lineHeight = {
+      value: source.lineHeight ?? 100,
+      units: source.lineHeight ? 'PIXELS' : 'PERCENT'
+    }
+  }
   await embedClipboardImages(nodeChanges, blobs, graph.images)
   return encodeFigmaClipboard(nodeChanges, blobs, randomInt())
 }

@@ -2,20 +2,25 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   fractionalPosition,
+  hasOrderKeyBetween,
   orderKeyBetween,
-  sceneNodeToKiwi,
   siblingOrderKeys
-} from '@open-pencil/fig/node-change'
-import { SceneGraph } from '@open-pencil/scene-graph'
-
-function requireKey(key: string | null, label: string): string {
-  if (key === null) throw new Error(`expected a key ${label}`)
-  return key
-}
+} from '@open-pencil/scene-graph/order-keys'
 
 function expectStrictlyIncreasing(keys: string[]) {
   for (let i = 1; i < keys.length; i++) expect(keys[i] > keys[i - 1]).toBe(true)
 }
+
+function expectBetween(key: string, lo: string | null, hi: string | null) {
+  if (lo !== null) expect(key > lo).toBe(true)
+  if (hi !== null) expect(key < hi).toBe(true)
+}
+
+describe('fractionalPosition', () => {
+  test('numbers siblings with printable keys that sort in index order', () => {
+    expect([0, 93, 94, 188].map(fractionalPosition)).toEqual(['!', '~', '~!', '~~!'])
+  })
+})
 
 describe('orderKeyBetween', () => {
   test('returns a key strictly between its bounds', () => {
@@ -26,30 +31,74 @@ describe('orderKeyBetween', () => {
       ['a', 'b'],
       [null, null]
     ] as const) {
-      const key = requireKey(orderKeyBetween(lo, hi), `between ${lo} and ${hi}`)
-      if (lo !== null) expect(key > lo).toBe(true)
-      if (hi !== null) expect(key < hi).toBe(true)
+      expectBetween(orderKeyBetween(lo, hi), lo, hi)
     }
   })
 
   test('stops at a longer prefix of hi when no character can be lowered', () => {
     expect(orderKeyBetween('a', 'a!!')).toBe('a!')
     expect(orderKeyBetween(null, '!!')).toBe('!')
-    expect(orderKeyBetween('a', 'a!')).toBeNull()
   })
 
   test('keeps keys short when many keys are appended one after another', () => {
     let lo = '$'
     for (let n = 0; n < 500; n++) {
-      const key = requireKey(orderKeyBetween(lo, null), 'after ' + lo)
+      const key = orderKeyBetween(lo, null)
       expect(key > lo).toBe(true)
       lo = key
     }
     expect(lo.length).toBeLessThan(100)
   })
 
-  test('returns null when nothing sorts before the smallest key', () => {
-    expect(orderKeyBetween(null, '!')).toBeNull()
+  test('returns a key above lo when no printable key fits below hi', () => {
+    for (const [lo, hi] of [
+      [null, '!'],
+      ['a', 'a!'],
+      ['b', 'a'],
+      ['a', 'a']
+    ] as const) {
+      expect(hasOrderKeyBetween(lo, hi)).toBe(false)
+      const key = orderKeyBetween(lo, hi)
+      expect(key).toBe(orderKeyBetween(lo, null))
+      if (lo !== null) expect(key > lo).toBe(true)
+    }
+  })
+
+  test('appends a suffix that keeps the key between its bounds', () => {
+    for (const [lo, hi] of [
+      [null, null],
+      ['!', '#'],
+      ['a', 'a!!!'],
+      ['~', null],
+      [null, '"']
+    ] as const) {
+      expectBetween(orderKeyBetween(lo, hi, 'xyz'), lo, hi)
+    }
+    expect(orderKeyBetween('!', '#', 'xyz')).toBe('"xyz')
+  })
+
+  test('drops the suffix when only a bare key fits', () => {
+    // 'a!' is the only printable key between these bounds; nothing can follow it.
+    expect(orderKeyBetween('a', 'a!!', 'xyz')).toBe('a!')
+  })
+
+  test('gives inserts at one spot with different suffixes distinct keys with room between', () => {
+    const first = orderKeyBetween('!', '#', 'AAA')
+    const second = orderKeyBetween('!', '#', 'zzz')
+    expect(first < second).toBe(true)
+    expectBetween(orderKeyBetween(first, second, 'mmm'), first, second)
+  })
+
+  test('keeps keys bounded when many keys are inserted into one gap', () => {
+    const suffixes = ['Kq7', '#a~', 'P0P', '!!z', '~~~']
+    let hi = '#'
+    for (let n = 0; n < 1000; n++) {
+      const key = orderKeyBetween('!', hi, suffixes[n % suffixes.length])
+      expectBetween(key, '!', hi)
+      hi = key
+    }
+    // Each character halves the gap about six times, so a key grows by one every few inserts.
+    expect(hi.length).toBeLessThan(250)
   })
 })
 
@@ -100,13 +149,26 @@ describe('siblingOrderKeys', () => {
     expect(new Set(keys).size).toBe(keys.length)
     expectStrictlyIncreasing(keys)
   })
+
+  test('re-keys a sibling that leaves no room before the next key', () => {
+    const keys = siblingOrderKeys(['a', undefined, 'a!'])
+    expect(new Set(keys).size).toBe(3)
+    expectStrictlyIncreasing(keys)
+  })
+
+  test('suffixes the keys it makes up when asked to', () => {
+    const keys = siblingOrderKeys(['!', undefined, undefined, '%'], { suffix: () => 'Q' })
+    expect(keys[0]).toBe('!')
+    expect(keys[3]).toBe('%')
+    expect(keys[1].endsWith('Q')).toBe(true)
+    expectStrictlyIncreasing(keys)
+  })
 })
 
 describe('Figma keys containing spaces', () => {
   // Real Figma files use keys such as '&RQTOt7CO O'; the space sorts below the printable range.
   test('finds a key between a key and its space-extended successor', () => {
-    const key = requireKey(orderKeyBetween('&RQTOt7CO', '&RQTOt7CO O'), 'before the space key')
-    expect(key > '&RQTOt7CO' && key < '&RQTOt7CO O').toBe(true)
+    expectBetween(orderKeyBetween('&RQTOt7CO', '&RQTOt7CO O'), '&RQTOt7CO', '&RQTOt7CO O')
   })
 
   test('keeps space-bearing imported keys and fits new layers between them', () => {
@@ -116,33 +178,5 @@ describe('Figma keys containing spaces', () => {
     expect(keys[3]).toBe('&RQTOt7CO f')
     expect(new Set(keys).size).toBe(keys.length)
     expectStrictlyIncreasing(keys)
-  })
-})
-
-describe('Figma export order keys', () => {
-  test('a layer added before imported siblings does not share their keys', () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const frame = graph.createNode('FRAME', page.id, { name: 'Frame' })
-    for (const [name, orderKey] of [
-      ['A', '!'],
-      ['B', '"'],
-      ['C', '#']
-    ]) {
-      const child = graph.createNode('RECTANGLE', frame.id, { name })
-      child.source.orderKey = orderKey
-    }
-    const inserted = graph.createNode('RECTANGLE', frame.id, { name: 'Inserted' })
-    frame.childIds = [inserted.id, ...frame.childIds.filter((id) => id !== inserted.id)]
-
-    const changes = sceneNodeToKiwi(frame, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
-    const children = changes.slice(1)
-    const positions = children.map((change) => change.parentIndex?.position ?? '')
-
-    expect(children.map((change) => change.name)).toEqual(['Inserted', 'A', 'B', 'C'])
-    // Nothing sorts before '!', so A is re-keyed; B and C keep their imported keys.
-    expect(positions.slice(2)).toEqual(['"', '#'])
-    expect(new Set(positions).size).toBe(4)
-    expectStrictlyIncreasing(positions)
   })
 })

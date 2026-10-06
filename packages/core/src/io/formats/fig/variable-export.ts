@@ -10,8 +10,9 @@ import {
   type SceneNode,
   type VariableValue
 } from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 
-import { fractionalPosition, safeColor } from '#core/kiwi/fig/node-change/serialize'
+import { safeColor } from '#core/kiwi/fig/node-change/serialize'
 
 /**
  * Identity allocation shared by the two writers. The document exporter and the clipboard
