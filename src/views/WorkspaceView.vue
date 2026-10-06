@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
@@ -82,6 +83,7 @@ useDocumentDrop()
 const collab = useCollab()
 provide(COLLAB_KEY, collab)
 exposeCollaborationActions(collab, joinRoomFromInput)
+exposeAutomationTestRequests()
 syncRoomRoute(router, route)
 
 useEventListener(
