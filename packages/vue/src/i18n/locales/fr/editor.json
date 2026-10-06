@@ -1,5 +1,9 @@
 {
   "toolOptions": "Options de {tool}",
   "removeGradientStop": "Supprimer le point de dégradé",
-  "showUI": "Afficher l’interface ({shortcut})"
+  "showUI": "Afficher l’interface ({shortcut})",
+  "previewing": "Aperçu",
+  "resetPreview": "Réinitialiser",
+  "leavePreview": "Quitter l’aperçu ({shortcut})",
+  "startPreview": "Aperçu ({shortcut})"
 }

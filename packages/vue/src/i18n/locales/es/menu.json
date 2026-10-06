@@ -72,5 +72,6 @@
   "exportSelectionAsPNG": "Exportar selección como PNG",
   "exportSelectionAsSVG": "Exportar selección como SVG",
   "exportSelectionAsPPTX": "Exportar selección como PPTX",
-  "exportSelectionAsFig": "Exportar selección como .fig"
+  "exportSelectionAsFig": "Exportar selección como .fig",
+  "togglePreview": "Vista previa"
 }

@@ -70,6 +70,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>⌃</kbd><kbd>G</kbd> | Layout Guides | 🔲 |
 | <kbd>⇧</kbd><kbd>R</kbd> | Rulers | 🔲 |
 | <kbd>⌘</kbd><kbd>\\</kbd> | Show/Hide UI | ✅ |
+| <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> | Preview controls | ✅ |
 | <kbd>⌘</kbd><kbd>=</kbd> | Zoom In | ✅ |
 | <kbd>⌘</kbd><kbd>-</kbd> | Zoom Out | ✅ |
 | <kbd>⌘</kbd><kbd>0</kbd> | Zoom to 100% | ✅ |
