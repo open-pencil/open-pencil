@@ -1,4 +1,8 @@
+import { omit, omitBy } from 'es-toolkit/object'
+import { isEmptyObject } from 'es-toolkit/predicate'
+
 import type {
+  TokenExpression,
   Variable,
   VariableCollection,
   VariableType,
@@ -26,6 +30,31 @@ function tokenFields(variable: Variable): VariableTokenFields {
     description,
     hiddenFromPublishing
   })
+}
+
+/** A mode's value with the CSS expression written for it, which the value must keep matching. */
+interface ModeEntry {
+  value: VariableValue | undefined
+  expression: TokenExpression | undefined
+}
+
+function modeEntry(variable: Variable, modeId: string): ModeEntry {
+  return structuredClone({
+    value: variable.valuesByMode[modeId],
+    expression: variable.expressions?.[modeId]
+  })
+}
+
+function setModeEntry(variable: Variable, modeId: string, entry: ModeEntry) {
+  const { value, expression } = structuredClone(entry)
+  const values = omit(variable.valuesByMode, [modeId])
+  variable.valuesByMode = value === undefined ? values : { ...values, [modeId]: value }
+  const others = omit(variable.expressions ?? {}, [modeId])
+  const expressions: Record<string, TokenExpression> = expression
+    ? { ...others, [modeId]: expression }
+    : others
+  if (isEmptyObject(expressions)) delete variable.expressions
+  else variable.expressions = expressions
 }
 
 export function createVariableActions(ctx: EditorContext) {
@@ -400,24 +429,26 @@ export function createVariableActions(ctx: EditorContext) {
   ) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
-    const prevValue = structuredClone(variable.valuesByMode[modeId])
-    const newValue = structuredClone(value)
-    variable.valuesByMode[modeId] = newValue
+    const previous = modeEntry(variable, modeId)
+    // A number keeps its expression, which records the number it stands for; anything else drops it.
+    const expression = previous.expression
+    const next: ModeEntry = {
+      value: structuredClone(value),
+      expression:
+        typeof value === 'number' && expression ? { ...expression, resolved: value } : undefined
+    }
+    const apply = (entry: ModeEntry) => {
+      const target = ctx.graph.variables.get(id)
+      if (target) setModeEntry(target, modeId, entry)
+      refreshVariables()
+    }
+    apply(next)
     ctx.undo.push({
       label: 'Update variable value',
-      forward: () => {
-        const v = ctx.graph.variables.get(id)
-        if (v) v.valuesByMode[modeId] = structuredClone(newValue)
-        refreshVariables()
-      },
-      inverse: () => {
-        const v = ctx.graph.variables.get(id)
-        if (v) v.valuesByMode[modeId] = structuredClone(prevValue)
-        refreshVariables()
-      },
+      forward: () => apply(next),
+      inverse: () => apply(previous),
       coalesceKey
     })
-    refreshVariables()
   }
 
   /** Change token fields in one undo step; a field set to `undefined` is cleared. */
@@ -430,7 +461,14 @@ export function createVariableActions(ctx: EditorContext) {
       const target = ctx.graph.variables.get(id)
       if (!target) return
       const { description, ...fields } = structuredClone(values)
-      Object.assign(target, fields)
+      // A cleared field is removed, not kept as a key set to `undefined`.
+      for (const key of Object.keys(fields) as Array<keyof typeof fields>) {
+        if (fields[key] === undefined) Reflect.deleteProperty(target, key)
+      }
+      Object.assign(
+        target,
+        omitBy(fields, (value) => value === undefined)
+      )
       // Every variable has a description; clearing it leaves an empty one.
       if ('description' in values) target.description = description ?? ''
       ctx.requestRender()

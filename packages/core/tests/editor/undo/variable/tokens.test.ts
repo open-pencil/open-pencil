@@ -149,4 +149,30 @@ describe('variable token undo', () => {
     editor.undo.undo()
     expect(light()).toBe(24)
   })
+
+  test('undoing a field that was unset removes it rather than leaving it undefined', () => {
+    const editor = themeEditor()
+    editor.updateVariableToken('gutter', { unit: 'rem' })
+    editor.undo.undo()
+
+    expect(Object.hasOwn(editor.graph.variables.get('gutter') ?? {}, 'unit')).toBe(false)
+  })
+
+  test('an expression follows its number, goes with an alias, and undoes with the value', () => {
+    const editor = themeEditor()
+    const gutter = () => editor.graph.variables.get('gutter')
+    const clamp = 'clamp(1rem, 4vw, 1.5rem)'
+    editor.updateVariableToken('gutter', { expressions: { light: { css: clamp, resolved: 24 } } })
+
+    editor.updateVariableValue('gutter', 'light', 20)
+    expect(gutter()?.expressions).toEqual({ light: { css: clamp, resolved: 20 } })
+
+    editor.updateVariableValue('gutter', 'light', { aliasId: 'other' })
+    expect(gutter()?.expressions).toBeUndefined()
+
+    editor.undo.undo()
+    expect(gutter()?.expressions).toEqual({ light: { css: clamp, resolved: 20 } })
+    editor.undo.undo()
+    expect(gutter()?.expressions).toEqual({ light: { css: clamp, resolved: 24 } })
+  })
 })
