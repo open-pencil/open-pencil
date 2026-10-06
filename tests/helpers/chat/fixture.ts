@@ -1,6 +1,7 @@
 import { test as base, expect } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { routeModelCatalog } from '#tests/helpers/chat/catalog'
 import { ChatHarness } from '#tests/helpers/chat/harness'
 import { injectMockChatTransport } from '#tests/helpers/chat/transport'
 
@@ -11,6 +12,7 @@ interface ChatFixtures {
 
 export const test = base.extend<ChatFixtures>({
   chat: async ({ page }, use) => {
+    await routeModelCatalog(page)
     const harness = new ChatHarness(page)
     await harness.open()
     const canvas = new CanvasHelper(page)
