@@ -19,6 +19,7 @@ import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
@@ -174,7 +175,9 @@ function handleStop() {
       @select="historyAction(() => history.open($event))"
       @rename="renameConversation"
       @delete="historyAction(() => history.remove($event))"
-    />
+    >
+      <template #actions><FollowAgentsToggle /></template>
+    </ChatHistory>
     <p v-if="history.storageError.value" role="alert" class="px-3 py-2 text-xs text-red-400">
       {{ ai.chatStorageFailed }}
     </p>

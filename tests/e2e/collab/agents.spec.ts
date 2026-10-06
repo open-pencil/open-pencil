@@ -72,6 +72,8 @@ test("a guest's agent shows on their avatar and can be followed until Escape", a
 test('an MCP session shows as an agent at the layers it touches, to collaborators too', async ({
   browser
 }) => {
+  // Two peers in a room, a tool call, and following it, stopping, and following again.
+  test.setTimeout(90_000)
   const relay = await startRelay()
   let host: Peer | null = null
   let guest: Peer | null = null
@@ -111,12 +113,18 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
     expect(agent).toMatchObject({ x: 240, y: 160 })
     const name = agent?.name ?? ''
 
-    // Its owner lists it on their avatar and can follow it like any agent.
+    // With Follow agents on, as by default, its owner's view follows it as soon as it works.
+    const frame = host.page.getByTestId('follow-frame')
+    await expect(frame).toContainText(`Following ${name}`)
+    await frame.getByRole('button', { name: 'Stop following' }).click()
+    await expect(frame).toHaveCount(0)
+
+    // Its owner lists it on their avatar and can follow it again like any agent.
     await host.page.getByTestId('collab-local-avatar').click()
     const menu = host.page.getByTestId('collab-self-menu')
     await expect(menu.getByText(name)).toBeVisible()
     await menu.getByRole('button', { name: `Follow ${name}` }).click()
-    await expect(host.page.getByTestId('follow-frame')).toContainText(`Following ${name}`)
+    await expect(frame).toContainText(`Following ${name}`)
 
     // Collaborators see it on its owner's avatar.
     await expect(guest.page.getByTestId('collab-peer-avatar')).toContainText('1')
@@ -125,7 +133,7 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
     await host.page.evaluate(() =>
       window.openPencil?.test?.automation?.('agent_session_closed', { session: 'session-1' })
     )
-    await expect(host.page.getByTestId('follow-frame')).toHaveCount(0)
+    await expect(frame).toHaveCount(0)
     expect(collaborationErrors(host)).toEqual([])
   } finally {
     await host?.context.close()

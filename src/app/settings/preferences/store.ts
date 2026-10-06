@@ -34,6 +34,8 @@ export interface AppPreferences {
     reasoningDisplay: ReasoningDisplay
     maxAgentSteps: number
     changePreviewSize: ChangePreviewSize
+    /** Whether the view follows our AI agents while they work. */
+    followAgents: boolean
   }
   version: 1
   recovery: {
@@ -53,7 +55,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   chat: {
     reasoningDisplay: 'collapsed',
     maxAgentSteps: DEFAULT_AGENT_STEPS,
-    changePreviewSize: 'medium'
+    changePreviewSize: 'medium',
+    followAgents: true
   },
   version: 1,
   recovery: { enabled: true },
@@ -78,7 +81,12 @@ interface StoredSnappingPreferences {
 
 interface StoredAppPreferences {
   appearance?: { animations?: unknown }
-  chat?: { reasoningDisplay?: unknown; maxAgentSteps?: unknown; changePreviewSize?: unknown }
+  chat?: {
+    reasoningDisplay?: unknown
+    maxAgentSteps?: unknown
+    changePreviewSize?: unknown
+    followAgents?: unknown
+  }
   recovery?: { enabled?: unknown }
   editing?: { snapping?: StoredSnappingPreferences }
   rendering?: { canvasMode?: unknown }
@@ -102,7 +110,8 @@ function normalizeChatPreferences(chat: StoredAppPreferences['chat']): AppPrefer
         : 'collapsed',
     changePreviewSize: CHANGE_PREVIEW_SIZES.includes(chat?.changePreviewSize as ChangePreviewSize)
       ? (chat?.changePreviewSize as ChangePreviewSize)
-      : DEFAULT_APP_PREFERENCES.chat.changePreviewSize
+      : DEFAULT_APP_PREFERENCES.chat.changePreviewSize,
+    followAgents: booleanOrDefault(chat?.followAgents, DEFAULT_APP_PREFERENCES.chat.followAgents)
   }
 }
 

@@ -23,6 +23,8 @@ export const aiMessageDefaults = {
   chatActions: 'Conversation actions',
   chatHistory: 'Conversation history',
   newChat: 'New chat',
+  followAgents: 'Follow agents as they work',
+  stopFollowingAgents: 'Stop following agents as they work',
   allChats: 'All chats',
   renameChat: 'Rename',
   deleteChat: 'Delete',

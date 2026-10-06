@@ -159,6 +159,7 @@ function closeMenu(event: Event) {
           </PopoverContent>
         </PopoverPortal>
       </PopoverRoot>
+      <slot name="actions" />
       <IconButton :label="ai.newChat" :disabled="disabled" size="sm" @click="emit('create')"
         ><icon-lucide-plus :class="styles.icon()"
       /></IconButton>

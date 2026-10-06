@@ -7,6 +7,7 @@ import { randomHex } from '@open-pencil/scene-graph/random'
 
 import type { RemotePeer } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'
+import { appPreferences } from '@/app/settings/preferences/store'
 
 import { pickCallsign } from './callsigns'
 import { glideViewTo, showCursors, stopViewGlide, type TrackedCursor } from './cursor-motion'
@@ -31,6 +32,8 @@ interface Presence {
   switching: string | null
   /** True while following centers the view; any other viewport change is yours. */
   moving: boolean
+  /** Our agents the person stopped following mid-work; following them again waits until they rest. */
+  declined: Set<string>
 }
 
 const presences = new WeakMap<EditorStore, Presence>()
@@ -45,7 +48,8 @@ export function presenceOf(store: EditorStore): Presence {
     following: shallowRef(null),
     followPage: null,
     switching: null,
-    moving: false
+    moving: false,
+    declined: new Set()
   }
   presences.set(store, presence)
   store.onEditorEvent('page:changed', () => {
@@ -55,7 +59,7 @@ export function presenceOf(store: EditorStore): Presence {
   // Zooming or fitting the view yourself, by any shortcut or menu, ends following. A page
   // switch restores that page's viewport without this event, so only centering is ours.
   store.onEditorEvent('viewport:changed', () => {
-    if (presence.following.value && !presence.moving) stopFollowing(store)
+    if (presence.following.value && !presence.moving) stopFollowing(store, true)
   })
   return presence
 }
@@ -153,6 +157,42 @@ export function refreshCursors(store: EditorStore): void {
     ]),
     ...agents.value.flatMap((agent) => agentCursor(agent, localAgentColor(store), pageId))
   ])
+  autoFollow(store)
+  keepFollowing(store)
+}
+
+/** An agent in a run: following it starts here and waits for its first cursor. */
+function isWorking(agent: AgentPresence): boolean {
+  return agent.status !== 'idle'
+}
+
+/**
+ * With Follow agents on, the view follows our agents while they work: whichever starts first
+ * when nobody is followed, and the next one at work once the followed agent rests. Following
+ * starts with the run, so leaving the page or moving the view while the agent thinks counts as
+ * stopping, and an agent the person stopped following is left alone until it rests.
+ */
+function autoFollow(store: EditorStore): void {
+  const presence = presenceOf(store)
+  const working = presence.agents.value.filter(isWorking)
+  for (const id of presence.declined) {
+    if (!working.some((agent) => agent.id === id)) presence.declined.delete(id)
+  }
+  if (!appPreferences.value.chat.followAgents) return
+  const target = presence.following.value
+  if (target?.kind === 'person') return
+  if (target && working.some((agent) => agent.id === target.agentId)) return
+  // A followed agent of someone else's is theirs to stop; only a resting one of ours hands over.
+  if (target && !presence.agents.value.some((agent) => agent.id === target.agentId)) return
+  const next = working.find((agent) => !presence.declined.has(agent.id))
+  if (!next) return
+  presence.following.value = { kind: 'agent', agentId: next.id }
+  presence.followPage = store.state.currentPageId
+}
+
+/** Starts following our agents at work right away, for when Follow agents is turned on. */
+export function followWorkingAgents(store: EditorStore): void {
+  autoFollow(store)
   keepFollowing(store)
 }
 
@@ -215,8 +255,17 @@ function keepFollowing(store: EditorStore): void {
 function stopIfLeftFollowedPage(store: EditorStore): void {
   const presence = presenceOf(store)
   if (presence.following.value && store.state.currentPageId !== presence.followPage) {
+    declineFollowed(presence)
     presence.following.value = null
   }
+}
+
+/** The person stopped following an agent of ours at work: auto-follow leaves it until it rests. */
+function declineFollowed(presence: Presence): void {
+  const target = presence.following.value
+  if (target?.kind !== 'agent') return
+  const agent = presence.agents.value.find((entry) => entry.id === target.agentId)
+  if (agent && isWorking(agent)) presence.declined.add(agent.id)
 }
 
 /** Who the view follows, for showing it: their name, an agent's owner, and the color. */
@@ -245,10 +294,10 @@ export function followedLabel(store: EditorStore): FollowedLabel | null {
   return null
 }
 
-/** Follow a person or an agent, or stop following with null. */
 /** Stop following; a follow switch still loading is overtaken, so it does not land later. */
-function stopFollowing(store: EditorStore): void {
+function stopFollowing(store: EditorStore, byPerson: boolean): void {
   const presence = presenceOf(store)
+  if (byPerson) declineFollowed(presence)
   presence.following.value = null
   stopViewGlide(store)
   if (presence.switching) {
@@ -257,9 +306,10 @@ function stopFollowing(store: EditorStore): void {
   }
 }
 
+/** Follow a person or an agent, or stop following with null. */
 export function follow(store: EditorStore, target: FollowTarget | null): void {
   if (!target) {
-    stopFollowing(store)
+    stopFollowing(store, true)
     return
   }
   const presence = presenceOf(store)

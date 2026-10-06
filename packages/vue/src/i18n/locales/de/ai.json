@@ -150,6 +150,8 @@
   "latest": "Neu",
   "chatHistory": "Chatverlauf",
   "newChat": "Neuer Chat",
+  "followAgents": "Agenten bei der Arbeit folgen",
+  "stopFollowingAgents": "Agenten bei der Arbeit nicht mehr folgen",
   "allChats": "Alle Chats",
   "renameChat": "Umbenennen",
   "deleteChat": "Löschen",

@@ -1,6 +1,9 @@
 import type { Page } from '@playwright/test'
 
+/** Clears the page and fixes the view; rendering snapshots compare it, so agents are not followed. */
 export async function setupCanvas(page: Page) {
+  const followAgents = page.getByTestId('chat-follow-agents')
+  if ((await followAgents.getAttribute('aria-pressed')) === 'true') await followAgents.click()
   await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('Editor unavailable')

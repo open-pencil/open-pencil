@@ -36,6 +36,8 @@ Pokoje nie są przechowywane na serwerze: plik znajduje się na urządzeniach os
 
 Kliknij awatar uczestnika na górnym pasku, aby śledzić jego widok. Położenie i skala obszaru roboczego będą odpowiadać jego widokowi, a ramka w kolorze uczestnika z paskiem „Obserwujesz: …” pokazuje, kogo śledzisz. Aby przestać, kliknij awatar ponownie, naciśnij <kbd>Esc</kbd> albo sam kliknij, przewiń, zmień powiększenie lub przełącz stronę.
 
+Twoi agenci, czat AI i klienci MCP, tacy jak Claude Code czy Cursor, są śledzeni automatycznie podczas pracy, więc nigdy nie edytują poza twoim widokiem. Wyłączysz to przyciskiem z celownikiem u góry panelu AI. Jeśli przestaniesz śledzić agenta w trakcie jego pracy, nie będzie śledzony do jej końca, a przy następnym uruchomieniu znów będzie.
+
 Awatar pokazuje liczbę agentów uruchomionych przez daną osobę. Najedź na niego, aby zobaczyć każdego agenta, jego bieżące działanie i stronę, a następnie kliknij **Obserwuj** przy agencie, aby mieć w widoku stronę i warstwy, które edytuje; śledzenie trwa między jego odpowiedziami i kończy się, gdy agent odejdzie. Przycisk za awatarami wyświetla wszystkich uczestników pokoju wraz z ich agentami i działa z klawiatury. Twój awatar wyświetla Twoich agentów — kliknij jednego, aby zmienić jego nazwę — i zawiera polecenie **Opuść pokój**.
 
 Panel udostępniania wyświetla wszystkich uczestników pokoju wraz z ich agentami, tym, co każdy z nich robi, i stroną, na której pracuje. Agenta śledzisz tak samo: strona i warstwy, które edytuje, pozostają w widoku; śledzenie trwa między jego odpowiedziami i kończy się, gdy agent odejdzie. Kliknij dwukrotnie własnego agenta, aby zmienić jego nazwę.

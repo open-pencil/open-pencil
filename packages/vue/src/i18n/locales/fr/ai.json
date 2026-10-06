@@ -150,6 +150,8 @@
   "latest": "Nouveau",
   "chatHistory": "Historique des discussions",
   "newChat": "Nouvelle discussion",
+  "followAgents": "Suivre les agents pendant qu’ils travaillent",
+  "stopFollowingAgents": "Ne plus suivre les agents pendant qu’ils travaillent",
   "allChats": "Toutes les discussions",
   "renameChat": "Renommer",
   "deleteChat": "Supprimer",

@@ -150,6 +150,8 @@
   "latest": "Nowy",
   "chatHistory": "Historia czatów",
   "newChat": "Nowy czat",
+  "followAgents": "Śledź agentów podczas pracy",
+  "stopFollowingAgents": "Przestań śledzić agentów podczas pracy",
   "allChats": "Wszystkie czaty",
   "renameChat": "Zmień nazwę",
   "deleteChat": "Usuń",

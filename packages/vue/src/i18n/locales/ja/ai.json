@@ -150,6 +150,8 @@
   "modelsTitle": "モデル",
   "chatHistory": "チャット履歴",
   "newChat": "新しいチャット",
+  "followAgents": "作業中のエージェントを追従",
+  "stopFollowingAgents": "作業中のエージェントの追従を停止",
   "allChats": "すべてのチャット",
   "renameChat": "名前を変更",
   "deleteChat": "削除",

@@ -150,6 +150,8 @@
   "modelsTitle": "模型",
   "chatHistory": "聊天记录",
   "newChat": "新建聊天",
+  "followAgents": "工作时跟随智能体",
+  "stopFollowingAgents": "停止在工作时跟随智能体",
   "allChats": "所有聊天",
   "renameChat": "重命名",
   "deleteChat": "删除",

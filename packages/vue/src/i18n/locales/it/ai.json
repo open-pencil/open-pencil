@@ -150,6 +150,8 @@
   "modelsTitle": "Modelli",
   "chatHistory": "Cronologia chat",
   "newChat": "Nuova chat",
+  "followAgents": "Segui gli agenti mentre lavorano",
+  "stopFollowingAgents": "Smetti di seguire gli agenti mentre lavorano",
   "allChats": "Tutte le chat",
   "renameChat": "Rinomina",
   "deleteChat": "Elimina",
