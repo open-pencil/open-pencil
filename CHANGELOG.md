@@ -167,6 +167,7 @@
 
 ### Security
 
+- Refuse writes from the desktop app to places where a written file would run: login items and startup folders, PowerShell profiles, global package and executable folders such as Homebrew, `/usr/local`, npm, Volta, and Scoop, and the MCP discovery files coding agents trust. Hidden files and folders such as shell profiles and agent settings are now off-limits on Windows too, as they already were on macOS and Linux.
 - Limit the programs the desktop app may start to the exact command lines of the supported coding agents, the MCP server, and the Harness companion. On Windows the app could run any command through `cmd /c`, so any code running in the editor's webview could start arbitrary programs.
 - Update the desktop app to Tauri 2.12, which binds large IPC channel responses to the webview that requested them instead of letting another webview fetch them (GHSA-w28w-mhc8-qvjv).
 - Install a desktop update only when its signature names the version the update server announces, so a tampered update manifest cannot pair a newer version number with an older signed build.
