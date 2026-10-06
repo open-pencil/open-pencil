@@ -125,6 +125,9 @@ const progress = computed(() => {
         <li>{{ messages.waitingAskSharer }}</li>
         <li>{{ messages.waitingCheckLink }}</li>
       </ul>
+      <p v-if="othersWaiting.length" :class="ui.othersWaiting()" data-test-id="room-others-waiting">
+        {{ messages.othersWaiting({ names: othersWaiting.join(', ') }) }}
+      </p>
       <template #action>
         <div :class="ui.actions()">
           <div :class="ui.buttons()">
@@ -149,9 +152,6 @@ const progress = computed(() => {
               {{ messages.leave }}
             </AppButton>
           </div>
-          <p v-if="othersWaiting.length" :class="ui.footnote()" data-test-id="room-others-waiting">
-            {{ messages.othersWaiting({ names: othersWaiting.join(', ') }) }}
-          </p>
           <RoomNameLine :name="name" @rename="emit('rename', $event)" />
           <p v-if="desktopLink" :class="ui.footnote()">
             <a :href="desktopLink" :class="ui.link()" data-test-id="room-screen-open-desktop">
