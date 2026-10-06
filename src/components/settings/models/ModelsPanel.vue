@@ -30,6 +30,10 @@ async function restoreFocus() {
 }
 async function focusEditor() {
   await nextTick()
+  // Focus that moved during the transition belongs to someone already working in the editor,
+  // such as an open model picker, which taking focus would close.
+  const active = document.activeElement
+  if (active && active !== document.body && active !== returnFocus) return
   panel.value
     ?.querySelector<HTMLInputElement>('[data-test-id="settings-model-editor"] input')
     ?.focus({ preventScroll: true })
