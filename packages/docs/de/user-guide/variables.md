@@ -34,7 +34,7 @@ Der Standardmodus ist **Immer aktiv** und steht in `:root`. Jeder andere Modus h
 
 | Gilt wenn | CSS |
 | --- | --- |
-| **manuell umgeschaltet wird** | ein Attribut, das nach Sammlung und Modus benannt ist, etwa `[data-theme="dark"]` für den Modus Dunkel einer Sammlung Theme |
+| **manuell umgeschaltet wird** | das Umschalt-Attribut der Sammlung mit dem Modus als Wert, etwa `[data-theme="dark"]` für den Modus Dunkel einer Sammlung Theme |
 | **das System im Dunkelmodus ist** / **das System im Hellmodus ist** | `@media (prefers-color-scheme: dark)` / `light` |
 | **hoher Kontrast aktiv ist** | `@media (prefers-contrast: more)` |
 | **reduzierte Bewegung aktiv ist** | `@media (prefers-reduced-motion: reduce)` |

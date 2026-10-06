@@ -34,7 +34,7 @@ El modo predeterminado es **Siempre activo** y va en `:root`. Todos los demás m
 
 | Se aplica cuando | CSS |
 | --- | --- |
-| **se cambia manualmente** | un atributo con el nombre de la colección y del modo, como `[data-theme="dark"]` para el modo Oscuro de una colección Theme |
+| **se cambia manualmente** | el atributo de cambio de la colección con el modo como valor, como `[data-theme="dark"]` para el modo Oscuro de una colección Theme |
 | **el sistema está en modo oscuro** / **el sistema está en modo claro** | `@media (prefers-color-scheme: dark)` / `light` |
 | **el contraste alto está activado** | `@media (prefers-contrast: more)` |
 | **la reducción de movimiento está activada** | `@media (prefers-reduced-motion: reduce)` |

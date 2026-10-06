@@ -34,7 +34,7 @@ La modalità predefinita è **Sempre attivo** e va in `:root`. Ogni altra modali
 
 | Si applica quando | CSS |
 | --- | --- |
-| **viene attivata manualmente** | un attributo che prende il nome dalla raccolta e dalla modalità, come `[data-theme="dark"]` per la modalità Scuro di una raccolta Theme |
+| **viene attivata manualmente** | l’attributo di attivazione della raccolta con la modalità come valore, come `[data-theme="dark"]` per la modalità Scuro di una raccolta Theme |
 | **il sistema è in modalità scura** / **il sistema è in modalità chiara** | `@media (prefers-color-scheme: dark)` / `light` |
 | **il contrasto elevato è attivo** | `@media (prefers-contrast: more)` |
 | **la riduzione del movimento è attiva** | `@media (prefers-reduced-motion: reduce)` |

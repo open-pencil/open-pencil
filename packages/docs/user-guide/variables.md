@@ -34,7 +34,7 @@ The default mode is **Always on** and goes in `:root`. Every other mode has **Ap
 
 | Applies when | CSS |
 | --- | --- |
-| **Switched manually** | an attribute named after the collection and mode, such as `[data-theme="dark"]` for a Theme collection's Dark mode |
+| **Switched manually** | the collection's switch attribute set to the mode, such as `[data-theme="dark"]` for a Theme collection's Dark mode |
 | **System is in dark mode** / **System is in light mode** | `@media (prefers-color-scheme: dark)` / `light` |
 | **High contrast is on** | `@media (prefers-contrast: more)` |
 | **Reduced motion is on** | `@media (prefers-reduced-motion: reduce)` |

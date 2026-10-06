@@ -34,7 +34,7 @@ Le mode par défaut est **Toujours actif** et va dans `:root`. Chaque autre mode
 
 | S’applique quand | CSS |
 | --- | --- |
-| **il est activé manuellement** | un attribut nommé d’après la collection et le mode, comme `[data-theme="dark"]` pour le mode Sombre d’une collection Theme |
+| **il est activé manuellement** | l’attribut de bascule de la collection avec le mode pour valeur, comme `[data-theme="dark"]` pour le mode Sombre d’une collection Theme |
 | **le système est en mode sombre** / **le système est en mode clair** | `@media (prefers-color-scheme: dark)` / `light` |
 | **le contraste élevé est activé** | `@media (prefers-contrast: more)` |
 | **la réduction des animations est activée** | `@media (prefers-reduced-motion: reduce)` |

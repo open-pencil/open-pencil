@@ -34,7 +34,7 @@ Tryb domyślny jest **Zawsze włączony** i trafia do `:root`. Każdy inny tryb 
 
 | Obowiązuje, gdy | CSS |
 | --- | --- |
-| **przełączono ręcznie** | atrybut nazwany od kolekcji i trybu, na przykład `[data-theme="dark"]` dla trybu Dark kolekcji Theme |
+| **przełączono ręcznie** | atrybut przełączania kolekcji z trybem jako wartością, na przykład `[data-theme="dark"]` dla trybu Dark kolekcji Theme |
 | **system jest w trybie ciemnym** / **system jest w trybie jasnym** | `@media (prefers-color-scheme: dark)` / `light` |
 | **włączony jest wysoki kontrast** | `@media (prefers-contrast: more)` |
 | **włączone jest ograniczenie ruchu** | `@media (prefers-reduced-motion: reduce)` |
