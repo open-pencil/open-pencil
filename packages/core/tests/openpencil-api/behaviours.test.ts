@@ -19,7 +19,7 @@ async function run(code: string) {
     thumb.name = 'Thumb'
     off.appendChild(thumb)
   `)(figma)
-  const set = graph.getAllNodes().find((node) => node.name === 'Switch')
+  const set = [...graph.getAllNodes()].find((node) => node.name === 'Switch')
   if (!set) throw new Error('No switch set')
   const result = await compileScript(code)(figma)
   return { graph, set, result }

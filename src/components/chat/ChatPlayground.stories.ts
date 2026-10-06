@@ -107,7 +107,7 @@ export const Interaction: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'New fixture' }))
     await userEvent.type(
-      canvas.getByRole('textbox', { name: 'Describe a change' }),
+      canvas.getByRole('textbox', { name: /^Describe a change/ }),
       'Make a dashboard'
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
