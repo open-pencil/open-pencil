@@ -4,6 +4,7 @@ import { i18n } from '#vue/i18n/create'
 
 export const collaborationMessageDefaults = {
   inThisRoom: 'In this room',
+  onThisPage: 'On this page',
   yourName: 'Your name',
   enterYourName: 'Enter your name',
   shareThisFile: 'Share this file',
@@ -27,7 +28,39 @@ export const collaborationMessageDefaults = {
   agentName: 'Agent name',
   agentThinking: 'Thinking',
   agentEditing: 'Editing',
-  agentIdle: 'Idle'
+  agentIdle: 'Idle',
+  sharedFile: 'Shared file',
+  invalidRoomLink: 'That isn’t a room link or ID.',
+  joiningTitle: 'Joining the room…',
+  connectingDescription: 'Connecting to the room’s servers.',
+  lookingDescription: 'Looking for people in this room.',
+  receivingDescription: params('Getting the file from {name}.'),
+  othersWaiting: params('Also waiting: {names}'),
+  unreachableTitle: 'Can’t reach the room’s servers',
+  unreachableDescription:
+    'Check your internet connection. OpenPencil keeps trying and opens the file once it connects.',
+  waitingTitle: 'Waiting for someone who has this file',
+  waitingDescription:
+    'Rooms aren’t stored on a server. The file lives on the devices of the people who’ve been in the room, so it can only open while one of them is online.',
+  waitingAskSharer: 'Ask the person who shared the link to open it.',
+  waitingCheckLink: 'Check that the link is complete.',
+  waitingOpensAutomatically: 'The file opens here as soon as someone with it joins.',
+  copyLink: 'Copy link',
+  linkCopied: 'Copied',
+  leave: 'Leave',
+  statusLive: params('Live · {count} here'),
+  statusAlone: 'Only you here — changes sync when others join',
+  leftRoomTitle: 'You left this room',
+  leftRoomDescription: 'This is now a local copy. Save it to keep it.',
+  dismiss: 'Dismiss',
+  openInDesktopApp: 'Open in desktop app',
+  downloadDesktopApp: 'Download',
+  appearsAs: params('You’ll appear as {name}'),
+  changeName: 'Change',
+  joinRoomEllipsis: 'Join room…',
+  joinRoomDescription: 'Paste a room link or ID to open a file someone shared with you.',
+  nameSettingTitle: 'Your name',
+  nameSettingDescription: 'Others see this name next to your cursor in shared rooms.'
 } as const
 
 export const collaborationMessages = i18n('collaboration', collaborationMessageDefaults)

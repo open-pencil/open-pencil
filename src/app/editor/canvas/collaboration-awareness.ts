@@ -1,16 +1,27 @@
-import type { useCollabInjected } from '@/app/collab/use'
-import type { EditorStore } from '@/app/editor/active-store'
+import { tryOnScopeDispose } from '@vueuse/core'
 
-type Collaboration = ReturnType<typeof useCollabInjected>
+import { roomForStore } from '@/app/collab/rooms'
+import { getActiveEditorStore, type EditorStore } from '@/app/editor/active-store'
 
-export function useCanvasCollaborationAwareness(store: EditorStore, collab: Collaboration) {
+/**
+ * Publishes a canvas's cursor and selection to the room its own tab is in, and no other.
+ *
+ * Canvases read the editor through a proxy that follows the active tab, which no room is keyed
+ * by. Every canvas is keyed by its tab, so the tab's own store is the active one while it mounts.
+ */
+export function useCanvasCollaborationAwareness(store: EditorStore) {
+  const tabStore = getActiveEditorStore()
+
   function updateCursor(cx: number, cy: number) {
     store.state.cursorCanvasX = cx
     store.state.cursorCanvasY = cy
-    collab?.updateCursor(cx, cy, store.state.currentPageId)
+    roomForStore(tabStore)?.updateCursor(cx, cy, tabStore.state.currentPageId)
   }
 
-  store.onEditorEvent('selection:changed', (ids) => collab?.updateSelection(ids))
+  const stopSelection = tabStore.onEditorEvent('selection:changed', (ids) =>
+    roomForStore(tabStore)?.updateSelection(ids)
+  )
+  tryOnScopeDispose(stopSelection)
 
   return { updateCursor }
 }

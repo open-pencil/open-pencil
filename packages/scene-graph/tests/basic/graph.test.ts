@@ -265,6 +265,17 @@ describe('SceneGraph', () => {
     expect(graph.getAbsolutePosition(child)).toEqual({ x: 110, y: 110 })
   })
 
+  test('ancestor walks stop on a parent cycle', () => {
+    const graph = new SceneGraph()
+    const first = graph.createNode('FRAME', pageId(graph))
+    const second = graph.createNode('FRAME', first.id)
+    graph.updateNode(first.id, { parentId: second.id })
+
+    expect(graph.isDescendant(second.id, pageId(graph))).toBe(false)
+    expect(graph.closest(second.id, (node) => node.type === 'CANVAS')).toBeUndefined()
+    expect(graph.closest(second.id, (node) => node.id === first.id)).toBe(first)
+  })
+
   test('children order', () => {
     const graph = new SceneGraph()
     rect(graph, 'A')

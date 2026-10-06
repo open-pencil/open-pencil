@@ -3,9 +3,10 @@ import {
   OPEN_PENCIL_PLUGIN_DATA,
   withPluginData
 } from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 
 import { effectiveFigmaRawNodeFields } from '../source-metadata'
-import { computeExportTransform, fractionalPosition, mapToFigmaType } from './basics'
+import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
 import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
 import { applyFontFeaturesToKiwi } from './font/features'

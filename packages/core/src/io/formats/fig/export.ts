@@ -16,6 +16,7 @@ import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import { ownsSlotContent, type SceneGraph } from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -26,7 +27,6 @@ import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail } from '#core/io/formats/raster'
 import {
   sceneNodeToKiwi,
-  fractionalPosition,
   buildFontDigestMap,
   makeDocumentNodeChange,
   makeCanvasNodeChange

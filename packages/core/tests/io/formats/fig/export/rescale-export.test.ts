@@ -5,7 +5,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import type { SymbolData } from '@open-pencil/fig/instance-overrides'
+import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
 import { setInstanceOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#core-tests/helpers/assert'
@@ -53,7 +53,7 @@ for (const scale of [0.5, 2]) {
       const exported = expectDefined(
         parsed.nodeChanges.find((node) => node.name === 'Rescaled owner')
       )
-      const symbol = exported.symbolData as SymbolData
+      const symbol = expectDefined(symbolDataOf(exported), 'exported symbol data')
       const symbolID = expectDefined(symbol.symbolID)
       expect(
         symbol.symbolOverrides?.filter((entry) => entry.size).map((entry) => entry.guidPath?.guids)

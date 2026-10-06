@@ -28,7 +28,6 @@ import {
 } from '@open-pencil/vue'
 
 import { useAIChat } from '@/app/ai/chat/use'
-import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
@@ -51,7 +50,6 @@ const { paneId } = defineProps<{
 }>()
 
 const store = useEditorStore()
-const collab = useCollabInjected()
 const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -72,7 +70,7 @@ const onViewportResize = (width: number, height: number) => {
   if (isActivePane.value) store.setViewportSize(width, height)
 }
 
-const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
+const { updateCursor } = useCanvasCollaborationAwareness(store)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 const shouldSuspendRender = () =>

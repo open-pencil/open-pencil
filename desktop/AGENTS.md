@@ -10,3 +10,4 @@ Check `desktop/Cargo.toml`, `desktop/capabilities/**`, and `desktop/tauri.conf.j
 - Run `bun run generate:icons --target desktop` before direct Cargo checks; native icons are generated, not committed.
 - `build_fig_file` performs `.fig` export on desktop; the browser path uses fflate (`packages/fig/AGENTS.md`).
 - The embedded WebDriver plugin compiles only with the `native-test` Cargo feature and must never be enabled in development or production binaries. Native tests use `bun run test:native` (`tests/AGENTS.md`).
+- `openpencil://` links are parsed in `desktop/src/deep_link.rs`: `open` queues files through `take_pending_open`, `join` queues validated room IDs through `take_pending_rooms`; second launches forward their link arguments through the single-instance handler (`deep_link` unit tests).

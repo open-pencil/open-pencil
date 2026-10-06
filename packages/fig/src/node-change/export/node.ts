@@ -14,10 +14,10 @@ import {
   OPEN_PENCIL_PLUGIN_DATA,
   withPluginData
 } from '@open-pencil/scene-graph'
+import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
-import { siblingOrderKeys } from '../basics'
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
 import { snapshotInstanceGeometry } from '../instance/geometry'
