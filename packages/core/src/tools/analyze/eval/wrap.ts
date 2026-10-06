@@ -1,5 +1,8 @@
 import { type Node, parse } from 'acorn'
 
+import type { FigmaAPI } from '#core/figma-api'
+import { OpenPencilAPI } from '#core/openpencil-api'
+
 /**
  * Wrap eval code so the last bare expression is returned (REPL-style).
  *
@@ -34,4 +37,17 @@ export function wrapEvalCode(code: string): string {
   }
 
   return `return (async () => { ${trimmed} })()`
+}
+
+type AsyncFunctionConstructor = new (...args: string[]) => (...args: unknown[]) => Promise<unknown>
+
+/**
+ * Compile a script for a document: it sees the `figma` global, the Figma Plugin API, and the
+ * `openpencil` global, what OpenPencil adds to it, both over the same document.
+ */
+export function compileScript(code: string): (figma: FigmaAPI) => Promise<unknown> {
+  const AsyncFunction = Object.getPrototypeOf(async () => undefined)
+    .constructor as AsyncFunctionConstructor
+  const run = new AsyncFunction('figma', 'openpencil', wrapEvalCode(code))
+  return (figma) => run(figma, new OpenPencilAPI(figma))
 }

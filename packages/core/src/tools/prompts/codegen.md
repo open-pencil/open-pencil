@@ -49,6 +49,7 @@ For each component determine:
 - **Props** — what content varies between instances (text, color, icon, visibility)
 - **Variants** — if the component has multiple states (default/hover/active, small/medium/large)
 - **Slots** — where child content is injected
+- **Behaviour** — `get_behaviour id=<component_id>` tells whether the designer made it a control, after Reka UI's primitives. Build such a component on that Reka primitive (`SwitchRoot` with `SwitchThumb`, `SliderRoot` with `SliderTrack`, `SliderRange`, and `SliderThumb`, `TabsRoot` with `TabsList`, `TabsTrigger`, and `TabsContent`, …): each part is the slot the behaviour names, its values are the properties it binds (`v-model` for the value, `disabled`), and its interaction states map to the variants for `data-state`, `:hover`, `:active`, `:focus-visible`, and `[data-disabled]`. Do not reimplement the control's keyboard and accessibility handling.
 
 ### Step 3 — Extract tokens
 

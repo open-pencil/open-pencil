@@ -58,6 +58,10 @@ export function createKeyboardActions({
   }
 
   function escapeOrDeselect() {
+    if (store.state.play) {
+      store.stopPlay()
+      return
+    }
     if (store.state.rotationPreview) {
       store.setRotationPreview(null)
       return
@@ -89,6 +93,10 @@ export function createKeyboardActions({
 
   function toggleUI() {
     store.state.showUI = !store.state.showUI
+  }
+
+  function togglePlay() {
+    store.togglePlay()
   }
 
   function toggleAI() {
@@ -140,6 +148,7 @@ export function createKeyboardActions({
     escapeOrDeselect,
     toggleAutoLayout,
     toggleUI,
+    togglePlay,
     toggleAI,
     exportSelectionPNG,
     opacityDigit

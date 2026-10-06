@@ -45,7 +45,8 @@ export const combineAsVariants = defineTool({
 
   description:
     'Combine components sharing a parent into a component set (variant set). Components named ' +
-    '"Category/Value" (e.g. "Button/Primary") derive variant properties from the name segments.',
+    'as Figma names variants, "State=On, Size=Large", get those variant properties; names like ' +
+    '"Button/Primary" derive a Variant property from the segments after the first slash.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.object({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Component node IDs to combine'))

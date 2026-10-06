@@ -12,7 +12,7 @@ export {
 export type { DocumentDiff, DocumentDiffOptions, LayerJSXChange } from './analyze/diff'
 export { evalCode } from './analyze/eval'
 export { lint, lintFix } from './analyze/lint'
-export { wrapEvalCode } from './analyze/eval/wrap'
+export { compileScript, wrapEvalCode } from './analyze/eval/wrap'
 export { analyzeOverlaps, computeOverlaps } from './analyze/overlaps'
 export type {
   AnalyzeOverlapsArgs,

@@ -121,6 +121,7 @@ export function useAppMenu() {
     'snap-pixel-grid': 'snapToPixelGrid',
     profiler: 'profiler',
     'toggle-ui': 'toggleUI',
+    'toggle-preview': 'togglePreview',
     theme: 'theme',
     'theme-light': 'themeLight',
     'theme-dark': 'themeDark',

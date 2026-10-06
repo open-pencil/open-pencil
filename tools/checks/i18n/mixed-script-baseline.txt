@@ -115,6 +115,7 @@ ja:menu.exportSelectionAsPNG
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
+ja:panels.behaviourAddVariants
 ja:panels.colorHintHsb
 ja:panels.colorHintHsl
 ja:panels.colorHintOkhcl
@@ -260,6 +261,7 @@ zh-cn:menu.exportSelectionAsFig
 zh-cn:menu.exportSelectionAsPNG
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
+zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
 zh-cn:panels.colorHintHsl
 zh-cn:panels.colorHintOkhcl

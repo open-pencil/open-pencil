@@ -69,6 +69,7 @@ export {
 } from '@open-pencil/scene-graph'
 
 export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
+export { BehaviourHandle, OpenPencilAPI, type NodeRef } from './openpencil-api'
 export {
   ALL_TOOLS,
   CORE_TOOLS,

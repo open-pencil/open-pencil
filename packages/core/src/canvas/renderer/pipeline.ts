@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { emitNavigationTrace } from '#core/profiler'
 
@@ -54,12 +55,16 @@ export function renderFromEditorState(
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
+  // A previewing canvas shows the design as it runs: no selection, hover, or edit chrome.
+  const previewing = state.play !== null
   render(
     r,
     graph,
-    state.selectedIds,
+    previewing ? new Set<string>() : state.selectedIds,
     {
-      hoveredNodeId: state.hoveredNodeId,
+      playing: previewing,
+      playIslands: previewing ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
+      hoveredNodeId: previewing ? null : state.hoveredNodeId,
       measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
@@ -94,7 +99,8 @@ function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {
     overlays.dropTargetId != null ||
     overlays.rotationPreview != null ||
     overlays.editingTextId != null ||
-    overlays.nodeEditState != null
+    overlays.nodeEditState != null ||
+    overlays.playing === true
   )
 }
 
@@ -163,6 +169,28 @@ function measure<T>(fn: () => T): { value: T; duration: number } {
   const start = now()
   const value = fn()
   return { value, duration: now() - start }
+}
+
+/** Labels, editing overlays, and rulers; a previewing canvas keeps only the rulers' chrome pass. */
+function drawAboveScene(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  selectedIds: Set<string>,
+  overlays: RenderOverlays,
+  sceneVersion: number
+): void {
+  canvas.save()
+  canvas.scale(r.dpr, r.dpr)
+  r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
+  if (!overlays.playing) drawLabelPass(r, canvas, graph, selectedIds, overlays)
+  canvas.restore()
+
+  canvas.save()
+  canvas.scale(r.dpr, r.dpr)
+  if (!overlays.playing) drawOverlayPass(r, canvas, graph, selectedIds, overlays)
+  drawChromePass(r, canvas, graph, selectedIds, overlays)
+  canvas.restore()
 }
 
 export function render(
@@ -273,21 +301,7 @@ export function render(
     canvas.restore()
   }
 
-  if (layer !== 'scene') {
-    canvas.save()
-    canvas.scale(r.dpr, r.dpr)
-    r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
-    drawLabelPass(r, canvas, graph, selectedIds, overlays)
-    canvas.restore()
-
-    canvas.save()
-    canvas.scale(r.dpr, r.dpr)
-
-    drawOverlayPass(r, canvas, graph, selectedIds, overlays)
-    drawChromePass(r, canvas, graph, selectedIds, overlays)
-
-    canvas.restore()
-  }
+  if (layer !== 'scene') drawAboveScene(r, canvas, graph, selectedIds, overlays, sceneVersion)
 
   p.beginPhase('render:flush')
   const { duration: flushDuration } = measure(() => r.surface.flush())

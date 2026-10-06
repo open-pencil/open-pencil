@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { createBehaviourActions } from './components/behaviours'
 import { becomesComponent, componentWrapProps } from './components/create'
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
@@ -86,6 +87,7 @@ export function createComponentActions(ctx: EditorContext) {
     ...variantActions,
     ...componentPropertyActions,
     ...createSlotActions(ctx),
-    ...createSlotAuthoringActions(ctx)
+    ...createSlotAuthoringActions(ctx),
+    ...createBehaviourActions(ctx, variantActions)
   }
 }

@@ -88,3 +88,29 @@ describe('combineAsVariants', () => {
     expect(() => api.combineAsVariants([component, frame], api.currentPage)).toThrow()
   })
 })
+
+describe('combineAsVariants with Property=Value names', () => {
+  test('derives each named property and its values, as Figma names variants', () => {
+    const api = createAPI()
+    const names = ['State=Off, Size=Small', 'State=On, Size=Small', 'State=On, Size=Large']
+    const components = names.map((name) => {
+      const component = api.createComponent()
+      component.name = name
+      return component
+    })
+
+    const set = api.combineAsVariants(components, api.currentPage)
+    const raw = api.graph.getNode(set.id)
+
+    expect(
+      raw?.componentPropertyDefinitions.map((item) => [item.name, item.variantOptions])
+    ).toEqual([
+      ['State', ['Off', 'On']],
+      ['Size', ['Small', 'Large']]
+    ])
+    expect(api.graph.getNode(components[2].id)?.componentPropertyValues).toEqual({
+      State: 'On',
+      Size: 'Large'
+    })
+  })
+})

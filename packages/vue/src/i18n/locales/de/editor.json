@@ -1,5 +1,9 @@
 {
   "toolOptions": "Optionen für {tool}",
   "removeGradientStop": "Farbverlaufspunkt entfernen",
-  "showUI": "UI anzeigen ({shortcut})"
+  "showUI": "UI anzeigen ({shortcut})",
+  "previewing": "Vorschau",
+  "resetPreview": "Zurücksetzen",
+  "leavePreview": "Vorschau verlassen ({shortcut})",
+  "startPreview": "Vorschau ({shortcut})"
 }
