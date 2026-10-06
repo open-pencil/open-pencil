@@ -61,7 +61,8 @@ export function useTokenActions(editor: Editor, copyName: (name: string) => stri
   function detach(id: string, modeId: string) {
     const value = variable(id)?.valuesByMode[modeId]
     if (typeof value !== 'object' || !('aliasId' in value)) return
-    const resolved = editor.graph.resolveVariable(value.aliasId)
+    // In the edited mode, as the row shows it, not the mode the canvas happens to be in.
+    const resolved = editor.graph.resolveVariable(value.aliasId, modeId)
     if (resolved !== undefined) editor.updateVariableValue(id, modeId, structuredClone(resolved))
   }
 

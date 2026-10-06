@@ -146,6 +146,24 @@ describe('token search', () => {
   })
 })
 
+describe('alias previews', () => {
+  test('show what the alias gives in their own mode', () => {
+    const graph = new SceneGraph()
+    const theme = graph.createCollection('Theme')
+    const dark = graph.createMode(theme.id, 'Dark') ?? ''
+    const white = { r: 1, g: 1, b: 1, a: 1 }
+    const black = { r: 0, g: 0, b: 0, a: 1 }
+    const surface = graph.createVariable('Surface', 'COLOR', theme.id, white)
+    surface.valuesByMode[dark] = black
+    const card = graph.createVariable('Card', 'COLOR', theme.id, { aliasId: surface.id })
+    card.valuesByMode[dark] = { aliasId: surface.id }
+
+    const [row] = tokenGroups(graph, theme, [card]).flatMap((group) => group.rows)
+
+    expect(row.values.map((value) => value.color)).toEqual([white, black])
+  })
+})
+
 describe('mode attributes', () => {
   test('a manual mode is turned on by the attribute its collection and name give', () => {
     const graph = new SceneGraph()

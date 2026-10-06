@@ -54,7 +54,9 @@ function modeValue(
   const expression = variable.expressions?.[modeId]?.css
   if (typeof value === 'object' && 'aliasId' in value) {
     const target = graph.variables.get(value.aliasId)
-    const color = graph.resolveColorVariable(value.aliasId)
+    // The column's own mode, so Dark previews what the alias gives in Dark.
+    const resolved = graph.resolveVariable(value.aliasId, modeId)
+    const color = typeof resolved === 'object' && 'r' in resolved ? resolved : undefined
     return { modeId, css: target?.name ?? value.aliasId, alias: target?.name, color, expression }
   }
   if (typeof value === 'object') return { modeId, css: colorToHex(value), color: value, expression }
