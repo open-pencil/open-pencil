@@ -74,8 +74,9 @@ export const diagnostics = {
     await pendingWrites
     return store === memoryStore ? memoryStore.list() : getStore().list()
   },
-  async export(): Promise<string> {
-    return JSON.stringify(await this.list(), null, 2)
+  /** The stored events, after `environment`, the context a report needs to reproduce them. */
+  async export(environment: Record<string, unknown> = {}): Promise<string> {
+    return JSON.stringify({ environment, events: await this.list() }, null, 2)
   },
   async prune(retention: DiagnosticsRetention): Promise<void> {
     memoryEvents = memoryEvents.slice(-retention)

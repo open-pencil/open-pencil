@@ -45,7 +45,16 @@ test('a bound stroke follows the same rule', () => {
     a: 0.4
   })
   const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
-    strokes: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+    strokes: [
+      {
+        type: 'SOLID',
+        color: { r: 1, g: 1, b: 1, a: 1 },
+        opacity: 1,
+        visible: true,
+        weight: 1,
+        align: 'INSIDE'
+      }
+    ],
     boundVariables: { 'strokes/0/color': variable.id }
   })
   applyDocumentPaintBindings(graph, [node])

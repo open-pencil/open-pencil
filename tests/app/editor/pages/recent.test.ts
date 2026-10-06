@@ -28,7 +28,7 @@ test('keeps a bounded history', async () => {
   const { editor, ids, recent } = setup(12)
   for (const id of ids) await editor.switchPage(id)
   expect(recent.ids.value).toHaveLength(8)
-  expect(recent.ids.value[0]).toBe(ids.at(-1))
+  expect(recent.ids.value[0]).toBe(ids[ids.length - 1])
   recent.dispose()
 })
 

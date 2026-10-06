@@ -30,4 +30,5 @@ OpenPencil est un éditeur de design local et open source, compatible avec Figma
 
 - [Disposition automatique](./auto-layout) — distribution avec Flexbox et CSS Grid ;
 - [Composants](./components) — composants réutilisables, instances et surcharges ;
-- [Variables](./variables) — collections, modes, valeurs et liaisons.
+- [Variables](./variables) — collections, modes, valeurs et liaisons ;
+- [Checking Designs](/user-guide/checking-designs) — panneau Check, repères de problèmes sur la zone de travail et règles de lint.

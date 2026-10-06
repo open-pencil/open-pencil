@@ -12,18 +12,18 @@ import {
 describe('FIG session ownership', () => {
   test('discards an archive response when the graph changes while it is pending', async () => {
     const graph = new SceneGraph()
-    let resolveArchive: ((bytes: Uint8Array) => void) | null = null
+    const archive: { resolve: ((bytes: Uint8Array) => void) | null } = { resolve: null }
     registerOriginalArchiveRequest(
       graph,
       () =>
         new Promise<Uint8Array>((resolve) => {
-          resolveArchive = resolve
+          archive.resolve = resolve
         })
     )
     const request = requestOriginalArchive(graph)
 
     graph.updateNode(graph.rootId, { name: 'Edited' })
-    resolveArchive?.(new Uint8Array([1, 2, 3]))
+    archive.resolve?.(new Uint8Array([1, 2, 3]))
 
     await expect(request).resolves.toBeNull()
     releaseFigPopulationWorker(graph)
@@ -41,10 +41,18 @@ describe('FIG session ownership', () => {
     }
     let workerTerminated = false
     let portClosed = false
-    const worker = { terminate: () => (workerTerminated = true) } as Worker
+    const worker = {
+      terminate: () => {
+        workerTerminated = true
+      }
+    } as Worker
     const port = {
-      postMessage: () => undefined,
-      close: () => (portClosed = true)
+      postMessage: (_message: unknown) => {
+        // The oversized path only disposes the port; it never posts to it.
+      },
+      close: () => {
+        portClosed = true
+      }
     } as MessagePort
 
     registerFigPopulationWorker(graph, worker, port)

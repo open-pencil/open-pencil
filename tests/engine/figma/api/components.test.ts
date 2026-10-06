@@ -4,7 +4,7 @@ import { hasInstanceOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
-import { createAPI } from './helpers'
+import { asTextNode, createAPI } from './helpers'
 
 describe('components', () => {
   test('exposes component property accessors and applies instance properties', () => {
@@ -171,10 +171,10 @@ describe('applied shared styles on instance children', () => {
     })
     const component = graph.createNode('COMPONENT', page.id, { name: 'Card' })
     const title = graph.createNode('TEXT', component.id, { name: 'title', text: 'Title' })
-    const first = graph.createInstance(component.id, page.id)
-    const second = graph.createInstance(component.id, page.id)
+    const first = expectDefined(graph.createInstance(component.id, page.id), 'first instance')
+    const second = expectDefined(graph.createInstance(component.id, page.id), 'second instance')
     const firstTitle = expectDefined(graph.getChildren(first.id)[0], 'first title')
-    api.wrapNode(firstTitle.id).textStyleId = heading.id
+    asTextNode(api.wrapNode(firstTitle.id)).textStyleId = heading.id
     expect(hasInstanceOverride(graph, firstTitle.id, 'textStyleId')).toBe(true)
 
     graph.updateNode(title.id, { textStyleId: body.id })

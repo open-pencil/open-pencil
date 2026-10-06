@@ -10,7 +10,7 @@ import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
-import { setTextMeasurer } from '#core/layout'
+import { installTextMeasurer } from '#core/layout'
 import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
@@ -20,6 +20,7 @@ import { fontResolver } from '#core/text/resolver'
 import { createAlignmentActions } from './alignment'
 import { createClipboardBridge } from './bridges/clipboard'
 import { createComponentBridge } from './bridges/components'
+import { createLintFixBridge } from './bridges/lint'
 import { createStructureBridge } from './bridges/structure'
 import { createUndoBridge } from './bridges/undo'
 import { createClipboardActions } from './clipboard'
@@ -29,6 +30,7 @@ import { createComponentActions } from './components'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
+import { createDesignIssueActions } from './issues'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createSelectionActions } from './selection'
@@ -64,6 +66,7 @@ export function createEditor(options?: EditorOptions) {
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
+  let uninstallTextMeasurer: (() => void) | null = null
   const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
@@ -218,6 +221,7 @@ export function createEditor(options?: EditorOptions) {
   const selection = createSelectionActions(ctx)
   const pages = createPageActions(ctx)
   const guides = createGuideActions(ctx)
+  const designIssues = createDesignIssueActions(ctx)
   const shapes = createShapeActions(ctx)
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
@@ -233,17 +237,23 @@ export function createEditor(options?: EditorOptions) {
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
   const undoBridge = createUndoBridge(undoActions, selection)
+  const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
 
   function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
     _ck = ck
     _renderer = renderer
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
-    setTextMeasurer(
+    uninstallTextMeasurer?.()
+    uninstallTextMeasurer =
       typeof renderer.measureTextNode === 'function'
-        ? (node, maxWidth) => renderer.measureTextNode(node, maxWidth)
+        ? installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
         : null
-    )
+  }
+
+  function releaseTextMeasurer() {
+    uninstallTextMeasurer?.()
+    uninstallTextMeasurer = null
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {
@@ -251,6 +261,7 @@ export function createEditor(options?: EditorOptions) {
     if (_renderer === renderer) {
       _renderer = _renderers.values().next().value ?? null
     }
+    if (_renderers.size === 0) releaseTextMeasurer()
   }
 
   function replaceGraph(newGraph: SceneGraph) {
@@ -277,6 +288,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function dispose() {
+    releaseTextMeasurer()
     nodes.cancelNodePreviews()
     interactiveEdits.clear()
     stopFontResolutionEvents()
@@ -331,6 +343,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Canvas and frame guides
     ...guides,
+    ...designIssues,
 
     // Shapes & tools
     ...shapes,
@@ -368,7 +381,10 @@ export function createEditor(options?: EditorOptions) {
     ...componentBridge,
 
     // Structure — bridge functions that need selectedNodes
-    ...structureBridge
+    ...structureBridge,
+
+    // Lint fixes, which touch nodes, structure and deletion in one undo step
+    ...lintFixBridge
   }
 }
 

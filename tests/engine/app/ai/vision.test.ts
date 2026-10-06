@@ -11,6 +11,8 @@ import {
 } from '@/app/ai/tools/vision'
 import type { EditorStore } from '@/app/editor/session/create'
 
+import { asDouble } from '#tests/helpers/doubles'
+
 describe('isolated visual inspection', () => {
   test('bounds renders and forwards only textual findings to the caller', async () => {
     const graph = new SceneGraph()
@@ -18,14 +20,14 @@ describe('isolated visual inspection', () => {
     const frame = graph.createNode('FRAME', page.id, { width: 2560, height: 1600 })
     const rendered: Array<{ ids: string[]; scale: number }> = []
     const inspections: unknown[] = []
-    const store = {
+    const store = asDouble<EditorStore>({
       graph,
       state: { currentPageId: page.id, selectedIds: new Set([frame.id]) },
       renderExportImage: async (ids: string[], scale: number) => {
         rendered.push({ ids, scale })
         return new Uint8Array([1, 2, 3])
       }
-    } as EditorStore
+    })
     const dependencies: VisualInspectionDependencies = {
       createRuntime: async () =>
         ({

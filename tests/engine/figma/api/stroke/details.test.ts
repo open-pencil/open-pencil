@@ -1,14 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '../helpers'
+import { createAPI, solidStroke } from '../helpers'
 
 describe('stroke details', () => {
   test('strokeWeight and strokeAlign', () => {
     const api = createAPI()
     const rect = api.createRectangle()
-    rect.strokes = [
-      { color: { r: 0, g: 0, b: 0, a: 1 }, weight: 2, opacity: 1, visible: true, align: 'CENTER' }
-    ]
+    rect.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'CENTER' })]
     expect(rect.strokeWeight).toBe(2)
     expect(rect.strokeAlign).toBe('CENTER')
     rect.strokeWeight = 4
@@ -18,9 +16,7 @@ describe('stroke details', () => {
   test('strokeCap and strokeJoin', () => {
     const api = createAPI()
     const line = api.createLine()
-    line.strokes = [
-      { color: { r: 0, g: 0, b: 0, a: 1 }, weight: 2, opacity: 1, visible: true, align: 'CENTER' }
-    ]
+    line.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'CENTER' })]
     expect(line.strokeCap).toBe('NONE')
     expect(line.strokeJoin).toBe('MITER')
     line.strokeCap = 'ROUND'

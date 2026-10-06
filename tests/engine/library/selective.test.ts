@@ -5,7 +5,7 @@ import {
   createSelectiveLibraryRevision,
   discoverPublishableLibraryChanges
 } from '@open-pencil/core/library'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 function source(buttonWidth: number, includeCard = true) {
   const graph = new SceneGraph()
@@ -104,7 +104,10 @@ describe('selective library publication', () => {
   test('does not mutate the source while discovering changes', async () => {
     const previous = await initialRevision()
     const changed = source(120)
-    const before = [...changed.nodes].map(([id, node]) => [id, structuredClone(node)] as const)
+    const before = [...changed.nodes].map(([id, node]): [string, SceneNode] => [
+      id,
+      structuredClone(node)
+    ])
     await discoverPublishableLibraryChanges(previous, changed)
     expect([...changed.nodes]).toEqual(before)
   })

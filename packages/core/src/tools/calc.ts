@@ -17,6 +17,9 @@ function evalExpr(
   }
 }
 
+/** A JSON array of expressions; anything that is not a JSON array is one expression. */
+const ExpressionListJSON = v.pipe(v.string(), v.parseJson(), v.array(v.string()))
+
 export const calc = defineTool({
   name: 'calc',
   description:
@@ -30,13 +33,11 @@ export const calc = defineTool({
     expr: v.pipe(v.string(), v.description('Single expression or JSON array of expressions'))
   }),
   execute: (_figma, { expr }) => {
-    let exprs: string[]
-    try {
-      const parsed = JSON.parse(expr)
-      exprs = Array.isArray(parsed) ? parsed : [expr]
-    } catch {
-      exprs = [expr]
-    }
+    const parsed = v.safeParse(ExpressionListJSON, expr)
+    // An issue with a path is a non-string array element; the rest mean "not a JSON array".
+    if (!parsed.success && parsed.issues.some((issue) => issue.path !== undefined))
+      return { expr, error: 'A JSON array of expressions must contain only strings' }
+    const exprs = parsed.success ? parsed.output : [expr]
 
     if (exprs.length === 1) {
       return evalExpr(exprs[0])

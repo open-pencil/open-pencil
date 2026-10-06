@@ -1,5 +1,7 @@
-import type { SceneGraph, Variable } from '@open-pencil/scene-graph'
+import type { SceneGraph, Variable, VariableType } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+
+import { exportTokenStylesheet, type TokenExport } from '#core/tools/codegen/tokens'
 
 import type { RPCCommand } from './types'
 
@@ -77,5 +79,37 @@ export const variablesCommand: RPCCommand<VariablesArgs, VariablesResult> = {
     }
 
     return result
+  }
+}
+
+// ── tokens ──
+
+export interface TokensArgs {
+  format?: string
+  collection?: string
+  type?: string
+}
+
+export type TokensResult = TokenExport
+
+const VARIABLE_TYPES: readonly VariableType[] = ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
+
+function variableType(value: string | undefined): VariableType | undefined {
+  if (!value) return undefined
+  const type = VARIABLE_TYPES.find((candidate) => candidate === value.toUpperCase())
+  if (!type) throw new Error(`Unknown variable type: ${value}. Use ${VARIABLE_TYPES.join(', ')}.`)
+  return type
+}
+
+export const tokensCommand: RPCCommand<TokensArgs, TokensResult> = {
+  name: 'tokens',
+  execute: (graph, args) => {
+    if (args.format && args.format !== 'css' && args.format !== 'tailwind')
+      throw new Error(`Unknown token format: ${args.format}. Use css or tailwind.`)
+    return exportTokenStylesheet(graph, {
+      format: args.format === 'tailwind' ? 'tailwind' : 'css',
+      collection: args.collection,
+      type: variableType(args.type)
+    })
   }
 }

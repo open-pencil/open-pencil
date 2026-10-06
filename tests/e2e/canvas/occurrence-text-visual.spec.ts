@@ -21,11 +21,12 @@ test('occurrence override renders new text rather than inherited source glyphs',
       size: { x: 450, y: 60 },
       textAutoResize: 'WIDTH_AND_HEIGHT',
       derivedTextData: {
-        glyphs: fixture.derivedTextGlyphs.map((glyph, index) => ({
+        glyphs: fixture.derivedTextGlyphs.map((glyph, index, glyphs) => ({
           commandsBlob: index,
           position: { x: glyph.x, y: glyph.y },
           fontSize: glyph.fontSize,
-          firstCharacter: glyph.firstCharacter
+          firstCharacter: glyph.firstCharacter,
+          advance: (glyphs[index + 1]?.x ?? glyph.x) - glyph.x
         }))
       }
     },

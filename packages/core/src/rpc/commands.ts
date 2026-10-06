@@ -17,7 +17,7 @@ import {
   treeCommand
 } from './read-commands'
 import type { RPCCommand } from './types'
-import { variablesCommand } from './variables-command'
+import { tokensCommand, variablesCommand } from './variables-command'
 
 export type AutomationDocumentSummary = {
   id: string
@@ -43,6 +43,7 @@ export const ALL_RPC_COMMANDS = [
   queryCommand,
   nodeCommand,
   variablesCommand,
+  tokensCommand,
   analyzeColorsCommand,
   analyzeTypographyCommand,
   analyzeSpacingCommand,

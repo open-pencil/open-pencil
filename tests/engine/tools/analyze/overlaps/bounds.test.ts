@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Rect } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/core'
 import { computeOverlaps } from '@open-pencil/core/tools/analyze/overlaps'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { frame, pageId, rect } from './helpers'
 
@@ -198,6 +199,7 @@ describe('analyze overlaps visible bounds', () => {
       rotation: 45,
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0, g: 0, b: 0, a: 1 },
           weight: 20,
           opacity: 1,

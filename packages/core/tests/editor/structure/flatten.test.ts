@@ -80,7 +80,7 @@ describe('flattenSelected', () => {
       width: 40,
       height: 30,
       fills: [{ type: 'SOLID', color: TRANSPARENT, opacity: 1, visible: true }],
-      strokes: [{ color: BLACK, weight: 8, opacity: 1, visible: true, align: 'CENTER' }]
+      strokes: [{ type: 'SOLID', color: BLACK, weight: 8, opacity: 1, visible: true, align: 'CENTER' }]
     })
 
     editor.select([rect.id])
@@ -108,7 +108,7 @@ describe('flattenSelected', () => {
       width: 40,
       height: 30,
       fills: [{ type: 'SOLID', color: TRANSPARENT, opacity: 1, visible: true }],
-      strokes: [{ color: BLACK, weight: 8, opacity: 1, visible: true, align: 'CENTER' }]
+      strokes: [{ type: 'SOLID', color: BLACK, weight: 8, opacity: 1, visible: true, align: 'CENTER' }]
     })
     editor.select([rect.id])
     editor.groupSelected()
@@ -366,7 +366,7 @@ describe('flattenSelected', () => {
       width: 50,
       height: 40,
       fills: [],
-      strokes: [{ color: BLACK, opacity: 1, visible: true, weight: 8, align: 'CENTER' }]
+      strokes: [{ type: 'SOLID', color: BLACK, opacity: 1, visible: true, weight: 8, align: 'CENTER' }]
     })
 
     editor.select([rect.id])

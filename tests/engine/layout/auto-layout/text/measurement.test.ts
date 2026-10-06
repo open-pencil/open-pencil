@@ -128,7 +128,6 @@ describe('text measurement', () => {
 
   test(
     'opening imported fig keeps stored text bounds before CanvasKit measurement',
-    { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {
       const graph = await loadFixtureGraph('gold-preview.fig')
       const store = createEditor({ graph, skipInitialGraphSetup: true })
@@ -165,12 +164,12 @@ describe('text measurement', () => {
       expect(store.graph.getNode(subtitle.id)?.height).toBe(22)
       expect(store.graph.getNode(description.id)?.width).toBe(878)
       expect(store.graph.getNode(description.id)?.height).toBe(60)
-    }
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 
   test(
     'imported nested instance layout keeps hidden sibling offsets stable',
-    { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {
       const graph = await loadFixtureGraph('gold-preview.fig')
       const previewRoot = graph.getChildren(graph.getPages()[0].id)[0]
@@ -209,7 +208,8 @@ describe('text measurement', () => {
 
       expect(graph.getNode(visibleToolbar.id)?.x).toBe(8)
       expect(graph.getNode(visibleToolbar.id)?.y).toBe(8)
-    }
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 
   test('WIDTH_AND_HEIGHT text uses measured width in centered layout', () => {

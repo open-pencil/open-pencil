@@ -13,7 +13,7 @@ import {
   type DesignDocument
 } from '@open-pencil/dom-css'
 
-import { requireFile } from '#cli/app-client'
+import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)

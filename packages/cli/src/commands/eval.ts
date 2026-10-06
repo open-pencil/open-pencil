@@ -2,8 +2,8 @@ import { defineCommand } from 'citty'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 
-import { isAppMode, requireFile, rpc } from '#cli/app-client'
-import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
+import { isAppMode, requireFile, rpc } from '#cli/app/client'
+import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
 import { printError } from '#cli/format'
 import {
   documentWriteOptions,

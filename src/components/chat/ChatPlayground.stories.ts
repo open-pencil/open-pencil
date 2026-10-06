@@ -70,6 +70,9 @@ const meta = {
               :messages="selected.messages"
               :presentations="presentations"
               :status="selected.status"
+              interactive
+              @regenerate="regenerate"
+              @edit="resend"
             />
             <p v-if="notice" role="status" class="px-3 py-2 text-xs text-muted">{{ notice }}</p>
             <ChatComposer
@@ -121,5 +124,6 @@ export const Interaction: Story = {
 export const Empty: Story = { args: { initialChat: 'empty' } }
 export const Streaming: Story = { args: { initialChat: 'streaming' } }
 export const ToolError: Story = { args: { initialChat: 'error' } }
+export const RevertedReply: Story = { args: { initialChat: 'reverted' } }
 export const Narrow: Story = { args: { narrow: true } }
 export const LongTitle: Story = { args: { initialChat: 'long-title', narrow: true } }

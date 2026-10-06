@@ -14,6 +14,11 @@ declare global {
     suggestedName?: string
   }
 
+  interface DataTransferItem {
+    /** File System Access drag support; Chromium only. */
+    getAsFileSystemHandle?(): Promise<FileSystemHandle | null>
+  }
+
   interface Window {
     openPencil?: OpenPencilWindowAPI
     showOpenFilePicker?(options?: FilePickerOptions): Promise<FileSystemFileHandle[]>

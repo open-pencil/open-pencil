@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 test('uniform FIG scale covers corners, dashes, and effects', () => {
   const guid = (localID: number) => ({ sessionID: 1, localID })
@@ -33,7 +34,7 @@ test('uniform FIG scale covers corners, dashes, and effects', () => {
       symbolData: { symbolID: guid(2), uniformScaleFactor: 2 },
       size: { x: 80, y: 40 }
     }
-  ])
+  ] as NodeChange[])
   const id = sources.get('1:4')
   if (!id) throw new Error('Missing instance')
   const child = graph.getChildren(id)[0]
@@ -78,7 +79,7 @@ test('a scaled instance keeps its own placed-space visual values verbatim', () =
       dashPattern: [1, 1],
       effects: [{ type: 'DROP_SHADOW', offset: { x: 1, y: 1 }, radius: 2, spread: 0 }]
     }
-  ])
+  ] as NodeChange[])
   const id = sources.get('1:4')
   if (!id) throw new Error('Missing instance')
   const node = graph.getNode(id)

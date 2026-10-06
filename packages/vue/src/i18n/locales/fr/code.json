@@ -11,5 +11,11 @@
   "updatedLive": "Mis à jour en direct",
   "previewFailed": "Échec de l’aperçu",
   "generatedReadOnly": "Généré, lecture seule",
-  "reset": "Réinitialiser"
+  "reset": "Réinitialiser",
+  "noSelection": "Sélectionnez un calque pour voir son code",
+  "noSelectionDesignJSX": "Ou écrivez du Design JSX pour ajouter de nouveaux calques à la page.",
+  "noSelectionTailwindJSX": "Le Tailwind JSX est généré pour les calques sélectionnés.",
+  "writeJSX": "Écrire du JSX",
+  "canvasChangedExpression": "Le canevas indique maintenant {value} ; l’expression reste telle qu’écrite.",
+  "canvasChangedOrder": "Le canevas ordonne maintenant ces calques autrement ; le code reste tel qu’écrit."
 }

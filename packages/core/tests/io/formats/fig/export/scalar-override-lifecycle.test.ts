@@ -43,7 +43,7 @@ test('scalar descendant claims survive synchronization and edited export', async
   await initCodec()
   const parsed = parseFigBuffer((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
   const reopened = materializeDocument(parsed.nodeChanges, parsed.blobs).graph
-  const restored = reopened.getAllNodes().find((node) => node.type === 'INSTANCE')
+  const restored = [...reopened.getAllNodes()].find((node) => node.type === 'INSTANCE')
   expect(restored && reopened.getChildren(restored.id)[0]).toMatchObject({
     name: 'Custom',
     fontSize: 24,

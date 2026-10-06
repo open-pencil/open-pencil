@@ -10,6 +10,8 @@ import type { ParagraphNode } from '#core/canvas/text/paragraph-inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
 import { fontManager } from '#core/text/fonts'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 async function fixture(maxEntries = 8, maxUnits = 1000) {
   const ck = await initCanvasKit()
   const provider = ck.TypefaceFontProvider.Make()
@@ -80,7 +82,7 @@ describe('text preparation cache', () => {
       textPreparationCache: f.cache
     }
     const nodes = Array.from({ length: 6 }, (_, i) =>
-      f.graph.createNode('TEXT', f.node.parentId, {
+      f.graph.createNode('TEXT', expectDefined(f.node.parentId, 'text node parent'), {
         text: `Label ${i}`,
         fontFamily: 'Inter',
         fontWeight: 400,

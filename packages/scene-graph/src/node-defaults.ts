@@ -22,6 +22,13 @@ export function createDefaultSourceMetadata(): SourceMetadata {
   }
 }
 
+/**
+ * Every SceneNode field. Nodes start with all of them, so setting any field later keeps the
+ * shape every node shares; a key added after creation turns a JavaScriptCore object into a
+ * slower, larger dictionary.
+ */
+type CompleteNodeFields = SceneNode & Record<keyof SceneNode, unknown>
+
 export function createDefaultNode(
   generateId: () => string,
   type: NodeType,
@@ -173,8 +180,9 @@ export function createDefaultNode(
     derivedTextGlyphs: null,
     textPathData: null,
     textPathBox: null,
+    booleanOperation: undefined,
     ...overrides
-  }
+  } satisfies CompleteNodeFields
 }
 
 export const CONTAINER_TYPES = new Set<NodeType>([

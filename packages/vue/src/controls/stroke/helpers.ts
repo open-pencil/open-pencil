@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit/array'
 import { computed, type ComputedRef, type Ref } from 'vue'
 
 import { BLACK } from '@open-pencil/core/constants'
@@ -33,6 +34,7 @@ export function isStrokeCapValue(value: string): value is StrokeCap {
   return (STROKE_CAP_VALUES as string[]).includes(value)
 }
 export const DEFAULT_STROKE: Stroke = {
+  type: 'SOLID',
   color: BLACK,
   weight: 1,
   opacity: 1,
@@ -152,7 +154,7 @@ export function currentSides(activeNode: SceneNode | null): StrokeSides {
     borderLeftWeight: l
   } = activeNode
   const active = [t > 0, r > 0, b > 0, l > 0]
-  const count = active.filter(Boolean).length
+  const count = compact(active).length
   if (count === 4 && t === r && r === b && b === l) return 'ALL'
   if (count === 1) {
     if (t > 0) return 'TOP'

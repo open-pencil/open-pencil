@@ -3,8 +3,10 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
 
+import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
+
 function decodeExport(bytes: Uint8Array) {
-  return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+  return parseFigBuffer(uint8ArrayToArrayBuffer(bytes))
 }
 
 describe('.fig auto-layout export', () => {
@@ -54,10 +56,8 @@ describe('.fig auto-layout export', () => {
       nodeChanges.find((node) => node.name === 'Absolute child')?.stackChildAlignSelf
     ).toBeUndefined()
 
-    const reimported = await parseFigFile(
-      exported.buffer.slice(exported.byteOffset, exported.byteOffset + exported.byteLength)
-    )
-    const importedNodes = reimported.getAllNodes()
+    const reimported = await parseFigFile(uint8ArrayToArrayBuffer(exported))
+    const importedNodes = [...reimported.getAllNodes()]
     expect(importedNodes.find((node) => node.name === 'Stretch frame')?.counterAxisAlign).toBe(
       'MIN'
     )

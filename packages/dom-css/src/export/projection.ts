@@ -4,16 +4,9 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
+import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '../types'
-import {
-  cssColor,
-  dropShadowToCSS,
-  effectsToCSS,
-  fillToCSS,
-  sceneNodeSizeStyle,
-  strokeColorToCSS,
-  strokeToCSS
-} from './css'
+import { cssColor, dropShadowToCSS, effectsToCSS, fillToCSS, strokeColorToCSS } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
@@ -22,7 +15,14 @@ const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 export interface SceneGraphToDesignOptions {
   rootId?: string
   includeSourceIds?: boolean
+  /** Write variable-bound values as `var(--name)` where CSS resolves them as drawn. Default true. */
+  tokens?: boolean
 }
+
+/** A field's CSS: its token reference where one is faithful, otherwise the literal value. */
+type FieldCSS = (field: string, literal: string) => string
+
+const px = (value: number) => `${value}px`
 
 function nodeChildren(graph: SceneGraph, node: SceneNode): SceneNode[] {
   return node.childIds
@@ -61,6 +61,11 @@ function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   return undefined
 }
 
+function addSize(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  if (node.width > 0) style.width = css('width', px(node.width))
+  if (node.height > 0) style.height = css('height', px(node.height))
+}
+
 function addPositioning(style: DesignStyleDeclaration, node: SceneNode): void {
   if (node.layoutPositioning !== 'ABSOLUTE') return
   style.position = 'absolute'
@@ -68,86 +73,91 @@ function addPositioning(style: DesignStyleDeclaration, node: SceneNode): void {
   style.top = `${node.y}px`
 }
 
-function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode): void {
-  if (node.minWidth !== null) style['min-width'] = `${node.minWidth}px`
-  if (node.maxWidth !== null) style['max-width'] = `${node.maxWidth}px`
-  if (node.minHeight !== null) style['min-height'] = `${node.minHeight}px`
-  if (node.maxHeight !== null) style['max-height'] = `${node.maxHeight}px`
+function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  if (node.minWidth !== null) style['min-width'] = css('minWidth', px(node.minWidth))
+  if (node.maxWidth !== null) style['max-width'] = css('maxWidth', px(node.maxWidth))
+  if (node.minHeight !== null) style['min-height'] = css('minHeight', px(node.minHeight))
+  if (node.maxHeight !== null) style['max-height'] = css('maxHeight', px(node.maxHeight))
 }
 
-function addCornerRadii(style: DesignStyleDeclaration, node: SceneNode): void {
+function addCornerRadii(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
   if (node.independentCorners) {
-    if (node.topLeftRadius > 0) style['border-top-left-radius'] = `${node.topLeftRadius}px`
-    if (node.topRightRadius > 0) style['border-top-right-radius'] = `${node.topRightRadius}px`
-    if (node.bottomRightRadius > 0)
-      style['border-bottom-right-radius'] = `${node.bottomRightRadius}px`
-    if (node.bottomLeftRadius > 0) style['border-bottom-left-radius'] = `${node.bottomLeftRadius}px`
+    const corners = [
+      ['border-top-left-radius', 'topLeftRadius', node.topLeftRadius],
+      ['border-top-right-radius', 'topRightRadius', node.topRightRadius],
+      ['border-bottom-right-radius', 'bottomRightRadius', node.bottomRightRadius],
+      ['border-bottom-left-radius', 'bottomLeftRadius', node.bottomLeftRadius]
+    ] as const
+    for (const [property, field, radius] of corners)
+      if (radius > 0) style[property] = css(field, px(radius))
     return
   }
 
-  if (node.cornerRadius > 0) style['border-radius'] = `${node.cornerRadius}px`
+  if (node.cornerRadius > 0) style['border-radius'] = css('cornerRadius', px(node.cornerRadius))
 }
 
-function addStroke(style: DesignStyleDeclaration, node: SceneNode): void {
-  const stroke = node.strokes[0]
-  const border = strokeToCSS(stroke)
-  if (!border) return
+function addStroke(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  const stroke = node.strokes.at(0)
+  const literalColor = strokeColorToCSS(stroke)
+  if (!literalColor || !stroke) return
+  const color = css('strokes/0/color', literalColor)
   const borderStyle = node.dashPattern.length > 0 ? 'dashed' : 'solid'
   if (!node.independentStrokeWeights) {
-    style.border = border
+    style.border = `${css('strokeWeight', px(stroke.weight))} solid ${color}`
     if (borderStyle !== 'solid') style['border-style'] = borderStyle
     return
   }
 
-  const color = strokeColorToCSS(stroke) ?? 'currentColor'
   style['border-style'] = borderStyle
   style['border-color'] = color
-  style['border-top-width'] = `${node.borderTopWeight}px`
-  style['border-right-width'] = `${node.borderRightWeight}px`
-  style['border-bottom-width'] = `${node.borderBottomWeight}px`
-  style['border-left-width'] = `${node.borderLeftWeight}px`
+  style['border-top-width'] = css('borderTopWeight', px(node.borderTopWeight))
+  style['border-right-width'] = css('borderRightWeight', px(node.borderRightWeight))
+  style['border-bottom-width'] = css('borderBottomWeight', px(node.borderBottomWeight))
+  style['border-left-width'] = css('borderLeftWeight', px(node.borderLeftWeight))
 }
 
-function addPadding(style: DesignStyleDeclaration, node: SceneNode): void {
-  const { paddingTop, paddingRight, paddingBottom, paddingLeft } = node
-  if (paddingTop === 0 && paddingRight === 0 && paddingBottom === 0 && paddingLeft === 0) return
+const PADDING_FIELDS = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'] as const
 
-  if (
-    paddingTop === paddingRight &&
-    paddingRight === paddingBottom &&
-    paddingBottom === paddingLeft
-  ) {
-    style.padding = `${paddingTop}px`
+/** Sides compare by their CSS, so a token and a literal of the same size stay separate. */
+function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  const [top, right, bottom, left] = PADDING_FIELDS.map((field) => css(field, px(node[field])))
+  const zero = px(0)
+  if ([top, right, bottom, left].every((value) => value === zero)) return
+
+  if (top === right && right === bottom && bottom === left) {
+    style.padding = top
     return
   }
 
-  if (paddingTop === paddingBottom && paddingRight === paddingLeft) {
-    if (paddingTop > 0) style['padding-block'] = `${paddingTop}px`
-    if (paddingRight > 0) style['padding-inline'] = `${paddingRight}px`
+  if (top === bottom && right === left) {
+    if (top !== zero) style['padding-block'] = top
+    if (right !== zero) style['padding-inline'] = right
     return
   }
 
-  if (paddingTop > 0) style['padding-top'] = `${paddingTop}px`
-  if (paddingRight > 0) style['padding-right'] = `${paddingRight}px`
-  if (paddingBottom > 0) style['padding-bottom'] = `${paddingBottom}px`
-  if (paddingLeft > 0) style['padding-left'] = `${paddingLeft}px`
+  if (top !== zero) style['padding-top'] = top
+  if (right !== zero) style['padding-right'] = right
+  if (bottom !== zero) style['padding-bottom'] = bottom
+  if (left !== zero) style['padding-left'] = left
 }
 
-function addFlexGap(style: DesignStyleDeclaration, node: SceneNode): void {
+function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
   if (node.itemSpacing <= 0 && node.counterAxisSpacing <= 0) return
+  const item = css('itemSpacing', px(node.itemSpacing))
   if (node.counterAxisSpacing <= 0) {
-    style.gap = `${node.itemSpacing}px`
+    style.gap = item
     return
   }
 
+  const counter = css('counterAxisSpacing', px(node.counterAxisSpacing))
   if (node.layoutMode === 'HORIZONTAL') {
-    if (node.itemSpacing > 0) style['column-gap'] = `${node.itemSpacing}px`
-    style['row-gap'] = `${node.counterAxisSpacing}px`
+    if (node.itemSpacing > 0) style['column-gap'] = item
+    style['row-gap'] = counter
     return
   }
 
-  if (node.itemSpacing > 0) style['row-gap'] = `${node.itemSpacing}px`
-  style['column-gap'] = `${node.counterAxisSpacing}px`
+  if (node.itemSpacing > 0) style['row-gap'] = item
+  style['column-gap'] = counter
 }
 
 function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
@@ -171,18 +181,20 @@ function addLayoutChild(
 
 function styleFromSceneNode(
   node: SceneNode,
-  parent: SceneNode | undefined
+  parent: SceneNode | undefined,
+  css: FieldCSS
 ): DesignStyleDeclaration {
-  const style = sceneNodeSizeStyle(node)
+  const style: DesignStyleDeclaration = {}
+  addSize(style, node, css)
   addPositioning(style, node)
-  addSizeConstraints(style, node)
+  addSizeConstraints(style, node, css)
   const fill = fillToCSS(node.fills.at(0))
-  if (fill) style['background-color'] = fill
+  if (fill) style['background-color'] = css('fills/0/color', fill)
   addImageStyle(style, node)
-  addStroke(style, node)
+  addStroke(style, node, css)
   Object.assign(style, effectsToCSS(node.effects))
-  if (node.opacity < 1) style.opacity = String(node.opacity)
-  addCornerRadii(style, node)
+  if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
+  addCornerRadii(style, node, css)
   if (node.clipsContent) style.overflow = 'hidden'
   const alignSelf = alignSelfToCSS(node.layoutAlignSelf)
   if (alignSelf) style['align-self'] = alignSelf
@@ -191,8 +203,8 @@ function styleFromSceneNode(
   if (node.layoutDirection === 'RTL') style.direction = 'rtl'
 
   if (node.layoutMode === 'GRID') {
-    addGridContainer(style, node)
-    addPadding(style, node)
+    addGridContainer(style, node, css)
+    addPadding(style, node, css)
   } else if (node.layoutMode !== 'NONE') {
     style.display = 'flex'
     // Row is the flexbox default.
@@ -202,28 +214,35 @@ function styleFromSceneNode(
     if (justifyContent) style['justify-content'] = justifyContent
     if (alignItems) style['align-items'] = alignItems
     if (node.layoutWrap === 'WRAP') style['flex-wrap'] = 'wrap'
-    addFlexGap(style, node)
-    addPadding(style, node)
+    addFlexGap(style, node, css)
+    addPadding(style, node, css)
   }
 
   return style
 }
 
-function styleFromTextNode(node: SceneNode, parent: SceneNode | undefined): DesignStyleDeclaration {
-  const style = sceneNodeSizeStyle(node)
+function styleFromTextNode(
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  css: FieldCSS
+): DesignStyleDeclaration {
+  const style: DesignStyleDeclaration = {}
+  addSize(style, node, css)
   addPositioning(style, node)
   addLayoutChild(style, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
-  style.color = fillToCSS(node.fills.at(0)) ?? cssColor(BLACK)
+  const color = fillToCSS(node.fills.at(0))
+  style.color = color ? css('fills/0/color', color) : cssColor(BLACK)
   style['font-family'] = node.fontFamily
-  style['font-size'] = `${node.fontSize}px`
+  style['font-size'] = css('fontSize', px(node.fontSize))
   style['font-weight'] = String(node.fontWeight)
   if (node.italic) style['font-style'] = 'italic'
-  if (node.lineHeight !== null) style['line-height'] = `${node.lineHeight}px`
-  if (node.letterSpacing !== 0) style['letter-spacing'] = `${node.letterSpacing}px`
+  if (node.lineHeight !== null) style['line-height'] = css('lineHeight', px(node.lineHeight))
+  if (node.letterSpacing !== 0)
+    style['letter-spacing'] = css('letterSpacing', px(node.letterSpacing))
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()
-  if (node.opacity < 1) style.opacity = String(node.opacity)
+  if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   const shadow = dropShadowToCSS(node.effects[0])
   if (shadow) style['text-shadow'] = shadow
   if (node.textDecoration !== 'NONE') {
@@ -266,20 +285,32 @@ function tagNameForNode(node: SceneNode): string {
   return 'div'
 }
 
+interface ProjectionContext {
+  graph: SceneGraph
+  includeSourceIds: boolean
+  tokens: DesignTokens | undefined
+}
+
 function sceneNodeToDesignNode(
-  graph: SceneGraph,
+  context: ProjectionContext,
   node: SceneNode,
-  options: Required<SceneGraphToDesignOptions>
+  inherited: CSSModes,
+  root: boolean
 ): DesignNode | null {
   if (!node.visible || node.internalOnly) return null
+  const { graph, includeSourceIds, tokens } = context
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  const entered = tokens?.enter(node, inherited, root)
+  const modes = entered?.modes ?? inherited
+  const attrs = { ...attrsForNode(graph, node, includeSourceIds), ...entered?.attrs }
+  const css: FieldCSS = (field, literal) => tokens?.reference(node, field, modes) ?? literal
 
   if (node.type === 'TEXT') {
     return {
       type: 'element',
       tagName: 'span',
-      attrs: attrsForNode(graph, node, options.includeSourceIds),
-      inlineStyle: styleFromTextNode(node, parent),
+      attrs,
+      inlineStyle: styleFromTextNode(node, parent, css),
       sourceSceneNodeId: node.id,
       sourceSceneNode: node,
       children: [{ type: 'text', text: node.text }]
@@ -287,14 +318,14 @@ function sceneNodeToDesignNode(
   }
 
   const children = nodeChildren(graph, node)
-    .map((child) => sceneNodeToDesignNode(graph, child, options))
+    .map((child) => sceneNodeToDesignNode(context, child, modes, false))
     .filter((child): child is DesignNode => child !== null)
 
   if (node.type === 'CANVAS') {
     return {
       type: 'element',
       tagName: 'main',
-      attrs: attrsForNode(graph, node, options.includeSourceIds),
+      attrs,
       sourceSceneNodeId: node.id,
       sourceSceneNode: node,
       children
@@ -304,12 +335,19 @@ function sceneNodeToDesignNode(
   return {
     type: 'element',
     tagName: tagNameForNode(node),
-    attrs: attrsForNode(graph, node, options.includeSourceIds),
-    inlineStyle: styleFromSceneNode(node, parent),
+    attrs,
+    inlineStyle: styleFromSceneNode(node, parent, css),
     sourceSceneNodeId: node.id,
     sourceSceneNode: node,
     children
   }
+}
+
+function projectionContext(
+  graph: SceneGraph,
+  { includeSourceIds = true, tokens = true }: SceneGraphToDesignOptions
+): ProjectionContext {
+  return { graph, includeSourceIds, tokens: tokens ? new DesignTokens(graph) : undefined }
 }
 
 export function sceneGraphToDesignDocument(
@@ -317,35 +355,33 @@ export function sceneGraphToDesignDocument(
   options: SceneGraphToDesignOptions = {}
 ): DesignDocument {
   const root = graph.getNode(options.rootId ?? graph.rootId)
-  const resolvedOptions: Required<SceneGraphToDesignOptions> = {
-    rootId: options.rootId ?? graph.rootId,
-    includeSourceIds: options.includeSourceIds ?? true
-  }
-
+  const context = projectionContext(graph, options)
+  const modes = context.tokens?.defaultModes() ?? new Map<string, string>()
   const children = root
     ? nodeChildren(graph, root)
-        .map((child) => sceneNodeToDesignNode(graph, child, resolvedOptions))
+        .map((child) => sceneNodeToDesignNode(context, child, modes, true))
         .filter((child): child is DesignNode => child !== null)
     : []
 
-  return {
-    type: 'document',
-    sourceGraph: graph,
-    children
-  }
+  return { type: 'document', sourceGraph: graph, tokens: context.tokens, children }
 }
 
 /** Project one node, including its own box, instead of the children of a root. */
 export function sceneNodeToDesignDocument(
   graph: SceneGraph,
   nodeId: string,
-  includeSourceIds = true
+  options: Omit<SceneGraphToDesignOptions, 'rootId'> = {}
 ): DesignDocument {
   const node = graph.getNode(nodeId)
-  const projected = node
-    ? sceneNodeToDesignNode(graph, node, { rootId: nodeId, includeSourceIds })
-    : null
-  return { type: 'document', sourceGraph: graph, children: projected ? [projected] : [] }
+  const context = projectionContext(graph, options)
+  const modes = context.tokens?.defaultModes() ?? new Map<string, string>()
+  const projected = node ? sceneNodeToDesignNode(context, node, modes, true) : null
+  return {
+    type: 'document',
+    sourceGraph: graph,
+    tokens: context.tokens,
+    children: projected ? [projected] : []
+  }
 }
 
 export type { SceneGraphToDesignOptions as ToDesignDocumentOptions }

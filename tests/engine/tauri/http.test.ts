@@ -83,10 +83,10 @@ describe('tauriFetch', () => {
   })
 
   test('passes request timeout metadata to the desktop HTTP command', async () => {
-    let captured: InvokeArgs | null = null
+    const captured: { value: InvokeArgs | null } = { value: null }
     await mockTauriIPC((command, args) => {
       expect(command).toBe('proxy_http_request')
-      captured = args as InvokeArgs
+      captured.value = args as InvokeArgs
       return {
         status: 201,
         headers: [{ name: 'x-open-pencil', value: 'ok' }],
@@ -100,33 +100,33 @@ describe('tauriFetch', () => {
       body: '{"ok":true}'
     })
 
-    if (!captured) throw new Error('Expected proxy_http_request to be invoked')
+    if (!captured.value) throw new Error('Expected proxy_http_request to be invoked')
     expect(response.status).toBe(201)
     expect(response.headers.get('x-open-pencil')).toBe('ok')
     expect(await response.text()).toBe('OK')
-    expect(captured.request.url).toBe('https://example.test/check')
-    expect(captured.request.method).toBe('POST')
-    expect(captured.request.timeout_ms).toBe(15_000)
-    expect(captured.request.body).toEqual([...new TextEncoder().encode('{"ok":true}')])
+    expect(captured.value.request.url).toBe('https://example.test/check')
+    expect(captured.value.request.method).toBe('POST')
+    expect(captured.value.request.timeout_ms).toBe(15_000)
+    expect(captured.value.request.body).toEqual([...new TextEncoder().encode('{"ok":true}')])
   })
 
   test('accepts URL objects without treating them as Requests', async () => {
-    let captured: InvokeArgs | null = null
+    const captured: { value: InvokeArgs | null } = { value: null }
     await mockTauriIPC((command, args) => {
       expect(command).toBe('proxy_http_request')
-      captured = args as InvokeArgs
+      captured.value = args as InvokeArgs
       return { status: 204, headers: [], body: [] }
     })
     await tauriFetch(new URL('https://example.test/url-object'))
-    if (!captured) throw new Error('Expected proxy_http_request to be invoked')
-    expect(captured.request.url).toBe('https://example.test/url-object')
+    if (!captured.value) throw new Error('Expected proxy_http_request to be invoked')
+    expect(captured.value.request.url).toBe('https://example.test/url-object')
   })
 
   test('forwards bodies from Request inputs', async () => {
-    let captured: InvokeArgs | null = null
+    const captured: { value: InvokeArgs | null } = { value: null }
     await mockTauriIPC((command, args) => {
       expect(command).toBe('proxy_http_request')
-      captured = args as InvokeArgs
+      captured.value = args as InvokeArgs
       return { status: 204, headers: [], body: [] }
     })
 
@@ -137,10 +137,10 @@ describe('tauriFetch', () => {
 
     const response = await tauriFetch(request)
 
-    if (!captured) throw new Error('Expected proxy_http_request to be invoked')
+    if (!captured.value) throw new Error('Expected proxy_http_request to be invoked')
     expect(response.status).toBe(204)
-    expect(captured.request.method).toBe('POST')
-    expect(proxyBodyText(captured.request)).toBe('from-request')
+    expect(captured.value.request.method).toBe('POST')
+    expect(proxyBodyText(captured.value.request)).toBe('from-request')
   })
 
   test('constructs null bodies for browser null-body response statuses', async () => {
@@ -159,10 +159,10 @@ describe('tauriFetch', () => {
   })
 
   test('forwards FormData bytes with the Request-generated content boundary', async () => {
-    let captured: InvokeArgs | null = null
+    const captured: { value: InvokeArgs | null } = { value: null }
     await mockTauriIPC((command, args) => {
       expect(command).toBe('proxy_http_request')
-      captured = args as InvokeArgs
+      captured.value = args as InvokeArgs
       return { status: 204, headers: [], body: [] }
     })
 
@@ -171,12 +171,12 @@ describe('tauriFetch', () => {
 
     await tauriFetch('https://example.test/upload', { method: 'POST', body: formData })
 
-    if (!captured) throw new Error('Expected proxy_http_request to be invoked')
-    const contentType = proxyHeaderValue(captured.request, 'content-type')
+    if (!captured.value) throw new Error('Expected proxy_http_request to be invoked')
+    const contentType = proxyHeaderValue(captured.value.request, 'content-type')
     const boundary = contentType?.match(/boundary=(.+)$/)?.[1]
     if (!boundary) throw new Error(`Expected multipart boundary in content-type: ${contentType}`)
 
-    const body = proxyBodyText(captured.request)
+    const body = proxyBodyText(captured.value.request)
     expect(body).toContain(`--${boundary}`)
     expect(body).toContain('name="family"')
     expect(body).toContain('Inter')

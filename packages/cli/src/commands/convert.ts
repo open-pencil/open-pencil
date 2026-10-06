@@ -5,7 +5,7 @@ import { defineCommand } from 'citty'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
-import { requireFile } from '#cli/app-client'
+import { requireFile } from '#cli/app/client'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument } from '#cli/headless'
 

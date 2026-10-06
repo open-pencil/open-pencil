@@ -160,7 +160,6 @@ function createScopedReader(
       options: InterpretInstanceOptions = {}
     ) {
       return planComponentConstruction(
-        changes,
         roots,
         (id) => sourceInterpreter.component(id, options),
         shared.index.sources

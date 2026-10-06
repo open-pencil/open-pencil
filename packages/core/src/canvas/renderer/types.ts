@@ -3,6 +3,7 @@ import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
+import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -79,4 +80,6 @@ export interface RenderOverlays {
     hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
   } | null
   presenceCursors?: PresenceCursor[]
+  designIssues?: DesignIssueOverlay | null
+  codeFocusNodeId?: string | null
 }

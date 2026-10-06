@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'bun:test'
 
-import { toSpeedscopeJSON } from '@open-pencil/core'
+import { toSpeedscopeJSON, type FrameCapture } from '@open-pencil/core'
 
 describe('toSpeedscopeJSON', () => {
   it('produces valid speedscope JSON', () => {
-    const capture = {
+    const capture: FrameCapture = {
       timestamp: 0,
       totalTimeMs: 10,
       cpuTimeMs: 8,
@@ -13,6 +13,11 @@ describe('toSpeedscopeJSON', () => {
       culledNodes: 1,
       drawCalls: 10,
       scenePictureCacheHit: false,
+      scenePictureMode: 'none',
+      scenePictureMissReason: '',
+      scenePictureDrawTimeMs: 0,
+      scenePictureRecordTimeMs: 0,
+      flushTimeMs: 0,
       rootProfiles: [
         {
           nodeId: 'n1',

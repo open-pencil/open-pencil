@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { componentPropDefsOf } from '#fig-tests/helpers/component-props'
 import { guid } from '#fig-tests/helpers/guid'
 import { materializeComponentClosure } from '#fig/instance-overrides/component-closure'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
@@ -45,7 +46,7 @@ for (const defaultId of [1, 2]) {
     expect(closure.externalPreferredKeys).toEqual(new Set(['external-choice']))
     expect(host?.componentPropertyDefinitions[0].preferredValues).toEqual(['external-choice'])
     expect(host?.childIds).toEqual([])
-    expect(changes[0].componentPropDefs?.[0].initialValue?.guidValue).toEqual(guid(defaultId))
+    expect(componentPropDefsOf(changes[0])?.[0].initialValue?.guidValue).toEqual(guid(defaultId))
   })
 }
 

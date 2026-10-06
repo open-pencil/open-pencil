@@ -17,6 +17,7 @@ describe('corner radius', () => {
     const rect = api.createRectangle()
     rect.topLeftRadius = 4
     rect.bottomRightRadius = 12
-    expect(rect.cornerRadius).toBe(api.mixed)
+    // `api.mixed` widens to `symbol`, so the matcher is typed to accept either side.
+    expect<number | symbol>(rect.cornerRadius).toBe(api.mixed)
   })
 })

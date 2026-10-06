@@ -7,6 +7,11 @@ import * as v from 'valibot'
 import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
+/** The `render` tool answers with the rendered root and its child IDs. */
+interface RenderToolResult extends ToolResult {
+  children: string[]
+}
+
 describe('create_shape', () => {
   test('creates a frame', () => {
     const { figma } = setupToolTest()
@@ -98,7 +103,7 @@ describe('render', () => {
     const tool = getTool('render')
     const result = (await tool.execute(figma, {
       jsx: '<Frame name="Card" w={200} h={100} bg="#FFF"><Text>Hello</Text></Frame>'
-    })) as ToolResult
+    })) as RenderToolResult
     expect(result.name).toBe('Card')
     expect(result.type).toBe('FRAME')
     expect(result.children.length).toBeGreaterThan(0)

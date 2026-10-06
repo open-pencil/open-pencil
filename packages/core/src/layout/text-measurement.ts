@@ -44,6 +44,23 @@ export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
 }
 
+const installedMeasurers: TextMeasurer[] = []
+
+/**
+ * Makes `measurer` the layout text measurer until the returned function uninstalls it. Then
+ * the most recent measurer still installed takes over, so closing one editor neither leaves
+ * layout measuring with its destroyed renderer nor keeps that editor alive.
+ */
+export function installTextMeasurer(measurer: TextMeasurer): () => void {
+  installedMeasurers.push(measurer)
+  globalTextMeasurer = measurer
+  return () => {
+    const index = installedMeasurers.lastIndexOf(measurer)
+    if (index !== -1) installedMeasurers.splice(index, 1)
+    if (globalTextMeasurer === measurer) globalTextMeasurer = installedMeasurers.at(-1) ?? null
+  }
+}
+
 /**
  * Run `fn` with `measurer` as the layout text measurer. The measurer is shared, so `fn` must
  * be synchronous: an override held across an await would leak into other layouts.

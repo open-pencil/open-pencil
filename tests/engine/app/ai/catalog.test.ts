@@ -6,8 +6,10 @@ import {
   resolveModelsDevModel
 } from '@/app/ai/models/catalog'
 
+import { fetchStub } from '#tests/helpers/fetch'
+
 function catalogResponse(body: unknown): typeof fetch {
-  return (async () => new Response(JSON.stringify(body), { status: 200 })) as typeof fetch
+  return fetchStub(async () => new Response(JSON.stringify(body), { status: 200 }))
 }
 
 afterEach(() => resetModelsDevCatalogForTests())
@@ -46,8 +48,8 @@ describe('models.dev catalog', () => {
       catalogResponse({
         openai: {
           models: {
-            'gpt-5.6': {
-              name: 'GPT-5.6 from catalog',
+            'gpt-6.1-sol': {
+              name: 'GPT-6.1 Sol from catalog',
               tool_call: true,
               attachment: true,
               release_date: '2026-07-09',
@@ -81,8 +83,8 @@ describe('models.dev catalog', () => {
     )
 
     expect(models[0]).toMatchObject({
-      id: 'gpt-5.6',
-      name: 'GPT-5.6',
+      id: 'gpt-6.1-sol',
+      name: 'GPT-6.1 Sol',
       tag: 'Best',
       capabilities: ['tools', 'vision'],
       releaseDate: '2026-07-09'
@@ -96,16 +98,26 @@ describe('models.dev catalog', () => {
   })
 
   test('falls back to curated models when the catalog request fails', async () => {
-    const failingFetch = (async () => new Response(null, { status: 503 })) as typeof fetch
+    const failingFetch = fetchStub(async () => new Response(null, { status: 503 }))
     const models = await listCatalogModels('anthropic', failingFetch)
 
-    expect(models[0]).toMatchObject({ id: 'claude-sonnet-5', tag: 'Best for design' })
+    expect(models[0]).toMatchObject({ id: 'claude-sonnet-5-5', tag: 'Best for design' })
+  })
+
+  test('falls back to curated models when the catalog has a malformed entry', async () => {
+    const failingFetch = fetchStub(async () => new Response(null, { status: 503 }))
+    const models = await listCatalogModels(
+      'anthropic',
+      catalogResponse({ anthropic: { models: { 'claude-sonnet-5': null } } })
+    )
+
+    expect(models).toEqual(await listCatalogModels('anthropic', failingFetch))
   })
 
   test('retries a failed shared request and shares a successful request', async () => {
     const originalFetch = globalThis.fetch
     let requests = 0
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchStub(async () => {
       requests++
       if (requests === 1) return new Response(null, { status: 503 })
       return new Response(
@@ -113,7 +125,7 @@ describe('models.dev catalog', () => {
           openai: { models: { retryModel: { name: 'Retry model', tool_call: true } } }
         })
       )
-    }) as typeof fetch
+    })
     try {
       expect(await resolveModelsDevModel('openai', 'retryModel')).toBeNull()
       const [first, second] = await Promise.all([
@@ -129,9 +141,9 @@ describe('models.dev catalog', () => {
   })
 
   test('preserves vision support in offline curated models', async () => {
-    const failingFetch = (async () => new Response(null, { status: 503 })) as typeof fetch
+    const failingFetch = fetchStub(async () => new Response(null, { status: 503 }))
     const openai = await listCatalogModels('openai', failingFetch)
-    for (const id of ['gpt-5.6', 'gpt-5.5', 'gpt-5.4-mini', 'gpt-5.4-nano']) {
+    for (const id of ['gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-luna']) {
       expect(openai.find((model) => model.id === id)?.capabilities).toContain('vision')
     }
     const zai = await listCatalogModels('zai', failingFetch)

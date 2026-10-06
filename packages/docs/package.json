@@ -20,7 +20,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "vitepress": "^2.0.0-alpha.19",
     "vitepress-plugin-llms": "1.12.2",
-    "vue": "^3.5.41",
+    "vue": "^3.5.43",
     "vue-component-meta": "^3.3.10"
   },
   "dependencies": {

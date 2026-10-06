@@ -77,6 +77,11 @@ export function createDocumentIOActions(
     getDocumentFilePath: sourceState.getFilePath,
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
+    /** Whether saving writes in place rather than asking for a location. */
+    hasWritableSource: () =>
+      !!sourceState.getFilePath() ||
+      !!sourceState.getFileHandle() ||
+      !!sourceState.getStorageBinding(),
     getRecoveryId: sourceActions.getRecoveryId,
     adoptRecoverySnapshot: sourceActions.adoptRecoverySnapshot,
     persistRecoveryNow: sourceActions.persistRecoveryNow,
@@ -84,6 +89,7 @@ export function createDocumentIOActions(
     setDocumentSource: sourceActions.setDocumentSource,
     setStorageDocumentSource: sourceActions.setStorageDocumentSource,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
+    saveFigFileToPath: sourceActions.saveFigFileToPath,
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
     disposeDocumentIO: sourceActions.disposeDocumentIO,
     openFigFile,
