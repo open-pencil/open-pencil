@@ -8,7 +8,6 @@ import {
   agentFinished,
   agentStarted,
   endAgentSession,
-  endAllAgentSessions,
   readAgentSession,
   touchedNodeIds,
   type AgentSession
@@ -28,7 +27,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  endAllAgentSessions()
+  endAgentSession(claude.session)
   store.preparationController.dispose()
   jest.useRealTimers()
 })

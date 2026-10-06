@@ -8,9 +8,10 @@ import * as v from 'valibot'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
 
-import { endAllAgentSessions } from '@/app/automation/agents'
+import { endAgentSession, readAgentSession } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
+import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 
 /** Requests from the MCP bridge; other message types (such as the register prompt) are ignored. */
@@ -56,6 +57,9 @@ export function connectAutomation(
       return
     }
 
+    /** MCP sessions whose calls came over this connection; they end with it. */
+    const sessions = new Set<string>()
+
     socket.onopen = () => {
       console.debug('[Automation] WebSocket connected to MCP server')
       socket.send(JSON.stringify({ type: 'register', token }))
@@ -70,6 +74,8 @@ export function connectAutomation(
           return
         }
         const msg = parsed.output
+        const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
+        if (session) sessions.add(session.session)
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
           if (socket.readyState !== WebSocket.OPEN) return
@@ -92,8 +98,9 @@ export function connectAutomation(
 
     socket.onclose = (event) => {
       if (ws === socket) ws = null
-      // No MCP session can reach the app without the server, so their agents leave.
-      endAllAgentSessions()
+      // Sessions that reached the app over this connection cannot any more, so their agents
+      // leave; ones that came another way, such as a second editor's, stay.
+      for (const id of sessions) endAgentSession(id)
       if (intentionalDisconnect || event.code === 1000) return
       console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()

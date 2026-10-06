@@ -145,8 +145,3 @@ export function endAgentSession(sessionId: string): void {
   // Removing entries while iterating a Map is safe: visited ones stay visited.
   for (const store of sessions.get(sessionId)?.keys() ?? []) remove(sessionId, store)
 }
-
-/** The connection to the MCP server closed: no session can reach the app any more. */
-export function endAllAgentSessions(): void {
-  for (const sessionId of sessions.keys()) endAgentSession(sessionId)
-}
