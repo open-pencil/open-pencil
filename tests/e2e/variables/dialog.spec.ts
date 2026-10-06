@@ -166,6 +166,9 @@ test('manual modes switch by the attribute the collection names', async () => {
   const attribute = inspector.getByTestId('variables-mode-attribute')
   await attribute.fill('data scheme')
   await expect(attribute).toHaveAttribute('aria-invalid', 'true')
+  await attribute.press('Enter')
+  // A refused attribute keeps the focus, so it can be corrected.
+  await expect(attribute).toBeFocused()
   await attribute.fill('data-scheme')
   await attribute.press('Enter')
 

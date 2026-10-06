@@ -174,6 +174,11 @@ function done(event: KeyboardEvent) {
   if (event.target instanceof HTMLElement) event.target.blur()
   emit('done')
 }
+
+/** An attribute the field refuses keeps the focus, so it can be corrected. */
+function attributeDone(event: KeyboardEvent) {
+  if (!attributeInvalid.value) done(event)
+}
 </script>
 
 <template>
@@ -225,7 +230,7 @@ function done(event: KeyboardEvent) {
           :ui="{ input: 'font-mono' }"
           data-test-id="variables-mode-attribute"
           @change="commitAttribute"
-          @enter="done"
+          @enter="attributeDone"
         />
         <p v-if="attributeInvalid" :id="attributeErrorId" :class="ui.error()" role="alert">
           {{ variables.modeAttributeInvalid }}

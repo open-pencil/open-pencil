@@ -184,6 +184,9 @@ describe('variable token undo', () => {
     expect(attribute()).toBe('data-scheme')
 
     editor.setModeAttribute('theme', 'data scheme"]')
+    expect(attribute()).toBe('data-scheme')
+
+    editor.setModeAttribute('theme', '  ')
     expect(attribute()).toBeUndefined()
 
     editor.undo.undo()

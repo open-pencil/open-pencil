@@ -506,14 +506,16 @@ export function createVariableActions(ctx: EditorContext) {
     })
   }
 
-  /** Name the attribute manual modes are switched by; an empty or invalid name restores the default. */
+  /**
+   * Name the attribute manual modes are switched by; an empty name restores the default, and a
+   * name no stylesheet can select on leaves the current one.
+   */
   function setModeAttribute(collectionId: string, name: string | undefined) {
     const collection = ctx.graph.variableCollections.get(collectionId)
     if (!collection) return
     const previous = collection.modeAttribute
-    const trimmed = name?.trim() ?? ''
-    const next = trimmed && isModeAttributeName(trimmed) ? trimmed : undefined
-    if (next === previous) return
+    const next = name?.trim() || undefined
+    if (next === previous || (next !== undefined && !isModeAttributeName(next))) return
     const apply = (value: string | undefined) => {
       const target = ctx.graph.variableCollections.get(collectionId)
       if (target) target.modeAttribute = value
