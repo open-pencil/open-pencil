@@ -19,7 +19,7 @@ Quien abre el enlace entra en la misma sala. El documento inicial se sincroniza 
 - **Presencia:** nombre, color, selección y página activa;
 - **Cursores:** posición de cada participante;
 - **Vista:** posibilidad de seguir el encuadre de otra persona;
-- **Agentes:** el chat con AI integrado aparece como un cursor sobre las capas que edita, con una etiqueta con contorno que muestra una chispa y un nombre en clave como *Fern*. El cursor y el contorno tienen el color de la persona que lo ejecuta, para que se sepa de quién es el agente. Solo se comparten su nombre, tipo, modelo, estado, página, posición y capas editadas, nunca los prompts ni las respuestas.
+- **Agentes:** el chat con AI integrado, los chats de ACP y Pi harness y cada cliente MCP conectado aparecen como cursores sobre las capas que leen o editan, con una etiqueta con contorno que muestra una chispa y un nombre en clave como *Fern*. Mientras el chat transmite JSX, su cursor recorre los elementos a medida que aparecen y los contornea. El cursor y el contorno tienen el color de la persona que ejecuta el agente, para que se sepa de quién es. Solo se comparten su nombre, tipo, modelo, estado, página, posición y capas editadas, nunca los prompts ni las respuestas.
 
 ## Modo seguimiento
 

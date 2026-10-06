@@ -17,7 +17,7 @@ Apri il menu di collaborazione, crea una stanza e condividi il link. L’identif
 - **Presenza:** nome, colore, selezione e pagina attiva;
 - **Cursori:** posizione di ogni partecipante;
 - **Vista:** possibilità di seguire l’inquadratura di un’altra persona;
-- **Agenti:** la chat AI integrata compare come cursore sui livelli che sta modificando, con un’etichetta contornata che mostra una scintilla e un nome in codice come *Fern*. Cursore e contorno hanno il colore di chi lo esegue, così si capisce a chi appartiene l’agente. Vengono condivisi solo nome, tipo, modello, stato, pagina, posizione e livelli modificati, mai richieste o risposte.
+- **Agenti:** la chat AI integrata, le chat ACP e Pi harness e ogni client MCP collegato compaiono come cursori sui livelli che leggono o modificano, con un’etichetta contornata che mostra una scintilla e un nome in codice come *Fern*. Mentre la chat trasmette JSX, il suo cursore percorre gli elementi man mano che compaiono e li contorna. Cursore e contorno hanno il colore di chi esegue l’agente, così si capisce a chi appartiene. Vengono condivisi solo nome, tipo, modello, stato, pagina, posizione e livelli modificati, mai richieste o risposte.
 
 ## Modalità di seguito
 

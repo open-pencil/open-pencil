@@ -17,7 +17,7 @@ Ouvrez le menu de collaboration, créez une salle et partagez le lien. L’ident
 - **Présence :** nom, couleur, sélection et page active ;
 - **Curseurs :** position de chaque participant ;
 - **Vue :** possibilité de suivre le cadrage d’une autre personne ;
-- **Agents :** le chat AI intégré apparaît sous la forme d’un curseur sur les calques qu’il modifie, son étiquette cerclée affichant une étincelle et un nom de code tel que *Fern*. Le curseur et le contour ont la couleur de la personne qui l’utilise, ce qui permet de savoir à qui appartient l’agent. Seuls son nom, son type, son modèle, son état, sa page, sa position et les calques modifiés sont partagés, jamais les instructions ni les réponses.
+- **Agents :** le chat AI intégré, les chats ACP et Pi harness et chaque client MCP connecté apparaissent sous la forme de curseurs sur les calques qu’ils lisent ou modifient, leur étiquette cerclée affichant une étincelle et un nom de code tel que *Fern*. Pendant que le chat diffuse du JSX, son curseur parcourt les éléments à mesure qu’ils apparaissent et les entoure. Le curseur et le contour ont la couleur de la personne qui utilise l’agent, ce qui permet de savoir à qui il appartient. Seuls son nom, son type, son modèle, son état, sa page, sa position et les calques modifiés sont partagés, jamais les instructions ni les réponses.
 
 ## Mode suivi
 

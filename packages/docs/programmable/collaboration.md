@@ -30,7 +30,7 @@ Rooms are not stored on a server: the file lives on the devices of the people wh
 - **Document changes** — every edit (shapes, text, properties, layout) syncs instantly
 - **Cursors** — see where each collaborator is pointing, with their name and color
 - **Selections** — highlighted selections are visible to everyone
-- **Agents** — the built-in AI chat appears as a cursor at the layers it is editing, its outlined label showing a sparkle and a callsign such as *Fern*. The cursor and outline have the color of the person running it, so you can tell whose agent it is. Only its name, kind, model, status, page, position, and edited layers are shared, never prompts or replies.
+- **Agents** — the built-in AI chat, ACP and Pi harness chats, and every connected MCP client appear as cursors at the layers they read or edit, each outlined label showing a sparkle and a callsign such as *Fern*. While the chat streams JSX, its cursor moves through the elements as they appear and outlines them. The cursor and outline have the color of the person running the agent, so you can tell whose agent it is. Only its name, kind, model, status, page, position, and edited layers are shared, never prompts or replies.
 
 ## Follow Mode
 

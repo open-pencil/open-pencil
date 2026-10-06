@@ -30,7 +30,7 @@ Pokoje nie są przechowywane na serwerze: plik znajduje się na urządzeniach os
 - **Dokument:** figury, tekst, właściwości i układ są aktualizowane po każdej zmianie.
 - **Kursory:** widoczne są położenie, nazwa i kolor każdego uczestnika.
 - **Zaznaczenie:** obiekty wybrane przez innych są widoczne dla wszystkich.
-- **Agenci:** wbudowany czat AI pojawia się jako kursor przy edytowanych warstwach, a jego obrysowana etykieta zawiera iskrę i kryptonim, na przykład *Fern*. Kursor i obrys mają kolor osoby, która go uruchomiła, więc widać, czyj to agent. Udostępniane są tylko nazwa, rodzaj, model, stan, strona, położenie i edytowane warstwy agenta, nigdy prompty ani odpowiedzi.
+- **Agenci:** wbudowany czat AI, czaty ACP i Pi harness oraz każdy połączony klient MCP pojawiają się jako kursory przy warstwach, które czytają lub edytują, a ich obrysowana etykieta zawiera iskrę i kryptonim, na przykład *Fern*. Gdy czat strumieniuje JSX, jego kursor przechodzi przez elementy w miarę ich pojawiania się i je obrysowuje. Kursor i obrys mają kolor osoby, która uruchomiła agenta, więc widać, czyj to agent. Udostępniane są tylko nazwa, rodzaj, model, stan, strona, położenie i edytowane warstwy agenta, nigdy prompty ani odpowiedzi.
 
 ## Tryb śledzenia
 

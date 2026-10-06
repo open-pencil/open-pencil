@@ -30,7 +30,7 @@ Räume werden nicht auf einem Server gespeichert: Die Datei liegt auf den Gerät
 - **Dokument:** Änderungen an Formen, Text, Eigenschaften und Anordnung;
 - **Zeiger:** Position, Name und Farbe jedes Teilnehmers;
 - **Auswahl:** ausgewählte Objekte der anderen Teilnehmer;
-- **Agenten:** Der integrierte AI-Chat erscheint als Zeiger an den Ebenen, die er bearbeitet; seine umrandete Beschriftung zeigt ein Funkelsymbol und einen Rufnamen wie *Fern*. Zeiger und Umrandung haben die Farbe der Person, die den Agenten ausführt, sodass erkennbar ist, wem er gehört. Geteilt werden nur Name, Art, Modell, Status, Seite, Position und bearbeitete Ebenen, niemals Prompts oder Antworten.
+- **Agenten:** Der integrierte AI-Chat, ACP- und Pi-Harness-Chats und jeder verbundene MCP-Client erscheinen als Zeiger an den Ebenen, die sie lesen oder bearbeiten; ihre umrandete Beschriftung zeigt ein Funkelsymbol und einen Rufnamen wie *Fern*. Während der Chat JSX streamt, wandert sein Zeiger durch die Elemente, sobald sie erscheinen, und umrandet sie. Zeiger und Umrandung haben die Farbe der Person, die den Agenten ausführt, sodass erkennbar ist, wem er gehört. Geteilt werden nur Name, Art, Modell, Status, Seite, Position und bearbeitete Ebenen, niemals Prompts oder Antworten.
 
 ## Ansichtsverfolgung
 
