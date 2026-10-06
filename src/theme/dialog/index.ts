@@ -21,12 +21,15 @@ export default {
       sm: { content: 'w-[min(24rem,92vw)]' },
       md: { content: 'w-[min(32rem,94vw)]' },
       lg: { content: 'w-[min(46rem,94vw)]' },
-      xl: { content: 'w-[min(64rem,96vw)]' }
+      xl: { content: 'w-[min(64rem,96vw)]' },
+      /** Nearly the whole window, for editors such as the variables dialog when expanded. */
+      screen: { content: 'w-[98vw]' }
     },
     height: {
       auto: {},
       tall: { content: 'h-[min(75vh,48rem)]' },
-      full: { content: 'h-[min(90vh,56rem)]' }
+      full: { content: 'h-[min(90vh,56rem)]' },
+      screen: { content: 'h-[96vh] max-h-[96vh]' }
     }
   }
 } as const

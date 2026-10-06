@@ -234,6 +234,9 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `render` | Render JSX to design nodes — create entire component trees in one call |
 | `create_component` | Convert a frame/group into a component |
 | `create_instance` | Create an instance of a component |
+| `create_slot` | Make a frame inside a main component a slot |
+| `set_behaviour` | Make a component behave as a Reka UI control, by its property and slot names; `null` removes it |
+| `get_behaviour` | Read a component's behaviour and what it still misses; without an ID, list every kind |
 | `node_to_component` | Convert an existing node into a component in-place |
 
 ### Modify

@@ -44,6 +44,8 @@ export function cloneCanvasPaneState(id: string, source: CanvasPaneState): Canva
     nodeEditState: null,
     cursorCanvasX: null,
     cursorCanvasY: null,
+    // A new canvas edits; preview belongs to the canvas that started it.
+    play: null,
     viewportWidth: source.viewportWidth,
     viewportHeight: source.viewportHeight
   })

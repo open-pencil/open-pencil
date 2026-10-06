@@ -70,7 +70,7 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 - **Create** — frames, shapes, text, components, pages. Renders JSX for complex layouts.
 - **Style** — fills, strokes, effects, opacity, corner radius, blend modes.
 - **Layout** — auto-layout, grid, alignment, spacing, sizing.
-- **Components** — create components, instances, component sets. Manage overrides.
+- **Components** — create components, instances, component sets, and slots. Manage overrides. Give components Reka UI behaviours so they work in preview.
 - **Variables** — create/edit variables, collections, modes. Bind to fills.
 - **Query** — find nodes, XPath selectors, read properties, list pages, fonts, selection.
 - **Inspect** — `get_jsx` for JSX roundtrip view, `diff_create` and `diff_jsx` for structural diffs, `diff_visual` for pixel diffs, `describe` for semantic role and design issue detection.
@@ -92,6 +92,7 @@ The assistant can verify its work visually. When `export_image` is enabled, it c
 - "Find all text nodes with font size less than 12"
 - "Describe the selected component — what role does it look like?"
 - "Show me the JSX for this frame"
+- "Make this component a switch that I can try in preview"
 
 ## Tips
 

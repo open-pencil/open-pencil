@@ -185,6 +185,12 @@ export function createDefaultNode(
   } satisfies CompleteNodeFields
 }
 
+/** Containers whose bounds follow their children and that set no coordinate space, as in Figma. */
+export const FITTED_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'GROUP',
+  'BOOLEAN_OPERATION'
+])
+
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
   'FRAME',

@@ -103,6 +103,9 @@ export function codeEditorTheme(dark: boolean) {
 }
 
 /** Compact read-only code in chat tool calls, layered over `codeEditorTheme`. */
+/** For a viewer that fills its container rather than stopping at the 16rem cap. */
+export const codeViewerFillTheme = EditorView.theme({ '&': { maxHeight: 'none', height: '100%' } })
+
 export const codeViewerTheme = EditorView.theme({
   '&': { maxHeight: '16rem', fontSize: '10.5px', backgroundColor: 'var(--color-input)' },
   '.cm-scroller': { lineHeight: '1.55' },

@@ -3,6 +3,7 @@ import { compact } from 'es-toolkit/array'
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { rekaExport, type RekaExport } from './behaviours'
 import { collectProps, NODE_TYPE_TO_TAG, type JSXProp } from './props'
 import { valueSyntax } from './value'
 
@@ -27,24 +28,47 @@ export interface DesignJSXWithLayers {
   layerIds: string[]
 }
 
+const NO_REKA: RekaExport = { tags: new Map(), props: new Map(), flatten: new Set() }
+
+function mergeReka(outer: RekaExport, inner: RekaExport | null): RekaExport {
+  if (!inner) return outer
+  return {
+    tags: new Map([...outer.tags, ...inner.tags]),
+    props: new Map([...outer.props, ...inner.props]),
+    flatten: new Set([...outer.flatten, ...inner.flatten])
+  }
+}
+
+/**
+ * A layer and the layers below it as JSX elements. A component with a behaviour is written as
+ * Reka UI elements; a container JSX leaves implicit is written as its children alone.
+ */
 function nodeToJSX(
   node: SceneNode,
   graph: SceneGraph,
   depth: number,
-  layerIds?: string[]
-): SyntaxNode | null {
-  const tag = NODE_TYPE_TO_TAG[node.type]
-  if (!tag) return null
-  layerIds?.push(node.id)
-  const attributes = collectProps(node, graph).map(propAttribute)
-  if (node.type === 'TEXT') {
-    return jsx.element(tag, attributes, node.text ? [jsx.text(node.text)] : [], depth, true)
-  }
+  layerIds?: string[],
+  outer: RekaExport = NO_REKA
+): SyntaxNode[] {
+  const reka = mergeReka(outer, rekaExport(graph, node))
   // Hidden children export with `visible={false}` rather than disappearing.
-  const children = graph
-    .getChildren(node.id)
-    .flatMap((child) => nodeToJSX(child, graph, depth + 1, layerIds) ?? [])
-  return jsx.element(tag, attributes, children, depth)
+  const children = (childDepth: number) =>
+    graph
+      .getChildren(node.id)
+      .flatMap((child) => nodeToJSX(child, graph, childDepth, layerIds, reka))
+  if (reka.flatten.has(node.id)) return children(depth)
+  const tag = reka.tags.get(node.id) ?? NODE_TYPE_TO_TAG[node.type]
+  if (!tag) return []
+  layerIds?.push(node.id)
+  const ownProps = reka.props.get(node.id)
+  // An item names its component; the instance's own layers are the component's to write.
+  if (ownProps?.some(([name]) => name === 'of'))
+    return [jsx.element(tag, ownProps.map(propAttribute), [], depth)]
+  const attributes = [...collectProps(node, graph), ...(ownProps ?? [])].map(propAttribute)
+  if (node.type === 'TEXT') {
+    return [jsx.element(tag, attributes, node.text ? [jsx.text(node.text)] : [], depth, true)]
+  }
+  return [jsx.element(tag, attributes, children(depth + 1), depth)]
 }
 
 /** A JSX attribute as the export prints it: its name and its source, such as `w={320}`. */
@@ -115,7 +139,7 @@ export function designJSXElement(nodeId: string, graph: SceneGraph): DesignJSXEl
 
 export function sceneNodeToJSX(nodeId: string, graph: SceneGraph): string {
   const node = graph.getNode(nodeId)
-  const syntax = node ? nodeToJSX(node, graph, 0) : null
+  const syntax = node ? nodeToJSX(node, graph, 0).at(0) : undefined
   return syntax ? jsx.printJSX(syntax) : ''
 }
 
@@ -131,7 +155,7 @@ export function selectionToJSXWithLayers(
   const code = compact(
     nodeIds.map((id) => {
       const node = graph.getNode(id)
-      const syntax = node ? nodeToJSX(node, graph, 0, layerIds) : null
+      const syntax = node ? nodeToJSX(node, graph, 0, layerIds).at(0) : undefined
       return syntax ? jsx.printJSX(syntax) : ''
     })
   ).join('\n\n')

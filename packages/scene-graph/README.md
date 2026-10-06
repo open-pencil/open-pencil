@@ -2,4 +2,4 @@
 
 Shared OpenPencil design document model.
 
-This package owns `SceneGraph`, `SceneNode`, paint/effect/layout/variable types, graph mutation helpers, source metadata, and model-level utilities. It does not own editor state, UI, file format policy, rendering, or app document I/O.
+This package owns `SceneGraph`, `SceneNode`, paint/effect/layout/variable types, graph mutation helpers, source metadata, and model-level utilities, including component slots and behaviours: the contracts after Reka UI's primitives, the behaviour stored in plugin data, and specs that name properties and slots. It does not own editor state, UI, file format policy, rendering, or app document I/O.

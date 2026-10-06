@@ -37,6 +37,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 - Browser and native menus share `src/app/shell/menu/schema.ts`; handle IDs in `use.ts` or editor commands, and regenerate `desktop/generated/menu.json` with `bun run generate:tauri-menu`.
 - Motion policy lives in `src/app/shell/motion/`: resolve the persisted System/Off preference and OS reduction once. The root `data-motion` attribute and the Tailwind `motion-safe`/`motion-reduce` variants represent the effective policy, including portalled content. Use the policy-aware Motion adapters rather than repeating preference conditionals in components.
+- Canvas shortcuts stop while a dialog, menu, or listbox is open. A dialog that edits the document listens for undo and redo on its own content with `useDocumentShortcuts`, so keys in menus it portals never reach it; there is one history, the editor's (`src/app/shell/keyboard/document.ts`, `src/components/variables/VariablesDialog.vue`).
 - Keep the app manifest in `vite/pwa.ts`; use `BrandMark` for in-app branding; never symlink web assets to desktop icons (`tools/AGENTS.md`, Brand assets).
 
 ## UI
@@ -51,6 +52,13 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - `Tip`, not native `title`; Lucide/Iconify components, not raw SVG or Unicode icons; `e.code`, not `e.key`, for modified shortcuts.
 - App dialogs compose the Reka-backed components under `src/components/ui/dialog/` and the typed theme in `src/theme/dialog.ts`. Do not repeat portal, overlay, content, header, or footer infrastructure in feature dialogs.
 - SDK property primitives, binding fields, commands, and i18n: `packages/vue/AGENTS.md`.
+
+### Layout
+
+- Lay a component out by the space it is given, not the window: panels, dialogs, and inspectors appear in docks, split views, and phones alike. Restyle with named Tailwind container queries (`@container/name`, `@2xl/name:`) on the element whose width matters, which for a list beside an inspector is the list itself (`src/theme/tokens-panel.ts`, `src/theme/panel/properties-tabs.ts`).
+- When the width changes structure, such as a side inspector becoming a drill-in, measure the container with VueUse `useElementSize` and keep the threshold beside the theme (`TOKENS_PANEL_COMPACT_WIDTH`).
+- Viewport breakpoints (`md:`, `useViewportKind`) are for app-shell decisions only: dock placement, sheets versus popovers, full-screen dialogs (`src/theme/dialog/index.ts`).
+- Stories for adaptive components render fixed container widths as separate stories rather than relying on the viewport toolbar (`src/components/variables/TokensPanel.stories.ts`).
 
 ### Settings
 

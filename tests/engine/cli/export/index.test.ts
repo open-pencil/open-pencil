@@ -196,7 +196,9 @@ test('export CLI writes Tailwind JSX for a page', async () => {
   expect(exitCode).toBe(0)
   const jsx = await Bun.file(output).text()
   expect(jsx).toStartWith('<div data-name="First slide" className="')
-  expect(jsx).toContain('<div data-name="Export Card" className="flex p-4 gap-2')
+  expect(jsx).toContain(
+    '<div data-name="Export Card" className="flex absolute top-0 left-0 p-4 gap-2'
+  )
   expect(jsx).not.toContain('Second Card')
 })
 
