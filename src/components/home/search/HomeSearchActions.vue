@@ -9,6 +9,8 @@ import { activeTab } from '@/app/tabs'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
+import HomeJoinRoom from './HomeJoinRoom.vue'
+
 const emit = defineEmits<{ 'new-document': [] }>()
 const query = defineModel<string>({ required: true })
 const { menu, files } = useI18n()
@@ -54,6 +56,9 @@ watch(
       <template #leading><icon-lucide-search class="size-4" /></template>
     </AppInput>
     <div class="grid grid-cols-2 gap-2 md:contents">
+      <div class="col-span-2 grid md:contents">
+        <HomeJoinRoom :size="isMobile ? 'lg' : 'md'" />
+      </div>
       <AppButton
         :size="isMobile ? 'lg' : 'md'"
         variant="outline"

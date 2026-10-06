@@ -3,15 +3,12 @@ import { tv } from 'tailwind-variants'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
-/** The avatar stack in the toolbar: you, collaborators with their agent counts, then "+N". */
+/** The toolbar's avatar stack controls: your menu, collaborators to follow, and everyone. */
 export const presenceAvatars = tv({
   slots: {
-    root: 'flex items-center -space-x-1.5',
     trigger:
       'relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent',
-    badge:
-      'absolute -right-1.5 -bottom-1 flex items-center gap-px rounded-full border border-panel bg-panel px-0.5 text-[8px] leading-none font-semibold',
-    badgeIcon: 'size-2',
+    chevron: 'size-2',
     /** On your avatar while you are in a room. */
     live: 'absolute -top-0.5 -right-0.5 size-2 rounded-full border border-panel bg-[var(--color-success-bg)]',
     overflow:

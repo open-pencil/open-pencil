@@ -5,6 +5,7 @@ import { placeSlotContent } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { ownsSlotContent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 
 import {
   appendVariableNodeChanges,
@@ -18,8 +19,7 @@ import {
   sceneNodeToKiwi,
   makeDocumentNodeChange,
   makeCanvasNodeChange,
-  buildFontDigestMap,
-  fractionalPosition
+  buildFontDigestMap
 } from './kiwi/fig/node-change/serialize'
 import { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 

@@ -211,6 +211,11 @@ function handleStop() {
         :status="status"
         :show-continue="showContinue"
         :nodes-live="!history.readOnly.value"
+        :interactive="chat !== null"
+        @regenerate="submission.regenerate()"
+        @revert="(messageId) => submission.revert(messageId)"
+        @restore="(messageId) => submission.restore(messageId)"
+        @edit="(messageId, text) => submission.resend(messageId, text)"
         @continue="
           submission.submit({
             modelText: 'Continue where you left off',

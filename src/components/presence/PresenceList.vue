@@ -8,7 +8,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import { avatar } from '@/theme/collaboration/avatar'
 import { presenceList } from '@/theme/collaboration/presence-list'
 
-import { isFollowing, type PresenceAgentRow, type PresencePersonRow } from './presence'
+import { isFollowing, type PresenceAgentRow, type PresencePersonRow } from './rows'
 
 const { rows, following } = defineProps<{
   rows: PresencePersonRow[]
