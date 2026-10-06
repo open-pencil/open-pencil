@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test'
 
+// Playwright's bundled Chromium on macOS closes the page when a FileSystemFileHandle is read
+// back from IndexedDB, before any app code runs; installed Google Chrome on the same machine
+// reads and compares it correctly.
+test.skip(
+  ({ browserName, channel }) =>
+    browserName === 'chromium' && !channel && process.platform === 'darwin',
+  "Playwright's bundled Chromium closes the page when reading a file handle back from IndexedDB on macOS"
+)
+
 test('browser file identity survives reopening and distinguishes same-named files', async ({
   page
 }) => {
