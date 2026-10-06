@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createDefaultEditorState, createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -92,5 +92,34 @@ describe('editor page backgrounds', () => {
     } finally {
       editor.dispose()
     }
+  })
+})
+
+// Recorded in Figma desktop 126: a page made in the dark theme is #1E1E1E, in the light one #F5F5F5.
+describe('new page backgrounds follow the interface theme', () => {
+  const dark: Color = { r: 0x1e / 255, g: 0x1e / 255, b: 0x1e / 255, a: 1 }
+  const light: Color = { r: 0.96, g: 0.96, b: 0.96, a: 1 }
+
+  test('a new document and the pages added to it', async () => {
+    const graph = new SceneGraph()
+    const state = createDefaultEditorState(graph.getPages()[0].id)
+    state.theme = 'dark'
+    const editor = createEditor({ graph, state })
+    try {
+      expect(editor.state.pageColor).toEqual(dark)
+      await editor.switchPage(editor.addPage())
+      expect(editor.state.pageColor).toEqual(dark)
+      editor.state.theme = 'light'
+      await editor.switchPage(editor.addPage())
+      expect(editor.state.pageColor).toEqual(light)
+    } finally {
+      editor.dispose()
+    }
+  })
+
+  test('pages made by scripts', () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    figma.theme = 'dark'
+    expect(figma.createPage().backgrounds[0]?.color).toEqual(dark)
   })
 })

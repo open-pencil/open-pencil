@@ -19,36 +19,6 @@ export const MEASUREMENT_PILL_HEIGHT = 18
 export const MEASUREMENT_PILL_RADIUS = 3
 export const MEASUREMENT_TEXT_BASELINE = 4
 export const CANVAS_BG_COLOR = { r: 0.96, g: 0.96, b: 0.96, a: 1 } satisfies Color
-export const CANVAS_BG_COLOR_DARK = { r: 0.173, g: 0.173, b: 0.173, a: 1 } satisfies Color // #2c2c2c, Figma-ish dark canvas
-
-/**
- * Returns the canvas background to initialize new pages with. Defers
- * to the OS `prefers-color-scheme` so users on a dark desktop don't
- * get a white flash every time they open a document.
- *
- * NOTE: this is deliberately the runtime/new-page path only. The
- * `.fig` serialization path continues to write the static light
- * `CANVAS_BG_COLOR` so files stay portable — a dark-theme user saving
- * a file must not force darkness on recipients.
- */
-export function getDefaultCanvasBgColor(): Color {
-  if (IS_BROWSER) {
-    const params = new URLSearchParams(window.location.search)
-    if ('env' in import.meta && import.meta.env.DEV && params.has('test')) {
-      return CANVAS_BG_COLOR
-    }
-  }
-
-  if (
-    IS_BROWSER &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  ) {
-    return CANVAS_BG_COLOR_DARK
-  }
-  return CANVAS_BG_COLOR
-}
-
 export const SNAP_THRESHOLD_SCREEN_PX = 5
 
 export const RULER_SIZE = 20
@@ -523,8 +493,14 @@ export const DEFAULT_FRAME_FILL: Fill = {
   visible: true
 }
 
-/** The light or dark interface a new section takes its fill from, as in Figma. */
+/** The light or dark interface a new page or section takes its colors from, as in Figma. */
 export type InterfaceTheme = 'light' | 'dark'
+
+/** A new page's background, which Figma picks from the interface theme it was made in. */
+export const PAGE_DEFAULT_BACKGROUNDS: Record<InterfaceTheme, Color> = {
+  light: CANVAS_BG_COLOR,
+  dark: { r: 0x1e / 255, g: 0x1e / 255, b: 0x1e / 255, a: 1 }
+}
 
 /** A new section's fill, which Figma picks from the interface theme it was made in. */
 export const SECTION_DEFAULT_FILLS: Record<InterfaceTheme, Fill> = {

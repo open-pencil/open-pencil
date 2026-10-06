@@ -3,7 +3,7 @@ import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { CANVAS_BG_COLOR } from '#core/constants'
+import { CANVAS_BG_COLOR, PAGE_DEFAULT_BACKGROUNDS, type InterfaceTheme } from '#core/constants'
 
 function isColor(value: unknown): value is Color {
   if (!value || typeof value !== 'object') return false
@@ -36,6 +36,18 @@ export function getPageColor(page: SceneNode | undefined): Color {
     page && getPageBackgrounds(page).find((fill) => fill.visible && fill.type === 'SOLID')
   if (!paint) return { ...CANVAS_BG_COLOR }
   return { ...paint.color, a: paint.color.a * paint.opacity }
+}
+
+/** Gives a new page Figma's background for the interface theme it is made in. */
+export function setDefaultPageBackground(
+  graph: SceneGraph,
+  page: SceneNode,
+  theme: InterfaceTheme = 'light'
+): void {
+  const color = { ...PAGE_DEFAULT_BACKGROUNDS[theme] }
+  setPageBackgrounds(graph, page, [
+    { type: 'SOLID', color, opacity: 1, visible: true, blendMode: 'NORMAL' }
+  ])
 }
 
 export function setPageBackgrounds(

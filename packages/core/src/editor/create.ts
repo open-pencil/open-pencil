@@ -8,6 +8,7 @@ import { UndoManager } from '@open-pencil/scene-graph/undo'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
+import { getPageColor, setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { installTextMeasurer } from '#core/layout'
@@ -186,6 +187,12 @@ export function createEditor(options?: EditorOptions) {
 
   if (!skipInitialGraphSetup) {
     subscribeToGraph()
+    // A new document's first page takes Figma's background for the interface theme the app gives.
+    const firstPage = _graph.getPages()[0]
+    if (options?.state?.theme) {
+      setDefaultPageBackground(_graph, firstPage, options.state.theme)
+      options.state.pageColor = getPageColor(firstPage)
+    }
   }
 
   // Build the shared context
