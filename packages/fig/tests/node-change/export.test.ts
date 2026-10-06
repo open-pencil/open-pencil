@@ -103,7 +103,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     ])
   })
 
-  test('injects runtime glyph outlines into derived text data', () => {
+  test('writes text shaped by the runtime as derived text data', () => {
     const graph = new SceneGraph()
     const text = graph.createNode('TEXT', graph.getPages()[0].id, {
       text: 'A',
@@ -113,13 +113,30 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     })
     const blobs: Uint8Array[] = []
     const runtime: FigNodeChangeExportRuntime = {
-      getGlyphOutlineMetrics: () => [
-        {
-          commands: [{ type: 'M', x: 0, y: 0 }, { type: 'L', x: 8, y: 16 }, { type: 'Z' }],
-          x: 0,
-          advance: 10
-        }
-      ]
+      shapeText: () => ({
+        glyphs: [
+          {
+            commands: [{ type: 'M', x: 0, y: 0 }, { type: 'L', x: 8, y: 16 }, { type: 'Z' }],
+            x: 0,
+            y: 15,
+            fontSize: 16,
+            firstCharacter: 0,
+            advance: 10
+          }
+        ],
+        baselines: [
+          {
+            firstCharacter: 0,
+            endCharacter: 1,
+            position: { x: 0, y: 15 },
+            width: 10,
+            lineY: 0,
+            lineHeight: 19,
+            lineAscent: 15
+          }
+        ],
+        logicalIndexToCharacterOffsetMap: [0]
+      })
     }
 
     const [change] = sceneNodeToKiwi(
@@ -137,6 +154,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     )
 
     expect(change.derivedTextData?.glyphs).toHaveLength(1)
+    expect(change.derivedTextData?.baselines?.[0]?.position.y).toBe(15)
     expect(blobs).toHaveLength(1)
   })
 

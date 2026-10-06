@@ -1,15 +1,13 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+type DerivedTextData = NonNullable<NodeChange['derivedTextData']>
+
 interface DerivedTextDataOptions {
   node: SceneNode
-  glyphs: NonNullable<NodeChange['derivedTextData']>['glyphs']
-  fontMetaData: NonNullable<NodeChange['derivedTextData']>['fontMetaData']
-  baseline: number
-  width: number
-  lineHeight: number
-  lineAscent: number
-  baselines?: NonNullable<NodeChange['derivedTextData']>['baselines']
+  glyphs: DerivedTextData['glyphs']
+  fontMetaData: DerivedTextData['fontMetaData']
+  baselines: DerivedTextData['baselines']
   logicalIndexToCharacterOffsetMap: number[]
 }
 
@@ -18,16 +16,7 @@ export function buildDerivedTextData(
 ): NodeChange['derivedTextData'] {
   return {
     layoutSize: { x: options.node.width, y: options.node.height },
-    baselines: options.baselines ?? [
-      {
-        firstCharacter: 0,
-        endCharacter: Math.max(options.node.text.length - 1, 0),
-        position: { x: 0, y: options.baseline },
-        width: options.width,
-        lineHeight: options.lineHeight,
-        lineAscent: options.lineAscent
-      }
-    ],
+    baselines: options.baselines,
     glyphs: options.glyphs,
     fontMetaData: options.fontMetaData,
     logicalIndexToCharacterOffsetMap: options.logicalIndexToCharacterOffsetMap,

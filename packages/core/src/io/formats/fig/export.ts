@@ -9,7 +9,8 @@ import {
   placeSlotContent,
   exportCanvasGuides,
   importCanvasGuides,
-  stringToGuid
+  stringToGuid,
+  type FigNodeChangeExportRuntime
 } from '@open-pencil/fig/node-change'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -18,6 +19,7 @@ import { ownsSlotContent, type SceneGraph } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
 import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
@@ -243,6 +245,7 @@ interface InternalResourceContext {
   assignedGuidValues: Set<string>
   componentPropertyDefinitionsById: ReturnType<typeof buildComponentPropIndex>
   propertyIdToGuid: Map<string, GUID>
+  runtime: FigNodeChangeExportRuntime
 }
 
 /**
@@ -288,7 +291,8 @@ function appendInternalResources(context: InternalResourceContext): void {
           assignedGuidValues: context.assignedGuidValues,
           componentPropertyDefinitionsById: context.componentPropertyDefinitionsById,
           modeIdToGuid: context.modeIdToGuid,
-          propertyIdToGuid: context.propertyIdToGuid
+          propertyIdToGuid: context.propertyIdToGuid,
+          runtime: context.runtime
         }
       )
     )
@@ -314,6 +318,19 @@ export async function exportFigFile(
 ): Promise<Uint8Array> {
   const originalArchive = await originalFigArchive(sourceGraph)
   if (originalArchive) return originalArchive.slice()
+  return withFigExportRuntime(sourceGraph, ck, (runtime) =>
+    writeFigFile(sourceGraph, runtime, ck, renderer, pageId, renderHeadlessThumbnail)
+  )
+}
+
+async function writeFigFile(
+  sourceGraph: SceneGraph,
+  runtime: FigNodeChangeExportRuntime,
+  ck: CanvasKit | undefined,
+  renderer: SkiaRenderer | undefined,
+  pageId: string | undefined,
+  renderHeadlessThumbnail: boolean
+): Promise<Uint8Array> {
   const graph = cloneSceneGraphForFigExport(sourceGraph)
   populateReaderExport(sourceGraph, graph)
   await initCodec()
@@ -428,7 +445,8 @@ export async function exportFigFile(
     blobIndexByHex,
     assignedGuidValues,
     componentPropertyDefinitionsById,
-    propertyIdToGuid
+    propertyIdToGuid,
+    runtime
   })
 
   const orderedCanvasEntries = [
@@ -453,7 +471,8 @@ export async function exportFigFile(
           componentPropertyDefinitionsById,
           modeIdToGuid,
           propertyIdToGuid,
-          slotContentRecords
+          slotContentRecords,
+          runtime
         })
       )
     }

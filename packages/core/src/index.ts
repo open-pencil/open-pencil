@@ -301,7 +301,7 @@ export {
   fractionalPosition,
   mapToFigmaType
 } from './kiwi/fig/node-change/serialize'
-export { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
+export { withFigExportRuntime } from './canvas/text/shape'
 
 export { renderJSX, renderTree } from './design-jsx'
 export {
