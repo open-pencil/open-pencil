@@ -5,7 +5,13 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RotationPreview } from '#core/geometry'
 
 import { LabelCache } from './cache'
-import { labelLayout, type LabelKind, type LabelLayout, type LabelTextMetrics } from './layout'
+import {
+  labelLayout,
+  labelViewport,
+  type LabelKind,
+  type LabelLayout,
+  type LabelTextMetrics
+} from './layout'
 import { measureGlyphWidth } from './paragraph-cache'
 import { frameLabelPlacement, labelLocalPoint, labelTransform } from './transform'
 
@@ -69,25 +75,24 @@ function catalogHitTest(kind: 'section' | 'component' | 'frame') {
   ): SceneNode | null {
     if (!font) return null
     const cache = catalog(graph, pageId, labelCache)
+    const viewport = options.viewport ? labelViewport(options.viewport, zoom) : undefined
     let candidates: Array<{ nodeId: string; inside: boolean }>
     if (kind === 'section') {
-      const sections = options.viewport
+      const sections = viewport
         ? cache
-            .getSections(graph, options.viewport, options.preview)
+            .getSections(graph, viewport, options.preview)
             .map(({ node, nested }) => ({ nodeId: node.id, nested }))
         : cache.getAllSections()
       candidates = sections.map(({ nodeId, nested }) => ({ nodeId, inside: nested }))
     } else if (kind === 'frame') {
-      const frames = options.viewport
-        ? cache
-            .getFrames(graph, options.viewport, options.preview)
-            .map(({ node }) => ({ nodeId: node.id }))
+      const frames = viewport
+        ? cache.getFrames(graph, viewport, options.preview).map(({ node }) => ({ nodeId: node.id }))
         : cache.getAllFrames()
       candidates = frames.map(({ nodeId }) => ({ nodeId, inside: false }))
     } else {
-      const components = options.viewport
+      const components = viewport
         ? cache
-            .getComponents(graph, options.viewport, options.preview)
+            .getComponents(graph, viewport, options.preview)
             .map(({ node }) => ({ nodeId: node.id }))
         : cache.getAllComponents()
       candidates = components.map(({ nodeId }) => ({ nodeId, inside: false }))

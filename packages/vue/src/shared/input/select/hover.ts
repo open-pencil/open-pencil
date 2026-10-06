@@ -59,9 +59,9 @@ function updateHoveredNode(
 ) {
   const hit = deep
     ? fns.hitTestInScope(cx, cy, true)
-    : (fns.hitTestFrameTitle(cx, cy) ??
+    : (fns.hitTestComponentLabel(cx, cy) ??
       fns.hitTestSectionTitle(cx, cy) ??
-      fns.hitTestComponentLabel(cx, cy) ??
+      fns.hitTestFrameTitle(cx, cy) ??
       fns.hitTestInScope(cx, cy, false))
   const editNodeId = getNodeEditState(editor)?.nodeId
   editor.setHoveredNode(

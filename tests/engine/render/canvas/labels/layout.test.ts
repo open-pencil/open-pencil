@@ -146,3 +146,20 @@ test('every frame on the page or in a section is hit by its name, selected or no
   graph.updateNode(outer.id, { locked: true })
   expect(hitTestFrameTitle(graph, 104, 90, 1, page.id, font)).toBeNull()
 })
+
+test('a frame just outside the view whose name is inside it is still hit by its name', () => {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const frame = graph.createNode('FRAME', page.id, {
+    name: 'Below',
+    x: 100,
+    y: 205,
+    width: 200,
+    height: 100
+  })
+  // The view ends at y = 200, above the frame; its name sits just above the frame, in view.
+  const viewport = { x: 0, y: 0, w: 400, h: 200 }
+  expect(hitTestFrameTitle(graph, 104, 197, 1, page.id, font, undefined, { viewport })?.id).toBe(
+    frame.id
+  )
+})
