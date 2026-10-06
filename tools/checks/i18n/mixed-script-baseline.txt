@@ -139,9 +139,9 @@ ja:storage.accessKeyID
 ja:storage.copyCors
 ja:storage.providerS3
 ja:updates.available
-ja:updates.availableTitle
-ja:updates.downloading
 ja:updates.installed
+ja:updates.restartFailed
+ja:updates.restartToFinish
 ja:updates.unavailable
 ja:updates.upToDate
 ja:variables.copyAsCSS
@@ -284,9 +284,9 @@ zh-cn:storage.accessKeyID
 zh-cn:storage.copyCors
 zh-cn:storage.providerS3
 zh-cn:updates.available
-zh-cn:updates.availableTitle
-zh-cn:updates.downloading
 zh-cn:updates.installed
+zh-cn:updates.restartFailed
+zh-cn:updates.restartToFinish
 zh-cn:updates.unavailable
 zh-cn:updates.upToDate
 zh-cn:variables.copyAsCSS
