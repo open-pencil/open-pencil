@@ -88,7 +88,8 @@ export function renderFromEditorState(
       codeFocusNodeId: state.codeFocusNodeId,
       autoLayoutHover: state.autoLayoutHover
     },
-    state.sceneVersion,
+    // Recorded pictures follow what the canvas draws, not every document change.
+    state.canvasVersion,
     layer,
     interactive
   )

@@ -8,6 +8,7 @@
 - `SceneNode.booleanOperation` is a required key whose value may be `undefined`, like every other scene node field, so code that builds `SceneNode` objects itself must include it.
 - `useVariables().collections` from `@open-pencil/vue` returns copies of the document's collections instead of the graph's own objects, so components see modes added or renamed in place; change collections through the editor's actions rather than by mutating the returned objects. `addVariable` returns the new variable's ID.
 - `useVariablesEditor`, `useVariablesTable`, and `useVariablesDialogState` are removed from `@open-pencil/vue`, together with the `formatModeValue`, `parseVariableValue`, and `shortName` helpers `useVariables()` returned for them, and the package no longer depends on `@tanstack/vue-table`. Build variable editors on `useVariables()` and the editor's variable actions.
+- The editor's shared state has a required `canvasVersion`, which the canvas redraws on; `sceneVersion` still counts every document change. Code that creates editor state itself must set it, and code that bumped `sceneVersion` to redraw the canvas calls `requestRender()` instead; `requestRefresh()` records a change the canvas does not draw.
 - `sceneNodeToDesignDocument` from `@open-pencil/dom-css` takes an options object, `{ includeSourceIds, tokens }`, instead of a boolean third argument; `tokens: false` writes literal values instead of variable references.
 - `randomHex`, `randomInt`, and `randomIndex` moved from `@open-pencil/core/random` and the `@open-pencil/core` barrel to `@open-pencil/scene-graph/random`.
 - `Stroke` from `@open-pencil/scene-graph` extends `Fill`, so every stroke states a paint `type` that code constructing one must set to `'SOLID'`, and `copyStroke` deep-copies the paint fields a fill already copied.
@@ -175,6 +176,7 @@
 
 ### Performance
 
+- Edit variables in large documents without stalls: renaming, reordering, or adding a variable, or changing its CSS name, unit, scopes, or conditions, no longer redraws the canvas, and changing a value or mode updates only the layers bound to those variables or to variables aliasing them instead of re-resolving and laying out every bound layer in the document.
 - Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.
 - Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, each page resolves only the layers it adds instead of rescanning the whole document, placing an instance no longer re-synchronises every other instance of its component, and archive records are copied directly rather than through `structuredClone`. A 33-page file loads about a fifth quicker, and a page of repeated components opens three to four times faster once a document is already open.
 

@@ -46,7 +46,13 @@ export interface EditorSharedState {
   /** The layer of the code element around the cursor in a code editor, shown in every pane. */
   codeFocusNodeId: string | null
   rulerTheme?: RulerTheme
+  /** Bumped by every document change; views, saving, and recovery follow it. */
   sceneVersion: number
+  /**
+   * Bumped by document changes the canvas draws. Changes it does not draw, such as a variable's
+   * name or CSS name, bump only `sceneVersion`, so the canvas keeps its recorded pictures.
+   */
+  canvasVersion: number
 }
 
 export interface EditorViewState {
@@ -175,6 +181,8 @@ export interface EditorContext {
   getRenderer: () => SkiaRenderer | null
   getTextEditor: () => TextEditor | null
   requestRender: () => void
+  /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
+  requestRefresh: () => void
   requestRepaint: () => void
   beginInteractiveEdit: () => () => void
   onEditorEvent: <K extends EditorEventName>(event: K, handler: EditorEvents[K]) => () => void
