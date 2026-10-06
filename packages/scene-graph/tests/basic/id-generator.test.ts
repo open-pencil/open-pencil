@@ -91,7 +91,15 @@ describe('SceneGraph ID generator', () => {
   })
 
   test('throws instead of hanging when the generator only returns IDs in use', () => {
-    expect(() => new SceneGraph(() => 'same')).toThrow('IDs in a row that are in use')
+    expect(() => new SceneGraph(() => 'same')).toThrow('only returned IDs that are in use')
+  })
+
+  test('walks a sequence past more taken IDs than any fixed cap', () => {
+    const graph = new SceneGraph(sequence('9'))
+    const page = pageId(graph)
+    for (let i = 3; i <= 2002; i++) graph.createNodeWithId(`9:${i}`, 'RECTANGLE', page)
+
+    expect(graph.createNode('RECTANGLE', page).id).toBe('9:2003')
   })
 
   test('gives modes added to a collection IDs from the injected generator', () => {

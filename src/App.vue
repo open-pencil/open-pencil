@@ -8,7 +8,7 @@ import { computed, onMounted } from 'vue'
 import { provideEditor, useI18n } from '@open-pencil/vue'
 
 import { useDocumentCloseProtection } from '@/app/document/close/use'
-import { useEditorStore } from '@/app/editor/active-store'
+import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
@@ -23,7 +23,6 @@ import SettingsDialog from '@/components/settings/SettingsDialog.vue'
 import AppShell from '@/components/shell/AppShell.vue'
 import Toaster from '@/components/shell/Toaster.vue'
 
-const store = useEditorStore()
 const { updates, locale } = useI18n()
 
 useHead({
@@ -34,7 +33,7 @@ useHead({
   }
 })
 
-provideEditor(store)
+provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
 useEventListener(window, 'pagehide', () => {

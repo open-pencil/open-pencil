@@ -66,10 +66,12 @@ function openFirstTab(): Tab {
   return shouldCreateHome ? createHomeTab() : createTab()
 }
 
-const firstTab = activeTab.value ?? openFirstTab()
-
-if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
-  void createDemoShapes(firstTab.store)
+// Block-scoped so the view does not keep the first tab's store after that tab closes.
+{
+  const firstTab = activeTab.value ?? openFirstTab()
+  if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
+    void createDemoShapes(firstTab.store)
+  }
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
@@ -214,6 +216,6 @@ onUnmounted(() => {
     <CommandPalette />
     <TabBar />
     <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
-    <EditorWorkspace v-if="activeTab?.kind !== 'home'" />
+    <EditorWorkspace v-if="activeTab && activeTab.kind !== 'home'" :key="activeTab.id" />
   </div>
 </template>
