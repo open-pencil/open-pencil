@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@/constants'
+import { APP_VERSION } from '@/app/runtime/version'
 
 /** The Harness companion runs Pi; it is installed separately and must match the app version. */
 export const HARNESS_EXECUTABLE = 'openpencil-harness'

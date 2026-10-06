@@ -77,10 +77,6 @@ export const ROOM_UNREACHABLE_MS = 20_000
 /** How often a room tab rechecks its connection while it waits for the file. */
 export const ROOM_STATUS_TICK_MS = 500
 
-/** The app's release version; tests and tools that run app code without the Vite define get a placeholder. */
-export const APP_VERSION =
-  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
-
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
