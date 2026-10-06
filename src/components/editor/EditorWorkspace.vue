@@ -12,6 +12,8 @@ import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { activeTab } from '@/app/tabs'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
 import CollabPanel from '@/components/collab-panel/CollabPanel.vue'
+import ActiveRoomOverlay from '@/components/collab-room/ActiveRoomOverlay.vue'
+import { useRoomActions } from '@/components/collab-room/useRoomActions'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
@@ -36,11 +38,21 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 /** One canvas previewing takes the whole window, in the canvas-only layout; split view keeps panels. */
 const playingAlone = computed(() => store.state.play !== null && store.visiblePaneCount.value <= 1)
 const { editor } = useI18n()
+// Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
+const { pending: roomPending } = useRoomActions()
 </script>
 
 <template>
+  <div
+    v-if="roomPending"
+    :key="'room-' + activeTab?.id"
+    class="relative flex flex-1 overflow-hidden"
+  >
+    <ActiveRoomOverlay />
+  </div>
+
   <SplitterGroup
-    v-if="!isMobile && showChrome && store.state.showUI && !playingAlone"
+    v-else-if="!isMobile && showChrome && store.state.showUI && !playingAlone"
     :key="activeTab?.id"
     direction="horizontal"
     class="flex-1 overflow-hidden"
@@ -64,6 +76,7 @@ const { editor } = useI18n()
     <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
         <CanvasSplitRoot />
+        <ActiveRoomOverlay />
         <Toolbar />
       </div>
     </SplitterPanel>
@@ -102,6 +115,7 @@ const { editor } = useI18n()
   >
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
+      <ActiveRoomOverlay />
       <MobileHud />
       <Toolbar />
     </div>
@@ -115,6 +129,7 @@ const { editor } = useI18n()
   >
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
+      <ActiveRoomOverlay />
       <WorkspacePill
         v-if="!isMobile && playingAlone"
         mode="preview"
@@ -136,6 +151,7 @@ const { editor } = useI18n()
   <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
+      <ActiveRoomOverlay />
     </div>
   </div>
 </template>

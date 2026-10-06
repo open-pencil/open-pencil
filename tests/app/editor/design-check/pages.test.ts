@@ -103,4 +103,14 @@ describe('pageOf', () => {
     expect(pageOf(graph, page.id)).toBe(page.id)
     expect(pageOf(graph, null)).toBeNull()
   })
+
+  test('returns no page for layers whose parents form a cycle', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const first = graph.createNode('FRAME', page.id)
+    const second = graph.createNode('FRAME', first.id)
+    graph.updateNode(first.id, { parentId: second.id })
+
+    expect(pageOf(graph, second.id)).toBeNull()
+  })
 })

@@ -37,7 +37,6 @@ export const UNIT_TEST_GROUPS = {
     'tests/engine/editor',
     'tests/engine/icons',
     'tests/engine/layout',
-    'tests/engine/library',
     'tests/engine/lint',
     'tests/engine/profiler',
     'tests/engine/text',

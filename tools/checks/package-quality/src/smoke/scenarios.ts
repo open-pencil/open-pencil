@@ -55,5 +55,9 @@ export const runtimeScenarios: RuntimeScenario[] = [
   {
     name: 'DOM/CSS JSX runtime',
     code: "const { jsx, jsxToDesignDocument } = await import('@open-pencil/dom-css/jsx-runtime'); const document = await jsxToDesignDocument(jsx('section', { class: 'card', style: { width: '120px' }, children: 'OpenPencil' })); const node = document.children[0]; if (node?.type !== 'element' || node.inlineStyle?.width !== '120px') throw new Error('DOM/CSS JSX runtime failed')"
+  },
+  {
+    name: 'XPath query',
+    code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { matchByXPath, queryByXPath } = await import('@open-pencil/core/xpath'); const graph = new SceneGraph(); new FigmaAPI(graph).createRectangle(); const found = await queryByXPath(graph, '//RECTANGLE'); if (found.length !== 1 || !(await matchByXPath(graph, '@width > 0', found[0]))) throw new Error('XPath query smoke failed')"
   }
 ]

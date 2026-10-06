@@ -1,6 +1,8 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { computeAllLayouts } from '#core/layout'
+
+const isComponent = (node: SceneNode) => node.type === 'COMPONENT'
 
 function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
   const dependents = new Map<string, Set<string>>()
@@ -9,10 +11,7 @@ function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
     const parents = new Set<string>()
     dependents.set(id, parents)
     for (const instance of graph.getInstances(id)) {
-      let parent = instance.parentId ? graph.getNode(instance.parentId) : undefined
-      while (parent && parent.type !== 'COMPONENT') {
-        parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
-      }
+      const parent = instance.parentId ? graph.closest(instance.parentId, isComponent) : undefined
       if (parent) parents.add(parent.id)
     }
     for (const parent of parents) discover(parent)
@@ -38,12 +37,7 @@ type ComputeLayouts = (graph: SceneGraph, scopeId?: string) => void
 
 /** Pages are `CANVAS` nodes; layout recomputation is scoped to them. */
 function pageIdOf(graph: SceneGraph, nodeId: string): string | null {
-  let current = graph.getNode(nodeId)
-  while (current) {
-    if (current.type === 'CANVAS') return current.id
-    current = current.parentId ? graph.getNode(current.parentId) : undefined
-  }
-  return null
+  return graph.closest(nodeId, (node) => node.type === 'CANVAS')?.id ?? null
 }
 
 /**
@@ -86,14 +80,8 @@ export function createComponentSyncScheduler(
       const graph = getGraph()
       const componentIds = new Set<string>()
       for (const id of ids) {
-        let current = graph.getNode(id)
-        while (current) {
-          if (current.type === 'COMPONENT') {
-            componentIds.add(current.id)
-            break
-          }
-          current = current.parentId ? graph.getNode(current.parentId) : undefined
-        }
+        const component = graph.closest(id, isComponent)
+        if (component) componentIds.add(component.id)
       }
       for (const compId of componentSyncOrder(graph, componentIds)) {
         graph.syncInstances(compId)

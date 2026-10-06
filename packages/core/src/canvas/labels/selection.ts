@@ -13,7 +13,6 @@ import {
 } from '#core/constants'
 import { createSceneGeometry } from '#core/geometry'
 
-import { hasFrameTitle, labelLayout } from './layout'
 import { measureGlyphWidth } from './paragraph-cache'
 import { frameLabelPlacement, labelScreenMatrix } from './transform'
 
@@ -34,43 +33,6 @@ function accumulateSelectionBounds(
     maxX: bounds.x + bounds.width,
     maxY: bounds.y + bounds.height
   }
-}
-
-function drawSingleFrameTitle(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  node: SceneNode,
-  overlays: RenderOverlays
-): void {
-  const parentNode = node.parentId ? graph.getNode(node.parentId) : null
-  const provider = r.fontProvider
-  if (!hasFrameTitle(node, parentNode) || !provider) return
-
-  const transform = frameLabelPlacement(node, graph, overlays.rotationPreview)
-
-  r.auxFill.setColor(r.selColor())
-
-  const layout = labelLayout('frame', transform.width * r.zoom)
-  if (!layout) return
-
-  canvas.save()
-  canvas.concat(labelScreenMatrix(transform, r))
-
-  r.labelParagraphCache.draw(
-    r.ck,
-    canvas,
-    provider,
-    node.name,
-    layout.fontSize,
-    layout.maxTextWidth,
-    r.selColor(),
-    r.fontGeneration,
-    layout.text.x,
-    layout.text.y,
-    layout.fontWeight
-  )
-  canvas.restore()
 }
 
 function drawSizePill(
@@ -165,7 +127,6 @@ export function drawSelectionLabels(
   if (nodes.length === 0) return
 
   if (nodes.length === 1) {
-    drawSingleFrameTitle(r, canvas, graph, nodes[0], activeOverlays)
     drawSingleSelectionSize(r, canvas, graph, nodes[0], activeOverlays, sizeFont)
     return
   }

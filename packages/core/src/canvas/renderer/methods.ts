@@ -175,6 +175,15 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Rulers.drawRulers(this, canvas, graph, selectedIds, guides)
   },
 
+  drawFrameTitles(
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: ReadonlySet<string>,
+    overlays?: RenderOverlays
+  ): void {
+    Labels.drawFrameTitles(this, canvas, graph, selectedIds, overlays)
+  },
+
   drawSectionTitles(canvas: Canvas, graph: SceneGraph, overlays?: RenderOverlays): void {
     Labels.drawSectionTitles(this, canvas, graph, overlays)
   },
