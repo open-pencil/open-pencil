@@ -277,7 +277,7 @@ export function createChatSessionManager({
       runtime.role.profile.modelID ||
       account?.defaultModel ||
       ''
-    if (!apiKey && !account) throw new AgentSetupError('pi-sign-in')
+    if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
     if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(
       sessionId,

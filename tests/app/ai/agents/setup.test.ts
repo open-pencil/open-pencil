@@ -37,7 +37,8 @@ describe('useAgentSetup', () => {
     })
     const agents = useAgentSetup(discovery, async () => ({
       agentDir: '/home/test/.pi/agent',
-      defaultModel: 'openai-codex/gpt-5.6'
+      defaultModel: 'openai-codex/gpt-5.6',
+      signedIn: true
     }))
     await agents.refreshAgents()
     expect(agents.piSetup('harness:pi')).toMatchObject({
