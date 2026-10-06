@@ -74,15 +74,25 @@ describe('boolean operation bounds', () => {
 
   test('from the canvas, a boolean takes the box of its result too', () => {
     const editor = createEditor()
-    editor.setCanvasKit(renderer.ck, renderer)
-    const pageId = editor.state.currentPageId
-    const a = editor.graph.createNode('RECTANGLE', pageId, { width: 50, height: 50 })
-    const b = editor.graph.createNode('RECTANGLE', pageId, { x: 20, y: 20, width: 50, height: 50 })
-    editor.select([a.id, b.id])
-    editor.booleanOperationSelected('INTERSECT')
-    const [booleanId] = [...editor.state.selectedIds]
-    const booleanNode = editor.graph.getNode(booleanId ?? '')
-    expect(booleanNode && box(booleanNode)).toEqual([20, 20, 30, 30])
-    expect(editor.graph.getAbsolutePosition(b.id)).toEqual({ x: 20, y: 20 })
+    // Attaching CanvasKit installs a global text measurer that later tests must not inherit.
+    try {
+      editor.setCanvasKit(renderer.ck, renderer)
+      const pageId = editor.state.currentPageId
+      const a = editor.graph.createNode('RECTANGLE', pageId, { width: 50, height: 50 })
+      const b = editor.graph.createNode('RECTANGLE', pageId, {
+        x: 20,
+        y: 20,
+        width: 50,
+        height: 50
+      })
+      editor.select([a.id, b.id])
+      editor.booleanOperationSelected('INTERSECT')
+      const [booleanId] = [...editor.state.selectedIds]
+      const booleanNode = editor.graph.getNode(booleanId ?? '')
+      expect(booleanNode && box(booleanNode)).toEqual([20, 20, 30, 30])
+      expect(editor.graph.getAbsolutePosition(b.id)).toEqual({ x: 20, y: 20 })
+    } finally {
+      editor.dispose()
+    }
   })
 })
