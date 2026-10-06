@@ -10,6 +10,9 @@ export { materializeComponentClosure } from './component-closure'
 export { linkInstanceSourceChildren, mapInstanceSourceChildren } from './source-children'
 export type { MaterializedInstance } from './materialize-instance'
 
+/** The Kiwi codec types only `symbolID`, so the remaining symbol fields are read through these. */
+export { symbolDataOf, symbolOverridesOf } from './types'
+
 export type {
   ComponentPropAssignment,
   ComponentPropDef,
