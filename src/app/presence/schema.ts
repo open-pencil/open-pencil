@@ -42,6 +42,7 @@ const peerState = v.object({
   cursor: lenient(personPoint),
   selection: lenient(selection),
   treeFormat: lenient(v.pipe(v.number(), v.integer(), v.minValue(1))),
+  hasFile: lenient(v.boolean()),
   agents: v.fallback(
     v.optional(
       v.pipe(v.array(v.fallback(v.nullable(agent), null)), v.maxLength(MAX_AGENTS_PER_PEER))
@@ -54,7 +55,7 @@ const peerState = v.object({
 export function parsePeer(clientId: number, state: unknown): RemotePeer | null {
   const result = v.safeParse(peerState, state)
   if (!result.success) return null
-  const { user, cursor, selection: selected, agents, treeFormat } = result.output
+  const { user, cursor, selection: selected, agents, treeFormat, hasFile } = result.output
   return {
     clientId,
     name: user.name ?? 'Anonymous',
@@ -62,6 +63,7 @@ export function parsePeer(clientId: number, state: unknown): RemotePeer | null {
     cursor,
     selection: selected,
     agents: (agents ?? []).flatMap((entry) => (entry ? [entry] : [])),
-    treeFormat
+    treeFormat,
+    hasFile: hasFile === true
   }
 }

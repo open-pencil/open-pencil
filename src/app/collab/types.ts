@@ -13,6 +13,8 @@ export interface RemotePeer {
   agents: AgentPresence[]
   /** The layer tree format the peer's build syncs, when it says. */
   treeFormat?: number
+  /** Whether the peer has the room's file, so a newcomer can get it from them. */
+  hasFile: boolean
 }
 
 /** The active tab's room, as the collaboration UI shows it. */

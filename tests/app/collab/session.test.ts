@@ -57,8 +57,8 @@ describe('room sessions', () => {
       const shared = open({ roomId: ROOM_A, store: host, origin: 'shared' })
       shared.shareDocument()
       const guest = newStore('Shared file')
-      const joined = open({ roomId: ROOM_A, store: guest, origin: 'joined', graceMs: 0 })
-      expect(joined.status.value).toBe('joining')
+      const joined = open({ roomId: ROOM_A, store: guest, origin: 'joined' })
+      expect(joined.status.value).toBe('connecting')
 
       await settle()
       expect(joined.status.value).toBe('live')
@@ -72,7 +72,7 @@ describe('room sessions', () => {
   test('a room nobody with the document is in waits, then opens when the sharer comes', async () => {
     await withRooms(async (open, settle) => {
       const guest = newStore()
-      const joined = open({ roomId: ROOM_A, store: guest, origin: 'joined', graceMs: 0 })
+      const joined = open({ roomId: ROOM_A, store: guest, origin: 'joined' })
       await settle()
       expect(joined.status.value).toBe('waiting')
       expect(joined.hasDocument.value).toBe(false)
@@ -115,7 +115,7 @@ describe('room sessions', () => {
   test('an edit in a tab whose room has no document yet stays in that tab', async () => {
     await withRooms(async (open, settle) => {
       const guest = newStore()
-      open({ roomId: ROOM_A, store: guest, origin: 'joined', graceMs: 0 })
+      open({ roomId: ROOM_A, store: guest, origin: 'joined' })
       guest.graph.createNode('RECTANGLE', firstPageId(guest), { id: 'early' })
       await settle()
 
@@ -123,6 +123,22 @@ describe('room sessions', () => {
       open({ roomId: ROOM_A, store: host, origin: 'shared' }).shareDocument()
       await settle()
       expect(host.graph.getNode('early')).toBeUndefined()
+    })
+  })
+
+  test('peers say whether they have the file, so a newcomer knows whom it is waiting for', async () => {
+    await withRooms(async (open, settle) => {
+      const host = newStore('Shared')
+      open({ roomId: ROOM_A, store: host, origin: 'shared' }).shareDocument()
+      const early = open({ roomId: ROOM_B, store: newStore(), origin: 'joined' })
+      const other = open({ roomId: ROOM_B, store: newStore(), origin: 'joined' })
+      const guest = open({ roomId: ROOM_A, store: newStore(), origin: 'joined' })
+      await settle()
+
+      expect(guest.peers.value.map((peer) => peer.hasFile)).toEqual([true])
+      expect(early.peers.value.map((peer) => peer.hasFile)).toEqual([false])
+      expect(early.status.value).toBe('waiting')
+      expect(other.status.value).toBe('waiting')
     })
   })
 })

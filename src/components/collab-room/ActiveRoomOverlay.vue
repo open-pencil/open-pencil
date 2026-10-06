@@ -9,8 +9,10 @@ const room = useRoomActions()
 
 <template>
   <RoomScreen
-    v-if="room.pending.value && room.state.value.status"
-    :status="room.state.value.status === 'joining' ? 'joining' : 'waiting'"
+    v-if="room.pendingStatus.value"
+    :status="room.pendingStatus.value"
+    :sender="room.sender.value"
+    :others-waiting="room.othersWaiting.value"
     :name="room.state.value.localName"
     :copied="room.copied.value"
     :desktop-link="room.desktopLink.value"

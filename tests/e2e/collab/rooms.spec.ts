@@ -44,7 +44,8 @@ test('a share link opens the room in its own tab, waiting until someone with it 
   try {
     guest = await createPeer(browser, 'Guest', relay.url, { path: shareLinkPath() })
     const screen = guest.page.getByTestId('room-screen')
-    await expect(screen).toHaveAttribute('data-status', 'joining')
+    // It connects and looks for people before it says nobody who has the file is here.
+    await expect(screen).toHaveAttribute('data-status', /^(connecting|looking)$/)
     await expect(screen).toHaveAttribute('data-status', 'waiting', { timeout: 15_000 })
     await expect(
       guest.page.getByRole('heading', { name: 'Waiting for someone who has this file' })

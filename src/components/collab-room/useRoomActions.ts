@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { useViewportKind } from '@open-pencil/vue'
 
 import { roomLinkURL } from '@/app/collab/room/links'
+import { showsRoomDocument, type PendingRoomStatus } from '@/app/collab/room/status'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
@@ -19,8 +20,16 @@ export function useRoomActions() {
   const state = computed(() => collab?.state.value ?? DEFAULT_COLLAB_STATE)
   const leftRoom = computed(() => collab?.leftRoom.value ?? false)
   /** Whether the room's document has yet to arrive, so its screen shows instead of the editor. */
-  const pending = computed(
-    () => state.value.status === 'joining' || state.value.status === 'waiting'
+  const pendingStatus = computed<PendingRoomStatus | null>(() => {
+    const status = state.value.status
+    return status && !showsRoomDocument(status) ? status : null
+  })
+  const pending = computed(() => pendingStatus.value !== null)
+  /** Who the file is coming from, while it is on its way. */
+  const sender = computed(() => state.value.peers.find((peer) => peer.hasFile)?.name ?? null)
+  /** People in the room who are waiting for the file too. */
+  const othersWaiting = computed(() =>
+    state.value.peers.filter((peer) => !peer.hasFile).map((peer) => peer.name)
   )
   // Browsers on a computer can hand the room to the desktop app; phones and the app cannot.
   const desktopLink = computed(() => {
@@ -54,6 +63,9 @@ export function useRoomActions() {
     state,
     leftRoom,
     pending,
+    pendingStatus,
+    sender,
+    othersWaiting,
     copied,
     desktopLink,
     downloadURL,

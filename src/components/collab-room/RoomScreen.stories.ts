@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
+import type { PendingRoomStatus } from '@/app/collab/room/status'
+
 import RoomScreen from './RoomScreen.vue'
 
 type Args = {
-  status: 'joining' | 'waiting'
+  status: PendingRoomStatus
+  sender: string | null
+  othersWaiting: string[]
   name: string
   copied: boolean
   desktopLink: string | null
@@ -20,6 +24,8 @@ const meta = {
   tags: ['autodocs'],
   args: {
     status: 'waiting',
+    sender: null,
+    othersWaiting: [],
     name: 'Teal Fox',
     copied: false,
     desktopLink: null,
@@ -38,8 +44,24 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Joining: Story = {
-  args: { status: 'joining' }
+export const Connecting: Story = {
+  args: { status: 'connecting' }
+}
+
+export const LookingForPeople: Story = {
+  args: { status: 'looking' }
+}
+
+export const ReceivingTheFile: Story = {
+  args: { status: 'receiving', sender: 'Ana' }
+}
+
+export const Unreachable: Story = {
+  args: { status: 'unreachable' }
+}
+
+export const WaitingWithOthers: Story = {
+  args: { othersWaiting: ['Ben', 'Teal Fox'] }
 }
 
 export const Waiting: Story = {}

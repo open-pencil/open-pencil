@@ -15,7 +15,7 @@ const room = useRoomActions()
 const ui = roomStatus()
 
 const statusText = computed(() =>
-  roomStatusText(collab.messages, collab.state.status ?? 'joining', collab.state.peers.length)
+  roomStatusText(collab.messages, collab.state.status ?? 'connecting', collab.state.peers.length)
 )
 </script>
 

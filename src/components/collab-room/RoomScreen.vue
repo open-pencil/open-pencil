@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import { useCollaborationMessages } from '@open-pencil/vue'
 
+import { isFetchingRoom, type PendingRoomStatus } from '@/app/collab/room/status'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { roomScreen } from '@/theme/collaboration/room-screen'
@@ -8,17 +11,24 @@ import { roomScreen } from '@/theme/collaboration/room-screen'
 import RoomNameLine from './RoomNameLine.vue'
 
 /**
- * What a room tab shows instead of the editor until the room's document arrives: briefly that it
- * is joining, then why nothing is here yet and what to do. Nothing on it can edit the document.
+ * What a room tab shows instead of the editor until the room's document arrives: what it is doing
+ * to get the file, why nothing is here yet when nobody who has it is online, or that it cannot
+ * reach the room at all. Nothing on it can edit the document.
  */
 const {
   status,
+  sender = null,
+  othersWaiting = [],
   name,
   copied = false,
   desktopLink = null,
   downloadURL = null
 } = defineProps<{
-  status: 'joining' | 'waiting'
+  status: PendingRoomStatus
+  /** Who the file is coming from, while it is on its way. */
+  sender?: string | null
+  /** People in the room who are waiting for the file too. */
+  othersWaiting?: string[]
   /** The person's name in the room, generated until they set one. */
   name: string
   copied?: boolean
@@ -36,6 +46,13 @@ const emit = defineEmits<{
 
 const messages = useCollaborationMessages()
 const ui = roomScreen()
+
+const fetching = computed(() => isFetchingRoom(status))
+const progress = computed(() => {
+  if (status === 'receiving' && sender) return messages.value.receivingDescription({ name: sender })
+  if (status === 'looking') return messages.value.lookingDescription
+  return messages.value.connectingDescription
+})
 </script>
 
 <template>
@@ -45,18 +62,41 @@ const ui = roomScreen()
     :data-status="status"
     role="status"
     aria-live="polite"
-    :aria-busy="status === 'joining'"
+    :aria-busy="fetching"
   >
     <AppPlaceholder
-      v-if="status === 'joining'"
+      v-if="fetching"
       size="page"
       label-as="h2"
       :label="messages.joiningTitle"
-      :description="messages.joiningDescription"
+      :description="progress"
       :ui="{ label: ui.title(), description: ui.description() }"
     >
       <template #icon>
         <icon-lucide-loader-circle :class="ui.spinner()" />
+      </template>
+      <template #action>
+        <AppButton
+          color="neutral"
+          variant="ghost"
+          data-test-id="room-screen-leave"
+          @click="emit('leave')"
+        >
+          {{ messages.leave }}
+        </AppButton>
+      </template>
+    </AppPlaceholder>
+
+    <AppPlaceholder
+      v-else-if="status === 'unreachable'"
+      size="page"
+      label-as="h2"
+      :label="messages.unreachableTitle"
+      :description="messages.unreachableDescription"
+      :ui="{ label: ui.title(), description: ui.description() }"
+    >
+      <template #icon>
+        <icon-lucide-wifi-off class="size-5" />
       </template>
       <template #action>
         <AppButton
@@ -109,6 +149,9 @@ const ui = roomScreen()
               {{ messages.leave }}
             </AppButton>
           </div>
+          <p v-if="othersWaiting.length" :class="ui.footnote()" data-test-id="room-others-waiting">
+            {{ messages.othersWaiting({ names: othersWaiting.join(', ') }) }}
+          </p>
           <RoomNameLine :name="name" @rename="emit('rename', $event)" />
           <p v-if="desktopLink" :class="ui.footnote()">
             <a :href="desktopLink" :class="ui.link()" data-test-id="room-screen-open-desktop">

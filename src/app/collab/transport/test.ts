@@ -4,6 +4,8 @@ import { COLLAB_APP_ID, IS_BROWSER } from '@/constants'
 import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
 
 const MAX_TEST_MESSAGE_BYTES = 8 * 1024 * 1024
+/** The relay introduces peers as soon as they say hello. */
+const TEST_DISCOVERY_MS = 1000
 
 type TestTransportMessage =
   | { type: 'hello'; senderId: string; targetId?: string }
@@ -141,6 +143,8 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
     onPeerLeave(handler) {
       leaveHandler = handler
     },
+    signalingConnected: () => socket.readyState === WebSocket.OPEN,
+    discoveryMs: TEST_DISCOVERY_MS,
     async leave() {
       if (left) return
       left = true

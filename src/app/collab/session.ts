@@ -1,3 +1,4 @@
+import { useIntervalFn } from '@vueuse/core'
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
@@ -24,7 +25,7 @@ import {
 } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
 import { setPeers } from '@/app/presence/registry'
-import { ROOM_JOIN_GRACE_MS } from '@/constants'
+import { ROOM_STATUS_TICK_MS, ROOM_UNREACHABLE_MS } from '@/constants'
 
 /** How a tab came to be in a room: by sharing its own document, or by joining someone's. */
 export type RoomOrigin = 'shared' | 'joined'
@@ -58,8 +59,10 @@ export interface RoomSessionOptions {
   origin: RoomOrigin
   joinRoom?: JoinCollabRoom
   openSavedCopy?: (roomId: string, ydoc: Y.Doc) => RoomSavedCopy
-  /** How long the tab says it is joining before it says nobody with the room is online. */
-  graceMs?: number
+  /** How long the tab tries to reach the service that introduces peers before saying it cannot. */
+  unreachableMs?: number
+  /** How often the tab rechecks its connection while it waits for the file. */
+  tickMs?: number
 }
 
 function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
@@ -74,7 +77,8 @@ export function openRoomSession({
   origin,
   joinRoom,
   openSavedCopy = openIndexedDBCopy,
-  graceMs = ROOM_JOIN_GRACE_MS
+  unreachableMs = ROOM_UNREACHABLE_MS,
+  tickMs = ROOM_STATUS_TICK_MS
 }: RoomSessionOptions): RoomSession {
   const identity = useCollabIdentity()
   const ydoc = new Y.Doc()
@@ -87,7 +91,10 @@ export function openRoomSession({
   const peers = shallowRef<RemotePeer[]>([])
   const hasDocument = ref(false)
   const savedCopyLoaded = ref(false)
-  const waitedLong = ref(false)
+  const openedAt = Date.now()
+  const now = ref(openedAt)
+  /** When the current stretch of being connected to the service that introduces peers began. */
+  const connectedSince = ref<number | null>(null)
   let suppressYjsEvents = false
   let suppressGraphSync = false
   let disposed = false
@@ -96,8 +103,12 @@ export function openRoomSession({
     deriveRoomStatus({
       hasDocument: hasDocument.value,
       savedCopyLoaded: savedCopyLoaded.value,
-      waitedLong: waitedLong.value,
-      peerCount: peers.value.length
+      openFor: now.value - openedAt,
+      connectedFor: connectedSince.value === null ? null : now.value - connectedSince.value,
+      discoveryMs: connection.room.discoveryMs,
+      unreachableMs,
+      peerCount: peers.value.length,
+      peersWithFile: peers.value.filter((peer) => peer.hasFile).length
     })
   )
 
@@ -112,8 +123,13 @@ export function openRoomSession({
   })
 
   function refreshDocument() {
+    if (disposed) return
     const rootId = readRoot(meta)
     hasDocument.value = rootId !== undefined && store.graph.rootId === rootId
+    // Newcomers wait for someone who has the file, so peers say whether they do.
+    if (awareness.getLocalState()?.hasFile !== hasDocument.value) {
+      awareness.setLocalStateField('hasFile', hasDocument.value)
+    }
     const name = readRoomName(meta)
     if (hasDocument.value && name && origin === 'joined') store.state.documentName = name
   }
@@ -163,9 +179,16 @@ export function openRoomSession({
     refreshDocument()
     return undefined
   })
-  const graceTimer = setTimeout(() => {
-    waitedLong.value = true
-  }, graceMs)
+  // Signaling services report no events, so the tab polls while it waits for the file.
+  function checkConnection() {
+    now.value = Date.now()
+    if (!connection.room.signalingConnected()) connectedSince.value = null
+    else connectedSince.value ??= now.value
+  }
+  checkConnection()
+  const connectionTimer = useIntervalFn(() => {
+    if (!hasDocument.value) checkConnection()
+  }, tickMs)
 
   const stopNameWatch = watch(identity.name, broadcastIdentity)
   const stopZoomWatch = store.onEditorEvent('viewport:changed', (viewport) => {
@@ -204,7 +227,7 @@ export function openRoomSession({
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
       unbindGraphEvents()
       disposed = true
-      clearTimeout(graceTimer)
+      connectionTimer.pause()
       stopNameWatch()
       stopZoomWatch()
       stopAgentSync()

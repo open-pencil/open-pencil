@@ -31,7 +31,13 @@ export const collaborationMessageDefaults = {
   sharedFile: 'Shared file',
   invalidRoomLink: 'That isn’t a room link or ID.',
   joiningTitle: 'Joining the room…',
-  joiningDescription: 'Connecting to the people in this room.',
+  connectingDescription: 'Connecting to the room’s servers.',
+  lookingDescription: 'Looking for people in this room.',
+  receivingDescription: params('Getting the file from {name}.'),
+  othersWaiting: params('Also waiting: {names}'),
+  unreachableTitle: 'Can’t reach the room’s servers',
+  unreachableDescription:
+    'Check your internet connection. OpenPencil keeps trying and opens the file once it connects.',
   waitingTitle: 'Waiting for someone who has this file',
   waitingDescription:
     'Rooms aren’t stored on a server. The file lives on the devices of the people who’ve been in the room, so it can only open while one of them is online.',

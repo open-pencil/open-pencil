@@ -2,6 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
+import { showsRoomDocument } from '@/app/collab/room/status'
 import ConnectedRoom from '@/components/collab-panel/ConnectedRoom.vue'
 import { useCollabPanelContext } from '@/components/collab-panel/context'
 import ShareOrJoinRoom from '@/components/collab-panel/ShareOrJoinRoom.vue'
@@ -12,8 +13,8 @@ const collab = useCollabPanelContext()
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
 const connection = computed(() => {
   const status = collab.state.status
-  if (status === 'joining' || status === 'waiting') return 'joining'
-  return status ? 'connected' : 'idle'
+  if (!status) return 'idle'
+  return showsRoomDocument(status) ? 'connected' : 'joining'
 })
 </script>
 

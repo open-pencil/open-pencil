@@ -55,6 +55,8 @@ export function createMemoryRooms(): { join: JoinCollabRoom; settle: () => Promi
       onPeerLeave(handler) {
         self.leaveHandlers.push(handler)
       },
+      signalingConnected: () => true,
+      discoveryMs: 0,
       async leave() {
         room.delete(self)
         for (const peer of room) for (const handler of peer.leaveHandlers) handler(self.id)
