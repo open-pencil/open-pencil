@@ -1,10 +1,14 @@
 import { tv } from 'tailwind-variants'
 
-export const chatMarkdownTheme = tv({
+export type MarkdownDensity = 'compact' | 'comfortable'
+
+// vue-stream-markdown styles itself with shadcn variables; map them to app tokens.
+// Density rules live in markdown.css, keyed by `data-markdown-density`.
+export const markdownTheme = tv({
   slots: {
-    root: 'chat-markdown-root',
+    root: 'markdown-root',
     markdown: [
-      'chat-markdown',
+      'markdown-content',
       '[--accent:var(--color-hover)]',
       '[--accent-foreground:var(--color-surface)]',
       '[--background:var(--color-input)]',
