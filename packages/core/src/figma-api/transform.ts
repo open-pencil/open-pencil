@@ -7,6 +7,8 @@ import {
 } from '@open-pencil/scene-graph'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
+import { figmaRotation } from '#core/geometry/figma'
+
 /**
  * A node's transform into its container's space, which Figma's plugin API reports as
  * `relativeTransform` and reads `x`, `y`, and `rotation` from. Groups and booleans set no space of
@@ -21,14 +23,6 @@ export function setContainerTransform(scene: SceneGraph, node: SceneNode, matrix
   const toParent = Matrix.invert(getParentToContainerMatrix(node, scene)) ?? Matrix.identity()
   const local = localTransformFromWorld(node, Matrix.multiply(toParent, matrix), Matrix.identity())
   if (local) scene.updateNode(node.id, local)
-}
-
-/** Figma's rotation of a transform: counterclockwise degrees in (-180, 180]. */
-export function figmaRotation(matrix: Mat3): number {
-  const degrees = (Math.atan2(-matrix[3], matrix[0]) * 180) / Math.PI
-  // Figma reports the angle a script set, not its floating-point round trip.
-  const rounded = Math.round(degrees * 1e6) / 1e6
-  return Math.abs(degrees - rounded) < 1e-9 ? rounded + 0 : degrees
 }
 
 /**
