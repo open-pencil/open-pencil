@@ -130,8 +130,8 @@ export function registerYjsObservers({
   getSuppressYjsEvents,
   setSuppressGraphSync,
   applyYjsToGraph
-}: YjsObserverOptions) {
-  ynodes.observeDeep((events, transaction) => {
+}: YjsObserverOptions): () => void {
+  function onNodes(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
     // A migration this peer wrote was applied by the change that triggered it.
     if (getSuppressYjsEvents() || transaction.origin === TREE_MIGRATION_ORIGIN) return
     setSuppressGraphSync(true)
@@ -143,9 +143,9 @@ export function registerYjsObservers({
     } finally {
       setSuppressGraphSync(false)
     }
-  })
+  }
 
-  yimages.observe((event) => {
+  function onImages(event: Y.YMapEvent<Uint8Array>) {
     if (getSuppressYjsEvents()) return
     try {
       for (const [key, change] of event.changes.keys) {
@@ -160,7 +160,14 @@ export function registerYjsObservers({
     } catch (error) {
       logCollabSyncError('Failed to apply remote image changes', error)
     }
-  })
+  }
+
+  ynodes.observeDeep(onNodes)
+  yimages.observe(onImages)
+  return () => {
+    ynodes.unobserveDeep(onNodes)
+    yimages.unobserve(onImages)
+  }
 }
 
 export function createYjsGraphSync({

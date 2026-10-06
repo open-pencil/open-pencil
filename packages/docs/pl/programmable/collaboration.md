@@ -21,7 +21,7 @@ Otwórz odnośnik albo wklej go (lub sam identyfikator pokoju) w polu **Dołącz
 
 Dołączasz od razu pod wygenerowaną nazwą, na przykład *Teal Fox*. Własną nazwę ustawisz w panelu udostępniania lub w ustawieniach; będzie używana w każdym pokoju.
 
-Pokoje nie są przechowywane na serwerze: plik znajduje się na urządzeniach osób, które były w pokoju, więc karta pokoju otwiera dokument tylko wtedy, gdy któraś z nich jest online. Do tego czasu karta informuje, że czeka, wyjaśnia dlaczego i otwiera plik, gdy tylko dołączy ktoś, kto go ma. Pokój, w którym już byłeś, otwiera się od razu z kopii na tym urządzeniu, a Twoje zmiany synchronizują się, gdy inni wrócą.
+Pokoje nie są przechowywane na serwerze: plik znajduje się na urządzeniach osób, które były w pokoju, więc karta pokoju otwiera dokument tylko wtedy, gdy któraś z nich jest online. Do tego czasu karta informuje, że czeka, wyjaśnia, dlaczego i otwiera plik, gdy tylko dołączy ktoś, kto go ma. Pokój, w którym już byłeś, otwiera się od razu z kopii na tym urządzeniu, a Twoje zmiany synchronizują się, gdy inni wrócą.
 
 **Opuść pokój** w panelu udostępniania kończy Twój udział w pokoju. Karta, która udostępniła swój dokument, znów staje się tym dokumentem; karta, która dołączyła, zachowuje plik pokoju jako lokalną, niezapisaną kopię, którą możesz zapisać. Każda karta pokoju ma własne połączenie, więc możesz być w kilku pokojach jednocześnie.
 

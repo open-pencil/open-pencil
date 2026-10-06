@@ -4,6 +4,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { openRoomSession, type RoomSession, type RoomSessionOptions } from '@/app/collab/session'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
+import { presenceOf } from '@/app/presence/registry'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { createMemoryRooms } from '#tests/helpers/collab/memory-transport'
@@ -139,6 +140,26 @@ describe('room sessions', () => {
       expect(early.peers.value.map((peer) => peer.hasFile)).toEqual([false])
       expect(early.status.value).toBe('waiting')
       expect(other.status.value).toBe('waiting')
+    })
+  })
+
+  test('a room a tab has left no longer changes that tab or its people', async () => {
+    await withRooms(async (open, settle) => {
+      const host = newStore('Shared')
+      const shared = open({ roomId: ROOM_A, store: host, origin: 'shared' })
+      shared.shareDocument()
+      const guest = newStore()
+      const joined = open({ roomId: ROOM_A, store: guest, origin: 'joined' })
+      await settle()
+      expect(joined.peers.value).toHaveLength(1)
+
+      joined.dispose()
+      host.graph.createNode('RECTANGLE', firstPageId(host), { id: 'after-leave' })
+      shared.updateCursor(10, 10, firstPageId(host))
+      await settle()
+      expect(guest.graph.getNode('after-leave')).toBeUndefined()
+      expect(joined.peers.value).toEqual([])
+      expect(presenceOf(guest).peers.value).toEqual([])
     })
   })
 })

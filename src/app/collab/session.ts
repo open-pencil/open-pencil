@@ -148,7 +148,7 @@ export function openRoomSession({
     awareness.setLocalStateField('treeFormat', TREE_FORMAT)
   }
 
-  registerYjsObservers({
+  const unregisterYjsObservers = registerYjsObservers({
     store,
     ynodes,
     yimages,
@@ -232,10 +232,14 @@ export function openRoomSession({
       stopZoomWatch()
       stopAgentSync()
       meta.unobserve(refreshDocument)
+      unregisterYjsObservers()
+      // Destroying the awareness can emit a last change; nothing here should react to it.
+      awareness.off('change', updatePeers)
       void connection.room.leave()
       awareness.destroy()
       void persistence.destroy()
       ydoc.destroy()
+      peers.value = []
       setPeers(store, [])
     }
   }
