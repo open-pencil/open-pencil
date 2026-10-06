@@ -1,10 +1,8 @@
 import { computed, markRaw, ref, type Ref } from 'vue'
 
-import { AgentSetupError, type AgentSetupProblem } from '@/app/ai/agents/readiness'
 import {
   analyzeAttachedImages,
-  designMessageWithImageFindings,
-  VisionModelUnavailableError
+  designMessageWithImageFindings
 } from '@/app/ai/attachment/image/analyze'
 import { prepareImageAttachment, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import {
@@ -14,30 +12,19 @@ import {
 import { snapshotNode } from '@/app/ai/attachment/node/snapshot'
 import { setMessageAttachments } from '@/app/ai/attachment/presentation/store'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
+import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { useRevertRecords } from '@/app/ai/chat/submission/reverts'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { recordTurn, restoreTurn, revertTurn } from '@/app/ai/chat/turns'
 import { runUndoEntries } from '@/app/ai/tools'
 import type { EditorStore } from '@/app/editor/active-store'
 
-interface SubmissionMessages {
-  openSettings: string
-  requestFailed: string
-  visionUnavailable: string
-  runSetup: string
-  agentSetup: Record<AgentSetupProblem, string>
-}
-
-interface SubmissionOptions {
+interface SubmissionOptions extends SubmissionErrorOptions {
   chat: Ref<ChatInstance | null>
   ensureChat: () => Promise<ChatInstance | null>
   flush?: () => Promise<void>
   clearFailure: () => void
   getEditor: () => EditorStore
-  messages: Ref<SubmissionMessages>
-  reportError: (message: string, action?: { label: string; run: () => void }) => void
-  openModelSettings: () => void
-  openSetup: () => void
 }
 
 export function useChatSubmission(options: SubmissionOptions) {
@@ -136,25 +123,6 @@ export function useChatSubmission(options: SubmissionOptions) {
     )
   }
 
-  function reportSubmissionError(error: unknown): void {
-    console.error('Chat error:', error)
-    if (error instanceof AgentSetupError) {
-      options.reportError(options.messages.value.agentSetup[error.problem], {
-        label: options.messages.value.runSetup,
-        run: options.openSetup
-      })
-      return
-    }
-    if (error instanceof VisionModelUnavailableError) {
-      options.reportError(options.messages.value.visionUnavailable, {
-        label: options.messages.value.openSettings,
-        run: options.openModelSettings
-      })
-      return
-    }
-    options.reportError(options.messages.value.requestFailed)
-  }
-
   /**
    * Resolves to false when the message never reached the chat. The composer then takes the
    * submission back, attachments included, so their previews stay alive until it decides.
@@ -193,7 +161,7 @@ export function useChatSubmission(options: SubmissionOptions) {
       if (request) reverts.reported(currentChat, note.reverts, request.id)
       return true
     } catch (error) {
-      reportSubmissionError(error)
+      reportSubmissionError(options, error)
       return sent()
     } finally {
       await options.flush?.().catch(() => undefined)
