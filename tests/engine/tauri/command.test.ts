@@ -6,6 +6,8 @@ import * as v from 'valibot'
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
 import { npmInstallArgs } from '@/app/ai/agents/native'
+import { HARNESS_PACKAGE } from '@/app/ai/harness/companion'
+import { MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
 import { repoPath } from '#tests/helpers/paths'
@@ -93,13 +95,19 @@ function allowedArgs(scope: boolean | unknown[] | undefined, args: string[]): un
   })
 }
 
+const rootPackage = v.parse(
+  v.pipe(v.string(), v.parseJson(), v.object({ version: v.string() })),
+  readFileSync(repoPath('package.json'), 'utf8')
+)
+
 describe('shell scope', () => {
   // Every program the app starts, with the arguments it starts it with.
-  // npm installs only these packages; the companions at a release version.
+  // npm installs only these packages; a build pins the companions to the app's version, which
+  // tests stand in for with a placeholder the scope rightly refuses.
   const installs = [
     ...ACP_AGENTS.flatMap((agent) => (agent.adapterPackage ? [agent.adapterPackage] : [])),
-    '@open-pencil/mcp@0.15.1',
-    '@open-pencil/harness@0.15.1'
+    `${MCP_PACKAGE_NAME}@${rootPackage.version}`,
+    `${HARNESS_PACKAGE}@${rootPackage.version}`
   ]
   const spawns: [string, string[]][] = [
     ...ACP_AGENTS.map((agent): [string, string[]] => [agent.command, agent.args]),
