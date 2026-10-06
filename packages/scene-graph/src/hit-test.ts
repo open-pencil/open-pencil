@@ -17,6 +17,15 @@ function hasVisibleFillOrStroke(node: SceneNode): boolean {
   return node.fills.some((f) => f.visible) || node.strokes.some((s) => s.visible)
 }
 
+/**
+ * An open container whose empty area still belongs to it, as in Figma: a top-level frame with auto
+ * layout is selected, hovered, and dragged by its gaps and padding, while its children stay one
+ * click away, with or without a fill. A plain top-level frame's empty area is background.
+ */
+function ownsItsEmptyArea(node: SceneNode): boolean {
+  return node.type === 'FRAME' && node.layoutMode !== 'NONE'
+}
+
 function hasTransformedAncestor(
   node: SceneNode,
   graph: SceneGraph,
@@ -98,7 +107,10 @@ function hitTestTransparentContainer(
     return childHit
   }
 
-  if (containsPoint(px, py, child, graph, transformCache) && hasVisibleFillOrStroke(child))
+  if (
+    containsPoint(px, py, child, graph, transformCache) &&
+    (hasVisibleFillOrStroke(child) || ownsItsEmptyArea(child))
+  )
     return child
   return null
 }
@@ -177,7 +189,8 @@ function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
  * the point and stops at the first layer that is not open. Top-level frames and sections with
  * layers and component sets are open, and so is every ancestor of the selection, so clicks reach
  * the siblings of selected layers. Where every layer under the point is open, a container opened
- * by the selection is selected, and a top-level frame or section is not.
+ * by the selection is selected, so is a top-level frame with auto layout, and a plain top-level
+ * frame or a section is not.
  */
 export function hitTestSelectable(
   graph: SceneGraph,
@@ -210,7 +223,9 @@ export function hitTestSelectable(
     if (!openedBySelection.has(node.id) && !opensByItself(graph, node)) return node
   }
   const last = chain.at(-1)
-  return last && openedBySelection.has(last.id) && !opensByItself(graph, last) ? last : null
+  if (!last) return null
+  if (ownsItsEmptyArea(last)) return last
+  return openedBySelection.has(last.id) && !opensByItself(graph, last) ? last : null
 }
 
 /** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */
@@ -231,7 +246,7 @@ export function hitTestOpenContainer(
 ): SceneNode | null {
   const deepest = hitTestChildren(graph, px, py, scopeId, true)
   for (let node: SceneNode | undefined = deepest ?? undefined; node && node.id !== scopeId;) {
-    if (!opensByItself(graph, node)) return null
+    if (!opensByItself(graph, node) || ownsItsEmptyArea(node)) return null
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
   return deepest

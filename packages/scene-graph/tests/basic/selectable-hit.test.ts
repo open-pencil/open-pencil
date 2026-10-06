@@ -28,10 +28,41 @@ function scene() {
   const sectionLeaf = add('RECTANGLE', 'sl', inSection.id, { x: 20, y: 20, width: 60, height: 60 })
   const component = add('COMPONENT', 'Component', page, { x: 800, width: 200, height: 200 })
   add('RECTANGLE', 'cr', component.id, { x: 20, y: 20, width: 60, height: 60 })
+  const card = add('FRAME', 'Card', page, { x: 1100, width: 300, height: 400, layoutMode: 'VERTICAL' })
+  const cardTitle = add('RECTANGLE', 'Card title', card.id, { x: 20, y: 20, width: 260, height: 40 })
+  const cardBody = add('FRAME', 'Card body', card.id, { x: 20, y: 80, width: 260, height: 200 })
+  add('RECTANGLE', 'Card body leaf', cardBody.id, { x: 20, y: 20, width: 60, height: 60 })
+  const grid = add('FRAME', 'Grid', page, { x: 1500, width: 200, height: 200, layoutMode: 'GRID', fills: [] })
+  add('RECTANGLE', 'Cell', grid.id, { x: 10, y: 10, width: 60, height: 60 })
+  const sectionCard = add('FRAME', 'Section card', section.id, {
+    x: 300,
+    y: 20,
+    width: 150,
+    height: 150,
+    layoutMode: 'HORIZONTAL'
+  })
+  add('RECTANGLE', 'sc', sectionCard.id, { x: 20, y: 20, width: 40, height: 40 })
   return {
     graph,
     page,
-    nodes: { top, nested, leaf, deeper, deepLeaf, direct, group, g1, g2, empty, inSection, sectionLeaf, component }
+    nodes: {
+      top,
+      nested,
+      leaf,
+      deeper,
+      deepLeaf,
+      direct,
+      group,
+      g1,
+      g2,
+      empty,
+      inSection,
+      sectionLeaf,
+      component,
+      card,
+      cardTitle,
+      cardBody
+    }
   }
 }
 
@@ -65,6 +96,24 @@ describe('hitTestSelectable', () => {
     expect(click(850, 50)).toBe('Component')
   })
 
+  test('selects a top-level auto-layout frame by its empty area', () => {
+    const { click, nodes } = setup()
+    expect(click(1120, 350)).toBe('Card')
+    expect(click(1110, 70)).toBe('Card')
+    expect(click(1550, 150)).toBe('Grid')
+    expect(click(1150, 30)).toBe('Card title')
+    expect(click(1130, 110)).toBe('Card body')
+    expect(click(1110, 70, [nodes.card.id])).toBe('Card')
+    expect(click(1150, 30, [nodes.card.id])).toBe('Card title')
+    expect(click(1120, 350, [nodes.cardTitle.id])).toBe('Card')
+  })
+
+  test('selects an auto-layout frame in a section by its empty area', () => {
+    const { click } = setup()
+    expect(click(420, 750)).toBe('Section card')
+    expect(click(330, 650)).toBe('sc')
+  })
+
   test('treats a frame in a section as top-level', () => {
     const { click } = setup()
     expect(click(100, 700)).toBe('sl')
@@ -86,6 +135,9 @@ describe('hitTestSelectable', () => {
     expect(graph.hitTestOpenContainer(20, 450, page)?.name).toBe('Top')
     expect(graph.hitTestOpenContainer(200, 700, page)?.name).toBe('In section')
     expect(graph.hitTestOpenContainer(130, 130, page)).toBeNull()
+    // Dragging the empty area of an auto-layout frame moves it instead of starting a marquee.
+    expect(graph.hitTestOpenContainer(1120, 350, page)).toBeNull()
+    expect(graph.hitTestOpenContainer(420, 750, page)).toBeNull()
     expect(graph.isOpenContainer(nodes.top.id)).toBe(true)
     expect(graph.isOpenContainer(nodes.empty.id)).toBe(false)
   })
