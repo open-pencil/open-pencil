@@ -8,6 +8,7 @@ import * as v from 'valibot'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
 
+import { endAllAgentSessions } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -91,6 +92,8 @@ export function connectAutomation(
 
     socket.onclose = (event) => {
       if (ws === socket) ws = null
+      // No MCP session can reach the app without the server, so their agents leave.
+      endAllAgentSessions()
       if (intentionalDisconnect || event.code === 1000) return
       console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()

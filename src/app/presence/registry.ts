@@ -2,6 +2,7 @@ import { shallowRef, type ShallowRef } from 'vue'
 
 import type { PresenceCursor } from '@open-pencil/core/canvas'
 import { AI_ACTIVE_COLOR } from '@open-pencil/core/constants'
+import { computeContentBounds } from '@open-pencil/core/io'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
@@ -314,4 +315,19 @@ export function addAgent(store: EditorStore, kind: AgentKind, model?: string): A
     },
     remove: () => replace(null)
   }
+}
+
+/**
+ * Where an agent shows it is working on `nodeIds`: its cursor at their top-left corner on
+ * `pageId`, and their outlines. Null when none of them is in the document.
+ */
+export function agentPlacement(
+  store: EditorStore,
+  nodeIds: readonly string[],
+  pageId: string
+): Pick<AgentPresence, 'cursor' | 'selection'> | null {
+  const present = nodeIds.filter((id) => store.graph.getNode(id))
+  const bounds = computeContentBounds(store.graph, present)
+  if (!bounds) return null
+  return { cursor: { x: bounds.minX, y: bounds.minY, pageId }, selection: present }
 }

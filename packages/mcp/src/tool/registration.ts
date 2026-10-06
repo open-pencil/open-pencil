@@ -53,10 +53,21 @@ function withTarget<T extends object>(body: T, res: RPCResponse): T & { target?:
   return res.target ? { ...body, target: res.target } : body
 }
 
+/** Who sends a session's tool calls: any MCP client, or an ACP or Pi harness chat in the app. */
+export const MCP_AGENT_KINDS = ['mcp', 'acp', 'harness'] as const
+export type MCPAgentKind = (typeof MCP_AGENT_KINDS)[number]
+
+/** The session tool calls come from, so the app can show the client as an agent at work. */
+export interface MCPAgentSession {
+  id: string
+  kind: MCPAgentKind
+}
+
 export interface RegisterToolsOptions {
   policy: ToolPolicy
   mcpRoot?: string | null
   sendRPC: RPCSender
+  agentSession?: MCPAgentSession
 }
 
 function toolAnnotations(effect: ToolEffect): ToolAnnotations {
@@ -71,7 +82,16 @@ function descriptorByName(descriptors: readonly ToolDescriptor[]): Map<string, T
 }
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions): void {
-  const { policy, sendRPC } = options
+  const { policy, sendRPC, agentSession } = options
+  // Sent with each tool call: the session, and the client's name once it has introduced itself.
+  const agent = () =>
+    agentSession
+      ? {
+          session: agentSession.id,
+          kind: agentSession.kind,
+          client: mcpServer.server.getClientVersion()?.name
+        }
+      : undefined
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const register = <InputArgs extends v.GenericSchema>(
@@ -106,7 +126,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const { target, args: toolArgs } = splitAutomationTarget(args)
           const result = await sendRPC({
             command: 'tool',
-            args: { ...target, name: def.name, args: toolArgs }
+            args: { ...target, name: def.name, args: toolArgs, agent: agent() }
           })
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))

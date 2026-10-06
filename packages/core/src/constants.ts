@@ -473,6 +473,11 @@ export const DEFAULT_AI_MODEL =
   AI_PROVIDERS.find((provider) => provider.id === DEFAULT_AI_PROVIDER)?.defaultModel ?? ''
 
 export const AUTOMATION_HTTP_PORT = 7600
+/**
+ * Request header the app's own ACP and Pi harness chats send to the MCP server, so their sessions
+ * show as those agents rather than as an outside MCP client.
+ */
+export const MCP_AGENT_HEADER = 'x-openpencil-agent'
 
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 

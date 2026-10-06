@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { randomUUID } from 'node:crypto'
+
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
 
@@ -75,7 +77,13 @@ const bridge = createStdioRPCBridge({
 })
 
 const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-registerTools(mcpServer, { policy: toolPolicy, mcpRoot, sendRPC: bridge.sendRPC })
+// One client per process: its tool calls show as one agent in the app.
+registerTools(mcpServer, {
+  policy: toolPolicy,
+  mcpRoot,
+  sendRPC: bridge.sendRPC,
+  agentSession: { id: randomUUID(), kind: 'mcp' }
+})
 
 const transport = new StdioServerTransport()
 mcpServer.connect(transport).catch((err) => {

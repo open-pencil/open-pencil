@@ -1,12 +1,11 @@
 import type { PageSnapshot } from '@open-pencil/core/editor'
-import { computeContentBounds } from '@open-pencil/core/io'
 import type { StepBudget } from '@open-pencil/core/tools'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
-import { addAgent, type AgentHandle } from '@/app/presence/registry'
+import { addAgent, agentPlacement, type AgentHandle } from '@/app/presence/registry'
 
 class RunState {
   currentSteps = 0
@@ -61,13 +60,9 @@ export function endRun(store: EditorStore): void {
 /** Point the run's agent at nodes a tool just created or changed. */
 export function markRunWork(store: EditorStore, nodeIds: string[]): void {
   const run = getRunState(store)
-  const bounds = computeContentBounds(store.graph, nodeIds)
-  if (!run.agent || !bounds) return
-  run.agent.update({
-    status: 'editing',
-    cursor: { x: bounds.minX, y: bounds.minY, pageId: runPageId(store) },
-    selection: nodeIds
-  })
+  const placement = agentPlacement(store, nodeIds, runPageId(store))
+  if (!run.agent || !placement) return
+  run.agent.update({ status: 'editing', ...placement })
 }
 
 export function recordStep(store?: EditorStore): void {

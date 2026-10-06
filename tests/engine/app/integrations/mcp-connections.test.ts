@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
+import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+
 import {
   buildACPMCPServers,
   createMCPConnectionDraft,
@@ -118,7 +120,10 @@ describe('MCP connections', () => {
           type: 'http',
           name: 'open-pencil',
           url: expect.stringContaining('/mcp'),
-          headers: [{ name: 'Authorization', value: 'Bearer built-in-token' }]
+          headers: [
+            { name: MCP_AGENT_HEADER, value: 'acp' },
+            { name: 'Authorization', value: 'Bearer built-in-token' }
+          ]
         },
         {
           type: 'http',
@@ -159,7 +164,10 @@ describe('MCP connections', () => {
         type: 'http',
         name: 'open-pencil',
         url: expect.stringContaining('/mcp'),
-        headers: [{ name: 'Authorization', value: 'Bearer built-in-token' }]
+        headers: [
+          { name: MCP_AGENT_HEADER, value: 'acp' },
+          { name: 'Authorization', value: 'Bearer built-in-token' }
+        ]
       },
       {
         type: 'http',
