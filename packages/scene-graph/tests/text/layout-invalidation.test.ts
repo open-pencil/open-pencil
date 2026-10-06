@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph, copyStyleRuns } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { scaledGeometryChanges } from '@open-pencil/scene-graph/resize'
 
 const shapingEdits: Partial<SceneNode>[] = [
   { fontVariations: [{ axis: 'wght', value: 600 }] },
@@ -69,3 +70,29 @@ for (const preview of [false, true]) {
     expect(node.derivedLayout).toBeNull()
   })
 }
+
+test('resizing flat text drops its glyphs so it reflows, while path text scales them', () => {
+  const graph = new SceneGraph()
+  const glyphs = [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 12, rotation: 0 }]
+  const flat = graph.createNode('TEXT', graph.getPages()[0].id, {
+    text: 'Text',
+    width: 100,
+    height: 20,
+    derivedTextGlyphs: glyphs
+  })
+  const path = graph.createNode('TEXT', graph.getPages()[0].id, {
+    text: 'Text',
+    width: 100,
+    height: 20,
+    derivedTextGlyphs: glyphs.map((glyph) => ({ ...glyph, rotation: -0.5 }))
+  })
+  for (const node of [flat, path]) {
+    graph.updateNode(node.id, {
+      width: 200,
+      ...scaledGeometryChanges(node, node.width, node.height, 200, node.height)
+    })
+  }
+
+  expect(flat.derivedTextGlyphs).toBeNull()
+  expect(path.derivedTextGlyphs?.[0].scaleX).toBe(2)
+})
