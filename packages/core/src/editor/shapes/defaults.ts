@@ -32,11 +32,10 @@ export function newLayerDefaults(type: NodeType): Partial<SceneNode> {
       }
     case 'RECTANGLE':
     case 'ELLIPSE':
+    case 'STAR':
       return { fills: copyFills([DEFAULT_SHAPE_FILL]) }
     case 'POLYGON':
       return { fills: copyFills([DEFAULT_SHAPE_FILL]), pointCount: 3 }
-    case 'STAR':
-      return { fills: copyFills([DEFAULT_SHAPE_FILL]), pointCount: 5, starInnerRadius: 0.38 }
     case 'LINE':
     case 'VECTOR':
       return { fills: [], strokes: copyStrokes([BLACK_STROKE]) }

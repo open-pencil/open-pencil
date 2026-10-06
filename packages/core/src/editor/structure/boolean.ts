@@ -1,14 +1,33 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import type { EditorContext } from '#core/editor/types'
 
+import { wrapNodes } from './container-wrap'
 import { selectedNodesInSharedParent } from './selection'
 
 export type BooleanOperation = 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
+
+/**
+ * Wraps sibling layers in a boolean operation named after it, as Figma names one from the canvas
+ * and from the plugin API. Shared by the editor command and the plugin API; `props` gives the look.
+ */
+export function createBooleanOperation(
+  graph: SceneGraph,
+  nodes: readonly SceneNode[],
+  parentId: string,
+  operation: BooleanOperation,
+  index: number | undefined,
+  props: Partial<SceneNode> = {}
+): SceneNode {
+  return wrapNodes(graph, 'BOOLEAN_OPERATION', nodes, parentId, index, {
+    name: operationLabel(operation),
+    booleanOperation: operation,
+    ...props
+  })
+}
 
 export function booleanOperationSelected(
   ctx: EditorContext,
@@ -25,21 +44,11 @@ export function booleanOperationSelected(
   const childSnapshots = childIds.map((id) => ({ id, subtree: snapshotSubtree(ctx.graph, id) }))
   const origPositions = topLevel.map((node) => ({ id: node.id, x: node.x, y: node.y }))
   const firstIndex = Math.min(...childIds.map((id) => parent.childIds.indexOf(id)))
-  const bounds = getAxisAlignedBoundsInParent(topLevel, parentId, ctx.graph)
-
-  const booleanNode = ctx.graph.createNode('BOOLEAN_OPERATION', parentId, {
-    name: operationLabel(operation),
-    x: bounds.x,
-    y: bounds.y,
-    width: bounds.width,
-    height: bounds.height,
+  const booleanNode = createBooleanOperation(ctx.graph, topLevel, parentId, operation, firstIndex, {
     fills: copyFills(topLevel[0].fills),
-    strokes: copyStrokes(topLevel[0].strokes),
-    booleanOperation: operation
+    strokes: copyStrokes(topLevel[0].strokes)
   })
   const booleanId = booleanNode.id
-  ctx.graph.insertChildAt(booleanId, parentId, firstIndex)
-  for (const id of childIds) ctx.graph.reparentNode(id, booleanId)
   ctx.setSelectedIds(new Set([booleanId]))
 
   ctx.undo.push({

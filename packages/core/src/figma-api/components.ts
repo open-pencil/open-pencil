@@ -13,8 +13,11 @@ import {
   removeComponentProperty,
   createComponentPropertyId
 } from '@open-pencil/scene-graph'
+import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'
+import { newLayerDefaults } from '#core/editor/shapes/defaults'
+import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
@@ -507,15 +510,38 @@ export function combineComponentsAsVariants(
   if (!parent) throw new Error('Parent node not found')
 
   // The plugin API wraps the variants exactly; see `variantSetProps`.
-  const componentSet = graph.createNode(
+  const componentSet = wrapNodes(
+    graph,
     'COMPONENT_SET',
+    components,
     parentId,
+    index,
     variantSetProps(graph, components, parentId, 'script')
   )
-
-  for (const component of components) graph.reparentNode(component.id, componentSet.id)
-  if (index !== undefined) graph.reorderChild(componentSet.id, parentId, index)
   applyVariantProperties(graph, components, componentSet.id)
 
   return componentSet
+}
+
+/**
+ * Makes a component from a layer as Figma's `createComponentFromNode` does: a frame becomes a new
+ * component with its look, layout, and children in its place in the stack, and any other layer is
+ * wrapped in a new component of its size, named after it.
+ */
+export function componentFromNode(graph: SceneGraph, node: SceneNode, parentId: string): SceneNode {
+  const index = graph.getNode(parentId)?.childIds.indexOf(node.id) ?? -1
+  if (node.type !== 'FRAME') {
+    return wrapNodes(graph, 'COMPONENT', [node], parentId, index < 0 ? undefined : index, {
+      ...newLayerDefaults('COMPONENT'),
+      name: node.name
+    })
+  }
+  const component = graph.createNode('COMPONENT', parentId, {
+    ...cloneNodeProps(node, null),
+    type: 'COMPONENT'
+  })
+  for (const childId of node.childIds) graph.reparentNode(childId, component.id)
+  if (index >= 0) graph.insertChildAt(component.id, parentId, index)
+  graph.deleteNode(node.id)
+  return component
 }

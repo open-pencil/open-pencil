@@ -51,4 +51,22 @@ describe('z-order actions', () => {
     editor.redoAction()
     expect(childNames(editor, pageId)).toEqual(['A', 'C', 'B', 'D'])
   })
+
+  test('grouping and ungrouping keep layers in their place in the stack, through undo', () => {
+    const { editor, pageId, nodes } = setupEditor()
+    editor.select([nodes[0]?.id ?? '', nodes[2]?.id ?? ''])
+
+    editor.groupSelected()
+    expect(childNames(editor, pageId)).toEqual(['Group', 'B', 'D'])
+
+    editor.undoAction()
+    expect(childNames(editor, pageId)).toEqual(['A', 'B', 'C', 'D'])
+
+    editor.redoAction()
+    editor.ungroupSelected()
+    expect(childNames(editor, pageId)).toEqual(['A', 'C', 'B', 'D'])
+
+    editor.undoAction()
+    expect(childNames(editor, pageId)).toEqual(['Group', 'B', 'D'])
+  })
 })

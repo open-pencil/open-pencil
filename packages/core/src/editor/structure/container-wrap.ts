@@ -1,8 +1,23 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
 import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
+
+export type WrapContainerType =
+  | 'GROUP'
+  | 'FRAME'
+  | 'COMPONENT'
+  | 'COMPONENT_SET'
+  | 'BOOLEAN_OPERATION'
+
+const CONTAINER_NAMES: Record<WrapContainerType, string> = {
+  BOOLEAN_OPERATION: 'Boolean',
+  COMPONENT_SET: 'Component Set',
+  COMPONENT: 'Component',
+  GROUP: 'Group',
+  FRAME: 'Frame'
+}
 
 /** The parent all these layers share, or null when they are not siblings. */
 export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
@@ -14,9 +29,40 @@ export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]):
     : null
 }
 
+/**
+ * Wraps sibling layers in a new container that spans them, keeping them where they are on the
+ * canvas. The container goes to `index` among the parent's remaining children, or on top when
+ * `index` is omitted. The editor's wrap commands and the plugin API's `group`, boolean
+ * operations, and `createComponentFromNode` all wrap through here; `props` gives the look.
+ */
+export function wrapNodes(
+  graph: SceneGraph,
+  type: WrapContainerType,
+  nodes: readonly SceneNode[],
+  parentId: string,
+  index: number | undefined,
+  props: Partial<SceneNode> = {}
+): SceneNode {
+  const bounds = getAxisAlignedBoundsInParent(nodes, parentId, graph)
+  const container = graph.createNode(type, parentId, {
+    name: CONTAINER_NAMES[type],
+    ...bounds,
+    fills: [],
+    ...props
+  })
+  for (const node of nodes) graph.reparentNode(node.id, container.id)
+  if (index !== undefined) graph.insertChildAt(container.id, parentId, index)
+  return container
+}
+
+/** Index a container made from `nodes` takes: where the lowest of them sat. */
+function lowestIndex(parent: SceneNode, nodes: readonly SceneNode[]): number {
+  return Math.min(...nodes.map((node) => parent.childIds.indexOf(node.id)))
+}
+
 export function wrapSelectionInContainer(
   ctx: EditorContext,
-  containerType: 'GROUP' | 'FRAME' | 'COMPONENT' | 'COMPONENT_SET',
+  containerType: WrapContainerType,
   selectedNodes: SceneNode[],
   extraProps?: Partial<SceneNode>
 ) {
@@ -29,49 +75,32 @@ export function wrapSelectionInContainer(
   if (!prepareSlotEdits(ctx, [parentId])) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
-  const nodeIds = selectedNodes.map((n) => n.id)
-  const origPositions = selectedNodes.map((n) => ({ id: n.id, x: n.x, y: n.y }))
+  const origPositions = selectedNodes
+    .map((n) => ({ id: n.id, x: n.x, y: n.y, index: parent.childIds.indexOf(n.id) }))
+    .toSorted((a, b) => a.index - b.index)
+  const index = lowestIndex(parent, selectedNodes)
 
-  const bounds = getAxisAlignedBoundsInParent(selectedNodes, parentId, ctx.graph)
-  const firstIndex = Math.min(...nodeIds.map((id) => parent.childIds.indexOf(id)))
-
-  const containerNames: Record<string, string> = {
-    COMPONENT_SET: 'Component Set',
-    COMPONENT: 'Component',
-    GROUP: 'Group',
-    FRAME: 'Frame'
-  }
-  // A component set's padding and look come from its caller; see `variantSetProps`.
-  const containerNode = ctx.graph.createNode(containerType, parentId, {
-    name: containerNames[containerType] ?? containerType,
-    x: bounds.x,
-    y: bounds.y,
-    width: bounds.width,
-    height: bounds.height,
-    fills: [],
-    ...extraProps
-  })
+  const containerNode = wrapNodes(
+    ctx.graph,
+    containerType,
+    selectedNodes,
+    parentId,
+    index,
+    extraProps
+  )
   const containerId = containerNode.id
-
-  ctx.graph.insertChildAt(containerId, parentId, firstIndex)
-
-  for (const n of selectedNodes) {
-    ctx.graph.reparentNode(n.id, containerId)
-  }
-
   ctx.setSelectedIds(new Set([containerId]))
 
   ctx.undo.push({
     label: `Create ${containerType.toLowerCase().replace('_', ' ')}`,
     forward: () => {
-      const c = ctx.graph.createNode(containerType, parentId, {
+      const nodes = origPositions.flatMap((n) => ctx.graph.getNode(n.id) ?? [])
+      wrapNodes(ctx.graph, containerType, nodes, parentId, index, {
         ...containerNode,
-        ...extraProps,
+        childIds: [],
         id: containerId
       })
-      ctx.graph.insertChildAt(c.id, parentId, firstIndex)
-      for (const n of origPositions) ctx.graph.reparentNode(n.id, c.id)
-      ctx.setSelectedIds(new Set([c.id]))
+      ctx.setSelectedIds(new Set([containerId]))
     },
     inverse: () => {
       for (const orig of origPositions) {
@@ -79,6 +108,8 @@ export function wrapSelectionInContainer(
         ctx.graph.updateNode(orig.id, { x: orig.x, y: orig.y })
       }
       ctx.graph.deleteNode(containerId)
+      // Back to their own places in the stack, lowest first so each index is still free.
+      for (const orig of origPositions) ctx.graph.insertChildAt(orig.id, parentId, orig.index)
       ctx.setSelectedIds(prevSelection)
     }
   })
