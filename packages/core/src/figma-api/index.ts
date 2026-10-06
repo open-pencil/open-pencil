@@ -317,7 +317,7 @@ export class FigmaAPI implements NodeProxyHost {
     const variable = this.graph.variables.get(variableId)
     if (!variable) throw new Error(`Variable "${variableId}" not found`)
     variable.valuesByMode[modeId] = structuredClone(value)
-    reconcileVariableLayouts(this.graph)
+    reconcileVariableLayouts(this.graph, { variables: [variableId] })
   }
 
   deleteVariable(id: string): void {
@@ -334,12 +334,12 @@ export class FigmaAPI implements NodeProxyHost {
 
   bindVariable(nodeId: string, field: string, variableId: string): void {
     this.graph.bindVariable(nodeId, field, variableId)
-    reconcileVariableLayouts(this.graph)
+    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
   }
 
   unbindVariable(nodeId: string, field: string): void {
     this.graph.unbindVariable(nodeId, field)
-    reconcileVariableLayouts(this.graph)
+    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
   }
 
   // --- Boolean Operations ---

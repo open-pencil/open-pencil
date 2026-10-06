@@ -3,6 +3,7 @@ import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
   isModeAttributeName,
+  type BindingScope,
   type TokenExpression,
   type Variable,
   type VariableCollection,
@@ -60,14 +61,20 @@ function setModeEntry(variable: Variable, modeId: string, entry: ModeEntry) {
 
 export function createVariableActions(ctx: EditorContext) {
   /**
-   * Re-resolves every bound layer, for changes to what variables resolve to. Adding, copying, or
-   * reordering variables changes no bound value, so those only request a render: re-resolving
-   * there would resize layers a file saved at a size their binding no longer gives.
+   * Re-resolves the layers a change to what variables resolve to can reach: those bound to the
+   * changed variables or to variables aliasing them. Adding, copying, or reordering variables
+   * changes no bound value, so those only request a render.
    */
-  function refreshVariables() {
-    reconcileVariableLayouts(ctx.graph)
+  function refreshVariables(scope: BindingScope) {
+    reconcileVariableLayouts(ctx.graph, scope)
     ctx.requestRender()
   }
+
+  /** Every variable in a collection, the ones a change to its modes can reach. */
+  function collectionScope(collectionId: string): BindingScope {
+    return { variables: [...(ctx.graph.variableCollections.get(collectionId)?.variableIds ?? [])] }
+  }
+
   function getVariablesByType(type: VariableType) {
     return ctx.graph.getVariablesByType(type)
   }
@@ -145,6 +152,7 @@ export function createVariableActions(ctx: EditorContext) {
     const collection = ctx.graph.variableCollections.get(id)
     if (!collection) return
     const snapshot = structuredClone(collection)
+    const scope: BindingScope = { variables: snapshot.variableIds }
     const variables = snapshot.variableIds
       .map((vid) => ctx.graph.variables.get(vid))
       .filter((v): v is Variable => v != null)
@@ -154,15 +162,15 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Remove collection',
       forward: () => {
         ctx.graph.removeCollection(id)
-        refreshVariables()
+        refreshVariables(scope)
       },
       inverse: () => {
         ctx.graph.addCollection(snapshot)
         for (const v of variables) ctx.graph.addVariable(v)
-        refreshVariables()
+        refreshVariables(scope)
       }
     })
-    refreshVariables()
+    refreshVariables(scope)
   }
 
   function addVariable(variable: Variable) {
@@ -191,16 +199,16 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Remove variable',
       forward: () => {
         ctx.graph.removeVariable(id)
-        refreshVariables()
+        refreshVariables({ variables: [id] })
       },
       // Undo puts the variable back where it was, not at the end of its collection.
       inverse: () => {
         ctx.graph.addVariable(structuredClone(snapshot))
         placeVariables(snapshot.collectionId, order)
-        refreshVariables()
+        refreshVariables({ variables: [id] })
       }
     })
-    refreshVariables()
+    refreshVariables({ variables: [id] })
   }
 
   /** Puts a collection's variables in `order`; ids it does not hold are ignored. */
@@ -294,14 +302,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add mode',
       forward: () => {
         ctx.graph.addMode(collectionId, modeId, modeName)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       },
       inverse: () => {
         ctx.graph.removeMode(collectionId, modeId)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       }
     })
-    refreshVariables()
+    refreshVariables(collectionScope(collectionId))
     return modeId
   }
 
@@ -323,7 +331,7 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Remove mode',
       forward: () => {
         ctx.graph.removeMode(collectionId, modeId)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       },
       inverse: () => {
         ctx.graph.addMode(collectionId, modeId, modeName)
@@ -337,10 +345,10 @@ export function createVariableActions(ctx: EditorContext) {
           if (v) v.valuesByMode[modeId] = structuredClone(value)
         }
         if (wasDefault) ctx.graph.setDefaultMode(collectionId, modeId)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       }
     })
-    refreshVariables()
+    refreshVariables(collectionScope(collectionId))
   }
 
   function renameMode(collectionId: string, modeId: string, newName: string) {
@@ -374,7 +382,7 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Set default mode',
       forward: () => {
         ctx.graph.setDefaultMode(collectionId, modeId)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       },
       inverse: () => {
         // Setting a default moves it first; undo restores the column order too. Look the
@@ -384,10 +392,10 @@ export function createVariableActions(ctx: EditorContext) {
           current.modes = structuredClone(prevModes)
           current.defaultModeId = prevDefault
         }
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       }
     })
-    refreshVariables()
+    refreshVariables(collectionScope(collectionId))
   }
 
   function duplicateMode(collectionId: string, sourceModeId: string): string | undefined {
@@ -402,20 +410,20 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Duplicate mode',
       forward: () => {
         ctx.graph.addMode(collectionId, modeId, modeName, sourceModeId)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       },
       inverse: () => {
         ctx.graph.removeMode(collectionId, modeId)
-        refreshVariables()
+        refreshVariables(collectionScope(collectionId))
       }
     })
-    refreshVariables()
+    refreshVariables(collectionScope(collectionId))
     return modeId
   }
 
   function setActiveMode(collectionId: string, modeId: string) {
     ctx.graph.setActiveMode(collectionId, modeId)
-    refreshVariables()
+    refreshVariables(collectionScope(collectionId))
   }
 
   /**
@@ -441,7 +449,7 @@ export function createVariableActions(ctx: EditorContext) {
     const apply = (entry: ModeEntry) => {
       const target = ctx.graph.variables.get(id)
       if (target) setModeEntry(target, modeId, entry)
-      refreshVariables()
+      refreshVariables({ variables: [id] })
     }
     apply(next)
     ctx.undo.push({
