@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
 
 import { expectDefined } from '#fig-tests/helpers/assert'
 import {
@@ -102,6 +102,22 @@ describe('derived text writer', () => {
     expect(data.glyphs).toEqual([])
     expect(data.baselines).toEqual([])
     expect(data.layoutSize).toEqual({ x: 20, y: 32 })
+  })
+
+  test('writes no glyphs, rather than failing, when the shaper throws', () => {
+    const writer = context(null)
+    writer.shapeText = () => {
+      throw new Error('shaper failed')
+    }
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      const data = expectDefined(buildNodeDerivedTextData(textNode(), writer), 'derived text')
+
+      expect(data.glyphs).toEqual([])
+      expect(warn).toHaveBeenCalledTimes(1)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   test('keeps saved glyphs on the lines they were placed on', () => {

@@ -179,6 +179,16 @@ function savedGlyphRecords(
   })
 }
 
+/** Glyphs are derived data: a shaper failure must not fail the save or copy that writes them. */
+function shapeOrNull(node: SceneNode, context: DerivedTextBuildContext): ShapedText | null {
+  try {
+    return context.shapeText(node)
+  } catch (error) {
+    console.warn(`Writing "${node.name}" without glyphs; text shaping failed:`, error)
+    return null
+  }
+}
+
 /**
  * The `derivedTextData` a text node is written with. Glyphs the node already has (from Figma,
  * or placed along a path) are kept; other text is shaped at the node's width. Text that cannot
@@ -198,7 +208,7 @@ export function buildNodeDerivedTextData(
       ...savedGlyphLayout(node, saved)
     })
   }
-  const shaped = node.textPathData ? null : context.shapeText(node)
+  const shaped = node.textPathData ? null : shapeOrNull(node, context)
   return buildDerivedTextData({
     node,
     glyphs: shaped ? shapedGlyphRecords(shaped, context) : [],
