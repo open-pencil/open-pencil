@@ -1,6 +1,7 @@
 import type { PageSnapshot } from '@open-pencil/core/editor'
 import { computeContentBounds } from '@open-pencil/core/io'
 import type { StepBudget } from '@open-pencil/core/tools'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import { getActiveEditorStore } from '@/app/editor/active-store'
@@ -17,12 +18,15 @@ class RunState {
   agent: AgentHandle | null = null
   /** Each page as it was before the run first edited it, for `diff_changes`. */
   baselines = new Map<string, PageSnapshot>()
+  /** Undo entries the run's edits pushed, oldest first, so its turn can be reverted. */
+  undoEntries: UndoEntry[] = []
 
   start(maxSteps: number, pageId: string): void {
     this.currentSteps = 0
     this.maxSteps = resolveAgentStepLimit(maxSteps)
     this.pageId = pageId
     this.baselines = new Map()
+    this.undoEntries = []
   }
 
   hitLimit(): boolean {
@@ -109,4 +113,15 @@ export function recordRunBaseline(store: EditorStore, snapshot: PageSnapshot): v
 
 export function runBaseline(store: EditorStore, pageId: string): PageSnapshot | null {
   return getRunState(store).baselines.get(pageId) ?? null
+}
+
+/** Note the entry an edit just pushed, if it carries the run's label (`AI: <tool>`). */
+export function recordRunUndoEntry(store: EditorStore, label: string): void {
+  const entry = store.undo.peekUndo()
+  const { undoEntries } = getRunState(store)
+  if (entry?.label === label && !undoEntries.includes(entry)) undoEntries.push(entry)
+}
+
+export function runUndoEntries(store: EditorStore): readonly UndoEntry[] {
+  return getRunState(store).undoEntries
 }

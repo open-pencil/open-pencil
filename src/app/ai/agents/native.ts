@@ -35,15 +35,15 @@ export async function installHarnessCompanion(searchPath: string): Promise<void>
   await installPackage(HARNESS_INSTALL_TARGET, searchPath)
 }
 
+/** The npm arguments that install a package globally; the desktop shell scope pins them. */
+export function npmInstallArgs(packageName: string): string[] {
+  // These are public packages; a user's private project registry may not mirror them.
+  return ['install', '--global', packageName, '--registry=https://registry.npmjs.org']
+}
+
 async function installPackage(packageName: string, searchPath: string): Promise<void> {
   const { Command } = await import('@tauri-apps/plugin-shell')
-  // These are public packages; a user's private project registry may not mirror them.
-  const resolved = resolvePlatformCommand('npm', [
-    'install',
-    '--global',
-    packageName,
-    '--registry=https://registry.npmjs.org'
-  ])
+  const resolved = resolvePlatformCommand('npm', npmInstallArgs(packageName))
   const command = Command.create(resolved.command, resolved.args, {
     env: { PATH: searchPath }
   })

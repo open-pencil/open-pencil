@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@/constants'
+import { APP_VERSION } from '@/app/runtime/version'
 
 /**
  * Name of the entry point installed by `@open-pencil/mcp`.

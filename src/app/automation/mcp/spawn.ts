@@ -11,10 +11,10 @@ import {
 } from '@open-pencil/mcp/tools'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
+import { APP_VERSION } from '@/app/runtime/version'
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
-import { APP_VERSION } from '@/constants'
 
 import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
 import {

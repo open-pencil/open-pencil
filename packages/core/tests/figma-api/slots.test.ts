@@ -6,10 +6,6 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 /** Figma's typings only expose the slot members on `SlotNode`, so narrow before reading them. */
 const isSlot = (node: FigmaNodeProxy): node is FigmaSlotNode => node.type === 'SLOT'
 
-/** `createInstance()` is typed as a bare proxy; the instance surface lives on `InstanceNode`. */
-const isInstance = (node: FigmaNodeProxy): node is FigmaNodeProxy & InstanceNode =>
-  node.type === 'INSTANCE'
-
 // Defaults, names, read-back values, and limit reports were recorded by running the same
 // script against a component in live Figma through figma-use.
 
@@ -78,7 +74,6 @@ describe('slots', () => {
     component.appendChild(Object.assign(api.createFrame(), { name: 'Locked' }))
     component.createSlot().appendChild(Object.assign(api.createRectangle(), { name: 'Default' }))
     const instance = component.createInstance()
-    if (!isInstance(instance)) throw new Error('Missing instance')
     const locked = instance.children.find((child) => child.name === 'Locked')
     const slot = instance.children.find(isSlot)
     if (!locked || !slot) throw new Error('Missing instance layers')

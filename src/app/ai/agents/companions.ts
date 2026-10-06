@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@/constants'
+import { APP_VERSION } from '@/app/runtime/version'
 
 function majorMinor(version: string): string | null {
   const match = /^(\d+)\.(\d+)/.exec(version)

@@ -12,7 +12,6 @@ export {
   buildFigKiwi,
   decompressFigKiwiDataAsync,
   FIG_KIWI_DEFAULT_VERSION,
-  fractionalPosition,
   makeCanvasNodeChange,
   makeDocumentNodeChange,
   mapToFigmaType,

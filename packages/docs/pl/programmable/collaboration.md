@@ -10,10 +10,20 @@ Kilka osób może jednocześnie edytować jeden dokument. Uczestnicy łączą si
 ## Udostępnianie pokoju
 
 1. Kliknij przycisk „Udostępnij” w prawym górnym rogu.
-2. Skopiuj odnośnik `app.openpencil.dev/share/<room-id>`.
+2. Kliknij **Udostępnij ten plik** — odnośnik `app.openpencil.dev/share/<room-id>` zostanie skopiowany.
 3. Wyślij go innym uczestnikom.
 
-Dołączyć może każda osoba znająca odnośnik. Pokój pozostaje dostępny, dopóki co najmniej jeden uczestnik ma otwartą stronę.
+Tylko udostępnienie umieszcza dokument w pokoju: karta, z której udostępniasz, staje się kartą pokoju i pozostaje powiązana ze swoim plikiem. Dołączyć może każda osoba znająca odnośnik.
+
+## Dołączanie do pokoju
+
+Otwórz odnośnik albo wklej go (lub sam identyfikator pokoju) w polu **Dołącz** w panelu udostępniania lub w **Dołącz do pokoju…** na ekranie startowym. Pokój otwiera się we własnej karcie, więc dokumenty, które masz już otwarte, się nie zmieniają. Na komputerze przeglądarka oferuje też **Otwórz w aplikacji na komputer**, co otwiera pokój w OpenPencil przez odnośnik `openpencil://join`.
+
+Dołączasz od razu pod wygenerowaną nazwą, na przykład *Teal Fox*. Własną nazwę ustawisz w panelu udostępniania lub w ustawieniach; będzie używana w każdym pokoju.
+
+Pokoje nie są przechowywane na serwerze: plik znajduje się na urządzeniach osób, które były w pokoju, więc karta pokoju otwiera dokument tylko wtedy, gdy któraś z nich jest online. Do tego czasu karta informuje, że czeka, wyjaśnia, dlaczego i otwiera plik, gdy tylko dołączy ktoś, kto go ma. Pokój, w którym już byłeś, otwiera się od razu z kopii na tym urządzeniu, a Twoje zmiany synchronizują się, gdy inni wrócą.
+
+**Opuść pokój** w panelu udostępniania kończy Twój udział w pokoju. Karta, która udostępniła swój dokument, znów staje się tym dokumentem; karta, która dołączyła, zachowuje plik pokoju jako lokalną, niezapisaną kopię, którą możesz zapisać. Każda karta pokoju ma własne połączenie, więc możesz być w kilku pokojach jednocześnie.
 
 ## Synchronizowane dane
 
@@ -34,7 +44,13 @@ Panel udostępniania wyświetla wszystkich uczestników pokoju wraz z ich agenta
 
 Uczestnicy łączą się bezpośrednio przez WebRTC, dlatego dane dokumentu są przesyłane między przeglądarkami bez centralnego serwera.
 
-Stan dokumentu jest synchronizowany przez Yjs CRDT, który automatycznie łączy równoczesne zmiany. IndexedDB przechowuje stan lokalny, aby można go było odtworzyć po ponownym otwarciu tego samego pokoju.
+Stan dokumentu jest synchronizowany przez Yjs CRDT, który automatycznie łączy równoczesne zmiany.
+
+Przenoszenie i zmiana kolejności warstw również się scalają. Każda warstwa pamięta każdego rodzica, do którego została przeniesiona, i swoje miejsce wśród rodzeństwa, a każdy uczestnik wyznacza z tej historii to samo drzewo warstw ([CRDT drzewa Evana Wallace’a](https://madebyevan.com/algos/crdt-mutable-tree-hierarchy/)). Przeniesienia, zmiany kolejności i nowe warstwy od różnych osób są stosowane; jeśli dwie osoby jednocześnie przeniosą tę samą warstwę, u wszystkich wygrywa to samo przeniesienie. Gdy równoczesne przeniesienia umieściłyby dwie warstwy jedna w drugiej, późniejsze przeniesienie jest cofane, a warstwa, której nowy rodzic został w międzyczasie usunięty, wraca na swoje miejsce.
+
+Wszyscy w pokoju potrzebują wersji OpenPencil, która zapisuje drzewo warstw w ten sam sposób; wersje zapisujące je inaczej nie widzą nawzajem swoich pokojów.
+
+IndexedDB przechowuje stan lokalny: po odświeżeniu strony automatycznie wracasz do pokoju z tym samym stanem.
 
 ## Wskazówki
 

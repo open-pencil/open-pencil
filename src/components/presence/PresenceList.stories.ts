@@ -4,8 +4,8 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import type { FollowTarget } from '@/app/presence/types'
 
 import { room } from './examples/room'
-import type { PresencePersonRow } from './presence'
 import PresenceList from './PresenceList.vue'
+import type { PresencePersonRow } from './rows'
 
 type Args = { rows: PresencePersonRow[]; following: FollowTarget | null }
 

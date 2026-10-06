@@ -8,7 +8,6 @@ export type CollabRoomOptions = {
   roomId: string
   ydoc: Y.Doc
   awareness: awarenessProtocol.Awareness
-  setConnected: () => void
   updatePeersList: () => void
   joinRoom?: JoinCollabRoom
 }
@@ -40,7 +39,6 @@ export function connectCollabRoom({
   roomId,
   ydoc,
   awareness,
-  setConnected,
   updatePeersList,
   joinRoom = joinCollabRoom
 }: CollabRoomOptions): CollabRoomConnection {
@@ -89,7 +87,6 @@ export function connectCollabRoom({
   )
 
   room.onPeerJoin((peerId) => {
-    setConnected()
     sendSyncStep1(Y.encodeStateVector(ydoc), peerId)
     sendAwareness(awarenessProtocol.encodeAwarenessUpdate(awareness, [awareness.clientID]), peerId)
   })

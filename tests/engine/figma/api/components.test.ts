@@ -4,7 +4,7 @@ import { hasInstanceOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
-import { asInstanceNode, asTextNode, createAPI } from './helpers'
+import { asTextNode, createAPI } from './helpers'
 
 describe('components', () => {
   test('exposes component property accessors and applies instance properties', () => {
@@ -13,7 +13,7 @@ describe('components', () => {
     component.name = 'Card'
     component.appendChild(Object.assign(api.createText(), { name: 'Label', characters: 'Default' }))
     const propertyName = component.addComponentProperty('Label', 'TEXT', 'Default')
-    const instance = asInstanceNode(component.createInstance())
+    const instance = component.createInstance()
 
     expect(component.componentPropertyDefinitions[propertyName]?.defaultValue).toBe('Default')
     expect(instance.componentProperties[propertyName]?.value).toBe('Default')
@@ -34,7 +34,7 @@ describe('components', () => {
     const visibleName = component.addComponentProperty('Visible', 'BOOLEAN', true)
     label.componentPropertyReferences = { characters: textName }
     badge.componentPropertyReferences = { visible: visibleName }
-    const instance = asInstanceNode(component.createInstance())
+    const instance = component.createInstance()
 
     expect(component.componentPropertyReferences).toEqual({})
     expect(instance.componentProperties[visibleName]?.value).toBe(true)
@@ -43,7 +43,7 @@ describe('components', () => {
     expect(instance.componentProperties[visibleName]?.value).toBe(false)
 
     const nested = api.createComponent()
-    const slot = asInstanceNode(nested.createInstance())
+    const slot = nested.createInstance()
     slot.componentPropertyReferences = { mainComponent: textName }
     expect(slot.isExposedInstance).toBe(true)
     slot.isExposedInstance = false

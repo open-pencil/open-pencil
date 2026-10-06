@@ -70,9 +70,9 @@
     {
       "identifier": "shell:allow-spawn",
       "allow": [
-        { "name": "claude-agent-acp", "cmd": "claude-agent-acp", "args": true },
-        { "name": "codex-acp", "cmd": "codex-acp", "args": true },
-        { "name": "gemini", "cmd": "gemini", "args": true },
+        { "name": "claude-agent-acp", "cmd": "claude-agent-acp", "args": false },
+        { "name": "codex-acp", "cmd": "codex-acp", "args": false },
+        { "name": "gemini", "cmd": "gemini", "args": ["--acp"] },
         {
           "name": "npm",
           "cmd": "npm",
@@ -85,9 +85,27 @@
             "--registry=https://registry.npmjs.org"
           ]
         },
-        { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": true },
+        { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": false },
         { "name": "openpencil-harness", "cmd": "openpencil-harness", "args": false },
-        { "name": "cmd", "cmd": "cmd", "args": true }
+        { "name": "cmd-claude-agent-acp", "cmd": "cmd", "args": ["/c", "claude-agent-acp"] },
+        { "name": "cmd-codex-acp", "cmd": "cmd", "args": ["/c", "codex-acp"] },
+        { "name": "cmd-gemini", "cmd": "cmd", "args": ["/c", "gemini", "--acp"] },
+        {
+          "name": "cmd-npm",
+          "cmd": "cmd",
+          "args": [
+            "/c",
+            "npm",
+            "install",
+            "--global",
+            {
+              "validator": "^(@agentclientprotocol/(claude-agent-acp|codex-acp)|@open-pencil/(mcp|harness)@[0-9]+\\.[0-9]+\\.[0-9]+)$"
+            },
+            "--registry=https://registry.npmjs.org"
+          ]
+        },
+        { "name": "cmd-openpencil-mcp-http", "cmd": "cmd", "args": ["/c", "openpencil-mcp-http"] },
+        { "name": "cmd-openpencil-harness", "cmd": "cmd", "args": ["/c", "openpencil-harness"] }
       ]
     },
     "shell:allow-stdin-write",
