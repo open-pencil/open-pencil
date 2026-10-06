@@ -50,12 +50,14 @@ describe('plugin API structure parity', () => {
     rect('a', 0)
     const b = rect('b', 100)
     const c = rect('c', 120)
-    b.fills = [{ type: 'SOLID', color: { r: 0, g: 1, b: 0 } }]
+    // Scripts pass Figma paints, which carry no alpha.
+    Reflect.set(b, 'fills', [{ type: 'SOLID', color: { r: 0, g: 1, b: 0 } }])
     const union = figma.union([b, c], host)
     expect(union.name).toBe('Union')
     expect(order()).toEqual(['a', 'Union'])
-    expect(union.fills[0]?.color.r).toBeCloseTo(217 / 255)
-    expect(union.children.map((child: FigmaNodeProxy) => child.name)).toEqual(['b', 'c'])
+    const raw = figma.graph.getNode(union.id)
+    expect(raw?.fills[0]?.color.r).toBeCloseTo(217 / 255)
+    expect(raw?.childIds).toEqual([b.id, c.id])
     expect(figma.subtract([rect('e', 0), rect('f', 10)], host).name).toBe('Subtract')
   })
 
@@ -92,5 +94,21 @@ describe('plugin API structure parity', () => {
     expect(component.clipsContent).toBe(true)
     expect(component.children.map((child: FigmaNodeProxy) => child.id)).toEqual([inner.id])
     expect(frame.removed).toBe(true)
+  })
+
+  test('a component from a group takes its place and children, with no fill', () => {
+    const { figma, host, rect, order } = setup()
+    rect('a', 0)
+    const b = rect('b', 100)
+    const c = rect('c', 200)
+    rect('d', 300)
+    const group = figma.group([b, c], host, 1)
+    group.name = 'grp'
+    const component = figma.createComponentFromNode(group)
+    expect(order()).toEqual(['a', 'grp', 'd'])
+    expect(component.fills).toEqual([])
+    expect(component.children.map((child: FigmaNodeProxy) => child.id)).toEqual([b.id, c.id])
+    expect([b.x, c.x]).toEqual([0, 100])
+    expect(group.removed).toBe(true)
   })
 })

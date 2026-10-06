@@ -1,11 +1,12 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
+import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import type { EditorContext } from '#core/editor/types'
 
-import { wrapNodes } from './container-wrap'
+import { canvasWrapIndex, inStackOrder, wrapNodes } from './container-wrap'
 import { selectedNodesInSharedParent } from './selection'
 
 export type BooleanOperation = 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
@@ -29,6 +30,21 @@ export function createBooleanOperation(
   })
 }
 
+/**
+ * Paints of a new boolean operation, listed bottom to top. From the canvas Figma fills it like its
+ * topmost operand, or like the base for Subtract, without strokes; from the plugin API it gets the
+ * default shape grey.
+ */
+export function booleanOperationPaints(
+  operation: BooleanOperation,
+  nodes: readonly SceneNode[],
+  style: 'canvas' | 'script'
+): Partial<SceneNode> {
+  if (style === 'script') return { fills: newLayerDefaults('RECTANGLE').fills, strokes: [] }
+  const source = operation === 'SUBTRACT' ? nodes.at(0) : nodes.at(-1)
+  return { fills: copyFills(source?.fills ?? []), strokes: [] }
+}
+
 export function booleanOperationSelected(
   ctx: EditorContext,
   selectedNodes: SceneNode[],
@@ -36,32 +52,43 @@ export function booleanOperationSelected(
 ) {
   const selection = selectedNodesInSharedParent(ctx, selectedNodes)
   if (!selection || selection.topLevel.length < 2) return null
-  const { topLevel, parentId, parent } = selection
-  if (topLevel.some((node) => !canMakeBooleanSourceNode(node, ctx.graph))) return null
+  const { parentId, parent } = selection
+  if (selection.topLevel.some((node) => !canMakeBooleanSourceNode(node, ctx.graph))) return null
 
+  const operands = inStackOrder(ctx.graph, selection.topLevel, parentId)
   const prevSelection = new Set(ctx.state.selectedIds)
-  const childIds = topLevel.map((node) => node.id)
-  const childSnapshots = childIds.map((id) => ({ id, subtree: snapshotSubtree(ctx.graph, id) }))
-  const origPositions = topLevel.map((node) => ({ id: node.id, x: node.x, y: node.y }))
-  const firstIndex = Math.min(...childIds.map((id) => parent.childIds.indexOf(id)))
-  const booleanNode = createBooleanOperation(ctx.graph, topLevel, parentId, operation, firstIndex, {
-    fills: copyFills(topLevel[0].fills),
-    strokes: copyStrokes(topLevel[0].strokes)
-  })
+  const childSnapshots = operands.map((node) => ({
+    id: node.id,
+    subtree: snapshotSubtree(ctx.graph, node.id)
+  }))
+  const origPositions = operands.map((node) => ({
+    id: node.id,
+    x: node.x,
+    y: node.y,
+    index: parent.childIds.indexOf(node.id)
+  }))
+  const index = canvasWrapIndex(parent, operands)
+  const booleanNode = createBooleanOperation(
+    ctx.graph,
+    operands,
+    parentId,
+    operation,
+    index,
+    booleanOperationPaints(operation, operands, 'canvas')
+  )
   const booleanId = booleanNode.id
   ctx.setSelectedIds(new Set([booleanId]))
 
   ctx.undo.push({
     label: operationLabel(operation),
     forward: () => {
-      const restored = ctx.graph.createNode('BOOLEAN_OPERATION', parentId, {
+      const nodes = origPositions.flatMap((pos) => ctx.graph.getNode(pos.id) ?? [])
+      createBooleanOperation(ctx.graph, nodes, parentId, operation, index, {
         ...booleanNode,
         childIds: [],
         id: booleanId
       })
-      ctx.graph.insertChildAt(restored.id, parentId, firstIndex)
-      for (const id of childIds) ctx.graph.reparentNode(id, restored.id)
-      ctx.setSelectedIds(new Set([restored.id]))
+      ctx.setSelectedIds(new Set([booleanId]))
     },
     inverse: () => {
       for (const { id, subtree } of childSnapshots) {
@@ -70,13 +97,12 @@ export function booleanOperationSelected(
         if (!ctx.graph.getNode(id)) restoreSubtree(ctx.graph, root, parentId, subtree)
         else ctx.graph.reparentNode(id, parentId)
       }
-      for (let i = 0; i < childIds.length; i++) {
-        const id = childIds[i]
-        const pos = origPositions[i]
-        ctx.graph.insertChildAt(id, parentId, firstIndex + i)
-        ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
-      }
       ctx.graph.deleteNode(booleanId)
+      // Back to their own places in the stack, lowest first so each index is still free.
+      for (const pos of origPositions) {
+        ctx.graph.insertChildAt(pos.id, parentId, pos.index)
+        ctx.graph.updateNode(pos.id, { x: pos.x, y: pos.y })
+      }
       ctx.setSelectedIds(prevSelection)
     }
   })

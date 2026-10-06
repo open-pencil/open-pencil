@@ -19,7 +19,7 @@ import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 import { IS_BROWSER } from '#core/constants'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
-import { createBooleanOperation } from '#core/editor/structure/boolean'
+import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group'
 import type { RasterCodec } from '#core/io/formats/raster'
@@ -352,9 +352,14 @@ export class FigmaAPI implements NodeProxyHost {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
     const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const group = createBooleanOperation(this.graph, members, parentId, operation, index, {
-      fills: newLayerDefaults('RECTANGLE').fills
-    })
+    const group = createBooleanOperation(
+      this.graph,
+      members,
+      parentId,
+      operation,
+      index,
+      booleanOperationPaints(operation, members, 'script')
+    )
     return this.wrapNode(group.id) as FigmaBooleanOperationNode
   }
 

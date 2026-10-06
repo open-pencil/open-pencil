@@ -15,8 +15,8 @@ import {
 } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
+import { becomesComponent, componentWrapProps } from '#core/editor/components/create'
 import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'
-import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
@@ -524,17 +524,21 @@ export function combineComponentsAsVariants(
 }
 
 /**
- * Makes a component from a layer as Figma's `createComponentFromNode` does: a frame becomes a new
- * component with its look, layout, and children in its place in the stack, and any other layer is
- * wrapped in a new component of its size, named after it.
+ * Makes a component from a layer as Figma's `createComponentFromNode` does: a frame or group
+ * becomes a new component with its look and children in its place in the stack, and any other
+ * layer is wrapped; see `becomesComponent`. Unlike the canvas command, the component takes a new id.
  */
 export function componentFromNode(graph: SceneGraph, node: SceneNode, parentId: string): SceneNode {
   const index = graph.getNode(parentId)?.childIds.indexOf(node.id) ?? -1
-  if (node.type !== 'FRAME') {
-    return wrapNodes(graph, 'COMPONENT', [node], parentId, index < 0 ? undefined : index, {
-      ...newLayerDefaults('COMPONENT'),
-      name: node.name
-    })
+  if (!becomesComponent(node)) {
+    return wrapNodes(
+      graph,
+      'COMPONENT',
+      [node],
+      parentId,
+      index < 0 ? undefined : index,
+      componentWrapProps([node])
+    )
   }
   const component = graph.createNode('COMPONENT', parentId, {
     ...cloneNodeProps(node, null),

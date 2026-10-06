@@ -19,14 +19,16 @@ const CONTAINER_NAMES: Record<WrapContainerType, string> = {
   FRAME: 'Frame'
 }
 
-/** The parent all these layers share, or null when they are not siblings. */
-export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+/**
+ * The parent these layers share when a new container may go there, or null when they are not
+ * siblings or sit in the locked part of an instance.
+ */
+export function wrapParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
   const first = nodes.at(0)
   if (!first) return null
   const parentId = first.parentId ?? ctx.state.currentPageId
-  return nodes.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId)
-    ? parentId
-    : null
+  if (nodes.some((node) => (node.parentId ?? ctx.state.currentPageId) !== parentId)) return null
+  return prepareSlotEdits(ctx, [parentId]) ? parentId : null
 }
 
 /**
@@ -50,14 +52,29 @@ export function wrapNodes(
     fills: [],
     ...props
   })
-  for (const node of nodes) graph.reparentNode(node.id, container.id)
+  for (const node of inStackOrder(graph, nodes, parentId)) {
+    graph.reparentNode(node.id, container.id)
+  }
   if (index !== undefined) graph.insertChildAt(container.id, parentId, index)
   return container
 }
 
-/** Index a container made from `nodes` takes: where the lowest of them sat. */
-function lowestIndex(parent: SceneNode, nodes: readonly SceneNode[]): number {
-  return Math.min(...nodes.map((node) => parent.childIds.indexOf(node.id)))
+/** Sibling layers bottom to top, whatever order they were selected in. */
+export function inStackOrder(
+  graph: SceneGraph,
+  nodes: readonly SceneNode[],
+  parentId: string
+): SceneNode[] {
+  const order = graph.getNode(parentId)?.childIds ?? []
+  return nodes.toSorted((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+}
+
+/**
+ * Where Figma's canvas commands put a container made from `nodes`: in the topmost one's place,
+ * counted among the children left once they move into it.
+ */
+export function canvasWrapIndex(parent: SceneNode, nodes: readonly SceneNode[]): number {
+  return Math.max(...nodes.map((node) => parent.childIds.indexOf(node.id))) - (nodes.length - 1)
 }
 
 export function wrapSelectionInContainer(
@@ -66,19 +83,15 @@ export function wrapSelectionInContainer(
   selectedNodes: SceneNode[],
   extraProps?: Partial<SceneNode>
 ) {
-  const parentId = sharedParentId(ctx, selectedNodes)
-  if (!parentId) return null
-
-  const parent = ctx.graph.getNode(parentId)
-  if (!parent) return null
-  // The locked part of an instance takes no new containers.
-  if (!prepareSlotEdits(ctx, [parentId])) return null
+  const parentId = wrapParentId(ctx, selectedNodes)
+  const parent = parentId ? ctx.graph.getNode(parentId) : undefined
+  if (!parentId || !parent) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const origPositions = selectedNodes
     .map((n) => ({ id: n.id, x: n.x, y: n.y, index: parent.childIds.indexOf(n.id) }))
     .toSorted((a, b) => a.index - b.index)
-  const index = lowestIndex(parent, selectedNodes)
+  const index = canvasWrapIndex(parent, selectedNodes)
 
   const containerNode = wrapNodes(
     ctx.graph,

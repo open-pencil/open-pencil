@@ -1,6 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FRAME_FILL } from '#core/constants'
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group-bounds'
 
@@ -70,10 +69,9 @@ export function createStructureActions(ctx: EditorContext) {
     return wrapSelectionInContainer('GROUP', selectedNodes)
   }
 
+  /** Figma frames a selection without a fill or clipping, unlike a drawn frame. */
   function frameSelection(selectedNodes: SceneNode[]) {
-    return wrapSelectionInContainer('FRAME', selectedNodes, {
-      fills: [structuredClone(DEFAULT_FRAME_FILL)]
-    })
+    return wrapSelectionInContainer('FRAME', selectedNodes)
   }
 
   /**

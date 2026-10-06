@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { becomesComponent, componentWrapProps } from './components/create'
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
@@ -28,7 +29,7 @@ export function createComponentActions(ctx: EditorContext) {
 
       if (node.type === 'COMPONENT') return
 
-      if (node.type === 'FRAME' || node.type === 'GROUP') {
+      if (becomesComponent(node)) {
         ctx.graph.updateNode(node.id, { type: 'COMPONENT' })
         ctx.setSelectedIds(new Set([node.id]))
         ctx.undo.push({
@@ -46,7 +47,7 @@ export function createComponentActions(ctx: EditorContext) {
       }
     }
 
-    wrapSelectionInContainer('COMPONENT', selectedNodes)
+    wrapSelectionInContainer('COMPONENT', selectedNodes, componentWrapProps(selectedNodes))
   }
 
   function createComponentSetFromComponents(

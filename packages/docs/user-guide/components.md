@@ -17,7 +17,7 @@ Local assets are grouped by source page. Published library assets remain availab
 
 Select a frame or group and press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd>). The selection becomes a reusable component.
 
-If you select multiple nodes, they're wrapped in a new component positioned at their bounding box.
+Any other layer, or several layers, is wrapped in a new white component at their bounding box, in the topmost layer's place in the layer list; a single wrapped layer gives the component its name.
 
 Components display a purple label with a diamond icon above them.
 
