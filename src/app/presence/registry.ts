@@ -1,6 +1,5 @@
 import { shallowRef, type ShallowRef } from 'vue'
 
-import type { PresenceCursor } from '@open-pencil/core/canvas'
 import { AI_ACTIVE_COLOR } from '@open-pencil/core/constants'
 import { computeContentBounds } from '@open-pencil/core/io'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -10,6 +9,7 @@ import type { RemotePeer } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'
 
 import { pickCallsign } from './callsigns'
+import { glideViewTo, showCursors, stopViewGlide, type TrackedCursor } from './cursor-motion'
 import { MAX_NAME_LENGTH } from './schema'
 import type { AgentKind, AgentPresence, FollowTarget, PersonPoint } from './types'
 
@@ -114,11 +114,12 @@ export function presenceByPage(store: EditorStore): Map<string, PagePresenceEntr
   return byPage
 }
 
-function agentCursor(agent: AgentPresence, color: Color, pageId: string): PresenceCursor[] {
+function agentCursor(agent: AgentPresence, color: Color, pageId: string): TrackedCursor[] {
   if (agent.status === 'idle' || agent.cursor?.pageId !== pageId) return []
   const { x, y } = agent.cursor
   return [
     {
+      id: `agent:${agent.id}`,
       kind: 'agent',
       name: agent.name,
       color,
@@ -134,11 +135,12 @@ function agentCursor(agent: AgentPresence, color: Color, pageId: string): Presen
 export function refreshCursors(store: EditorStore): void {
   const { agents, peers } = presenceOf(store)
   const pageId = store.state.currentPageId
-  store.state.presenceCursors = [
-    ...peers.value.flatMap((peer): PresenceCursor[] => [
+  showCursors(store, [
+    ...peers.value.flatMap((peer): TrackedCursor[] => [
       ...(peer.cursor?.pageId === pageId
         ? [
             {
+              id: `person:${peer.clientId}`,
               kind: 'person' as const,
               name: peer.name,
               color: peer.color,
@@ -150,8 +152,7 @@ export function refreshCursors(store: EditorStore): void {
       ...peer.agents.flatMap((agent) => agentCursor(agent, peer.color, pageId))
     ]),
     ...agents.value.flatMap((agent) => agentCursor(agent, localAgentColor(store), pageId))
-  ]
-  store.requestRepaint()
+  ])
   keepFollowing(store)
 }
 
@@ -198,12 +199,16 @@ function keepFollowing(store: EditorStore): void {
     })
     return
   }
-  presence.moving = true
-  try {
-    store.centerOn(point.x, point.y, point.zoom)
-  } finally {
-    presence.moving = false
-  }
+  glideViewTo(store, point, point.zoom ?? store.state.zoom, (x, y, zoom) => {
+    // Following ended while the view was on its way: leave it where the person left it.
+    if (!presence.following.value) return
+    presence.moving = true
+    try {
+      store.centerOn(x, y, zoom)
+    } finally {
+      presence.moving = false
+    }
+  })
 }
 
 /** A page change following did not make is yours, so it ends following, even of a resting agent. */
@@ -245,6 +250,7 @@ export function followedLabel(store: EditorStore): FollowedLabel | null {
 function stopFollowing(store: EditorStore): void {
   const presence = presenceOf(store)
   presence.following.value = null
+  stopViewGlide(store)
   if (presence.switching) {
     presence.switching = null
     void store.switchPage(store.state.currentPageId)

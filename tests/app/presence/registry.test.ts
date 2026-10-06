@@ -34,7 +34,16 @@ test('draws active agents on their page, in their owner color', () => {
   there.update({ status: 'editing', cursor: { x: 1, y: 1, pageId: other } })
   setOwnerColor(store, red)
   expect(store.state.presenceCursors).toEqual([
-    { kind: 'agent', name: here.name, color: red, x: 5, y: 6, selection: undefined }
+    {
+      id: `agent:${here.id}`,
+      kind: 'agent',
+      name: here.name,
+      color: red,
+      x: 5,
+      y: 6,
+      selection: undefined,
+      outline: undefined
+    }
   ])
 })
 
@@ -282,4 +291,15 @@ test('keeps people with the same name apart on a page', () => {
       .get(pageId)
       ?.map((entry) => entry.id)
   ).toEqual(['person:4', 'person:5'])
+})
+
+test('without animation frames, cursors and following move at once', () => {
+  const { store, pageId } = setup()
+  const agent = addAgent(store, 'chat')
+  agent.update({ status: 'editing', cursor: { x: 5, y: 6, pageId } })
+  agent.update({ status: 'editing', cursor: { x: 50, y: 60, pageId } })
+  expect(store.state.presenceCursors.map(({ x, y }) => ({ x, y }))).toEqual([{ x: 50, y: 60 }])
+
+  follow(store, { kind: 'agent', agentId: agent.id })
+  expect(centered(store)).toEqual({ x: 50, y: 60 })
 })

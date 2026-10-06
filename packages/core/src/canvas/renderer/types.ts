@@ -18,6 +18,8 @@ export type MeasurementMode = 'off' | 'shallow' | 'deep'
 
 /** Where a collaborator or an agent is working, in world coordinates. */
 export interface PresenceCursor {
+  /** Who it is, kept between updates; editors use it to glide a cursor rather than jump it. */
+  id?: string
   kind: 'person' | 'agent'
   name: string
   /** A person's color, or the color of the person who runs the agent. */
