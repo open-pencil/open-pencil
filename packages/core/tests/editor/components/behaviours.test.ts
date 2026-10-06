@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
+import { expectDefined } from '#core-tests/helpers/assert'
 import {
   emptyBehaviour,
   missingBindings,
@@ -45,7 +46,7 @@ describe('completing a behaviour', () => {
   test('a textarea drawn as a rectangle gets a text layer and property in one step', () => {
     const { editor, component, behaviour } = bareComponent('textarea')
     const undoDepth = editor.undo.undoLabel
-    const id = editor.addBehaviourText(component.id, 'value', 'Text')
+    const id = expectDefined(editor.addBehaviourText(component.id, 'value', 'Text'), 'property id')
     if (!id) throw new Error('No text property')
 
     const text = editor.graph.getChildren(component.id).find((child) => child.type === 'TEXT')
@@ -68,7 +69,7 @@ describe('completing a behaviour', () => {
   test('an existing text layer becomes the text instead of a new one', () => {
     const { editor, component } = bareComponent('textField')
     const label = editor.graph.createNode('TEXT', component.id, { name: 'Label', text: 'Email' })
-    const id = editor.addBehaviourText(component.id, 'value', 'Text')
+    const id = expectDefined(editor.addBehaviourText(component.id, 'value', 'Text'), 'property id')
     expect(editor.graph.getChildren(component.id).filter((child) => child.type === 'TEXT')).toHaveLength(
       1
     )
@@ -89,7 +90,7 @@ describe('completing a behaviour', () => {
     editor.setBehaviour(set.id, emptyBehaviour('switch'))
     const undoDepth = editor.undo.undoLabel
 
-    const id = editor.addBehaviourVariant(set.id, 'value', 'On')
+    const id = expectDefined(editor.addBehaviourVariant(set.id, 'value', 'On'), 'property id')
     const variants = editor.graph.getChildren(set.id)
     expect(variants.map((variant) => variant.componentPropertyValues.On)).toEqual(['Off', 'On'])
     expect(readBehaviour(editor.graph.getNode(set.id) ?? set)?.booleans.value).toEqual({
@@ -105,7 +106,7 @@ describe('completing a behaviour', () => {
 
   test('a slider gets a new slot frame for a missing part', () => {
     const { editor, component, behaviour } = bareComponent('slider')
-    const id = editor.addBehaviourPart(component.id, 'track', 'Track')
+    const id = expectDefined(editor.addBehaviourPart(component.id, 'track', 'Track'), 'property id')
     const frame = editor.graph.getChildren(component.id).find((child) => child.name === 'Track')
     expect(frame?.componentPropertyReferences).toEqual([{ propertyId: id, field: 'SLOT_CONTENT' }])
     expect(behaviour()?.parts.track).toBe(id)
@@ -115,11 +116,11 @@ describe('completing a behaviour', () => {
 
   test('a lone slider gets state variants as a new set that keeps its behaviour, in one step', () => {
     const { editor, component } = bareComponent('slider')
-    const track = editor.addBehaviourPart(component.id, 'track', 'Track')
+    const track = expectDefined(editor.addBehaviourPart(component.id, 'track', 'Track'), 'property id')
     const page = editor.state.currentPageId
     const undoDepth = editor.undo.undoLabel
 
-    const id = editor.addBehaviourStates(component.id)
+    const id = expectDefined(editor.addBehaviourStates(component.id), 'property id')
     const set = editor.graph.getNode(component.parentId ?? '')
     if (set?.type !== 'COMPONENT_SET' || !id) throw new Error('No set')
     const variants = editor.graph.getChildren(set.id)
@@ -168,7 +169,7 @@ describe('completing a behaviour', () => {
 
   test('a lone switch gets Off and On variants as a new set', () => {
     const { editor, component } = bareComponent('switch')
-    const id = editor.addBehaviourVariant(component.id, 'value', 'On')
+    const id = expectDefined(editor.addBehaviourVariant(component.id, 'value', 'On'), 'property id')
     const set = editor.graph.getNode(component.parentId ?? '')
     expect(set?.type).toBe('COMPONENT_SET')
     expect(set && readBehaviour(set)?.booleans.value).toEqual({ propertyId: id, on: 'On', off: 'Off' })
@@ -179,7 +180,7 @@ describe('completing a behaviour', () => {
     editor.addBehaviourStates(component.id)
     const set = editor.graph.getNode(component.parentId ?? '')
     if (!set) throw new Error('No set')
-    const id = editor.addBehaviourPart(set.id, 'thumb', 'Thumb')
+    const id = expectDefined(editor.addBehaviourPart(set.id, 'thumb', 'Thumb'), 'property id')
     const slots = editor.graph
       .getChildren(set.id)
       .map((variant) => editor.graph.getChildren(variant.id).find((child) => child.name === 'Thumb'))

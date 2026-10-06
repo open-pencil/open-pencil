@@ -53,7 +53,7 @@ describe('.fig round trip of behaviours', () => {
     })
     expect(missingBindings(editor.graph, set, readBehaviour(set) ?? emptyBehaviour('button'))).toEqual([])
 
-    const reopened = await parseFigFile((await exportFigFile(editor.graph)).buffer)
+    const reopened = await parseFigFile((await exportFigFile(editor.graph)).slice().buffer)
     const owner = [...reopened.nodes.values()].find((node) => node.name === 'Field')
     const behaviour = owner && readBehaviour(owner)
     if (!owner || !behaviour) throw new Error('Behaviour lost')
