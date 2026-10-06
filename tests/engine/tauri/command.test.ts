@@ -93,6 +93,7 @@ describe('shell scope', () => {
       test(`allows exactly ${name} ${args.join(' ')} on ${userAgent === MAC_UA ? 'macOS' : 'Windows'}`, () => {
         const resolved = resolvePlatformCommand(name, args, userAgent)
         const entry = spawnScope().find((candidate) => candidate.name === resolved.command)
+        expect(entry?.cmd).toBe(userAgent === WINDOWS_UA ? 'cmd' : name)
         expect(entry?.args === false ? [] : entry?.args).toEqual(resolved.args)
       })
     }
