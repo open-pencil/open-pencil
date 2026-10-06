@@ -274,7 +274,7 @@ test('a rectangle made a Textarea gets its text layer from the panel and takes t
   const section = propertySection(editor.page, 'Behaviour')
   await section.getByRole('button', { name: 'Add behaviour' }).click()
   await editor.page.getByRole('option', { name: /Textarea/ }).click()
-  await expect(section.getByRole('button', { name: 'Still needed: Text.' })).toBeVisible()
+  await expect(section.getByRole('status')).toHaveText('Still needed: Text.')
   await section.getByRole('button', { name: 'Add text layer' }).click()
   await expect(section.getByText('Ready', { exact: true })).toBeVisible()
 

@@ -93,7 +93,6 @@
   "missingStyle": "Stile mancante ({id})",
   "layersCount": "{count} livelli",
   "goToMainComponent": "Vai al componente principale",
-  "detachInstance": "Scollega istanza",
   "solid": "Pieno",
   "linearGradient": "Lineare",
   "radialGradient": "Radiale",

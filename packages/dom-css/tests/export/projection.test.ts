@@ -38,6 +38,15 @@ describe('DOM projection', () => {
     expect(root.inlineStyle?.position).toBeUndefined()
     expect(element(root.children[0]).inlineStyle?.position).toBeUndefined()
   })
+
+  test('children start at the cross-axis start, as auto layout places them, not stretched', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const column = graph.createNode('FRAME', page.id, { name: 'Column', layoutMode: 'VERTICAL' })
+
+    const root = element(sceneNodeToDesignDocument(graph, column.id).children[0])
+    expect(root.inlineStyle?.['align-items']).toBe('flex-start')
+  })
 })
 
 describe('DOM projection sizes', () => {

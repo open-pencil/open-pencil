@@ -37,15 +37,14 @@ function justifyContentToCSS(value: SceneNode['primaryAxisAlign']): string | und
   return undefined
 }
 
-function alignItemsToCSS(value: SceneNode['counterAxisAlign']): string | undefined {
-  if (value === 'CENTER') return 'center'
-  if (value === 'MAX') return 'flex-end'
-  if (value === 'STRETCH') return 'stretch'
-  if (value === 'BASELINE') return 'baseline'
-  return undefined
-}
-
-function alignSelfToCSS(value: SceneNode['layoutAlignSelf']): string | undefined {
+/**
+ * Cross-axis alignment of a container's children, or of one child. Auto layout starts children
+ * at the start while flexbox stretches them, so start is written out: a child that hugs its
+ * content keeps its own size.
+ */
+function alignToCSS(
+  value: SceneNode['counterAxisAlign'] | SceneNode['layoutAlignSelf']
+): string | undefined {
   if (value === 'MIN') return 'flex-start'
   if (value === 'CENTER') return 'center'
   if (value === 'MAX') return 'flex-end'
@@ -255,7 +254,7 @@ function styleFromSceneNode(
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   addCornerRadii(style, node, css)
   if (node.clipsContent) style.overflow = 'hidden'
-  const alignSelf = alignSelfToCSS(node.layoutAlignSelf)
+  const alignSelf = alignToCSS(node.layoutAlignSelf)
   if (alignSelf) style['align-self'] = alignSelf
 
   addLayoutChild(style, node, parent)
@@ -269,7 +268,7 @@ function styleFromSceneNode(
     // Row is the flexbox default.
     if (node.layoutMode === 'VERTICAL') style['flex-direction'] = 'column'
     const justifyContent = justifyContentToCSS(node.primaryAxisAlign)
-    const alignItems = alignItemsToCSS(node.counterAxisAlign)
+    const alignItems = alignToCSS(node.counterAxisAlign)
     if (justifyContent) style['justify-content'] = justifyContent
     if (alignItems) style['align-items'] = alignItems
     if (node.layoutWrap === 'WRAP') style['flex-wrap'] = 'wrap'

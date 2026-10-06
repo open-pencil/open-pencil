@@ -106,7 +106,6 @@
   "missingStyle": "不明なスタイル ({id})",
   "layersCount": "{count} 個のレイヤー",
   "goToMainComponent": "メインコンポーネントに移動",
-  "detachInstance": "インスタンスの切り離し",
   "solid": "ソリッド (単色)",
   "linearGradient": "線形グラデーション",
   "radialGradient": "放射状グラデーション",

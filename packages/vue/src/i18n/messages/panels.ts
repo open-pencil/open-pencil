@@ -396,7 +396,6 @@ export const panelMessageDefaults = {
   missingStyle: params('Missing style ({id})'),
   layersCount: params('{count} layers'),
   goToMainComponent: 'Go to main component',
-  detachInstance: 'Detach instance',
 
   gap: 'Gap',
 

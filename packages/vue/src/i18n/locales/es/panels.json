@@ -106,7 +106,6 @@
   "missingStyle": "Estilo no disponible ({id})",
   "layersCount": "{count} capas",
   "goToMainComponent": "Ir al componente principal",
-  "detachInstance": "Separar instancia",
   "solid": "Sólido",
   "linearGradient": "Lineal",
   "radialGradient": "Radial",

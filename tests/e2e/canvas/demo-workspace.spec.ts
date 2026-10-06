@@ -16,7 +16,8 @@ test.use({ viewport: { width: 1200, height: 1300 } })
 for (const [name, snapshot] of [
   ['01 · Components & variables', 'demo-components-and-variables'],
   ['02 · Typography', 'demo-typography'],
-  ['03 · Paint & effects', 'demo-paint']
+  ['03 · Paint & effects', 'demo-paint'],
+  ['04 · Controls', 'demo-controls']
 ] as const) {
   test(`demo startup and page navigation: ${name}`, async ({ page }) => {
     const canvas = await openDemo(page)

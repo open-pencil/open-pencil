@@ -93,7 +93,6 @@
   "missingStyle": "Fehlender Stil ({id})",
   "layersCount": "{count} Ebenen",
   "goToMainComponent": "Zur Hauptkomponente",
-  "detachInstance": "Instanz lösen",
   "solid": "Vollton",
   "linearGradient": "Linear",
   "radialGradient": "Radial",

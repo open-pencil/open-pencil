@@ -106,7 +106,6 @@
   "missingStyle": "Недоступный стиль ({id})",
   "layersCount": "{count} слоёв",
   "goToMainComponent": "Перейти к главному компоненту",
-  "detachInstance": "Отвязать экземпляр",
   "solid": "Сплошной",
   "linearGradient": "Линейный",
   "radialGradient": "Радиальный",

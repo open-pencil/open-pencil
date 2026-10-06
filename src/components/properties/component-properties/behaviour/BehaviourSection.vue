@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { BehaviourKind, InteractionState } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
@@ -107,15 +107,6 @@ const nextStep = computed(() => {
   const list = new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(names)
   return panels.value.behaviourNextStep({ names: list })
 })
-
-const root = useTemplateRef<HTMLElement>('root')
-/** Bring the first missing row into view and focus its control. */
-function showMissing() {
-  const [missing] = behaviour?.missing ?? []
-  const row = missing ? root.value?.querySelector<HTMLElement>(`[data-row="${missing}"]`) : null
-  row?.scrollIntoView({ block: 'nearest' })
-  row?.querySelector<HTMLElement>('button, input')?.focus()
-}
 </script>
 
 <template>
@@ -127,7 +118,7 @@ function showMissing() {
       </IconButton>
     </template>
 
-    <div v-if="behaviour && kind" ref="root" class="flex flex-col gap-2" data-property="behaviour">
+    <div v-if="behaviour && kind" class="flex flex-col gap-2" data-property="behaviour">
       <div class="flex items-center gap-1.5 text-xs text-surface">
         <icon-lucide-mouse-pointer-click class="size-3.5 shrink-0 text-component" />
         <span class="min-w-0 flex-1 truncate font-medium">{{ kind.label }}</span>
@@ -140,16 +131,15 @@ function showMissing() {
         </span>
       </div>
 
-      <button
+      <p
         v-if="behaviour.missing.length"
-        type="button"
-        class="flex items-start gap-1.5 rounded bg-issue-warning/10 px-1.5 py-1 text-left text-[11px] leading-4 text-issue-warning outline-none hover:bg-issue-warning/20 focus-visible:bg-issue-warning/20"
+        role="status"
+        class="flex items-start gap-1.5 rounded bg-issue-warning/10 px-1.5 py-1 text-[11px] leading-4 text-issue-warning"
         data-property="behaviour-missing"
-        @click="showMissing"
       >
         <SeverityIcon severity="warning" class="mt-0.5 shrink-0" />
         {{ nextStep }}
-      </button>
+      </p>
 
       <BehaviourRow
         v-for="row in mainRows"

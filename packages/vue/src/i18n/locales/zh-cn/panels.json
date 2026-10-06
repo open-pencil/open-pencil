@@ -106,7 +106,6 @@
   "missingStyle": "缺失样式 ({id})",
   "layersCount": "{count} 个图层",
   "goToMainComponent": "转到主组件",
-  "detachInstance": "分离实例",
   "solid": "纯色",
   "linearGradient": "线性",
   "radialGradient": "径向",

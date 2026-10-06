@@ -93,7 +93,6 @@
   "missingStyle": "Brakujący styl ({id})",
   "layersCount": "{count} warstw",
   "goToMainComponent": "Przejdź do głównego komponentu",
-  "detachInstance": "Odłącz instancję",
   "solid": "Jednolity",
   "linearGradient": "Liniowy",
   "radialGradient": "Promieniowy",

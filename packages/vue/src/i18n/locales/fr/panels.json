@@ -93,7 +93,6 @@
   "missingStyle": "Style manquant ({id})",
   "layersCount": "{count} calques",
   "goToMainComponent": "Aller au composant principal",
-  "detachInstance": "Détacher l'instance",
   "solid": "Uni",
   "linearGradient": "Linéaire",
   "radialGradient": "Radial",

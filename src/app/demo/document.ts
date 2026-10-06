@@ -5,6 +5,7 @@ import { yieldToUI } from '@/app/document/io/browser'
 import type { EditorStore } from '@/app/editor/session'
 
 import { createAnnouncementSection } from './announcement/section'
+import { createControlsSection } from './controls/section'
 import { loadDemoFonts } from './fonts'
 import { createPaintSection } from './paint/section'
 import { createComponentsSection } from './sections/components'
@@ -79,7 +80,7 @@ function createDemoBuild(store: EditorStore, preparation: DemoPreparation): Demo
   }
   const abandoned = () => store.graph !== graph || preparation.signal.aborted
   const step = (completed: number) =>
-    preparation.update({ phase: 'materializing', completed, total: 4, unit: 'pages' })
+    preparation.update({ phase: 'materializing', completed, total: 5, unit: 'pages' })
 
   async function run(): Promise<boolean> {
     await store.canvasReady
@@ -99,7 +100,8 @@ function createDemoBuild(store: EditorStore, preparation: DemoPreparation): Demo
     graph.updateNode(state.initialPageId, { name: '01 · Components & variables' })
     const typography = graph.addPage('02 · Typography')
     const paint = graph.addPage('03 · Paint & effects')
-    state.createdPageIds.push(typography.id, paint.id)
+    const controls = graph.addPage('04 · Controls')
+    state.createdPageIds.push(typography.id, paint.id, controls.id)
 
     // Build page 01 while it is still the current page, so shape creation inside
     // the section helpers lands here rather than on a leftover empty page.
@@ -125,6 +127,10 @@ function createDemoBuild(store: EditorStore, preparation: DemoPreparation): Demo
 
     await createPaintSection(graph, paint.id)
     step(4)
+    if (abandoned()) return false
+
+    await createControlsSection(graph, controls.id)
+    step(5)
     if (abandoned()) return false
 
     const pages = graph.getPages()
