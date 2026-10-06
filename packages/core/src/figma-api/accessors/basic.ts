@@ -4,6 +4,7 @@ import {
   FITTED_CONTAINER_TYPES,
   TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
   findInstanceAncestor,
+  recordInstanceOverride,
   rescaleNodeTree,
   slotPropertyId,
   type SceneGraph,
@@ -196,10 +197,14 @@ export function installBasicNodeProxyAccessors(
 
   Object.assign(prototype, {
     // A resized node keeps its top-left corner, as Figma's does, though it turns about its center.
+    // The groups around it refit once, after the corner is back in place.
     resize(this: ProxyThis, width: number, height: number): void {
+      assertEditable(this, internals)
+      const scene = graph(this, internals)
       const node = raw(this, internals)
-      const before = containerTransform(node, graph(this, internals))
-      updateNode(this, internals, { width, height })
+      const before = containerTransform(node, scene)
+      scene.updateNode(node.id, { width, height })
+      recordInstanceOverride(scene, node.id, ['width', 'height'])
       setTransform(this, internals, () => before)
     },
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {

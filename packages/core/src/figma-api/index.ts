@@ -361,7 +361,7 @@ export class FigmaAPI implements NodeProxyHost {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
     const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const group = createBooleanOperation(
+    const { node: group } = createBooleanOperation(
       this.graph,
       members,
       parentId,

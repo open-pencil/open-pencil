@@ -95,4 +95,31 @@ describe('boolean operation bounds', () => {
       editor.dispose()
     }
   })
+
+  test('undo puts back the group a boolean refit', () => {
+    const editor = createEditor()
+    try {
+      editor.setCanvasKit(renderer.ck, renderer)
+      const pageId = editor.state.currentPageId
+      const group = editor.graph.createNode('GROUP', pageId, { width: 200, height: 70 })
+      const a = editor.graph.createNode('RECTANGLE', group.id, { width: 50, height: 50 })
+      const b = editor.graph.createNode('RECTANGLE', group.id, {
+        x: 20,
+        y: 20,
+        width: 50,
+        height: 50
+      })
+      editor.graph.createNode('RECTANGLE', group.id, { x: 150, y: 0, width: 50, height: 50 })
+      const before = [a, b].map((node) => editor.graph.getAbsolutePosition(node.id))
+
+      editor.select([a.id, b.id])
+      editor.booleanOperationSelected('INTERSECT')
+      editor.undo.undo()
+
+      expect(box(group)).toEqual([0, 0, 200, 70])
+      expect([a, b].map((node) => editor.graph.getAbsolutePosition(node.id))).toEqual(before)
+    } finally {
+      editor.dispose()
+    }
+  })
 })

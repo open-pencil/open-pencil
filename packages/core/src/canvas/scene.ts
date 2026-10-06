@@ -473,7 +473,8 @@ export function renderComponentSet(
           node,
           stroke,
           color,
-          node.cornerRadius,
+          // Skia fits a rounded rect's radii to its bounds; the dashed outline must match the fill.
+          Math.min(node.cornerRadius, node.width / 2, node.height / 2),
           dashPhase
         )
       } else {
