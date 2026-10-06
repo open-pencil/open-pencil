@@ -372,13 +372,22 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
     textDirection: readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.textDirection) ?? 'AUTO',
-    derivedLayout: nc.derivedTextData?.layoutSize
-      ? {
-          width: nc.derivedTextData.layoutSize.x,
-          height: nc.derivedTextData.layoutSize.y
-        }
-      : null,
-    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
+    ...convertDerivedText(nc, blobs)
+  }
+}
+
+function convertDerivedText(
+  nc: NodeChange,
+  blobs: Uint8Array[]
+): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs'> {
+  const layoutSize = nc.derivedTextData?.layoutSize
+  return {
+    derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
+    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
+      nc.derivedTextData,
+      blobs,
+      nc.textData?.characters ?? ''
+    )
   }
 }
 

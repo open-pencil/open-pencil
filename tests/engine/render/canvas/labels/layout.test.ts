@@ -81,7 +81,7 @@ for (const flipX of [false, true]) {
       expect(transform.rotation).toBeGreaterThanOrEqual(-45)
       expect(transform.rotation).toBeLessThan(45)
       expect(
-        hitTestFrameTitle(graph, world.x, world.y, 2, new Set([frame.id]), font, { preview })?.id
+        hitTestFrameTitle(graph, world.x, world.y, 2, page.id, font, undefined, { preview })?.id
       ).toBe(frame.id)
     })
   }
@@ -97,8 +97,69 @@ test('hidden component labels and the clipped-away part of long titles are not h
     width: 50,
     height: 100
   })
-  expect(hitTestFrameTitle(graph, 140, 90, 1, new Set([frame.id]), font)?.id).toBe(frame.id)
-  expect(hitTestFrameTitle(graph, 170, 90, 1, new Set([frame.id]), font)).toBeNull()
+  expect(hitTestFrameTitle(graph, 140, 90, 1, page.id, font)?.id).toBe(frame.id)
+  expect(hitTestFrameTitle(graph, 170, 90, 1, page.id, font)).toBeNull()
   graph.createNode('COMPONENT', frame.id, { name: 'Not drawn here', width: 80, height: 40 })
   expect(hitTestComponentLabel(graph, 104, 90, 1, page.id, font)).toBeNull()
+})
+
+test('every frame on the page or in a section is hit by its name, selected or not', () => {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const outer = graph.createNode('FRAME', page.id, {
+    name: 'Outer',
+    x: 100,
+    y: 100,
+    width: 200,
+    height: 200
+  })
+  const inner = graph.createNode('FRAME', outer.id, {
+    name: 'Inner',
+    x: 20,
+    y: 40,
+    width: 100,
+    height: 100
+  })
+  const section = graph.createNode('SECTION', page.id, {
+    name: 'Flows',
+    x: 400,
+    y: 100,
+    width: 300,
+    height: 300
+  })
+  const inSection = graph.createNode('FRAME', section.id, {
+    name: 'Step',
+    x: 20,
+    y: 60,
+    width: 100,
+    height: 100
+  })
+
+  // No selection: the name above a frame holding layers still selects it.
+  expect(hitTestFrameTitle(graph, 104, 90, 1, page.id, font)?.id).toBe(outer.id)
+  expect(hitTestFrameTitle(graph, 424, 150, 1, page.id, font)?.id).toBe(inSection.id)
+  // A frame inside another frame shows no name, so the spot above it is not a target.
+  expect(hitTestFrameTitle(graph, 124, 130, 1, page.id, font)).toBeNull()
+  expect(inner.parentId).toBe(outer.id)
+
+  // Locked frames cannot be picked on the canvas, by their names either.
+  graph.updateNode(outer.id, { locked: true })
+  expect(hitTestFrameTitle(graph, 104, 90, 1, page.id, font)).toBeNull()
+})
+
+test('a frame just outside the view whose name is inside it is still hit by its name', () => {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const frame = graph.createNode('FRAME', page.id, {
+    name: 'Below',
+    x: 100,
+    y: 205,
+    width: 200,
+    height: 100
+  })
+  // The view ends at y = 200, above the frame; its name sits just above the frame, in view.
+  const viewport = { x: 0, y: 0, w: 400, h: 200 }
+  expect(hitTestFrameTitle(graph, 104, 197, 1, page.id, font, undefined, { viewport })?.id).toBe(
+    frame.id
+  )
 })

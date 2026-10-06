@@ -10,6 +10,13 @@ export interface CachedSection {
   nested: boolean
 }
 
+/** A frame on the page or in a section, which shows its name above it. */
+export interface CachedFrame {
+  nodeId: string
+  absX: number
+  absY: number
+}
+
 export interface CachedComponent {
   nodeId: string
   absX: number
@@ -25,6 +32,7 @@ interface Viewport {
 }
 
 const LABEL_TYPES = new Set(['COMPONENT', 'COMPONENT_SET'])
+const FRAME_TITLE_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
 const COMPONENT_LABEL_PARENT_TYPES = new Set(['CANVAS', 'SECTION', 'COMPONENT_SET'])
 
 function isInViewport(absX: number, absY: number, w: number, h: number, vp: Viewport): boolean {
@@ -57,6 +65,7 @@ function collectVisibleLabels<
 export class LabelCache {
   private sections: CachedSection[] = []
   private components: CachedComponent[] = []
+  private frames: CachedFrame[] = []
   private cachedSceneVersion = -1
   private cachedPositionPreviewVersion = -1
   private cachedPageId: string | null = null
@@ -86,6 +95,7 @@ export class LabelCache {
     this.cachedPageId = null
     this.sections = []
     this.components = []
+    this.frames = []
   }
 
   getSections(
@@ -120,6 +130,18 @@ export class LabelCache {
     )
   }
 
+  getFrames(
+    graph: SceneGraph,
+    viewport: Viewport,
+    preview?: RenderOverlays['rotationPreview']
+  ): Array<{ node: SceneNode; absX: number; absY: number }> {
+    return collectVisibleLabels(graph, viewport, this.frames, () => ({}), preview)
+  }
+
+  getAllFrames(): readonly CachedFrame[] {
+    return this.frames
+  }
+
   getAllSections(): readonly CachedSection[] {
     return this.sections
   }
@@ -131,6 +153,7 @@ export class LabelCache {
   private rebuild(graph: SceneGraph, pageId: string | null): void {
     this.sections = []
     this.components = []
+    this.frames = []
 
     const pageNode = graph.getNode(pageId ?? graph.rootId)
     if (!pageNode) return
@@ -164,8 +187,12 @@ export class LabelCache {
         if (child.childIds.length > 0) {
           this.walkChildren(graph, childId, insideSection)
         }
-      } else if (child.childIds.length > 0) {
-        this.walkChildren(graph, childId, insideSection)
+      } else {
+        if (child.type === 'FRAME' && FRAME_TITLE_PARENT_TYPES.has(parentType)) {
+          const origin = graph.getAbsolutePosition(childId)
+          this.frames.push({ nodeId: childId, absX: origin.x, absY: origin.y })
+        }
+        if (child.childIds.length > 0) this.walkChildren(graph, childId, insideSection)
       }
     }
   }

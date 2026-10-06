@@ -311,19 +311,6 @@ tests/engine/layout/auto-layout/text/measurement.test.ts
 tests/engine/layout/auto-layout/vertical/basic.test.ts
 tests/engine/layout/auto-layout/wrap/layout.test.ts
 tests/engine/layout/grid-layout.test.ts
-tests/engine/library/discovery.test.ts
-tests/engine/library/hash-normalization.test.ts
-tests/engine/library/instance-updates.test.ts
-tests/engine/library/materialize.test.ts
-tests/engine/library/metadata.test.ts
-tests/engine/library/preview.test.ts
-tests/engine/library/routed-catalog.test.ts
-tests/engine/library/selective.test.ts
-tests/engine/library/snapshot.test.ts
-tests/engine/library/source-publication.test.ts
-tests/engine/library/storage-catalog.test.ts
-tests/engine/library/update-groups.test.ts
-tests/engine/library/update.test.ts
 tests/engine/lint/basic.test.ts
 tests/engine/lint/variable-binding-validation.test.ts
 tests/engine/mcp/auth.test.ts
@@ -438,7 +425,6 @@ tests/engine/tauri/mcp-spawn.test.ts
 tests/engine/tauri/mock-cleanup.test.ts
 tests/engine/tauri/processes.test.ts
 tests/engine/text/coverage.test.ts
-tests/engine/text/derived-text/clipboard.test.ts
 tests/engine/text/edit-undo.test.ts
 tests/engine/text/editor.test.ts
 tests/engine/text/fonts/coverage.test.ts
