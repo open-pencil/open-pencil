@@ -72,5 +72,6 @@
   "exportSelectionAsPNG": "Eksportuj zaznaczenie jako PNG",
   "exportSelectionAsSVG": "Eksportuj zaznaczenie jako SVG",
   "exportSelectionAsPPTX": "Eksportuj zaznaczenie jako PPTX",
-  "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig"
+  "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig",
+  "togglePreview": "Podgląd"
 }

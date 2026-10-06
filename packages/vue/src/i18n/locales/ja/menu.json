@@ -72,5 +72,6 @@
   "exportSelectionAsPNG": "選択範囲を PNG としてエクスポート",
   "exportSelectionAsSVG": "選択範囲を SVG としてエクスポート",
   "exportSelectionAsPPTX": "選択範囲を PPTX としてエクスポート",
-  "exportSelectionAsFig": "選択範囲を .fig としてエクスポート"
+  "exportSelectionAsFig": "選択範囲を .fig としてエクスポート",
+  "togglePreview": "プレビュー"
 }

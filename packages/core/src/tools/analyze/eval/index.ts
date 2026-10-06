@@ -2,12 +2,12 @@ import * as v from 'valibot'
 
 import { defineTool } from '#core/tools/schema'
 
-import { wrapEvalCode } from './wrap'
+import { compileScript } from './wrap'
 
 export const evalCode = defineTool({
   name: 'eval',
   description:
-    'Execute JavaScript with full Figma Plugin API access. Use for operations not covered by other tools. The `figma` global is available.',
+    'Execute JavaScript with full Figma Plugin API access. Use for operations not covered by other tools. The `figma` global is the Figma Plugin API; the `openpencil` global adds what Figma has no API for, such as component behaviours (`openpencil.setBehaviour`, `openpencil.getBehaviour`, `openpencil.behaviourKinds`) and slots (`openpencil.createSlot`).',
   execution: { kind: 'async', mutation: 'document' },
   capabilities: ['document:read', 'document:write', 'code:execute'],
   availability: 'eval',
@@ -16,13 +16,7 @@ export const evalCode = defineTool({
   }),
 
   execute: async (figma, { code }) => {
-    type AsyncFunctionConstructor = new (
-      ...args: string[]
-    ) => (...args: unknown[]) => Promise<unknown>
-    const AsyncFunction = Object.getPrototypeOf(async () => undefined)
-      .constructor as AsyncFunctionConstructor
-    const fn = new AsyncFunction('figma', wrapEvalCode(code))
-    const result = await fn(figma)
+    const result = await compileScript(code)(figma)
     if (result && typeof result === 'object') {
       const toJSON = Reflect.get(result, 'toJSON')
       if (typeof toJSON === 'function') return toJSON.call(result)

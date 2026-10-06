@@ -30,7 +30,7 @@ export function appMenuShortcut(id: string): string | undefined {
 }
 
 function normalizeShortcutToken(shortcut: string): string {
-  return shortcut === '⌫' ? 'Backspace' : shortcut
+  return shortcut === '⌫' ? 'Backspace' : shortcut.replaceAll('↩', 'Enter')
 }
 
 export function shortcutTokenToTinykeys(shortcut: string | undefined): string | undefined {

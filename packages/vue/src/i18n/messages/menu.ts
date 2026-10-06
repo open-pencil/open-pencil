@@ -51,6 +51,7 @@ export const menuMessageDefaults = {
   front: 'Front',
   back: 'Back',
   toggleUI: 'Toggle UI',
+  togglePreview: 'Preview',
 
   bold: 'Bold',
   italic: 'Italic',

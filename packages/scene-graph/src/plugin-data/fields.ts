@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { behaviourSchema } from '../behaviours/schema'
 import type { OkHCLPayload } from '../color/okhcl'
 import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
@@ -11,11 +12,17 @@ import {
   type ExportSetting,
   type LayoutDirection,
   type LibraryAssetSource,
+  type PluginDataEntry,
   type SourceLibraryPublication,
   type TextDirection,
   type TokenUnit
 } from '../types'
-import { jsonPluginDataField, textPluginDataField, type PluginDataKey } from './field'
+import {
+  jsonPluginDataField,
+  textPluginDataField,
+  withoutPluginData,
+  type PluginDataKey
+} from './field'
 
 const DIRECTIONS = ['AUTO', 'LTR', 'RTL'] as const satisfies readonly (
   | TextDirection
@@ -129,34 +136,53 @@ const sourceLibraryPublication: v.GenericSchema<unknown, SourceLibraryPublicatio
  */
 export const OPEN_PENCIL_PLUGIN_DATA = {
   /** A text node's direction, on TEXT nodes. */
-  textDirection: textPluginDataField('textDirection', DIRECTIONS),
+  textDirection: textPluginDataField('textDirection', 'format', DIRECTIONS),
   /** An auto-layout frame's direction. */
-  layoutDirection: textPluginDataField('layoutDirection', DIRECTIONS),
+  layoutDirection: textPluginDataField('layoutDirection', 'format', DIRECTIONS),
   /** Marks a component set Figma would read as a plain frame. */
-  nodeType: textPluginDataField('nodeType', ['COMPONENT_SET']),
+  nodeType: textPluginDataField('nodeType', 'format', ['COMPONENT_SET']),
   /** Variable bindings by field path, including those Figma cannot store natively. */
-  boundVariables: jsonPluginDataField('boundVariables', boundVariables),
-  exportSettings: jsonPluginDataField('exportSettings', exportSettings),
+  boundVariables: jsonPluginDataField('boundVariables', 'format', boundVariables),
+  exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettings),
   /** The node-local rect a TEXT_PATH layout maps onto, which Kiwi has no field for. */
-  textPathBox: jsonPluginDataField('textPathBox', textPathBox),
+  textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBox),
   /** The library asset a node was inserted from. */
-  librarySource: jsonPluginDataField('librarySource', librarySource),
+  librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySource),
   /** Libraries enabled for the document, on the DOCUMENT node. */
-  enabledLibraries: jsonPluginDataField('enabledLibraries', enabledLibraries),
+  enabledLibraries: jsonPluginDataField('enabledLibraries', 'bookkeeping', enabledLibraries),
   /** The library this document publishes as, on the DOCUMENT node. */
   sourceLibraryPublication: jsonPluginDataField(
     'sourceLibraryPublication',
+    'bookkeeping',
     sourceLibraryPublication
   ),
   /** Unit and CSS expressions, on each VARIABLE. */
-  token: jsonPluginDataField('token', token),
+  token: jsonPluginDataField('token', 'format', token),
   /** Mode conditions by mode id, on each VARIABLE_SET. */
-  modeConditions: jsonPluginDataField('modeConditions', v.record(v.string(), cssText)),
+  modeConditions: jsonPluginDataField('modeConditions', 'format', v.record(v.string(), cssText)),
   /** The attribute that switches manual modes, on each VARIABLE_SET. */
   modeAttribute: jsonPluginDataField(
     'modeAttribute',
+    'format',
     v.pipe(v.string(), v.trim(), v.maxLength(100), v.regex(MODE_ATTRIBUTE_PATTERN))
   ),
   /** One entry per paint picked in OkHCL, so the picker reopens on the same coordinates. */
-  okhcl: jsonPluginDataField('okhcl', okhcl)
+  okhcl: jsonPluginDataField('okhcl', 'content', okhcl),
+  /** How a main component or component set behaves as a control in preview. */
+  behaviour: jsonPluginDataField('behaviour', 'content', behaviourSchema)
 } satisfies Record<string, PluginDataKey>
+
+const NOT_CONTENT = Object.values(OPEN_PENCIL_PLUGIN_DATA).filter(
+  (field) => field.role !== 'content'
+)
+
+/**
+ * A node's plugin data that is part of its content, in a stable order: OpenPencil's content
+ * fields and every other plugin's entries, which the node carries wherever it goes. Format
+ * copies of node fields and bookkeeping are left out.
+ */
+export function contentPluginData(entries: readonly PluginDataEntry[]): PluginDataEntry[] {
+  return withoutPluginData(entries, NOT_CONTENT).sort(
+    (a, b) => a.pluginId.localeCompare(b.pluginId) || a.key.localeCompare(b.key)
+  )
+}

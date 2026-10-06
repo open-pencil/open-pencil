@@ -1,5 +1,9 @@
 {
   "toolOptions": "Opciones de {tool}",
   "removeGradientStop": "Eliminar parada de degradado",
-  "showUI": "Mostrar interfaz ({shortcut})"
+  "showUI": "Mostrar interfaz ({shortcut})",
+  "previewing": "Vista previa",
+  "resetPreview": "Restablecer",
+  "leavePreview": "Salir de la vista previa ({shortcut})",
+  "startPreview": "Vista previa ({shortcut})"
 }

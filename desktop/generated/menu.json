@@ -266,6 +266,11 @@
         "accelerator": "CmdOrCtrl+\\"
       },
       {
+        "id": "toggle-preview",
+        "label": "Preview",
+        "accelerator": "CmdOrCtrl+Alt+Enter"
+      },
+      {
         "type": "separator"
       },
       {

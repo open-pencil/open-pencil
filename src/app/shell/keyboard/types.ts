@@ -10,6 +10,7 @@ export type KeyboardShortcutActions = {
   escapeOrDeselect: () => void
   toggleAutoLayout: () => void
   toggleUI: () => void
+  togglePlay: () => void
   toggleAI: () => void
   exportSelectionPNG: () => void
   opacityDigit: (digit: string) => void
