@@ -161,6 +161,7 @@ ja:menu.exportSelectionAsPNG
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
+ja:panels.behaviourAddVariants
 ja:panels.colorHintHsb
 ja:panels.colorHintHsl
 ja:panels.colorHintOkhcl
@@ -352,6 +353,7 @@ zh-cn:menu.exportSelectionAsFig
 zh-cn:menu.exportSelectionAsPNG
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
+zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
 zh-cn:panels.colorHintHsl
 zh-cn:panels.colorHintOkhcl
@@ -381,3 +383,13 @@ zh-cn:updates.unavailable
 zh-cn:updates.upToDate
 zh-cn:variables.copyAsCSS
 zh-cn:variables.copyAsTailwindTheme
+ja:variables.cssName
+ja:variables.expression
+ja:variables.expressionHint
+ja:variables.conditionHint
+ja:variables.conditionCustom
+zh-cn:variables.cssName
+zh-cn:variables.expression
+zh-cn:variables.expressionHint
+zh-cn:variables.conditionHint
+zh-cn:variables.conditionCustom

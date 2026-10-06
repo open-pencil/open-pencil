@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -19,13 +19,12 @@ import { readToolChange } from '@/app/ai/tools/changes/store'
 import { toolCallState } from '@/components/chat/tool/state'
 import ToolChangeView from '@/components/chat/tool/ToolChangeView.vue'
 import ToolNodeChips from '@/components/chat/tool/ToolNodeChips.vue'
+import { loadCodeViewer } from '@/components/code-editor/lazy'
+import CodeViewer from '@/components/code-editor/LazyCodeViewer.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { chatToolTheme } from '@/theme/chat/tool'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
-
-// CodeMirror loads with the first expanded call, not with the chat panel.
-const CodeViewer = defineAsyncComponent(() => import('@/components/code-editor/CodeViewer.vue'))
 
 const { part } = defineProps<{ part: ToolCallPart }>()
 const { ai } = useI18n()
@@ -81,7 +80,13 @@ function json(value: unknown): string {
 
 <template>
   <CollapsibleRoot :class="ui.root()" :data-tool-state="state" data-slot="chat-tool-call">
-    <CollapsibleTrigger :class="ui.trigger()" :disabled="!expandable">
+    <!-- Start loading CodeMirror on hover, so it is ready by the time the call opens. -->
+    <CollapsibleTrigger
+      :class="ui.trigger()"
+      :disabled="!expandable"
+      @pointerenter="loadCodeViewer"
+      @focus="loadCodeViewer"
+    >
       <span :class="ui.status()" :data-state="state" :aria-label="stateLabel" role="img">
         <icon-lucide-loader-circle
           v-if="state === 'pending'"

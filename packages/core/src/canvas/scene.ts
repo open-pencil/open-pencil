@@ -40,7 +40,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern
 } from './strokes'
-import { withTextParagraph } from './text'
+import { textVerticalOffset, withTextParagraph } from './text'
 import {
   canDrawSavedText,
   drawDerivedText,
@@ -125,7 +125,8 @@ function renderNodeContent(
 ): void {
   if (node.type === 'SECTION') {
     r.renderSection(canvas, node, graph)
-  } else if (node.type === 'COMPONENT_SET') {
+  } else if (node.type === 'COMPONENT_SET' && !overlays.playing) {
+    // A previewing canvas draws a set as a plain frame, without its dashed editing border.
     r.renderComponentSet(canvas, node, graph)
   } else if (node.type === 'BOOLEAN_OPERATION') {
     renderBooleanOperation(r, canvas, node, graph)
@@ -297,6 +298,16 @@ function nodeIsolationLayerBounds(
     : r.ck.LTRBRect(0, 0, node.width, node.height)
 }
 
+/**
+ * Whether the canvas draws a node itself: not hidden, a mask, blocked on fonts, drawn live by
+ * node-edit mode, or left to a live island while the canvas previews.
+ */
+function drawsNode(node: SceneNode, overlays: RenderOverlays): boolean {
+  if (node.internalOnly || !node.visible || node.isMask || fontManager.isNodeBlocked(node.id))
+    return false
+  return overlays.nodeEditState?.nodeId !== node.id && !overlays.playIslands?.has(node.id)
+}
+
 export function renderNode(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -308,18 +319,7 @@ export function renderNode(
   hasTransformedAncestor = false
 ): void {
   const node = graph.getNode(nodeId)
-  if (
-    !node ||
-    node.internalOnly ||
-    !node.visible ||
-    node.isMask ||
-    fontManager.isNodeBlocked(nodeId)
-  ) {
-    return
-  }
-
-  // Hide the node being edited in node-edit mode (overlay draws it live)
-  if (overlays.nodeEditState?.nodeId === nodeId) return
+  if (!node || !drawsNode(node, overlays)) return
 
   r._nodeCount++
 
@@ -886,13 +886,6 @@ export function renderShapeUncached(
 
 function hasComplexTextFill(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
-}
-
-export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
-  const available = Math.max(0, node.height - contentHeight)
-  if (node.textAlignVertical === 'CENTER') return available / 2
-  if (node.textAlignVertical === 'BOTTOM') return available
-  return 0
 }
 
 function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {

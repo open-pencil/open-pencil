@@ -28,6 +28,11 @@ export interface PresenceCursor {
 }
 
 export interface RenderOverlays {
+  /** Whether the canvas previews: it draws the design without labels or editing outlines. */
+  playing?: boolean
+  /** Nodes a previewing canvas draws from its preview session instead of the document. */
+  /** Layers a previewing canvas leaves to its live islands. */
+  playIslands?: ReadonlySet<string>
   hoveredNodeId?: string | null
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null

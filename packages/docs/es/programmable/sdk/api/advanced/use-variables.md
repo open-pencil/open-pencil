@@ -10,9 +10,3 @@ description: Leer y modificar colecciones, variables, modos y valores.
 Úselo para controlar directamente colecciones, modos activos, filtros y operaciones de creación, lectura, actualización y eliminación sin una tabla o diálogo prefabricados.
 
 Entre los valores devueltos están `collections`, `activeCollection`, `activeModes`, `variables` y `searchTerm`.
-
-## Véase también
-
-- [useVariablesEditor](../composables/use-variables-editor)
-- [useVariablesDialogState](./use-variables-dialog-state)
-- [useVariablesTable](./use-variables-table)

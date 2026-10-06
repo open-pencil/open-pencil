@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { DEFAULT_STROKE_WEIGHT } from '#core/constants'
 import {
   nodeId,
   raw,
@@ -41,8 +42,8 @@ export function installStrokeNodeProxyAccessors(
   Object.defineProperties(prototype, {
     strokeWeight: {
       get(this: ProxyThis): number {
-        const strokes = raw(this, internals).strokes
-        return strokes.length > 0 ? strokes[0].weight : 0
+        // Figma reports its default weight of 1 for a node without strokes.
+        return raw(this, internals).strokes[0]?.weight ?? DEFAULT_STROKE_WEIGHT
       },
       set(this: ProxyThis, value: number) {
         setFirstStrokeWeight(graph(this, internals), raw(this, internals), value)

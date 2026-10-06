@@ -37,8 +37,6 @@ Estas funciones respaldan los componentes y composables públicos. Úselas cuand
 ## Variables y configuración regional
 
 - [useVariables](./use-variables)
-- [useVariablesDialogState](./use-variables-dialog-state)
-- [useVariablesTable](./use-variables-table)
 - [API regionales](./locale-apis)
 
 ## Portapapeles

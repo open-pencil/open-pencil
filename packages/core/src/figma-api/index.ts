@@ -9,8 +9,7 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { copyFills, copyStrokes, copyEffects } from '@open-pencil/scene-graph/copy'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -19,11 +18,15 @@ import type { SkiaRenderer } from '#core/canvas'
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 import { IS_BROWSER } from '#core/constants'
+import { newLayerDefaults } from '#core/editor/shapes/defaults'
+import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
+import { wrapNodes } from '#core/editor/structure/container-wrap'
+import { ungroupNode } from '#core/editor/structure/group'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
-import { combineComponentsAsVariants, exposeInstanceSwap } from './components'
+import { combineComponentsAsVariants, componentFromNode, exposeInstanceSwap } from './components'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -151,8 +154,12 @@ export class FigmaAPI implements NodeProxyHost {
 
   // --- Node Creation ---
 
+  /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
   private _createNode(type: NodeType): FigmaNodeProxy {
-    const node = this.graph.createNode(type, this._currentPageId)
+    const defaults = newLayerDefaults(type)
+    // Figma's plugin API makes a line 100 wide with no height.
+    if (type === 'LINE') defaults.height = 0
+    const node = this.graph.createNode(type, this._currentPageId, defaults)
     return this.wrapNode(node.id)
   }
 
@@ -227,74 +234,21 @@ export class FigmaAPI implements NodeProxyHost {
   ): FigmaGroupNode {
     const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const groupNode = this.graph.createNode(
-      'GROUP',
-      parentId,
-      members.length > 0 ? getAxisAlignedBoundsInParent(members, parentId, this.graph) : undefined
-    )
-    for (const n of nodes) {
-      this.graph.reparentNode(this._nodeId(n), groupNode.id)
-    }
-    if (index != null) this.graph.reorderChild(groupNode.id, parentId, index)
+    const groupNode = wrapNodes(this.graph, 'GROUP', members, parentId, index)
     return this.wrapNode(groupNode.id) as FigmaGroupNode
   }
 
   ungroup(node: FigmaNodeProxy): FigmaNodeProxy[]
   ungroup(node: SceneNode & ChildrenMixin): Array<SceneNode>
   ungroup(node: (SceneNode & ChildrenMixin) | FigmaNodeProxy): Array<SceneNode> | FigmaNodeProxy[] {
-    const nodeId = this._nodeId(node)
-    const raw = this.graph.getNode(nodeId)
-    if (!raw || raw.childIds.length === 0) return []
-    const parentId = raw.parentId ?? this._currentPageId
-    const children = Array.from(raw.childIds)
-    for (const childId of children) {
-      this.graph.reparentNode(childId, parentId)
-    }
-    this.graph.deleteNode(nodeId)
+    const children = ungroupNode(this.graph, this._nodeId(node)) ?? []
     return children.map((id) => this.wrapNode(id))
   }
 
   createComponentFromNode(node: FigmaNodeProxy): FigmaNodeProxy {
     const raw = this.graph.getNode(node[INTERNAL_ID])
     if (!raw) throw new Error('Node not found')
-    const parentId = raw.parentId ?? this._currentPageId
-    const comp = this.graph.createNode('COMPONENT', parentId)
-    this.graph.updateNode(comp.id, {
-      name: raw.name,
-      width: raw.width,
-      height: raw.height,
-      x: raw.x,
-      y: raw.y,
-      fills: copyFills(raw.fills),
-      strokes: copyStrokes(raw.strokes),
-      effects: copyEffects(raw.effects),
-      cornerRadius: raw.cornerRadius,
-      topLeftRadius: raw.topLeftRadius,
-      topRightRadius: raw.topRightRadius,
-      bottomRightRadius: raw.bottomRightRadius,
-      bottomLeftRadius: raw.bottomLeftRadius,
-      independentCorners: raw.independentCorners,
-      opacity: raw.opacity,
-      layoutMode: raw.layoutMode,
-      primaryAxisAlign: raw.primaryAxisAlign,
-      counterAxisAlign: raw.counterAxisAlign,
-      primaryAxisSizing: raw.primaryAxisSizing,
-      counterAxisSizing: raw.counterAxisSizing,
-      itemSpacing: raw.itemSpacing,
-      paddingTop: raw.paddingTop,
-      paddingRight: raw.paddingRight,
-      paddingBottom: raw.paddingBottom,
-      paddingLeft: raw.paddingLeft,
-      pluginData: structuredClone(raw.pluginData),
-      pluginRelaunchData: structuredClone(raw.pluginRelaunchData),
-      boundVariables: { ...raw.boundVariables },
-      variableModes: { ...raw.variableModes }
-    })
-    for (const childId of raw.childIds) {
-      this.graph.cloneTree(childId, comp.id)
-    }
-    this.graph.deleteNode(node[INTERNAL_ID])
-    return this.wrapNode(comp.id)
+    return this.wrapNode(componentFromNode(this.graph, raw, raw.parentId ?? this._currentPageId).id)
   }
 
   combineAsVariants(
@@ -399,15 +353,14 @@ export class FigmaAPI implements NodeProxyHost {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
     const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const group = this.graph.createNode('BOOLEAN_OPERATION', parentId, {
-      name: `Boolean ${operation.toLowerCase()}`,
-      ...getAxisAlignedBoundsInParent(members, parentId, this.graph),
-      booleanOperation: operation
-    })
-    for (const node of nodes) {
-      this.graph.reparentNode(this._nodeId(node), group.id)
-    }
-    if (index != null) this.graph.reorderChild(group.id, parentId, index)
+    const group = createBooleanOperation(
+      this.graph,
+      members,
+      parentId,
+      operation,
+      index,
+      booleanOperationPaints(operation, members, 'script')
+    )
     return this.wrapNode(group.id) as FigmaBooleanOperationNode
   }
 

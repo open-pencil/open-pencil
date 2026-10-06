@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { compileScript } from '@open-pencil/core/tools'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app/target'
@@ -71,19 +72,9 @@ export default defineCommand({
     populateWholeDocument(graph)
     const figma = new FigmaAPI(graph)
 
-    type AsyncFunctionConstructor = new (
-      ...args: string[]
-    ) => (...args: unknown[]) => Promise<unknown>
-    const AsyncFunction = Object.getPrototypeOf(async () => undefined)
-      .constructor as AsyncFunctionConstructor
-    const wrappedCode = code.trim().startsWith('return')
-      ? code
-      : `return (async () => { ${code} })()`
-
     let result: unknown
     try {
-      const fn = new AsyncFunction('figma', wrappedCode)
-      result = await fn(figma)
+      result = await compileScript(code)(figma)
     } catch (err) {
       printError(err instanceof Error ? err.message : String(err))
       process.exit(1)

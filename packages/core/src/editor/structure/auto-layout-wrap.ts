@@ -1,17 +1,14 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
-import { prepareSlotEdits } from '#core/editor/components/slots'
-import { sharedParentId } from '#core/editor/structure/container-wrap'
+import { wrapParentId } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
 /** Wrap sibling layers in a new auto layout frame; returns the frame, or null if they are not siblings. */
 export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[]): string | null {
-  const parentId = sharedParentId(ctx, selectedNodes)
+  const parentId = wrapParentId(ctx, selectedNodes)
   if (!parentId) return null
-  // The locked part of an instance takes no new containers.
-  if (!prepareSlotEdits(ctx, [parentId])) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const origPositions = selectedNodes.map((n) => ({ id: n.id, x: n.x, y: n.y, parentId }))

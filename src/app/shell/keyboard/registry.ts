@@ -24,6 +24,8 @@ type ShortcutDefinition = {
   run: ShortcutAction
   shouldPreventDefault?: (event: KeyboardEvent) => boolean
   global?: boolean
+  /** Whether the shortcut also works while a canvas previews. */
+  preview?: boolean
 }
 
 function commandShortcut(
@@ -136,6 +138,12 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     },
     ...commandShortcuts('selection.ungroup', 'edit.redo'),
     {
+      id: 'toggle-preview',
+      keys: appMenuTinykeysShortcut('toggle-preview') ?? '$mod+Alt+Enter',
+      run: ({ actions }) => actions.togglePlay(),
+      preview: true
+    },
+    {
       id: 'toggle-ui',
       keys: appMenuTinykeysShortcut('toggle-ui') ?? '$mod+Backslash',
       run: ({ actions }) => actions.toggleUI()
@@ -215,12 +223,21 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     { id: 'delete', keys: 'Delete', run: ({ actions }) => actions.smartDelete(false) },
     { id: 'delete-alt', keys: 'Alt+Delete', run: ({ actions }) => actions.smartDelete(true) },
     { id: 'enter', keys: 'Enter', run: ({ actions }) => actions.confirmOrEnterText() },
-    { id: 'escape', keys: 'Escape', run: ({ actions }) => actions.escapeOrDeselect() },
+    {
+      id: 'escape',
+      keys: 'Escape',
+      run: ({ actions }) => actions.escapeOrDeselect(),
+      preview: true
+    },
     ...opacityBindings()
   ]
 
   const bindings: KeyBindingMap = {}
   const globalBindings: KeyBindingMap = {}
+  /** Keys that keep working while a canvas previews; everything else would edit the design. */
+  const previewKeys = new Set(
+    shortcuts.filter((shortcut) => shortcut.preview).flatMap((shortcut) => [shortcut.keys].flat())
+  )
   bindToolShortcuts(bindings, runOptions(new KeyboardEvent('keydown')))
 
   for (const shortcut of shortcuts) {
@@ -237,6 +254,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
         keys,
         (event: KeyboardEvent) => {
           if (shouldIgnoreShortcut(event, options)) return
+          if (options.store.state.play && !previewKeys.has(keys)) return
           handler(event)
         }
       ])

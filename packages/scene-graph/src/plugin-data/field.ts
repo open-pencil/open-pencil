@@ -5,9 +5,20 @@ import type { PluginDataEntry } from '../types'
 /** The plugin id OpenPencil keeps its own state under, on nodes and in `.fig` files. */
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 
+/**
+ * What a field holds:
+ * - `content` belongs to the node like its fills do and exists only as plugin data, so it
+ *   travels with a component copied into a library or another document;
+ * - `format` repeats a node or variable field for files that have no slot for it, where the
+ *   node field is what counts;
+ * - `bookkeeping` records where a node or document came from and stays behind.
+ */
+export type PluginDataRole = 'content' | 'format' | 'bookkeeping'
+
 /** One OpenPencil plugin-data key. */
 export interface PluginDataKey {
   readonly key: string
+  readonly role: PluginDataRole
 }
 
 /** A plugin-data key and how its string value is read and written. */
@@ -23,11 +34,13 @@ export interface PluginDataField<T> extends PluginDataKey {
  */
 export function jsonPluginDataField<T>(
   key: string,
+  role: PluginDataRole,
   schema: v.GenericSchema<unknown, T>
 ): PluginDataField<T> {
   const stored = v.pipe(v.string(), v.parseJson(), schema)
   return {
     key,
+    role,
     decode(value) {
       const parsed = v.safeParse(stored, value)
       return parsed.success ? parsed.output : undefined
@@ -39,11 +52,13 @@ export function jsonPluginDataField<T>(
 /** A value stored as one of a fixed set of plain strings. */
 export function textPluginDataField<const T extends string>(
   key: string,
+  role: PluginDataRole,
   values: readonly T[]
 ): PluginDataField<T> {
   const schema = v.picklist(values)
   return {
     key,
+    role,
     decode(value) {
       const parsed = v.safeParse(schema, value)
       return parsed.success ? parsed.output : undefined

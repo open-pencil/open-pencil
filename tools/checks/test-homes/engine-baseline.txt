@@ -425,7 +425,6 @@ tests/engine/tauri/mcp-spawn.test.ts
 tests/engine/tauri/mock-cleanup.test.ts
 tests/engine/tauri/processes.test.ts
 tests/engine/text/coverage.test.ts
-tests/engine/text/derived-text/clipboard.test.ts
 tests/engine/text/edit-undo.test.ts
 tests/engine/text/editor.test.ts
 tests/engine/text/fonts/coverage.test.ts

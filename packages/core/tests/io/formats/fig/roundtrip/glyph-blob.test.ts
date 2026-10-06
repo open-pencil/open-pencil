@@ -6,6 +6,7 @@ import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil
 import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
 
+import { expectDefined } from '#core-tests/helpers/assert'
 import { HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
 
 import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
@@ -97,5 +98,49 @@ describe('roundtrip: text glyph blobs', () => {
 
     expect(output.glyphsWithBlob).toBe(500)
     expect(output.uniqueGlyphBlobs).toBeLessThanOrEqual(4)
+  })
+
+  test('reopens wrapped text on the lines it was drawn on (#914)', async () => {
+    loadInterFonts()
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('FRAME', page.id, {
+      name: 'Card',
+      width: 260,
+      height: 52,
+      layoutMode: 'VERTICAL',
+      paddingTop: 10,
+      paddingRight: 10,
+      paddingBottom: 10,
+      paddingLeft: 10
+    })
+    graph.createNode('TEXT', card.id, {
+      name: 'Message',
+      text: 'A sentence long enough that it has to wrap onto a second line.',
+      width: 230,
+      height: 32,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 13,
+      lineHeight: 16,
+      textAutoResize: 'HEIGHT'
+    })
+
+    const reopenedLines = async (bytes: Uint8Array) => {
+      const reopened = await parseFigFile(new Uint8Array(bytes).buffer)
+      const message = expectDefined(
+        [...reopened.nodes.values()].find((node) => node.name === 'Message'),
+        'Message'
+      )
+      const glyphs = message.derivedTextGlyphs ?? []
+      expect(glyphs.length).toBeGreaterThan(0)
+      for (const glyph of glyphs) expect(glyph.x).toBeLessThan(230)
+      return { reopened, lines: new Set(glyphs.map((glyph) => glyph.y)).size }
+    }
+
+    const first = await reopenedLines(await exportFigFile(graph))
+    expect(first.lines).toBe(2)
+    expect((await reopenedLines(await exportFigFile(first.reopened))).lines).toBe(2)
   })
 })

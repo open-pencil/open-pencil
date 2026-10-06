@@ -44,6 +44,5 @@ description: Основные composables пакета @open-pencil/vue.
 
 ## Переменные, навигация и локализация
 
-- [useVariablesEditor](./use-variables-editor)
 - [usePageList](./use-page-list)
 - [useI18n](./use-i18n)

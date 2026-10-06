@@ -1,15 +1,69 @@
-import type {
-  Variable,
-  VariableCollection,
-  VariableType,
-  VariableValue
+import { omit, omitBy } from 'es-toolkit/object'
+import { isEmptyObject } from 'es-toolkit/predicate'
+
+import {
+  isModeAttributeName,
+  type TokenExpression,
+  type Variable,
+  type VariableCollection,
+  type VariableType,
+  type VariableValue
 } from '@open-pencil/scene-graph'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import type { EditorContext } from './types'
 
+/** What a variable means as a design token beyond its values: how CSS and code read it. */
+export type VariableTokenFields = Pick<
+  Variable,
+  'unit' | 'expressions' | 'scopes' | 'codeSyntax' | 'description' | 'hiddenFromPublishing'
+>
+
+/** Every token field, unset ones included, so restoring it also clears what was added. */
+function tokenFields(variable: Variable): VariableTokenFields {
+  const { unit, expressions, scopes, codeSyntax, description, hiddenFromPublishing } = variable
+  return structuredClone({
+    unit,
+    expressions,
+    scopes,
+    codeSyntax,
+    description,
+    hiddenFromPublishing
+  })
+}
+
+/** A mode's value with the CSS expression written for it, which the value must keep matching. */
+interface ModeEntry {
+  value: VariableValue | undefined
+  expression: TokenExpression | undefined
+}
+
+function modeEntry(variable: Variable, modeId: string): ModeEntry {
+  return structuredClone({
+    value: variable.valuesByMode[modeId],
+    expression: variable.expressions?.[modeId]
+  })
+}
+
+function setModeEntry(variable: Variable, modeId: string, entry: ModeEntry) {
+  const { value, expression } = structuredClone(entry)
+  const values = omit(variable.valuesByMode, [modeId])
+  variable.valuesByMode = value === undefined ? values : { ...values, [modeId]: value }
+  const others = omit(variable.expressions ?? {}, [modeId])
+  const expressions: Record<string, TokenExpression> = expression
+    ? { ...others, [modeId]: expression }
+    : others
+  if (isEmptyObject(expressions)) delete variable.expressions
+  else variable.expressions = expressions
+}
+
 export function createVariableActions(ctx: EditorContext) {
+  /**
+   * Re-resolves every bound layer, for changes to what variables resolve to. Adding, copying, or
+   * reordering variables changes no bound value, so those only request a render: re-resolving
+   * there would resize layers a file saved at a size their binding no longer gives.
+   */
   function refreshVariables() {
     reconcileVariableLayouts(ctx.graph)
     ctx.requestRender()
@@ -77,14 +131,14 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add collection',
       forward: () => {
         ctx.graph.addCollection(collection)
-        refreshVariables()
+        ctx.requestRender()
       },
       inverse: () => {
         ctx.graph.removeCollection(collection.id)
-        refreshVariables()
+        ctx.requestRender()
       }
     })
-    refreshVariables()
+    ctx.requestRender()
   }
 
   function removeCollection(id: string) {
@@ -117,20 +171,21 @@ export function createVariableActions(ctx: EditorContext) {
       label: 'Add variable',
       forward: () => {
         ctx.graph.addVariable(variable)
-        refreshVariables()
+        ctx.requestRender()
       },
       inverse: () => {
         ctx.graph.removeVariable(variable.id)
-        refreshVariables()
+        ctx.requestRender()
       }
     })
-    refreshVariables()
+    ctx.requestRender()
   }
 
   function removeVariable(id: string) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
     const snapshot = structuredClone(variable)
+    const order = [...(ctx.graph.variableCollections.get(variable.collectionId)?.variableIds ?? [])]
     ctx.graph.removeVariable(id)
     ctx.undo.push({
       label: 'Remove variable',
@@ -138,12 +193,74 @@ export function createVariableActions(ctx: EditorContext) {
         ctx.graph.removeVariable(id)
         refreshVariables()
       },
+      // Undo puts the variable back where it was, not at the end of its collection.
       inverse: () => {
-        ctx.graph.addVariable(snapshot)
+        ctx.graph.addVariable(structuredClone(snapshot))
+        placeVariables(snapshot.collectionId, order)
         refreshVariables()
       }
     })
     refreshVariables()
+  }
+
+  /** Puts a collection's variables in `order`; ids it does not hold are ignored. */
+  function placeVariables(collectionId: string, order: readonly string[]) {
+    const collection = ctx.graph.variableCollections.get(collectionId)
+    if (!collection) return
+    const held = new Set(collection.variableIds)
+    const placed = order.filter((id) => held.has(id))
+    const rest = collection.variableIds.filter((id) => !placed.includes(id))
+    collection.variableIds = [...placed, ...rest]
+  }
+
+  /** Reorders a collection's variables in one undo step; the order is what files and lists show. */
+  function setVariableOrder(collectionId: string, order: readonly string[]) {
+    const collection = ctx.graph.variableCollections.get(collectionId)
+    if (!collection) return
+    const previous = [...collection.variableIds]
+    const next = [...order]
+    placeVariables(collectionId, next)
+    if (previous.join('\n') === collection.variableIds.join('\n')) return
+    ctx.undo.push({
+      label: 'Reorder variables',
+      forward: () => {
+        placeVariables(collectionId, next)
+        ctx.requestRender()
+      },
+      inverse: () => {
+        placeVariables(collectionId, previous)
+        ctx.requestRender()
+      }
+    })
+    ctx.requestRender()
+  }
+
+  /** Copies a variable, values and token fields included, right after the original. */
+  function duplicateVariable(id: string, name: string): string | undefined {
+    const source = ctx.graph.variables.get(id)
+    const collection = source && ctx.graph.variableCollections.get(source.collectionId)
+    if (!source || !collection) return undefined
+    const created = ctx.graph.createVariable(name, source.type, source.collectionId)
+    const copy: Variable = { ...structuredClone(source), id: created.id, name }
+    ctx.graph.addVariable(copy)
+    const before = [...collection.variableIds]
+    const order = before.filter((candidate) => candidate !== copy.id)
+    order.splice(order.indexOf(id) + 1, 0, copy.id)
+    placeVariables(collection.id, order)
+    ctx.undo.push({
+      label: 'Duplicate variable',
+      forward: () => {
+        ctx.graph.addVariable(structuredClone(copy))
+        placeVariables(collection.id, order)
+        ctx.requestRender()
+      },
+      inverse: () => {
+        ctx.graph.removeVariable(copy.id)
+        ctx.requestRender()
+      }
+    })
+    ctx.requestRender()
+    return copy.id
   }
 
   function renameVariable(id: string, newName: string) {
@@ -301,29 +418,123 @@ export function createVariableActions(ctx: EditorContext) {
     refreshVariables()
   }
 
-  function updateVariableValue(id: string, modeId: string, value: VariableValue) {
+  /**
+   * Sets one mode's value. Calls that share a `coalesceKey`, such as the steps of one color picker
+   * drag, undo together.
+   */
+  function updateVariableValue(
+    id: string,
+    modeId: string,
+    value: VariableValue,
+    coalesceKey?: string
+  ) {
     const variable = ctx.graph.variables.get(id)
     if (!variable) return
-    const prevValue = structuredClone(variable.valuesByMode[modeId])
-    const newValue = structuredClone(value)
-    variable.valuesByMode[modeId] = newValue
+    const previous = modeEntry(variable, modeId)
+    // A number keeps its expression, which records the number it stands for; anything else drops it.
+    const expression = previous.expression
+    const next: ModeEntry = {
+      value: structuredClone(value),
+      expression:
+        typeof value === 'number' && expression ? { ...expression, resolved: value } : undefined
+    }
+    const apply = (entry: ModeEntry) => {
+      const target = ctx.graph.variables.get(id)
+      if (target) setModeEntry(target, modeId, entry)
+      refreshVariables()
+    }
+    apply(next)
     ctx.undo.push({
       label: 'Update variable value',
-      forward: () => {
-        const v = ctx.graph.variables.get(id)
-        if (v) v.valuesByMode[modeId] = structuredClone(newValue)
-        refreshVariables()
-      },
-      inverse: () => {
-        const v = ctx.graph.variables.get(id)
-        if (v) v.valuesByMode[modeId] = structuredClone(prevValue)
-        refreshVariables()
-      }
+      forward: () => apply(next),
+      inverse: () => apply(previous),
+      coalesceKey
     })
-    refreshVariables()
+  }
+
+  /** Change token fields in one undo step; a field set to `undefined` is cleared. */
+  function updateVariableToken(id: string, patch: Partial<VariableTokenFields>) {
+    const variable = ctx.graph.variables.get(id)
+    if (!variable) return
+    const previous = tokenFields(variable)
+    const next = structuredClone(patch)
+    const apply = (values: Partial<VariableTokenFields>) => {
+      const target = ctx.graph.variables.get(id)
+      if (!target) return
+      const { description, ...fields } = structuredClone(values)
+      // A cleared field is removed, not kept as a key set to `undefined`.
+      for (const key of Object.keys(fields) as Array<keyof typeof fields>) {
+        if (fields[key] === undefined) Reflect.deleteProperty(target, key)
+      }
+      Object.assign(
+        target,
+        omitBy(fields, (value) => value === undefined)
+      )
+      // Every variable has a description; clearing it leaves an empty one.
+      if ('description' in values) target.description = description ?? ''
+      ctx.requestRender()
+    }
+    apply(next)
+    ctx.undo.push({
+      label: 'Update variable token',
+      forward: () => apply(next),
+      inverse: () => apply(previous)
+    })
+  }
+
+  /** The selector or query a mode applies under; an empty condition restores the default. */
+  function setModeCondition(collectionId: string, modeId: string, condition: string | undefined) {
+    const mode = ctx.graph.variableCollections
+      .get(collectionId)
+      ?.modes.find((candidate) => candidate.modeId === modeId)
+    if (!mode) return
+    const previous = mode.condition
+    const next = condition?.trim() || undefined
+    if (next === previous) return
+    const apply = (value: string | undefined) => {
+      const target = ctx.graph.variableCollections
+        .get(collectionId)
+        ?.modes.find((candidate) => candidate.modeId === modeId)
+      if (target) target.condition = value
+      ctx.requestRender()
+    }
+    apply(next)
+    ctx.undo.push({
+      label: 'Set mode condition',
+      forward: () => apply(next),
+      inverse: () => apply(previous)
+    })
+  }
+
+  /**
+   * Name the attribute manual modes are switched by; an empty name restores the default, and a
+   * name no stylesheet can select on leaves the current one.
+   */
+  function setModeAttribute(collectionId: string, name: string | undefined) {
+    const collection = ctx.graph.variableCollections.get(collectionId)
+    if (!collection) return
+    const previous = collection.modeAttribute
+    const next = name?.trim() || undefined
+    if (next === previous || (next !== undefined && !isModeAttributeName(next))) return
+    const apply = (value: string | undefined) => {
+      const target = ctx.graph.variableCollections.get(collectionId)
+      if (target) target.modeAttribute = value
+      ctx.requestRender()
+    }
+    apply(next)
+    ctx.undo.push({
+      label: 'Set mode attribute',
+      forward: () => apply(next),
+      inverse: () => apply(previous)
+    })
   }
 
   return {
+    updateVariableToken,
+    setModeCondition,
+    duplicateVariable,
+    setVariableOrder,
+    setModeAttribute,
     getVariablesByType,
     getVariable,
     resolveColorVariable,
