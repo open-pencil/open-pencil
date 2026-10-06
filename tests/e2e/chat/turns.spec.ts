@@ -21,12 +21,15 @@ test('reverting a reply undoes its edits, marks it, saves the chat, and tells th
   await expect(chat.assistantMessage()).toContainText('Done')
   expect(await cardCount(page)).toBe(1)
 
+  const content = chat.assistantMessage().locator('[data-slot="chat-reply-content"]')
   await chat.assistantMessage().getByTestId('chat-revert-turn').click()
   expect(await cardCount(page)).toBe(0)
+  await expect(content).toHaveAttribute('data-reverted', 'true')
 
   // Restore redoes the edits, then reverting again leaves the reply marked.
   await chat.assistantMessage().getByTestId('chat-restore-turn').click()
   expect(await cardCount(page)).toBe(1)
+  await expect(content).toHaveAttribute('data-reverted', 'false')
   await chat.assistantMessage().getByTestId('chat-revert-turn').click()
   expect(await cardCount(page)).toBe(0)
 
