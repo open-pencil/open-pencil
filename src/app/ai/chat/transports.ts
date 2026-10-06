@@ -22,7 +22,14 @@ import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
-import { createAITools, endRun, recordStep, runPageId, startRun } from '@/app/ai/tools'
+import {
+  createAITools,
+  endRun,
+  markRunPreview,
+  recordStep,
+  runPageId,
+  startRun
+} from '@/app/ai/tools'
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { diagnosticErrorDetails } from '@/app/diagnostics'
@@ -110,7 +117,12 @@ export function createToolLoopTransport({
   diagnosticContext = {}
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store, diagnosticContext)
-  const preview = createCanvasJSXPreview(store, () => runPageId(store))
+  // While JSX streams, the chat's agent moves through the elements as they appear.
+  const preview = createCanvasJSXPreview(
+    store,
+    () => runPageId(store),
+    (focus) => markRunPreview(store, focus)
+  )
   const renderTool = tools.render
   renderTool.onInputStart = ({ toolCallId, abortSignal }) => preview.start(toolCallId, abortSignal)
   renderTool.onInputDelta = ({ toolCallId, inputTextDelta }) =>

@@ -117,7 +117,17 @@ export function presenceByPage(store: EditorStore): Map<string, PagePresenceEntr
 function agentCursor(agent: AgentPresence, color: Color, pageId: string): PresenceCursor[] {
   if (agent.status === 'idle' || agent.cursor?.pageId !== pageId) return []
   const { x, y } = agent.cursor
-  return [{ kind: 'agent', name: agent.name, color, x, y, selection: agent.selection }]
+  return [
+    {
+      kind: 'agent',
+      name: agent.name,
+      color,
+      x,
+      y,
+      selection: agent.selection,
+      outline: agent.outline
+    }
+  ]
 }
 
 /** Draw everyone working on the page on screen: people, their agents, and ours. */
@@ -325,9 +335,13 @@ export function agentPlacement(
   store: EditorStore,
   nodeIds: readonly string[],
   pageId: string
-): Pick<AgentPresence, 'cursor' | 'selection'> | null {
+): Pick<AgentPresence, 'cursor' | 'selection' | 'outline'> | null {
   const present = nodeIds.filter((id) => store.graph.getNode(id))
   const bounds = computeContentBounds(store.graph, present)
   if (!bounds) return null
-  return { cursor: { x: bounds.minX, y: bounds.minY, pageId }, selection: present }
+  return {
+    cursor: { x: bounds.minX, y: bounds.minY, pageId },
+    selection: present,
+    outline: undefined
+  }
 }

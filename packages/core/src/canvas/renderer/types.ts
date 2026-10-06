@@ -25,6 +25,8 @@ export interface PresenceCursor {
   x: number
   y: number
   selection?: string[]
+  /** Outlines in world coordinates of what is not a layer yet, such as streamed JSX. */
+  outline?: Rect[]
 }
 
 export interface RenderOverlays {
