@@ -47,7 +47,7 @@ import type {
   StrokeCap,
   StrokeJoin,
   LayoutMode,
-  LayoutSizing,
+  AxisSizingMode,
   LayoutAlign,
   LayoutAlignSelf,
   LayoutCounterAlign,
@@ -150,13 +150,11 @@ function mapStackMode(mode?: string): LayoutMode {
   }
 }
 
-export function mapStackSizing(sizing?: string): LayoutSizing {
+export function mapStackSizing(sizing?: string): AxisSizingMode {
   switch (sizing) {
     case 'RESIZE_TO_FIT':
     case 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE':
       return 'HUG'
-    case 'FILL':
-      return 'FILL'
     default:
       return 'FIXED'
   }

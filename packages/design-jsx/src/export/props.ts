@@ -1,4 +1,9 @@
-import type { SceneGraph, SceneNode, NodeType } from '@open-pencil/scene-graph'
+import {
+  layoutSizing,
+  type SceneGraph,
+  type SceneNode,
+  type NodeType
+} from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
@@ -50,13 +55,12 @@ function collectFlexSizingProps(node: SceneNode, props: JSXProp[]): void {
   const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
   const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
 
-  if (node.primaryAxisSizing === 'FILL') props.push([primaryAxis === 'width' ? 'w' : 'h', 'fill'])
-  else if (node.primaryAxisSizing !== 'HUG')
+  if (node.primaryAxisSizing !== 'HUG') {
     props.push([primaryAxis === 'width' ? 'w' : 'h', node[primaryAxis]])
-
-  if (node.counterAxisSizing === 'FILL') props.push([crossAxis === 'width' ? 'w' : 'h', 'fill'])
-  else if (node.counterAxisSizing !== 'HUG')
+  }
+  if (node.counterAxisSizing !== 'HUG') {
     props.push([crossAxis === 'width' ? 'w' : 'h', node[crossAxis]])
+  }
 }
 
 function collectGridPositionProps(node: SceneNode, props: JSXProp[]): void {
@@ -168,13 +172,23 @@ function collectSizingProps(
   }
 
   if (!ctx.parentIsAutoLayout) return
-  if (node.layoutGrow > 0) props.push(['grow', node.layoutGrow])
-  if (node.layoutAlignSelf === 'STRETCH') {
-    const parent = node.parentId ? graph.getNode(node.parentId) : null
-    if (parent && (parent.layoutMode === 'HORIZONTAL' || parent.layoutMode === 'VERTICAL')) {
-      const crossDim = parent.layoutMode === 'HORIZONTAL' ? 'h' : 'w'
-      if (!props.some(([k]) => k === crossDim)) props.push([crossDim, 'fill'])
-    }
+  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  // A flex child's main-axis fill keeps its grow factor; every other fill is `"fill"`.
+  const growAxis = parent?.layoutMode === 'VERTICAL' ? 'VERTICAL' : 'HORIZONTAL'
+  const keepsGrow = parent?.layoutMode !== 'GRID' && node.layoutGrow > 0
+  if (keepsGrow) props.push(['grow', node.layoutGrow])
+  for (const [axis, key] of [
+    ['HORIZONTAL', 'w'],
+    ['VERTICAL', 'h']
+  ] as const) {
+    if (keepsGrow && axis === growAxis) continue
+    if (layoutSizing(graph, node, axis) !== 'FILL') continue
+    // Stretch inherited from the parent's alignment is written on the parent.
+    if (axis !== growAxis && node.layoutAlignSelf !== 'STRETCH') continue
+    // Fill replaces the size the node had before it filled.
+    const index = props.findIndex(([k]) => k === key)
+    if (index === -1) props.push([key, 'fill'])
+    else props[index] = [key, 'fill']
   }
 }
 

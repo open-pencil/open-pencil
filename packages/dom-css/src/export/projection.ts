@@ -1,6 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { layoutSizingInParent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
@@ -77,9 +77,33 @@ function hugs(node: SceneNode, axis: 'width' | 'height'): boolean {
  * A layer's size: fixed on the axes the design fixes, and left to the content where the layer
  * hugs it (an auto layout frame set to Hug, or auto-sizing text), so the page grows with it.
  */
-function addSize(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  if (node.width > 0 && !hugs(node, 'width')) style.width = css('width', px(node.width))
-  if (node.height > 0 && !hugs(node, 'height')) style.height = css('height', px(node.height))
+function addSize(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  css: FieldCSS
+): void {
+  const sized = (axis: 'width' | 'height') =>
+    node[axis] > 0 && !hugs(node, axis) && !stretches(node, parent, axis)
+  if (sized('width')) style.width = css('width', px(node.width))
+  if (sized('height')) style.height = css('height', px(node.height))
+}
+
+/**
+ * Whether a layer fills an axis by stretching, which a fixed CSS size would prevent: across a
+ * flex parent, or either axis of a grid cell. Along a flex parent, fill is `flex-grow`, and the
+ * size stays as its basis.
+ */
+function stretches(
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  axis: 'width' | 'height'
+): boolean {
+  const sizing = layoutSizingInParent(parent, node, axis === 'width' ? 'HORIZONTAL' : 'VERTICAL')
+  if (sizing !== 'FILL' || !parent) return false
+  if (parent.layoutMode === 'GRID') return true
+  const mainAxis = parent.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
+  return axis !== mainAxis
 }
 
 /**
@@ -220,7 +244,7 @@ function styleFromSceneNode(
   css: FieldCSS
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  addSize(style, node, css)
+  addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addSizeConstraints(style, node, css)
   const fill = fillToCSS(node.fills.at(0))
@@ -262,7 +286,7 @@ function styleFromTextNode(
   css: FieldCSS
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  addSize(style, node, css)
+  addSize(style, node, parent, css)
   addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'

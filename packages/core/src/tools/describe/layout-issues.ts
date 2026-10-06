@@ -143,8 +143,6 @@ function checkGrowInHug(ctx: LayoutContext): void {
 function checkGrowSizeConflict(ctx: LayoutContext): void {
   for (const child of ctx.children) {
     if (child.layoutGrow > 0 && child.layoutMode === 'NONE') {
-      const mainSizing = ctx.isRow ? child.primaryAxisSizing : child.counterAxisSizing
-      if (mainSizing === 'FILL') continue
       const fixedDim = ctx.isRow ? child.width : child.height
       if (fixedDim > 0 && fixedDim !== 100) {
         ctx.issues.push({
@@ -338,7 +336,7 @@ function checkFillWithoutFlex(ctx: LayoutContext): void {
   if (node.layoutMode !== 'NONE') return
   for (const child of visibleChildren(node, graph)) {
     if (!CONTAINER_TYPES.has(child.type)) continue
-    if (child.primaryAxisSizing === 'FILL' || child.counterAxisSizing === 'FILL') {
+    if (child.layoutGrow > 0 || child.layoutAlignSelf === 'STRETCH') {
       issues.push({
         message: `"${child.name}" uses fill sizing but parent "${node.name}" has no auto-layout`,
         suggestion: 'Add flex="col" or flex="row" to the parent'
@@ -362,33 +360,19 @@ function effectivelyFillsCrossAxis(child: SceneNode, parent: SceneNode, isRow: b
 
 function childNeedsFill(child: SceneNode, parent: SceneNode, isRow: boolean): boolean {
   if (child.layoutMode === 'NONE') return false
-  const crossDim = isRow ? child.width : child.height
-  const crossSizing = isRow ? child.counterAxisSizing : child.primaryAxisSizing
-  if (crossDim <= 0 && crossSizing !== 'FILL') return false
+  // Along the parent's main axis, fill is grow.
+  if (child.layoutGrow > 0) return false
+  const mainDim = isRow ? child.width : child.height
+  if (mainDim <= 0) return false
   const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
   if (mainSizing === 'FIXED') return false
   if (effectivelyFillsCrossAxis(child, parent, isRow)) return false
   if (child.childIds.length === 0) return false
-  return isRow
-    ? child.width < parent.width * 0.3 &&
-        child.counterAxisSizing !== 'FILL' &&
-        child.layoutGrow <= 0
-    : child.height < parent.height * 0.3 &&
-        child.primaryAxisSizing !== 'FILL' &&
-        child.layoutGrow <= 0
+  return isRow ? child.width < parent.width * 0.3 : child.height < parent.height * 0.3
 }
 
-function hasSiblingWithGrowOrFill(
-  children: SceneNode[],
-  exclude: SceneNode,
-  isRow: boolean
-): boolean {
-  return children.some((c) => {
-    if (c === exclude) return false
-    if (c.layoutGrow > 0) return true
-    const sizing = isRow ? c.counterAxisSizing : c.primaryAxisSizing
-    return sizing === 'FILL'
-  })
+function hasGrowingSibling(children: SceneNode[], exclude: SceneNode): boolean {
+  return children.some((c) => c !== exclude && c.layoutGrow > 0)
 }
 
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
@@ -398,7 +382,7 @@ function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   if (node.layoutWrap === 'WRAP') return
   for (const child of children) {
     if (!childNeedsFill(child, node, isRow)) continue
-    if (hasSiblingWithGrowOrFill(children, child, isRow)) continue
+    if (hasGrowingSibling(children, child)) continue
     issues.push({
       message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
       suggestion: 'Add w="fill" or grow={1}'
