@@ -163,16 +163,24 @@ watch(
 )
 
 /**
- * Undo and redo change the document under the panel: selected tokens that no longer exist drop out
- * of the selection, and a collection that no longer exists gives way to the first one left.
+ * Undo and redo change the document under the panel: tokens being grouped that no longer exist drop
+ * out, and a collection that no longer exists gives way to the first one left.
  */
 watch(collectionVariables, (current) => {
   const ids = new Set(current.map((variable) => variable.id))
-  if (selectedIds.value.some((id) => !ids.has(id)))
-    selectedIds.value = selectedIds.value.filter((id) => ids.has(id))
   if (groupingIds.value?.some((id) => !ids.has(id)))
     groupingIds.value = groupingIds.value.filter((id) => ids.has(id))
   if (compactDetail.value?.kind === 'token' && !ids.has(compactDetail.value.id)) closeDetail()
+})
+
+/**
+ * Only shown tokens stay selected, so a filter, a search or an undo never leaves a hidden token
+ * to be edited, moved or deleted.
+ */
+watch(groups, (current) => {
+  const shown = new Set(current.flatMap((group) => group.rows.map((row) => row.variable.id)))
+  if (selectedIds.value.some((id) => !shown.has(id)))
+    selectedIds.value = selectedIds.value.filter((id) => shown.has(id))
 })
 
 /** A group filter lets go once its group is gone, whether deleted, emptied or undone. */

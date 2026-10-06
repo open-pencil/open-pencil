@@ -325,9 +325,15 @@ test('search finds variables by CSS name and by value', async () => {
   await expect(variableRows()).toHaveCount(1)
   await expect(variableRows()).toContainText('gap-spacing')
 
+  await variableRows().filter({ hasText: 'gap-spacing' }).click()
+  await expect(editor.page.getByTestId('token-inspector')).toBeVisible()
+
   await search.fill('#FF0000')
   await expect(variableRows().filter({ hasText: 'brand-color' })).toHaveCount(1)
   await expect(variableRows().filter({ hasNotText: '#FF0000' })).toHaveCount(0)
+  // The search hid the selected token, so it is no longer selected or editable.
+  await expect(editor.page.getByTestId('token-inspector')).toBeHidden()
+  await expect(editor.page.getByTestId('collection-inspector')).toBeVisible()
 
   await search.fill('')
   editor.canvas.assertNoErrors()
