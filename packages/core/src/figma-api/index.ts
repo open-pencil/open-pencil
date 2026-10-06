@@ -42,6 +42,7 @@ import type {
   FigmaTextNode,
   FigmaVectorNode
 } from './node-types'
+import { startPendingLayout } from './pending-layout'
 import {
   FigmaNodeProxy,
   INTERNAL_ID,
@@ -92,6 +93,7 @@ export class FigmaAPI implements NodeProxyHost {
 
   constructor(graph: SceneGraph) {
     this.graph = graph
+    startPendingLayout(graph)
     const pages = graph.getPages()
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }

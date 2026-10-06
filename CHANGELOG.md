@@ -98,6 +98,7 @@
 
 ### Fixed
 
+- Read geometry in scripts after an edit without waiting for the script to finish: `x`, `y`, `width`, `height`, `relativeTransform`, `absoluteTransform`, `absoluteBoundingBox`, and `absoluteRenderBounds` lay out what the script changed first, as in Figma, so a hugging parent reports its new size right after a child is added.
 - Keep saving AI chat history in Safari Private Browsing after a message with an image or a reply that changed the document. Safari cannot store image data that way in a private window, so the conversation stopped saving from that point and showed "Chat history could not be saved".
 - `figma.combineAsVariants` derives variant properties from components named as Figma names variants, such as `State=On, Size=Large`, as Combine as variants in the editor now does too; before, only slash-separated names gave the set any properties.
 - HTML and Tailwind export place layers of frames without auto layout at their coordinates instead of stacking them, leave the size of hugging auto layout frames and auto-sizing text to their content, and round ellipses.
