@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import { IS_TAURI } from '@open-pencil/core/constants'
 
 import { createDeferred } from '@/app/runtime/deferred'
@@ -34,10 +36,8 @@ export interface OpenRouterSignInOptions {
   keyLabel: string
 }
 
-interface OAuthCallbackEvent {
-  provider: string
-  query: string
-}
+/** What the desktop shell forwards from an `openpencil://oauth/<provider>?…` link. */
+const oauthCallbackSchema = v.object({ provider: v.string(), query: v.string() })
 
 export interface OpenRouterSignIn {
   /** Opens the OpenRouter sign-in page again for the same attempt. */
@@ -135,8 +135,11 @@ async function listenForDesktopCallback() {
   const { listen } = await import('@tauri-apps/api/event')
   const received = createDeferred<string | null>()
   const timer = setTimeout(() => received.resolve(null), OPENROUTER_CODE_LIFETIME_MS)
-  const unlisten = await listen<OAuthCallbackEvent>(OAUTH_CALLBACK_EVENT, (event) => {
-    if (event.payload.provider === 'openrouter') received.resolve(event.payload.query)
+  const unlisten = await listen<unknown>(OAUTH_CALLBACK_EVENT, (event) => {
+    const callback = v.safeParse(oauthCallbackSchema, event.payload)
+    if (callback.success && callback.output.provider === 'openrouter') {
+      received.resolve(callback.output.query)
+    }
   })
   return {
     query: (signal: AbortSignal) => abortable(received.promise, signal),

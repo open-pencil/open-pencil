@@ -16,12 +16,8 @@ export interface PiAccount {
 
 /** Reads the default model from Pi's `settings.json`; never touches `auth.json`. */
 export function parsePiSettings(text: string): string | null {
-  try {
-    const parsed = v.safeParse(piSettingsSchema, JSON.parse(text))
-    return parsed.success ? (parsed.output.defaultModel ?? null) : null
-  } catch {
-    return null
-  }
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), piSettingsSchema), text)
+  return parsed.success ? (parsed.output.defaultModel ?? null) : null
 }
 
 /**

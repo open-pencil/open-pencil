@@ -1,4 +1,5 @@
 import { fromUint8Array } from 'js-base64'
+import * as v from 'valibot'
 
 /** OpenRouter's OAuth PKCE flow: https://openrouter.ai/docs/guides/overview/auth/oauth */
 export const OPENROUTER_AUTH_URL = 'https://openrouter.ai/auth'
@@ -60,6 +61,8 @@ export function parseOpenRouterCallback(query: string, expectedState: string): O
   return code ? { ok: true, code } : { ok: false, reason: 'cancelled' }
 }
 
+const keyExchangeSchema = v.object({ key: v.pipe(v.string(), v.minLength(1)) })
+
 /** Trades an authorization code for an API key; OpenRouter allows this from a browser. */
 export async function exchangeOpenRouterCode(
   code: string,
@@ -72,11 +75,7 @@ export async function exchangeOpenRouterCode(
     body: JSON.stringify({ code, code_verifier: verifier, code_challenge_method: 'S256' })
   })
   if (!response.ok) throw new OpenRouterKeyExchangeError(response.status)
-  const body: unknown = await response.json()
-  const key =
-    typeof body === 'object' && body !== null && 'key' in body && typeof body.key === 'string'
-      ? body.key
-      : ''
-  if (!key) throw new OpenRouterKeyExchangeError(response.status)
-  return key
+  const parsed = v.safeParse(keyExchangeSchema, await response.json())
+  if (!parsed.success) throw new OpenRouterKeyExchangeError(response.status)
+  return parsed.output.key
 }
