@@ -22,9 +22,10 @@ const { open, back, parent, ui } = defineProps<{
 const emit = defineEmits<{ back: [] }>()
 
 const styles = tv(drillInTheme)()
-const body = useTemplateRef<HTMLElement>('body')
+const detail = useTemplateRef<HTMLElement>('detail')
 /**
- * The list shows under the detail while it slides, then hides once covered, so the two never
+ * The list shows under the detail while it slides, then hides once covered. It is inert from the
+ * moment the detail opens, and a closing detail is inert while it slides away, so the two never
  * share the tab order.
  */
 const covered = ref(false)
@@ -38,15 +39,20 @@ watch(
   }
 )
 
-const FIELD = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled])'
+const FIELD = '[data-slot="body"] :is(input:not([type="hidden"]), textarea, select):not([disabled])'
 
+/** The detail's first field, or its back control when it has none. */
 async function focusDetail() {
   covered.value = true
   await nextTick()
-  body.value?.querySelector<HTMLElement>(FIELD)?.focus({ preventScroll: true })
+  const target =
+    detail.value?.querySelector<HTMLElement>(FIELD) ??
+    detail.value?.querySelector<HTMLElement>('[data-slot="back"]')
+  target?.focus({ preventScroll: true })
 }
 
-function uncover() {
+function uncover(element: Element) {
+  if (element instanceof HTMLElement) element.inert = true
   covered.value = false
 }
 
@@ -65,7 +71,12 @@ async function restoreFocus() {
       @before-leave="uncover"
       @after-leave="restoreFocus"
     >
-      <div v-if="open" data-slot="detail" :class="styles.detail({ class: ui?.detail })">
+      <div
+        v-if="open"
+        ref="detail"
+        data-slot="detail"
+        :class="styles.detail({ class: ui?.detail })"
+      >
         <div data-slot="header" :class="styles.header({ class: ui?.header })">
           <AppButton variant="ghost" size="sm" data-slot="back" @click="emit('back')">
             <template #leading><icon-lucide-chevron-left class="size-4" /></template>
@@ -75,12 +86,12 @@ async function restoreFocus() {
           <span class="flex-1" />
           <slot name="actions" />
         </div>
-        <div ref="body" data-slot="body" :class="styles.body({ class: ui?.body })">
+        <div data-slot="body" :class="styles.body({ class: ui?.body })">
           <slot name="detail" />
         </div>
       </div>
     </Transition>
-    <div v-show="!covered" data-slot="base" :class="styles.base({ class: ui?.base })">
+    <div v-show="!covered" :inert="open" data-slot="base" :class="styles.base({ class: ui?.base })">
       <slot />
     </div>
   </div>
