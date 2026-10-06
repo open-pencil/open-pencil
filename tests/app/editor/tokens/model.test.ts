@@ -6,6 +6,7 @@ import {
   aliasCandidates,
   groupTree,
   inGroup,
+  modeAttributeText,
   nameInGroup,
   parseTokenValueText,
   reorderedVariableIds,
@@ -142,6 +143,16 @@ describe('token search', () => {
 
   test('an empty search filters nothing', () => {
     expect(searchTokenIds(rows(), '  ')).toBeNull()
+  })
+})
+
+describe('mode attributes', () => {
+  test('a manual mode is turned on by the attribute its collection and name give', () => {
+    const graph = new SceneGraph()
+    const theme = graph.createCollection('Theme')
+    const dark = graph.createMode(theme.id, 'Dark') ?? ''
+
+    expect(modeAttributeText(theme, dark)).toBe('data-theme="dark"')
   })
 })
 

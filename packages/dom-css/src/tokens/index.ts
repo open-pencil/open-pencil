@@ -14,6 +14,7 @@ export {
   buildTokenStylesheet,
   defaultModeCondition,
   loadTokenValidator,
+  modeAttribute,
   tokenStylesheet,
   type TokenStylesheet,
   type TokenStylesheetFormat,

@@ -21,7 +21,7 @@ import {
   type ConditionKind,
   type ModeCondition
 } from '@/app/editor/tokens/conditions'
-import { modeConditionPlaceholder } from '@/app/editor/tokens/model'
+import { modeAttributeText, modeConditionPlaceholder } from '@/app/editor/tokens/model'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -137,7 +137,7 @@ function hint(modeId: string): string {
   const current = condition(modeId)
   if (current.kind === 'manual')
     return variables.value.conditionManualHint({
-      attribute: (modeConditionPlaceholder(collection, modeId) ?? '').replace(/^\[|\]$/g, '')
+      attribute: modeAttributeText(collection, modeId)
     })
   if (isAutomaticCondition(current)) return variables.value.conditionAutomaticHint
   return variables.value.conditionHint

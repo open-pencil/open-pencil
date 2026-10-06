@@ -3,6 +3,7 @@ import { compact, groupBy } from 'es-toolkit/array'
 import {
   collectionVariables,
   defaultModeCondition,
+  modeAttribute,
   tokenNumberToCSS,
   variableCSSNames,
   variableUnit
@@ -102,6 +103,14 @@ export function modeConditionPlaceholder(
   if (modeId === collection.defaultModeId) return undefined
   const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
   return mode && defaultModeCondition(collection, mode)
+}
+
+/** The attribute that turns a manual mode on, as an element carries it: `data-theme="dark"`. */
+export function modeAttributeText(collection: VariableCollection, modeId: string): string {
+  const mode = collection.modes.find((candidate) => candidate.modeId === modeId)
+  if (!mode) return ''
+  const { name, value } = modeAttribute(collection, mode)
+  return `${name}="${value}"`
 }
 
 /**
