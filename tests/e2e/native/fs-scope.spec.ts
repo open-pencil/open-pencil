@@ -9,6 +9,11 @@ const NAME = 'openpencil-native-test-scope.txt'
 const DISCOVERY = join(homedir(), 'Library', 'Application Support', 'OpenPencil', 'mcp.json')
 
 describe('desktop file scope', () => {
+  // The protected paths below are macOS ones; other platforms are not claimed.
+  before(function () {
+    if (process.platform !== 'darwin') this.skip()
+  })
+
   it('saves documents but not where a written file would run', async () => {
     const documents = mkdtempSync(join(tmpdir(), 'openpencil-scope-'))
     const refused = [
@@ -31,7 +36,8 @@ describe('desktop file scope', () => {
   })
 
   it('refuses to open the MCP discovery file for writing', async () => {
-    // Opening without truncating changes nothing, even if the scope let it through.
+    // The scope is checked before the file is opened, so a refusal does not depend on the file
+    // existing; opening without truncating changes nothing even if the scope let it through.
     const opened = await invokeNative<number>('plugin:fs|open', {
       path: DISCOVERY,
       options: { write: true }
