@@ -28,14 +28,29 @@ test('every story renders and passes its play function', async ({ page, request 
             return
           }
           const on = channel.on as (event: string, listener: (detail?: unknown) => void) => void
-          const fail = (kind: string) => (detail?: unknown) =>
-            resolve(
-              `${kind}: ${detail instanceof Object && 'message' in detail ? String(detail.message) : String(detail)}`
-            )
-          on.call(channel, 'storyRendered', () => resolve('ok'))
-          on.call(channel, 'playFunctionThrewException', fail('play function'))
-          on.call(channel, 'storyThrewException', fail('render'))
-          on.call(channel, 'storyErrored', fail('story'))
+          // Exceptions name what failed. storyFinished comes last, after afterEach, and its
+          // reporters say whether anything else failed; accessibility reports are left to axe.
+          const failures: string[] = []
+          const record = (kind: string) => (detail?: unknown) => {
+            const message =
+              detail instanceof Object && 'message' in detail ? detail.message : detail
+            failures.push(`${kind}: ${String(message)}`)
+          }
+          on.call(channel, 'playFunctionThrewException', record('play function'))
+          on.call(channel, 'storyThrewException', record('render'))
+          on.call(channel, 'storyErrored', record('story'))
+          on.call(channel, 'storyFinished', (detail?: unknown) => {
+            const reporters =
+              detail instanceof Object && 'reporters' in detail && Array.isArray(detail.reporters)
+                ? detail.reporters
+                : []
+            for (const report of reporters) {
+              const { type, status } = report as { type?: unknown; status?: unknown }
+              if (type !== 'a11y' && status === 'failed')
+                failures.push(`${String(type)} report failed`)
+            }
+            resolve(failures[0] ?? 'ok')
+          })
           setTimeout(() => resolve('timed out'), timeout)
         }),
       STORY_TIMEOUT_MS
