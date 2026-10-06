@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import { maxAgentSteps, reasoningDisplay } from '@/app/ai/chat/preferences'
+import { changePreviewSize, maxAgentSteps, reasoningDisplay } from '@/app/ai/chat/preferences'
 import { AGENT_STEP_LIMIT_MIN, AGENT_STEP_LIMIT_MAX } from '@/app/ai/chat/step-limit'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -23,6 +23,12 @@ const options = computed(() => [
   { value: 'while-thinking' as const, label: ai.value.reasoningWhileThinking },
   { value: 'expanded' as const, label: ai.value.reasoningExpanded }
 ])
+const previewOptions = computed(() => [
+  { value: 'off' as const, label: ai.value.changePreviewOff },
+  { value: 'small' as const, label: ai.value.changePreviewSmall },
+  { value: 'medium' as const, label: ai.value.changePreviewMedium },
+  { value: 'large' as const, label: ai.value.changePreviewLarge }
+])
 </script>
 
 <template>
@@ -34,6 +40,18 @@ const options = computed(() => [
           v-model="reasoningDisplay"
           :label="ai.reasoningDisplay"
           :options="options"
+          :ui="{ trigger: 'w-full sm:w-52' }"
+        />
+      </SettingsRow>
+      <SettingsRow
+        :label="ai.changePreview"
+        :description="ai.changePreviewHint"
+        class="max-sm:flex-col max-sm:items-stretch"
+      >
+        <AppSelect
+          v-model="changePreviewSize"
+          :label="ai.changePreview"
+          :options="previewOptions"
           :ui="{ trigger: 'w-full sm:w-52' }"
         />
       </SettingsRow>

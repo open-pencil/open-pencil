@@ -1,40 +1,38 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
+import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
+
+/** The parent all these layers share, or null when they are not siblings. */
+export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+  const first = nodes.at(0)
+  if (!first) return null
+  const parentId = first.parentId ?? ctx.state.currentPageId
+  return nodes.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId)
+    ? parentId
+    : null
+}
 
 export function wrapSelectionInContainer(
   ctx: EditorContext,
-  isTopLevel: (parentId: string | null) => boolean,
   containerType: 'GROUP' | 'FRAME' | 'COMPONENT' | 'COMPONENT_SET',
   selectedNodes: SceneNode[],
   extraProps?: Partial<SceneNode>
 ) {
-  if (selectedNodes.length === 0) return null
-
-  const parentId = selectedNodes[0].parentId ?? ctx.state.currentPageId
-  const sameParent = selectedNodes.every(
-    (n) => (n.parentId ?? ctx.state.currentPageId) === parentId
-  )
-  if (!sameParent) return null
+  const parentId = sharedParentId(ctx, selectedNodes)
+  if (!parentId) return null
 
   const parent = ctx.graph.getNode(parentId)
   if (!parent) return null
+  // The locked part of an instance takes no new containers.
+  if (!prepareSlotEdits(ctx, [parentId])) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const nodeIds = selectedNodes.map((n) => n.id)
   const origPositions = selectedNodes.map((n) => ({ id: n.id, x: n.x, y: n.y }))
 
-  const {
-    x: minX,
-    y: minY,
-    width: bw,
-    height: bh
-  } = computeAbsoluteBounds(selectedNodes, (id) => ctx.graph.getAbsolutePosition(id))
-  const maxX = minX + bw
-  const maxY = minY + bh
-
-  const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : ctx.graph.getAbsolutePosition(parentId)
+  const bounds = getAxisAlignedBoundsInParent(selectedNodes, parentId, ctx.graph)
   const firstIndex = Math.min(...nodeIds.map((id) => parent.childIds.indexOf(id)))
 
   const padding = containerType === 'COMPONENT_SET' ? 40 : 0
@@ -46,10 +44,10 @@ export function wrapSelectionInContainer(
   }
   const containerNode = ctx.graph.createNode(containerType, parentId, {
     name: containerNames[containerType] ?? containerType,
-    x: minX - parentAbs.x - padding,
-    y: minY - parentAbs.y - padding,
-    width: maxX - minX + padding * 2,
-    height: maxY - minY + padding * 2,
+    x: bounds.x - padding,
+    y: bounds.y - padding,
+    width: bounds.width + padding * 2,
+    height: bounds.height + padding * 2,
     fills:
       containerType === 'COMPONENT_SET'
         ? [

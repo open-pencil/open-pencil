@@ -10,8 +10,8 @@ import {
   linearGradient,
   radialGradient,
   solid
-} from '@open-pencil/core/design-jsx'
-import type { TreeNode } from '@open-pencil/core/design-jsx'
+} from '@open-pencil/design-jsx'
+import type { TreeNode } from '@open-pencil/design-jsx'
 
 export interface PaintExample {
   title: string

@@ -1,71 +1,33 @@
-import { describe, expect, test } from 'bun:test'
+import { expect, test } from 'bun:test'
 
-import {
-  populateAllLazyFigImportRoots,
-  populateLazyFigImportRoots,
-  setLazyFigImportContext
-} from '@open-pencil/core/kiwi/fig/lazy-import'
+import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
+import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-function createLazyGraph() {
-  const graph = new SceneGraph()
-  const [page1] = graph.getPages()
-  const page2 = graph.addPage('Page 2')
-  const component = graph.createNode('COMPONENT', page1.id, {
-    name: 'Button',
-    width: 100,
-    height: 40
-  })
-  graph.createNode('RECTANGLE', component.id, {
-    name: 'Background',
-    width: 100,
-    height: 40
-  })
-  const page1Instance = graph.createNode('INSTANCE', page1.id, {
-    name: 'Button instance 1',
-    componentId: component.id,
-    width: 100,
-    height: 40
-  })
-  const page2Instance = graph.createNode('INSTANCE', page2.id, {
-    name: 'Button instance 2',
-    componentId: component.id,
-    width: 100,
-    height: 40
-  })
-
-  setLazyFigImportContext(graph, {
-    changeMap: new Map(),
-    guidToNodeId: new Map(),
-    blobs: [],
-    populatedRootIds: new Set([page1.id])
-  })
-
-  return { graph, page1, page2, page1Instance, page2Instance }
+async function createLazyGraph() {
+  await initCodec()
+  const source = new SceneGraph()
+  source.createNode('RECTANGLE', source.getPages()[0].id, { name: 'First' })
+  source.createNode('RECTANGLE', source.addPage('Page 2').id, { name: 'Second' })
+  const bytes = await exportFigFile(source)
+  return parseFigFile(bytes.slice().buffer as ArrayBuffer, { populate: 'none' })
 }
 
-describe('lazy .fig page population', () => {
-  test('populates an unvisited page once', () => {
-    const { graph, page2, page1Instance, page2Instance } = createLazyGraph()
+test('replacement session populates an unvisited page exactly once', async () => {
+  const graph = await createLazyGraph()
+  const [first, second] = graph.getPages()
+  expect(graph.getChildren(first.id)).toHaveLength(0)
+  expect(populateFigPage(graph, second.id)).toBe(true)
+  expect(graph.getChildren(first.id)).toHaveLength(0)
+  expect(graph.getChildren(second.id).map((node) => node.name)).toEqual(['Second'])
+  const count = graph.nodes.size
+  expect(populateFigPage(graph, second.id)).toBe(false)
+  expect(graph.nodes.size).toBe(count)
+})
 
-    expect(graph.getChildren(page1Instance.id)).toHaveLength(0)
-    expect(graph.getChildren(page2Instance.id)).toHaveLength(0)
-
-    expect(populateLazyFigImportRoots(graph, [page2.id])).toBe(true)
-    expect(graph.getChildren(page1Instance.id)).toHaveLength(0)
-    expect(graph.getChildren(page2Instance.id)).toHaveLength(1)
-
-    const nodeCount = graph.nodes.size
-    expect(populateLazyFigImportRoots(graph, [page2.id])).toBe(false)
-    expect(graph.nodes.size).toBe(nodeCount)
-  })
-
-  test('can populate all remaining pages before full-document operations', () => {
-    const { graph, page1Instance, page2Instance } = createLazyGraph()
-
-    expect(populateAllLazyFigImportRoots(graph)).toBe(true)
-    expect(graph.getChildren(page1Instance.id)).toHaveLength(1)
-    expect(graph.getChildren(page2Instance.id)).toHaveLength(1)
-    expect(populateAllLazyFigImportRoots(graph)).toBe(false)
-  })
+test('replacement session populates all remaining pages once', async () => {
+  const graph = await createLazyGraph()
+  expect(populateAllFigPages(graph)).toBe(true)
+  expect(graph.getPages().map((page) => graph.getChildren(page.id).length)).toEqual([1, 1])
+  expect(populateAllFigPages(graph)).toBe(false)
 })

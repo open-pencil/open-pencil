@@ -1,6 +1,8 @@
 import type { SceneGraph } from '../index'
-import { setInstanceOverride } from '../instance-overrides'
+import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
 import { findInstanceAncestor } from '../instances'
+import { instanceMainComponent } from '../instances/main-component'
+import { randomHex } from '../random'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -14,8 +16,8 @@ export interface ComponentPropertyTarget {
 }
 
 export function componentPropertyOwners(graph: SceneGraph, instance: SceneNode): SceneNode[] {
-  if (instance.type !== 'INSTANCE' || !instance.componentId) return []
-  const component = graph.getNode(instance.componentId)
+  if (instance.type !== 'INSTANCE') return []
+  const component = instanceMainComponent(graph, instance)
   if (!component) return []
   const parent = component.parentId ? graph.getNode(component.parentId) : null
   return parent?.type === 'COMPONENT_SET' ? [parent, component] : [component]
@@ -70,10 +72,22 @@ export function findComponentPropertyTargets(
   if (!component) return []
   const targets: ComponentPropertyTarget[] = []
   const visit = (sourceParent: SceneNode, instanceParent: SceneNode): void => {
-    for (const [index, childId] of sourceParent.childIds.entries()) {
+    const bySource = new Map<string, SceneNode>()
+    for (const child of graph.getChildren(instanceParent.id)) {
+      const mapped = getInstanceOverride(
+        instance.instanceOverrides,
+        instance.id,
+        child.id,
+        'sourceComponentId'
+      )
+      const sourceId = typeof mapped === 'string' ? mapped : child.componentId
+      if (!sourceId) continue
+      if (bySource.has(sourceId)) throw new Error(`Ambiguous component-property target ${sourceId}`)
+      bySource.set(sourceId, child)
+    }
+    for (const childId of sourceParent.childIds) {
       const source = graph.getNode(childId)
-      const targetId = instanceParent.childIds[index]
-      const target = targetId ? graph.getNode(targetId) : undefined
+      const target = bySource.get(childId)
       if (!source || !target) continue
       const reference = source.componentPropertyReferences.find(
         (candidate) => candidate.propertyId === propertyId
@@ -235,4 +249,9 @@ export function removeComponentProperty(
   ]
   for (const node of nodes) removePropertyFromNode(graph, node, propertyId)
   return true
+}
+
+/** A new component property ID, in the `prop:` form the editor, plugin API, and design JSX share. */
+export function createComponentPropertyId(): string {
+  return `prop:${randomHex(8)}`
 }

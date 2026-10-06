@@ -64,14 +64,18 @@ class FakeSession implements BackendSession {
 
 class FakeBackend implements HarnessBackend {
   readonly id = 'pi' as const
-  readonly capabilities = {
-    adapter: 'pi',
-    sandboxes: ['just-bash'],
-    structuredOutput: false,
-    sessionResume: 'live-process',
-    turnContinuation: true
-  } as const
+  readonly capabilities
   sessions: FakeSession[] = []
+
+  constructor(sessionResume: 'live-process' | 'persistent' = 'live-process') {
+    this.capabilities = {
+      adapter: 'pi',
+      sandboxes: ['just-bash'],
+      structuredOutput: false,
+      sessionResume,
+      turnContinuation: true
+    } as const
+  }
 
   async createSession(options: {
     sessionId: string
@@ -100,7 +104,7 @@ describe('HarnessSessionService', () => {
   })
 
   test('streams turns and resumes from opaque persisted state', async () => {
-    const backend = new FakeBackend()
+    const backend = new FakeBackend('persistent')
     const store = new MemoryStore()
     const service = new HarnessSessionService(new Map([[backend.id, backend]]), store)
 
@@ -118,7 +122,7 @@ describe('HarnessSessionService', () => {
   })
 
   test('destroys a session and removes resumability', async () => {
-    const backend = new FakeBackend()
+    const backend = new FakeBackend('persistent')
     const store = new MemoryStore()
     const service = new HarnessSessionService(new Map([[backend.id, backend]]), store)
     await service.createSession('session-1', configuration)
@@ -138,9 +142,41 @@ describe('HarnessSessionService', () => {
       specificationVersion: 'harness-v1',
       data: {}
     })
-    const service = new HarnessSessionService(new Map([['pi', new FakeBackend()]]), store)
+    const service = new HarnessSessionService(
+      new Map([['pi', new FakeBackend('persistent')]]),
+      store
+    )
     await expect(service.createSession('session-1', configuration)).rejects.toThrow(
       'belongs to other'
     )
+  })
+
+  test('starts a live-process backend fresh and drops state saved by an earlier session', async () => {
+    const backend = new FakeBackend('live-process')
+    const store = new MemoryStore()
+    const service = new HarnessSessionService(new Map([[backend.id, backend]]), store)
+    await service.createSession('session-1', configuration)
+    await service.stopSession('session-1')
+
+    expect(await service.createSession('session-1', configuration)).toEqual({ isResume: false })
+    expect(store.states.has('session-1')).toBeFalse()
+  })
+
+  test("rejects another backend's state without deleting it for a live-process backend", async () => {
+    const store = new MemoryStore()
+    store.states.set('session-1', {
+      type: 'resume-session',
+      harnessId: 'other',
+      specificationVersion: 'harness-v1',
+      data: {}
+    })
+    const service = new HarnessSessionService(
+      new Map([['pi', new FakeBackend('live-process')]]),
+      store
+    )
+    await expect(service.createSession('session-1', configuration)).rejects.toThrow(
+      'belongs to other'
+    )
+    expect(store.states.has('session-1')).toBeTrue()
   })
 })

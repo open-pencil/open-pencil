@@ -41,7 +41,7 @@ jobs:
         name: Resolve immutable source and native matrix
         env:
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-        run: bun tools/release-packages/src/native/resolve.ts
+        run: bun tools/release/release-packages/src/native/resolve.ts
 
   frontend:
     needs: plan
@@ -74,12 +74,12 @@ jobs:
           bun run build
       - name: Prepare and validate npm tarballs
         run: |
-          bun .pipeline/tools/release-packages/src/cli.ts prepare
-          bun .pipeline/tools/release-packages/src/cli.ts pack
+          bun .pipeline/tools/release/release-packages/src/cli.ts prepare
+          bun .pipeline/tools/release/release-packages/src/cli.ts pack
       - name: Extract exact release notes
         env:
           RELEASE_VERSION: ${{ needs.plan.outputs.version }}
-        run: bun .pipeline/tools/release-packages/src/extract-release-notes.ts "$RELEASE_VERSION" release-notes.md
+        run: bun .pipeline/tools/release/release-packages/src/extract-release-notes.ts "$RELEASE_VERSION" release-notes.md
       - name: Archive platform-independent native inputs
         id: frontend
         run: |
@@ -148,7 +148,7 @@ jobs:
         with:
           name: release-frontend
       - name: Verify shared inputs and disable only the redundant build hook
-        run: bun .pipeline/tools/release-packages/src/native/frontend.ts
+        run: bun .pipeline/tools/release/release-packages/src/native/frontend.ts
       - name: Extract shared frontend, icons and menu
         run: tar -xf frontend.tar
       - name: Verify Node and Tauri startup
@@ -175,7 +175,7 @@ jobs:
       - name: Collect only reported bundles and signatures
         env:
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
-        run: bun .pipeline/tools/release-packages/src/native/collect.ts
+        run: bun .pipeline/tools/release/release-packages/src/native/collect.ts
       - uses: actions/upload-artifact@v7
         with:
           name: native-${{ matrix.target }}
@@ -230,9 +230,9 @@ jobs:
       - name: Install signature verifier
         run: sudo apt-get update && sudo apt-get install -y minisign
       - name: Verify all targets, digests and updater signatures
-        run: bun .pipeline/tools/release-packages/src/native/assemble.ts
+        run: bun .pipeline/tools/release/release-packages/src/native/assemble.ts
       - name: Refuse published releases or moved tags
-        run: bun .pipeline/tools/release-packages/src/native/publish.ts check
+        run: bun .pipeline/tools/release/release-packages/src/native/publish.ts check
       - name: Attest the complete binary set and source/workflow manifest
         id: provenance
         uses: actions/attest@v4
@@ -249,6 +249,6 @@ jobs:
               --signer-digest "$WORKFLOW_COMMIT" --deny-self-hosted-runners
           done
       - name: Publish verified npm artifacts with provenance
-        run: bun .pipeline/tools/release-packages/src/cli.ts publish
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts publish
       - name: Replace and verify the entire draft asset set
-        run: bun .pipeline/tools/release-packages/src/native/publish.ts upload
+        run: bun .pipeline/tools/release/release-packages/src/native/publish.ts upload

@@ -89,6 +89,33 @@ export function cloneInstanceOverrideState(state: InstanceOverrideState): Instan
   }
 }
 
+export interface InstanceOverrideReferenceMapper {
+  node: (id: string) => string
+  variable: (id: string) => string
+}
+
+/** Remap runtime identities only; ordinary strings and source-format payloads stay opaque. */
+export function remapInstanceOverrideState(
+  state: InstanceOverrideState,
+  references: InstanceOverrideReferenceMapper
+): InstanceOverrideState {
+  const remapValue = (field: string, value: unknown): unknown => {
+    if (typeof value !== 'string') return structuredClone(value)
+    if (field === 'componentId' || field === 'sourceComponentId') return references.node(value)
+    if (field.startsWith('boundVariables/')) return references.variable(value)
+    return value
+  }
+  const fields = (entries: ReadonlyMap<string, unknown>) =>
+    new Map([...entries].map(([field, value]) => [field, remapValue(field, value)]))
+  const descendants = new Map<string, Map<string, unknown>>()
+  for (const [id, entries] of state.descendants) {
+    const mapped = references.node(id)
+    if (descendants.has(mapped)) throw new Error(`Duplicate remapped override target ${mapped}`)
+    descendants.set(mapped, fields(entries))
+  }
+  return { self: fields(state.self), descendants }
+}
+
 export function getInstanceOverride(
   state: InstanceOverrideState,
   instanceId: string,

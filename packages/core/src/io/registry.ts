@@ -3,9 +3,9 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { ExportRequest, IOContext, IOFormatAdapter, ReadDocumentInput } from './types'
 
 export class IORegistry {
-  constructor(private readonly adapters: IOFormatAdapter[]) {}
+  constructor(private readonly adapters: readonly IOFormatAdapter[]) {}
 
-  listFormats(): IOFormatAdapter[] {
+  listFormats(): readonly IOFormatAdapter[] {
     return this.adapters
   }
 

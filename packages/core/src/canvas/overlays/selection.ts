@@ -1,5 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import { slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { computeBounds, rotatedCorners } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -9,6 +10,7 @@ import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
   HANDLE_HALF_SIZE,
   ROTATION_HANDLE_DISTANCE,
+  CODE_FOCUS_FILL_ALPHA,
   SELECTION_DASH_ALPHA,
   SECTION_HOVER_STROKE_WIDTH
 } from '#core/constants'
@@ -32,10 +34,37 @@ export function drawHoverHighlight(
   const node = hoveredNodeId ? graph.getNode(hoveredNodeId) : undefined
   if (!node) return
   r.auxStroke.setStrokeWidth((node.type === 'SECTION' ? SECTION_HOVER_STROKE_WIDTH : 1) / r.zoom)
-  r.auxStroke.setColor(r.isComponentType(node.type) ? r.compColor() : r.selColor())
+  r.auxStroke.setColor(r.outlineColor(node))
   r.auxStroke.setPathEffect(null)
   canvas.save()
   canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
+  r.strokeNodeShape(canvas, node, r.auxStroke)
+  canvas.restore()
+}
+
+/**
+ * The layer of the code element around the cursor: the hover outline over a light tint, so it
+ * reads apart from canvas hover (outline only) and selection (outline and handles).
+ */
+export function drawCodeFocus(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  nodeId?: string | null,
+  preview?: RotationPreview | null
+): void {
+  const node = nodeId ? graph.getNode(nodeId) : undefined
+  if (!node) return
+  const component = r.isComponentType(node.type)
+  r.auxFill.setColor(
+    component ? r.compColor(CODE_FOCUS_FILL_ALPHA) : r.selColor(CODE_FOCUS_FILL_ALPHA)
+  )
+  r.auxStroke.setStrokeWidth(1 / r.zoom)
+  r.auxStroke.setColor(component ? r.compColor() : r.selColor())
+  r.auxStroke.setPathEffect(null)
+  canvas.save()
+  canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
+  r.strokeNodeShape(canvas, node, r.auxFill)
   r.strokeNodeShape(canvas, node, r.auxStroke)
   canvas.restore()
 }
@@ -88,8 +117,7 @@ function drawSingleSelection(
   // is suppressed (see drawTextEditOverlay) since it can't follow the path.
   if (editing && !isPathText) return
 
-  const useComponentColor = r.isComponentType(node.type)
-  r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
+  r.selectionPaint.setColor(r.outlineColor(node))
   r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
   const rotation = node.rotation
@@ -127,8 +155,7 @@ export function drawSelection(
     const node = graph.getNode(id)
     if (!node) continue
 
-    const useComponentColor = r.isComponentType(node.type)
-    r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
+    r.selectionPaint.setColor(r.outlineColor(node))
     r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
     const rotation = node.rotation
@@ -372,6 +399,8 @@ export function drawParentFrameOutlines(
     const parent = graph.getNode(node.parentId)
     if (!parent || parent.type === 'CANVAS') continue
     if (drawn.has(parent.id) || selectedIds.has(parent.id)) continue
+    // Slots get their own dashed outline (overlays/slots.ts).
+    if (slotPropertyId(parent)) continue
 
     const grandparent = parent.parentId ? graph.getNode(parent.parentId) : null
     if (!grandparent || grandparent.type === 'CANVAS') continue

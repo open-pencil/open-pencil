@@ -2,15 +2,15 @@ import { promiseTimeout } from '@vueuse/core'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { findFigThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { findFigThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
-import { populateLazyFigImportRoots } from '@open-pencil/core/kiwi'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { confirmAllDocuments } from '@/app/document/close/all'
+import { confirmDocumentClose } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -31,6 +31,7 @@ import {
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
+import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
@@ -153,13 +154,19 @@ export function switchTab(tabId: string): boolean {
   return true
 }
 
-export async function closeTab(tabId: string): Promise<void> {
+/**
+ * Close a tab, asking whether to save unsaved changes. Pass `unsaved` to decide without
+ * asking, as automation must: nobody may be there to answer.
+ */
+export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Promise<void> {
   const idx = tabsRef.value.findIndex((t) => t.id === tabId)
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
   if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
-  const choice = await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
+  const choice = unsaved
+    ? await confirmDocumentClose(closingTab.store, async () => unsaved)
+    : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
   if (choice === 'cancel') return
   if (choice === 'discard') await closingTab.store.discardRecovery()
   else await closingTab.store.persistRecoveryNow()
@@ -214,7 +221,7 @@ async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGra
   if (firstPageId) computeAllLayouts(imported, firstPageId)
   const coverPageId = findFigThumbnailPageId(imported.getPages())
   if (coverPageId && coverPageId !== firstPageId) {
-    populateLazyFigImportRoots(imported, [coverPageId])
+    populateFigPage(imported, coverPageId)
     computeAllLayouts(imported, coverPageId)
   }
   return imported
@@ -430,7 +437,7 @@ export async function openFileInNewTab(
       subject: file.name
     })
 
-    const completion = Promise.withResolvers<undefined>()
+    const completion = createDeferred<undefined>()
     void completion.promise.catch(() => undefined)
     const pendingOpen = { completion: completion.promise, identity, store }
     fileOpenCoordinator.add(pendingOpen)

@@ -14,6 +14,21 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(serializeHTML(cardDocument)).toContain('OpenPencil')
   })
 
+  it('keeps images with invalid Base64 inline instead of extracting them', async () => {
+    const src = 'data:image/png;base64,A!QID'
+    const bundle = await exportHTMLBundle(
+      {
+        type: 'document',
+        children: [{ type: 'element', tagName: 'img', attrs: { src }, children: [] }]
+      },
+      { html: 'standalone', assets: 'external' }
+    )
+    const page = bundle.files.find((file) => file.path === bundle.entrypoint)
+
+    expect(bundle.files.some((file) => file.path.includes('/images/'))).toBe(false)
+    expect(String(page?.content)).toContain(src)
+  })
+
   it('serializes inline styles as Tailwind classes when requested', () => {
     const html = serializeHTML(
       {

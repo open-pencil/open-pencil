@@ -149,7 +149,9 @@ Endpoints are available over both active transports:
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
 6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
 7. **Save** — `save_file` to write back to `.fig`
-8. **Close** — `close_file` to close an open document tab; it prompts to save unsaved changes.
+8. **Close** — `close_file` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
+
+`undo` and `redo` step back through the agent's own changes, and `activate_document` brings a tab to the front when the user should see it.
 
 Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
@@ -174,10 +176,29 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | Tool | Description |
 |------|-------------|
 | `open_file` | Open a `.fig` file for editing |
-| `close_file` | Close an open document tab, prompting to save unsaved changes |
+| `close_file` | Close an open document tab; `unsaved: "save"` or `"discard"` decides what happens to unsaved changes |
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
 | `list_documents` | List open app documents/tabs and their pages |
+| `activate_document` | Bring a document tab to the front, optionally on a given page |
+
+### History
+
+| Tool | Description |
+|------|-------------|
+| `undo` | Undo the newest change made through MCP or the CLI |
+| `redo` | Redo the newest change undone through MCP or the CLI |
+
+The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call is one undo step. An `eval` script is recorded against its target page, so edits it makes after switching `figma.currentPage` are not undoable.
+
+### Settings
+
+| Tool | Description |
+|------|-------------|
+| `get_settings` | Read editor settings: appearance, snapping, canvas rendering, recovery, AI chat, and design check preferences |
+| `update_settings` | Change settings with a partial object shaped like `get_settings` output; invalid keys and values are rejected |
+
+Settings tools never expose credentials, AI models, MCP connections, storage, or tool access. The available keys are listed in [Controlling the App](/programmable/cli/app-control#settings).
 
 ### Read
 
@@ -194,7 +215,7 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `list_collections` | List variable collections |
 | `list_fonts` | List fonts used in the current page |
 | `list_available_fonts` | List font families the current host can render |
-| `get_font_status` | Report requested faces, loaded sources, active substitutions, and affected nodes |
+| `get_font_status` | Report requested faces, loaded sources, active substitutions, why an installed face could not be loaded, and affected nodes |
 | `page_bounds` | Get bounding box of all objects on the current page |
 | `node_bounds` | Get bounding box of a node |
 | `node_ancestors` | Get ancestor chain of a node |
@@ -308,13 +329,18 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | `analyze_typography` | Analyze font/size/weight distribution |
 | `analyze_spacing` | Analyze gap and padding values |
 | `analyze_clusters` | Detect repeated patterns (potential components) |
+| `lint` | Check accessibility and consistency issues, with fixes and suggestions |
+| `lint_fix` | Apply safe lint fixes, and optionally the first suggestion of each finding |
 
 ### Diff
 
 | Tool | Description |
 |------|-------------|
-| `diff_create` | Create a snapshot of the current document state |
-| `diff_show` | Show differences between the current state and a snapshot |
+| `diff_create` | Patch that turns one node tree into another, as JSX attribute changes |
+| `diff_jsx` | Structural diff between two nodes as design JSX |
+| `diff_show` | Preview the patch that setting JSX attributes on a node would produce |
+| `diff_apply` | Apply a patch after checking the nodes still match its old values |
+| `diff_visual` | Pixel diff between two rendered nodes, returned as an image |
 
 ### Navigation
 

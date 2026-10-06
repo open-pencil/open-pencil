@@ -1,11 +1,12 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
-
-import { randomHex } from '#core/random'
 
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
+import { createSlotActions } from './components/slots'
+import { createSlotAuthoringActions } from './components/slots/authoring'
 import { createVariantActions } from './components/variants'
 import type { EditorContext } from './types'
 
@@ -62,7 +63,7 @@ export function createComponentActions(ctx: EditorContext) {
     const containerId = wrapSelectionInContainer('COMPONENT_SET', selectedNodes)
     if (!containerId) return
 
-    const derived = deriveSlashVariantProperties(selectedNodes, () => `prop:${randomHex(8)}`)
+    const derived = deriveSlashVariantProperties(selectedNodes, createComponentPropertyId)
     if (!derived) return
 
     for (const [nodeId, changes] of derived.variants) {
@@ -85,6 +86,8 @@ export function createComponentActions(ctx: EditorContext) {
     ...instanceActions,
     ...focusActions,
     ...variantActions,
-    ...componentPropertyActions
+    ...componentPropertyActions,
+    ...createSlotActions(ctx),
+    ...createSlotAuthoringActions(ctx)
   }
 }

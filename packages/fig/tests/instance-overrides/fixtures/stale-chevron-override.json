@@ -1,0 +1,107 @@
+[
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 94
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 94,
+        "localID": 5467
+      },
+      "position": "I=OOOOOOOOOOOOOOOOOOOP#}}}}}}}f"
+    },
+    "type": "SYMBOL",
+    "name": "Chevron Down"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 95
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 91
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "Chevron Down",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 93
+              }
+            ]
+          },
+          "strokePaints": [
+            {
+              "type": "SOLID",
+              "color": {
+                "r": 0.035100001841783524,
+                "g": 0.035100001841783524,
+                "b": 0.042899999767541885,
+                "a": 1
+              },
+              "opacity": 1,
+              "visible": true,
+              "blendMode": "NORMAL",
+              "colorVar": {
+                "value": {
+                  "alias": {
+                    "guid": {
+                      "sessionID": 4,
+                      "localID": 57
+                    }
+                  }
+                },
+                "dataType": "ALIAS",
+                "resolvedDataType": "COLOR"
+              }
+            }
+          ]
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 94
+              }
+            ]
+          },
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "proportionsConstrained": true
+        }
+      ],
+      "uniformScaleFactor": 1
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 94,
+      "localID": 5438
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "position": "\""
+    },
+    "type": "VECTOR",
+    "name": "Icon"
+  }
+]

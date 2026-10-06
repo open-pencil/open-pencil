@@ -12,6 +12,8 @@ export interface CommandPaletteItem {
   icon?: Component
   shortcut?: CommandPaletteShortcut
   disabled?: boolean
+  /** Listed only when the search query matches it, not in the unfiltered list. */
+  searchOnly?: boolean
   children?: CommandPaletteItem[]
   onSelect?: () => void
 }

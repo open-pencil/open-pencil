@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+import type * as AppFonts from '@/app/editor/fonts'
+
 import type { FontManager } from '#core/text/fonts'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -18,7 +20,8 @@ test('tool-created CJK text requests fallback through app font loading', async (
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
 
-    const { ensureGraphFonts, loadFont } = await import('/src/app/editor/fonts/index.ts')
+    const appFontsURL = '/src/app/editor/fonts/index.ts'
+    const { ensureGraphFonts, loadFont }: typeof AppFonts = await import(appFontsURL)
     await loadFont('Inter', 'Regular')
     const fontModuleURL = performance
       .getEntriesByType('resource')
@@ -90,15 +93,15 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
-    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
-    const originalFamilies = [...manager.cjkFallbackFamilies]
+    const cjkFallbackFamilies = fontManager.getCJKFallbackFamilies()
+    const originalFamilies = [...cjkFallbackFamilies]
     const originalEnsureFallbackPack = fontManager.ensureFallbackPack.bind(fontManager)
 
-    let releaseFallback = () => undefined
+    let releaseFallback: () => void = () => undefined
     const fallbackGate = new Promise<void>((resolve) => {
       releaseFallback = resolve
     })
-    manager.cjkFallbackFamilies = []
+    cjkFallbackFamilies.length = 0
 
     let fallbackRenderCount = 0
     let renderCount = 0
@@ -157,7 +160,8 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
         renderCount
       }
     } finally {
-      manager.cjkFallbackFamilies = originalFamilies
+      cjkFallbackFamilies.length = 0
+      cjkFallbackFamilies.push(...originalFamilies)
       fontManager.ensureFallbackPack = originalEnsureFallbackPack
       renderer.renderFromEditorState = originalRender
     }

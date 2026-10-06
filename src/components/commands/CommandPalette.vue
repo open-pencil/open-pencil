@@ -12,6 +12,7 @@ import {
   useCommonMessages
 } from '@open-pencil/vue'
 
+import { usePagePaletteGroup } from '@/app/editor/pages/palette'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
@@ -19,7 +20,11 @@ import { IS_BROWSER } from '@/constants'
 
 import { useCommandPaletteUI } from './ui'
 
-const { commandGroups: groups } = useAppMenu()
+const { commandGroups } = useAppMenu()
+const pageGroup = usePagePaletteGroup()
+const groups = computed(() =>
+  pageGroup.value ? [pageGroup.value, ...commandGroups.value] : commandGroups.value
+)
 const commands = useCommandMessages()
 const common = useCommonMessages()
 const paletteUI = useCommandPaletteUI()

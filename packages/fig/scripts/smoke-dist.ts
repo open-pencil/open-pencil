@@ -5,11 +5,11 @@ const instanceOverrides = await import('../dist/instance-overrides.js')
 const nodeChange = await import('../dist/node-change.js')
 
 if (
-  mod.FIG_PACKAGE_STATUS !== 'archive-api' ||
+  mod.FIG_PACKAGE_STATUS !== 'document-reader' ||
   typeof mod.effectiveFigmaRawNodeFields !== 'function' ||
   typeof mod.parseFigBuffer !== 'function' ||
   typeof mod.writeFigArchive !== 'function' ||
-  typeof instanceOverrides.populateAndApplyOverrides !== 'function' ||
+  typeof instanceOverrides.interpretInstance !== 'function' ||
   typeof nodeChange.convertLineHeight !== 'function' ||
   typeof nodeChange.sceneNodeToKiwi !== 'function'
 ) {

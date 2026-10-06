@@ -69,7 +69,8 @@ function componentItems({ commandMenuItem, selection }: CanvasMenuOptions): Menu
   return [
     selection.isComponent.value
       ? commandMenuItem('selection.createInstance')
-      : commandMenuItem('selection.createComponent')
+      : commandMenuItem('selection.createComponent'),
+    ...(selection.canCreateSlot.value ? [commandMenuItem('selection.createSlot')] : [])
   ]
 }
 

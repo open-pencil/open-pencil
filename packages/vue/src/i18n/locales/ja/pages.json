@@ -2,5 +2,9 @@
   "newPage": "新しいページ",
   "rename": "名前を変更",
   "delete": "削除",
-  "pageName": "ページ {number}"
+  "pageName": "ページ {number}",
+  "pages": "ページ",
+  "goToPage": "ページへ移動…",
+  "recentPage": "最近",
+  "currentPage": "現在のページ"
 }

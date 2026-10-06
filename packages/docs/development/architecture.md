@@ -2,6 +2,9 @@
 
 ## System Overview
 
+For source identity, override evaluation, page sessions, and export contracts, see
+[.fig Reader Architecture](./fig-reader).
+
 ```mermaid
 graph TB
     subgraph Tauri["Tauri v2 Shell"]

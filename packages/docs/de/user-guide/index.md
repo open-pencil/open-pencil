@@ -35,3 +35,4 @@ Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <k
 - [Automatische Anordnung](./auto-layout) — Anordnung mit Flexbox und CSS Grid;
 - [Komponenten](./components) — wiederverwendbare Komponenten, Instanzen und Überschreibungen;
 - [Variablen](./variables) — Designvariablen, Sammlungen, Modi und Bindungen.
+- [Designs prüfen](/user-guide/checking-designs) — das Prüfen-Panel, Problemmarkierungen auf der Arbeitsfläche und Lint-Regeln.

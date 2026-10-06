@@ -30,4 +30,5 @@ OpenPencil es un editor de diseño local y de código abierto, compatible con Fi
 
 - [Disposición automática](./auto-layout) — distribución con Flexbox y CSS Grid;
 - [Componentes](./components) — componentes reutilizables, instancias y sustituciones;
-- [Variables](./variables) — variables de diseño, colecciones, modos y enlaces.
+- [Variables](./variables) — variables de diseño, colecciones, modos y enlaces;
+- [Revisar diseños](/user-guide/checking-designs) — panel de revisión, marcadores de problemas en el lienzo y reglas de lint.

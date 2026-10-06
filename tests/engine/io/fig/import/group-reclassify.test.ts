@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import type { NodeChange } from '#core/kiwi/fig/codec'
-
-import { parseFixture } from '#tests/helpers/fig-fixtures'
-import { collectAllNodes } from '#tests/helpers/fig-traversal'
+import { parseFixture } from '#tests/helpers/fig/fixtures'
+import { collectAllNodes } from '#tests/helpers/fig/traversal'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('Figma group reclassification on import', () => {
@@ -60,13 +59,13 @@ describe('Figma group reclassification on import', () => {
 
   test(
     'gold-preview.fig fixture imports its groups as GROUP nodes',
-    { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {
       const graph = await parseFixture('gold-preview.fig')
       const groups = collectAllNodes(graph).filter((n) => n.type === 'GROUP')
       // gold-preview.fig contains real Figma groups (FRAME + resizeToFit) that must
       // import as GROUP, not FRAME.
       expect(groups.length).toBeGreaterThan(0)
-    }
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 })

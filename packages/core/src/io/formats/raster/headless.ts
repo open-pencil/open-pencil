@@ -45,17 +45,13 @@ export async function headlessRenderNodes(
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
   renderer.invalidateAllPictures()
-  const restoreTextMeasurer = await renderer.prepareForExport(graph, pageId, nodeIds)
-  try {
-    return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
-      scale: options.scale ?? 1,
-      format: options.format ?? 'PNG',
-      quality: options.quality,
-      trimTransparent: options.trimTransparent
-    })
-  } finally {
-    restoreTextMeasurer()
-  }
+  await renderer.prepareForExport(graph, pageId, nodeIds)
+  return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
+    scale: options.scale ?? 1,
+    format: options.format ?? 'PNG',
+    quality: options.quality,
+    trimTransparent: options.trimTransparent
+  })
 }
 
 export async function headlessRenderThumbnail(

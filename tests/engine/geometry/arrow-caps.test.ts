@@ -222,6 +222,7 @@ describe('lineArrowEndpoints', () => {
 
 function stroke(overrides: Partial<Stroke> = {}): Stroke {
   return {
+    type: 'SOLID',
     color: { r: 0, g: 0, b: 0, a: 1 },
     weight: 4,
     opacity: 1,

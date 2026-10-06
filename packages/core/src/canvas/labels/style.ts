@@ -22,6 +22,19 @@ export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: Sce
   }
 }
 
+/** How far a frame's name fades into the canvas while the frame is not selected or hovered. */
+const FRAME_TITLE_MUTED_ALPHA = 0.5
+
+/**
+ * A top-level frame's name: the selection color while the frame is selected or hovered, otherwise
+ * the canvas's own text color, faded, so names read on light and dark canvases alike.
+ */
+export function frameTitleColor(r: SkiaRenderer, highlighted: boolean) {
+  if (highlighted) return r.selColor()
+  const foreground = canvasLabelForeground(r.pageColor)
+  return r.ck.Color4f(foreground.r, foreground.g, foreground.b, FRAME_TITLE_MUTED_ALPHA)
+}
+
 /** Hit-testing reuses the same shaped paragraphs, constraints and paint keys as drawing. */
 export function measureLabel(
   r: SkiaRenderer,
@@ -31,7 +44,7 @@ export function measureLabel(
 ): LabelTextMetrics | null {
   const provider = r.fontProvider
   if (!provider) return null
-  let color = r.selColor()
+  let color = frameTitleColor(r, false)
   if (layout.kind === 'section') color = sectionLabelColors(r, graph, node).foreground
   else if (layout.kind === 'component') color = r.compColor()
   return r.labelParagraphCache.measure(

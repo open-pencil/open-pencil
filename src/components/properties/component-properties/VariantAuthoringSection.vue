@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 
 import { useI18n, useVariantAuthoring } from '@open-pencil/vue'
 
@@ -22,15 +22,12 @@ const {
   reorderValues,
   setVariantValue,
   addVariant,
-  duplicateVariant,
-  removeVariant
+  duplicateVariant
 } = useVariantAuthoring()
 const { panels } = useI18n()
 const propertyNames = reactive<Record<string, string>>({})
 const propertyValues = reactive<Record<string, string>>({})
 const selectedValues = reactive<Record<string, string>>({})
-const newPropertyName = ref('')
-const newPropertyValue = ref('')
 const mutationConflictIds = ref<string[]>([])
 const conflictIds = computed(
   () =>
@@ -124,13 +121,20 @@ function commitSelectedValue(propertyId: string) {
   }
 }
 
-function createProperty() {
-  const name = newPropertyName.value.trim()
-  const value = newPropertyValue.value.trim()
-  if (!name || !value) return
-  addProperty(name, value)
-  newPropertyName.value = ''
-  newPropertyValue.value = ''
+/** Add Property N and put the cursor in its name, so typing renames it right away. */
+async function createProperty() {
+  const id = addProperty()
+  if (!id) return
+  await nextTick()
+  nameInputs.get(id)?.select()
+}
+
+/** Name fields of the listed properties, so a new one can be selected for typing. */
+type SelectableInput = { select(): void }
+const nameInputs = new Map<string, SelectableInput>()
+function nameInputRef(id: string, input: SelectableInput | null) {
+  if (input) nameInputs.set(id, input)
+  else nameInputs.delete(id)
 }
 </script>
 
@@ -138,13 +142,10 @@ function createProperty() {
   <PanelSection v-if="active" :label="panels.variants" :empty="definitions.length === 0">
     <template #actions>
       <IconButton
-        :label="variant ? panels.duplicateVariant : panels.addVariant"
-        @click="variant ? duplicateVariant() : addVariant()"
+        :label="variant ? panels.duplicateVariant : panels.addVariantProperty"
+        @click="variant ? duplicateVariant() : createProperty()"
       >
         <icon-lucide-plus class="size-3.5" />
-      </IconButton>
-      <IconButton v-if="variant" :label="panels.removeVariant" @click="removeVariant">
-        <icon-lucide-trash-2 class="size-3.5" />
       </IconButton>
     </template>
 
@@ -183,6 +184,7 @@ function createProperty() {
       >
         <div class="flex items-center gap-1">
           <AppInput
+            :ref="(input) => nameInputRef(definition.id, input as SelectableInput | null)"
             v-model="propertyNames[definition.id]"
             size="sm"
             tone="panel"
@@ -205,7 +207,7 @@ function createProperty() {
             <icon-lucide-chevron-down class="size-3.5" />
           </IconButton>
           <IconButton :label="panels.removeVariantProperty" @click="removeProperty(definition.id)">
-            <icon-lucide-trash-2 class="size-3.5" />
+            <icon-lucide-minus class="size-3.5" />
           </IconButton>
         </div>
         <div
@@ -248,31 +250,15 @@ function createProperty() {
 
     <p v-else class="py-1 text-[10px] text-muted">{{ panels.noVariantProperties }}</p>
 
-    <form class="mt-2 flex flex-col gap-1.5" @submit.prevent="createProperty">
-      <div class="grid grid-cols-2 gap-1">
-        <AppInput
-          v-model="newPropertyName"
-          size="sm"
-          tone="panel"
-          :placeholder="panels.variantPropertyName"
-          :aria-label="panels.variantPropertyName"
-        />
-        <AppInput
-          v-model="newPropertyValue"
-          size="sm"
-          tone="panel"
-          :placeholder="panels.variantPropertyValue"
-          :aria-label="panels.variantPropertyValue"
-        />
-      </div>
-      <AppButton
-        type="submit"
-        size="xs"
-        variant="soft"
-        :disabled="!newPropertyName.trim() || !newPropertyValue.trim()"
-      >
-        {{ panels.addVariantProperty }}
-      </AppButton>
-    </form>
+    <AppButton
+      v-if="!variant"
+      size="xs"
+      variant="soft"
+      class="mt-2 self-start"
+      @click="addVariant()"
+    >
+      <icon-lucide-plus class="size-3.5" />
+      {{ panels.addVariant }}
+    </AppButton>
   </PanelSection>
 </template>

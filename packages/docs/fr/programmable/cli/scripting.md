@@ -55,6 +55,6 @@ Les identifiants exacts comme `figma.currentPage`, `createFrame`, `appendChild`,
 
 ## Limites
 
-Il n’existe pas encore d’équivalent complet pour `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()`, les styles de peinture/texte et toutes les opérations booléennes vectorielles.
+Il n’existe pas encore d’équivalent complet pour `node.exportAsync()`, `node.setBoundVariable()`, `figma.combineAsVariants()`, les styles de peinture/texte et toutes les opérations booléennes vectorielles.
 
 Selon le besoin, utilisez aussi la commande d’exportation, les outils du noyau ou les opérations directes de SceneGraph.

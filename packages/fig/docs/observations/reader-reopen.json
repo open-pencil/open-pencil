@@ -1,0 +1,68 @@
+{
+  "capturedOn": "2026-09-22",
+  "figma": "126.6.12 desktop",
+  "syntheticOverrides": {
+    "instance": {
+      "name": "Card instance",
+      "width": 320,
+      "paddingLeft": 32,
+      "primaryAxisSizingMode": "FIXED"
+    },
+    "icon": {
+      "name": "icon (override)",
+      "opacity": 0.5,
+      "fillVariable": "On Surface Variant",
+      "size": [24, 24]
+    },
+    "componentIcon": { "fillVariable": "On Surface" },
+    "label": { "characters": "Overridden label", "fontSize": 18 },
+    "badge": { "fill": [0, 0, 1], "count": "42" },
+    "orphan": { "type": "INSTANCE", "mainComponent": null }
+  },
+  "syntheticOverridesB": {
+    "instance": { "name": "Panel" },
+    "box": {
+      "strokeVariable": "Accent",
+      "cornerRadius": 8,
+      "boundVariableKeys": ["cornerRadius", "strokes"]
+    },
+    "title": { "textStyle": "Heading style", "fontSize": 24 },
+    "row": {
+      "size": [200, 32],
+      "claimedSize": [180, 40],
+      "paddingLeft": 16,
+      "itemSpacing": 12,
+      "primaryAxisSizingMode": "FIXED"
+    },
+    "hidden": { "name": "hidden later", "visible": false },
+    "marker": { "mainComponent": "Star", "size": [16, 16], "claimedSize": [24, 24] },
+    "sizeClaimsApplied": false,
+    "descendantResizeSupportedByFigma": false
+  },
+  "goldPreviewEdited": {
+    "inputFrame": { "width": 376.34124755859375, "height": 39.3802604675293 },
+    "placeholder": { "fontSize": 12.471817970275879, "lineHeight": 17.816883087158203 },
+    "badgeAvatars": ["avatar04", "avatar05", "avatar06"],
+    "badgeVisibility": { "avatar": true, "home": false, "chevronRight": false, "closeIcon": true },
+    "leadingAvatarVisible": false,
+    "trailingAvatarVisible": false,
+    "trailingHasChevronDown": true
+  },
+  "material3Edited": {
+    "pages": 33,
+    "listItemMain": "Condition=1 line, Leading=Icon, Trailing=None, Show overline=False, Show supporting text=False",
+    "appBarLeadingIcons": [
+      {
+        "configuration": "Small-centered",
+        "icon": "menu",
+        "vectorFillVariable": "Schemes/On Surface Variant"
+      },
+      {
+        "configuration": "Small",
+        "icon": "arrow_back",
+        "vectorFillVariable": "Schemes/On Surface Variant"
+      }
+    ],
+    "buttonSet": { "variants": 50, "axes": ["Type", "Size", "State"] }
+  }
+}

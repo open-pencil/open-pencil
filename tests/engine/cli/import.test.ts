@@ -7,6 +7,7 @@ import { parseFigFile } from '@open-pencil/core/io'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'
+import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 setDefaultTimeout(30_000)
 
@@ -142,7 +143,7 @@ test.each(['card.fig', 'missing/nested/card.fig'])(
     expect(JSON.parse(stdout)).toMatchObject({ format: 'fig', output, pages: 1, rootElements: 1 })
 
     const bytes = new Uint8Array(await Bun.file(output).arrayBuffer())
-    const graph = await parseFigFile(bytes)
+    const graph = await parseFigFile(uint8ArrayToArrayBuffer(bytes))
     const nodes = [...graph.nodes.values()]
     const card = findNode(nodes, 'card')
     const title = findNode(nodes, 'DOM/CSS card')

@@ -20,6 +20,17 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-stat",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-open",
+      "allow": [{ "path": "**" }]
+    },
+    "fs:allow-fstat",
+    "fs:allow-seek",
+    "fs:allow-read",
+    {
       "identifier": "fs:allow-read-text-file",
       "allow": [
         { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
@@ -57,12 +68,16 @@
     {
       "identifier": "shell:allow-spawn",
       "allow": [
-        { "name": "claude-agent-acp", "cmd": "claude-agent-acp", "args": true },
-        { "name": "codex-acp", "cmd": "codex-acp", "args": true },
-        { "name": "gemini", "cmd": "gemini", "args": true },
-        { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": true },
+        { "name": "claude-agent-acp", "cmd": "claude-agent-acp", "args": false },
+        { "name": "codex-acp", "cmd": "codex-acp", "args": false },
+        { "name": "gemini", "cmd": "gemini", "args": ["--acp"] },
+        { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": false },
         { "name": "openpencil-harness", "cmd": "openpencil-harness", "args": false },
-        { "name": "cmd", "cmd": "cmd", "args": true }
+        { "name": "cmd-claude-agent-acp", "cmd": "cmd", "args": ["/c", "claude-agent-acp"] },
+        { "name": "cmd-codex-acp", "cmd": "cmd", "args": ["/c", "codex-acp"] },
+        { "name": "cmd-gemini", "cmd": "cmd", "args": ["/c", "gemini", "--acp"] },
+        { "name": "cmd-openpencil-mcp-http", "cmd": "cmd", "args": ["/c", "openpencil-mcp-http"] },
+        { "name": "cmd-openpencil-harness", "cmd": "cmd", "args": ["/c", "openpencil-harness"] }
       ]
     },
     "shell:allow-stdin-write",

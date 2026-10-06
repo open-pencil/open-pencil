@@ -15,12 +15,16 @@ export function createOpenPencilAliases(rootDir: string) {
       replacement: resolve(rootDir, 'packages/dom-css/src/browser.ts')
     },
     {
+      find: /^@open-pencil\/dom-css\/export$/,
+      replacement: resolve(rootDir, 'packages/dom-css/src/export/index.ts')
+    },
+    {
       find: /^@open-pencil\/dom-css\/jsx-runtime$/,
-      replacement: resolve(rootDir, 'packages/dom-css/src/jsx/runtime.ts')
+      replacement: resolve(rootDir, 'packages/dom-css/src/import/jsx/runtime.ts')
     },
     {
       find: /^@open-pencil\/dom-css\/jsx-dev-runtime$/,
-      replacement: resolve(rootDir, 'packages/dom-css/src/jsx/dev-runtime.ts')
+      replacement: resolve(rootDir, 'packages/dom-css/src/import/jsx/dev-runtime.ts')
     },
     {
       find: /^@open-pencil\/dom-css$/,
@@ -31,6 +35,16 @@ export function createOpenPencilAliases(rootDir: string) {
       replacement: resolve(rootDir, 'packages/scene-graph/src/index.ts')
     },
     { find: '@open-pencil/scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
+    { find: '#emit', replacement: resolve(rootDir, 'packages/emit/src') },
+    {
+      find: /^@open-pencil\/emit$/,
+      replacement: resolve(rootDir, 'packages/emit/src/index.ts')
+    },
+    { find: '#design-jsx', replacement: resolve(rootDir, 'packages/design-jsx/src') },
+    {
+      find: /^@open-pencil\/design-jsx$/,
+      replacement: resolve(rootDir, 'packages/design-jsx/src/index.ts')
+    },
     { find: /^@open-pencil\/pen$/, replacement: resolve(rootDir, 'packages/pen/src/index.ts') },
     { find: '@open-pencil/pen', replacement: resolve(rootDir, 'packages/pen/src') },
     { find: /^@open-pencil\/kiwi$/, replacement: resolve(rootDir, 'packages/kiwi/src/index.ts') },

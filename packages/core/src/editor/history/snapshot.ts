@@ -17,19 +17,23 @@ export function snapshotPage(graph: SceneGraph, pageId: string): PageSnapshot {
   return snapshot
 }
 
+/** Restore the page the snapshot was taken of, whichever page is on screen. */
 export function restorePageFromSnapshot(ctx: EditorContext, snapshot: PageSnapshot): void {
-  const pageId = ctx.state.currentPageId
-  const page = ctx.graph.getNode(pageId)
-  const pageSnap = snapshot.get(pageId)
-  if (!page || !pageSnap) return
+  // `snapshotPage` records the page first.
+  const pageSnap = snapshot.values().next().value
+  if (!pageSnap) return
+  const page = ctx.graph.getNode(pageSnap.id)
+  if (!page) return
 
   for (const childId of page.childIds.slice()) ctx.graph.deleteNode(childId)
-  restoreChildren(ctx.graph, snapshot, pageId, pageSnap.childIds)
+  restoreChildren(ctx.graph, snapshot, page.id, pageSnap.childIds)
 
   ctx.graph.clearAbsPosCache()
-  computeAllLayouts(ctx.graph, pageId)
-  ctx.setSelectedIds(new Set())
-  ctx.state.hoveredNodeId = null
+  computeAllLayouts(ctx.graph, page.id)
+  if (page.id === ctx.state.currentPageId) {
+    ctx.setSelectedIds(new Set())
+    ctx.state.hoveredNodeId = null
+  }
   ctx.requestRender()
 }
 

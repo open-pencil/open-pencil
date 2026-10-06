@@ -12,7 +12,7 @@ description: Управление настройками экспорта — м
 - настройки экспорта;
 - ID выбранных объектов;
 - имя экспортируемого файла;
-- доступные масштабы и форматы.
+- доступные масштабы и форматы (идентификаторы `formats` и подписанные `formatOptions`).
 
 ## Использование
 
@@ -30,6 +30,7 @@ const {
   nodeName,
   scales,
   formats,
+  formatOptions,
   addSetting,
   updateScale,
   updateFormat,
@@ -48,7 +49,7 @@ exportState.addSetting()
 
 ```ts
 exportState.updateScale(0, 2)
-exportState.updateFormat(0, 'WEBP')
+exportState.updateFormat(0, 'webp')
 ```
 
 ## Связанные API

@@ -1,12 +1,25 @@
-import type { SceneGraph, SceneGraphEvents, SceneNode } from '@open-pencil/scene-graph'
+import {
+  TRANSFORM_FIELDS,
+  type SceneGraph,
+  type SceneGraphEvents,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
 type EmittedGraphEventName = keyof SceneGraphEvents
 
+/** The renderer surface graph events invalidate; tests provide a double of just this. */
+export type GraphEventRenderer = Pick<
+  SkiaRenderer,
+  'invalidateVectorPath' | 'invalidateNodePicture'
+> & {
+  tiledScene: Pick<SkiaRenderer['tiledScene'], 'invalidateNode' | 'invalidateStructure'>
+}
+
 type GraphEventOptions = {
   getGraph: () => SceneGraph
-  getRenderers: () => Iterable<SkiaRenderer>
+  getRenderers: () => Iterable<GraphEventRenderer>
   scheduleComponentSync: (nodeId: string) => void
   requestRender: () => void
   emitEditorEvent: <K extends EmittedGraphEventName>(
@@ -28,14 +41,7 @@ const TILED_CHUNK_TOPOLOGY_KEYS = new Set<keyof SceneNode>([
   'maskType'
 ])
 
-const NODE_PICTURE_STABLE_PREVIEW_KEYS = new Set<keyof SceneNode>([
-  'x',
-  'y',
-  'rotation',
-  'flipX',
-  'flipY',
-  'parentId'
-])
+const NODE_PICTURE_STABLE_PREVIEW_KEYS = new Set<keyof SceneNode>([...TRANSFORM_FIELDS, 'parentId'])
 
 export type RendererInvalidation = {
   geometryCache: boolean
@@ -56,7 +62,7 @@ export function rendererInvalidationForChanges(
 
 function invalidateRenderersForChange(
   graph: SceneGraph,
-  renderers: Iterable<SkiaRenderer>,
+  renderers: Iterable<GraphEventRenderer>,
   id: string,
   changes: Partial<SceneNode>,
   invalidateNodePicture: boolean

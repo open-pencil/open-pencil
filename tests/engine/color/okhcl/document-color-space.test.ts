@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   colorDistance,
   getFillOkHCL,
@@ -7,8 +8,7 @@ import {
   rgbaToOkHCL,
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
-} from '@open-pencil/core/color'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/color'
 
 const SATURATED = { l: 0.6, c: 0.3, h: 20, a: 1 }
 
@@ -18,7 +18,14 @@ function createNode() {
   return graph.createNode('RECTANGLE', page.id, {
     fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
     strokes: [
-      { color: { r: 0, g: 0, b: 0, a: 1 }, weight: 1, opacity: 1, visible: true, align: 'INSIDE' }
+      {
+        type: 'SOLID',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        weight: 1,
+        opacity: 1,
+        visible: true,
+        align: 'INSIDE'
+      }
     ]
   })
 }

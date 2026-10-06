@@ -2,6 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { createEditorStore } from '@/app/editor/session/create'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 test('cross-document paste imports variable aliases and undoes definitions with the pasted nodes', async () => {
   const source = createEditorStore()
   const collection = source.graph.createCollection('Spacing')
@@ -31,7 +33,9 @@ test('cross-document paste imports variable aliases and undoes definitions with 
   if (!importedCollection) throw new Error('Missing imported collection')
   expect(importedCollection.modes.map((mode) => mode.modeId)).not.toContain(alternateModeId)
   expect(target.graph.getActiveModeId(importedCollection.id)).toBe(
-    target.graph.getNode(pastedId)?.variableModes[importedCollection.id]
+    expectDefined(target.graph.getNode(pastedId), 'pasted node').variableModes[
+      importedCollection.id
+    ]
   )
   const value = Object.values(imported.valuesByMode)[0]
   if (typeof value !== 'object' || !('aliasId' in value)) throw new Error('Missing alias')

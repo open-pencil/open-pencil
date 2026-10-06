@@ -32,7 +32,65 @@ describe('filesystem library catalog', () => {
     const catalog = new FileSystemLibraryCatalog(root)
     await expect(catalog.getRevision('../outside')).rejects.toThrow('Invalid catalog path')
     await Bun.write(join(root, 'libraries.json'), '{invalid')
-    await expect(catalog.listLibraries()).rejects.toBeInstanceOf(SyntaxError)
+    await expect(catalog.listLibraries()).rejects.toThrow(
+      'Invalid library catalog file libraries.json'
+    )
+    await Bun.write(join(root, 'libraries.json'), '[{"libraryId":1}]')
+    await expect(catalog.listLibraries()).rejects.toThrow(
+      'Invalid library catalog file libraries.json'
+    )
+  })
+
+  test('restores image bytes from stored revisions', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const graph = new SceneGraph()
+    graph.images.set('image-hash', new Uint8Array([1, 2, 3]))
+    graph.createNode('COMPONENT', graph.getPages()[0].id, {
+      name: 'Avatar',
+      componentKey: 'avatar',
+      fills: [
+        {
+          type: 'IMAGE',
+          imageHash: 'image-hash',
+          visible: true,
+          opacity: 1,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          blendMode: 'NORMAL'
+        }
+      ]
+    })
+    const catalog = new FileSystemLibraryCatalog(root)
+    await catalog.publishRevision({ libraryId: 'design-system', name: 'Design system', graph })
+    const restored = await catalog.getRevision('design-system')
+    expect(restored.graph.images.get('image-hash')).toEqual(new Uint8Array([1, 2, 3]))
+  })
+
+  test('rejects revisions that are malformed or fail integrity validation', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-pencil-libraries-'))
+    const graph = new SceneGraph()
+    graph.createNode('COMPONENT', graph.getPages()[0].id, {
+      name: 'Button',
+      componentKey: 'button'
+    })
+    const catalog = new FileSystemLibraryCatalog(root)
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph
+    })
+    const path = join(root, 'design-system/revisions', `${revision.manifest.revisionId}.json`)
+    const stored = await readFile(path, 'utf8')
+    const contentHash = revision.manifest.assets[0]?.contentHash ?? ''
+
+    await Bun.write(path, JSON.stringify({ manifest: revision.manifest, graph: { nodes: 'none' } }))
+    await expect(catalog.getRevision('design-system')).rejects.toThrow(
+      'Invalid library catalog file'
+    )
+
+    await Bun.write(path, stored.replaceAll(contentHash, 'tampered'))
+    await expect(catalog.getRevision('design-system')).rejects.toThrow(
+      'Component library content hash mismatch'
+    )
   })
 
   test('serializes concurrent publishers and keeps a valid index', async () => {

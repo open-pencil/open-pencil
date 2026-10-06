@@ -15,12 +15,14 @@ import IconUndo from '~icons/lucide/undo-2'
 import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
+import type { BuiltinIOFormatId } from '@open-pencil/core/io'
 import type { CommandPaletteGroup, CommandPaletteItem, MenuEntry } from '@open-pencil/vue'
 import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { setSnappingPreference } from '@/app/settings/preferences/apply'
+import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
+import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import type {
@@ -109,6 +111,7 @@ export function useAppMenu() {
     settings: 'settings',
     'view-rulers': 'rulers',
     'view-multiplayer-cursors': 'multiplayerCursors',
+    'view-design-issues': 'designIssues',
     'snap-geometry': 'snapToGeometry',
     'snap-objects': 'snapToObjects',
     'snap-pixel-grid': 'snapToPixelGrid',
@@ -143,7 +146,7 @@ export function useAppMenu() {
     }))
   )
 
-  function exportSelection(format: 'png' | 'svg' | 'pptx' | 'fig') {
+  function exportSelection(format: BuiltinIOFormatId) {
     if (store.state.selectedIds.size > 0) void store.exportSelection(1, format)
   }
 
@@ -182,6 +185,8 @@ export function useAppMenu() {
         return store.state.showRulers
       case 'view-multiplayer-cursors':
         return store.state.showRemoteCursors
+      case 'view-design-issues':
+        return appPreferences.value.designCheck.showOnCanvas
       case 'snap-geometry':
         return store.state.snappingPreferences.geometry
       case 'snap-objects':
@@ -215,6 +220,8 @@ export function useAppMenu() {
         return (value: boolean) => {
           if (store.state.showRemoteCursors !== value) itemAction(item)?.()
         }
+      case 'view-design-issues':
+        return (value: boolean) => setDesignIssuesOnCanvas(value)
       case 'snap-geometry':
         return (value: boolean) => setSnappingPreference('geometry', value)
       case 'snap-objects':

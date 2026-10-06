@@ -1,6 +1,7 @@
-import { parseColor } from '@open-pencil/core/color'
-import { Frame, Text, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
+import { Frame, Text } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { ARTICLE, FEATURE_COMPARISONS } from './content'
 import { createTypographySample } from './samples'

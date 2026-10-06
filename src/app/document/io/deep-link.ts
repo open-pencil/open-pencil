@@ -21,13 +21,28 @@ export interface DeepLinkActions {
   /** Absolute paths of the documents currently open in tabs. */
   openPaths: () => string[]
   /** Selects the node and zooms to it. False when no node carries that name. */
-  selectByName: (name: string) => boolean
+  selectByName: (name: string) => boolean | Promise<boolean>
   notify: (message: string) => void
 }
 
 /** A link is attacker-supplied text; a toast is not a place for 4 KB of it. */
 export function clamp(value: string): string {
   return value.length > 120 ? `${value.slice(0, 119)}…` : value
+}
+
+/**
+ * Runs a link's layer search. Searching can load other pages after the file opened, so a
+ * failure is reported as an error rather than as a layer the document does not carry.
+ */
+export async function searchLinkedNode(
+  selectByName: (name: string) => boolean | Promise<boolean>,
+  name: string
+): Promise<{ found: boolean } | { error: string }> {
+  try {
+    return { found: await selectByName(name) }
+  } catch (error) {
+    return { error: clamp(error instanceof Error ? error.message : String(error)) }
+  }
 }
 
 /**
@@ -99,9 +114,11 @@ export async function openDeepLink(
     }
     await io.openPath(picked)
   }
-  if (target.node && !actions.selectByName(target.node)) {
+  if (!target.node) return
+  const search = await searchLinkedNode(actions.selectByName, target.node)
+  if ('error' in search) actions.notify(messages.operationFailed(search))
+  else if (!search.found)
     actions.notify(
       messages.deepLinkNodeNotFound({ node: clamp(target.node), file: clamp(target.path) })
     )
-  }
 }

@@ -11,14 +11,16 @@ import {
   type Node as YogaNode
 } from 'yoga-layout'
 
+import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
+
 import { applyYogaLayout } from './layout/apply'
 import { usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
-import { resolveNodeLayoutDirection } from './text/direction'
 export {
   estimateTextSize,
   getTextMeasurer,
+  installTextMeasurer,
   setTextMeasurer,
   type TextMeasurer
 } from './layout/text-measurement'
@@ -28,6 +30,7 @@ import { estimateTextSize, getTextMeasurer } from './layout/text-measurement'
 import {
   applyMinMaxConstraints,
   configureAbsoluteChild,
+  configureNonTextLeaf,
   createYogaNode,
   freeYogaTree,
   mapAlign,
@@ -383,6 +386,24 @@ function derivedGrowingLeafFitsParent(
   return sizesFitParent(parent, children.length, sizes, axis)
 }
 
+/**
+ * Fill text shares its parent's main axis like a fill frame: it grows and shrinks from a zero
+ * basis, so its stored width (100px for new text) never decides its share. Returns whether
+ * it fills the row's width, where its stored width must not constrain it either.
+ */
+function configureGrowingText(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode,
+  fixedDerivedMainAxis: boolean
+): boolean {
+  if (child.layoutGrow <= 0 || fixedDerivedMainAxis) return false
+  yogaChild.setFlexGrow(child.layoutGrow)
+  yogaChild.setFlexShrink(1)
+  yogaChild.setFlexBasis(0)
+  return parent.layoutMode === 'HORIZONTAL'
+}
+
 function configureTextLeafWithoutMeasurer(
   yogaChild: YogaNode,
   child: SceneNode,
@@ -405,6 +426,7 @@ function configureTextLeafWithoutMeasurer(
   }
   if (child.textAutoResize !== 'HEIGHT') return
 
+  const growsWidth = configureGrowingText(yogaChild, child, parent, fixedDerivedMainAxis)
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const measurementWidth = fixedDerivedMainAxis
     ? (child.derivedLayout?.width ?? child.width)
@@ -412,7 +434,9 @@ function configureTextLeafWithoutMeasurer(
   const stretches =
     child.layoutAlignSelf === 'STRETCH' ||
     (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
-  if (!(!isRow && stretches) && !fixedDerivedMainAxis) yogaChild.setWidth(child.width)
+  if (!(!isRow && stretches) && !fixedDerivedMainAxis && !growsWidth) {
+    yogaChild.setWidth(child.width)
+  }
   if (hasStoredSize) yogaChild.setHeight(child.height)
   else yogaChild.setHeight(estimateTextSize(child, measurementWidth).height)
 }
@@ -448,6 +472,12 @@ function configureChildAsLeaf(
     configureTextLeafWithoutMeasurer(yogaChild, child, parent, fixedDerivedMainAxis)
   } else {
     configureNonTextLeaf(yogaChild, child, isRow, stretchCross)
+    // Fixed text still contributes its box to a HUG cross axis. Without
+    // an intrinsic minimum, stretch collapses the text to its siblings.
+    if (isText && stretchCross && parent.counterAxisSizing === 'HUG') {
+      if (isRow) yogaChild.setMinHeight(child.height)
+      else yogaChild.setMinWidth(child.width)
+    }
   }
 
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
@@ -464,10 +494,7 @@ function configureTextLeaf(
 ): void {
   const autoResize = child.textAutoResize
   const isRow = parent.layoutMode === 'HORIZONTAL'
-
-  if (child.layoutGrow > 0 && !fixedDerivedMainAxis) {
-    yogaChild.setFlexGrow(child.layoutGrow)
-  }
+  const growsWidth = configureGrowingText(yogaChild, child, parent, fixedDerivedMainAxis)
 
   const cache = new Map<number, { width: number; height: number }>()
   const UNCONSTRAINED_KEY = -1
@@ -495,8 +522,8 @@ function configureTextLeaf(
     const stretchesCross =
       child.layoutAlignSelf === 'STRETCH' ||
       (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
-    // Let Yoga stretch fill-width text instead of fixing its stored width.
-    const fillsWidth = !isRow && stretchesCross
+    // Let Yoga stretch or grow fill-width text instead of fixing its stored width.
+    const fillsWidth = (!isRow && stretchesCross) || growsWidth
     const fixedWidth = fixedDerivedMainAxis
       ? (child.derivedLayout?.width ?? child.width)
       : child.width
@@ -514,6 +541,9 @@ function configureTextLeaf(
       const cached = cache.get(cacheKey)
       if (cached) return cached
 
+      if (constraintW === child.width && (child.derivedTextGlyphs?.length ?? 0) > 0) {
+        return { width: constraintW, height: child.height }
+      }
       const measured = getTextMeasurer()?.(child, constraintW)
       const result = {
         width: constraintW,
@@ -522,32 +552,6 @@ function configureTextLeaf(
       cache.set(cacheKey, result)
       return result
     })
-  }
-}
-
-function configureNonTextLeaf(
-  yogaChild: YogaNode,
-  child: SceneNode,
-  isRow: boolean,
-  stretchCross: boolean
-): void {
-  const w = child.width
-  const h = child.height
-
-  if (child.layoutGrow > 0) {
-    yogaChild.setFlexGrow(child.layoutGrow)
-    if (!stretchCross) {
-      if (isRow) yogaChild.setHeight(h)
-      else yogaChild.setWidth(w)
-    }
-  } else {
-    if (isRow) {
-      yogaChild.setWidth(w)
-      if (!stretchCross) yogaChild.setHeight(h)
-    } else {
-      yogaChild.setHeight(h)
-      if (!stretchCross) yogaChild.setWidth(w)
-    }
   }
 }
 

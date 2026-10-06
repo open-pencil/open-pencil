@@ -2,13 +2,15 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
+  OPEN_PENCIL_PLUGIN_DATA,
   styleToWeight
 } from '@open-pencil/scene-graph'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
 import { importCanvasGuides } from './canvas-guides'
-import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
+import { convertFigmaDerivedTextGlyphs } from './derived-text/glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
 import { convertEffects, convertFills, convertStrokes } from './paint'
@@ -20,25 +22,22 @@ import {
   extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
-  getOpenPencilPluginValue,
-  LAYOUT_DIRECTION_PLUGIN_KEY,
-  NODE_TYPE_PLUGIN_KEY,
-  TEXT_DIRECTION_PLUGIN_KEY
+  readNodeChangePluginData
 } from './plugin-data'
-import { importStyleRuns } from './style-runs'
-import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
+import { importStyleRuns } from './style/runs'
+import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
 import {
   alignGeometryWindingRules,
   resolveGeometryPaths,
   resolveVectorNetwork,
   resolveVectorStyleOverrideFills
-} from './vector-geometry'
-import { decodeVectorNetworkBlob, type StyleOverride } from './vector-network'
+} from './vector/geometry'
+import { decodeVectorNetworkBlob, type StyleOverride } from './vector/network'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
-export { importStyleRuns } from './style-runs'
-export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
-export { resolveGeometryPaths } from './vector-geometry'
+export { importStyleRuns } from './style/runs'
+export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
+export { resolveGeometryPaths } from './vector/geometry'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
@@ -61,6 +60,7 @@ import type {
   SharedStyleType,
   VectorNetwork,
   ComponentPropertyDefinition,
+  SlotSettings,
   ComponentPropertyReference,
   ComponentPropertyType,
   SymbolLink,
@@ -71,7 +71,8 @@ import type {
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 export { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable-bindings'
+import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
+export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
 
 interface FigVariableModeMap {
   entries?: Array<{
@@ -370,17 +371,23 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     fontVariations: convertFontVariations(nc),
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
-    textDirection:
-      (getOpenPencilPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
-        | SceneNode['textDirection']
-        | null) || 'AUTO',
-    derivedLayout: nc.derivedTextData?.layoutSize
-      ? {
-          width: nc.derivedTextData.layoutSize.x,
-          height: nc.derivedTextData.layoutSize.y
-        }
-      : null,
-    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
+    textDirection: readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.textDirection) ?? 'AUTO',
+    ...convertDerivedText(nc, blobs)
+  }
+}
+
+function convertDerivedText(
+  nc: NodeChange,
+  blobs: Uint8Array[]
+): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs'> {
+  const layoutSize = nc.derivedTextData?.layoutSize
+  return {
+    derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
+    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
+      nc.derivedTextData,
+      blobs,
+      nc.textData?.characters ?? ''
+    )
   }
 }
 
@@ -452,7 +459,11 @@ function convertLayoutProps(
 > &
   Partial<Pick<SceneNode, 'derivedLayout'>> {
   const layoutMode = mapStackMode(nc.stackMode)
-  const primaryAxisSizing = mapStackSizing(nc.stackPrimarySizing)
+  const primaryAxisSizing =
+    nc.stackPrimarySizing === undefined &&
+    (layoutMode === 'HORIZONTAL' || layoutMode === 'VERTICAL')
+      ? 'HUG'
+      : mapStackSizing(nc.stackPrimarySizing)
   const counterAxisSizing = mapStackSizing(nc.stackCounterSizing)
   const derivedLayout = visibleContainerDerivedLayout(
     nc,
@@ -479,9 +490,7 @@ function convertLayoutProps(
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean,
     layoutDirection:
-      (getOpenPencilPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
-        | SceneNode['layoutDirection']
-        | null) || 'AUTO',
+      readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
     ...(derivedLayout ? { derivedLayout } : {})
   }
 }
@@ -502,6 +511,14 @@ function styleRefId(value: unknown): string | null {
   if (!value || typeof value !== 'object' || !('guid' in value)) return null
   const guid = value.guid
   if (!guid || typeof guid !== 'object') return null
+  // Kiwi's all-ones GUID denotes an explicitly cleared style reference.
+  if (
+    'sessionID' in guid &&
+    'localID' in guid &&
+    guid.sessionID === 0xffffffff &&
+    guid.localID === 0xffffffff
+  )
+    return null
   return guidToString(guid as GUID)
 }
 
@@ -576,7 +593,7 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
-    getOpenPencilPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
   }
@@ -595,25 +612,10 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   return nodeType
 }
 
-function nearlyEqualSize(a: number | undefined, b: number | undefined): boolean {
-  return Math.abs((a ?? 0) - (b ?? 0)) <= 0.5
-}
-
-export function shouldImportTextAsAutoSize(
-  nc: NodeChange,
-  parentNc: NodeChange | undefined
-): boolean {
-  if (nc.type !== 'TEXT' || nc.textAutoResize !== 'NONE') return false
-  if (parentNc?.stackMode !== 'HORIZONTAL' && parentNc?.stackMode !== 'VERTICAL') return false
-  if (!nc.textData?.characters) return false
-  const layoutSize = nc.derivedTextData?.layoutSize
-  if (!layoutSize || !nc.size) return false
-  return nearlyEqualSize(layoutSize.x, nc.size.x) && nearlyEqualSize(layoutSize.y, nc.size.y)
-}
-
 export function nodeChangeToProps(
   nc: NodeChange,
-  blobs: Uint8Array[]
+  blobs: Uint8Array[],
+  metadata: 'source' | 'occurrence' = 'source'
 ): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
   const nodeType = resolveNodeType(nc)
 
@@ -623,11 +625,13 @@ export function nodeChangeToProps(
   const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
     nodeType,
     name: nc.name ?? nodeType,
-    source: extractSourceMetadata(nc, blobs),
+    source:
+      metadata === 'source' ? extractSourceMetadata(nc, blobs) : extractOccurrenceMetadata(nc),
     ...convertFigmaTransformProps(nc),
     opacity: nc.opacity ?? 1,
     visible: nc.visible ?? true,
     locked: nc.locked ?? false,
+    internalOnly: nc.internalOnly === true || sharedStyleType(nc.styleType) !== null,
     blendMode: (nc.blendMode as Fill['blendMode']) ?? 'PASS_THROUGH',
     booleanOperation: mapBooleanOperation(nc),
     fills: convertFills(nc.fillPaints),
@@ -664,6 +668,8 @@ export function nodeChangeToProps(
     expanded: true,
     autoRename: (nc.autoRename ?? true) as boolean,
     boundVariables: extractBoundVariables(nc),
+    variableAssignmentScales: numericVariableAssignmentScales(),
+    variableBindingScales: sourceVariableBindingScales(nc),
     variableModes: extractVariableModes(nc),
     exportSettings: extractExportSettings(nc),
     pluginData: extractPluginData(nc),
@@ -671,7 +677,7 @@ export function nodeChangeToProps(
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
-    componentPropertyDefinitions: extractComponentPropertyDefs(nc),
+    componentPropertyDefinitions: nodeType === 'INSTANCE' ? [] : extractComponentPropertyDefs(nc),
     componentPropertyReferences: extractComponentPropertyRefs(nc),
     componentPropertyAssignments: extractComponentPropertyAssignments(nc),
     componentPropertyValues: extractComponentPropertyValues(nc),
@@ -702,7 +708,8 @@ const COMPONENT_PROP_TYPE_MAP: Record<string, ComponentPropertyType> = {
   TEXT: 'TEXT',
   BOOL: 'BOOLEAN',
   BOOLEAN: 'BOOLEAN',
-  INSTANCE_SWAP: 'INSTANCE_SWAP'
+  INSTANCE_SWAP: 'INSTANCE_SWAP',
+  SLOT: 'SLOT'
 }
 
 function componentPropValueToString(value: unknown): string {
@@ -725,10 +732,29 @@ interface RawComponentPropDef {
   name?: string
   type?: string
   initialValue?: unknown
+  description?: string
   preferredValues?: {
     stringValues?: string[]
     instanceSwapValues?: Array<{ key?: string }>
   }
+  slotPropConfig?: {
+    stretchChildOnInsert?: boolean
+    displayByDefault?: boolean
+    minChildren?: number
+    maxChildren?: number
+    allowPreferredValuesOnly?: boolean
+  }
+}
+
+function slotSettings(config: NonNullable<RawComponentPropDef['slotPropConfig']>): SlotSettings {
+  const settings: SlotSettings = {
+    allowPreferredValuesOnly: config.allowPreferredValuesOnly ?? false,
+    displayEmptyByDefault: config.displayByDefault ?? false,
+    stretchChildOnInsert: config.stretchChildOnInsert ?? false
+  }
+  if (config.minChildren !== undefined) settings.minChildren = config.minChildren
+  if (config.maxChildren !== undefined) settings.maxChildren = config.maxChildren
+  return settings
 }
 
 interface RawComponentPropRef {
@@ -768,19 +794,23 @@ function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefiniti
   for (const def of defs) {
     if (!def.id || !def.name) continue
     const propType = COMPONENT_PROP_TYPE_MAP[def.type ?? ''] ?? 'VARIANT'
-    result.push({
+    const definition: ComponentPropertyDefinition = {
       id: guidToString(def.id),
       name: def.name,
       type: propType,
       defaultValue: componentPropValueToString(def.initialValue),
       variantOptions: propType === 'VARIANT' ? def.preferredValues?.stringValues : undefined,
       preferredValues:
-        propType === 'INSTANCE_SWAP'
+        propType === 'INSTANCE_SWAP' || propType === 'SLOT'
           ? def.preferredValues?.instanceSwapValues
               ?.map((value) => value.key)
               .filter((value): value is string => value !== undefined)
           : undefined
-    })
+    }
+    if (def.description) definition.description = def.description
+    if (propType === 'SLOT' && def.slotPropConfig)
+      definition.slotSettings = slotSettings(def.slotPropConfig)
+    result.push(definition)
   }
   return result
 }
@@ -792,9 +822,11 @@ function extractComponentPropertyRefs(nc: NodeChange): ComponentPropertyReferenc
     '0': 'VISIBLE',
     '1': 'TEXT',
     '2': 'INSTANCE_SWAP',
+    '4': 'SLOT_CONTENT',
     VISIBLE: 'VISIBLE',
     TEXT_DATA: 'TEXT',
-    OVERRIDDEN_SYMBOL_ID: 'INSTANCE_SWAP'
+    OVERRIDDEN_SYMBOL_ID: 'INSTANCE_SWAP',
+    SLOT_CONTENT_ID: 'SLOT_CONTENT'
   }
   return refs.flatMap((ref) => {
     const field = fieldMap[String(ref.componentPropNodeField)]
@@ -940,6 +972,12 @@ function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig'][
     bordersTakeSpace: nc.bordersTakeSpace as boolean | undefined,
     stackReverseZIndex: nc.stackReverseZIndex as boolean | undefined
   }
+}
+
+function extractOccurrenceMetadata(nc: NodeChange): SceneNode['source'] {
+  const source = createDefaultSourceMetadata()
+  source.fig.layout = extractFigmaLayoutMetadata(nc)
+  return source
 }
 
 function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['source'] {

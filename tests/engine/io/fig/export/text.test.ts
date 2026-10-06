@@ -10,7 +10,7 @@ import {
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { parseFixture } from '#tests/helpers/fig-fixtures'
+import { parseFixture } from '#tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -34,9 +34,10 @@ describe('text node export', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')
-    expect(textNode).toBeDefined()
-    expect(expectDefined(textNode, 'textNode').type).toBe('TEXT')
+    const greeting = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')
+    expect(greeting).toBeDefined()
+    const textNode = expectDefined(greeting, 'textNode')
+    expect(textNode.type).toBe('TEXT')
     expect(textNode.text).toBe('Hello World')
     expect(textNode.fontFamily).toBe('Inter')
     expect(textNode.fontSize).toBe(16)
@@ -61,7 +62,7 @@ describe('text node export', () => {
     })
 
     const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
-    const textNode = reimported.getAllNodes().find((node) => node.name === 'Advanced type')
+    const textNode = [...reimported.getAllNodes()].find((node) => node.name === 'Advanced type')
     expect(textNode).toMatchObject({
       textAlignHorizontal: 'JUSTIFIED',
       textAlignVertical: 'BOTTOM',
@@ -85,7 +86,7 @@ describe('text node export', () => {
     })
 
     const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
-    const textNode = reimported.getAllNodes().find((node) => node.name === 'Localized Han')
+    const textNode = [...reimported.getAllNodes()].find((node) => node.name === 'Localized Han')
 
     expect(expectDefined(textNode, 'textNode').text).toBe('骨')
     expect(textNode?.textLanguage).toBeNull()
@@ -152,28 +153,34 @@ describe('text node export', () => {
     const message = compiled.decodeMessage(dataRaw)
 
     const nodeChanges = message.nodeChanges as JSONObject[]
-    const textNc = nodeChanges.find((nc) => nc.type === 'TEXT')
-    expect(textNc).toBeDefined()
+    const found = nodeChanges.find((nc) => nc.type === 'TEXT')
+    expect(found).toBeDefined()
+    const textNc = expectDefined(found, 'text node change')
 
-    expect(textNc.textData.characters).toBe('Check binary')
-    expect(textNc.textData.lines).toBeDefined()
-    expect(textNc.textData.lines.length).toBeGreaterThanOrEqual(1)
-    expect(textNc.textData.lines[0].lineType).toBe('PLAIN')
+    const textData = textNc.textData as JSONObject
+    expect(textData.characters).toBe('Check binary')
+    expect(textData.lines).toBeDefined()
+    const lines = textData.lines as JSONObject[]
+    expect(lines.length).toBeGreaterThanOrEqual(1)
+    expect(lines[0].lineType).toBe('PLAIN')
 
     expect(textNc.textUserLayoutVersion).toBe(4)
 
     expect(textNc.derivedTextData).toBeDefined()
-    expect(textNc.derivedTextData.layoutSize).toBeDefined()
-    expect(textNc.derivedTextData.layoutSize.x).toBe(80)
-    expect(textNc.derivedTextData.layoutSize.y).toBe(18)
+    const derivedTextData = textNc.derivedTextData as JSONObject
+    expect(derivedTextData.layoutSize).toBeDefined()
+    const layoutSize = derivedTextData.layoutSize as JSONObject
+    expect(layoutSize.x).toBe(80)
+    expect(layoutSize.y).toBe(18)
 
-    expect(textNc.derivedTextData.fontMetaData).toBeDefined()
-    expect(textNc.derivedTextData.fontMetaData.length).toBe(1)
-    expect(textNc.fontName.style).toBe('Bold')
-    expect(textNc.derivedTextData.fontMetaData[0].key.family).toBe('Roboto')
-    expect(textNc.derivedTextData.fontMetaData[0].key.style).toBe('Bold')
-    expect(textNc.derivedTextData.fontMetaData[0].fontWeight).toBe(700)
-    expect(textNc.derivedTextData.fontMetaData[0].fontStyle).toBe('NORMAL')
+    expect(derivedTextData.fontMetaData).toBeDefined()
+    const fontMetaData = derivedTextData.fontMetaData as JSONObject[]
+    expect(fontMetaData.length).toBe(1)
+    expect((textNc.fontName as JSONObject).style).toBe('Bold')
+    expect((fontMetaData[0].key as JSONObject).family).toBe('Roboto')
+    expect((fontMetaData[0].key as JSONObject).style).toBe('Bold')
+    expect(fontMetaData[0].fontWeight).toBe(700)
+    expect(fontMetaData[0].fontStyle).toBe('NORMAL')
   })
 
   test('uses Figma font style names for weighted text', async () => {
@@ -222,7 +229,7 @@ describe('text node export', () => {
     expect((fontMetaData[0].key as JSONObject).style).toBe('Semi Bold')
   })
 
-  test('auto-layout text children export height auto-resize for Figma rendering', async () => {
+  test('auto-layout text children preserve explicit fixed text sizing', async () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
@@ -266,7 +273,7 @@ describe('text node export', () => {
       'text node change'
     )
 
-    expect(textNc.textAutoResize).toBe('HEIGHT')
+    expect(textNc.textAutoResize).toBe('NONE')
     expect(textNc.lineHeight).toBeUndefined()
     expect(textNc.stackChildAlignSelf).toBeUndefined()
   })
@@ -292,7 +299,7 @@ describe('text node export', () => {
 
     const exported = await exportFigFile(graph)
     const parsed = await parseFigFile(exported.buffer as ArrayBuffer)
-    const restored = parsed.getAllNodes().find((node) => node.name === text.name)
+    const restored = [...parsed.getAllNodes()].find((node) => node.name === text.name)
 
     expect(restored?.textAutoResize).toBe('NONE')
     expect(restored?.source.fig.rawNodeFields).not.toHaveProperty('textAutoResize')

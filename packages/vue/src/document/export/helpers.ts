@@ -2,25 +2,41 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { MAX_EXPORT_SCALE, MIN_EXPORT_SCALE, clampExportScale } from '@open-pencil/scene-graph'
+import { BUILTIN_IO_FORMATS, IORegistry, type BuiltinIOFormatId } from '@open-pencil/core/io'
+import {
+  EXPORT_FORMAT_IDS,
+  MAX_EXPORT_SCALE,
+  MIN_EXPORT_SCALE,
+  OPEN_PENCIL_PLUGIN_DATA,
+  clampExportScale,
+  withPluginData
+} from '@open-pencil/scene-graph'
 import type { ExportFormatId, ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
 
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 export const EXPORT_SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
-export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'pdf']
+// Persisted export-setting formats must name built-in IO adapters.
+export const EXPORT_FORMATS = EXPORT_FORMAT_IDS satisfies readonly BuiltinIOFormatId[]
+
+export interface ExportFormatOption {
+  value: ExportFormatId
+  label: string
+}
 
 export type ExportPanelTarget = 'selection' | 'page'
-
-const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
-const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
 
 // Re-exported from core so the UI and the .fig file-format boundary share one
 // definition of the export-scale bounds (see scene-graph/export-scale).
 export { MIN_EXPORT_SCALE, MAX_EXPORT_SCALE, clampExportScale }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
+
+/** Short, extension-style labels for the node export formats (PNG, PDF, PPTX, …). */
+export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = EXPORT_FORMATS.map((id) => ({
+  value: id,
+  label: (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
+}))
 
 export function createDefaultExportSetting(): ExportSetting {
   return { scale: 1, format: 'png' }
@@ -107,19 +123,11 @@ function syncExportSettingsPluginData(
   pluginData: PluginDataEntry[],
   settings: ExportSetting[]
 ): PluginDataEntry[] {
-  const withoutExportSettings = pluginData.filter(
-    (entry) =>
-      !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === EXPORT_SETTINGS_PLUGIN_KEY)
+  return withPluginData(
+    pluginData,
+    OPEN_PENCIL_PLUGIN_DATA.exportSettings,
+    settings.length > 0 ? settings : undefined
   )
-  if (settings.length === 0) return withoutExportSettings
-  return [
-    ...withoutExportSettings,
-    {
-      pluginId: OPEN_PENCIL_PLUGIN_ID,
-      key: EXPORT_SETTINGS_PLUGIN_KEY,
-      value: JSON.stringify(settings)
-    }
-  ]
 }
 
 function updateEveryTarget(

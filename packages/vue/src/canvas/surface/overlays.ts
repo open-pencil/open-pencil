@@ -1,4 +1,4 @@
-import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { hitTestIssueMarkers, type SkiaRenderer } from '@open-pencil/core/canvas'
 import type { Editor } from '@open-pencil/core/editor'
 
 import { useViewportKind } from '#vue/editor/viewport-kind/use'
@@ -45,11 +45,16 @@ export function createCanvasHitTests(editor: Editor, getRenderer: () => SkiaRend
         editor.graph,
         canvasX,
         canvasY,
-        editor.state.selectedIds,
         editor.state.rotationPreview
       ) ?? null
     )
   }
 
-  return { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle }
+  /** Issue marker under a point in canvas-element CSS pixels, from the last drawn frame. */
+  function hitTestIssueMarker(screenX: number, screenY: number) {
+    const renderer = getRenderer()
+    return renderer ? hitTestIssueMarkers(renderer.issueMarkers, screenX, screenY) : null
+  }
+
+  return { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker }
 }

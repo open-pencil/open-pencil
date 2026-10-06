@@ -10,7 +10,7 @@ description: Scale und Format für den Export der aktuellen Selection verwalten.
 - Export settings;
 - IDs der ausgewählten Objekte;
 - Name der Output file;
-- verfügbare Scales und Formats.
+- verfügbare Scales und Formats (`formats`-IDs und beschriftete `formatOptions`).
 
 ## Verwendung
 
@@ -28,6 +28,7 @@ const {
   nodeName,
   scales,
   formats,
+  formatOptions,
   addSetting,
   updateScale,
   updateFormat,
@@ -44,7 +45,7 @@ exportState.addSetting()
 
 ```ts
 exportState.updateScale(0, 2)
-exportState.updateFormat(0, 'WEBP')
+exportState.updateFormat(0, 'webp')
 ```
 
 ## Siehe auch

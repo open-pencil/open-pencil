@@ -81,6 +81,8 @@ test('updates cap, join, and miter state from compact controls', async () => {
   ])
 
   await page.keyboard.press('Escape')
+  // Undo goes to the canvas only once the settings popover is gone.
+  await expect(page.getByRole('dialog', { name: 'Stroke settings' })).toHaveCount(0)
   await canvas.pressKey('Meta+z')
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry())[0]?.miterLimit).toBe(4)
@@ -103,6 +105,8 @@ test('applies mixed multi-selection joins in one undo step', async () => {
   expect((await selectedStrokeGeometry()).map((value) => value?.join)).toEqual(['ROUND', 'ROUND'])
 
   await page.keyboard.press('Escape')
+  // Undo goes to the canvas only once the settings popover is gone.
+  await expect(page.getByRole('dialog', { name: 'Stroke settings' })).toHaveCount(0)
   await canvas.pressKey('Meta+z')
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry()).map((value) => value?.join)).toEqual(['MITER', 'MITER'])

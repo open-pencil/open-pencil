@@ -9,6 +9,7 @@ import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-backing'
+import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
   r: SkiaRenderer,
@@ -77,7 +78,9 @@ export function renderFromEditorState(
           } as RenderOverlays['penState'])
         : null,
       nodeEditState: state.nodeEditState ?? null,
-      remoteCursors: state.remoteCursors,
+      presenceCursors: state.presenceCursors,
+      designIssues: state.designIssues,
+      codeFocusNodeId: state.codeFocusNodeId,
       autoLayoutHover: state.autoLayoutHover
     },
     state.sceneVersion,
@@ -103,6 +106,7 @@ function scenePictureMissReason(
   hasPositionPreview: boolean
 ): string {
   if (hasPositionPreview) return 'position-preview'
+  if (hasTransientPreviews(r, graph)) return 'transient-preview'
   if (sceneContentDependsOnOverlay(overlays)) return 'volatile-overlay'
   if (!r.scenePicture) return 'missing-picture'
   if (graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion)
@@ -140,7 +144,10 @@ function getSceneRenderPolicy(
     graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
     sceneVersion === r.scenePictureVersion
   const requiresUncachedSceneRender =
-    interactive || hasPositionPreview || sceneContentDependsOnOverlay(overlays)
+    interactive ||
+    hasPositionPreview ||
+    sceneContentDependsOnOverlay(overlays) ||
+    hasTransientPreviews(r, graph)
   return {
     requiresUncachedSceneRender,
     canUsePicture: canUseScenePicture(r, graph, sceneVersion, requiresUncachedSceneRender),
@@ -270,7 +277,7 @@ export function render(
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
     r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
-    drawLabelPass(r, canvas, graph, overlays)
+    drawLabelPass(r, canvas, graph, selectedIds, overlays)
     canvas.restore()
 
     canvas.save()
@@ -346,6 +353,7 @@ function renderPageChildren(
   graph: SceneGraph,
   overlays: RenderOverlays
 ): void {
+  if (renderPageWithPreviews(r, canvas, graph, overlays)) return
   const pageNode = graph.getNode(r.pageId ?? graph.rootId)
   if (!pageNode) return
   for (const childId of pageNode.childIds) {

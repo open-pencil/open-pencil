@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
+import { fromUint8Array } from 'js-base64'
+
 const execFileAsync = promisify(execFile)
 
 interface ClientPoint {
@@ -55,7 +57,8 @@ $scale = $dpi / 96.0
 
 async function runPowerShell(script: string): Promise<void> {
   if (process.platform !== 'win32') throw new Error('Win32 input is only available on Windows')
-  const encoded = Buffer.from(script, 'utf16le').toString('base64')
+  // PowerShell -EncodedCommand takes UTF-16LE text as Base64.
+  const encoded = fromUint8Array(Buffer.from(script, 'utf16le'))
   await execFileAsync('powershell.exe', ['-NoProfile', '-EncodedCommand', encoded])
 }
 

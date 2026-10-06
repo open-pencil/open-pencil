@@ -15,7 +15,7 @@ export const Dismissible: Story = {
   render: () => ({
     components: { AppBanner },
     template: `
-      <AppBanner storage-key="storybook-banner-dismissed" test-id="app-banner">
+      <AppBanner storage-key="storybook-banner-dismissed">
         This display or browser cannot show Display-P3 colors, so the canvas previews them in sRGB.
         <template #dismiss>Dismiss</template>
       </AppBanner>

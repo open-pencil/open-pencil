@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { Component, ComponentSet, Frame, Text, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
+import { Component, ComponentSet, Frame, Text } from '@open-pencil/design-jsx'
 import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 
 import { makeSceneGraph } from '#tests/helpers/scene'

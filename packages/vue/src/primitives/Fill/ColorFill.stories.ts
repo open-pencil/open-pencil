@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import ColorFillDemo from '#vue/primitives/Fill/demo/ColorFillDemo.vue'
+import ColorFillStates from './examples/States.vue'
 
 const meta = {
   title: 'Vue SDK/Primitives/Color and Fill',
-  component: ColorFillDemo,
+  component: ColorFillStates,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -15,7 +15,7 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof ColorFillDemo>
+} satisfies Meta<typeof ColorFillStates>
 
 export default meta
 type Story = StoryObj<typeof meta>

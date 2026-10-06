@@ -1,9 +1,14 @@
 import { convertToHsb, convertToHsl, convertToRgb } from 'reka-ui'
 import type { Color as RekaColor, HSBColor, HSLColor, RGBColor } from 'reka-ui'
 
-import { colorToCSS, okhclToRGBA, rgba255ToColor, rgbaToOkHCL } from '@open-pencil/core/color'
-import type { OkHCLColor } from '@open-pencil/core/color'
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import {
+  colorToCSS,
+  okhclToRGBA,
+  rgba255ToColor,
+  rgbaToOkHCL
+} from '@open-pencil/scene-graph/color'
+import type { OkHCLColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type {
@@ -186,6 +191,18 @@ export function applySolidFillColor(fill: Fill, color: Color): Fill {
 
 export function applySolidStrokeColor(color: Color): Partial<Stroke> {
   return { color, opacity: color.a }
+}
+
+/**
+ * A stroke's geometry survives a paint change; every paint field comes from the new paint, so
+ * the stroke carries exactly what the picker produced rather than a mix of both paints.
+ */
+export function applyStrokePaint(stroke: Stroke, paint: Fill): Stroke {
+  const next: Stroke = { ...paint, weight: stroke.weight, align: stroke.align }
+  if (stroke.cap !== undefined) next.cap = stroke.cap
+  if (stroke.join !== undefined) next.join = stroke.join
+  if (stroke.dashPattern) next.dashPattern = [...stroke.dashPattern]
+  return next
 }
 
 export function toPercent(value: number): number {

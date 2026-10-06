@@ -1,6 +1,6 @@
 import dedent from 'dedent'
 
-import { JSX_REFERENCE } from '#core/design-jsx/reference'
+import { JSX_REFERENCE } from '@open-pencil/design-jsx'
 
 import codegen from './codegen.md?raw'
 

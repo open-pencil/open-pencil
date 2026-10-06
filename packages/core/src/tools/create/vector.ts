@@ -1,17 +1,13 @@
-import { safeDestr } from 'destr'
 import * as v from 'valibot'
 
-import {
-  normalizeVectorNetwork,
-  transformVectorNetwork,
-  validateVectorNetwork
-} from '@open-pencil/scene-graph'
+import { transformVectorNetwork } from '@open-pencil/scene-graph'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
-import { parseColor } from '#core/color'
 import { toolNumber, positionInputs } from '#core/tools/input'
 import { defineTool, nodeSummary } from '#core/tools/schema'
+import { parseVectorNetworkJSON } from '#core/tools/vector/network'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 interface ParsedVectorPath {
@@ -34,24 +30,11 @@ function parseSVGVectorPath(path: string): VectorPathResult {
   }
 }
 
-function parseVectorNetworkJSON(path: string): VectorPathResult {
-  let parsed: unknown
-  try {
-    parsed = safeDestr(path)
-  } catch {
-    return { error: 'Invalid VectorNetwork JSON' }
-  }
-
-  const errors = validateVectorNetwork(parsed)
-  if (errors.length > 0) return { error: `Invalid VectorNetwork: ${errors.join('; ')}` }
-
-  return { network: normalizeVectorNetwork(parsed as VectorNetwork), size: null }
-}
-
 function parseVectorPath(path: string): VectorPathResult {
   const trimmed = path.trim()
   if (/^[Mm]/.test(trimmed)) return parseSVGVectorPath(trimmed)
-  return parseVectorNetworkJSON(trimmed)
+  const parsed = parseVectorNetworkJSON(trimmed)
+  return 'error' in parsed ? parsed : { network: parsed.network, size: null }
 }
 
 export const createVector = defineTool({
@@ -98,6 +81,7 @@ export const createVector = defineTool({
       figma.graph.updateNode(node.id, {
         strokes: [
           {
+            type: 'SOLID',
             color: parseColor(args.stroke),
             weight: args.stroke_weight ?? 1,
             opacity: 1,

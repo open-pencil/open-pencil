@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import type { ExportSetting } from '@open-pencil/scene-graph'
+
 import { expectInViewport } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { propertyItems, propertySection } from '#tests/helpers/properties'
@@ -31,7 +33,7 @@ function exportButton() {
   return page.getByTestId('export-button')
 }
 
-async function createRectangles(count: number, settings: unknown[][] = []) {
+async function createRectangles(count: number, settings: ExportSetting[][] = []) {
   const ids = await page.evaluate(
     ({ count: nodeCount, settingsByNode }) => {
       const store = window.openPencil?.getStore?.()
@@ -109,7 +111,7 @@ test('format selector changes to JPG', async () => {
   await expect(formatTrigger).toHaveAttribute('aria-label', 'Export format')
   await formatTrigger.click()
 
-  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF']) {
+  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF', 'PPTX']) {
     await expect(page.locator('[role="option"]').filter({ hasText: label })).toBeVisible()
   }
 
@@ -182,7 +184,7 @@ async function forceBlobDownload() {
 // `createRectangles` makes fill-less rectangles, which have no visual bounds and
 // export to nothing. Use createShape so the rectangle has a real fill and is
 // actually exportable, then attach the export settings under test.
-async function createExportableRect(settings: { scale: number; format: string }[]) {
+async function createExportableRect(settings: ExportSetting[]) {
   await page.evaluate((nodeSettings) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -215,6 +217,16 @@ test('a single export format downloads the file directly', async () => {
 
   const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
   expect(download.suggestedFilename()).toBe('Export rect 1@1x.png')
+  canvas.assertNoErrors()
+})
+
+test('a PPTX export setting downloads a PowerPoint file', async () => {
+  await createExportableRect([{ scale: 1, format: 'pptx' }])
+  await forceBlobDownload()
+
+  await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.pptx')
   canvas.assertNoErrors()
 })
 

@@ -220,8 +220,8 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
-  function snapshotPage(): PageSnapshot {
-    return createPageSnapshot(ctx.graph, ctx.state.currentPageId)
+  function snapshotPage(pageId = ctx.state.currentPageId): PageSnapshot {
+    return createPageSnapshot(ctx.graph, pageId)
   }
 
   function restorePageFromSnapshot(snapshot: PageSnapshot) {

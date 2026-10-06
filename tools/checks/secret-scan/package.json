@@ -1,0 +1,5 @@
+{
+  "name": "@open-pencil/secret-scan-tools",
+  "private": true,
+  "type": "module"
+}

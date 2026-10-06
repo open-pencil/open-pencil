@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import { fontManager, prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { bold, entity, fmtList, kv, printError } from '#cli/format'
 import { loadDocument } from '#cli/headless'
 import { loadRPCData } from '#cli/rpc-data'

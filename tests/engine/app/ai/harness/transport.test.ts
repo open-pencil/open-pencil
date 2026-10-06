@@ -16,7 +16,7 @@ test('failed session stop kills the process without deleting resume state', asyn
       model: 'test',
       settings: {},
       instructions: '',
-      mcpServers: []
+      mcpServers: {}
     },
     {},
     async () => ({
@@ -55,7 +55,8 @@ test('failed session stop kills the process without deleting resume state', asyn
     chatId: 'test',
     trigger: 'submit-message',
     messageId: undefined,
-    messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }]
+    messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+    abortSignal: undefined
   })
   const reader = stream.getReader()
   while (!(await reader.read()).done) {

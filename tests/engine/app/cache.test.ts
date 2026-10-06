@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 function installLocalStorage() {
   const data = new Map<string, string>()
   const storage = {
@@ -38,8 +40,22 @@ describe('app cache', () => {
 
     await writeCacheJSON('json/key', { ok: true })
 
-    await expect(readCacheJSON('json/key', 60_000)).resolves.toEqual({ ok: true })
-    await expect(readCacheJSON('json/key', -1)).resolves.toBeNull()
+    const schema = v.object({ ok: v.boolean() })
+    await expect(readCacheJSON('json/key', schema, 60_000)).resolves.toEqual({ ok: true })
+    await expect(readCacheJSON('json/key', schema, -1)).resolves.toBeNull()
+  })
+
+  test('reads malformed or mismatched JSON entries as missing', async () => {
+    const storage = installLocalStorage()
+    const { readCacheJSON, writeCacheJSON } = await import('@/app/cache')
+    const schema = v.object({ ok: v.boolean() })
+
+    storage.set('open-pencil:cache:v1:json/key', '{not json')
+    await expect(readCacheJSON('json/key', schema)).resolves.toBeNull()
+    storage.set('open-pencil:cache:v1:json/key', JSON.stringify({ value: { ok: true } }))
+    await expect(readCacheJSON('json/key', schema)).resolves.toBeNull()
+    await writeCacheJSON('json/key', { ok: 'yes' })
+    await expect(readCacheJSON('json/key', schema)).resolves.toBeNull()
   })
 
   test('removes a web cache prefix', async () => {

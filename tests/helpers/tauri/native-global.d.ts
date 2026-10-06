@@ -1,4 +1,7 @@
+/// <reference types="@wdio/globals/types" />
+
 import type * as TauriAPI from '@tauri-apps/api'
+import type * as TauriOS from '@tauri-apps/plugin-os'
 
 export {}
 
@@ -35,7 +38,7 @@ type NativeTestStore = {
 
 declare global {
   interface Window {
-    __TAURI__?: Pick<typeof TauriAPI, 'core'>
+    __TAURI__?: Pick<typeof TauriAPI, 'core'> & { os?: typeof TauriOS }
     openPencil?: {
       getStore?: () => NativeTestStore
     }

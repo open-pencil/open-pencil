@@ -9,6 +9,7 @@ import {
   SECTION_TITLE_FONT_SIZE,
   SIZE_FONT_SIZE
 } from '#core/constants'
+import { withTextMeasurer } from '#core/layout/text-measurement'
 import { fontManager } from '#core/text/fonts'
 import { prepareGraphFonts } from '#core/text/prepare'
 import {
@@ -134,15 +135,12 @@ export async function prepareForExport(
   graph: SceneGraph,
   pageId: string,
   nodeIds: string[]
-): Promise<() => void> {
-  const { getTextMeasurer, setTextMeasurer, computeAllLayouts } = await import('#core/layout')
-
-  const previousTextMeasurer = getTextMeasurer()
-  setTextMeasurer((node, maxWidth) => r.measureTextNode(node, maxWidth))
-
+): Promise<void> {
+  const { computeAllLayouts } = await import('#core/layout')
   await prepareGraphFonts(graph, nodeIds)
   syncFontGeneration(r)
-  computeAllLayouts(graph, pageId)
-
-  return () => setTextMeasurer(previousTextMeasurer)
+  withTextMeasurer(
+    (node, maxWidth) => r.measureTextNode(node, maxWidth),
+    () => computeAllLayouts(graph, pageId)
+  )
 }

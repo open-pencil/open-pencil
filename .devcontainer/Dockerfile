@@ -25,6 +25,8 @@ RUN apt-get update \
         /workspace/open-pencil/packages/fig/node_modules \
         /workspace/open-pencil/packages/core/node_modules \
         /workspace/open-pencil/packages/dom-css/node_modules \
+        /workspace/open-pencil/packages/design-jsx/node_modules \
+        /workspace/open-pencil/packages/emit/node_modules \
         /workspace/open-pencil/packages/vue/node_modules \
         /workspace/open-pencil/packages/cli/node_modules \
         /workspace/open-pencil/packages/mcp/node_modules \

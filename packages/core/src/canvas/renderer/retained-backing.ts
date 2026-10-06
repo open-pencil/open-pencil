@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { recordWorldPicture } from '#core/canvas/renderer/picture'
 import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
 import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 import { emitNavigationTrace } from '#core/profiler'
@@ -260,32 +261,17 @@ function cachedSubtreePicture(
   const bounds = computeRetainedSubtreeBounds(graph, childId)
   if (!bounds) return null
 
-  const recorder = new r.ck.PictureRecorder()
-  const prevViewport = r.worldViewport
-  try {
-    const recCanvas = recorder.beginRecording(
-      r.ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
-    )
-    r.worldViewport = {
-      x: bounds.minX,
-      y: bounds.minY,
-      w: bounds.maxX - bounds.minX,
-      h: bounds.maxY - bounds.minY
-    }
-    r.renderNode(recCanvas, graph, childId, {})
-    const picture = recorder.finishRecordingAsPicture()
-    r.subtreePictureCache.set(childId, {
-      picture,
-      pageId: r.pageId,
-      sceneVersion,
-      positionPreviewVersion: graph.positionPreviewVersion,
-      fontGeneration: r.fontGeneration
-    })
-    return picture
-  } finally {
-    r.worldViewport = prevViewport
-    recorder.delete()
-  }
+  const picture = recordWorldPicture(r, bounds, (canvas) =>
+    r.renderNode(canvas, graph, childId, {})
+  )
+  r.subtreePictureCache.set(childId, {
+    picture,
+    pageId: r.pageId,
+    sceneVersion,
+    positionPreviewVersion: graph.positionPreviewVersion,
+    fontGeneration: r.fontGeneration
+  })
+  return picture
 }
 
 function drawRetainedChild(

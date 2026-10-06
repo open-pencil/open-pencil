@@ -163,6 +163,9 @@ export class ByteBuffer {
   }
 
   writeByteArray(value: Uint8Array): void {
+    if (!(value instanceof Uint8Array) && !Array.isArray(value)) {
+      throw new Error('Expected byte array')
+    }
     this.writeVarUint(value.length)
     let index = this.length
     this._growBy(value.length)

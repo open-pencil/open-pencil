@@ -1,0 +1,33 @@
+{
+  "before": {
+    "componentId": "293747:7",
+    "instanceId": "293747:9",
+    "root": {
+      "width": 20.5,
+      "height": 7,
+      "left": 5,
+      "right": 5
+    },
+    "nested": {
+      "width": 10.5,
+      "height": 7,
+      "left": 3,
+      "right": 2.5
+    }
+  },
+  "after": {
+    "width": 28,
+    "height": 14,
+    "nested": {
+      "width": 18,
+      "height": 14,
+      "left": 3,
+      "right": 5
+    }
+  },
+  "token": {
+    "width": 29,
+    "left": 4,
+    "nestedWidth": 19
+  }
+}

@@ -5,6 +5,7 @@ import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { recordWorldPicture, withWorldViewport } from '#core/canvas/renderer/picture'
 import { clipNodeShape, nodeHasRadius } from '#core/canvas/shapes'
 
 import type { RenderChunk } from './index'
@@ -38,28 +39,13 @@ function drawChunkContent(
   canvas.restore()
 }
 
-function withChunkViewport(renderer: SkiaRenderer, chunk: RenderChunk, draw: () => void): void {
-  const previousViewport = renderer.worldViewport
-  renderer.worldViewport = {
-    x: chunk.minX,
-    y: chunk.minY,
-    w: chunk.maxX - chunk.minX,
-    h: chunk.maxY - chunk.minY
-  }
-  try {
-    draw()
-  } finally {
-    renderer.worldViewport = previousViewport
-  }
-}
-
 export function drawRenderChunkDirect(
   renderer: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
   chunk: RenderChunk
 ): void {
-  withChunkViewport(renderer, chunk, () => drawChunkContent(renderer, canvas, graph, chunk))
+  withWorldViewport(renderer, chunk, () => drawChunkContent(renderer, canvas, graph, chunk))
 }
 
 export function recordRenderChunk(
@@ -67,17 +53,10 @@ export function recordRenderChunk(
   graph: SceneGraph,
   chunk: RenderChunk
 ): RecordedRenderChunk {
-  const recorder = new renderer.ck.PictureRecorder()
-  try {
-    const canvas = recorder.beginRecording(
-      renderer.ck.LTRBRect(chunk.minX, chunk.minY, chunk.maxX, chunk.maxY)
-    )
-    withChunkViewport(renderer, chunk, () => drawChunkContent(renderer, canvas, graph, chunk))
-    const picture = recorder.finishRecordingAsPicture()
-    return { chunk, picture }
-  } finally {
-    recorder.delete()
-  }
+  const picture = recordWorldPicture(renderer, chunk, (canvas) =>
+    drawChunkContent(renderer, canvas, graph, chunk)
+  )
+  return { chunk, picture }
 }
 
 export function drawRecordedRenderChunks(canvas: Canvas, chunks: RecordedRenderChunk[]): void {

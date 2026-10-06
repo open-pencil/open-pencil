@@ -1,0 +1,25 @@
+{
+  "occurrence": [
+    {
+      "type": "INSTANCE",
+      "error": "Error: in rescale: This property cannot be overridden in an instance: size"
+    },
+    {
+      "type": "RECTANGLE",
+      "error": "Error: in rescale: This property cannot be overridden in an instance: size"
+    }
+  ],
+  "definition": {
+    "id": "293870:10",
+    "before": {
+      "width": 25,
+      "height": 14,
+      "left": 10
+    },
+    "after": {
+      "width": 50,
+      "height": 28,
+      "left": 20
+    }
+  }
+}

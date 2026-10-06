@@ -14,7 +14,7 @@ import {
 } from '@/app/ai/models/storage'
 import {
   HARNESS_PERMISSION_MODES,
-  HARNESS_THINKING_LEVELS,
+  THINKING_LEVELS,
   type AIModelCapability,
   type AIModelConnection,
   type AIModelProfile,
@@ -26,7 +26,7 @@ import {
   type OptionalAIModelRole,
   type ResolvedAIModelRole,
   type HarnessPermissionMode,
-  type HarnessThinkingLevel
+  type ThinkingLevel
 } from '@/app/ai/models/types'
 
 const LEGACY_CONNECTION_ID = 'connection-default'
@@ -48,10 +48,18 @@ function isAPIType(value: unknown): value is 'completions' | 'responses' {
   return value === 'completions' || value === 'responses'
 }
 
-function isHarnessThinkingLevel(value: unknown): value is HarnessThinkingLevel {
-  return (
-    typeof value === 'string' && HARNESS_THINKING_LEVELS.includes(value as HarnessThinkingLevel)
-  )
+function isThinkingLevel(value: unknown): value is ThinkingLevel {
+  return typeof value === 'string' && THINKING_LEVELS.includes(value as ThinkingLevel)
+}
+
+/** Profiles saved before thinking levels kept a Pi level or a free-text provider effort. */
+function parseThinkingLevel(value: Record<string, unknown>): ThinkingLevel {
+  if (isThinkingLevel(value.thinkingLevel)) return value.thinkingLevel
+  if (isThinkingLevel(value.harnessThinkingLevel)) return value.harnessThinkingLevel
+  const effort = stringValue(value.reasoningEffort).trim().toLowerCase()
+  if (effort === 'none') return 'off'
+  if (effort === 'max') return 'xhigh'
+  return isThinkingLevel(effort) ? effort : 'default'
 }
 
 function isHarnessPermissionMode(value: unknown): value is HarnessPermissionMode {
@@ -103,10 +111,7 @@ function parseProfile(value: unknown, connectionIds: Set<string>): AIModelProfil
     modelID: stringValue(value.modelID),
     customModelID: stringValue(value.customModelID),
     maxOutputTokens: normalizedMaxOutputTokens(value.maxOutputTokens),
-    reasoningEffort: stringValue(value.reasoningEffort).trim() || undefined,
-    harnessThinkingLevel: isHarnessThinkingLevel(value.harnessThinkingLevel)
-      ? value.harnessThinkingLevel
-      : undefined,
+    thinkingLevel: parseThinkingLevel(value),
     harnessPermissionMode: isHarnessPermissionMode(value.harnessPermissionMode)
       ? value.harnessPermissionMode
       : undefined,
@@ -142,7 +147,8 @@ function hydrateCuratedCapabilities(
   }
 }
 
-function parseSettings(value: unknown): AIModelSettings | null {
+/** Normalizes persisted settings, migrating fields from earlier versions. */
+export function parseAIModelSettings(value: unknown): AIModelSettings | null {
   if (!isRecord(value) || value.version !== 1) return null
   const connections = Array.isArray(value.connections)
     ? value.connections.map(parseConnection).filter((connection) => connection !== null)
@@ -214,6 +220,7 @@ function legacySettings(): AIModelSettings {
         maxOutputTokens: Number.isFinite(maxOutputTokens)
           ? maxOutputTokens
           : DEFAULT_MAX_OUTPUT_TOKENS,
+        thinkingLevel: 'default',
         capabilities: curatedCapabilities ?? ['tools']
       }
     ],
@@ -227,7 +234,7 @@ function legacySettings(): AIModelSettings {
 }
 
 function loadSettings(): AIModelSettings {
-  return parseSettings(readAIModelSettingsStorage()) ?? legacySettings()
+  return parseAIModelSettings(readAIModelSettingsStorage()) ?? legacySettings()
 }
 
 export const aiModelSettings = ref<AIModelSettings>(loadSettings())
@@ -331,8 +338,7 @@ function draftForProfile(
     customBaseURL: connection.customBaseURL,
     customAPIType: connection.customAPIType,
     maxOutputTokens: profile.maxOutputTokens,
-    reasoningEffort: profile.reasoningEffort ?? '',
-    harnessThinkingLevel: profile.harnessThinkingLevel ?? 'medium',
+    thinkingLevel: profile.thinkingLevel,
     harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
     capabilities: [...profile.capabilities]
   }
@@ -351,8 +357,7 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     customBaseURL: connection?.customBaseURL ?? '',
     customAPIType: connection?.customAPIType ?? 'completions',
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
-    reasoningEffort: '',
-    harnessThinkingLevel: 'medium',
+    thinkingLevel: 'default',
     harnessPermissionMode: 'allow-edits',
     capabilities: ['tools']
   }
@@ -387,9 +392,7 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     modelID: draft.modelID.trim() || provider?.defaultModel || '',
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
-    reasoningEffort: draft.reasoningEffort.trim() || undefined,
-    harnessThinkingLevel:
-      draft.providerID === 'harness:pi' ? draft.harnessThinkingLevel : undefined,
+    thinkingLevel: draft.thinkingLevel,
     harnessPermissionMode:
       draft.providerID === 'harness:pi' ? draft.harnessPermissionMode : undefined,
     capabilities: [...new Set(draft.capabilities)]

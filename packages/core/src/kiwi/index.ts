@@ -1,7 +1,5 @@
 export { prefetchFigmaSchema } from '#core/clipboard'
 export { readFigFile, parseFigFile } from './fig/file'
-export { importNodeChanges } from './fig/import'
-export { populateAllLazyFigImportRoots, populateLazyFigImportRoots } from './fig/lazy-import'
 export { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 export {
   initCodec,
@@ -16,14 +14,11 @@ export {
   createNodeChangesMessage,
   createNodeChange,
   parseVariableId,
-  encodePaintWithVariableBinding,
-  encodeNodeChangeWithVariables,
   type NodeChange,
   type GUID,
   type Color,
   type Paint,
   type Effect,
-  type VariableBinding,
   type VariableAnyValue,
   type VariableDataEntry,
   type VariableConsumptionEntry,

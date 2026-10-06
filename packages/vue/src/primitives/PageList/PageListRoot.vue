@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { isPageDivider, PAGE_DIVIDER_PATTERN } from '#vue/primitives/PageList/divider'
 import { usePageList } from '#vue/primitives/PageList/usePageList'
 
 const { dividerPattern: customDividerPattern } = defineProps<{
@@ -18,10 +19,10 @@ const emit = defineEmits<{
 const { pages, currentPageId, switchPage, addPage, renamePage, deletePage, movePage } =
   usePageList()
 
-const dividerPattern = computed(() => customDividerPattern ?? /^[-–—*\s]+$/)
+const dividerPattern = computed(() => customDividerPattern ?? PAGE_DIVIDER_PATTERN)
 
 function isDivider(page: { name: string; childIds: string[] }) {
-  return page.childIds.length === 0 && dividerPattern.value.test(page.name)
+  return isPageDivider(page, dividerPattern.value)
 }
 
 function handleAdd() {

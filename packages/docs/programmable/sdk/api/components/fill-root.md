@@ -4,7 +4,7 @@ description: Headless fill category state and conversion actions.
 ---
 
 <script setup lang="ts">
-import ColorFillDemo from '#vue/primitives/Fill/demo/ColorFillDemo.vue'
+import FillStates from '#vue/primitives/Fill/examples/States.vue'
 import { data } from './fill-root.data'
 </script>
 
@@ -13,7 +13,7 @@ import { data } from './fill-root.data'
 `FillRoot` owns solid, gradient, and image category state without owning a popover or visual swatch.
 Compose it around the picker surface appropriate for your application.
 
-<ColorFillDemo />
+<FillStates />
 
 Its default slot exposes the current fill, category, transparency, swatch background, and grouped
 conversion actions. Category changes emit immutable `Fill` values and are no-ops when the requested

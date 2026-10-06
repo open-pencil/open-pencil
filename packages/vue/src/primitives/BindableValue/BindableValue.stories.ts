@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import BindableValueDemo from './demo/BindableValueDemo.vue'
-import ModeEditDemo from './demo/ModeEditDemo.vue'
+import BindableValueStates from './examples/States.vue'
 
 const meta = {
   title: 'Vue SDK/Primitives/BindableValue',
-  component: BindableValueDemo,
+  component: BindableValueStates,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -16,14 +15,10 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof BindableValueDemo>
+} satisfies Meta<typeof BindableValueStates>
 
 export default meta
 type Story = StoryObj<typeof meta>
-
-export const ModeEditing: Story = {
-  render: () => ({ components: { ModeEditDemo }, template: '<ModeEditDemo />' })
-}
 
 export const StateMatrix: Story = {
   play: async ({ canvasElement }) => {

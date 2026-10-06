@@ -33,14 +33,16 @@ import { makeSmoothRRectPath, nodeHasRadius, nodeHasSmoothCorners } from './shap
 import {
   configureStrokePaint,
   drawArrowHeads,
+  applyStrokeShader,
   drawDashedRRectWithSolidCorners,
   drawStyledRRectStroke,
   getStrokeCapEntity,
   getStrokeJoinEntity,
   normalizeDashPattern
 } from './strokes'
-import { withTextParagraph } from './text'
+import { textVerticalOffset, withTextParagraph } from './text'
 import {
+  canDrawSavedText,
   drawDerivedText,
   drawReflowedPathTextSilhouettes,
   isReflowedPathText
@@ -405,6 +407,10 @@ function makeNodeRRect(r: SkiaRenderer, node: SceneNode, radius: number): Float3
   return r.ck.RRectXY(rect, radius, radius)
 }
 
+/**
+ * Every stroke a node draws passes through here, so a gradient or image stroke gets its shader
+ * here rather than in each draw helper, and the shader is cleared before the next stroke.
+ */
 function forVisibleStrokes(
   r: SkiaRenderer,
   node: SceneNode,
@@ -414,7 +420,13 @@ function forVisibleStrokes(
   for (let index = 0; index < node.strokes.length; index++) {
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
-    draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+    applyStrokeShader(r, stroke, index, node, graph)
+    try {
+      draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+    } finally {
+      r.strokePaint.setShader(null)
+      r.fillPaint.setShader(null)
+    }
   }
 }
 
@@ -613,7 +625,6 @@ function drawVectorStrokeGeometry(
 ): void {
   r.fillPaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
   r.fillPaint.setAlphaf(opacity)
-  r.fillPaint.setShader(null)
   for (const p of sg) canvas.drawPath(p, r.fillPaint)
 }
 
@@ -671,7 +682,6 @@ function drawVectorPathStrokes(
     r.strokePaint.setStrokeCap(getStrokeCapEntity(r, stroke.cap ?? 'NONE'))
     r.strokePaint.setStrokeJoin(getStrokeJoinEntity(r, stroke.join ?? 'MITER'))
     r.strokePaint.setStrokeMiter(miterLimit)
-    r.strokePaint.setShader(null)
     const effect = r.ck.PathEffect.MakeDash(dash, 0)
     r.strokePaint.setPathEffect(effect)
     for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
@@ -687,7 +697,6 @@ function drawVectorPathStrokes(
   }
   r.fillPaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
   r.fillPaint.setAlphaf(stroke.opacity)
-  r.fillPaint.setShader(null)
 
   let outlines = outlineCacheKey ? r.vectorStrokeOutlineCache.get(outlineCacheKey) : undefined
   if (!outlines) {
@@ -879,13 +888,6 @@ function hasComplexTextFill(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
 }
 
-export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
-  const available = Math.max(0, node.height - contentHeight)
-  if (node.textAlignVertical === 'CENTER') return available / 2
-  if (node.textAlignVertical === 'BOTTOM') return available
-  return 0
-}
-
 function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   if (!r.fontsLoaded || !r.fontProvider) return false
   // Apply the shader directly to native glyphs: coverage layers add another rounding pass.
@@ -923,6 +925,10 @@ function drawResolvedPathText(
   )
 }
 
+function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
+  return canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node)
+}
+
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
@@ -932,6 +938,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }
 
+  if (drawSavedText(r, canvas, node, fill)) {
+    canvas.restore()
+    return
+  }
   const fontReadiness = r.nodeFontReadiness(node)
   if (fontReadiness === 'pending') {
     canvas.restore()

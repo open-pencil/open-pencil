@@ -1,9 +1,13 @@
-import { decodeBase64, encodeBase64 } from '@open-pencil/core/bytes'
+import { fromUint8Array, toUint8Array } from 'js-base64'
+import * as v from 'valibot'
+
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
   MAX_LIBRARY_REVISION_BYTES,
+  SerializedLibraryRevisionSchema,
   serializeLibraryRevision,
+  StoredLibraryLatestManifestSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
 import type {
@@ -11,7 +15,6 @@ import type {
   LibraryCatalog,
   LibrarySummary,
   PublishLibraryInput,
-  SerializedComponentLibraryRevision,
   StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
 
@@ -60,7 +63,7 @@ function encodeValue(value: unknown): unknown {
       entries: [...value].map(([key, entry]) => [encodeValue(key), encodeValue(entry)])
     }
   }
-  if (value instanceof Uint8Array) return { $bytes: encodeBase64(value) }
+  if (value instanceof Uint8Array) return { $bytes: fromUint8Array(value) }
   if (Array.isArray(value)) return value.map(encodeValue)
   if (value && typeof value === 'object') {
     const encoded = Object.fromEntries(
@@ -98,7 +101,7 @@ function decodeValue(value: unknown): unknown {
       )
     }
     if ('$bytes' in value && typeof (value as { $bytes?: unknown }).$bytes === 'string') {
-      return decodeBase64((value as { $bytes: string }).$bytes)
+      return toUint8Array((value as { $bytes: string }).$bytes)
     }
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [key, decodeValue(entry)])
@@ -111,40 +114,26 @@ function encodeRevision(revision: ComponentLibraryRevision): Uint8Array {
   return textEncoder.encode(JSON.stringify(encodeValue(serializeLibraryRevision(revision))))
 }
 
+const RevisionJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.transform(decodeValue),
+  SerializedLibraryRevisionSchema
+)
+
+const LatestManifestJSON = v.pipe(v.string(), v.parseJson(), StoredLibraryLatestManifestSchema)
+
 function decodeRevision(bytes: Uint8Array): ComponentLibraryRevision {
-  const parsed = decodeValue(
-    JSON.parse(textDecoder.decode(bytes))
-  ) as SerializedComponentLibraryRevision
-  return deserializeLibraryRevision(parsed)
+  const parsed = v.safeParse(RevisionJSON, textDecoder.decode(bytes))
+  if (!parsed.success)
+    throw new Error(`Invalid component library revision: ${v.summarize(parsed.issues)}`)
+  return deserializeLibraryRevision(parsed.output)
 }
 
 function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest {
-  const parsed = JSON.parse(textDecoder.decode(bytes)) as unknown
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Invalid component library manifest')
-  }
-  const candidate = parsed as { schemaVersion?: unknown; summary?: unknown }
-  if (
-    candidate.schemaVersion !== 1 ||
-    !candidate.summary ||
-    typeof candidate.summary !== 'object' ||
-    Array.isArray(candidate.summary)
-  ) {
-    throw new Error('Invalid component library manifest')
-  }
-  const summary = candidate.summary as Partial<LibrarySummary>
-  if (
-    typeof summary.libraryId !== 'string' ||
-    typeof summary.name !== 'string' ||
-    typeof summary.latestRevisionId !== 'string' ||
-    typeof summary.publishedAt !== 'string' ||
-    typeof summary.assetCount !== 'number' ||
-    !Number.isSafeInteger(summary.assetCount) ||
-    summary.assetCount < 0
-  ) {
-    throw new Error('Invalid component library manifest')
-  }
-  return candidate as StoredLibraryLatestManifest
+  const parsed = v.safeParse(LatestManifestJSON, textDecoder.decode(bytes))
+  if (!parsed.success) throw new Error('Invalid component library manifest')
+  return parsed.output
 }
 
 export class StorageLibraryCatalog implements LibraryCatalog {

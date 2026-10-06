@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { canvas, doc, node } from './helpers'
@@ -26,7 +26,7 @@ const grid = { pattern: 'COLUMNS', count: 12, gutterSize: 16, visible: true }
 
 describe('fig-import: shared styles', () => {
   test('models all style references and keeps definitions internal', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('ROUNDED_RECTANGLE', 20, 1, {
@@ -59,15 +59,17 @@ describe('fig-import: shared styles', () => {
         styleIdForEffect: { guid: { sessionID: 1, localID: 22 } },
         styleIdForGrid: { guid: { sessionID: 1, localID: 23 } }
       } as Partial<NodeChange>)
-    ])
+    ]).graph
 
     const target = [...graph.getAllNodes()].find((item) => item.name === 'Styled target')
+    const styleId = (name: string) =>
+      [...graph.getAllNodes()].find((node) => node.name === name)?.id
     expect(target).toMatchObject({
-      fillStyleId: '1:20',
-      strokeStyleId: '1:20',
-      textStyleId: '1:21',
-      effectStyleId: '1:22',
-      gridStyleId: '1:23',
+      fillStyleId: styleId('Brand/Fill'),
+      strokeStyleId: styleId('Brand/Fill'),
+      textStyleId: styleId('Type/Body'),
+      effectStyleId: styleId('Effects/Card'),
+      gridStyleId: styleId('Grid/12 columns'),
       fontSize: 18,
       fontWeight: 700,
       lineHeight: 26,

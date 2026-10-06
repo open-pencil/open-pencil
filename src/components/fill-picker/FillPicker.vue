@@ -28,6 +28,8 @@ const {
   fill: Fill
   okhcl?: OkHCLControls | null
   swatchBackground?: string
+  /** Names the trigger for a paint that is not a fill, such as a stroke. */
+  label?: string
 }>()
 const emit = defineEmits<{
   update: [fill: Fill]
@@ -53,7 +55,7 @@ function cancelFromEscape(event: KeyboardEvent) {
       <PopoverTrigger as-child>
         <button
           type="button"
-          :aria-label="panels.fill"
+          :aria-label="label ?? panels.fill"
           data-test-id="fill-picker-swatch"
           class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
         >

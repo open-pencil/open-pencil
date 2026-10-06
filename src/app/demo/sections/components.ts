@@ -1,3 +1,4 @@
+import { renderTree } from '@open-pencil/core/design-jsx'
 import {
   Component,
   ComponentSet,
@@ -6,10 +7,9 @@ import {
   Instance,
   Rectangle,
   Text,
-  linearGradient,
-  renderTree
-} from '@open-pencil/core/design-jsx'
-import type { TreeNode } from '@open-pencil/core/design-jsx'
+  linearGradient
+} from '@open-pencil/design-jsx'
+import type { TreeNode } from '@open-pencil/design-jsx'
 import type { ComponentPropertyDefinition, SceneGraph, Vector } from '@open-pencil/scene-graph'
 
 import { createArtworkTile, createExampleColumn } from './example'

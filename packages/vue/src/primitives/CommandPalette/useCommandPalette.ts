@@ -1,4 +1,4 @@
-import { groupBy } from 'es-toolkit/array'
+import { groupBy, take } from 'es-toolkit/array'
 import Fuse from 'fuse.js'
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
 
@@ -9,7 +9,11 @@ function searchItems(
   query: string,
   resultLimit: number
 ): CommandPaletteItem[] {
-  if (!query) return items.slice(0, resultLimit)
+  if (!query)
+    return take(
+      items.filter((item) => !item.searchOnly),
+      resultLimit
+    )
 
   return new Fuse(items, {
     keys: ['label', 'description', 'keywords'],
@@ -47,13 +51,13 @@ export function useCommandPalette(options: MaybeRefOrGetter<UseCommandPaletteOpt
     return current ? [current] : groups.value
   })
   const items = computed(() => currentGroups.value.flatMap((group) => group.items))
-  const filteredGroups = computed(() =>
-    filterGroups(
-      currentGroups.value,
-      searchItems(items.value, searchTerm.value.trim(), resultLimit.value)
-    )
-  )
   const isNested = computed(() => navigation.value.length > 0)
+  const filteredGroups = computed(() => {
+    const query = searchTerm.value.trim()
+    // A step the user opened, like a page list, shows all of its items until they search.
+    const limit = isNested.value && !query ? Number.POSITIVE_INFINITY : resultLimit.value
+    return filterGroups(currentGroups.value, searchItems(items.value, query, limit))
+  })
 
   function resetNavigation() {
     navigation.value = []
@@ -81,11 +85,13 @@ export function useCommandPalette(options: MaybeRefOrGetter<UseCommandPaletteOpt
     return true
   }
 
-  function select(item: CommandPaletteItem) {
-    if (item.disabled || navigate(item)) return
+  /** Run `item`, or open its children. Returns whether a command ran. */
+  function select(item: CommandPaletteItem): boolean {
+    if (item.disabled || navigate(item)) return false
     selectedId.value = item.id
     item.onSelect?.()
     close()
+    return true
   }
 
   return {

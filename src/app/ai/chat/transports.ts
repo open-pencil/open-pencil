@@ -1,6 +1,13 @@
 import { Chat } from '@ai-sdk/vue'
-import { DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
-import type { ChatTransport, FinishReason, LanguageModel, UIMessage } from 'ai'
+import { useEventListener } from '@vueuse/core'
+import { createUIMessageStream, DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
+import type {
+  ChatTransport,
+  FinishReason,
+  LanguageModel,
+  ToolExecutionOptions,
+  UIMessage
+} from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
@@ -9,12 +16,16 @@ import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
-import { buildReasoningProviderOptions, type AIProviderOptions } from '@/app/ai/chat/reasoning'
+import { reasoningCallSettings, type AIProviderOptions } from '@/app/ai/chat/reasoning'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { createAITools, recordStep, resetRunSteps } from '@/app/ai/tools'
+import type { ThinkingLevel } from '@/app/ai/models/types'
+import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
+import { createAITools, endRun, recordStep, runPageId, startRun } from '@/app/ai/tools'
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
+import { diagnosticErrorDetails } from '@/app/diagnostics'
 import {
   recordChatCompleted,
   recordChatFailed,
@@ -43,7 +54,8 @@ export type ToolLoopTransportOptions = {
   model: LanguageModel
   effectiveModelID: string
   maxOutputTokens: number
-  reasoningEffort: string
+  /** Read per request, so the composer's level applies to the next message. */
+  thinkingLevel: () => ThinkingLevel
   onError?: (error: unknown) => void
   diagnosticContext?: AIDiagnosticContext
 }
@@ -68,6 +80,15 @@ function mergeProviderOptions(
   return { ...cacheOptions, ...reasoningOptions }
 }
 
+function callSettings(
+  providerID: AIProviderID,
+  cacheOptions: typeof ANTHROPIC_CACHE_CONTROL | undefined,
+  thinkingLevel: ThinkingLevel
+) {
+  const { reasoning, providerOptions } = reasoningCallSettings(providerID, thinkingLevel)
+  return { reasoning, providerOptions: mergeProviderOptions(cacheOptions, providerOptions) }
+}
+
 export async function createACPTransport(providerID: AIProviderID) {
   const agentId = providerID.replace('acp:', '') as ACPAgentID
   const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
@@ -84,41 +105,48 @@ export function createToolLoopTransport({
   model,
   effectiveModelID,
   maxOutputTokens,
-  reasoningEffort,
+  thinkingLevel,
   onError,
   diagnosticContext = {}
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store, diagnosticContext)
+  const preview = createCanvasJSXPreview(store, () => runPageId(store))
+  const renderTool = tools.render
+  renderTool.onInputStart = ({ toolCallId, abortSignal }) => preview.start(toolCallId, abortSignal)
+  renderTool.onInputDelta = ({ toolCallId, inputTextDelta }) =>
+    preview.delta(toolCallId, inputTextDelta)
+  renderTool.onInputAvailable = ({ toolCallId }: ToolExecutionOptions<unknown>) =>
+    preview.finish(toolCallId)
   const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
     ? ANTHROPIC_CACHE_CONTROL
     : undefined
-  const providerOptions = mergeProviderOptions(
-    cacheProviderOptions,
-    buildReasoningProviderOptions(providerID, reasoningEffort)
-  )
-
   const agent = new ToolLoopAgent({
     model,
     instructions: SYSTEM_PROMPT,
     tools,
     maxOutputTokens,
-    providerOptions,
     prepareCall: (options) => {
       const stepLimit = maxAgentSteps.value
       const enabledNames = new Set(
         enabledAIToolDefinitions(aiToolOverrides.value).map((tool) => tool.name)
       )
-      resetRunSteps(store, stepLimit)
+      preview.clear()
+      startRun(store, stepLimit, effectiveModelID)
       return {
         ...options,
         stopWhen: stepCountIs(stepLimit),
         // Keep the full catalog for validating history; offer only enabled tools to this request.
         tools: Object.fromEntries(Object.entries(tools).filter(([name]) => enabledNames.has(name))),
         maxOutputTokens,
-        providerOptions
+        ...callSettings(providerID, cacheProviderOptions, thinkingLevel())
       }
     },
+    onFinish: () => {
+      preview.clear()
+      endRun(store)
+    },
     onStepFinish: ({ usage }) => {
+      preview.clear()
       recordStep(store)
       recordModelStepCompleted(
         {
@@ -134,15 +162,30 @@ export function createToolLoopTransport({
     }
   })
 
-  return resumableTransport(
-    new DirectChatTransport({
-      agent,
-      onError: (error) => {
-        onError?.(error)
-        return 'The provider rejected the request.'
-      }
-    }) as ChatTransport<UIMessage>
-  )
+  function handleError(error: unknown): string {
+    preview.clear()
+    endRun(store)
+    onError?.(error)
+    return 'The provider rejected the request.'
+  }
+  const transport = new DirectChatTransport({
+    agent,
+    onError: handleError
+  }) as ChatTransport<UIMessage>
+  return resumableTransport({
+    reconnectToStream: (options) => transport.reconnectToStream(options),
+    async sendMessages(options) {
+      // Stopping a reply ends the run without onFinish.
+      if (options.abortSignal) useEventListener(options.abortSignal, 'abort', () => endRun(store))
+      // DirectChatTransport handles error chunks, but not a rejected underlying stream.
+      return createUIMessageStream<UIMessage>({
+        execute: async ({ writer }) => {
+          writer.merge(await transport.sendMessages(options))
+        },
+        onError: handleError
+      })
+    }
+  })
 }
 
 export function createChatSessionManager({
@@ -232,7 +275,9 @@ export function createChatSessionManager({
         sandbox: 'just-bash',
         model,
         settings: {
-          thinkingLevel: runtime.role.profile.harnessThinkingLevel ?? 'medium',
+          ...(runtime.role.profile.thinkingLevel !== 'default' && {
+            thinkingLevel: runtime.role.profile.thinkingLevel
+          }),
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
         instructions: SYSTEM_PROMPT,
@@ -263,7 +308,7 @@ export function createChatSessionManager({
         customModelID: runtime.role.profile.customModelID
       }),
       maxOutputTokens: runtime.role.profile.maxOutputTokens,
-      reasoningEffort: runtime.role.profile.reasoningEffort ?? '',
+      thinkingLevel: () => chatThinkingLevel.value,
       onError: captureProviderError,
       diagnosticContext
     })
@@ -301,12 +346,8 @@ export function createChatSessionManager({
           const reportedError = activeProviderError ?? error
           activeProviderError = null
           failure.value = classifyAIChatError(reportedError)
-          recordChatFailed(
-            {
-              errorName: reportedError instanceof Error ? reportedError.name : 'unknown'
-            },
-            diagnosticContext
-          )
+          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
+          recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },
         onFinish: (event) => handleChatFinish(diagnosticContext, event)
       })

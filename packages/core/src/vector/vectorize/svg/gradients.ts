@@ -10,9 +10,9 @@
  * gradientTransform convention used by the SVG exporter (see io/formats/svg/defs).
  */
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color, Matrix, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { parseColor } from '#core/color'
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 
 import { mapSVGPointToViewport, type SVGViewportMapping } from './transform'

@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 
 import type { Browser } from '@playwright/test'
+import { toUint8Array } from 'js-base64'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -56,6 +57,7 @@ async function captureText(
         fills: [
           {
             type: 'GRADIENT_LINEAR',
+            color: { r: 0, g: 0, b: 0, a: 1 },
             visible: true,
             opacity: 1,
             gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
@@ -91,9 +93,9 @@ async function captureText(
       for (const solid of [false, true]) {
         await page.evaluate((solid) => {
           const store = window.openPencil?.getStore?.()
-          const node = store?.graph
-            .getAllNodes()
-            .find((node) => node.name === 'Raster history subject')
+          const node = [...(store?.graph.getAllNodes() ?? [])].find(
+            (node) => node.name === 'Raster history subject'
+          )
           if (!store || !node) throw new Error('Text subject unavailable')
           store.updateNode(node.id, {
             fills: solid
@@ -116,9 +118,9 @@ async function captureText(
         const source = document.querySelector<HTMLCanvasElement>(
           '[data-test-id="scene-canvas-element"]'
         )
-        const node = store?.graph
-          .getAllNodes()
-          .find((node) => node.name === 'Raster history subject')
+        const node = [...(store?.graph.getAllNodes() ?? [])].find(
+          (node) => node.name === 'Raster history subject'
+        )
         if (!store || !renderer || !source || !node) throw new Error('Scene unavailable')
         const paragraph = renderer.buildParagraph(node)
         let glyphs: number[]
@@ -154,7 +156,7 @@ async function captureText(
       expect(result.ink).toBeGreaterThan(100)
       expect(result.hadBacking).toBe(backing)
       await cdp.detach()
-      return Buffer.from(result.png.split(',')[1], 'base64')
+      return Buffer.from(toUint8Array(result.png.split(',')[1]))
     } finally {
       await lease.evaluate((release) => release?.())
       await lease.dispose()

@@ -1,13 +1,33 @@
-import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { normalizeColor } from '@open-pencil/scene-graph/color'
+import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
-import { normalizeColor } from '#core/color'
 import {
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
+
+function styleReference(
+  internals: NodeProxyInternals,
+  field: 'fillStyleId' | 'strokeStyleId' | 'effectStyleId' | 'gridStyleId'
+): PropertyDescriptor {
+  return {
+    get(this: ProxyThis): string {
+      return raw(this, internals)[field] ?? ''
+    },
+    set(this: ProxyThis, value: string) {
+      updateNode(this, internals, { [field]: value || null })
+    }
+  }
+}
+
+/** Figma treats a paint's `opacity` and `visible` as optional, defaulting to 1 and `true`. */
+function paintDefaults(paint: Partial<Pick<Fill, 'opacity' | 'visible'>>) {
+  return { opacity: paint.opacity ?? 1, visible: paint.visible ?? true }
+}
 
 export function installVisualNodeProxyAccessors(
   prototype: object,
@@ -23,6 +43,7 @@ export function installVisualNodeProxyAccessors(
         updateNode(this, internals, {
           fills: value.map((fill) => ({
             ...fill,
+            ...paintDefaults(fill),
             color: normalizeColor(fill.color),
             gradientStops: fill.gradientStops?.map((stop) => ({
               ...stop,
@@ -38,20 +59,27 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly Stroke[]) {
         updateNode(this, internals, {
-          strokes: value.map((stroke) => ({ ...stroke, color: normalizeColor(stroke.color) }))
+          strokes: value.map((stroke) => ({
+            ...stroke,
+            ...paintDefaults(stroke),
+            color: normalizeColor(stroke.color)
+          }))
         })
       }
     },
     effects: {
-      get(this: ProxyThis): readonly Effect[] {
-        return Object.freeze(copyEffects(raw(this, internals).effects))
+      get(this: ProxyThis): readonly FigmaEffect[] {
+        return Object.freeze(raw(this, internals).effects.map(toFigmaEffect))
       },
-      set(this: ProxyThis, value: readonly Effect[]) {
-        updateNode(this, internals, {
-          effects: value.map((effect) => ({ ...effect, color: normalizeColor(effect.color) }))
-        })
+      set(this: ProxyThis, value: readonly FigmaEffect[]) {
+        updateNode(this, internals, { effects: parseFigmaEffects(value) })
       }
     },
+    // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.
+    fillStyleId: styleReference(internals, 'fillStyleId'),
+    strokeStyleId: styleReference(internals, 'strokeStyleId'),
+    effectStyleId: styleReference(internals, 'effectStyleId'),
+    gridStyleId: styleReference(internals, 'gridStyleId'),
     opacity: {
       get(this: ProxyThis): number {
         return raw(this, internals).opacity

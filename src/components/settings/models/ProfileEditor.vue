@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
+import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
@@ -37,7 +38,7 @@ const {
   providerDef,
   isACP,
   isHarness,
-  supportsReasoningEffort,
+  supportsThinking,
   modelOptions,
   selectedModelValue,
   knownModel,
@@ -58,6 +59,7 @@ const {
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
+const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
 useSettingsFormGuard({ dirty, busy, cancel: () => emit('done') })
 const CUSTOM_MODEL_VALUE = '__custom__'
 const advancedOpen = ref(Boolean(draft.customModelID.trim()))
@@ -276,19 +278,13 @@ async function remove() {
                 </div>
               </div>
 
-              <ProviderSettingsField v-if="isHarness" :label="ai.harnessThinkingLevel">
+              <ProviderSettingsField v-if="supportsThinking" :label="ai.thinkingLevel">
                 <AppSelect
-                  v-model="draft.harnessThinkingLevel"
-                  :label="ai.harnessThinkingLevel"
-                  :options="[
-                    { value: 'off', label: ai.harnessThinkingOff },
-                    { value: 'minimal', label: ai.harnessThinkingMinimal },
-                    { value: 'low', label: ai.harnessThinkingLow },
-                    { value: 'medium', label: ai.harnessThinkingMedium },
-                    { value: 'high', label: ai.harnessThinkingHigh },
-                    { value: 'xhigh', label: ai.harnessThinkingExtraHigh }
-                  ]"
+                  v-model="draft.thinkingLevel"
+                  :label="ai.thinkingLevel"
+                  :options="thinkingLevelOptions"
                 />
+                <p class="mt-1 text-[10px] text-muted">{{ ai.thinkingLevelDescription }}</p>
               </ProviderSettingsField>
 
               <ProviderSettingsField v-if="isHarness" :label="ai.harnessToolPermissions">
@@ -301,15 +297,6 @@ async function remove() {
                     { value: 'allow-all', label: ai.harnessPermissionAll }
                   ]"
                 />
-              </ProviderSettingsField>
-
-              <ProviderSettingsField v-if="supportsReasoningEffort" :label="ai.reasoningEffort">
-                <ProviderSettingsInput
-                  v-model="draft.reasoningEffort"
-                  :aria-label="ai.reasoningEffort"
-                  :placeholder="ai.reasoningEffortPlaceholder"
-                />
-                <p class="mt-1 text-[10px] text-muted">{{ ai.reasoningEffortDescription }}</p>
               </ProviderSettingsField>
 
               <div class="border-t border-border pt-2.5">

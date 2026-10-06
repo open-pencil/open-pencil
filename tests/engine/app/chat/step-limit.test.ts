@@ -16,6 +16,8 @@ import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
 import { appPreferences } from '@/app/settings/preferences/store'
 
+import { MOCK_USAGE } from '#tests/helpers/chat/usage'
+
 test.each([undefined, null, '100', 0, -1, 1.5, 1001, Number.NaN, Infinity])(
   'invalid stored step limit %p falls back to the default',
   (value) => {
@@ -67,10 +69,7 @@ test('stop condition, warnings and limit detection share the budget captured per
             {
               type: 'finish',
               finishReason: { unified: 'tool-calls', raw: undefined },
-              usage: {
-                inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
-                outputTokens: { total: 1, text: 1, reasoning: undefined }
-              }
+              usage: MOCK_USAGE
             }
           ]
         })
@@ -86,14 +85,15 @@ test('stop condition, warnings and limit detection share the budget captured per
       model,
       effectiveModelID: 'test',
       maxOutputTokens: 100,
-      reasoningEffort: ''
+      thinkingLevel: () => 'default'
     })
     async function send() {
       const stream = await transport.sendMessages({
         trigger: 'submit-message',
         chatId: 'step-limit',
         messageId: undefined,
-        messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Inspect' }] }]
+        messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Inspect' }] }],
+        abortSignal: undefined
       })
       const reader = stream.getReader()
       try {

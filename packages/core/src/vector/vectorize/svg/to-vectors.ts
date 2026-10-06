@@ -9,11 +9,11 @@ import svgpath from 'svgpath'
 
 import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { mergeVectorNetworks } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import type { Rect, Size } from '@open-pencil/scene-graph/primitives'
 
-import { parseColor } from '#core/color'
 import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
@@ -99,7 +99,12 @@ export function svgToVectorPaths(
     const transform = path.transform ?? null
     const pathData = applySVGTransformToPath(path.d, transform)
     const scaledD = mapSVGPathToViewport(pathData, viewport)
-    const network = parseSVGPath(scaledD, fillRule)
+    const solidFills = resolveFill(path, defaultColor)
+    const strokes = resolveStrokes(path, defaultColor, strokeScale)
+    // A stroke would also trace the closing edge of an open subpath in the fill region.
+    const network = parseSVGPath(scaledD, fillRule, {
+      includeOpenRegions: solidFills.length > 0 && strokes.length === 0
+    })
     const pathBounds = computeAccurateBounds(network)
     const gradientFill =
       gradients.size > 0
@@ -127,9 +132,11 @@ export function svgToVectorPaths(
                   .scale(pathBounds.width, pathBounds.height)
                   .translate(pathBounds.x, pathBounds.y)
                   .toString()
-                return parseSVGPath(clipData, clipPath.fillRule)
+                return parseSVGPath(clipData, clipPath.fillRule, { includeOpenRegions: true })
               }
-              return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule)
+              return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule, {
+                includeOpenRegions: true
+              })
             })
           )
         )
@@ -138,8 +145,8 @@ export function svgToVectorPaths(
     }
     vectorized.push({
       vectorNetwork: network,
-      fills: gradientFill ? [gradientFill] : resolveFill(path, defaultColor),
-      strokes: resolveStrokes(path, defaultColor, strokeScale),
+      fills: gradientFill ? [gradientFill] : solidFills,
+      strokes,
       clipNetworks
     })
   }

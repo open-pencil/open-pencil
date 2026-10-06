@@ -1,8 +1,0 @@
-{
-  "name": "@open-pencil/navigation-benchmark",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "bun test tests"
-  }
-}

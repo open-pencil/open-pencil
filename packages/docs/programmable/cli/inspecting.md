@@ -160,13 +160,13 @@ openpencil variables design.fig
 When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas:
 
 ```sh
-openpencil documents         # list open document/page IDs
+openpencil documents list    # list open document/page IDs
 openpencil tree              # inspect the active live document
 openpencil tree --document-id tab-123 --page-id 0:1
 openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-Use `openpencil documents --json` in agent workflows, then pass `--document-id` and `--page-id` explicitly instead of relying on the visible active tab/page.
+Use `openpencil documents list --json` in agent workflows, then pass `--document-id` and `--page-id` explicitly instead of relying on the visible active tab/page. To open, save, switch, and close documents, undo, change settings, or call any editor tool, see [Controlling the App](/programmable/cli/app-control).
 
 ## Lint Designs
 
@@ -177,9 +177,10 @@ openpencil lint design.fig
 openpencil lint design.pen --preset strict
 openpencil lint design.fig --rule color-contrast
 openpencil lint design.fig --list-rules
+openpencil lint design.fig --fix -o fixed.fig
 ```
 
-Use `--json` for machine-readable output.
+Use `--json` for machine-readable output; each message carries its `fix` and `suggestions` as data. `--fix` applies the safe fixes — binding colors to the color variable they match and rounding geometry to whole pixels — and writes the result to the `.fig` file given with `-o`.
 
 ## JSON Output
 

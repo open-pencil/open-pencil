@@ -7,6 +7,7 @@
   "group": "Gruppieren",
   "ungroup": "Gruppierung aufheben",
   "createComponent": "Komponente erstellen",
+  "createSlot": "Slot erstellen",
   "createComponentSet": "Komponentensatz erstellen",
   "createInstance": "Instanz erstellen",
   "detachInstance": "Instanz lösen",

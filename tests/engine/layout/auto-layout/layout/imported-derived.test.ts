@@ -52,6 +52,7 @@ describe('imported auto-layout bounds', () => {
       ],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0.58, g: 0.64, b: 0.72, a: 1 },
           weight: 2,
           opacity: 1,
@@ -91,6 +92,7 @@ describe('imported auto-layout bounds', () => {
       ],
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0.8, g: 0.84, b: 0.88, a: 1 },
           weight: 1,
           opacity: 1,
@@ -116,6 +118,7 @@ describe('imported auto-layout bounds', () => {
       rotation: 90,
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0, g: 0, b: 0, a: 1 },
           weight: 1,
           opacity: 1,
@@ -150,6 +153,7 @@ describe('imported auto-layout bounds', () => {
       paddingBottom: 4,
       strokes: [
         {
+          type: 'SOLID',
           color: { r: 0, g: 0, b: 0, a: 1 },
           weight: 1,
           opacity: 1,

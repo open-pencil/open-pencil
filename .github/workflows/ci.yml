@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # Every base, so stacked pull requests are checked against the PR below them.
   pull_request:
-    branches: [master]
+  # The merge queue checks each queued change on top of the ones ahead of it.
+  merge_group:
 
 permissions:
   contents: read
@@ -28,14 +30,14 @@ jobs:
 
       - name: Fetch comparison base
         env:
-          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: git fetch --no-tags --depth=1 origin "$CI_BASE_SHA"
 
       - name: Select validation scope
         id: classify
         env:
-          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: bun tools/ci/src/classify.ts
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: bun tools/ci/policy/src/classify.ts
 
   commit-messages:
     name: Commit messages
@@ -49,8 +51,8 @@ jobs:
       - uses: ./.github/actions/setup-bun
       - name: Validate PR commit messages
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: |
           if ! bun run check:commits --from "$BASE_SHA" --to "$HEAD_SHA" --verbose; then
             echo '::error title=Commit messages::Check the messages listed above. Use type(scope): description, for example fix: preserve selection. See CONTRIBUTING.md#commit-messages.'
@@ -101,7 +103,7 @@ jobs:
         run: bun run typecheck
 
       - name: Enforce architecture and type-shape boundaries
-        run: bun run check:arch && bun run test:type-shapes
+        run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
 
   package-quality:
     name: Package integrity
@@ -241,13 +243,13 @@ jobs:
         with:
           lfs: 'true'
           # Quick shards read only the small fixtures; heavy-tests.yml pulls the large .fig corpora.
-          lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/fonts/*
+          lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/slots.fig,tests/fixtures/variable-override-precedence.fig,tests/fixtures/fonts/*
 
       - name: Build shared Core test dependency
         run: bun --filter @open-pencil/core build
 
       - name: Run ${{ matrix.group }} unit tests
-        run: bun tools/unit-tests/src/run.ts "${{ matrix.group }}"
+        run: bun tools/dev/unit-tests/src/run.ts "${{ matrix.group }}"
 
   result:
     name: CI result
@@ -263,4 +265,4 @@ jobs:
       - name: Require successful checks for the selected scope
         env:
           CI_NEEDS: ${{ toJSON(needs) }}
-        run: bun tools/ci/src/gate.ts
+        run: bun tools/ci/policy/src/gate.ts

@@ -15,53 +15,41 @@ describe('web font coverage requests', () => {
   test('aborts a font load queued behind an active provider request', async () => {
     const resolver = new WebFontResolver()
     resolver.setEnabled({ google: true })
-    let requestStarted: (() => void) | null = null
-    let releaseRequest: (() => void) | null = null
-    const started = new Promise<void>((resolve) => {
-      requestStarted = resolve
-    })
-    const blocked = new Promise<Response>((resolve) => {
-      releaseRequest = () => resolve(new Response('{}', { status: 200 }))
-    })
+    const started = Promise.withResolvers<undefined>()
+    const blocked = Promise.withResolvers<Response>()
     resolver.setRemoteFetch(async () => {
-      requestStarted?.()
-      return blocked
+      started.resolve(undefined)
+      return blocked.promise
     })
     const first = resolver.listFamilies('google')
-    await started
+    await started.promise
     const abort = new AbortController()
     const queued = resolver.fetchFont(['Inter'], 'Regular', '', abort.signal)
 
     abort.abort()
 
     await expect(queued).rejects.toHaveProperty('name', 'AbortError')
-    releaseRequest?.()
+    blocked.resolve(new Response('{}', { status: 200 }))
     await first
   })
 
   test('aborts promptly while provider resolution is pending', async () => {
     const resolver = new WebFontResolver()
     resolver.setEnabled({ google: true })
-    let providerRequestStarted: (() => void) | null = null
-    let releaseProviderRequest: (() => void) | null = null
-    const started = new Promise<void>((resolve) => {
-      providerRequestStarted = resolve
-    })
-    const blocked = new Promise<Response>((resolve) => {
-      releaseProviderRequest = () => resolve(new Response('{}', { status: 200 }))
-    })
+    const started = Promise.withResolvers<undefined>()
+    const blocked = Promise.withResolvers<Response>()
     resolver.setRemoteFetch(async () => {
-      providerRequestStarted?.()
-      return blocked
+      started.resolve(undefined)
+      return blocked.promise
     })
     const abort = new AbortController()
     const loading = resolver.fetchFont(['Inter'], 'Regular', '', abort.signal)
-    await started
+    await started.promise
 
     abort.abort()
 
     await expect(loading).rejects.toHaveProperty('name', 'AbortError')
-    releaseProviderRequest?.()
+    blocked.resolve(new Response('{}', { status: 200 }))
   })
 
   test('requests script-specific subsets instead of Latin only', () => {

@@ -62,7 +62,11 @@ describe('Figma Kiwi codec', () => {
         {
           type: 'SOLID',
           color: red,
-          colorVariableBinding: { variableID: { sessionID: 7, localID: 9 } }
+          colorVar: {
+            dataType: 'ALIAS',
+            resolvedDataType: 'COLOR',
+            value: { alias: { guid: { sessionID: 7, localID: 9 } } }
+          }
         }
       ]
     }

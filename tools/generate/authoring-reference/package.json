@@ -1,0 +1,17 @@
+{
+  "name": "@open-pencil/authoring-reference-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#authoring-reference/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/design-jsx": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "dedent": "^1.7.2"
+  }
+}
