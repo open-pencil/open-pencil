@@ -22,15 +22,20 @@ export const chatToolTheme = tv({
     compare:
       'relative w-full max-w-full overflow-hidden rounded border border-border bg-input select-none data-[mode=highlight]:[&>img:first-child]:opacity-40',
     compareImage: 'absolute inset-0 size-full object-contain',
-    compareDivider:
-      'pointer-events-none absolute inset-y-0 w-px -translate-x-1/2 bg-accent shadow-[0_0_0_1px_rgb(0_0_0/0.25)]',
+    // `cqw` is the split's width, so each side draws the whole image and its panel crops it.
+    compareSplit: '@container absolute inset-0',
+    comparePanel: 'relative h-full overflow-hidden',
+    compareBefore: 'absolute inset-y-0 left-0 h-full w-[100cqw] max-w-none object-contain',
+    compareAfter: 'absolute inset-y-0 right-0 h-full w-[100cqw] max-w-none object-contain',
+    compareDivider: 'bg-accent shadow-[0_0_0_1px_rgb(0_0_0/0.25)]',
     compareLabel:
       'pointer-events-none absolute top-1 rounded bg-black/55 px-1 py-px text-[9px] font-medium text-white',
-    compareSlider: 'block w-full accent-(--color-accent)',
     group: 'rounded-lg border border-dashed border-border',
     groupTrigger:
-      'flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface',
+      'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface',
     groupIcon: 'size-3.5 shrink-0 text-accent',
+    groupNames: 'min-w-0 flex-1 truncate',
+    groupFailed: 'bg-red-500/20 text-red-400',
     groupItems: 'space-y-1.5 px-1.5 pb-1.5'
   }
 })

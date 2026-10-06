@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { templateRef } from '@vueuse/core'
-import { nextTick, ref, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -11,41 +10,21 @@ import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
-import { modelPanelTransition } from '@/theme/settings/models'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 const { ai, collaboration, common } = useI18n()
 const editing = defineModel<boolean>('editing', { default: false })
 const editingProfileId = ref<string>()
-const editorLeaving = ref(false)
-const panel = templateRef<HTMLElement>('panel')
-let returnFocus: HTMLElement | null = null
-function captureFocus() {
-  returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-}
-async function restoreFocus() {
-  editorLeaving.value = false
-  await nextTick()
-  if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true })
-  returnFocus = null
-}
-async function focusEditor() {
-  await nextTick()
-  panel.value
-    ?.querySelector<HTMLInputElement>('[data-test-id="settings-model-editor"] input')
-    ?.focus({ preventScroll: true })
-}
 onUnmounted(() => {
   editing.value = false
 })
 
 function addModel(): void {
-  captureFocus()
   editingProfileId.value = undefined
   editing.value = true
 }
 
 function editModel(profileId: string): void {
-  captureFocus()
   editingProfileId.value = profileId
   editing.value = true
 }
@@ -59,7 +38,6 @@ function statusLabel(connectionId: string, providerID: string): string {
 }
 
 function closeEditor(): void {
-  editorLeaving.value = true
   editing.value = false
   void refreshStatuses()
 }
@@ -68,23 +46,17 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
 </script>
 
 <template>
-  <div ref="panel" class="relative flex min-h-0 flex-1 flex-col">
-    <Transition
-      v-bind="modelPanelTransition"
-      @after-enter="focusEditor"
-      @after-leave="restoreFocus"
-    >
-      <div v-if="editing" class="absolute inset-0 flex min-h-0 flex-col">
-        <ProfileEditor
-          :key="editingProfileId ?? 'new'"
-          :profile-id="editingProfileId"
-          @done="closeEditor"
-          @deleted="closeEditor"
-        />
-      </div>
-    </Transition>
+  <PanelDrillIn :open="editing" :back="common.back" :parent="ai.modelsTitle" @back="closeEditor">
+    <template #detail>
+      <ProfileEditor
+        :key="editingProfileId ?? 'new'"
+        :profile-id="editingProfileId"
+        @done="closeEditor"
+        @deleted="closeEditor"
+      />
+    </template>
 
-    <SettingsPage v-show="!editing && !editorLeaving">
+    <SettingsPage>
       <div class="flex flex-col gap-6">
         <SettingsSection>
           <template #title>{{ ai.modelsTitle }}</template>
@@ -168,5 +140,5 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
         <slot />
       </div>
     </SettingsPage>
-  </div>
+  </PanelDrillIn>
 </template>

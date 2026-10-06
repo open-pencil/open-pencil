@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from './index'
 import Matrix, { type Mat3 } from './matrix'
+import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
 
 export function getWorldMatrix(node: SceneNode, graph: Pick<SceneGraph, 'getNode'>): Mat3 {
@@ -258,4 +259,25 @@ export function localTransformFromWorld(
 
 export function isTranslationOnly(matrix: Mat3): boolean {
   return matrix[0] === 1 && matrix[1] === 0 && matrix[3] === 0 && matrix[4] === 1
+}
+
+/**
+ * Maps a node's parent space into its container's: through the groups and booleans around it,
+ * which set no coordinate space of their own. Figma's plugin API reports `x`, `y`, and
+ * `relativeTransform` of their children in the container's space. The identity when the parent is
+ * not a group.
+ */
+export function getParentToContainerMatrix(
+  node: SceneNode,
+  graph: Pick<SceneGraph, 'getNode'>
+): Mat3 {
+  let matrix = Matrix.identity()
+  for (
+    let parent = node.parentId ? graph.getNode(node.parentId) : undefined;
+    parent && FITTED_CONTAINER_TYPES.has(parent.type);
+    parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
+  ) {
+    matrix = Matrix.multiply(getNodeLocalMatrix(parent), matrix)
+  }
+  return matrix
 }

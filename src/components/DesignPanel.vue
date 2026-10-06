@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
+import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openLibraryReview, useLibraryService } from '@/app/libraries'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
@@ -30,9 +31,7 @@ import SelectionActionsControl from './properties/SelectionActionsControl.vue'
 import StrokeSection from './properties/stroke/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
-import VariablesDialog from './variables/VariablesDialog.vue'
 
-const variablesOpen = ref(false)
 const store = useEditorStore()
 const libraryService = useLibraryService()
 const activeTool = computed(() => store.state.activeTool)
@@ -186,9 +185,7 @@ const { panels } = useI18n()
     class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PageSection />
-    <VariablesSection @open-dialog="variablesOpen = true" />
+    <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <ExportSection />
   </div>
-
-  <VariablesDialog v-model:open="variablesOpen" />
 </template>

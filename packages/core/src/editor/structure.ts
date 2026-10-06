@@ -1,8 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FRAME_FILL } from '#core/constants'
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
-import { fitEnclosingGroups } from '#core/editor/structure/group-bounds'
+import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group-bounds'
 
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {
@@ -70,10 +69,9 @@ export function createStructureActions(ctx: EditorContext) {
     return wrapSelectionInContainer('GROUP', selectedNodes)
   }
 
+  /** Figma frames a selection without a fill or clipping, unlike a drawn frame. */
   function frameSelection(selectedNodes: SceneNode[]) {
-    return wrapSelectionInContainer('FRAME', selectedNodes, {
-      fills: [structuredClone(DEFAULT_FRAME_FILL)]
-    })
+    return wrapSelectionInContainer('FRAME', selectedNodes)
   }
 
   /**
@@ -165,7 +163,7 @@ export function createStructureActions(ctx: EditorContext) {
     isTopLevel,
     acceptsChildren: (parentId: string) => acceptsChildren(ctx, parentId),
     acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
-    fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroups(ctx, parentIds),
+    fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroupsWithUndo(ctx, parentIds),
     ...reorderActions,
     reparentNodes,
     wrapSelectionInContainer,

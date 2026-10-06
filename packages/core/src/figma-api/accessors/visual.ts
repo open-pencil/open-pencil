@@ -2,6 +2,7 @@ import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { normalizeColor } from '@open-pencil/scene-graph/color'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
+import { DEFAULT_STROKE_WEIGHT } from '#core/constants'
 import {
   raw,
   updateNode,
@@ -57,11 +58,14 @@ export function installVisualNodeProxyAccessors(
       get(this: ProxyThis): readonly Stroke[] {
         return Object.freeze(copyStrokes(raw(this, internals).strokes))
       },
-      set(this: ProxyThis, value: readonly Stroke[]) {
+      // Figma paints carry no weight; a stroke takes the node's weight, 1 until one is set.
+      set(this: ProxyThis, value: readonly (Omit<Stroke, 'weight'> & { weight?: number })[]) {
+        const weight = raw(this, internals).strokes[0]?.weight ?? DEFAULT_STROKE_WEIGHT
         updateNode(this, internals, {
           strokes: value.map((stroke) => ({
             ...stroke,
             ...paintDefaults(stroke),
+            weight: stroke.weight ?? weight,
             color: normalizeColor(stroke.color)
           }))
         })

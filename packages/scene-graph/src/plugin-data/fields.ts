@@ -5,6 +5,7 @@ import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
 import type { Rect } from '../primitives'
 import {
+  MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
   type EnabledLibraryBinding,
   type ExportSetting,
@@ -151,6 +152,11 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   token: jsonPluginDataField('token', token),
   /** Mode conditions by mode id, on each VARIABLE_SET. */
   modeConditions: jsonPluginDataField('modeConditions', v.record(v.string(), cssText)),
+  /** The attribute that switches manual modes, on each VARIABLE_SET. */
+  modeAttribute: jsonPluginDataField(
+    'modeAttribute',
+    v.pipe(v.string(), v.trim(), v.maxLength(100), v.regex(MODE_ATTRIBUTE_PATTERN))
+  ),
   /** One entry per paint picked in OkHCL, so the picker reopens on the same coordinates. */
   okhcl: jsonPluginDataField('okhcl', okhcl)
 } satisfies Record<string, PluginDataKey>

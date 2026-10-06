@@ -22,6 +22,7 @@ import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import VariablesDialog from '@/components/variables/VariablesDialog.vue'
 import splitterTheme from '@/theme/splitter'
 
 const showChrome = appRuntimeConfig.showChrome
@@ -142,4 +143,6 @@ const { pending: roomPending } = useRoomActions()
       <ActiveRoomOverlay />
     </div>
   </div>
+
+  <VariablesDialog />
 </template>

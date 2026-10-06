@@ -49,8 +49,6 @@
   "toolStepsFailed": "nieudane: {count}",
   "showNodeOnCanvas": "Pokaż {name} na kanwie",
   "toolChanges": "Zmiany",
-  "changeView": "Widok zmian",
-  "changeCompare": "Porównaj",
   "changeHighlight": "Wyróżnij",
   "changeBefore": "Przed",
   "changeAfter": "Po",
