@@ -89,12 +89,18 @@ export function useBehaviour() {
     return {
       kind: current.kind,
       values,
-      parts: contract.parts.map((part) => ({
-        id: part.id,
-        required: part.required,
-        propertyId: partBinding(current, part.id) ?? null,
-        options: options(['SLOT'])
-      })),
+      // A slot draws one part, so another part's slot is not offered.
+      parts: contract.parts.map((part) => {
+        const others = new Set(
+          Object.entries(current.parts).flatMap(([id, slot]) => (id === part.id ? [] : [slot]))
+        )
+        return {
+          id: part.id,
+          required: part.required,
+          propertyId: partBinding(current, part.id) ?? null,
+          options: options(['SLOT']).filter((slot) => !others.has(slot.id))
+        }
+      }),
       states: {
         propertyId: current.states?.propertyId ?? null,
         values: Object.fromEntries(

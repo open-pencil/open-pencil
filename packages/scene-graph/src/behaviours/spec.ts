@@ -169,7 +169,10 @@ export function behaviourFromSpec(
   for (const [partId, slotName] of Object.entries(spec.parts ?? {})) {
     if (!contract.parts.some((item) => item.id === partId))
       throw new Error(`A ${spec.kind} has no part "${partId}"; it has ${listed(contract.parts)}`)
-    behaviour.parts[partId] = findProperty(properties, slotName, ['SLOT'], partId).id
+    const id = findProperty(properties, slotName, ['SLOT'], partId).id
+    const taken = Object.entries(behaviour.parts).find(([, slot]) => slot === id)?.[0]
+    if (taken) throw new Error(`"${slotName}" is already the ${taken}; a slot draws one part`)
+    behaviour.parts[partId] = id
   }
   if (spec.states !== undefined) resolveStates(behaviour, properties, spec.states)
   return behaviour

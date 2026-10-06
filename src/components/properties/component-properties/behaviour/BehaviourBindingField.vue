@@ -3,11 +3,12 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPickerField from '@/components/ui/select/AppPickerField.vue'
 
 /**
  * One binding of a behaviour row: a picker of the component's matching properties or slots,
- * or, when it has none, the action that creates one.
+ * whose footer creates a new one, or, when it has none, that create action alone.
  */
 const {
   label,
@@ -47,7 +48,24 @@ const items = computed(() => options.map((option) => ({ value: option.id, label:
     :data-missing="(missing && !propertyId) || undefined"
     v-bind="$attrs"
     @update:model-value="emit('bind', $event)"
-  />
+  >
+    <template #footer="{ close }">
+      <AppButton
+        size="xs"
+        class="w-full justify-start"
+        data-slot="action"
+        @click="
+          () => {
+            close()
+            emit('create')
+          }
+        "
+      >
+        <template #leading><icon-lucide-plus class="size-3" /></template>
+        {{ createLabel }}
+      </AppButton>
+    </template>
+  </AppPickerField>
   <button
     v-else
     type="button"

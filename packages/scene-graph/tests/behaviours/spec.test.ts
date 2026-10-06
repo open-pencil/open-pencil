@@ -80,5 +80,8 @@ describe('behaviour specs', () => {
     expect(() =>
       behaviourFromSpec(graph, set, { kind: 'slider', numbers: { value: { min: 10, max: 5 } } })
     ).toThrow('"value" needs max above min and a positive step')
+    expect(() =>
+      behaviourFromSpec(graph, set, { kind: 'slider', parts: { track: 'Thumb', thumb: 'Thumb' } })
+    ).toThrow('"Thumb" is already the track; a slot draws one part')
   })
 })

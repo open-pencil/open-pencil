@@ -16,7 +16,11 @@ const { label, items, searchPlaceholder, emptyLabel, closeLabel, placeholder } =
   placeholder?: string
 }>()
 const value = defineModel<string>({ required: true })
-defineSlots<{ leading?(props: { item: AppPickerItem }): unknown }>()
+defineSlots<{
+  leading?(props: { item: AppPickerItem }): unknown
+  /** An action under the list, such as creating a new item. */
+  footer?(props: { close: () => void }): unknown
+}>()
 defineOptions({ inheritAttrs: false })
 const styles = tv(theme)()
 const current = computed(() => items.find((item) => item.value === value.value))
@@ -48,6 +52,9 @@ const current = computed(() => items.find((item) => item.value === value.value))
     </template>
     <template v-if="$slots.leading" #leading="{ item }">
       <slot name="leading" :item="item" />
+    </template>
+    <template v-if="$slots.footer" #footer="{ close }">
+      <slot name="footer" :close="close" />
     </template>
   </AppPicker>
 </template>
