@@ -45,7 +45,6 @@ export function createCanvasHitTests(editor: Editor, getRenderer: () => SkiaRend
         editor.graph,
         canvasX,
         canvasY,
-        editor.state.selectedIds,
         editor.state.rotationPreview
       ) ?? null
     )

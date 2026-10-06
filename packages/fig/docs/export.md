@@ -87,6 +87,26 @@ Writing 50 x 20 into both places can apply the scale twice.
 This example describes root dimensions only. Padding and other fields require their own
 coordinate-space contracts; do not apply the same division to every numeric property.
 
+## Derived text
+
+Figma draws saved text from `derivedTextData`, even when it has the font, so the glyphs written
+here are what Figma shows. [`buildNodeDerivedTextData`](../src/node-change/derived-text/build.ts)
+writes them for `.fig` export and the Figma clipboard alike:
+
+- Glyphs a layer already has (from Figma, or placed along a path) are kept, with their lines
+  recovered from their baselines.
+- Other text is shaped by the export runtime's `shapeText`, which Core implements with the
+  renderer's paragraph: lines, alignment, and baselines match what OpenPencil draws, and each
+  outline belongs to the glyph ID the shaper chose, so ligatures and contextual forms survive.
+- When the shaper cannot tell which font drew a run (a missing, variable, or fallback font), the
+  layout is written without outlines and readers lay the text out themselves. A partial set of
+  outlines would draw the text with gaps, so it is all or none.
+- Advances are em units, and `logicalIndexToCharacterOffsetMap` has one entry per character,
+  measured from the start of its line, as in Figma's own files.
+
+The reader drops glyphs an earlier writer laid on one unwrapped line, recognised by an offset
+map one entry longer than the text with every glyph on the one written baseline.
+
 ## Component properties and parameters
 
 Current Figma records use typed `varValue` data for definitions and assignments, and `PROP_REF`
@@ -110,6 +130,7 @@ selected passing properties as complete editable-document compatibility.
 
 - [Node-change serialization](../src/node-change/export/node.ts)
 - [Override claims](../src/node-change/export/override-claims.ts)
+- [Derived text](../src/node-change/derived-text/build.ts)
 - [Export context and identity allocation](../src/node-change/export/context.ts)
 - [Property/layout conversion](../src/node-change/serialize.ts)
 - [Archive assembly](../src/archive.ts)

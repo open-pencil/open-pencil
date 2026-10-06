@@ -44,6 +44,7 @@ export async function installTauriClipboardMock(page: Page): Promise<TauriClipbo
         return state.html || state.text
       case 'list_system_fonts':
       case 'take_pending_open':
+      case 'take_pending_rooms':
         return []
       case 'load_system_font':
       case 'plugin:event|listen':

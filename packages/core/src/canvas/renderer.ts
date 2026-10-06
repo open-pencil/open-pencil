@@ -284,6 +284,12 @@ export class SkiaRenderer {
     selectedIds: Set<string>,
     guides?: RenderOverlays['guides']
   ) => void
+  declare drawFrameTitles: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: ReadonlySet<string>,
+    overlays?: RenderOverlays
+  ) => void
   declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph, overlays?: RenderOverlays) => void
   declare drawComponentLabels: (
     canvas: Canvas,
@@ -577,7 +583,6 @@ export class SkiaRenderer {
     graph: SceneGraph,
     canvasX: number,
     canvasY: number,
-    selectedIds: Set<string>,
     preview?: RenderOverlays['rotationPreview']
   ): SceneNode | null {
     return LabelHitTest.hitTestFrameTitle(
@@ -585,8 +590,9 @@ export class SkiaRenderer {
       canvasX,
       canvasY,
       this.zoom,
-      selectedIds,
+      this.pageId ?? graph.rootId,
       this.labelFont,
+      this.labelCache,
       labelHitOptions(this, graph, preview)
     )
   }

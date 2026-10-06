@@ -32,6 +32,7 @@ import {
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import type { FigmaFontName } from './fonts'
+import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
@@ -237,22 +238,24 @@ export class FigmaNodeProxy {
     return this[INTERNAL_API].wrapNode(comp.id)
   }
 
-  createInstance(): FigmaNodeProxy {
+  createInstance(): FigmaInstanceNode {
     const n = this._raw()
     if (n.type !== 'COMPONENT') throw new Error('createInstance() can only be called on components')
     const pageId = this[INTERNAL_API].currentPageId
     const inst = this[INTERNAL_GRAPH].createInstance(n.id, pageId)
     if (!inst) throw new Error('Failed to create instance')
-    return this[INTERNAL_API].wrapNode(inst.id)
+    // `wrapNode` cannot know the node's type; this one just built an instance.
+    return this[INTERNAL_API].wrapNode(inst.id) as FigmaInstanceNode
   }
 
   /** Turns this instance into a frame that keeps its current content, like Figma's. */
-  detachInstance(): FigmaNodeProxy {
+  detachInstance(): FigmaFrameNode {
     const n = this._raw()
     if (n.type !== 'INSTANCE') throw new Error('detachInstance() can only be called on instances')
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].detachInstance(n.id)
-    return this[INTERNAL_API].wrapNode(n.id)
+    // The node is a frame once detached, which `wrapNode` has no way to tell.
+    return this[INTERNAL_API].wrapNode(n.id) as FigmaFrameNode
   }
 
   /** Points this instance at another component, as Figma's swapComponent does. */

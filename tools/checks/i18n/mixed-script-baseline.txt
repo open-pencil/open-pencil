@@ -69,7 +69,10 @@ ja:code.editorHTMLCSSLabel
 ja:code.noSelectionDesignJSX
 ja:code.noSelectionTailwindJSX
 ja:code.writeJSX
+ja:collaboration.invalidRoomLink
+ja:collaboration.joinRoomDescription
 ja:collaboration.pasteRoomLinkOrId
+ja:collaboration.unreachableDescription
 ja:commands.paletteDescription
 ja:credentials.apiKey
 ja:credentials.getAPIKey
@@ -213,7 +216,10 @@ zh-cn:code.editorHTMLCSSLabel
 zh-cn:code.noSelectionDesignJSX
 zh-cn:code.noSelectionTailwindJSX
 zh-cn:code.writeJSX
+zh-cn:collaboration.invalidRoomLink
+zh-cn:collaboration.joinRoomDescription
 zh-cn:collaboration.pasteRoomLinkOrId
+zh-cn:collaboration.unreachableDescription
 zh-cn:commands.paletteDescription
 zh-cn:credentials.apiKey
 zh-cn:credentials.getAPIKey

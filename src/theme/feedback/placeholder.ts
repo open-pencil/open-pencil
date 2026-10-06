@@ -5,6 +5,7 @@ const placeholderTheme = {
     icon: 'mb-3 flex size-10 items-center justify-center rounded-full bg-panel-field text-muted',
     label: 'text-xs font-medium text-surface',
     description: 'mt-1 text-xs leading-relaxed text-muted',
+    body: 'mt-3 w-full',
     action: 'mt-4 flex w-full items-center justify-center gap-2'
   },
   variants: {

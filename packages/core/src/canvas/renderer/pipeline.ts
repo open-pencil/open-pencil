@@ -277,7 +277,7 @@ export function render(
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
     r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
-    drawLabelPass(r, canvas, graph, overlays)
+    drawLabelPass(r, canvas, graph, selectedIds, overlays)
     canvas.restore()
 
     canvas.save()

@@ -1,7 +1,12 @@
 /// <reference types="@figma/plugin-typings" />
 
 import type { FigmaAPI } from './index'
-import type { FigmaComponentNode, FigmaComponentSetNode, FigmaSlotNode } from './node-types'
+import type {
+  FigmaComponentNode,
+  FigmaComponentSetNode,
+  FigmaInstanceNode,
+  FigmaSlotNode
+} from './node-types'
 import type { FigmaNodeProxy } from './proxy'
 
 type Expect<T extends true> = T
@@ -64,7 +69,7 @@ const _componentSetPropertyMethodsMatch: ComponentSetPropertyMethodsMatch = true
 type InstancePropertySurfaceMatch = Expect<
   Extends<
     Pick<
-      FigmaNodeProxy & InstanceNode,
+      FigmaInstanceNode,
       | 'componentProperties'
       | 'componentPropertyReferences'
       | 'setProperties'
