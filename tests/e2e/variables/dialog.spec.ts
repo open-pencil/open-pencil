@@ -231,6 +231,13 @@ test('a name is edited in place and a CSS name CSS cannot use is refused', async
   await expect(cssName).toHaveAttribute('aria-invalid', 'true')
   await cssName.press('Enter')
   await expect(editor.page.getByTestId('token-output')).not.toContainText('not valid')
+  // A refused name keeps the focus, so it can be corrected.
+  await expect(cssName).toBeFocused()
+
+  // A pasted `var(--…)` is read as the name inside it.
+  await cssName.fill('var(--accent-color)')
+  await cssName.press('Enter')
+  await expect(editor.page.getByTestId('token-output')).toContainText('--accent-color:')
   editor.canvas.assertNoErrors()
 })
 

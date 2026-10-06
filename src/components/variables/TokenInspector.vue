@@ -9,6 +9,7 @@ import {
   cssNameCodeSyntax,
   explicitCSSName,
   loadTokenValidator,
+  parseCSSName,
   variableUnit
 } from '@open-pencil/dom-css/export'
 import {
@@ -22,6 +23,7 @@ import {
   type VariableScope,
   type VariableValue
 } from '@open-pencil/scene-graph'
+import { randomHex } from '@open-pencil/scene-graph/random'
 import { useI18n } from '@open-pencil/vue'
 
 import type { AliasCandidate, TokenRow } from '@/app/editor/tokens/model'
@@ -160,13 +162,18 @@ function commitName() {
 /** The browser's CSS parser decides what a custom property name may be. */
 const validator = computedAsync(loadTokenValidator, null)
 const cssNameErrorId = `${useId()}-css-name`
+/** The name typed, without the `--` the field shows, also when `--name` or `var(--name)` is pasted. */
+const typedCSSName = computed(() => {
+  const text = draft.cssName.trim()
+  return parseCSSName(text) ?? text
+})
 const cssNameInvalid = computed(() => {
-  const name = draft.cssName.trim().replace(/^--/, '')
+  const name = typedCSSName.value
   return name !== '' && validator.value !== null && !validator.value.name(name)
 })
 
 function commitCSSName() {
-  const name = draft.cssName.trim().replace(/^--/, '')
+  const name = typedCSSName.value
   draft.cssName = name
   if (cssNameInvalid.value || name === (explicitCSSName(variable.value) ?? '')) return
   emit('updateToken', {
@@ -227,11 +234,10 @@ function aliasId(modeId: string): string | undefined {
  * is one undo step however many colors it passes through.
  */
 const colorSessions = new Map<string, string>()
-let sessionCount = 0
 
 function setPickerOpen(modeId: string, open: boolean) {
-  if (open)
-    colorSessions.set(modeId, `variable-color:${variable.value.id}:${modeId}:${++sessionCount}`)
+  // A fresh key each time, so a session never merges into the last one, even across remounts.
+  if (open) colorSessions.set(modeId, `variable-color:${variable.value.id}:${randomHex(8)}`)
   else colorSessions.delete(modeId)
 }
 
@@ -251,6 +257,11 @@ function color(modeId: string): Color | undefined {
 function done(event: KeyboardEvent) {
   if (event.target instanceof HTMLElement) event.target.blur()
   emit('done')
+}
+
+/** A name the field refuses keeps the focus, so it can be corrected. */
+function cssNameDone(event: KeyboardEvent) {
+  if (!cssNameInvalid.value) done(event)
 }
 </script>
 
@@ -273,7 +284,7 @@ function done(event: KeyboardEvent) {
           :ui="{ input: 'font-mono pl-7' }"
           data-test-id="variables-css-name"
           @change="commitCSSName"
-          @enter="done"
+          @enter="cssNameDone"
         >
           <template #leading><span :class="ui.prefix()">--</span></template>
         </AppInput>
