@@ -188,3 +188,29 @@ test('two room tabs stay live at once, each syncing with its own room', async ({
     await closeAll([guest, hostA, hostB], relay)
   }
 })
+
+test("a guest's page list shows which page the sharer is on", async ({ browser }) => {
+  test.setTimeout(90_000)
+  const relay = await startRelay()
+  let host: Peer | null = null
+  let guest: Peer | null = null
+  try {
+    host = await createPeer(browser, 'Host', relay.url)
+    await addRectangle(host.page, 'Card')
+    await share(host)
+    guest = await createPeer(browser, 'Guest', relay.url, { path: shareLinkPath() })
+    await expect(guest.page.getByTestId('room-screen')).toHaveCount(0, { timeout: 15_000 })
+
+    // A real pointer over the canvas, as people move it, not the test hook.
+    const box = await host.canvas.canvas.boundingBox()
+    if (!box) throw new Error('Canvas has no bounding box')
+    await host.page.mouse.move(box.x + 120, box.y + 80)
+    await host.page.mouse.move(box.x + 160, box.y + 100, { steps: 4 })
+
+    const marker = guest.page.getByTestId('pages-item').getByTestId('presence-markers')
+    await expect(marker).toHaveAttribute('aria-label', 'Host')
+    expect(collaborationErrors(guest)).toEqual([])
+  } finally {
+    await closeAll([guest, host], relay)
+  }
+})
