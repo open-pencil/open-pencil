@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 import {
   buildACPMCPServers,
   createMCPConnectionDraft,
+  mcpConnectionCredentialRef,
   mcpConnectionSettingsSnapshot,
   parseMCPConnectionSettings,
   removeMCPConnection,
@@ -81,6 +82,35 @@ describe('MCP connections', () => {
         ]
       }).connections.map((connection) => connection.id)
     ).toEqual(['mcp-valid'])
+  })
+
+  test("keeps a stored token only when it is the connection's own credential", () => {
+    const stored = (credentialRef: unknown) => ({
+      version: 1,
+      connections: [
+        {
+          id: 'mcp-tools',
+          name: '  Tools  ',
+          enabled: 'yes',
+          transport: { type: 'streamable-http', url: ' https://example.com/mcp ' },
+          authentication: { type: 'bearer', credentialRef }
+        }
+      ]
+    })
+    const own = mcpConnectionCredentialRef('mcp-tools')
+    expect(parseMCPConnectionSettings(stored(own)).connections).toEqual([
+      {
+        id: 'mcp-tools',
+        name: 'Tools',
+        enabled: false,
+        transport: { type: 'streamable-http', url: 'https://example.com/mcp' },
+        authentication: { type: 'bearer', credentialRef: own }
+      }
+    ])
+    const other = mcpConnectionCredentialRef('mcp-other')
+    expect(parseMCPConnectionSettings(stored(other)).connections[0]?.authentication).toEqual({
+      type: 'none'
+    })
   })
 
   test('defaults new connections to disabled and reserves unique names', async () => {
