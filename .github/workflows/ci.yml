@@ -243,7 +243,7 @@ jobs:
         with:
           lfs: 'true'
           # Quick shards read only the small fixtures; heavy-tests.yml pulls the large .fig corpora.
-          lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/slots.fig,tests/fixtures/fonts/*
+          lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/slots.fig,tests/fixtures/variable-override-precedence.fig,tests/fixtures/fonts/*
 
       - name: Build shared Core test dependency
         run: bun --filter @open-pencil/core build

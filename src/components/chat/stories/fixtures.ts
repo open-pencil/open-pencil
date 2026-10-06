@@ -103,6 +103,34 @@ export function conversations(): Conversation[] {
         }
       ]
     },
+    {
+      id: 'reverted',
+      title: 'Blue header',
+      status: 'ready',
+      messages: [
+        {
+          id: 'reverted-request',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Make the header blue.' }]
+        },
+        {
+          id: 'reverted-response',
+          role: 'assistant',
+          // Reverted from the chat; conversations store the mark in the reply's metadata.
+          metadata: { reverted: true },
+          parts: [
+            {
+              type: 'tool-set_fill',
+              toolCallId: 'fill',
+              state: 'output-available',
+              input: { id: 'header', color: '#2563eb' },
+              output: { id: 'header', name: 'Header' }
+            },
+            { type: 'text', text: 'The header is now blue.' }
+          ]
+        }
+      ]
+    },
     { id: 'empty', title: 'New chat', status: 'ready', messages: [] },
     {
       id: 'long-title',
