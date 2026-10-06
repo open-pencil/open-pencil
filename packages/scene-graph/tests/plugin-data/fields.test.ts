@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  contentPluginData,
   OPEN_PENCIL_PLUGIN_DATA,
   OPEN_PENCIL_PLUGIN_ID,
   readAllPluginData,
@@ -24,6 +25,16 @@ function entry(key: string, value: string): PluginDataEntry {
 }
 
 describe('OpenPencil plugin data', () => {
+  test('keeps content and other plugins’ entries as a node’s content', () => {
+    const entries = [
+      OTHER_PLUGIN,
+      entry('textDirection', 'RTL'),
+      entry('librarySource', '{}'),
+      entry('okhcl', '[]')
+    ]
+    expect(contentPluginData(entries)).toEqual([entry('okhcl', '[]'), OTHER_PLUGIN])
+  })
+
   test('gives every field its own key', () => {
     const keys = Object.values(OPEN_PENCIL_PLUGIN_DATA).map((field) => field.key)
     expect(new Set(keys).size).toBe(keys.length)

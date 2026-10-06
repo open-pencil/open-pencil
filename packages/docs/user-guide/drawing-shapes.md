@@ -74,7 +74,7 @@ Click **+** to add an effect. Each effect row is collapsible with inline control
 
 ## Frames and Sections
 
-**Frames** are containers. Drag shapes into a frame to make them children, or start drawing inside one: a new shape goes into the frame under the point where you start, except locked frames, and joins the end of an auto-layout flow. Drawing a frame over existing nodes puts the unlocked ones it fully covers inside it. Frames can clip their content (off by default) and support [auto layout](./auto-layout).
+**Frames** are containers. Drag shapes into a frame to make them children, or start drawing inside one: a new shape goes into the frame under the point where you start, except locked frames, and joins the end of an auto-layout flow. Drawing a frame over existing nodes puts the unlocked ones it fully covers inside it. New frames clip their content, as in Figma (turn off **Clip content** to let children show outside), and frames support [auto layout](./auto-layout).
 
 Select the Frame tool to browse collapsible presets for phones, tablets, desktops, presentations, watches, paper, social media, Figma Community assets, and archived devices in the Design panel. Choosing a preset creates a named frame centered in the viewport and returns to the Select tool. With an existing frame selected, use its Frame preset dropdown to resize it without changing its name.
 

@@ -1,12 +1,13 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { createComponentPropertyId } from '@open-pencil/scene-graph'
-import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
+import { createBehaviourActions } from './components/behaviours'
+import { becomesComponent, componentWrapProps } from './components/create'
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
 import { createComponentPropertyActions } from './components/properties'
 import { createSlotActions } from './components/slots'
 import { createSlotAuthoringActions } from './components/slots/authoring'
+import { applyVariantProperties, variantSetProps } from './components/variant-set'
 import { createVariantActions } from './components/variants'
 import type { EditorContext } from './types'
 
@@ -29,7 +30,7 @@ export function createComponentActions(ctx: EditorContext) {
 
       if (node.type === 'COMPONENT') return
 
-      if (node.type === 'FRAME' || node.type === 'GROUP') {
+      if (becomesComponent(node)) {
         ctx.graph.updateNode(node.id, { type: 'COMPONENT' })
         ctx.setSelectedIds(new Set([node.id]))
         ctx.undo.push({
@@ -47,7 +48,7 @@ export function createComponentActions(ctx: EditorContext) {
       }
     }
 
-    wrapSelectionInContainer('COMPONENT', selectedNodes)
+    wrapSelectionInContainer('COMPONENT', selectedNodes, componentWrapProps(selectedNodes))
   }
 
   function createComponentSetFromComponents(
@@ -60,16 +61,14 @@ export function createComponentActions(ctx: EditorContext) {
   ) {
     if (selectedNodes.length < 2) return
     if (!selectedNodes.every((n) => n.type === 'COMPONENT')) return
-    const containerId = wrapSelectionInContainer('COMPONENT_SET', selectedNodes)
+    const parentId = selectedNodes[0].parentId ?? ctx.state.currentPageId
+    const containerId = wrapSelectionInContainer(
+      'COMPONENT_SET',
+      selectedNodes,
+      variantSetProps(ctx.graph, selectedNodes, parentId, 'canvas')
+    )
     if (!containerId) return
-
-    const derived = deriveSlashVariantProperties(selectedNodes, createComponentPropertyId)
-    if (!derived) return
-
-    for (const [nodeId, changes] of derived.variants) {
-      ctx.graph.updateNode(nodeId, changes)
-    }
-    ctx.graph.updateNode(containerId, { componentPropertyDefinitions: derived.definitions })
+    applyVariantProperties(ctx.graph, selectedNodes, containerId)
   }
 
   const focusActions = createComponentFocusActions(ctx)
@@ -88,6 +87,7 @@ export function createComponentActions(ctx: EditorContext) {
     ...variantActions,
     ...componentPropertyActions,
     ...createSlotActions(ctx),
-    ...createSlotAuthoringActions(ctx)
+    ...createSlotAuthoringActions(ctx),
+    ...createBehaviourActions(ctx, variantActions)
   }
 }

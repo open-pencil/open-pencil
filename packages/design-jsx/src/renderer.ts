@@ -11,6 +11,8 @@ import {
 } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
+import type { RekaScope } from './behaviours'
+import { renderRekaNode } from './behaviours/render'
 import {
   assignComponentProperties,
   componentMetadata,
@@ -542,9 +544,10 @@ async function renderNode<Artwork>(
   graph: SceneGraph,
   tree: TreeNode,
   parentId: string,
-  onNode?: RenderOptions['onNode']
+  onNode?: RenderOptions['onNode'],
+  scope?: RekaScope
 ): Promise<SceneNode> {
-  const node = await renderNodeContent(services, graph, tree, parentId, onNode)
+  const node = await renderNodeContent(services, graph, tree, parentId, onNode, scope)
   onNode?.(tree, node)
   return node
 }
@@ -554,11 +557,25 @@ async function renderNodeContent<Artwork>(
   graph: SceneGraph,
   tree: TreeNode,
   parentId: string,
-  onNode?: RenderOptions['onNode']
+  onNode?: RenderOptions['onNode'],
+  scope?: RekaScope
 ): Promise<SceneNode> {
   if (tree.type === 'icon' || tree.type === 'svg')
     return renderArtworkNode(services, graph, tree, parentId)
   if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
+  const reka = await renderRekaNode(graph, tree, parentId, scope, {
+    render: (child, childParentId, childScope) =>
+      renderNode(services, graph, child, childParentId, onNode, childScope),
+    create: (nodeType, element, elementParentId) => {
+      const { overrides, bindings } = elementOverrides(graph, nodeType, element, elementParentId)
+      const created = graph.createNode(nodeType, elementParentId, overrides)
+      applyBindings(graph, created.id, bindings)
+      return created
+    },
+    instance: (element, elementParentId) => renderInstanceNode(graph, element, elementParentId),
+    finishSet: (setId) => inferComponentSetProperties(graph, setId)
+  })
+  if (reka) return reka
 
   const nodeType = TYPE_MAP[tree.type]
   if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
@@ -570,7 +587,7 @@ async function renderNodeContent<Artwork>(
   for (const child of tree.children) {
     if (typeof child === 'string') continue
     if (isTreeNode(child)) {
-      await renderNode(services, graph, child, node.id, onNode)
+      await renderNode(services, graph, child, node.id, onNode, scope)
     }
   }
 

@@ -94,7 +94,8 @@ export function explicitCSSName(variable: Variable): string | undefined {
 }
 
 /**
- * `Gray/50` as COLOR is `color-gray-50`; `Space/small` is `spacing-small`. Two tokens can derive
+ * `Gray/50` as COLOR is `color-gray-50`; `Space/small` is `spacing-small`. A group the next segment
+ * repeats is said once, so `Gap/gap-1` is `gap-1`, as kits that mirror Tailwind classes name them. Two tokens can derive
  * the same name, so stylesheet output takes names from `variableCSSNames`, which makes them unique.
  */
 export function deriveCSSName(variable: Variable): string {
@@ -103,7 +104,13 @@ export function deriveCSSName(variable: Variable): string {
   if (segments.length > 1 && namespace && NAMESPACE_WORDS[segments[0] ?? ''] === namespace) {
     segments.shift()
   }
-  const body = segments.join('-') || 'token'
+  const body =
+    segments
+      .filter((segment, index) => {
+        const next = segments.at(index + 1)
+        return next === undefined || (next !== segment && !next.startsWith(`${segment}-`))
+      })
+      .join('-') || 'token'
   if (!namespace || body === namespace || body.startsWith(`${namespace}-`)) return body
   return `${namespace}-${body}`
 }

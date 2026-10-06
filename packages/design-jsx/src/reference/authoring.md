@@ -39,6 +39,24 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 - Reuse existing local or library components before recreating them. Keep meaningful text, visibility, and swap properties exposed rather than hand-editing cloned child nodes.
 - Explicit instance `w` / `h` replace the inherited sizing mode on that axis; omitted dimensions retain the main component's sizing. Authored overrides survive component synchronization. Distinguish those placement constraints from the main component's default size, and verify actual bounds in narrower parents. Do not compensate for a sizing mismatch with guessed heights, clipping, or manually positioned siblings.
 
+## Controls
+
+- A main component can behave as a Reka UI control in preview and code. Write it with Reka's names: `Switch.Root` is the component (a component set when its children are `Component` variants), and each Reka part is the slot that draws it, such as `Switch.Thumb`, `Slider.Track`, `Slider.Range`, `Slider.Thumb`, `Tabs.List`, `Collapsible.Trigger`, or `NumberField.Increment`. Parts in different variants share one slot.
+- The root names the properties that hold its values: `modelValue` (`open` on `Collapsible.Root`), `disabled`, and, for text fields, `filled`, as a variant or boolean property name, or `{ property, on, off }` when the variant values are not named like On and Off. `states` names the variant property that draws default, hover, pressed, focus, and disabled; a slider, progress bar, or number field takes `min`, `max`, `step`, and `defaultValue`.
+- `TextField.Input`, `Textarea.Input`, and `NumberField.Input` are the text layers whose text becomes the field's text property. `Tabs.Trigger` goes in `Tabs.List`; `Tabs.Content` panels may sit directly under `Tabs.Root`, the first showing.
+- A group's item component is written on its own (`RadioGroup.Item`, `ToggleGroup.Item`, `Accordion.Item` with its `Accordion.Trigger` and `Accordion.Content`); the group's root then lists items as `<RadioGroup.Item of={radioId} />`.
+
+```tsx
+<Switch.Root name="Switch" modelValue="State" states="Interaction">
+  <Component name="State=Off, Interaction=Default" w={44} h={24} rounded={12} bg="#D0D4DA">
+    <Switch.Thumb x={2} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" />
+  </Component>
+  <Component name="State=On, Interaction=Default" w={44} h={24} rounded={12} bg="#3B6CF6">
+    <Switch.Thumb x={22} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" />
+  </Component>
+</Switch.Root>
+```
+
 ## Verification
 
 Inspect structure and actual rendered output. Node counts and `describe` diagnostics do not establish visual fidelity. Check wrapping with longer content, narrower containers, component edits, and relevant modes. Resolve overflow and contrast problems at their source. Reuse IDs returned by creation tools rather than repeatedly searching for the same nodes.

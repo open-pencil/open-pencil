@@ -15,7 +15,13 @@ import {
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
-import { ownsSlotContent, type SceneGraph } from '@open-pencil/scene-graph'
+import {
+  ownsSlotContent,
+  readBehaviour,
+  renameBehaviourProperties,
+  withBehaviour,
+  type SceneGraph
+} from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -131,6 +137,21 @@ function assignComponentPropertyGuids(
       nodeSourceGuidValues
     )
     propertyIdToGuid.set(propertyId, guid)
+  }
+}
+
+/** Behaviours bind component properties by id, so they follow the ids' new GUIDs. */
+function renameBehaviourPropertyIds(graph: SceneGraph, propertyIdToGuid: Map<string, GUID>): void {
+  const rename = (propertyId: string) => {
+    const guid = propertyIdToGuid.get(propertyId)
+    return guid ? `${guid.sessionID}:${guid.localID}` : propertyId
+  }
+  for (const node of graph.getAllNodes()) {
+    const behaviour = readBehaviour(node)
+    if (behaviour)
+      graph.updateNode(node.id, {
+        pluginData: withBehaviour(node, renameBehaviourProperties(behaviour, rename))
+      })
   }
 }
 
@@ -428,6 +449,7 @@ async function writeFigFile(
     assignedGuidValues,
     nodeSourceGuidValues
   )
+  renameBehaviourPropertyIds(graph, propertyIdToGuid)
 
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
 

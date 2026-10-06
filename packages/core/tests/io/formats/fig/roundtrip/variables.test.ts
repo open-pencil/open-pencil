@@ -316,7 +316,8 @@ describe('variable roundtrip', () => {
         { modeId: '4:8', name: 'Dark', condition: '[data-theme="dark"]' }
       ],
       defaultModeId: '4:7',
-      variableIds: []
+      variableIds: [],
+      modeAttribute: 'data-scheme'
     })
     const add = (id: string, name: string, extra: Partial<Variable>) =>
       graph.addVariable({
@@ -347,6 +348,8 @@ describe('variable roundtrip', () => {
       { modeId: '4:7', name: 'Light', condition: undefined },
       { modeId: '4:8', name: 'Dark', condition: '[data-theme="dark"]' }
     ])
+    expect(reimported.variableCollections.get('4:70')?.modeAttribute).toBe('data-scheme')
+    expect(reimported.variableCollections.get('4:70')?.pluginData).toBeUndefined()
     // Rebuilt on save, never duplicated into pass-through plugin data.
     expect(page.pluginData).toBeUndefined()
   })

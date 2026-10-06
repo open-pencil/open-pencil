@@ -61,7 +61,7 @@ Component actions are displayed in purple to match the component color theme.
 
 | Action | Shortcut (Mac) | Shortcut (Win/Linux) | Available on |
 |--------|----------------|----------------------|--------------|
-| Create component | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> | Frames, groups, multi-selection |
+| Create component | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> | Any selection |
 | Create component set | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd> | 2+ selected components |
 | Create instance | — | — | Components (no shortcut) |
 | Go to main component | — | — | Instances |

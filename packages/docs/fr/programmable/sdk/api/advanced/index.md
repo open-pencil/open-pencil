@@ -37,8 +37,6 @@ Ces fonctions sous-tendent les composants et composables publics. Utilisez-les l
 ## Variables et langue
 
 - [useVariables](./use-variables)
-- [useVariablesDialogState](./use-variables-dialog-state)
-- [useVariablesTable](./use-variables-table)
 - [API régionales](./locale-apis)
 
 ## Presse-papiers
