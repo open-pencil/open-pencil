@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/scene-graph'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
+import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variant-set'
 import type { createVariantActions } from '#core/editor/components/variants'
 import { wrapSelectionInContainer } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
@@ -35,9 +36,8 @@ const STATE_VALUES: Record<InteractionState, string> = {
 }
 /** Names tried, in order, for a new states property, skipping ones the set already has. */
 const STATE_PROPERTY_NAMES = ['State', 'Interaction', 'Interaction state']
-/** Space between variants and around them in a set laid out as a grid. */
+/** Space between variants in a set laid out as a grid. */
 const SET_GAP = 20
-const SET_PADDING = 40
 
 /**
  * Lay a set's variants out as rows, one per variant it had, each followed by its new state
@@ -53,16 +53,16 @@ function layOutRows(ctx: EditorContext, setId: string, rows: string[][]): void {
       return node ? [{ id, x: node.x, y: node.y, width: node.width, height: node.height }] : []
     })
   const before = capture()
-  let y = SET_PADDING
+  let y = VARIANT_SET_PADDING
   for (const row of nodes) {
     for (const [column, node] of row.entries())
-      ctx.graph.updateNode(node.id, { x: SET_PADDING + column * (width + SET_GAP), y })
+      ctx.graph.updateNode(node.id, { x: VARIANT_SET_PADDING + column * (width + SET_GAP), y })
     y += Math.max(...row.map((node) => node.height)) + SET_GAP
   }
   const columns = Math.max(...nodes.map((row) => row.length))
   ctx.graph.updateNode(setId, {
-    width: SET_PADDING * 2 + columns * width + (columns - 1) * SET_GAP,
-    height: y - SET_GAP + SET_PADDING
+    width: VARIANT_SET_PADDING * 2 + columns * width + (columns - 1) * SET_GAP,
+    height: y - SET_GAP + VARIANT_SET_PADDING
   })
   const after = capture()
   const apply = (frames: typeof before) => {
@@ -216,7 +216,13 @@ export function createBehaviourCompletionActions(
   function ownSet(owner: SceneNode, behaviour: Behaviour): SceneNode | undefined {
     if (owner.type === 'COMPONENT_SET') return owner
     const component = owner
-    const setId = wrapSelectionInContainer(ctx, 'COMPONENT_SET', [component])
+    const parentId = component.parentId ?? ctx.state.currentPageId
+    const setId = wrapSelectionInContainer(
+      ctx,
+      'COMPONENT_SET',
+      [component],
+      variantSetProps(ctx.graph, [component], parentId, 'canvas')
+    )
     if (!setId) return undefined
     setBehaviour(component.id, null)
     setBehaviour(setId, behaviour)

@@ -23,7 +23,7 @@ export * from './behaviours/kinds'
 export * from './behaviours/model'
 export * from './behaviours/spec'
 export * from './copy'
-export { createDefaultNode } from './node-defaults'
+export { createDefaultNode, FITTED_CONTAINER_TYPES } from './node-defaults'
 export {
   copyInstanceComponentProps,
   findInstanceAncestor,
@@ -45,6 +45,7 @@ export * from './snap'
 export * from './export-format'
 export * from './export-scale'
 export * from './coordinate'
+export * from './group-bounds'
 export * from './constants'
 export * from './geometry'
 export * from './guides'

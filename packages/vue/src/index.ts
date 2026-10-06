@@ -84,6 +84,7 @@ export {
   useToolbarState
 } from '#vue/primitives/Toolbar/useToolbarState'
 export { useNodeFontStatus } from '#vue/shared/font-status/use'
+export { fuzzyFilter, fuzzySearch } from '#vue/shared/search/fuzzy'
 export { usePropScrub } from '#vue/controls/prop-scrub/use'
 export { toolCursor } from '#vue/editor/tool-cursor'
 export {
@@ -147,9 +148,6 @@ export { useOkHCL } from '#vue/controls/okhcl/use'
 
 /** Variables, page navigation, and picker helpers. */
 export { useVariables } from '#vue/variables/use'
-export { useVariablesDialogState } from '#vue/variables/dialog/use'
-export { useVariablesEditor } from '#vue/variables/editor/use'
-export { useVariablesTable } from '#vue/variables/table/use'
 export { usePageList } from '#vue/primitives/PageList/usePageList'
 export {
   fillCategory,

@@ -162,7 +162,6 @@ These are the main APIs most SDK consumers should start with.
 
 #### Variables, navigation, and localization
 
-- `useVariablesEditor()`
 - `usePageList()`
 - `useI18n()`
 
@@ -208,8 +207,6 @@ These exports are intentionally public, but they are lower-level or more special
 - `useFontPicker()`
 - `useOkHCL()`
 - `useVariables()`
-- `useVariablesDialogState()`
-- `useVariablesTable()`
 - `usePropScrub()`
 - `useLayerDrag()`
 - `useInlineRename()`

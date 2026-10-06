@@ -17,13 +17,13 @@ Local assets are grouped by source page. Published library assets remain availab
 
 Select a frame or group and press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd>). The selection becomes a reusable component.
 
-If you select multiple nodes, they're wrapped in a new component positioned at their bounding box.
+Any other layer, or several layers, is wrapped in a new white component at their bounding box, in the topmost layer's place in the layer list; a single wrapped layer gives the component its name.
 
 Components display a purple label with a diamond icon above them.
 
 ## Component Sets and Variants
 
-Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) to combine them into a component set — a container with a dashed purple border and 40 px padding around its children.
+Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) to combine them into a component set — a container with a dashed purple border and 20 px padding around its children, as in Figma. Sets made by scripts with `figma.combineAsVariants()` wrap their components exactly, as Figma's plugin API does.
 
 Each component in a set can define values across multiple variant dimensions, such as `Size=Small`, `State=Hover`, and `Theme=Dark`. OpenPencil supports sparse combinations, so a set does not need every possible combination. The top-left variant is the default and is used as the fallback when an update no longer contains an exact combination.
 

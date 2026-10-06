@@ -118,6 +118,36 @@ describe('booleanOperationSelected', () => {
     expect(editor.graph.getNode(booleanId)?.booleanOperation).toBe('EXCLUDE')
     expect(editor.state.selectedIds).toEqual(new Set([booleanId]))
   })
+
+  // Recorded in Figma desktop 126 with Union, Subtract, Intersect, and Exclude from the canvas.
+  test('takes the fill of the topmost operand, or the base for Subtract, and no strokes', () => {
+    const solid = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const operands = (editor: ReturnType<typeof createEditor>) => {
+      const pageId = editor.state.currentPageId
+      const base = editor.graph.createNode('RECTANGLE', pageId, { fills: solid(0, 1, 0) })
+      const top = editor.graph.createNode('RECTANGLE', pageId, {
+        x: 20,
+        fills: solid(0, 0, 1),
+        strokes: [{ ...solid(0, 0, 0)[0], weight: 1, align: 'CENTER' }]
+      })
+      // Selected top first: the stack, not the selection order, decides.
+      editor.select([top.id, base.id])
+      return { base, top }
+    }
+    for (const operation of ['UNION', 'SUBTRACT', 'INTERSECT', 'EXCLUDE'] as const) {
+      const editor = createEditor()
+      const { base, top } = operands(editor)
+      editor.booleanOperationSelected(operation)
+      const [booleanId] = [...editor.state.selectedIds]
+      const booleanNode = editor.graph.getNode(booleanId)
+      const source = operation === 'SUBTRACT' ? base : top
+      expect(booleanNode?.fills).toEqual(source.fills)
+      expect(booleanNode?.strokes).toEqual([])
+      expect(booleanNode?.childIds).toEqual([base.id, top.id])
+    }
+  })
 })
 
 describe('container placement inside a rotated frame', () => {

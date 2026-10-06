@@ -340,6 +340,31 @@ export class TextEditor {
     this.moveWord(extend, 'right')
   }
 
+  /**
+   * The caret of empty text. CanvasKit lays out no line for an empty paragraph, so a line
+   * holding one space gives the caret's height, and the alignment its place.
+   */
+  private emptyCaret(paragraph: Paragraph): TextCaret | null {
+    const node = this.paragraphNode
+    const line = paragraph.getLineMetrics().at(0)
+    if (line) {
+      const offsetY = this.paragraphVerticalOffset()
+      return { x: line.left, y0: offsetY, y1: offsetY + line.height }
+    }
+    if (!node || !this.renderer) return null
+    const probe = this.renderer.buildParagraph({ ...node, text: ' ' })
+    const height = probe.getLineMetrics()[0]?.height ?? probe.getHeight()
+    probe.delete()
+    const available = Math.max(0, node.height - height)
+    let offsetY = 0
+    if (node.textAlignVertical === 'CENTER') offsetY = available / 2
+    if (node.textAlignVertical === 'BOTTOM') offsetY = available
+    let x = 0
+    if (node.textAlignHorizontal === 'CENTER') x = node.width / 2
+    if (node.textAlignHorizontal === 'RIGHT') x = node.width
+    return { x, y0: offsetY, y1: offsetY + height }
+  }
+
   getCaretRect(): TextCaret | null {
     const s = this._state
     if (!s?.paragraph) return null
@@ -347,13 +372,7 @@ export class TextEditor {
     const text = s.text
     const cursor = s.cursor
 
-    if (text.length === 0) {
-      const metrics = s.paragraph.getLineMetrics()
-      if (metrics.length === 0) return null
-      const line = metrics[0]
-      const offsetY = this.paragraphVerticalOffset()
-      return { x: line.left, y0: offsetY, y1: offsetY + line.height }
-    }
+    if (text.length === 0) return this.emptyCaret(s.paragraph)
 
     let lo: number
     let hi: number

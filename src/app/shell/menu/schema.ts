@@ -13,6 +13,7 @@ export type AppMenuIcon =
   | 'save'
   | 'settings'
   | 'type'
+  | 'variables'
   | 'undo'
   | 'zoom-in'
   | 'zoom-out'
@@ -173,6 +174,15 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'view-split-right', label: 'Split Right' },
       { id: 'view-split-down', label: 'Split Down' },
+      { type: 'separator' },
+      {
+        id: 'variables',
+        label: 'Variables…',
+        palette: {
+          icon: 'variables',
+          keywords: ['tokens', 'design tokens', 'css variables', 'collections', 'modes', 'theme']
+        }
+      },
       { type: 'separator' },
       { id: 'view-rulers', label: 'Rulers', checkbox: true },
       { id: 'view-multiplayer-cursors', label: 'Multiplayer Cursors', checkbox: true },
