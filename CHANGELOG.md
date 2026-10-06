@@ -89,6 +89,7 @@
 
 ### Fixed
 
+- Draw segmented controls in the properties panel at the height of the fields beside them.
 - Text saved to `.fig` or copied to Figma keeps its layout in Figma: it wraps at the layer's width with its alignment and line height, and keeps ligatures and contextual forms such as Inter's arrows, where Figma previously drew every saved OpenPencil text layer on one unwrapped line (#914).
 - Release a document's memory when its tab closes. Every closed tab kept its scene, canvas, and editor panels alive until reload, so memory grew with each document opened and closed. Menus and shortcuts now also follow the active document, so Undo and Redo are offered according to its history rather than the first document opened.
 - Start Pi chats with OpenPencil's MCP tools when the Harness companion runs on Node 22.15 or later; the companion now installs the dependency Pi's MCP adapter needs and loads its TypeScript sources. A reopened Pi session starts fresh instead of failing to resume its in-memory sandbox, and npm output from Pi no longer mixes into the companion's protocol.
