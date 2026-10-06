@@ -6,8 +6,8 @@ import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { SECTION_TITLE_RADIUS } from '#core/constants'
 
 import { labelLayout } from './layout'
-import { sectionLabelColors } from './style'
-import { labelScreenMatrix, labelTransform } from './transform'
+import { frameTitleColor, sectionLabelColors } from './style'
+import { frameLabelPlacement, labelScreenMatrix, labelTransform } from './transform'
 
 export function drawSectionTitles(
   r: SkiaRenderer,
@@ -150,6 +150,46 @@ export function drawComponentLabels(
       layout.fontSize,
       layout.maxTextWidth,
       compColor,
+      r.fontGeneration,
+      layout.text.x,
+      layout.text.y,
+      layout.fontWeight
+    )
+    canvas.restore()
+  }
+}
+
+/**
+ * Names above the frames on the page and in sections, as Figma shows them: faded, or in the
+ * selection color while the frame is selected or hovered. A frame holding layers is a background
+ * that a click on its body does not select, so its name is how it is picked.
+ */
+export function drawFrameTitles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  selectedIds: ReadonlySet<string>,
+  overlays?: RenderOverlays
+): void {
+  const provider = r.fontProvider
+  if (!r.labelFont || !provider) return
+
+  const frames = r.labelCache.getFrames(graph, r.worldViewport, overlays?.rotationPreview)
+  for (const { node } of frames) {
+    const transform = frameLabelPlacement(node, graph, overlays?.rotationPreview)
+    const layout = labelLayout('frame', transform.width * r.zoom)
+    if (!layout) continue
+    const highlighted = selectedIds.has(node.id) || overlays?.hoveredNodeId === node.id
+    canvas.save()
+    canvas.concat(labelScreenMatrix(transform, r))
+    r.labelParagraphCache.draw(
+      r.ck,
+      canvas,
+      provider,
+      node.name,
+      layout.fontSize,
+      layout.maxTextWidth,
+      frameTitleColor(r, highlighted),
       r.fontGeneration,
       layout.text.x,
       layout.text.y,

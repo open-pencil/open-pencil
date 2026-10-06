@@ -51,12 +51,16 @@ function updateHoveredNode(
   cx: number,
   cy: number,
   editor: Editor,
-  fns: Pick<HitTestFns, 'hitTestInScope' | 'hitTestSectionTitle' | 'hitTestComponentLabel'>,
+  fns: Pick<
+    HitTestFns,
+    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+  >,
   deep: boolean
 ) {
   const hit = deep
     ? fns.hitTestInScope(cx, cy, true)
-    : (fns.hitTestSectionTitle(cx, cy) ??
+    : (fns.hitTestFrameTitle(cx, cy) ??
+      fns.hitTestSectionTitle(cx, cy) ??
       fns.hitTestComponentLabel(cx, cy) ??
       fns.hitTestInScope(cx, cy, false))
   const editNodeId = getNodeEditState(editor)?.nodeId
@@ -69,7 +73,10 @@ export function updateHoverCursor(
   cx: number,
   cy: number,
   editor: Editor,
-  fns: Pick<HitTestFns, 'hitTestInScope' | 'hitTestSectionTitle' | 'hitTestComponentLabel'>,
+  fns: Pick<
+    HitTestFns,
+    'hitTestInScope' | 'hitTestFrameTitle' | 'hitTestSectionTitle' | 'hitTestComponentLabel'
+  >,
   deep = false
 ): string | null {
   if (getNodeEditState(editor)) {

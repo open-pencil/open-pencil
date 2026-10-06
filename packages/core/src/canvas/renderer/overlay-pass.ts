@@ -25,9 +25,13 @@ export function drawLabelPass(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
+  selectedIds: ReadonlySet<string>,
   overlays?: RenderOverlays
 ): void {
   const profiler = r.profiler
+  profiler.beginPhase('render:frameTitles')
+  r.drawFrameTitles(canvas, graph, selectedIds, overlays)
+  profiler.endPhase('render:frameTitles')
   profiler.beginPhase('render:sectionTitles')
   r.drawSectionTitles(canvas, graph, overlays)
   profiler.endPhase('render:sectionTitles')

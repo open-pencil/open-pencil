@@ -5,13 +5,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RotationPreview } from '#core/geometry'
 
 import { LabelCache } from './cache'
-import {
-  hasFrameTitle,
-  labelLayout,
-  type LabelKind,
-  type LabelLayout,
-  type LabelTextMetrics
-} from './layout'
+import { labelLayout, type LabelKind, type LabelLayout, type LabelTextMetrics } from './layout'
 import { measureGlyphWidth } from './paragraph-cache'
 import { frameLabelPlacement, labelLocalPoint, labelTransform } from './transform'
 
@@ -62,7 +56,7 @@ function catalog(graph: SceneGraph, pageId: string, existing?: LabelCache): Labe
   return cache
 }
 
-function catalogHitTest(kind: 'section' | 'component') {
+function catalogHitTest(kind: 'section' | 'component' | 'frame') {
   return function hitTest(
     graph: SceneGraph,
     canvasX: number,
@@ -83,6 +77,13 @@ function catalogHitTest(kind: 'section' | 'component') {
             .map(({ node, nested }) => ({ nodeId: node.id, nested }))
         : cache.getAllSections()
       candidates = sections.map(({ nodeId, nested }) => ({ nodeId, inside: nested }))
+    } else if (kind === 'frame') {
+      const frames = options.viewport
+        ? cache
+            .getFrames(graph, options.viewport, options.preview)
+            .map(({ node }) => ({ nodeId: node.id }))
+        : cache.getAllFrames()
+      candidates = frames.map(({ nodeId }) => ({ nodeId, inside: false }))
     } else {
       const components = options.viewport
         ? cache
@@ -94,7 +95,8 @@ function catalogHitTest(kind: 'section' | 'component') {
     for (let i = candidates.length - 1; i >= 0; i--) {
       const candidate = candidates[i]
       const node = graph.getNode(candidate.nodeId)
-      if (!node?.visible) continue
+      // Locked frames cannot be selected on the canvas, by their name either.
+      if (!node?.visible || (kind === 'frame' && node.locked)) continue
       const hit = hitLabel(
         node,
         graph,
@@ -115,18 +117,8 @@ export const hitTestSectionTitle = catalogHitTest('section')
 
 export const hitTestComponentLabel = catalogHitTest('component')
 
-export function hitTestFrameTitle(
-  graph: SceneGraph,
-  canvasX: number,
-  canvasY: number,
-  zoom: number,
-  selectedIds: Set<string>,
-  font: Font | null,
-  options: LabelHitOptions = {}
-): SceneNode | null {
-  if (!font || selectedIds.size !== 1) return null
-  const node = graph.getNode([...selectedIds][0])
-  if (!node?.visible || !hasFrameTitle(node, node.parentId ? graph.getNode(node.parentId) : null))
-    return null
-  return hitLabel(node, graph, 'frame', false, canvasX, canvasY, zoom, font, options)
-}
+/**
+ * The top-level frame whose name is under a point, selected or not: a frame on the page or in a
+ * section shows its name, and clicking it selects the frame even when its body is a background.
+ */
+export const hitTestFrameTitle = catalogHitTest('frame')
