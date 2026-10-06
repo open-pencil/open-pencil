@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import type { FollowTarget } from '@/app/presence/types'
+import { colors, room } from '@/components/presence/examples/room'
+import type { PresencePersonRow } from '@/components/presence/rows'
 
-import { colors, room } from './examples/room'
-import type { PresencePersonRow } from './presence'
 import PresenceAvatars from './PresenceAvatars.vue'
 
 const crowd: PresencePersonRow[] = [

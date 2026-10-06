@@ -16,7 +16,7 @@ test('mobile presence popover returns focus and disconnects the peer', async ({ 
     peer = await createPeer(browser, 'Mobile', relay.url)
     await peer.page.setViewportSize({ width: 390, height: 844 })
     await share(peer)
-    const trigger = peer.page.getByRole('button', { name: 'Online: 1', exact: true })
+    const trigger = peer.page.getByRole('button', { name: 'In this room: Mobile', exact: true })
     await expect(trigger).toBeVisible()
     await trigger.focus()
     await trigger.press('Enter')

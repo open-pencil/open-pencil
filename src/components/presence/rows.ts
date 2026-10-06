@@ -1,6 +1,7 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { RemotePeer } from '@/app/collab/types'
+import { agentPage } from '@/app/presence/registry'
 import type { AgentPresence, AgentStatus, FollowTarget } from '@/app/presence/types'
 
 export interface PresenceAgentRow {
@@ -49,6 +50,32 @@ export function presenceRows(
       agents: agentRows(peer.agents, pageName, false)
     }))
   ]
+}
+
+/**
+ * The people on one page, each with only the agents they run there: collaborators whose cursor is
+ * on it, and anyone, you included, whose agents work there.
+ */
+export function pagePresenceRows(
+  self: { name: string; color: Color; agents: readonly AgentPresence[] },
+  peers: readonly RemotePeer[],
+  pageId: string
+): PresencePersonRow[] {
+  const onPage = (agents: readonly AgentPresence[]) =>
+    agentRows(
+      agents.filter((agent) => agentPage(agent) === pageId),
+      () => undefined,
+      false
+    )
+  const rows: PresencePersonRow[] = []
+  const ownAgents = onPage(self.agents)
+  if (ownAgents.length > 0) rows.push({ name: self.name, color: self.color, agents: ownAgents })
+  for (const peer of peers) {
+    const agents = onPage(peer.agents)
+    if (peer.cursor?.pageId !== pageId && agents.length === 0) continue
+    rows.push({ clientId: peer.clientId, name: peer.name, color: peer.color, agents })
+  }
+  return rows
 }
 
 export function isFollowing(following: FollowTarget | null, target: FollowTarget): boolean {

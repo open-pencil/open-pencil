@@ -72,7 +72,8 @@ export interface PagePresenceEntry {
   color: Color
 }
 
-function agentPage(agent: AgentPresence): string | undefined {
+/** The page an agent is working on, or undefined while it is idle. */
+export function agentPage(agent: AgentPresence): string | undefined {
   return agent.status === 'idle' ? undefined : (agent.pageId ?? agent.cursor?.pageId)
 }
 

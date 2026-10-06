@@ -189,7 +189,9 @@ test('two room tabs stay live at once, each syncing with its own room', async ({
   }
 })
 
-test("a guest's page list shows which page the sharer is on", async ({ browser }) => {
+test("a guest's page list shows which page the sharer is on, and who is there on hover", async ({
+  browser
+}) => {
   test.setTimeout(90_000)
   const relay = await startRelay()
   let host: Peer | null = null
@@ -209,6 +211,12 @@ test("a guest's page list shows which page the sharer is on", async ({ browser }
 
     const marker = guest.page.getByTestId('pages-item').getByTestId('presence-markers')
     await expect(marker).toHaveAttribute('aria-label', 'Host')
+
+    // Hovering the page shows who is there and lets the guest follow them.
+    await guest.page.getByTestId('pages-item').hover()
+    const card = guest.page.getByTestId('page-presence-card')
+    await expect(card).toBeVisible()
+    await expect(card.getByRole('button', { name: 'Follow Host' })).toBeVisible()
     expect(collaborationErrors(guest)).toEqual([])
   } finally {
     await closeAll([guest, host], relay)

@@ -11,9 +11,8 @@ import { useNotificationMessages } from '@/app/i18n/notifications'
 import { presenceOf, renameAgent } from '@/app/presence/registry'
 import type { FollowTarget } from '@/app/presence/types'
 import { toast } from '@/app/shell/ui'
+import { presenceRows as buildPresenceRows } from '@/components/presence/rows'
 import { getShareURL } from '@/constants'
-
-import { presenceRows as buildPresenceRows } from './presence'
 
 function createCollabPanelContext() {
   const collab = useCollabInjected()
