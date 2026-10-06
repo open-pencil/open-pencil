@@ -102,6 +102,9 @@ jobs:
       - name: Typecheck application and SDKs
         run: bun run typecheck
 
+      - name: Typecheck test suites
+        run: bun run check:test-types
+
       - name: Enforce architecture and type-shape boundaries
         run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
 
