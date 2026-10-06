@@ -11,10 +11,11 @@ export function resolveHit(
   fns: HitTestFns,
   deep = false
 ): SceneNode | null {
+  // Labels are drawn frames first, then sections, then components, so the topmost is tested first.
   const titleHit =
-    fns.hitTestFrameTitle(cx, cy) ??
+    fns.hitTestComponentLabel(cx, cy) ??
     fns.hitTestSectionTitle(cx, cy) ??
-    fns.hitTestComponentLabel(cx, cy)
+    fns.hitTestFrameTitle(cx, cy)
   if (titleHit) return titleHit
 
   const hit = fns.hitTestInScope(cx, cy, deep)

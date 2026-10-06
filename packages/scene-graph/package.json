@@ -173,6 +173,12 @@
       "import": "./dist/random.js",
       "default": "./dist/random.js"
     },
+    "./order-keys": {
+      "types": "./dist/order-keys.d.ts",
+      "bun": "./src/order-keys.ts",
+      "import": "./dist/order-keys.js",
+      "default": "./dist/order-keys.js"
+    },
     "./parse-path": {
       "types": "./dist/parse-path.d.ts",
       "bun": "./src/parse-path.ts",

@@ -189,6 +189,36 @@ describe('TextEditor', () => {
     }
   })
 
+  test('places the caret of empty text, which CanvasKit lays out no line for', () => {
+    const empty = asDouble<Paragraph>({
+      delete: () => undefined,
+      getHeight: () => 0,
+      getLineMetrics: () => []
+    })
+    const space = asDouble<Paragraph>({
+      delete: () => undefined,
+      getHeight: () => 17,
+      getLineMetrics: () => [{ height: 17, left: 0 }]
+    })
+    const editor = new TextEditor(mockCk)
+    editor.setRenderer(
+      asDouble<Parameters<TextEditor['setRenderer']>[0]>({
+        buildParagraph: (node: SceneNode) => (node.text === '' ? empty : space),
+        fontGeneration: 1
+      })
+    )
+    editor.start(
+      createDefaultNode(() => 'new-text', 'TEXT', {
+        text: '',
+        width: 120,
+        height: 57,
+        textAlignHorizontal: 'CENTER',
+        textAlignVertical: 'BOTTOM'
+      })
+    )
+    expect(editor.getCaretRect()).toEqual({ x: 60, y0: 40, y1: 57 })
+  })
+
   test('offsets the empty-text caret for vertical alignment', () => {
     const { editor } = createParagraphEditor('BOTTOM')
     editorState(editor).text = ''

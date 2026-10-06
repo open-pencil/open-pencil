@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   collaborationErrors,
   connect,
+  share,
   createPeer,
   startRelay,
   type Peer
@@ -14,8 +15,8 @@ test('mobile presence popover returns focus and disconnects the peer', async ({ 
   try {
     peer = await createPeer(browser, 'Mobile', relay.url)
     await peer.page.setViewportSize({ width: 390, height: 844 })
-    await connect(peer)
-    const trigger = peer.page.getByRole('button', { name: 'Online: 1', exact: true })
+    await share(peer)
+    const trigger = peer.page.getByRole('button', { name: 'In this room: Mobile', exact: true })
     await expect(trigger).toBeVisible()
     await trigger.focus()
     await trigger.press('Enter')
@@ -45,7 +46,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
     const guest = await createPeer(browser, 'Guest', relay.url)
     guestToClose = guest
 
-    await connect(host)
+    await share(host)
     await connect(guest)
     await expect
       .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))

@@ -69,7 +69,6 @@ export default defineConfig({
       '@nanostores/vue',
       '@nanostores/i18n',
       'nanostores',
-      '@tanstack/vue-table',
       'reka-ui'
     ],
     onlyBundle: false

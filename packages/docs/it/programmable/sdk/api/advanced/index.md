@@ -37,6 +37,4 @@ Queste funzioni supportano componenti e composable pubblici. Usale quando un’i
 ## Variabili e lingua
 
 - [useVariables](./use-variables)
-- [useVariablesDialogState](./use-variables-dialog-state)
-- [useVariablesTable](./use-variables-table)
 - [API locali](./locale-apis)

@@ -4,6 +4,7 @@ import { startAgent } from '#tests/helpers/collab/agent'
 import {
   collaborationErrors,
   connect,
+  share,
   createPeer,
   startRelay,
   type Peer
@@ -28,7 +29,7 @@ test("a guest's agent shows on their avatar and can be followed until Escape", a
   try {
     host = await createPeer(browser, 'Host', relay.url)
     guest = await createPeer(browser, 'Guest', relay.url)
-    await connect(host)
+    await share(host)
     await connect(guest)
     await expect
       .poll(() => host?.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))

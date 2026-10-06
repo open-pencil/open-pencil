@@ -66,12 +66,20 @@ function modeSlug(collection: VariableCollection, mode: VariableCollectionMode):
   return plainSlug(mode)
 }
 
+/** The attribute a collection's manual modes are switched by, unless it names its own. */
+export function defaultModeAttributeName(collection: VariableCollection): string {
+  return `data-${tokenSlug(collection.name) || 'mode'}`
+}
+
 /** The attribute that puts an element in a mode with no condition of its own: `data-theme`. */
 export function modeAttribute(
   collection: VariableCollection,
   mode: VariableCollectionMode
 ): { name: string; value: string } {
-  return { name: `data-${tokenSlug(collection.name) || 'mode'}`, value: modeSlug(collection, mode) }
+  return {
+    name: collection.modeAttribute ?? defaultModeAttributeName(collection),
+    value: modeSlug(collection, mode)
+  }
 }
 
 /** The scope a mode applies in when it names none: `[data-theme="dark"]` for Theme / Dark. */
@@ -276,7 +284,7 @@ export function buildTokenStylesheet(
  * object model package loads on first use; its browser build exports nothing, so it is never
  * the browser path.
  */
-async function tokenValidator(): Promise<TokenValidator> {
+export async function loadTokenValidator(): Promise<TokenValidator> {
   if (typeof CSSStyleSheet === 'function') return createTokenValidator(parseWithBrowser)
   const headless = await import('./cssom-validator')
   return headless.tokenValidator
@@ -286,5 +294,5 @@ export async function tokenStylesheet(
   source: TokenSource,
   options: TokenStylesheetOptions
 ): Promise<TokenStylesheet> {
-  return buildTokenStylesheet(source, options, await tokenValidator())
+  return buildTokenStylesheet(source, options, await loadTokenValidator())
 }

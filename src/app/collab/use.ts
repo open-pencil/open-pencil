@@ -1,85 +1,90 @@
-import { tryOnScopeDispose, useLocalStorage } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
-import { generateRoomId } from '@/app/collab/awareness'
-import { createLocalAwarenessActions } from '@/app/collab/local-awareness'
+import { useCollabIdentity } from '@/app/collab/identity'
 import {
-  createCollabConnectionActions,
-  createCollabRuntime,
-  createInitialCollabState
-} from '@/app/collab/session'
+  activeRoom,
+  activeTabLeftRoom,
+  dismissLeftRoomNote,
+  joinRoom,
+  leaveRoom,
+  shareDocument,
+  type JoinRoomOptions
+} from '@/app/collab/rooms'
 import { DEFAULT_COLLAB_STATE, type CollabState, type RemotePeer } from '@/app/collab/types'
-import { createYjsGraphSync } from '@/app/collab/yjs-sync'
-import type { EditorStore } from '@/app/editor/active-store'
 import { follow, presenceOf } from '@/app/presence/registry'
 import type { FollowTarget } from '@/app/presence/types'
+import { activeTab } from '@/app/tabs'
 
 export { COLLAB_KEY, useCollabInjected } from '@/app/collab/context'
 export { DEFAULT_COLLAB_STATE }
 export type { CollabState, RemotePeer }
 
-export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
-  const getStore = () =>
-    typeof storeOrGetter === 'function' ? (storeOrGetter as () => EditorStore)() : storeOrGetter
-  const storedName = useLocalStorage('op-collab-name', '')
-  const state = ref<CollabState>(createInitialCollabState(storedName.value))
-  const runtime = createCollabRuntime()
-  const remotePeers = computed(() => state.value.peers)
-  const getActiveStore = () => runtime.connectedStore.value ?? getStore()
+/**
+ * The collaboration UI's view of the active tab: its room, if it is in one, and the app-wide
+ * identity. Each room tab keeps its own session in `src/app/collab/rooms.ts`; switching tabs
+ * switches what this shows.
+ */
+export function useCollab() {
+  const identity = useCollabIdentity()
 
-  const following = computed(() => presenceOf(getActiveStore()).following.value)
+  const state = computed<CollabState>(() => {
+    const room = activeRoom.value
+    return {
+      inRoom: room !== undefined,
+      roomId: room?.roomId ?? null,
+      status: room?.status.value ?? null,
+      peers: room?.peers.value ?? [],
+      localName: identity.name.value,
+      localColor: identity.color,
+      hasChosenName: identity.hasChosenName.value
+    }
+  })
+  const remotePeers = computed(() => state.value.peers)
+  const leftRoom = computed(() => activeTabLeftRoom.value)
+  const following = computed(() => {
+    const store = activeTab.value?.store
+    return store ? presenceOf(store).following.value : null
+  })
   const followingPeer = computed(() =>
     following.value?.kind === 'person' ? following.value.clientId : null
   )
-  const { broadcastAwareness, updateCursor, updateSelection, updatePeersList, setLocalName } =
-    createLocalAwarenessActions({
-      state,
-      storedName,
-      getStore: getActiveStore,
-      getAwareness: () => runtime.awareness
-    })
 
-  const { syncNodeToYjs, syncAllNodesToYjs, applyYjsToGraph } = createYjsGraphSync({
-    getStore: getActiveStore,
-    getYdoc: () => runtime.ydoc,
-    getYnodes: () => runtime.ynodes,
-    getYimages: () => runtime.yimages,
-    setSuppressYjsEvents: (value) => {
-      runtime.suppressYjsEvents = value
-    }
-  })
-  const { connect, disconnect } = createCollabConnectionActions({
-    runtime,
-    state,
-    getStore,
-    updatePeersList,
-    broadcastAwareness,
-    applyYjsToGraph,
-    syncNodeToYjs
-  })
-
-  function shareCurrentDoc(): string {
-    const roomId = generateRoomId()
-    connect(roomId)
-    syncAllNodesToYjs()
-    return roomId
+  function followTarget(target: FollowTarget | null) {
+    const store = activeTab.value?.store
+    if (store) follow(store, target)
   }
-
-  tryOnScopeDispose(disconnect)
 
   return {
     state,
     remotePeers,
-    followingPeer,
-    connect,
-    disconnect,
-    shareCurrentDoc,
-    updateCursor,
-    updateSelection,
-    setLocalName,
+    leftRoom,
     following,
-    follow: (target: FollowTarget | null) => follow(getActiveStore(), target),
+    followingPeer,
+    /** Opens a room in its own tab; false when the ID is not a room ID. */
+    join: (roomId: string, options: JoinRoomOptions) => joinRoom(roomId, options) !== null,
+    /** Puts the active tab's document into a room and returns the room ID. */
+    shareCurrentDoc: (roomId?: string): string | null => {
+      const store = activeTab.value?.store
+      if (!store || activeTab.value?.kind === 'home') return null
+      return shareDocument(store, roomId).roomId
+    },
+    disconnect: () => {
+      const room = activeRoom.value
+      if (room) leaveRoom(room)
+    },
+    updateCursor: (x: number, y: number, pageId: string) => {
+      activeRoom.value?.updateCursor(x, y, pageId)
+    },
+    updateSelection: (ids: string[]) => {
+      activeRoom.value?.updateSelection(ids)
+    },
+    dismissLeftRoomNote: () => {
+      const store = activeTab.value?.store
+      if (store) dismissLeftRoomNote(store)
+    },
+    setLocalName: identity.setName,
+    follow: followTarget,
     followPeer: (clientId: number | null) =>
-      follow(getActiveStore(), clientId === null ? null : { kind: 'person', clientId })
+      followTarget(clientId === null ? null : { kind: 'person', clientId })
   }
 }

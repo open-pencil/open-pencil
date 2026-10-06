@@ -44,6 +44,5 @@ These are the main composables most `@open-pencil/vue` consumers will use.
 
 ## Variables, navigation, and localization
 
-- [useVariablesEditor](./use-variables-editor)
 - [usePageList](./use-page-list)
 - [useI18n](./use-i18n)

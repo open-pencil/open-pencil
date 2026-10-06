@@ -46,4 +46,13 @@ describe('parsePeer', () => {
     expect(parsePeer(7, { user, agents: tooMany })?.agents).toEqual([])
     expect(parsePeer(7, { user: { name: 'x'.repeat(200) } })?.name).toBe('Anonymous')
   })
+
+  test('reads the layer tree format a peer syncs, and ignores a malformed one', () => {
+    expect(parsePeer(7, { user, treeFormat: 2 })?.treeFormat).toBe(2)
+    expect(parsePeer(7, { user, treeFormat: 'two' })).toMatchObject({
+      name: 'Ana',
+      treeFormat: undefined
+    })
+    expect(parsePeer(7, { user })?.treeFormat).toBeUndefined()
+  })
 })

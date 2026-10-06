@@ -13,8 +13,13 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { renderText, textVerticalOffset } from '#core/canvas/scene'
-import { buildParagraph, isNodeFontLoaded, nodeFontReadiness } from '#core/canvas/text'
+import { renderText } from '#core/canvas/scene'
+import {
+  buildParagraph,
+  isNodeFontLoaded,
+  nodeFontReadiness,
+  textVerticalOffset
+} from '#core/canvas/text'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'

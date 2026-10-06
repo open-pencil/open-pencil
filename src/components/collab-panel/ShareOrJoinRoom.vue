@@ -4,15 +4,19 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 const collab = useCollabPanelContext()
+const JOIN_ERROR_ID = 'collab-join-error'
 </script>
 
 <template>
   <div class="mb-3">
-    <label class="mb-1 block text-xs text-muted">{{ collab.messages.yourName }}</label>
+    <label for="collab-name-input" class="mb-1 block text-xs text-muted">
+      {{ collab.messages.yourName }}
+    </label>
     <AppInput
+      id="collab-name-input"
       v-model="collab.nameDraft"
       data-test-id="collab-name-input"
-      :placeholder="collab.messages.enterYourName"
+      :placeholder="collab.state.localName"
       @enter="collab.share"
     />
   </div>
@@ -23,7 +27,6 @@ const collab = useCollabPanelContext()
     variant="solid"
     class="mb-3 w-full"
     data-test-id="collab-share-file"
-    :disabled="!collab.nameDraft.trim()"
     @click="collab.share"
   >
     <template #leading><icon-lucide-share-2 class="size-3.5" /></template>
@@ -41,17 +44,31 @@ const collab = useCollabPanelContext()
       v-model="collab.joinInput"
       data-test-id="collab-join-input"
       :placeholder="collab.messages.pasteRoomLinkOrId"
+      :aria-label="collab.messages.pasteRoomLinkOrId"
+      :state="collab.joinError ? 'invalid' : 'idle'"
+      :aria-invalid="collab.joinError"
+      :aria-describedby="collab.joinError ? JOIN_ERROR_ID : undefined"
       class="min-w-0 flex-1"
+      @update:model-value="collab.clearJoinError"
       @enter="collab.join"
     />
     <AppButton
       color="primary"
       variant="solid"
       data-test-id="collab-join-room-button"
-      :disabled="!collab.joinInput.trim() || !collab.nameDraft.trim()"
+      :disabled="!collab.joinInput.trim()"
       @click="collab.join"
     >
-      Join
+      {{ collab.messages.join }}
     </AppButton>
   </div>
+  <p
+    v-if="collab.joinError"
+    :id="JOIN_ERROR_ID"
+    data-test-id="collab-join-error"
+    class="mt-1.5 text-xs text-error"
+    role="alert"
+  >
+    {{ collab.messages.invalidRoomLink }}
+  </p>
 </template>

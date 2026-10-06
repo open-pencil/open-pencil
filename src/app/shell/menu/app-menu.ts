@@ -12,6 +12,7 @@ import IconSave from '~icons/lucide/save'
 import IconSettings from '~icons/lucide/settings'
 import IconType from '~icons/lucide/type'
 import IconUndo from '~icons/lucide/undo-2'
+import IconVariables from '~icons/lucide/variable'
 import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
@@ -20,6 +21,7 @@ import type { CommandPaletteGroup, CommandPaletteItem, MenuEntry } from '@open-p
 import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -56,6 +58,7 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   settings: IconSettings,
   type: IconType,
   undo: IconUndo,
+  variables: IconVariables,
   'zoom-in': IconZoomIn,
   'zoom-out': IconZoomOut
 }
@@ -109,6 +112,7 @@ export function useAppMenu() {
     language: 'language',
     preferences: 'preferences',
     settings: 'settings',
+    variables: 'variables',
     'view-rulers': 'rulers',
     'view-multiplayer-cursors': 'multiplayerCursors',
     'view-design-issues': 'designIssues',
@@ -164,6 +168,7 @@ export function useAppMenu() {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },
     settings: openSettingsDialog,
+    variables: () => openVariablesDialog(store),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

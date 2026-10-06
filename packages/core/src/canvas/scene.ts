@@ -44,7 +44,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern
 } from './strokes'
-import { withTextParagraph } from './text'
+import { textVerticalOffset, withTextParagraph } from './text'
 import {
   canDrawSavedText,
   drawDerivedText,
@@ -898,13 +898,6 @@ export function renderShapeUncached(
 
 function hasComplexTextFill(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
-}
-
-export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
-  const available = Math.max(0, node.height - contentHeight)
-  if (node.textAlignVertical === 'CENTER') return available / 2
-  if (node.textAlignVertical === 'BOTTOM') return available
-  return 0
 }
 
 function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {

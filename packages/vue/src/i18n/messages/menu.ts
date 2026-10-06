@@ -31,6 +31,7 @@ export const menuMessageDefaults = {
   profiler: 'Performance profiler',
   language: 'Language',
   settings: 'Settings…',
+  variables: 'Variables…',
   rulers: 'Rulers',
   multiplayerCursors: 'Multiplayer cursors',
   designIssues: 'Design issues',

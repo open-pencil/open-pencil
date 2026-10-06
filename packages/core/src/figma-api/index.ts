@@ -65,6 +65,7 @@ export type {
   FigmaEllipseNode,
   FigmaFrameNode,
   FigmaGroupNode,
+  FigmaInstanceNode,
   FigmaLineNode,
   FigmaPolygonNode,
   FigmaRectangleNode,

@@ -275,3 +275,16 @@ zh-cn:settings.mcp
 zh-cn:storage.providerAmazonS3
 zh-cn:storage.providerBackblaze
 zh-cn:storage.providerR2
+de:variables.name
+de:variables.stylesheet
+es:variables.unitAuto
+fr:variables.unitAuto
+fr:variables.description
+fr:variables.collection
+fr:variables.condition
+fr:variables.mode
+it:variables.unitAuto
+pl:variables.unitAuto
+es:menu.variables
+fr:menu.variables
+fr:variables.collections

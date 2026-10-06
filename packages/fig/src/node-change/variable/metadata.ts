@@ -10,7 +10,12 @@ import {
 } from '@open-pencil/scene-graph'
 
 import { extractPluginData, mergePluginData } from '../plugin-data'
-import { modeConditionsPluginData, tokenPluginData, withoutTokenPluginData } from './token'
+import {
+  modeAttributePluginData,
+  modeConditionsPluginData,
+  tokenPluginData,
+  withoutTokenPluginData
+} from './token'
 
 type VariableMetadata = Pick<
   Variable,
@@ -74,9 +79,11 @@ export function collectionPluginDataNodeChange(
   modeKey: ModeKey
 ): NodeChange['pluginData'] {
   const conditions = modeConditionsPluginData(collection, modeKey)
+  const attribute = modeAttributePluginData(collection)
   return pluginDataNodeChange([
     ...withoutTokenPluginData(collection.pluginData ?? []),
-    ...(conditions ? [conditions] : [])
+    ...(conditions ? [conditions] : []),
+    ...(attribute ? [attribute] : [])
   ])
 }
 
