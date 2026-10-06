@@ -20,7 +20,12 @@ export * from './slots/content'
 export * from './slots/authoring'
 export * from './slots/limits'
 export * from './copy'
-export { createDefaultNode, FITTED_CONTAINER_TYPES } from './node-defaults'
+export {
+  createDefaultNode,
+  defaultStrokeAlign,
+  FITTED_CONTAINER_TYPES,
+  newStrokeGeometry
+} from './node-defaults'
 export {
   copyInstanceComponentProps,
   findInstanceAncestor,

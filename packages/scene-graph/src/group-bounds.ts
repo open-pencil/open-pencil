@@ -1,6 +1,7 @@
 import { getAxisAlignedBoundsInParent } from './coordinate'
 import type { SceneGraph } from './index'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
+import type { Rect } from './primitives'
 import type { SceneNode } from './types'
 
 type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>
@@ -11,6 +12,14 @@ export interface GroupFit {
   after: Map<string, Placement>
   /** Emptied groups, outermost last, with their index in their parent. */
   removed: Array<{ node: SceneNode; index: number }>
+}
+
+export interface GroupFitOptions {
+  /**
+   * The box of a boolean operation's result in its parent's space, which Figma sizes a boolean to,
+   * or null to fit its operands. Measuring needs path operations, so the renderer supplies it.
+   */
+  booleanBounds?: (node: SceneNode) => Rect | null
 }
 
 function placement(node: SceneNode): Placement {
@@ -37,9 +46,17 @@ function fittedAncestors(graph: SceneGraph, parentIds: Iterable<string>): SceneN
 }
 
 /** Moves the group to its children's bounds, shifting them back so they stay put. */
-function fitGroup(graph: SceneGraph, group: SceneNode, children: SceneNode[], fit: GroupFit) {
+function fitGroup(
+  graph: SceneGraph,
+  group: SceneNode,
+  children: SceneNode[],
+  fit: GroupFit,
+  options: GroupFitOptions
+) {
   if (!group.parentId || group.rotation !== 0 || group.flipX || group.flipY) return
-  const bounds = getAxisAlignedBoundsInParent(children, group.parentId, graph)
+  const bounds =
+    (group.type === 'BOOLEAN_OPERATION' ? options.booleanBounds?.(group) : null) ??
+    getAxisAlignedBoundsInParent(children, group.parentId, graph)
   const dx = bounds.x - group.x
   const dy = bounds.y - group.y
   if (dx === 0 && dy === 0 && bounds.width === group.width && bounds.height === group.height) {
@@ -74,13 +91,14 @@ function removeEmptyGroup(graph: SceneGraph, group: SceneNode, fit: GroupFit) {
  */
 export function fitEnclosingGroups(
   graph: SceneGraph,
-  parentIds: Iterable<string>
+  parentIds: Iterable<string>,
+  options: GroupFitOptions = {}
 ): GroupFit | null {
   const fit: GroupFit = { before: new Map(), after: new Map(), removed: [] }
   for (const group of fittedAncestors(graph, parentIds)) {
     const children = graph.getChildren(group.id)
     if (children.length === 0) removeEmptyGroup(graph, group, fit)
-    else fitGroup(graph, group, children, fit)
+    else fitGroup(graph, group, children, fit, options)
   }
   return fit.before.size === 0 && fit.removed.length === 0 ? null : fit
 }

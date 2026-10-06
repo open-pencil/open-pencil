@@ -17,6 +17,7 @@ import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { MeasurementMode, PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
+import type { InterfaceTheme } from '#core/constants'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
@@ -45,6 +46,8 @@ export interface EditorSharedState {
   /** The layer of the code element around the cursor in a code editor, shown in every pane. */
   codeFocusNodeId: string | null
   rulerTheme?: RulerTheme
+  /** The interface theme new sections take their fill from; light when unset. */
+  theme?: InterfaceTheme
   sceneVersion: number
 }
 

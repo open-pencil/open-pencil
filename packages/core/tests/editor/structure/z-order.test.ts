@@ -53,12 +53,12 @@ describe('z-order actions', () => {
   })
 
   test('grouping takes the topmost layer’s place, and ungrouping and undo keep the stack', () => {
-    // Recorded in Figma desktop 126: grouping A and C of A, B, C, D gives B, Group, D.
+    // Recorded in Figma desktop 126: grouping A and C of A, B, C, D gives B, Group 1, D.
     const { editor, pageId, nodes } = setupEditor()
     editor.select([nodes[2]?.id ?? '', nodes[0]?.id ?? ''])
 
     editor.groupSelected()
-    expect(childNames(editor, pageId)).toEqual(['B', 'Group', 'D'])
+    expect(childNames(editor, pageId)).toEqual(['B', 'Group 1', 'D'])
     const [groupId] = [...editor.state.selectedIds]
     expect(editor.graph.getChildren(groupId ?? '').map((node) => node.name)).toEqual(['A', 'C'])
 
@@ -66,11 +66,11 @@ describe('z-order actions', () => {
     expect(childNames(editor, pageId)).toEqual(['A', 'B', 'C', 'D'])
 
     editor.redoAction()
-    expect(childNames(editor, pageId)).toEqual(['B', 'Group', 'D'])
+    expect(childNames(editor, pageId)).toEqual(['B', 'Group 1', 'D'])
     editor.ungroupSelected()
     expect(childNames(editor, pageId)).toEqual(['B', 'A', 'C', 'D'])
 
     editor.undoAction()
-    expect(childNames(editor, pageId)).toEqual(['B', 'Group', 'D'])
+    expect(childNames(editor, pageId)).toEqual(['B', 'Group 1', 'D'])
   })
 })

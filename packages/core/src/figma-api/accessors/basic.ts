@@ -1,6 +1,5 @@
 import {
-  getNodeLocalMatrix,
-  getParentToContainerMatrix,
+  getAxisAlignedWorldBounds,
   getWorldMatrix,
   FITTED_CONTAINER_TYPES,
   TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
@@ -10,13 +9,14 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
   fitGroupsAround,
   graph,
+  hostFitOptions,
   nodeId,
   raw,
   updateNode,
@@ -25,6 +25,13 @@ import {
 } from '#core/figma-api/accessor-utils'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
+import {
+  containerTransform,
+  figmaRotation,
+  setContainerTransform,
+  withFigmaRotation,
+  withOrigin
+} from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
@@ -59,30 +66,21 @@ function inGroup(node: SceneNode, scene: SceneGraph): boolean {
   return parent !== undefined && FITTED_CONTAINER_TYPES.has(parent.type)
 }
 
-/** Where Figma's plugin API places a node: in its container's space, looking through groups. */
-function containerPosition(node: SceneNode, scene: SceneGraph): Vector {
-  const [x, y] = Matrix.mapPoints(getParentToContainerMatrix(node, scene), [node.x, node.y])
-  return { x, y }
-}
-
-function setPosition(
+/**
+ * Moves, turns, or resizes a node as Figma's plugin API does: its transform into its container
+ * keeps whatever `change` leaves of it, so the top-left corner stays put unless moved, and the
+ * groups around it refit.
+ */
+function setTransform(
   target: ProxyThis,
   internals: NodeProxyInternals,
-  axis: 'x' | 'y',
-  value: number
+  change: (matrix: Mat3) => Mat3
 ) {
   assertEditable(target, internals)
   const scene = graph(target, internals)
   const node = raw(target, internals)
-  if (!inGroup(node, scene)) {
-    scene.updateNode(node.id, { [axis]: value })
-    return
-  }
-  const desired = { ...containerPosition(node, scene), [axis]: value }
-  const toParent = Matrix.invert(getParentToContainerMatrix(node, scene)) ?? Matrix.identity()
-  const [x, y] = Matrix.mapPoints(toParent, [desired.x, desired.y])
-  scene.updateNode(node.id, { x, y })
-  fitGroupsAround(scene, node.parentId)
+  setContainerTransform(scene, node, change(containerTransform(node, scene)))
+  fitGroupsAround(scene, node.parentId, hostFitOptions(target, internals))
 }
 
 export function installBasicNodeProxyAccessors(
@@ -114,20 +112,21 @@ export function installBasicNodeProxyAccessors(
         return !graph(this, internals).getNode(nodeId(this, internals))
       }
     },
+    // Figma places a node by its top-left corner in its container, wherever rotation takes it.
     x: {
       get(this: ProxyThis): number {
-        return containerPosition(raw(this, internals), graph(this, internals)).x
+        return containerTransform(raw(this, internals), graph(this, internals))[2]
       },
       set(this: ProxyThis, value: number) {
-        setPosition(this, internals, 'x', value)
+        setTransform(this, internals, (matrix) => withOrigin(matrix, value, matrix[5]))
       }
     },
     y: {
       get(this: ProxyThis): number {
-        return containerPosition(raw(this, internals), graph(this, internals)).y
+        return containerTransform(raw(this, internals), graph(this, internals))[5]
       },
       set(this: ProxyThis, value: number) {
-        setPosition(this, internals, 'y', value)
+        setTransform(this, internals, (matrix) => withOrigin(matrix, matrix[2], value))
       }
     },
     width: {
@@ -147,13 +146,11 @@ export function installBasicNodeProxyAccessors(
         if (sourceTransform && preservesRawTransform(node)) {
           return Math.atan2(-sourceTransform.m10, sourceTransform.m00) * (180 / Math.PI)
         }
-        return node.rotation
+        return figmaRotation(containerTransform(node, graph(this, internals)))
       },
+      // Figma turns a node counterclockwise about its top-left corner.
       set(this: ProxyThis, value: number) {
-        assertEditable(this, internals)
-        const scene = graph(this, internals)
-        scene.updateNode(nodeId(this, internals), { rotation: value })
-        fitGroupsAround(scene, raw(this, internals).parentId)
+        setTransform(this, internals, (matrix) => withFigmaRotation(matrix, value))
       }
     },
     relativeTransform: {
@@ -161,11 +158,7 @@ export function installBasicNodeProxyAccessors(
         const node = raw(this, internals)
         const scene = graph(this, internals)
         // Children of groups report a transform into the container, as Figma does.
-        if (inGroup(node, scene)) {
-          return figmaTransform(
-            Matrix.multiply(getParentToContainerMatrix(node, scene), getNodeLocalMatrix(node))
-          )
-        }
+        if (inGroup(node, scene)) return figmaTransform(containerTransform(node, scene))
         const sourceTransform = node.source.fig.rawTransform
         if (sourceTransform && preservesRawTransform(node)) {
           return figmaTransform([
@@ -177,7 +170,11 @@ export function installBasicNodeProxyAccessors(
             sourceTransform.m12
           ])
         }
-        return figmaTransform(getNodeLocalMatrix(node))
+        return figmaTransform(containerTransform(node, scene))
+      },
+      set(this: ProxyThis, value: FigmaTransform) {
+        const [[a, b, x], [c, d, y]] = value
+        setTransform(this, internals, () => [a, b, x, c, d, y, 0, 0, 1])
       }
     },
     absoluteTransform: {
@@ -187,7 +184,7 @@ export function installBasicNodeProxyAccessors(
     },
     absoluteBoundingBox: {
       get(this: ProxyThis): Rect {
-        return graph(this, internals).getAbsoluteBounds(nodeId(this, internals))
+        return getAxisAlignedWorldBounds(raw(this, internals), graph(this, internals))
       }
     },
     absoluteRenderBounds: {
@@ -198,8 +195,12 @@ export function installBasicNodeProxyAccessors(
   })
 
   Object.assign(prototype, {
+    // A resized node keeps its top-left corner, as Figma's does, though it turns about its center.
     resize(this: ProxyThis, width: number, height: number): void {
+      const node = raw(this, internals)
+      const before = containerTransform(node, graph(this, internals))
       updateNode(this, internals, { width, height })
+      setTransform(this, internals, () => before)
     },
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {
       ;(this as { resize(width: number, height: number): void }).resize(width, height)

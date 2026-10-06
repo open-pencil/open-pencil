@@ -1,7 +1,12 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  fitEnclosingGroups,
+  type GroupFitOptions,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 
-import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
+import { canMakeBooleanSourceNode, groupFitOptions } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import type { EditorContext } from '#core/editor/types'
@@ -21,13 +26,17 @@ export function createBooleanOperation(
   parentId: string,
   operation: BooleanOperation,
   index: number | undefined,
-  props: Partial<SceneNode> = {}
+  props: Partial<SceneNode> = {},
+  fitOptions: GroupFitOptions = {}
 ): SceneNode {
-  return wrapNodes(graph, 'BOOLEAN_OPERATION', nodes, parentId, index, {
+  const node = wrapNodes(graph, 'BOOLEAN_OPERATION', nodes, parentId, index, {
     name: operationLabel(operation),
     booleanOperation: operation,
     ...props
   })
+  // Figma sizes a boolean to its result, and the groups around it follow.
+  fitEnclosingGroups(graph, [node.id], fitOptions)
+  return node
 }
 
 /**
@@ -74,7 +83,8 @@ export function booleanOperationSelected(
     parentId,
     operation,
     index,
-    booleanOperationPaints(operation, operands, 'canvas')
+    booleanOperationPaints(operation, operands, 'canvas'),
+    groupFitOptions(ctx.getRenderer(), ctx.graph)
   )
   const booleanId = booleanNode.id
   ctx.setSelectedIds(new Set([booleanId]))
@@ -83,11 +93,15 @@ export function booleanOperationSelected(
     label: operationLabel(operation),
     forward: () => {
       const nodes = origPositions.flatMap((pos) => ctx.graph.getNode(pos.id) ?? [])
-      createBooleanOperation(ctx.graph, nodes, parentId, operation, index, {
-        ...booleanNode,
-        childIds: [],
-        id: booleanId
-      })
+      createBooleanOperation(
+        ctx.graph,
+        nodes,
+        parentId,
+        operation,
+        index,
+        { ...booleanNode, childIds: [], id: booleanId },
+        groupFitOptions(ctx.getRenderer(), ctx.graph)
+      )
       ctx.setSelectedIds(new Set([booleanId]))
     },
     inverse: () => {

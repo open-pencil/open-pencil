@@ -1,4 +1,5 @@
 import {
+  DEFAULT_STROKE_WEIGHT,
   normalizeFontFamily,
   OPEN_PENCIL_PLUGIN_DATA,
   weightToStyle,
@@ -587,7 +588,6 @@ export function sceneNodeToKiwi(
 }
 
 const IDENTITY_TRANSFORM = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-const DEFAULT_STROKE_WEIGHT = 1
 
 export function makeDocumentNodeChange(
   guid: GUID,

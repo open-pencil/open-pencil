@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
 import { prepareSlotEdits } from '#core/editor/components/slots'
+import { nextNumberedName } from '#core/editor/structure/rename'
 import type { EditorContext } from '#core/editor/types'
 
 export type WrapContainerType =
@@ -18,6 +19,12 @@ const CONTAINER_NAMES: Record<WrapContainerType, string> = {
   GROUP: 'Group',
   FRAME: 'Frame'
 }
+
+const NUMBERED_WHEN_WRAPPED: ReadonlySet<WrapContainerType> = new Set([
+  'GROUP',
+  'FRAME',
+  'COMPONENT'
+])
 
 /**
  * The parent these layers share when a new container may go there, or null when they are not
@@ -93,14 +100,14 @@ export function wrapSelectionInContainer(
     .toSorted((a, b) => a.index - b.index)
   const index = canvasWrapIndex(parent, selectedNodes)
 
-  const containerNode = wrapNodes(
-    ctx.graph,
-    containerType,
-    selectedNodes,
-    parentId,
-    index,
-    extraProps
-  )
+  // Figma numbers a group, frame, or component the canvas wraps layers in, as "Group 1".
+  const name = NUMBERED_WHEN_WRAPPED.has(containerType)
+    ? nextNumberedName(ctx.graph, ctx.state.currentPageId, CONTAINER_NAMES[containerType])
+    : undefined
+  const containerNode = wrapNodes(ctx.graph, containerType, selectedNodes, parentId, index, {
+    ...(name ? { name } : {}),
+    ...extraProps
+  })
   const containerId = containerNode.id
   ctx.setSelectedIds(new Set([containerId]))
 
