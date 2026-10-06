@@ -15,22 +15,28 @@ export const RestartReply = v.object({ id: v.string(), approved: v.boolean() })
 
 /** Called from the Software Update window; resolves true once the editor's documents may close. */
 export async function requestRestartApproval(): Promise<boolean> {
-  const [{ emitTo, listen }, { WebviewWindow }] = await Promise.all([
+  const [{ emitTo, listen, TauriEvent }, { WebviewWindow }] = await Promise.all([
     import('@tauri-apps/api/event'),
     import('@tauri-apps/api/webviewWindow')
   ])
-  if (!(await WebviewWindow.getByLabel(EDITOR_WINDOW_LABEL))) return true
+  const editor = await WebviewWindow.getByLabel(EDITOR_WINDOW_LABEL)
+  if (!editor) return true
 
   const id = randomHex(8)
   const reply = createDeferred<boolean>()
-  const stop = await listen<unknown>(RESTART_REPLY_EVENT, ({ payload }) => {
+  const stopReply = await listen<unknown>(RESTART_REPLY_EVENT, ({ payload }) => {
     const parsed = v.safeParse(RestartReply, payload)
     if (parsed.success && parsed.output.id === id) reply.resolve(parsed.output.approved)
   })
+  // No timeout: the reply waits for the person to answer the unsaved-documents prompt.
+  // An editor closed meanwhile has run its own prompt and holds no documents, so it approves.
+  const stopDestroyed = await editor.once(TauriEvent.WINDOW_DESTROYED, () => reply.resolve(true))
+  if (!(await WebviewWindow.getByLabel(EDITOR_WINDOW_LABEL))) reply.resolve(true)
   try {
     await emitTo(EDITOR_WINDOW_LABEL, RESTART_REQUEST_EVENT, { id })
     return await reply.promise
   } finally {
-    stop()
+    stopReply()
+    stopDestroyed()
   }
 }
