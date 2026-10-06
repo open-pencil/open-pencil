@@ -201,8 +201,12 @@ test("the chat's agent moves through the streamed elements and outlines them", a
     await expect.poll(() => stream.evaluate((s) => s.ready())).toBe(true)
     await stream.evaluate((s) => s.advance())
     await expect.poll(() => previewKey(chat.page)).not.toBe('')
-    // The text streams first: the cursor sits on it, inside the outlined card.
-    await expect.poll(agentCursor).toMatchObject({ x: 100, y: 100, outlines: 2 })
+    // The text streams first: the cursor sits at its trailing corner, inside the outlined card,
+    // so the agent's name does not cover the text being written.
+    await expect.poll(agentCursor).toMatchObject({ outlines: 2 })
+    const onText = await agentCursor()
+    expect(onText?.x).toBeGreaterThan(100)
+    expect(onText?.y).toBeGreaterThan(100)
 
     await stream.evaluate((s) => s.advance())
     // The last element to appear is the button bar below the text.

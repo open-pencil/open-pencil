@@ -59,14 +59,16 @@ function newestElement(graph: SceneGraph, rootIds: readonly string[]): string | 
   return undefined
 }
 
-/** The cursor at the newest element, and outlines of what the JSX builds and that element. */
+/** The cursor at the newest element's trailing corner, and outlines of the JSX and that element. */
 export function previewFocus(staged: Pick<StagedJSXPreview, 'graph' | 'renderedIds'>) {
   const newest = newestElement(staged.graph, staged.renderedIds)
   const newestRect = newest ? nodeRect(staged.graph, newest) : null
   if (!newest || !newestRect) return null
   const outlined = uniq([...staged.renderedIds, newest]).slice(-MAX_OUTLINE)
   const outline = outlined.flatMap((id) => nodeRect(staged.graph, id) ?? [])
-  return { cursor: { x: newestRect.x, y: newestRect.y }, outline } satisfies PreviewFocus
+  // The trailing corner, where content grows, so the agent's name sits beside what it writes.
+  const cursor = { x: newestRect.x + newestRect.width, y: newestRect.y + newestRect.height }
+  return { cursor, outline } satisfies PreviewFocus
 }
 
 function countNodes(tree: JSXPreviewNode): number {

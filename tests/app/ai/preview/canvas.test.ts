@@ -20,8 +20,9 @@ describe('streamed JSX focus', () => {
     const button = graph.createNode('RECTANGLE', footer.id, { x: 8, y: 8, width: 80, height: 32 })
 
     const focus = expectDefined(previewFocus({ graph, renderedIds: [card.id] }), 'focus')
-    // The source's last element: the button, the last child of the card's last child.
-    expect(focus.cursor).toEqual({ x: 124, y: 178 })
+    // The source's last element: the button, the last child of the card's last child. The
+    // cursor sits at its trailing corner, where content grows.
+    expect(focus.cursor).toEqual({ x: 204, y: 210 })
     expect(focus.outline).toEqual([
       { x: 100, y: 50, width: 300, height: 200 },
       { x: 124, y: 178, width: 80, height: 32 }
@@ -38,7 +39,7 @@ describe('streamed JSX focus', () => {
       previewFocus({ graph, renderedIds: roots.map((root) => root.id) }),
       'focus'
     )
-    expect(focus.cursor).toEqual({ x: (MAX_OUTLINE + 3) * 10, y: 0 })
+    expect(focus.cursor).toEqual({ x: (MAX_OUTLINE + 3) * 10 + 8, y: 8 })
     expect(focus.outline).toHaveLength(MAX_OUTLINE)
   })
 
