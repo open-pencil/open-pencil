@@ -84,6 +84,7 @@ export {
   useToolbarState
 } from '#vue/primitives/Toolbar/useToolbarState'
 export { useNodeFontStatus } from '#vue/shared/font-status/use'
+export { fuzzyFilter, fuzzySearch } from '#vue/shared/search/fuzzy'
 export { usePropScrub } from '#vue/controls/prop-scrub/use'
 export { toolCursor } from '#vue/editor/tool-cursor'
 export {
@@ -147,9 +148,6 @@ export { useOkHCL } from '#vue/controls/okhcl/use'
 
 /** Variables, page navigation, and picker helpers. */
 export { useVariables } from '#vue/variables/use'
-export { useVariablesDialogState } from '#vue/variables/dialog/use'
-export { useVariablesEditor } from '#vue/variables/editor/use'
-export { useVariablesTable } from '#vue/variables/table/use'
 export { usePageList } from '#vue/primitives/PageList/usePageList'
 export {
   fillCategory,
@@ -162,7 +160,7 @@ export { useGradientStops } from '#vue/primitives/GradientEditor/useGradientStop
 export { useFontPicker } from '#vue/primitives/FontPicker/useFontPicker'
 
 /** Headless structural primitives and their local contexts. */
-export { CanvasRoot, CanvasSurface, useCanvasContext } from '#vue/canvas'
+export { CanvasRoot, CanvasSurface, PlayIslands, useCanvasContext } from '#vue/canvas'
 export type { CanvasContext } from '#vue/canvas'
 export { ColorInputRoot, ColorPickerRoot } from '#vue/primitives/ColorPicker'
 export {
@@ -245,22 +243,36 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
+  useComponentProperties
+} from '#vue/controls/component-props'
+export {
   slotInstanceOptions,
   slotLimits,
-  useComponentProperties,
   useSlotAuthoring,
-  useSlotProperties,
-  useVariantAuthoring
-} from '#vue/controls/component-props'
+  useSlotProperties
+} from '#vue/controls/slots'
+export { useVariantAuthoring } from '#vue/controls/variants'
+export { useBehaviour } from '#vue/controls/behaviour'
+export type {
+  BehaviourBooleanControl,
+  BehaviourControl,
+  BehaviourNumberControl,
+  BehaviourPartControl,
+  BehaviourStatesControl,
+  BehaviourTextControl,
+  BehaviourValueControl
+} from '#vue/controls/behaviour'
 export type {
   ComponentPropertyControl,
-  ComponentPropertyOption,
+  ComponentPropertyOption
+} from '#vue/controls/component-props'
+export type {
   SlotDefinitionControl,
   SlotInstanceOption,
   SlotLimit,
-  SlotPropertyControl,
-  VariantDefinitionControl
-} from '#vue/controls/component-props'
+  SlotPropertyControl
+} from '#vue/controls/slots'
+export type { VariantDefinitionControl } from '#vue/controls/variants'
 export type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 export { isPageDivider, PageListRoot, PAGE_DIVIDER_PATTERN } from '#vue/primitives/PageList'
 export { PositionControlsRoot } from '#vue/primitives/PositionControls'

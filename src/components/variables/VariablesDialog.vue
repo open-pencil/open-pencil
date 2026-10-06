@@ -1,430 +1,55 @@
 <script setup lang="ts">
-import { FlexRender } from '@tanstack/vue-table'
-import { templateRef } from '@vueuse/core'
-import {
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuPortal,
-  ContextMenuRoot,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-  DialogClose,
-  DialogTitle,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuRoot,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  TabsContent,
-  TabsList,
-  TabsRoot,
-  TabsTrigger
-} from 'reka-ui'
-import { tv } from 'tailwind-variants'
-import { watch, type Component } from 'vue'
-import IconHash from '~icons/lucide/hash'
-import IconPalette from '~icons/lucide/palette'
-import IconToggleLeft from '~icons/lucide/toggle-left'
-import IconType from '~icons/lucide/type'
-import IconX from '~icons/lucide/x'
+import { DialogTitle } from 'reka-ui'
+import { computed, ref } from 'vue'
 
-import type { VariableType } from '@open-pencil/scene-graph'
-import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTokenCopy } from '@/app/editor/tokens/copy'
-import ColorInput from '@/components/ColorPicker/ColorInput.vue'
-import AppButton from '@/components/ui/button/AppButton.vue'
+import { useDocumentShortcuts } from '@/app/shell/keyboard/document'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { AppDialogRoot } from '@/components/ui/dialog'
-import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import { useMenuUI } from '@/components/ui/menu/menu'
-import variableTableTheme from '@/theme/variable-table'
+import { AppDialogClose, AppDialogRoot } from '@/components/ui/dialog'
+import TokensPanel from '@/components/variables/TokensPanel.vue'
 
-const open = defineModel<boolean>('open', { default: false })
-const menuCls = useMenuUI({ content: 'w-40', item: 'justify-start gap-2' })
-const collectionMenuCls = useMenuUI({ content: 'w-56', item: 'justify-start gap-2' })
-const addVariableMenuCls = useMenuUI({ content: 'w-48' })
-const variableTable = tv(variableTableTheme)
-const tableStyles = variableTable()
-
-const variableTypeIcons: Record<VariableType, Component> = {
-  COLOR: IconPalette,
-  FLOAT: IconHash,
-  STRING: IconType,
-  BOOLEAN: IconToggleLeft
-}
-
-const { panels, variableTypes: variableTypeText, variables, common } = useI18n()
-
-const variableTypes: Array<{
-  type: VariableType
-  label: () => string
-  description: () => string
-}> = [
-  {
-    type: 'COLOR',
-    label: () => variableTypeText.value.color,
-    description: () => variableTypeText.value.colorHint
-  },
-  {
-    type: 'FLOAT',
-    label: () => variableTypeText.value.number,
-    description: () => variableTypeText.value.numberHint
-  },
-  {
-    type: 'STRING',
-    label: () => variableTypeText.value.text,
-    description: () => variableTypeText.value.textHint
-  },
-  {
-    type: 'BOOLEAN',
-    label: () => variableTypeText.value.boolean,
-    description: () => variableTypeText.value.booleanHint
+const store = useEditorStore()
+const open = computed({
+  get: () => store.state.variablesOpen,
+  set: (value: boolean) => {
+    store.state.variablesOpen = value
   }
-]
-
-const copyTokens = createTokenCopy(useEditorStore())
-
-const ctx = useVariablesEditor({
-  colorInput: ColorInput,
-  icons: variableTypeIcons,
-  fallbackIcon: IconToggleLeft,
-  deleteIcon: IconX
-})
-const collectionInput = templateRef<HTMLInputElement>('collectionInput')
-const modeInput = templateRef<HTMLInputElement>('modeInput')
-
-watch(collectionInput, (input) => {
-  void ctx.collectionRename.focusInput(input)
-})
-watch(modeInput, (input) => {
-  void ctx.modeRename.focusInput(input)
 })
 
-function getModeId(columnId: string): string | undefined {
-  return columnId.startsWith('mode-') ? columnId.slice(5) : undefined
-}
+/** Undo and redo reach the document from inside the dialog, as they do on the canvas. */
+const onKeydown = useDocumentShortcuts()
 
-function modeId(columnId: string): string {
-  return columnId.slice(5)
-}
-
-function modeLabelClass(defaultMode: boolean) {
-  return variableTable({ defaultMode }).modeLabel()
-}
-
-function resizeHandleClass(resizing: boolean) {
-  return variableTable({ resizing }).resizeHandle()
-}
+const { variables, common } = useI18n()
+/** Expanding gives a large design system most of the window; it is kept for this session. */
+const expanded = ref(false)
+const copyTokens = createTokenCopy(store)
 </script>
 
 <template>
   <AppDialogRoot
     v-model:open="open"
-    height="tall"
-    :ui="{ content: 'w-[800px] max-w-[90vw]' }"
+    :size="expanded ? 'screen' : 'xl'"
+    :height="expanded ? 'screen' : 'full'"
     data-test-id="variables-dialog"
+    @keydown="onKeydown"
     :aria-describedby="undefined"
   >
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
-    <div v-if="!ctx.hasCollections.value" class="flex flex-1 flex-col">
-      <div class="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-        <h2 class="text-sm font-semibold text-surface">{{ variables.localVariables }}</h2>
-        <DialogClose
-          :aria-label="common.close"
-          class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
+    <TokensPanel @copy="copyTokens">
+      <template #actions>
+        <IconButton
+          :label="expanded ? variables.collapse : variables.expand"
+          data-test-id="variables-expand"
+          @click="expanded = !expanded"
         >
-          <icon-lucide-x class="size-4" />
-        </DialogClose>
-      </div>
-      <AppPlaceholder :label="variables.noVariableCollections">
-        <template #icon>
-          <icon-lucide-folder class="size-5" />
-        </template>
-        <template #action>
-          <AppButton
-            variant="soft"
-            data-test-id="variables-create-collection"
-            @click="ctx.addCollection"
-          >
-            {{ variables.createCollection }}
-          </AppButton>
-        </template>
-      </AppPlaceholder>
-    </div>
-
-    <template v-else>
-      <TabsRoot v-model="ctx.activeCollectionId.value" class="flex flex-1 flex-col overflow-hidden">
-        <div class="flex shrink-0 items-center border-b border-border">
-          <TabsList class="flex flex-1 gap-0.5 overflow-x-auto px-3 py-1">
-            <template v-for="col in ctx.collections.value" :key="col.id">
-              <input
-                v-if="ctx.collectionRename.editingId.value === col.id"
-                ref="collectionInput"
-                class="w-24 rounded border border-accent bg-input px-2 py-0.5 text-xs text-surface outline-none"
-                :value="col.name"
-                @blur="ctx.collectionRename.commit(col.id, $event)"
-                @keydown="ctx.collectionRename.onKeydown"
-              />
-              <TabsTrigger
-                v-else
-                :value="col.id"
-                data-test-id="variables-collection-tab"
-                class="cursor-pointer rounded border-none px-2.5 py-1 text-xs whitespace-nowrap text-muted data-[state=active]:bg-hover data-[state=active]:text-surface"
-                @dblclick="ctx.startRenameCollection(col.id)"
-              >
-                {{ col.name }}
-              </TabsTrigger>
-            </template>
-          </TabsList>
-
-          <div class="flex items-center gap-1.5 px-3">
-            <DropdownMenuRoot>
-              <DropdownMenuTrigger as-child>
-                <button
-                  data-test-id="variables-collection-menu"
-                  class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
-                >
-                  <icon-lucide-ellipsis class="size-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuContent
-                  side="bottom"
-                  :side-offset="4"
-                  align="start"
-                  :class="collectionMenuCls.content"
-                >
-                  <DropdownMenuItem
-                    :class="collectionMenuCls.item"
-                    @select="ctx.startRenameCollection(ctx.activeCollectionId.value)"
-                  >
-                    <icon-lucide-pencil :class="collectionMenuCls.icon" />
-                    {{ variables.renameCollection }}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator class="mx-1.5 my-1 h-px bg-border" />
-                  <DropdownMenuItem
-                    :class="collectionMenuCls.item"
-                    data-test-id="variables-copy-css"
-                    @select="copyTokens('css')"
-                  >
-                    <icon-lucide-braces :class="collectionMenuCls.icon" />
-                    {{ variables.copyAsCSS }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    :class="collectionMenuCls.item"
-                    data-test-id="variables-copy-tailwind"
-                    @select="copyTokens('tailwind')"
-                  >
-                    <icon-lucide-wind :class="collectionMenuCls.icon" />
-                    {{ variables.copyAsTailwindTheme }}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator class="mx-1.5 my-1 h-px bg-border" />
-                  <DropdownMenuItem
-                    :class="collectionMenuCls.item"
-                    class="text-red-500"
-                    data-test-id="variables-delete-collection"
-                    @select="ctx.removeCollection(ctx.activeCollectionId.value)"
-                  >
-                    <icon-lucide-trash-2 :class="collectionMenuCls.icon" />
-                    {{ variables.deleteCollection }}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenuPortal>
-            </DropdownMenuRoot>
-            <div class="flex items-center gap-1 rounded border border-border px-2 py-0.5">
-              <icon-lucide-search class="size-3 text-muted" />
-              <input
-                v-model="ctx.searchTerm.value"
-                data-test-id="variables-search-input"
-                class="w-24 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
-                :placeholder="common.search"
-              />
-            </div>
-            <IconButton
-              :label="variables.createCollection"
-              data-test-id="variables-add-collection"
-              @click="ctx.addCollection"
-            >
-              <icon-lucide-folder-plus class="size-3.5" />
-            </IconButton>
-            <DialogClose
-              :aria-label="common.close"
-              class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
-            >
-              <icon-lucide-x class="size-4" />
-            </DialogClose>
-          </div>
-        </div>
-
-        <TabsContent
-          v-for="col in ctx.collections.value"
-          :key="col.id"
-          :value="col.id"
-          class="flex flex-1 flex-col overflow-hidden outline-none"
-        >
-          <div class="flex-1 overflow-auto">
-            <table
-              class="w-full min-w-full border-collapse"
-              :style="{ width: `${ctx.table.getCenterTotalSize()}px` }"
-            >
-              <thead class="sticky top-0 z-10 bg-panel">
-                <tr
-                  v-for="headerGroup in ctx.table.getHeaderGroups()"
-                  :key="headerGroup.id"
-                  class="border-b border-border"
-                >
-                  <th
-                    v-for="header in headerGroup.headers"
-                    :key="header.id"
-                    class="relative px-4 py-2 text-left text-[11px] font-medium text-muted"
-                    :style="{ width: `${header.getSize()}px` }"
-                  >
-                    <template v-if="getModeId(header.column.id)">
-                      <input
-                        v-if="ctx.modeRename.editingId.value === getModeId(header.column.id)"
-                        ref="modeInput"
-                        class="-mx-1 w-full rounded border border-accent bg-input px-1 py-0 text-[11px] font-medium text-surface outline-none"
-                        :value="header.column.columnDef.header"
-                        @blur="ctx.modeRename.commit(modeId(header.column.id), $event)"
-                        @keydown="ctx.modeRename.onKeydown"
-                      />
-                      <ContextMenuRoot v-else>
-                        <ContextMenuTrigger as-child>
-                          <span
-                            :data-default="
-                              getModeId(header.column.id) === col.defaultModeId || undefined
-                            "
-                            :class="
-                              modeLabelClass(getModeId(header.column.id) === col.defaultModeId)
-                            "
-                            @dblclick="ctx.startRenameMode(modeId(header.column.id))"
-                          >
-                            {{ header.column.columnDef.header }}
-                          </span>
-                        </ContextMenuTrigger>
-                        <ContextMenuPortal>
-                          <ContextMenuContent :class="menuCls.content">
-                            <ContextMenuItem
-                              :class="menuCls.item"
-                              @select="ctx.startRenameMode(modeId(header.column.id))"
-                            >
-                              <icon-lucide-pencil :class="menuCls.icon" />
-                              {{ variables.renameMode }}
-                            </ContextMenuItem>
-                            <ContextMenuItem
-                              :class="menuCls.item"
-                              @select="ctx.duplicateMode(modeId(header.column.id))"
-                            >
-                              <icon-lucide-copy :class="menuCls.icon" />
-                              {{ variables.duplicateMode }}
-                            </ContextMenuItem>
-                            <ContextMenuItem
-                              v-if="getModeId(header.column.id) !== col.defaultModeId"
-                              :class="menuCls.item"
-                              @select="ctx.setDefaultMode(modeId(header.column.id))"
-                            >
-                              <icon-lucide-pin :class="menuCls.icon" />
-                              {{ variables.setDefaultMode }}
-                            </ContextMenuItem>
-                            <ContextMenuSeparator :class="menuCls.separator" />
-                            <ContextMenuItem
-                              :class="[menuCls.item, 'text-red-500']"
-                              :disabled="col.modes.length <= 1"
-                              @select="ctx.removeMode(modeId(header.column.id))"
-                            >
-                              <icon-lucide-trash-2 :class="menuCls.icon" />
-                              {{ variables.deleteMode }}
-                            </ContextMenuItem>
-                          </ContextMenuContent>
-                        </ContextMenuPortal>
-                      </ContextMenuRoot>
-                    </template>
-                    <FlexRender
-                      v-else-if="!header.isPlaceholder"
-                      :render="header.column.columnDef.header"
-                      :props="header.getContext()"
-                    />
-                    <div
-                      v-if="header.column.getCanResize()"
-                      :data-resizing="header.column.getIsResizing() || undefined"
-                      :class="resizeHandleClass(header.column.getIsResizing())"
-                      @mousedown="header.getResizeHandler()?.($event)"
-                      @touchstart="header.getResizeHandler()?.($event)"
-                      @dblclick="header.column.resetSize()"
-                    />
-                  </th>
-                  <th class="w-8 px-1 py-2">
-                    <IconButton
-                      :label="variables.addMode"
-                      data-test-id="variables-add-mode"
-                      @click="ctx.addMode"
-                    >
-                      <icon-lucide-plus class="size-3" />
-                    </IconButton>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="row in ctx.table.getRowModel().rows"
-                  :key="row.id"
-                  data-test-id="variable-row"
-                  :class="tableStyles.row()"
-                >
-                  <td
-                    v-for="cell in row.getVisibleCells()"
-                    :key="cell.id"
-                    class="px-4 py-1.5"
-                    :style="{ width: `${cell.column.getSize()}px` }"
-                  >
-                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div
-            class="flex w-full shrink-0 items-center justify-between gap-2 border-t border-border px-4 py-2"
-          >
-            <span class="text-xs text-muted">{{ panels.createVariable }}</span>
-            <DropdownMenuRoot>
-              <DropdownMenuTrigger as-child>
-                <AppButton variant="soft" data-test-id="variables-add-variable">
-                  <template #leading><icon-lucide-plus class="size-3.5" /></template>
-                  {{ panels.add }}
-                  <template #trailing><icon-lucide-chevron-down class="size-3" /></template>
-                </AppButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuContent
-                  side="top"
-                  :side-offset="8"
-                  align="end"
-                  :class="addVariableMenuCls.content"
-                >
-                  <DropdownMenuItem
-                    v-for="item in variableTypes"
-                    :key="item.type"
-                    :class="menuCls.item"
-                    v-test-id="variablesAddTestId(item.type)"
-                    @select="ctx.addVariable(item.type)"
-                  >
-                    <component :is="variableTypeIcons[item.type]" :class="menuCls.icon" />
-                    <span class="flex min-w-0 flex-1 flex-col">
-                      <span>{{ item.label() }}</span>
-                      <span class="truncate text-[10px] text-muted">{{ item.description() }}</span>
-                    </span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenuPortal>
-            </DropdownMenuRoot>
-          </div>
-        </TabsContent>
-      </TabsRoot>
-    </template>
+          <icon-lucide-minimize-2 v-if="expanded" class="size-3.5" />
+          <icon-lucide-maximize-2 v-else class="size-3.5" />
+        </IconButton>
+        <AppDialogClose :ariaLabel="common.close" />
+      </template>
+    </TokensPanel>
   </AppDialogRoot>
 </template>

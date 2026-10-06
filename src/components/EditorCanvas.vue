@@ -18,6 +18,7 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
 } from '@open-pencil/core/constants'
 import {
+  PlayIslands,
   toolCursor,
   useCanvas,
   useCanvasDrop,
@@ -65,6 +66,8 @@ function updatePaneCursor(cx: number, cy: number) {
 }
 
 const getRenderState = paneId ? () => store.getPaneRenderState(paneId) : undefined
+/** This pane's view: its pan, zoom, page, and whether it previews. */
+const paneView = computed(() => (paneId ? store.getPaneRenderState(paneId) : store.state))
 const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
@@ -96,7 +99,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
   useCanvas(canvasRef, store, {
     layer: 'overlays',
     get showRulers() {
-      return appRuntimeConfig.showRulers && store.state.showRulers
+      return appRuntimeConfig.showRulers && store.state.showRulers && paneView.value.play === null
     },
     getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
     shouldSuspendRender,
@@ -226,6 +229,7 @@ const cursor = computed(() =>
           :style="{ cursor }"
           class="absolute inset-0 block size-full touch-none outline-none"
         />
+        <PlayIslands :view="paneView" :canvas="canvasRef" />
         <Transition
           enter-active-class="transition-opacity duration-150"
           enter-from-class="opacity-0"

@@ -209,8 +209,13 @@ export function scaledGeometryChanges(
   if (orig.strokeGeometry.length > 0) {
     changes.strokeGeometry = scaleGeometryPaths(orig.strokeGeometry, sx, sy)
   }
-  if (orig.derivedTextGlyphs?.length) {
-    changes.derivedTextGlyphs = scaleDerivedGlyphs(orig.derivedTextGlyphs, sx, sy)
+  // Path text scales with its path, including baked path text that kept only rotated glyphs;
+  // other text reflows in the new box, so its glyphs are dropped.
+  const glyphs = orig.derivedTextGlyphs ?? []
+  const pathText =
+    !!orig.textPathData || !!orig.textPathBox || glyphs.some((glyph) => (glyph.rotation ?? 0) !== 0)
+  if (glyphs.length > 0 && pathText) {
+    changes.derivedTextGlyphs = scaleDerivedGlyphs(glyphs, sx, sy)
     // Keep the layout/selection box in sync with the scaled glyphs. reflow
     // overrides this when it applies; this covers the fallback where reflow
     // returns null (no path data) so the box doesn't carry a stale size.

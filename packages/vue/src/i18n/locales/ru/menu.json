@@ -64,6 +64,7 @@
   "renameSelection": "Переименовать выделение…",
   "rulers": "Линейки",
   "settings": "Настройки…",
+  "variables": "Переменные…",
   "splitRight": "Разделить вправо",
   "splitDown": "Разделить вниз",
   "closeView": "Закрыть вид",
@@ -71,5 +72,6 @@
   "exportSelectionAsPNG": "Экспортировать выделение как PNG",
   "exportSelectionAsSVG": "Экспортировать выделение как SVG",
   "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
-  "exportSelectionAsFig": "Экспортировать выделение как .fig"
+  "exportSelectionAsFig": "Экспортировать выделение как .fig",
+  "togglePreview": "Просмотр"
 }

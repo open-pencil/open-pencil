@@ -724,5 +724,17 @@ export interface VariableCollection {
   modes: VariableCollectionMode[]
   defaultModeId: string
   variableIds: string[]
+  /**
+   * The attribute that switches a mode with no condition of its own, `data-theme` for
+   * `[data-theme="dark"]`. Absent means one named after the collection.
+   */
+  modeAttribute?: string
   pluginData?: PluginDataEntry[]
+}
+
+/** An HTML attribute name a stylesheet can select on unescaped: `data-theme`, `theme`. */
+export const MODE_ATTRIBUTE_PATTERN = /^[A-Za-z_][\w-]*$/
+
+export function isModeAttributeName(name: string): boolean {
+  return name.length <= 100 && MODE_ATTRIBUTE_PATTERN.test(name)
 }

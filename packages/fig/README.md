@@ -16,7 +16,7 @@ Current ownership:
 - NodeChange-to-SceneGraph property conversion, including styles, plugin metadata, text, paint, vector, and font policy, through `@open-pencil/fig/node-change`
 - Component-property, symbol-override, derived-symbol-data, and instance synchronization policy through `@open-pencil/fig/instance-overrides`
 - Effective raw-metadata precedence and invalidation over SceneGraph's format-neutral edited-field tracking
-- SceneGraph-to-`NodeChange` export conversion with an explicit glyph-outline runtime service
+- SceneGraph-to-`NodeChange` export conversion with an explicit text-shaping runtime service for saved glyphs
 - Package-local archive, conversion, instance, export, and dist smoke tests
 
 ## Architecture documentation

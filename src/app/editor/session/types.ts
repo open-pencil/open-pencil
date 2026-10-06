@@ -22,6 +22,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     cursorCanvasY: null,
     nodeEditState: null,
     renameSelectionOpen: false,
+    variablesOpen: false,
     renameNodeId: null,
     numberFieldFocused: false,
     preparation: null,
@@ -43,6 +44,8 @@ export type AppEditorState = EditorState & {
   cursorCanvasY: number | null
   nodeEditState: NodeEditState | null
   renameSelectionOpen: boolean
+  /** The variables dialog, opened from the Design panel, the View menu, or the palette. */
+  variablesOpen: boolean
   renameNodeId: string | null
   numberFieldFocused: boolean
   preparation: EditorPreparation | null

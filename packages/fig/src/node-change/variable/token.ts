@@ -14,13 +14,13 @@ import {
 
 import { readNodeChangePluginData } from '../plugin-data'
 
-const { token, modeConditions } = OPEN_PENCIL_PLUGIN_DATA
+const { token, modeConditions, modeAttribute } = OPEN_PENCIL_PLUGIN_DATA
 
 type TokenFields = Pick<Variable, 'unit' | 'expressions'>
 
 /** Plugin data other than the token entries, which are rebuilt on every save. */
 export function withoutTokenPluginData(pluginData: PluginDataEntry[]): PluginDataEntry[] {
-  return withoutPluginData(pluginData, [token, modeConditions])
+  return withoutPluginData(pluginData, [token, modeConditions, modeAttribute])
 }
 
 function nonEmpty<T extends object>(record: T): T | undefined {
@@ -49,6 +49,18 @@ export function readVariableToken(
 
 export function readModeConditions(nc: NodeChange): Record<string, string> {
   return readNodeChangePluginData(nc, modeConditions) ?? {}
+}
+
+export function readModeAttribute(nc: NodeChange): string | undefined {
+  return readNodeChangePluginData(nc, modeAttribute)
+}
+
+export function modeAttributePluginData(
+  collection: VariableCollection
+): PluginDataEntry | undefined {
+  return collection.modeAttribute
+    ? pluginDataEntry(modeAttribute, collection.modeAttribute)
+    : undefined
 }
 
 /** Mode ids in the file differ from the model's, so callers map them. */

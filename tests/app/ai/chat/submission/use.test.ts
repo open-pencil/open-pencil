@@ -80,19 +80,21 @@ describe('useChatSubmission', () => {
     expect(target.messages).toEqual([])
   })
 
-  test('keeps a message the chat already took when a later step fails', async () => {
-    const target = fakeChat()
-    const { chat } = submission(async () => target)
-    const image = { file: new File(['not an image'], 'card.png'), previewURL: 'blob:card' }
-    expect(await chat.submit({ ...message, images: [image] })).toBe(true)
-    expect(target.messages).toHaveLength(1)
+  test('takes back a message whose images could not be prepared', async () => {
+    const revoke = spyOn(URL, 'revokeObjectURL')
+    try {
+      const target = fakeChat()
+      const { chat } = submission(async () => target)
+      const image = { file: new File(['not an image'], 'card.png'), previewURL: 'blob:card' }
+      expect(await chat.submit({ ...message, images: [image] })).toBe(false)
+      expect(target.messages).toEqual([])
+      expect(revoke).not.toHaveBeenCalled()
+    } finally {
+      revoke.mockRestore()
+    }
   })
 })
 
-function fakeChat(): Chat<UIMessage> {
-  return asDouble<Chat<UIMessage>>({
-    messages: [],
-    status: 'ready',
-    sendMessage: async () => undefined
-  })
+function fakeChat(sendMessage: () => Promise<void> = async () => undefined): Chat<UIMessage> {
+  return asDouble<Chat<UIMessage>>({ messages: [], status: 'ready', sendMessage })
 }

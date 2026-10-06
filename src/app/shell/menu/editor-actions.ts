@@ -75,6 +75,7 @@ export function createSharedEditorMenuActions(
     'toggle-ui': () => {
       store.state.showUI = !store.state.showUI
     },
+    'toggle-preview': () => store.togglePlay(),
     'theme-light': () => setTheme('light'),
     'theme-dark': () => setTheme('dark'),
     'theme-auto': () => setTheme('auto'),

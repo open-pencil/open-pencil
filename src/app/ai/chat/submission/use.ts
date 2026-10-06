@@ -1,18 +1,19 @@
 import { computed, markRaw, ref, type Ref } from 'vue'
 
-import {
-  analyzeAttachedImages,
-  designMessageWithImageFindings
-} from '@/app/ai/attachment/image/analyze'
-import { prepareImageAttachment, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
+import { designMessageWithImageFindings } from '@/app/ai/attachment/image/analyze'
+import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import {
   imageDraftPresentations,
   preparedImagePresentations
 } from '@/app/ai/attachment/image/presentation'
 import { snapshotNode } from '@/app/ai/attachment/node/snapshot'
-import { setMessageAttachments } from '@/app/ai/attachment/presentation/store'
+import {
+  deleteMessageAttachments,
+  setMessageAttachments
+} from '@/app/ai/attachment/presentation/store'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
+import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
 import { useRevertRecords } from '@/app/ai/chat/submission/reverts'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { recordTurn, restoreTurn, revertTurn } from '@/app/ai/chat/turns'
@@ -60,8 +61,13 @@ export function useChatSubmission(options: SubmissionOptions) {
     recordTurn(reply, editor, runUndoEntries(editor))
   }
 
-  async function sendText(currentChat: ChatInstance, submission: ChatSubmission): Promise<void> {
+  async function sendText(
+    currentChat: ChatInstance,
+    submission: ChatSubmission,
+    dispatch: () => void
+  ): Promise<void> {
     const previousIds = new Set(currentChat.messages.map((message) => message.id))
+    dispatch()
     await withTurn(currentChat, () =>
       currentChat.sendMessage({ text: submission.modelText }).catch(() => undefined)
     )
@@ -71,10 +77,15 @@ export function useChatSubmission(options: SubmissionOptions) {
     if (message) setVisibleMessageText(message.id, submission.displayText)
   }
 
+  /**
+   * Shows the message at once and sends it once its images are prepared. A failure before it
+   * is sent takes the message back out, so the composer can restore the draft.
+   */
   async function sendAttachments(
     currentChat: ChatInstance,
     submission: ChatSubmission,
-    version: number
+    version: number,
+    dispatch: () => void
   ): Promise<void> {
     const messageId = crypto.randomUUID()
     const editor = options.getEditor()
@@ -88,19 +99,30 @@ export function useChatSubmission(options: SubmissionOptions) {
     setVisibleMessageText(messageId, submission.displayText)
     const draftImages = imageDraftPresentations(messageId, submission.images)
     setMessageAttachments(messageId, [...nodeAttachments, ...draftImages])
-    for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
+    // The message previews its images from their files; the composer's previews go once sent.
+    const send = () => {
+      dispatch()
+      for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
+    }
 
     if (submission.images.length === 0) {
+      send()
       await withTurn(currentChat, () =>
         currentChat.sendMessage({ messageId, text: submission.modelText }).catch(() => undefined)
       )
       return
     }
 
-    const preparedImages = await Promise.all(
-      submission.images.map((image) => prepareImageAttachment(image.file))
-    )
-    const findings = await analyzeAttachedImages(editor, submission.modelText, preparedImages)
+    const images = await prepareSubmittedImages(
+      editor,
+      submission.modelText,
+      submission.images
+    ).catch((error: unknown) => {
+      currentChat.messages = currentChat.messages.filter((message) => message.id !== messageId)
+      deleteMessageAttachments(messageId)
+      throw error
+    })
+    const { prepared: preparedImages, findings } = images
     if (version !== operationVersion || options.chat.value !== currentChat) return
 
     const normalizedImages = preparedImagePresentations(
@@ -109,6 +131,7 @@ export function useChatSubmission(options: SubmissionOptions) {
       preparedImages
     )
     setMessageAttachments(messageId, [...nodeAttachments, ...normalizedImages])
+    send()
     await withTurn(currentChat, () =>
       currentChat
         .sendMessage({
@@ -135,8 +158,11 @@ export function useChatSubmission(options: SubmissionOptions) {
     }
 
     const version = ++operationVersion
-    // Whether the message reached the chat: after that, a failure must not hand it back.
-    let sent = () => false
+    // Whether the message was sent: after that, a failure must not hand it back.
+    let sent = false
+    const dispatch = () => {
+      sent = true
+    }
     isPreparingAttachments.value = submission.images.length > 0
     options.clearFailure()
     try {
@@ -149,11 +175,10 @@ export function useChatSubmission(options: SubmissionOptions) {
       const note = reverts.note(submission.modelText, currentChat.messages)
       const noted = { ...submission, modelText: note.text }
       const previousIds = new Set(currentChat.messages.map((message) => message.id))
-      sent = () => currentChat.messages.some((message) => !previousIds.has(message.id))
       if (submission.images.length === 0 && submission.nodes.length === 0) {
-        await sendText(currentChat, noted)
+        await sendText(currentChat, noted, dispatch)
       } else {
-        await sendAttachments(currentChat, noted, version)
+        await sendAttachments(currentChat, noted, version, dispatch)
       }
       const request = currentChat.messages.find(
         (message) => message.role === 'user' && !previousIds.has(message.id)
@@ -162,7 +187,7 @@ export function useChatSubmission(options: SubmissionOptions) {
       return true
     } catch (error) {
       reportSubmissionError(options, error)
-      return sent()
+      return sent
     } finally {
       await options.flush?.().catch(() => undefined)
       if (version === operationVersion) isPreparingAttachments.value = false

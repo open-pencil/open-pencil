@@ -111,6 +111,6 @@ test('section and nested frame hit targets follow their rendered title transform
     expect(hitTestSectionTitle(graph, 260, 54, 1, page.id, font, catalog)?.id).toBe(section.id)
   }
   // The readable frame title moves to the horizontal edge at (180, 70).
-  expect(hitTestFrameTitle(graph, 184, 60, 1, new Set([frame.id]), font)?.id).toBe(frame.id)
-  expect(hitTestFrameTitle(graph, 230, 74, 1, new Set([frame.id]), font)).toBeNull()
+  expect(hitTestFrameTitle(graph, 184, 60, 1, page.id, font)?.id).toBe(frame.id)
+  expect(hitTestFrameTitle(graph, 230, 74, 1, page.id, font)).toBeNull()
 })

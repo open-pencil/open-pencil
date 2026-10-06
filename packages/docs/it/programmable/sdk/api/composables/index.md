@@ -35,6 +35,5 @@ Questi composable forniscono stato e azioni comunemente necessari alle interfacc
 ## Documento
 
 - [usePageList](./use-page-list)
-- [useVariablesEditor](./use-variables-editor)
 - [useExport](./use-export)
 - [useI18n](./use-i18n)

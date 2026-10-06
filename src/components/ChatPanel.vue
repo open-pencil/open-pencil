@@ -5,6 +5,7 @@ import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import { useChatRunLocation } from '@/app/ai/chat/run-location'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
@@ -55,11 +56,15 @@ const submission = useChatSubmission({
 const chatInput = useTemplateRef<{ restoreDraft: (submission: ChatSubmission) => void }>(
   'chatInput'
 )
-async function submitMessage(message: ChatSubmission) {
-  if (!(await submission.submit(message))) chatInput.value?.restoreDraft(message)
-}
-
 let viewGeneration = 0
+
+/** Puts an unsent message back only in the conversation it was written in. */
+async function submitMessage(message: ChatSubmission) {
+  const generation = viewGeneration
+  if (await submission.submit(message)) return
+  if (generation === viewGeneration) chatInput.value?.restoreDraft(message)
+  else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
+}
 // Restoring local history must not open a provider connection or read credentials.
 void history.initialize().catch(() => {
   toast.error(ai.value.chatHistoryFailed)

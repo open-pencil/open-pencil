@@ -49,8 +49,6 @@
   "toolStepsFailed": "失败：{count}",
   "showNodeOnCanvas": "在画布上显示 {name}",
   "toolChanges": "更改",
-  "changeView": "更改视图",
-  "changeCompare": "对比",
   "changeHighlight": "高亮",
   "changeBefore": "之前",
   "changeAfter": "之后",
