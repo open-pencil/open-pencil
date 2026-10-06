@@ -40,21 +40,32 @@ const emit = defineEmits<{
   createText: [valueId: string, name: string]
   createVariant: [valueId: string, name: string]
   createPart: [partId: string, name: string]
+  createStates: []
 }>()
-const { panels } = useI18n()
+const { panels, locale } = useI18n()
 const labels = useBehaviourLabels()
 
 type Row = { part: BehaviourPartControl } | { value: BehaviourValueControl }
+const rowOf = (row: Row) => ('part' in row ? row.part : row.value)
 
 /** A row comes first when the control needs it, uses it, or keeps its own settings. */
 function first(row: BehaviourValueControl | BehaviourPartControl): boolean {
   return !('required' in row) || row.required || !!row.propertyId
 }
-const rows = computed<Row[]>(() => [
-  ...(behaviour?.values.map((value) => ({ value })) ?? []),
-  ...(behaviour?.parts.map((part) => ({ part })) ?? [])
-])
-const rowOf = (row: Row) => ('part' in row ? row.part : row.value)
+/**
+ * Whether a row belongs in the section. An unbound Disabled leaves its look to the states,
+ * which add a Disabled variant, unless the component has a property to bind it to.
+ */
+function usable(row: BehaviourValueControl | BehaviourPartControl): boolean {
+  if (row.id !== 'disabled' || !('options' in row) || row.propertyId) return true
+  return row.options.length > 0 && !behaviour?.states.values.disabled
+}
+const rows = computed<Row[]>(() =>
+  [
+    ...(behaviour?.values.map((value) => ({ value })) ?? []),
+    ...(behaviour?.parts.map((part) => ({ part })) ?? [])
+  ].filter((row) => usable(rowOf(row)))
+)
 const mainRows = computed(() => rows.value.filter((row) => first(rowOf(row))))
 const moreRows = computed(() => rows.value.filter((row) => !first(rowOf(row))))
 /** States come first once drawn, or when there is nothing else to set up, as on a button. */
@@ -82,16 +93,19 @@ function create(row: Row, name: string) {
 
 const kind = computed(() => (behaviour ? labels.value.kind(behaviour.kind) : null))
 
-/** What the missing chip says: the one row missing, or how many are. */
-const missingLabel = computed(() => {
-  const missing = behaviour?.missing ?? []
-  const [only] = missing
-  if (!behaviour || missing.length !== 1 || !only)
-    return panels.value.behaviourMissingCount(missing.length)
-  const isPart = behaviour.parts.some((row) => row.id === only)
-  return panels.value.behaviourNeeds({
-    name: isPart ? labels.value.part(only) : labels.value.valueOf(behaviour.kind, only)
-  })
+/** The name of a missing row: a part, the states, or a value. */
+function missingName(control: BehaviourControl, id: string): string {
+  if (control.parts.some((row) => row.id === id)) return labels.value.part(id)
+  if (id === 'states') return panels.value.behaviourStates
+  return labels.value.valueOf(control.kind, id)
+}
+
+/** What is left to bind, by row name, such as "Still needed: Track and Thumb." */
+const nextStep = computed(() => {
+  if (!behaviour) return ''
+  const names = behaviour.missing.map((id) => missingName(behaviour, id))
+  const list = new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(names)
+  return panels.value.behaviourNextStep({ names: list })
 })
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -117,24 +131,25 @@ function showMissing() {
       <div class="flex items-center gap-1.5 text-xs text-surface">
         <icon-lucide-mouse-pointer-click class="size-3.5 shrink-0 text-component" />
         <span class="min-w-0 flex-1 truncate font-medium">{{ kind.label }}</span>
-        <button
-          v-if="behaviour.missing.length"
-          type="button"
-          class="flex h-5 shrink-0 items-center gap-1 rounded bg-issue-warning/15 px-1.5 text-[10px] text-issue-warning hover:bg-issue-warning/25"
-          data-property="behaviour-missing"
-          @click="showMissing"
-        >
-          <SeverityIcon severity="warning" />
-          {{ missingLabel }}
-        </button>
         <span
-          v-else
+          v-if="!behaviour.missing.length"
           class="flex h-5 shrink-0 items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted"
         >
           <icon-lucide-check class="size-3 text-success" />
           {{ panels.behaviourComplete }}
         </span>
       </div>
+
+      <button
+        v-if="behaviour.missing.length"
+        type="button"
+        class="flex items-start gap-1.5 rounded bg-issue-warning/10 px-1.5 py-1 text-left text-[11px] leading-4 text-issue-warning outline-none hover:bg-issue-warning/20 focus-visible:bg-issue-warning/20"
+        data-property="behaviour-missing"
+        @click="showMissing"
+      >
+        <SeverityIcon severity="warning" class="mt-0.5 shrink-0" />
+        {{ nextStep }}
+      </button>
 
       <BehaviourRow
         v-for="row in mainRows"
@@ -151,6 +166,7 @@ function showMissing() {
         :states="behaviour.states"
         @bind="emit('bindStates', $event)"
         @map="(state, value) => emit('mapState', state, value)"
+        @create="emit('createStates')"
       />
 
       <AppCollapsible
@@ -175,6 +191,7 @@ function showMissing() {
             :states="behaviour.states"
             @bind="emit('bindStates', $event)"
             @map="(state, value) => emit('mapState', state, value)"
+            @create="emit('createStates')"
           />
         </div>
       </AppCollapsible>

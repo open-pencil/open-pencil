@@ -63,7 +63,7 @@ export function useBehaviourLabels() {
     }
     /** What a control's main value is called, which code calls its `value`. */
     const mainValue: Partial<Record<BehaviourKind, string>> = {
-      switch: p.behaviourOnValue,
+      switch: p.behaviourChecked,
       checkbox: p.behaviourChecked,
       radio: p.behaviourChecked,
       toggle: p.behaviourPressed,

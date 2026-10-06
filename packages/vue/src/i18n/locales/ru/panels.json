@@ -453,11 +453,9 @@
   "behaviourItems": "Элементы",
   "behaviourChecked": "Отмечен",
   "behaviourPressed": "Нажата",
-  "behaviourNeeds": "Нужно: {name}",
   "behaviourAddTextLayer": "Добавить текстовый слой",
   "behaviourAddVariants": "Добавить варианты Off и On",
   "behaviourAddSlot": "Добавить слот «{name}»",
-  "behaviourNeedsVariants": "Сначала объедините компонент с его другими состояниями в варианты",
   "behaviourMoreOptions": "Ещё параметры",
   "behaviourValue": "Значение",
   "behaviourDisabled": "Отключено",
@@ -478,7 +476,10 @@
   "behaviourMin": "Мин",
   "behaviourMax": "Макс",
   "behaviourStep": "Шаг",
-  "behaviourDefault": "По умолчанию",
+  "behaviourStart": "Старт",
+  "behaviourNextStep": "Ещё нужно: {names}.",
+  "behaviourStatesHint": "Виды при наведении, нажатии, фокусе и отключении рисуются как варианты.",
+  "behaviourAddStates": "Добавить варианты состояний",
   "behaviourButton": "Кнопка",
   "behaviourButtonDescription": "Показывает состояния наведения, нажатия, фокуса и отключения",
   "behaviourStates": "Состояния",
@@ -490,10 +491,5 @@
   "behaviourStateUnset": "Нет",
   "behaviourStateField": "Состояние «{state}»",
   "searchComponentProperties": "Поиск свойств",
-  "noComponentProperties": "Свойства не найдены",
-  "behaviourMissingCount": {
-    "one": "не хватает {count}",
-    "few": "не хватает {count}",
-    "many": "не хватает {count}"
-  }
+  "noComponentProperties": "Свойства не найдены"
 }

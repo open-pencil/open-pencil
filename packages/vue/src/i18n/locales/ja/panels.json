@@ -441,11 +441,9 @@
   "behaviourItems": "項目",
   "behaviourChecked": "チェック",
   "behaviourPressed": "押下",
-  "behaviourNeeds": "{name} が必要です",
   "behaviourAddTextLayer": "テキストレイヤーを追加",
   "behaviourAddVariants": "Off と On のバリアントを追加",
   "behaviourAddSlot": "{name} スロットを追加",
-  "behaviourNeedsVariants": "まずこのコンポーネントを他の状態とバリアントとして結合してください",
   "behaviourMoreOptions": "その他のオプション",
   "behaviourValue": "値",
   "behaviourDisabled": "無効",
@@ -466,7 +464,10 @@
   "behaviourMin": "最小",
   "behaviourMax": "最大",
   "behaviourStep": "ステップ",
-  "behaviourDefault": "既定",
+  "behaviourStart": "開始値",
+  "behaviourNextStep": "まだ必要: {names}。",
+  "behaviourStatesHint": "ホバー、押下、フォーカス、無効の見た目はバリアントとして描きます。",
+  "behaviourAddStates": "状態バリアントを追加",
   "behaviourButton": "ボタン",
   "behaviourButtonDescription": "ホバー、押下、フォーカス、無効の状態を表示します",
   "behaviourStates": "状態",
@@ -478,8 +479,5 @@
   "behaviourStateUnset": "なし",
   "behaviourStateField": "{state} 状態",
   "searchComponentProperties": "プロパティを検索",
-  "noComponentProperties": "プロパティが見つかりません",
-  "behaviourMissingCount": {
-    "many": "{count} 件不足"
-  }
+  "noComponentProperties": "プロパティが見つかりません"
 }

@@ -441,11 +441,9 @@
   "behaviourItems": "项目",
   "behaviourChecked": "已选中",
   "behaviourPressed": "已按下",
-  "behaviourNeeds": "需要 {name}",
   "behaviourAddTextLayer": "添加文本图层",
   "behaviourAddVariants": "添加 Off 和 On 变体",
   "behaviourAddSlot": "添加 {name} 插槽",
-  "behaviourNeedsVariants": "请先将此组件与其他状态合并为变体",
   "behaviourMoreOptions": "更多选项",
   "behaviourValue": "值",
   "behaviourDisabled": "已禁用",
@@ -466,7 +464,10 @@
   "behaviourMin": "最小",
   "behaviourMax": "最大",
   "behaviourStep": "步长",
-  "behaviourDefault": "默认",
+  "behaviourStart": "起始值",
+  "behaviourNextStep": "仍需设置：{names}。",
+  "behaviourStatesHint": "悬停、按下、焦点和禁用的外观以变体绘制。",
+  "behaviourAddStates": "添加状态变体",
   "behaviourButton": "按钮",
   "behaviourButtonDescription": "显示悬停、按下、聚焦和禁用状态",
   "behaviourStates": "状态",
@@ -478,8 +479,5 @@
   "behaviourStateUnset": "无",
   "behaviourStateField": "{state}状态",
   "searchComponentProperties": "搜索属性",
-  "noComponentProperties": "未找到属性",
-  "behaviourMissingCount": {
-    "many": "缺少 {count} 项"
-  }
+  "noComponentProperties": "未找到属性"
 }

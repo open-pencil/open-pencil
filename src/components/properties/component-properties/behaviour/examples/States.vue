@@ -26,21 +26,17 @@ const switchComplete = ref<BehaviourControl>({
       propertyId: 'state',
       on: 'On',
       off: 'Off',
-      options: [stateProperty, sizeProperty],
-      creatable: true
+      options: [stateProperty, sizeProperty]
     },
     {
       id: 'disabled',
       type: 'boolean',
       required: false,
       propertyId: null,
-      options: [stateProperty, sizeProperty],
-      creatable: true
+      options: [stateProperty, sizeProperty]
     }
   ],
-  parts: [
-    { id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot], creatable: false }
-  ],
+  parts: [{ id: 'thumb', required: false, propertyId: 'thumb', options: [thumbSlot] }],
   states: {
     propertyId: 'interaction',
     values: { rest: 'Default', hover: 'Hover', pressed: 'Pressed', disabled: 'Disabled' },
@@ -57,14 +53,13 @@ const sliderIncomplete = ref<BehaviourControl>({
       type: 'boolean',
       required: false,
       propertyId: null,
-      options: [stateProperty],
-      creatable: false
+      options: [stateProperty]
     }
   ],
   parts: [
-    { id: 'track', required: true, propertyId: 'track', options: [trackSlot], creatable: true },
-    { id: 'range', required: false, propertyId: null, options: [trackSlot], creatable: true },
-    { id: 'thumb', required: true, propertyId: null, options: [], creatable: true }
+    { id: 'track', required: true, propertyId: 'track', options: [trackSlot] },
+    { id: 'range', required: false, propertyId: null, options: [trackSlot] },
+    { id: 'thumb', required: true, propertyId: null, options: [] }
   ],
   states: { propertyId: null, values: {}, options: [interactionProperty] }
 })
@@ -73,22 +68,20 @@ const textareaBare = ref<BehaviourControl>({
   kind: 'textarea',
   missing: ['value'],
   values: [
-    { id: 'value', type: 'text', required: true, propertyId: null, options: [], creatable: true },
+    { id: 'value', type: 'text', required: true, propertyId: null, options: [] },
     {
       id: 'filled',
       type: 'boolean',
       required: false,
       propertyId: null,
-      options: [],
-      creatable: false
+      options: []
     },
     {
       id: 'disabled',
       type: 'boolean',
       required: false,
       propertyId: null,
-      options: [],
-      creatable: false
+      options: []
     }
   ],
   parts: [],

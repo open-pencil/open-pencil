@@ -23,5 +23,6 @@ const behaviour = useBehaviour()
     @create-text="behaviour.createText"
     @create-variant="behaviour.createVariant"
     @create-part="behaviour.createPart"
+    @create-states="behaviour.createStates"
   />
 </template>

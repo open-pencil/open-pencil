@@ -453,11 +453,9 @@
   "behaviourItems": "Elementy",
   "behaviourChecked": "Zaznaczony",
   "behaviourPressed": "Wciśnięty",
-  "behaviourNeeds": "Brak: {name}",
   "behaviourAddTextLayer": "Dodaj warstwę tekstu",
   "behaviourAddVariants": "Dodaj warianty Off i On",
   "behaviourAddSlot": "Dodaj slot {name}",
-  "behaviourNeedsVariants": "Najpierw połącz ten komponent z jego innymi stanami jako warianty",
   "behaviourMoreOptions": "Więcej opcji",
   "behaviourValue": "Wartość",
   "behaviourDisabled": "Wyłączony",
@@ -478,7 +476,10 @@
   "behaviourMin": "Min",
   "behaviourMax": "Maks",
   "behaviourStep": "Krok",
-  "behaviourDefault": "Domyślna",
+  "behaviourStart": "Początek",
+  "behaviourNextStep": "Jeszcze potrzebne: {names}.",
+  "behaviourStatesHint": "Wygląd po najechaniu, wciśnięciu, fokusie i wyłączeniu rysuje się jako warianty.",
+  "behaviourAddStates": "Dodaj warianty stanów",
   "behaviourButton": "Przycisk",
   "behaviourButtonDescription": "Pokazuje stany najechania, wciśnięcia, fokusu i wyłączenia",
   "behaviourStates": "Stany",
@@ -490,10 +491,5 @@
   "behaviourStateUnset": "Brak",
   "behaviourStateField": "Stan {state}",
   "searchComponentProperties": "Szukaj właściwości",
-  "noComponentProperties": "Nie znaleziono właściwości",
-  "behaviourMissingCount": {
-    "one": "brakuje {count}",
-    "few": "brakuje {count}",
-    "many": "brakuje {count}"
-  }
+  "noComponentProperties": "Nie znaleziono właściwości"
 }

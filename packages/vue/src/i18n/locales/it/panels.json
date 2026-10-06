@@ -447,11 +447,9 @@
   "behaviourItems": "Elementi",
   "behaviourChecked": "Selezionato",
   "behaviourPressed": "Premuto",
-  "behaviourNeeds": "Manca {name}",
   "behaviourAddTextLayer": "Aggiungi livello di testo",
   "behaviourAddVariants": "Aggiungi varianti Off e On",
   "behaviourAddSlot": "Aggiungi slot {name}",
-  "behaviourNeedsVariants": "Combina prima questo componente con gli altri stati come varianti",
   "behaviourMoreOptions": "Altre opzioni",
   "behaviourValue": "Valore",
   "behaviourDisabled": "Disattivato",
@@ -472,7 +470,10 @@
   "behaviourMin": "Min",
   "behaviourMax": "Max",
   "behaviourStep": "Passo",
-  "behaviourDefault": "Predefinito",
+  "behaviourStart": "Inizio",
+  "behaviourNextStep": "Ancora da impostare: {names}.",
+  "behaviourStatesHint": "Gli aspetti hover, premuto, focus e disattivato si disegnano come varianti.",
+  "behaviourAddStates": "Aggiungi varianti di stato",
   "behaviourButton": "Pulsante",
   "behaviourButtonDescription": "Mostra gli stati hover, premuto, focus e disattivato",
   "behaviourStates": "Stati",
@@ -484,9 +485,5 @@
   "behaviourStateUnset": "Nessuno",
   "behaviourStateField": "Stato {state}",
   "searchComponentProperties": "Cerca proprietà",
-  "noComponentProperties": "Nessuna proprietà trovata",
-  "behaviourMissingCount": {
-    "one": "{count} mancante",
-    "many": "{count} mancanti"
-  }
+  "noComponentProperties": "Nessuna proprietà trovata"
 }

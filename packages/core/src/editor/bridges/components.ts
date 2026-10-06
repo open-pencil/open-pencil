@@ -40,6 +40,7 @@ export function createComponentBridge(
     addBehaviourText: components.addBehaviourText,
     addBehaviourVariant: components.addBehaviourVariant,
     addBehaviourPart: components.addBehaviourPart,
+    addBehaviourStates: components.addBehaviourStates,
     addPropertyDefinition: components.addPropertyDefinition,
     removePropertyDefinition: components.removePropertyDefinition,
     renamePropertyDefinition: components.renamePropertyDefinition,

@@ -447,11 +447,9 @@
   "behaviourItems": "Elemente",
   "behaviourChecked": "Ausgewählt",
   "behaviourPressed": "Gedrückt",
-  "behaviourNeeds": "{name} fehlt",
   "behaviourAddTextLayer": "Textebene hinzufügen",
   "behaviourAddVariants": "Varianten Aus und Ein hinzufügen",
   "behaviourAddSlot": "Slot {name} hinzufügen",
-  "behaviourNeedsVariants": "Kombiniere diese Komponente zuerst mit ihren anderen Zuständen als Varianten",
   "behaviourMoreOptions": "Weitere Optionen",
   "behaviourValue": "Wert",
   "behaviourDisabled": "Deaktiviert",
@@ -472,7 +470,10 @@
   "behaviourMin": "Min",
   "behaviourMax": "Max",
   "behaviourStep": "Schritt",
-  "behaviourDefault": "Standard",
+  "behaviourStart": "Anfangswert",
+  "behaviourNextStep": "Noch nötig: {names}.",
+  "behaviourStatesHint": "Hover-, Gedrückt-, Fokus- und Deaktiviert-Ansichten werden als Varianten gezeichnet.",
+  "behaviourAddStates": "Zustandsvarianten hinzufügen",
   "behaviourButton": "Schaltfläche",
   "behaviourButtonDescription": "Zeigt Hover-, Gedrückt-, Fokus- und Deaktiviert-Zustände",
   "behaviourStates": "Zustände",
@@ -484,9 +485,5 @@
   "behaviourStateUnset": "Keine",
   "behaviourStateField": "Zustand {state}",
   "searchComponentProperties": "Eigenschaften suchen",
-  "noComponentProperties": "Keine Eigenschaften gefunden",
-  "behaviourMissingCount": {
-    "one": "{count} fehlt",
-    "many": "{count} fehlen"
-  }
+  "noComponentProperties": "Keine Eigenschaften gefunden"
 }

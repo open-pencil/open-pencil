@@ -13,8 +13,6 @@ export interface BehaviourBooleanControl {
   on?: string
   off?: string
   options: VariantDefinitionControl[]
-  /** Whether `createVariant` can add a variant property for it: only on a component set. */
-  creatable: boolean
 }
 
 /** A number value of the behaviour, which keeps its own range since Figma has no number property. */
@@ -35,8 +33,6 @@ export interface BehaviourTextControl {
   /** The bound text property, if any. */
   propertyId: string | null
   options: VariantDefinitionControl[]
-  /** Whether `createText` can add a text layer and property for it. */
-  creatable: boolean
 }
 
 export type BehaviourValueControl =
@@ -52,8 +48,6 @@ export interface BehaviourPartControl {
   propertyId: string | null
   /** The component's slot properties. */
   options: VariantDefinitionControl[]
-  /** Whether `createPart` can add a slot frame for it: only in a component, not a set. */
-  creatable: boolean
 }
 
 /** The variant property that draws interaction states, and the value of each state. */

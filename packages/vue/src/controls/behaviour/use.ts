@@ -62,8 +62,7 @@ export function useBehaviour() {
             propertyId: binding?.propertyId ?? null,
             on: binding?.on,
             off: binding?.off,
-            options: options(['VARIANT', 'BOOLEAN']),
-            creatable: target.type === 'COMPONENT_SET'
+            options: options(['VARIANT', 'BOOLEAN'])
           }
         ]
       }
@@ -74,8 +73,7 @@ export function useBehaviour() {
             type: 'text',
             required: value.required,
             propertyId: textBinding(current, value.id) ?? null,
-            options: options(['TEXT']),
-            creatable: true
+            options: options(['TEXT'])
           }
         ]
       if (value.type === 'number')
@@ -95,8 +93,7 @@ export function useBehaviour() {
         id: part.id,
         required: part.required,
         propertyId: partBinding(current, part.id) ?? null,
-        options: options(['SLOT']),
-        creatable: target.type === 'COMPONENT'
+        options: options(['SLOT'])
       })),
       states: {
         propertyId: current.states?.propertyId ?? null,
@@ -177,6 +174,10 @@ export function useBehaviour() {
     /** Add a slot frame named `name` for a part, and bind it. */
     createPart: (partId: string, name: string) => {
       if (owner.value) editor.addBehaviourPart(owner.value.id, partId, name)
+    },
+    /** Add a variant for each interaction state, making a lone component a set, and bind them. */
+    createStates: () => {
+      if (owner.value) editor.addBehaviourStates(owner.value.id)
     },
     /**
      * Draw interaction states with a variant property, its values named like states (Hover,

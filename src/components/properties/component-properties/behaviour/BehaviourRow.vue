@@ -10,7 +10,7 @@ import type {
   BehaviourValueControl
 } from '@open-pencil/vue'
 
-import AppInput from '@/components/ui/input/AppInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
@@ -33,6 +33,7 @@ const labels = useBehaviourLabels()
 
 const part = computed(() => ('part' in row ? row.part : null))
 const value = computed(() => ('value' in row ? row.value : null))
+const number = computed(() => (value.value?.type === 'number' ? value.value : null))
 const id = computed(() => part.value?.id ?? value.value?.id ?? '')
 const label = computed(() =>
   part.value ? labels.value.part(id.value) : labels.value.valueOf(kind, id.value)
@@ -52,9 +53,10 @@ function setMapping(boolean: BehaviourBooleanControl, side: 'on' | 'off', choice
 }
 
 const NUMBER_FIELDS = ['min', 'max', 'step', 'default'] as const
+type NumberSetting = (typeof NUMBER_FIELDS)[number]
 
-/** Number fields being typed in, reset whenever the value changes. */
-const drafts = reactive<Record<string, string | number>>({})
+/** Number fields as they are scrubbed, reset whenever the value changes. */
+const drafts = reactive<Partial<Record<NumberSetting, number>>>({})
 watch(
   value,
   (current) => {
@@ -64,22 +66,21 @@ watch(
   { immediate: true, deep: true }
 )
 
-function setNumberField(number: BehaviourNumberControl, field: (typeof NUMBER_FIELDS)[number]) {
-  const input = drafts[field] ?? ''
-  const parsed = typeof input === 'number' ? input : Number.parseFloat(input)
+/** Keep a range a slider can step through; any other puts the field back. */
+function commitNumber(number: BehaviourNumberControl, field: NumberSetting, input: number) {
   const { id: _id, type: _type, ...settings } = number
-  const next = { ...settings, [field]: parsed }
-  if (Number.isFinite(parsed) && isNumberRange(next)) emit('setNumber', next)
+  const next = { ...settings, [field]: input }
+  if (isNumberRange(next)) emit('setNumber', next)
   else drafts[field] = number[field]
 }
 
-function numberLabel(field: (typeof NUMBER_FIELDS)[number]) {
+function numberLabel(field: NumberSetting) {
   const p = panels.value
   return {
     min: p.behaviourMin,
     max: p.behaviourMax,
     step: p.behaviourStep,
-    default: p.behaviourDefault
+    default: p.behaviourStart
   }[field]
 }
 </script>
@@ -93,8 +94,7 @@ function numberLabel(field: (typeof NUMBER_FIELDS)[number]) {
       :options="part.options"
       :placeholder="panels.behaviourChooseSlot"
       :empty-label="panels.behaviourNoSlots"
-      :create-label="part.creatable ? panels.behaviourAddSlot({ name: label }) : undefined"
-      :hint="panels.behaviourNoSlots"
+      :create-label="panels.behaviourAddSlot({ name: label })"
       :missing="part.required"
       :data-property="`behaviour-part-${id}`"
       @bind="emit('bind', $event)"
@@ -107,8 +107,7 @@ function numberLabel(field: (typeof NUMBER_FIELDS)[number]) {
         :options="value.options"
         :placeholder="panels.behaviourChooseProperty"
         :empty-label="panels.noComponentProperties"
-        :create-label="value.creatable ? panels.behaviourAddVariants : undefined"
-        :hint="panels.behaviourNeedsVariants"
+        :create-label="panels.behaviourAddVariants"
         :missing="value.required"
         :data-property="`behaviour-value-${id}`"
         @bind="emit('bind', $event)"
@@ -145,21 +144,17 @@ function numberLabel(field: (typeof NUMBER_FIELDS)[number]) {
       @bind="emit('bind', $event)"
       @create="emit('create', label)"
     />
-    <div
-      v-else-if="value?.type === 'number'"
-      class="grid grid-cols-4 gap-1"
-      :data-property="`behaviour-value-${id}`"
-    >
-      <AppInput
+    <div v-else-if="number" class="grid grid-cols-2 gap-1" :data-property="`behaviour-value-${id}`">
+      <NumberField
         v-for="field in NUMBER_FIELDS"
         :key="field"
-        v-model="drafts[field]"
-        type="number"
-        size="sm"
-        tone="panel"
+        :label="numberLabel(field)"
         :aria-label="numberLabel(field)"
-        :placeholder="numberLabel(field)"
-        @change="setNumberField(value, field)"
+        :model-value="drafts[field] ?? number[field]"
+        :data-property="`behaviour-number-${field}`"
+        @update:model-value="drafts[field] = $event"
+        @commit="(input: number) => number && commitNumber(number, field, input)"
+        @cancel="drafts[field] = number[field]"
       />
     </div>
   </PanelFieldGroup>

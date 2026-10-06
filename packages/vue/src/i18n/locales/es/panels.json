@@ -447,11 +447,9 @@
   "behaviourItems": "Elementos",
   "behaviourChecked": "Marcado",
   "behaviourPressed": "Pulsado",
-  "behaviourNeeds": "Falta {name}",
   "behaviourAddTextLayer": "Añadir capa de texto",
   "behaviourAddVariants": "Añadir variantes Off y On",
   "behaviourAddSlot": "Añadir slot {name}",
-  "behaviourNeedsVariants": "Primero combina este componente con sus otros estados como variantes",
   "behaviourMoreOptions": "Más opciones",
   "behaviourValue": "Valor",
   "behaviourDisabled": "Desactivado",
@@ -472,7 +470,10 @@
   "behaviourMin": "Mín",
   "behaviourMax": "Máx",
   "behaviourStep": "Paso",
-  "behaviourDefault": "Predeterminado",
+  "behaviourStart": "Inicio",
+  "behaviourNextStep": "Falta: {names}.",
+  "behaviourStatesHint": "Los aspectos de hover, pulsado, foco y deshabilitado se dibujan como variantes.",
+  "behaviourAddStates": "Añadir variantes de estado",
   "behaviourButton": "Botón",
   "behaviourButtonDescription": "Muestra los estados de hover, pulsado, foco y desactivado",
   "behaviourStates": "Estados",
@@ -484,9 +485,5 @@
   "behaviourStateUnset": "Ninguno",
   "behaviourStateField": "Estado {state}",
   "searchComponentProperties": "Buscar propiedades",
-  "noComponentProperties": "No se encontraron propiedades",
-  "behaviourMissingCount": {
-    "one": "falta {count}",
-    "many": "faltan {count}"
-  }
+  "noComponentProperties": "No se encontraron propiedades"
 }

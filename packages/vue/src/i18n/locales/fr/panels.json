@@ -447,11 +447,9 @@
   "behaviourItems": "Éléments",
   "behaviourChecked": "Coché",
   "behaviourPressed": "Appuyé",
-  "behaviourNeeds": "{name} manquant",
   "behaviourAddTextLayer": "Ajouter un calque de texte",
   "behaviourAddVariants": "Ajouter les variantes Off et On",
   "behaviourAddSlot": "Ajouter le slot {name}",
-  "behaviourNeedsVariants": "Combinez d’abord ce composant avec ses autres états en variantes",
   "behaviourMoreOptions": "Plus d’options",
   "behaviourValue": "Valeur",
   "behaviourDisabled": "Désactivé",
@@ -472,7 +470,10 @@
   "behaviourMin": "Min",
   "behaviourMax": "Max",
   "behaviourStep": "Pas",
-  "behaviourDefault": "Par défaut",
+  "behaviourStart": "Départ",
+  "behaviourNextStep": "Encore requis : {names}.",
+  "behaviourStatesHint": "Les apparences survol, pressé, focus et désactivé sont dessinées comme des variantes.",
+  "behaviourAddStates": "Ajouter des variantes d’état",
   "behaviourButton": "Bouton",
   "behaviourButtonDescription": "Affiche les états survol, appuyé, focus et désactivé",
   "behaviourStates": "États",
@@ -484,9 +485,5 @@
   "behaviourStateUnset": "Aucun",
   "behaviourStateField": "État {state}",
   "searchComponentProperties": "Rechercher des propriétés",
-  "noComponentProperties": "Aucune propriété trouvée",
-  "behaviourMissingCount": {
-    "one": "{count} manquant",
-    "many": "{count} manquants"
-  }
+  "noComponentProperties": "Aucune propriété trouvée"
 }
