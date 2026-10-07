@@ -27,7 +27,15 @@ test('a new document and its new pages take the dark page in the dark theme', as
 })
 
 test('the light theme starts documents on the light page', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('open-pencil:theme', 'light'))
   await openFresh(page)
+  await page.evaluate(async () => {
+    const themeModulePath = '/src/app/shell/theme.ts'
+    const themeModule = await import(themeModulePath)
+    themeModule.setAppTheme('light')
+  })
+  // The theme setting persists, so the reloaded app starts a new document in it.
+  await page.reload()
+  await page.getByTestId('canvas-element').and(page.locator('[data-ready="1"]')).waitFor()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   expect(await currentPageColor(page)).toBeCloseTo(LIGHT, 3)
 })
