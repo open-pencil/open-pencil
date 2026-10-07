@@ -275,6 +275,7 @@ export function createEditor(options?: EditorOptions) {
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId
     setSelectedIds(new Set())
     state.hoveredNodeId = null
+    state.transforming = false
     state.measurementMode = 'off'
     state.snapGuides = []
     state.guides = { preview: null, hovered: null, selected: null, redline: null }

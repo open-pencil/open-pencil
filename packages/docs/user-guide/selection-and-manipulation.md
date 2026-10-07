@@ -9,6 +9,7 @@ Select objects to move, resize, rotate, duplicate, and organize them on the canv
 ## Selecting
 
 - **Click** a node to select it (deselects everything else). As in Figma, a click inside a top-level frame selects that frame's direct child, such as a nested frame or a group, rather than the deepest layer; click a top-level frame by its title, anywhere when it is empty, or by its gaps and padding when it has auto layout
+- **Hover** an auto layout frame to see its direct children outlined with dotted lines; while a single layer is selected, the border of its auto layout parent is dotted
 - **Double-click** to go one level deeper; once a layer is selected, clicks reach its siblings and cousins directly
 - <kbd>⌘</kbd> + click (<kbd>Ctrl</kbd> + click on Windows and Linux) selects the deepest layer under the cursor
 - <kbd>Shift</kbd> + click to add or remove a node from the current selection

@@ -34,6 +34,7 @@ export interface RenderOverlays {
   /** Layers a previewing canvas leaves to its live islands. */
   playIslands?: ReadonlySet<string>
   hoveredNodeId?: string | null
+  transforming?: boolean
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null
   editingTextId?: string | null

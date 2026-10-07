@@ -65,6 +65,7 @@ export function renderFromEditorState(
       playing: previewing,
       playIslands: previewing ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: previewing ? null : state.hoveredNodeId,
+      transforming: state.transforming,
       measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,

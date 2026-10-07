@@ -66,6 +66,8 @@ export interface EditorViewState {
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
   hoveredNodeId: string | null
+  /** A pointer move, resize, or rotation is in progress. */
+  transforming: boolean
   measurementMode: MeasurementMode
   editingTextId: string | null
   penState: {

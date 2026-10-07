@@ -1,5 +1,5 @@
 import { useEventListener } from '@vueuse/core'
-import { onScopeDispose, ref, type Ref } from 'vue'
+import { onScopeDispose, ref, watch, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -45,6 +45,12 @@ export function useCanvasInput(
   isEnabled: () => boolean = () => true
 ) {
   const drag = ref<DragState | null>(null)
+  // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
+  // layers move, resize, or rotate.
+  watch(
+    () => drag.value?.type,
+    (type) => editor.setTransforming(type === 'move' || type === 'resize' || type === 'rotate')
+  )
   const canvasLabelEdit = createCanvasLabelEdit(editor)
   const cursorOverride = ref<string | null>(null)
   /** Whether the primary button is held on a preview control, such as a slider thumb. */
