@@ -36,11 +36,11 @@ describe('plugin text sizing', () => {
     node.characters = 'Hello'
     expect(size(node)).toEqual([29, 15])
     node.characters = 'Hello world, a longer line of text'
-    expect(node.width).toBeCloseTo(180, -0.5)
+    expect(Math.abs(node.width - 180)).toBeLessThanOrEqual(1)
     node.characters = 'Hello'
     node.fontSize = 24
     expect(node.width).toBe(58)
-    expect(node.height).toBeCloseTo(29, -0.5)
+    expect(Math.abs(node.height - 29)).toBeLessThanOrEqual(1)
   })
 
   test('resizing text fixes its size', () => {
