@@ -1,16 +1,13 @@
+import { escapeAttribute, escapeText } from 'entities'
+
 import { printExpression, printModule, type SyntaxNode } from './estree'
 
 /**
- * Vue's template parser finds `{{` interpolations and tag starts before it decodes entities, so
- * text written with `&`, `<`, and `{` as entities reads back as written and can never open an
- * interpolation or a tag. Attribute values end at `"`, so `&` and `"` are entities there.
+ * Text and attribute values are escaped as HTML by `entities`. Vue also reads `{{` as an
+ * interpolation before it decodes entities, so text writes `{` as one too and a design's text
+ * can never become template syntax.
  */
-const TEXT_ENTITIES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '{': '&#123;' }
-const ATTRIBUTE_ENTITIES: Record<string, string> = { '&': '&amp;', '"': '&quot;' }
-
-const escapeText = (value: string) => value.replace(/[&<{]/g, (char) => TEXT_ENTITIES[char] ?? char)
-const escapeAttribute = (value: string) =>
-  value.replace(/[&"]/g, (char) => ATTRIBUTE_ENTITIES[char] ?? char)
+const templateText = (value: string) => escapeText(value).replaceAll('{', '&#123;')
 
 export type VueAttribute =
   | { type: 'static'; name: string; value: string }
@@ -68,13 +65,13 @@ function printAttribute(item: VueAttribute): string {
 
 function printNode(node: VueNode, depth: number): string {
   const indent = '  '.repeat(depth)
-  if (node.type === 'text') return `${indent}${escapeText(node.value)}`
+  if (node.type === 'text') return `${indent}${templateText(node.value)}`
   const open = [node.tag, ...node.attributes.map(printAttribute)].join(' ')
   if (node.children.length === 0) return `${indent}<${open} />`
   const only = node.children.at(0)
   // A lone text child stays on the element's line, so no whitespace is added around it.
   if (node.children.length === 1 && only?.type === 'text')
-    return `${indent}<${open}>${escapeText(only.value)}</${node.tag}>`
+    return `${indent}<${open}>${templateText(only.value)}</${node.tag}>`
   const children = node.children.map((child) => printNode(child, depth + 1))
   return [`${indent}<${open}>`, ...children, `${indent}</${node.tag}>`].join('\n')
 }

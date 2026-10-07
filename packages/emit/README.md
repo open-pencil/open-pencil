@@ -28,7 +28,7 @@ const module = es.fill(es.parseModule("export const title = '$title'"), {
 es.printModule(module) // export const title = 'Checkout';
 ```
 
-`vue` builds templates and single-file components. Text escapes `&`, `<`, and `{` and attribute values escape `&` and `"` as entities, which Vue's parser decodes only after it looks for interpolations, tags, and the attribute's end:
+`vue` builds templates and single-file components. Text and attribute values are escaped as HTML with `entities`, and text also writes `{` as an entity, since Vue reads `{{` as an interpolation before it decodes entities:
 
 ```ts
 import { es, vue } from '@open-pencil/emit'

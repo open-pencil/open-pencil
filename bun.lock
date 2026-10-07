@@ -320,6 +320,7 @@
       "dependencies": {
         "@sveltejs/acorn-typescript": "^1.0.13",
         "acorn": "^8.18.0",
+        "entities": "^8.0.0",
         "esrap": "^2.3.11",
       },
       "devDependencies": {
