@@ -81,12 +81,31 @@ function invalidateRenderersForChange(
 
 export function createGraphEventSubscription(options: GraphEventOptions) {
   let unbindGraphEvents: (() => void) | null = null
+  let layoutRenderPending = false
+
+  /**
+   * A layout pass updates many layers at once, and each render request bumps reactive versions;
+   * the pass asks for one render after it, before the next frame draws.
+   */
+  function requestRenderFor(graph: SceneGraph) {
+    if (!graph.isApplyingLayout) {
+      options.requestRender()
+      return
+    }
+    if (layoutRenderPending) return
+    layoutRenderPending = true
+    queueMicrotask(() => {
+      layoutRenderPending = false
+      options.requestRender()
+    })
+  }
 
   function onNodeUpdated(id: string, changes: Partial<SceneNode>) {
-    invalidateRenderersForChange(options.getGraph(), options.getRenderers(), id, changes, true)
+    const graph = options.getGraph()
+    invalidateRenderersForChange(graph, options.getRenderers(), id, changes, true)
     options.emitEditorEvent('node:updated', id, changes)
     options.scheduleComponentSync(id)
-    options.requestRender()
+    requestRenderFor(graph)
   }
 
   function onNodePreviewUpdated(id: string, changes: Partial<SceneNode>) {
