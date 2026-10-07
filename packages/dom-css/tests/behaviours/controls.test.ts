@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { behaviourControls, booleanOf, controlRoles } from '#dom-css/behaviours'
+import { behaviourControls, booleanOf } from '#dom-css/behaviours/controls'
+import { controlRoles } from '#dom-css/behaviours/roles'
 
 import { emptyBehaviour, SceneGraph, withBehaviour } from '@open-pencil/scene-graph'
 

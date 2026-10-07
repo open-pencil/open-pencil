@@ -1,4 +1,4 @@
-import { behaviourArgs } from '#dom-css/behaviours'
+import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'

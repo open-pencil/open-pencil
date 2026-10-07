@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { behaviourArgs } from '#dom-css/behaviours'
+import { behaviourArgs } from '#dom-css/behaviours/args'
 
 import { emptyBehaviour, SceneGraph, withBehaviour } from '@open-pencil/scene-graph'
 
