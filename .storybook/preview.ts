@@ -82,9 +82,7 @@ const preview: Preview = {
           // A row being dragged stays behind as a faded placeholder; the drag preview carries it.
           '[data-dragging]',
           // Design Check shows the document's own failing text and background colors as a sample.
-          '[data-contrast-sample]',
-          // A reverted reply is dimmed history whose edits are gone.
-          '[data-reverted="true"]'
+          '[data-contrast-sample]'
         ]
       }
     }
