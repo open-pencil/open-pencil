@@ -125,6 +125,7 @@
 
 ### Fixed
 
+- Keep a layer's `.fig` ID the same across saves (#890). Layers created in OpenPencil were numbered in tree order on each save until the file was reopened, so inserting a layer shifted the IDs of the layers after it; variable collections and modes could also be renumbered.
 - Store crash recovery snapshots of any size. Snapshots of documents over 127 MiB failed to save to IndexedDB and stayed in memory for the rest of the session.
 - Keep an opened `.fig` file saved until it is edited. Laying out its first page, which recomputes auto-layout sizes and positions, and showing another page for the first time, which loads its layers from the file, marked it unsaved, so closing it asked to save changes nobody made.
 - Run crash recovery and autosave after edits, not whenever the canvas redraws. Opening a document, laying out a page, or loading a font started a recovery snapshot or an autosave, which encoded the whole document again once another page had loaded. In Safari, where every opened file gets recovery snapshots, a large page froze the browser for minutes after it first appeared.

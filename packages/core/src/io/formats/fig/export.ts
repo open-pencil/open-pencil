@@ -95,31 +95,66 @@ async function renderFigThumbnail(
   )
 }
 
-interface ComponentPropertyGuidState {
-  ids: string[]
-  maxLocalId0: number
-  maxLocalId1: number
+/**
+ * The GUID a layer that was never opened from a file is saved under: its graph ID, which has
+ * Figma's `sessionID:localID` shape and never changes, so later saves keep it. Saved GUIDs of
+ * opened layers and GUIDs already written win over it.
+ */
+function ownGuid(
+  id: string,
+  sourceGuidValues: ReadonlySet<string>,
+  assignedGuidValues: ReadonlySet<string>
+): GUID | null {
+  if (!/^\d+:\d+$/.test(id)) return null
+  const guid = stringToGuid(id)
+  const key = `${guid.sessionID}:${guid.localID}`
+  return sourceGuidValues.has(key) || assignedGuidValues.has(key) ? null : guid
 }
 
-function collectComponentPropertyGuidState(graph: SceneGraph): ComponentPropertyGuidState {
+function assignOwnLayerGuids(
+  graph: SceneGraph,
+  sourceGuidValues: ReadonlySet<string>,
+  nodeIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>
+): void {
+  for (const node of graph.nodes.values()) {
+    if (node.source.id || node.id === graph.rootId || nodeIdToGuid.has(node.id)) continue
+    const guid = ownGuid(node.id, sourceGuidValues, assignedGuidValues)
+    if (!guid) continue
+    nodeIdToGuid.set(node.id, guid)
+    assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
+  }
+}
+
+/**
+ * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
+ * ID that layers, collections, modes, variables and component properties are saved under.
+ */
+function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
+  const ids = [...propertyIds]
+  for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
+  for (const [collectionId, collection] of graph.variableCollections) {
+    ids.push(collectionId, ...collection.modes.map((mode) => mode.modeId))
+    ids.push(...collection.variableIds)
+  }
+  let last = 0
+  for (const id of ids) {
+    if (!/^\d+:\d+$/.test(id)) continue
+    const guid = stringToGuid(id)
+    if (guid.sessionID <= 1) last = Math.max(last, guid.localID)
+  }
+  return last + 1
+}
+
+function collectComponentPropertyIds(graph: SceneGraph): string[] {
   const ids = new Set<string>()
-  let maxLocalId0 = 0
-  let maxLocalId1 = 0
   for (const node of graph.getAllNodes()) {
     for (const definition of node.componentPropertyDefinitions) ids.add(definition.id)
     for (const reference of node.componentPropertyReferences) ids.add(reference.propertyId)
     for (const propertyId of Object.keys(node.componentPropertyAssignments)) ids.add(propertyId)
     for (const spec of node.variantPropSpecs) ids.add(spec.propDefId)
   }
-  for (const propertyId of ids) {
-    const match = /^(\d+):(\d+)$/.exec(propertyId)
-    if (!match) continue
-    const sessionID = Number.parseInt(match[1], 10)
-    const localID = Number.parseInt(match[2], 10)
-    if (sessionID === 0) maxLocalId0 = Math.max(maxLocalId0, localID)
-    if (sessionID === 1) maxLocalId1 = Math.max(maxLocalId1, localID)
-  }
-  return { ids: [...ids], maxLocalId0, maxLocalId1 }
+  return [...ids]
 }
 
 function assignComponentPropertyGuids(
@@ -186,14 +221,22 @@ function buildCanvasEntries(
   docGuid: GUID,
   localIdCounter: { value: number },
   nodeIdToGuid: Map<string, GUID>,
-  assignedGuidValues: Set<string>
+  assignedGuidValues: Set<string>,
+  sourceGuidValues: ReadonlySet<string>
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
   for (let p = 0; p < pages.length; p++) {
     const page = pages[p]
     const canvasGuid = (() => {
-      if (!page.source.id) return { sessionID: 0, localID: localIdCounter.value++ }
+      if (!page.source.id) {
+        return (
+          ownGuid(page.id, sourceGuidValues, assignedGuidValues) ?? {
+            sessionID: 0,
+            localID: localIdCounter.value++
+          }
+        )
+      }
 
       const importedGuid = stringToGuid(page.source.id)
       const key = `${importedGuid.sessionID}:${importedGuid.localID}`
@@ -398,29 +441,13 @@ async function writeFigFile(
   const blobIndexByHex = new Map<string, number>()
   const componentPropertyDefinitionsById = buildComponentPropIndex(graph)
 
-  // Scan ALL imported source.ids BEFORE any new GUID assignment to find
-  // max sessionID:0 and sessionID:1 localID values. This guarantees the
-  // counter is past every imported GUID before any canvas, variable, or
-  // node claims a new counter-based GUID — preventing collisions.
-  let maxLocalId0 = localIdCounter.value - 1
-  let maxLocalId1 = localIdCounter.value - 1
   const nodeSourceGuidValues = new Set<string>()
   for (const node of graph.nodes.values()) {
-    if (node.source.id) {
-      nodeSourceGuidValues.add(node.source.id)
-      const g = stringToGuid(node.source.id)
-      if (g.sessionID === 0 && g.localID > maxLocalId0) {
-        maxLocalId0 = g.localID
-      }
-      if (g.sessionID === 1 && g.localID > maxLocalId1) {
-        maxLocalId1 = g.localID
-      }
-    }
+    if (node.source.id) nodeSourceGuidValues.add(node.source.id)
   }
-  const propertyGuidState = collectComponentPropertyGuidState(graph)
-  maxLocalId0 = Math.max(maxLocalId0, propertyGuidState.maxLocalId0)
-  maxLocalId1 = Math.max(maxLocalId1, propertyGuidState.maxLocalId1)
-  localIdCounter.value = Math.max(localIdCounter.value, maxLocalId0 + 1, maxLocalId1 + 1)
+  const propertyIds = collectComponentPropertyIds(graph)
+  // Before any canvas, variable or layer takes a counter GUID, so none collides.
+  localIdCounter.value = Math.max(localIdCounter.value, firstUnclaimedLocalId(graph, propertyIds))
 
   const { canvasEntries, internalCanvasGuid } = buildCanvasEntries(
     graph,
@@ -428,7 +455,8 @@ async function writeFigFile(
     docGuid,
     localIdCounter,
     nodeIdToGuid,
-    assignedGuidValues
+    assignedGuidValues,
+    nodeSourceGuidValues
   )
 
   // Assign variable GUIDs AFTER canvas entries so that source.id-derived
@@ -443,13 +471,14 @@ async function writeFigFile(
   )
 
   assignComponentPropertyGuids(
-    propertyGuidState.ids,
+    propertyIds,
     localIdCounter,
     propertyIdToGuid,
     assignedGuidValues,
     nodeSourceGuidValues
   )
   renameBehaviourPropertyIds(graph, propertyIdToGuid)
+  assignOwnLayerGuids(graph, nodeSourceGuidValues, nodeIdToGuid, assignedGuidValues)
 
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
 
