@@ -73,6 +73,27 @@ const rows = 4
   }
 }
 
+export const Table: Story = {
+  args: {
+    content: `The button now has these states:
+
+| State | Look |
+| --- | --- |
+| Default | Burnt orange \`#c2410c\` with the soft glow |
+| Hover | Brighter \`#ea580c\` with a bigger glow |
+| Disabled | Muted \`#374151\` with grey text |`
+  }
+}
+
+export const TaskList: Story = {
+  args: {
+    content: `- [x] Variants created
+- [ ] Checked in preview
+
+See [the guide](https://openpencil.dev/guide).`
+  }
+}
+
 export const Streaming: Story = {
   args: {
     mode: 'streaming',

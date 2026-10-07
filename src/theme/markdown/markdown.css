@@ -1,5 +1,48 @@
 @reference 'tailwindcss';
 
+/* The renderer's shadcn variables, mapped to app tokens on everything it draws: messages and the
+   tooltips and dialogs it teleports out of them. */
+.stream-markdown {
+  --accent: var(--color-hover);
+  --accent-foreground: var(--color-surface);
+  --background: var(--color-input);
+  --border: var(--color-border);
+  --foreground: var(--color-surface);
+  --muted: var(--color-hover);
+  --muted-foreground: var(--color-muted);
+  --popover: var(--color-panel);
+  --popover-foreground: var(--color-surface);
+  --primary: var(--color-accent);
+  --primary-foreground: white;
+}
+
+/* The confirmation before opening a link, sized like the app's dialogs. */
+[data-stream-markdown='alert'] {
+  @apply max-w-80 gap-3 rounded-lg bg-panel p-4 text-surface shadow-lg;
+}
+
+[data-stream-markdown='alert-title'] {
+  @apply mb-1 text-sm;
+}
+
+[data-stream-markdown='alert-description'] {
+  @apply text-xs;
+}
+
+[data-stream-markdown='alert'] [data-stream-markdown='link-url'] {
+  @apply bg-input p-2 text-[11px] break-all text-surface;
+}
+
+/* Menus such as a table's copy formats, sized like the app's menus. The renderer sets the item
+   size inline, so these override it. */
+[data-stream-markdown='dropdown-overlay'] [data-stream-markdown='button'] {
+  @apply !min-w-24 !gap-2 rounded px-2 py-1 !text-xs !leading-4 text-surface;
+}
+
+[data-stream-markdown='alert-backdrop'] {
+  @apply bg-black/40 backdrop-blur-none;
+}
+
 .markdown-root [data-stream-markdown='code-block'],
 .markdown-root .shiki {
   background-color: var(--color-input);
@@ -17,7 +60,69 @@
   }
 }
 
+.markdown-content {
+  /* Tables read as part of the reply: regular weight, a light header, no fills on the rows. */
+  [data-stream-markdown='table-wrapper'] {
+    @apply items-stretch gap-1;
+  }
+
+  [data-stream-markdown='table'] {
+    @apply rounded-md;
+  }
+
+  [data-stream-markdown='thead'] {
+    @apply bg-hover/60;
+  }
+
+  [data-stream-markdown='th'] {
+    @apply text-left align-bottom font-medium text-muted;
+  }
+
+  [data-stream-markdown='tbody'] {
+    @apply border-y-0 bg-transparent font-normal;
+  }
+
+  [data-stream-markdown='td'] {
+    @apply align-top;
+  }
+
+  [data-stream-markdown='table-controls'] [data-stream-markdown='button'] {
+    @apply size-5 p-0;
+
+    & svg {
+      @apply size-3;
+    }
+  }
+
+  [data-stream-markdown='error-component'],
+  [data-stream-markdown='image-caption'] {
+    @apply text-[11px];
+  }
+
+  /* A task item shows its checkbox in place of the bullet. */
+  [data-stream-markdown='li'].task-list-item {
+    @apply list-none;
+  }
+
+  [data-stream-markdown='input'][type='checkbox'] {
+    @apply mr-1.5 size-3 align-[-0.125em] accent-accent;
+  }
+
+  [data-stream-markdown='footnote-definition-button'] {
+    @apply text-muted;
+  }
+}
+
 .markdown-content[data-markdown-density='compact'] {
+  [data-stream-markdown='table-wrapper'] {
+    @apply my-2;
+  }
+
+  [data-stream-markdown='th'],
+  [data-stream-markdown='td'] {
+    @apply px-2 py-1 text-[11px] leading-4;
+  }
+
   @apply text-[11px] leading-4;
 
   [data-stream-markdown='blockquote'],
@@ -97,6 +202,15 @@
 
 .markdown-content[data-markdown-density='comfortable'] {
   @apply text-xs leading-5;
+
+  [data-stream-markdown='table-wrapper'] {
+    @apply my-3;
+  }
+
+  [data-stream-markdown='th'],
+  [data-stream-markdown='td'] {
+    @apply px-2.5 py-1.5 text-xs leading-5;
+  }
 
   [data-stream-markdown='heading-1'] {
     @apply mt-4 mb-1.5 text-base font-semibold first:mt-0;
