@@ -16,7 +16,7 @@ interface Args {
   narrow: boolean
 }
 const meta = {
-  title: 'Chat/Playground',
+  title: 'App/Chat/Playground',
   args: { initialChat: 'dashboard', narrow: false },
   parameters: {
     docs: {

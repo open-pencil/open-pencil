@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const story = (name: string) =>
-  `/iframe.html?id=collaboration-presence-list--${name}&viewMode=story`
+  `/iframe.html?id=app-collaboration-presence-list--${name}&viewMode=story`
 
 test('lists people with their agents and what each agent is doing', async ({ page }) => {
   await page.goto(story('room'))

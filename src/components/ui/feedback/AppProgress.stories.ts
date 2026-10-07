@@ -10,7 +10,7 @@ type ProgressStoryArgs = {
 }
 
 const meta = {
-  title: 'Design System/Progress',
+  title: 'Design System/Feedback/Progress',
   component: AppProgress,
   args: { amount: { value: 42, max: 100 }, label: '42% · 9.6 MiB of 22.9 MiB' },
   render: (args) => ({

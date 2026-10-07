@@ -132,7 +132,7 @@ interface IssueGroupStoryArgs {
 }
 
 const meta = {
-  title: 'Editor/Design Check/Issue Group',
+  title: 'App/Editor/Design Check/Issue Group',
   component: IssueGroup,
   args: { group: contrast },
   render: (args) => ({

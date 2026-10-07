@@ -5,7 +5,7 @@ import LayerTreeStateMatrix from './examples/States.vue'
 import LayerTreeVirtualized from './examples/Virtualized.vue'
 
 const meta = {
-  title: 'Editor/Layer Tree',
+  title: 'App/Editor/Layer Tree',
   component: LayerTreeStateMatrix,
   tags: ['autodocs'],
   parameters: {

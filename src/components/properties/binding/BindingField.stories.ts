@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import BindingFieldStates from './examples/States.vue'
 
 const meta = {
-  title: 'Editor/Properties/Binding Field',
+  title: 'App/Editor/Properties/Binding Field',
   component: BindingFieldStates,
   tags: ['autodocs'],
   parameters: {

@@ -19,7 +19,7 @@ type Args = {
 }
 
 const meta = {
-  title: 'Collaboration/Room Screen',
+  title: 'App/Collaboration/Room Screen',
   component: RoomScreen,
   tags: ['autodocs'],
   args: {

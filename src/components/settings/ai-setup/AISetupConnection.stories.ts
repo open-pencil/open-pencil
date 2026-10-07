@@ -67,7 +67,7 @@ function piSetup(overrides: Partial<PiSetupState>): PiSetupState {
 }
 
 const meta = {
-  title: 'Settings/AI Setup/Connection',
+  title: 'App/Settings/AI Setup/Connection',
   args: {
     providerID: 'openrouter',
     signInStatus: 'idle',

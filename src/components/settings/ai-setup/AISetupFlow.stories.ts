@@ -43,7 +43,7 @@ const freshInstall: AIModelSettings = {
 }
 
 const meta = {
-  title: 'Settings/AI Setup/Guided setup',
+  title: 'App/Settings/AI Setup/Guided Setup',
   args: { entry: 'guided', agentsAvailable: false },
   parameters: {
     docs: {

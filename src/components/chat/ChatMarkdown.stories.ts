@@ -10,7 +10,7 @@ type ChatMarkdownStoryArgs = {
 type Story = StoryObj<ChatMarkdownStoryArgs>
 
 const meta = {
-  title: 'Chat/Markdown',
+  title: 'App/Chat/Markdown',
   component: ChatMarkdown,
   parameters: {
     layout: 'centered',

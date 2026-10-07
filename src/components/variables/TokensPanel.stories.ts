@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import DesignSystem from './examples/DesignSystem.vue'
 
 const meta = {
-  title: 'Editor/Tokens Panel',
+  title: 'App/Editor/Tokens Panel',
   component: DesignSystem,
   parameters: {
     layout: 'centered',

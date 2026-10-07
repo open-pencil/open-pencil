@@ -16,7 +16,7 @@ const plan = planOnboarding(
 )
 
 const meta = {
-  title: 'Settings/AI Setup/Roles',
+  title: 'App/Settings/AI Setup/Roles',
   args: { isRecommended: true },
   render: (args) => ({
     components: { AISetupRoles },

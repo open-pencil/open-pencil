@@ -62,7 +62,7 @@ interface Args {
 }
 
 const meta = {
-  title: 'Chat/Tool calls',
+  title: 'App/Chat/Tool Calls',
   component: ToolCallGroup,
   args: { parts: [rendered] },
   render: (args) => ({

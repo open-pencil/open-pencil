@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import Picker from './examples/Picker.vue'
 
 const meta = {
-  title: 'Design System/Picker',
+  title: 'Design System/Selection/Picker',
   component: Picker,
   tags: ['autodocs'],
   parameters: {

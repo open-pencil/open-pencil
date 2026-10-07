@@ -12,7 +12,7 @@ type Args = {
 }
 
 const meta = {
-  title: 'Collaboration/Avatar Stack',
+  title: 'App/Collaboration/Avatar Stack',
   component: AvatarStack,
   tags: ['autodocs'],
   args: { people: room, max: 3, size: 'sm', label: 'In this room: Dana, Ana, Ben' },

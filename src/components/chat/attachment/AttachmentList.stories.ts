@@ -42,7 +42,7 @@ type AttachmentListStoryArgs = {
 }
 
 const meta = {
-  title: 'Chat/Attachments',
+  title: 'App/Chat/Attachments',
   component: AttachmentList,
   parameters: { layout: 'centered' },
   render: (args) => ({

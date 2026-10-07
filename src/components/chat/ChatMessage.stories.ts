@@ -35,7 +35,7 @@ type ChatMessageStoryArgs = {
 }
 
 const meta = {
-  title: 'Chat/Message',
+  title: 'App/Chat/Message',
   component: ChatMessage,
   parameters: { layout: 'centered' },
   render: (args) => ({

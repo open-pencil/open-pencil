@@ -40,7 +40,7 @@ interface Args {
 }
 
 const meta = {
-  title: 'Chat/Tool change',
+  title: 'App/Chat/Tool Change',
   component: ToolChangeView,
   args: { change },
   render: (args) => ({

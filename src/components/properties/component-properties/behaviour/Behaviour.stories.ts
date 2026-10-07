@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import BehaviourStates from './examples/States.vue'
 
 const meta = {
-  title: 'Editor/Properties/Behaviour',
+  title: 'App/Editor/Properties/Behaviour',
   component: BehaviourStates,
   tags: ['autodocs'],
   parameters: {

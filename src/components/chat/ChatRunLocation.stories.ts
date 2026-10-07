@@ -6,7 +6,7 @@ import ChatRunLocation from './ChatRunLocation.vue'
 type Args = { agent: string; page: string; onOpen: () => void }
 
 const meta = {
-  title: 'Chat/Run Location',
+  title: 'App/Chat/Run Location',
   component: ChatRunLocation,
   tags: ['autodocs'],
   args: { agent: 'Fern', page: 'Checkout', onOpen: fn() },

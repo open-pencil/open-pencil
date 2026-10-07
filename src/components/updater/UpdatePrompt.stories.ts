@@ -36,7 +36,7 @@ type Args = { state: UpdaterState; currentVersion: string; installQuitsApp?: boo
 type Story = StoryObj<Args>
 
 const meta = {
-  title: 'Shell/Update Prompt',
+  title: 'App/Shell/Update Prompt',
   component: UpdatePrompt,
   parameters: { layout: 'centered' },
   args: { currentVersion: '0.15.0' },

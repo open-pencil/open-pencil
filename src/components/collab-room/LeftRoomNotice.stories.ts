@@ -6,7 +6,7 @@ import LeftRoomNotice from './LeftRoomNotice.vue'
 type Args = { onDismiss: () => void }
 
 const meta = {
-  title: 'Collaboration/Left Room Notice',
+  title: 'App/Collaboration/Left Room Notice',
   component: LeftRoomNotice,
   tags: ['autodocs'],
   args: { onDismiss: fn() },
