@@ -1,5 +1,11 @@
 import type { ImagePreviewDecoder } from '@open-pencil/core/canvas'
 
+/**
+ * WebP keeps transparency at a fraction of PNG's size and encoding time for photos; browsers
+ * that cannot encode it hand back PNG instead.
+ */
+const PREVIEW_ENCODING = { type: 'image/webp', quality: 0.9 } as const
+
 /** Serialize native browser decodes outside the CanvasKit heap without detaching graph bytes. */
 export function createImagePreviewDecoder(): ImagePreviewDecoder {
   let disposed = false
@@ -27,7 +33,7 @@ export function createImagePreviewDecoder(): ImagePreviewDecoder {
         if (!context) throw new Error('Image preview canvas unavailable')
         context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
         const bytes = new Uint8Array(
-          await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer()
+          await (await canvas.convertToBlob(PREVIEW_ENCODING)).arrayBuffer()
         )
         assertActive()
         return { bytes, originalWidth, originalHeight }
