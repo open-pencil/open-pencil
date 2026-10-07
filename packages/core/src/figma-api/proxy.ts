@@ -1,5 +1,6 @@
 import { recordInstanceOverride, slotPropertyId } from '@open-pencil/scene-graph'
 import type {
+  GroupFitOptions,
   SceneGraph,
   SceneNode,
   NodeType,
@@ -39,6 +40,7 @@ import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slots'
 import * as TextProxy from './text'
+import { containerTransform, setContainerTransform } from './transform'
 import * as Traversal from './traversal'
 import type { FigmaTransform } from './types'
 
@@ -53,6 +55,8 @@ export const INTERNAL_API = Symbol('api')
 export interface NodeProxyHost {
   wrapNode(id: string): FigmaNodeProxy
   readonly currentPageId: string
+  /** How groups and booleans refit; booleans size to their result when a renderer is attached. */
+  readonly groupFitOptions: GroupFitOptions
 }
 
 export { MIXED }
@@ -72,7 +76,7 @@ export class FigmaNodeProxy {
   declare readonly width: number
   declare readonly height: number
   declare rotation: number
-  declare readonly relativeTransform: FigmaTransform
+  declare relativeTransform: FigmaTransform
   declare resize: (width: number, height: number) => void
   declare resizeWithoutConstraints: (width: number, height: number) => void
   declare rescale: (scale: number) => void
@@ -290,13 +294,21 @@ export class FigmaNodeProxy {
     this._reparentAndFit(child[INTERNAL_ID])
   }
 
-  /** Moves a child here, keeping its place on the canvas, and refits the groups it left and joined. */
+  /**
+   * Moves a child here as Figma does: it keeps its transform into its container, so its `x`, `y`,
+   * and rotation stay and it moves with its new parent. The groups it left and joined refit.
+   */
   private _reparentAndFit(childId: string): void {
     const scene = this[INTERNAL_GRAPH]
-    const previousParentId = scene.getNode(childId)?.parentId
+    const child = scene.getNode(childId)
+    if (!child) return
+    const previousParentId = child.parentId
+    const transform = containerTransform(child, scene)
     scene.reparentNode(childId, this[INTERNAL_ID])
-    fitGroupsAround(scene, previousParentId)
-    fitGroupsAround(scene, this[INTERNAL_ID])
+    setContainerTransform(scene, child, transform)
+    const options = this[INTERNAL_API].groupFitOptions
+    fitGroupsAround(scene, previousParentId, options)
+    fitGroupsAround(scene, this[INTERNAL_ID], options)
   }
 
   insertChild(index: number, child: FigmaNodeProxy): void {
@@ -328,7 +340,7 @@ export class FigmaNodeProxy {
     prepareSlotRemoval(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     const parentId = this._raw().parentId
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
-    fitGroupsAround(this[INTERNAL_GRAPH], parentId)
+    fitGroupsAround(this[INTERNAL_GRAPH], parentId, this[INTERNAL_API].groupFitOptions)
   }
 
   findAll(callback?: (node: FigmaNodeProxy) => boolean): FigmaNodeProxy[] {

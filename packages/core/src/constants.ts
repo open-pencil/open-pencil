@@ -74,7 +74,6 @@ export const DEFAULT_FONT_FAMILY = 'Inter'
 export const DEFAULT_FONT_SIZE = 14
 export const DEFAULT_STROKE_MITER_LIMIT = 4
 /** Figma's stroke weight for a node that has not been given one. */
-export const DEFAULT_STROKE_WEIGHT = 1
 export const LABEL_FONT_SIZE = 11
 export const SIZE_FONT_SIZE = 10
 
@@ -114,7 +113,6 @@ export const AUTO_LAYOUT_HOVER_BLUE_FILL = { r: 0.28, g: 0.64, b: 1, a: 0.1 } sa
 export const AUTO_LAYOUT_HOVER_MAGENTA = { r: 1, g: 0.32, b: 0.68, a: 0.78 } satisfies Color
 export const AUTO_LAYOUT_HOVER_MAGENTA_FILL = { r: 1, g: 0.32, b: 0.68, a: 0.1 } satisfies Color
 
-export const SECTION_CORNER_RADIUS = 5
 export const SECTION_TITLE_HEIGHT = 24
 export const SECTION_TITLE_PADDING_X = 6
 export const SECTION_TITLE_RADIUS = 5
@@ -125,6 +123,8 @@ export const SECTION_HOVER_STROKE_WIDTH = 2
 export const COMPONENT_SET_DASH = 6
 export const COMPONENT_SET_DASH_GAP = 4
 export const COMPONENT_SET_BORDER_WIDTH = 1.5
+/** Corners of the outline the editor draws around a component set with no strokes of its own. */
+export const COMPONENT_SET_OUTLINE_RADIUS = 5
 export const COMPONENT_LABEL_FONT_SIZE = 11
 export const COMPONENT_LABEL_GAP = 6
 export const COMPONENT_LABEL_ICON_SIZE = 10
@@ -536,21 +536,30 @@ export const DEFAULT_FRAME_FILL: Fill = {
   visible: true
 }
 
-export const SECTION_DEFAULT_FILL: Fill = {
-  type: 'SOLID',
-  color: { r: 0.37, g: 0.37, b: 0.37, a: 1 },
-  opacity: 1,
-  visible: true
+/** The light or dark interface a new section takes its fill from, as in Figma. */
+export type InterfaceTheme = 'light' | 'dark'
+
+/** A new section's fill, which Figma picks from the interface theme it was made in. */
+export const SECTION_DEFAULT_FILLS: Record<InterfaceTheme, Fill> = {
+  light: { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true },
+  dark: {
+    type: 'SOLID',
+    color: { r: 0x44 / 255, g: 0x44 / 255, b: 0x44 / 255, a: 1 },
+    opacity: 1,
+    visible: true
+  }
 }
 
 export const SECTION_DEFAULT_STROKE: Stroke = {
   type: 'SOLID',
-  color: { r: 0.55, g: 0.55, b: 0.55, a: 1 },
+  color: { r: 1, g: 1, b: 1, a: 1 },
   weight: 1,
-  opacity: 1,
+  opacity: 0.1,
   visible: true,
   align: 'INSIDE'
 }
+
+export const SECTION_CORNER_RADIUS = 2
 
 export const ZOOM_DIVISOR = 50
 export const ZOOM_SCALE_MIN = 0.75

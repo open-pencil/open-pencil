@@ -53,6 +53,8 @@ async function getSelectedCount(): Promise<number> {
   })
 }
 
+const NUMBERED_GROUP = /^Group \d+$/
+
 test('demo layers visible in panel', async () => {
   const names = await getLayerNames()
   expect(names).toContain('Announcement system')
@@ -105,13 +107,13 @@ test('creating a shape updates layers', async () => {
   const before = await getLayerNames()
   await editor.canvas.drawRect(600, 500, 50, 50)
   const names = await getLayerNames()
-  expect(names).toContain('Rectangle')
+  expect(names).toContain('Rectangle 1')
   expect(names.length).toBe(before.length + 1)
 
   await editor.canvas.undo()
   const after = await getLayerNames()
   expect(after.length).toBe(before.length)
-  expect(after).not.toContain('Rectangle')
+  expect(after).not.toContain('Rectangle 1')
 })
 
 test('Shift+A wraps selection in auto-layout frame', async () => {
@@ -152,12 +154,13 @@ test('grouping updates layers', async () => {
   await editor.page.keyboard.press('Meta+g')
   await editor.canvas.waitForRender()
 
+  // The canvas numbers a group past the highest "Group" number on the page, as Figma does.
   const tree = await getSceneTree()
-  const group = tree.children.find((c) => c.name === 'Group' && c.type === 'GROUP')
+  const group = tree.children.find((c) => NUMBERED_GROUP.test(c.name) && c.type === 'GROUP')
   expect(group).toBeTruthy()
 
   const names = await getLayerNames()
-  expect(names).toContain('Group')
+  expect(names.some((name) => NUMBERED_GROUP.test(name))).toBe(true)
 
   editor.canvas.assertNoErrors()
 })
@@ -167,8 +170,8 @@ test('ungrouping updates layers', async () => {
   await editor.canvas.waitForRender()
 
   const names = await getLayerNames()
-  expect(names).not.toContain('Group')
-  expect(names).toContain('Rectangle')
+  expect(names.some((name) => NUMBERED_GROUP.test(name))).toBe(false)
+  expect(names.some((name) => /^Rectangle \d+$/.test(name))).toBe(true)
 
   editor.canvas.assertNoErrors()
 })
@@ -210,11 +213,16 @@ test('clicking outside rename input commits', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('clearing a layer name falls back to the default node name', async () => {
+test('clearing a layer name keeps the name it had', async () => {
   await editor.canvas.drawRect(980, 600, 50, 50)
   await editor.canvas.waitForRender()
 
-  const row = layerRows().filter({ hasText: 'Rectangle' }).last()
+  const drawn = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const id = store ? [...store.state.selectedIds][0] : undefined
+    return id ? (store?.graph.getNode(id)?.name ?? '') : ''
+  })
+  const row = layerRows().filter({ hasText: drawn }).last()
   const countBefore = await layerRows().count()
 
   await row.dblclick()
@@ -230,7 +238,8 @@ test('clearing a layer name falls back to the default node name', async () => {
   expect(countAfter).toBe(countBefore)
 
   const names = await getLayerNames()
-  expect(names.filter((name) => name === 'Rectangle').length).toBeGreaterThan(0)
+  expect(drawn).toMatch(/^Rectangle \d+$/)
+  expect(names).toContain(drawn)
 
   editor.canvas.assertNoErrors()
 })

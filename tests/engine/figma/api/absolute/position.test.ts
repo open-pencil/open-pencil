@@ -15,13 +15,14 @@ describe('absolute position', () => {
     child.resize(50, 30)
     child.rotation = 90
 
+    // Recorded in Figma desktop 126: a node turns counterclockwise about its top-left corner.
     expect(child.relativeTransform).toEqual([
-      [0, -1, 50],
-      [1, 0, 10]
+      [0, 1, 10],
+      [-1, 0, 20]
     ])
     expect(child.absoluteTransform).toEqual([
-      [0, -1, 150],
-      [1, 0, 210]
+      [0, 1, 110],
+      [-1, 0, 220]
     ])
   })
 
@@ -49,8 +50,9 @@ describe('absolute position', () => {
       }
     })
 
+    // Recorded in Figma desktop 126: x and y are the transform's translation, flipped or not.
     expect(node.x).toBe(5)
-    expect(node.y).toBe(8)
+    expect(node.y).toBe(16)
     expect(node.rotation).toBe(-0)
     expect(node.relativeTransform).toEqual([
       [1, 0, 5],

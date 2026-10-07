@@ -3,9 +3,10 @@ import {
   FITTED_CONTAINER_TYPES,
   recordInstanceOverride
 } from '@open-pencil/scene-graph'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
+import type { NodeProxyHost } from '#core/figma-api/proxy'
 
 export interface NodeProxyInternals {
   id: symbol
@@ -46,9 +47,20 @@ const GEOMETRY_FIELDS: ReadonlySet<string> = new Set([
 ])
 
 /** Refits the groups around a node's parent, as Figma does after a script changes it. */
-export function fitGroupsAround(graph: SceneGraph, parentId: string | null | undefined): void {
+export function fitGroupsAround(
+  graph: SceneGraph,
+  parentId: string | null | undefined,
+  options: GroupFitOptions
+): void {
   const parent = parentId ? graph.getNode(parentId) : undefined
-  if (parent && FITTED_CONTAINER_TYPES.has(parent.type)) fitEnclosingGroups(graph, [parent.id])
+  if (parent && FITTED_CONTAINER_TYPES.has(parent.type)) {
+    fitEnclosingGroups(graph, [parent.id], options)
+  }
+}
+
+/** Refit options of the API a proxy belongs to. */
+export function hostFitOptions(target: ProxyThis, internals: NodeProxyInternals): GroupFitOptions {
+  return (target[internals.api] as NodeProxyHost).groupFitOptions
 }
 
 export function updateNode(
@@ -68,6 +80,6 @@ export function updateNode(
   g.updateNode(id, applied)
   recordInstanceOverride(g, id, Object.keys(applied))
   if (Object.keys(applied).some((key) => GEOMETRY_FIELDS.has(key))) {
-    fitGroupsAround(g, g.getNode(id)?.parentId)
+    fitGroupsAround(g, g.getNode(id)?.parentId, hostFitOptions(target, internals))
   }
 }
