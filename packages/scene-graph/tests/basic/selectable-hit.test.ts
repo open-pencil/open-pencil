@@ -147,10 +147,20 @@ describe('hitTestSelectable', () => {
     expect(click(250, 250, [nodes.leaf.id])).toBe('Deeper')
     expect(click(130, 130, [nodes.deepLeaf.id])).toBe('Leaf')
     expect(click(460, 140, [nodes.g1.id])).toBe('g2')
-    expect(click(230, 230, [nodes.deeper.id])).toBe('Deeper')
     // A container opened by the selection is selected where nothing inside it is hit.
     expect(click(330, 100, [nodes.leaf.id])).toBe('Nested')
     expect(click(20, 450, [nodes.nested.id])).toBeNull()
+  })
+
+  test('opens a selected container, so repeated clicks reach deeper layers', () => {
+    const { click, nodes } = setup()
+    expect(click(230, 230)).toBe('Nested')
+    expect(click(230, 230, [nodes.nested.id])).toBe('Deeper')
+    expect(click(230, 230, [nodes.deeper.id])).toBe('Deep leaf')
+    // Its empty area keeps it selected.
+    expect(click(300, 300, [nodes.deeper.id])).toBe('Deeper')
+    // A selected group stays closed.
+    expect(click(420, 70, [nodes.group.id])).toBe('Group')
   })
 
   test('finds the open container a marquee starts in', () => {

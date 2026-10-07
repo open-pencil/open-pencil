@@ -211,15 +211,27 @@ function frameChildAt(
   return null
 }
 
-/** The containers the selection opens: every ancestor of a selected layer inside the scope. */
-function selectionAncestors(
+/**
+ * The containers the selection opens: every ancestor of a selected layer inside the scope, and a
+ * selected container itself, so a click inside it selects the layer under the point, as in Figma.
+ * A selected group or boolean stays closed: clicking inside it keeps it selected.
+ */
+function openedBySelection(
   graph: SceneGraph,
   selectedIds: ReadonlySet<string>,
   scopeId: string
 ): Set<string> {
   const ancestors = new Set<string>()
   for (const id of selectedIds) {
-    let parentId = graph.nodes.get(id)?.parentId
+    const node = graph.nodes.get(id)
+    if (
+      node &&
+      node.childIds.length > 0 &&
+      node.type !== 'GROUP' &&
+      node.type !== 'BOOLEAN_OPERATION'
+    )
+      ancestors.add(id)
+    let parentId = node?.parentId
     while (parentId && parentId !== scopeId && !ancestors.has(parentId)) {
       ancestors.add(parentId)
       parentId = graph.nodes.get(parentId)?.parentId
@@ -255,19 +267,19 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const openedBySelection = selectionAncestors(graph, selectedIds, scopeId)
+  const opened = openedBySelection(graph, selectedIds, scopeId)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
     if (node.locked) return node
-    if (!openedBySelection.has(node.id) && !opensByItself(graph, node)) return node
+    if (!opened.has(node.id) && !opensByItself(graph, node)) return node
   }
   const last = chain.at(-1)
   if (!last) return null
   const frame = frameChildAt(graph, last, px, py)
   if (frame) return frame
   if (ownsItsEmptyArea(graph, last)) return last
-  return openedBySelection.has(last.id) && !opensByItself(graph, last) ? last : null
+  return opened.has(last.id) && !opensByItself(graph, last) ? last : null
 }
 
 /** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */

@@ -136,3 +136,59 @@ test('the empty area of a plain top-level frame stays background', async () => {
   expect(await position(plain)).toEqual({ x: 400, y: 100 })
   editor.canvas.assertNoErrors()
 })
+
+test('repeated clicks at one point reach deeper layers, one level at a time', async () => {
+  const ids = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const fill = (r: number, g: number, b: number) => [
+      { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
+    ]
+    const page = store.state.currentPageId
+    const board = store.graph.createNode('FRAME', page, {
+      name: 'Board',
+      x: 100,
+      y: 100,
+      width: 300,
+      height: 300,
+      fills: fill(1, 1, 1)
+    })
+    const grid = store.graph.createNode('FRAME', board.id, {
+      name: 'Grid',
+      x: 20,
+      y: 20,
+      width: 260,
+      height: 260,
+      fills: fill(0.95, 0.95, 0.95)
+    })
+    const cell = store.graph.createNode('FRAME', grid.id, {
+      name: 'Cell',
+      x: 40,
+      y: 40,
+      width: 80,
+      height: 80,
+      fills: fill(0.1, 0.1, 0.1)
+    })
+    const label = store.graph.createNode('RECTANGLE', cell.id, {
+      name: 'Label',
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40,
+      fills: fill(1, 1, 1)
+    })
+    store.clearSelection()
+    store.requestRender()
+    return { grid: grid.id, cell: cell.id, label: label.id }
+  })
+  await editor.canvas.waitForRender()
+  const point = await at(ids.label, 20, 20)
+
+  for (const expected of [ids.grid, ids.cell, ids.label]) {
+    await editor.canvas.click(point.x, point.y)
+    await expect.poll(async () => (await state()).selected).toEqual([expected])
+    // Apart enough not to count as a double-click, which goes one level deeper by itself.
+    await editor.page.waitForTimeout(600)
+  }
+  editor.canvas.assertNoErrors()
+})
