@@ -38,16 +38,23 @@ export class CanvasHelper {
 
   /**
    * Canvas specs draw on Figma's light page. Playwright runs the app in its dark theme, where a new
-   * document starts on Figma's dark page, so a fresh document is switched back; documents a spec
-   * opened keep their own background. `tests/e2e/pages/theme-background.spec.ts` covers the theme.
+   * document starts on Figma's dark page, so a fresh document (one empty page on that exact
+   * background) is switched back; any other document keeps its own.
+   * `tests/e2e/pages/theme-background.spec.ts` covers the theme.
    */
   async useLightPage() {
     await this.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
-      const color = store?.state.pageColor
+      if (!store) return
+      const pages = store.graph.getPages()
+      const [first] = pages
       const darkDefault = 0x1e / 255
-      if (!store || !color || color.r !== darkDefault || color.g !== darkDefault) return
-      store.setPageColor({ r: 0.96, g: 0.96, b: 0.96, a: 1 })
+      const { r, g, b } = store.state.pageColor
+      const fresh =
+        pages.length === 1 &&
+        first.childIds.length === 0 &&
+        [r, g, b].every((c) => c === darkDefault)
+      if (fresh) store.setPageColor({ r: 0.96, g: 0.96, b: 0.96, a: 1 })
     })
   }
 

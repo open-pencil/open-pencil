@@ -117,6 +117,18 @@ describe('new page backgrounds follow the interface theme', () => {
     }
   })
 
+  test('a supplied document keeps the background its page has', () => {
+    const graph = importedGraph()
+    const state = createDefaultEditorState(graph.getPages()[0].id)
+    state.theme = 'dark'
+    const editor = createEditor({ graph, state })
+    try {
+      expect(editor.state.pageColor).toEqual(navy)
+    } finally {
+      editor.dispose()
+    }
+  })
+
   test('pages made by scripts', () => {
     const figma = new FigmaAPI(new SceneGraph())
     figma.theme = 'dark'
