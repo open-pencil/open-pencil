@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+
+import { expectDefined } from '#core-tests/helpers/assert'
 
 function boundText() {
   const graph = new SceneGraph()
@@ -44,4 +46,31 @@ test('bound text follows a mode set on the layer', () => {
   editor.updateNodeWithUndo(text.id, { variableModes: { [copy.id]: french } }, 'Set mode')
 
   expect(text.text).toBe('Enregistrer')
+})
+
+test('text and visibility an instance overrides keep their own values', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const copy = graph.createCollection('Copy')
+  const label = graph.createVariable('Label', 'STRING', copy.id, 'Save')
+  const shown = graph.createVariable('Shown', 'BOOLEAN', copy.id, true)
+  const button = graph.createNode('COMPONENT', page)
+  graph.createNode('TEXT', button.id, {
+    text: 'Save',
+    boundVariables: { text: label.id, visible: shown.id }
+  })
+  const placed = expectDefined(graph.createInstance(button.id, page))
+  const layer = expectDefined(graph.getNode(placed.childIds[0]))
+  const editor = createEditor({ graph })
+
+  // Typing in the layer records its text as the instance's own, as the text editor does.
+  setInstanceOverride(placed.instanceOverrides, placed.id, layer.id, 'text', 'Keep')
+  graph.updateNode(layer.id, { text: 'Keep' })
+  editor.toggleNodeVisibility(layer.id)
+
+  editor.updateVariableValue(label.id, copy.defaultModeId, 'Save changes')
+  editor.updateVariableValue(shown.id, copy.defaultModeId, true)
+
+  expect(layer.text).toBe('Keep')
+  expect(layer.visible).toBe(false)
 })

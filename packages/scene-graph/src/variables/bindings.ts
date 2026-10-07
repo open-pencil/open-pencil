@@ -59,8 +59,10 @@ export function resolvedNumericBindings(
 
 /**
  * The text and visibility a node's string and boolean bindings resolve to in its mode, for the
- * fields whose stored value differs. A bound font family is left as stored: changing it needs the
- * font loaded, which resolving a binding cannot do.
+ * fields whose stored value differs. Text or visibility an instance overrides, which typing in a
+ * layer or toggling its eye records, keeps its own value, as an overridden width or height does.
+ * A bound font family is left as stored: changing it needs the font loaded, which resolving a
+ * binding cannot do.
  */
 export function resolvedValueBindings(
   graph: SceneGraph,
@@ -68,13 +70,14 @@ export function resolvedValueBindings(
   fallback: VariableModeFallback = 'active'
 ): Partial<SceneNode> {
   const updates: Partial<SceneNode> = {}
-  const { text: textId, visible: visibleId } = node.boundVariables
-  const text =
-    node.type === 'TEXT' && textId
-      ? graph.resolveVariableForNode(node.id, textId, fallback)
-      : undefined
+  const resolve = (field: 'text' | 'visible') => {
+    const variableId = node.boundVariables[field]
+    if (!variableId || hasInstanceOverride(graph, node.id, field)) return undefined
+    return graph.resolveVariableForNode(node.id, variableId, fallback)
+  }
+  const text = node.type === 'TEXT' ? resolve('text') : undefined
   if (typeof text === 'string' && text !== node.text) updates.text = text
-  const visible = visibleId ? graph.resolveVariableForNode(node.id, visibleId, fallback) : undefined
+  const visible = resolve('visible')
   if (typeof visible === 'boolean' && visible !== node.visible) updates.visible = visible
   return updates
 }
