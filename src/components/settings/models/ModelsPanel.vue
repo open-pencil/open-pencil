@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, useTemplateRef } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -15,6 +15,14 @@ import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 const { ai, collaboration, common } = useI18n()
 const editing = defineModel<boolean>('editing', { default: false })
 const editingProfileId = ref<string>()
+const editor = useTemplateRef('editor')
+
+/** The editor opens on its name field rather than the back control. */
+function focusEditor(event: Event): void {
+  if (!editor.value) return
+  event.preventDefault()
+  editor.value.focus()
+}
 onUnmounted(() => {
   editing.value = false
 })
@@ -46,9 +54,16 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
 </script>
 
 <template>
-  <PanelDrillIn :open="editing" :back="common.back" :parent="ai.modelsTitle" @back="closeEditor">
+  <PanelDrillIn
+    :open="editing"
+    :back="common.back"
+    :parent="ai.modelsTitle"
+    @back="closeEditor"
+    @open-auto-focus="focusEditor"
+  >
     <template #detail>
       <ProfileEditor
+        ref="editor"
         :key="editingProfileId ?? 'new'"
         :profile-id="editingProfileId"
         @done="closeEditor"

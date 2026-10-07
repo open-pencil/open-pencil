@@ -28,6 +28,8 @@ const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials, settings } = useI18n()
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
+const nameInput = useTemplateRef('nameInput')
+defineExpose({ focus: () => nameInput.value?.focus({ preventScroll: true }) })
 const keyInput = ref('')
 const deleteOpen = ref(false)
 const profile = useModelProfileEditor({ profileId, keyInput, labels: ai })
@@ -116,6 +118,7 @@ async function remove() {
             @blur="feedback.blur('name')"
           >
             <AppInput
+              ref="nameInput"
               v-bind="control"
               v-model="draft.name"
               :aria-label="ai.modelName"
