@@ -72,7 +72,15 @@ function openFirstTab(): Tab {
 {
   const firstTab = activeTab.value ?? openFirstTab()
   if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
-    void openDemoDocument(firstTab.store)
+    openDemoDocument(firstTab.store).catch((error: unknown) => {
+      console.error('[Demo] Could not open the demo document:', error)
+      toast.error(
+        notificationMessages.get().openFileFailed({
+          name: 'Demo',
+          error: error instanceof Error ? error.message : String(error)
+        })
+      )
+    })
   }
 }
 
