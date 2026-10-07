@@ -21,12 +21,15 @@ class FakeSocket {
   onmessage: ((event: { data: string }) => Promise<void>) | null = null
   onclose: ((event: { code: number; reason: string }) => void) | null = null
   onerror: ((event: unknown) => void) | null = null
+  readonly sent: string[] = []
 
   constructor() {
     FakeSocket.opened.push(this)
   }
 
-  send() {}
+  send(data: string) {
+    this.sent.push(data)
+  }
 
   close() {
     this.readyState = 2
