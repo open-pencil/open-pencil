@@ -24,7 +24,7 @@ import {
 } from '#core/geometry'
 import { pathTextSelectionBand, pointAtArc } from '#core/text/path'
 
-import { inNodeSpace, withScreenStroke } from './outline'
+import { inNodeSpace, outlineNode, withScreenStroke } from './outline'
 
 /** The dash of faint selection bounds, in screen pixels. */
 const SELECTION_DASH = [4, 4] as const
@@ -78,14 +78,8 @@ export function drawEnteredContainer(
   enteredContainerId?: string | null,
   preview?: RotationPreview | null
 ): void {
-  const node = enteredContainerId ? graph.getNode(enteredContainerId) : undefined
-  if (!node) return
   const stroke = { color: r.selColor(SELECTION_DASH_ALPHA), dash: SELECTION_DASH }
-  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () =>
-    withScreenStroke(r, stroke, (paint) =>
-      canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
-    )
-  )
+  outlineNode(r, canvas, graph, enteredContainerId, stroke, preview)
 }
 
 /** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,

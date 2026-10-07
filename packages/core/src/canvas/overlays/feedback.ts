@@ -19,7 +19,7 @@ import {
 } from '#core/constants'
 import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
-import { inNodeSpace, withScreenStroke } from './outline'
+import { inNodeSpace, outlineNode } from './outline'
 
 export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
   if (!guides || guides.length === 0) return
@@ -122,14 +122,8 @@ export function drawDropTarget(
   dropTargetId?: string | null,
   preview?: RotationPreview | null
 ): void {
-  const node = dropTargetId ? graph.getNode(dropTargetId) : undefined
-  if (!node) return
   const stroke = { color: r.selColor(DROP_HIGHLIGHT_ALPHA), width: DROP_HIGHLIGHT_STROKE }
-  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () =>
-    withScreenStroke(r, stroke, (paint) =>
-      canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
-    )
-  )
+  outlineNode(r, canvas, graph, dropTargetId, stroke, preview)
 }
 
 /** The caret and text selection of the text layer being edited, over the layer. */

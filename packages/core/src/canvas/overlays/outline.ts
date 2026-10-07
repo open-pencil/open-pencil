@@ -1,9 +1,9 @@
 import type { Canvas, Color, Paint } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import type { createSceneGeometry } from '#core/geometry'
+import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
 /** An outline sized in screen pixels, so it looks the same at every zoom. */
 export interface ScreenStroke {
@@ -54,4 +54,22 @@ export function inNodeSpace(
   } finally {
     canvas.restore()
   }
+}
+
+/** Outline the bounds of the layer `nodeId`, if it exists, with `stroke`. */
+export function outlineNode(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  nodeId: string | null | undefined,
+  stroke: ScreenStroke,
+  preview?: RotationPreview | null
+): void {
+  const node = nodeId ? graph.getNode(nodeId) : undefined
+  if (!node) return
+  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () =>
+    withScreenStroke(r, stroke, (paint) =>
+      canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
+    )
+  )
 }
