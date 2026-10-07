@@ -174,6 +174,17 @@ describe('design token export', () => {
     expect(Object.keys(content?.sets ?? {})).toEqual(['Primitives', 'Styles 2', 'Styles'])
   })
 
+  test('without styles, a collection named Styles keeps its name in the resolver', () => {
+    const graph = new SceneGraph()
+    const styles = graph.createCollection('Styles')
+    graph.createVariable('Gap', 'FLOAT', styles.id, 4)
+
+    const resolver = exportDesignTokens(graph).files.find((file) => file.path === RESOLVER_FILE)
+    const content = resolver?.content as { sets?: object } | undefined
+
+    expect(Object.keys(content?.sets ?? {})).toEqual(['Styles'])
+  })
+
   test('the resolver switches collections with several modes and layers the rest', () => {
     expect(file(designSystem(), RESOLVER_FILE)).toEqual({
       version: '2025-11-01',

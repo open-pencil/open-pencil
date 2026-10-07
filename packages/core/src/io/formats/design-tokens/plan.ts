@@ -244,7 +244,9 @@ function aliasTarget(
         (candidate) =>
           planner.graph.variableCollections.get(candidate.collectionId)?.name === value.collection
       )
-    if (existing) return { kind: 'variable', variableId: existing.id }
+    // A named target that is not there, say in a collection left out, is missing: the same
+    // path in another collection is a different variable.
+    return existing ? { kind: 'variable', variableId: existing.id } : undefined
   }
   const key = value.path.join('.')
   const order = [from, ...planner.paths.keys()].filter(

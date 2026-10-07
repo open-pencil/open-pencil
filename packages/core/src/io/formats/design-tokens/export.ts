@@ -194,10 +194,13 @@ export function exportDesignTokens(graph: SceneGraph): DesignTokenExport {
   }
   const context: ExportContext = { graph, references, collectionOf, issues }
   const files: DesignTokenFile[] = []
+  const styles = styleTokens(graph, references)
+  issues.push(...styles.issues)
+  const stylesPath = styles.tokens.length > 0 ? STYLES_FILE : null
   const folders = distinct(collections.map((collection) => fileSegment(collection.name)))
   const collectionNames = distinct(
     collections.map((collection) => collection.name),
-    [STYLES_SET]
+    stylesPath ? [STYLES_SET] : []
   )
   const collectionFiles = collections.map((collection, index): CollectionFiles => {
     const fileNames = distinct(collection.modes.map((mode) => fileSegment(mode.name)))
@@ -224,9 +227,6 @@ export function exportDesignTokens(graph: SceneGraph): DesignTokenExport {
     })
     return { collection, name: collectionNames[index], modes }
   })
-  const styles = styleTokens(graph, references)
-  issues.push(...styles.issues)
-  const stylesPath = styles.tokens.length > 0 ? STYLES_FILE : null
   if (stylesPath) files.push({ path: stylesPath, content: tokenTree(styles.tokens) })
   if (files.length > 0)
     files.push({ path: RESOLVER_FILE, content: resolverDocument(collectionFiles, stylesPath) })

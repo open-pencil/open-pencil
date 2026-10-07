@@ -211,21 +211,22 @@ describe('design token import', () => {
     expect(graph.getNode(style.nodeId)).toMatchObject({ textCase: 'UPPER', lineHeight: 40 })
   })
 
-  test('an edited shadow replaces the exact shadows and keeps the blur beside them', () => {
+  test('an edited shadow takes the place of the exact one, and the blur keeps its own', () => {
     const source = new SceneGraph()
+    const shadow = (radius: number) => ({
+      type: 'DROP_SHADOW' as const,
+      color: { r: 0, g: 0, b: 0, a: 0.25 },
+      offset: { x: 0, y: 4 },
+      radius,
+      spread: 0,
+      visible: true
+    })
     const card = source.createNode('RECTANGLE', source.getPages()[0].id, {
       name: 'Card',
       sharedStyleType: 'EFFECT',
       internalOnly: true,
       effects: [
-        {
-          type: 'DROP_SHADOW',
-          color: { r: 0, g: 0, b: 0, a: 0.25 },
-          offset: { x: 0, y: 4 },
-          radius: 12,
-          spread: 0,
-          visible: true
-        },
+        shadow(12),
         {
           type: 'LAYER_BLUR',
           color: { r: 0, g: 0, b: 0, a: 0 },
@@ -233,7 +234,8 @@ describe('design token import', () => {
           radius: 6,
           spread: 0,
           visible: true
-        }
+        },
+        shadow(2)
       ]
     })
     card.source.id = 'style:card'
@@ -249,7 +251,8 @@ describe('design token import', () => {
     const [style] = getSharedStyles(graph, 'effect')
     expect(graph.getNode(style.nodeId)?.effects).toMatchObject([
       { type: 'DROP_SHADOW', radius: 20 },
-      { type: 'LAYER_BLUR', radius: 6 }
+      { type: 'LAYER_BLUR', radius: 6 },
+      { type: 'DROP_SHADOW', radius: 2 }
     ])
   })
 })

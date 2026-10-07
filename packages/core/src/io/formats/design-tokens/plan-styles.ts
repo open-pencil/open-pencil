@@ -174,16 +174,29 @@ function shadowList(value: unknown, resolve: Resolve, depth = 0): Effect[] | nul
   return effects.length > 0 ? effects : null
 }
 
+/**
+ * Shadows edited in another tool, in place of the visible shadows OpenPencil wrote. Effects
+ * `$value` cannot hold, such as blurs and hidden shadows, keep their places; extra shadows go last.
+ */
+function replaceShadows(exact: readonly Effect[], shadows: readonly Effect[]): Effect[] {
+  const queue = [...shadows]
+  const effects = exact.flatMap((effect) => {
+    if (!isShadow(effect) || !effect.visible) return [effect]
+    const next = queue.shift()
+    return next ? [next] : []
+  })
+  return [...effects, ...queue]
+}
+
 /** A shadow token as effects, preferring the exact effects OpenPencil wrote. */
 function effectFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
   const own = v.safeParse(OwnEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
   // Extension effects that do not read fall back to the token's own shadows.
   const exact = own.success ? tryParseFigmaEffects(own.output.effects) : null
   if (exact && isEqual(token.value, shadowTokenValue(exact))) return { effects: exact }
-  const effects = shadowList(token.value, resolve)
-  if (!effects) return null
-  // Shadows edited in another tool replace the exact ones; blurs, which `$value` cannot hold, stay.
-  return { effects: [...effects, ...(exact ?? []).filter((effect) => !isShadow(effect))] }
+  const shadows = shadowList(token.value, resolve)
+  if (!shadows) return null
+  return { effects: exact ? replaceShadows(exact, shadows) : shadows }
 }
 
 /** Typography tokens as text styles and shadow tokens as effect styles, matched by name. */

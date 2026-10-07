@@ -221,6 +221,39 @@ describe('planning an import', () => {
     ])
   })
 
+  test('an alias to a collection left out is missing, not bound to the same path elsewhere', () => {
+    const graph = new SceneGraph()
+    const other = graph.createCollection('Other')
+    graph.createVariable('blue/500', 'COLOR', other.id, { r: 1, g: 0, b: 0, a: 1 })
+    const bundle = readDesignTokens(
+      files({
+        'Primitives/Value.tokens.json': { blue: { 500: { $type: 'color', $value: '#3b82f6' } } },
+        'Theme/Light.tokens.json': {
+          accent: {
+            $type: 'color',
+            $value: '{blue.500}',
+            $extensions: {
+              'com.figma.aliasData': {
+                targetVariableName: 'blue/500',
+                targetVariableSetName: 'Primitives'
+              }
+            }
+          }
+        }
+      })
+    )
+    const options = defaultTokenImportOptions(graph, bundle)
+    options.collections[0].target = { kind: 'skip' }
+
+    const result = planTokenImport(graph, bundle, options)
+
+    expect(result.skipped).toContainEqual({
+      name: 'accent',
+      collection: 'Theme',
+      reason: 'missing-alias'
+    })
+  })
+
   test('composite tokens other than typography and shadow are skipped with a reason', () => {
     const { plan: result } = plan(
       files({
