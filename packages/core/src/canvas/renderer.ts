@@ -122,7 +122,7 @@ export class SkiaRenderer {
   scenePicturePositionPreviewVersion = -1
   scenePicturePageId: string | null = null
   /** World-space box the current `scenePicture` was recorded against; null when none. */
-  scenePictureWorldViewport: { x: number; y: number; w: number; h: number } | null = null
+  scenePictureWorldViewport: SkiaRenderer['worldViewport'] | null = null
   sceneBacking: SceneBacking | null = null
   sceneBackingPreviewUntil = 0
   sceneBackingNeedsCrispRender = false

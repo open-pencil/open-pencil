@@ -122,6 +122,16 @@ function scenePictureMissReason(
   return 'unknown'
 }
 
+/** The part of the page the viewport shows, in world coordinates. */
+function viewportInWorld(r: SkiaRenderer): SkiaRenderer['worldViewport'] {
+  return {
+    x: -r.panX / r.zoom,
+    y: -r.panY / r.zoom,
+    w: r.viewportWidth / r.zoom,
+    h: r.viewportHeight / r.zoom
+  }
+}
+
 /**
  * Whether the recorded scene picture still covers the current viewport. The picture is a
  * finite 3x3-viewport box (see `recordScenePicture`), so once the camera moves outside it
@@ -131,15 +141,12 @@ function scenePictureMissReason(
 function scenePictureCoversViewport(r: SkiaRenderer): boolean {
   const box = r.scenePictureWorldViewport
   if (!box) return false
-  const liveW = r.viewportWidth / r.zoom
-  const liveH = r.viewportHeight / r.zoom
-  const liveX = -r.panX / r.zoom
-  const liveY = -r.panY / r.zoom
+  const live = viewportInWorld(r)
   return (
-    liveX >= box.x &&
-    liveY >= box.y &&
-    liveX + liveW <= box.x + box.w &&
-    liveY + liveH <= box.y + box.h
+    live.x >= box.x &&
+    live.y >= box.y &&
+    live.x + live.w <= box.x + box.w &&
+    live.y + live.h <= box.y + box.h
   )
 }
 
@@ -246,12 +253,7 @@ export function render(
     canvas.clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
   }
 
-  r.worldViewport = {
-    x: -r.panX / r.zoom,
-    y: -r.panY / r.zoom,
-    w: r.viewportWidth / r.zoom,
-    h: r.viewportHeight / r.zoom
-  }
+  r.worldViewport = viewportInWorld(r)
   updateSceneBackingPreviewState(r, layer)
 
   const { requiresUncachedSceneRender, canUsePicture, cacheMissReason } = getSceneRenderPolicy(
@@ -411,16 +413,8 @@ export function recordScenePicture(
   // page and its memory scaled with the whole canvas; for documents with large bounds or
   // many off-screen nodes this blew up memory. A 3x3 viewport box still covers small pans
   // while bounding the picture by what is actually on screen.
-  const vpWorldWidth = r.viewportWidth / r.zoom
-  const vpWorldHeight = r.viewportHeight / r.zoom
-  const vpWorldX = -r.panX / r.zoom
-  const vpWorldY = -r.panY / r.zoom
-  r.worldViewport = {
-    x: vpWorldX - vpWorldWidth,
-    y: vpWorldY - vpWorldHeight,
-    w: vpWorldWidth * 3,
-    h: vpWorldHeight * 3
-  }
+  const live = viewportInWorld(r)
+  r.worldViewport = { x: live.x - live.w, y: live.y - live.h, w: live.w * 3, h: live.h * 3 }
   const recorder = new r.ck.PictureRecorder()
   try {
     const pageNode = graph.getNode(r.pageId ?? graph.rootId)
