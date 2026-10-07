@@ -22,6 +22,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 - `commitlint.config.ts` enforces commit structure in the **Commit messages** job; the separate **PR title** workflow validates titles. Preserve the `Release vX.Y.Z` exception and product casing when changing rules; the known AI co-author check does not rewrite base history. Gate policy lives in `tools/ci/policy/src/policy.ts`.
 - `tools/ci/policy` runs right after Bun is set up, before any install, so it imports only Node built-ins; `oxlint.json` switches `open-pencil/prefer-es-toolkit` off there. Other CI tools install their workspace first, as `pr-review-guidance.yml` does through `.github/actions/setup-bun`.
 - Required checks must also run on `merge_group`, the merge queue's event; read base and head from `merge_group.base_sha`/`head_sha` there (`ci.yml`, `pr-title.yml`).
+- A passing pull request run records the tree it tested as the `CI verified tree` status on the PR head; a merge queue commit with that exact tree is classified `verified` and runs only the always-on checks. Any other tree, including a group with other PRs ahead, gets the full run (`tools/ci/policy/src/verified-tree/`).
 - App and docs production workflows run on `v*` tags or `workflow_dispatch`, not ordinary `master` pushes. `build.yml` checks the tooling out under `.pipeline/` and runs `tools/release/release-packages` from there.
 
 ## Releases

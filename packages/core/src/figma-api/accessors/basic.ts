@@ -29,12 +29,12 @@ import type { NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
 import {
   containerTransform,
-  figmaRotation,
   setContainerTransform,
   withFigmaRotation,
   withOrigin
 } from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
+import { figmaRotation } from '#core/geometry/figma'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
 

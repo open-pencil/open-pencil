@@ -30,11 +30,13 @@ Rooms are not stored on a server: the file lives on the devices of the people wh
 - **Document changes** — every edit (shapes, text, properties, layout) syncs instantly
 - **Cursors** — see where each collaborator is pointing, with their name and color
 - **Selections** — highlighted selections are visible to everyone
-- **Agents** — the built-in AI chat appears as a cursor at the layers it is editing, its outlined label showing a sparkle and a callsign such as *Fern*. The cursor and outline have the color of the person running it, so you can tell whose agent it is. Only its name, kind, model, status, page, position, and edited layers are shared, never prompts or replies.
+- **Agents** — the built-in AI chat, ACP and Pi harness chats, and every connected MCP client appear as cursors at the layers they read or edit, each outlined label showing a sparkle and a callsign such as *Fern*. While the chat streams JSX, its cursor moves through the elements as they appear and outlines them. The cursor and outline have the color of the person running the agent, so you can tell whose agent it is. Only its name, kind, model, status, page, position, and edited layers are shared, never prompts or replies.
 
 ## Follow Mode
 
 Click a collaborator's avatar in the top bar to follow their viewport. Your canvas pans and zooms to match their view, and a frame in their color with a “Following …” bar shows whom you follow. Click the avatar again, press <kbd>Esc</kbd>, or click, scroll, zoom, or switch pages yourself to stop.
+
+Your own agents, the AI chat and MCP clients such as Claude Code or Cursor, are followed automatically while they work, so what they edit stays in view. Turn this off with the crosshair button at the top of the AI panel. If you stop following an agent while it works, it is left alone until it finishes and followed again on its next run.
 
 An avatar counts the agents that person runs. Hover over it to see each agent, what it is doing, and on which page, and click **Follow** next to an agent to keep the page and layers it is editing in view; following continues between its replies and stops when it leaves. The button after the avatars lists everyone in the room with their agents, and works from the keyboard. Your own avatar lists your agents — click one to rename it — and has **Leave room**.
 

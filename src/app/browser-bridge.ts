@@ -25,6 +25,8 @@ export interface OpenPencilTestHooks {
     peerSelections: () => Array<string[] | undefined>
     status: () => RoomStatus | null
   }
+  /** Sends a request through the MCP bridge's command handler, as an MCP client's call arrives. */
+  automation?: (command: string, args: unknown) => Promise<unknown>
 }
 
 export interface OpenPencilWindowAPI {
@@ -74,6 +76,20 @@ export function exposeCollaborationActions(
       collab.shareCurrentDoc(roomId)
     },
     status: () => collab.state.value.status
+  }
+}
+
+/** Test runs send MCP requests the way the bridge delivers them, without a separate server. */
+export function exposeAutomationRequests(
+  handleRequest: (store: EditorStore, command: string, args: unknown) => Promise<unknown>
+) {
+  if (!IS_BROWSER || !import.meta.env.DEV) return
+  if (!appRuntimeConfig.test) return
+  const testHooks = (windowAPI().test ??= {})
+  testHooks.automation = async (command, args) => {
+    const store = windowAPI().getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return handleRequest(store, command, args)
   }
 }
 

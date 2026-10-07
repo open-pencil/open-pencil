@@ -30,11 +30,13 @@ Pokoje nie są przechowywane na serwerze: plik znajduje się na urządzeniach os
 - **Dokument:** figury, tekst, właściwości i układ są aktualizowane po każdej zmianie.
 - **Kursory:** widoczne są położenie, nazwa i kolor każdego uczestnika.
 - **Zaznaczenie:** obiekty wybrane przez innych są widoczne dla wszystkich.
-- **Agenci:** wbudowany czat AI pojawia się jako kursor przy edytowanych warstwach, a jego obrysowana etykieta zawiera iskrę i kryptonim, na przykład *Fern*. Kursor i obrys mają kolor osoby, która go uruchomiła, więc widać, czyj to agent. Udostępniane są tylko nazwa, rodzaj, model, stan, strona, położenie i edytowane warstwy agenta, nigdy prompty ani odpowiedzi.
+- **Agenci:** wbudowany czat AI, czaty ACP i Pi harness oraz każdy połączony klient MCP pojawiają się jako kursory przy warstwach, które czytają lub edytują, a ich obrysowana etykieta zawiera iskrę i kryptonim, na przykład *Fern*. Gdy czat strumieniuje JSX, jego kursor przechodzi przez elementy w miarę ich pojawiania się i je obrysowuje. Kursor i obrys mają kolor osoby, która uruchomiła agenta, więc widać, czyj to agent. Udostępniane są tylko nazwa, rodzaj, model, stan, strona, położenie i edytowane warstwy agenta, nigdy prompty ani odpowiedzi.
 
 ## Tryb śledzenia
 
 Kliknij awatar uczestnika na górnym pasku, aby śledzić jego widok. Położenie i skala obszaru roboczego będą odpowiadać jego widokowi, a ramka w kolorze uczestnika z paskiem „Obserwujesz: …” pokazuje, kogo śledzisz. Aby przestać, kliknij awatar ponownie, naciśnij <kbd>Esc</kbd> albo sam kliknij, przewiń, zmień powiększenie lub przełącz stronę.
+
+Twoi agenci, czat AI i klienci MCP, tacy jak Claude Code czy Cursor, są śledzeni automatycznie podczas pracy, więc to, co edytują, pozostaje w widoku. Wyłączysz to przyciskiem z celownikiem u góry panelu AI. Jeśli przestaniesz śledzić agenta w trakcie jego pracy, nie będzie śledzony do jej końca, a przy następnym uruchomieniu znów będzie.
 
 Awatar pokazuje liczbę agentów uruchomionych przez daną osobę. Najedź na niego, aby zobaczyć każdego agenta, jego bieżące działanie i stronę, a następnie kliknij **Obserwuj** przy agencie, aby mieć w widoku stronę i warstwy, które edytuje; śledzenie trwa między jego odpowiedziami i kończy się, gdy agent odejdzie. Przycisk za awatarami wyświetla wszystkich uczestników pokoju wraz z ich agentami i działa z klawiatury. Twój awatar wyświetla Twoich agentów — kliknij jednego, aby zmienić jego nazwę — i zawiera polecenie **Opuść pokój**.
 

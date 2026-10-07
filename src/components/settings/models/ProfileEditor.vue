@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
-import { useOnboardingAgents } from '@/app/ai/models/settings/onboarding/agents'
+import { usePiSetup } from '@/app/ai/agents/setup'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
-import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
-import AISetupPi from '@/components/settings/ai-setup/AISetupPi.vue'
+import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
+import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
@@ -30,6 +30,8 @@ const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials, settings } = useI18n()
 const formElement = useTemplateRef<HTMLFormElement>('formElement')
+const nameInput = useTemplateRef('nameInput')
+defineExpose({ focus: () => nameInput.value?.focus({ preventScroll: true }) })
 const keyInput = ref('')
 const deleteOpen = ref(false)
 const profile = useModelProfileEditor({ profileId, keyInput, labels: ai })
@@ -58,16 +60,10 @@ const {
   clearKey,
   testConnection: runConnectionTest
 } = profile
-const piAgents = useOnboardingAgents()
-const piSetup = computed(() => {
-  const setup = isHarness.value ? piAgents.piSetup('harness:pi') : undefined
-  // Pi runs only in the desktop app, where its companion can be checked.
-  return setup?.supported ? setup : undefined
-})
+const pi = usePiSetup(isHarness)
 const customModelPlaceholder = computed(() =>
-  isHarness.value ? (piSetup.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
+  isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
 )
-watch(isHarness, (harness) => harness && piAgents.refreshAgents(), { immediate: true })
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
@@ -128,6 +124,7 @@ async function remove() {
             @blur="feedback.blur('name')"
           >
             <AppInput
+              ref="nameInput"
               v-bind="control"
               v-model="draft.name"
               :aria-label="ai.modelName"
@@ -145,12 +142,12 @@ async function remove() {
             />
           </ProviderSettingsField>
 
-          <div v-if="piSetup" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
-            <AISetupPi
-              :setup="piSetup"
-              @check="piAgents.refreshAgents()"
-              @install-companion="piAgents.installAgent('harness:pi')"
-              @install-bridge="piAgents.setupCanvasBridge()"
+          <div v-if="pi.state.value" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
+            <PiSetup
+              :setup="pi.state.value"
+              @check="pi.refresh()"
+              @install-companion="pi.installCompanion()"
+              @install-bridge="pi.installBridge()"
             />
           </div>
 

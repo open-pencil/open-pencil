@@ -40,6 +40,15 @@ export const ONBOARDING_SERVER_PRESETS = [
   { id: 'lmstudio', name: 'LM Studio', baseURL: 'http://localhost:1234/v1' }
 ] as const
 
+export type OnboardingServerPreset = (typeof ONBOARDING_SERVER_PRESETS)[number]['id'] | 'custom'
+
+/** The preset whose address the person entered, or `custom` for any other server. */
+export function serverPresetFor(baseURL: string): OnboardingServerPreset {
+  return (
+    ONBOARDING_SERVER_PRESETS.find((preset) => preset.baseURL === baseURL.trim())?.id ?? 'custom'
+  )
+}
+
 /** Details the person edits while connecting. */
 export type OnboardingConnectionPatch = Partial<
   Pick<OnboardingConnectionState, 'apiKey' | 'customBaseURL' | 'customModelID'>
@@ -147,6 +156,12 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
     state.reason = null
   }
 
+  /** Applies what the person typed; a changed connection needs a new test. */
+  function updateConnection(providerID: OnboardingAccess, patch: OnboardingConnectionPatch): void {
+    Object.assign(connection(providerID), patch)
+    resetTest(providerID)
+  }
+
   async function testConnection(providerID: OnboardingAccess): Promise<void> {
     const request = (testVersions.get(providerID) ?? 0) + 1
     testVersions.set(providerID, request)
@@ -182,5 +197,14 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
     keyStatuses[connectionId] = 'configured'
   }
 
-  return { connection, hasSavedKey, ready, resetTest, testConnection, clearKeys, markKeySaved }
+  return {
+    connection,
+    hasSavedKey,
+    ready,
+    resetTest,
+    updateConnection,
+    testConnection,
+    clearKeys,
+    markKeySaved
+  }
 }

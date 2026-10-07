@@ -9,6 +9,12 @@ import {
 } from '@open-pencil/core/tools'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import {
+  agentFinished,
+  agentStarted,
+  readAgentSession,
+  touchedNodeIds
+} from '@/app/automation/agents'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import {
   AUTOMATION_UNDO_LABEL,
@@ -25,7 +31,7 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
   async function handleToolRender(
     target: AutomationTarget,
     toolArgs: Record<string, unknown>
-  ): Promise<unknown> {
+  ): Promise<{ id: string; name: string; type: string; children: string[] }> {
     const store = target.store
     const tree = toolArgs.tree as Parameters<typeof renderTree>[1]
     const parentId = (toolArgs.parent_id as string | undefined) ?? target.pageId
@@ -47,10 +53,7 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     )
     store.requestRender()
     store.flashNodes([result.id])
-    return {
-      ok: true,
-      result: { id: result.id, name: result.name, type: result.type, children: result.childIds }
-    }
+    return { id: result.id, name: result.name, type: result.type, children: result.childIds }
   }
 
   return async function handleTool(target: AutomationTarget, args: unknown): Promise<unknown> {
@@ -58,8 +61,27 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     const toolArgs = (args as { args?: Record<string, unknown> }).args ?? {}
     if (!toolName) throw new Error('Missing "name" in args')
 
+    // A call from an MCP session shows as that session's agent, working where the call works.
+    const session = readAgentSession((args as { agent?: unknown }).agent)
+    if (session) agentStarted(target.store, session, target.pageId)
+    const response = await runTool(target, toolName, toolArgs)
+    if (session) {
+      agentFinished(target.store, session, {
+        pageId: target.pageId,
+        nodeIds: touchedNodeIds(target.store, toolArgs, response.result),
+        edited: response.edited
+      })
+    }
+    return { ok: true, result: response.result }
+  }
+
+  async function runTool(
+    target: AutomationTarget,
+    toolName: string,
+    toolArgs: Record<string, unknown>
+  ): Promise<{ result: unknown; edited: boolean }> {
     if (toolName === 'render' && toolArgs.tree) {
-      return handleToolRender(target, toolArgs)
+      return { result: await handleToolRender(target, toolArgs), edited: true }
     }
 
     const def = ALL_TOOLS.find((t) => t.name === toolName && isToolExposed(t, 'mcp'))
@@ -97,7 +119,7 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
       store.requestRender()
       store.flashNodes(extractNodeIds(result))
     }
-    return { ok: true, result }
+    return { result, edited: def.mutates }
   }
 }
 

@@ -8,6 +8,8 @@ import { AGENT_KINDS, AGENT_STATUSES } from './types'
 /** Bounds on what a peer can publish, so a broken or hostile peer cannot flood rendering. */
 export const MAX_AGENTS_PER_PEER = 16
 const MAX_SELECTION = 256
+/** Outlines an agent draws around JSX it is still streaming. */
+export const MAX_OUTLINE = 32
 export const MAX_NAME_LENGTH = 40
 const MAX_ID = 64
 
@@ -25,6 +27,11 @@ const personPoint = v.object({
   zoom: lenient(v.pipe(finite, v.minValue(0.02), v.maxValue(256)))
 })
 const selection = v.pipe(v.array(id), v.maxLength(MAX_SELECTION))
+const extent = v.pipe(finite, v.minValue(0))
+const outline = v.pipe(
+  v.array(v.object({ x: finite, y: finite, width: extent, height: extent })),
+  v.maxLength(MAX_OUTLINE)
+)
 
 const agent = v.object({
   id,
@@ -34,7 +41,8 @@ const agent = v.object({
   status: v.picklist(AGENT_STATUSES),
   pageId: lenient(id),
   cursor: lenient(point),
-  selection: lenient(selection)
+  selection: lenient(selection),
+  outline: lenient(outline)
 })
 
 const peerState = v.object({

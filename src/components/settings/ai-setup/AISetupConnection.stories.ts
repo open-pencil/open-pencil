@@ -4,7 +4,7 @@ import { expect, within } from 'storybook/test'
 import { ACP_AGENTS, type ACPAgentID } from '@open-pencil/core/constants'
 
 import type { DetectedAgent } from '@/app/ai/agents/discovery'
-import type { AgentSetupState, PiSetupState } from '@/app/ai/models/settings/onboarding/agents'
+import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup'
 
 import AISetupConnection from './AISetupConnection.vue'
 
@@ -32,6 +32,7 @@ function detected(id: ACPAgentID, status: DetectedAgent['status']): DetectedAgen
 function agentSetup(overrides: Partial<AgentSetupState>): AgentSetupState {
   return {
     supported: true,
+    checked: true,
     scanning: false,
     detected: null,
     bridge: false,
@@ -48,6 +49,7 @@ function agentSetup(overrides: Partial<AgentSetupState>): AgentSetupState {
 function piSetup(overrides: Partial<PiSetupState>): PiSetupState {
   return {
     supported: true,
+    checked: true,
     scanning: false,
     companion: false,
     companionOutdated: false,
@@ -137,7 +139,11 @@ export const CodingAgentInBrowser: Story = {
   }
 }
 export const CodingAgentChecking: Story = {
-  args: { providerID: 'acp:codex', recommended: false, agentSetup: agentSetup({ scanning: true }) }
+  args: {
+    providerID: 'acp:codex',
+    recommended: false,
+    agentSetup: agentSetup({ scanning: true, checked: false })
+  }
 }
 export const CodingAgentInstalled: Story = {
   args: {

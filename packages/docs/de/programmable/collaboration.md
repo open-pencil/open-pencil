@@ -30,11 +30,13 @@ Räume werden nicht auf einem Server gespeichert: Die Datei liegt auf den Gerät
 - **Dokument:** Änderungen an Formen, Text, Eigenschaften und Anordnung;
 - **Zeiger:** Position, Name und Farbe jedes Teilnehmers;
 - **Auswahl:** ausgewählte Objekte der anderen Teilnehmer;
-- **Agenten:** Der integrierte AI-Chat erscheint als Zeiger an den Ebenen, die er bearbeitet; seine umrandete Beschriftung zeigt ein Funkelsymbol und einen Rufnamen wie *Fern*. Zeiger und Umrandung haben die Farbe der Person, die den Agenten ausführt, sodass erkennbar ist, wem er gehört. Geteilt werden nur Name, Art, Modell, Status, Seite, Position und bearbeitete Ebenen, niemals Prompts oder Antworten.
+- **Agenten:** Der integrierte AI-Chat, ACP- und Pi-Harness-Chats und jeder verbundene MCP-Client erscheinen als Zeiger an den Ebenen, die sie lesen oder bearbeiten; ihre umrandete Beschriftung zeigt ein Funkelsymbol und einen Rufnamen wie *Fern*. Während der Chat JSX streamt, wandert sein Zeiger durch die Elemente, sobald sie erscheinen, und umrandet sie. Zeiger und Umrandung haben die Farbe der Person, die den Agenten ausführt, sodass erkennbar ist, wem er gehört. Geteilt werden nur Name, Art, Modell, Status, Seite, Position und bearbeitete Ebenen, niemals Prompts oder Antworten.
 
 ## Ansichtsverfolgung
 
 Ein Klick auf einen Avatar folgt der Ansicht dieses Teilnehmers. Position und Zoom werden angepasst, und ein Rahmen in dessen Farbe mit einer Leiste „Du folgst …“ zeigt, wem Sie folgen. Zum Beenden klicken Sie erneut auf den Avatar, drücken <kbd>Esc</kbd> oder klicken, scrollen, zoomen oder wechseln selbst die Seite.
+
+Deinen eigenen Agenten, dem AI-Chat und MCP-Clients wie Claude Code oder Cursor, folgt die Ansicht automatisch, während sie arbeiten, sodass im Blick bleibt, was sie bearbeiten. Abschalten lässt sich das mit dem Fadenkreuz-Symbol oben im AI-Panel. Beendest du das Folgen, während ein Agent arbeitet, bleibt er bis zum Ende seiner Arbeit unbeachtet und wird beim nächsten Durchlauf wieder verfolgt.
 
 Ein Avatar zählt die Agenten, die die Person ausführt. Beim Daraufzeigen erscheinen alle Agenten, ihre Tätigkeit und die jeweilige Seite; mit **Folgen** neben einem Agenten bleiben die Seite und die Ebenen, die er bearbeitet, im Blick. Die Verfolgung läuft zwischen seinen Antworten weiter und endet, wenn er den Raum verlässt. Die Schaltfläche nach den Avataren listet alle Personen im Raum mit ihren Agenten auf und ist per Tastatur bedienbar. Ihr eigener Avatar listet Ihre Agenten auf – ein Klick benennt einen Agenten um – und enthält **Raum verlassen**.
 

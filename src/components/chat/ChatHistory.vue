@@ -18,6 +18,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { AppConfirmationDialog } from '@/components/ui/dialog'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
@@ -159,6 +160,7 @@ function closeMenu(event: Event) {
           </PopoverContent>
         </PopoverPortal>
       </PopoverRoot>
+      <slot name="actions" />
       <IconButton :label="ai.newChat" :disabled="disabled" size="sm" @click="emit('create')"
         ><icon-lucide-plus :class="styles.icon()"
       /></IconButton>
@@ -201,14 +203,15 @@ function closeMenu(event: Event) {
         }}</AppButton>
       </div>
     </form>
-    <div v-if="confirming" :class="styles.form()" @keydown.esc.stop="confirming = false">
-      <p :class="styles.confirmation()">{{ ai.deleteChatConfirmation }}</p>
-      <div :class="styles.actions()">
-        <AppButton size="xs" @click="confirming = false">{{ ai.cancelChatAction }}</AppButton
-        ><AppButton size="xs" color="error" :disabled="disabled" @click="remove">{{
-          ai.deleteChat
-        }}</AppButton>
-      </div>
-    </div>
+    <AppConfirmationDialog
+      v-model:open="confirming"
+      :heading="ai.deleteChatConfirmation"
+      :description="ai.deleteChatDescription({ title: selected?.title ?? '' })"
+      :cancel-label="ai.cancelChatAction"
+      :confirm-label="ai.deleteChat"
+      tone="danger"
+      :confirm-disabled="disabled"
+      @confirm="remove"
+    />
   </div>
 </template>

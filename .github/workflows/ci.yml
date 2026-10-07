@@ -19,6 +19,12 @@ jobs:
     name: Classify changes
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    # In the merge queue, reads the queued PR's verified-tree status and the CI run behind it.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      statuses: read
     outputs:
       scope: ${{ steps.classify.outputs.scope }}
     steps:
@@ -37,6 +43,10 @@ jobs:
         id: classify
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          # In the merge queue, a tree the pull request's CI already passed skips the suites.
+          CI_EVENT: ${{ github.event_name }}
+          CI_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: bun tools/ci/policy/src/classify.ts
 
   commit-messages:
@@ -101,6 +111,9 @@ jobs:
 
       - name: Typecheck application and SDKs
         run: bun run typecheck
+
+      - name: Typecheck test suites
+        run: bun run check:test-types
 
       - name: Enforce architecture and type-shape boundaries
         run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
@@ -257,6 +270,10 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    # Records the verified tree as a commit status once the gate has passed.
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -266,3 +283,14 @@ jobs:
         env:
           CI_NEEDS: ${{ toJSON(needs) }}
         run: bun tools/ci/policy/src/gate.ts
+      # Lets the merge queue skip the suites when it tests this exact tree. Forks cannot write it,
+      # and the queue accepts it only from this run. Recording is an optimization: a failure
+      # leaves the queue to run every check, so it must not fail the gate.
+      - name: Record the verified tree
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        env:
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bun tools/ci/policy/src/verified-tree/record.ts

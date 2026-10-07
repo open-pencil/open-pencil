@@ -68,3 +68,76 @@ test("a guest's agent shows on their avatar and can be followed until Escape", a
     await relay.close()
   }
 })
+
+test('an MCP session shows as an agent at the layers it touches, to collaborators too', async ({
+  browser
+}) => {
+  // Two peers in a room, a tool call, and following it, stopping, and following again.
+  test.setTimeout(90_000)
+  const relay = await startRelay()
+  let host: Peer | null = null
+  let guest: Peer | null = null
+  try {
+    host = await createPeer(browser, 'Host', relay.url)
+    guest = await createPeer(browser, 'Guest', relay.url)
+    await share(host)
+    await connect(guest)
+    const nodeId = await host.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.graph.createNode('FRAME', store.state.currentPageId, {
+        name: 'Card',
+        x: 240,
+        y: 160,
+        width: 200,
+        height: 120
+      }).id
+    })
+
+    // A tool call as the MCP bridge delivers it, from a session of an outside client.
+    await host.page.evaluate(
+      (id) =>
+        window.openPencil?.test?.automation?.('tool', {
+          name: 'rename_node',
+          args: { id, name: 'Checkout card' },
+          agent: { session: 'session-1', kind: 'mcp', client: 'claude-code' }
+        }),
+      nodeId
+    )
+    const agent = await host.page.evaluate(() => {
+      const cursor = window.openPencil
+        ?.getStore?.()
+        .state.presenceCursors.find((entry) => entry.kind === 'agent')
+      return cursor ? { name: cursor.name, x: cursor.x, y: cursor.y } : null
+    })
+    expect(agent).toMatchObject({ x: 240, y: 160 })
+    const name = agent?.name ?? ''
+
+    // With Follow agents on, as by default, its owner's view follows it as soon as it works.
+    const frame = host.page.getByTestId('follow-frame')
+    await expect(frame).toContainText(`Following ${name}`)
+    await frame.getByRole('button', { name: 'Stop following' }).click()
+    await expect(frame).toHaveCount(0)
+
+    // Its owner lists it on their avatar and can follow it again like any agent.
+    await host.page.getByTestId('collab-local-avatar').click()
+    const menu = host.page.getByTestId('collab-self-menu')
+    await expect(menu.getByText(name)).toBeVisible()
+    await menu.getByRole('button', { name: `Follow ${name}` }).click()
+    await expect(frame).toContainText(`Following ${name}`)
+
+    // Collaborators see it on its owner's avatar.
+    await expect(guest.page.getByTestId('collab-peer-avatar')).toContainText('1')
+
+    // When the session ends, the agent leaves.
+    await host.page.evaluate(() =>
+      window.openPencil?.test?.automation?.('agent_session_closed', { session: 'session-1' })
+    )
+    await expect(frame).toHaveCount(0)
+    expect(collaborationErrors(host)).toEqual([])
+  } finally {
+    await host?.context.close()
+    await guest?.context.close()
+    await relay.close()
+  }
+})

@@ -23,6 +23,7 @@ import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group'
+import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
@@ -215,6 +216,7 @@ export class FigmaAPI implements NodeProxyHost {
 
   createPage(): FigmaNodeProxy {
     const page = this.graph.addPage('Page')
+    setDefaultPageBackground(this.graph, page, this.theme)
     return this.wrapNode(page.id)
   }
 

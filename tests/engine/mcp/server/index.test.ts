@@ -7,6 +7,7 @@ import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
+import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
@@ -702,4 +703,71 @@ describe('MCP server concurrent startServer', () => {
       await b.close()
     }
   }, 15000)
+})
+
+describe('MCP sessions as agents', () => {
+  async function withAgentClient(
+    headers: Record<string, string>,
+    run: (
+      client: Client,
+      browser: MockBrowser,
+      transport: StreamableHTTPClientTransport
+    ) => Promise<void>
+  ) {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_CLIENT_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = expectDefined(handle.httpPort, 'TCP port')
+    const browser = await connectMockBrowser(httpPort, new SceneGraph(), TEST_CLIENT_AUTH_TOKEN)
+    try {
+      await waitForBrowserRegistration(httpPort)
+      const client = new Client({ name: 'test-client', version: '0.0.0' })
+      const transport = new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${httpPort}/mcp`),
+        {
+          requestInit: {
+            headers: { Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`, ...headers }
+          }
+        }
+      )
+      await client.connect(transport)
+      await run(client, browser, transport)
+    } finally {
+      browser.close()
+      await handle.close()
+    }
+  }
+
+  function agentOf(browser: MockBrowser): unknown {
+    const request = browser.requests.find((item) => item.command === 'tool')
+    return (request?.args as { agent?: unknown } | undefined)?.agent
+  }
+
+  test('a tool call names its session and client, so the app can show it as an agent', async () => {
+    await withAgentClient({}, async (client, browser) => {
+      await client.callTool({ name: 'get_page_tree', arguments: {} })
+      expect(agentOf(browser)).toMatchObject({ kind: 'mcp', client: 'test-client' })
+      expect((agentOf(browser) as { session: unknown }).session).toBeString()
+    })
+  })
+
+  test("the app's ACP chat marks its session, and closing the session tells the app", async () => {
+    await withAgentClient({ [MCP_AGENT_HEADER]: 'acp' }, async (client, browser, transport) => {
+      await client.callTool({ name: 'get_page_tree', arguments: {} })
+      const agent = agentOf(browser) as { session: string; kind: string }
+      expect(agent.kind).toBe('acp')
+
+      await transport.terminateSession()
+      const closed = () => browser.requests.find((item) => item.command === 'agent_session_closed')
+      // The notice reaches the app over its socket after the DELETE is answered.
+      for (let attempt = 0; attempt < 50 && !closed(); attempt++) await Bun.sleep(10)
+      expect(closed()?.args).toEqual({ session: agent.session })
+    })
+  })
 })

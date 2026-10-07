@@ -33,6 +33,22 @@ export class CanvasHelper {
       .waitFor({ timeout: 30000 })
     await this.page.getByTestId('canvas-loading').waitFor({ state: 'hidden', timeout: 30000 })
     await this.page.locator('#loader').waitFor({ state: 'detached', timeout: 30000 })
+    await this.useLightPage()
+  }
+
+  /**
+   * Canvas specs draw on Figma's light page. Playwright runs the app in its dark theme, where a new
+   * document starts on Figma's dark page, so a fresh document is switched back; documents a spec
+   * opened keep their own background. `tests/e2e/pages/theme-background.spec.ts` covers the theme.
+   */
+  async useLightPage() {
+    await this.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      const color = store?.state.pageColor
+      const darkDefault = 0x1e / 255
+      if (!store || !color || color.r !== darkDefault || color.g !== darkDefault) return
+      store.setPageColor({ r: 0.96, g: 0.96, b: 0.96, a: 1 })
+    })
   }
 
   async clearCanvas() {

@@ -1,5 +1,6 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
+import { endAgentSession } from '@/app/automation/agents'
 import {
   handleActivateDocument,
   handleGetSettings,
@@ -75,6 +76,11 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
   ): Promise<unknown> {
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
+    }
+    if (command === 'agent_session_closed') {
+      const session = isUnknownRecord(args) ? args.session : undefined
+      if (typeof session === 'string') endAgentSession(session)
+      return { ok: true, result: null }
     }
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)

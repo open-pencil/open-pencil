@@ -33,6 +33,7 @@ import {
 export {
   didHitStepLimit,
   endRun,
+  markRunPreview,
   recordStep,
   runAgentId,
   runPageId,

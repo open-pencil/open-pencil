@@ -3,7 +3,11 @@ import { limitAsync } from 'es-toolkit/promise'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { getPageColor, setPageBackgrounds } from '#core/figma-api/page-backgrounds'
+import {
+  getPageColor,
+  setDefaultPageBackground,
+  setPageBackgrounds
+} from '#core/figma-api/page-backgrounds'
 import {
   canUseFigPopulationWorker,
   createFigPopulationWorker
@@ -263,6 +267,7 @@ export function createPageActions(ctx: EditorContext) {
     const pages = ctx.graph.getPages()
     const pageName = name ?? `Page ${pages.length + 1}`
     const page = ctx.graph.addPage(pageName)
+    setDefaultPageBackground(ctx.graph, page, ctx.state.theme)
     void switchPage(page.id)
     return page.id
   }
