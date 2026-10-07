@@ -126,8 +126,8 @@ describe('state styles', () => {
 })
 
 describe('state stylesheet', () => {
-  test('writes readable classes and state selectors on the root', () => {
-    const { document, css } = stateStylesToCSS(styles(switchSet()))
+  test('writes readable classes and state selectors on the root', async () => {
+    const { document, css } = await stateStylesToCSS(styles(switchSet()))
     expect(
       elements(document.children[0] ?? { type: 'text', text: '' }).map((el) => el.attrs.class)
     ).toEqual(['switch', 'switch__thumb'])
@@ -141,13 +141,14 @@ describe('state stylesheet', () => {
     })
     expect(rules.get('.switch[data-disabled]')).toEqual({ opacity: '0.5' })
     // Fewer conditions come first, so the cascade never depends on emission order.
+    expect(css.indexOf('.switch[data-state="checked"] {')).toBeGreaterThan(-1)
     expect(css.indexOf('.switch[data-state="checked"] {')).toBeLessThan(
       css.indexOf('.switch[data-state="checked"]:hover')
     )
   })
 
-  test('writes a prop condition as the data attribute a component sets', () => {
-    const rules = cssRules(stateStylesToCSS(styles(buttonSet())).css)
+  test('writes a prop condition as the data attribute a component sets', async () => {
+    const rules = cssRules((await stateStylesToCSS(styles(buttonSet()))).css)
     expect(rules.get('.button[data-size="Large"]')).toEqual({ width: '160px' })
   })
 })

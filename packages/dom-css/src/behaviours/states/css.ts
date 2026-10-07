@@ -4,7 +4,8 @@ import type {
   DesignNode,
   DesignStyleDeclaration
 } from '#dom-css/types'
-import { compact } from 'es-toolkit/array'
+import cssesc from 'cssesc'
+import { compact, sortBy } from 'es-toolkit/array'
 
 import type { StateCondition, StateElement, StateNode, StateStyles } from './model'
 import { layerClassNames, propAttribute } from './names'
@@ -15,7 +16,8 @@ export interface StateStylesheet {
   css: string
 }
 
-const quoted = (value: string) => JSON.stringify(value)
+/** A CSS string for an attribute selector's value. */
+const quoted = (value: string) => cssesc(value, { quotes: 'double', wrap: true })
 
 /** The selector part a condition adds to the control's root. */
 export function conditionSelector(condition: StateCondition): string {
@@ -26,12 +28,6 @@ export function conditionSelector(condition: StateCondition): string {
   if (condition.state === 'focus') return ':focus-visible'
   // A disabled control keeps its disabled look under the pointer.
   return `${condition.state === 'hover' ? ':hover' : ':active'}:not([data-disabled])`
-}
-
-function declarations(style: DesignStyleDeclaration): string {
-  return Object.entries(style)
-    .map(([property, value]) => `  ${property}: ${value};`)
-    .join('\n')
 }
 
 function designNode(node: StateNode, classes: Map<StateElement, string>): DesignNode {
@@ -48,27 +44,37 @@ function designNode(node: StateNode, classes: Map<StateElement, string>): Design
 
 /**
  * The state styles as a stylesheet with a readable class per layer. A rule with more
- * conditions has a more specific selector, so a combined variant wins over each of its parts.
+ * conditions comes later and has a more specific selector, so a combined variant wins over
+ * each of its parts. The sheet is built with the CSS object model, which rejects an invalid
+ * selector and prints the declarations.
  */
-export function stateStylesToCSS(styles: StateStyles): StateStylesheet {
+export async function stateStylesToCSS(styles: StateStyles): Promise<StateStylesheet> {
   const classes = layerClassNames(styles)
   const rootClass = classes.get(styles.root) ?? ''
-  const blocks: { order: number; text: string }[] = []
+  const rules: { order: number; selector: string; style: DesignStyleDeclaration }[] = []
   for (const [element, className] of classes) {
     const own = element === styles.root ? '' : ` .${className}`
     if (Object.keys(element.base).length > 0)
-      blocks.push({ order: 0, text: `.${rootClass}${own} {\n${declarations(element.base)}\n}` })
+      rules.push({ order: 0, selector: `.${rootClass}${own}`, style: element.base })
     for (const rule of element.rules) {
       const when = rule.conditions.map(conditionSelector).join('')
-      blocks.push({
+      rules.push({
         order: rule.conditions.length,
-        text: `.${rootClass}${when}${own} {\n${declarations(rule.style)}\n}`
+        selector: `.${rootClass}${when}${own}`,
+        style: rule.style
       })
     }
   }
-  const css = blocks
-    .sort((a, b) => a.order - b.order)
-    .map((block) => block.text)
-    .join('\n\n')
-  return { document: { type: 'document', children: [designNode(styles.root, classes)] }, css }
+  // Loaded only when a stylesheet is written; the CSS object model is not bundled for browsers.
+  const { CSSStyleSheet } = await import('@acemir/cssom')
+  const sheet = new CSSStyleSheet()
+  for (const rule of sortBy(rules, [(item) => item.order])) {
+    const index = sheet.insertRule(`${rule.selector} {}`, sheet.cssRules.length)
+    for (const [property, value] of Object.entries(rule.style))
+      sheet.cssRules[index]?.style.setProperty(property, value)
+  }
+  return {
+    document: { type: 'document', children: [designNode(styles.root, classes)] },
+    css: sheet.toString()
+  }
 }
