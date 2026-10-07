@@ -18,6 +18,23 @@ export type TauriClipboardMock = {
 
 const IPC_BINDING = '__playwrightTauriIPC'
 
+/**
+ * What the desktop app's own commands return on a machine with no system fonts, no pending files
+ * or rooms, and no stored credentials. Any other command fails the spec, so a new one is noticed.
+ */
+const APP_COMMAND_RESULTS: Record<string, unknown> = {
+  list_system_fonts: [],
+  take_pending_open: [],
+  take_pending_rooms: [],
+  credential_status: 'missing',
+  load_system_font: null,
+  set_native_menu_checked: null,
+  'plugin:event|listen': null,
+  'plugin:event|unlisten': null,
+  'plugin:process|exit': null,
+  'plugin:process|restart': null
+}
+
 export async function installTauriClipboardMock(page: Page): Promise<TauriClipboardMock> {
   const state: TauriClipboardSnapshot = {
     text: '',
@@ -42,17 +59,8 @@ export async function installTauriClipboardMock(page: Page): Promise<TauriClipbo
       }
       case 'plugin:clipboard-manager|read_text':
         return state.html || state.text
-      case 'list_system_fonts':
-      case 'take_pending_open':
-      case 'take_pending_rooms':
-        return []
-      case 'load_system_font':
-      case 'plugin:event|listen':
-      case 'plugin:event|unlisten':
-      case 'plugin:process|exit':
-      case 'plugin:process|restart':
-        return null
       default:
+        if (Object.hasOwn(APP_COMMAND_RESULTS, cmd)) return APP_COMMAND_RESULTS[cmd]
         throw new Error(`Unexpected Tauri command: ${cmd}`)
     }
   })
