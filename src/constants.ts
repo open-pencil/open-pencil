@@ -82,10 +82,6 @@ export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
 
-/** The running app's version, from `package.json` at build time. */
-export const APP_VERSION =
-  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : ''
-
 /** The published release page, with its full notes, for a desktop version. */
 export function releaseNotesURL(version: string): string {
   return `https://github.com/open-pencil/open-pencil/releases/tag/v${version}`
