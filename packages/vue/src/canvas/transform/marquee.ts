@@ -1,43 +1,41 @@
 import type { Editor } from '@open-pencil/core/editor'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DragMarquee } from '#vue/shared/input/types'
 
-type CanvasToLocal = (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
+function intersects(a: Rect, b: Rect) {
+  return a.x + a.width > b.x && a.x < b.x + b.width && a.y + a.height > b.y && a.y < b.y + b.height
+}
 
-export function handleMarqueeMove(
-  editor: Editor,
-  canvasToLocal: CanvasToLocal,
-  d: DragMarquee,
-  cx: number,
-  cy: number
-) {
-  const minX = Math.min(d.startX, cx)
-  const minY = Math.min(d.startY, cy)
-  const maxX = Math.max(d.startX, cx)
-  const maxY = Math.max(d.startY, cy)
+function encloses(outer: Rect, inner: Rect) {
+  return (
+    inner.x >= outer.x &&
+    inner.x + inner.width <= outer.x + outer.width &&
+    inner.y >= outer.y &&
+    inner.y + inner.height <= outer.y + outer.height
+  )
+}
 
-  const scopeId = editor.state.enteredContainerId
-  const parentId = scopeId ?? editor.state.currentPageId
-  const localMin = scopeId ? canvasToLocal(minX, minY, scopeId) : { lx: minX, ly: minY }
-  const localMax = scopeId ? canvasToLocal(maxX, maxY, scopeId) : { lx: maxX, ly: maxY }
-  const localMinX = Math.min(localMin.lx, localMax.lx)
-  const localMinY = Math.min(localMin.ly, localMax.ly)
-  const localMaxX = Math.max(localMin.lx, localMax.lx)
-  const localMaxY = Math.max(localMin.ly, localMax.ly)
+export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy: number) {
+  const marquee = {
+    x: Math.min(d.startX, cx),
+    y: Math.min(d.startY, cy),
+    width: Math.abs(cx - d.startX),
+    height: Math.abs(cy - d.startY)
+  }
 
+  // Layers are compared by their canvas bounds, so rotated layers and containers match what is drawn.
+  const scopeId = d.containerId ?? editor.state.enteredContainerId
   const hits: string[] = []
-  for (const node of editor.graph.getChildren(parentId)) {
+  for (const node of editor.graph.getChildren(scopeId ?? editor.state.currentPageId)) {
     if (!node.visible || node.locked) continue
-    if (
-      node.x + node.width > localMinX &&
-      node.x < localMaxX &&
-      node.y + node.height > localMinY &&
-      node.y < localMaxY
-    ) {
-      hits.push(node.id)
-    }
+    const bounds = getAxisAlignedWorldBounds(node, editor.graph)
+    // As in Figma, on the page a frame or section holding layers needs to be fully enclosed.
+    const enclose = !scopeId && editor.graph.isOpenContainer(node.id)
+    if (enclose ? encloses(marquee, bounds) : intersects(marquee, bounds)) hits.push(node.id)
   }
 
   editor.select(hits)
-  editor.setMarquee({ x: minX, y: minY, width: maxX - minX, height: maxY - minY })
+  editor.setMarquee(marquee)
 }

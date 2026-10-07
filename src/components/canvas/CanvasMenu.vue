@@ -51,8 +51,7 @@ function removeSelectedGuide() {
 }
 
 const menuCls = useMenuUI({
-  content:
-    'min-w-56 max-w-80 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95 motion-reduce:animate-none',
+  content: 'min-w-56 max-w-80',
   separator: 'my-1'
 })
 const componentMenu = menu({ tone: 'component' })
@@ -71,7 +70,9 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
 </script>
 
 <template>
-  <ContextMenuContent :class="cls.menu" :side-offset="2" align="start">
+  <!-- Closing hands focus back to the canvas; when that lands just after a quick reopen, it
+       must not close the new menu. Clicks outside and Escape still close it. -->
+  <ContextMenuContent :class="cls.menu" :side-offset="2" align="start" @close-auto-focus.prevent>
     <template v-if="selectedGuide">
       <ContextMenuItem data-property="guide" :class="cls.item" @select="removeSelectedGuide">
         <span>{{ t.removeGuide }}</span>

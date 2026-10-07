@@ -13,6 +13,8 @@ export type {
   NodeResult,
   VariablesArgs,
   VariablesResult,
+  TokensArgs,
+  TokensResult,
   AnalyzeColorsArgs,
   AnalyzeColorsResult,
   AnalyzeTypographyArgs,

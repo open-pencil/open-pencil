@@ -14,9 +14,3 @@ const variables = useVariables()
 ```
 
 Среди возвращаемых значений — `collections`, `activeCollection`, `activeModes`, `variables`, `searchTerm` и действия для создания, переименования, удаления и обновления переменных и коллекций.
-
-## См. также
-
-- [useVariablesEditor](../composables/use-variables-editor)
-- [useVariablesDialogState](./use-variables-dialog-state)
-- [useVariablesTable](./use-variables-table)

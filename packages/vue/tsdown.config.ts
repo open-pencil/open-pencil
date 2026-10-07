@@ -39,8 +39,7 @@ export default defineConfig({
   format: ['esm'],
   dts: {
     vue: true,
-    sourcemap: true,
-    resolver: 'tsc'
+    sourcemap: true
   },
   sourcemap: true,
   hash: false,
@@ -69,7 +68,6 @@ export default defineConfig({
       '@nanostores/vue',
       '@nanostores/i18n',
       'nanostores',
-      '@tanstack/vue-table',
       'reka-ui'
     ],
     onlyBundle: false

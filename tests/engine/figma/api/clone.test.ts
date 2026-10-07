@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from './helpers'
+import { createAPI, solidFill } from './helpers'
 
 describe('clone', () => {
   test('clone creates a deep copy', () => {
     const api = createAPI()
     const frame = api.createFrame()
     frame.name = 'Original'
-    frame.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    frame.fills = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
     const child = api.createRectangle()
     child.name = 'Child'
     frame.appendChild(child)

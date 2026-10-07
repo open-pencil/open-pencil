@@ -2,6 +2,9 @@ import { randomBytes } from 'node:crypto'
 import { access, constants, lstat, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { Socket } from 'node:net'
 
+import * as v from 'valibot'
+
+import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
 /**
@@ -22,6 +25,30 @@ export interface DiscoveryInfo {
   version: string
   startedAt: string
   disabledTools?: string[]
+  /** What MCP clients can reach; stdio clients started outside the app follow it. */
+  scope?: MCPToolScope
+}
+
+const DiscoveryInfoJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    pid: v.pipe(v.number(), v.integer(), v.minValue(1)),
+    version: v.string(),
+    httpPort: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(65535)),
+    authRequired: v.boolean(),
+    startedAt: v.string(),
+    socketPath: v.nullable(v.pipe(v.string(), v.nonEmpty())),
+    authToken: v.nullable(v.string()),
+    disabledTools: v.optional(v.array(v.string()), () => []),
+    scope: v.optional(v.picklist(MCP_TOOL_SCOPES), 'document')
+  })
+) satisfies v.GenericSchema<string, DiscoveryInfo>
+
+/** Parse discovery file contents, or null when the file is not valid discovery JSON. */
+export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
+  const result = v.safeParse(DiscoveryInfoJSON, raw)
+  return result.success ? result.output : null
 }
 
 /**
@@ -74,50 +101,11 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
     return null
   }
 
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-  if (!parsed || typeof parsed !== 'object') return null
-
-  const obj = parsed as { [key: string]: unknown }
-  const info = validateDiscoveryFields(obj)
+  const info = parseDiscoveryInfo(raw)
   if (!info) return null
   if (!isProcessAlive(info.pid)) return null
 
   return info
-}
-
-function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo | null {
-  const { pid, version, httpPort, authRequired, startedAt, socketPath, authToken, disabledTools } =
-    obj
-  if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) return null
-  if (typeof version !== 'string') return null
-  if (typeof httpPort !== 'number' || !Number.isInteger(httpPort)) return null
-  if (httpPort < 0 || httpPort > 65535) return null
-  if (typeof authRequired !== 'boolean') return null
-  if (typeof startedAt !== 'string') return null
-  if (typeof socketPath !== 'string' && socketPath !== null) return null
-  if (socketPath === '') return null
-  if (authToken !== null && typeof authToken !== 'string') return null
-  if (
-    disabledTools !== undefined &&
-    (!Array.isArray(disabledTools) || disabledTools.some((name) => typeof name !== 'string'))
-  ) {
-    return null
-  }
-  return {
-    pid,
-    version,
-    httpPort,
-    authRequired,
-    startedAt,
-    socketPath,
-    authToken,
-    disabledTools: disabledTools ?? []
-  }
 }
 
 /**
@@ -145,15 +133,7 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
   }
   const raw = await readFile(discoveryPath, 'utf-8').catch(() => null)
   if (!raw) return false
-  let info: DiscoveryInfo | null = null
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object') {
-      info = validateDiscoveryFields(parsed as { [key: string]: unknown })
-    }
-  } catch {
-    return false
-  }
+  const info = parseDiscoveryInfo(raw)
   if (!info || info.socketPath !== socketPath) return false
 
   // If TCP is disabled (httpPort <= 0), fall back to PID-based liveness check

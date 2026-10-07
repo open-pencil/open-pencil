@@ -82,8 +82,11 @@ At the composable level, the main canvas APIs are:
 - `useCanvas()`
 - `useCanvasInput()`
 - `useTextEdit()`
+- `PlayIslands`
 
 If you want SDK-provided structure, use headless primitives like `CanvasRoot` and `CanvasSurface`.
+
+`PlayIslands` previews a canvas pane: place it over the canvas with the pane's view state, and while the pane's `play` state is set, each top-level layer holding components with behaviours runs as live Reka UI components in its own shadow root.
 
 ### Headless primitives
 
@@ -159,7 +162,6 @@ These are the main APIs most SDK consumers should start with.
 
 #### Variables, navigation, and localization
 
-- `useVariablesEditor()`
 - `usePageList()`
 - `useI18n()`
 
@@ -205,8 +207,6 @@ These exports are intentionally public, but they are lower-level or more special
 - `useFontPicker()`
 - `useOkHCL()`
 - `useVariables()`
-- `useVariablesDialogState()`
-- `useVariablesTable()`
 - `usePropScrub()`
 - `useLayerDrag()`
 - `useInlineRename()`

@@ -1,5 +1,6 @@
 import { toUint8Array } from 'js-base64'
 
+import { slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -9,6 +10,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import {
   SELECTION_COLOR,
   COMPONENT_COLOR,
+  SLOT_COLOR,
   CANVAS_BG_COLOR,
   DEFAULT_FONT_SIZE,
   COMPONENT_SET_DASH,
@@ -67,6 +69,7 @@ export interface PendingFontNode {
   keys: Set<string>
 }
 
+import type { PlacedIssueMarker } from './issues/types'
 import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
@@ -176,6 +179,10 @@ export class SkiaRenderer {
   pageColor = CANVAS_BG_COLOR
   rulerTheme: RulerTheme | null = null
   pageId: string | null = null
+  /** Issue markers placed in the last overlay pass; hit testing reads the same layout. */
+  issueMarkers: PlacedIssueMarker[] = []
+  /** Screen rectangles of UI floating over this canvas, which overlays such as edge pins avoid. */
+  overlayObstacles: readonly Rect[] = []
 
   boundEffectLayersToViewport = false
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
@@ -278,6 +285,12 @@ export class SkiaRenderer {
     graph: SceneGraph,
     selectedIds: Set<string>,
     guides?: RenderOverlays['guides']
+  ) => void
+  declare drawFrameTitles: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: ReadonlySet<string>,
+    overlays?: RenderOverlays
   ) => void
   declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph, overlays?: RenderOverlays) => void
   declare drawComponentLabels: (
@@ -410,6 +423,16 @@ export class SkiaRenderer {
     return this.ck.Color4f(COMPONENT_COLOR.r, COMPONENT_COLOR.g, COMPONENT_COLOR.b, alpha)
   }
 
+  slotColor(alpha = 1) {
+    return this.ck.Color4f(SLOT_COLOR.r, SLOT_COLOR.g, SLOT_COLOR.b, alpha)
+  }
+
+  /** The outline colour for a node: pink for slots, purple for components, blue otherwise. */
+  outlineColor(node: SceneNode) {
+    if (slotPropertyId(node)) return this.slotColor()
+    return this.isComponentType(node.type) ? this.compColor() : this.selColor()
+  }
+
   isComponentType(type: string): boolean {
     return type === 'COMPONENT' || type === 'COMPONENT_SET' || type === 'INSTANCE'
   }
@@ -490,8 +513,9 @@ export class SkiaRenderer {
     RendererState.invalidateAllPictures(this)
   }
 
-  invalidateNodePicture(nodeId: string): void {
-    RendererState.invalidateNodePicture(this, nodeId)
+  /** Drops `nodeId`'s cached drawing; `changedKeys`, when known, lets text keep its glyph coverage. */
+  invalidateNodePicture(nodeId: string, changedKeys?: readonly (keyof SceneNode)[]): void {
+    RendererState.invalidateNodePicture(this, nodeId, changedKeys)
   }
 
   flashNode(nodeId: string): void {
@@ -562,7 +586,6 @@ export class SkiaRenderer {
     graph: SceneGraph,
     canvasX: number,
     canvasY: number,
-    selectedIds: Set<string>,
     preview?: RenderOverlays['rotationPreview']
   ): SceneNode | null {
     return LabelHitTest.hitTestFrameTitle(
@@ -570,8 +593,9 @@ export class SkiaRenderer {
       canvasX,
       canvasY,
       this.zoom,
-      selectedIds,
+      this.pageId ?? graph.rootId,
       this.labelFont,
+      this.labelCache,
       labelHitOptions(this, graph, preview)
     )
   }

@@ -1,5 +1,6 @@
 import { wcagContrast } from 'culori'
 
+import { BLACK, WHITE } from '../constants'
 import type { Color } from '../primitives'
 
 /** Opaque color seen when `foreground` at `alpha` is drawn over an opaque `background`. */
@@ -22,4 +23,9 @@ export function contrastRatio(
     { mode: 'rgb', r: a.r, g: a.g, b: a.b },
     { mode: 'rgb', r: b.r, g: b.g, b: b.b }
   )
+}
+
+/** Black or white, whichever reads better on an opaque `background`. */
+export function readableForeground(background: Pick<Color, 'r' | 'g' | 'b'>): Color {
+  return contrastRatio(background, BLACK) >= contrastRatio(background, WHITE) ? BLACK : WHITE
 }

@@ -14,7 +14,7 @@ interface Args {
 }
 
 const meta = {
-  title: 'Settings/Layout/Section',
+  title: 'App/Settings/Layout/Section',
   component: SettingsSection,
   args: { heading: 'Recovery' },
   render: (args) => ({

@@ -2,11 +2,13 @@ import type { DBSchema } from 'idb'
 
 import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
 
+import { fromStorableBlobs, toStorableBlobs } from './blobs'
 import type { Conversation, ConversationMeta, ConversationStore } from './types'
 
 interface ChatDatabase extends DBSchema {
   conversations: { key: string; value: ConversationMeta; indexes: { document: string } }
-  messages: { key: string; value: Conversation['messages'] }
+  /** `Conversation['messages']` with each Blob stored as bytes (`./blobs`). */
+  messages: { key: string; value: unknown }
   files: { key: string; value: FileSystemFileHandle }
   deleted: { key: string; value: true }
   selected: { key: string; value: string }
@@ -48,10 +50,15 @@ export function createConversationStore(): ConversationStore {
       const meta = await transaction.objectStore('conversations').get(id)
       const messages = await transaction.objectStore('messages').get(id)
       await transaction.done
-      return meta ? { ...meta, messages: messages ?? [] } : null
+      if (!meta) return null
+      // Written only by `write` below, from `Conversation['messages']`.
+      const restored = fromStorableBlobs(messages ?? []) as Conversation['messages']
+      return { ...meta, messages: restored }
     },
     async write(conversation) {
       const { messages, ...meta } = conversation
+      // Before the transaction opens: awaiting anything but its own requests would end it.
+      const stored = await toStorableBlobs(messages)
       const transaction = (await getDatabase()).transaction(
         ['conversations', 'messages', 'deleted'],
         'readwrite'
@@ -71,7 +78,7 @@ export function createConversationStore(): ConversationStore {
         meta.titleSource = 'manual'
       }
       await transaction.objectStore('conversations').put(meta)
-      await transaction.objectStore('messages').put(messages, meta.id)
+      await transaction.objectStore('messages').put(stored, meta.id)
       await transaction.done
     },
     async rename(id, title) {

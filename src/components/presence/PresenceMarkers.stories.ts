@@ -17,7 +17,7 @@ const anaWithAgent: PagePresenceEntry[] = [
 type Args = { entries: PagePresenceEntry[] }
 
 const meta = {
-  title: 'Collaboration/Page Presence Markers',
+  title: 'App/Collaboration/Page Presence Markers',
   component: PresenceMarkers,
   tags: ['autodocs'],
   args: { entries: anaWithAgent },

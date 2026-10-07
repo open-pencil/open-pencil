@@ -26,6 +26,19 @@ export async function dismissWideGamutBanner(page: Page) {
 
 /** Focus the demo's paint and effects page, where blends and masks live. */
 export async function focusPaintEffects(page: Page) {
+  // Zooming to a layer uses the viewport size the canvas last measured, so a window resize must
+  // reach it first or the zoom fits the old size. The canvas sizes its pixels in the same step.
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>(
+      '[data-test-id="scene-canvas-element"]'
+    )
+    const dpr = window.devicePixelRatio || 1
+    return (
+      !!canvas &&
+      canvas.width === Math.round(canvas.clientWidth * dpr) &&
+      canvas.height === Math.round(canvas.clientHeight * dpr)
+    )
+  })
   await page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('Editor unavailable')

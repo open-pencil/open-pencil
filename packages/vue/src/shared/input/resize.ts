@@ -229,6 +229,18 @@ function clearResizedRawGeometry(editor: Editor, nodeId: string): void {
 export function commitResizePreview(dragState: DragResize, editor: Editor) {
   // See applyResize — reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
+  if (editor.graph.getNode(d.nodeId)?.type !== 'SECTION') {
+    commitResizeGeometry(d, editor)
+    return
+  }
+  // A section resized over layers takes in the ones it now covers, in the same undo step.
+  editor.undo.runBatch('Resize', () => {
+    commitResizeGeometry(d, editor)
+    editor.adoptCoveredLayers(d.nodeId)
+  })
+}
+
+function commitResizeGeometry(d: DragResize, editor: Editor) {
   optionalEditorState(editor)?.snapGuides.splice(0)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return

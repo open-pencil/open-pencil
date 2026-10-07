@@ -9,6 +9,8 @@ Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI
 
 ## Setup
 
+The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Gemini CLI, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → AI & agents → Run guided setup**. To configure models by hand:
+
 1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
 2. Click the settings icon
 3. Add a model and configure its provider, model ID, credentials, and capabilities
@@ -70,7 +72,7 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 - **Create** — frames, shapes, text, components, pages. Renders JSX for complex layouts.
 - **Style** — fills, strokes, effects, opacity, corner radius, blend modes.
 - **Layout** — auto-layout, grid, alignment, spacing, sizing.
-- **Components** — create components, instances, component sets. Manage overrides.
+- **Components** — create components, instances, component sets, and slots. Manage overrides. Give components Reka UI behaviours so they work in preview.
 - **Variables** — create/edit variables, collections, modes. Bind to fills.
 - **Query** — find nodes, XPath selectors, read properties, list pages, fonts, selection.
 - **Inspect** — `get_jsx` for JSX roundtrip view, `diff_create` and `diff_jsx` for structural diffs, `diff_visual` for pixel diffs, `describe` for semantic role and design issue detection.
@@ -92,6 +94,7 @@ The assistant can verify its work visually. When `export_image` is enabled, it c
 - "Find all text nodes with font size less than 12"
 - "Describe the selected component — what role does it look like?"
 - "Show me the JSX for this frame"
+- "Make this component a switch that I can try in preview"
 
 ## Tips
 

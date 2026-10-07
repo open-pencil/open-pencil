@@ -4,7 +4,7 @@ import { expect, within } from 'storybook/test'
 import NavigationStates from './examples/States.vue'
 
 const meta = {
-  title: 'Design System/Editor/Navigation',
+  title: 'App/Editor/Navigation',
   tags: ['autodocs'],
   parameters: {
     docs: {

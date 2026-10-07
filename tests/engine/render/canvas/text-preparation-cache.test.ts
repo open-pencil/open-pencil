@@ -10,6 +10,8 @@ import type { ParagraphNode } from '#core/canvas/text/paragraph-inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
 import { fontManager } from '#core/text/fonts'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 async function fixture(maxEntries = 8, maxUnits = 1000) {
   const ck = await initCanvasKit()
   const provider = ck.TypefaceFontProvider.Make()
@@ -80,7 +82,7 @@ describe('text preparation cache', () => {
       textPreparationCache: f.cache
     }
     const nodes = Array.from({ length: 6 }, (_, i) =>
-      f.graph.createNode('TEXT', f.node.parentId, {
+      f.graph.createNode('TEXT', expectDefined(f.node.parentId, 'text node parent'), {
         text: `Label ${i}`,
         fontFamily: 'Inter',
         fontWeight: 400,
@@ -133,7 +135,19 @@ describe('text preparation cache', () => {
       expect(f.cache.hasGlyphCoverage(f.node, 1, otherProvider)).toBe(false)
       f.graph.updateNodePreview(f.node.id, { x: 50, rotation: 20 })
       expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(true)
+      // Layout resizing the box shapes the same glyphs, unless truncation hides some of them.
       f.graph.updateNodePreview(f.node.id, { width: 80 })
+      expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(true)
+      f.cache.deleteNode(f.node.id, { keepGlyphCoverage: true })
+      expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(true)
+      f.graph.updateNodePreview(f.node.id, { textTruncation: 'ENDING' })
+      expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(false)
+      f.cache.recordGlyphCoverage(f.node)
+      f.graph.updateNodePreview(f.node.id, { width: 60 })
+      expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(false)
+      f.graph.updateNodePreview(f.node.id, { textTruncation: 'DISABLED' })
+      f.cache.recordGlyphCoverage(f.node)
+      f.cache.deleteNode(f.node.id)
       expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(false)
       f.use('coverage', 1)
       f.cache.recordGlyphCoverage(f.node)

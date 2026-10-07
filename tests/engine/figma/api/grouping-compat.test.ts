@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from './helpers'
+import { asPageNode, createAPI } from './helpers'
 
 describe('FigmaAPI grouping compatibility', () => {
   test('group accepts parent and index and returns a group node', () => {
@@ -127,7 +127,7 @@ describe('FigmaAPI grouping compatibility', () => {
     const first = api.createRectangle()
     const second = api.createRectangle()
 
-    const booleanNode = api.union([first, second], page, 1)
+    const booleanNode = api.union([first, second], asPageNode(page), 1)
 
     expect(booleanNode.type).toBe('BOOLEAN_OPERATION')
     expect(booleanNode.children.map((child) => child.id)).toEqual([first.id, second.id])
@@ -145,7 +145,7 @@ describe('FigmaAPI grouping compatibility', () => {
     second.y = 70
     second.resize(20, 20)
 
-    const booleanNode = api.union([first, second], api.currentPage)
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
 
     expect([booleanNode.x, booleanNode.y, booleanNode.width, booleanNode.height]).toEqual([
       10, 20, 70, 70

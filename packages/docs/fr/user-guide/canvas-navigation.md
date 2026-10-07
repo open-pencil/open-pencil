@@ -26,3 +26,9 @@ Le zoom est centré sur le pointeur. Utilisez <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + m
 | 100 % | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Ctrl</kbd><kbd>0</kbd> |
 | Ajuster le document | <kbd>⌘</kbd><kbd>1</kbd> | <kbd>Ctrl</kbd><kbd>1</kbd> |
 | Zoomer sur la sélection | <kbd>⌘</kbd><kbd>2</kbd> | <kbd>Ctrl</kbd><kbd>2</kbd> |
+
+## Palette de commandes
+
+Appuyez sur <kbd>⌘</kbd><kbd>K</kbd> sous macOS ou <kbd>Ctrl</kbd><kbd>K</kbd> sous Windows/Linux pour rechercher des actions de l’éditeur et de l’application. Sélectionnez un résultat pour l’exécuter ; les actions indisponibles restent soumises à la sélection et à l’état du document.
+
+La palette permet aussi de changer de page. Avant que vous ne tapiez, elle liste les pages visitées récemment dans cet onglet, de la plus récente à la plus ancienne, et **Aller à la page…** ouvre la liste de toutes les pages. Saisir le nom d’une page permet aussi de la trouver. Les pages où des collaborateurs ou des agents AI travaillent affichent leurs noms ; le panneau Pages marque les mêmes pages avec leurs couleurs.

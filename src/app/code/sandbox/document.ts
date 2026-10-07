@@ -13,11 +13,13 @@ self.onmessage = ({ data }) => {
   const normalizeChildren = (children) => children.flat(Infinity).filter((child) => child != null && child !== false)
   const __fragment = ''
   const __h = (type, props, ...children) => {
-    const normalizedProps = props == null ? {} : props
+    const { __source, __self, ...normalizedProps } = props == null ? {} : props
     const normalizedChildren = normalizeChildren(children)
     if (typeof type === 'function') return type({ ...normalizedProps, children: normalizedChildren })
     if (type === __fragment) return normalizedChildren
-    return { type, props: normalizedProps, children: normalizedChildren }
+    const element = { type, props: normalizedProps, children: normalizedChildren }
+    if (__source && typeof __source.lineNumber === 'number') element.source = [String(__source.fileName), __source.lineNumber]
+    return element
   }
   const helper = (name) => (...args) => ({ __openPencilHelper: name, args })
   const helperRuntime = (name) => {

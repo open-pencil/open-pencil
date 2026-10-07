@@ -85,7 +85,7 @@ function updateOpen(value: boolean): void {
       data-slot="chat-reasoning-trigger"
       class="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface"
     >
-      <icon-lucide-brain class="size-3.5 shrink-0 text-accent" aria-hidden="true" />
+      <icon-lucide-brain class="size-3.5 shrink-0 text-primary" aria-hidden="true" />
       <span class="flex-1">{{ streaming ? thinkingLabel : finishedLabel }}</span>
       <icon-lucide-loader-circle
         v-if="streaming"

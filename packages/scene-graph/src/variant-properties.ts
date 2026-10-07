@@ -1,4 +1,7 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { ComponentPropertyDefinition, SceneNode } from './types'
+import { buildVariantName, parseVariantName } from './variant-name'
 
 export interface DerivedVariantProperties {
   definitions: ComponentPropertyDefinition[]
@@ -45,4 +48,51 @@ export function deriveSlashVariantProperties(
   }
 
   return { definitions, variants }
+}
+
+/**
+ * Variant properties from names written as `Property=Value` pairs, as Figma names variants:
+ * `State=On, Size=Large` gives State and Size. Every component must name at least one pair;
+ * a property a component leaves out takes an empty value.
+ */
+export function deriveNamedVariantProperties(
+  components: ReadonlyArray<Pick<SceneNode, 'id' | 'name'>>,
+  createPropertyId: () => string
+): DerivedVariantProperties | null {
+  const parsed = components.map((component) => parseVariantName(component.name))
+  if (parsed.some((values) => Object.keys(values).length === 0)) return null
+  const names = uniq(parsed.flatMap((values) => Object.keys(values)))
+  const definitions: ComponentPropertyDefinition[] = names.map((name) => {
+    const options = uniq(parsed.map((values) => values[name] ?? ''))
+    return {
+      id: createPropertyId(),
+      name,
+      type: 'VARIANT',
+      defaultValue: options[0] ?? '',
+      variantOptions: options
+    }
+  })
+  const variants = new Map(
+    components.map((component, index) => {
+      const componentPropertyValues = Object.fromEntries(
+        names.map((name) => [name, parsed[index][name] ?? ''])
+      )
+      return [
+        component.id,
+        { componentPropertyValues, name: buildVariantName(componentPropertyValues) }
+      ]
+    })
+  )
+  return { definitions, variants }
+}
+
+/** Variant properties from component names: slash paths first, else `Property=Value` pairs. */
+export function deriveVariantProperties(
+  components: ReadonlyArray<Pick<SceneNode, 'id' | 'name'>>,
+  createPropertyId: () => string
+): DerivedVariantProperties | null {
+  return (
+    deriveSlashVariantProperties(components, createPropertyId) ??
+    deriveNamedVariantProperties(components, createPropertyId)
+  )
 }

@@ -1,5 +1,13 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
+import { endAgentSession } from '@/app/automation/agents'
+import {
+  handleActivateDocument,
+  handleGetSettings,
+  handleRedo,
+  handleUndo,
+  handleUpdateSettings
+} from '@/app/automation/bridge/app-handlers'
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
 import {
@@ -15,17 +23,16 @@ import {
   listAutomationDocuments,
   resolveAutomationTarget,
   responseWithTarget,
-  stripAutomationTargetArgs
+  stripAutomationTargetArgs,
+  type AutomationTarget,
+  type UnknownRecord
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
 
 type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 
-type CommandHandler = (
-  target: ReturnType<typeof resolveAutomationTarget>,
-  args: unknown
-) => Promise<unknown>
+type CommandHandler = (target: AutomationTarget, args: unknown) => Promise<unknown>
 
 export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
   const handleEval = createAutomationEvalHandler(makeFigma)
@@ -40,7 +47,26 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     save_file: handleSaveFile,
     close_file: handleCloseFile,
     new_document: handleNewDocument,
-    open_file: handleOpenFile
+    open_file: handleOpenFile,
+    activate_document: handleActivateDocument,
+    undo: handleUndo,
+    redo: handleRedo
+  }
+
+  /** Runs a command on a resolved document page, loading the page first if it was never shown. */
+  async function handleTargetCommand(
+    target: AutomationTarget,
+    command: string,
+    args: UnknownRecord
+  ): Promise<unknown> {
+    if (!(await target.store.preparePageNodes(target.pageId))) {
+      throw new Error(`Page "${target.pageId}" was closed before it finished loading`)
+    }
+    const handler = commandHandlers[command]
+    const result = handler
+      ? await handler(target, args)
+      : await handleRPCFallback(target, command, args)
+    return responseWithTarget(result, target)
   }
 
   async function handleRequest(
@@ -51,6 +77,13 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
     }
+    if (command === 'agent_session_closed') {
+      const session = isUnknownRecord(args) ? args.session : undefined
+      if (typeof session === 'string') endAgentSession(session)
+      return { ok: true, result: null }
+    }
+    if (command === 'get_settings') return handleGetSettings()
+    if (command === 'update_settings') return handleUpdateSettings(args)
 
     if (command === 'open_file' || command === 'new_document') {
       const handler = commandHandlers[command]
@@ -59,13 +92,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
 
     const rawArgs = isUnknownRecord(args) ? args : {}
     const target = resolveAutomationTarget(store, rawArgs)
-    const targetArgs = stripAutomationTargetArgs(rawArgs)
-    const handler = commandHandlers[command]
-    const result = handler
-      ? await handler(target, targetArgs)
-      : await handleRPCFallback(target, command, targetArgs)
-    return responseWithTarget(result, target)
+    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs))
   }
 
-  return { handleRequest }
+  return { handleRequest, handleTargetCommand }
 }

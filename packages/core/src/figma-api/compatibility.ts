@@ -1,7 +1,12 @@
 /// <reference types="@figma/plugin-typings" />
 
 import type { FigmaAPI } from './index'
-import type { FigmaComponentNode, FigmaComponentSetNode } from './node-types'
+import type {
+  FigmaComponentNode,
+  FigmaComponentSetNode,
+  FigmaInstanceNode,
+  FigmaSlotNode
+} from './node-types'
 import type { FigmaNodeProxy } from './proxy'
 
 type Expect<T extends true> = T
@@ -64,7 +69,7 @@ const _componentSetPropertyMethodsMatch: ComponentSetPropertyMethodsMatch = true
 type InstancePropertySurfaceMatch = Expect<
   Extends<
     Pick<
-      FigmaNodeProxy & InstanceNode,
+      FigmaInstanceNode,
       | 'componentProperties'
       | 'componentPropertyReferences'
       | 'setProperties'
@@ -89,6 +94,15 @@ type InstancePropertySurfaceMatch = Expect<
 >
 
 const _instancePropertySurfaceMatch: InstancePropertySurfaceMatch = true
+
+type SlotSurfaceMatch = Expect<
+  Extends<
+    Pick<FigmaComponentNode, 'createSlot'> &
+      Pick<FigmaSlotNode, 'type' | 'resetSlot' | 'limitViolations'>,
+    Pick<ComponentNode, 'createSlot'> & Pick<SlotNode, 'type' | 'resetSlot' | 'limitViolations'>
+  >
+>
+const _slotSurfaceMatch: SlotSurfaceMatch = true
 
 // `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
 type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>

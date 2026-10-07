@@ -6,14 +6,14 @@ import AppCombobox from './AppCombobox.vue'
 
 const models = [
   {
-    value: 'anthropic/claude-sonnet-5',
-    label: 'Claude Sonnet 5',
+    value: 'anthropic/claude-sonnet-5.5',
+    label: 'Claude Sonnet 5.5',
     meta: 'Recommended',
     group: 'Recommended'
   },
   {
-    value: 'openai/gpt-5.6',
-    label: 'GPT-5.6',
+    value: 'openai/gpt-6.1-sol',
+    label: 'GPT-6.1 Sol',
     meta: 'Latest',
     group: 'Latest'
   },
@@ -53,13 +53,13 @@ type AppComboboxStoryArgs = {
 type Story = StoryObj<AppComboboxStoryArgs>
 
 const meta = {
-  title: 'Design System/Combobox',
+  title: 'Design System/Selection/Combobox',
   component: AppCombobox,
   parameters: { layout: 'centered' },
   render: (args) => ({
     components: { AppCombobox },
     setup() {
-      const value = ref('anthropic/claude-sonnet-5')
+      const value = ref('anthropic/claude-sonnet-5.5')
       return { args, value }
     },
     template: `

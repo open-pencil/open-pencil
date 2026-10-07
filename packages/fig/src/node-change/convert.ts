@@ -2,6 +2,8 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
+  DEFAULT_STROKE_WEIGHT,
+  OPEN_PENCIL_PLUGIN_DATA,
   styleToWeight
 } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
@@ -12,7 +14,7 @@ import { importCanvasGuides } from './canvas-guides'
 import { convertFigmaDerivedTextGlyphs } from './derived-text/glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
-import { convertEffects, convertFills, convertStrokes } from './paint'
+import { convertEffects, convertFills, convertStrokeAlign, convertStrokes } from './paint'
 import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
@@ -21,10 +23,7 @@ import {
   extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
-  getOpenPencilPluginValue,
-  LAYOUT_DIRECTION_PLUGIN_KEY,
-  NODE_TYPE_PLUGIN_KEY,
-  TEXT_DIRECTION_PLUGIN_KEY
+  readNodeChangePluginData
 } from './plugin-data'
 import { importStyleRuns } from './style/runs'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
@@ -49,7 +48,7 @@ import type {
   StrokeCap,
   StrokeJoin,
   LayoutMode,
-  LayoutSizing,
+  AxisSizingMode,
   LayoutAlign,
   LayoutAlignSelf,
   LayoutCounterAlign,
@@ -152,13 +151,11 @@ function mapStackMode(mode?: string): LayoutMode {
   }
 }
 
-export function mapStackSizing(sizing?: string): LayoutSizing {
+export function mapStackSizing(sizing?: string): AxisSizingMode {
   switch (sizing) {
     case 'RESIZE_TO_FIT':
     case 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE':
       return 'HUG'
-    case 'FILL':
-      return 'FILL'
     default:
       return 'FIXED'
   }
@@ -373,17 +370,23 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     fontVariations: convertFontVariations(nc),
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
-    textDirection:
-      (getOpenPencilPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
-        | SceneNode['textDirection']
-        | null) || 'AUTO',
-    derivedLayout: nc.derivedTextData?.layoutSize
-      ? {
-          width: nc.derivedTextData.layoutSize.x,
-          height: nc.derivedTextData.layoutSize.y
-        }
-      : null,
-    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
+    textDirection: readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.textDirection) ?? 'AUTO',
+    ...convertDerivedText(nc, blobs)
+  }
+}
+
+function convertDerivedText(
+  nc: NodeChange,
+  blobs: Uint8Array[]
+): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs'> {
+  const layoutSize = nc.derivedTextData?.layoutSize
+  return {
+    derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
+    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
+      nc.derivedTextData,
+      blobs,
+      nc.textData?.characters ?? ''
+    )
   }
 }
 
@@ -486,9 +489,7 @@ function convertLayoutProps(
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean,
     layoutDirection:
-      (getOpenPencilPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
-        | SceneNode['layoutDirection']
-        | null) || 'AUTO',
+      readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.layoutDirection) ?? 'AUTO',
     ...(derivedLayout ? { derivedLayout } : {})
   }
 }
@@ -591,7 +592,7 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
-    getOpenPencilPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
   }
@@ -641,6 +642,8 @@ export function nodeChangeToProps(
       vectorAndStrokeProps.strokeJoin,
       nc.dashPattern ?? []
     ),
+    strokeWeight: nc.strokeWeight ?? DEFAULT_STROKE_WEIGHT,
+    strokeAlign: convertStrokeAlign(nc.strokeAlign),
     effects: convertEffects(nc.effects),
     layoutGrids: convertLayoutGrids(nc.layoutGrids),
     guides: importCanvasGuides(nc.guides),

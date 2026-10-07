@@ -6,6 +6,8 @@ import type { MCPFailure, MCPFailureCode } from '@/app/automation/mcp/failure'
 import MCPFailureAlert from './MCPFailureAlert.vue'
 
 /** One representative failure per reason, mirroring what each path records. */
+const TIMEOUT_DETAIL = 'no health response from http://127.0.0.1:7600/health'
+
 const reasons: Record<MCPFailureCode, MCPFailure> = {
   'not-installed': {
     code: 'not-installed',
@@ -19,7 +21,7 @@ const reasons: Record<MCPFailureCode, MCPFailure> = {
     code: 'exited',
     detail: 'Error: listen EADDRINUSE: address already in use 127.0.0.1:7600'
   },
-  timeout: { code: 'timeout', detail: 'no health response from http://127.0.0.1:7600/health' },
+  timeout: { code: 'timeout', detail: TIMEOUT_DETAIL },
   rejected: { code: 'rejected', detail: 'HTTP 401' },
   malformed: { code: 'malformed', detail: 'HTTP 200' },
   unreachable: { code: 'unreachable', detail: 'http://127.0.0.1:7600/mcp' },
@@ -27,7 +29,7 @@ const reasons: Record<MCPFailureCode, MCPFailure> = {
 }
 
 const meta = {
-  title: 'Settings/MCP/Failure alert',
+  title: 'App/Settings/MCP/Failure Alert',
   component: MCPFailureAlert,
   args: { failure: reasons.timeout, restarting: false, externallyManaged: false },
   render: (args) => ({
@@ -70,10 +72,10 @@ export const DetailsExpandOnDemand: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // Collapsed payloads stay unmounted, so the alert announces only its summary.
-    await expect(canvas.queryByTestId('settings-mcp-failure-detail')).toBeNull()
+    await expect(canvas.queryByText(TIMEOUT_DETAIL)).toBeNull()
     const trigger = canvas.getByRole('button', { name: 'Details' })
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
     await userEvent.click(trigger)
-    await expect(canvas.getByTestId('settings-mcp-failure-detail')).toBeVisible()
+    await expect(canvas.getByText(TIMEOUT_DETAIL)).toBeVisible()
   }
 }

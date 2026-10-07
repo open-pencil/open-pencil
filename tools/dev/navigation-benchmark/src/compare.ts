@@ -1,4 +1,56 @@
+import { readFile } from 'node:fs/promises'
+
+import * as v from 'valibot'
+
 import type { NavigationMetrics } from './types'
+
+const distributionSchema = v.object({
+  count: v.number(),
+  min: v.number(),
+  median: v.number(),
+  p95: v.number(),
+  p99: v.number(),
+  max: v.number(),
+  mean: v.number()
+})
+
+const thresholdsSchema = v.object({
+  over8Ms: v.number(),
+  over16Ms: v.number(),
+  over33Ms: v.number(),
+  over50Ms: v.number()
+})
+
+const metricsSchema: v.GenericSchema<unknown, NavigationMetrics> = v.object({
+  durationMs: v.number(),
+  eventCount: v.number(),
+  viewportUpdateCount: v.number(),
+  renderCount: v.number(),
+  displayFrameIntervalsMs: distributionSchema,
+  renderFrameIntervalsMs: distributionSchema,
+  renderDurationsMs: distributionSchema,
+  eventToViewportMs: distributionSchema,
+  eventToRenderEndMs: distributionSchema,
+  zoomAnchorDriftPx: distributionSchema,
+  maximumJumpPx: v.number(),
+  finalInputToCrispMs: v.nullable(v.number()),
+  scheduler: v.object({
+    frameCount: v.number(),
+    maximumJobsPerFrame: v.number(),
+    maximumJobRenderMs: v.number(),
+    overBudgetJobs: v.number(),
+    maximumDeadlineOverrunMs: v.number(),
+    cancelledJobs: v.number()
+  }),
+  longTasks: v.object({ count: v.number(), totalMs: v.number(), maximumMs: v.number() }),
+  missedDisplayFrames: thresholdsSchema,
+  renderGaps: thresholdsSchema
+})
+
+/** Read metrics a previous `run` wrote. */
+export async function readMetrics(path: string): Promise<NavigationMetrics> {
+  return v.parse(v.pipe(v.string(), v.parseJson(), metricsSchema), await readFile(path, 'utf8'))
+}
 
 export interface MetricComparison {
   baseline: number | null

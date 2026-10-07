@@ -3,6 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { renderNodesToPPTX, type PPTXExportStats } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS } from '@open-pencil/core/io'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 import {
   SLIDE_WIDTH_IN,
   TINY_PNG,
@@ -534,7 +536,8 @@ describe('renderNodesToPPTX()', () => {
     const pptx = BUILTIN_IO_FORMATS.find((format) => format.id === 'pptx')
     expect(pptx).toBeDefined()
     if (!pptx) return
-    const result = await pptx.exportContent(
+    const exportPPTX = expectDefined(pptx.exportContent, 'pptx exportContent')
+    const result = await exportPPTX(
       { graph, target: { scope: 'document' } },
       { rasterize: stubRasterize }
     )

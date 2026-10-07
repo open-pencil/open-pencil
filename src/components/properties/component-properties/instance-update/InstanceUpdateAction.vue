@@ -40,7 +40,7 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
         <button
           type="button"
           data-test-id="instance-update-action"
-          class="flex size-7 items-center justify-center rounded bg-accent/10 text-accent hover:bg-accent/20 data-[state=open]:bg-accent/20 disabled:opacity-50"
+          class="flex size-7 items-center justify-center rounded bg-accent/10 text-primary hover:bg-accent/20 data-[state=open]:bg-accent/20 disabled:opacity-50"
           :disabled="updating"
           :aria-label="panels.updateSelectedInstance"
         >

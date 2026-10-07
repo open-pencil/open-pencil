@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import * as v from 'valibot'
+
 import {
   parseFigFile,
   type ParseFigFileOptions,
@@ -8,9 +10,10 @@ import {
   type SceneNode
 } from '@open-pencil/core'
 
+import { testPath } from '../paths'
 import { collectAllNodes } from './traversal'
 
-export const FIXTURES = resolve(import.meta.dir, '../../fixtures')
+export const FIXTURES = testPath('fixtures')
 
 export const VALID_NODE_TYPES = new Set<string>([
   'CANVAS',
@@ -33,9 +36,11 @@ export const VALID_NODE_TYPES = new Set<string>([
   'SHAPE_WITH_TEXT'
 ])
 
-/** Read a shared JSON fixture as data. */
-export function readFixtureJSON<T>(name: string): T {
-  return JSON.parse(readFileSync(resolve(FIXTURES, name), 'utf8')) as T
+const FixtureObjectJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+
+/** Read a shared JSON fixture object. */
+export function readFixtureObject(name: string): Record<string, unknown> {
+  return v.parse(FixtureObjectJSON, readFileSync(resolve(FIXTURES, name), 'utf8'))
 }
 
 export function readFixtureBytes(name: string): Uint8Array {

@@ -19,7 +19,7 @@ OpenPencil otwiera i zapisuje pliki `.fig` bez wcześniejszej konwersji. Import 
 
 ## Panel właściwości
 
-Zawartość kart „Projekt”, „Kod” i „AI” zależy od zaznaczenia.
+Zawartość kart „Design”, „Kod”, „AI” i „Sprawdź” zależy od zaznaczenia.
 
 - **Wygląd:** przezroczystość, wspólny lub osobny promień narożników i widoczność.
 - **Zalew:** kolor jednolity, gradient liniowy, radialny, kątowy lub diamentowy oraz obraz.
@@ -28,6 +28,8 @@ Zawartość kart „Projekt”, „Kod” i „AI” zależy od zaznaczenia.
 - **Typografia:** wybór czcionki z wyszukiwaniem i wirtualnym przewijaniem, odmiana, rozmiar, wyrównanie i formatowanie.
 - **Układ:** ustawienia automatycznego układu.
 - **Eksport:** skala, format PNG/JPG/WEBP/SVG i podgląd.
+- **Kod:** Design JSX i Tailwind JSX dla zaznaczenia; dwukierunkowa edycja Design JSX na żywo aktualizuje kod wraz ze zmianami warstw. Element pod kursorem obrysowuje swoją warstwę na obszarze roboczym, a problemy projektowe są podkreślone przy właściwości, która je powoduje.
+- **Sprawdź:** lint projektu na żywo dla strony lub zaznaczenia: niski kontrast, małe obszary dotykowe, niepowiązane kolory, odstępy spoza skali. Znaczniki problemów widać na obszarze roboczym, a zmienną można powiązać jednym kliknięciem ([Checking Designs](/user-guide/checking-designs)).
 
 ## Renderowanie
 

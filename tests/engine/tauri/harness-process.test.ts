@@ -52,7 +52,7 @@ describe('Harness sidecar process', () => {
     ).not.toContain('secret')
   })
 
-  test('routes the npm launcher through cmd on Windows', async () => {
+  test('routes the npm launcher through its cmd scope entry on Windows', async () => {
     const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
     try {
       Object.defineProperty(globalThis, 'navigator', {
@@ -62,7 +62,7 @@ describe('Harness sidecar process', () => {
       await mockTauriIPC((cmd, args) => {
         if (cmd === 'plugin:shell|spawn') {
           expect(args).toMatchObject({
-            program: 'cmd',
+            program: 'cmd-openpencil-harness',
             args: ['/c', 'openpencil-harness'],
             options: { encoding: 'raw', env: {} }
           })

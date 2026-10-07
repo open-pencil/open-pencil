@@ -18,6 +18,7 @@ for (const theme of ['light', 'dark']) {
         editor.updateNode(target, {
           strokes: [
             {
+              type: 'SOLID',
               color: { r: 0, g: 0, b: 0, a: 1 },
               weight: 2,
               opacity: 1,

@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { runToolData } from '#cli/tool-data'
 
 import { printDiffResult, type DiffResult } from './output'

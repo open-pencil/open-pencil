@@ -73,7 +73,7 @@ const selectedLabel = computed(
             :class="styles.item({ class: ui?.item })"
           >
             <SelectItemIndicator :class="styles.indicator({ class: ui?.indicator })">
-              <icon-lucide-check class="size-3 text-accent" />
+              <icon-lucide-check class="size-3 text-primary" />
             </SelectItemIndicator>
             <SelectItemText>{{ opt.label }}</SelectItemText>
             <slot name="option-end" :option="opt" />

@@ -14,7 +14,7 @@ function withoutPositions(tree: JSXPreviewNode | null): TreeNode | null {
   return {
     type: tree.type,
     props: tree.props,
-    children: tree.children.flatMap((child) => {
+    children: tree.children.flatMap<string | TreeNode>((child) => {
       if (typeof child === 'string') return [child]
       const result = withoutPositions(child)
       return result ? [result] : []

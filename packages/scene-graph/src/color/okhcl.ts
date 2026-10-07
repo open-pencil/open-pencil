@@ -1,8 +1,10 @@
 import { converter, toGamut } from 'culori'
 
 import { copyFill, copyStroke } from '../copy'
+import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
+import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import type { Color } from '../primitives'
-import type { SceneNode } from '../types'
+import type { PluginDataEntry, SceneNode } from '../types'
 import { normalizeColor } from './normalize'
 
 export interface OkHCLColor {
@@ -27,7 +29,6 @@ const toDisplayableP3 = toGamut('p3', 'oklch')
 
 /** Colour spaces a document's stored numbers can be in. */
 export type OkHCLColorSpace = 'srgb' | 'display-p3'
-const OKHCL_PLUGIN_KEY = 'okhcl'
 
 function clampUnit(value: number): number {
   if (value < 0) return 0
@@ -93,34 +94,11 @@ export function rgbaToOkHCL(color: Color, colorSpace: OkHCLColorSpace = 'srgb'):
 }
 
 export function serializeOkHCLPayload(payload: OkHCLPayload): string {
-  return JSON.stringify(payload)
+  return OPEN_PENCIL_PLUGIN_DATA.okhcl.encode(payload)
 }
 
 export function parseOkHCLPayload(value: string): OkHCLPayload | null {
-  try {
-    const parsed = JSON.parse(value) as Partial<OkHCLPayload>
-    if (parsed.version !== 1) return null
-    if (parsed.kind !== 'fill' && parsed.kind !== 'stroke') return null
-    if (typeof parsed.index !== 'number') return null
-    if (!parsed.color) return null
-    const color = parsed.color as Partial<OkHCLColor>
-    if (typeof color.h !== 'number' || typeof color.c !== 'number' || typeof color.l !== 'number') {
-      return null
-    }
-    return {
-      version: 1,
-      kind: parsed.kind,
-      index: parsed.index,
-      color: {
-        h: color.h,
-        c: color.c,
-        l: color.l,
-        a: typeof color.a === 'number' ? color.a : undefined
-      }
-    }
-  } catch {
-    return null
-  }
+  return OPEN_PENCIL_PLUGIN_DATA.okhcl.decode(value) ?? null
 }
 
 function createOkHCLPayload(
@@ -136,17 +114,18 @@ function createOkHCLPayload(
   }
 }
 
-function filterOkHCLPayloads(
-  entries: string[],
-  kind?: 'fill' | 'stroke',
-  index?: number
-): string[] {
-  return entries.filter((entry) => {
-    const payload = parseOkHCLPayload(entry)
-    if (!payload) return true
-    if (kind === undefined || index === undefined) return false
-    return payload.kind !== kind || payload.index !== index
-  })
+/** The node's plugin data with the payload for one paint replaced, or removed without `color`. */
+function withOkHCLPayload(
+  node: SceneNode,
+  kind: 'fill' | 'stroke',
+  index: number,
+  color?: OkHCLColor
+): PluginDataEntry[] {
+  const payloads = getNodeOkHCLPayloads(node).filter(
+    (payload) => payload.kind !== kind || payload.index !== index
+  )
+  if (color) payloads.push(createOkHCLPayload(kind, index, color))
+  return withAllPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.okhcl, payloads)
 }
 
 export function setNodeFillOkHCL(
@@ -165,16 +144,9 @@ export function setNodeFillOkHCL(
     opacity: rgba.a
   }
 
-  const payloads = filterOkHCLPayloads(
-    node.pluginData.map((entry) => entry.value),
-    'fill',
-    index
-  )
-  payloads.push(serializeOkHCLPayload(createOkHCLPayload('fill', index, color)))
-
   return {
     fills,
-    pluginData: payloads.map((value) => ({ pluginId: 'open-pencil', key: OKHCL_PLUGIN_KEY, value }))
+    pluginData: withOkHCLPayload(node, 'fill', index, color)
   }
 }
 
@@ -194,54 +166,22 @@ export function setNodeStrokeOkHCL(
     opacity: rgba.a
   }
 
-  const payloads = filterOkHCLPayloads(
-    node.pluginData.map((entry) => entry.value),
-    'stroke',
-    index
-  )
-  payloads.push(serializeOkHCLPayload(createOkHCLPayload('stroke', index, color)))
-
   return {
     strokes,
-    pluginData: payloads.map((value) => ({ pluginId: 'open-pencil', key: OKHCL_PLUGIN_KEY, value }))
+    pluginData: withOkHCLPayload(node, 'stroke', index, color)
   }
 }
 
 export function clearNodeFillOkHCL(node: SceneNode, index: number): Partial<SceneNode> {
-  const okhclValues = filterOkHCLPayloads(
-    node.pluginData.map((entry) => entry.value),
-    'fill',
-    index
-  )
-  return {
-    pluginData: okhclValues.map((value) => ({
-      pluginId: 'open-pencil',
-      key: OKHCL_PLUGIN_KEY,
-      value
-    }))
-  }
+  return { pluginData: withOkHCLPayload(node, 'fill', index) }
 }
 
 export function clearNodeStrokeOkHCL(node: SceneNode, index: number): Partial<SceneNode> {
-  const okhclValues = filterOkHCLPayloads(
-    node.pluginData.map((entry) => entry.value),
-    'stroke',
-    index
-  )
-  return {
-    pluginData: okhclValues.map((value) => ({
-      pluginId: 'open-pencil',
-      key: OKHCL_PLUGIN_KEY,
-      value
-    }))
-  }
+  return { pluginData: withOkHCLPayload(node, 'stroke', index) }
 }
 
 export function getNodeOkHCLPayloads(node: SceneNode): OkHCLPayload[] {
-  return node.pluginData
-    .filter((entry) => entry.pluginId === 'open-pencil' && entry.key === OKHCL_PLUGIN_KEY)
-    .map((entry) => parseOkHCLPayload(entry.value))
-    .filter((payload): payload is OkHCLPayload => payload !== null)
+  return readAllPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.okhcl)
 }
 
 export function getFillOkHCL(node: SceneNode, index: number): OkHCLPayload | null {

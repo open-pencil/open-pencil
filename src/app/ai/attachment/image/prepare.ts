@@ -58,6 +58,50 @@ function canvasToBlob(
   })
 }
 
+/** Whether a file is an SVG image, which some systems report without a media type. */
+export function isSVGFile(file: File): boolean {
+  return (
+    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
+  )
+}
+
+/** Whether a file can be attached as an image, as it is or after drawing an SVG as PNG. */
+export function isAttachableImageFile(file: File): boolean {
+  return file.type.startsWith('image/') || isSVGFile(file)
+}
+
+/** The square an SVG without its own size is drawn into, in pixels. */
+const SVG_FALLBACK_EDGE = 512
+
+/**
+ * An SVG drawn as a PNG, since vision models take raster images. Its longer edge is drawn at the
+ * attachment size, so small icons stay sharp; an `<img>` never runs the SVG's scripts.
+ */
+export async function rasterizeSVGAttachment(
+  file: File,
+  maxEdge = IMAGE_ATTACHMENT_MAX_EDGE
+): Promise<File> {
+  if (file.size > MAX_IMAGE_FILE_BYTES) throw new Error('Images must be 20 MB or smaller.')
+  const sourceURL = createImagePreviewURL(new Blob([file], { type: 'image/svg+xml' }))
+  try {
+    const image = await loadImage(sourceURL)
+    const naturalWidth = image.naturalWidth || SVG_FALLBACK_EDGE
+    const naturalHeight = image.naturalHeight || SVG_FALLBACK_EDGE
+    const scale = maxEdge / Math.max(naturalWidth, naturalHeight)
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(naturalWidth * scale))
+    canvas.height = Math.max(1, Math.round(naturalHeight * scale))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Could not prepare the image.')
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    const blob = await canvasToBlob(canvas, 'image/png')
+    const name = file.name.replace(/\.svg$/i, '') + '.png'
+    return new File([blob], name, { type: 'image/png' })
+  } finally {
+    revokeImagePreviewURL(sourceURL)
+  }
+}
+
 export async function prepareImageAttachment(
   file: File,
   maxEdge = IMAGE_ATTACHMENT_MAX_EDGE

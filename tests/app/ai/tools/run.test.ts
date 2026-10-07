@@ -8,16 +8,22 @@ import { toRaw } from 'vue'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { createToolLoopTransport } from '@/app/ai/chat/transports'
-import { runPageId } from '@/app/ai/tools'
+import { endRun, markRunPreview, runPageId, startRun } from '@/app/ai/tools'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
+import { markRunWork } from '@/app/ai/tools/run'
 import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
 import { presenceOf } from '@/app/presence/registry'
 import { appPreferences } from '@/app/settings/preferences/store'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
 
 type EditorStore = ReturnType<typeof createEditorStore>
+type StreamChunk =
+  Awaited<ReturnType<MockLanguageModelV4['doStream']>>['stream'] extends ReadableStream<infer Chunk>
+    ? Chunk
+    : never
 type Step = { toolName: string; input: unknown } | ((store: EditorStore) => Promise<void>)
 
 /** Run one message whose model calls `steps` in order: a tool call, or a user action first. */
@@ -52,7 +58,11 @@ async function runMessage(store: EditorStore, steps: Step[]) {
             }
           ]
       return {
-        stream: simulateReadableStream({ initialDelayInMs: null, chunkDelayInMs: null, chunks })
+        stream: simulateReadableStream<StreamChunk>({
+          initialDelayInMs: null,
+          chunkDelayInMs: null,
+          chunks
+        })
       }
     }
   })
@@ -68,6 +78,7 @@ async function runMessage(store: EditorStore, steps: Step[]) {
     trigger: 'submit-message',
     chatId: 'run-page',
     messageId: undefined,
+    abortSignal: undefined,
     messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Draw' }] }]
   })
   const reader = stream.getReader()
@@ -164,4 +175,34 @@ test("shows the chat's agent where its tools work, then takes it off the canvas"
       { name: during[0]?.name, status: 'idle', cursor: undefined }
     ])
   })
+})
+
+test('the agent moves through streamed JSX, then onto the layers the tool made', () => {
+  const store = createEditorStore()
+  try {
+    startRun(store, 10)
+    markRunPreview(store, {
+      cursor: { x: 40, y: 60 },
+      outline: [{ x: 40, y: 60, width: 100, height: 20 }]
+    })
+    const agent = () => expectDefined(presenceOf(store).agents.value[0], 'agent')
+    expect(agent()).toMatchObject({
+      status: 'editing',
+      cursor: { x: 40, y: 60, pageId: store.state.currentPageId },
+      outline: [{ x: 40, y: 60, width: 100, height: 20 }]
+    })
+
+    const made = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 30
+    })
+    markRunWork(store, [made.id])
+    expect(agent()).toMatchObject({ selection: [made.id], outline: undefined })
+    endRun(store)
+    expect(agent()).toMatchObject({ status: 'idle', outline: undefined })
+  } finally {
+    store.preparationController.dispose()
+  }
 })

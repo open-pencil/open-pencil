@@ -1,5 +1,4 @@
 import type { SceneGraph, SceneNode } from './'
-import { detachOwnedSlotContent, restoreOwnedSlotContent } from './components/slots'
 import type { NodeCloneMode } from './copy'
 import {
   clearInstanceOverrides,
@@ -19,6 +18,7 @@ import {
   syncChildren,
   updateSyncedProps
 } from './instances/sync'
+import { detachOwnedSlotContent, restoreOwnedSlotContent } from './slots/frames'
 
 export type { NodeCloneMode } from './copy'
 export {

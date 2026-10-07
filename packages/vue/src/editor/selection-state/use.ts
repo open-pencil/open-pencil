@@ -1,5 +1,7 @@
 import { computed } from 'vue'
 
+import { canCreateSlot as canBecomeSlot, slotOwner, slotPropertyId } from '@open-pencil/scene-graph'
+
 import { useEditor } from '#vue/editor/context'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
@@ -35,6 +37,16 @@ export function useSelectionState() {
     return true
   })
 
+  // A frame of a main component becomes a slot; other sibling layers there are wrapped in one.
+  const canCreateSlot = useSceneComputed(() => {
+    const nodes = editor.getSelectedNodes()
+    const first = nodes.at(0)
+    if (!first || nodes.some((node) => node.parentId !== first.parentId || slotPropertyId(node)))
+      return false
+    if (nodes.length === 1 && canBecomeSlot(editor.graph, first)) return true
+    return !!slotOwner(editor.graph, first)
+  })
+
   return {
     editor,
     selectedIds,
@@ -45,6 +57,7 @@ export function useSelectionState() {
     isInstance,
     isComponent,
     isGroup,
-    canCreateComponentSet
+    canCreateComponentSet,
+    canCreateSlot
   }
 }

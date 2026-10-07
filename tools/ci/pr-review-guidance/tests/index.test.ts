@@ -113,6 +113,31 @@ describe('monitorPRReviewGuidance', () => {
     expect(messages.join('\n')).toContain('No automatic label, comment, or close was applied')
   })
 
+  test('accepts the null fields GitHub sends for absent values', async () => {
+    const eventPath = await writeEvent({
+      sender: { login: 'coderabbitai[bot]' },
+      review: { state: 'commented', body: null },
+      pull_request: { number: 294 },
+      issue: null,
+      comment: null
+    })
+    const messages: string[] = []
+
+    await monitorPRReviewGuidance({
+      env: {
+        GITHUB_API_URL: 'https://example.test',
+        GITHUB_EVENT_PATH: eventPath,
+        GITHUB_REPOSITORY: 'open-pencil/open-pencil',
+        GITHUB_REPOSITORY_OWNER: 'open-pencil',
+        GITHUB_TOKEN: 'token'
+      },
+      fetchImpl: async () => response({}),
+      log: (message) => messages.push(message)
+    })
+
+    expect(messages).toEqual(['No PR review guidance signal found.'])
+  })
+
   test('ignores non-CodeRabbit comments', async () => {
     const eventPath = await writeEvent({
       sender: { login: 'contributor' },

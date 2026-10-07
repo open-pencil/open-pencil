@@ -89,6 +89,27 @@ describe('component sync layout scope', () => {
     expect(scopes).toEqual([])
   })
 
+  test('layout writing its own results schedules no sync', async () => {
+    const { graph, label } = createGraph()
+    const scopes: (string | undefined)[] = []
+    const { scheduleComponentSync } = createComponentSyncScheduler(
+      () => graph,
+      () => undefined,
+      (innerGraph, scopeId) => {
+        scopes.push(scopeId)
+        computeAllLayouts(innerGraph, scopeId)
+      }
+    )
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(label.id, { width: 120 })
+      scheduleComponentSync(label.id)
+    })
+
+    await Promise.resolve()
+    expect(scopes).toEqual([])
+  })
+
   test('a cross-page instance still receives the component layout', async () => {
     const { graph, instance, component } = createGraph()
     const { scheduleComponentSync } = createComponentSyncScheduler(

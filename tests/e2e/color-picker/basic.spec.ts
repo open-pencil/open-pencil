@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import type { OkHCLPayload } from '@open-pencil/scene-graph/color'
+import { parseOkHCLPayload } from '@open-pencil/scene-graph/color'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -32,7 +32,7 @@ async function getSelectedFill() {
 }
 
 async function getSelectedFillOkHCL() {
-  return page.evaluate(() => {
+  const value = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
@@ -41,10 +41,10 @@ async function getSelectedFillOkHCL() {
     const entry = node?.pluginData.find(
       (value) => value.pluginId === 'open-pencil' && value.key === 'okhcl'
     )
-    if (!entry) return null
-    const payload = JSON.parse(entry.value) as Partial<OkHCLPayload>
-    return payload.kind === 'fill' && payload.index === 0 ? (payload.color ?? null) : null
+    return entry?.value ?? null
   })
+  const payload = value === null ? null : parseOkHCLPayload(value)
+  return payload?.kind === 'fill' && payload.index === 0 ? payload.color : null
 }
 
 async function openFillPicker() {

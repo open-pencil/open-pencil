@@ -56,6 +56,7 @@
   "arrangeAlignMiddle": "Выровнять по центру по вертикали",
   "arrangeAlignBottom": "Выровнять по нижнему краю",
   "multiplayerCursors": "Курсоры участников",
+  "designIssues": "Проблемы дизайна",
   "preferences": "Настройки",
   "snapToGeometry": "Привязка к геометрии",
   "snapToObjects": "Привязка к объектам",
@@ -63,6 +64,7 @@
   "renameSelection": "Переименовать выделение…",
   "rulers": "Линейки",
   "settings": "Настройки…",
+  "variables": "Переменные…",
   "splitRight": "Разделить вправо",
   "splitDown": "Разделить вниз",
   "closeView": "Закрыть вид",
@@ -70,5 +72,6 @@
   "exportSelectionAsPNG": "Экспортировать выделение как PNG",
   "exportSelectionAsSVG": "Экспортировать выделение как SVG",
   "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
-  "exportSelectionAsFig": "Экспортировать выделение как .fig"
+  "exportSelectionAsFig": "Экспортировать выделение как .fig",
+  "togglePreview": "Просмотр"
 }

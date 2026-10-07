@@ -14,6 +14,22 @@ export function usePropScrub(editor: Editor) {
     )
   }
 
+  /** Previews a change worked out for each node from its current state. */
+  function updateEach(
+    nodes: SceneNode[],
+    key: NumericNodeProperty,
+    changes: (node: SceneNode) => Partial<SceneNode>
+  ) {
+    preview.update(
+      nodes.map((node) => node.id),
+      (id) => {
+        const node = editor.graph.getNode(id)
+        return node ? changes(node) : {}
+      },
+      `Change ${key}`
+    )
+  }
+
   function commitProp(
     _nodes: SceneNode[],
     _key: NumericNodeProperty,
@@ -27,5 +43,5 @@ export function usePropScrub(editor: Editor) {
     preview.cancel()
   }
 
-  return { updateProp, commitProp, cancelProp }
+  return { updateProp, updateEach, commitProp, cancelProp }
 }

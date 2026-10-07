@@ -1,10 +1,13 @@
 import { fromUint8Array, toUint8Array } from 'js-base64'
+import * as v from 'valibot'
 
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
   MAX_LIBRARY_REVISION_BYTES,
+  SerializedLibraryRevisionSchema,
   serializeLibraryRevision,
+  StoredLibraryLatestManifestSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
 import type {
@@ -12,7 +15,6 @@ import type {
   LibraryCatalog,
   LibrarySummary,
   PublishLibraryInput,
-  SerializedComponentLibraryRevision,
   StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
 
@@ -112,40 +114,26 @@ function encodeRevision(revision: ComponentLibraryRevision): Uint8Array {
   return textEncoder.encode(JSON.stringify(encodeValue(serializeLibraryRevision(revision))))
 }
 
+const RevisionJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.transform(decodeValue),
+  SerializedLibraryRevisionSchema
+)
+
+const LatestManifestJSON = v.pipe(v.string(), v.parseJson(), StoredLibraryLatestManifestSchema)
+
 function decodeRevision(bytes: Uint8Array): ComponentLibraryRevision {
-  const parsed = decodeValue(
-    JSON.parse(textDecoder.decode(bytes))
-  ) as SerializedComponentLibraryRevision
-  return deserializeLibraryRevision(parsed)
+  const parsed = v.safeParse(RevisionJSON, textDecoder.decode(bytes))
+  if (!parsed.success)
+    throw new Error(`Invalid component library revision: ${v.summarize(parsed.issues)}`)
+  return deserializeLibraryRevision(parsed.output)
 }
 
 function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest {
-  const parsed = JSON.parse(textDecoder.decode(bytes)) as unknown
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Invalid component library manifest')
-  }
-  const candidate = parsed as { schemaVersion?: unknown; summary?: unknown }
-  if (
-    candidate.schemaVersion !== 1 ||
-    !candidate.summary ||
-    typeof candidate.summary !== 'object' ||
-    Array.isArray(candidate.summary)
-  ) {
-    throw new Error('Invalid component library manifest')
-  }
-  const summary = candidate.summary as Partial<LibrarySummary>
-  if (
-    typeof summary.libraryId !== 'string' ||
-    typeof summary.name !== 'string' ||
-    typeof summary.latestRevisionId !== 'string' ||
-    typeof summary.publishedAt !== 'string' ||
-    typeof summary.assetCount !== 'number' ||
-    !Number.isSafeInteger(summary.assetCount) ||
-    summary.assetCount < 0
-  ) {
-    throw new Error('Invalid component library manifest')
-  }
-  return candidate as StoredLibraryLatestManifest
+  const parsed = v.safeParse(LatestManifestJSON, textDecoder.decode(bytes))
+  if (!parsed.success) throw new Error('Invalid component library manifest')
+  return parsed.output
 }
 
 export class StorageLibraryCatalog implements LibraryCatalog {

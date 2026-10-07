@@ -19,7 +19,7 @@ OpenPencil apre e salva direttamente i file `.fig`. Import ed export usano lo st
 
 ## Pannello Proprietà
 
-Le schede Design, Code e AI cambiano in base alla selezione.
+Le schede Design, Codice, AI e Verifica cambiano in base alla selezione.
 
 - **Aspetto:** opacità, raggio comune o per angolo e visibilità.
 - **Riempimento:** colore solido, gradienti lineare, radiale, angolare e diamante, immagini.
@@ -28,6 +28,8 @@ Le schede Design, Code e AI cambiano in base alla selezione.
 - **Tipografia:** scelta del font con ricerca e scorrimento virtuale, stile, dimensione, allineamento e formattazione.
 - **Layout:** impostazioni della disposizione automatica.
 - **Export:** scala, PNG/JPG/WEBP/SVG e anteprima.
+- **Codice:** Design JSX e Tailwind JSX per la selezione, con modifica bidirezionale in tempo reale del Design JSX che aggiorna il codice al variare dei livelli; l’elemento sotto il cursore evidenzia il proprio livello nell’area di lavoro e i problemi di design sono sottolineati sulla proprietà che li causa.
+- **Verifica:** controllo di design in tempo reale per la pagina o la selezione (contrasto basso, aree di tocco piccole, colori non collegati, spaziature fuori scala), con indicatori dei problemi nell’area di lavoro e collegamento alle variabili con un clic ([Controllare i design](/user-guide/checking-designs)).
 
 ## Rendering
 

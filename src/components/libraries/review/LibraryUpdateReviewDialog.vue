@@ -228,7 +228,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             <SliderRange class="absolute h-full bg-accent" />
           </SliderTrack>
           <SliderThumb
-            class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
           />
         </SliderRoot>
         <span v-if="mode === 'overlay'" class="w-8 text-right text-[10px] text-muted">

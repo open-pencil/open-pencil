@@ -13,13 +13,14 @@ Open and save native Figma files directly. The import/export pipeline uses the s
 - **Text** — canvas-native editing with IME support, double-click to enter edit mode
 - **Rich text** — per-character bold (<kbd>⌘</kbd><kbd>B</kbd>), italic (<kbd>⌘</kbd><kbd>I</kbd>), underline (<kbd>⌘</kbd><kbd>U</kbd>), strikethrough
 - **Auto-layout** — flexbox and CSS Grid via Yoga WASM: direction, gap, padding, justify, align, child sizing, grid tracks. <kbd>⇧</kbd><kbd>A</kbd> to toggle
-- **Components** — create (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>), component sets (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>), instances with override support, live sync
+- **Components** — create (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>), component sets (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>), instances with override support, slots, live sync
+- **Behaviours and preview** — make components work as Reka UI controls (switch, slider, tabs, text field, accordion, …) and try them live over the canvas with <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> ([Components](/user-guide/components#behaviours-and-preview))
 - **Variables** — design tokens with collections, modes (Light/Dark), color/float/string/boolean types, variable binding
 - **Sections** — organizational containers with auto-adopting children and title pills
 
 ## Properties Panel
 
-Context-sensitive Design | Code | AI tabs:
+Context-sensitive Design | Code | AI | Lint tabs:
 
 - **Appearance** — opacity, corner radius (uniform or per-corner), visibility
 - **Fill** — solid, gradient (linear/radial/angular/diamond), image
@@ -28,6 +29,8 @@ Context-sensitive Design | Code | AI tabs:
 - **Typography** — font picker with virtual scroll and search, weight, size, alignment, style buttons
 - **Layout** — auto-layout controls when enabled
 - **Export** — scale, format (PNG/JPG/WEBP/SVG), live preview
+- **Code** — Design JSX and Tailwind JSX for the selection, with live two-way Design JSX editing that patches your code as layers change; the element around the cursor outlines its layer on the canvas, and design issues are underlined on the property that causes them
+- **Lint** — live design lint for the page or selection: low contrast, small touch targets, unbound colors, off-scale spacing, with issue markers on the canvas and one-click variable binding ([Checking Designs](/user-guide/checking-designs))
 
 ## Rendering
 

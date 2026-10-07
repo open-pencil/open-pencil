@@ -14,6 +14,7 @@ import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
+import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
 
 export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 
@@ -37,10 +38,37 @@ function splitAutomationTarget(args: Record<string, unknown>): {
   return { target, args: rest }
 }
 
+type RPCResponse = { ok?: boolean; result?: unknown; target?: unknown; error?: string }
+
+async function sendCommand(
+  sendRPC: RPCSender,
+  command: string,
+  args: Record<string, unknown>
+): Promise<RPCResponse> {
+  const res = (await sendRPC({ command, args })) as RPCResponse
+  if (res.ok === false) throw new Error(res.error)
+  return res
+}
+
+function withTarget<T extends object>(body: T, res: RPCResponse): T & { target?: unknown } {
+  return res.target ? { ...body, target: res.target } : body
+}
+
+/** Who sends a session's tool calls: any MCP client, or an ACP or Pi harness chat in the app. */
+export const MCP_AGENT_KINDS = ['mcp', 'acp', 'harness'] as const
+export type MCPAgentKind = (typeof MCP_AGENT_KINDS)[number]
+
+/** The session tool calls come from, so the app can show the client as an agent at work. */
+export interface MCPAgentSession {
+  id: string
+  kind: MCPAgentKind
+}
+
 export interface RegisterToolsOptions {
   policy: ToolPolicy
   mcpRoot?: string | null
   sendRPC: RPCSender
+  agentSession?: MCPAgentSession
 }
 
 function toolAnnotations(effect: ToolEffect): ToolAnnotations {
@@ -55,12 +83,21 @@ function descriptorByName(descriptors: readonly ToolDescriptor[]): Map<string, T
 }
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions): void {
-  const { policy, sendRPC } = options
+  const { policy, sendRPC, agentSession } = options
+  // Sent with each tool call: the session, and the client's name once it has introduced itself.
+  const agent = () =>
+    agentSession
+      ? {
+          session: agentSession.id,
+          kind: agentSession.kind,
+          client: mcpServer.server.getClientVersion()?.name
+        }
+      : undefined
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const register = <InputArgs extends v.GenericSchema>(
     name: string,
-    toolOptions: { description: string; inputSchema: InputArgs },
+    toolOptions: { description?: string; inputSchema: InputArgs },
     handler: ToolCallback<ReturnType<typeof toStandardJSONSchema<InputArgs>>>
   ) => {
     const descriptor = descriptors.get(name)
@@ -69,7 +106,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     mcpServer.registerTool(
       name,
       {
-        ...toolOptions,
+        description: toolOptions.description ?? descriptor.description,
         inputSchema: toStandardJSONSchema(toolOptions.inputSchema),
         annotations: toolAnnotations(descriptor.effect),
         _meta: { 'openpencil/capabilities': descriptor.capabilities }
@@ -88,9 +125,19 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: Record<string, unknown>) => {
         try {
           const { target, args: toolArgs } = splitAutomationTarget(args)
+          if (policy.scope === 'selection' && toolArgs.path !== undefined) {
+            return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
+          }
           const result = await sendRPC({
             command: 'tool',
-            args: { ...target, name: def.name, args: toolArgs }
+            args: {
+              ...target,
+              name: def.name,
+              args: toolArgs,
+              agent: agent(),
+              // A client limited to the selection says so, whatever the server's own scope.
+              ...(policy.scope === 'selection' ? { scope: policy.scope } : {})
+            }
           })
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
@@ -263,28 +310,117 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     )
   }
 
+  const closeEntries = {
+    unsaved: v.optional(
+      v.pipe(
+        v.picklist(['error', 'save', 'discard']),
+        v.description(
+          'What to do with unsaved changes: "error" (default) fails, "save" saves first, "discard" drops them'
+        )
+      )
+    ),
+    ...automationTargetSchema
+  }
+
   register(
     'close_file',
     {
-      description: 'Close an open document tab, prompting to save unsaved changes.',
-      inputSchema: v.object({ ...automationTargetSchema })
+      inputSchema: resolvedRoot
+        ? v.object({
+            ...closeEntries,
+            path: v.optional(
+              v.pipe(
+                v.string(),
+                v.minLength(1),
+                v.description(
+                  'With unsaved "save": .fig path for a document never saved, inside the MCP root'
+                )
+              )
+            )
+          })
+        : v.object(closeEntries)
     },
-    async (args: { document_id?: string; page_id?: string }) => {
+    async (args: {
+      unsaved?: 'error' | 'save' | 'discard'
+      path?: string
+      document_id?: string
+      page_id?: string
+    }) => {
+      try {
+        const safePath =
+          args.path !== undefined && resolvedRoot
+            ? await resolveSafePath(args.path, resolvedRoot)
+            : undefined
+        const { target } = splitAutomationTarget(args)
+        const rpcArgs: Record<string, unknown> = { ...target }
+        if (args.unsaved) rpcArgs.unsaved = args.unsaved
+        if (safePath) rpcArgs.path = safePath.realPath
+        const res = await sendCommand(sendRPC, 'close_file', rpcArgs)
+        const closed = (res.result as { closed?: boolean } | undefined)?.closed === true
+        return ok(withTarget({ closed }, res))
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  register(
+    'activate_document',
+    {
+      inputSchema: v.object({
+        document_id: v.pipe(v.string(), v.description('Document/tab ID from list_documents')),
+        page_id: automationTargetSchema.page_id
+      })
+    },
+    async (args: { document_id: string; page_id?: string }) => {
       try {
         const { target } = splitAutomationTarget(args)
-        const result = await sendRPC({ command: 'close_file', args: target })
-        const res = result as {
-          ok?: boolean
-          result?: { closed?: boolean }
-          target?: unknown
-          error?: string
-        }
-        if (res.ok === false) return fail(new Error(res.error))
-        const response: { closed: boolean; target?: unknown } = {
-          closed: res.result?.closed === true
-        }
-        if (res.target) response.target = res.target
-        return ok(response)
+        const res = await sendCommand(sendRPC, 'activate_document', target)
+        return ok(withTarget({ activated: true }, res))
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  for (const command of ['undo', 'redo'] as const) {
+    register(command, { inputSchema: v.object({ ...automationTargetSchema }) }, async (args) => {
+      try {
+        const { target } = splitAutomationTarget(args)
+        const res = await sendCommand(sendRPC, command, target)
+        return ok(withTarget({ ...(res.result as RPCJSONObject | undefined) }, res))
+      } catch (e) {
+        return fail(e)
+      }
+    })
+  }
+
+  register('get_settings', { inputSchema: v.object({}) }, async () => {
+    try {
+      const res = await sendCommand(sendRPC, 'get_settings', {})
+      return ok(res.result ?? {})
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  register(
+    'update_settings',
+    {
+      inputSchema: v.object({
+        settings: v.pipe(
+          v.record(v.string(), v.unknown()),
+          v.description(
+            'Partial settings, e.g. {"appearance":{"theme":"light"},"editing":{"snapping":{"pixelGrid":false}}}. Unknown keys and invalid values are rejected.'
+          )
+        )
+      })
+    },
+    async (args: { settings: Record<string, unknown> }) => {
+      try {
+        // Echo only the applied patch: with get_settings disabled, writing must not read.
+        await sendCommand(sendRPC, 'update_settings', { settings: args.settings })
+        return ok({ updated: args.settings })
       } catch (e) {
         return fail(e)
       }

@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import type { FollowTarget } from '@/app/presence/types'
+import { colors, room } from '@/components/presence/examples/room'
+import type { PresencePersonRow } from '@/components/presence/rows'
 
-import { colors, room } from './examples/room'
-import type { PresencePersonRow } from './presence'
 import PresenceAvatars from './PresenceAvatars.vue'
 
 const crowd: PresencePersonRow[] = [
@@ -14,16 +14,22 @@ const crowd: PresencePersonRow[] = [
   { clientId: 6, name: 'Fay', color: colors.ana, agents: [] }
 ]
 
-type Args = { rows: PresencePersonRow[]; following: FollowTarget | null; connected: boolean }
+type Args = {
+  rows: PresencePersonRow[]
+  following: FollowTarget | null
+  connected: boolean
+  inRoom: boolean
+}
 
 const meta = {
-  title: 'Collaboration/Presence Avatars',
+  title: 'App/Collaboration/Presence Avatars',
   component: PresenceAvatars,
   tags: ['autodocs'],
   args: {
     rows: room,
     following: null,
     connected: true,
+    inRoom: true,
     onFollow: fn(),
     onRename: fn(),
     onLeave: fn()
@@ -60,5 +66,5 @@ export const ManyPeople: Story = {
 }
 
 export const Alone: Story = {
-  args: { rows: room.slice(0, 1), connected: false }
+  args: { rows: room.slice(0, 1), connected: false, inRoom: false }
 }

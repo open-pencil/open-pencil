@@ -57,3 +57,21 @@ export function orderPackagesByDependencies(packages: WorkspacePackage[]): Works
   for (const pkg of packages) visit(pkg, [])
   return ordered
 }
+
+/**
+ * Packages grouped into levels: each level depends only on earlier ones, so a level's packages
+ * can build at the same time.
+ */
+export function groupPackagesByDependencyLevel(packages: WorkspacePackage[]): WorkspacePackage[][] {
+  const levelByName = new Map<string, number>()
+  const levels: WorkspacePackage[][] = []
+  for (const pkg of orderPackagesByDependencies(packages)) {
+    const dependencyLevels = DEPENDENCY_FIELDS.flatMap((field) =>
+      Object.keys(pkg.manifest[field] ?? {}).flatMap((name) => levelByName.get(name) ?? [])
+    )
+    const level = dependencyLevels.length > 0 ? Math.max(...dependencyLevels) + 1 : 0
+    levelByName.set(pkg.manifest.name, level)
+    ;(levels[level] ??= []).push(pkg)
+  }
+  return levels
+}

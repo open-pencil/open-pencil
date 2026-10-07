@@ -19,8 +19,10 @@ test('P3 paint blends and masks survive pan, zoom, and surface resize', async ({
   await canvas.waitForInit()
   await focusPaintEffects(page)
   // The notice appears once the document is Display P3, and dismissing it keeps the canvas
-  // at a fixed offset for the snapshot.
+  // at a fixed offset for the snapshot. The canvas grows when it goes, so focus again to fit
+  // the paint page to the final size.
   await dismissWideGamutBanner(page)
+  await focusPaintEffects(page)
   await waitForSettledScene(page)
 
   async function expectEffects() {

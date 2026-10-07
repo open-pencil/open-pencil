@@ -2,13 +2,13 @@ import { describe, expect, test } from 'bun:test'
 
 import { type Fill } from '@open-pencil/core'
 
-import { createAPI } from '../helpers'
+import { createAPI, solidFill } from '../helpers'
 
 describe('frozen arrays', () => {
   test('fills returns frozen clone', () => {
     const api = createAPI()
     const rect = api.createRectangle()
-    rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    rect.fills = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
     const fills = rect.fills
     expect(Object.isFrozen(fills)).toBe(true)
     expect(() => {
@@ -19,7 +19,7 @@ describe('frozen arrays', () => {
   test('mutating returned fills does not affect node', () => {
     const api = createAPI()
     const rect = api.createRectangle()
-    rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    rect.fills = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
     const fills = rect.fills as Fill[]
     try {
       fills[0].color.r = 0

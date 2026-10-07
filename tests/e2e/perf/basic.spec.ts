@@ -92,7 +92,7 @@ test.describe('Render performance', () => {
       const renderer = store.renderer
       if (!renderer) throw new Error('OpenPencil renderer not initialized')
 
-      function setupRenderer() {
+      const setupRenderer = () => {
         renderer.dpr = window.devicePixelRatio || 1
         renderer.panX = store.state.panX
         renderer.panY = store.state.panY
@@ -210,10 +210,10 @@ test.describe('Render performance', () => {
               }
             ]
           })
-          shadowIds.push(id)
+          shadowIds.push(id.id)
         }
 
-        function setupRenderer() {
+        const setupRenderer = () => {
           renderer.dpr = window.devicePixelRatio || 1
           renderer.panX = 0
           renderer.panY = -2000

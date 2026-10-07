@@ -9,11 +9,16 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_MITER_LIMIT } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_STROKE_MITER_LIMIT,
+  DEFAULT_STROKE_WEIGHT,
+  OPEN_PENCIL_PLUGIN_DATA,
+  withPluginData
+} from '@open-pencil/scene-graph'
+import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 /* eslint-disable max-lines */
-import { siblingOrderKeys } from '../basics'
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
 import { snapshotInstanceGeometry } from '../instance/geometry'
@@ -22,9 +27,7 @@ import {
   applyLibrarySourcePluginData,
   applyTextPathBoxPluginData,
   mergePluginData,
-  NODE_TYPE_PLUGIN_KEY,
-  serializePluginRelaunchData,
-  upsertPluginData
+  serializePluginRelaunchData
 } from '../plugin-data'
 import {
   applyColorVariableBinding,
@@ -40,6 +43,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
+import { nodeWithResolvedBindings } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
@@ -883,12 +887,13 @@ function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): s
 }
 
 export function sceneNodeToKiwiWithContext(
-  node: SceneNode,
+  source: SceneNode,
   parentGuid: GUID,
   childIndex: number,
   localIdCounter: { value: number },
   context: SceneNodeToKiwiContext
 ): KiwiNodeChange[] {
+  const node = nodeWithResolvedBindings(context.graph, source)
   const guid = getOrCreateNodeGuid(context, node.id, localIdCounter) ?? {
     sessionID: 1,
     localID: localIdCounter.value++
@@ -913,23 +918,33 @@ export function sceneNodeToKiwiWithContext(
     transform: exportNodeTransform(context, node)
   }
   if (node.sharedStyleType) nc.styleType = node.sharedStyleType
+  // Readers take a missing blend mode as pass-through, the layer default.
+  if (node.blendMode !== 'PASS_THROUGH') nc.blendMode = node.blendMode
   if (node.type === 'GROUP') {
     nc.resizeToFit = true
   }
-  // Only set strokeWeight/strokeAlign when the node has strokes in the scene
-  // model. For imported nodes without strokes but with raw strokeWeight data
-  // (e.g. text nodes, instance children with scaled strokes), the raw value
-  // must be allowed to flow through via applyRawFigmaNodeFields.
+  // With strokes, their geometry is the node's. Without, the node keeps its own weight and
+  // alignment, written when set or when the source file carried them.
   if (node.strokes.length > 0) {
     nc.strokeWeight = node.strokes[0].weight
     nc.strokeAlign = node.strokes[0].align
+  } else {
+    const rawNodeFields = effectiveFigmaRawNodeFields(node)
+    if (node.strokeWeight !== DEFAULT_STROKE_WEIGHT || 'strokeWeight' in rawNodeFields) {
+      nc.strokeWeight = node.strokeWeight
+    }
+    // Kiwi reads a missing alignment as centered.
+    if (node.strokeAlign !== 'CENTER' || 'strokeAlign' in rawNodeFields) {
+      nc.strokeAlign = node.strokeAlign
+    }
   }
   if (node.locked) nc.locked = true
 
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
-  if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
+  if (node.type === 'COMPONENT_SET')
+    node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)

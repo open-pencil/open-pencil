@@ -35,11 +35,22 @@ function handleSubmit(event: Event) {
   input.value = ''
   triggerResize()
 }
+/**
+ * Puts back a message that could not be sent, unless something new was typed meanwhile.
+ * Returns whether it did.
+ */
+function restoreDraft(text: string): boolean {
+  if (input.value.trim()) return false
+  input.value = text
+  triggerResize()
+  return true
+}
+defineExpose({ restoreDraft })
 </script>
 <template>
   <TooltipProvider>
     <div class="shrink-0 border-t border-border p-2.5">
-      <form @submit="handleSubmit" @paste.stop="emit('paste', $event)">
+      <form class="relative" @submit="handleSubmit" @paste.stop="emit('paste', $event)">
         <InputGroup :disabled="isStreaming">
           <template v-if="$slots.attachment" #attachment><slot name="attachment" /></template>
 
@@ -93,6 +104,8 @@ function handleSubmit(event: Event) {
             </IconButton>
           </template>
         </InputGroup>
+        <!-- Over the input while files are dragged onto the chat. -->
+        <slot name="overlay" />
       </form>
     </div>
   </TooltipProvider>

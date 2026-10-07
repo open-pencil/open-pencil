@@ -6,5 +6,6 @@
   "pages": "ページ",
   "goToPage": "ページへ移動…",
   "recentPage": "最近",
-  "currentPage": "現在のページ"
+  "currentPage": "現在のページ",
+  "pageNameLabel": "ページ名"
 }

@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
 import { isTauri } from '@/app/tauri/env'
@@ -61,25 +63,35 @@ async function resolveConfig(runtime: StorageProviderRuntime): Promise<S3Compati
   }
 }
 
+/** Each field falls back on its own; only a document with both fields is authoritative. */
+const DocumentMetadataJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    name: v.fallback(
+      v.nullable(
+        v.pipe(
+          v.string(),
+          v.check((name) => name.trim() !== '')
+        )
+      ),
+      null
+    ),
+    updatedAt: v.fallback(v.nullable(v.pipe(v.string(), v.nonEmpty())), null)
+  })
+)
+
 function parseMetadata(
   bytes: Uint8Array | null,
   fallback: StorageDocumentMetadata
 ): { metadata: StorageDocumentMetadata; authoritative: boolean } {
   if (!bytes) return { metadata: fallback, authoritative: false }
-  try {
-    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Partial<StorageDocumentMetadata>
-    const name = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name : null
-    const updatedAt =
-      typeof parsed.updatedAt === 'string' && parsed.updatedAt ? parsed.updatedAt : null
-    return {
-      metadata: {
-        name: name ?? fallback.name,
-        updatedAt: updatedAt ?? fallback.updatedAt
-      },
-      authoritative: name !== null && updatedAt !== null
-    }
-  } catch {
-    return { metadata: fallback, authoritative: false }
+  const parsed = v.safeParse(DocumentMetadataJSON, new TextDecoder().decode(bytes))
+  if (!parsed.success) return { metadata: fallback, authoritative: false }
+  const { name, updatedAt } = parsed.output
+  return {
+    metadata: { name: name ?? fallback.name, updatedAt: updatedAt ?? fallback.updatedAt },
+    authoritative: name !== null && updatedAt !== null
   }
 }
 

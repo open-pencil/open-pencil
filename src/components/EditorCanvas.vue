@@ -18,22 +18,29 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
 } from '@open-pencil/core/constants'
 import {
+  PlayIslands,
   toolCursor,
   useCanvas,
   useCanvasDrop,
   useCanvasInput,
+  useCanvasIssueMarkers,
   useCanvasVirtualReference,
   useTextEdit
 } from '@open-pencil/vue'
 
-import { useCollabInjected } from '@/app/collab/use'
+import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
+import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
+import { motionStyles } from '@/theme/motion/styles'
+import { floatingSurface } from '@/theme/overlay'
 
 import CanvasMenu from './canvas/CanvasMenu.vue'
 import CanvasLabelEditor from './canvas/labels/CanvasLabelEditor.vue'
@@ -45,7 +52,6 @@ const { paneId } = defineProps<{
 }>()
 
 const store = useEditorStore()
-const collab = useCollabInjected()
 const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -61,12 +67,14 @@ function updatePaneCursor(cx: number, cy: number) {
 }
 
 const getRenderState = paneId ? () => store.getPaneRenderState(paneId) : undefined
+/** This pane's view: its pan, zoom, page, and whether it previews. */
+const paneView = computed(() => (paneId ? store.getPaneRenderState(paneId) : store.state))
 const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
 }
 
-const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
+const { updateCursor } = useCanvasCollaborationAwareness(store)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 const shouldSuspendRender = () =>
@@ -88,19 +96,17 @@ useCanvas(sceneCanvasRef, store, {
     store.state.canvasPresentation = colorSpace
   }
 })
-const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
-  canvasRef,
-  store,
-  {
+const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker } =
+  useCanvas(canvasRef, store, {
     layer: 'overlays',
     get showRulers() {
-      return appRuntimeConfig.showRulers && store.state.showRulers
+      return appRuntimeConfig.showRulers && store.state.showRulers && paneView.value.play === null
     },
+    getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
     shouldSuspendRender,
     getRenderState,
     onViewportResize
-  }
-)
+  })
 const {
   cursorOverride,
   canvasLabelEdit,
@@ -127,6 +133,24 @@ watch(isActivePane, (active) => {
   if (!active) cleanupInteractions()
 })
 onUnmounted(cleanupInteractions)
+
+const { activeTab: propertiesTab } = useAIChat()
+const { detailMarker: hoveredIssueMarker, cursor: issueMarkerCursor } = useCanvasIssueMarkers(
+  canvasRef,
+  store,
+  {
+    hitTest: hitTestIssueMarker,
+    onHover: (marker) => store.designCheck.highlightMarker(marker?.nodeIds ?? null),
+    onActivate: (marker) => {
+      activatePane()
+      propertiesTab.value = 'lint'
+      // An edge pin leads to its nearest issue; a marker opens every layer it covers.
+      const nodeIds = marker.direction ? marker.nodeIds.slice(0, 1) : marker.nodeIds
+      store.designCheck.openMarker(nodeIds)
+      if (marker.direction) store.revealNodes(nodeIds)
+    }
+  }
+)
 
 useTextEdit(canvasRef, store, { isEnabled: () => isActivePane.value })
 const { isDraggingOver } = useCanvasDrop(canvasRef, store, activatePane)
@@ -172,7 +196,9 @@ const paddingEditorIcon = computed(() => {
   return edit ? paddingSideIcons[edit.side] : IconLucidePanelTop
 })
 
-const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))
+const cursor = computed(() =>
+  toolCursor(store.state.activeTool, issueMarkerCursor.value ?? cursorOverride.value)
+)
 </script>
 
 <template>
@@ -204,17 +230,9 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
           :style="{ cursor }"
           class="absolute inset-0 block size-full touch-none outline-none"
         />
-        <Transition
-          enter-active-class="transition-opacity duration-150"
-          enter-from-class="opacity-0"
-          leave-active-class="transition-opacity duration-150"
-          leave-to-class="opacity-0"
-        >
-          <div
-            v-if="isDraggingOver"
-            class="pointer-events-none absolute inset-0 z-40 border-2 border-dashed border-accent/60 bg-accent/5"
-          />
-        </Transition>
+        <PlayIslands :view="paneView" :canvas="canvasRef" />
+        <AppDropOverlay :visible="isDraggingOver" />
+        <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
         <CanvasLabelEditor
           :edit="canvasLabelEdit"
           :presentation="canvasLabelEditPresentation"
@@ -233,7 +251,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
               :side-offset="AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y"
               :align-offset="AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X"
               :collision-padding="8"
-              class="z-50 w-20 rounded-md bg-panel p-1 shadow-lg"
+              :class="['z-50 w-20 p-1', floatingSurface, motionStyles.floating]"
               data-test-id="auto-layout-padding-editor"
               @keydown.escape.prevent="cancelAutoLayoutPaddingEdit"
               @open-auto-focus.prevent

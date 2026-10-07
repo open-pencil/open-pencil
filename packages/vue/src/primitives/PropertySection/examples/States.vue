@@ -60,7 +60,7 @@ function toggleFill(index: number) {
           <PropertySectionActions class="text-[var(--vp-c-text-2)]">⌘ L</PropertySectionActions>
         </PropertySectionHeader>
         <PropertySectionContent class="border-t border-[var(--vp-c-divider)] px-3 py-2">
-          Collapsible content
+          Section content
         </PropertySectionContent>
       </PropertySectionRoot>
 

@@ -49,6 +49,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
     ...STROKE_GEOMETRY_RAW_FIELDS
   ],
   strokeWeight: ['strokeWeight', ...STROKE_GEOMETRY_RAW_FIELDS],
+  strokeAlign: ['strokeAlign', ...STROKE_GEOMETRY_RAW_FIELDS],
   strokeJoin: ['strokeJoin', ...STROKE_GEOMETRY_RAW_FIELDS],
   strokeMiterLimit: ['miterLimit', ...STROKE_GEOMETRY_RAW_FIELDS],
   strokeCap: [...STROKE_GEOMETRY_RAW_FIELDS],

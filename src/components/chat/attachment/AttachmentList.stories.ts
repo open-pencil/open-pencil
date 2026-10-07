@@ -42,13 +42,13 @@ type AttachmentListStoryArgs = {
 }
 
 const meta = {
-  title: 'Chat/Attachments',
+  title: 'App/Chat/Attachments',
   component: AttachmentList,
   parameters: { layout: 'centered' },
   render: (args) => ({
     components: { AttachmentList },
     setup: () => ({ args }),
-    template: '<div class="w-96 rounded-xl bg-accent p-3"><AttachmentList v-bind="args" /></div>'
+    template: '<div class="w-96 rounded-xl bg-panel p-3"><AttachmentList v-bind="args" /></div>'
   })
 } satisfies Meta<AttachmentListStoryArgs>
 

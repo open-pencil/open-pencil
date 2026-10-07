@@ -48,9 +48,9 @@ Going the other direction, export any selection back to JSX with Tailwind classe
 
 Inspect, lint, export, and analyze design documents without opening the editor. List pages, search nodes, extract design tokens, catch layout or accessibility issues, and render to PNG — all from the terminal with machine-readable JSON output.
 
-The CLI also connects to the running desktop app via RPC, so you can script the editor while you're using it.
+The CLI also connects to the running desktop app via RPC, so you can script the editor while you're using it: open, save, and switch documents, undo, change settings, and call any MCP tool.
 
-[Inspecting Files](./cli/inspecting) · [Exporting](./cli/exporting) · [Analyzing Designs](./cli/analyzing) · [Scripting](./cli/scripting)
+[Inspecting Files](./cli/inspecting) · [Exporting](./cli/exporting) · [Analyzing Designs](./cli/analyzing) · [Scripting](./cli/scripting) · [Controlling the App](./cli/app-control)
 
 ## MCP Server
 

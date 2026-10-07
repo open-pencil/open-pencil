@@ -26,7 +26,8 @@ interface OutlineFont {
   unitsPerEm: number
   ascender: number
   descender: number
-  tables: { os2?: { sTypoLineGap?: number } }
+  tables: { os2?: { sTypoLineGap?: number }; fvar?: unknown }
+  glyphs: { get(index: number): OutlineGlyph | undefined }
   charToGlyphIndex(char: string): number
   charToGlyph(char: string): OutlineGlyph
   forEachGlyph(
@@ -178,6 +179,28 @@ export function getGlyphOutlineMetricsSync(
       x += advance
       return metrics
     })
+  }
+}
+
+/** Outlines of one loaded static font, addressed by the glyph IDs a shaper produced. */
+export interface GlyphOutlineSource {
+  /** Whether the font has a glyph for every code point, so a shaper used it rather than a fallback. */
+  covers(text: string): boolean
+  outline(glyphId: number, fontSize: number): OutlineCommand[] | null
+}
+
+/**
+ * Glyph outlines by glyph ID for a loaded font, or `null` when it is not loaded, cannot be
+ * parsed, or is variable: opentype.js draws a variable font's default instance, not the
+ * instance a shaper used.
+ */
+export function glyphOutlineSourceSync(family: string, style: string): GlyphOutlineSource | null {
+  const font = getParsedFont(family, style)
+  if (!font || font.tables.fvar) return null
+  return {
+    covers: (text) => Array.from(text).every((char) => font.charToGlyphIndex(char) !== 0),
+    outline: (glyphId, fontSize) =>
+      font.glyphs.get(glyphId)?.getPath(0, 0, fontSize).commands ?? null
   }
 }
 

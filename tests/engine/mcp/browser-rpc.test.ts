@@ -438,4 +438,41 @@ describe('BrowserRpcBridge reconnection', () => {
     expect(result.legitimate).toBe(true)
     expect(result.injected).toBeUndefined()
   })
+
+  test('ignores malformed JSON but closes sockets that send malformed messages', async () => {
+    const bridge = createBrowserRPCBridge({
+      authToken: AUTH_TOKEN,
+      onConnectionChange: () => undefined
+    })
+    const closed = (ws: WebSocket) =>
+      new Promise<void>((resolve) => {
+        ws.once('close', () => resolve())
+      })
+
+    const pair = await setupWsPair()
+    track(pair)
+    pair.serverWs.on('message', (raw: Buffer) => {
+      bridge.handleMessage(raw.toString(), pair.serverWs)
+    })
+    pair.clientWs.send('{not json')
+    pair.clientWs.send(JSON.stringify({ type: 'register', token: AUTH_TOKEN }))
+    for (let i = 0; i < 200 && !bridge.isConnected(); i++) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 5)
+      })
+    }
+    expect(bridge.isConnected()).toBe(true)
+    const arrayClosed = closed(pair.clientWs)
+    pair.clientWs.send('[]')
+    await arrayClosed
+
+    const mistyped = await setupWsPair()
+    track(mistyped)
+    mistyped.serverWs.on('message', (raw: Buffer) => {
+      bridge.handleMessage(raw.toString(), mistyped.serverWs)
+    })
+    const tokenClosed = closed(mistyped.clientWs)
+    mistyped.clientWs.send(JSON.stringify({ type: 'auth', token: 42 }))
+    await tokenClosed
+  })
 })

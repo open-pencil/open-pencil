@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('alignment arrows move spatially without applying until activation', async ({ page }) => {
-  await page.goto('/iframe.html?id=editor-properties-layout-alignment--default&viewMode=story')
+  await page.goto('/iframe.html?id=app-editor-properties-layout-alignment--default&viewMode=story')
   const first = page.getByRole('button', { name: 'Top left', exact: true })
   await first.focus()
   await first.press('ArrowRight')

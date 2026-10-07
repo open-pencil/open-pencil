@@ -10,7 +10,7 @@ import type { missingGlyphOccurrences } from '#core/text/resolver'
 const MAX_PREPARED_PARAGRAPHS = 1024
 const MAX_PREPARED_TEXT_UNITS = 262_144
 
-import { PARAGRAPH_INPUT_KEYS } from './paragraph-inputs'
+import { glyphCoverageInputs, PARAGRAPH_INPUT_KEYS } from './paragraph-inputs'
 
 type PreparationInput = SceneNode[(typeof PARAGRAPH_INPUT_KEYS)[number]]
 
@@ -106,7 +106,12 @@ export class TextPreparationCache {
     }
     const inputs = this.glyphCoverage.get(node)
     if (!inputs) return false
-    if (PARAGRAPH_INPUT_KEYS.every((prop, index) => inputs[index] === node[prop])) return true
+    const current = glyphCoverageInputs(node)
+    if (
+      current.length === inputs.length &&
+      current.every((input, index) => input === inputs[index])
+    )
+      return true
     this.glyphCoverage.delete(node)
     return false
   }
@@ -114,16 +119,17 @@ export class TextPreparationCache {
   /** Call only after observing complete coverage with this cache's current font scope. */
   recordGlyphCoverage(node: SceneNode): void {
     this.invalidatedCoverage.delete(node.id)
-    this.glyphCoverage.set(
-      node,
-      PARAGRAPH_INPUT_KEYS.map((prop) => node[prop])
-    )
+    this.glyphCoverage.set(node, glyphCoverageInputs(node))
   }
 
-  deleteNode(id: string): void {
+  /**
+   * Drops `id`'s paragraphs and, unless `keepGlyphCoverage`, its coverage. Keep coverage only for
+   * changes `glyphCoverageInputs` compares, such as layout resizing the box.
+   */
+  deleteNode(id: string, { keepGlyphCoverage = false } = {}): void {
     // Invalidation arrives by ID; don't add strong node ownership just to find
     // weak observations. Bound pending IDs and conservatively reset on overflow.
-    this.invalidatedCoverage.add(id)
+    if (!keepGlyphCoverage) this.invalidatedCoverage.add(id)
     if (this.invalidatedCoverage.size > this.maxEntries) {
       this.glyphCoverage = new WeakMap()
       this.invalidatedCoverage.clear()

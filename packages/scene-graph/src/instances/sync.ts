@@ -2,7 +2,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '../'
-import { ownsSlotContent, slotPropertyId } from '../components/slots'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
 import type { NodeCloneMode } from '../copy'
 import {
@@ -12,6 +11,7 @@ import {
   type InstanceOverrideState
 } from '../instance-overrides'
 import { scaleNodeChanges } from '../scaling/node'
+import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { INSTANCE_SYNC_FIELDS } from './fields'
 
@@ -183,18 +183,71 @@ const PROPERTY_REFERENCE_FIELDS: Partial<Record<ComponentPropertyReferenceField,
   INSTANCE_SWAP: 'componentId'
 }
 
-/** The nearest enclosing instance that assigns `propertyId`, if any does. */
-function hasEnclosingAssignment(graph: SceneGraph, node: SceneNode, propertyId: string): boolean {
+/** Instance links are expected to be shallow; the cap only stops a cycle from hanging sync. */
+const INSTANCE_CHAIN_LIMIT = 16
+
+/**
+ * Whether this instance's component, or the set it is a variant of, is where `propertyId` is
+ * defined. Only a set counts: a component nested in an ordinary component defines its own
+ * properties, not the outer one's.
+ */
+function definesProperty(graph: SceneGraph, instance: SceneNode, propertyId: string): boolean {
+  // An instance of an instance links through to the component, so follow the chain to it.
+  let component = instance.componentId ? graph.nodes.get(instance.componentId) : undefined
+  for (let hops = 0; component?.type === 'INSTANCE' && hops < INSTANCE_CHAIN_LIMIT; hops++) {
+    component = component.componentId ? graph.nodes.get(component.componentId) : undefined
+  }
+  const parent = component?.parentId ? graph.nodes.get(component.parentId) : undefined
+  const set = parent?.type === 'COMPONENT_SET' ? parent : undefined
+  return [component, set]
+    .flatMap((node) => node?.componentPropertyDefinitions ?? [])
+    .some((definition) => definition.id === propertyId)
+}
+
+/**
+ * What the nearest enclosing instance assigns `propertyId`, if any does. A property id belongs
+ * to the component that defines it, so the walk stops at an instance of that component even
+ * when it assigns nothing; otherwise an outer instance's unrelated property of the same id wins.
+ */
+function enclosingAssignment(
+  graph: SceneGraph,
+  node: SceneNode,
+  propertyId: string
+): string | undefined {
   let current: SceneNode | undefined = node
   while (current) {
-    if (
-      current.type === 'INSTANCE' &&
-      Object.hasOwn(current.componentPropertyAssignments, propertyId)
-    )
-      return true
+    if (current.type === 'INSTANCE') {
+      if (Object.hasOwn(current.componentPropertyAssignments, propertyId))
+        return current.componentPropertyAssignments[propertyId]
+      if (definesProperty(graph, current, propertyId)) return undefined
+    }
     current = current.parentId ? graph.nodes.get(current.parentId) : undefined
   }
-  return false
+  return undefined
+}
+
+function hasEnclosingAssignment(graph: SceneGraph, node: SceneNode, propertyId: string): boolean {
+  return enclosingAssignment(graph, node, propertyId) !== undefined
+}
+
+/**
+ * A component can gain a property-driven layer after an instance of it exists. Pass 4 leaves a
+ * driven field alone, so the fresh clone has to take the enclosing instance's assignment here or
+ * it keeps the component's default while every other instance layer shows the assigned value.
+ */
+function applyEnclosingAssignments(graph: SceneGraph, clone: SceneNode): void {
+  for (const reference of clone.componentPropertyReferences) {
+    const field = PROPERTY_REFERENCE_FIELDS[reference.field]
+    if (!field) continue
+    const value = enclosingAssignment(graph, clone, reference.propertyId)
+    if (value === undefined) continue
+    if (field === 'visible') graph.updateNode(clone.id, { visible: value === 'true' })
+    else if (field === 'text') graph.updateNode(clone.id, { text: value })
+    else if (field === 'componentId' && clone.type === 'INSTANCE' && graph.nodes.has(value)) {
+      graph.swapInstanceComponent(clone.id, value)
+    }
+  }
+  for (const child of graph.getChildren(clone.id)) applyEnclosingAssignments(graph, child)
 }
 
 /**
@@ -309,7 +362,13 @@ function sortInstanceChildren(
     const componentIndex = mapped ? orderMap.get(mapped) : undefined
     ranks.set(childId, componentIndex ?? compChildOrder.length + index)
   }
-  instParent.childIds.sort((left, right) => (ranks.get(left) ?? 0) - (ranks.get(right) ?? 0))
+  const sorted = instParent.childIds.toSorted(
+    (left, right) => (ranks.get(left) ?? 0) - (ranks.get(right) ?? 0)
+  )
+  // Move through the graph so the reorder is reported, as collaboration syncs it.
+  sorted.forEach((childId, index) => {
+    if (instParent.childIds[index] !== childId) graph.insertChildAt(childId, instParentId, index)
+  })
 }
 
 /** True when syncing `compParentId` into `instParentId` would form a cycle. */
@@ -395,6 +454,7 @@ export function syncChildren(
       if (src.childIds.length > 0) {
         cloneChildrenWithMapping(graph, compChildId, clone.id)
       }
+      applyEnclosingAssignments(graph, clone)
       instChildMap.set(compChildId, clone)
       usedInstChildIds.add(clone.id)
     }
@@ -411,7 +471,12 @@ export function syncChildren(
     const componentScale =
       (compChild.componentScale * instParent.componentScale) / compParent.componentScale
     const source = sourceInTargetCoordinates(compChild, componentScale)
-    const updates: Partial<SceneNode> = { componentScale }
+    // Which properties a layer serves is the component's to say; a slot or exposed layer
+    // created on the component becomes one in every instance.
+    const updates: Partial<SceneNode> = {
+      componentScale,
+      componentPropertyReferences: structuredClone(compChild.componentPropertyReferences)
+    }
     syncBindingFields(instChild, source, updates, protectedField)
     for (const key of INSTANCE_SYNC_FIELDS) {
       if (key === 'boundVariables') continue

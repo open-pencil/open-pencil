@@ -1,35 +1,40 @@
 import { useClipboard } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs, ref, watch } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { useJoinRoom } from '@/app/collab/join'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { presenceOf, renameAgent } from '@/app/presence/registry'
 import type { FollowTarget } from '@/app/presence/types'
 import { toast } from '@/app/shell/ui'
+import { presenceRows as buildPresenceRows } from '@/components/presence/rows'
 import { getShareURL } from '@/constants'
 
-import { presenceRows as buildPresenceRows } from './presence'
-
 function createCollabPanelContext() {
-  const route = useRoute()
-  const router = useRouter()
   const collab = useCollabInjected()
+  const joinRoomFromInput = useJoinRoom()
   const { copy, copied } = useClipboard({ copiedDuring: 2000 })
   const { common, collaboration } = useI18n()
   const notifications = useNotificationMessages()
 
-  const joinInput = ref('')
-  const nameDraft = ref(collab?.state.value.localName ?? '')
-  const pendingRoomId = computed(() =>
-    typeof route.params.roomId === 'string' ? route.params.roomId : null
-  )
-  const popoverOpen = ref(!!pendingRoomId.value)
   const state = computed(() => collab?.state.value ?? DEFAULT_COLLAB_STATE)
+  const joinInput = ref('')
+  const joinError = ref(false)
+  const nameDraft = ref('')
+  const popoverOpen = ref(false)
+  // Each time the panel opens it shows the current name, or stays empty while the person has
+  // none of their own, so the field shows the generated one as its placeholder.
+  watch(
+    popoverOpen,
+    (open) => {
+      if (open) nameDraft.value = state.value.hasChosenName ? state.value.localName : ''
+    },
+    { immediate: true }
+  )
   const peers = computed(() => collab?.remotePeers.value ?? [])
   const following = computed(() => collab?.following.value ?? null)
   const storeRef = useActiveEditorStoreRef()
@@ -45,19 +50,7 @@ function createCollabPanelContext() {
       (pageId) => store?.graph.getNode(pageId)?.name
     )
   })
-  const shareURL = computed(() => {
-    if (!state.value.roomId) return ''
-    return getShareURL(state.value.roomId)
-  })
-  const isJoining = computed(() => !!pendingRoomId.value && !state.value.connected)
-
-  watch(
-    pendingRoomId,
-    (roomId) => {
-      if (!state.value.connected) popoverOpen.value = !!roomId
-    },
-    { immediate: true }
-  )
+  const shareURL = computed(() => (state.value.roomId ? getShareURL(state.value.roomId) : ''))
 
   function copyLink() {
     if (!shareURL.value) return
@@ -65,31 +58,39 @@ function createCollabPanelContext() {
     toast.info(notifications.value.linkCopied)
   }
 
+  function saveName() {
+    const name = nameDraft.value.trim()
+    if (name && name !== state.value.localName) collab?.setLocalName(name)
+  }
+
   function share() {
-    if (!collab || !nameDraft.value.trim()) return
-    collab.setLocalName(nameDraft.value.trim())
+    if (!collab) return
+    saveName()
     const roomId = collab.shareCurrentDoc()
-    void router.push(`/share/${roomId}`)
+    if (!roomId) return
     void copy(getShareURL(roomId))
     toast.info(notifications.value.linkCopied)
     popoverOpen.value = false
   }
 
   function join() {
-    if (!collab) return
-    const roomId = pendingRoomId.value || joinInput.value.trim().replace(/.*\/share\//, '')
-    if (!roomId || !nameDraft.value.trim()) return
-    collab.setLocalName(nameDraft.value.trim())
-    collab.connect(roomId)
-    void router.push(`/share/${roomId}`)
+    saveName()
+    if (!joinRoomFromInput(joinInput.value)) {
+      joinError.value = true
+      return
+    }
+    joinInput.value = ''
+    joinError.value = false
     popoverOpen.value = false
   }
 
+  function clearJoinError() {
+    joinError.value = false
+  }
+
   function disconnect() {
-    if (!collab) return
-    collab.disconnect()
+    collab?.disconnect()
     popoverOpen.value = false
-    void router.push('/')
   }
 
   function follow(target: FollowTarget | null) {
@@ -105,16 +106,18 @@ function createCollabPanelContext() {
     messages: collaboration,
     copied,
     joinInput,
+    joinError,
     nameDraft,
     popoverOpen,
     state,
     following,
     presenceRows,
     shareURL,
-    isJoining,
     copyLink,
+    saveName,
     share,
     join,
+    clearJoinError,
     disconnect,
     follow,
     renameLocalAgent

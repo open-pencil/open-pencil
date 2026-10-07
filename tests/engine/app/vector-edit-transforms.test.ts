@@ -13,6 +13,7 @@ import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'
 import type { VectorEditState } from '@/app/editor/vector/types'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { asDouble } from '#tests/helpers/doubles'
 
 const NETWORK: VectorNetwork = {
   vertices: [
@@ -58,7 +59,7 @@ function setup(frameRotation: number, vectorRotation: number) {
   })
 
   const undoLabels: string[] = []
-  const editor = {
+  const editor = asDouble<Editor>({
     get graph() {
       return graph
     },
@@ -68,7 +69,7 @@ function setup(frameRotation: number, vectorRotation: number) {
       undoLabels.push(label)
       graph.updateNode(id, changes)
     }
-  } as Editor
+  })
   const state: VectorEditState = { nodeEditState: null } as VectorEditState
   const lifecycle = createVectorEditLifecycle(editor, state)
   return { graph, vector, state, lifecycle, undoLabels }

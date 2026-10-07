@@ -5,7 +5,9 @@ import {
   analyzeSpacing,
   analyzeTypography,
   diffApply,
-  diffShow
+  diffShow,
+  lint,
+  lintFix
 } from './analyze'
 import { designToComponentMap, designToTokens } from './codegen'
 import {
@@ -17,10 +19,13 @@ import {
   createVector,
   exposeInstanceSwap,
   combineAsVariants,
+  createSlot,
   fetchIconsTool,
+  getBehaviour,
   importSVG,
   insertIcon,
-  searchIconsTool
+  searchIconsTool,
+  setBehaviour
 } from './create'
 import {
   setBlend,
@@ -128,6 +133,9 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   createComponent,
   createInstance,
   exposeInstanceSwap,
+  createSlot,
+  getBehaviour,
+  setBehaviour,
   createPage,
   createVector,
   createSlice,
@@ -192,6 +200,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   // Analyze & diff
   analyzeColors,
   analyzeTypography,
+  lint,
+  lintFix,
   analyzeSpacing,
   analyzeClusters,
   analyzeOverlaps,

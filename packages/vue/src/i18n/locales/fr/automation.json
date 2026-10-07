@@ -30,6 +30,8 @@
   "version": "Version",
   "authentication": "Exiger une authentification",
   "authenticationDescription": "Protégez le point de terminaison MCP local avec un jeton Bearer. Désactivez-le uniquement sur une machine de confiance. Redémarrez le serveur pour appliquer les modifications.",
+  "selectionScope": "Partager uniquement la sélection",
+  "selectionScopeDescription": "Les clients MCP ne lisent que les calques que vous sélectionnez, avec get_selection, get_node, get_page_tree, describe et export_image, et aucun autre outil. Redémarrez le serveur pour appliquer les modifications.",
   "rootDirectory": "Répertoire racine MCP",
   "rootDirectoryDefault": "Dossier par défaut du serveur",
   "chooseRootDirectory": "Choisir un dossier",

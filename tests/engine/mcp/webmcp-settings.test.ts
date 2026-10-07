@@ -68,7 +68,9 @@ describe('WebMCP access preferences', () => {
     for (const value of [undefined, null, true, {}, 'all', 'EDIT']) {
       expect(resolveWebMCPMode(value)).toBe('off')
     }
-    for (const mode of ['off', 'inspect', 'edit']) expect(resolveWebMCPMode(mode)).toBe(mode)
+    for (const mode of ['off', 'inspect', 'edit'] as const) {
+      expect(resolveWebMCPMode(mode)).toBe(mode)
+    }
     expect(getWebMCPTools('off')).toEqual([])
     expect(getWebMCPTools('inspect').length).toBeGreaterThan(0)
     expect(getWebMCPTools('inspect').every((tool) => !tool.mutates)).toBe(true)
@@ -90,7 +92,9 @@ describe('WebMCP access preferences', () => {
       const retained = context.tools.get('set_fill')
       if (!retained) throw new Error('Missing editing tool')
       mode.value = 'inspect'
-      await expect(retained.execute({ id: 'node', color: '#ffffff' })).rejects.toThrow()
+      await expect(
+        retained.execute({ id: 'node', color: '#ffffff' }, { signal: new AbortController().signal })
+      ).rejects.toThrow()
       expect(executions).toBe(0)
       await ready(service)
       expect(context.tools.size).toBe(getWebMCPTools('inspect').length)

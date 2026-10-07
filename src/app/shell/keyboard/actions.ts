@@ -3,11 +3,12 @@ import type { Ref } from 'vue'
 import { opacityFromBuffer } from '@open-pencil/core/editor'
 import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
 
+import type { PropertiesTab } from '@/app/ai/chat/use'
 import type { EditorStore } from '@/app/editor/active-store'
 
 type KeyboardActionsOptions = {
   store: EditorStore
-  activeTab: Ref<'design' | 'code' | 'ai'>
+  activeTab: Ref<PropertiesTab>
   isMobile: ReturnType<typeof useViewportKind>['isMobile']
   runCommand: ReturnType<typeof useEditorCommands>['runCommand']
   setOpacityTarget: ReturnType<typeof useEditorCommands>['setOpacityTarget']
@@ -57,6 +58,10 @@ export function createKeyboardActions({
   }
 
   function escapeOrDeselect() {
+    if (store.state.play) {
+      store.stopPlay()
+      return
+    }
     if (store.state.rotationPreview) {
       store.setRotationPreview(null)
       return
@@ -88,6 +93,10 @@ export function createKeyboardActions({
 
   function toggleUI() {
     store.state.showUI = !store.state.showUI
+  }
+
+  function togglePlay() {
+    store.togglePlay()
   }
 
   function toggleAI() {
@@ -139,6 +148,7 @@ export function createKeyboardActions({
     escapeOrDeselect,
     toggleAutoLayout,
     toggleUI,
+    togglePlay,
     toggleAI,
     exportSelectionPNG,
     opacityDigit

@@ -7,6 +7,7 @@
   "group": "编组",
   "ungroup": "取消编组",
   "createComponent": "创建组件",
+  "createSlot": "创建插槽",
   "createComponentSet": "创建组件集",
   "createInstance": "创建实例",
   "detachInstance": "分离实例",

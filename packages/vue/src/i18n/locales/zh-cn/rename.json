@@ -5,6 +5,7 @@
   "match": "匹配",
   "to": "重命名为",
   "currentName": "当前名称",
+  "layerName": "图层名称",
   "numberAscending": "编号 ↑",
   "numberDescending": "编号 ↓",
   "startAscendingFrom": "升序起始值",

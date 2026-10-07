@@ -24,12 +24,22 @@ import {
   markRunWork,
   moveRunToPage,
   recordRunBaseline,
+  recordRunUndoEntry,
   runBaseline,
   runPageId,
   stepBudget
 } from './run'
 
-export { didHitStepLimit, endRun, recordStep, runAgentId, runPageId, startRun } from './run'
+export {
+  didHitStepLimit,
+  endRun,
+  markRunPreview,
+  recordStep,
+  runAgentId,
+  runPageId,
+  runUndoEntries,
+  startRun
+} from './run'
 
 export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnosticContext) {
   const acquireMutation = createMutex()
@@ -86,6 +96,10 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
               inverse: () => store.restorePageFromSnapshot(before)
             })
           }
+          // Every entry the run pushes belongs to its turn, view changes included: one left on
+          // top, such as a closing zoom to fit, would otherwise keep the turn from reverting.
+          // Atomic and snapshot edits both label their entries this way.
+          recordRunUndoEntry(store, `AI: ${def.name}`)
           // View tools (selection, viewport, pages) cannot change the document.
           if (toolChangesDocument(def)) {
             try {
@@ -121,7 +135,8 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
             mutates: entry.mutates,
             failed: Boolean(entry.error)
           },
-          diagnosticContext
+          diagnosticContext,
+          entry.cause
         )
       },
       getStepBudget: () => stepBudget(store)
