@@ -27,3 +27,12 @@ const module = es.fill(es.parseModule("export const title = '$title'"), {
 })
 es.printModule(module) // export const title = 'Checkout';
 ```
+
+`vue` builds templates and single-file components. Text escapes `&`, `<`, and `{` and attribute values escape `&` and `"` as entities, which Vue's parser decodes only after it looks for interpolations, tags, and the attribute's end:
+
+```ts
+import { es, vue } from '@open-pencil/emit'
+
+const template = vue.element('SwitchRoot', [vue.attribute('class', 'switch'), vue.model(es.identifier('checked'))])
+vue.printTemplate(template) // <SwitchRoot class="switch" v-model="checked" />
+```

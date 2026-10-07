@@ -90,6 +90,16 @@ export function printModule(program: SyntaxNode): string {
   return print(program, ts(), { indent: '  ' }).code
 }
 
+/** One expression, as a template binding or another host language embeds it. */
+export function printExpression(expression: SyntaxNode): string {
+  const program = {
+    type: 'Program',
+    sourceType: 'module',
+    body: [{ type: 'ExpressionStatement', expression }]
+  }
+  return printModule(program).trim().replace(/;$/, '')
+}
+
 export const identifier = (name: string): SyntaxNode => ({ type: 'Identifier', name })
 
 export const string = (value: string): SyntaxNode => ({ type: 'Literal', value })
@@ -129,13 +139,15 @@ export function stringUnionType(values: string[]): SyntaxNode {
     : { type: 'TSUnionType', types: literals }
 }
 
-export function objectType(entries: [string, SyntaxNode][]): SyntaxNode {
+/** An object type; a member whose third element is `true` is optional. */
+export function objectType(entries: [string, SyntaxNode, boolean?][]): SyntaxNode {
   return {
     type: 'TSTypeLiteral',
-    members: entries.map(([key, typeAnnotation]) => ({
+    members: entries.map(([key, typeAnnotation, optional = false]) => ({
       type: 'TSPropertySignature',
       key: propertyKey(key),
       computed: false,
+      optional,
       typeAnnotation: { type: 'TSTypeAnnotation', typeAnnotation }
     }))
   }
