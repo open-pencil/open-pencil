@@ -34,6 +34,9 @@ test('deleting a conversation asks in a confirmation dialog', async ({
   configuredChat: chat,
   page
 }) => {
+  await chat.submit('Conversation to keep')
+  await expect(chat.assistantMessage()).toBeVisible()
+  await page.getByRole('button', { name: 'New chat', exact: true }).first().click()
   await chat.submit('Conversation to delete')
   await expect(chat.assistantMessage()).toBeVisible()
   const actions = page.getByRole('button', { name: 'Conversation actions' })
@@ -51,4 +54,12 @@ test('deleting a conversation asks in a confirmation dialog', async ({
   await dialog.getByRole('button', { name: 'Delete' }).click()
   await expect(dialog).toBeHidden()
   await expect(page.getByTestId('chat-message-user')).toHaveCount(0)
+
+  // The conversation is gone from storage, not only from the panel.
+  await page.reload()
+  await chat.chatTab.click()
+  await page.getByRole('button', { name: 'Conversation history', exact: true }).click()
+  await page.getByRole('button', { name: 'All documents', exact: true }).click()
+  await expect(page.getByRole('button', { name: /Conversation to keep/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Conversation to delete/ })).toHaveCount(0)
 })
