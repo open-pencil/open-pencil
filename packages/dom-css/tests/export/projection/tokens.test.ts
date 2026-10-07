@@ -59,6 +59,19 @@ describe('token references in design-to-code', () => {
     expect(inner.inlineStyle?.['background-color']).toBe('var(--color-primary)')
   })
 
+  test('puts a node in its mode with the attribute its collection names', () => {
+    const graph = designSystem()
+    const theme = graph.variableCollections.get('theme')
+    if (theme) theme.modeAttribute = 'data-scheme'
+    const outer = card(graph, graph.getPages()[0].id, BLUE_500)
+    card(graph, outer.id, BLUE_300, { variableModes: { theme: 'dark' } })
+
+    const inner = child(element(graph, outer.id))
+
+    expect(inner.attrs['data-scheme']).toBe('dark')
+    expect(inner.attrs).not.toHaveProperty('data-theme')
+  })
+
   test('keeps literals where no attribute can bring back the mode the node is in', () => {
     const graph = designSystem()
     const outer = card(graph, graph.getPages()[0].id, BLUE_300, {

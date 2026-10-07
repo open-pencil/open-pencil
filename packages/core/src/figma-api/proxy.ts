@@ -19,6 +19,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaEffect } from '#core/figma-api/effects'
 
+import { fitGroupsAround } from './accessor-utils'
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
 import { installStrokeNodeProxyAccessors } from './accessors/strokes'
@@ -286,14 +287,23 @@ export class FigmaNodeProxy {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
     prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'appendChild')
-    this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
+    this._reparentAndFit(child[INTERNAL_ID])
+  }
+
+  /** Moves a child here, keeping its place on the canvas, and refits the groups it left and joined. */
+  private _reparentAndFit(childId: string): void {
+    const scene = this[INTERNAL_GRAPH]
+    const previousParentId = scene.getNode(childId)?.parentId
+    scene.reparentNode(childId, this[INTERNAL_ID])
+    fitGroupsAround(scene, previousParentId)
+    fitGroupsAround(scene, this[INTERNAL_ID])
   }
 
   insertChild(index: number, child: FigmaNodeProxy): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
     prepareSlotMove(this[INTERNAL_GRAPH], this[INTERNAL_ID], child[INTERNAL_ID], 'insertChild')
-    this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
+    this._reparentAndFit(child[INTERNAL_ID])
     this[INTERNAL_GRAPH].reorderChild(child[INTERNAL_ID], this[INTERNAL_ID], index)
   }
 
@@ -316,7 +326,9 @@ export class FigmaNodeProxy {
   remove(): void {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     prepareSlotRemoval(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    const parentId = this._raw().parentId
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
+    fitGroupsAround(this[INTERNAL_GRAPH], parentId)
   }
 
   findAll(callback?: (node: FigmaNodeProxy) => boolean): FigmaNodeProxy[] {

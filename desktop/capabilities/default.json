@@ -6,6 +6,9 @@
   "permissions": [
     "core:default",
     "core:window:allow-destroy",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-set-focus",
+    "core:window:allow-unminimize",
     "opener:default",
     "dialog:default",
     "dialog:allow-save",
@@ -15,6 +18,42 @@
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-html",
     "clipboard-manager:allow-write-text",
+    "fs:deny-default",
+    {
+      "identifier": "fs:scope",
+      "deny": [
+        { "path": "$HOME/Library/LaunchAgents" },
+        { "path": "$HOME/Library/LaunchAgents/**" },
+        { "path": "$DATA/Microsoft/Windows/Start Menu/Programs/Startup" },
+        { "path": "$DATA/Microsoft/Windows/Start Menu/Programs/Startup/**" },
+        { "path": "$DOCUMENT/PowerShell" },
+        { "path": "$DOCUMENT/PowerShell/**" },
+        { "path": "$DOCUMENT/WindowsPowerShell" },
+        { "path": "$DOCUMENT/WindowsPowerShell/**" },
+        { "path": "/usr/local" },
+        { "path": "/usr/local/**" },
+        { "path": "/opt/homebrew" },
+        { "path": "/opt/homebrew/**" },
+        { "path": "$HOME/bin" },
+        { "path": "$HOME/bin/**" },
+        { "path": "$HOME/n" },
+        { "path": "$HOME/n/**" },
+        { "path": "$DATA/npm" },
+        { "path": "$DATA/npm/**" },
+        { "path": "$DATA/nvm" },
+        { "path": "$DATA/nvm/**" },
+        { "path": "$DATA/fnm" },
+        { "path": "$DATA/fnm/**" },
+        { "path": "$LOCALDATA/Volta" },
+        { "path": "$LOCALDATA/Volta/**" },
+        { "path": "$LOCALDATA/Programs" },
+        { "path": "$LOCALDATA/Programs/**" },
+        { "path": "$LOCALDATA/Microsoft/WindowsApps" },
+        { "path": "$LOCALDATA/Microsoft/WindowsApps/**" },
+        { "path": "$HOME/scoop" },
+        { "path": "$HOME/scoop/**" }
+      ]
+    },
     {
       "identifier": "fs:allow-read-file",
       "allow": [{ "path": "**" }]
@@ -25,7 +64,13 @@
     },
     {
       "identifier": "fs:allow-open",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "**" }],
+      "deny": [
+        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
+        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
+        { "path": "$RUNTIME/openpencil/mcp.json" },
+        { "path": "$HOME/.openpencil/mcp.json" }
+      ]
     },
     "fs:allow-fstat",
     "fs:allow-seek",
@@ -41,7 +86,13 @@
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "**" }],
+      "deny": [
+        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
+        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
+        { "path": "$RUNTIME/openpencil/mcp.json" },
+        { "path": "$HOME/.openpencil/mcp.json" }
+      ]
     },
     {
       "identifier": "fs:allow-exists",
@@ -58,7 +109,13 @@
     },
     {
       "identifier": "fs:allow-remove",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "**" }],
+      "deny": [
+        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
+        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
+        { "path": "$RUNTIME/openpencil/mcp.json" },
+        { "path": "$HOME/.openpencil/mcp.json" }
+      ]
     },
     {
       "identifier": "fs:allow-watch",

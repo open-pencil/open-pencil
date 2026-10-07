@@ -1,4 +1,5 @@
 import type { CSSStyleSheetLike } from '@acemir/cssom'
+import valueParser from 'postcss-value-parser'
 
 type Parse = (cssText: string) => CSSStyleSheetLike
 
@@ -22,16 +23,33 @@ function rules(sheet: CSSStyleSheetLike): ParsedRule[] {
  * or condition that closes its rule early parses to a different number of rules and fails.
  */
 export function createTokenValidator(parse: Parse) {
+  /** `--name: value` is one declaration whose value reads back unchanged. */
+  function declaration(name: string, value: string): boolean {
+    const parsed = rules(parse(`:root{--${name}:${value}}`))
+    const [rule] = parsed
+    return (
+      parsed.length === 1 &&
+      rule.style?.length === 1 &&
+      rule.style.getPropertyValue(`--${name}`).trim() === value.trim() &&
+      (rule.cssRules?.length ?? 0) === 0
+    )
+  }
+
   return {
-    /** `--name: value` is one declaration whose value reads back unchanged. */
-    declaration(name: string, value: string): boolean {
-      const parsed = rules(parse(`:root{--${name}:${value}}`))
-      const [rule] = parsed
+    declaration,
+
+    /**
+     * A custom property name without its `--`: one word to the CSS value tokenizer, which splits
+     * on spaces, colons, commas and slashes, and one declaration to the parser. It starts with a
+     * letter, digit or underscore, so `--` is never doubled into `----`.
+     */
+    name(name: string): boolean {
+      const { nodes } = valueParser(`--${name}`)
       return (
-        parsed.length === 1 &&
-        rule.style?.length === 1 &&
-        rule.style.getPropertyValue(`--${name}`).trim() === value.trim() &&
-        (rule.cssRules?.length ?? 0) === 0
+        /^\w/.test(name) &&
+        nodes.length === 1 &&
+        nodes[0]?.type === 'word' &&
+        declaration(name, '0')
       )
     },
 

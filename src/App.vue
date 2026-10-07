@@ -12,7 +12,8 @@ import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
-import { scheduleStartupUpdateCheck } from '@/app/shell/updater'
+import { useRestartApprovals } from '@/app/shell/updater/approvals'
+import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
@@ -36,6 +37,7 @@ useHead({
 provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
+useRestartApprovals()
 useEventListener(window, 'pagehide', () => {
   void prepareForReload()
 })

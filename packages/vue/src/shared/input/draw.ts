@@ -34,7 +34,7 @@ function startDraw(
   const nodeId = editor.createShape(type, start.x, start.y, 0, 0, parentId)
   if (type === 'TEXT') editor.graph.updateNode(nodeId, { text: '' })
   editor.select([nodeId])
-  setDrag(createDraw(editor, nodeId, start.x, start.y, toLocal))
+  setDrag(createDraw(editor, nodeId, start.x, start.y, toLocal, type === 'LINE'))
 }
 
 export function startTextDraw(
@@ -58,10 +58,24 @@ export function startShapeDraw(
   startDraw(nodeType, 'Create shape', cx, cy, editor, setDrag)
 }
 
+const LINE_ANGLE_STEP = 45
+
+/** A line from the start point to the cursor: its length, no height, and the angle as rotation. */
+function lineGeometry(d: DragDraw, dx: number, dy: number, shiftKey: boolean): Partial<SceneNode> {
+  let angle = (Math.atan2(dy, dx) * 180) / Math.PI
+  // Shift snaps the angle to steps of 45°.
+  if (shiftKey) angle = Math.round(angle / LINE_ANGLE_STEP) * LINE_ANGLE_STEP
+  return { x: d.startX, y: d.startY, width: Math.hypot(dx, dy), height: 0, rotation: angle }
+}
+
 export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean) {
   const point = d.toLocal(cx, cy)
   let w = point.x - d.startX
   let h = point.y - d.startY
+  if (d.line) {
+    d.update(lineGeometry(d, w, h, shiftKey))
+    return
+  }
 
   if (shiftKey) {
     const size = Math.max(Math.abs(w), Math.abs(h))
@@ -86,6 +100,9 @@ function settleDrawnSize(preview: ReturnType<Editor['beginNodePreview']>, node: 
       height: clicked ? DEFAULT_TEXT_HEIGHT : node.height,
       textAutoResize: clicked ? 'WIDTH_AND_HEIGHT' : 'NONE'
     })
+  } else if (node.type === 'LINE' && node.width < 2) {
+    preview.update(node.id, { width: 100, height: 0, rotation: 0 })
+    return true
   } else if (clicked) {
     preview.update(node.id, { width: 100, height: 100 })
   }
@@ -97,7 +114,8 @@ function createDraw(
   nodeId: string,
   startX: number,
   startY: number,
-  toLocal: DragDraw['toLocal']
+  toLocal: DragDraw['toLocal'],
+  line: boolean
 ): DragDraw {
   const graph = editor.graph
   const preview = editor.beginNodePreview('Draw dimensions')
@@ -152,6 +170,7 @@ function createDraw(
     startX,
     startY,
     toLocal,
+    line,
     nodeId,
     update: (changes) => {
       if (!finished) preview.update(nodeId, changes)

@@ -1,5 +1,9 @@
 {
   "toolOptions": "Параметры инструмента «{tool}»",
   "removeGradientStop": "Удалить точку градиента",
-  "showUI": "Показать интерфейс ({shortcut})"
+  "showUI": "Показать интерфейс ({shortcut})",
+  "previewing": "Просмотр",
+  "resetPreview": "Сбросить",
+  "leavePreview": "Выйти из просмотра ({shortcut})",
+  "startPreview": "Просмотр ({shortcut})"
 }

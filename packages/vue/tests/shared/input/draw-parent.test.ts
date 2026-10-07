@@ -21,7 +21,7 @@ function node(type: SceneNode['type'], parentId: string, props: Partial<SceneNod
   return editor.graph.createNode(type, parentId, { width: 40, height: 40, ...props })
 }
 
-function draw(tool: Tool, from: [number, number], to: [number, number] = from) {
+function draw(tool: Tool, from: [number, number], to: [number, number] = from, shiftKey = false) {
   editor.setTool(tool)
   let drag: DragState | null = null
   startShapeDraw(from[0], from[1], editor, (d) => {
@@ -29,7 +29,7 @@ function draw(tool: Tool, from: [number, number], to: [number, number] = from) {
   })
   const drawing = drag as DragState | null
   if (drawing?.type !== 'draw') throw new Error('Expected a drawing')
-  if (to !== from) handleDrawMove(drawing, to[0], to[1], false)
+  if (to !== from) handleDrawMove(drawing, to[0], to[1], shiftKey)
   drawing.commit()
   const created = editor.graph.getNode(drawing.nodeId)
   if (!created) throw new Error('Expected a drawn layer')
@@ -110,5 +110,27 @@ describe('drawing into containers', () => {
     const covered = node('RECTANGLE', page, { x: 20, y: 20 })
     draw('RECTANGLE', [-20, -20], [150, 150])
     expect(covered.parentId).toBe(page)
+  })
+})
+
+describe('drawing lines', () => {
+  test('a line runs from the start point to the cursor, with no height', () => {
+    setup()
+    const line = draw('LINE', [60, 80], [300, 160])
+    expect(line).toMatchObject({ type: 'LINE', x: 60, y: 80, height: 0 })
+    expect(line.width).toBeCloseTo(Math.hypot(240, 80))
+    expect(line.rotation).toBeCloseTo((Math.atan2(80, 240) * 180) / Math.PI)
+    expect(line.strokes[0]).toMatchObject({ weight: 1, color: { r: 0, g: 0, b: 0, a: 1 } })
+  })
+
+  test('Shift snaps the angle to 45° steps', () => {
+    setup()
+    expect(draw('LINE', [0, 0], [100, 30], true).rotation).toBe(0)
+    expect(draw('LINE', [0, 0], [100, 80], true).rotation).toBe(45)
+  })
+
+  test('a click makes a 100 px horizontal line', () => {
+    setup()
+    expect(draw('LINE', [10, 10])).toMatchObject({ width: 100, height: 0, rotation: 0 })
   })
 })

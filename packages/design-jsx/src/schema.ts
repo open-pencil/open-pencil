@@ -1,3 +1,23 @@
+import { REKA_ELEMENTS, rekaRole } from './behaviours'
+
+function rekaDescription(namespace: string, part: string): string {
+  const role = rekaRole(`${namespace}.${part}`)
+  if (role?.role === 'root')
+    return `A main component that behaves as Reka UI's ${namespace} ${part}.`
+  if (role?.role === 'input') return `The text layer of a ${namespace}'s text property.`
+  return `The ${namespace} ${part}, drawn by a slot of its component.`
+}
+
+/** A Reka UI element as the element list describes it. */
+function rekaElementDefinitions(): DesignJSXElementDefinition[] {
+  return Object.entries(REKA_ELEMENTS).flatMap(([namespace, parts]) =>
+    Object.keys(parts).map((part) => {
+      const type = `${namespace}.${part}`
+      return { name: type, runtimeType: type, description: rekaDescription(namespace, part) }
+    })
+  )
+}
+
 export type DesignJSXElementDefinition = {
   name: string
   runtimeType: string
@@ -28,7 +48,8 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
   { name: 'Instance', runtimeType: 'instance', description: 'An instance of a component.' },
   { name: 'View', runtimeType: 'frame', description: 'An alias for Frame.' },
   { name: 'Rect', runtimeType: 'rectangle', description: 'An alias for Rectangle.' },
-  { name: 'Icon', runtimeType: 'icon', description: 'An Iconify icon.' }
+  { name: 'Icon', runtimeType: 'icon', description: 'An Iconify icon.' },
+  ...rekaElementDefinitions()
 ]
 
 export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
@@ -149,7 +170,17 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'componentId',
   'properties',
   'propertyRefs',
-  'of'
+  'of',
+  // A Reka UI root's behaviour, by its own property names
+  'modelValue',
+  'open',
+  'disabled',
+  'filled',
+  'states',
+  'min',
+  'max',
+  'step',
+  'defaultValue'
 ] as const
 
 export const DESIGN_JSX_SUPPORTED_PROPERTIES = new Set<string>(DESIGN_JSX_SUPPORTED_PROPERTY_NAMES)

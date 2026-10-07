@@ -212,7 +212,12 @@ heavy('eval CLI', () => {
   })
 
   test('undefined result produces no output', async () => {
-    const { stdout, exitCode } = await run(['eval', FIXTURE, '--code', 'figma.createFrame()'])
+    const { stdout, exitCode } = await run([
+      'eval',
+      FIXTURE,
+      '--code',
+      'const frame = figma.createFrame()'
+    ])
     expect(exitCode).toBe(0)
     expect(stdout).toBe('')
   })

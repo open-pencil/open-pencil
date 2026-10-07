@@ -125,6 +125,17 @@ describe('token stylesheet', () => {
     )
   })
 
+  test('switches manual modes by the attribute the collection names', async () => {
+    const graph = designSystem()
+    const theme = graph.variableCollections.get('theme')
+    if (theme) theme.modeAttribute = 'data-scheme'
+
+    const { css } = await tokenStylesheet(graph, { format: 'css' })
+
+    expect(css).toContain('[data-scheme="dark"] {')
+    expect(css).not.toContain('data-theme')
+  })
+
   test('declares an alias again where a mode changes what it points to', async () => {
     const graph = new SceneGraph()
     graph.addCollection({

@@ -17,13 +17,13 @@ Local assets are grouped by source page. Published library assets remain availab
 
 Select a frame or group and press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd>). The selection becomes a reusable component.
 
-If you select multiple nodes, they're wrapped in a new component positioned at their bounding box.
+Any other layer, or several layers, is wrapped in a new white component at their bounding box, in the topmost layer's place in the layer list; a single wrapped layer gives the component its name.
 
 Components display a purple label with a diamond icon above them.
 
 ## Component Sets and Variants
 
-Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) to combine them into a component set — a container with a dashed purple border and 40 px padding around its children.
+Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) to combine them into a component set — a container with a dashed purple border and 20 px padding around its children, as in Figma. Sets made by scripts with `figma.combineAsVariants()` wrap their components exactly, as Figma's plugin API does.
 
 Each component in a set can define values across multiple variant dimensions, such as `Size=Small`, `State=Hover`, and `Theme=Dark`. OpenPencil supports sparse combinations, so a set does not need every possible combination. The top-left variant is the default and is used as the fallback when an update no longer contains an exact combination.
 
@@ -31,7 +31,27 @@ Use the component properties panel to add, rename, reorder, and remove variant d
 
 ## Component Properties
 
-Components and component sets support reusable text, boolean visibility, and instance-swap properties. Link a property to a descendant field, then select an instance to edit its assigned value without detaching it. Properties and assignments are preserved when saving and reopening `.fig` files.
+Components and component sets support reusable text, boolean visibility, instance-swap, and slot properties. Link a property to a descendant field, then select an instance to edit its assigned value without detaching it. Properties and assignments are preserved when saving and reopening `.fig` files.
+
+## Slots
+
+A slot is a frame of a main component whose content each instance can change. Select a frame inside a main component and choose **Create slot** from the context menu or the Slots section, or select other layers to wrap them in a new slot frame. Slot settings set a description, the components it prefers, and how many items it holds; an instance outside those limits shows a warning. In an instance, add, reorder, and remove a slot's items, or reset it to the component's content.
+
+## Behaviours and Preview
+
+A behaviour makes a main component or component set work like a real control, after [Reka UI](https://reka-ui.com)'s primitives: Button, Text field, Textarea, Number field, Toggle, Switch, Checkbox, Radio, Radio group, Toggle group, Slider, Progress, Tabs, Collapsible, or Accordion. Select the component and use **+** in the **Behaviour** section to choose one.
+
+The section lists what the control needs:
+
+- **Values** — the property that holds each value: a variant or boolean property for On, Checked, Pressed, Open, Filled, or Disabled (with the variant values that mean on and off), a text property for a field's text, or a slider's own minimum, maximum, step, and default.
+- **Parts** — the slot that draws each part, such as a switch's thumb, a slider's track, range, and thumb, or a tab list. A group's items slot holds instances of its radios, toggles, or collapsibles.
+- **States** — a variant property whose values draw default, hover, pressed, focus, and disabled. Values named like those states are matched automatically.
+
+Rows the control requires come first; the rest are under **More options**. When a component has nothing to bind yet, a row offers to create it: a text layer and text property, Off and On variants, or a slot, and **States** offers **Add state variants**, which adds a Default, Hover, Pressed, Focus, and Disabled variant of the component. A lone main component that gets variants this way becomes a component set, and a slot added to a set appears in every variant. Until the control works, a line under its name says what is still needed; clicking it goes there.
+
+Press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Enter</kbd>), choose **View → Preview**, or use ▶ next to Share to preview the canvas. Each top-level layer holding controls runs as live Reka UI components over the canvas, drawn by the component's variants: switches flip, sliders drag, tabs and accordions open, and text fields are real inputs with the browser's caret, selection, and paste. Preview never changes the document or its history. **Reset** puts every control back as designed, and <kbd>Esc</kbd> or the pill's close button returns to editing. In split view, each canvas previews on its own.
+
+Behaviours are saved in `.fig` files and published with library components.
 
 ## Component Libraries
 
@@ -133,6 +153,7 @@ Components and instances are opaque containers — clicking on a child selects t
 | Create component | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> |
 | Create component set | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd> |
 | Detach instance | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>B</kbd> |
+| Preview | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Enter</kbd> |
 
 ## Tips
 

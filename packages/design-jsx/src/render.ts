@@ -3,6 +3,7 @@ import { transform } from 'sucrase'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { REKA_ELEMENTS } from './behaviours'
 import { designJSXHelpers } from './helpers'
 import * as React from './mini-react'
 import { renderRoots, renderTree, type RenderResult } from './renderer'
@@ -16,6 +17,16 @@ import type { RenderOptions as RenderJSXOptions } from './types'
  * Works in both Node/Bun and the browser (no native bindings).
  */
 const SUPPORTED_PROPS = DESIGN_JSX_SUPPORTED_PROPERTIES
+
+/** `const Switch = { Root: 'Switch.Root', … }`: each Reka namespace as element types. */
+const REKA_ALIASES = Object.entries(REKA_ELEMENTS)
+  .map(
+    ([namespace, parts]) =>
+      `const ${namespace} = ${JSON.stringify(
+        Object.fromEntries(Object.keys(parts).map((part) => [part, `${namespace}.${part}`]))
+      )}`
+  )
+  .join('\n')
 
 function stripHTMLComments(jsxString: string): string {
   return jsxString.replace(/<!--[\s\S]*?-->/g, '')
@@ -57,6 +68,7 @@ export function buildComponent(jsxString: string, warnings: string[] = []): Reac
     const Component = 'component', ComponentSet = 'component-set', Instance = 'instance'
     const Icon = 'icon'
     const svg = 'svg'
+    ${REKA_ALIASES}
     const dropShadow = __helpers.dropShadow
     const innerShadow = __helpers.innerShadow
     const layerBlur = __helpers.layerBlur

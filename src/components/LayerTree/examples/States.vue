@@ -155,7 +155,7 @@ const states: Array<{
       Layer Tree states
     </div>
     <div :class="adjacent ? 'space-y-0' : 'space-y-1'">
-      <div v-for="state in states" :key="state.label" :aria-label="state.label">
+      <div v-for="state in states" :key="state.label">
         <LayerTreeNodeRow
           :node="state.node"
           :level="1"

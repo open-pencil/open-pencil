@@ -73,6 +73,8 @@ export const PARENT_OUTLINE_DASH = 4
 export const DEFAULT_FONT_FAMILY = 'Inter'
 export const DEFAULT_FONT_SIZE = 14
 export const DEFAULT_STROKE_MITER_LIMIT = 4
+/** Figma's stroke weight for a node that has not been given one. */
+export const DEFAULT_STROKE_WEIGHT = 1
 export const LABEL_FONT_SIZE = 11
 export const SIZE_FONT_SIZE = 10
 
@@ -506,9 +508,10 @@ export const CJK_FALLBACK_FAMILIES_LINUX = [
 
 export const CJK_GOOGLE_FONTS = ['Noto Sans SC', 'Noto Sans TC', 'Noto Sans JP', 'Noto Sans KR']
 
+/** Figma's #D9D9D9 for new shapes. */
 export const DEFAULT_SHAPE_FILL: Fill = {
   type: 'SOLID',
-  color: { r: 0.83, g: 0.83, b: 0.83, a: 1 },
+  color: { r: 217 / 255, g: 217 / 255, b: 217 / 255, a: 1 },
   opacity: 1,
   visible: true
 }
