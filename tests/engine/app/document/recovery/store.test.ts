@@ -48,6 +48,20 @@ describe('document recovery store', () => {
     expect(await store.read('recovery-1')).toBeNull()
   })
 
+  test('stores a view into a larger buffer as its own bytes', async () => {
+    const store = createIdbRecoveryStore()
+    const buffer = new Uint8Array([9, 9, 1, 2, 3, 9])
+    await store.write({
+      id: 'recovery-1',
+      documentName: 'Agent draft',
+      sceneVersion: 1,
+      figBytes: buffer.subarray(2, 5)
+    })
+    const stored = await store.read('recovery-1')
+    expect(stored?.figBytes).toEqual(new Uint8Array([1, 2, 3]))
+    expect(stored?.figBytes.buffer.byteLength).toBe(3)
+  })
+
   test('memory store owns input and output bytes', async () => {
     const store = createMemoryRecoveryStore()
     const input = new Uint8Array(bytes)
