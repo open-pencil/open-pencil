@@ -32,6 +32,7 @@ import { createClipboardActions } from './clipboard'
 import { createColorSpaceActions } from './color-space'
 import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
+import { createDesignTokenActions } from './design-tokens'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
@@ -250,6 +251,7 @@ export function createEditor(options?: EditorOptions) {
   const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
   const variables = createVariableActions(ctx)
+  const designTokens = createDesignTokenActions(ctx, variables, nodes)
   const vectorize = createVectorizeActions(ctx)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
@@ -387,6 +389,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Variables
     ...variables,
+    ...designTokens,
 
     // Text editing
     ...text,

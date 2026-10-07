@@ -1,4 +1,4 @@
-import { converter, formatCss, formatRgb, inGamut, toGamut } from 'culori'
+import { converter, formatCss, formatRgb, inGamut, parse, toGamut } from 'culori'
 
 import type { Color } from '../primitives'
 import type { DocumentColorSpace, Fill, SceneNode, Stroke } from '../types'
@@ -147,6 +147,20 @@ export function resolveOkHCLForPreview(
     targetSpace,
     clipped
   }
+}
+
+/**
+ * A CSS color in any space, mapped into sRGB the way CSS maps out-of-gamut colors: by reducing
+ * chroma in OKLCH, so a Display P3 red becomes the nearest sRGB red, not a clipped one. A missing
+ * (`none`) component reads as zero. Null when `input` is not a color.
+ */
+export function parseDisplayableColor(input: string): Color | null {
+  const parsed = parse(input)
+  if (!parsed) return null
+  // Mapping through OKLCH shifts colors already in sRGB by float noise, so only map the rest.
+  const rgb = isDisplayableRGB(parsed) ? toRGB(parsed) : toDisplayableRGB(parsed)
+  // culori leaves a `none` channel out, which normalizing reads as zero.
+  return normalizeColor({ r: rgb.r, g: rgb.g, b: rgb.b, a: parsed.alpha })
 }
 
 export function resolveRGBAForPreview(
