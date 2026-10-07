@@ -18,7 +18,9 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import { AppDialog } from '@/components/ui/dialog'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
@@ -55,9 +57,9 @@ function targetValue(target: CollectionTarget | ModeTarget): string {
   return target.kind
 }
 
-function collectionOptions(name: string) {
+function collectionOptions() {
   return [
-    { value: 'new', label: variables.value.importNewCollection({ name }) },
+    { value: 'new', label: variables.value.importNewCollection },
     ...existingCollections.value.map((collection) => ({
       value: `existing:${collection.id}`,
       label: collection.name
@@ -66,14 +68,14 @@ function collectionOptions(name: string) {
   ]
 }
 
-function modeOptions(index: number, name: string) {
+function modeOptions(index: number) {
   const target = options.value?.collections[index]?.target
   const existing =
     target?.kind === 'existing'
       ? store.graph.variableCollections.get(target.collectionId)
       : undefined
   return [
-    { value: 'new', label: variables.value.importNewMode({ name }) },
+    { value: 'new', label: variables.value.importNewMode },
     ...(existing?.modes ?? []).map((mode) => ({
       value: `existing:${mode.modeId}`,
       label: mode.name
@@ -148,44 +150,57 @@ function importTokens() {
     :heading="variables.importDesignTokens"
     :description="variables.importTokensDescription"
     :close-label="common.close"
+    :ui="{ footer: 'justify-between' }"
     data-test-id="variables-import-dialog"
   >
-    <div class="flex flex-col gap-4 text-xs">
+    <div class="flex flex-col gap-3 text-xs">
       <p v-if="empty" class="text-muted">{{ variables.importNothing }}</p>
-      <section
-        v-for="(collection, index) in bundle?.collections ?? []"
-        :key="`${index}:${collection.name}`"
-        class="flex flex-col gap-2"
-        data-test-id="variables-import-collection"
+
+      <AppAlert
+        v-for="issue in bundle?.issues ?? []"
+        :key="`${issue.kind}:${issue.file}`"
+        tone="warning"
+        :heading="issueText(issue)"
+      />
+
+      <div
+        v-if="options && bundle?.collections.length"
+        class="max-h-72 overflow-y-auto rounded-lg border border-border"
       >
-        <AppSelect
-          v-if="options"
-          :model-value="targetValue(options.collections[index].target)"
-          :options="collectionOptions(collection.name)"
-          :label="collection.name"
-          :ui="{ trigger: 'w-full' }"
-          @update:model-value="setCollection(index, $event)"
-        />
-        <div
-          v-if="options && options.collections[index].target.kind !== 'skip'"
-          class="flex flex-col gap-1.5 pl-3"
+        <section
+          v-for="(collection, index) in bundle.collections"
+          :key="`${index}:${collection.name}`"
+          class="border-b border-border py-1 last:border-b-0"
+          data-test-id="variables-import-collection"
         >
-          <label
-            v-for="(mode, modeIndex) in collection.modes"
-            :key="`${modeIndex}:${mode.name}`"
-            class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] items-center gap-2"
-          >
-            <span class="truncate text-muted">{{ mode.name }}</span>
+          <div class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 px-3 py-1">
+            <span class="truncate font-medium text-surface">{{ collection.name }}</span>
+            <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />
             <AppSelect
-              :model-value="targetValue(options.collections[index].modes[modeIndex])"
-              :options="modeOptions(index, mode.name)"
-              :label="`${collection.name}: ${mode.name}`"
-              :ui="{ trigger: 'w-full' }"
-              @update:model-value="setMode(index, modeIndex, $event)"
+              :model-value="targetValue(options.collections[index].target)"
+              :options="collectionOptions()"
+              :label="collection.name"
+              @update:model-value="setCollection(index, $event)"
             />
-          </label>
-        </div>
-      </section>
+          </div>
+          <template v-if="options.collections[index].target.kind !== 'skip'">
+            <div
+              v-for="(mode, modeIndex) in collection.modes"
+              :key="`${modeIndex}:${mode.name}`"
+              class="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-2 py-1 pr-3 pl-6"
+            >
+              <span class="truncate text-muted">{{ mode.name }}</span>
+              <icon-lucide-arrow-right class="size-3 text-muted" aria-hidden="true" />
+              <AppSelect
+                :model-value="targetValue(options.collections[index].modes[modeIndex])"
+                :options="modeOptions(index)"
+                :label="`${collection.name}: ${mode.name}`"
+                @update:model-value="setMode(index, modeIndex, $event)"
+              />
+            </div>
+          </template>
+        </section>
+      </div>
 
       <div v-if="options && !empty" class="flex flex-col gap-2">
         <label class="flex items-center gap-2">
@@ -201,44 +216,42 @@ function importTokens() {
         </label>
       </div>
 
-      <p
-        v-if="plan && !empty"
-        class="font-medium text-surface"
-        data-test-id="variables-import-summary"
-      >
-        {{ variables.importSummary(plan.counts) }}
-      </p>
-
-      <ul v-if="bundle?.issues.length" class="flex flex-col gap-1 text-warning-text">
-        <li v-for="issue in bundle.issues" :key="`${issue.kind}:${issue.file}`">
-          {{ issueText(issue) }}
-        </li>
-      </ul>
-
-      <details v-if="plan?.skipped.length" class="text-muted">
-        <summary class="cursor-default select-none">{{ variables.importSkippedTitle }}</summary>
-        <ul class="mt-1 flex max-h-40 flex-col gap-0.5 overflow-auto">
-          <li v-for="(skip, index) in plan.skipped" :key="`${index}:${skip.name}`">
-            <span class="font-mono text-surface">{{ skip.name }}</span>
-            — {{ REASONS[skip.reason]() }}
+      <AppCollapsible v-if="plan?.skipped.length">
+        <template #label>
+          {{ variables.importSkippedTitle }}
+          <span class="text-muted">{{ plan.skipped.length }}</span>
+        </template>
+        <ul class="mt-2 max-h-32 overflow-y-auto rounded-lg border border-border">
+          <li
+            v-for="(skip, index) in plan.skipped"
+            :key="`${index}:${skip.name}`"
+            class="flex items-baseline justify-between gap-3 border-b border-border px-3 py-1.5 last:border-b-0"
+          >
+            <span class="truncate text-surface">{{ skip.name }}</span>
+            <span class="shrink-0 text-muted">{{ REASONS[skip.reason]() }}</span>
           </li>
         </ul>
-      </details>
+      </AppCollapsible>
     </div>
 
     <template #footer>
-      <AppButton color="neutral" variant="ghost" @click="open = false">{{
-        common.cancel
-      }}</AppButton>
-      <AppButton
-        color="primary"
-        variant="solid"
-        :disabled="changes === 0"
-        data-test-id="variables-import-confirm"
-        @click="importTokens"
-      >
-        {{ variables.importAction }}
-      </AppButton>
+      <span class="text-xs text-muted" data-test-id="variables-import-summary">
+        {{ plan && !empty ? variables.importSummary(plan.counts) : '' }}
+      </span>
+      <div class="flex gap-2">
+        <AppButton color="neutral" variant="ghost" @click="open = false">
+          {{ common.cancel }}
+        </AppButton>
+        <AppButton
+          color="primary"
+          variant="solid"
+          :disabled="changes === 0"
+          data-test-id="variables-import-confirm"
+          @click="importTokens"
+        >
+          {{ variables.importAction }}
+        </AppButton>
+      </div>
     </template>
   </AppDialog>
 </template>

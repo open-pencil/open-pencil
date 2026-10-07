@@ -107,8 +107,8 @@ export const variablesMessageDefaults = {
   importDesignTokens: 'Import design tokens',
   importTokensDescription:
     'Choose where each collection and mode goes. Variables with the same name are updated; nothing is deleted.',
-  importNewCollection: params('New collection “{name}”'),
-  importNewMode: params('New mode “{name}”'),
+  importNewCollection: 'New collection',
+  importNewMode: 'New mode',
   importSkipTarget: 'Don’t import',
   importAddMissing: 'Add tokens that don’t exist yet',
   importStyles: params('Make text and effect styles ({count})'),
