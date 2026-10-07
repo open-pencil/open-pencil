@@ -1,10 +1,9 @@
-import { fileURLToPath } from 'node:url'
-
 import { expect, test } from '@playwright/test'
 
 import type * as AppTabs from '@/app/tabs'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { testPath } from '#tests/helpers/paths'
 
 // An auto-layout file whose layout the app recomputes on its first page.
 const FIXTURE = 'gold-preview.fig'
@@ -12,7 +11,7 @@ const FIXTURE = 'gold-preview.fig'
 // Opening a page lays it out, which updates node sizes and positions but is not an edit.
 test('an opened .fig file stays saved until it is edited', async ({ page }) => {
   await page.route(`**/__fixtures/${FIXTURE}`, (route) =>
-    route.fulfill({ path: fileURLToPath(new URL(`../../fixtures/${FIXTURE}`, import.meta.url)) })
+    route.fulfill({ path: testPath('fixtures', FIXTURE) })
   )
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
