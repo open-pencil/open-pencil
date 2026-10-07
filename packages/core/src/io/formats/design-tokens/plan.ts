@@ -175,9 +175,8 @@ interface Planner {
 interface PlannerIndexes {
   /** The document's variables by name. */
   variables: Map<string, Variable[]>
-  /** Planned collection, then variable, by name, as `[collection, variable]`. */
-  planned: Map<string, Map<string, number>>
-  plannedCollections: Map<string, number>
+  /** The first planned collection with each name: its index and its variables' indexes by name. */
+  planned: Map<string, { index: number; variables: Map<string, number> }>
   /** Tokens by path in each collection's default mode, then composites, first one winning. */
   literals: Map<string, ReadToken>
 }
@@ -187,14 +186,11 @@ function indexesOf(planner: Planner): PlannerIndexes {
   const variables = new Map<string, Variable[]>()
   for (const variable of planner.graph.variables.values())
     variables.set(variable.name, [...(variables.get(variable.name) ?? []), variable])
-  const planned = new Map<string, Map<string, number>>()
-  const plannedCollections = new Map<string, number>()
+  const planned = new Map<string, { index: number; variables: Map<string, number> }>()
   planner.collections.forEach((collection, index) => {
-    if (!plannedCollections.has(collection.name)) plannedCollections.set(collection.name, index)
-    planned.set(
-      collection.name,
-      new Map(collection.variables.map((variable, at) => [variable.name, at]))
-    )
+    if (planned.has(collection.name)) return
+    const variables = new Map(collection.variables.map((variable, at) => [variable.name, at]))
+    planned.set(collection.name, { index, variables })
   })
   const literals = new Map<string, ReadToken>()
   for (const collection of planner.bundle.collections) {
@@ -208,7 +204,7 @@ function indexesOf(planner: Planner): PlannerIndexes {
     const key = token.path.join('.')
     if (!literals.has(key)) literals.set(key, token)
   }
-  planner.indexes = { variables, planned, plannedCollections, literals }
+  planner.indexes = { variables, planned, literals }
   return planner.indexes
 }
 
@@ -239,9 +235,9 @@ function aliasTarget(
   })
   const indexes = indexesOf(planner)
   if (value.collection && value.name) {
-    const index = indexes.plannedCollections.get(value.collection)
-    const variable = indexes.planned.get(value.collection)?.get(value.name)
-    if (index !== undefined && variable !== undefined) return planned(index, variable)
+    const collection = indexes.planned.get(value.collection)
+    const variable = collection?.variables.get(value.name)
+    if (collection && variable !== undefined) return planned(collection.index, variable)
     const existing = indexes.variables
       .get(value.name)
       ?.find(
@@ -285,11 +281,22 @@ function plannedVariable(
     existingId: existing?.id ?? null,
     values: [],
     expressions: decoded.map((entry) => entry?.expression),
-    unit: fields?.unit,
-    scopes: fields?.scopes,
-    codeSyntax: fields?.codeSyntax,
-    hiddenFromPublishing: fields?.hiddenFromPublishing,
+    ...tokenFields(fields, existing),
     description: fields?.description
+  }
+}
+
+/**
+ * A variable's unit, scopes, and code syntax. OpenPencil's tokens state them, so theirs replace
+ * the variable's; other tools' tokens leave an updated variable's own where they say nothing.
+ */
+function tokenFields(fields: DecodedVariable | undefined, existing: Variable | undefined) {
+  const kept = fields?.own ? undefined : existing
+  return {
+    unit: fields?.unit ?? kept?.unit,
+    scopes: fields?.scopes ?? kept?.scopes,
+    codeSyntax: fields?.codeSyntax ?? kept?.codeSyntax,
+    hiddenFromPublishing: fields?.hiddenFromPublishing ?? kept?.hiddenFromPublishing
   }
 }
 

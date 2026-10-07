@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import {
   defaultTokenImportOptions,
   planTokenImport,
   readDesignTokens,
   type DesignTokenSourceFile
 } from '#core/io/formats/design-tokens'
-import { SceneGraph } from '@open-pencil/scene-graph'
 
 function files(entries: Record<string, unknown>): DesignTokenSourceFile[] {
   return Object.entries(entries).map(([path, content]) => ({
@@ -88,7 +89,11 @@ describe('reading token files', () => {
           light: { accent: { $type: 'color', $value: '{blue}' } },
           dark: { accent: { $type: 'color', $value: '#ffffff' } },
           $themes: [
-            { name: 'Light', group: 'Theme', selectedTokenSets: { core: 'source', light: 'enabled' } },
+            {
+              name: 'Light',
+              group: 'Theme',
+              selectedTokenSets: { core: 'source', light: 'enabled' }
+            },
             { name: 'Dark', group: 'Theme', selectedTokenSets: { core: 'source', dark: 'enabled' } }
           ]
         }
@@ -125,7 +130,11 @@ describe('planning an import', () => {
     const byName = Object.fromEntries(
       result.collections[0].variables.map((variable) => [variable.name, variable])
     )
-    expect(byName['space/md']).toMatchObject({ type: 'FLOAT', unit: 'rem', values: [{ value: 24 }] })
+    expect(byName['space/md']).toMatchObject({
+      type: 'FLOAT',
+      unit: 'rem',
+      values: [{ value: 24 }]
+    })
     expect(byName.weight).toMatchObject({ values: [{ value: 600 }], scopes: ['FONT_STYLE'] })
     expect(byName.quick).toMatchObject({ unit: 'ms', values: [{ value: 150 }] })
     expect(byName.brand.values[0]).toMatchObject({ kind: 'literal' })
@@ -141,7 +150,9 @@ describe('planning an import', () => {
       })
     )
 
-    expect(result.collections[0].variables.map((variable) => [variable.name, variable.type])).toEqual([
+    expect(
+      result.collections[0].variables.map((variable) => [variable.name, variable.type])
+    ).toEqual([
       ['base', 'COLOR'],
       ['link', 'COLOR']
     ])
@@ -171,6 +182,45 @@ describe('planning an import', () => {
     ])
   })
 
+  test('an alias to a collection whose name repeats points into the first one', () => {
+    const token = (path: string, value: unknown, extensions: Record<string, unknown> = {}) => ({
+      path: path.split('.'),
+      name: path,
+      type: 'color',
+      value,
+      description: undefined,
+      extensions
+    })
+    const theme = (tokens: ReturnType<typeof token>[]) => ({
+      name: 'Theme',
+      modeAttribute: undefined,
+      modes: [{ name: 'Light', isDefault: true, condition: undefined, tokens }]
+    })
+    const bundle = {
+      collections: [
+        theme([token('brand', '#0066cc')]),
+        theme([token('other', '#ffffff'), token('extra', '#000000')]),
+        {
+          ...theme([
+            token('link', '{brand}', {
+              'com.figma.aliasData': { targetVariableName: 'brand', targetVariableSetName: 'Theme' }
+            })
+          ]),
+          name: 'Links'
+        }
+      ],
+      composites: [],
+      issues: []
+    }
+    const graph = new SceneGraph()
+
+    const result = planTokenImport(graph, bundle, defaultTokenImportOptions(graph, bundle))
+
+    expect(result.collections[2].variables[0].values).toEqual([
+      { kind: 'alias', target: { kind: 'planned', collection: 0, variable: 0 } }
+    ])
+  })
+
   test('composite tokens other than typography and shadow are skipped with a reason', () => {
     const { plan: result } = plan(
       files({
@@ -193,7 +243,9 @@ describe('planning an import', () => {
       })
     )
 
-    expect(result.skipped).toEqual([{ name: 'card', collection: undefined, reason: 'unsupported-type' }])
+    expect(result.skipped).toEqual([
+      { name: 'card', collection: undefined, reason: 'unsupported-type' }
+    ])
     expect(result.styles).toMatchObject([
       {
         kind: 'EFFECT',

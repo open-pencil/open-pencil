@@ -1,13 +1,14 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+// Not the format's barrel: the editor always loads this file, and the exporter is loaded on demand.
 import {
   applyTokenImport,
   styleNodeProps,
   styleNodeType,
-  type TokenImportPlan,
   type TokenImportResult,
   type TokenImportTarget
-} from '#core/io/formats/design-tokens'
+} from '#core/io/formats/design-tokens/apply'
+import type { TokenImportPlan } from '#core/io/formats/design-tokens/plan'
 
 import type { createNodeActions } from './nodes'
 import type { EditorContext } from './types'

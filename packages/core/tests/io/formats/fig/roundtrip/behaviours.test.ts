@@ -51,7 +51,9 @@ describe('.fig round trip of behaviours', () => {
       booleans: { filled: { propertyId: 'filled', on: 'Yes', off: 'No' } },
       states: guessInteractionStates('interaction', ['Default', 'Focus'])
     })
-    expect(missingBindings(editor.graph, set, readBehaviour(set) ?? emptyBehaviour('button'))).toEqual([])
+    expect(
+      missingBindings(editor.graph, set, readBehaviour(set) ?? emptyBehaviour('button'))
+    ).toEqual([])
 
     const reopened = await parseFigFile((await exportFigFile(editor.graph)).slice().buffer)
     const owner = [...reopened.nodes.values()].find((node) => node.name === 'Field')

@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { createEditor, graphFromPageSnapshot } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-
-import { expectDefined } from '#core-tests/helpers/assert'
 
 type ChangesResult = { diff?: string | null; message?: string; error?: string }
 

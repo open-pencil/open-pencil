@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test'
 
+import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
+
 import { createEditor } from '@open-pencil/core/editor'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
 
 function tagsInInput(graph: SceneGraph, rootId: string): SceneNode {
   const found: SceneNode[] = []

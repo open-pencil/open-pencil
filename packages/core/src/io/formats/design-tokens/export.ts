@@ -31,14 +31,18 @@ export const RESOLVER_FILE = 'tokens.resolver.json'
 export const STYLES_FILE = 'styles.tokens.json'
 
 /** Names made distinct by numbering repeats: `Theme`, `Theme 2`. */
-function distinct(names: readonly string[]): string[] {
-  const seen = new Map<string, number>()
+function distinct(names: readonly string[], reserved: readonly string[] = []): string[] {
+  const taken = new Set(reserved)
   return names.map((name) => {
-    const count = (seen.get(name) ?? 0) + 1
-    seen.set(name, count)
-    return count === 1 ? name : `${name} ${count}`
+    let candidate = name
+    for (let count = 2; taken.has(candidate); count++) candidate = `${name} ${count}`
+    taken.add(candidate)
+    return candidate
   })
 }
+
+/** The resolver set that holds the styles file, a name no collection may take there. */
+const STYLES_SET = 'Styles'
 
 /** A JSON pointer segment: `~` and `/` are escaped as RFC 6901 requires. */
 function pointerSegment(name: string): string {
@@ -150,8 +154,8 @@ function resolverDocument(collections: readonly CollectionFiles[], stylesPath: s
     resolutionOrder.push({ $ref: `#/modifiers/${pointerSegment(name)}` })
   }
   if (stylesPath) {
-    sets.Styles = { sources: [{ $ref: stylesPath }] }
-    resolutionOrder.push({ $ref: '#/sets/Styles' })
+    sets[STYLES_SET] = { sources: [{ $ref: stylesPath }] }
+    resolutionOrder.push({ $ref: `#/sets/${STYLES_SET}` })
   }
   const resolver: Record<string, unknown> = { version: RESOLVER_VERSION }
   if (!isEmptyObject(sets)) resolver.sets = sets
@@ -191,7 +195,10 @@ export function exportDesignTokens(graph: SceneGraph): DesignTokenExport {
   const context: ExportContext = { graph, references, collectionOf, issues }
   const files: DesignTokenFile[] = []
   const folders = distinct(collections.map((collection) => fileSegment(collection.name)))
-  const collectionNames = distinct(collections.map((collection) => collection.name))
+  const collectionNames = distinct(
+    collections.map((collection) => collection.name),
+    [STYLES_SET]
+  )
   const collectionFiles = collections.map((collection, index): CollectionFiles => {
     const fileNames = distinct(collection.modes.map((mode) => fileSegment(mode.name)))
     const modeNames = distinct(collection.modes.map((mode) => mode.name))

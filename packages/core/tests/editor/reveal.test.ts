@@ -11,7 +11,12 @@ function setup() {
 describe('revealNodes', () => {
   test('leaves the viewport alone when the layers are already in view', () => {
     const { editor, pageId } = setup()
-    const card = editor.graph.createNode('FRAME', pageId, { x: 100, y: 100, width: 200, height: 100 })
+    const card = editor.graph.createNode('FRAME', pageId, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 100
+    })
 
     editor.revealNodes([card.id])
 
@@ -20,7 +25,12 @@ describe('revealNodes', () => {
 
   test('centers off-screen layers that fit without changing zoom', () => {
     const { editor, pageId } = setup()
-    const card = editor.graph.createNode('FRAME', pageId, { x: 2000, y: 1000, width: 200, height: 100 })
+    const card = editor.graph.createNode('FRAME', pageId, {
+      x: 2000,
+      y: 1000,
+      width: 200,
+      height: 100
+    })
 
     editor.revealNodes([card.id])
 

@@ -148,6 +148,11 @@ export interface DecodedVariable {
   codeSyntax?: Partial<Record<CodeSyntaxPlatform, string>>
   hiddenFromPublishing?: boolean
   description?: string
+  /**
+   * Whether the token carries OpenPencil's own fields. Its unit, scopes, and code syntax then
+   * replace a variable's, missing ones included; other tools' tokens leave them as they are.
+   */
+  own: boolean
 }
 
 /** Why a token does not become a variable. */
@@ -190,6 +195,18 @@ function decodeNumber(token: ReadToken): Literal | null {
       ? { value: Boolean(value) }
       : null
   return typeof value === 'number' && Number.isFinite(value) ? { value } : null
+}
+
+/**
+ * A literal's value in the unit its variable keeps: a duration written in seconds, as Figma
+ * requires, goes back into a variable that holds milliseconds.
+ */
+function valueInUnit(literal: Literal, unit: TokenUnit | undefined): Literal['value'] {
+  const { value } = literal
+  if (typeof value !== 'number') return value
+  if (literal.unit === 's' && unit === 'ms') return Number((value * 1000).toPrecision(12))
+  if (literal.unit === 'ms' && unit === 's') return Number((value / 1000).toPrecision(12))
+  return value
 }
 
 /** A literal in the shape its type takes, with the unit it was written in. */
@@ -252,8 +269,8 @@ export function decodeVariableToken(token: ReadToken): DecodedVariable | DecodeF
   } else {
     const literal = decodeLiteral(token)
     if (!literal) return 'invalid-value'
-    value = { kind: 'literal', value: literal.value }
     unit ??= literal.unit === 'px' ? undefined : literal.unit
+    value = { kind: 'literal', value: valueInUnit(literal, unit) }
   }
   return {
     type,
@@ -263,6 +280,7 @@ export function decodeVariableToken(token: ReadToken): DecodedVariable | DecodeF
     scopes: fields.scopes ?? impliedScopes(token),
     codeSyntax: fields.codeSyntax,
     hiddenFromPublishing: fields.hiddenFromPublishing,
-    description: token.description
+    description: token.description,
+    own: own.success
   }
 }

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { createEditor, graphFromPageSnapshot } from '@open-pencil/core/editor'
 import {
   comparePNGs,
@@ -7,8 +9,6 @@ import {
   initCanvasKit,
   renderRegionToImage
 } from '@open-pencil/core/io/formats/raster'
-
-import { expectDefined } from '#core-tests/helpers/assert'
 
 function setup() {
   const editor = createEditor()

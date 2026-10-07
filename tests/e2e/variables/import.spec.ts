@@ -45,7 +45,10 @@ test('design token files import as a collection with a mode per file', async () 
   await expect(importDialog).toBeHidden()
 
   await expect(dialog.getByTestId('variable-row')).toHaveCount(3)
-  await expect(dialog.getByTestId('token-output')).toContainText('--spacing-md: 1rem')
+  const stylesheet = dialog.getByTestId('token-output')
+  await expect(stylesheet).toContainText('--spacing-md: 1rem')
+  // Each file is a mode: the second one's value goes under its condition.
+  await expect(stylesheet).toContainText(/="dark"\][^}]*--color-background: #09090b/i)
 
   // The whole import is one step on the document's history.
   await dialog.getByTestId('variable-row').first().click()

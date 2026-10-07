@@ -1,16 +1,16 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
+import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
+import * as v from 'valibot'
+
 import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
-import * as v from 'valibot'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
 /** Only the component-edit measurements this file asserts against are read from the oracle. */
 const AuthoringOracle = v.looseObject({
@@ -26,9 +26,7 @@ const oracle = readFixture('nested-binding-authoring.json', AuthoringOracle)
 const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
 function document(inherited = false) {
-  const changes = inherited
-    ? inheritedNestedBindingRecords()
-    : structuredClone(fixture.nodeChanges)
+  const changes = inherited ? inheritedNestedBindingRecords() : structuredClone(fixture.nodeChanges)
   const result = materializeDocument(
     changes,
     fixture.blobs.map((value) => Uint8Array.fromBase64(value)),

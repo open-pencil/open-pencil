@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
+
 import { createEditor } from '@open-pencil/core/editor'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 import { createResizeSnapshot } from '@open-pencil/scene-graph/resize'
-
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 const originalVectorNetwork: VectorNetwork = {
   vertices: [

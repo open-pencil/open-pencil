@@ -1,13 +1,13 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#core-tests/helpers/fig/guid'
+
 import { FigmaAPI } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { guid } from '#core-tests/helpers/fig/guid'
 
 test('nested instances retain their outer source-child correspondence during sync', () => {
   const source: NodeChange[] = [

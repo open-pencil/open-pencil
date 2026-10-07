@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { importClipboardNodes } from '@open-pencil/core'
-import type { NodeChange } from '@open-pencil/core'
-
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
+
+import { importClipboardNodes } from '@open-pencil/core'
+import type { NodeChange } from '@open-pencil/core'
 
 describe('importClipboardNodes: filtering', () => {
   it('skips VARIABLE_SET and VARIABLE nodes', () => {

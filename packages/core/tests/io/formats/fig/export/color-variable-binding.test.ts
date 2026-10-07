@@ -1,13 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
 import { inflateSync, unzipSync } from 'fflate'
 
 import { exportFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 import { parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
 import { ByteBuffer, compileSchema, decodeBinarySchema } from '@open-pencil/kiwi/schema-runtime'
 import type { Color, GUID } from '@open-pencil/scene-graph/primitives'
-
-import { expectDefined } from '#core-tests/helpers/assert'
 
 interface DecodedPaint {
   color?: Color
@@ -97,7 +96,7 @@ describe('Figma export colour variable bindings', () => {
     }
   })
 
-  test('writes bound fields resolved for each node\'s mode, as Figma draws the stored value', async () => {
+  test("writes bound fields resolved for each node's mode, as Figma draws the stored value", async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const theme = graph.createCollection('Theme')

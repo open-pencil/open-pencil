@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import * as v from 'valibot'
+
 import {
   parseFigFile,
   type ParseFigFileOptions,
@@ -8,10 +10,8 @@ import {
   type SceneNode
 } from '@open-pencil/core'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import * as v from 'valibot'
 
 import { FIXTURES } from '../paths'
-
 import { collectAllNodes } from './traversal'
 
 export { FIXTURES }

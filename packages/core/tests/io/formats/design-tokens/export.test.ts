@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportDesignTokens, RESOLVER_FILE, STYLES_FILE } from '#core/io/formats/design-tokens'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { exportDesignTokens, RESOLVER_FILE, STYLES_FILE } from '#core/io/formats/design-tokens'
 
 const blue = { r: 0, g: 0.4, b: 0.8, a: 1 }
 const white = { r: 1, g: 1, b: 1, a: 1 }
@@ -84,7 +85,10 @@ describe('design token export', () => {
       $value: '{Blue.500}',
       $description: 'Buttons and links',
       $extensions: {
-        'com.figma.aliasData': { targetVariableName: 'Blue/500', targetVariableSetName: 'Primitives' }
+        'com.figma.aliasData': {
+          targetVariableName: 'Blue/500',
+          targetVariableSetName: 'Primitives'
+        }
       }
     })
     expect(light.Space).toEqual({
@@ -157,6 +161,17 @@ describe('design token export', () => {
         }
       }
     })
+  })
+
+  test('a collection named like the styles set gets a name of its own in the resolver', () => {
+    const graph = designSystem()
+    const styles = graph.createCollection('Styles')
+    graph.createVariable('Gap', 'FLOAT', styles.id, 4)
+
+    const resolver = exportDesignTokens(graph).files.find((file) => file.path === RESOLVER_FILE)
+    const content = resolver?.content as { sets?: object } | undefined
+
+    expect(Object.keys(content?.sets ?? {})).toEqual(['Primitives', 'Styles 2', 'Styles'])
   })
 
   test('the resolver switches collections with several modes and layers the rest', () => {

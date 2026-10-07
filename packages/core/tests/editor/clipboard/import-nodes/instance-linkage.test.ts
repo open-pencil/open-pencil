@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
+
 import { importClipboardNodes } from '@open-pencil/core'
 import type { NodeChange } from '@open-pencil/core'
 import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 describe('importClipboardNodes: instance child linkage', () => {
   it('links serialized instance children so a later component sync does not duplicate them', () => {

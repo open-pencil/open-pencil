@@ -122,7 +122,10 @@ describe('AI adapter tool log', () => {
   })
 
   test('logs a returned error as a failure, like a thrown one', async () => {
-    const { entries } = await runLogged(() => ({ id: '999:999', error: 'Node "999:999" not found' }))
+    const { entries } = await runLogged(() => ({
+      id: '999:999',
+      error: 'Node "999:999" not found'
+    }))
     expect(entries).toMatchObject([{ error: 'Node "999:999" not found', cause: undefined }])
   })
 

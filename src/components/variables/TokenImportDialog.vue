@@ -40,10 +40,42 @@ watch(
   { immediate: true }
 )
 
-const plan = computed(() =>
-  bundle && options.value ? planTokenImport(store.graph, bundle, options.value) : null
+/** Whether a choice names a collection or mode the document no longer has, as after an undo. */
+function isStale(choices: TokenImportOptions): boolean {
+  return choices.collections.some(({ target, modes }) => {
+    if (target.kind !== 'existing') return false
+    const collection = store.graph.variableCollections.get(target.collectionId)
+    if (!collection) return true
+    return modes.some(
+      (mode) =>
+        mode.kind === 'existing' &&
+        !collection.modes.some((candidate) => candidate.modeId === mode.modeId)
+    )
+  })
+}
+
+// The plan reads the document, so it follows every change to it, and choices that went stale
+// start over from the defaults.
+watch(
+  () => store.state.sceneVersion,
+  () => {
+    if (bundle && options.value && isStale(options.value))
+      options.value = defaultTokenImportOptions(store.graph, bundle)
+  }
 )
-const existingCollections = computed(() => [...store.graph.variableCollections.values()])
+
+function currentPlan() {
+  return bundle && options.value ? planTokenImport(store.graph, bundle, options.value) : null
+}
+
+const plan = computed(() => {
+  void store.state.sceneVersion
+  return currentPlan()
+})
+const existingCollections = computed(() => {
+  void store.state.sceneVersion
+  return [...store.graph.variableCollections.values()]
+})
 const styleCount = computed(
   () =>
     bundle?.composites.filter((token) => token.type === 'typography' || token.type === 'shadow')
@@ -135,9 +167,13 @@ const empty = computed(
 )
 
 function importTokens() {
-  if (!plan.value || changes.value === 0) return
-  const result = store.importDesignTokens(plan.value)
-  toast.info(notificationMessages.get().designTokensImported({ count: changes.value }))
+  // Planned again against the document as it is now, not as it was when the plan was shown.
+  const fresh = currentPlan()
+  if (!fresh) return
+  const count = fresh.counts.added + fresh.counts.updated
+  if (count === 0) return
+  const result = store.importDesignTokens(fresh)
+  toast.info(notificationMessages.get().designTokensImported({ count }))
   open.value = false
   emit('imported', result)
 }

@@ -1,13 +1,13 @@
 import { afterEach, expect, test } from 'bun:test'
 
+import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
+import { HEAVY_TEST_TIMEOUT_MS, runsHeavyTests } from '#core-tests/helpers/test-utils'
+
 import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
 
 import { readerDiagnostics, registerReaderSession } from '#core/kiwi/fig/session/document-state'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
-
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
-import { HEAVY_TEST_TIMEOUT_MS, runsHeavyTests } from '#core-tests/helpers/test-utils'
 
 // Each full material3.fig graph takes gigabytes, and the collector does not run on its own
 // between steps, so release them explicitly.

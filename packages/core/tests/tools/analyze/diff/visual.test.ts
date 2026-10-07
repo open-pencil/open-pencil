@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   createCanvasKitRasterCodec,
@@ -9,8 +11,6 @@ import {
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph, type Color } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-
-import { expectDefined } from '#core-tests/helpers/assert'
 
 type VisualDiff = {
   error?: string

@@ -12,7 +12,15 @@ function solidFill(color = RED, fields: Partial<Fill> = {}): Fill {
 }
 
 function stroke(fields: Partial<Stroke> = {}): Stroke {
-  return { type: 'SOLID', color: BLUE, weight: 1, opacity: 1, visible: true, align: 'INSIDE', ...fields }
+  return {
+    type: 'SOLID',
+    color: BLUE,
+    weight: 1,
+    opacity: 1,
+    visible: true,
+    align: 'INSIDE',
+    ...fields
+  }
 }
 
 export interface RoundTripCase {
@@ -137,7 +145,14 @@ export const PROPERTY_CASES: RoundTripCase[] = [
   }),
   leafCase('single stroke with every option', 'RECTANGLE', {
     strokes: [
-      stroke({ type: 'SOLID', weight: 3, align: 'OUTSIDE', dashPattern: [4, 2], cap: 'ROUND', join: 'BEVEL' })
+      stroke({
+        type: 'SOLID',
+        weight: 3,
+        align: 'OUTSIDE',
+        dashPattern: [4, 2],
+        cap: 'ROUND',
+        join: 'BEVEL'
+      })
     ]
   }),
   leafCase('node-level stroke cap and join under a stroke without its own', 'RECTANGLE', {

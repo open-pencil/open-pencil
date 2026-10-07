@@ -28,22 +28,35 @@ function bindingReferences(
   return Object.fromEntries(bound)
 }
 
+export type TypographyFields = Pick<
+  SceneNode,
+  'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'letterSpacing'
+>
+
+/** A typography token's `$value`: bound fields as references to their variables' tokens. */
+export function typographyValue(
+  text: TypographyFields,
+  bound: Partial<Record<(typeof TEXT_BINDING_FIELDS)[number], string>>
+) {
+  const lineHeight =
+    text.lineHeight === null || text.fontSize <= 0
+      ? AUTO_LINE_HEIGHT
+      : trimNumber(text.lineHeight / text.fontSize)
+  return {
+    fontFamily: bound.fontFamily ?? text.fontFamily,
+    fontSize: bound.fontSize ?? dimensionTokenValue(text.fontSize),
+    fontWeight: text.fontWeight,
+    lineHeight,
+    letterSpacing: bound.letterSpacing ?? dimensionTokenValue(text.letterSpacing)
+  }
+}
+
 /** A text style as a typography token; its own fields ride along so OpenPencil reads it back exactly. */
 function typographyToken(node: SceneNode, references: TokenReferences): DesignToken {
   const bound = bindingReferences(node, references)
-  const lineHeight =
-    node.lineHeight === null || node.fontSize <= 0
-      ? AUTO_LINE_HEIGHT
-      : trimNumber(node.lineHeight / node.fontSize)
   return {
     $type: 'typography',
-    $value: {
-      fontFamily: bound.fontFamily ?? node.fontFamily,
-      fontSize: bound.fontSize ?? dimensionTokenValue(node.fontSize),
-      fontWeight: node.fontWeight,
-      lineHeight,
-      letterSpacing: bound.letterSpacing ?? dimensionTokenValue(node.letterSpacing)
-    },
+    $value: typographyValue(node, bound),
     $extensions: {
       [OPENPENCIL_EXTENSION]: {
         text: {
@@ -62,7 +75,7 @@ function typographyToken(node: SceneNode, references: TokenReferences): DesignTo
   }
 }
 
-function isShadow(effect: Effect): boolean {
+export function isShadow(effect: Effect): boolean {
   return effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
 }
 
@@ -77,14 +90,21 @@ function shadowValue(effect: Effect) {
   }
 }
 
+/** A shadow token's `$value`: the visible shadows of `effects`, or undefined when there are none. */
+export function shadowTokenValue(effects: readonly Effect[]) {
+  const values = effects.filter((effect) => isShadow(effect) && effect.visible).map(shadowValue)
+  if (values.length === 0) return undefined
+  return values.length === 1 ? values[0] : values
+}
+
 /**
  * An effect style's shadows as a shadow token. Effects a shadow token cannot express, such as
  * blurs or hidden shadows, ride along whole in OpenPencil's extension, in the plugin API's shape;
  * a style with no visible shadow has no token.
  */
 function shadowToken(node: SceneNode): DesignToken | undefined {
-  const shadows = node.effects.filter((effect) => isShadow(effect) && effect.visible)
-  if (shadows.length === 0) return undefined
+  const $value = shadowTokenValue(node.effects)
+  if ($value === undefined) return undefined
   const exact = node.effects.every(
     (effect) =>
       isShadow(effect) &&
@@ -92,10 +112,9 @@ function shadowToken(node: SceneNode): DesignToken | undefined {
       (effect.blendMode ?? 'NORMAL') === 'NORMAL' &&
       effect.showShadowBehindNode !== true
   )
-  const values = shadows.map(shadowValue)
   return {
     $type: 'shadow',
-    $value: values.length === 1 ? values[0] : values,
+    $value,
     ...(exact
       ? {}
       : { $extensions: { [OPENPENCIL_EXTENSION]: { effects: node.effects.map(toFigmaEffect) } } })

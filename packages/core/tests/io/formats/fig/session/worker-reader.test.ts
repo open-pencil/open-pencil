@@ -14,10 +14,9 @@ test.each(['first-page', 'none'] as const)(
     graph.createNode('TEXT', graph.getPages()[0].id, { text: 'First' })
     graph.createNode('TEXT', graph.addPage('Second').id, { text: 'Second' })
     const bytes = await exportFigFile(graph)
-    const worker = new Worker(
-      import.meta.resolve('#core/kiwi/fig/session/worker'),
-      { type: 'module' }
-    )
+    const worker = new Worker(import.meta.resolve('#core/kiwi/fig/session/worker'), {
+      type: 'module'
+    })
     const channel = new MessageChannel()
     const messages: FigSessionResponse[] = []
     let notify: (() => void) | undefined

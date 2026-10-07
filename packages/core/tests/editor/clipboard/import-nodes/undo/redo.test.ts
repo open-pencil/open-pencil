@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { importClipboardNodes } from '@open-pencil/core'
-import type { NodeChange, SceneNode } from '@open-pencil/core'
-
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createClipboardGraph } from '#core-tests/helpers/clipboard'
+
+import { importClipboardNodes } from '@open-pencil/core'
+import type { NodeChange, SceneNode } from '@open-pencil/core'
 
 describe('importClipboardNodes: undo redo', () => {
   it('undo removes all imported nodes including children', () => {

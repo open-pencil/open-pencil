@@ -13,8 +13,7 @@ interface TokensToolResult extends Omit<TokenExport, 'css'> {
 const run = async (
   figma: FigmaAPI,
   args: Parameters<typeof designToTokens.execute>[1]
-): Promise<TokensToolResult> =>
-  (await designToTokens.execute(figma, args)) as TokensToolResult
+): Promise<TokensToolResult> => (await designToTokens.execute(figma, args)) as TokensToolResult
 
 function themeTokens() {
   const graph = new SceneGraph()

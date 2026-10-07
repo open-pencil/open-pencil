@@ -101,14 +101,23 @@ describe('node.effects', () => {
     ['an infinite radius', [{ ...shadow, radius: Number.POSITIVE_INFINITY }]],
     ['an infinite offset', [{ ...shadow, offset: { x: Number.POSITIVE_INFINITY, y: 0 } }]],
     ['an infinite spread', [{ ...shadow, spread: Number.NEGATIVE_INFINITY }]],
-    ['an infinite blur radius', [{ type: 'LAYER_BLUR', radius: Number.POSITIVE_INFINITY, visible: true }]],
+    [
+      'an infinite blur radius',
+      [{ type: 'LAYER_BLUR', radius: Number.POSITIVE_INFINITY, visible: true }]
+    ],
     ['an unknown type', [{ type: 'NOT_AN_EFFECT' }]],
     ['a foreground blur', [{ type: 'FOREGROUND_BLUR', radius: 4, visible: true }]],
     ['an unknown key', [{ ...shadow, foo: 1 }]],
     ['a shadow without blendMode', [{ ...shadow, blendMode: undefined }]],
     ['an unknown blendMode', [{ ...shadow, blendMode: 'NOPE' }]],
-    ['showShadowBehindNode on an inner shadow', [{ ...shadow, type: 'INNER_SHADOW', showShadowBehindNode: true }]],
-    ['shadow fields on a blur', [{ type: 'LAYER_BLUR', radius: 4, visible: true, color, offset: { x: 0, y: 0 }, spread: 0 }]],
+    [
+      'showShadowBehindNode on an inner shadow',
+      [{ ...shadow, type: 'INNER_SHADOW', showShadowBehindNode: true }]
+    ],
+    [
+      'shadow fields on a blur',
+      [{ type: 'LAYER_BLUR', radius: 4, visible: true, color, offset: { x: 0, y: 0 }, spread: 0 }]
+    ],
     ['a color without alpha', [{ ...shadow, color: { r: 0, g: 0, b: 0 } }]],
     ['a color channel above 1', [{ ...shadow, color: { r: 2, g: 0, b: 0, a: 1 } }]],
     ['an incomplete offset', [{ ...shadow, offset: { x: 0 } }]],
@@ -116,7 +125,9 @@ describe('node.effects', () => {
   ])('rejects %s without changing the node', (_name, value) => {
     const rect = assign([shadow])
     const before = rect.effects
-    expect(() => Reflect.set(rect, 'effects', value)).toThrow('Property "effects" failed validation')
+    expect(() => Reflect.set(rect, 'effects', value)).toThrow(
+      'Property "effects" failed validation'
+    )
     expect(rect.effects).toEqual(before)
   })
 

@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
 import { expectDefined } from '#core-tests/helpers/assert'
+
+import { createEditor } from '@open-pencil/core/editor'
 import {
   emptyBehaviour,
   missingBindings,
@@ -12,7 +13,9 @@ import {
 describe('setBehaviour', () => {
   test('adds, edits, and removes as single undo steps', () => {
     const editor = createEditor()
-    const set = editor.graph.createNode('COMPONENT_SET', editor.state.currentPageId, { name: 'Switch' })
+    const set = editor.graph.createNode('COMPONENT_SET', editor.state.currentPageId, {
+      name: 'Switch'
+    })
     editor.setBehaviour(set.id, emptyBehaviour('switch'))
     expect(editor.undo.undoLabel).toBe('Add behaviour')
     editor.setBehaviour(set.id, { ...emptyBehaviour('switch'), parts: { thumb: 'x' } })
@@ -59,9 +62,7 @@ describe('completing a behaviour', () => {
 
     editor.undo.undo()
     expect(editor.undo.undoLabel).toBe(undoDepth)
-    expect(editor.graph.getChildren(component.id).map((child) => child.type)).toEqual([
-      'RECTANGLE'
-    ])
+    expect(editor.graph.getChildren(component.id).map((child) => child.type)).toEqual(['RECTANGLE'])
     expect(behaviour()?.texts).toEqual({})
     expect(editor.graph.getNode(component.id)?.componentPropertyDefinitions).toEqual([])
   })
@@ -70,15 +71,15 @@ describe('completing a behaviour', () => {
     const { editor, component } = bareComponent('textField')
     const label = editor.graph.createNode('TEXT', component.id, { name: 'Label', text: 'Email' })
     const id = expectDefined(editor.addBehaviourText(component.id, 'value', 'Text'), 'property id')
-    expect(editor.graph.getChildren(component.id).filter((child) => child.type === 'TEXT')).toHaveLength(
-      1
-    )
+    expect(
+      editor.graph.getChildren(component.id).filter((child) => child.type === 'TEXT')
+    ).toHaveLength(1)
     expect(editor.graph.getNode(label.id)?.componentPropertyReferences).toEqual([
       { propertyId: id, field: 'TEXT' }
     ])
-    expect(
-      editor.graph.getNode(component.id)?.componentPropertyDefinitions[0]?.defaultValue
-    ).toBe('Email')
+    expect(editor.graph.getNode(component.id)?.componentPropertyDefinitions[0]?.defaultValue).toBe(
+      'Email'
+    )
   })
 
   test('a switch set gets Off and On variants of each variant in one step', () => {
@@ -116,7 +117,10 @@ describe('completing a behaviour', () => {
 
   test('a lone slider gets state variants as a new set that keeps its behaviour, in one step', () => {
     const { editor, component } = bareComponent('slider')
-    const track = expectDefined(editor.addBehaviourPart(component.id, 'track', 'Track'), 'property id')
+    const track = expectDefined(
+      editor.addBehaviourPart(component.id, 'track', 'Track'),
+      'property id'
+    )
     const page = editor.state.currentPageId
     const undoDepth = editor.undo.undoLabel
 
@@ -162,7 +166,9 @@ describe('completing a behaviour', () => {
     editor.setBehaviour(set.id, emptyBehaviour('switch'))
     editor.addBehaviourVariant(set.id, 'value', 'State')
     editor.addBehaviourStates(set.id)
-    const names = editor.graph.getNode(set.id)?.componentPropertyDefinitions.map((item) => item.name)
+    const names = editor.graph
+      .getNode(set.id)
+      ?.componentPropertyDefinitions.map((item) => item.name)
     expect(names).toEqual(['State', 'Interaction'])
     expect(editor.graph.getChildren(set.id)).toHaveLength(10)
   })
@@ -172,7 +178,11 @@ describe('completing a behaviour', () => {
     const id = expectDefined(editor.addBehaviourVariant(component.id, 'value', 'On'), 'property id')
     const set = editor.graph.getNode(component.parentId ?? '')
     expect(set?.type).toBe('COMPONENT_SET')
-    expect(set && readBehaviour(set)?.booleans.value).toEqual({ propertyId: id, on: 'On', off: 'Off' })
+    expect(set && readBehaviour(set)?.booleans.value).toEqual({
+      propertyId: id,
+      on: 'On',
+      off: 'Off'
+    })
   })
 
   test('a part added to a set is one slot in every variant', () => {
@@ -183,7 +193,9 @@ describe('completing a behaviour', () => {
     const id = expectDefined(editor.addBehaviourPart(set.id, 'thumb', 'Thumb'), 'property id')
     const slots = editor.graph
       .getChildren(set.id)
-      .map((variant) => editor.graph.getChildren(variant.id).find((child) => child.name === 'Thumb'))
+      .map((variant) =>
+        editor.graph.getChildren(variant.id).find((child) => child.name === 'Thumb')
+      )
     expect(slots).toHaveLength(5)
     for (const slot of slots)
       expect(slot?.componentPropertyReferences).toEqual([{ propertyId: id, field: 'SLOT_CONTENT' }])

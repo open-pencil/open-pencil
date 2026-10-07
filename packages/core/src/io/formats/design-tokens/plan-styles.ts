@@ -1,4 +1,4 @@
-import { isPlainObject } from 'es-toolkit/predicate'
+import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
 import {
@@ -20,6 +20,7 @@ import {
 } from './decode'
 import type { AliasTarget, ImportSkip, ResolvedReference } from './plan'
 import type { DesignTokenBundle, ReadToken } from './read'
+import { isShadow, shadowTokenValue, typographyValue } from './styles'
 import { OPENPENCIL_EXTENSION } from './types'
 
 /** A text or effect style the import makes or updates. */
@@ -81,10 +82,28 @@ function fieldValue<T>(
 const pixels = (value: unknown) =>
   typeof value === 'number' ? value : (decodeDimension(value)?.value ?? null)
 
+/**
+ * OpenPencil's own fields for a style token, while its `$value` still says what they would write.
+ * Other tools keep extensions they do not read, so a `$value` edited there no longer matches, and
+ * the edit wins over the exact fields.
+ */
+function ownText(token: ReadToken) {
+  const own = v.safeParse(OwnTextSchema, token.extensions[OPENPENCIL_EXTENSION])
+  if (!own.success) return null
+  const { text, bindings = {} } = own.output
+  return { ...own.output, current: isEqual(token.value, typographyValue(text, bindings)) }
+}
+
 /** A typography token as text style fields, preferring the exact fields OpenPencil wrote. */
 function textFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
-  const own = v.safeParse(OwnTextSchema, token.extensions[OPENPENCIL_EXTENSION])
-  if (own.success) return { ...own.output.text }
+  const own = ownText(token)
+  if (own?.current) return { ...own.text }
+  const fields = decodedTextFields(token, resolve)
+  // Italic, decoration, and case have no place in `$value`, so the extension's still apply.
+  return fields && own ? { ...own.text, ...fields } : fields
+}
+
+function decodedTextFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
   if (!isPlainObject(token.value)) return null
   const value = token.value
   const fontFamily = fieldValue(value.fontFamily, resolve, decodeFontFamily)
@@ -105,9 +124,9 @@ function textFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | nu
 
 /** Text style fields bound to variables: OpenPencil's recorded bindings, or the token's references. */
 function textBindings(token: ReadToken, alias: Alias): PlannedStyle['bindings'] {
-  const own = v.safeParse(OwnTextSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = ownText(token)
   let references: Record<string, unknown> = {}
-  if (own.success) references = own.output.bindings ?? {}
+  if (own?.current) references = own.bindings ?? {}
   else if (isPlainObject(token.value)) references = token.value
   const bindings: PlannedStyle['bindings'] = {}
   for (const field of TEXT_BINDING_FIELDS) {
@@ -160,9 +179,11 @@ function effectFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | 
   const own = v.safeParse(OwnEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
   // Extension effects that do not read fall back to the token's own shadows.
   const exact = own.success ? tryParseFigmaEffects(own.output.effects) : null
-  if (exact) return { effects: exact }
+  if (exact && isEqual(token.value, shadowTokenValue(exact))) return { effects: exact }
   const effects = shadowList(token.value, resolve)
-  return effects && { effects }
+  if (!effects) return null
+  // Shadows edited in another tool replace the exact ones; blurs, which `$value` cannot hold, stay.
+  return { effects: [...effects, ...(exact ?? []).filter((effect) => !isShadow(effect))] }
 }
 
 /** Typography tokens as text styles and shadow tokens as effect styles, matched by name. */

@@ -117,7 +117,11 @@ describe('suggestions', () => {
   test('snap radius to the nearest scale value, or full radius for a pill', () => {
     const graph = new SceneGraph()
     const pageId = graph.getPages()[0].id
-    const card = graph.createNode('RECTANGLE', pageId, { width: 200, height: 100, cornerRadius: 10 })
+    const card = graph.createNode('RECTANGLE', pageId, {
+      width: 200,
+      height: 100,
+      cornerRadius: 10
+    })
     const pill = graph.createNode('RECTANGLE', pageId, { width: 80, height: 28, cornerRadius: 14 })
 
     const suggestions = new Map(
