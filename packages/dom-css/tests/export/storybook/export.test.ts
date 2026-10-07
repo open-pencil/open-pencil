@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import { exportStorybook } from '#dom-css/index'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { emptyBehaviour, SceneGraph, withBehaviour } from '@open-pencil/scene-graph'
 
 function buttonGraph() {
   const graph = new SceneGraph()
@@ -39,14 +39,14 @@ function buttonGraph() {
 
 interface Story {
   name: string
-  args: Record<string, string>
+  args: Record<string, string | boolean>
   parameters?: { design: { name: string; type: string; url: string }[] }
 }
 
 interface StoryModule {
   default: {
     title: string
-    args: Record<string, string>
+    args: Record<string, string | boolean>
     argTypes: Record<string, unknown>
     render: (args: object) => string
   }
@@ -90,6 +90,74 @@ describe('exportStorybook', () => {
     expect(large).toContain('width: 160px')
     expect(large).toContain('&lt;b&gt;Large&lt;/b&gt;')
     expect(() => story.default.render({ Size: 'Huge' })).toThrow('Button has no variant ["Huge"]')
+  })
+
+  it('gives a component with a behaviour its own props instead of variant selects', async () => {
+    const graph = new SceneGraph()
+    const page = graph.addPage('Library')
+    const set = graph.createNode('COMPONENT_SET', page.id, {
+      name: 'Switch',
+      componentPropertyDefinitions: [
+        {
+          id: 'state',
+          name: 'State',
+          type: 'VARIANT',
+          defaultValue: 'Off',
+          variantOptions: ['Off', 'On']
+        },
+        {
+          id: 'interaction',
+          name: 'Interaction',
+          type: 'VARIANT',
+          defaultValue: 'Default',
+          variantOptions: ['Default', 'Hover', 'Disabled']
+        }
+      ]
+    })
+    // Each variant has its own width, so the rendered HTML shows which one a story picked.
+    let width = 40
+    for (const state of ['Off', 'On'])
+      for (const interaction of ['Default', 'Hover', 'Disabled'])
+        graph.createNode('COMPONENT', set.id, {
+          name: `State=${state}, Interaction=${interaction}`,
+          width: width++,
+          height: 20,
+          componentPropertyValues: { State: state, Interaction: interaction }
+        })
+    graph.updateNode(set.id, {
+      pluginData: withBehaviour(set, {
+        ...emptyBehaviour('switch'),
+        booleans: { value: { propertyId: 'state', on: 'On', off: 'Off' } },
+        states: { propertyId: 'interaction', rest: 'Default', hover: 'Hover', disabled: 'Disabled' }
+      })
+    })
+
+    const story = await importStory(
+      String((await exportStorybook(graph, { framework: 'html' }))[0]?.content)
+    )
+    expect(story.default.argTypes).toEqual({
+      checked: { control: 'boolean' },
+      Interaction: { table: { disable: true } },
+      disabled: { control: 'boolean' }
+    })
+    expect(story.default.args).toEqual({ checked: false, Interaction: 'Default', disabled: false })
+    const render = (args: object) => story.default.render(args)
+    expect(render({ checked: true, Interaction: 'Default', disabled: false })).toContain(
+      'width: 43px'
+    )
+    expect(render({ checked: false, Interaction: 'Hover', disabled: false })).toContain(
+      'width: 41px'
+    )
+    expect(render({ checked: true, Interaction: 'Default', disabled: true })).toContain(
+      'width: 45px'
+    )
+    // Each state remains a story; a disabled one clears to the rest state.
+    expect(storyExport(story, 'OnHover')).toMatchObject({
+      args: { checked: true, Interaction: 'Hover', disabled: false }
+    })
+    expect(storyExport(story, 'OffDisabled')).toMatchObject({
+      args: { checked: false, Interaction: 'Default', disabled: true }
+    })
   })
 
   it('groups slash-named components and keeps standalone ones apart', async () => {

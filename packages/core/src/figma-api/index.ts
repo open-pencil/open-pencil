@@ -23,6 +23,7 @@ import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group'
+import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -187,7 +188,13 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   createText(): FigmaTextNode {
-    return this._createNode('TEXT') as FigmaTextNode
+    const text = this._createNode('TEXT') as FigmaTextNode
+    // Figma's plugin text starts empty at 12px and sizes itself to its content: no width, one
+    // line tall.
+    const node = this.graph.getNode(text.id)
+    const defaults = { fontSize: 12, textAutoResize: 'WIDTH_AND_HEIGHT' as const, width: 0 }
+    this.graph.updateNode(text.id, { ...defaults, ...textAutoResizeChanges(node, defaults) })
+    return text
   }
 
   createLine(): FigmaLineNode {

@@ -6,11 +6,10 @@ import {
 } from 'reka-ui'
 import { h, type VNode } from 'vue'
 
+import { booleanOf, type ControlModel, type ControlRole } from '@open-pencil/dom-css/export'
 import { numberSettings } from '@open-pencil/scene-graph'
 
-import { booleanOf, type ControlModel } from '#vue/canvas/islands/model'
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
-import type { IslandRole } from '#vue/canvas/islands/roles'
 
 import { disabled, interaction, stateOf } from './shared'
 
@@ -53,7 +52,7 @@ export function fieldRoot(island: IslandRenderContext, control: ControlModel, ba
 /** The text layer of a field, as the input it is, or a number field's stepper part. */
 export function fieldRole(
   island: IslandRenderContext,
-  role: IslandRole,
+  role: ControlRole,
   base: Base
 ): VNode | undefined {
   if (role.type === 'part' && role.control.kind === 'numberField') {

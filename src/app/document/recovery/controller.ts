@@ -1,16 +1,14 @@
 import { watchDebounced } from '@vueuse/core'
 import { watch, type WatchHandle } from 'vue'
 
-import type { EditorState } from '@open-pencil/core/editor'
-
 import { getRecoveryStore } from '@/app/document/recovery/store'
 import type { RecoveryStore } from '@/app/document/recovery/types'
 import { createCanvasId } from '@/app/storage/id'
 
-type RecoveryState = EditorState & { documentName: string }
-
 interface DocumentRecoveryOptions {
-  state: RecoveryState
+  state: { documentName: string }
+  /** The document's content revision; rendering and layout do not advance it. */
+  version: () => number
   buildFigFile: () => Promise<Uint8Array> | Uint8Array
   hasWritableSource: () => boolean
   isEnabled?: () => boolean
@@ -20,7 +18,7 @@ interface DocumentRecoveryOptions {
 
 export interface DocumentRecoveryController {
   getRecoveryId(): string
-  adoptRecoverySnapshot(id: string, sceneVersion: number): Promise<void>
+  adoptRecoverySnapshot(id: string): Promise<void>
   persistNow(): Promise<void>
   markProtectedVersion(version: number): Promise<void>
   discardRecovery(): Promise<void>
@@ -29,6 +27,7 @@ export interface DocumentRecoveryController {
 
 export function createDocumentRecovery({
   state,
+  version: currentVersion,
   buildFigFile,
   hasWritableSource,
   isEnabled = () => true,
@@ -36,7 +35,7 @@ export function createDocumentRecovery({
   recoveryId = createCanvasId()
 }: DocumentRecoveryOptions): DocumentRecoveryController {
   let id = recoveryId
-  let protectedVersion = state.sceneVersion
+  let protectedVersion = currentVersion()
   let persistedVersion: number | null = null
   let requestedVersion = protectedVersion
   let lifecycleGeneration = 0
@@ -53,7 +52,6 @@ export function createDocumentRecovery({
     await store.write({
       id,
       documentName: state.documentName,
-      sceneVersion: version,
       figBytes: bytes
     })
     persistedVersion = version
@@ -65,7 +63,7 @@ export function createDocumentRecovery({
   async function persistNow(): Promise<void> {
     await cleanup
     if (disposed || hasWritableSource() || !isEnabled()) return
-    requestedVersion = state.sceneVersion
+    requestedVersion = currentVersion()
     if (requestedVersion === protectedVersion) return
     if (!writing) {
       const generation = lifecycleGeneration
@@ -77,7 +75,7 @@ export function createDocumentRecovery({
   }
 
   const stopVersionWatch: WatchHandle = watchDebounced(
-    () => state.sceneVersion,
+    currentVersion,
     () => {
       void persistNow().catch((error) => console.warn('[Recovery] Snapshot failed:', error))
     },
@@ -88,15 +86,15 @@ export function createDocumentRecovery({
     isEnabled,
     (enabled) => {
       if (enabled) {
-        protectedVersion = state.sceneVersion
-        requestedVersion = state.sceneVersion
+        protectedVersion = currentVersion()
+        requestedVersion = currentVersion()
         return
       }
       lifecycleGeneration++
       const cleanupGeneration = lifecycleGeneration
       const snapshotId = id
-      requestedVersion = state.sceneVersion
-      protectedVersion = state.sceneVersion
+      requestedVersion = currentVersion()
+      protectedVersion = currentVersion()
       const activeWrite = writing
       cleanup = cleanup
         .then(async () => {
@@ -117,13 +115,15 @@ export function createDocumentRecovery({
 
   return {
     getRecoveryId: () => id,
-    async adoptRecoverySnapshot(nextId, sceneVersion) {
+    async adoptRecoverySnapshot(nextId) {
       const previousId = id
       await invalidateActiveWrite()
       id = nextId
-      protectedVersion = sceneVersion
-      persistedVersion = sceneVersion
-      requestedVersion = sceneVersion
+      // The adopted snapshot holds the document as it is now.
+      const version = currentVersion()
+      protectedVersion = version
+      persistedVersion = version
+      requestedVersion = version
       disposed = false
       if (previousId !== nextId) await store.remove(previousId)
     },
@@ -131,7 +131,7 @@ export function createDocumentRecovery({
     async markProtectedVersion(version) {
       await invalidateActiveWrite()
       protectedVersion = version
-      requestedVersion = state.sceneVersion
+      requestedVersion = currentVersion()
       if (persistedVersion == null || persistedVersion <= version) {
         await store.remove(id)
         persistedVersion = null
@@ -139,9 +139,9 @@ export function createDocumentRecovery({
     },
     async discardRecovery() {
       await invalidateActiveWrite()
-      protectedVersion = state.sceneVersion
+      protectedVersion = currentVersion()
       persistedVersion = null
-      requestedVersion = state.sceneVersion
+      requestedVersion = currentVersion()
       await store.remove(id)
     },
     disposeRecovery() {

@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
+import { populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/core/kiwi'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { PageSwitchProgress } from '#core/editor/pages'
@@ -237,4 +240,27 @@ test('preparing a page reports failure when the document is replaced meanwhile',
   release()
 
   expect(await preparing).toBe(false)
+})
+
+test("loading a page's layers from the opened file asks for one render", async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  const second = source.addPage('Second')
+  for (let i = 0; i < 30; i++) source.createNode('RECTANGLE', second.id, { name: `Layer ${i}` })
+  const bytes = await exportFigFile(source)
+  const graph = await parseFigFile(bytes.slice().buffer, { populate: 'first-page' })
+  const editor = createEditor({ graph })
+  const page = graph.getPages()[1]
+  if (!page) throw new Error('Expected a second page')
+  await Promise.resolve()
+
+  let renders = 0
+  const unbind = editor.onEditorEvent('render:requested', () => renders++)
+  expect(populateFigPage(graph, page.id)).toBe(true)
+  await Promise.resolve()
+  unbind()
+
+  expect(graph.getChildren(page.id)).toHaveLength(30)
+  expect(renders).toBe(1)
+  editor.dispose()
 })

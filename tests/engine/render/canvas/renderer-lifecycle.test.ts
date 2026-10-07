@@ -2,6 +2,8 @@ import { expect, mock, test } from 'bun:test'
 
 import type { Font, Paint, Surface } from 'canvaskit-wasm'
 
+import { createImageCache } from '#core/canvas/images/cache'
+import { ImagePreviewCache } from '#core/canvas/images/previews'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
@@ -19,7 +21,9 @@ function createRenderer() {
     destroyed: false,
     textPreparationCache: new TextPreparationCache(),
     transientPreviews: new Map(),
-    imageCache: new Map(),
+    imageCache: createImageCache(),
+    imagePreviews: new ImagePreviewCache(() => undefined),
+    onImagePreviewReady: null,
     vectorPathCache: new Map(),
     vectorStrokePathCache: new Map(),
     vectorStrokeOutlineCache: new Map(),

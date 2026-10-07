@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/core/editor'
 import {
-  createEditor,
+  emptyBehaviour,
+  instanceMainComponent,
   layerPath,
-  playIslandRoots,
-  resolvePlayState
-} from '@open-pencil/core/editor'
-import { emptyBehaviour, instanceMainComponent, SceneGraph } from '@open-pencil/scene-graph'
+  SceneGraph
+} from '@open-pencil/scene-graph'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
 function switchCard() {

@@ -1,8 +1,10 @@
+import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
+import type { StoryProp } from './module'
 import { claimName } from './names'
 
 export interface StoryVariant {
@@ -15,7 +17,7 @@ export interface StoryGroup {
   page: SceneNode
   title: string
   name: string
-  props: { name: string; options: string[] }[]
+  props: StoryProp[]
   variants: StoryVariant[]
   /** Layer the story file links to, when the group has a layer of its own. */
   linkNode?: string
@@ -49,10 +51,22 @@ function componentSetGroup(graph: SceneGraph, page: SceneNode, set: SceneNode): 
       values: definitions.map((def) => component.componentPropertyValues[def.name] ?? ''),
       node: component
     }))
-  const props = definitions.map((def, index) => ({
-    name: def.name,
-    options: uniq([...(def.variantOptions ?? []), ...variants.map((v) => v.values[index] ?? '')])
-  }))
+  const args = behaviourArgs(graph, set)
+  const props = definitions.map((def, index): StoryProp => {
+    const options = uniq([
+      ...(def.variantOptions ?? []),
+      ...variants.map((v) => v.values[index] ?? '')
+    ])
+    const boolean = args?.booleans.get(def.name)
+    if (boolean) return { name: def.name, options, control: { type: 'boolean', ...boolean } }
+    if (args?.states?.property === def.name)
+      return {
+        name: def.name,
+        options,
+        control: { type: 'state', rest: args.states.rest, disabled: args.states.disabled }
+      }
+    return { name: def.name, options }
+  })
   return distinctVariants({
     page,
     title: `${page.name}/${set.name}`,

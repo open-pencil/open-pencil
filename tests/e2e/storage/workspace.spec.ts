@@ -86,17 +86,13 @@ test('configured storage lists previews through ranges before opening the docume
   await page.keyboard.press('ControlOrMeta+KeyN')
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()
-  await page.getByLabel('Endpoint').fill('https://s3.example.com')
-  await page.getByLabel('Bucket').fill('designs')
-
-  for (const [field, value] of [
-    ['access-key-id', 'access-key'],
-    ['secret-access-key', 'secret-key']
-  ] as const) {
-    const container = page.locator(`[data-credential="${field}"]`)
-    await container.locator('input').fill(value)
-    await container.getByRole('button', { name: 'Save' }).click()
-  }
+  const panel = page.getByTestId('settings-storage-panel')
+  await panel.getByRole('button', { name: /S3 storage/ }).click()
+  await panel.getByLabel('Endpoint').fill('https://s3.example.com')
+  await panel.getByLabel('Bucket').fill('designs')
+  await panel.getByLabel('Access key ID').fill('access-key')
+  await panel.getByLabel('Secret access key').fill('secret-key')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
 
   await page.getByTestId('settings-storage-open-workspace').click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()

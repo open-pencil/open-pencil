@@ -1,17 +1,4 @@
-import {
-  behaviourOwner,
-  readBehaviour,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-
-/** Whether an instance's main component, or its set, has a behaviour. */
-export function hasBehaviour(graph: SceneGraph, node: SceneNode): boolean {
-  if (node.type !== 'INSTANCE' || !node.componentId) return false
-  const component = graph.getNode(node.componentId)
-  const owner = component && behaviourOwner(graph, component)
-  return !!owner && !!readBehaviour(owner)
-}
+import { hasBehaviour, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 function containsControl(graph: SceneGraph, node: SceneNode): boolean {
   if (hasBehaviour(graph, node)) return true

@@ -1,7 +1,10 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { reconcileLiveComponentEdits } from '../instance-overrides/live-component-edits'
+import {
+  reconcileLiveComponentEdits,
+  syncSourceLayers
+} from '../instance-overrides/live-component-edits'
 import { materializeInstance } from '../instance-overrides/materialize-instance'
 import type {
   InstanceOccurrence,
@@ -169,6 +172,31 @@ function createAssemblyState(
   }
 }
 
+/**
+ * Syncing a resumed load's new instances copies their component's sizes over the sizes Figma
+ * derived for them, such as a field filling its resized instance. Puts the derived sizes back,
+ * except along an axis whose component layer was edited live, which syncing rightly carried over:
+ * the layer an owning instance maps it to, or its own component.
+ */
+function restoreDerivedSizes(
+  graph: SceneGraph,
+  derivedSizes: ReadonlyMap<string, { width: number; height: number }>
+): void {
+  graph.preserveSourceMetadataDuring(() => {
+    for (const [id, size] of derivedSizes) {
+      const node = graph.getNode(id)
+      if (!node) continue
+      const edited = new Set(
+        syncSourceLayers(graph, node).flatMap((layer) => layer.source.editedFields)
+      )
+      const updates: Partial<SceneNode> = {}
+      if (node.width !== size.width && !edited.has('width')) updates.width = size.width
+      if (node.height !== size.height && !edited.has('height')) updates.height = size.height
+      if (Object.keys(updates).length > 0) graph.updateNode(id, updates)
+    }
+  })
+}
+
 function materializeReader(
   reader: ReturnType<typeof createDocumentReader>,
   blobs: Uint8Array[],
@@ -186,9 +214,14 @@ function materializeReader(
   const { graph, sources, components, savedSizeNodes, componentIds } = state
   const existingNodeIds = new Set(graph.nodes.keys())
   const layoutScales = new Map<string, number>()
+  /** The sizes Figma derived for this pass's instance layers, as materialized. */
+  const derivedSizes = new Map<string, { width: number; height: number }>()
   const rememberDerivedSizes = (nodes: ReadonlyMap<InstanceOccurrence, SceneNode>): void => {
     for (const [occurrence, node] of nodes) {
-      if (occurrence.derivedSize) savedSizeNodes.add(node.id)
+      if (occurrence.derivedSize) {
+        savedSizeNodes.add(node.id)
+        derivedSizes.set(node.id, { width: node.width, height: node.height })
+      }
       if (occurrence.layoutScale !== undefined) layoutScales.set(node.id, occurrence.layoutScale)
     }
   }
@@ -232,9 +265,9 @@ function materializeReader(
     sources.set(item.sourceId, materialized.root.id)
   }
   /**
-   * Components whose instances a resumed load must re-sync. Syncing visits every instance
-   * of a component, so a page placing many instances of one component collects it once
-   * and syncs after the page is built rather than per instance.
+   * Instances a resumed load must sync with their components, which may have changed live since
+   * the file loaded. Only this page's new instances: syncing a whole component would copy its
+   * sizes over the sizes Figma derived for instances earlier pages already placed.
    */
   const resync = new Set<string>()
   const populateInstances = (occurrence: InstanceOccurrence): void => {
@@ -253,7 +286,7 @@ function materializeReader(
         linkInstanceSourceChildren(child, materialized, components)
         if (previous) {
           reconcileLiveComponentEdits(graph, materialized)
-          if (materialized.root.componentId) resync.add(materialized.root.componentId)
+          if (materialized.root.componentId) resync.add(materialized.root.id)
         }
         sources.set(child.sourceId, materialized.root.id)
       } else if (child.mainComponentId === null && child.properties.type !== 'SYMBOL')
@@ -267,7 +300,8 @@ function materializeReader(
       parent.childIds = [...ordered, ...parent.childIds.filter((id) => !ordered.includes(id))]
   }
   for (const page of pages) populateInstances(page)
-  for (const componentId of resync) graph.syncInstances(componentId)
+  for (const instanceId of resync) graph.syncInstance(instanceId)
+  if (resync.size > 0) restoreDerivedSizes(graph, derivedSizes)
   for (const node of graph.getAllNodes()) {
     if (existingNodeIds.has(node.id)) continue
     for (const field of [

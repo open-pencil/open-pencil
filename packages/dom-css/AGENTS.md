@@ -4,6 +4,7 @@ DOM, CSS, HTML, JSX, and Tailwind projection between documents and SceneGraph, w
 
 - `src/import/` — HTML, CSS, JSX, and Tailwind to SceneGraph, including the `jsx-runtime` entries and CSS value parsing.
 - `src/export/` — SceneGraph to HTML, Tailwind JSX, and Storybook: projection, CSS formatting, the HTML bundle, and printers. `src/export/index.ts` is the `./export` entry.
+- `src/behaviours/` — what a behaviour means in the DOM, shared by preview and export: controls and layer roles, story props, and state styles compiled from variants. Exported from `./export`.
 - `src/runtime/` — browser and headless CSS runtimes.
 - `src/tokens/` — variables as design tokens: CSS custom property names, Tailwind namespaces from `twirlwind`, and units. Shared by both directions and exported from `./export`.
 

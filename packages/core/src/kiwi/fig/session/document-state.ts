@@ -101,7 +101,9 @@ export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
   }
   const page = state.session.pages.find((page) => state.session?.graphPageId(page.id) === pageId)
   if (!page) throw new Error(`Unknown graph page ${pageId}`)
-  const populated = !state.session.loadedPageIds.has(page.id)
-  state.session.loadPage(page.id)
+  const session = state.session
+  const populated = !session.loadedPageIds.has(page.id)
+  // The layers come from the opened file, as they do through the population worker's delta.
+  graph.applyImportedStateDuring(() => session.loadPage(page.id))
   return populated
 }

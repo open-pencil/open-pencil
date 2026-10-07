@@ -27,8 +27,28 @@ interface RecoveryDatabase extends DBSchema {
   }
   fig: {
     key: string
-    value: Uint8Array
+    value: StoredFig
   }
+}
+
+/**
+ * A snapshot as IndexedDB stores it. Chromium refuses a single value over 127 MiB, which a
+ * document's archive passes easily, but keeps a Blob as a file at any size, and faster.
+ * Snapshots from earlier versions are byte arrays.
+ */
+type StoredFig = Blob | Uint8Array
+
+/** A Blob of the snapshot without copying it; bytes over a shared buffer are copied first. */
+function figBlob(bytes: Uint8Array): Blob {
+  const plain =
+    bytes.buffer instanceof ArrayBuffer
+      ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+      : bytes.slice()
+  return new Blob([plain])
+}
+
+async function figBytesOf(stored: StoredFig): Promise<Uint8Array> {
+  return stored instanceof Blob ? new Uint8Array(await stored.arrayBuffer()) : stored
 }
 
 export function createIdbRecoveryStore(): RecoveryStore {
@@ -43,13 +63,13 @@ export function createIdbRecoveryStore(): RecoveryStore {
     async read(id: string) {
       const db = await database
       const transaction = db.transaction(['meta', 'fig'])
-      const [metadata, figBytes] = await Promise.all([
+      const [metadata, stored] = await Promise.all([
         transaction.objectStore('meta').get(id),
         transaction.objectStore('fig').get(id)
       ])
       await transaction.done
-      return metadata && figBytes
-        ? ({ ...metadata, figBytes: Uint8Array.from(figBytes) } satisfies RecoverySnapshot)
+      return metadata && stored
+        ? ({ ...metadata, figBytes: await figBytesOf(stored) } satisfies RecoverySnapshot)
         : null
     },
 
@@ -60,13 +80,12 @@ export function createIdbRecoveryStore(): RecoveryStore {
         id: input.id,
         documentName: input.documentName || 'Untitled',
         updatedAt: new Date().toISOString(),
-        sceneVersion: input.sceneVersion,
         byteLength: input.figBytes.byteLength,
         formatVersion: 1
       }
       await Promise.all([
         transaction.objectStore('meta').put(metadata),
-        transaction.objectStore('fig').put(Uint8Array.from(input.figBytes), input.id),
+        transaction.objectStore('fig').put(figBlob(input.figBytes), input.id),
         transaction.done
       ])
       return metadata

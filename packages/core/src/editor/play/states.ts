@@ -1,6 +1,7 @@
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
+  findLayerByPath,
   SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -20,37 +21,6 @@ export interface InstanceState {
   properties?: Record<string, string>
   /** Layers, by path below the island root, shown even where the design hides them. */
   reveal?: string[]
-}
-
-/**
- * A layer's path below a root: the names of the layers down to it, with the position among
- * same-named siblings when names repeat. It stays the same when a variant switch rebuilds an
- * instance's layers, so it identifies controls and keeps their DOM in place.
- */
-export function layerPath(graph: SceneGraph, rootId: string, nodeId: string): string {
-  const segments: string[] = []
-  let current = graph.getNode(nodeId)
-  while (current && current.id !== rootId) {
-    const parent = current.parentId ? graph.getNode(current.parentId) : undefined
-    const { id, name } = current
-    const twins = parent ? graph.getChildren(parent.id).filter((child) => child.name === name) : []
-    const index = twins.findIndex((child) => child.id === id)
-    segments.unshift(twins.length > 1 ? `${name}#${index}` : name)
-    current = parent
-  }
-  return segments.join('/')
-}
-
-function findByPath(graph: SceneGraph, rootId: string, path: string): SceneNode | undefined {
-  let current = graph.getNode(rootId)
-  for (const segment of path ? path.split('/') : []) {
-    if (!current) return undefined
-    const hash = segment.lastIndexOf('#')
-    const name = hash === -1 ? segment : segment.slice(0, hash)
-    const twins = graph.getChildren(current.id).filter((child) => child.name === name)
-    current = twins.at(hash === -1 ? 0 : Number(segment.slice(hash + 1)))
-  }
-  return current
 }
 
 /** The root's layers and every component they show, so instances can switch variant. */
@@ -158,7 +128,7 @@ function applyState(
     reflow(graph, instance.id)
   }
   for (const path of state.reveal ?? []) {
-    const layer = findByPath(graph, rootId, path)
+    const layer = findLayerByPath(graph, rootId, path)
     if (layer && !layer.visible) {
       graph.updateNode(layer.id, { visible: true })
       reflow(graph, layer.id)
@@ -179,7 +149,7 @@ export function resolvePlayState(
   const graph = copyGraph(source, closure(source, rootId))
   const ordered = [...states].sort(([a], [b]) => a.split('/').length - b.split('/').length)
   for (const [path, state] of ordered) {
-    const instance = findByPath(graph, rootId, path)
+    const instance = findLayerByPath(graph, rootId, path)
     if (instance?.type === 'INSTANCE') applyState(graph, rootId, instance, state)
   }
   computeAllLayouts(graph, rootId)

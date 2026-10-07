@@ -44,8 +44,7 @@ test.each(['first-page', 'none'] as const)(
       worker.postMessage(
         {
           type: 'open',
-          originalBuffer: bytes.slice().buffer,
-          archiveBuffer: bytes.slice().buffer,
+          buffer: bytes.slice().buffer,
           options: { populate },
           port: channel.port2
         },

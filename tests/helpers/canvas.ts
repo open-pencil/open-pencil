@@ -39,7 +39,8 @@ export class CanvasHelper {
   /**
    * Canvas specs draw on Figma's light page. Playwright runs the app in its dark theme, where a new
    * document starts on Figma's dark page, so a fresh document (one empty page on that exact
-   * background) is switched back; any other document keeps its own.
+   * background) is switched back; any other document keeps its own. The switch is setup, not an
+   * edit, so the document stays saved and closing it asks nothing.
    * `tests/e2e/pages/theme-background.spec.ts` covers the theme.
    */
   async useLightPage() {
@@ -54,7 +55,9 @@ export class CanvasHelper {
         pages.length === 1 &&
         first.childIds.length === 0 &&
         [r, g, b].every((c) => c === darkDefault)
-      if (fresh) store.setPageColor({ r: 0.96, g: 0.96, b: 0.96, a: 1 })
+      if (!fresh) return
+      store.setPageColor({ r: 0.96, g: 0.96, b: 0.96, a: 1 })
+      store.markDocumentSaved()
     })
   }
 

@@ -26,6 +26,7 @@ function createSaveHarness(handle: FileSystemFileHandle) {
   const setSourceIdentity = vi.fn()
   const actions = createSaveActions({
     state,
+    version: () => 1,
     buildFigFile: () => new Uint8Array([1, 2, 3]),
     getFilePath: () => null,
     setFilePath: vi.fn(),

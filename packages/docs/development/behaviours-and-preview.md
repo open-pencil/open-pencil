@@ -36,9 +36,21 @@ Preview is a per-pane mode (`EditorViewState.play`). It runs controls as real co
 2. **Shadow DOM.** Each island renders into its own shadow root: app CSS does not reach in, island CSS does not leak out, fonts already loaded by the app apply, and the island moves with the canvas in the same frame. Wheel gestures over an island are passed to the canvas.
 3. **State to design.** An island keeps each control's state (values, choice, number, typed text, hover, pressed, focus). Core's `resolvePlayState` copies the island's layers into a private graph and shows each instance in its state: the matching variant, boolean properties, and layers a control reveals, such as tab panels. The document is never changed.
 4. **Design to DOM.** The private graph is projected to DOM through `@open-pencil/dom-css`, the same projection HTML export uses, so island fidelity and export fidelity improve together.
-5. **DOM to Reka.** Each projected layer has a role: a control's root, a part, a group's item, a tab trigger or panel, or a text input. Roles wrap the layer in its Reka UI primitive with `asChild`, so Reka renders through the designed element. Typing, focus, keyboard navigation, and accessibility are the browser's and Reka's.
+5. **DOM to Reka.** Each projected layer has a role: a control's root, a part, a group's item, a tab trigger or panel, or a text input. `behaviourControls` and `controlRoles` in `@open-pencil/dom-css` (`packages/dom-css/src/behaviours/`) assign them, so code export reads the same roles. Roles wrap the layer in its Reka UI primitive with `asChild`, so Reka renders through the designed element. Typing, focus, keyboard navigation, and accessibility are the browser's and Reka's.
 
 Controls and DOM keys use layer paths (names below the island root), not node ids: a variant switch rebuilds an instance's layers with new ids, and a stable path keeps the DOM in place, including a focused input.
+
+## Code export
+
+Export reads the same model as preview. `behaviourArgs` gives a component set its props: a boolean value drawn by an on/off variant property becomes `checked`, `pressed`, `open`, or `disabled`.
+
+`stateStyles` merges a set's variants into one markup tree, matching layers by layer path:
+
+- The rest variant is the base. Each other variant becomes a rule holding only what it changes, under conditions on the control's root.
+- The conditions are the attributes Reka and Radix set, `data-state` and `data-disabled`; the browser's `:hover`, `:active`, and `:focus-visible`; and a `data-*` attribute for any other variant property, which the generated component sets from its prop.
+- Layers only some variants draw stay in the tree, hidden where absent, and a label that reads differently is a layer per state. A combination the set doesn't draw combines from its parts, and a drawn combination keeps only what its parts don't already give.
+
+`stateStylesToCSS` writes the result as a stylesheet with a readable class per layer. `stateStylesToTailwind` writes it as utilities behind state variants, with a named group per control so a control nested in another reacts only to its own root.
 
 ## Adding a kind or a part
 

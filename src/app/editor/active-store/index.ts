@@ -1,4 +1,7 @@
-import { shallowRef, triggerRef, watch } from 'vue'
+import { hasInjectionContext, inject, provide, shallowRef, triggerRef, watch } from 'vue'
+import type { InjectionKey } from 'vue'
+
+import { provideEditor } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/session'
 
@@ -30,8 +33,24 @@ const storeProxy = new Proxy({} as EditorStore, {
   }
 })
 
+const TAB_STORE_KEY: InjectionKey<EditorStore> = Symbol('open-pencil-tab-store')
+
+/**
+ * Binds a tab's components to that tab's own store, for `useEditorStore` and the SDK's
+ * `useEditor`. Without it they would follow the active tab, so a closing tab's canvas would
+ * hand its renderers to the next document and never take them back.
+ */
+export function provideTabEditorStore(store: EditorStore) {
+  provide(TAB_STORE_KEY, store)
+  provideEditor(store)
+}
+
+/**
+ * The store of the tab this component belongs to, or the active tab's store outside any tab
+ * and outside component setup.
+ */
 export function useEditorStore(): EditorStore {
-  return storeProxy
+  return hasInjectionContext() ? inject(TAB_STORE_KEY, storeProxy) : storeProxy
 }
 
 /**
