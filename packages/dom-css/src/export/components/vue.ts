@@ -4,7 +4,13 @@ import { omit } from 'es-toolkit/object'
 
 import { es, vue } from '@open-pencil/emit'
 
-import type { ComponentBinding, ComponentModel, ComponentNode, GeneratedKind } from './model'
+import type {
+  ComponentBinding,
+  ComponentGenerator,
+  ComponentModel,
+  ComponentNode,
+  GeneratedKind
+} from './model'
 
 /** The Reka UI components a kind renders, by part, and the prop its model binds. */
 const REKA: Record<
@@ -119,9 +125,20 @@ function script(component: ComponentModel, used: Set<string>): es.SyntaxNode {
  * scoped stylesheet, its parts as Reka components, and its props from the behaviour and its
  * other variant properties.
  */
-export async function vueComponent(component: ComponentModel): Promise<string> {
+export const vueComponent: ComponentGenerator = async (component) => {
   const used = new Set<string>()
   const template = templateNode(component.tree, component.kind, used)
   const { css } = await stateStylesToCSS(component.styles)
-  return vue.printComponent({ script: script(component, used), template, style: css })
+  const path = `${component.name}.vue`
+  return {
+    files: [
+      {
+        path,
+        content: vue.printComponent({ script: script(component, used), template, style: css })
+      }
+    ],
+    entry: { path: `./${path}`, named: false },
+    // `v-model` binds the value, and its prop takes a story's initial value.
+    valueArg: component.model
+  }
 }

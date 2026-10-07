@@ -98,6 +98,17 @@ function componentTree(
   }
 }
 
+/** A generated component's files, and what its stories need to know about it. */
+export interface GeneratedComponent {
+  files: { path: string; content: string }[]
+  /** How stories import it: its path next to them, and whether it's a named export. */
+  entry: { path: string; named: boolean }
+  /** The prop a story sets the value with, if the component has one. */
+  valueArg: string | null
+}
+
+export type ComponentGenerator = (component: ComponentModel) => Promise<GeneratedComponent>
+
 /** Parts each kind renders as a native button, which the reset clears for the design. */
 const BUTTON_PARTS: Record<GeneratedKind, readonly string[]> = {
   button: ['root'],

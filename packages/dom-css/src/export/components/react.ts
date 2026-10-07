@@ -4,7 +4,13 @@ import { omit } from 'es-toolkit/object'
 
 import { es, jsx } from '@open-pencil/emit'
 
-import type { ComponentElement, ComponentModel, ComponentNode, GeneratedKind } from './model'
+import type {
+  ComponentElement,
+  ComponentGenerator,
+  ComponentModel,
+  ComponentNode,
+  GeneratedKind
+} from './model'
 
 /**
  * The Radix primitive a kind renders, from the unified `radix-ui` package, and the component
@@ -153,23 +159,14 @@ function parameters(component: ComponentModel): es.SyntaxNode {
   }
 }
 
-export interface ReactComponent {
-  /** The `.tsx` module. */
-  source: string
-  /** The CSS module it imports. */
-  css: string
-}
-
 /**
  * A component as a React component on Radix UI: its parts as Radix primitives from the
  * `radix-ui` package, its variants' state styles in a CSS module, and props that extend the
  * Radix root's with its other variant properties.
  */
-export async function reactComponent(
-  component: ComponentModel,
-  stylesPath: string
-): Promise<ReactComponent> {
+export const reactComponent: ComponentGenerator = async (component) => {
   const radix = RADIX[component.kind]
+  const stylesPath = `${component.name}.module.css`
   const imports = radix
     ? es.fill(RADIX_IMPORT, {
         $Namespace: es.identifier(radix.namespace),
@@ -177,7 +174,7 @@ export async function reactComponent(
       }).body
     : []
   const [typeImport, stylesImport, ...rest] = es.fill(MODULE, {
-    $styles: es.string(stylesPath),
+    $styles: es.string(`./${stylesPath}`),
     $Props: es.identifier(`${component.name}Props`),
     $Type: propsType(component),
     $Name: es.identifier(component.name),
@@ -190,5 +187,14 @@ export async function reactComponent(
     body: [typeImport, ...imports, stylesImport, ...rest]
   }
   const { css } = await stateStylesToCSS(component.styles)
-  return { source: `${jsx.printModule(program)}\n`, css }
+  const model = component.model
+  return {
+    files: [
+      { path: `${component.name}.tsx`, content: `${jsx.printModule(program)}\n` },
+      { path: stylesPath, content: css }
+    ],
+    entry: { path: `./${component.name}`, named: true },
+    // Radix's uncontrolled value, so a story's control and its play function can both change it.
+    valueArg: model ? `default${model.charAt(0).toUpperCase()}${model.slice(1)}` : null
+  }
 }

@@ -3,7 +3,7 @@ import { compact } from 'es-toolkit/array'
 
 import { es } from '@open-pencil/emit'
 
-import type { ComponentModel, GeneratedKind } from '../components/model'
+import type { ComponentModel, GeneratedComponent, GeneratedKind } from '../components/model'
 import { claimName, identifierName } from './names'
 
 /** Tells readers the file is generated; nothing parses it. */
@@ -25,25 +25,8 @@ const MODULE = es.parseModule(dedent`
   type Story = StoryObj<typeof meta>
 `)
 
-/** How each framework's stories import the component and name its value. */
-const FRAMEWORKS = {
-  vue: {
-    storybook: '@storybook/vue3-vite',
-    /** `import Switch from './Switch.vue'` */
-    importComponent: es.parseModule(`import $Component from '$path'`),
-    /** The value as `v-model` binds it. */
-    model: (name: string) => name
-  },
-  react: {
-    storybook: '@storybook/react-vite',
-    /** `import { Switch } from './Switch'` */
-    importComponent: es.parseModule(`import { $Component } from '$path'`),
-    /** Radix's uncontrolled value, so a story's control and its play function can both change it. */
-    model: (name: string) => `default${name.charAt(0).toUpperCase()}${name.slice(1)}`
-  }
-} as const
-
-export type ComponentFramework = keyof typeof FRAMEWORKS
+const IMPORT_DEFAULT = es.parseModule(`import $Component from '$path'`)
+const IMPORT_NAMED = es.parseModule(`import { $Component } from '$path'`)
 
 const STORY = es.parseModule(`export const $name: Story = $story`)
 
@@ -67,21 +50,17 @@ const PLAY = es.parseExpression(dedent`
 `)
 
 export interface ComponentStoriesData {
-  framework: ComponentFramework
+  /** The Storybook renderer package the stories import their types from. */
+  storybook: string
   title: string
   component: ComponentModel
-  /** The component's import path next to the stories, such as `./Switch.vue` or `./Switch`. */
-  path: string
+  generated: Pick<GeneratedComponent, 'entry' | 'valueArg'>
   /** Design links for the whole file, as `parameters.design` entries. */
   design: { name: string; type: string; url: string }[]
 }
 
 const FALSE = es.parseExpression('false')
 const TRUE = es.parseExpression('true')
-
-/** The arg the component's value is set by in this framework's stories, if it has one. */
-const modelArg = (component: ComponentModel, framework: ComponentFramework) =>
-  component.model ? FRAMEWORKS[framework].model(component.model) : null
 
 function restArgs(component: ComponentModel, model: string | null): [string, es.SyntaxNode][] {
   return [
@@ -157,19 +136,18 @@ export function printComponentStories(data: ComponentStoriesData): string {
           ]
         ])
       : es.OMIT
-  const framework = FRAMEWORKS[data.framework]
-  const model = modelArg(component, data.framework)
+  const { entry, valueArg: model } = data.generated
   const body = es.fill(MODULE, {
-    $storybook: es.string(framework.storybook),
+    $storybook: es.string(data.storybook),
     $Component: es.identifier(component.name),
     $title: es.string(data.title),
     $parameters: parameters,
     $args: es.object(restArgs(component, model)),
     $argTypes: argTypes(component, model)
   }).body
-  const componentImport = es.fill(framework.importComponent, {
+  const componentImport = es.fill(entry.named ? IMPORT_NAMED : IMPORT_DEFAULT, {
     $Component: es.identifier(component.name),
-    $path: es.string(data.path)
+    $path: es.string(entry.path)
   }).body
   const exported = stories(component, model).flatMap(
     (item) => es.fill(STORY, { $name: es.identifier(item.name), $story: item.story }).body
