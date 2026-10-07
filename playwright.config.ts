@@ -62,6 +62,7 @@ const appDefaults = {
 } satisfies Pick<PlaywrightTestConfig, 'expect' | 'use'>
 
 export default defineConfig({
+  globalSetup: './tests/helpers/dev-server/warm.ts',
   testDir: './tests',
   timeout: 15_000,
   workers: 1,

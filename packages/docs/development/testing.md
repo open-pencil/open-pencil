@@ -83,6 +83,7 @@ Current commands:
 | Quick unit, parallel           | `bun run test:unit:quick`    |
 | Quick unit, per-file isolation | `bun run test:unit:isolated` |
 | App browser E2E                | `bun run test`               |
+| Render benchmarks              | `bun run test:benchmark`     |
 | Storybook browser              | `bun run test:storybook`     |
 | Figma acceptance               | `bun run test:figma`         |
 | Native WebView                 | `bun run test:native`        |
@@ -101,7 +102,7 @@ Heavier `.fig` suites are sensitive to machine load. A full run alongside other 
 
 ## Server ownership and worktrees
 
-The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:real-llm` and `test:figma` scripts select only the app server; `test:storybook` selects Storybook on port `6017`. Direct Playwright commands start both servers by default. Set `OPENPENCIL_TEST_SERVER=app`, `storybook` or `all`; `--project` selects tests, not servers.
+The canonical `playwright.config.ts` owns app, Figma and Storybook projects. The `test`, `test:update`, `test:benchmark`, `test:real-llm` and `test:figma` scripts select only the app server; `test:storybook` selects Storybook on port `6017`. Direct Playwright commands start both servers by default. Set `OPENPENCIL_TEST_SERVER=app`, `storybook` or `all`; `--project` selects tests, not servers. Before the first test, global setup walks the app's module graph on the dev server so every module is compiled up front (`tests/helpers/dev-server/warm.ts`); otherwise the first test to open the canvas, chat or settings spends its time budget on compilation. Render benchmarks carry `@benchmark` and run only through `test:benchmark`, since their fixed iteration counts measure the machine as much as the renderer.
 
 App tests start Vite from the current checkout and wait for its HTTP URL. Vite owns its MCP companion. Reuse is off by default and always off in CI. Default ports are app `1420` and MCP `7600`; concurrent worktrees need distinct free pairs:
 

@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 const NODE_COUNT = 500
 const ITERATIONS = 200
 
-test.describe('Render performance', () => {
+test.describe('Render performance', { tag: '@benchmark' }, () => {
   let helper: CanvasHelper
 
   test.beforeAll(async ({ browser, baseURL }) => {
