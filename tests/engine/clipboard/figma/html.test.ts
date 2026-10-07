@@ -15,10 +15,9 @@ import { expectDefined } from '#tests/helpers/assert'
 function expectFigmaEditableTextDefaults(
   textNode: NonNullable<Awaited<ReturnType<typeof parseFigmaClipboard>>>['nodes'][number]
 ) {
-  expect(textNode.textUserLayoutVersion).toBe(5)
+  expect(textNode.textUserLayoutVersion).toBe(4)
   expect(textNode.textExplicitLayoutVersion).toBe(1)
   expect(textNode.textBidiVersion).toBe(1)
-  expect(textNode.textAutoResize).toBe('NONE')
   expect(textNode.lineHeight).toEqual({ value: 100, units: 'PERCENT' })
   expect(textNode.letterSpacing).toEqual({ value: 0, units: 'PIXELS' })
   expect(textNode.fontVariantCommonLigatures).toBe(true)
@@ -97,6 +96,35 @@ describe('buildFigmaClipboardHTML', () => {
     }
   })
 
+  it('keeps how text resizes, so Figma reflows it in its own font', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const create = (name: string, textAutoResize: 'WIDTH_AND_HEIGHT' | 'HEIGHT' | 'NONE') =>
+      graph.createNode('TEXT', page.id, {
+        name,
+        width: 120,
+        height: 24,
+        text: 'Get started',
+        fontFamily: 'Inter',
+        fontSize: 16,
+        textAutoResize
+      })
+    const nodes = [
+      create('Label', 'WIDTH_AND_HEIGHT'),
+      create('Body', 'HEIGHT'),
+      create('Box', 'NONE')
+    ]
+
+    const html = await buildFigmaClipboardHTML(nodes, graph)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
+    const autoResize = Object.fromEntries(
+      (parsed?.nodes ?? [])
+        .filter((node) => node.type === 'TEXT')
+        .map((node) => [node.name, node.textAutoResize])
+    )
+    expect(autoResize).toEqual({ Label: 'WIDTH_AND_HEIGHT', Body: 'HEIGHT', Box: 'NONE' })
+  })
+
   it('encodes text nodes with style runs', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -156,8 +184,8 @@ describe('buildFigmaClipboardHTML', () => {
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     const baseline = textNode?.derivedTextData?.baselines?.[0]
 
-    expect(textNode?.textUserLayoutVersion).toBe(5)
-    expect(textNode?.textAutoResize).toBe('NONE')
+    // The text keeps its auto-resize, so Figma reflows it in its own font instead of fixing the box.
+    expect(textNode?.textAutoResize).toBe('HEIGHT')
     const glyphs = textNode?.derivedTextData?.glyphs ?? []
     expect(glyphs).toHaveLength('Analytics Overview'.length)
     expect(glyphs.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)

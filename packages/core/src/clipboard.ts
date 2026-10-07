@@ -177,8 +177,6 @@ async function writeFigmaClipboardHTML(
     if (change.type !== 'TEXT' || !change.guid) continue
     const source = sourceByGuid.get(`${change.guid.sessionID}:${change.guid.localID}`)
     if (!source) continue
-    change.textAutoResize = 'NONE'
-    change.textUserLayoutVersion = 5
     change.lineHeight = {
       value: source.lineHeight ?? 100,
       units: source.lineHeight ? 'PIXELS' : 'PERCENT'
