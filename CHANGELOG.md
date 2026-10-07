@@ -220,6 +220,7 @@
 
 ### Performance
 
+- Use less memory drawing documents whose layers spread far beyond the view: when the canvas cannot keep its cached image, the scene it draws instead holds only the layers in and around the view rather than the whole page, and is redrawn once the view moves past them (#580).
 - Edit variables in large documents without stalls: renaming, reordering, or adding a variable, or changing its CSS name, unit, scopes, or conditions, no longer redraws the canvas, and changing a value or mode updates only the layers bound to those variables or to variables aliasing them instead of re-resolving and laying out every bound layer in the document.
 - Open the `/demo` document like any `.fig` file, built ahead of time, instead of generating it in the browser, which froze the page for several seconds.
 - Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.

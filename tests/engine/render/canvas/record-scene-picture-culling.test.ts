@@ -9,12 +9,14 @@ import { renderNode } from '#core/canvas/scene'
 
 import { expectDefined } from '#tests/helpers/assert'
 
+import { asCanvas, asDouble, asRenderer } from './helpers'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
 
 function createCanvas() {
-  return {
+  return asCanvas({
     save: mock(() => undefined),
     restore: mock(() => undefined),
     translate: mock(() => undefined),
@@ -25,7 +27,7 @@ function createCanvas() {
     clipRect: mock(() => undefined),
     clipRRect: mock(() => undefined),
     drawPicture: mock(() => undefined)
-  }
+  })
 }
 
 function createRenderer() {
@@ -59,14 +61,12 @@ function createRenderer() {
       ClipOp: { Intersect: 'Intersect' },
       RRectXY: mock(() => undefined),
       PathEffect: { MakeDash: mock(() => undefined) },
-      LTRBRect: mock(
-        (left: number, top: number, right: number, bottom: number) => [
-          left,
-          top,
-          right,
-          bottom
-        ]
-      ),
+      LTRBRect: mock((left: number, top: number, right: number, bottom: number) => [
+        left,
+        top,
+        right,
+        bottom
+      ]),
       PictureRecorder: mock(() => recorder)
     },
     getCachedBlur: mock(() => null),
@@ -79,15 +79,9 @@ function createRenderer() {
     renderComponentSet: mock((_canvas, node) => {
       rendered.push(node.id)
     }),
-    renderNode(canvas, graph, nodeId, overlays) {
-      observedViewport = { ...this.worldViewport }
-      renderNode(
-        this as SkiaRenderer,
-        canvas,
-        graph,
-        nodeId,
-        overlays
-      )
+    renderNode(...args: Parameters<SkiaRenderer['renderNode']>) {
+      observedViewport = { ...renderer.worldViewport }
+      renderNode(asRenderer(renderer), ...args)
     },
     // Outstanding values that recordScenePicture writes/reads while recording.
     fontGeneration: 0,
@@ -105,7 +99,7 @@ function createRenderer() {
     scenePictureWorldViewport: null
   }
   return {
-    renderer: renderer as SkiaRenderer,
+    renderer: asRenderer(renderer),
     rendered,
     readObservedViewport: () => observedViewport
   }
@@ -185,11 +179,9 @@ describe('recordScenePicture viewport culling', () => {
 })
 
 describe('canUseScenePicture viewport coverage guard', () => {
-  function coveredRenderer(
-    viewport: { x: number; y: number; w: number; h: number }
-  ) {
+  function coveredRenderer(viewport: { x: number; y: number; w: number; h: number }) {
     const { renderer } = createRenderer()
-    renderer.scenePicture = {} as SkiaRenderer['scenePicture']
+    renderer.scenePicture = asDouble<NonNullable<SkiaRenderer['scenePicture']>>({})
     renderer.scenePictureWorldViewport = { ...viewport }
     renderer.scenePictureVersion = 1
     renderer.scenePicturePositionPreviewVersion = graph.positionPreviewVersion
