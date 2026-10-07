@@ -6,6 +6,9 @@
   "permissions": [
     "core:default",
     "core:window:allow-destroy",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-set-focus",
+    "core:window:allow-unminimize",
     "opener:default",
     "dialog:default",
     "dialog:allow-save",

@@ -7,11 +7,7 @@ const toastTheme = {
     content: 'min-w-0 flex-1',
     message: 'select-text',
     count: 'ml-1.5 opacity-70',
-    progress: 'mt-1.5 flex flex-col gap-1',
-    progressTrack: 'h-1 w-full overflow-hidden rounded-full bg-current/25',
-    progressFill:
-      'h-full rounded-full bg-current transition-[width] duration-150 ease-out motion-reduce:transition-none',
-    progressLabel: 'text-[10px] leading-none tabular-nums opacity-80',
+    progress: 'mt-1.5',
     action:
       'shrink-0 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium underline-offset-2 hover:underline',
     control: 'mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100'
@@ -24,15 +20,11 @@ const toastTheme = {
       },
       error: { root: 'bg-red-600 text-white' }
     },
-    // A determinate bar takes its width from the consumer; an indeterminate one
-    // pulses in place so the toast still reads as work in progress.
+    // Work in progress spins the icon; AppProgress draws the bar.
     progress: {
       none: {},
       determinate: { icon: motionStyles.spinner },
-      indeterminate: {
-        icon: motionStyles.spinner,
-        progressFill: 'motion-reduce:animate-none w-1/3 animate-pulse'
-      }
+      indeterminate: { icon: motionStyles.spinner }
     }
   },
   defaultVariants: { tone: 'default' as const, progress: 'none' as const }
