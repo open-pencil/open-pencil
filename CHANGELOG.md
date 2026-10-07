@@ -131,6 +131,7 @@
 - `figma.combineAsVariants` derives variant properties from components named as Figma names variants, such as `State=On, Size=Large`, as Combine as variants in the editor now does too; before, only slash-separated names gave the set any properties.
 - HTML and Tailwind export place layers of frames without auto layout at their coordinates instead of stacking them, leave the size of hugging auto layout frames and auto-sizing text to their content, and round ellipses.
 - Show the blinking caret in a new, empty text layer before the first character is typed.
+- Frames and instances that fill their auto layout parent keep filling it when saved to `.fig` or copied to Figma, instead of shrinking to their content there, as a filled title row or full-width button did.
 - Text saved to `.fig` or copied to Figma keeps its layout in Figma: it wraps at the layer's width with its alignment and line height, and keeps ligatures and contextual forms such as Inter's arrows, where Figma previously drew every saved OpenPencil text layer on one unwrapped line (#914).
 - Release a document's memory when its tab closes. Every closed tab kept its scene, canvas, and editor panels alive until reload, so memory grew with each document opened and closed. Menus and shortcuts now also follow the active document, so Undo and Redo are offered according to its history rather than the first document opened.
 - Put a deleted variable back in its place in its collection when the deletion is undone, instead of at the end.
