@@ -2,7 +2,8 @@ export interface RecoverySnapshotMeta {
   id: string
   documentName: string
   updatedAt: string
-  sceneVersion: number
+  /** The content revision the snapshot was taken at, within its session. */
+  version: number
   byteLength: number
   formatVersion: 1
 }
@@ -14,7 +15,7 @@ export interface RecoverySnapshot extends RecoverySnapshotMeta {
 export interface RecoverySnapshotInput {
   id: string
   documentName: string
-  sceneVersion: number
+  version: number
   figBytes: Uint8Array
 }
 

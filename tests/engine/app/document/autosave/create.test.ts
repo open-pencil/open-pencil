@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { reactive } from 'vue'
-
-import { createDefaultEditorState } from '@open-pencil/core/editor'
+import { reactive, ref } from 'vue'
 
 import { createAutosave } from '@/app/document/autosave/create'
 
@@ -15,14 +13,13 @@ function deferred() {
 }
 
 function setup(saveCurrentDocument: (version: number) => Promise<void>) {
-  const state = reactive({
-    ...createDefaultEditorState('page-1'),
-    autosaveEnabled: true
-  })
+  const state = reactive({ autosaveEnabled: true })
+  const version = ref(0)
   let savedVersion = 0
   let writable = true
   const autosave = createAutosave({
     state,
+    version: () => version.value,
     getSavedVersion: () => savedVersion,
     hasWritableSource: () => writable,
     saveCurrentDocument: async (version) => {
@@ -32,6 +29,7 @@ function setup(saveCurrentDocument: (version: number) => Promise<void>) {
   })
   return {
     state,
+    version,
     autosave,
     setWritable: (value: boolean) => {
       writable = value
@@ -42,19 +40,19 @@ function setup(saveCurrentDocument: (version: number) => Promise<void>) {
 describe('document autosave', () => {
   test('skips saved versions and documents without writable sources', async () => {
     const versions: number[] = []
-    const { state, autosave, setWritable } = setup(async (version) => {
-      versions.push(version)
+    const { version, autosave, setWritable } = setup(async (saved) => {
+      versions.push(saved)
     })
 
     await autosave.requestSave(0)
     setWritable(false)
-    state.sceneVersion = 1
+    version.value = 1
     await autosave.requestSave(1)
     expect(versions).toEqual([])
 
     setWritable(true)
     await autosave.requestSave(1)
-    state.sceneVersion = 0
+    version.value = 0
     await autosave.requestSave(0)
     await autosave.requestSave(1)
     expect(versions).toEqual([1])
@@ -64,17 +62,17 @@ describe('document autosave', () => {
   test('coalesces 100 edits during an in-flight save into the latest version', async () => {
     const firstSave = deferred()
     const started: number[] = []
-    const { state, autosave } = setup(async (version) => {
-      started.push(version)
+    const { version, autosave } = setup(async (saved) => {
+      started.push(saved)
       if (started.length === 1) await firstSave.promise
     })
 
-    state.sceneVersion = 1
+    version.value = 1
     const pending = autosave.requestSave(1)
     await Promise.resolve()
-    for (let version = 2; version <= 101; version++) {
-      state.sceneVersion = version
-      void autosave.requestSave(version)
+    for (let next = 2; next <= 101; next++) {
+      version.value = next
+      void autosave.requestSave(next)
     }
     firstSave.resolve()
     await pending
@@ -85,11 +83,11 @@ describe('document autosave', () => {
 
   test('retries the current version after a failed save', async () => {
     let attempts = 0
-    const { state, autosave } = setup(async () => {
+    const { version, autosave } = setup(async () => {
       attempts++
       if (attempts === 1) throw new Error('write failed')
     })
-    state.sceneVersion = 1
+    version.value = 1
 
     await expect(autosave.requestSave(1)).rejects.toThrow('write failed')
     await autosave.requestSave(1)
@@ -101,18 +99,18 @@ describe('document autosave', () => {
   test('preserves a newer requested version when the active save fails', async () => {
     const firstSave = deferred()
     const started: number[] = []
-    const { state, autosave } = setup(async (version) => {
-      started.push(version)
-      if (version === 1) {
+    const { version, autosave } = setup(async (saved) => {
+      started.push(saved)
+      if (saved === 1) {
         await firstSave.promise
         throw new Error('write failed')
       }
     })
 
-    state.sceneVersion = 1
+    version.value = 1
     const failed = autosave.requestSave(1)
     await Promise.resolve()
-    state.sceneVersion = 2
+    version.value = 2
     void autosave.requestSave(2)
     firstSave.resolve()
     await expect(failed).rejects.toThrow('write failed')

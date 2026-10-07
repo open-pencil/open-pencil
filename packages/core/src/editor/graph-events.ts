@@ -81,21 +81,22 @@ function invalidateRenderersForChange(
 
 export function createGraphEventSubscription(options: GraphEventOptions) {
   let unbindGraphEvents: (() => void) | null = null
-  let layoutRenderPending = false
+  let batchRenderPending = false
 
   /**
-   * A layout pass updates many layers at once, and each render request bumps reactive versions;
-   * the pass asks for one render after it, before the next frame draws.
+   * A layout pass or a page's layers loading updates many layers at once, and each render
+   * request bumps reactive versions; the batch asks for one render after it, before the next
+   * frame draws.
    */
   function requestRenderFor(graph: SceneGraph) {
-    if (!graph.isApplyingLayout) {
+    if (!graph.isApplyingLayout && !graph.isApplyingImportedState) {
       options.requestRender()
       return
     }
-    if (layoutRenderPending) return
-    layoutRenderPending = true
+    if (batchRenderPending) return
+    batchRenderPending = true
     queueMicrotask(() => {
-      layoutRenderPending = false
+      batchRenderPending = false
       options.requestRender()
     })
   }
@@ -126,7 +127,7 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
       renderer.tiledScene.invalidateStructure()
     }
     options.scheduleComponentSync(nodeId)
-    options.requestRender()
+    requestRenderFor(options.getGraph())
   }
 
   function subscribeToGraph() {

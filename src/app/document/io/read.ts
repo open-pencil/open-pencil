@@ -34,7 +34,7 @@ type ReloadActionsOptions = {
   state: ReloadDocumentState
   getFilePath: () => string | null
   getFileHandle: () => FileSystemFileHandle | null
-  setSavedVersion: (version: number) => void
+  markDocumentSaved: () => void
   preparationController: EditorPreparationController
 }
 
@@ -96,7 +96,7 @@ export function createReloadActions({
   state,
   getFilePath,
   getFileHandle,
-  setSavedVersion,
+  markDocumentSaved,
   preparationController
 }: ReloadActionsOptions) {
   async function reloadFromDisk() {
@@ -121,7 +121,7 @@ export function createReloadActions({
       await applyImportedDocument(editor, imported, load)
       restoreReloadState(editor, state, snapshot)
       editor.requestRender()
-      setSavedVersion(state.sceneVersion)
+      markDocumentSaved()
       succeeded = true
     } catch (error) {
       if (load.signal.aborted) return

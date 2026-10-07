@@ -1,11 +1,9 @@
-import type { EditorState } from '@open-pencil/core/editor'
-
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
 
-type WriteDocumentState = EditorState & { documentName: string }
+type WriteDocumentState = { documentName: string }
 
 type DocumentWriterOptions = {
   state: WriteDocumentState
@@ -36,10 +34,7 @@ export function createDocumentWriter({
     return true
   }
 
-  return async function writeFile(
-    data: Uint8Array,
-    version = state.sceneVersion
-  ): Promise<boolean> {
+  return async function writeFile(data: Uint8Array, version: number): Promise<boolean> {
     setLastWriteTime(Date.now())
     try {
       const storage = getStorageBinding()
