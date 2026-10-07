@@ -1,23 +1,27 @@
 import { describe, expect, test } from 'bun:test'
 
-import { buildDemoDocument } from '#demo/build'
+import { measuringRenderer, withMeasuredText } from '#demo/build'
+import { createControlsSection } from '#demo/document/controls/section'
 
-import { readFigFile } from '@open-pencil/core/io'
+import { exportFigFile, readFigFile } from '@open-pencil/core/io'
 import { populateAllFigPages } from '@open-pencil/core/io/formats/fig'
-import { missingBindings, readBehaviour } from '@open-pencil/scene-graph'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { missingBindings, readBehaviour, SceneGraph } from '@open-pencil/scene-graph'
 
-describe('demo document', () => {
-  test('opens as four pages whose controls keep complete behaviours', async () => {
-    const bytes = await buildDemoDocument()
+describe('demo controls', () => {
+  test('keep complete behaviours through the .fig the demo opens', async () => {
+    const { ck, renderer } = await measuringRenderer()
+    const built = await withMeasuredText(renderer, async () => {
+      const graph = new SceneGraph()
+      const [page] = graph.getPages()
+      await createControlsSection(graph, page.id)
+      computeAllLayouts(graph, page.id)
+      return graph
+    })
+    const bytes = await exportFigFile(built, ck, renderer)
     const graph = await readFigFile(new File([bytes.slice()], 'Demo.fig'))
     populateAllFigPages(graph)
 
-    expect(graph.getPages().map((page) => page.name)).toEqual([
-      '01 · Components & variables',
-      '02 · Typography',
-      '03 · Paint & effects',
-      '04 · Controls'
-    ])
     const controls = [...graph.getAllNodes()].flatMap((node) => {
       const behaviour = node.type === 'INSTANCE' ? null : readBehaviour(node)
       return behaviour

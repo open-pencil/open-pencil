@@ -32,7 +32,7 @@ function squareCommandsBlob(): Uint8Array {
 }
 
 /** The highest coverage on the underline rows at column `x` of a rendered text layer. */
-function underlineAlpha(pixels: Uint8Array, width: number, x: number): number {
+function underlineAlpha(pixels: ArrayLike<number>, width: number, x: number): number {
   return Math.max(...[15, 16].map((y) => pixels[(y * width + x) * 4 + 3]))
 }
 

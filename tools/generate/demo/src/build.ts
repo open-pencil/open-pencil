@@ -16,7 +16,7 @@ const PAGE_GAP = 64
 const INTER_STYLES = ['Regular', 'Medium', 'SemiBold', 'Bold']
 
 /** A renderer on a 1×1 surface, for measuring text while laying the document out. */
-async function measuringRenderer() {
+export async function measuringRenderer() {
   const ck = await initCanvasKit()
   const surface = ck.MakeSurface(1, 1)
   if (!surface) throw new Error('CanvasKit could not create a surface')
@@ -25,13 +25,25 @@ async function measuringRenderer() {
   return { ck, renderer }
 }
 
-/** Builds every page of the demo into a fresh graph, laid out with `renderer`'s text metrics. */
-async function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
+/** Runs `build` with Inter loaded and text measured by `renderer`, as demo layout needs. */
+export async function withMeasuredText<T>(
+  renderer: SkiaRenderer,
+  build: () => Promise<T>
+): Promise<T> {
   const uninstall = installTextMeasurer((node, maxWidth) =>
     renderer.measureTextNode(node, maxWidth)
   )
   try {
     await Promise.all(INTER_STYLES.map((style) => fontManager.loadFont('Inter', style)))
+    return await build()
+  } finally {
+    uninstall()
+  }
+}
+
+/** Builds every page of the demo into a fresh graph, laid out with `renderer`'s text metrics. */
+function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
+  return withMeasuredText(renderer, async () => {
     const graph = new SceneGraph()
     const [first] = graph.getPages()
     graph.updateNode(first.id, { name: '01 · Components & variables' })
@@ -58,9 +70,7 @@ async function buildDemoGraph(renderer: SkiaRenderer): Promise<SceneGraph> {
     )
     for (const page of pages) computeAllLayouts(graph, page.id)
     return graph
-  } finally {
-    uninstall()
-  }
+  })
 }
 
 /** The demo document as `.fig` bytes, as `/demo` opens it. */
