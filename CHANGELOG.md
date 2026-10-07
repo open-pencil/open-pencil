@@ -125,7 +125,7 @@
 
 ### Fixed
 
-- Open image-heavy Figma files without accumulating every full-resolution image in the canvas heap; viewport previews follow zoom while exports keep the original images.
+- Open image-heavy `.fig` files without the canvas running out of memory (#924). Decoded images stay within a fixed budget, and documents with many large images draw previews sized to the view, decoded in the background a few at a time, while exports keep the full images.
 - Show tables in AI chat replies at the chat's text size and weight, with a light header and copy as their only action, and task lists with a checkbox in place of the bullet. Tooltips, the copy menu, and the confirmation before opening a link follow the app's style, and links no longer load each site's favicon.
 - Keep an opened `.fig` file saved until it is edited. Laying out its first page, which recomputes auto-layout sizes and positions, marked it unsaved, so closing it asked to save changes nobody made.
 - Fill one axis of a grid cell: a grid child set to fill its width or its height no longer fills both, and an auto-layout child of a grid keeps its own size unless it fills, as in Figma. Design JSX renders and exports `w="fill"` and `h="fill"` in grids, and HTML and Tailwind export leave out the size a child fills, so it stretches in the browser too.
@@ -225,11 +225,10 @@
 - Open the `/demo` document like any `.fig` file, built ahead of time, instead of generating it in the browser, which froze the page for several seconds.
 - Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.
 - Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, each page resolves only the layers it adds instead of rescanning the whole document, placing an instance no longer re-synchronises every other instance of its component, and archive records are copied directly rather than through `structuredClone`. A 33-page file loads about a fifth quicker, and a page of repeated components opens three to four times faster once a document is already open.
-- Lay out documents with many text layers and component instances without long freezes: text checks whether its fonts cover every glyph once rather than on every layout pass, and layout updating sizes no longer re-synchronises the components it touched. Building the demo document takes less than half as long.
+- Lay out documents with many text layers and component instances without long freezes: text checks whether its fonts cover every glyph and measures itself at each width once rather than on every layout pass, and layout updating sizes no longer re-synchronises the components it touched. Building the demo document takes less than half as long.
 
 ### Security
 
-- Update `proxy-addr` in the Harness companion's dependencies to 2.0.8, which fixes trust checks for IPv4-mapped IPv6 subnets (GHSA-jqcg-44mw-7w3h).
 - Refuse writes from the desktop app to places where a written file would run: login items and startup folders, PowerShell profiles, global package and executable folders such as Homebrew, `/usr/local`, npm, Volta, and Scoop, and the MCP discovery files coding agents trust. On Windows, hidden files and folders such as shell profiles and agent settings are now off-limits too, as on macOS and Linux, except a document you open there yourself, which can still be saved.
 - Limit the programs the desktop app may start to the exact command lines of the supported coding agents, the MCP server, and the Harness companion. On Windows the app could run any command through `cmd /c`, so any code running in the editor's webview could start arbitrary programs.
 - Update the desktop app to Tauri 2.12, which binds large IPC channel responses to the webview that requested them instead of letting another webview fetch them (GHSA-w28w-mhc8-qvjv).
