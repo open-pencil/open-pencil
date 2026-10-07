@@ -9,7 +9,7 @@ import {
   lint,
   lintFix
 } from './analyze'
-import { designToComponentMap, designToTokens } from './codegen'
+import { designToComponentMap, designToTokens, importDesignTokens } from './codegen'
 import {
   createComponent,
   createInstance,
@@ -209,5 +209,6 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   diffApply,
   // Codegen
   designToTokens,
+  importDesignTokens,
   designToComponentMap
 ]

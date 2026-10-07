@@ -39,6 +39,17 @@ export type DesignTokenIssue =
   | { kind: 'duplicate-path'; collection: string; token: string }
   | { kind: 'unsupported-effect'; style: string }
 
+/** An issue as one line of text, for the CLI and tool output. */
+export function designTokenIssueMessage(issue: DesignTokenIssue): string {
+  if (issue.kind === 'missing-value')
+    return `${issue.collection} / ${issue.mode}: ${issue.token} has no value in this mode`
+  if (issue.kind === 'missing-alias')
+    return `${issue.collection} / ${issue.mode}: ${issue.token} points at a variable that is gone`
+  if (issue.kind === 'duplicate-path')
+    return `${issue.collection}: ${issue.token} has the same token path as another variable`
+  return `${issue.style}: an effect style with no visible shadow has no token`
+}
+
 /** The key OpenPencil's own token data is kept under in `$extensions`. */
 export const OPENPENCIL_EXTENSION = 'dev.openpencil'
 

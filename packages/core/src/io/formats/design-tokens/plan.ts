@@ -119,9 +119,13 @@ export function defaultTokenImportOptions(
   bundle: DesignTokenBundle
 ): TokenImportOptions {
   const existing = [...graph.variableCollections.values()]
+  const claimed = new Set<string>()
   return {
     collections: bundle.collections.map((collection): CollectionImportChoice => {
-      const match = existing.find((candidate) => candidate.name === collection.name)
+      const match = existing.find(
+        (candidate) => candidate.name === collection.name && !claimed.has(candidate.id)
+      )
+      if (match) claimed.add(match.id)
       if (!match) {
         return {
           target: { kind: 'new', name: collection.name },

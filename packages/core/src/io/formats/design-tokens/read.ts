@@ -95,6 +95,12 @@ function extensionsOf(node: Record<string, unknown>): Record<string, unknown> {
   return isPlainObject(node.$extensions) ? node.$extensions : {}
 }
 
+/** The collection and mode a file says it holds, which OpenPencil writes into each mode file. */
+function modeInfo(parsed: Record<string, unknown> | undefined) {
+  const own = v.safeParse(ModeExtensionSchema, parsed && extensionsOf(parsed)[OPENPENCIL_EXTENSION])
+  return own.success ? own.output : {}
+}
+
 /** Tokens in a document, groups flattened, each with the type it declares or inherits. */
 export function documentTokens(parsed: Record<string, unknown>): ReadToken[] {
   const tokens: ReadToken[] = []
@@ -160,8 +166,9 @@ function sourceTokens(
   reader: Reader,
   from: string,
   sources: ReadonlyArray<v.InferOutput<typeof SourceSchema>>
-): ReadToken[] {
+): { tokens: ReadToken[]; info: ReturnType<typeof modeInfo> } {
   const byPath = new Map<string, ReadToken>()
+  let info: ReturnType<typeof modeInfo> = {}
   for (const source of sources) {
     let parsed: Record<string, unknown> | undefined
     if (typeof source.$ref === 'string') {
@@ -172,10 +179,11 @@ function sourceTokens(
     } else {
       parsed = source
     }
+    if (parsed && !info.collection) info = modeInfo(parsed)
     for (const token of parsed ? documentTokens(parsed) : [])
       byPath.set(token.path.join('.'), token)
   }
-  return [...byPath.values()]
+  return { tokens: [...byPath.values()], info }
 }
 
 function mode(name: string, tokens: ReadToken[], isDefault: boolean): ReadMode {
@@ -190,20 +198,32 @@ function readResolver(reader: Reader, path: string, parsed: Document): ReadColle
     return []
   }
   const { sets = {}, modifiers = {} } = result.output
-  const collections: ReadCollection[] = Object.entries(sets).map(([name, set]) => ({
-    name,
-    modes: [mode('Mode 1', sourceTokens(reader, path, set.sources), true)],
-    modeAttribute: undefined
-  }))
+  // The collection and mode names a source file records win over the resolver's own labels,
+  // which an export makes distinct when two collections share a name.
+  const collections: ReadCollection[] = Object.entries(sets).map(([name, set]) => {
+    const { tokens, info } = sourceTokens(reader, path, set.sources)
+    return {
+      name: info.collection ?? name,
+      modes: [{ name: info.mode ?? 'Mode 1', tokens, isDefault: true, condition: info.condition }],
+      modeAttribute: info.modeAttribute
+    }
+  })
   for (const [name, modifier] of Object.entries(modifiers)) {
     const contexts = Object.entries(modifier.contexts)
     const defaultName = modifier.default ?? contexts[0]?.[0]
+    const modes = contexts.map(([context, sources]) => ({
+      context,
+      ...sourceTokens(reader, path, sources)
+    }))
     collections.push({
-      name,
-      modes: contexts.map(([context, sources]) =>
-        mode(context, sourceTokens(reader, path, sources), context === defaultName)
-      ),
-      modeAttribute: undefined
+      name: modes.find((entry) => entry.info.collection)?.info.collection ?? name,
+      modes: modes.map(({ context, tokens, info }) => ({
+        name: info.mode ?? context,
+        tokens,
+        isDefault: context === defaultName,
+        condition: info.condition
+      })),
+      modeAttribute: modes.find((entry) => entry.info.modeAttribute)?.info.modeAttribute
     })
   }
   return collections
@@ -254,10 +274,13 @@ function readModeFiles(paths: readonly string[], reader: Reader): ReadCollection
   for (const path of paths) {
     const parsed = reader.documents.get(path)
     if (!parsed) continue
-    const own = v.safeParse(ModeExtensionSchema, extensionsOf(parsed)[OPENPENCIL_EXTENSION])
-    const info = own.success ? own.output : {}
-    const name = info.collection ?? (folderOf(path).split('/').at(-1) || 'Tokens')
-    const collection = collections.get(name) ?? { name, modes: [], modeAttribute: undefined }
+    const info = modeInfo(parsed)
+    // Files group by folder, since two collections may share a name; loose files by the
+    // collection they name, or into one.
+    const folder = folderOf(path)
+    const key = folder || info.collection || ''
+    const name = info.collection ?? (folder.split('/').at(-1) || 'Tokens')
+    const collection = collections.get(key) ?? { name, modes: [], modeAttribute: undefined }
     collection.modeAttribute ??= info.modeAttribute
     collection.modes.push({
       name: info.mode ?? baseName(path),
@@ -265,7 +288,7 @@ function readModeFiles(paths: readonly string[], reader: Reader): ReadCollection
       isDefault: info.default ?? collection.modes.length === 0,
       condition: info.condition
     })
-    collections.set(name, collection)
+    collections.set(key, collection)
   }
   return [...collections.values()]
 }

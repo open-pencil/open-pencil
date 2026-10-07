@@ -24,9 +24,14 @@ describe('tokens command', () => {
     })
   })
 
+  test('writes W3C design token files for the dtcg format', async () => {
+    const result = await executeRPCCommand(graphWithTokens(), 'tokens', { format: 'dtcg' })
+    expect(result.files?.map((file) => file.path)).toContain('tokens.resolver.json')
+  })
+
   test('rejects an unknown format or type', () => {
     expect(() => executeRPCCommand(graphWithTokens(), 'tokens', { format: 'scss' })).toThrow(
-      'Unknown token format: scss. Use css or tailwind.'
+      'Unknown token format: scss. Use css, tailwind, or dtcg.'
     )
     expect(() => executeRPCCommand(graphWithTokens(), 'tokens', { type: 'shadow' })).toThrow(
       'Unknown variable type: shadow. Use COLOR, FLOAT, STRING, BOOLEAN.'

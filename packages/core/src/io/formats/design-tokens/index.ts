@@ -1,5 +1,6 @@
 export { exportDesignTokens, RESOLVER_FILE, STYLES_FILE, type DesignTokenExport } from './export'
 export {
+  designTokenIssueMessage,
   OPENPENCIL_EXTENSION,
   RESOLVER_VERSION,
   type DesignToken,
@@ -34,3 +35,12 @@ export {
   type TokenImportPlan
 } from './plan'
 export type { PlannedStyle } from './plan-styles'
+export {
+  applyTokenImport,
+  importTokensIntoGraph,
+  styleNodeProps,
+  styleNodeType,
+  type ImportedTokenFields,
+  type TokenImportResult,
+  type TokenImportTarget
+} from './apply'

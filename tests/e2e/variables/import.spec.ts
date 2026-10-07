@@ -25,8 +25,16 @@ test('design token files import as a collection with a mode per file', async () 
   await (
     await chooser
   ).setFiles([
-    { name: 'Light.tokens.json', mimeType: 'application/json', buffer: Buffer.from(theme('#ffffff')) },
-    { name: 'Dark.tokens.json', mimeType: 'application/json', buffer: Buffer.from(theme('#09090b')) }
+    {
+      name: 'Light.tokens.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(theme('#ffffff'))
+    },
+    {
+      name: 'Dark.tokens.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(theme('#09090b'))
+    }
   ])
 
   const importDialog = editor.page.getByTestId('variables-import-dialog')
