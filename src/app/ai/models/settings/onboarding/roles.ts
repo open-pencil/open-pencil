@@ -1,9 +1,8 @@
 import { computed, ref, type ComputedRef } from 'vue'
 
-import type { AIModelRole } from '@/app/ai/models/types'
+import { AI_MODEL_ROLES, type AIModelRole } from '@/app/ai/models/types'
 
 import {
-  ONBOARDING_ROLES,
   planConnections,
   roleChoiceKey,
   roleOptions,
@@ -45,7 +44,7 @@ export function useOnboardingRoles(
   })
 
   const isRecommended = computed(() =>
-    ONBOARDING_ROLES.every(
+    AI_MODEL_ROLES.every(
       (role) => roleChoiceKey(plan.value[role]) === roleChoiceKey(recommended.value[role])
     )
   )

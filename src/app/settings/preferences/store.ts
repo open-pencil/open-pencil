@@ -1,4 +1,6 @@
 import { useLocalStorage } from '@vueuse/core'
+import { uniq } from 'es-toolkit'
+import * as v from 'valibot'
 
 import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core/editor'
 
@@ -29,7 +31,8 @@ export interface DesignCheckPreferences {
 }
 
 /** Whether guided AI setup was offered and finished or skipped. */
-export type AISetupState = 'pending' | 'done'
+export const AI_SETUP_STATES = ['pending', 'done'] as const
+export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
 export interface AppPreferences {
   appearance: { animations: AnimationPreference }
@@ -76,111 +79,69 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
 
-function booleanOrDefault(value: unknown, fallback: boolean): boolean {
-  return typeof value === 'boolean' ? value : fallback
+/** An object whose fields each fall back to their default, and that is all defaults when absent. */
+function section<TEntries extends v.ObjectEntries>(entries: TEntries) {
+  const schema = v.object(entries)
+  return v.fallback(schema, () => v.parse(schema, {}))
 }
 
-interface StoredSnappingPreferences {
-  geometry?: unknown
-  objects?: unknown
-  pixelGrid?: unknown
-}
+const defaults = DEFAULT_APP_PREFERENCES
+const snapping = defaults.editing.snapping
 
-interface StoredAppPreferences {
-  appearance?: { animations?: unknown }
-  chat?: {
-    reasoningDisplay?: unknown
-    maxAgentSteps?: unknown
-    changePreviewSize?: unknown
-    followAgents?: unknown
-  }
-  recovery?: { enabled?: unknown }
-  editing?: { snapping?: StoredSnappingPreferences }
-  rendering?: { canvasMode?: unknown }
-  designCheck?: { showOnCanvas?: unknown; preset?: unknown; disabledRules?: unknown }
-  onboarding?: { aiSetup?: unknown }
-}
-
-function isStoredAppPreferences(value: unknown): value is StoredAppPreferences {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-function normalizeAnimationPreference(value: unknown): AnimationPreference {
-  return value === 'off' ? 'off' : 'system'
-}
-
-function normalizeChatPreferences(chat: StoredAppPreferences['chat']): AppPreferences['chat'] {
-  return {
-    maxAgentSteps: resolveAgentStepLimit(chat?.maxAgentSteps),
-    reasoningDisplay:
-      chat?.reasoningDisplay === 'expanded' || chat?.reasoningDisplay === 'while-thinking'
-        ? chat.reasoningDisplay
-        : 'collapsed',
-    changePreviewSize: CHANGE_PREVIEW_SIZES.includes(chat?.changePreviewSize as ChangePreviewSize)
-      ? (chat?.changePreviewSize as ChangePreviewSize)
-      : DEFAULT_APP_PREFERENCES.chat.changePreviewSize,
-    followAgents: booleanOrDefault(chat?.followAgents, DEFAULT_APP_PREFERENCES.chat.followAgents)
-  }
-}
-
-function normalizeDesignCheckPreferences(
-  designCheck: StoredAppPreferences['designCheck']
-): DesignCheckPreferences {
-  const preset = DESIGN_CHECK_PRESETS.find((candidate) => candidate === designCheck?.preset)
-  const disabledRules = Array.isArray(designCheck?.disabledRules)
-    ? designCheck.disabledRules.filter((rule): rule is string => typeof rule === 'string')
-    : []
-  return {
-    showOnCanvas: booleanOrDefault(
-      designCheck?.showOnCanvas,
-      DEFAULT_APP_PREFERENCES.designCheck.showOnCanvas
+/** Stored preferences, read field by field so one bad value keeps the rest. */
+const appPreferencesSchema = section({
+  appearance: section({
+    animations: v.fallback(v.picklist(ANIMATION_PREFERENCES), defaults.appearance.animations)
+  }),
+  chat: section({
+    reasoningDisplay: v.fallback(v.picklist(REASONING_DISPLAYS), defaults.chat.reasoningDisplay),
+    maxAgentSteps: v.fallback(
+      v.pipe(v.unknown(), v.transform(resolveAgentStepLimit)),
+      defaults.chat.maxAgentSteps
     ),
-    preset: preset ?? DEFAULT_APP_PREFERENCES.designCheck.preset,
-    disabledRules: [...new Set(disabledRules)]
-  }
-}
+    changePreviewSize: v.fallback(
+      v.picklist(CHANGE_PREVIEW_SIZES),
+      defaults.chat.changePreviewSize
+    ),
+    followAgents: v.fallback(v.boolean(), defaults.chat.followAgents)
+  }),
+  version: v.fallback(v.literal(1), 1),
+  recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),
+  editing: section({
+    snapping: section({
+      geometry: v.fallback(v.boolean(), snapping.geometry),
+      objects: v.fallback(v.boolean(), snapping.objects),
+      pixelGrid: v.fallback(v.boolean(), snapping.pixelGrid)
+    })
+  }),
+  rendering: section({
+    canvasMode: v.fallback(v.picklist(CANVAS_RENDERING_MODES), defaults.rendering.canvasMode)
+  }),
+  designCheck: section({
+    showOnCanvas: v.fallback(v.boolean(), defaults.designCheck.showOnCanvas),
+    preset: v.fallback(v.picklist(DESIGN_CHECK_PRESETS), defaults.designCheck.preset),
+    disabledRules: v.fallback(
+      v.pipe(
+        v.array(v.unknown()),
+        v.transform((rules) => uniq(rules.filter((rule) => typeof rule === 'string')))
+      ),
+      () => []
+    )
+  }),
+  onboarding: section({
+    aiSetup: v.fallback(v.picklist(AI_SETUP_STATES), defaults.onboarding.aiSetup)
+  })
+})
 
-function normalizePreferences(value: unknown): AppPreferences {
-  const stored = isStoredAppPreferences(value) ? value : undefined
-  const snapping = stored?.editing?.snapping
-
-  return {
-    appearance: { animations: normalizeAnimationPreference(stored?.appearance?.animations) },
-    chat: normalizeChatPreferences(stored?.chat),
-    version: 1,
-    recovery: {
-      enabled: booleanOrDefault(stored?.recovery?.enabled, DEFAULT_APP_PREFERENCES.recovery.enabled)
-    },
-    editing: {
-      snapping: {
-        geometry: booleanOrDefault(
-          snapping?.geometry,
-          DEFAULT_APP_PREFERENCES.editing.snapping.geometry
-        ),
-        objects: booleanOrDefault(
-          snapping?.objects,
-          DEFAULT_APP_PREFERENCES.editing.snapping.objects
-        ),
-        pixelGrid: booleanOrDefault(
-          snapping?.pixelGrid,
-          DEFAULT_APP_PREFERENCES.editing.snapping.pixelGrid
-        )
-      }
-    },
-    rendering: {
-      canvasMode: stored?.rendering?.canvasMode === 'tiled' ? 'tiled' : 'retained'
-    },
-    designCheck: normalizeDesignCheckPreferences(stored?.designCheck),
-    onboarding: {
-      aiSetup: stored?.onboarding?.aiSetup === 'done' ? 'done' : 'pending'
-    }
-  }
+/** Reads stored preferences, keeping every valid field and defaulting the rest. */
+export function parseAppPreferences(value: unknown): AppPreferences {
+  return v.parse(appPreferencesSchema, value)
 }
 
 export const appPreferences = useLocalStorage<AppPreferences>(
   STORAGE_KEY,
   structuredClone(DEFAULT_APP_PREFERENCES),
-  { mergeDefaults: (storageValue) => normalizePreferences(storageValue) }
+  { mergeDefaults: (storageValue) => parseAppPreferences(storageValue) }
 )
 
 export function updateAnimationPreference(animations: AnimationPreference): void {

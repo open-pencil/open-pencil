@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/agents'
 
 /** One thing guided setup checks on this computer, with an optional one-click fix. */
 const {
@@ -23,8 +23,8 @@ const styles = tv(theme)()
 </script>
 
 <template>
-  <li :class="styles.installItem()" :data-status="ready ? 'available' : 'missing'">
-    <icon-lucide-circle-check v-if="ready" :class="styles.signedInIcon()" aria-hidden="true" />
+  <li :class="styles.item()" :data-status="ready ? 'available' : 'missing'">
+    <icon-lucide-circle-check v-if="ready" :class="styles.readyIcon()" aria-hidden="true" />
     <icon-lucide-circle-dashed v-else :class="styles.missingIcon()" aria-hidden="true" />
     <span class="flex-1"><slot /></span>
     <slot name="action">

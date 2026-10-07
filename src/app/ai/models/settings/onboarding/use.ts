@@ -2,6 +2,7 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 
+import { useAgentSetup } from '@/app/ai/agents/setup'
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
 import {
   aiModelSettings,
@@ -11,14 +12,15 @@ import {
 } from '@/app/ai/models'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
-import { useOnboardingAgents } from './agents'
 import { applyOnboardingPlan } from './apply'
 import { existingOnboardingConnection, useOnboardingConnections } from './connections'
 import { currentOnboardingModels } from './current'
 import {
   isOnboardingAccess,
+  ONBOARDING_GOALS,
   planOnboarding,
   type OnboardingAccess,
+  type OnboardingGoal,
   type OnboardingAnswers,
   type PlannedModel,
   uncoveredGoals
@@ -78,7 +80,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
   const connections = useOnboardingConnections({ plannedModel })
   const { connection, ready, markKeySaved } = connections
   const signIn = useOnboardingSignIn(connections)
-  const agents = useOnboardingAgents()
+  const agents = useAgentSetup()
   // Look for installed agents when they are about to be connected, and again on return.
   watch(step, (current) => {
     if (current === 'connect') void agents.refreshAgents()
@@ -91,6 +93,13 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
     }
     return true
   })
+
+  /** Keeps goals in their canonical order however they were picked. */
+  function setGoal(goal: OnboardingGoal, wanted: boolean): void {
+    answers.goals = ONBOARDING_GOALS.filter((candidate) =>
+      candidate === goal ? wanted : answers.goals.includes(candidate)
+    )
+  }
 
   function next(): void {
     const index = AI_SETUP_STEPS.indexOf(step.value)
@@ -165,6 +174,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
     ...connections,
     ...signIn,
     ...agents,
+    setGoal,
     next,
     back,
     apply

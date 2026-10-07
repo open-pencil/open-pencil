@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit'
+import * as v from 'valibot'
 import { computed, ref, toRaw, watch } from 'vue'
 
 import { appCredentialServices } from '@/app/settings/credentials/app'
@@ -17,61 +19,57 @@ export const MCP_CONNECTION_NAME_MAX_LENGTH = 80
 const MAX_URL_LENGTH = 2048
 const MCP_CONNECTION_ID_PATTERN = /^mcp-[a-z0-9._-]{1,60}$/
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
+const bearerSchema = v.object({
+  type: v.literal('bearer'),
+  credentialRef: v.object({ integrationId: v.string(), profileId: v.string(), field: v.string() })
+})
 
-function isCredentialRef(value: unknown): value is CredentialRef {
-  return (
-    isRecord(value) &&
-    typeof value.integrationId === 'string' &&
-    typeof value.profileId === 'string' &&
-    typeof value.field === 'string'
-  )
-}
-
+/** A stored bearer token counts only when it points at this connection's own credential. */
 function parseAuthentication(value: unknown, id: MCPConnectionID): MCPAuthentication {
-  if (!isRecord(value) || value.type !== 'bearer') return { type: 'none' }
-  const expectedReference = mcpConnectionCredentialRef(id)
-  if (!isCredentialRef(value.credentialRef)) return { type: 'none' }
-  const matchesExpected =
-    value.credentialRef.integrationId === expectedReference.integrationId &&
-    value.credentialRef.profileId === expectedReference.profileId &&
-    value.credentialRef.field === expectedReference.field
-  return matchesExpected ? { type: 'bearer', credentialRef: expectedReference } : { type: 'none' }
+  const bearer = v.safeParse(bearerSchema, value)
+  const expected = mcpConnectionCredentialRef(id)
+  return bearer.success && isEqual(bearer.output.credentialRef, expected)
+    ? { type: 'bearer', credentialRef: expected }
+    : { type: 'none' }
 }
+
+const connectionSchema = v.object({
+  id: v.pipe(v.string(), v.regex(MCP_CONNECTION_ID_PATTERN)),
+  name: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(1),
+    v.transform((name) => name.slice(0, MCP_CONNECTION_NAME_MAX_LENGTH))
+  ),
+  enabled: v.fallback(v.boolean(), false),
+  transport: v.object({
+    type: v.literal('streamable-http'),
+    url: v.pipe(
+      v.string(),
+      v.trim(),
+      v.check((url) => isValidMCPConnectionURL(url))
+    )
+  }),
+  authentication: v.optional(v.unknown())
+})
 
 function parseConnection(value: unknown): MCPConnection | null {
-  if (!isRecord(value) || !isRecord(value.transport)) return null
-  const id = typeof value.id === 'string' ? value.id : ''
-  const name = typeof value.name === 'string' ? value.name.trim() : ''
-  const url = typeof value.transport.url === 'string' ? value.transport.url.trim() : ''
-  if (!MCP_CONNECTION_ID_PATTERN.test(id) || !name || value.transport.type !== 'streamable-http') {
-    return null
-  }
-  try {
-    validateMCPConnectionURL(url)
-  } catch {
-    return null
-  }
-  const connectionId = id as MCPConnectionID
-  return {
-    id: connectionId,
-    name: name.slice(0, MCP_CONNECTION_NAME_MAX_LENGTH),
-    enabled: value.enabled === true,
-    transport: { type: 'streamable-http', url },
-    authentication: parseAuthentication(value.authentication, connectionId)
-  }
+  const parsed = v.safeParse(connectionSchema, value)
+  if (!parsed.success) return null
+  const { authentication, ...connection } = parsed.output
+  const id = connection.id as MCPConnectionID
+  return { ...connection, id, authentication: parseAuthentication(authentication, id) }
 }
 
+const settingsSchema = v.object({ version: v.literal(1), connections: v.array(v.unknown()) })
+
 export function parseMCPConnectionSettings(value: unknown): MCPConnectionSettings {
-  if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.connections)) {
-    return { version: 1, connections: [] }
-  }
+  const settings = v.safeParse(settingsSchema, value)
+  if (!settings.success) return { version: 1, connections: [] }
   const connections: MCPConnection[] = []
   const ids = new Set<string>()
   const names = new Set<string>()
-  for (const candidate of value.connections) {
+  for (const candidate of settings.output.connections) {
     const connection = parseConnection(candidate)
     if (!connection || ids.has(connection.id)) continue
     const normalizedName = connection.name.toLowerCase()
@@ -81,6 +79,15 @@ export function parseMCPConnectionSettings(value: unknown): MCPConnectionSetting
     connections.push(connection)
   }
   return { version: 1, connections }
+}
+
+function isValidMCPConnectionURL(url: string): boolean {
+  try {
+    validateMCPConnectionURL(url)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function validateMCPConnectionURL(value: string): URL {

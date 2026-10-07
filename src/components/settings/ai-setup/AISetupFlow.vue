@@ -5,26 +5,20 @@ import { computed, ref } from 'vue'
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
-import type { OnboardingConnectionPatch } from '@/app/ai/models/settings/onboarding/connections'
 import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
-import {
-  ONBOARDING_GOALS,
-  type OnboardingAccess,
-  type OnboardingGoal
-} from '@/app/ai/models/settings/onboarding/plan'
+import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_SETUP_STEPS, useAIOnboarding } from '@/app/ai/models/settings/onboarding/use'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogBody, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
+import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import theme from '@/theme/settings/ai-setup/flow'
 
 import AISetupAccess from './AISetupAccess.vue'
 import AISetupConnection from './AISetupConnection.vue'
 import AISetupReview from './AISetupReview.vue'
 import AISetupRoles from './AISetupRoles.vue'
-import SetupChoice from './SetupChoice.vue'
 
 const { entry, agentsAvailable = IS_TAURI } = defineProps<{
   entry: AISetupEntry
@@ -77,17 +71,6 @@ const header = computed(() => {
   }
 })
 
-function toggleGoal(goal: OnboardingGoal, checked: boolean): void {
-  answers.goals = ONBOARDING_GOALS.filter((candidate) =>
-    candidate === goal ? checked : answers.goals.includes(candidate)
-  )
-}
-
-function updateConnection(providerID: OnboardingAccess, patch: OnboardingConnectionPatch): void {
-  Object.assign(onboarding.connection(providerID), patch)
-  onboarding.resetTest(providerID)
-}
-
 /** Runs in the click handler, so the browser allows the sign-in popup. */
 function signIn(providerID: OnboardingAccess): void {
   onboarding.signIn(providerID, { keyLabel: 'OpenPencil' })
@@ -129,18 +112,14 @@ async function finish(): Promise<void> {
       </template>
 
       <template v-else-if="step === 'goals'">
-        <SetupChoice
+        <AppCheckboxCard
           v-for="goal in goals"
           :key="goal.id"
           :label="goal.label"
           :description="goal.description"
-        >
-          <AppCheckbox
-            :model-value="answers.goals.includes(goal.id)"
-            :ariaLabel="goal.label"
-            @update:model-value="toggleGoal(goal.id, $event)"
-          />
-        </SetupChoice>
+          :model-value="answers.goals.includes(goal.id)"
+          @update:model-value="onboarding.setGoal(goal.id, $event)"
+        />
       </template>
 
       <template v-else-if="step === 'access'">
@@ -190,7 +169,7 @@ async function finish(): Promise<void> {
           :pi-setup="onboarding.piSetup(providerID)"
           :recommended="!answers.access.includes(providerID)"
           :disabled="busy"
-          @update="updateConnection(providerID, $event)"
+          @update="onboarding.updateConnection(providerID, $event)"
           @test="onboarding.testConnection(providerID)"
           @sign-in="signIn(providerID)"
           @reopen-sign-in="onboarding.reopenSignIn(providerID)"

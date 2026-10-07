@@ -46,6 +46,15 @@ export function detectedAgents(lookup: AgentLookup): DetectedAgent[] {
   })
 }
 
+/** What went wrong in the last lookup or installation. */
+export type DiscoveryError =
+  | 'lookup'
+  | 'install'
+  | 'npm'
+  | 'canvas-install'
+  | 'canvas-start'
+  | 'harness-install'
+
 export function createAgentDiscovery(options: {
   enabled: boolean
   lookup: () => Promise<AgentLookup>
@@ -57,15 +66,15 @@ export function createAgentDiscovery(options: {
   const snapshot = shallowRef<AgentLookup | null>(null)
   const scanning = ref(false)
   const installing = ref<ACPAgentID | 'canvas' | 'harness' | null>(null)
-  const error = ref<
-    'lookup' | 'install' | 'npm' | 'canvas-install' | 'canvas-start' | 'harness-install' | null
-  >(null)
+  const error = ref<DiscoveryError | null>(null)
   let pending: Promise<void> | null = null
   const agents = computed(() => (snapshot.value ? detectedAgents(snapshot.value) : []))
   const availableAgents = computed(() =>
     agents.value.filter((agent) => agent.status === 'available')
   )
   const npmAvailable = computed(() => Boolean(snapshot.value?.executables.npm))
+  /** A lookup has finished, so a later rescan can keep showing its results. */
+  const checked = computed(() => snapshot.value !== null)
   // Checks read through functions so they see the snapshot of a rescan that just finished.
   function hasBridge(): boolean {
     return Boolean(snapshot.value?.executables[MCP_EXECUTABLE])
@@ -191,6 +200,7 @@ export function createAgentDiscovery(options: {
     agents,
     availableAgents,
     scanning,
+    checked,
     installing,
     error,
     npmAvailable,
