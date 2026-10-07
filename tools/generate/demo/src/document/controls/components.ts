@@ -12,7 +12,7 @@ export const CONTROL_COLORS = {
   line: '#CBD5E1',
   tile: '#EEF2FF',
   surface: '#FFFFFF',
-  disabled: '#A5B4FC'
+  disabled: '#E2E8F0'
 }
 
 const { ink, muted, accent, accentHover, accentPressed, line, tile, surface, disabled } =
@@ -21,9 +21,9 @@ const { ink, muted, accent, accentHover, accentPressed, line, tile, surface, dis
 const label = (color: string, value: string) =>
   `<Text font="Inter" size={13} weight={600} color="${color}">${value}</Text>`
 
-const buttonVariant = (state: string, props: string) =>
+const buttonVariant = (state: string, props: string, color = surface) =>
   `<Component name="Interaction=${state}" flex="row" px={16} py={8} rounded={8} ${props}>
-    ${label(surface, 'Save')}
+    ${label(color, 'Save')}
   </Component>`
 
 /** A button whose variants draw its interaction states. */
@@ -32,7 +32,7 @@ export const BUTTON = `<Button.Root name="Button" states="Interaction" flex="row
   ${buttonVariant('Hover', `bg="${accentHover}"`)}
   ${buttonVariant('Pressed', `bg="${accentPressed}"`)}
   ${buttonVariant('Focus', `bg="${accent}" stroke="${ink}" strokeWidth={2}`)}
-  ${buttonVariant('Disabled', `bg="${disabled}"`)}
+  ${buttonVariant('Disabled', `bg="${disabled}"`, muted)}
 </Button.Root>`
 
 export const SWITCH = `<Switch.Root name="Switch" modelValue="State" flex="row" gap={16} p={16}>

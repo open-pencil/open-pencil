@@ -1,16 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createTypographySection } from '@/app/demo/typography/section'
-import { createEditorStore } from '@/app/editor/session'
+import { createTypographySection } from '#demo/document/typography/section'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('demo document', () => {
   test('showcases OpenType features and native text decorations', async () => {
-    const store = createEditorStore()
-    const page = store.graph.addPage('Typography')
+    const graph = new SceneGraph()
+    const page = graph.addPage('Typography')
 
-    await createTypographySection(store.graph, page.id)
+    await createTypographySection(graph, page.id)
 
-    const nodes = [...store.graph.getAllNodes()]
+    const nodes = [...graph.getAllNodes()]
     const sample = (name: string) =>
       nodes.find((node) => node.name === name && node.type === 'TEXT')
 

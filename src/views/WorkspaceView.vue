@@ -15,7 +15,7 @@ import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
 import { syncRoomRoute } from '@/app/collab/route'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
-import { createDemoShapes } from '@/app/demo/document'
+import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
@@ -72,7 +72,7 @@ function openFirstTab(): Tab {
 {
   const firstTab = activeTab.value ?? openFirstTab()
   if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
-    void createDemoShapes(firstTab.store)
+    void openDemoDocument(firstTab.store)
   }
 }
 

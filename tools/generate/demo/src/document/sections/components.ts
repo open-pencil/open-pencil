@@ -23,7 +23,7 @@ const BORDER = '#DCE3F5'
 
 const text = { font: 'Inter', color: INK }
 const label = { ...text, size: 12, color: MUTED }
-const caption = { ...label, size: 10 }
+const caption = { ...label, size: 12 }
 
 export const COMPONENT_PROPERTIES = {
   buttonLabel: {
@@ -292,9 +292,9 @@ export async function createComponentsSection(
         Text({
           ...text,
           name: 'Label',
-          size: 11,
+          size: 12,
           weight: 600,
-          color: '#16A34A',
+          color: '#15803D',
           children: COMPONENT_PROPERTIES.badgeLabel.defaultValue,
           propertyRefs: [{ propertyId: COMPONENT_PROPERTIES.badgeLabel.id, field: 'TEXT' }]
         })

@@ -131,6 +131,9 @@
 - Read geometry in scripts after an edit without waiting for the script to finish: `x`, `y`, `width`, `height`, `relativeTransform`, `absoluteTransform`, `absoluteBoundingBox`, and `absoluteRenderBounds` lay out what the script changed first, as in Figma, so a hugging parent reports its new size right after a child is added.
 - Draw segmented controls in the properties panel at the height of the fields beside them.
 - Keep saving AI chat history in Safari Private Browsing after a message with an image or a reply that changed the document. Safari cannot store image data that way in a private window, so the conversation stopped saving from that point and showed "Chat history could not be saved".
+- Keep a layer's blend mode, such as Multiply or Screen, when saving to `.fig`; it was dropped and the layer reopened as pass-through.
+- Stop the underline of saved or Figma text where the text ends instead of running to the edge of its text box.
+- Keep the content of an imported auto layout frame centred, or otherwise aligned, within the width its parent stretches it to, instead of laying it out as if the frame hugged its content.
 - `figma.combineAsVariants` derives variant properties from components named as Figma names variants, such as `State=On, Size=Large`, as Combine as variants in the editor now does too; before, only slash-separated names gave the set any properties.
 - HTML and Tailwind export place layers of frames without auto layout at their coordinates instead of stacking them, leave the size of hugging auto layout frames and auto-sizing text to their content, and round ellipses.
 - Show the blinking caret in a new, empty text layer before the first character is typed.
@@ -214,6 +217,7 @@
 ### Performance
 
 - Edit variables in large documents without stalls: renaming, reordering, or adding a variable, or changing its CSS name, unit, scopes, or conditions, no longer redraws the canvas, and changing a value or mode updates only the layers bound to those variables or to variables aliasing them instead of re-resolving and laying out every bound layer in the document.
+- Open the `/demo` document like any `.fig` file, built ahead of time, instead of generating it in the browser, which froze the page for several seconds.
 - Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.
 - Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, each page resolves only the layers it adds instead of rescanning the whole document, placing an instance no longer re-synchronises every other instance of its component, and archive records are copied directly rather than through `structuredClone`. A 33-page file loads about a fifth quicker, and a page of repeated components opens three to four times faster once a document is already open.
 

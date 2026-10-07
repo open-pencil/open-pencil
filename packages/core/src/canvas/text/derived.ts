@@ -52,10 +52,23 @@ export function derivedUnderlineRect(node: Pick<SceneNode, 'width'>, baselineY: 
   }
 }
 
+/**
+ * Where the drawn text starts and ends, from its glyphs, when every glyph knows its advance;
+ * text narrower than its layer, or aligned to the centre or the end, does not reach its edges.
+ */
+function derivedTextExtent(node: SceneNode): { x1: number; x2: number } | null {
+  const glyphs = node.derivedTextGlyphs ?? []
+  if (glyphs.length === 0 || glyphs.some((glyph) => glyph.advance === undefined)) return null
+  return {
+    x1: Math.min(...glyphs.map((glyph) => glyph.x)),
+    x2: Math.max(...glyphs.map((glyph) => glyph.x + (glyph.advance ?? 0) * (glyph.scaleX ?? 1)))
+  }
+}
+
 function styleRunX(node: SceneNode, index: number): number {
   const glyph = node.derivedTextGlyphs?.[index]
   if (glyph) return glyph.x
-  if (index >= node.text.length) return node.width
+  if (index >= node.text.length) return derivedTextExtent(node)?.x2 ?? node.width
   if (node.text.length === 0) return 0
   return (node.width * index) / node.text.length
 }
@@ -104,9 +117,10 @@ function isDecorationSpan(span: DecorationSpan | null): span is DecorationSpan {
 function baseDecorationSpan(node: SceneNode): DecorationSpan | null {
   if (node.textDecoration !== 'UNDERLINE') return null
   const rect = derivedUnderlineRect(node, 0)
+  const extent = derivedTextExtent(node)
   return {
-    x1: rect.x1,
-    x2: rect.x2,
+    x1: extent?.x1 ?? rect.x1,
+    x2: extent?.x2 ?? rect.x2,
     style: node.textDecorationStyle,
     thickness: node.textDecorationThickness ?? rect.y2 - rect.y1,
     offset: node.textUnderlineOffset ?? 0,

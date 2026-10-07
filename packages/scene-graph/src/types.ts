@@ -341,6 +341,11 @@ export interface DerivedTextGlyph {
   /** Figma Glyph.rotation — radians, not degrees. Zero for axis-aligned text. */
   rotation?: number
   /**
+   * Horizontal advance in pixels at `fontSize`, before `scaleX`, when the shaping source gave
+   * one; where the glyph ends, so decorations stop at the text rather than the layer's edge.
+   */
+  advance?: number
+  /**
    * Accumulated non-uniform resize scale (default 1). Paint order is
    * translate → scale(scaleX,Y) → rotate → scale(fontSize,-fontSize) so
    * anisotropic stretch matches scaleGeometryPaths(strokeGeometry).

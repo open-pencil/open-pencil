@@ -58,7 +58,9 @@ describe('fig-import: text properties', () => {
         fontSize: 14,
         // Path text needs per-glyph rotation preserved through import (#396);
         // plain text imports it as 0 rather than dropping the field.
-        rotation: 0
+        rotation: 0,
+        // One em at 14px, so decorations can stop where the glyph ends.
+        advance: 14
       }
     ])
 

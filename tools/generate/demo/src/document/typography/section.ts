@@ -38,7 +38,7 @@ export async function createTypographySection(graph: SceneGraph, parentId: strin
               rounded: 16,
               bg: '#EEF2FF',
               children: [
-                Text({ ...label, size: 10, children: ARTICLE.eyebrow }),
+                Text({ ...label, size: 12, children: ARTICLE.eyebrow }),
                 Text({
                   ...text,
                   name: 'Article headline',
@@ -64,7 +64,7 @@ export async function createTypographySection(graph: SceneGraph, parentId: strin
                   lineHeight: 22,
                   children: ARTICLE.body
                 }),
-                Text({ ...label, size: 10, children: ARTICLE.detail })
+                Text({ ...label, size: 12, children: ARTICLE.detail })
               ]
             }),
             Frame({
@@ -89,7 +89,7 @@ export async function createTypographySection(graph: SceneGraph, parentId: strin
                     description: 'Readable lines, generous leading, and a content-sized frame.'
                   },
                   {
-                    title: 'Details · 10',
+                    title: 'Details · 12',
                     description: 'Supporting information with enough contrast to stay useful.'
                   }
                 ].map((item) =>
@@ -143,7 +143,7 @@ export async function createTypographySection(graph: SceneGraph, parentId: strin
       { parentId: comparisonRow.id }
     )
     for (const [index, settings] of [comparison.enabled, comparison.disabled].entries()) {
-      await renderTree(graph, Text({ ...label, size: 10, children: comparison.labels[index] }), {
+      await renderTree(graph, Text({ ...label, size: 12, children: comparison.labels[index] }), {
         parentId: column.id
       })
       await createTypographySample(graph, column.id, {

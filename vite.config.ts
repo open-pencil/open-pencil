@@ -9,6 +9,7 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { ensureDemoDocument } from '@open-pencil/demo-tools'
 
 import packageJson from './package.json'
 import { viteBuildTarget } from './src/app/shell/support/baseline'
@@ -28,7 +29,7 @@ const host = process.env.TAURI_DEV_HOST
 const automationRoute = localAutomationRoute(host)
 
 export default defineConfig(async ({ command }) => {
-  await ensureBrandAssets(['web'])
+  await Promise.all([ensureBrandAssets(['web']), ensureDemoDocument()])
   return {
     resolve: {
       alias: createOpenPencilAliases(__dirname)
