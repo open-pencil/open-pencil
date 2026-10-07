@@ -10,9 +10,10 @@ import {
   type SceneNode
 } from '@open-pencil/core'
 
+import { testPath } from '../paths'
 import { collectAllNodes } from './traversal'
 
-export const FIXTURES = resolve(import.meta.dir, '../../fixtures')
+export const FIXTURES = testPath('fixtures')
 
 export const VALID_NODE_TYPES = new Set<string>([
   'CANVAS',

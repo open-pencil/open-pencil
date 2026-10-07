@@ -17,6 +17,12 @@ Use **Settings → Tool access** (select **Local MCP**) to search and toggle the
 
 Restart the MCP server, then reconnect stdio clients, to apply changes. For an externally managed server, restart its owning process. The list reflects the tools discovered from the server; disabling a dedicated tool does not prevent an enabled script tool from performing the same operation. These switches are not a sandbox and do not configure remote MCP servers or WebMCP.
 
+## Share only the selection {#selection-scope}
+
+Turn on **Share only the selection** in **Settings → MCP → Local server** to let MCP clients read only the layers you select. Clients then get `get_selection`, `get_node`, `get_page_tree`, `describe`, and `export_image`, and no tools that edit, open files, list documents, or change settings. Every node a call names must be a selected layer or inside one; `describe` and `export_image` read the selection when given no IDs, and `get_page_tree` needs a `root_id` from the selection. `export_image` returns the image but cannot write it to a file. With nothing selected, calls fail and ask the user to select layers.
+
+The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
+
 ## Browser-native WebMCP (experimental) {#webmcp}
 
 WebMCP is **off by default**. Open **Settings → MCP → WebMCP** and choose **Inspect** for read-only access or **Edit** to also allow scoped, undoable changes. **Off** unregisters all browser tools; changing modes revokes the previous registrations immediately. This preference is independent of local MCP authentication, tool switches, and outbound connections.
@@ -153,6 +159,8 @@ Endpoints are available over both active transports:
 
 `undo` and `redo` step back through the agent's own changes, and `activate_document` brings a tab to the front when the user should see it.
 
+Each MCP session shows in the app as an agent with a callsign, like the built-in chat: its cursor and outline sit on the layers each tool reads or changes, it rests after a quiet spell and leaves when the session ends, and people can follow it from their avatar. Collaborators in a shared room see it too.
+
 Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
 ## AI Agent Skill
@@ -202,7 +210,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 | Tool | Description |
 |------|-------------|
-| `get_selection` | Get currently selected nodes |
+| `get_selection` | Get the selected nodes, with their direct children by default; `depth` sets how many levels |
 | `get_page_tree` | Get the full node tree of the current page |
 | `get_current_page` | Get the current page name and ID |
 | `get_node` | Get detailed properties of a node by ID |
@@ -232,6 +240,9 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `render` | Render JSX to design nodes — create entire component trees in one call |
 | `create_component` | Convert a frame/group into a component |
 | `create_instance` | Create an instance of a component |
+| `create_slot` | Make a frame inside a main component a slot |
+| `set_behaviour` | Make a component behave as a Reka UI control, by its property and slot names; `null` removes it |
+| `get_behaviour` | Read a component's behaviour and what it still misses; without an ID, list every kind |
 | `node_to_component` | Convert an existing node into a component in-place |
 
 ### Modify

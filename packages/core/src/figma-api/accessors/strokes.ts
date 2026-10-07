@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { newStrokeGeometry, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import {
   nodeId,
@@ -8,9 +8,9 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import {
-  setFirstStrokeAlign,
-  setFirstStrokeWeight,
-  setIndependentStrokeWeight
+  setIndependentStrokeWeight,
+  setStrokeAlign,
+  setStrokeWeight
 } from '#core/figma-api/strokes'
 
 type IndependentWeightField =
@@ -39,22 +39,21 @@ export function installStrokeNodeProxyAccessors(
   internals: NodeProxyInternals
 ): void {
   Object.defineProperties(prototype, {
+    // Figma keeps stroke weight and alignment on the node, with or without strokes.
     strokeWeight: {
       get(this: ProxyThis): number {
-        const strokes = raw(this, internals).strokes
-        return strokes.length > 0 ? strokes[0].weight : 0
+        return newStrokeGeometry(raw(this, internals)).weight
       },
       set(this: ProxyThis, value: number) {
-        setFirstStrokeWeight(graph(this, internals), raw(this, internals), value)
+        setStrokeWeight(graph(this, internals), raw(this, internals), value)
       }
     },
     strokeAlign: {
       get(this: ProxyThis): string {
-        const strokes = raw(this, internals).strokes
-        return strokes.length > 0 ? strokes[0].align : 'INSIDE'
+        return newStrokeGeometry(raw(this, internals)).align
       },
-      set(this: ProxyThis, value: string) {
-        setFirstStrokeAlign(graph(this, internals), raw(this, internals), value)
+      set(this: ProxyThis, value: SceneNode['strokeAlign']) {
+        setStrokeAlign(graph(this, internals), raw(this, internals), value)
       }
     },
     dashPattern: {

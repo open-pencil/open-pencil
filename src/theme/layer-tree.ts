@@ -32,7 +32,7 @@ const layerTreeTheme = {
     },
     visible: {
       true: {},
-      false: { row: 'opacity-50' }
+      false: {}
     },
     component: {
       true: { icon: 'text-component opacity-100' },
@@ -82,7 +82,11 @@ const layerTreeTheme = {
       selected: true,
       focused: false,
       class: { row: 'bg-panel-selected-muted text-surface hover:bg-panel-selected-muted' }
-    }
+    },
+    // A hidden layer dims while its name still reads at 4.5:1. Once selected, fading the row would
+    // fade its highlight too, so only the icon dims.
+    { visible: false, selected: false, class: { row: 'opacity-65' } },
+    { visible: false, selected: true, class: { icon: 'opacity-50' } }
   ],
   defaultVariants: {
     selected: false,

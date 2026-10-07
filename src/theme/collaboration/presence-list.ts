@@ -1,7 +1,7 @@
 import { tv } from 'tailwind-variants'
 
 const NAME =
-  'min-w-0 cursor-default truncate text-left text-[11px] text-surface outline-none focus-visible:ring-1 focus-visible:ring-accent'
+  'min-w-0 cursor-default truncate text-left text-[11px] text-surface outline-none focus-visible:ring-1 focus-visible:ring-panel-focus'
 
 /** People in a room, each followed by their agents. */
 export const presenceList = tv({

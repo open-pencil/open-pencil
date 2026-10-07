@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import DocumentEntry from './DocumentEntry.vue'
 
 const meta = {
-  title: 'Home/Document Entry',
+  title: 'App/Home/Document Entry',
   component: DocumentEntry,
   args: { name: 'Design system', metadata: 'Sep 7, 2026', view: 'grid' },
   render: (args) => ({

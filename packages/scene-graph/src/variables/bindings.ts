@@ -58,6 +58,31 @@ export function resolvedNumericBindings(
 }
 
 /**
+ * The text and visibility a node's string and boolean bindings resolve to in its mode, for the
+ * fields whose stored value differs. Text or visibility an instance overrides, which typing in a
+ * layer or toggling its eye records, keeps its own value, as an overridden width or height does.
+ * A bound font family is left as stored: changing it needs the font loaded, which resolving a
+ * binding cannot do.
+ */
+export function resolvedValueBindings(
+  graph: SceneGraph,
+  node: SceneNode,
+  fallback: VariableModeFallback = 'active'
+): Partial<SceneNode> {
+  const updates: Partial<SceneNode> = {}
+  const resolve = (field: 'text' | 'visible') => {
+    const variableId = node.boundVariables[field]
+    if (!variableId || hasInstanceOverride(graph, node.id, field)) return undefined
+    return graph.resolveVariableForNode(node.id, variableId, fallback)
+  }
+  const text = node.type === 'TEXT' ? resolve('text') : undefined
+  if (typeof text === 'string' && text !== node.text) updates.text = text
+  const visible = resolve('visible')
+  if (typeof visible === 'boolean' && visible !== node.visible) updates.visible = visible
+  return updates
+}
+
+/**
  * A bound paint takes its whole color from the variable, alpha included, the way Figma stores
  * it: the variable's RGB at full alpha, and its alpha as the paint's opacity.
  */
@@ -94,11 +119,65 @@ export function resolvedPaintBindings(
   return changes
 }
 
-/** Resolve live numeric bindings in scene units, without authoring instance overrides. */
-export function reconcileNumericVariableBindings(graph: SceneGraph): string[] {
+/**
+ * The layers a reconcile looks at: those bound to these variables, directly or through a variable
+ * aliasing them, or the layers in these subtrees. Without a scope, every layer.
+ */
+export type BindingScope = { variables: Iterable<string> } | { subtrees: Iterable<string> }
+
+/** These variables and every variable that aliases one of them, at any depth and in any mode. */
+export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<string>): Set<string> {
+  const found = new Set(ids)
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const variable of graph.variables.values()) {
+      if (found.has(variable.id)) continue
+      const aliases = Object.values(variable.valuesByMode).some(
+        (value) => typeof value === 'object' && 'aliasId' in value && found.has(value.aliasId)
+      )
+      if (aliases) {
+        found.add(variable.id)
+        grew = true
+      }
+    }
+  }
+  return found
+}
+
+function subtreeNodes(graph: SceneGraph, roots: Iterable<string>): SceneNode[] {
+  const nodes: SceneNode[] = []
+  const pending = [...roots]
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    nodes.push(node)
+    pending.push(...node.childIds)
+  }
+  return nodes
+}
+
+function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterable<SceneNode> {
+  if (!scope) return graph.getAllNodes()
+  if ('subtrees' in scope) return subtreeNodes(graph, scope.subtrees)
+  const variables = variablesResolvingThrough(graph, scope.variables)
+  return [...graph.getAllNodes()].filter((node) =>
+    Object.values(node.boundVariables).some((id) => variables.has(id))
+  )
+}
+
+/**
+ * Resolve live numeric, text, and visibility bindings, numbers in scene units, without authoring
+ * instance overrides. A scope limits it to the layers a change can reach, so layers whose saved
+ * values differ from their bindings elsewhere in the document are left as saved.
+ */
+export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
   const changed: string[] = []
-  for (const node of graph.getAllNodes()) {
-    const updates = resolvedNumericBindings(graph, node)
+  for (const node of scopedNodes(graph, scope)) {
+    const updates = {
+      ...resolvedNumericBindings(graph, node),
+      ...resolvedValueBindings(graph, node)
+    }
     if (Object.keys(updates).length === 0) continue
     graph.updateNode(node.id, updates)
     changed.push(node.id)

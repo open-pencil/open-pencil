@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 
 import { McpServer, WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/server'
 
+import type { MCPAgentKind, MCPAgentSession } from '#mcp/tool/registration'
+
 export type MCPTransport = {
   handleRequest: (request: Request) => Promise<Response>
   close: () => Promise<void>
@@ -15,7 +17,9 @@ type MCPSession = {
 
 type MCPSessionManagerOptions = {
   serverVersion: string
-  registerTools: (server: McpServer) => void
+  registerTools: (server: McpServer, session: MCPAgentSession) => void
+  /** Told when a session ends, so the app stops showing its agent. */
+  onSessionClosed?: (sessionId: string) => void
 }
 
 const MAX_MCP_SESSIONS = 10
@@ -61,12 +65,14 @@ async function closeSession(session: MCPSession): Promise<void> {
 
 export function createMCPSessionManager({
   serverVersion,
-  registerTools
+  registerTools,
+  onSessionClosed
 }: MCPSessionManagerOptions) {
   const sessions = new Map<string, MCPSession>()
   const closing = new Set<Promise<void>>()
 
-  function scheduleClose(session: MCPSession): Promise<void> {
+  function scheduleClose(session: MCPSession, id?: string): Promise<void> {
+    if (id) onSessionClosed?.(id)
     const task = closeSession(session).finally(() => closing.delete(task))
     closing.add(task)
     return task
@@ -87,7 +93,7 @@ export function createMCPSessionManager({
     for (const [id, session] of sessions) {
       if (now - session.lastSeen > MCP_SESSION_TTL_MS) {
         sessions.delete(id)
-        void scheduleClose(session)
+        void scheduleClose(session, id)
       }
     }
   }
@@ -95,14 +101,14 @@ export function createMCPSessionManager({
   const creating = new Map<string, Promise<MCPTransport>>()
   let closed = false
 
-  async function createSession(id: string): Promise<MCPTransport> {
+  async function createSession(id: string, kind: MCPAgentKind): Promise<MCPTransport> {
     if (closed) throw new Error('Session manager is closed')
     const inFlight = creating.get(id)
     if (inFlight) return inFlight
 
     const promise = (async () => {
       const server = new McpServer({ name: 'open-pencil', version: serverVersion })
-      registerTools(server)
+      registerTools(server, { id, kind })
 
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: () => id,
@@ -142,7 +148,8 @@ export function createMCPSessionManager({
   }
 
   function resolveTransport(
-    sessionId: string | undefined
+    sessionId: string | undefined,
+    kind: MCPAgentKind = 'mcp'
   ): Promise<MCPTransport | { error: 'too_many' | 'closed' }> {
     if (closed) return Promise.resolve({ error: 'closed' })
     cleanupExpired()
@@ -163,7 +170,7 @@ export function createMCPSessionManager({
     if (sessions.size + creating.size + closing.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
     }
-    return createSession(sessionId ?? randomUUID()).catch((e) => {
+    return createSession(sessionId ?? randomUUID(), kind).catch((e) => {
       // If the manager was closed during session creation, return the structured
       // error instead of letting the throw escape as a route-level 500.
       if (closed) return { error: 'closed' as const }
@@ -200,14 +207,14 @@ export function createMCPSessionManager({
     const session = sessions.get(sessionId)
     if (!session) return
     sessions.delete(sessionId)
-    void scheduleClose(session)
+    void scheduleClose(session, sessionId)
   }
 
   async function clear() {
     closed = true
     // Collect sessions before awaiting in-flight creations so new sessions
     // can't be added during shutdown.
-    const all = [...sessions.values()]
+    const all = [...sessions]
     sessions.clear()
     // Wait for in-flight session creations to finish (they will check
     // `closed` and clean up without storing the session).
@@ -216,7 +223,10 @@ export function createMCPSessionManager({
     creating.clear()
     // Await both previously-scheduled closes (from cleanupExpired/deleteSession)
     // and closes for sessions still alive at clear() time.
-    await Promise.allSettled([...closing, ...all.map(scheduleClose)])
+    await Promise.allSettled([
+      ...closing,
+      ...all.map(([id, session]) => scheduleClose(session, id))
+    ])
   }
 
   return { clear, deleteSession, getExistingTransport, notifyToolsChanged, resolveTransport, touch }

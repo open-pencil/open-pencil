@@ -34,30 +34,33 @@ const preview: Preview = {
     layout: 'fullscreen',
     options: {
       storySort: {
+        // Design System follows the families under src/components/ui; App follows product areas.
         order: [
           'Design System',
           [
             'Actions',
-            ['Button', 'Icon Button'],
             'Inputs',
-            ['Combobox', 'Segmented Control'],
-            'Navigation',
-            ['Tabs'],
-            'Lists',
-            ['Action Row'],
-            'Paint',
-            ['Fill Swatch'],
-            'Overlays',
-            ['Dialog'],
+            'Selection',
             'Feedback',
-            ['Placeholder', 'Toast'],
+            'Overlays',
             'Layout',
-            ['Panel Foundation']
+            'Lists',
+            'Navigation',
+            'Paint'
           ],
-          'Editor',
-          ['Navigation', 'Layer Tree', 'Properties'],
-          'Chat',
-          ['Markdown', 'Message', 'Attachments'],
+          'App',
+          [
+            'Editor',
+            ['Navigation', 'Layer Tree', 'Properties'],
+            'Chat',
+            ['Markdown', 'Message', 'Attachments'],
+            'Collaboration',
+            'Settings',
+            'Home',
+            'Shell',
+            'Brand'
+          ],
+          'Vue SDK',
           '*'
         ]
       }
@@ -69,7 +72,19 @@ const preview: Preview = {
       }
     },
     a11y: {
-      test: 'error'
+      test: 'error',
+      context: {
+        include: ['body'],
+        exclude: [
+          // Reka's toast viewport brackets its list with empty aria-hidden spans that only pass
+          // focus into the toasts; they never keep it.
+          '[role=region] > span[aria-hidden="true"][tabindex="0"]',
+          // A row being dragged stays behind as a faded placeholder; the drag preview carries it.
+          '[data-dragging]',
+          // Design Check shows the document's own failing text and background colors as a sample.
+          '[data-contrast-sample]'
+        ]
+      }
     }
   }
 }

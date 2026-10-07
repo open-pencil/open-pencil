@@ -64,7 +64,7 @@ function isActive(scale: number) {
 <template>
   <Tip :label="label" :disabled="!label">
     <div
-      class="flex min-w-0 flex-1 overflow-hidden rounded border border-border bg-input focus-within:border-accent"
+      class="flex min-w-0 flex-1 overflow-hidden rounded border border-border bg-input focus-within:border-panel-focus"
     >
       <input
         ref="inputRef"
@@ -101,7 +101,7 @@ function isActive(scale: number) {
               @select="pick(scale)"
             >
               <span>{{ scale }}x</span>
-              <icon-lucide-check v-if="isActive(scale)" class="size-3 text-accent" />
+              <icon-lucide-check v-if="isActive(scale)" class="size-3 text-primary" />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenuPortal>

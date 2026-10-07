@@ -7,7 +7,7 @@ import PresetNumberField from './PresetNumberField.vue'
 const LABEL = 'Maximum steps per message'
 
 const meta = {
-  title: 'Design System/Inputs/Preset number',
+  title: 'Design System/Inputs/Preset Number',
   args: {
     presets: [25, 50, 100, 200],
     min: 1,

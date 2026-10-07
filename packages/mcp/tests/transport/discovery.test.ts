@@ -13,12 +13,15 @@ const VALID = {
 }
 
 describe('parseDiscoveryInfo', () => {
-  test('defaults disabledTools to an empty list', () => {
-    expect(parseDiscoveryInfo(JSON.stringify(VALID))).toEqual({ ...VALID, disabledTools: [] })
-    expect(parseDiscoveryInfo(JSON.stringify({ ...VALID, disabledTools: ['eval'] }))).toEqual({
+  test('defaults disabledTools to an empty list and the scope to the document', () => {
+    expect(parseDiscoveryInfo(JSON.stringify(VALID))).toEqual({
       ...VALID,
-      disabledTools: ['eval']
+      disabledTools: [],
+      scope: 'document'
     })
+    expect(
+      parseDiscoveryInfo(JSON.stringify({ ...VALID, disabledTools: ['eval'], scope: 'selection' }))
+    ).toEqual({ ...VALID, disabledTools: ['eval'], scope: 'selection' })
   })
 
   test.each([

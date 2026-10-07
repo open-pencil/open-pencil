@@ -9,7 +9,7 @@ const { ui } = defineProps<{
 }>()
 
 const cls = computed(() =>
-  twMerge('shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] text-accent', ui?.base)
+  twMerge('shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] text-primary', ui?.base)
 )
 </script>
 

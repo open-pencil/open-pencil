@@ -69,6 +69,7 @@ export {
 } from '@open-pencil/scene-graph'
 
 export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
+export { BehaviourHandle, OpenPencilAPI, type NodeRef } from './openpencil-api'
 export {
   ALL_TOOLS,
   CORE_TOOLS,
@@ -298,10 +299,10 @@ export {
   decompressFigKiwiDataAsync,
   buildFontDigestMap,
   sceneNodeToKiwi,
-  fractionalPosition,
   mapToFigmaType
 } from './kiwi/fig/node-change/serialize'
-export { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
+export { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+export { withFigExportRuntime } from './canvas/text/shape'
 
 export { renderJSX, renderTree } from './design-jsx'
 export {

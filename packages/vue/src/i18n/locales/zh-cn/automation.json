@@ -30,6 +30,8 @@
   "version": "版本",
   "authentication": "要求身份验证",
   "authenticationDescription": "使用 Bearer 令牌保护本地 MCP 端点。仅在可信设备上禁用。重启服务器以应用更改。",
+  "selectionScope": "仅共享所选内容",
+  "selectionScopeDescription": "MCP 客户端只能读取你选中的图层，仅可使用 get_selection、get_node、get_page_tree、describe 和 export_image，不能使用其他工具。重启服务器以应用更改。",
   "rootDirectory": "MCP 根目录",
   "rootDirectoryDefault": "服务器默认目录",
   "chooseRootDirectory": "选择文件夹",

@@ -74,6 +74,7 @@ export const programmableSidebar = (
       { text: labels.aiChat, link: `${prefix}/programmable/ai-chat` },
       ...(!prefix
         ? [
+            { text: 'Coding agents', link: '/programmable/coding-agents' },
             {
               text: 'BYOK Compatibility',
               link: '/programmable/byok-provider-compatibility',
@@ -120,6 +121,7 @@ export const developmentSidebar = (
       ...(!prefix
         ? [
             { text: 'Roadmap', link: '/development/roadmap' },
+            { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },

@@ -224,3 +224,44 @@ describe('eval', () => {
     expect(result).toBe('FromEval')
   })
 })
+
+describe('get_selection', () => {
+  /** A card selected on the page, holding a row that holds a chip. */
+  function selectedCard() {
+    const { figma } = setupToolTest()
+    const card = figma.createFrame()
+    card.name = 'Card'
+    const row = figma.createFrame()
+    row.name = 'Row'
+    card.appendChild(row)
+    const chip = figma.createRectangle()
+    chip.name = 'Chip'
+    row.appendChild(chip)
+    figma.currentPage.selection = [card]
+    return figma
+  }
+
+  test('returns the selection with its direct children by default', () => {
+    const result = getTool('get_selection').execute(selectedCard(), {}) as {
+      selection: Array<{ name: string; children?: Array<{ name: string; childCount?: number }> }>
+    }
+    const [card] = result.selection
+    expect(card.name).toBe('Card')
+    expect(card.children?.map((child) => child.name)).toEqual(['Row'])
+    expect(card.children?.[0].childCount).toBe(1)
+  })
+
+  test('takes a depth', () => {
+    const tool = getTool('get_selection')
+    const shallow = tool.execute(selectedCard(), { depth: 0 }) as {
+      selection: Array<{ children?: unknown; childCount?: number }>
+    }
+    expect(shallow.selection[0].children).toBeUndefined()
+    expect(shallow.selection[0].childCount).toBe(1)
+
+    const deep = tool.execute(selectedCard(), { depth: 2 }) as {
+      selection: Array<{ children: Array<{ children: Array<{ name: string }> }> }>
+    }
+    expect(deep.selection[0].children[0].children[0].name).toBe('Chip')
+  })
+})

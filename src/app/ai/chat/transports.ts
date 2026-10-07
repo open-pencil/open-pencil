@@ -14,6 +14,7 @@ import { ref } from 'vue'
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
+import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { reasoningCallSettings, type AIProviderOptions } from '@/app/ai/chat/reasoning'
@@ -22,7 +23,14 @@ import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
-import { createAITools, endRun, recordStep, runPageId, startRun } from '@/app/ai/tools'
+import {
+  createAITools,
+  endRun,
+  markRunPreview,
+  recordStep,
+  runPageId,
+  startRun
+} from '@/app/ai/tools'
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { diagnosticErrorDetails } from '@/app/diagnostics'
@@ -110,7 +118,12 @@ export function createToolLoopTransport({
   diagnosticContext = {}
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store, diagnosticContext)
-  const preview = createCanvasJSXPreview(store, () => runPageId(store))
+  // While JSX streams, the chat's agent moves through the elements as they appear.
+  const preview = createCanvasJSXPreview(
+    store,
+    () => runPageId(store),
+    (focus) => markRunPreview(store, focus)
+  )
   const renderTool = tools.render
   renderTool.onInputStart = ({ toolCallId, abortSignal }) => preview.start(toolCallId, abortSignal)
   renderTool.onInputDelta = ({ toolCallId, inputTextDelta }) =>
@@ -252,6 +265,7 @@ export function createChatSessionManager({
 
   async function createActiveACPTransport() {
     await destroyAgentTransports()
+    await assertAgentReady('acp')
     const transport = await createACPTransport(providerID.value)
     acpTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -261,13 +275,22 @@ export function createChatSessionManager({
     await destroyAgentTransports()
     const runtime = await createAIModelRuntime('design')
     if (runtime?.kind !== 'harness') throw new Error('The Design agent is not configured for Pi')
-    const [{ HarnessChatTransport }, { buildPiMCPServers }] = await Promise.all([
+    await assertAgentReady('pi')
+    const [{ HarnessChatTransport }, { buildPiMCPServers }, { readPiAccount }] = await Promise.all([
       import('@/app/ai/harness/transport'),
-      import('@/app/integrations/mcp')
+      import('@/app/integrations/mcp'),
+      import('@/app/ai/harness/pi-settings')
     ])
+    // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
-    if (!apiKey) throw new Error('Credential is unavailable for the Pi agent')
-    const model = runtime.role.profile.customModelID || runtime.role.profile.modelID
+    const account = apiKey ? null : await readPiAccount()
+    const model =
+      runtime.role.profile.customModelID ||
+      runtime.role.profile.modelID ||
+      account?.defaultModel ||
+      ''
+    if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
+    if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(
       sessionId,
       {
@@ -283,7 +306,9 @@ export function createChatSessionManager({
         instructions: SYSTEM_PROMPT,
         mcpServers: await buildPiMCPServers()
       },
-      { OPENPENCIL_HARNESS_API_KEY: apiKey }
+      apiKey
+        ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
+        : { OPENPENCIL_HARNESS_AGENT_DIR: account?.agentDir ?? '' }
     )
     harnessTransportInstance = transport
     return transport as ChatTransport<UIMessage>

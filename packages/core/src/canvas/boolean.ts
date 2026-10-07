@@ -1,6 +1,6 @@
 import type { Canvas, Path, PathBuilder, PathOp } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 
@@ -293,6 +293,30 @@ export function makeBooleanOperationPath(
     result = combined
   }
   return result
+}
+
+/**
+ * Measures boolean operations for the group refit: the tight box of the combined shape in the
+ * parent's space, which Figma sizes a boolean to, or null for an empty result, which keeps the
+ * operands' box as Figma does.
+ */
+export function booleanResultBounds(
+  r: SkiaRenderer,
+  graph: SceneGraph
+): NonNullable<GroupFitOptions['booleanBounds']> {
+  return (node) => {
+    const path = makeBooleanOperationPath(r, node, graph)
+    if (!path) return null
+    const [left, top, right, bottom] = path.computeTightBounds()
+    path.delete()
+    if (right <= left && bottom <= top) return null
+    return { x: node.x + left, y: node.y + top, width: right - left, height: bottom - top }
+  }
+}
+
+/** Group refit options that size booleans to their result when a renderer can measure it. */
+export function groupFitOptions(r: SkiaRenderer | null, graph: SceneGraph): GroupFitOptions {
+  return r ? { booleanBounds: booleanResultBounds(r, graph) } : {}
 }
 
 export function renderBooleanOperation(

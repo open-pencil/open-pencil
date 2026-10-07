@@ -1,3 +1,5 @@
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
 export const AGENT_KINDS = ['chat', 'acp', 'harness', 'mcp'] as const
 export type AgentKind = (typeof AGENT_KINDS)[number]
 
@@ -31,4 +33,6 @@ export interface AgentPresence {
   /** Where the agent last worked, derived from the nodes it touched. */
   cursor?: PresencePoint
   selection?: string[]
+  /** Outlines, in world coordinates on the cursor's page, of what is not a layer yet. */
+  outline?: Rect[]
 }

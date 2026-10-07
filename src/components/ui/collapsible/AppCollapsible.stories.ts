@@ -7,7 +7,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from './AppCollapsible.vue'
 
 const meta = {
-  title: 'Design System/Disclosure/Collapsible',
+  title: 'Design System/Layout/Collapsible',
   args: { label: 'Advanced settings' },
   render: (args) => ({
     components: { AppCollapsible, AppButton },

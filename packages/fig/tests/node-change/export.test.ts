@@ -5,19 +5,18 @@ import { componentPropDefsOf, componentPropRefsOf } from '#fig-tests/helpers/com
 import { symbolDataOf } from '#fig/instance-overrides/types'
 import {
   buildComponentPropIndex,
-  fractionalPosition,
   mapToFigmaType,
   sceneNodeToKiwi,
   type FigNodeChangeExportRuntime
 } from '#fig/node-change/index'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 describe('@open-pencil/fig SceneGraph export policy', () => {
-  test('maps node types and sibling positions deterministically', () => {
+  test('maps node types deterministically', () => {
     expect(mapToFigmaType('COMPONENT')).toBe('SYMBOL')
-    expect([0, 93, 94, 188].map(fractionalPosition)).toEqual(['!', '~', '~!', '~~!'])
   })
 
   test('exports one ordering scheme when preserved and generated siblings are mixed', () => {
@@ -103,7 +102,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     ])
   })
 
-  test('injects runtime glyph outlines into derived text data', () => {
+  test('writes text shaped by the runtime as derived text data', () => {
     const graph = new SceneGraph()
     const text = graph.createNode('TEXT', graph.getPages()[0].id, {
       text: 'A',
@@ -113,13 +112,30 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     })
     const blobs: Uint8Array[] = []
     const runtime: FigNodeChangeExportRuntime = {
-      getGlyphOutlineMetrics: () => [
-        {
-          commands: [{ type: 'M', x: 0, y: 0 }, { type: 'L', x: 8, y: 16 }, { type: 'Z' }],
-          x: 0,
-          advance: 10
-        }
-      ]
+      shapeText: () => ({
+        glyphs: [
+          {
+            commands: [{ type: 'M', x: 0, y: 0 }, { type: 'L', x: 8, y: 16 }, { type: 'Z' }],
+            x: 0,
+            y: 15,
+            fontSize: 16,
+            firstCharacter: 0,
+            advance: 10
+          }
+        ],
+        baselines: [
+          {
+            firstCharacter: 0,
+            endCharacter: 1,
+            position: { x: 0, y: 15 },
+            width: 10,
+            lineY: 0,
+            lineHeight: 19,
+            lineAscent: 15
+          }
+        ],
+        logicalIndexToCharacterOffsetMap: [0]
+      })
     }
 
     const [change] = sceneNodeToKiwi(
@@ -137,6 +153,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     )
 
     expect(change.derivedTextData?.glyphs).toHaveLength(1)
+    expect(change.derivedTextData?.baselines?.[0]?.position.y).toBe(15)
     expect(blobs).toHaveLength(1)
   })
 
@@ -469,5 +486,37 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     expect(bindingEntries).toEqual([
       { pluginID: 'other-plugin', key: 'boundVariables', value: 'kept' }
     ])
+  })
+})
+
+function expectStrictlyIncreasing(keys: string[]) {
+  for (let i = 1; i < keys.length; i++) expect(keys[i] > keys[i - 1]).toBe(true)
+}
+
+describe('Figma export order keys', () => {
+  test('a layer added before imported siblings does not share their keys', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { name: 'Frame' })
+    for (const [name, orderKey] of [
+      ['A', '!'],
+      ['B', '"'],
+      ['C', '#']
+    ]) {
+      const child = graph.createNode('RECTANGLE', frame.id, { name })
+      child.source.orderKey = orderKey
+    }
+    const inserted = graph.createNode('RECTANGLE', frame.id, { name: 'Inserted' })
+    frame.childIds = [inserted.id, ...frame.childIds.filter((id) => id !== inserted.id)]
+
+    const changes = sceneNodeToKiwi(frame, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
+    const children = changes.slice(1)
+    const positions = children.map((change) => change.parentIndex?.position ?? '')
+
+    expect(children.map((change) => change.name)).toEqual(['Inserted', 'A', 'B', 'C'])
+    // Nothing sorts before '!', so A is re-keyed; B and C keep their imported keys.
+    expect(positions.slice(2)).toEqual(['"', '#'])
+    expect(new Set(positions).size).toBe(4)
+    expectStrictlyIncreasing(positions)
   })
 })

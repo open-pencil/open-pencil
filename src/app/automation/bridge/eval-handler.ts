@@ -1,5 +1,5 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { wrapEvalCode } from '@open-pencil/core/tools'
+import { compileScript } from '@open-pencil/core/tools'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { automationUndoLabel, executeWithPageUndo } from '@/app/automation/execution/editor'
@@ -12,17 +12,14 @@ export function createAutomationEvalHandler(makeFigma: FigmaFactory) {
     const code = (args as { code?: string }).code
     if (!code) throw new Error('Missing "code" in args')
     const figma = makeFigma(target.store, target.pageId)
-    const AsyncFunction = Object.getPrototypeOf(async function () {
-      /* noop */
-    }).constructor
-    const fn = new AsyncFunction('figma', wrapEvalCode(code))
+    const run = compileScript(code)
     const result = await executeWithPageUndo(
       target.store,
       target.pageId,
       automationUndoLabel('eval'),
       () =>
         target.store.runMutationWithLayout(
-          () => fn(figma),
+          () => run(figma),
           target.pageId,
           async () => {
             const page = target.store.graph.getNode(target.pageId)

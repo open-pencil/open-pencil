@@ -6,23 +6,14 @@ export function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
 }
 
-/**
- * Reads a proxy through Figma's `InstanceNode` surface. The proxy installs the instance accessors
- * on its prototype but only the node types in `figma-api/node-types` spell them out, so a proxy
- * handed back by `createInstance()` or `wrapNode()` needs the node type naming them.
- */
-export function asInstanceNode(node: FigmaNodeProxy): FigmaNodeProxy & InstanceNode {
-  return node as FigmaNodeProxy & InstanceNode
-}
-
-/** The text counterpart of {@link asInstanceNode}. */
+/** Reads a proxy through Figma's `TextNode` surface, which `wrapNode()` cannot name. */
 export function asTextNode(node: FigmaNodeProxy): FigmaNodeProxy & TextNode {
   return node as FigmaNodeProxy & TextNode
 }
 
 /**
- * The component counterpart of {@link asInstanceNode}, which also names the node a rejection path
- * is handed when the runtime guard, not the type, is what the test exercises.
+ * Names a proxy a component, including where a rejection path is handed one and the runtime
+ * guard, not the type, is what the test exercises.
  */
 export function asComponentNode(node: FigmaNodeProxy): FigmaNodeProxy & ComponentNode {
   return node as FigmaNodeProxy & ComponentNode

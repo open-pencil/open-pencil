@@ -30,6 +30,8 @@
   "version": "Versión",
   "authentication": "Requerir autenticación",
   "authenticationDescription": "Protege el endpoint MCP local con un token Bearer. Desactívalo solo en un equipo de confianza. Reinicia el servidor para aplicar los cambios.",
+  "selectionScope": "Compartir solo la selección",
+  "selectionScopeDescription": "Permite que los clientes MCP lean solo las capas que selecciones, con get_selection, get_node, get_page_tree, describe y export_image, y sin otras herramientas. Reinicia el servidor para aplicar los cambios.",
   "rootDirectory": "Directorio raíz MCP",
   "rootDirectoryDefault": "Carpeta predeterminada del servidor",
   "chooseRootDirectory": "Elegir carpeta",

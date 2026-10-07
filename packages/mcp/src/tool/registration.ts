@@ -14,6 +14,7 @@ import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
+import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
 
 export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 
@@ -53,10 +54,21 @@ function withTarget<T extends object>(body: T, res: RPCResponse): T & { target?:
   return res.target ? { ...body, target: res.target } : body
 }
 
+/** Who sends a session's tool calls: any MCP client, or an ACP or Pi harness chat in the app. */
+export const MCP_AGENT_KINDS = ['mcp', 'acp', 'harness'] as const
+export type MCPAgentKind = (typeof MCP_AGENT_KINDS)[number]
+
+/** The session tool calls come from, so the app can show the client as an agent at work. */
+export interface MCPAgentSession {
+  id: string
+  kind: MCPAgentKind
+}
+
 export interface RegisterToolsOptions {
   policy: ToolPolicy
   mcpRoot?: string | null
   sendRPC: RPCSender
+  agentSession?: MCPAgentSession
 }
 
 function toolAnnotations(effect: ToolEffect): ToolAnnotations {
@@ -71,7 +83,16 @@ function descriptorByName(descriptors: readonly ToolDescriptor[]): Map<string, T
 }
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions): void {
-  const { policy, sendRPC } = options
+  const { policy, sendRPC, agentSession } = options
+  // Sent with each tool call: the session, and the client's name once it has introduced itself.
+  const agent = () =>
+    agentSession
+      ? {
+          session: agentSession.id,
+          kind: agentSession.kind,
+          client: mcpServer.server.getClientVersion()?.name
+        }
+      : undefined
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const register = <InputArgs extends v.GenericSchema>(
@@ -104,9 +125,19 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: Record<string, unknown>) => {
         try {
           const { target, args: toolArgs } = splitAutomationTarget(args)
+          if (policy.scope === 'selection' && toolArgs.path !== undefined) {
+            return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
+          }
           const result = await sendRPC({
             command: 'tool',
-            args: { ...target, name: def.name, args: toolArgs }
+            args: {
+              ...target,
+              name: def.name,
+              args: toolArgs,
+              agent: agent(),
+              // A client limited to the selection says so, whatever the server's own scope.
+              ...(policy.scope === 'selection' ? { scope: policy.scope } : {})
+            }
           })
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))

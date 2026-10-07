@@ -1,6 +1,6 @@
 # @open-pencil/cli
 
-Headless command line for [OpenPencil](https://openpencil.dev) and `.fig` files: inspect documents and layers, query with XPath, export to PNG, JPG, WEBP, SVG, PDF, PPTX, JSX, HTML, or `.fig`, import HTML/CSS/Tailwind, lint design files, analyze and extract design tokens, and script documents with a Figma Plugin API-compatible `figma` global through `eval`.
+Headless command line for [OpenPencil](https://openpencil.dev) and `.fig` files: inspect documents and layers, query with XPath, export to PNG, JPG, WEBP, SVG, PDF, PPTX, JSX, HTML, or `.fig`, import HTML/CSS/Tailwind, lint design files, analyze and extract design tokens, and script documents through `eval` with a Figma Plugin API-compatible `figma` global and an `openpencil` global for what OpenPencil adds, such as component behaviours and slots.
 
 ```sh
 npm install -g @open-pencil/cli   # or: bun add -g @open-pencil/cli

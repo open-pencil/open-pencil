@@ -55,6 +55,7 @@ const styles = designCheck()
           v-else-if="row.swatch?.kind === 'contrast'"
           :class="styles.contrastSwatch()"
           :style="{ backgroundColor: row.swatch.background, color: row.swatch.foreground }"
+          data-contrast-sample
           aria-hidden="true"
         >
           Aa

@@ -13,7 +13,7 @@ const hud = useMobileHudContext()
       <component
         :is="hud.activeToolIcon"
         :key="hud.store.state.activeTool"
-        class="size-3.5 text-accent"
+        class="size-3.5 text-primary"
       />
     </Transition>
   </div>

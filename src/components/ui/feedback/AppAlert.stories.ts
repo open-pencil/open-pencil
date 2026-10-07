@@ -4,7 +4,7 @@ import type { AlertProps } from './alert'
 import AppAlert from './AppAlert.vue'
 
 const meta = {
-  title: 'Design System/Alert',
+  title: 'Design System/Feedback/Alert',
   component: AppAlert,
   args: {
     heading: 'Connection information',

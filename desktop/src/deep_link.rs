@@ -8,6 +8,19 @@ pub struct DeepLinkOpen {
     pub node: Option<String>,
 }
 
+/// A collaboration room to open, from `openpencil://join?room=<id>`.
+#[derive(Debug, PartialEq, Eq)]
+pub struct DeepLinkJoin {
+    pub room: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum DeepLink {
+    Open(DeepLinkOpen),
+    Join(DeepLinkJoin),
+    OAuth(OAuthCallback),
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum DeepLinkError {
     UnknownAction(String),
@@ -15,10 +28,69 @@ pub enum DeepLinkError {
     AbsolutePath,
     ParentSegment,
     BadExtension,
+    BadRoom,
+    BadOAuthProvider,
+}
+
+/// Room IDs are 32 lowercase base36 characters (`ROOM_ID_LENGTH` and `ROOM_ID_CHARS` in
+/// `src/constants.ts`); anything else is refused before it reaches the frontend.
+const ROOM_ID_LENGTH: usize = 32;
+
+fn is_room_id(room: &str) -> bool {
+    room.len() == ROOM_ID_LENGTH
+        && room
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
+}
+
+pub fn parse_deep_link(url: &Url) -> Result<DeepLink, DeepLinkError> {
+    // openpencil://<action>?…  → host is the action.
+    match url.host_str().unwrap_or("") {
+        "open" => parse_open_url(url).map(DeepLink::Open),
+        "join" => parse_join_url(url).map(DeepLink::Join),
+        "oauth" => parse_oauth_url(url)
+            .map(DeepLink::OAuth)
+            .ok_or(DeepLinkError::BadOAuthProvider),
+        action => Err(DeepLinkError::UnknownAction(action.to_string())),
+    }
+}
+
+fn parse_join_url(url: &Url) -> Result<DeepLinkJoin, DeepLinkError> {
+    let room = url
+        .query_pairs()
+        .find(|(key, _)| key == "room")
+        .map(|(_, value)| value.into_owned())
+        .filter(|room| is_room_id(room))
+        .ok_or(DeepLinkError::BadRoom)?;
+    Ok(DeepLinkJoin { room })
+}
+
+/// An OAuth redirect relayed by the web app's callback page: `openpencil://oauth/<provider>?…`.
+/// The query goes to the webview untouched; the attempt that started sign-in checks its state.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct OAuthCallback {
+    pub provider: String,
+    pub query: String,
+}
+
+pub fn parse_oauth_url(url: &Url) -> Option<OAuthCallback> {
+    if url.host_str() != Some("oauth") {
+        return None;
+    }
+    let provider = url.path().strip_prefix('/')?;
+    if provider.is_empty() || !provider.bytes().all(|byte| byte.is_ascii_lowercase()) {
+        return None;
+    }
+    Some(OAuthCallback {
+        provider: provider.to_owned(),
+        query: url
+            .query()
+            .map(|query| format!("?{query}"))
+            .unwrap_or_default(),
+    })
 }
 
 pub fn parse_open_url(url: &Url) -> Result<DeepLinkOpen, DeepLinkError> {
-    // openpencil://open?…  → host is the action.
     let action = url.host_str().unwrap_or("");
     if action != "open" {
         return Err(DeepLinkError::UnknownAction(action.to_string()));
@@ -129,6 +201,28 @@ fn path_ends_with_segments(candidate: &Path, suffix: &str) -> bool {
 mod tests {
     use super::*;
 
+    fn oauth(url: &str) -> Option<OAuthCallback> {
+        parse_oauth_url(&Url::parse(url).unwrap())
+    }
+
+    #[test]
+    fn passes_an_oauth_redirect_through_with_its_provider() {
+        assert_eq!(
+            oauth("openpencil://oauth/openrouter?code=abc&state=xyz"),
+            Some(OAuthCallback {
+                provider: "openrouter".to_owned(),
+                query: "?code=abc&state=xyz".to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn refuses_an_oauth_link_without_a_plain_provider() {
+        assert_eq!(oauth("openpencil://oauth?code=abc"), None);
+        assert_eq!(oauth("openpencil://oauth/open/router?code=abc"), None);
+        assert_eq!(oauth("openpencil://open?file=a.pen"), None);
+    }
+
     fn parse(s: &str) -> Result<DeepLinkOpen, DeepLinkError> {
         parse_open_url(&Url::parse(s).unwrap())
     }
@@ -147,6 +241,46 @@ mod tests {
     #[test]
     fn node_is_optional() {
         assert_eq!(parse("openpencil://open?file=a.pen").unwrap().node, None);
+    }
+
+    const ROOM: &str = "abcdefghijklmnopqrstuvwxyz012345";
+
+    #[test]
+    fn join_with_room() {
+        assert_eq!(
+            parse_deep_link(&Url::parse(&format!("openpencil://join?room={ROOM}")).unwrap()),
+            Ok(DeepLink::Join(DeepLinkJoin { room: ROOM.into() }))
+        );
+    }
+
+    #[test]
+    fn join_refuses_a_room_that_is_not_a_room_id() {
+        for url in [
+            "openpencil://join".to_string(),
+            "openpencil://join?room=".to_string(),
+            "openpencil://join?room=short".to_string(),
+            format!("openpencil://join?room={}", ROOM.to_uppercase()),
+            format!("openpencil://join?room={ROOM}x"),
+            format!("openpencil://join?room={}%2F", &ROOM[..31]),
+        ] {
+            assert_eq!(
+                parse_deep_link(&Url::parse(&url).unwrap()),
+                Err(DeepLinkError::BadRoom),
+                "{url}"
+            );
+        }
+    }
+
+    #[test]
+    fn deep_link_routes_open_and_refuses_other_actions() {
+        assert!(matches!(
+            parse_deep_link(&Url::parse("openpencil://open?file=a.pen").unwrap()),
+            Ok(DeepLink::Open(_))
+        ));
+        assert_eq!(
+            parse_deep_link(&Url::parse("openpencil://export?file=a.pen").unwrap()),
+            Err(DeepLinkError::UnknownAction("export".into()))
+        );
     }
 
     #[test]

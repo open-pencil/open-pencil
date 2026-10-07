@@ -10,7 +10,10 @@ import {
   readDevMCPConfiguration,
   waitForAutomationHealth
 } from '@/app/automation/bridge/vite-plugin'
-import { parseDevMCPConfiguration } from '@/app/automation/mcp/dev-control'
+import {
+  parseDevMCPConfiguration,
+  type DevMCPConfiguration
+} from '@/app/automation/mcp/dev-control'
 
 import { fetchStub } from '#tests/helpers/fetch'
 
@@ -22,7 +25,8 @@ describe('MCP Vite development server', () => {
       configuration: {
         authenticationEnabled: false,
         rootDirectory: '/designs',
-        disabledTools: ['eval', 'delete_node']
+        disabledTools: ['eval', 'delete_node'],
+        scope: 'selection'
       },
       corsOrigin: 'http://localhost:1420',
       discoveryPath: '/tmp/mcp.json',
@@ -34,6 +38,7 @@ describe('MCP Vite development server', () => {
     expect(env.OPENPENCIL_MCP_ROOT).toBe('/designs')
     expect(env.OPENPENCIL_MCP_DISABLED_TOOLS).toBe('eval,delete_node')
     expect(env.OPENPENCIL_MCP_DISCOVERY_PATH).toBe('/tmp/mcp.json')
+    expect(env.OPENPENCIL_MCP_SCOPE).toBe('selection')
   })
 
   test('normalizes and validates typed disabled tool configuration', () => {
@@ -41,18 +46,21 @@ describe('MCP Vite development server', () => {
       parseDevMCPConfiguration({
         authenticationEnabled: true,
         rootDirectory: '/designs',
-        disabledTools: [' eval ', 'delete_node', 'eval']
+        disabledTools: [' eval ', 'delete_node', 'eval'],
+        scope: 'document'
       })
     ).toEqual({
       authenticationEnabled: true,
       rootDirectory: '/designs',
-      disabledTools: ['eval', 'delete_node']
+      disabledTools: ['eval', 'delete_node'],
+      scope: 'document'
     })
     expect(
       parseDevMCPConfiguration({
         authenticationEnabled: true,
         rootDirectory: '',
-        disabledTools: ['invalid tool']
+        disabledTools: ['invalid tool'],
+        scope: 'document'
       })
     ).toBeNull()
   })
@@ -62,7 +70,8 @@ describe('MCP Vite development server', () => {
       JSON.stringify({
         authenticationEnabled: true,
         rootDirectory: '/设计',
-        disabledTools: []
+        disabledTools: [],
+        scope: 'document'
       })
     )
     const split = body.indexOf(Buffer.from('设')) + 1
@@ -71,20 +80,23 @@ describe('MCP Vite development server', () => {
     await expect(readDevMCPConfiguration(request as never)).resolves.toEqual({
       authenticationEnabled: true,
       rootDirectory: '/设计',
-      disabledTools: []
+      disabledTools: [],
+      scope: 'document'
     })
   })
 
   test('does not restart MCP for unchanged configuration', () => {
-    const configuration = {
+    const configuration: DevMCPConfiguration = {
       authenticationEnabled: true,
       rootDirectory: '/designs',
-      disabledTools: ['eval', 'delete_node']
+      disabledTools: ['eval', 'delete_node'],
+      scope: 'document'
     }
     expect(configurationsMatch(configuration, structuredClone(configuration))).toBe(true)
     expect(
       configurationsMatch(configuration, { ...configuration, disabledTools: ['delete_node'] })
     ).toBe(false)
+    expect(configurationsMatch(configuration, { ...configuration, scope: 'selection' })).toBe(false)
   })
 
   test('waits through transient Portless responses until MCP is healthy', async () => {

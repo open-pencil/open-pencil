@@ -8,6 +8,11 @@ import { UndoManager } from '@open-pencil/scene-graph/undo'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
+import {
+  getPageColor,
+  hasStoredBackground,
+  setDefaultPageBackground
+} from '#core/figma-api/page-backgrounds'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { installTextMeasurer } from '#core/layout'
@@ -33,6 +38,7 @@ import { createGuideActions } from './guides'
 import { createDesignIssueActions } from './issues'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
+import { createPlayActions } from './play/actions'
 import { createSelectionActions } from './selection'
 import { createShapeActions } from './shapes'
 import { createDefaultEditorState } from './state'
@@ -92,6 +98,7 @@ export function createEditor(options?: EditorOptions) {
   function requestRender() {
     state.renderVersion++
     state.sceneVersion++
+    state.canvasVersion++
     emitNavigationTrace('render:requested', {
       kind: 'render',
       renderVersion: state.renderVersion,
@@ -101,6 +108,10 @@ export function createEditor(options?: EditorOptions) {
       renderVersion: state.renderVersion,
       sceneVersion: state.sceneVersion
     })
+  }
+
+  function requestRefresh() {
+    state.sceneVersion++
   }
 
   function requestRepaint() {
@@ -185,6 +196,13 @@ export function createEditor(options?: EditorOptions) {
 
   if (!skipInitialGraphSetup) {
     subscribeToGraph()
+    // A new document's first page takes Figma's background for the interface theme the app gives;
+    // a page that already has one keeps it.
+    const firstPage = _graph.getPages()[0]
+    if (options?.state?.theme && !hasStoredBackground(firstPage)) {
+      setDefaultPageBackground(_graph, firstPage, options.state.theme)
+      options.state.pageColor = getPageColor(firstPage)
+    }
   }
 
   // Build the shared context
@@ -204,6 +222,7 @@ export function createEditor(options?: EditorOptions) {
     getRenderer: () => _renderer,
     getTextEditor: () => _textEditor,
     requestRender,
+    requestRefresh,
     requestRepaint,
     beginInteractiveEdit,
     onEditorEvent,
@@ -233,6 +252,7 @@ export function createEditor(options?: EditorOptions) {
   const variables = createVariableActions(ctx)
   const vectorize = createVectorizeActions(ctx)
   const alignment = createAlignmentActions(ctx)
+  const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
@@ -273,6 +293,7 @@ export function createEditor(options?: EditorOptions) {
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId
     setSelectedIds(new Set())
     state.hoveredNodeId = null
+    state.transforming = false
     state.measurementMode = 'off'
     state.snapGuides = []
     state.guides = { preview: null, hovered: null, selected: null, redline: null }
@@ -325,6 +346,7 @@ export function createEditor(options?: EditorOptions) {
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,
     requestRender,
+    requestRefresh,
     requestRepaint,
     onEditorEvent,
     setCanvasKit,
@@ -356,6 +378,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Alignment (align, flip, rotate)
     ...alignment,
+
+    // Preview: instances with a behaviour respond to the pointer on this canvas
+    ...preview,
 
     // Bitmap-to-vector replacement
     ...vectorize,

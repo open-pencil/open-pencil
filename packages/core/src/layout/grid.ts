@@ -1,6 +1,6 @@
 import { Direction, Display, Gutter, Edge, type Node as YogaNode } from 'yoga-layout'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { layoutSizing, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { configureAbsoluteChild, createYogaNode, mapGridTrack } from './yoga-helpers'
@@ -33,7 +33,7 @@ function configureAsGrid(
   yogaNode.setPadding(Edge.Left, node.paddingLeft)
 }
 
-export function createGridChildNode(child: SceneNode): YogaNode {
+export function createGridChildNode(graph: SceneGraph, child: SceneNode): YogaNode {
   const yogaChild = createYogaNode()
   if (!child.visible) {
     yogaChild.setDisplay(Display.None)
@@ -45,20 +45,11 @@ export function createGridChildNode(child: SceneNode): YogaNode {
       yogaChild.setGridRowStart(pos.row)
       yogaChild.setGridRowEndSpan(pos.rowSpan)
     }
-    const hasLayout = child.layoutMode !== 'NONE'
-    const explicitStretch = child.layoutGrow > 0 || child.layoutAlignSelf === 'STRETCH'
-    const inheritsContainerStretch = hasLayout && child.layoutAlignSelf === 'AUTO'
-
-    if (explicitStretch || inheritsContainerStretch) {
-      yogaChild.setWidthStretch()
-    } else {
-      yogaChild.setWidth(child.width)
-    }
-    if (explicitStretch) {
-      yogaChild.setHeightStretch()
-    } else {
-      yogaChild.setHeight(child.height)
-    }
+    // Each axis fills its cell on its own, as in Figma: grow for width, stretch for height.
+    if (layoutSizing(graph, child, 'HORIZONTAL') === 'FILL') yogaChild.setWidthStretch()
+    else yogaChild.setWidth(child.width)
+    if (layoutSizing(graph, child, 'VERTICAL') === 'FILL') yogaChild.setHeightStretch()
+    else yogaChild.setHeight(child.height)
   }
   return yogaChild
 }
@@ -79,7 +70,7 @@ export function buildGridTree(
       configureAbsoluteChild(yogaChild, child)
       root.insertChild(yogaChild, root.getChildCount())
     } else {
-      const yogaChild = createGridChildNode(child)
+      const yogaChild = createGridChildNode(graph, child)
       if (
         child.layoutMode === 'GRID' ||
         child.layoutMode === 'HORIZONTAL' ||

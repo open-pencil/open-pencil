@@ -23,7 +23,12 @@ test('multiple conversations preserve messages and manual titles', async ({
   const actions = page.getByRole('button', { name: 'Conversation actions' })
   const triggerBox = await actions.boundingBox()
   await actions.click()
-  const menuBox = await page.getByRole('menu').boundingBox()
+  const menu = page.getByRole('menu')
+  // Measure where the menu settles, not a frame of its entrance.
+  await menu.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished))
+  })
+  const menuBox = await menu.boundingBox()
   expect(triggerBox).not.toBeNull()
   expect(menuBox).not.toBeNull()
   if (!triggerBox || !menuBox) throw new Error('Missing menu geometry')

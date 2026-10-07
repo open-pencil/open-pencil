@@ -56,7 +56,6 @@ function select(item: CommandPaletteItem) {
   <ListboxRoot
     v-model="palette.selectedId.value"
     :class="ui?.root"
-    :aria-label="labels.paletteLabel"
     :data-searching="palette.searchTerm.value ? '' : undefined"
   >
     <div v-if="palette.isNested.value" :class="ui?.back">
@@ -77,7 +76,7 @@ function select(item: CommandPaletteItem) {
       </ListboxFilter>
       <slot name="search-trailing" />
     </div>
-    <ListboxContent :class="ui?.content">
+    <ListboxContent :class="ui?.content" :aria-label="labels.paletteLabel">
       <template v-if="palette.filteredGroups.value.length">
         <ListboxGroup
           v-for="group in palette.filteredGroups.value"

@@ -19,8 +19,16 @@ export { instanceMainComponent } from './instances/main-component'
 export * from './slots/content'
 export * from './slots/authoring'
 export * from './slots/limits'
+export * from './behaviours/kinds'
+export * from './behaviours/model'
+export * from './behaviours/spec'
 export * from './copy'
-export { createDefaultNode } from './node-defaults'
+export {
+  createDefaultNode,
+  defaultStrokeAlign,
+  FITTED_CONTAINER_TYPES,
+  newStrokeGeometry
+} from './node-defaults'
 export {
   copyInstanceComponentProps,
   findInstanceAncestor,
@@ -42,6 +50,8 @@ export * from './snap'
 export * from './export-format'
 export * from './export-scale'
 export * from './coordinate'
+export * from './layout-sizing'
+export * from './group-bounds'
 export * from './constants'
 export * from './geometry'
 export * from './guides'
@@ -103,10 +113,26 @@ export {
   vectorNetworksEqual
 } from './vector-network'
 
+const MAX_ID_SESSION = 0xffffffff
+
+let idSession = 0
 let nextLocalID = 1
 
+/**
+ * Sets the session part of the IDs this process mints, as in Figma's `sessionID:localID` GUIDs.
+ * Headless tools keep session 0, so a file's layers get the same IDs on every run. The editor
+ * picks a random session at startup, as Yjs picks each document's `clientID`, so peers editing
+ * one shared room never mint the same ID. Call it before creating any graph.
+ */
+export function setIdSession(sessionId: number): void {
+  if (!Number.isInteger(sessionId) || sessionId < 0 || sessionId > MAX_ID_SESSION) {
+    throw new RangeError('sessionId must be an unsigned 32-bit integer')
+  }
+  idSession = sessionId
+}
+
 export function generateId(): string {
-  return `0:${nextLocalID++}`
+  return `${idSession}:${nextLocalID++}`
 }
 
 function stripUndefinedProps<T extends object>(obj: T): T {
@@ -297,8 +323,20 @@ export class SceneGraph {
     return Variables.resolveNumberVariableForNode(this, nodeId, variableId, fallback)
   }
 
-  resolveStringVariableForNode(nodeId: string, variableId: string): string | undefined {
-    return Variables.resolveStringVariableForNode(this, nodeId, variableId)
+  resolveVariableForNode(
+    nodeId: string,
+    variableId: string,
+    fallback?: VariableModeFallback
+  ): VariableValue | undefined {
+    return Variables.resolveVariableForNode(this, nodeId, variableId, fallback)
+  }
+
+  resolveStringVariableForNode(
+    nodeId: string,
+    variableId: string,
+    fallback?: VariableModeFallback
+  ): string | undefined {
+    return Variables.resolveStringVariableForNode(this, nodeId, variableId, fallback)
   }
 
   getVariablesForCollection(collectionId: string): Variable[] {
@@ -331,12 +369,20 @@ export class SceneGraph {
   }
 
   isDescendant(childId: string, ancestorId: string): boolean {
-    let current = this.nodes.get(childId)
-    while (current) {
-      if (current.id === ancestorId) return true
+    return this.closest(childId, (node) => node.id === ancestorId) !== undefined
+  }
+
+  /**
+   * The node itself or its nearest ancestor that matches. The walk visits at most as many nodes
+   * as the graph holds, so a parent cycle in bad data cannot hang it.
+   */
+  closest(id: string, match: (node: SceneNode) => boolean): SceneNode | undefined {
+    let current = this.nodes.get(id)
+    for (let steps = 0; current && steps < this.nodes.size; steps++) {
+      if (match(current)) return current
       current = current.parentId ? this.nodes.get(current.parentId) : undefined
     }
-    return false
+    return undefined
   }
 
   clearAbsPosCache(): void {

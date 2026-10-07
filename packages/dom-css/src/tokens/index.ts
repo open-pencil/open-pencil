@@ -1,5 +1,7 @@
 // Design tokens as CSS custom properties: names, namespaces, units, and the stylesheet.
+export { featureConditionCSS, parseFeatureCondition, type FeatureCondition } from './conditions'
 export {
+  collectionVariables,
   cssNameCodeSyntax,
   deriveCSSName,
   explicitCSSName,
@@ -10,7 +12,10 @@ export {
 } from './names'
 export {
   buildTokenStylesheet,
+  defaultModeAttributeName,
   defaultModeCondition,
+  loadTokenValidator,
+  modeAttribute,
   tokenStylesheet,
   type TokenStylesheet,
   type TokenStylesheetFormat,

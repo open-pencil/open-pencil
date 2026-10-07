@@ -41,7 +41,6 @@ export interface AppPickerSlots {
 </script>
 
 <script setup lang="ts">
-import Fuse from 'fuse.js'
 import {
   ListboxContent,
   ListboxFilter,
@@ -59,7 +58,7 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref, watch } from 'vue'
 
-import { useRetainedPopup } from '@open-pencil/vue'
+import { fuzzySearch, useRetainedPopup } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -89,17 +88,9 @@ watch(open, (isOpen) => {
 })
 const styles = computed(() => tv(theme)({ density }))
 
-const index = computed(
-  () =>
-    new Fuse(items, {
-      keys: ['label', 'description', 'group'],
-      threshold: 0.2,
-      ignoreLocation: true
-    })
-)
 const matches = computed(() => {
   const term = query.value.trim()
-  return term ? index.value.search(term).map((result) => result.item) : items
+  return term ? fuzzySearch(items, ['label', 'description', 'group'], term) : items
 })
 const groups = computed(() => {
   const byGroup = new Map<string, AppPickerItem[]>()
@@ -145,12 +136,7 @@ function select(value: AcceptableValue) {
             </AppButton>
           </PopoverClose>
         </div>
-        <ListboxRoot
-          class="flex min-h-0 flex-col"
-          highlight-on-hover
-          :aria-label="heading"
-          @update:model-value="select"
-        >
+        <ListboxRoot class="flex min-h-0 flex-col" highlight-on-hover @update:model-value="select">
           <div :class="styles.search({ class: ui?.search })">
             <icon-lucide-search :class="styles.searchIcon({ class: ui?.searchIcon })" />
             <ListboxFilter
@@ -161,7 +147,7 @@ function select(value: AcceptableValue) {
               :class="styles.input({ class: ui?.input })"
             />
           </div>
-          <ListboxContent :class="styles.list({ class: ui?.list })">
+          <ListboxContent :class="styles.list({ class: ui?.list })" :aria-label="heading">
             <p v-if="groups.length === 0" :class="styles.empty({ class: ui?.empty })">
               {{ emptyLabel }}
             </p>
@@ -169,11 +155,13 @@ function select(value: AcceptableValue) {
               <ListboxGroupLabel v-if="group" :class="styles.groupLabel({ class: ui?.groupLabel })">
                 {{ group }}
               </ListboxGroupLabel>
+              <!-- Reka marks a disabled option only with data-disabled; assistive tech needs aria-disabled. -->
               <ListboxItem
                 v-for="item in entries"
                 :key="item.value"
                 :value="item.value"
                 :disabled="item.disabled"
+                :aria-disabled="item.disabled || undefined"
                 :class="styles.item({ class: ui?.item })"
               >
                 <span v-if="slots.leading" :class="styles.leading({ class: ui?.leading })">

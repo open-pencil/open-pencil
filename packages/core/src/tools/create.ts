@@ -1,4 +1,5 @@
 export { createPage, createShape, createSlice } from './create/basic'
+export { createSlot, getBehaviour, setBehaviour } from './create/behaviours'
 export {
   combineAsVariants,
   createComponent,

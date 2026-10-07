@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
+import { compositeOver, contrastRatio, readableForeground } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
@@ -29,5 +29,13 @@ describe('compositeOver', () => {
     expect(blended.r).toBeCloseTo(0.6, 10)
     expect(contrastRatio(blended, WHITE)).toBeCloseTo(2.849, 3)
     expect(compositeOver(BLACK, WHITE, 0)).toEqual(WHITE)
+  })
+})
+
+describe('readableForeground', () => {
+  test('picks whichever of black and white contrasts more', () => {
+    expect(readableForeground({ r: 0xeb / 255, g: 0x57 / 255, b: 0x4a / 255 })).toEqual(BLACK)
+    expect(readableForeground({ r: 0x25 / 255, g: 0x63 / 255, b: 0xeb / 255 })).toEqual(WHITE)
+    expect(readableForeground(GRAY_94)).toEqual(BLACK)
   })
 })

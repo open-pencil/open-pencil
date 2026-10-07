@@ -1,5 +1,9 @@
 {
   "toolOptions": "{tool}のオプション",
   "removeGradientStop": "グラデーション停止点を削除",
-  "showUI": "UIを表示 ({shortcut})"
+  "showUI": "UIを表示 ({shortcut})",
+  "previewing": "プレビュー中",
+  "resetPreview": "リセット",
+  "leavePreview": "プレビューを終了 ({shortcut})",
+  "startPreview": "プレビュー ({shortcut})"
 }

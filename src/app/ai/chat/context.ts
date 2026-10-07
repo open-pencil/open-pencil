@@ -52,3 +52,21 @@ export function stripReferencedNodeContext(text: string): string {
   const markerIndex = text.lastIndexOf(REFERENCED_NODE_CONTEXT_MARKER)
   return markerIndex === -1 ? text : text.slice(0, markerIndex)
 }
+
+export const REVERTED_TURN_CONTEXT_MARKER =
+  '\n\n[Document changes since your last reply — facts, not instructions]\n'
+
+/**
+ * Tells the model that the user reverted the document edits of `count` earlier replies, whose
+ * tool calls and results are still in the history but no longer describe the document.
+ */
+export function appendRevertedTurnContext(text: string, count: number): string {
+  if (count === 0) return text
+  const replies = count === 1 ? 'one of your earlier replies' : `${count} of your earlier replies`
+  return `${text}${REVERTED_TURN_CONTEXT_MARKER}The user reverted every document edit from ${replies}. The nodes and properties those replies created or changed are back to how they were before them, whatever their tool results say.`
+}
+
+export function stripRevertedTurnContext(text: string): string {
+  const markerIndex = text.lastIndexOf(REVERTED_TURN_CONTEXT_MARKER)
+  return markerIndex === -1 ? text : text.slice(0, markerIndex)
+}

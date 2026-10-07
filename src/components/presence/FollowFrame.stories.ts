@@ -10,7 +10,7 @@ const ana = { r: 0.92, g: 0.34, b: 0.29, a: 1 }
 type Args = { followed: FollowedLabel; onStop: () => void }
 
 const meta = {
-  title: 'Collaboration/Follow Frame',
+  title: 'App/Collaboration/Follow Frame',
   component: FollowFrame,
   args: { followed: { kind: 'person', name: 'Ana', color: ana }, onStop: fn() },
   render: (args) => ({

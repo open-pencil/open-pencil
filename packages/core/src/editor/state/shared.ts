@@ -10,6 +10,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
     designIssues: null,
     codeFocusNodeId: null,
     rulerTheme: undefined,
-    sceneVersion: 0
+    sceneVersion: 0,
+    canvasVersion: 0
   }
 }

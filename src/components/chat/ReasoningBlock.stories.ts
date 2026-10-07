@@ -13,7 +13,7 @@ interface Args {
 }
 
 const meta = {
-  title: 'Chat/Reasoning',
+  title: 'App/Chat/Reasoning',
   component: ReasoningBlock,
   args: {
     text: 'I’ll inspect the selected frame, compare its spacing, and arrange the summary cards.\n\nThe layout should keep a consistent **24 px gap**.',

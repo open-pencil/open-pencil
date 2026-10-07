@@ -14,9 +14,12 @@ const {
   description,
   fill = true,
   size = 'panel',
+  labelAs = 'p',
   ui
 } = defineProps<{
   label: string
+  /** A heading level when the placeholder stands for a whole page or view. */
+  labelAs?: 'p' | 'h1' | 'h2' | 'h3'
   description?: string
   fill?: boolean
   size?: PlaceholderVariants['size']
@@ -32,6 +35,7 @@ const styles = computed(() => {
     icon: theme.icon({ class: ui?.icon }),
     label: theme.label({ class: ui?.label }),
     description: theme.description({ class: ui?.description }),
+    body: theme.body({ class: ui?.body }),
     action: theme.action({ class: ui?.action })
   }
 })
@@ -43,10 +47,15 @@ const styles = computed(() => {
       <div v-if="slots.icon" :class="styles.icon" data-slot="placeholder-icon" aria-hidden="true">
         <slot name="icon" />
       </div>
-      <p :class="styles.label" data-slot="placeholder-label">{{ label }}</p>
+      <component :is="labelAs" :class="styles.label" data-slot="placeholder-label">
+        {{ label }}
+      </component>
       <p v-if="description" :class="styles.description" data-slot="placeholder-description">
         {{ description }}
       </p>
+      <div v-if="slots.default" :class="styles.body" data-slot="placeholder-body">
+        <slot />
+      </div>
       <div v-if="slots.action" :class="styles.action" data-slot="placeholder-action">
         <slot name="action" />
       </div>

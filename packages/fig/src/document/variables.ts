@@ -5,6 +5,7 @@ import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
 import { extractPluginData } from '../node-change/plugin-data'
 import { readVariableMetadata } from '../node-change/variable/metadata'
 import {
+  readModeAttribute,
   readModeConditions,
   readVariableToken,
   withoutTokenPluginData
@@ -74,6 +75,7 @@ export function materializeVariableResources(
       }),
       defaultModeId: guidToString(modes[0].id),
       variableIds: [],
+      modeAttribute: readModeAttribute(resource),
       pluginData: pluginData.length > 0 ? pluginData : undefined
     })
   }

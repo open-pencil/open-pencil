@@ -75,7 +75,7 @@ function results(scope: ChangeScope): Record<string, JobStatus> {
   }
 }
 
-test.each(['docs', 'code'] as const)(
+test.each(['docs', 'code', 'verified'] as const)(
   'accepts only appropriate successful checks for %s',
   (scope) => {
     expect(gateErrors(results(scope))).toEqual([])
@@ -116,5 +116,14 @@ test('missing jobs or outputs cannot pass', () => {
 test('docs routing rejects unexpected execution of test suites', () => {
   for (const job of CODE_JOBS) {
     expect(gateErrors({ ...results('docs'), [job]: { result: 'success' } })).not.toEqual([])
+  }
+})
+
+test('a verified tree runs only the checks every change runs', () => {
+  for (const job of [...CODE_JOBS, DOCS_JOB]) {
+    expect(gateErrors({ ...results('verified'), [job]: { result: 'success' } })).not.toEqual([])
+  }
+  for (const job of ALWAYS_JOBS) {
+    expect(gateErrors({ ...results('verified'), [job]: { result: 'skipped' } })).not.toEqual([])
   }
 })

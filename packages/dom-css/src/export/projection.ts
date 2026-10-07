@@ -1,6 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { layoutSizingInParent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
@@ -37,15 +37,14 @@ function justifyContentToCSS(value: SceneNode['primaryAxisAlign']): string | und
   return undefined
 }
 
-function alignItemsToCSS(value: SceneNode['counterAxisAlign']): string | undefined {
-  if (value === 'CENTER') return 'center'
-  if (value === 'MAX') return 'flex-end'
-  if (value === 'STRETCH') return 'stretch'
-  if (value === 'BASELINE') return 'baseline'
-  return undefined
-}
-
-function alignSelfToCSS(value: SceneNode['layoutAlignSelf']): string | undefined {
+/**
+ * Cross-axis alignment of a container's children, or of one child. Auto layout starts children
+ * at the start while flexbox stretches them, so start is written out: a child that hugs its
+ * content keeps its own size.
+ */
+function alignToCSS(
+  value: SceneNode['counterAxisAlign'] | SceneNode['layoutAlignSelf']
+): string | undefined {
   if (value === 'MIN') return 'flex-start'
   if (value === 'CENTER') return 'center'
   if (value === 'MAX') return 'flex-end'
@@ -61,16 +60,71 @@ function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   return undefined
 }
 
-function addSize(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  if (node.width > 0) style.width = css('width', px(node.width))
-  if (node.height > 0) style.height = css('height', px(node.height))
+/** Whether a layer sizes itself to its content along an axis, so CSS should too. */
+function hugs(node: SceneNode, axis: 'width' | 'height'): boolean {
+  if (node.type === 'TEXT')
+    return (
+      node.textAutoResize === 'WIDTH_AND_HEIGHT' ||
+      (axis === 'height' && node.textAutoResize === 'HEIGHT')
+    )
+  if (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL') return false
+  const primary = (node.layoutMode === 'HORIZONTAL') === (axis === 'width')
+  return (primary ? node.primaryAxisSizing : node.counterAxisSizing) === 'HUG'
 }
 
-function addPositioning(style: DesignStyleDeclaration, node: SceneNode): void {
-  if (node.layoutPositioning !== 'ABSOLUTE') return
-  style.position = 'absolute'
-  style.left = `${node.x}px`
-  style.top = `${node.y}px`
+/**
+ * A layer's size: fixed on the axes the design fixes, and left to the content where the layer
+ * hugs it (an auto layout frame set to Hug, or auto-sizing text), so the page grows with it.
+ */
+function addSize(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  css: FieldCSS
+): void {
+  const sized = (axis: 'width' | 'height') =>
+    node[axis] > 0 && !hugs(node, axis) && !stretches(node, parent, axis)
+  if (sized('width')) style.width = css('width', px(node.width))
+  if (sized('height')) style.height = css('height', px(node.height))
+}
+
+/**
+ * Whether a layer fills an axis by stretching, which a fixed CSS size would prevent: across a
+ * flex parent, or either axis of a grid cell. Along a flex parent, fill is `flex-grow`, and the
+ * size stays as its basis.
+ */
+function stretches(
+  node: SceneNode,
+  parent: SceneNode | undefined,
+  axis: 'width' | 'height'
+): boolean {
+  const sizing = layoutSizingInParent(parent, node, axis === 'width' ? 'HORIZONTAL' : 'VERTICAL')
+  if (sizing !== 'FILL' || !parent) return false
+  if (parent.layoutMode === 'GRID') return true
+  const mainAxis = parent.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
+  return axis !== mainAxis
+}
+
+/**
+ * Place a layer at its coordinates when its parent does not lay it out: it is absolutely
+ * positioned, or its parent frame has no auto layout. A frame without auto layout becomes the
+ * containing block of the children it places.
+ */
+function addPositioning(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined
+): void {
+  const placed =
+    node.layoutPositioning === 'ABSOLUTE' ||
+    (parent !== undefined && parent.type !== 'CANVAS' && parent.layoutMode === 'NONE')
+  if (placed) {
+    style.position = 'absolute'
+    style.left = `${node.x}px`
+    style.top = `${node.y}px`
+  } else if (node.layoutMode === 'NONE' && node.type !== 'TEXT' && node.childIds.length > 0) {
+    style.position = 'relative'
+  }
 }
 
 function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
@@ -81,6 +135,10 @@ function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode, css:
 }
 
 function addCornerRadii(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
+  if (node.type === 'ELLIPSE') {
+    style['border-radius'] = '50%'
+    return
+  }
   if (node.independentCorners) {
     const corners = [
       ['border-top-left-radius', 'topLeftRadius', node.topLeftRadius],
@@ -185,8 +243,8 @@ function styleFromSceneNode(
   css: FieldCSS
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  addSize(style, node, css)
-  addPositioning(style, node)
+  addSize(style, node, parent, css)
+  addPositioning(style, node, parent)
   addSizeConstraints(style, node, css)
   const fill = fillToCSS(node.fills.at(0))
   if (fill) style['background-color'] = css('fills/0/color', fill)
@@ -196,7 +254,7 @@ function styleFromSceneNode(
   if (node.opacity < 1) style.opacity = css('opacity', String(node.opacity))
   addCornerRadii(style, node, css)
   if (node.clipsContent) style.overflow = 'hidden'
-  const alignSelf = alignSelfToCSS(node.layoutAlignSelf)
+  const alignSelf = alignToCSS(node.layoutAlignSelf)
   if (alignSelf) style['align-self'] = alignSelf
 
   addLayoutChild(style, node, parent)
@@ -210,7 +268,7 @@ function styleFromSceneNode(
     // Row is the flexbox default.
     if (node.layoutMode === 'VERTICAL') style['flex-direction'] = 'column'
     const justifyContent = justifyContentToCSS(node.primaryAxisAlign)
-    const alignItems = alignItemsToCSS(node.counterAxisAlign)
+    const alignItems = alignToCSS(node.counterAxisAlign)
     if (justifyContent) style['justify-content'] = justifyContent
     if (alignItems) style['align-items'] = alignItems
     if (node.layoutWrap === 'WRAP') style['flex-wrap'] = 'wrap'
@@ -227,8 +285,8 @@ function styleFromTextNode(
   css: FieldCSS
 ): DesignStyleDeclaration {
   const style: DesignStyleDeclaration = {}
-  addSize(style, node, css)
-  addPositioning(style, node)
+  addSize(style, node, parent, css)
+  addPositioning(style, node, parent)
   addLayoutChild(style, node, parent)
   if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
   const color = fillToCSS(node.fills.at(0))

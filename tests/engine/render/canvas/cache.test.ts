@@ -214,4 +214,24 @@ describe('render cache regressions', () => {
       surface.delete()
     }
   })
+
+  test('drop targeting and text editing reuse the cached scene', () => {
+    const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    renderer.viewportWidth = 900
+    renderer.viewportHeight = 700
+    renderer.dpr = 1
+    renderer.zoom = 0.75
+    renderer.pageId = graph.getPages()[0].id
+
+    try {
+      renderPreview(renderer, 20)
+      for (const overlays of [{ dropTargetId: movingNodeId }, { editingTextId: movingNodeId }]) {
+        renderer.render(graph, new Set(), overlays, 20)
+        expect(renderer.profiler.stats.scenePictureMode).toBe('hit')
+      }
+    } finally {
+      surface.delete()
+    }
+  })
 })

@@ -43,3 +43,26 @@
 /ru/guide/tech-stack /development/tech-stack 301
 /ru/guide/comparison /ru/overview/comparison 301
 /ru/guide/figma-comparison /ru/reference/figma-compatibility 301
+
+# Removed SDK variables table APIs
+/programmable/sdk/api/composables/use-variables-editor /programmable/sdk/api/advanced/use-variables 301
+/programmable/sdk/api/advanced/use-variables-dialog-state /programmable/sdk/api/advanced/use-variables 301
+/programmable/sdk/api/advanced/use-variables-table /programmable/sdk/api/advanced/use-variables 301
+/de/programmable/sdk/api/composables/use-variables-editor /de/programmable/sdk/api/advanced/use-variables 301
+/de/programmable/sdk/api/advanced/use-variables-dialog-state /de/programmable/sdk/api/advanced/use-variables 301
+/de/programmable/sdk/api/advanced/use-variables-table /de/programmable/sdk/api/advanced/use-variables 301
+/es/programmable/sdk/api/composables/use-variables-editor /es/programmable/sdk/api/advanced/use-variables 301
+/es/programmable/sdk/api/advanced/use-variables-dialog-state /es/programmable/sdk/api/advanced/use-variables 301
+/es/programmable/sdk/api/advanced/use-variables-table /es/programmable/sdk/api/advanced/use-variables 301
+/fr/programmable/sdk/api/composables/use-variables-editor /fr/programmable/sdk/api/advanced/use-variables 301
+/fr/programmable/sdk/api/advanced/use-variables-dialog-state /fr/programmable/sdk/api/advanced/use-variables 301
+/fr/programmable/sdk/api/advanced/use-variables-table /fr/programmable/sdk/api/advanced/use-variables 301
+/it/programmable/sdk/api/composables/use-variables-editor /it/programmable/sdk/api/advanced/use-variables 301
+/it/programmable/sdk/api/advanced/use-variables-dialog-state /it/programmable/sdk/api/advanced/use-variables 301
+/it/programmable/sdk/api/advanced/use-variables-table /it/programmable/sdk/api/advanced/use-variables 301
+/pl/programmable/sdk/api/composables/use-variables-editor /pl/programmable/sdk/api/advanced/use-variables 301
+/pl/programmable/sdk/api/advanced/use-variables-dialog-state /pl/programmable/sdk/api/advanced/use-variables 301
+/pl/programmable/sdk/api/advanced/use-variables-table /pl/programmable/sdk/api/advanced/use-variables 301
+/ru/programmable/sdk/api/composables/use-variables-editor /ru/programmable/sdk/api/advanced/use-variables 301
+/ru/programmable/sdk/api/advanced/use-variables-dialog-state /ru/programmable/sdk/api/advanced/use-variables 301
+/ru/programmable/sdk/api/advanced/use-variables-table /ru/programmable/sdk/api/advanced/use-variables 301

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
+import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+
 import { replaceMCPConnectionSettings, setMCPConnectionCredential } from '@/app/integrations/mcp'
 import { buildPiMCPServers } from '@/app/integrations/mcp/pi'
 
@@ -39,7 +41,7 @@ describe('Pi MCP configuration', () => {
     })
     expect(servers['open-pencil']).toEqual({
       url: expect.stringContaining('/mcp'),
-      headers: { Authorization: 'Bearer built-in-token' },
+      headers: { [MCP_AGENT_HEADER]: 'harness', Authorization: 'Bearer built-in-token' },
       auth: false
     })
   })

@@ -18,6 +18,7 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
 } from '@open-pencil/core/constants'
 import {
+  PlayIslands,
   toolCursor,
   useCanvas,
   useCanvasDrop,
@@ -28,7 +29,6 @@ import {
 } from '@open-pencil/vue'
 
 import { useAIChat } from '@/app/ai/chat/use'
-import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
@@ -38,6 +38,7 @@ import { appRuntimeConfig } from '@/app/runtime/config'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
+import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
@@ -51,7 +52,6 @@ const { paneId } = defineProps<{
 }>()
 
 const store = useEditorStore()
-const collab = useCollabInjected()
 const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -67,12 +67,14 @@ function updatePaneCursor(cx: number, cy: number) {
 }
 
 const getRenderState = paneId ? () => store.getPaneRenderState(paneId) : undefined
+/** This pane's view: its pan, zoom, page, and whether it previews. */
+const paneView = computed(() => (paneId ? store.getPaneRenderState(paneId) : store.state))
 const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
 }
 
-const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
+const { updateCursor } = useCanvasCollaborationAwareness(store)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 const shouldSuspendRender = () =>
@@ -98,7 +100,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIs
   useCanvas(canvasRef, store, {
     layer: 'overlays',
     get showRulers() {
-      return appRuntimeConfig.showRulers && store.state.showRulers
+      return appRuntimeConfig.showRulers && store.state.showRulers && paneView.value.play === null
     },
     getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
     shouldSuspendRender,
@@ -228,17 +230,8 @@ const cursor = computed(() =>
           :style="{ cursor }"
           class="absolute inset-0 block size-full touch-none outline-none"
         />
-        <Transition
-          enter-active-class="transition-opacity duration-150"
-          enter-from-class="opacity-0"
-          leave-active-class="transition-opacity duration-150"
-          leave-to-class="opacity-0"
-        >
-          <div
-            v-if="isDraggingOver"
-            class="pointer-events-none absolute inset-0 z-40 border-2 border-dashed border-accent/60 bg-accent/5"
-          />
-        </Transition>
+        <PlayIslands :view="paneView" :canvas="canvasRef" />
+        <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
         <CanvasLabelEditor
           :edit="canvasLabelEdit"

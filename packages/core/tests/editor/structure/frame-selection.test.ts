@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_FRAME_FILL } from '@open-pencil/core'
 import { createEditor } from '@open-pencil/core/editor'
 
 describe('frameSelection', () => {
@@ -35,7 +34,9 @@ describe('frameSelection', () => {
     expect(frame?.y).toBe(30)
     expect(frame?.width).toBe(110)
     expect(frame?.height).toBe(110)
-    expect(frame?.fills).toEqual([DEFAULT_FRAME_FILL])
+    // Recorded in Figma desktop 126: Frame selection adds no fill and does not clip.
+    expect(frame?.fills).toEqual([])
+    expect(frame?.clipsContent).toBe(false)
     expect(first.parentId).toBe(frameId)
     expect(second.parentId).toBe(frameId)
     expect(editor.graph.getAbsolutePosition(first.id)).toEqual(beforeFirst)
@@ -72,7 +73,7 @@ describe('frameSelection', () => {
 
     const frame = editor.graph.getNode(frameId)
     expect(frame?.type).toBe('FRAME')
-    expect(frame?.fills).toEqual([DEFAULT_FRAME_FILL])
+    expect(frame?.fills).toEqual([])
     expect(editor.graph.getNode(first.id)?.parentId).toBe(frameId)
     expect(editor.graph.getNode(second.id)?.parentId).toBe(frameId)
     expect(editor.state.selectedIds).toEqual(new Set([frameId]))

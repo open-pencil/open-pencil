@@ -1,9 +1,11 @@
 import { appRuntimeConfig } from '@/app/runtime/config'
-import { IS_BROWSER } from '@/constants'
+import { COLLAB_APP_ID, IS_BROWSER } from '@/constants'
 
 import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
 
 const MAX_TEST_MESSAGE_BYTES = 8 * 1024 * 1024
+/** The relay introduces peers as soon as they say hello. */
+const TEST_DISCOVERY_MS = 1000
 
 type TestTransportMessage =
   | { type: 'hello'; senderId: string; targetId?: string }
@@ -52,7 +54,8 @@ function relayURL(roomId: string): URL {
   const configured = appRuntimeConfig.collaborationRelayURL
   if (!configured) throw new Error('Test collaboration transport requires collabRelay')
   const url = new URL(configured)
-  url.searchParams.set('roomId', roomId)
+  // Namespaced like Trystero's rooms, so only builds with the same document format meet.
+  url.searchParams.set('roomId', `${COLLAB_APP_ID}:${roomId}`)
   return url
 }
 
@@ -140,6 +143,8 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
     onPeerLeave(handler) {
       leaveHandler = handler
     },
+    signalingConnected: () => socket.readyState === WebSocket.OPEN,
+    discoveryMs: TEST_DISCOVERY_MS,
     async leave() {
       if (left) return
       left = true

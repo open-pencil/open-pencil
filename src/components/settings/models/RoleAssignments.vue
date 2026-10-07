@@ -4,34 +4,17 @@ import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
+import { AI_MODEL_ROLES } from '@/app/ai/models/types'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import { useModelRoleLabels } from './role-labels'
+
 const { ai } = useI18n()
 
-const roleDefinitions = computed(() => [
-  {
-    role: 'design' as const,
-    label: ai.value.modelRoleDesign,
-    description: ai.value.modelRoleDesignDescription
-  },
-  {
-    role: 'review' as const,
-    label: ai.value.modelRoleReview,
-    description: ai.value.modelRoleReviewDescription
-  },
-  {
-    role: 'fast' as const,
-    label: ai.value.modelRoleFast,
-    description: ai.value.modelRoleFastDescription
-  },
-  {
-    role: 'vision' as const,
-    label: ai.value.modelRoleVision,
-    description: ai.value.modelRoleVisionDescription
-  }
-])
+const roleLabel = useModelRoleLabels()
+const roleDefinitions = computed(() => AI_MODEL_ROLES.map((role) => ({ role, ...roleLabel(role) })))
 
 const { assignmentValue, optionsForRole, updateAssignment } = useModelRoleAssignments(ai)
 </script>

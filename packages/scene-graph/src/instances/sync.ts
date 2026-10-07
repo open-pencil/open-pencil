@@ -362,7 +362,13 @@ function sortInstanceChildren(
     const componentIndex = mapped ? orderMap.get(mapped) : undefined
     ranks.set(childId, componentIndex ?? compChildOrder.length + index)
   }
-  instParent.childIds.sort((left, right) => (ranks.get(left) ?? 0) - (ranks.get(right) ?? 0))
+  const sorted = instParent.childIds.toSorted(
+    (left, right) => (ranks.get(left) ?? 0) - (ranks.get(right) ?? 0)
+  )
+  // Move through the graph so the reorder is reported, as collaboration syncs it.
+  sorted.forEach((childId, index) => {
+    if (instParent.childIds[index] !== childId) graph.insertChildAt(childId, instParentId, index)
+  })
 }
 
 /** True when syncing `compParentId` into `instParentId` would form a cycle. */

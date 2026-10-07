@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import AppBanner from './AppBanner.vue'
 
 const meta = {
-  title: 'Design System/Banner',
+  title: 'Design System/Feedback/Banner',
   component: AppBanner,
   parameters: { layout: 'fullscreen' }
 } satisfies Meta<typeof AppBanner>

@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-/** Shared archives live outside the package; this is the only path that reaches them. */
-export const FIXTURES = resolve(import.meta.dir, '../../../../tests/fixtures')
+import { FIXTURES } from './paths'
+
+export { FIXTURES }
 
 export function readFixtureBytes(name: string): Uint8Array {
   return readFileSync(resolve(FIXTURES, name))

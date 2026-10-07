@@ -9,6 +9,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
+import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
 import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -100,6 +101,8 @@ const snapToPixelGrid = computed({
         </label>
       </SettingsGroup>
     </SettingsSection>
+
+    <CollaborationNameSection />
 
     <SettingsSection>
       <template #title>{{ recovery.settingsTitle }}</template>

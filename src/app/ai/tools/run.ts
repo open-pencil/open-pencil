@@ -1,11 +1,12 @@
 import type { PageSnapshot } from '@open-pencil/core/editor'
-import { computeContentBounds } from '@open-pencil/core/io'
 import type { StepBudget } from '@open-pencil/core/tools'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
+import type { PreviewFocus } from '@/app/ai/preview/canvas'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
-import { addAgent, type AgentHandle } from '@/app/presence/registry'
+import { addAgent, agentPlacement, type AgentHandle } from '@/app/presence/registry'
 
 class RunState {
   currentSteps = 0
@@ -17,12 +18,15 @@ class RunState {
   agent: AgentHandle | null = null
   /** Each page as it was before the run first edited it, for `diff_changes`. */
   baselines = new Map<string, PageSnapshot>()
+  /** Undo entries the run's edits pushed, oldest first, so its turn can be reverted. */
+  undoEntries: UndoEntry[] = []
 
   start(maxSteps: number, pageId: string): void {
     this.currentSteps = 0
     this.maxSteps = resolveAgentStepLimit(maxSteps)
     this.pageId = pageId
     this.baselines = new Map()
+    this.undoEntries = []
   }
 
   hitLimit(): boolean {
@@ -51,19 +55,33 @@ export function startRun(store: EditorStore, maxSteps: number, model?: string): 
 
 /** The reply finished, failed, or was stopped: the agent stays listed but leaves the canvas. */
 export function endRun(store: EditorStore): void {
-  getRunState(store).agent?.update({ status: 'idle', cursor: undefined, selection: undefined })
+  getRunState(store).agent?.update({
+    status: 'idle',
+    cursor: undefined,
+    selection: undefined,
+    outline: undefined
+  })
+}
+
+/**
+ * Point the run's agent at JSX it is still streaming: the element that appeared last, with
+ * outlines of what it builds, until the tool runs and `markRunWork` names the real layers.
+ */
+export function markRunPreview(store: EditorStore, focus: PreviewFocus): void {
+  getRunState(store).agent?.update({
+    status: 'editing',
+    cursor: { ...focus.cursor, pageId: runPageId(store) },
+    selection: undefined,
+    outline: focus.outline
+  })
 }
 
 /** Point the run's agent at nodes a tool just created or changed. */
 export function markRunWork(store: EditorStore, nodeIds: string[]): void {
   const run = getRunState(store)
-  const bounds = computeContentBounds(store.graph, nodeIds)
-  if (!run.agent || !bounds) return
-  run.agent.update({
-    status: 'editing',
-    cursor: { x: bounds.minX, y: bounds.minY, pageId: runPageId(store) },
-    selection: nodeIds
-  })
+  const placement = agentPlacement(store, nodeIds, runPageId(store))
+  if (!run.agent || !placement) return
+  run.agent.update({ status: 'editing', ...placement })
 }
 
 export function recordStep(store?: EditorStore): void {
@@ -109,4 +127,15 @@ export function recordRunBaseline(store: EditorStore, snapshot: PageSnapshot): v
 
 export function runBaseline(store: EditorStore, pageId: string): PageSnapshot | null {
   return getRunState(store).baselines.get(pageId) ?? null
+}
+
+/** Note the entry an edit just pushed, if it carries the run's label (`AI: <tool>`). */
+export function recordRunUndoEntry(store: EditorStore, label: string): void {
+  const entry = store.undo.peekUndo()
+  const { undoEntries } = getRunState(store)
+  if (entry?.label === label && !undoEntries.includes(entry)) undoEntries.push(entry)
+}
+
+export function runUndoEntries(store: EditorStore): readonly UndoEntry[] {
+  return getRunState(store).undoEntries
 }

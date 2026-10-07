@@ -4,6 +4,7 @@ import { Socket } from 'node:net'
 
 import * as v from 'valibot'
 
+import { MCP_TOOL_SCOPES, type MCPToolScope } from '#mcp/tool/scope'
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
 /**
@@ -24,6 +25,8 @@ export interface DiscoveryInfo {
   version: string
   startedAt: string
   disabledTools?: string[]
+  /** What MCP clients can reach; stdio clients started outside the app follow it. */
+  scope?: MCPToolScope
 }
 
 const DiscoveryInfoJSON = v.pipe(
@@ -37,7 +40,8 @@ const DiscoveryInfoJSON = v.pipe(
     startedAt: v.string(),
     socketPath: v.nullable(v.pipe(v.string(), v.nonEmpty())),
     authToken: v.nullable(v.string()),
-    disabledTools: v.optional(v.array(v.string()), () => [])
+    disabledTools: v.optional(v.array(v.string()), () => []),
+    scope: v.optional(v.picklist(MCP_TOOL_SCOPES), 'document')
   })
 ) satisfies v.GenericSchema<string, DiscoveryInfo>
 

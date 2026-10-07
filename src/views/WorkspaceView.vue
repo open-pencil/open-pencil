@@ -4,11 +4,18 @@ import { useEventListener } from '@vueuse/core'
 import { onMounted, onUnmounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { useI18n } from '@open-pencil/vue'
+
+import { offerAISetupOnFirstRun } from '@/app/ai/models/settings/onboarding/dialog'
+import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { useJoinRoom } from '@/app/collab/join'
+import { bindDesktopRoomLinks } from '@/app/collab/room/links'
+import { syncRoomRoute } from '@/app/collab/route'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
-import { createDemoShapes } from '@/app/demo/document'
+import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
@@ -26,7 +33,8 @@ import {
   createTab,
   getActiveStore,
   getTabsSnapshot,
-  tabCount
+  tabCount,
+  type Tab
 } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
@@ -47,12 +55,37 @@ const shouldCreateHome =
   !appRuntimeConfig.test &&
   !route.meta.demo &&
   (isTauri() || appRuntimeConfig.recentFiles)
+const { collaboration } = useI18n()
+const joinRoomFromInput = useJoinRoom()
+
+/** A share link opens its room in a tab of its own, so nothing editable shows before it. */
+function openFirstTab(): Tab {
+  const roomId = typeof route.params.roomId === 'string' ? route.params.roomId : null
+  if (roomId) {
+    if (joinRoomFromInput(roomId) && activeTab.value) return activeTab.value
+    toast.error(collaboration.value.invalidRoomLink)
+  }
+  return shouldCreateHome ? createHomeTab() : createTab()
+}
+
 // Block-scoped so the view does not keep the first tab's store after that tab closes.
 {
-  const firstTab = activeTab.value ?? (shouldCreateHome ? createHomeTab() : createTab())
+  const firstTab = activeTab.value ?? openFirstTab()
   if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
-    void createDemoShapes(firstTab.store)
+    openDemoDocument(firstTab.store).catch((error: unknown) => {
+      console.error('[Demo] Could not open the demo document:', error)
+      toast.error(
+        notificationMessages.get().openFileFailed({
+          name: 'Demo',
+          error: error instanceof Error ? error.message : String(error)
+        })
+      )
+    })
   }
+}
+
+if (createdInitialTab && route.path === '/' && !appRuntimeConfig.test && !route.meta.demo) {
+  offerAISetupOnFirstRun()
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
@@ -60,9 +93,11 @@ useKeyboard()
 useEditorMenu()
 useDocumentDrop()
 
-const collab = useCollab(getActiveStore)
+const collab = useCollab()
 provide(COLLAB_KEY, collab)
-exposeCollaborationActions(collab)
+exposeCollaborationActions(collab, joinRoomFromInput)
+exposeAutomationTestRequests()
+syncRoomRoute(router, route)
 
 useEventListener(
   document,
@@ -74,6 +109,7 @@ useEventListener(
 )
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
+const roomLinksCleanup = ref<(() => void) | null>(null)
 
 /**
  * A drain that fails wholesale — the `take_pending_open` invoke, the event binding —
@@ -156,6 +192,14 @@ onMounted(async () => {
     reportOpenFailure(error)
   }
 
+  try {
+    roomLinksCleanup.value = await bindDesktopRoomLinks((roomId) => {
+      if (!joinRoomFromInput(roomId)) toast.error(collaboration.value.invalidRoomLink)
+    })
+  } catch (error) {
+    console.error('[Room link]', error)
+  }
+
   // The browser twin of the deep link: the desktop build takes its links through the
   // deep-link plugin above, so only a real browser reads them off the address bar.
   if (IS_BROWSER && !isTauri()) {
@@ -174,6 +218,7 @@ onUnmounted(() => {
   stopWebMCP?.()
   void stopMCPRuntime()
   fileAssociationCleanup.value?.()
+  roomLinksCleanup.value?.()
 })
 </script>
 
