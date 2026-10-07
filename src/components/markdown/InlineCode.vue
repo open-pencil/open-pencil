@@ -7,7 +7,7 @@ const { node: _node } = defineProps<MarkdownComponentProps>()
 <template>
   <code
     data-stream-markdown="inline-code"
-    class="rounded bg-hover px-1 py-px font-mono text-[11px] leading-4 text-surface break-words whitespace-normal"
+    class="rounded bg-hover px-1 py-px font-mono text-[length:inherit] leading-[inherit] text-surface break-words whitespace-normal"
     dir="ltr"
   >
     <slot />

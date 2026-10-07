@@ -12,7 +12,7 @@ import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { useAppTheme } from '@/app/shell/theme'
-import { checkForAppUpdate } from '@/app/shell/updater'
+import { checkForAppUpdate } from '@/app/shell/updater/check'
 import { isTauri } from '@/app/tauri/env'
 
 function shellMenuIds(entries: readonly AppMenuEntry[]): string[] {

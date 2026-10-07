@@ -28,6 +28,7 @@
 - Shared rooms record the layer tree in a new format, so people on this version and on earlier versions can no longer join each other's rooms. A room this browser saved with an earlier version converts when you open it again.
 - `SceneGraph.hitTestFrame` is now `hitTestDropTarget`, which returns only layers that take a drop, as in Figma: it skips groups, boolean operations, component sets, and locked layers, follows rotation, and respects clipping. The editor's `adoptNodesIntoSection` is now `adoptCoveredLayers`, which also takes a frame, and leaves locked layers out.
 - `buildDerivedTextDataV4` is removed from `@open-pencil/core`, and `sceneNodeToKiwi` no longer writes glyph outlines by itself: pass the `runtime` that `withFigExportRuntime(graph, canvasKit, write)` hands its callback. In `@open-pencil/fig/node-change`, `FigNodeChangeExportRuntime` takes `shapeText(node)` instead of `getGlyphOutlineMetrics`, `buildDerivedTextData` takes the `baselines` it writes, and `convertFigmaDerivedTextGlyphs` takes the text's characters.
+- The `updates` messages from `@open-pencil/vue` no longer include `availableTitle`, `installPrompt`, `installedTitle`, and `downloading`, which only the system update dialogs and download toast used; `installed` now takes only `{ version }`, and `install` reads "Install Update". The Software Update window uses the new `windowTitle`, `currentVersion`, `whatsNew`, `installAndRestart`, `restartNow`, and related messages.
 
 ### Added
 
@@ -75,6 +76,7 @@
 
 - Run Pi with the providers you signed in to in the Pi CLI and Pi's default model, so an AI Gateway key and a model ID are optional. The Pi model editor shows whether the Harness companion and MCP server are installed and match the app, and a chat whose Harness companion is missing, or whose companion or MCP server does not match the app, says what to fix and offers guided setup instead of failing with a generic error, and the message and its attachments stay in the composer.
 - Point Codex install instructions at `@agentclientprotocol/codex-acp`, which replaces `@zed-industries/codex-acp` and provides the same `codex-acp` command.
+- The desktop app shows an available update in a Software Update window with formatted, scrollable release notes, a link to the full notes, and download progress you can cancel, instead of a system dialog that showed raw Markdown and could grow taller than the screen (#743). On macOS and Linux the update installs first and you choose when to restart; restarting, and on Windows installing, first asks about unsaved documents as Quit does.
 - `openpencil eval` prints the value of a script's last expression, as the `eval` tool and app automation already do, so `-c 'figma.currentPage.children.length'` prints the count without a `return`.
 - In scripts, children of groups and booleans report `x`, `y`, and `relativeTransform` in their container's space, as in Figma, and a group refits whenever a script moves, resizes, rotates, adds, or removes one of its children; a group left without children is removed. The canvas and the plugin API share the refit.
 - Group, Frame selection, Create component, and boolean operations match Figma from the canvas and from scripts, through one shared implementation. From the canvas, the new layer takes the topmost selected layer's place in the layer list, Frame selection adds no fill and does not clip, a component wrapped around layers is white and takes a single layer's name, and a boolean is filled like its topmost operand, or its base for Subtract, without strokes. In scripts, `figma.ungroup()` leaves the children in the group's place instead of moving them to the top, booleans are named Union, Subtract, Intersect, or Exclude with the default grey fill, and `figma.createComponentFromNode()` turns a frame or group into a component that keeps its children instead of copying them, and wraps any other layer. Undoing a group or boolean returns each layer to its own place in the layer list.
@@ -102,6 +104,8 @@
 
 ### Fixed
 
+- Draw segmented controls in the properties panel at the height of the fields beside them.
+- Keep saving AI chat history in Safari Private Browsing after a message with an image or a reply that changed the document. Safari cannot store image data that way in a private window, so the conversation stopped saving from that point and showed "Chat history could not be saved".
 - `figma.combineAsVariants` derives variant properties from components named as Figma names variants, such as `State=On, Size=Large`, as Combine as variants in the editor now does too; before, only slash-separated names gave the set any properties.
 - HTML and Tailwind export place layers of frames without auto layout at their coordinates instead of stacking them, leave the size of hugging auto layout frames and auto-sizing text to their content, and round ellipses.
 - Show the blinking caret in a new, empty text layer before the first character is typed.
@@ -187,6 +191,7 @@
 
 ### Security
 
+- Refuse writes from the desktop app to places where a written file would run: login items and startup folders, PowerShell profiles, global package and executable folders such as Homebrew, `/usr/local`, npm, Volta, and Scoop, and the MCP discovery files coding agents trust. On Windows, hidden files and folders such as shell profiles and agent settings are now off-limits too, as on macOS and Linux, except a document you open there yourself, which can still be saved.
 - Limit the programs the desktop app may start to the exact command lines of the supported coding agents, the MCP server, and the Harness companion. On Windows the app could run any command through `cmd /c`, so any code running in the editor's webview could start arbitrary programs.
 - Update the desktop app to Tauri 2.12, which binds large IPC channel responses to the webview that requested them instead of letting another webview fetch them (GHSA-w28w-mhc8-qvjv).
 - Install a desktop update only when its signature names the version the update server announces, so a tampered update manifest cannot pair a newer version number with an older signed build.
