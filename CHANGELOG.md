@@ -224,7 +224,7 @@
 - Open the `/demo` document like any `.fig` file, built ahead of time, instead of generating it in the browser, which froze the page for several seconds.
 - Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.
 - Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, each page resolves only the layers it adds instead of rescanning the whole document, placing an instance no longer re-synchronises every other instance of its component, and archive records are copied directly rather than through `structuredClone`. A 33-page file loads about a fifth quicker, and a page of repeated components opens three to four times faster once a document is already open.
-- Lay out documents with many text layers and component instances without long freezes: text checks whether its fonts cover every glyph once rather than on every layout pass, and layout updating sizes no longer re-synchronises the components it touched. Building the demo document takes less than half as long.
+- Lay out documents with many text layers and component instances without long freezes: text checks whether its fonts cover every glyph and measures itself at each width once rather than on every layout pass, and layout updating sizes no longer re-synchronises the components it touched. Building the demo document takes less than half as long.
 
 ### Security
 

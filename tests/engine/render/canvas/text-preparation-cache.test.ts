@@ -138,7 +138,7 @@ describe('text preparation cache', () => {
       // Layout resizing the box shapes the same glyphs, unless truncation hides some of them.
       f.graph.updateNodePreview(f.node.id, { width: 80 })
       expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(true)
-      f.cache.deleteNode(f.node.id, { keepGlyphCoverage: true })
+      f.cache.deleteNode(f.node.id, { keepShaping: true })
       expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(true)
       f.graph.updateNodePreview(f.node.id, { textTruncation: 'ENDING' })
       expect(f.cache.hasGlyphCoverage(f.node, 1, f.provider)).toBe(false)
@@ -161,6 +161,37 @@ describe('text preparation cache', () => {
       expect(f.cache.hasGlyphCoverage(f.node, 2, f.provider)).toBe(false)
     } finally {
       otherProvider.delete()
+      f.dispose()
+    }
+  })
+
+  test('measures a text once per shaping and layout width', async () => {
+    const f = await fixture()
+    let measured = 0
+    const measure = (width: number, generation = 1) =>
+      f.cache.measure(f.node, width, generation, f.provider, () => {
+        measured++
+        return { width, height: f.node.text.length }
+      })
+    try {
+      measure(200)
+      measure(200)
+      measure(120)
+      expect(measured).toBe(2)
+      // Layout resizing the box changes neither the shaping nor the sizes at a given width.
+      f.graph.updateNodePreview(f.node.id, { width: 80, height: 30 })
+      f.cache.deleteNode(f.node.id, { keepShaping: true })
+      measure(200)
+      expect(measured).toBe(2)
+      f.graph.updateNodePreview(f.node.id, { text: 'Edited text' })
+      expect(measure(200).height).toBe('Edited text'.length)
+      expect(measured).toBe(3)
+      f.cache.deleteNode(f.node.id)
+      measure(200)
+      expect(measured).toBe(4)
+      measure(200, 2)
+      expect(measured).toBe(5)
+    } finally {
       f.dispose()
     }
   })
