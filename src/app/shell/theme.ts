@@ -36,6 +36,7 @@ function updateCanvasTheme(): void {
   const store = getActiveEditorStoreOrNull()
   if (!store) return
   store.state.rulerTheme = readRulerTheme() ?? undefined
+  store.state.theme = resolvedAppTheme.value
   store.requestRepaint()
 }
 

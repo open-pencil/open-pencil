@@ -20,6 +20,7 @@ import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import RecoveryDialog from '@/components/recovery/RecoveryDialog.vue'
+import AISetupDialog from '@/components/settings/ai-setup/AISetupDialog.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
 import AppShell from '@/components/shell/AppShell.vue'
 import Toaster from '@/components/shell/Toaster.vue'
@@ -56,6 +57,7 @@ onMounted(() => {
         <RouterView />
       </AppShell>
       <SettingsDialog />
+      <AISetupDialog />
       <RecoveryDialog />
       <UnsavedChangesDialog />
       <PublishLibraryDialog />

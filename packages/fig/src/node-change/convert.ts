@@ -2,6 +2,7 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
+  DEFAULT_STROKE_WEIGHT,
   OPEN_PENCIL_PLUGIN_DATA,
   styleToWeight
 } from '@open-pencil/scene-graph'
@@ -13,7 +14,7 @@ import { importCanvasGuides } from './canvas-guides'
 import { convertFigmaDerivedTextGlyphs } from './derived-text/glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
-import { convertEffects, convertFills, convertStrokes } from './paint'
+import { convertEffects, convertFills, convertStrokeAlign, convertStrokes } from './paint'
 import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
@@ -641,6 +642,8 @@ export function nodeChangeToProps(
       vectorAndStrokeProps.strokeJoin,
       nc.dashPattern ?? []
     ),
+    strokeWeight: nc.strokeWeight ?? DEFAULT_STROKE_WEIGHT,
+    strokeAlign: convertStrokeAlign(nc.strokeAlign),
     effects: convertEffects(nc.effects),
     layoutGrids: convertLayoutGrids(nc.layoutGrids),
     guides: importCanvasGuides(nc.guides),

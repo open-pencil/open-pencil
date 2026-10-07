@@ -523,6 +523,14 @@ export interface SceneNode {
   borderLeftWeight: number
   independentStrokeWeights: boolean
 
+  /**
+   * The weight and alignment a node keeps for its strokes, as Figma keeps them on the node: they
+   * last while it has no strokes, and a stroke added to it takes them. Each stroke still carries
+   * its own `weight` and `align`, which win while the node has strokes.
+   */
+  strokeWeight: number
+  strokeAlign: Stroke['align']
+
   strokeMiterLimit: number
 
   minWidth: number | null

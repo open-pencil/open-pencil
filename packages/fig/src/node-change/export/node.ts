@@ -11,6 +11,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
+  DEFAULT_STROKE_WEIGHT,
   OPEN_PENCIL_PLUGIN_DATA,
   withPluginData
 } from '@open-pencil/scene-graph'
@@ -920,13 +921,20 @@ export function sceneNodeToKiwiWithContext(
   if (node.type === 'GROUP') {
     nc.resizeToFit = true
   }
-  // Only set strokeWeight/strokeAlign when the node has strokes in the scene
-  // model. For imported nodes without strokes but with raw strokeWeight data
-  // (e.g. text nodes, instance children with scaled strokes), the raw value
-  // must be allowed to flow through via applyRawFigmaNodeFields.
+  // With strokes, their geometry is the node's. Without, the node keeps its own weight and
+  // alignment, written when set or when the source file carried them.
   if (node.strokes.length > 0) {
     nc.strokeWeight = node.strokes[0].weight
     nc.strokeAlign = node.strokes[0].align
+  } else {
+    const rawNodeFields = effectiveFigmaRawNodeFields(node)
+    if (node.strokeWeight !== DEFAULT_STROKE_WEIGHT || 'strokeWeight' in rawNodeFields) {
+      nc.strokeWeight = node.strokeWeight
+    }
+    // Kiwi reads a missing alignment as centered.
+    if (node.strokeAlign !== 'CENTER' || 'strokeAlign' in rawNodeFields) {
+      nc.strokeAlign = node.strokeAlign
+    }
   }
   if (node.locked) nc.locked = true
 
