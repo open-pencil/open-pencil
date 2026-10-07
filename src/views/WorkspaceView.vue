@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { offerAISetupOnFirstRun } from '@/app/ai/models/settings/onboarding/dialog'
 import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
@@ -73,6 +74,10 @@ function openFirstTab(): Tab {
   if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
     void createDemoShapes(firstTab.store)
   }
+}
+
+if (createdInitialTab && route.path === '/' && !appRuntimeConfig.test && !route.meta.demo) {
+  offerAISetupOnFirstRun()
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })

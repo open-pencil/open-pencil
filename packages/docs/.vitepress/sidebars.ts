@@ -74,6 +74,7 @@ export const programmableSidebar = (
       { text: labels.aiChat, link: `${prefix}/programmable/ai-chat` },
       ...(!prefix
         ? [
+            { text: 'Coding agents', link: '/programmable/coding-agents' },
             {
               text: 'BYOK Compatibility',
               link: '/programmable/byok-provider-compatibility',

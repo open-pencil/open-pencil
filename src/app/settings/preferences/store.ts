@@ -28,6 +28,9 @@ export interface DesignCheckPreferences {
   disabledRules: string[]
 }
 
+/** Whether guided AI setup was offered and finished or skipped. */
+export type AISetupState = 'pending' | 'done'
+
 export interface AppPreferences {
   appearance: { animations: AnimationPreference }
   chat: {
@@ -48,6 +51,9 @@ export interface AppPreferences {
     canvasMode: CanvasRenderingMode
   }
   designCheck: DesignCheckPreferences
+  onboarding: {
+    aiSetup: AISetupState
+  }
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -64,7 +70,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   rendering: { canvasMode: 'retained' },
-  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] }
+  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
+  onboarding: { aiSetup: 'pending' }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -91,6 +98,7 @@ interface StoredAppPreferences {
   editing?: { snapping?: StoredSnappingPreferences }
   rendering?: { canvasMode?: unknown }
   designCheck?: { showOnCanvas?: unknown; preset?: unknown; disabledRules?: unknown }
+  onboarding?: { aiSetup?: unknown }
 }
 
 function isStoredAppPreferences(value: unknown): value is StoredAppPreferences {
@@ -162,7 +170,10 @@ function normalizePreferences(value: unknown): AppPreferences {
     rendering: {
       canvasMode: stored?.rendering?.canvasMode === 'tiled' ? 'tiled' : 'retained'
     },
-    designCheck: normalizeDesignCheckPreferences(stored?.designCheck)
+    designCheck: normalizeDesignCheckPreferences(stored?.designCheck),
+    onboarding: {
+      aiSetup: stored?.onboarding?.aiSetup === 'done' ? 'done' : 'pending'
+    }
   }
 }
 
@@ -180,6 +191,10 @@ export function updateRecoveryEnabled(enabled: boolean): void {
   const preferences = structuredClone(appPreferences.value)
   preferences.recovery.enabled = enabled
   appPreferences.value = preferences
+}
+
+export function updateAISetupState(aiSetup: AISetupState): void {
+  appPreferences.value = { ...appPreferences.value, onboarding: { aiSetup } }
 }
 
 export function updateCanvasRenderingMode(canvasMode: CanvasRenderingMode): void {

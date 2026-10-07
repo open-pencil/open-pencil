@@ -375,7 +375,12 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
   const provider = AI_PROVIDERS.find((definition) => definition.id === draft.providerID)
   const effectiveModel = draft.customModelID.trim() || draft.modelID.trim()
   if (!draft.name.trim()) throw new Error('Model name is required')
-  if (!draft.providerID.startsWith('acp:') && !effectiveModel) {
+  // Agents choose their own model, and Pi falls back to its own default model.
+  if (
+    !draft.providerID.startsWith('acp:') &&
+    draft.providerID !== 'harness:pi' &&
+    !effectiveModel
+  ) {
     throw new Error('Model ID is required')
   }
   if (

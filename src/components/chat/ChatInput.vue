@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { useI18n, useSelectionState } from '@open-pencil/vue'
 
+import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
@@ -47,8 +48,18 @@ const {
   removeNode: removeReferencedNode,
   toggleSelection: toggleCurrentSelection,
   handlePaste,
-  takeSubmission
+  takeSubmission,
+  restoreSubmission
 } = attachments
+
+const composer = useTemplateRef<{ restoreDraft: (text: string) => boolean }>('composer')
+
+/** Puts back an unsent message with its attachments; releases them if newer text replaced it. */
+function restoreDraft(submission: ChatSubmission): void {
+  if (composer.value?.restoreDraft(submission.displayText)) restoreSubmission(submission)
+  else for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
+}
+defineExpose({ restoreDraft })
 
 const isStreaming = computed(() => disabled || status === 'streaming' || status === 'submitted')
 const isAgentProvider = computed(
@@ -81,6 +92,7 @@ const selectedProfileName = computed(
 
 <template>
   <ChatComposer
+    ref="composer"
     :status="status"
     :disabled="disabled"
     @submit="emit('submit', takeSubmission($event))"

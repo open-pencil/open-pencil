@@ -14,8 +14,8 @@ export function nodeTraversalInput(depthDescription: string) {
   })
 }
 export const positionInputs = {
-  x: toolNumber(v.pipe(v.number(), v.description('X position'))),
-  y: toolNumber(v.pipe(v.number(), v.description('Y position')))
+  x: toolNumber(v.pipe(v.number(), v.description('X position in the parent, or on the page'))),
+  y: toolNumber(v.pipe(v.number(), v.description('Y position in the parent, or on the page')))
 }
 
 /** Reuse a native number schema for both numeric and numeric-string agent inputs. */
