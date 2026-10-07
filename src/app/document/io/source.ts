@@ -71,7 +71,8 @@ export function createDocumentSourceActions({
     state,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
-    hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding()
+    hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
+    hasUnsavedChanges: changes.hasUnsavedChanges
   })
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({

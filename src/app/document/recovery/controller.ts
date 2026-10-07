@@ -13,6 +13,8 @@ interface DocumentRecoveryOptions {
   state: RecoveryState
   buildFigFile: () => Promise<Uint8Array> | Uint8Array
   hasWritableSource: () => boolean
+  /** Whether the document has edits its file does not hold; nothing else needs a snapshot. */
+  hasUnsavedChanges?: () => boolean
   isEnabled?: () => boolean
   store?: RecoveryStore
   recoveryId?: string
@@ -31,6 +33,7 @@ export function createDocumentRecovery({
   state,
   buildFigFile,
   hasWritableSource,
+  hasUnsavedChanges = () => true,
   isEnabled = () => true,
   store = getRecoveryStore(),
   recoveryId = createCanvasId()
@@ -46,7 +49,7 @@ export function createDocumentRecovery({
 
   async function runWrites(generation: number): Promise<void> {
     if (disposed || generation !== lifecycleGeneration || !isEnabled()) return
-    if (hasWritableSource() || requestedVersion === protectedVersion) return
+    if (hasWritableSource() || requestedVersion === protectedVersion || !hasUnsavedChanges()) return
     const version = requestedVersion
     const bytes = await buildFigFile()
     if (generation !== lifecycleGeneration || hasWritableSource() || !isEnabled()) return
@@ -64,7 +67,8 @@ export function createDocumentRecovery({
 
   async function persistNow(): Promise<void> {
     await cleanup
-    if (disposed || hasWritableSource() || !isEnabled()) return
+    // Opening a document lays it out without an edit; a snapshot of it would only copy the file.
+    if (disposed || hasWritableSource() || !isEnabled() || !hasUnsavedChanges()) return
     requestedVersion = state.sceneVersion
     if (requestedVersion === protectedVersion) return
     if (!writing) {

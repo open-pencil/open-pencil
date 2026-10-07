@@ -76,6 +76,36 @@ describe('document recovery controller', () => {
     recovery.disposeRecovery()
   })
 
+  test('takes no snapshot until the document has unsaved changes', async () => {
+    let builds = 0
+    const unsaved = ref(false)
+    const state = reactive({ ...createDefaultEditorState('page-1'), documentName: 'Opened file' })
+    const store = createMemoryRecoveryStore()
+    const recovery = createDocumentRecovery({
+      state,
+      store,
+      recoveryId: 'recovery-1',
+      hasWritableSource: () => false,
+      hasUnsavedChanges: () => unsaved.value,
+      buildFigFile: async () => {
+        builds++
+        return new Uint8Array([1])
+      }
+    })
+    // Opening a file lays it out, which bumps the scene version without an edit.
+    state.sceneVersion = 1
+    await recovery.persistNow()
+    expect(builds).toBe(0)
+    expect(await store.list()).toEqual([])
+
+    unsaved.value = true
+    state.sceneVersion = 2
+    await recovery.persistNow()
+    expect(builds).toBe(1)
+    expect((await store.read('recovery-1'))?.sceneVersion).toBe(2)
+    recovery.disposeRecovery()
+  })
+
   test('does not serialize or persist while disabled', async () => {
     let builds = 0
     const { state, store, recovery } = setup(async () => {
