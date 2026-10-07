@@ -307,15 +307,26 @@ export function resolveNumberVariableForNode(
   return typeof value === 'number' ? value : undefined
 }
 
+/** A variable's value in the mode a node is in, aliases followed. */
+export function resolveVariableForNode(
+  graph: SceneGraph,
+  nodeId: string,
+  variableId: string,
+  fallback: VariableModeFallback = 'active'
+): VariableValue | undefined {
+  const variable = graph.variables.get(variableId)
+  if (!variable) return undefined
+  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
+  return resolveVariable(graph, variableId, modeId)
+}
+
 export function resolveStringVariableForNode(
   graph: SceneGraph,
   nodeId: string,
-  variableId: string
+  variableId: string,
+  fallback: VariableModeFallback = 'active'
 ): string | undefined {
-  const variable = graph.variables.get(variableId)
-  if (!variable) return undefined
-  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId)
-  const value = resolveVariable(graph, variableId, modeId)
+  const value = resolveVariableForNode(graph, nodeId, variableId, fallback)
   return typeof value === 'string' ? value : undefined
 }
 

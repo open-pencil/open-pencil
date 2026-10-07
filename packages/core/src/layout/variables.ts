@@ -1,5 +1,5 @@
 import {
-  reconcileNumericVariableBindings,
+  reconcileVariableBindings,
   type BindingScope,
   type SceneGraph
 } from '@open-pencil/scene-graph'
@@ -14,7 +14,7 @@ import { createLayoutRunner } from './mutations'
  */
 export function reconcileVariableLayouts(graph: SceneGraph, scope: BindingScope): void {
   const { runLayoutForNode } = createLayoutRunner(() => graph)
-  for (const id of reconcileNumericVariableBindings(graph, scope)) {
+  for (const id of reconcileVariableBindings(graph, scope)) {
     // A deliberate binding change also invalidates a placed instance's saved Hug size.
     computeLayout(graph, id)
     runLayoutForNode(id)

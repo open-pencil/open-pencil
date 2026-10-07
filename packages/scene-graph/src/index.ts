@@ -323,8 +323,20 @@ export class SceneGraph {
     return Variables.resolveNumberVariableForNode(this, nodeId, variableId, fallback)
   }
 
-  resolveStringVariableForNode(nodeId: string, variableId: string): string | undefined {
-    return Variables.resolveStringVariableForNode(this, nodeId, variableId)
+  resolveVariableForNode(
+    nodeId: string,
+    variableId: string,
+    fallback?: VariableModeFallback
+  ): VariableValue | undefined {
+    return Variables.resolveVariableForNode(this, nodeId, variableId, fallback)
+  }
+
+  resolveStringVariableForNode(
+    nodeId: string,
+    variableId: string,
+    fallback?: VariableModeFallback
+  ): string | undefined {
+    return Variables.resolveStringVariableForNode(this, nodeId, variableId, fallback)
   }
 
   getVariablesForCollection(collectionId: string): Variable[] {
