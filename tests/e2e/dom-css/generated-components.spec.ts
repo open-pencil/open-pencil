@@ -1,8 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import react from '@vitejs/plugin-react'
 import vue from '@vitejs/plugin-vue'
-import { createServer, type ViteDevServer } from 'vite'
+import { createServer, type PluginOption, type ViteDevServer } from 'vite'
 
 import { exportStorybook } from '@open-pencil/dom-css'
 import {
@@ -110,74 +111,108 @@ function disclosureGraph(): SceneGraph {
   )
 }
 
+type Framework = 'vue' | 'react'
+
+/** How each framework's app mounts the generated component twice: as is, and disabled. */
+const APPS: Record<
+  Framework,
+  { entry: string; main: (path: string) => string; plugin: () => PluginOption }
+> = {
+  vue: {
+    entry: 'main.ts',
+    main: (path) =>
+      [
+        "import { createApp, h } from 'vue'",
+        `import Control from './${path}'`,
+        "createApp({ render: () => [h('div', { id: 'enabled' }, h(Control)), h('div', { id: 'disabled' }, h(Control, { disabled: true }))] }).mount('#app')"
+      ].join('\n'),
+    plugin: () => vue()
+  },
+  react: {
+    entry: 'main.tsx',
+    main: (path) =>
+      [
+        "import { createRoot } from 'react-dom/client'",
+        `import * as Module from './${path.replace(/\.tsx$/, '')}'`,
+        'const Control = Object.values(Module)[0] as (props: { disabled?: boolean }) => JSX.Element',
+        'createRoot(document.getElementById(\'app\')!).render(<><div id="enabled"><Control /></div><div id="disabled"><Control disabled /></div></>)'
+      ].join('\n'),
+    plugin: () => react()
+  }
+}
+
 /**
- * Exports `graph` to Vue stories, mounts the generated component twice (as is, and disabled)
- * in a Vite app under the test's output folder, so it resolves `vue` and `reka-ui` from the
- * repository as an app would, and serves it.
+ * Exports `graph` to stories for `framework`, mounts the generated component in a Vite app
+ * under the test's output folder, so it resolves `vue`, `reka-ui`, `react`, and `radix-ui`
+ * from the repository as an app would, and serves it.
  */
-async function serveComponent(graph: SceneGraph, folder: string): Promise<ViteDevServer> {
-  const files = await exportStorybook(graph, { framework: 'vue' })
-  const component = files.find((file) => file.path.endsWith('.vue'))
+async function serveComponent(
+  graph: SceneGraph,
+  framework: Framework,
+  folder: string
+): Promise<ViteDevServer> {
+  const files = await exportStorybook(graph, { framework })
+  const component = files.find((file) => /\.(vue|tsx)$/.test(file.path))
   if (!component) throw new Error('No component was generated')
   await mkdir(folder, { recursive: true })
-  await writeFile(join(folder, component.path), component.content)
-  await writeFile(
-    join(folder, 'main.ts'),
-    [
-      "import { createApp, h } from 'vue'",
-      `import Control from './${component.path}'`,
-      "createApp({ render: () => [h('div', { id: 'enabled' }, h(Control)), h('div', { id: 'disabled' }, h(Control, { disabled: true }))] }).mount('#app')"
-    ].join('\n')
-  )
+  for (const file of files) await writeFile(join(folder, file.path), file.content)
+  const app = APPS[framework]
+  await writeFile(join(folder, app.entry), app.main(component.path))
   await writeFile(
     join(folder, 'index.html'),
-    '<!doctype html><div id="app"></div><script type="module" src="/main.ts"></script>'
+    `<!doctype html><div id="app"></div><script type="module" src="/${app.entry}"></script>`
   )
   const server = await createServer({
     root: folder,
     configFile: false,
     logLevel: 'silent',
-    plugins: [vue()],
+    plugins: [app.plugin()],
     server: { port: 0, host: '127.0.0.1' }
   })
   await server.listen()
   return server
 }
 
-test.describe('generated Vue components in a browser', () => {
-  let server: ViteDevServer | undefined
-  test.afterEach(async () => {
-    await server?.close()
-    server = undefined
+for (const framework of ['vue', 'react'] as const) {
+  test.describe(`generated ${framework} components in a browser`, () => {
+    let server: ViteDevServer | undefined
+    test.afterEach(async () => {
+      await server?.close()
+      server = undefined
+    })
+
+    test('a switch toggles on click and its state styles move the thumb', async ({
+      page
+    }, info) => {
+      server = await serveComponent(switchGraph(), framework, info.outputPath('switch'))
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const control = page.locator('#enabled').getByRole('switch')
+      const thumb = page.locator('#enabled [class*="switch__thumb"]')
+      await expect(control).toHaveAttribute('data-state', 'unchecked')
+      await expect(thumb).toHaveCSS('left', '2px')
+
+      await control.click()
+      await expect(control).toHaveAttribute('data-state', 'checked')
+      await expect(thumb).toHaveCSS('left', '20px')
+      await expect(control).toHaveCSS('background-color', 'rgb(77, 69, 230)')
+
+      const disabled = page.locator('#disabled').getByRole('switch')
+      await disabled.click({ force: true })
+      await expect(disabled).toHaveAttribute('data-state', 'unchecked')
+    })
+
+    test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {
+      server = await serveComponent(disclosureGraph(), framework, info.outputPath('disclosure'))
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const content = page.locator('#enabled [class*="disclosure__content"]')
+      await expect(content).toBeHidden()
+      await page.locator('#enabled').getByRole('button').click()
+      await expect(page.locator('#enabled > [data-state]').first()).toHaveAttribute(
+        'data-state',
+        'open'
+      )
+      await expect(content).toBeVisible()
+      await expect(content).toHaveCSS('top', '12px')
+    })
   })
-
-  test('a switch toggles on click and its state styles move the thumb', async ({ page }, info) => {
-    server = await serveComponent(switchGraph(), info.outputPath('switch'))
-    await page.goto(server.resolvedUrls?.local[0] ?? '')
-    const control = page.locator('#enabled').getByRole('switch')
-    const thumb = page.locator('#enabled .switch__thumb')
-    await expect(control).toHaveAttribute('data-state', 'unchecked')
-    await expect(thumb).toHaveCSS('left', '2px')
-
-    await control.click()
-    await expect(control).toHaveAttribute('data-state', 'checked')
-    await expect(thumb).toHaveCSS('left', '20px')
-    await expect(control).toHaveCSS('background-color', 'rgb(77, 69, 230)')
-
-    const disabled = page.locator('#disabled').getByRole('switch')
-    await disabled.click({ force: true })
-    await expect(disabled).toHaveAttribute('data-state', 'unchecked')
-  })
-
-  test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {
-    server = await serveComponent(disclosureGraph(), info.outputPath('disclosure'))
-    await page.goto(server.resolvedUrls?.local[0] ?? '')
-    const trigger = page.locator('#enabled .disclosure__trigger')
-    const content = page.locator('#enabled .disclosure__content')
-    await expect(content).toBeHidden()
-    await trigger.click()
-    await expect(page.locator('#enabled .disclosure')).toHaveAttribute('data-state', 'open')
-    await expect(content).toBeVisible()
-    await expect(content).toHaveCSS('top', '12px')
-  })
-})
+}

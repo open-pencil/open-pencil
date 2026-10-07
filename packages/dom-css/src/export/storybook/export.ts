@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { ExportHTMLFile } from '../bundle'
 import { componentModel } from '../components/model'
+import { reactComponent } from '../components/react'
 import { vueComponent } from '../components/vue'
 import { serializeHTML } from '../html'
 import { sceneNodeToDesignDocument } from '../projection'
@@ -123,19 +124,28 @@ export async function exportStorybook(
       })
       if (options.pageId && page.id !== options.pageId) continue
 
-      const component = framework === 'vue' && group.set ? componentModel(graph, group.set) : null
-      if (component) {
+      // Static HTML stories have no component to generate.
+      const generated = framework === 'html' ? null : framework
+      const component = generated && group.set ? componentModel(graph, group.set) : null
+      if (generated && component) {
         // The component is imported by the file's name, so the two always match.
         component.name = file
-        add(page, `${file}.vue`, await vueComponent(component))
+        if (generated === 'vue') {
+          add(page, `${file}.vue`, await vueComponent(component))
+        } else {
+          const react = await reactComponent(component, `./${file}.module.css`)
+          add(page, `${file}.tsx`, react.source)
+          add(page, `${file}.module.css`, react.css)
+        }
         const design = designLink({ linkPath: options.linkPath, uniqueNames }, group.linkNode)
         add(
           page,
           `${file}.stories.ts`,
           printComponentStories({
+            framework: generated,
             title: group.title,
             component,
-            path: `./${file}.vue`,
+            path: generated === 'vue' ? `./${file}.vue` : `./${file}`,
             design: design.flatMap((entry) =>
               entry.type === 'link' ? [{ name: 'OpenPencil', type: 'link', url: entry.url }] : []
             )
