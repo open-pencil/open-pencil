@@ -25,7 +25,9 @@ describe('tokens command', () => {
   })
 
   test('writes W3C design token files for the dtcg format', async () => {
-    const result = await executeRPCCommand(graphWithTokens(), 'tokens', { format: 'dtcg' })
+    const result = (await executeRPCCommand(graphWithTokens(), 'tokens', {
+      format: 'dtcg'
+    })) as TokensResult
     expect(result.files?.map((file) => file.path)).toContain('tokens.resolver.json')
   })
 
