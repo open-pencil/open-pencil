@@ -9,11 +9,12 @@ import { createMockCanvas, createMockRenderer, mockCalls } from '../effects/help
 import { asCanvas, asDouble } from '../helpers'
 
 function graphWithGuides(guides: SceneNode['guides']): SceneGraph {
-  const page = createDefaultNode(() => 'page', 'CANVAS', { childIds: [], guides })
-  return asDouble<SceneGraph>({
-    rootId: 'root',
-    getNode: (id: string) => (id === 'page' ? page : null)
-  })
+  const graph = new SceneGraph()
+  graph.rootId = 'root'
+  graph.nodes = new Map([
+    ['page', createDefaultNode(() => 'page', 'CANVAS', { childIds: [], guides })]
+  ])
+  return graph
 }
 
 describe('page guide rendering', () => {

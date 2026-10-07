@@ -1,6 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { guideOwnersOnPage } from '@open-pencil/scene-graph/guides'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 
@@ -87,7 +88,7 @@ export function drawGuides(
   const selected = guides?.selected
 
   r.auxStroke.setStrokeWidth(1)
-  const visit = (owner: SceneNode) => {
+  for (const owner of guideOwnersOnPage(graph, page.id)) {
     for (const guide of owner.guides) {
       if (preview?.source?.ownerId === owner.id && preview.source.guideId === guide.id) continue
       drawGuide(
@@ -104,12 +105,7 @@ export function drawGuides(
         )
       )
     }
-    for (const childId of owner.childIds) {
-      const child = graph.getNode(childId)
-      if (child) visit(child)
-    }
   }
-  visit(page)
 
   if (preview) {
     const owner = graph.getNode(preview.ownerId)
