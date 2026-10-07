@@ -10,6 +10,9 @@ export function hasBehaviour(graph: SceneGraph, node: SceneNode): boolean {
   return !!owner && !!readBehaviour(owner)
 }
 
+/** A name as a path segment: `/` separates segments and `#` the twin index, so both are escaped. */
+const pathName = (name: string) => name.replace(/[%/#]/g, (char) => encodeURIComponent(char))
+
 /**
  * A layer's path below a root: the names of the layers down to it, with the position among
  * same-named siblings when names repeat. It stays the same when a variant switch rebuilds an
@@ -17,15 +20,16 @@ export function hasBehaviour(graph: SceneGraph, node: SceneNode): boolean {
  */
 export function layerPath(graph: SceneGraph, rootId: string, nodeId: string): string {
   const segments: string[] = []
-  let current = graph.getNode(nodeId)
-  while (current && current.id !== rootId) {
-    const parent = current.parentId ? graph.getNode(current.parentId) : undefined
-    const { id, name } = current
-    const twins = parent ? graph.getChildren(parent.id).filter((child) => child.name === name) : []
-    const index = twins.findIndex((child) => child.id === id)
-    segments.unshift(twins.length > 1 ? `${name}#${index}` : name)
-    current = parent
-  }
+  // `closest` stops on a parent cycle in bad data, where a hand-written walk would not.
+  graph.closest(nodeId, (node) => {
+    if (node.id === rootId) return true
+    const twins = node.parentId
+      ? graph.getChildren(node.parentId).filter((child) => child.name === node.name)
+      : []
+    const index = twins.findIndex((child) => child.id === node.id)
+    segments.unshift(twins.length > 1 ? `${pathName(node.name)}#${index}` : pathName(node.name))
+    return false
+  })
   return segments.join('/')
 }
 
@@ -40,7 +44,7 @@ export function findLayerByPath(
     if (!current) return undefined
     const hash = segment.lastIndexOf('#')
     const name = hash === -1 ? segment : segment.slice(0, hash)
-    const twins = graph.getChildren(current.id).filter((child) => child.name === name)
+    const twins = graph.getChildren(current.id).filter((child) => pathName(child.name) === name)
     current = twins.at(hash === -1 ? 0 : Number(segment.slice(hash + 1)))
   }
   return current
