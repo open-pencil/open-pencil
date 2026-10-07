@@ -32,7 +32,8 @@ const showChrome = appRuntimeConfig.showChrome
 // active tab and would move these subscriptions to the next document when this tab closes.
 const tab = activeTab.value
 if (tab) provideTabEditorStore(tab.store)
-const store = useEditorStore()
+// A component cannot inject what it provides itself, so the workspace takes its tab's store here.
+const store = tab?.store ?? useEditorStore()
 const { isMobile } = useViewportKind()
 const initialEditorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
