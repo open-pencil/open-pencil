@@ -211,6 +211,23 @@ function frameChildAt(
   return null
 }
 
+/** The containers the selection opens: every ancestor of a selected layer inside the scope. */
+function selectionAncestors(
+  graph: SceneGraph,
+  selectedIds: ReadonlySet<string>,
+  scopeId: string
+): Set<string> {
+  const ancestors = new Set<string>()
+  for (const id of selectedIds) {
+    let parentId = graph.nodes.get(id)?.parentId
+    while (parentId && parentId !== scopeId && !ancestors.has(parentId)) {
+      ancestors.add(parentId)
+      parentId = graph.nodes.get(parentId)?.parentId
+    }
+  }
+  return ancestors
+}
+
 /**
  * The layer a click selects, as in Figma. It walks from the scope down to the deepest layer under
  * the point and stops at the first layer that is not open. Top-level frames and sections with
@@ -238,14 +255,7 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const openedBySelection = new Set<string>()
-  for (const id of selectedIds) {
-    let parentId = graph.nodes.get(id)?.parentId
-    while (parentId && parentId !== scopeId && !openedBySelection.has(parentId)) {
-      openedBySelection.add(parentId)
-      parentId = graph.nodes.get(parentId)?.parentId
-    }
-  }
+  const openedBySelection = selectionAncestors(graph, selectedIds, scopeId)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
