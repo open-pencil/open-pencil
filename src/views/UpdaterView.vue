@@ -4,11 +4,11 @@ import { computed, onMounted, onScopeDispose } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { APP_VERSION } from '@/app/runtime/version'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { createTauriUpdaterBackend, createUpdaterSession } from '@/app/shell/updater/session'
 import UpdatePrompt from '@/components/updater/UpdatePrompt.vue'
-import { APP_VERSION } from '@/constants'
 
 const { updates, locale } = useI18n()
 

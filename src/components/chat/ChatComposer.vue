@@ -35,6 +35,17 @@ function handleSubmit(event: Event) {
   input.value = ''
   triggerResize()
 }
+/**
+ * Puts back a message that could not be sent, unless something new was typed meanwhile.
+ * Returns whether it did.
+ */
+function restoreDraft(text: string): boolean {
+  if (input.value.trim()) return false
+  input.value = text
+  triggerResize()
+  return true
+}
+defineExpose({ restoreDraft })
 </script>
 <template>
   <TooltipProvider>

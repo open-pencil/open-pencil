@@ -1,4 +1,9 @@
-import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './constants'
+import {
+  BLACK,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_STROKE_MITER_LIMIT,
+  DEFAULT_STROKE_WEIGHT
+} from './constants'
 import { createInstanceOverrideState } from './instance-overrides'
 import type { NodeType, SceneNode, SourceMetadata } from './types'
 
@@ -28,6 +33,23 @@ export function createDefaultSourceMetadata(): SourceMetadata {
  * slower, larger dictionary.
  */
 type CompleteNodeFields = SceneNode & Record<keyof SceneNode, unknown>
+
+/** Where Figma aligns a new node's strokes: centered on lines and vectors, outside text, else inside. */
+export function defaultStrokeAlign(type: NodeType): SceneNode['strokeAlign'] {
+  if (type === 'LINE' || type === 'VECTOR') return 'CENTER'
+  return type === 'TEXT' ? 'OUTSIDE' : 'INSIDE'
+}
+
+/**
+ * Weight and alignment a stroke added to `node` takes: its first stroke's, or what the node keeps
+ * with none. Adding a stroke from the panel and from the plugin API both go through here.
+ */
+export function newStrokeGeometry(
+  node: Pick<SceneNode, 'strokes' | 'strokeWeight' | 'strokeAlign'>
+): Pick<SceneNode['strokes'][number], 'weight' | 'align'> {
+  const first = node.strokes.at(0)
+  return { weight: first?.weight ?? node.strokeWeight, align: first?.align ?? node.strokeAlign }
+}
 
 export function createDefaultNode(
   generateId: () => string,
@@ -126,6 +148,8 @@ export function createDefaultNode(
     borderBottomWeight: 0,
     borderLeftWeight: 0,
     independentStrokeWeights: false,
+    strokeWeight: DEFAULT_STROKE_WEIGHT,
+    strokeAlign: defaultStrokeAlign(type),
     strokeMiterLimit: DEFAULT_STROKE_MITER_LIMIT,
     minWidth: null,
     maxWidth: null,

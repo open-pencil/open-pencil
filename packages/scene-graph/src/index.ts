@@ -23,7 +23,12 @@ export * from './behaviours/kinds'
 export * from './behaviours/model'
 export * from './behaviours/spec'
 export * from './copy'
-export { createDefaultNode, FITTED_CONTAINER_TYPES } from './node-defaults'
+export {
+  createDefaultNode,
+  defaultStrokeAlign,
+  FITTED_CONTAINER_TYPES,
+  newStrokeGeometry
+} from './node-defaults'
 export {
   copyInstanceComponentProps,
   findInstanceAncestor,

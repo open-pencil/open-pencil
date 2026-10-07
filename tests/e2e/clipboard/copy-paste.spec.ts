@@ -42,7 +42,7 @@ test('pasted node is offset from original', async () => {
   expect(nodes).toHaveLength(1)
 
   const pasted = nodes[0]
-  expect(pasted.name).toBe('Rectangle')
+  expect(pasted.name).toBe('Rectangle 1')
 })
 
 test('⌘D duplicates in place', async () => {

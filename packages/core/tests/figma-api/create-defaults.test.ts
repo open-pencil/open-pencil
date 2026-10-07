@@ -65,6 +65,18 @@ describe('new layer defaults', () => {
     expect(rect.strokeWeight).toBe(1)
   })
 
+  test('sections are 496 square with a faint white outline, filled for the interface theme', () => {
+    const figma = api()
+    const light = figma.createSection()
+    expect([light.width, light.height, light.cornerRadius]).toEqual([496, 496, 2])
+    expect(solid(light.fills)).toEqual([WHITE])
+    expect(solid(light.strokes)).toEqual([WHITE])
+    expect([light.strokes[0]?.opacity, light.strokeAlign]).toEqual([0.1, 'INSIDE'])
+    // Figma fills a section #444444 in its dark theme.
+    figma.theme = 'dark'
+    expect(solid(figma.createSection().fills)).toEqual([[0.27, 0.27, 0.27]])
+  })
+
   test('each layer gets its own copy of the default paints', () => {
     const editor = createEditor()
     try {
