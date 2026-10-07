@@ -88,25 +88,40 @@ const noDeepParentRelativeImports = createParentRelativeImportRule({
   minDepth: 2
 })
 
-/** A path that climbs two or more directories, written as `../..` or as `'..', '..'`. */
+/**
+ * A path that climbs two or more directories, written as `../..`, `..\\..`, or `'..', '..'`.
+ * An unknown part, such as a template expression, ends the run of parent segments.
+ */
 function climbsTwoLevels(values: (string | null)[]): boolean {
-  const joined = values.map((value) => value ?? '\u0000').join('/')
+  const joined = values
+    .map((value) => value ?? '\u0000')
+    .join('/')
+    .replaceAll('\\', '/')
   return /(^|\/)\.\.\/+\.\.(\/|$)/.test(joined)
 }
 
 function staticString(node: TSESTree.Node): string | null {
   if (node.type === 'Literal' && typeof node.value === 'string') return node.value
-  if (node.type === 'TemplateLiteral') return node.quasis[0]?.value.cooked ?? null
+  if (node.type === 'TemplateLiteral') {
+    const head = node.quasis[0]?.value.cooked ?? null
+    return head !== null && node.expressions.length ? `${head}\u0000` : head
+  }
   return null
 }
 
+/** `import.meta.url`, `.dir`, or `.dirname`, directly or wrapped, as in `dirname(fileURLToPath(import.meta.url))`. */
 function isImportMetaLocation(node: TSESTree.Node): boolean {
-  return (
-    node.type === 'MemberExpression' &&
-    node.object.type === 'MetaProperty' &&
-    node.property.type === 'Identifier' &&
-    ['url', 'dir', 'dirname'].includes(node.property.name)
-  )
+  if (node.type === 'MemberExpression') {
+    if (node.object.type === 'MetaProperty') {
+      return (
+        node.property.type === 'Identifier' &&
+        ['url', 'dir', 'dirname'].includes(node.property.name)
+      )
+    }
+    return isImportMetaLocation(node.object)
+  }
+  if (node.type === 'CallExpression') return node.arguments.some(isImportMetaLocation)
+  return false
 }
 
 const noDeepParentRelativePaths: RuleDefinition = {
