@@ -27,7 +27,7 @@ import { renderJSX } from '@open-pencil/core/design-jsx'
 await renderJSX(graph, '<Frame w={320} p={16} bg="#FFFFFF"><Text>Hello</Text></Frame>')
 ```
 
-Components that behave as controls are written with Reka UI's element names, and export writes them back the same way:
+Components that behave as controls are written with Reka UI's element names, in TSX (import `Switch`, `Slider`, `Tabs`, and the other namespaces, typed with their behaviour props) or in strings, and export writes them back the same way:
 
 ```tsx
 <Switch.Root name="Switch" modelValue="State">

@@ -1,4 +1,4 @@
-import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
 import { Frame, Instance, Text } from '@open-pencil/design-jsx'
 import type { TreeNode } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -35,9 +35,9 @@ function settingRow(title: string, caption: string, control: TreeNode): TreeNode
   })
 }
 
-/** Renders one control's JSX onto the board and returns its main component or set. */
-async function renderControl(graph: SceneGraph, boardId: string, jsx: string) {
-  const [result] = await renderJSX(graph, jsx, { parentId: boardId })
+/** Renders one control onto the board and returns its main component or set. */
+async function renderControl(graph: SceneGraph, boardId: string, control: TreeNode) {
+  const result = await renderTree(graph, control, { parentId: boardId })
   const node = graph.getNode(result.id)
   if (!node) throw new Error('The control did not render')
   return node

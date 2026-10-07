@@ -17,6 +17,24 @@ export {
   Page,
   INTRINSIC_ELEMENTS
 } from './components'
+export {
+  Accordion,
+  Button,
+  Checkbox,
+  Collapsible,
+  NumberField,
+  Progress,
+  RadioGroup,
+  Slider,
+  Switch,
+  Tabs,
+  Textarea,
+  TextField,
+  Toggle,
+  ToggleGroup,
+  type RekaElement,
+  type RekaProps
+} from './behaviours/elements'
 
 export {
   type TreeNode,
