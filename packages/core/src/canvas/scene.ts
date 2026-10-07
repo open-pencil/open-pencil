@@ -430,16 +430,25 @@ function forVisibleStrokes(
   }
 }
 
+/** Fill a section's or set's rounded bounds and return them, for its strokes to follow. */
+function fillRoundedBounds(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): Float32Array {
+  const rrect = makeNodeRRect(r, node, node.cornerRadius)
+  drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
+  return rrect
+}
+
 export function renderSection(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rrect = makeNodeRRect(r, node, node.cornerRadius)
-
-  drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
-
+  const rrect = fillRoundedBounds(r, canvas, node, graph)
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     configureStrokePaint(r, node, stroke, color)
 
@@ -454,10 +463,7 @@ export function renderComponentSet(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rrect = makeNodeRRect(r, node, node.cornerRadius)
-
-  drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
-
+  const rrect = fillRoundedBounds(r, canvas, node, graph)
   // A set without a stroke gets its dashed editing border from the overlay pass.
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     const dashPhase = stroke.dashPattern?.[1] ?? 0
