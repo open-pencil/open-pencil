@@ -1,7 +1,14 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  fitEnclosingGroups,
+  undoGroupFit,
+  type GroupFit,
+  type GroupFitOptions,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 
-import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
+import { canMakeBooleanSourceNode, groupFitOptions } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import type { EditorContext } from '#core/editor/types'
@@ -14,6 +21,7 @@ export type BooleanOperation = 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
 /**
  * Wraps sibling layers in a boolean operation named after it, as Figma names one from the canvas
  * and from the plugin API. Shared by the editor command and the plugin API; `props` gives the look.
+ * Returns the refit of the boolean and the groups around it too, so undo can reverse it.
  */
 export function createBooleanOperation(
   graph: SceneGraph,
@@ -21,13 +29,17 @@ export function createBooleanOperation(
   parentId: string,
   operation: BooleanOperation,
   index: number | undefined,
-  props: Partial<SceneNode> = {}
-): SceneNode {
-  return wrapNodes(graph, 'BOOLEAN_OPERATION', nodes, parentId, index, {
+  props: Partial<SceneNode> = {},
+  fitOptions: GroupFitOptions = {}
+): { node: SceneNode; fit: GroupFit | null } {
+  const node = wrapNodes(graph, 'BOOLEAN_OPERATION', nodes, parentId, index, {
     name: operationLabel(operation),
     booleanOperation: operation,
     ...props
   })
+  // Figma sizes a boolean to its result, and the groups around it follow.
+  const fit = fitEnclosingGroups(graph, [node.id], fitOptions)
+  return { node, fit }
 }
 
 /**
@@ -68,29 +80,37 @@ export function booleanOperationSelected(
     index: parent.childIds.indexOf(node.id)
   }))
   const index = canvasWrapIndex(parent, operands)
-  const booleanNode = createBooleanOperation(
+  const { node: booleanNode, fit: createdFit } = createBooleanOperation(
     ctx.graph,
     operands,
     parentId,
     operation,
     index,
-    booleanOperationPaints(operation, operands, 'canvas')
+    booleanOperationPaints(operation, operands, 'canvas'),
+    groupFitOptions(ctx.getRenderer(), ctx.graph)
   )
   const booleanId = booleanNode.id
+  let fit = createdFit
   ctx.setSelectedIds(new Set([booleanId]))
 
   ctx.undo.push({
     label: operationLabel(operation),
     forward: () => {
       const nodes = origPositions.flatMap((pos) => ctx.graph.getNode(pos.id) ?? [])
-      createBooleanOperation(ctx.graph, nodes, parentId, operation, index, {
-        ...booleanNode,
-        childIds: [],
-        id: booleanId
-      })
+      fit = createBooleanOperation(
+        ctx.graph,
+        nodes,
+        parentId,
+        operation,
+        index,
+        { ...booleanNode, childIds: [], id: booleanId },
+        groupFitOptions(ctx.getRenderer(), ctx.graph)
+      ).fit
       ctx.setSelectedIds(new Set([booleanId]))
     },
     inverse: () => {
+      // The groups around the boolean go back first, so the operands' places mean what they did.
+      if (fit) undoGroupFit(ctx.graph, fit)
       for (const { id, subtree } of childSnapshots) {
         const root = subtree.get(id)
         if (!root) continue

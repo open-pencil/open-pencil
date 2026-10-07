@@ -157,6 +157,11 @@ export function convertFills(paints?: Paint[]): Fill[] {
   return paints.map(convertPaint)
 }
 
+/** A Kiwi stroke alignment; Figma leaves out the centered default. */
+export function convertStrokeAlign(align?: string): Stroke['align'] {
+  return align === 'INSIDE' || align === 'OUTSIDE' ? align : 'CENTER'
+}
+
 export function convertStrokes(
   paints?: Paint[],
   weight?: number,
@@ -166,9 +171,7 @@ export function convertStrokes(
   dashPattern?: number[]
 ): Stroke[] {
   if (!paints) return []
-  let strokeAlign: 'INSIDE' | 'OUTSIDE' | 'CENTER' = 'CENTER'
-  if (align === 'INSIDE') strokeAlign = 'INSIDE'
-  else if (align === 'OUTSIDE') strokeAlign = 'OUTSIDE'
+  const strokeAlign = convertStrokeAlign(align)
 
   return paints.map((p) => ({
     ...convertPaint(p),

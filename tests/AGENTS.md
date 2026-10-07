@@ -13,6 +13,7 @@
 ## Writing specs
 
 - Test contracts and observable behavior, not source text. Specs use domain drivers and probes, not scattered Window/store traversal or unrestricted evaluator wrappers.
+- Assert state and outcomes, never copy, prompts, or constants: a test must not fail on rewording, a catalog update, or a list it restates. Name controls by role to reach them, assert what they do, and never recompute an expected value with the rule under test (`tests/app/ai/models/settings/onboarding/plan.test.ts`).
 - Locate behavior by accessible role and name, then label, then visible text. Scope repeated controls to a named region. Use scoped `data-slot` anatomy or semantic attributes (`data-property`, `data-command`, `data-node-id`) when needed; reserve `data-test-id` for integration boundaries and never add test-hook props or compound IDs.
 - Prefer test-runner-owned fixtures and request/route counters over browser globals. For in-page performance instrumentation, return a scoped `JSHandle` from `evaluateHandle()`, restore patched methods and listeners, and dispose the handle in `finally`; handles do not survive navigation. Assert transient DOM state with locators before the interaction ends.
 - Do not create a catch-all test Window interface or ad-hoc counter properties on `window`. Native-test declarations live in `tests/helpers/tauri/native-global.d.ts`; never expand production Window declarations for fixtures.
@@ -26,6 +27,7 @@
 
 - Use the canonical `playwright.config.ts`; do not create task-specific config copies or server runners. Playwright owns Vite; the Vite automation plugin owns MCP startup and cleanup; browser fixtures own interactions, not server processes.
 - Test scripts select their server; direct Playwright commands start both servers unless `OPENPENCIL_TEST_SERVER=app|storybook|all` is set. Managed runs start the intended checkout; server reuse is opt-in for local development only, never for baseline comparisons or CI. Isolate the app URL, MCP endpoint, CORS origin, socket, and discovery path together.
+- App projects start with the first-run AI setup offer already dismissed through the shared `storageState` in `playwright.config.ts`. A spec that overrides `storageState` and loads without `?test` must keep that preference unless it tests the offer (`tests/e2e/settings/ai-setup-first-run.spec.ts`).
 - Pixel-affecting renderer changes need committed canvas snapshots (`packages/core/AGENTS.md`, Renderer). Update only the justified affected snapshot and rerun without update mode.
 
 ## Native WebView

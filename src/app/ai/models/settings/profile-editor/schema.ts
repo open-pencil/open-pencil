@@ -23,8 +23,9 @@ export function modelProfileSchema(
   messages: ModelProfileValidationMessages
 ) {
   const modelField = context.customModel ? 'customModelID' : 'modelID'
-  const requiresModel = context.providerKind !== 'acp'
+  // Agents choose their own model, and Pi falls back to the default model set in Pi.
   const requiresAPI = context.providerKind === 'api'
+  const requiresModel = requiresAPI
   return v.pipe(
     v.object({
       name: context.intent === 'save' ? requiredSetting(messages.requiredField) : v.string(),

@@ -18,6 +18,7 @@ pub struct DeepLinkJoin {
 pub enum DeepLink {
     Open(DeepLinkOpen),
     Join(DeepLinkJoin),
+    OAuth(OAuthCallback),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -28,6 +29,7 @@ pub enum DeepLinkError {
     ParentSegment,
     BadExtension,
     BadRoom,
+    BadOAuthProvider,
 }
 
 /// Room IDs are 32 lowercase base36 characters (`ROOM_ID_LENGTH` and `ROOM_ID_CHARS` in
@@ -46,6 +48,9 @@ pub fn parse_deep_link(url: &Url) -> Result<DeepLink, DeepLinkError> {
     match url.host_str().unwrap_or("") {
         "open" => parse_open_url(url).map(DeepLink::Open),
         "join" => parse_join_url(url).map(DeepLink::Join),
+        "oauth" => parse_oauth_url(url)
+            .map(DeepLink::OAuth)
+            .ok_or(DeepLinkError::BadOAuthProvider),
         action => Err(DeepLinkError::UnknownAction(action.to_string())),
     }
 }
@@ -58,6 +63,31 @@ fn parse_join_url(url: &Url) -> Result<DeepLinkJoin, DeepLinkError> {
         .filter(|room| is_room_id(room))
         .ok_or(DeepLinkError::BadRoom)?;
     Ok(DeepLinkJoin { room })
+}
+
+/// An OAuth redirect relayed by the web app's callback page: `openpencil://oauth/<provider>?…`.
+/// The query goes to the webview untouched; the attempt that started sign-in checks its state.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct OAuthCallback {
+    pub provider: String,
+    pub query: String,
+}
+
+pub fn parse_oauth_url(url: &Url) -> Option<OAuthCallback> {
+    if url.host_str() != Some("oauth") {
+        return None;
+    }
+    let provider = url.path().strip_prefix('/')?;
+    if provider.is_empty() || !provider.bytes().all(|byte| byte.is_ascii_lowercase()) {
+        return None;
+    }
+    Some(OAuthCallback {
+        provider: provider.to_owned(),
+        query: url
+            .query()
+            .map(|query| format!("?{query}"))
+            .unwrap_or_default(),
+    })
 }
 
 pub fn parse_open_url(url: &Url) -> Result<DeepLinkOpen, DeepLinkError> {
@@ -170,6 +200,28 @@ fn path_ends_with_segments(candidate: &Path, suffix: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn oauth(url: &str) -> Option<OAuthCallback> {
+        parse_oauth_url(&Url::parse(url).unwrap())
+    }
+
+    #[test]
+    fn passes_an_oauth_redirect_through_with_its_provider() {
+        assert_eq!(
+            oauth("openpencil://oauth/openrouter?code=abc&state=xyz"),
+            Some(OAuthCallback {
+                provider: "openrouter".to_owned(),
+                query: "?code=abc&state=xyz".to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn refuses_an_oauth_link_without_a_plain_provider() {
+        assert_eq!(oauth("openpencil://oauth?code=abc"), None);
+        assert_eq!(oauth("openpencil://oauth/open/router?code=abc"), None);
+        assert_eq!(oauth("openpencil://open?file=a.pen"), None);
+    }
 
     fn parse(s: &str) -> Result<DeepLinkOpen, DeepLinkError> {
         parse_open_url(&Url::parse(s).unwrap())

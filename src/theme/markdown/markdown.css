@@ -1,20 +1,23 @@
 @reference 'tailwindcss';
 
-.chat-markdown-root [data-stream-markdown='code-block'],
-.chat-markdown-root .shiki {
+.markdown-root [data-stream-markdown='code-block'],
+.markdown-root .shiki {
   background-color: var(--color-input);
 }
 
-.chat-markdown {
+.markdown-content {
   --shiki-dark-bg: var(--color-input);
 
-  &[data-chat-markdown-mode='streaming'] {
+  &[data-markdown-mode='streaming'] {
     [data-stream-markdown='li'],
     [data-stream-markdown='code-block'],
     [data-stream-markdown='code-line'] {
       @apply animate-in fade-in duration-200 motion-reduce:animate-none;
     }
   }
+}
+
+.markdown-content[data-markdown-density='compact'] {
   @apply text-[11px] leading-4;
 
   [data-stream-markdown='blockquote'],
@@ -89,5 +92,47 @@
 
   [data-stream-markdown='thematic-break'] {
     @apply my-2;
+  }
+}
+
+.markdown-content[data-markdown-density='comfortable'] {
+  @apply text-xs leading-5;
+
+  [data-stream-markdown='heading-1'] {
+    @apply mt-4 mb-1.5 text-base font-semibold first:mt-0;
+  }
+
+  [data-stream-markdown='heading-2'] {
+    @apply mt-4 mb-1.5 text-sm font-semibold first:mt-0;
+  }
+
+  [data-stream-markdown='heading-3'],
+  [data-stream-markdown='heading-4'],
+  [data-stream-markdown='heading-5'],
+  [data-stream-markdown='heading-6'] {
+    @apply mt-3.5 mb-1 text-xs font-semibold first:mt-0;
+  }
+
+  [data-stream-markdown='li'],
+  [data-stream-markdown='p'] {
+    @apply leading-5;
+  }
+
+  [data-stream-markdown='li'] {
+    @apply py-0.5;
+  }
+
+  [data-stream-markdown='p'] {
+    @apply my-2;
+  }
+
+  [data-stream-markdown='li'] > [data-stream-markdown='p'] {
+    @apply my-0;
+  }
+
+  [data-stream-markdown='blockquote'],
+  [data-stream-markdown='code-block'],
+  [data-stream-markdown='thematic-break'] {
+    @apply my-3;
   }
 }

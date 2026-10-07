@@ -5,10 +5,29 @@ import { adoptCoveredLayers } from './shapes/adopt'
 import { newLayerDefaults } from './shapes/defaults'
 import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions } from './shapes/pen'
+import { defaultNodeName, nextNumberedName } from './structure/rename'
 import type { EditorContext } from './types'
 export type { PenDragOptions } from './shapes/pen'
 
+/** Layers Figma numbers when drawn, as "Rectangle 1"; others keep their type's name. */
+const NUMBERED_WHEN_DRAWN: ReadonlySet<NodeType> = new Set([
+  'FRAME',
+  'SECTION',
+  'RECTANGLE',
+  'ELLIPSE',
+  'LINE',
+  'POLYGON',
+  'STAR'
+])
+
 export function createShapeActions(ctx: EditorContext) {
+  function drawnLayerName(type: NodeType): string {
+    const base = defaultNodeName(type)
+    return NUMBERED_WHEN_DRAWN.has(type)
+      ? nextNumberedName(ctx.graph, ctx.state.currentPageId, base)
+      : base
+  }
+
   function createShape(
     type: NodeType,
     x: number,
@@ -24,12 +43,12 @@ export function createShapeActions(ctx: EditorContext) {
       throw new Error('Cannot add a layer to the locked part of an instance')
     }
     const overrides: Partial<SceneNode> = {
-      ...newLayerDefaults(type),
+      ...newLayerDefaults(type, ctx.state.theme),
       x,
       y,
       width: w,
       height: h,
-      ...(name ? { name } : {})
+      name: name ?? drawnLayerName(type)
     }
     const node = ctx.graph.createNode(type, pid, overrides)
     const id = node.id

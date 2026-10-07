@@ -104,9 +104,22 @@ function submission(chat: ReturnType<typeof fakeChat>) {
     ensureChat: async () => chat,
     clearFailure: () => undefined,
     getEditor: () => store,
-    messages: shallowRef({ openSettings: '', requestFailed: '', visionUnavailable: '' }),
+    messages: shallowRef({
+      openSettings: '',
+      requestFailed: '',
+      visionUnavailable: '',
+      runSetup: '',
+      agentSetup: {
+        'companion-missing': '',
+        'companion-outdated': '',
+        'mcp-outdated': '',
+        'pi-sign-in': '',
+        'pi-model': ''
+      }
+    }),
     reportError: () => undefined,
     openModelSettings: () => undefined,
+    openSetup: () => undefined,
     // Like the history's flush, this snapshots the messages synchronously, so a message that
     // cannot be cloned throws here instead of becoming a rejected promise.
     flush: () => {

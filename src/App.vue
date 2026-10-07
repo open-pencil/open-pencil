@@ -12,13 +12,15 @@ import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
-import { scheduleStartupUpdateCheck } from '@/app/shell/updater'
+import { useRestartApprovals } from '@/app/shell/updater/approvals'
+import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import RecoveryDialog from '@/components/recovery/RecoveryDialog.vue'
+import AISetupDialog from '@/components/settings/ai-setup/AISetupDialog.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
 import AppShell from '@/components/shell/AppShell.vue'
 import Toaster from '@/components/shell/Toaster.vue'
@@ -36,6 +38,7 @@ useHead({
 provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
+useRestartApprovals()
 useEventListener(window, 'pagehide', () => {
   void prepareForReload()
 })
@@ -54,6 +57,7 @@ onMounted(() => {
         <RouterView />
       </AppShell>
       <SettingsDialog />
+      <AISetupDialog />
       <RecoveryDialog />
       <UnsavedChangesDialog />
       <PublishLibraryDialog />
