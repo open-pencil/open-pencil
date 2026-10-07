@@ -54,6 +54,12 @@ describe('limitToSelection', () => {
     expect(() => limitToSelection(store, 'get_page_tree', {})).toThrow(/root_id/)
   })
 
+  test('rejects writing an export to a file', () => {
+    expect(() =>
+      limitToSelection(store, 'export_image', { ids: [ids.card], path: 'card.png' })
+    ).toThrow(/Writing files/)
+  })
+
   test('rejects other tools and calls without a selection', () => {
     expect(() => limitToSelection(store, 'delete_node', { id: ids.title })).toThrow(/unavailable/)
     store.clearSelection()

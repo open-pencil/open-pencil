@@ -349,6 +349,16 @@ describe('MCP server sharing only the selection', () => {
     expect(call?.args).toMatchObject({ name: 'get_selection', scope: 'selection' })
   })
 
+  test('refuses to write an export to a file', async () => {
+    const { client, browser } = expectDefined(ctx, 'client')
+    const result = await client.callTool({
+      name: 'export_image',
+      arguments: { path: 'selection.png' }
+    })
+    expect(result.isError).toBe(true)
+    expect(browser.requests.map((request) => request.command)).not.toContain('tool')
+  })
+
   test('keeps raw RPC to the selection tools, so it cannot reach settings', async () => {
     const { browser, handle } = expectDefined(ctx, 'client')
     const rpc = (body: object) =>

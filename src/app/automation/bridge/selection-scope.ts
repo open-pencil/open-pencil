@@ -1,4 +1,8 @@
-import { isSelectionScopeTool, SELECTION_SCOPE_TOOLS } from '@open-pencil/mcp/tools'
+import {
+  isSelectionScopeTool,
+  SELECTION_SCOPE_FILE_OUTPUT_ERROR,
+  SELECTION_SCOPE_TOOLS
+} from '@open-pencil/mcp/tools'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -24,6 +28,8 @@ export function limitToSelection(
   if (!isSelectionScopeTool(toolName)) {
     throw new Error(`${toolName} is unavailable while OpenPencil shares only the selection`)
   }
+  // The MCP side writes a `path` to disk, which the selection does not extend to.
+  if (toolArgs.path !== undefined) throw new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR)
   const fields = SELECTION_SCOPE_TOOLS[toolName]
   const selected = [...store.state.selectedIds]
   if (selected.length === 0) {

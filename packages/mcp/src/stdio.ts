@@ -9,7 +9,7 @@ import { MCP_VERSION, registerTools } from '#mcp/server'
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 import type { ToolPolicy } from '#mcp/tool/metadata'
 import { parseDisabledTools } from '#mcp/tool/policy'
-import { parseToolScope } from '#mcp/tool/scope'
+import { narrowestScope, parseToolScope } from '#mcp/tool/scope'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
 
 if (process.argv.includes('--version')) {
@@ -47,11 +47,12 @@ const toolPolicy: ToolPolicy = {
     process.env.OPENPENCIL_MCP_DISABLED_TOOLS === undefined
       ? (discovery?.disabledTools ?? [])
       : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS),
-  // The server enforces its own scope on every call; this only keeps the tool list in step.
-  scope:
-    process.env.OPENPENCIL_MCP_SCOPE === undefined
-      ? (discovery?.scope ?? 'document')
-      : parseToolScope(process.env.OPENPENCIL_MCP_SCOPE)
+  // The server enforces its own scope on every call; this keeps the tool list in step with it,
+  // and lets the client limit itself further.
+  scope: narrowestScope(
+    discovery?.scope ?? 'document',
+    parseToolScope(process.env.OPENPENCIL_MCP_SCOPE)
+  )
 }
 const mcpRoot = resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT)
 // Auth token: undefined → auto-discover from discovery file, empty string →
