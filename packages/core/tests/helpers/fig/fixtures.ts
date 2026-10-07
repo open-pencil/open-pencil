@@ -10,9 +10,11 @@ import {
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import * as v from 'valibot'
 
+import { FIXTURES } from '../paths'
+
 import { collectAllNodes } from './traversal'
 
-export const FIXTURES = resolve(import.meta.dir, '../../../../../tests/fixtures')
+export { FIXTURES }
 
 export const VALID_NODE_TYPES = new Set<string>([
   'CANVAS',
