@@ -9,7 +9,8 @@ const SCENE = 'packages/core/src/canvas/scene.ts'
 describe('no-zoom-in-scene-drawing', () => {
   test.each([
     'paint.setStrokeWidth(1 / r.zoom)',
-    'const dash = [4 / renderer.zoom, 4 / renderer.zoom]'
+    'const dash = [4 / renderer.zoom, 4 / renderer.zoom]',
+    'const scale = effectRasterScale(() => 1 / r.zoom)'
   ])('rejects %s in scene drawing', async (source) => {
     expect(ruleDiagnostics(await lint(source, rules, SCENE), rule).length).toBeGreaterThan(0)
   })

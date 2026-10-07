@@ -223,9 +223,15 @@ const SCENE_DRAWING_FILES = [
 ]
 const SCENE_DRAWING_DIRECTORIES = ['/packages/core/src/canvas/text/']
 
-/** Whether `node` is inside the arguments of an `effectRasterScale(...)` call. */
+/** Whether `node` is an argument of `effectRasterScale(...)`, not inside a function passed to it. */
 function inEffectRasterScale(node: TSESTree.Node): boolean {
   for (let current = node.parent; current; current = current.parent) {
+    if (
+      current.type === 'ArrowFunctionExpression' ||
+      current.type === 'FunctionExpression' ||
+      current.type === 'FunctionDeclaration'
+    )
+      return false
     if (
       current.type === 'CallExpression' &&
       current.callee.type === 'Identifier' &&
