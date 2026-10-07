@@ -98,11 +98,7 @@ export function renderFromEditorState(
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {
   return (
-    overlays.dropTargetId != null ||
-    overlays.rotationPreview != null ||
-    overlays.editingTextId != null ||
-    overlays.nodeEditState != null ||
-    overlays.playing === true
+    overlays.rotationPreview != null || overlays.nodeEditState != null || overlays.playing === true
   )
 }
 
