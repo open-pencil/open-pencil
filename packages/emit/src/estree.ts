@@ -67,12 +67,15 @@ export function fill<T extends SyntaxNode>(
   const replacement = (node: SyntaxNode): SyntaxNode | undefined => {
     const value = holeOf(node)
     if (!value || value === OMIT) return undefined
-    // `$name: Story` keeps its annotation when the identifier is filled.
-    return node.typeAnnotation ? { ...value, typeAnnotation: node.typeAnnotation } : value
+    // `$name: Story` keeps its annotation when the identifier is filled, with its own holes filled.
+    const annotation = child(node, 'typeAnnotation')
+    return annotation
+      ? { ...structuredClone(value), typeAnnotation: visit(annotation) }
+      : structuredClone(value)
   }
-  const visit = (node: SyntaxNode): SyntaxNode => {
+  function visit(node: SyntaxNode): SyntaxNode {
     const filled = replacement(node)
-    if (filled) return structuredClone(filled)
+    if (filled) return filled
     const copy: SyntaxNode = { ...node }
     for (const [key, value] of Object.entries(node)) {
       if (Array.isArray(value))

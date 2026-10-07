@@ -15,7 +15,7 @@ const card = jsx.element(
 jsx.printJSX(card) // <Card title={"Fish & chips"}>Hello</Card>
 ```
 
-`jsx.stringValue` and `jsx.text` keep a value as plain JSX only when JSX reads it back unchanged; anything with quotes, entities, braces, angle brackets, backslashes, or line breaks becomes a string literal.
+`jsx.stringValue` and `jsx.text` keep a value as plain JSX only when JSX reads it back unchanged; anything with quotes, entities, braces, angle brackets, backslashes, or line breaks becomes a string literal. `jsx.printModule` prints a whole TSX module, such as an `es` template filled with JSX, quoting every string the same way; dotted tags such as `Switch.Root` print as members of a namespace, and `jsx.spread` passes an object on as attributes.
 
 `es` parses TypeScript templates, fills `$name` placeholders, and prints modules:
 
