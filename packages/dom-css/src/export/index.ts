@@ -9,6 +9,7 @@ export {
 } from './tailwind-jsx'
 export { serializeHTML } from './html'
 export * from '../tokens'
+export * from '../behaviours'
 export type {
   ExportHTMLBundle,
   ExportHTMLBundleOptions,
