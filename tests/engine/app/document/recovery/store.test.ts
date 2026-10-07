@@ -52,7 +52,6 @@ describe('document recovery store', () => {
     await store.write({
       id: 'recovery-1',
       documentName: 'Agent draft',
-      sceneVersion: 1,
       figBytes: buffer.subarray(2, 5)
     })
     const stored = await store.read('recovery-1')
