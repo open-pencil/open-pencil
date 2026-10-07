@@ -6,7 +6,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { drawGuides } from '#core/canvas/guides/draw'
 
 import { createMockCanvas, createMockRenderer, mockCalls } from '../effects/helpers'
-import { asCanvas, asDouble } from '../helpers'
+import { asCanvas } from '../helpers'
 
 function graphWithGuides(guides: SceneNode['guides']): SceneGraph {
   const graph = new SceneGraph()
