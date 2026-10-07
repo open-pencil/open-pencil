@@ -204,7 +204,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 | Tool | Description |
 |------|-------------|
-| `get_selection` | Get currently selected nodes |
+| `get_selection` | Get the selected nodes, with their direct children by default; `depth` sets how many levels |
 | `get_page_tree` | Get the full node tree of the current page |
 | `get_current_page` | Get the current page name and ID |
 | `get_node` | Get detailed properties of a node by ID |

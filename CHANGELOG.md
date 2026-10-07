@@ -79,6 +79,7 @@
 
 ### Changed
 
+- The `get_selection` tool returns the selected layers with their direct children by default instead of their whole subtrees, and takes a `depth` for more or fewer levels, so agents can start from what the user selected without reading the full tree.
 - Confirm deleting an AI conversation in the standard confirmation dialog, which names the conversation, instead of a prompt inside the chat panel.
 - Run Pi with the providers you signed in to in the Pi CLI and Pi's default model, so an AI Gateway key and a model ID are optional. The Pi model editor shows whether the Harness companion and MCP server are installed and match the app, and a chat whose Harness companion is missing, or whose companion or MCP server does not match the app, says what to fix and offers guided setup instead of failing with a generic error, and the message and its attachments stay in the composer.
 - Point Codex install instructions at `@agentclientprotocol/codex-acp`, which replaces `@zed-industries/codex-acp` and provides the same `codex-acp` command.
