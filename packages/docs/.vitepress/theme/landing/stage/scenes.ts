@@ -8,9 +8,6 @@ import { loadFont } from '@/app/editor/fonts'
 // The app's own demo, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
 import demoFigURL from '#app-public/demo.fig?url'
 
-// Placeholder: a third-party preview file, to be replaced with one we publish ourselves.
-import sampleFigURL from './assets/sample.fig?url'
-
 const GUARANTEES = [
   { title: 'Opens .fig', detail: 'Bring your Figma files with you.' },
   { title: 'MIT licensed', detail: 'Read, fork, and ship all of it.' },
@@ -99,6 +96,14 @@ async function demoSection(store: EditorStore, section: string): Promise<void> {
   store.zoomToBounds(x, y, x + node.width, y + node.height)
 }
 
+/** Opens the app's demo on one of its pages, the way any `.fig` file opens. */
+async function demoPage(store: EditorStore, pageName: string): Promise<void> {
+  await openFig(store, demoFigURL, 'Demo.fig')
+  const page = store.graph.getPages().find((candidate) => candidate.name === pageName)
+  if (page) await store.switchPage(page.id)
+  store.zoomToFit()
+}
+
 export function findByName(store: EditorStore, name: string): string | null {
   const pending = store.graph.getChildren(store.state.currentPageId).map((node) => node.id)
   while (pending.length > 0) {
@@ -132,10 +137,7 @@ export type SceneBuilder = (store: EditorStore) => Promise<void>
 
 export const SCENES = {
   announcement: (store) => demoSection(store, 'Announcement system'),
-  figma: async (store) => {
-    await openFig(store, sampleFigURL, 'Preview.fig')
-    store.zoomToFit()
-  },
+  figma: (store) => demoPage(store, '03 · Paint & effects'),
   components: (store) => demoSection(store, 'Components'),
   pricing: (store) => pricing(store),
   pricingSelected: pricingWithSelection
