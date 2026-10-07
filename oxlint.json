@@ -180,6 +180,7 @@
     "open-pencil/no-core-framework-imports": "error",
     "open-pencil/no-direct-storage-access": "error",
     "open-pencil/no-deep-parent-relative-imports": "error",
+    "open-pencil/no-deep-parent-relative-paths": "error",
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-unknown-record-double-cast": "error",
     "open-pencil/no-broad-unknown-type-assertions": "error",

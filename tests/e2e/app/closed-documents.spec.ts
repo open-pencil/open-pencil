@@ -1,10 +1,9 @@
-import { fileURLToPath } from 'node:url'
-
 import { expect, test } from '@playwright/test'
 
 import type * as AppTabs from '@/app/tabs'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { testPath } from '#tests/helpers/paths'
 
 const FIXTURE = 'gold-preview.fig'
 
@@ -14,7 +13,7 @@ const FIXTURE = 'gold-preview.fig'
 test('documents closed in tabs are released', async ({ page }) => {
   test.setTimeout(90_000)
   await page.route(`**/__fixtures/${FIXTURE}`, (route) =>
-    route.fulfill({ path: fileURLToPath(new URL(`../../fixtures/${FIXTURE}`, import.meta.url)) })
+    route.fulfill({ path: testPath('fixtures', FIXTURE) })
   )
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()

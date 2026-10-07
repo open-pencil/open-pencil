@@ -203,9 +203,7 @@ assets/
 - `primaryAxisAlign: CENTER` → `justify-content: center`
 - `counterAxisAlign: CENTER` → `align-items: center`
 - `layoutWrap: WRAP` → `flex-wrap: wrap`
-- `primaryAxisSizing: HUG` → no explicit size on primary axis (content-sized)
-- `primaryAxisSizing: FILL` → `flex: 1` or `width: 100%` depending on context
-- `counterAxisSizing: FILL` → `align-self: stretch` or explicit `width/height: 100%`
+- `primaryAxisSizing: HUG` / `counterAxisSizing: HUG` → no explicit size on that axis (content-sized)
 
 **Grid layout**
 
@@ -216,9 +214,8 @@ assets/
 
 **Sizing**
 
-- `layoutGrow > 0` → `flex-grow: 1`
-- `layoutAlignSelf: STRETCH` → cross-axis fill
-- Fixed width/height only when sizing mode is `FIXED`
+- Fill lives on the child: `layoutGrow > 0` fills the parent's primary axis (`flex-grow: 1`), `layoutAlignSelf: STRETCH` fills the cross axis (`align-self: stretch`, no fixed size on that axis). In a grid, `layoutGrow` fills the cell's width and `STRETCH` its height.
+- Fixed width/height only on axes that neither hug nor fill
 
 **Corner radius**
 

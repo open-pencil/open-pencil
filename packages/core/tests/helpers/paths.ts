@@ -2,9 +2,6 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-/** The CLI entry point, for tests that run it as a subprocess. */
-export const CLI_ENTRY = Bun.resolveSync('#cli/index.ts', import.meta.dir)
-
 /** The workspace root, found by its lockfile rather than by counting directories. */
 export function workspaceRoot(from = dirname(fileURLToPath(import.meta.url))): string {
   for (let dir = from; ; dir = dirname(dir)) {
@@ -15,3 +12,8 @@ export function workspaceRoot(from = dirname(fileURLToPath(import.meta.url))): s
 
 /** Fixtures shared across the repository; a module import would escape the package root. */
 export const FIXTURES = join(workspaceRoot(), 'tests/fixtures')
+
+/** A file inside this package, for assets that are not modules. */
+export function corePackagePath(...segments: string[]): string {
+  return join(dirname(Bun.resolveSync('@open-pencil/core/package.json', import.meta.dir)), ...segments)
+}

@@ -1,88 +1,86 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import {
+  axisSizingForNode,
   axisSizingPatchForNode,
-  widthSizingForNode,
-  heightSizingForNode,
   sizingOptionsForNode
 } from '#vue/controls/layout/helpers'
 
-function node(overrides: Partial<SceneNode>): SceneNode {
-  return {
-    id: 'node',
-    type: 'FRAME',
-    name: 'Frame',
-    parentId: 'page',
-    childIds: [],
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-    rotation: 0,
-    layoutMode: 'NONE',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    layoutGrow: 0,
-    layoutAlignSelf: 'AUTO',
-    ...overrides
-  } as SceneNode
+function setup(parentMode: SceneNode['layoutMode'], child: Partial<SceneNode> = {}) {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const parent = graph.createNode('FRAME', page.id, {
+    layoutMode: parentMode,
+    width: 300,
+    height: 200
+  })
+  const node = graph.createNode('FRAME', parent.id, { width: 100, height: 100, ...child })
+  return { graph, node }
+}
+
+function options(graph: SceneGraph, node: SceneNode) {
+  return sizingOptionsForNode(graph, node).map((option) => option.value)
 }
 
 describe('layout sizing controls', () => {
-  test('plain containers with children expose hug contents', () => {
-    const frame = node({ childIds: ['child'] })
+  test('a frame outside auto-layout only shows its fixed size', () => {
+    const { graph, node } = setup('NONE', { childIds: ['child'] })
 
-    expect(sizingOptionsForNode(frame, false).map((option) => option.value)).toContain('HUG')
+    expect(options(graph, node)).toEqual(['FIXED'])
   })
 
-  test('plain container width and height reflect hug sizing fields', () => {
-    const frame = node({
-      childIds: ['child'],
-      primaryAxisSizing: 'HUG',
-      counterAxisSizing: 'HUG'
+  test('an auto-layout child offers fill, and hug once it has its own auto-layout', () => {
+    const plain = setup('HORIZONTAL')
+    expect(options(plain.graph, plain.node)).toEqual(['FIXED', 'FILL'])
+
+    const stack = setup('HORIZONTAL', { layoutMode: 'VERTICAL' })
+    expect(options(stack.graph, stack.node)).toEqual(['FIXED', 'HUG', 'FILL'])
+  })
+
+  test('fill is stored on the child per axis, as grow along the parent and stretch across it', () => {
+    const { graph, node } = setup('HORIZONTAL')
+
+    expect(axisSizingPatchForNode(graph, node, 'width', 'FILL')).toEqual({ layoutGrow: 1 })
+    expect(axisSizingPatchForNode(graph, node, 'height', 'FILL')).toEqual({
+      layoutAlignSelf: 'STRETCH'
     })
-
-    expect(widthSizingForNode(frame, false)).toBe('HUG')
-    expect(heightSizingForNode(frame, false)).toBe('HUG')
   })
 
-  test('leaf frames do not expose hug contents', () => {
-    const frame = node({ childIds: [] })
+  test('grid cells fill their width by grow and their height by stretch', () => {
+    const { graph, node } = setup('GRID', { layoutAlignSelf: 'STRETCH' })
 
-    expect(sizingOptionsForNode(frame, false).map((option) => option.value)).not.toContain('HUG')
+    expect(axisSizingForNode(graph, node, 'width')).toBe('FIXED')
+    expect(axisSizingForNode(graph, node, 'height')).toBe('FILL')
+    expect(axisSizingPatchForNode(graph, node, 'width', 'FILL')).toEqual({ layoutGrow: 1 })
   })
 
-  test('editing derived flex dimensions can switch only that axis to fixed', () => {
-    const frame = node({
+  test('editing a filled and hugged stack switches only that axis to fixed', () => {
+    const { graph, node } = setup('HORIZONTAL', {
       layoutMode: 'VERTICAL',
-      primaryAxisSizing: 'FILL',
-      counterAxisSizing: 'HUG'
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'FIXED',
+      layoutGrow: 1
     })
 
-    expect(axisSizingPatchForNode(frame, 'width', 'FIXED', false)).toEqual({
-      counterAxisSizing: 'FIXED'
-    })
-    expect(axisSizingPatchForNode(frame, 'height', 'FIXED', false)).toEqual({
+    expect(axisSizingForNode(graph, node, 'width')).toBe('FILL')
+    expect(axisSizingForNode(graph, node, 'height')).toBe('HUG')
+    expect(axisSizingPatchForNode(graph, node, 'width', 'FIXED')).toEqual({ layoutGrow: 0 })
+    expect(axisSizingPatchForNode(graph, node, 'height', 'FIXED')).toEqual({
       primaryAxisSizing: 'FIXED'
     })
   })
 
-  test('switching an auto-layout child from fill to hug clears fill mechanics', () => {
-    const frame = node({
-      childIds: ['child'],
-      layoutGrow: 1,
+  test('switching a stack from fill to hug clears the fill', () => {
+    const { graph, node } = setup('VERTICAL', {
+      layoutMode: 'HORIZONTAL',
       layoutAlignSelf: 'STRETCH'
     })
 
-    expect(axisSizingPatchForNode(frame, 'width', 'HUG', true)).toEqual({
-      counterAxisSizing: 'HUG',
-      layoutGrow: 0
-    })
-    expect(axisSizingPatchForNode(frame, 'height', 'HUG', true)).toEqual({
-      primaryAxisSizing: 'HUG',
-      layoutAlignSelf: 'AUTO'
+    expect(axisSizingPatchForNode(graph, node, 'width', 'HUG')).toEqual({
+      layoutAlignSelf: 'AUTO',
+      primaryAxisSizing: 'HUG'
     })
   })
 })

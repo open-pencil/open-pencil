@@ -48,8 +48,7 @@ describe('property previews', () => {
       const original = frame.width
       const actions = createLayoutActions({
         editor,
-        node: computed(() => frame),
-        isInAutoLayout: computed(() => false)
+        node: computed(() => frame)
       })
       actions.updateAxisSize('width', 200)
       expect(frame.primaryAxisSizing).toBe('FIXED')

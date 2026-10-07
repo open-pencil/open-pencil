@@ -24,6 +24,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
+import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
 import {
@@ -116,6 +117,7 @@ export function installBasicNodeProxyAccessors(
     // Figma places a node by its top-left corner in its container, wherever rotation takes it.
     x: {
       get(this: ProxyThis): number {
+        flushPendingLayout(graph(this, internals))
         return containerTransform(raw(this, internals), graph(this, internals))[2]
       },
       set(this: ProxyThis, value: number) {
@@ -124,6 +126,7 @@ export function installBasicNodeProxyAccessors(
     },
     y: {
       get(this: ProxyThis): number {
+        flushPendingLayout(graph(this, internals))
         return containerTransform(raw(this, internals), graph(this, internals))[5]
       },
       set(this: ProxyThis, value: number) {
@@ -132,11 +135,13 @@ export function installBasicNodeProxyAccessors(
     },
     width: {
       get(this: ProxyThis): number {
+        flushPendingLayout(graph(this, internals))
         return raw(this, internals).width
       }
     },
     height: {
       get(this: ProxyThis): number {
+        flushPendingLayout(graph(this, internals))
         return raw(this, internals).height
       }
     },
@@ -156,8 +161,9 @@ export function installBasicNodeProxyAccessors(
     },
     relativeTransform: {
       get(this: ProxyThis): FigmaTransform {
-        const node = raw(this, internals)
         const scene = graph(this, internals)
+        flushPendingLayout(scene)
+        const node = raw(this, internals)
         // Children of groups report a transform into the container, as Figma does.
         if (inGroup(node, scene)) return figmaTransform(containerTransform(node, scene))
         const sourceTransform = node.source.fig.rawTransform
@@ -180,16 +186,19 @@ export function installBasicNodeProxyAccessors(
     },
     absoluteTransform: {
       get(this: ProxyThis): FigmaTransform {
+        flushPendingLayout(graph(this, internals))
         return figmaTransform(getWorldMatrix(raw(this, internals), graph(this, internals)))
       }
     },
     absoluteBoundingBox: {
       get(this: ProxyThis): Rect {
+        flushPendingLayout(graph(this, internals))
         return getAxisAlignedWorldBounds(raw(this, internals), graph(this, internals))
       }
     },
     absoluteRenderBounds: {
       get(this: ProxyThis): Rect | null {
+        flushPendingLayout(graph(this, internals))
         return computeAbsoluteRenderBounds(graph(this, internals), raw(this, internals))
       }
     }
