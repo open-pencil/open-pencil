@@ -35,7 +35,7 @@ const tooltip = computed(() => (variableName ? `${variableName} · #${model.hex.
     v-else
     :aria-label="label"
     data-property="color-hex"
-    class="min-w-0 flex-1 border-none bg-transparent font-mono text-xs text-surface outline-none"
+    class="min-w-0 flex-1 border-none bg-transparent font-mono text-[11px] text-surface outline-none"
     :value="model.hex.value"
     maxlength="6"
     @change="model.updateHex(inputValue($event))"
