@@ -488,7 +488,7 @@ export function renderShape(
   graph: SceneGraph
 ): void {
   const hasEffects = node.effects.some((effect) => effect.visible)
-  if (!hasEffects) {
+  if (r.viewportImageRendering || !hasEffects) {
     r.renderShapeUncached(canvas, node, graph)
     return
   }

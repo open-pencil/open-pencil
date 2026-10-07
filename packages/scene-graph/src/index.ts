@@ -20,6 +20,7 @@ export * from './slots/content'
 export * from './slots/authoring'
 export * from './slots/limits'
 export * from './behaviours/kinds'
+export * from './behaviours/layers'
 export * from './behaviours/model'
 export * from './behaviours/spec'
 export * from './copy'
@@ -832,6 +833,10 @@ export class SceneGraph {
 
   syncInstances(componentId: string): void {
     Instances.syncInstances(this, componentId)
+  }
+
+  syncInstance(instanceId: string): void {
+    Instances.syncInstance(this, instanceId)
   }
 
   detachInstance(instanceId: string): void {

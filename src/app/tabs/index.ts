@@ -543,7 +543,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
       imported,
       async () => {
         store.state.documentName = snapshot.documentName
-        await store.adoptRecoverySnapshot(id, snapshot.sceneVersion)
+        await store.adoptRecoverySnapshot(id)
       },
       load
     )

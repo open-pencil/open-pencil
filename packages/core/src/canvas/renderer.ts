@@ -23,6 +23,8 @@ import { RenderProfiler } from '#core/profiler'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
+import { createImageCache } from './images/cache'
+import { ImagePreviewCache } from './images/previews'
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'
 import { LabelParagraphCache } from './labels/paragraph-cache'
@@ -40,7 +42,6 @@ import { createGlyphSilhouetteCache } from './text/derived'
 import { TextPreparationCache } from './text/preparation-cache'
 export type { MeasurementMode, PresenceCursor, RenderOverlays, RulerTheme } from './renderer/types'
 import type {
-  Image as CKImage,
   Path,
   CanvasKit,
   Surface,
@@ -107,7 +108,12 @@ export class SkiaRenderer {
   pendingFontNodes = new Map<string, PendingFontNode>()
   textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
-  imageCache = new Map<string, CKImage>()
+  imageCache = createImageCache()
+  viewportImageRendering = false
+  imageMemoryGraph: SceneGraph | null = null
+  imageMemoryPage: string | null = null
+  onImagePreviewReady: (() => void) | null = null
+  readonly imagePreviews = new ImagePreviewCache(() => this.onImagePreviewReady?.())
   vectorPathCache = new Map<string, Path[]>()
   vectorStrokePathCache = new Map<string, Path[]>()
   vectorStrokeOutlineCache = new Map<string, Path[]>()

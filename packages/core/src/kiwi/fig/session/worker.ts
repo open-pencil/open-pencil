@@ -60,9 +60,10 @@ self.onmessage = (event: MessageEvent<FigSessionOpenRequest>) => {
   port = request.port
   port.onmessage = (message: MessageEvent<FigSessionRequest>) => handleRequest(message.data)
   port.start()
-  originalArchive = new Uint8Array(request.archiveBuffer)
+  // The worker copies the archive itself, so the main thread sends the file once.
+  originalArchive = new Uint8Array(request.buffer.slice(0))
   try {
-    const opened = openReaderSession(request.originalBuffer, request.options?.populate)
+    const opened = openReaderSession(request.buffer, request.options?.populate)
     respond({ type: 'page-manifest', pages: opened.pages })
     session =
       request.options?.populate === 'first-page' || request.options?.populate === 'none'

@@ -16,6 +16,7 @@ import {
   type CanvasGLContext,
   type CanvasGLHandle
 } from '#vue/canvas/surface/gl-surface'
+import { createImagePreviewDecoder } from '#vue/canvas/surface/image-preview'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
@@ -104,6 +105,8 @@ export function createCanvasSurfaceManager({
 
     const glCtx = canvas.getContext('webgl2') ?? null
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
+    state.renderer.onImagePreviewReady = () => renderLoop.markDirty()
+    state.renderer.imagePreviews.setDecoder(createImagePreviewDecoder())
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
     state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'

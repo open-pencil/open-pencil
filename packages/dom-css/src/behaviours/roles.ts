@@ -1,7 +1,7 @@
-import type { ControlModel } from './model'
+import type { ControlModel } from './controls'
 
-/** What a layer of an island is to the controls in it. */
-export type IslandRole =
+/** What a layer below a root is to the controls in it. */
+export type ControlRole =
   | { type: 'root'; control: ControlModel }
   | { type: 'part'; control: ControlModel; part: string }
   | { type: 'item'; group: ControlModel; control: ControlModel; index: number }
@@ -14,8 +14,10 @@ export type IslandRole =
  * and panels, and the text layers that become inputs. Items of a group take the item role in
  * place of their root role, since the group drives them.
  */
-export function islandRoles(controls: ReadonlyMap<string, ControlModel>): Map<string, IslandRole> {
-  const roles = new Map<string, IslandRole>()
+export function controlRoles(
+  controls: ReadonlyMap<string, ControlModel>
+): Map<string, ControlRole> {
+  const roles = new Map<string, ControlRole>()
   for (const control of controls.values()) {
     if (!roles.has(control.path)) roles.set(control.path, { type: 'root', control })
     for (const [part, path] of Object.entries(control.parts))
@@ -34,7 +36,7 @@ export function islandRoles(controls: ReadonlyMap<string, ControlModel>): Map<st
 
 /** The group a control is an item of, if any. */
 export function groupOf(
-  roles: ReadonlyMap<string, IslandRole>,
+  roles: ReadonlyMap<string, ControlRole>,
   control: ControlModel
 ): ControlModel | undefined {
   const role = roles.get(control.path)

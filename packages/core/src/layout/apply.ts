@@ -21,10 +21,27 @@ function preservesImportedHugCrossSize(
     )
 }
 
+type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>>
+
+/**
+ * Writes only the geometry layout changed. Laying out a large page leaves most layers where they
+ * were, and each write would notify every graph listener for nothing.
+ */
+function writeLayoutGeometry(graph: SceneGraph, id: string, geometry: LayoutGeometry): void {
+  const node = graph.getNode(id)
+  if (!node) return
+  const changes: LayoutGeometry = {}
+  for (const key of ['x', 'y', 'width', 'height'] as const) {
+    const value = geometry[key]
+    if (value !== undefined && value !== node[key]) changes[key] = value
+  }
+  if (Object.keys(changes).length > 0) graph.updateNode(id, changes)
+}
+
 function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode): void {
   if (frame.layoutMode === 'GRID') {
     if (frame.gridTemplateRows.length === 0) {
-      graph.updateNode(frame.id, { height: yogaNode.getComputedHeight() })
+      writeLayoutGeometry(graph, frame.id, { height: yogaNode.getComputedHeight() })
     }
     return
   }
@@ -33,7 +50,7 @@ function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode)
 
   const computedW = yogaNode.getComputedWidth()
   const computedH = yogaNode.getComputedHeight()
-  const updates: Partial<SceneNode> = {}
+  const updates: LayoutGeometry = {}
 
   const derived = frame.derivedLayout
   if (frame.primaryAxisSizing === 'HUG') {
@@ -52,7 +69,7 @@ function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode)
     }
   }
 
-  graph.updateNode(frame.id, updates)
+  writeLayoutGeometry(graph, frame.id, updates)
 }
 
 function frameSourceIsFig(graph: SceneGraph, parentId: string | null): boolean {
@@ -107,7 +124,7 @@ function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: Yog
   const preservesImportedPosition =
     preservesImportedFrameGeometry ||
     (child.source.format === 'fig' && Math.abs(child.rotation) > 0.001)
-  graph.updateNode(child.id, {
+  writeLayoutGeometry(graph, child.id, {
     x: computedChildPosition(child, yogaChild, 'x', preservesImportedPosition),
     y: computedChildPosition(child, yogaChild, 'y', preservesImportedPosition),
     width: computedChildSize(child, yogaChild, 'width', preservesImportedFrameGeometry),

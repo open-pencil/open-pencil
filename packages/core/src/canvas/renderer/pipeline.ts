@@ -3,6 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
+import { needsImagePreviews } from '#core/canvas/images/previews'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
@@ -13,20 +14,24 @@ import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-b
 import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
-  r: SkiaRenderer,
+  r: Pick<SkiaRenderer, 'worldViewport' | 'viewportImageRendering' | 'renderNode'>,
   canvas: Canvas,
   graph: SceneGraph,
   pageId: string
 ): void {
   const prevViewport = r.worldViewport
+  const previewMode = r.viewportImageRendering
+  r.viewportImageRendering = false
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
-  const pageNode = graph.getNode(pageId)
-  if (pageNode) {
-    for (const childId of pageNode.childIds) {
-      r.renderNode(canvas, graph, childId, {})
+  try {
+    const pageNode = graph.getNode(pageId)
+    if (pageNode) {
+      for (const childId of pageNode.childIds) r.renderNode(canvas, graph, childId, {})
     }
+  } finally {
+    r.worldViewport = prevViewport
+    r.viewportImageRendering = previewMode
   }
-  r.worldViewport = prevViewport
 }
 
 export type RenderLayer = 'full' | 'scene' | 'overlays'
@@ -43,6 +48,21 @@ export function renderFromEditorState(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
+  const previewMode = r.imagePreviews.enabled && needsImagePreviews(graph)
+  if (
+    r.imageMemoryGraph !== graph ||
+    r.viewportImageRendering !== previewMode ||
+    (previewMode && r.imageMemoryPage !== state.currentPageId)
+  ) {
+    r.invalidateAllPictures()
+    r.imageCache.clear()
+    // Previews of another document hold its encoded images, which a document without
+    // previews would otherwise keep alive.
+    if (r.imageMemoryGraph !== graph) r.imagePreviews.release()
+    r.imageMemoryGraph = graph
+    r.imageMemoryPage = state.currentPageId
+  }
+  r.viewportImageRendering = previewMode
   r.dpr = dpr
   r.panX = state.panX
   r.panY = state.panY
@@ -148,6 +168,7 @@ function getSceneRenderPolicy(
     graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
     sceneVersion === r.scenePictureVersion
   const requiresUncachedSceneRender =
+    r.viewportImageRendering ||
     interactive ||
     hasPositionPreview ||
     sceneContentDependsOnOverlay(overlays) ||

@@ -1,5 +1,5 @@
 import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 
 import { findWithinBoundary, type TreeShape } from './tree'
 
@@ -62,7 +62,9 @@ export function readOverrideKey(value: unknown): GUID | undefined {
   if (!value || typeof value !== 'object' || !('sessionID' in value) || !('localID' in value))
     return undefined
   if (typeof value.sessionID !== 'number' || typeof value.localID !== 'number') return undefined
-  return { sessionID: value.sessionID, localID: value.localID }
+  const key = { sessionID: value.sessionID, localID: value.localID }
+  // Layers without an override key share the unset GUID, so it identifies none of them.
+  return isUnsetGuid(key) ? undefined : key
 }
 
 /** A path segment addresses a record by GUID or by its stable override key. */

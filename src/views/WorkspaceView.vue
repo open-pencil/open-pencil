@@ -231,6 +231,10 @@ onUnmounted(() => {
     <CommandPalette />
     <TabBar />
     <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
-    <EditorWorkspace v-if="activeTab && activeTab.kind !== 'home'" :key="activeTab.id" />
+    <EditorWorkspace
+      v-if="activeTab && activeTab.kind !== 'home'"
+      :key="activeTab.id"
+      :tab="activeTab"
+    />
   </div>
 </template>

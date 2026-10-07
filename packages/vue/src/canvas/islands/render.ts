@@ -1,12 +1,14 @@
 import { h, type VNode } from 'vue'
 
-import { layerPath } from '@open-pencil/core/editor'
-import type { DesignElement, DesignNode } from '@open-pencil/dom-css/export'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type {
+  ControlModel,
+  ControlRole,
+  DesignElement,
+  DesignNode
+} from '@open-pencil/dom-css/export'
+import { layerPath, type SceneGraph } from '@open-pencil/scene-graph'
 
 import { wrapRole } from './controls'
-import type { ControlModel } from './model'
-import type { IslandRole } from './roles'
 import type { IslandState } from './state'
 
 export interface IslandRenderContext {
@@ -14,7 +16,7 @@ export interface IslandRenderContext {
   graph: SceneGraph
   rootId: string
   controls: ReadonlyMap<string, ControlModel>
-  roles: ReadonlyMap<string, IslandRole>
+  roles: ReadonlyMap<string, ControlRole>
   state: IslandState
 }
 

@@ -62,8 +62,9 @@ export function registerOriginalArchiveRequest(
   request: () => Promise<Uint8Array>
 ): void {
   const entry: OriginalArchiveRequest = { request, valid: true, unbind: () => undefined }
+  // Layout and the layers a page loads from this archive leave it describing the document.
   const invalidate = () => {
-    if (!graph.isApplyingLayout) entry.valid = false
+    if (!graph.isApplyingLayout && !graph.isApplyingImportedState) entry.valid = false
   }
   entry.unbind = graph.onNodeEvents({
     created: invalidate,

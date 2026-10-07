@@ -6,6 +6,7 @@ import {
 import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
+import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 
 export interface NodeProxyInternals {
@@ -77,6 +78,8 @@ export function updateNode(
       .map((key) => [key, Reflect.get(changes, key)])
   ) as Partial<SceneNode>
   if (Object.keys(applied).length === 0) return
+  // Auto-sizing text measures its new content, as the editor's updates do.
+  Object.assign(applied, textAutoResizeChanges(g.getNode(id), applied))
   g.updateNode(id, applied)
   recordInstanceOverride(g, id, Object.keys(applied))
   if (Object.keys(applied).some((key) => GEOMETRY_FIELDS.has(key))) {
