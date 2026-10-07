@@ -26,6 +26,13 @@ const AutomationRequestJSON = v.pipe(
   })
 )
 
+/**
+ * The connections each MCP session's calls came over, across bridges: restarting MCP opens a new
+ * bridge while the old socket is still closing, and that close must not end a session the new
+ * connection carries, so a session ends only with its last connection.
+ */
+const sessionSockets = new Map<string, Set<WebSocket>>()
+
 export function connectAutomation(
   getStore: () => EditorStore,
   authToken: string | null = null,
@@ -57,9 +64,6 @@ export function connectAutomation(
       return
     }
 
-    /** MCP sessions whose calls came over this connection; they end with it. */
-    const sessions = new Set<string>()
-
     socket.onopen = () => {
       console.debug('[Automation] WebSocket connected to MCP server')
       socket.send(JSON.stringify({ type: 'register', token }))
@@ -75,7 +79,11 @@ export function connectAutomation(
         }
         const msg = parsed.output
         const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
-        if (session) sessions.add(session.session)
+        if (session) {
+          const sockets = sessionSockets.get(session.session) ?? new Set<WebSocket>()
+          sockets.add(socket)
+          sessionSockets.set(session.session, sockets)
+        }
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
           if (socket.readyState !== WebSocket.OPEN) return
@@ -98,9 +106,13 @@ export function connectAutomation(
 
     socket.onclose = (event) => {
       if (ws === socket) ws = null
-      // Sessions that reached the app over this connection cannot any more, so their agents
-      // leave; ones that came another way, such as a second editor's, stay.
-      for (const id of sessions) endAgentSession(id)
+      // Sessions that reached the app only over this connection cannot any more, so their agents
+      // leave; ones that also came another way, such as over a newer connection, stay.
+      for (const [id, sockets] of sessionSockets) {
+        if (!sockets.delete(socket) || sockets.size > 0) continue
+        sessionSockets.delete(id)
+        endAgentSession(id)
+      }
       if (intentionalDisconnect || event.code === 1000) return
       console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()
