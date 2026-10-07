@@ -1,6 +1,7 @@
 import type { Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
 import type { missingGlyphOccurrences } from '#core/text/resolver'
@@ -21,16 +22,11 @@ export interface PreparedText {
   missingGlyphs?: ReturnType<typeof missingGlyphOccurrences>
 }
 
-export interface TextSize {
-  width: number
-  height: number
-}
-
 /** What shaping a node's text showed, valid while its `shapingInputs` stay the same. */
 interface Shaping {
   inputs: PreparationInput[]
   covered: boolean
-  sizes: Map<number, TextSize>
+  sizes: Map<number, Size>
 }
 
 interface Entry extends PreparedText {
@@ -124,8 +120,8 @@ export class TextPreparationCache {
     layoutWidth: number,
     generation: number,
     provider: TypefaceFontProvider,
-    compute: () => TextSize
-  ): TextSize {
+    compute: () => Size
+  ): Size {
     this.useScope(generation, provider)
     const sizes = this.shapingFor(node).sizes
     const cached = sizes.get(layoutWidth)
