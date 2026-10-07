@@ -183,6 +183,13 @@ describe('text preparation cache', () => {
       f.cache.deleteNode(f.node.id, { keepShaping: true })
       measure(200)
       expect(measured).toBe(2)
+      // Drawing rebuilds its paragraph for the new box without dropping the measurements.
+      f.use()
+      f.graph.updateNodePreview(f.node.id, { width: 90 })
+      f.use()
+      expect(f.built).toHaveLength(2)
+      measure(200)
+      expect(measured).toBe(2)
       f.graph.updateNodePreview(f.node.id, { text: 'Edited text' })
       expect(measure(200).height).toBe('Edited text'.length)
       expect(measured).toBe(3)

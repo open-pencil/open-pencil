@@ -86,7 +86,8 @@ export class TextPreparationCache {
       entry &&
       !PARAGRAPH_INPUT_KEYS.every((prop, index) => entry?.inputs[index] === node[prop])
     ) {
-      this.deleteNode(node.id)
+      // Shaping compares its own inputs, so a change it doesn't see, such as a resize, keeps it.
+      this.deleteNode(node.id, { keepShaping: true })
       entry = undefined
     }
     if (!entry) {
