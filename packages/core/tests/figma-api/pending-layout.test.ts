@@ -53,6 +53,20 @@ describe('geometry reads after edits', () => {
     expect(row.width).toBe(110)
   })
 
+  test('edits stay recorded when another API opens the same graph before a read', () => {
+    const api = createAPI()
+    const row = hugRow(api)
+    const child = api.createRectangle()
+    child.resize(40, 20)
+    row.appendChild(child)
+    expect(row.width).toBe(40)
+
+    // A script resizes the child and fails before its tool lays the edit out.
+    child.resize(90, 20)
+    const next = new FigmaAPI(api.graph)
+    expect(next.getNodeById(row.id)?.width).toBe(90)
+  })
+
   test('reading again without edits does no layout work', () => {
     const api = createAPI()
     const row = hugRow(api)

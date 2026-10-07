@@ -152,8 +152,10 @@ export function layoutSizingUpdates(
       if (fill !== node.layoutGrow > 0) updates.layoutGrow = fill ? 1 : 0
     } else if (fill && node.layoutAlignSelf !== 'STRETCH') {
       updates.layoutAlignSelf = 'STRETCH'
-    } else if (!fill && node.layoutAlignSelf === 'STRETCH') {
-      updates.layoutAlignSelf = 'AUTO'
+    } else if (!fill && fills(parent, node, axis)) {
+      // A flex parent set to stretch its children stretches this one too unless it opts out.
+      const inheritsStretch = parent.layoutMode !== 'GRID' && parent.counterAxisAlign === 'STRETCH'
+      updates.layoutAlignSelf = inheritsStretch ? 'MIN' : 'AUTO'
     }
   }
   const field = ownSizingField(node, axis)

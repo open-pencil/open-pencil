@@ -18,18 +18,20 @@ function clearImpact(impact: SceneMutationImpact): void {
   for (const ids of Object.values(impact)) ids.clear()
 }
 
+function mergeImpact(into: SceneMutationImpact, from: SceneMutationImpact): void {
+  for (const key of Object.keys(into) as (keyof SceneMutationImpact)[]) {
+    for (const id of from[key]) into[key].add(id)
+  }
+}
+
 /**
  * Records the graph's edits so that reading geometry lays out what they touched first, as Figma
  * does: a script that fills a child and then reads its width sees the filled width. A graph has
- * one recorder for its lifetime; a new API starts it afresh, because the editor lays out its own
- * edits.
+ * one recorder for its lifetime, kept across APIs: a script that failed before its tool laid
+ * out its edits leaves them for the next read to lay out.
  */
 export function startPendingLayout(graph: SceneGraph): void {
-  const existing = pendingByGraph.get(graph)
-  if (existing) {
-    clearImpact(existing.impact)
-    return
-  }
+  if (pendingByGraph.has(graph)) return
   const pending: PendingLayout = { impact: createSceneMutationImpact(), flushing: false }
   pendingByGraph.set(graph, pending)
   // Layout's own writes are its result, not new edits.
@@ -45,6 +47,10 @@ export function flushPendingLayout(graph: SceneGraph): void {
   pending.flushing = true
   try {
     createLayoutRunner(() => graph).runLayoutForImpact(impact)
+  } catch (error) {
+    // The edits are still unlaid out, so the next read tries again.
+    mergeImpact(pending.impact, impact)
+    throw error
   } finally {
     pending.flushing = false
   }
