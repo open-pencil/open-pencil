@@ -217,6 +217,7 @@
 - Keep round and other stroke caps and joins after saving and reopening the file on icons from `insert_icon` and Design JSX `<Icon>`, and on vectors from inline Design JSX `<svg>`, `import_svg`, and dropped or pasted SVG files. They were set only on the stroke paint, which `.fig` does not store, so outline icons such as Lucide's reopened with butt caps and miter joins and showed gaps where their strokes meet.
 - Join the right room from a pasted link that ends in a query, `#`, or `/`, and say so when pasted text is not a room link instead of joining an empty room.
 - Name the layer and page rename fields, the command palette list, and picker lists for screen readers, and announce disabled picker options as disabled.
+- Show a fill's whole hex value and the whole opacity in the Design panel; the last hex digit and the opacity were cut off beside the variable button.
 
 ### Performance
 
