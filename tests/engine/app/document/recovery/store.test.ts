@@ -29,14 +29,12 @@ describe('document recovery store', () => {
     const metadata = await store.write({
       id: 'recovery-1',
       documentName: 'Agent draft',
-      version: 12,
       figBytes: bytes
     })
 
     expect(metadata).toMatchObject({
       id: 'recovery-1',
       documentName: 'Agent draft',
-      version: 12,
       byteLength: 4,
       formatVersion: 1
     })
@@ -51,7 +49,7 @@ describe('document recovery store', () => {
   test('memory store owns input and output bytes', async () => {
     const store = createMemoryRecoveryStore()
     const input = new Uint8Array(bytes)
-    await store.write({ id: 'one', documentName: 'Draft', version: 1, figBytes: input })
+    await store.write({ id: 'one', documentName: 'Draft', figBytes: input })
     input[0] = 99
 
     const first = await store.read('one')

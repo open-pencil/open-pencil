@@ -52,7 +52,6 @@ export function createDocumentRecovery({
     await store.write({
       id,
       documentName: state.documentName,
-      version,
       figBytes: bytes
     })
     persistedVersion = version

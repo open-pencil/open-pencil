@@ -39,8 +39,9 @@ function deferredRemoveStore() {
   return { store, release: () => release?.() }
 }
 
+/** Snapshots built by default hold the version they were built at, to show which one was kept. */
 function setup(
-  buildFigFile = async () => new Uint8Array([1, 2, 3]),
+  buildFigFile?: () => Promise<Uint8Array>,
   initialEnabled = true,
   injectedStore?: RecoveryStore
 ) {
@@ -56,7 +57,7 @@ function setup(
     recoveryId: 'recovery-1',
     hasWritableSource: () => writable,
     isEnabled: () => enabled.value,
-    buildFigFile
+    buildFigFile: buildFigFile ?? (async () => new Uint8Array([version.value]))
   })
   return {
     version,
@@ -75,7 +76,7 @@ describe('document recovery controller', () => {
 
     version.value = 1
     await recovery.persistNow()
-    expect((await store.read('recovery-1'))?.version).toBe(1)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(1)
     recovery.disposeRecovery()
   })
 
@@ -110,7 +111,7 @@ describe('document recovery controller', () => {
 
     version.value = 3
     await recovery.persistNow()
-    expect((await store.read('recovery-1'))?.version).toBe(3)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(3)
     recovery.disposeRecovery()
   })
 
@@ -125,11 +126,11 @@ describe('document recovery controller', () => {
     version.value = 2
     const nextWrite = recovery.persistNow()
     await Promise.resolve()
-    expect((await store.read('recovery-1'))?.version).toBe(1)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(1)
 
     deferred.release()
     await nextWrite
-    expect((await store.read('recovery-1'))?.version).toBe(2)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(2)
     recovery.disposeRecovery()
   })
 
@@ -152,7 +153,7 @@ describe('document recovery controller', () => {
           release = resolve
         })
       }
-      return new Uint8Array([calls])
+      return new Uint8Array([version.value])
     })
     version.value = 1
     const pending = recovery.persistNow()
@@ -168,7 +169,7 @@ describe('document recovery controller', () => {
     await pending
 
     expect(calls).toBe(2)
-    expect((await store.read('recovery-1'))?.version).toBe(101)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(101)
     recovery.disposeRecovery()
   })
 
@@ -189,14 +190,14 @@ describe('document recovery controller', () => {
       store,
       recoveryId: 'recovery-1',
       hasWritableSource: () => false,
-      buildFigFile: () => new Uint8Array([1])
+      buildFigFile: () => new Uint8Array([version.value])
     })
     version.value = 1
 
     await expect(recovery.persistNow()).rejects.toThrow('recovery storage unavailable')
     await recovery.persistNow()
     expect(writeAttempts).toBe(2)
-    expect((await store.read('recovery-1'))?.version).toBe(1)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(1)
     recovery.disposeRecovery()
   })
 
@@ -288,7 +289,7 @@ describe('document recovery controller', () => {
 
     await recovery.markProtectedVersion(1)
 
-    expect((await store.read('recovery-1'))?.version).toBe(2)
+    expect((await store.read('recovery-1'))?.figBytes[0]).toBe(2)
     recovery.disposeRecovery()
   })
 
@@ -302,7 +303,7 @@ describe('document recovery controller', () => {
       store,
       recoveryId: 'recovery-1',
       hasWritableSource: () => false,
-      buildFigFile: () => new Uint8Array([1])
+      buildFigFile: () => new Uint8Array([changes.capture()])
     })
     try {
       for (let i = 0; i < 5; i++) editor.requestRender()
@@ -311,7 +312,7 @@ describe('document recovery controller', () => {
 
       editor.createShape('RECTANGLE', 0, 0, 100, 100)
       await recovery.persistNow()
-      expect((await store.read('recovery-1'))?.version).toBe(changes.capture())
+      expect((await store.read('recovery-1'))?.figBytes[0]).toBe(changes.capture())
     } finally {
       recovery.disposeRecovery()
       changes.dispose()
