@@ -17,13 +17,19 @@ function hasVisibleFillOrStroke(node: SceneNode): boolean {
   return node.fills.some((f) => f.visible) || node.strokes.some((s) => s.visible)
 }
 
+function isTopLevel(graph: SceneGraph, node: SceneNode): boolean {
+  const parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
+  return parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+}
+
 /**
  * An open container whose empty area still belongs to it, as in Figma: a top-level frame with auto
  * layout is selected, hovered, and dragged by its gaps and padding, while its children stay one
- * click away, with or without a fill. A plain top-level frame's empty area is background.
+ * click away, with or without a fill. A plain top-level frame's empty area is background, and a
+ * nested frame's empty area belongs to it only as a click target (see `frameChildAt`).
  */
-function ownsItsEmptyArea(node: SceneNode): boolean {
-  return node.type === 'FRAME' && node.layoutMode !== 'NONE'
+function ownsItsEmptyArea(graph: SceneGraph, node: SceneNode): boolean {
+  return node.type === 'FRAME' && node.layoutMode !== 'NONE' && isTopLevel(graph, node)
 }
 
 function hasTransformedAncestor(
@@ -109,7 +115,7 @@ function hitTestTransparentContainer(
 
   if (
     containsPoint(px, py, child, graph, transformCache) &&
-    (hasVisibleFillOrStroke(child) || ownsItsEmptyArea(child))
+    (hasVisibleFillOrStroke(child) || ownsItsEmptyArea(graph, child))
   )
     return child
   return null
@@ -180,8 +186,29 @@ function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
   if (node.type === 'COMPONENT_SET') return true
   if (node.childIds.length === 0) return false
   if (node.type === 'SECTION') return true
-  const parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
-  return node.type === 'FRAME' && (parent?.type === 'CANVAS' || parent?.type === 'SECTION')
+  return node.type === 'FRAME' && isTopLevel(graph, node)
+}
+
+/**
+ * The topmost frame among a container's children whose bounds hold the point, filled or not: in
+ * Figma a click on the empty area of a frame inside an open container selects that frame, while a
+ * deep (⌘) click looks through it.
+ */
+function frameChildAt(
+  graph: SceneGraph,
+  container: SceneNode,
+  px: number,
+  py: number
+): SceneNode | null {
+  const transformCache = new Map<string, boolean>()
+  for (let i = container.childIds.length - 1; i >= 0; i--) {
+    const child = graph.nodes.get(container.childIds[i])
+    if (!child || child.internalOnly || !child.visible || child.type !== 'FRAME') continue
+    // A board, such as a top-level frame in a section, keeps its empty area as background.
+    if (opensByItself(graph, child) && !ownsItsEmptyArea(graph, child)) continue
+    if (containsPoint(px, py, child, graph, transformCache)) return child
+  }
+  return null
 }
 
 /**
@@ -224,7 +251,9 @@ export function hitTestSelectable(
   }
   const last = chain.at(-1)
   if (!last) return null
-  if (ownsItsEmptyArea(last)) return last
+  const frame = frameChildAt(graph, last, px, py)
+  if (frame) return frame
+  if (ownsItsEmptyArea(graph, last)) return last
   return openedBySelection.has(last.id) && !opensByItself(graph, last) ? last : null
 }
 
@@ -246,7 +275,7 @@ export function hitTestOpenContainer(
 ): SceneNode | null {
   const deepest = hitTestChildren(graph, px, py, scopeId, true)
   for (let node: SceneNode | undefined = deepest ?? undefined; node && node.id !== scopeId;) {
-    if (!opensByItself(graph, node) || ownsItsEmptyArea(node)) return null
+    if (!opensByItself(graph, node) || ownsItsEmptyArea(graph, node)) return null
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
   return deepest

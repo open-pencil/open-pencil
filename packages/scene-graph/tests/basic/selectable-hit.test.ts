@@ -6,7 +6,9 @@ import { pageId } from './helpers'
 
 // Each expectation matches a click observed in Figma desktop 126 with real pointer input.
 
-const FILL = [{ type: 'SOLID' as const, color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+const FILL = [
+  { type: 'SOLID' as const, color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
+]
 
 function scene() {
   const graph = new SceneGraph()
@@ -24,15 +26,36 @@ function scene() {
   const g2 = add('RECTANGLE', 'g2', group.id, { x: 40, y: 70, width: 40, height: 40 })
   const empty = add('FRAME', 'Empty', page, { x: 600, width: 100, height: 100 })
   const section = add('SECTION', 'Section', page, { y: 600, width: 500, height: 300 })
-  const inSection = add('FRAME', 'In section', section.id, { x: 50, y: 50, width: 200, height: 200 })
+  const inSection = add('FRAME', 'In section', section.id, {
+    x: 50,
+    y: 50,
+    width: 200,
+    height: 200
+  })
   const sectionLeaf = add('RECTANGLE', 'sl', inSection.id, { x: 20, y: 20, width: 60, height: 60 })
   const component = add('COMPONENT', 'Component', page, { x: 800, width: 200, height: 200 })
   add('RECTANGLE', 'cr', component.id, { x: 20, y: 20, width: 60, height: 60 })
-  const card = add('FRAME', 'Card', page, { x: 1100, width: 300, height: 400, layoutMode: 'VERTICAL' })
-  const cardTitle = add('RECTANGLE', 'Card title', card.id, { x: 20, y: 20, width: 260, height: 40 })
+  const card = add('FRAME', 'Card', page, {
+    x: 1100,
+    width: 300,
+    height: 400,
+    layoutMode: 'VERTICAL'
+  })
+  const cardTitle = add('RECTANGLE', 'Card title', card.id, {
+    x: 20,
+    y: 20,
+    width: 260,
+    height: 40
+  })
   const cardBody = add('FRAME', 'Card body', card.id, { x: 20, y: 80, width: 260, height: 200 })
   add('RECTANGLE', 'Card body leaf', cardBody.id, { x: 20, y: 20, width: 60, height: 60 })
-  const grid = add('FRAME', 'Grid', page, { x: 1500, width: 200, height: 200, layoutMode: 'GRID', fills: [] })
+  const grid = add('FRAME', 'Grid', page, {
+    x: 1500,
+    width: 200,
+    height: 200,
+    layoutMode: 'GRID',
+    fills: []
+  })
   add('RECTANGLE', 'Cell', grid.id, { x: 10, y: 10, width: 60, height: 60 })
   const sectionCard = add('FRAME', 'Section card', section.id, {
     x: 300,
@@ -140,5 +163,77 @@ describe('hitTestSelectable', () => {
     expect(graph.hitTestOpenContainer(420, 750, page)).toBeNull()
     expect(graph.isOpenContainer(nodes.top.id)).toBe(true)
     expect(graph.isOpenContainer(nodes.empty.id)).toBe(false)
+  })
+})
+
+describe('unfilled frames inside a top-level frame', () => {
+  /** A card, with or without auto layout, holding an unfilled auto layout row and plain box. */
+  function cards() {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const add = (type: NodeType, name: string, parent: string, props: Partial<SceneNode>) =>
+      graph.createNode(type, parent, { name, fills: FILL, ...props })
+    for (const [x, layoutMode] of [
+      [0, 'VERTICAL'],
+      [400, 'NONE']
+    ] as const) {
+      const card = add('FRAME', `${layoutMode} card`, page, {
+        x,
+        width: 320,
+        height: 360,
+        layoutMode
+      })
+      const row = add('FRAME', `${layoutMode} row`, card.id, {
+        x: 24,
+        y: 24,
+        width: 272,
+        height: 100,
+        fills: [],
+        layoutMode: 'HORIZONTAL'
+      })
+      add('RECTANGLE', 'Chip', row.id, { x: 30, y: 30, width: 40, height: 40 })
+      const box = add('FRAME', `${layoutMode} box`, card.id, {
+        x: 24,
+        y: 148,
+        width: 272,
+        height: 100,
+        fills: []
+      })
+      add('RECTANGLE', 'Dot', box.id, { x: 30, y: 30, width: 40, height: 40 })
+    }
+    const section = add('SECTION', 'Section', page, { y: 600, width: 500, height: 400 })
+    const board = add('FRAME', 'Board', section.id, {
+      x: 50,
+      y: 50,
+      width: 300,
+      height: 300,
+      fills: []
+    })
+    add('RECTANGLE', 'Board leaf', board.id, { x: 20, y: 20, width: 60, height: 60 })
+    const click = (x: number, y: number) =>
+      graph.hitTestSelectable(x, y, page, new Set())?.name ?? null
+    const deep = (x: number, y: number) => graph.hitTestDeep(x, y)?.name ?? null
+    return { click, deep }
+  }
+
+  test('a click selects them by their empty area, with or without auto layout', () => {
+    const { click } = cards()
+    expect(click(224, 74)).toBe('VERTICAL row')
+    expect(click(224, 198)).toBe('VERTICAL box')
+    expect(click(624, 74)).toBe('NONE row')
+    expect(click(624, 198)).toBe('NONE box')
+  })
+
+  test('a deep click looks through their empty area to the card', () => {
+    const { deep } = cards()
+    expect(deep(224, 74)).toBe('VERTICAL card')
+    expect(deep(224, 198)).toBe('VERTICAL card')
+    expect(deep(624, 74)).toBe('NONE card')
+    expect(deep(624, 198)).toBe('NONE card')
+  })
+
+  test('the empty area of an unfilled board in a section stays background', () => {
+    const { click } = cards()
+    expect(click(250, 900)).toBeNull()
   })
 })
