@@ -3,7 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { useViewportImageRendering } from '#core/canvas/images/previews'
+import { needsImagePreviews } from '#core/canvas/images/previews'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
@@ -48,7 +48,7 @@ export function renderFromEditorState(
   layer: RenderLayer = 'full',
   interactive = false
 ): void {
-  const previewMode = r.imagePreviews.enabled && useViewportImageRendering(graph)
+  const previewMode = r.imagePreviews.enabled && needsImagePreviews(graph)
   if (
     r.imageMemoryGraph !== graph ||
     r.viewportImageRendering !== previewMode ||
