@@ -1,7 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { changesGlyphCoverage } from '#core/canvas/text/paragraph-inputs'
+import { changesShaping } from '#core/canvas/text/paragraph-inputs'
 
 export function invalidateScenePicture(r: SkiaRenderer): void {
   r.scenePicture?.delete()
@@ -41,7 +41,7 @@ export function invalidateNodePicture(
   changedKeys?: readonly (keyof SceneNode)[]
 ): void {
   r.textPreparationCache.deleteNode(nodeId, {
-    keepGlyphCoverage: changedKeys !== undefined && !changesGlyphCoverage(changedKeys)
+    keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
   r.effectRasterCache.delete(nodeId)
   r.effectRasterCache.deleteDependencies(nodeId)
