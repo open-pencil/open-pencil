@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
 
+import { HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
+import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { useModelSettings } from '@/app/ai/models/settings/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -30,8 +32,12 @@ function editModel(profileId: string): void {
 }
 
 function statusLabel(connectionId: string, providerID: string): string {
-  if (providerID.startsWith('acp:')) return ai.value.modelAgentConnection
   const status = statusByConnection.value[connectionId]
+  if (providerID.startsWith('acp:')) return ai.value.modelAgentConnection
+  // Pi uses its own sign-ins unless an AI Gateway key is saved.
+  if (providerID === HARNESS_PROVIDER_ID && status !== 'configured') {
+    return ai.value.modelAgentConnection
+  }
   if (status === 'configured') return collaboration.value.connected
   if (status === 'locked' || status === 'unavailable') return common.value.unavailable
   return ai.value.modelNeedsCredential
@@ -130,6 +136,17 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
               </template>
             </AppActionRow>
           </div>
+          <AppButton
+            color="primary"
+            variant="link"
+            size="xs"
+            class="self-start"
+            data-test-id="settings-run-ai-setup"
+            @click="openAISetup()"
+          >
+            <template #leading><icon-lucide-sparkles class="size-3" /></template>
+            {{ ai.aiSetupRun }}
+          </AppButton>
         </SettingsSection>
 
         <SettingsSection>

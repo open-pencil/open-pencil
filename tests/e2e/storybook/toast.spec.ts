@@ -5,7 +5,7 @@ test('determinate progress exposes its value and bar width', async ({ page }) =>
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'determinate')
-  await expect(toast.locator('[data-slot="toast-progress-label"]')).toHaveText(
+  await expect(toast.locator('[data-slot="progress-label"]')).toHaveText(
     '42% · 9.6 MiB of 22.9 MiB'
   )
 
@@ -13,10 +13,7 @@ test('determinate progress exposes its value and bar width', async ({ page }) =>
   await expect(bar).toHaveAttribute('aria-valuenow', '42')
   await expect(bar).toHaveAttribute('aria-valuemin', '0')
   await expect(bar).toHaveAttribute('aria-valuemax', '100')
-  await expect(toast.locator('[data-slot="toast-progress-fill"]')).toHaveAttribute(
-    'style',
-    /width: 42%/
-  )
+  await expect(toast.locator('[data-slot="progress-fill"]')).toHaveAttribute('style', /width: 42%/)
 })
 
 test('progress without a known total stays indeterminate', async ({ page }) => {
@@ -27,7 +24,7 @@ test('progress without a known total stays indeterminate', async ({ page }) => {
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'indeterminate')
   await expect(toast.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow', /\d/)
-  await expect(toast.locator('[data-slot="toast-progress-label"]')).toHaveText('4.2 MiB downloaded')
+  await expect(toast.locator('[data-slot="progress-label"]')).toHaveText('4.2 MiB downloaded')
 })
 
 test('a reported total flips between determinate, indeterminate, and cleared', async ({ page }) => {
@@ -42,7 +39,7 @@ test('a reported total flips between determinate, indeterminate, and cleared', a
   // The bar follows the reported work and keeps the toast open instead of expiring.
   await page.getByRole('button', { name: 'Advance download' }).click()
   await expect(bar).toHaveAttribute('aria-valuenow', '13')
-  await expect(toast.locator('[data-slot="toast-progress-label"]')).toHaveText(
+  await expect(toast.locator('[data-slot="progress-label"]')).toHaveText(
     '13% · 2.9 MiB of 22.9 MiB'
   )
   await page.clock.fastForward(3_500)

@@ -140,7 +140,7 @@ Not every provider works in the browser, and not every model streams tool calls 
 
 Use Claude Code, Codex, or Gemini CLI directly in the chat panel. The agent connects to the editor's MCP server and uses all 100+ design tools. Requires the desktop app and the agent CLI installed locally.
 
-Pi works too: install `@open-pencil/harness` globally, then add a **Pi** model profile in **Settings → AI & agents**.
+Pi works too: choose it in guided setup (**Settings → AI & agents → Run guided setup**), which installs the `@open-pencil/harness` companion with one click and uses the providers you signed in to in Pi. The companion needs Node.js 22.15 or later; see [Coding agents](packages/docs/programmable/coding-agents.md#pi).
 
 **Setup (Claude Code):**
 

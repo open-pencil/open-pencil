@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import { tauriFetch } from '@/app/tauri/http'
 
 type ClipboardImageFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
@@ -7,27 +9,24 @@ type FigmaImageURLs = Record<string, string>
 const IMAGE_FETCH_CONCURRENCY = 6
 const IMAGE_FETCH_TIMEOUT_MS = 15_000
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
+/** Figma's image batch response: a URL per image hash, unless it reports a failure. */
+const batchResponseSchema = v.pipe(
+  v.object({
+    error: v.optional(v.unknown()),
+    status: v.optional(v.unknown()),
+    meta: v.object({ s3_urls: v.record(v.string(), v.unknown()) })
+  }),
+  v.check(({ error, status }) => error !== true && (typeof status !== 'number' || status === 200))
+)
 
 function imageURLsFromBatchResponse(value: unknown): FigmaImageURLs {
-  if (
-    !isRecord(value) ||
-    value.error === true ||
-    (typeof value.status === 'number' && value.status !== 200) ||
-    !isRecord(value.meta)
-  ) {
-    throw new Error('Figma returned an invalid image response')
-  }
-  const urls = value.meta.s3_urls
-  if (!isRecord(urls)) throw new Error('Figma returned an invalid image URL map')
-
-  const result: FigmaImageURLs = {}
-  for (const [hash, url] of Object.entries(urls)) {
-    if (typeof url === 'string') result[hash] = url
-  }
-  return result
+  const parsed = v.safeParse(batchResponseSchema, value)
+  if (!parsed.success) throw new Error('Figma returned an invalid image response')
+  return Object.fromEntries(
+    Object.entries(parsed.output.meta.s3_urls).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  )
 }
 
 async function sha1Hex(bytes: Uint8Array): Promise<string> {

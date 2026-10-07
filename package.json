@@ -199,6 +199,7 @@
     "@figma/plugin-typings": "^1.140.0",
     "@hono/node-server": "^1.19.17",
     "@iconify-json/lucide": "^1.2.139",
+    "@lobehub/icons-static-svg": "^1.95.1",
     "@modelcontextprotocol/client": "^2.0.0",
     "@open-pencil/brand-tools": "workspace:*",
     "@open-pencil/mcp": "workspace:*",

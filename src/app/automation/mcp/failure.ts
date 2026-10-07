@@ -1,3 +1,5 @@
+import { APP_VERSION } from '@/app/runtime/version'
+
 /**
  * Name of the entry point installed by `@open-pencil/mcp`.
  *
@@ -5,9 +7,6 @@
  * instruction without importing the spawning code.
  */
 export const MCP_PACKAGE_NAME = '@open-pencil/mcp'
-
-const APP_VERSION =
-  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
 
 /** Exact package spec a user should install to match this app. */
 export const MCP_INSTALL_TARGET = `${MCP_PACKAGE_NAME}@${APP_VERSION}`

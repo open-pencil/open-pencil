@@ -5,12 +5,8 @@ import { computed } from 'vue'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 
-import {
-  toast as toastTheme,
-  toastProgressPercent,
-  toastProgressState,
-  type ToastProps
-} from './toast'
+import AppProgress from './AppProgress.vue'
+import { toast as toastTheme, toastProgressState, type ToastProps } from './toast'
 
 const {
   message,
@@ -31,7 +27,6 @@ const emit = defineEmits<{ close: []; action: [] }>()
 
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const state = computed(() => toastProgressState(progress))
-const percent = computed(() => toastProgressPercent(progress))
 const styles = computed(() => {
   const theme = toastTheme({ tone: variant, progress: state.value })
   return {
@@ -41,9 +36,6 @@ const styles = computed(() => {
     message: theme.message({ class: ui?.message }),
     count: theme.count({ class: ui?.count }),
     progress: theme.progress({ class: ui?.progress }),
-    progressTrack: theme.progressTrack({ class: ui?.progressTrack }),
-    progressFill: theme.progressFill({ class: ui?.progressFill }),
-    progressLabel: theme.progressLabel({ class: ui?.progressLabel }),
     action: theme.action({ class: ui?.action }),
     control: theme.control({ class: ui?.control })
   }
@@ -73,25 +65,14 @@ const styles = computed(() => {
       <ToastDescription :class="styles.message">
         {{ message }}<span v-if="count > 1" :class="styles.count">×{{ count }}</span>
       </ToastDescription>
-      <div v-if="state !== 'none'" :class="styles.progress" data-slot="toast-progress">
-        <div
-          role="progressbar"
-          :class="styles.progressTrack"
-          :aria-label="progressLabel ?? message"
-          :aria-valuenow="percent ?? undefined"
-          :aria-valuemin="percent === null ? undefined : 0"
-          :aria-valuemax="percent === null ? undefined : 100"
-        >
-          <div
-            :class="styles.progressFill"
-            :style="percent === null ? undefined : { width: `${percent}%` }"
-            data-slot="toast-progress-fill"
-          />
-        </div>
-        <p v-if="progressLabel" :class="styles.progressLabel" data-slot="toast-progress-label">
-          {{ progressLabel }}
-        </p>
-      </div>
+      <AppProgress
+        v-if="progress"
+        :amount="progress"
+        :label="progressLabel"
+        :aria-label="progressLabel ?? message"
+        tone="current"
+        :class="styles.progress"
+      />
       <slot />
     </div>
     <button v-if="actionLabel" type="button" :class="styles.action" @click="emit('action')">
