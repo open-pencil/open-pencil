@@ -21,6 +21,8 @@ export interface StoryGroup {
   variants: StoryVariant[]
   /** Layer the story file links to, when the group has a layer of its own. */
   linkNode?: string
+  /** The component set the group shows, which may generate a component of its own. */
+  set?: SceneNode
 }
 
 function isExported(node: SceneNode): boolean {
@@ -73,7 +75,8 @@ function componentSetGroup(graph: SceneGraph, page: SceneNode, set: SceneNode): 
     name: set.name,
     props,
     variants,
-    linkNode: set.name
+    linkNode: set.name,
+    set
   })
 }
 

@@ -1,8 +1,11 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { ExportHTMLFile } from '../bundle'
+import { componentModel } from '../components/model'
+import { vueComponent } from '../components/vue'
 import { serializeHTML } from '../html'
 import { sceneNodeToDesignDocument } from '../projection'
+import { printComponentStories } from './component'
 import { collectGroups, type StoryGroup } from './groups'
 import { printStoryModule, type StoryDesign, type StorybookFramework } from './module'
 import { claimName, identifierName, storyId } from './names'
@@ -42,7 +45,10 @@ interface ModuleContext {
   images: string[]
 }
 
-function designLink(context: ModuleContext, ...candidates: (string | undefined)[]): StoryDesign[] {
+function designLink(
+  context: Pick<ModuleContext, 'linkPath' | 'uniqueNames'>,
+  ...candidates: (string | undefined)[]
+): StoryDesign[] {
   const node = candidates.find((name) => name !== undefined && context.uniqueNames.has(name))
   if (!context.linkPath || !node) return []
   const url = `openpencil://open?file=${encodeURIComponent(context.linkPath)}&node=${encodeURIComponent(node)}`
@@ -116,6 +122,27 @@ export async function exportStorybook(
         key: (name) => name.toLowerCase()
       })
       if (options.pageId && page.id !== options.pageId) continue
+
+      const component = framework === 'vue' && group.set ? componentModel(graph, group.set) : null
+      if (component) {
+        // The component is imported by the file's name, so the two always match.
+        component.name = file
+        add(page, `${file}.vue`, await vueComponent(component))
+        const design = designLink({ linkPath: options.linkPath, uniqueNames }, group.linkNode)
+        add(
+          page,
+          `${file}.stories.ts`,
+          printComponentStories({
+            title: group.title,
+            component,
+            path: `./${file}.vue`,
+            design: design.flatMap((entry) =>
+              entry.type === 'link' ? [{ name: 'OpenPencil', type: 'link', url: entry.url }] : []
+            )
+          })
+        )
+        continue
+      }
 
       const names = storyNames(group)
       const render = options.renderDesignImage

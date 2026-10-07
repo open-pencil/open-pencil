@@ -46,6 +46,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
   '#core-tests/': 'packages/core/tests/',
   '#fig/': 'packages/fig/src/',
   '#fig-tests/': 'packages/fig/tests/',
+  '#dom-css-tests/': 'packages/dom-css/tests/',
   '#vue/': 'packages/vue/src/',
   '#cli/': 'packages/cli/src/',
   '#mcp/': 'packages/mcp/src/'
@@ -58,6 +59,7 @@ export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
   '#core-tests/': 'packages/core/tests/',
   '#fig/': 'packages/fig/',
   '#fig-tests/': 'packages/fig/tests/',
+  '#dom-css-tests/': 'packages/dom-css/tests/',
   '#vue/': 'packages/vue/',
   '#cli/': 'packages/cli/',
   '#mcp/': 'packages/mcp/src/'

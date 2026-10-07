@@ -144,6 +144,8 @@ Each variant of a component set becomes a story, and its variant properties beco
 
 Stories render the component as HTML with inline styles, like `-f html`, so they need no OpenPencil runtime; `--framework` (`react`, `vue`, or `html`) only changes the wrapper and the `Meta`/`StoryObj` import from `@storybook/react-vite`, `@storybook/vue3-vite`, or `@storybook/html-vite`. Text uses the document's font families, which Storybook has to load itself. Text, boolean, and instance-swap properties are not exported yet.
 
+With `--framework vue`, a component set whose behaviour is a Button, Switch, Checkbox, Toggle, or Collapsible becomes a real component instead: `<Name>.vue` built on Reka UI. Its variants are compiled into a scoped stylesheet keyed on the states Reka sets (`data-state`, `data-disabled`, hover, and focus), its value is a `v-model` such as `checked` or `open`, and every other variant property is a prop the component sets as a `data-*` attribute. Its stories render the component, and a play function clicks the control and checks its state, so the Storybook project needs `reka-ui` installed.
+
 Stories carry `parameters.design` entries for [`@storybook/addon-designs`](https://github.com/storybookjs/addon-designs):
 
 - **OpenPencil** — when the document path is inside the current directory, an [`openpencil://` link](../index#url-scheme) that opens the document in the desktop app and selects the variant, or its component set when another layer shares the variant's name. The scheme addresses layers by name, so a story whose variant and component names are both shared by other layers gets no link.
