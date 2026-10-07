@@ -8,13 +8,14 @@ import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { ensureDemoDocument } from '@open-pencil/demo-tools'
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
 import { docsLocales } from './locales.ts'
 import { rootThemeConfig } from './root-theme.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
-await ensureBrandAssets(['docs'])
+await Promise.all([ensureBrandAssets(['docs']), ensureDemoDocument()])
 
 const configDir = dirname(fileURLToPath(import.meta.url))
 const docsRoot = dirname(configDir)

@@ -3,11 +3,10 @@ import dedent from 'dedent'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 
-import { createAnnouncementSection } from '@/app/demo/announcement/section'
-import { loadDemoFonts } from '@/app/demo/fonts'
-import { createComponentsSection } from '@/app/demo/sections/components'
-import { createDemoVariables } from '@/app/demo/sections/variables'
 import type { EditorStore } from '@/app/editor/active-store'
+import { loadFont } from '@/app/editor/fonts'
+// The app's own demo, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
+import demoFigURL from '#app-public/demo.fig?url'
 
 // Placeholder: a third-party preview file, to be replaced with one we publish ourselves.
 import sampleFigURL from './assets/sample.fig?url'
@@ -74,6 +73,32 @@ async function finish(store: EditorStore): Promise<void> {
   store.requestRender()
 }
 
+const INTER_STYLES = ['Regular', 'Medium', 'SemiBold', 'Bold']
+
+/** Text is measured as it is laid out, so the faces it uses load first. */
+async function loadInter(): Promise<void> {
+  await Promise.all(INTER_STYLES.map((style) => loadFont('Inter', style)))
+}
+
+async function openFig(store: EditorStore, url: string, name: string): Promise<void> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`${name} is unavailable (${response.status})`)
+  await store.openFigFile(new File([await response.blob()], name))
+}
+
+/** Opens the app's demo and frames one of its sections, as the app's demo route would show it. */
+async function demoSection(store: EditorStore, section: string): Promise<void> {
+  await openFig(store, demoFigURL, 'Demo.fig')
+  const id = findByName(store, section)
+  const node = id ? store.graph.getNode(id) : undefined
+  if (!node) {
+    store.zoomToFit()
+    return
+  }
+  const { x, y } = store.graph.getAbsolutePosition(node.id)
+  store.zoomToBounds(x, y, x + node.width, y + node.height)
+}
+
 export function findByName(store: EditorStore, name: string): string | null {
   const pending = store.graph.getChildren(store.state.currentPageId).map((node) => node.id)
   while (pending.length > 0) {
@@ -87,7 +112,7 @@ export function findByName(store: EditorStore, name: string): string | null {
 }
 
 async function pricing(store: EditorStore): Promise<void> {
-  await loadDemoFonts()
+  await loadInter()
   await renderJSX(store.graph, pricingJSX(), {
     parentId: store.state.currentPageId,
     x: 0,
@@ -106,23 +131,12 @@ async function pricingWithSelection(store: EditorStore): Promise<void> {
 export type SceneBuilder = (store: EditorStore) => Promise<void>
 
 export const SCENES = {
-  announcement: async (store) => {
-    await loadDemoFonts()
-    await createAnnouncementSection(store.graph, store.state.currentPageId)
-    await finish(store)
-  },
+  announcement: (store) => demoSection(store, 'Announcement system'),
   figma: async (store) => {
-    const response = await fetch(sampleFigURL)
-    if (!response.ok) throw new Error(`Sample file unavailable (${response.status})`)
-    await store.openFigFile(new File([await response.blob()], 'preview.fig'))
+    await openFig(store, sampleFigURL, 'Preview.fig')
     store.zoomToFit()
   },
-  components: async (store) => {
-    await loadDemoFonts()
-    await createComponentsSection(store.graph, store.state.currentPageId)
-    createDemoVariables(store)
-    await finish(store)
-  },
+  components: (store) => demoSection(store, 'Components'),
   pricing: (store) => pricing(store),
   pricingSelected: pricingWithSelection
 } satisfies Record<string, SceneBuilder>
