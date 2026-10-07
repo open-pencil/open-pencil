@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
+import { useOnboardingAgents } from '@/app/ai/models/settings/onboarding/agents'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
+import AISetupPi from '@/components/settings/ai-setup/AISetupPi.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
@@ -56,6 +58,16 @@ const {
   clearKey,
   testConnection: runConnectionTest
 } = profile
+const piAgents = useOnboardingAgents()
+const piSetup = computed(() => {
+  const setup = isHarness.value ? piAgents.piSetup('harness:pi') : undefined
+  // Pi runs only in the desktop app, where its companion can be checked.
+  return setup?.supported ? setup : undefined
+})
+const customModelPlaceholder = computed(() =>
+  isHarness.value ? (piSetup.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
+)
+watch(isHarness, (harness) => harness && piAgents.refreshAgents(), { immediate: true })
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
@@ -133,6 +145,15 @@ async function remove() {
             />
           </ProviderSettingsField>
 
+          <div v-if="piSetup" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
+            <AISetupPi
+              :setup="piSetup"
+              @check="piAgents.refreshAgents()"
+              @install-companion="piAgents.installAgent('harness:pi')"
+              @install-bridge="piAgents.setupCanvasBridge()"
+            />
+          </div>
+
           <template v-if="!isACP">
             <div class="flex items-center gap-2 pt-1">
               <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
@@ -142,7 +163,7 @@ async function remove() {
             </div>
 
             <ProviderSettingsField
-              v-if="modelOptions.length"
+              v-if="modelOptions.length && !isHarness"
               v-slot="{ control }"
               :label="ai.modelID"
               :error="fieldErrors.modelID"
@@ -164,7 +185,7 @@ async function remove() {
               v-if="providerDef.supportsCustomModel && selectedModelValue === CUSTOM_MODEL_VALUE"
               v-slot="{ control }"
               :label="ai.customModelID"
-              :hint="settings.modelIDHint"
+              :hint="isHarness ? ai.piModelHint : settings.modelIDHint"
               :error="fieldErrors.customModelID"
               @blur="feedback.blur('customModelID')"
             >
@@ -173,7 +194,7 @@ async function remove() {
                 v-model="draft.customModelID"
                 :aria-label="ai.customModelID"
                 data-test-id="provider-settings-custom-model"
-                placeholder="e.g. llama-3.3-70b"
+                :placeholder="customModelPlaceholder"
               />
             </ProviderSettingsField>
 

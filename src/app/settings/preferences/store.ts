@@ -30,6 +30,10 @@ export interface DesignCheckPreferences {
   disabledRules: string[]
 }
 
+/** Whether guided AI setup was offered and finished or skipped. */
+export const AI_SETUP_STATES = ['pending', 'done'] as const
+export type AISetupState = (typeof AI_SETUP_STATES)[number]
+
 export interface AppPreferences {
   appearance: { animations: AnimationPreference }
   chat: {
@@ -48,6 +52,9 @@ export interface AppPreferences {
     canvasMode: CanvasRenderingMode
   }
   designCheck: DesignCheckPreferences
+  onboarding: {
+    aiSetup: AISetupState
+  }
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -63,7 +70,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   rendering: { canvasMode: 'retained' },
-  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] }
+  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
+  onboarding: { aiSetup: 'pending' }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -112,6 +120,9 @@ const appPreferencesSchema = section({
       ),
       () => []
     )
+  }),
+  onboarding: section({
+    aiSetup: v.fallback(v.picklist(AI_SETUP_STATES), defaults.onboarding.aiSetup)
   })
 })
 
@@ -134,6 +145,10 @@ export function updateRecoveryEnabled(enabled: boolean): void {
   const preferences = structuredClone(appPreferences.value)
   preferences.recovery.enabled = enabled
   appPreferences.value = preferences
+}
+
+export function updateAISetupState(aiSetup: AISetupState): void {
+  appPreferences.value = { ...appPreferences.value, onboarding: { aiSetup } }
 }
 
 export function updateCanvasRenderingMode(canvasMode: CanvasRenderingMode): void {

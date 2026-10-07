@@ -24,10 +24,9 @@ export const StateMatrix: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    const layer = canvas.getByRole('button', { name: 'Layer' })
-    await expect(canvas.getByText('Collapsible content')).toBeVisible()
-    await userEvent.click(layer)
-    await expect(layer).toHaveAttribute('data-state', 'closed')
+    // Section titles are static, as in Figma: clicking one keeps the section open.
+    await userEvent.click(canvas.getByText('Layer', { exact: true }))
+    await expect(canvas.getByText('Section content')).toBeVisible()
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add first effect' }))
     await expect(canvas.getByText('Drop shadow')).toBeVisible()

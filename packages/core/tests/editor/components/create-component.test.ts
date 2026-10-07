@@ -35,9 +35,9 @@ describe('createComponentFromSelection', () => {
     editor.select([a.id, c.id])
     editor.createComponentFromSelection()
     const component = created()
-    expect(component?.name).toBe('Component')
+    expect(component?.name).toBe('Component 1')
     expect(component?.fills.map((fill) => fill.color)).toEqual([WHITE])
-    expect(order()).toEqual(['b', 'Component', 'd'])
+    expect(order()).toEqual(['b', 'Component 1', 'd'])
   })
 
   test('turns a group into the component in place, keeping its look', () => {
@@ -49,6 +49,6 @@ describe('createComponentFromSelection', () => {
     expect(component?.type).toBe('COMPONENT')
     expect(component?.fills).toEqual([])
     expect(component?.childIds).toEqual([b.id, c.id])
-    expect(order()).toEqual(['a', 'Group', 'd'])
+    expect(order()).toEqual(['a', 'Group 1', 'd'])
   })
 })

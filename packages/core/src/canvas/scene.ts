@@ -12,7 +12,11 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE, SECTION_CORNER_RADIUS } from '#core/constants'
+import {
+  COMPONENT_SET_OUTLINE_RADIUS,
+  DROP_HIGHLIGHT_ALPHA,
+  DROP_HIGHLIGHT_STROKE
+} from '#core/constants'
 import { createSceneGeometry, nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
@@ -436,7 +440,7 @@ export function renderSection(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rrect = makeNodeRRect(r, node, SECTION_CORNER_RADIUS)
+  const rrect = makeNodeRRect(r, node, node.cornerRadius)
 
   drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
 
@@ -454,7 +458,7 @@ export function renderComponentSet(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rrect = makeNodeRRect(r, node, 5)
+  const rrect = makeNodeRRect(r, node, node.cornerRadius)
 
   drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
 
@@ -463,7 +467,16 @@ export function renderComponentSet(
     forVisibleStrokes(r, node, graph, (stroke, color) => {
       const dashPhase = stroke.dashPattern?.[1] ?? 0
       if (stroke.dashPattern && stroke.dashPattern.length > 0) {
-        drawDashedRRectWithSolidCorners(r, canvas, node, stroke, color, 5, dashPhase)
+        drawDashedRRectWithSolidCorners(
+          r,
+          canvas,
+          node,
+          stroke,
+          color,
+          // Skia fits a rounded rect's radii to its bounds; the dashed outline must match the fill.
+          Math.min(node.cornerRadius, node.width / 2, node.height / 2),
+          dashPhase
+        )
       } else {
         drawStyledRRectStroke(r, canvas, rrect, node, stroke, color, dashPhase)
       }
@@ -476,7 +489,7 @@ export function renderComponentSet(
   r.auxStroke.setPathEffect(
     r.ck.PathEffect.MakeDash([r.COMPONENT_SET_DASH / r.zoom, r.COMPONENT_SET_DASH_GAP / r.zoom], 0)
   )
-  canvas.drawRRect(rrect, r.auxStroke)
+  canvas.drawRRect(makeNodeRRect(r, node, COMPONENT_SET_OUTLINE_RADIUS), r.auxStroke)
   r.auxStroke.setPathEffect(null)
 }
 

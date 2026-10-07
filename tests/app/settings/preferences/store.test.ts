@@ -38,4 +38,11 @@ describe('parseAppPreferences', () => {
       disabledRules: ['contrast', 'spacing']
     })
   })
+
+  test('remembers that guided AI setup was finished or skipped', () => {
+    expect(parseAppPreferences({ onboarding: { aiSetup: 'done' } }).onboarding.aiSetup).toBe('done')
+    expect(parseAppPreferences({ onboarding: { aiSetup: 'later' } }).onboarding.aiSetup).toBe(
+      'pending'
+    )
+  })
 })
