@@ -26,7 +26,9 @@ export async function buildPublicPackages(
 ): Promise<WorkspacePackage[]> {
   const packages = await discoverPublicPackages(root)
   for (const level of groupPackagesByDependencyLevel(packages)) {
-    await Promise.all(
+    // Every build in the level settles before a failure is reported, so none keeps writing
+    // output after the caller sees the error.
+    const results = await Promise.allSettled(
       level
         .filter((pkg) => pkg.manifest.scripts?.build)
         .map(async (pkg) => {
@@ -55,6 +57,13 @@ export async function buildPublicPackages(
           }
         })
     )
+    const failures = results.flatMap((result) =>
+      result.status === 'rejected' ? [result.reason] : []
+    )
+    if (failures.length === 1) throw failures[0]
+    if (failures.length > 1) {
+      throw new AggregateError(failures, `${failures.length} package builds failed`)
+    }
   }
   return orderPackagesByDependencies(packages)
 }
