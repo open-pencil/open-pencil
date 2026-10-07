@@ -203,3 +203,32 @@ test('at most four previews decode at once', () => {
   expect(running).toBe(4)
   cache.destroy()
 })
+
+test('releasing a document drops its previews and image bytes but keeps decoding', async () => {
+  const before = new SceneGraph()
+  before.images.set('a', new Uint8Array([1]))
+  let calls = 0
+  const cache = new ImagePreviewCache(() => undefined)
+  cache.setDecoder({
+    decode: async () => {
+      calls++
+      return preview()
+    },
+    destroy: () => undefined
+  })
+  cache.get(before, 'a', 128)
+  await tick()
+  expect(cache.bytes).toBe(5)
+
+  cache.release()
+  expect(cache.bytes).toBe(0)
+  expect(cache.enabled).toBe(true)
+
+  const after = new SceneGraph()
+  after.images.set('b', new Uint8Array([2]))
+  cache.get(after, 'b', 128)
+  await tick()
+  expect(calls).toBe(2)
+  expect(cache.get(after, 'b', 128)?.key).toBe('b:preview:128')
+  cache.destroy()
+})

@@ -56,6 +56,9 @@ export function renderFromEditorState(
   ) {
     r.invalidateAllPictures()
     r.imageCache.clear()
+    // Previews of another document hold its encoded images, which a document without
+    // previews would otherwise keep alive.
+    if (r.imageMemoryGraph !== graph) r.imagePreviews.release()
     r.imageMemoryGraph = graph
     r.imageMemoryPage = state.currentPageId
   }

@@ -107,6 +107,12 @@ export class ImagePreviewCache {
     this.queue = []
   }
 
+  /** Lets go of a document's previews and image bytes, keeping the decoder for the next one. */
+  release() {
+    this.reset()
+    this.graph = null
+  }
+
   get(
     graph: SceneGraph,
     hash: string,
