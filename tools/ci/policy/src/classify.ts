@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { appendFile } from 'node:fs/promises'
 
 import { classifyPaths } from './policy'
-import { isVerifiedTree } from './verified-tree'
+import { isVerifiedTree } from './verified-tree/status'
 
 const base = process.env.CI_BASE_SHA
 const output = process.env.GITHUB_OUTPUT

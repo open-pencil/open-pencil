@@ -293,4 +293,4 @@ jobs:
           CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: bun tools/ci/policy/src/record-verified-tree.ts
+        run: bun tools/ci/policy/src/verified-tree/record.ts

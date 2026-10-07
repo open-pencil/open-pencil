@@ -5,7 +5,7 @@ import {
   queuedPullRequest,
   recordVerifiedTree,
   VERIFIED_TREE_CONTEXT
-} from '#ci/verified-tree'
+} from '#ci/verified-tree/status'
 
 const HEAD = 'a'.repeat(40)
 const OTHER_HEAD = 'e'.repeat(40)

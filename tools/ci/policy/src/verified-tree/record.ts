@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 
-import { recordVerifiedTree } from './verified-tree'
+import { recordVerifiedTree } from './status'
 
 // Runs in the CI result job after the gate passed on a pull request, from its merge checkout.
 const { CI_HEAD_SHA, CI_RUN_URL, GITHUB_REPOSITORY, GITHUB_TOKEN } = process.env
