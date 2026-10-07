@@ -1,3 +1,4 @@
+export { behaviourArgs, type BehaviourArgs, type BooleanArg } from './args'
 export {
   behaviourControls,
   booleanOf,
