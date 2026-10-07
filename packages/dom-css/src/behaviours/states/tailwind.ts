@@ -2,8 +2,8 @@ import { splitWhitespace } from '#dom-css/export/html'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 import { twirl } from 'twirlwind'
 
-import type { StateCondition, StateNode, StateStyles } from './model'
 import { cssName, propAttribute } from './names'
+import type { StateCondition, StateNode, StateStyles } from './types'
 
 export interface StateTailwindOptions {
   /** Custom properties declared in `@theme`; a `var()` naming one becomes its utility. */

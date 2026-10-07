@@ -1,7 +1,7 @@
 import { claimName } from '#dom-css/export/storybook/names'
 import { kebabCase } from 'es-toolkit/string'
 
-import type { StateElement, StateStyles } from './model'
+import type { StateElement, StateStyles } from './types'
 
 const NOT_NAME_PART = /[^a-z0-9-]/g
 

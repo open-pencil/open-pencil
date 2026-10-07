@@ -11,7 +11,9 @@ import { compileTailwindCSS } from '#dom-css/import/tailwind'
 import type { DesignElement, DesignNode } from '#dom-css/types'
 import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
 
-import { buttonSet, checkboxSet, switchSet, toggleSet } from './fixtures'
+import { emptyBehaviour } from '@open-pencil/scene-graph'
+
+import { buttonSet, checkboxSet, componentSet, switchSet, toggleSet } from './fixtures'
 
 function styles(fixture: ReturnType<typeof switchSet>): StateStyles {
   const result = stateStyles(fixture.graph, fixture.set)
@@ -123,6 +125,21 @@ describe('state styles', () => {
       { conditions: [{ type: 'prop', name: 'Size', value: 'Large' }], style: { width: '160px' } }
     ])
   })
+})
+
+test('has no state styles when no variant shows the rest state', () => {
+  // Only the checked variant is drawn; using it as the base would show it checked at rest.
+  const { graph, set } = componentSet(
+    'Switch',
+    { State: ['Off', 'On'] },
+    {
+      ...emptyBehaviour('switch'),
+      booleans: { value: { propertyId: 'state', on: 'On', off: 'Off' } }
+    },
+    () => undefined,
+    ({ State }) => State === 'Off'
+  )
+  expect(stateStyles(graph, set)).toBeNull()
 })
 
 describe('state stylesheet', () => {

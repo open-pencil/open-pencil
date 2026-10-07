@@ -7,8 +7,8 @@ import type {
 import cssesc from 'cssesc'
 import { compact, sortBy } from 'es-toolkit/array'
 
-import type { StateCondition, StateElement, StateNode, StateStyles } from './model'
 import { layerClassNames, propAttribute } from './names'
+import type { StateCondition, StateElement, StateNode, StateStyles } from './types'
 
 export interface StateStylesheet {
   /** The merged markup, each layer carrying its class and no inline style. */
