@@ -72,7 +72,6 @@ ja:ai.changePreviewHint
 ja:automation.addServerConnection
 ja:automation.aiToolAccessDescription
 ja:automation.authenticationDescription
-ja:automation.followAgentDescription
 ja:automation.bearerAuthentication
 ja:automation.bearerToken
 ja:automation.bearerTokenPlaceholder
@@ -267,7 +266,6 @@ zh-cn:ai.changePreviewHint
 zh-cn:automation.addServerConnection
 zh-cn:automation.aiToolAccessDescription
 zh-cn:automation.authenticationDescription
-zh-cn:automation.followAgentDescription
 zh-cn:automation.bearerAuthentication
 zh-cn:automation.bearerToken
 zh-cn:automation.bearerTokenPlaceholder

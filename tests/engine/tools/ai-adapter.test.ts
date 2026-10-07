@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { tool } from 'ai'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@open-pencil/core'
-import { isToolExposed } from '@open-pencil/core/tools'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -60,12 +59,12 @@ describe('AI adapter', () => {
     expect(Object.keys(tools)).toEqual(['default', 'other-interface'])
   })
 
-  test('generates exactly the definitions exposed to AI', () => {
+  test('generates tool for every definition', () => {
     const { tools } = setup()
-    const expectedNames = ALL_TOOLS.filter((def) => isToolExposed(def, 'ai')).map((def) => def.name)
-    expect(Object.keys(tools).sort()).toEqual(expectedNames.sort())
-    expect(tools.see_user_selection).toBeUndefined()
-    expect(tools.get_user_selection_details).toBeUndefined()
+    for (const def of ALL_TOOLS) {
+      expect(tools[def.name]).toBeDefined()
+    }
+    expect(Object.keys(tools).length).toBe(ALL_TOOLS.length)
   })
 
   test('each tool has description and execute', () => {

@@ -30,8 +30,6 @@
   "version": "Versione",
   "authentication": "Richiedi autenticazione",
   "authenticationDescription": "Proteggi l’endpoint MCP locale con un token Bearer. Disabilita l’autenticazione solo su un computer attendibile. Riavvia il server per applicare le modifiche.",
-  "followAgent": "Segui l’agente",
-  "followAgentDescription": "Mantieni l’area di lavoro focalizzata sulla pagina o sui livelli usati dagli strumenti MCP, così puoi seguire il lavoro dell’agente.",
   "rootDirectory": "Directory radice MCP",
   "rootDirectoryDefault": "Cartella predefinita del server",
   "chooseRootDirectory": "Scegli una cartella",
@@ -86,9 +84,5 @@
   "mcpFailureUnknownHint": "Avvialo di nuovo o controlla i dettagli tecnici qui sotto.",
   "mcpFailureDetails": "Dettagli",
   "mcpFailureCopy": "Copia dettagli",
-  "mcpFailureCopied": "Dettagli tecnici copiati.",
-  "toolMode": "Modalità strumenti",
-  "toolModeDescription": "Scegli accesso completo o solo anteprima e dettagli strutturati della selezione corrente. Riavvia il server per applicare le modifiche.",
-  "toolModeFull": "Accesso completo agli strumenti",
-  "toolModeSelectionContext": "Solo contesto della selezione"
+  "mcpFailureCopied": "Dettagli tecnici copiati."
 }

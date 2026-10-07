@@ -46,8 +46,7 @@ describe('MCP Vite development server', () => {
     ).toEqual({
       authenticationEnabled: true,
       rootDirectory: '/designs',
-      disabledTools: ['eval', 'delete_node'],
-      toolMode: 'full'
+      disabledTools: ['eval', 'delete_node']
     })
     expect(
       parseDevMCPConfiguration({

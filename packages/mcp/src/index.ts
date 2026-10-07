@@ -85,7 +85,6 @@ const handle = await startServer({
   socketPath: process.env.OPENPENCIL_MCP_SOCKET?.trim() || null,
   enableEval: toolPolicy.allowEval,
   disabledTools: toolPolicy.disabledTools,
-  toolMode: toolPolicy.mode,
   mcpRoot: resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT),
   // Auth token: undefined → auto-generate, empty string → disable auth,
   // non-empty → use trimmed value. Whitespace-only is rejected to prevent a

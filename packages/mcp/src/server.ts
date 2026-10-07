@@ -17,7 +17,7 @@ import type { RPCJSONObject } from '#mcp/json'
 import { preprocessRPC } from '#mcp/jsx-preprocess'
 import { createMCPSessionManager } from '#mcp/server/sessions'
 import { createToolDescriptors } from '#mcp/tool/manifest'
-import type { MCPToolMode, ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
+import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
 import { applyToolPolicy } from '#mcp/tool/policy'
 import {
   MCP_AGENT_KINDS,
@@ -88,8 +88,6 @@ export interface ServerOptions {
   enableEval?: boolean
   /** Tool names omitted from every MCP session. */
   disabledTools?: Iterable<string>
-  /** Select which family of tools the server exposes. */
-  toolMode?: MCPToolMode
   mcpRoot?: string | null
   /** Auth token for /mcp and /rpc endpoints. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. */
   authToken?: string | null
@@ -134,17 +132,8 @@ function createHonoApp(options: {
   mcpSessions: ReturnType<typeof createMCPSessionManager>
   sendToBrowser: (msg: RPCJSONObject) => Promise<unknown>
   toolDescriptors: ToolDescriptor[]
-  toolMode: MCPToolMode
 }): Hono {
-  const {
-    authToken,
-    corsOrigin,
-    browserRPC,
-    mcpSessions,
-    sendToBrowser,
-    toolDescriptors,
-    toolMode
-  } = options
+  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser, toolDescriptors } = options
 
   const app = new Hono()
 
@@ -168,14 +157,7 @@ function createHonoApp(options: {
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
       authRequired: authToken !== null,
-      ...(canInspectConfiguration
-        ? {
-            tools:
-              toolMode === 'selection-context'
-                ? toolDescriptors.filter((tool) => tool.enabled)
-                : toolDescriptors
-          }
-        : {})
+      ...(canInspectConfiguration ? { tools: toolDescriptors } : {})
     })
   })
 
@@ -196,9 +178,6 @@ function createHonoApp(options: {
   // is a semantic shift from 503 → 502; callers that distinguished 503 may
   // need to handle 502 equivalently.
   app.post('/rpc', async (c) => {
-    if (toolMode === 'selection-context') {
-      return c.json({ error: 'Raw RPC is unavailable in selection-context mode' }, 403)
-    }
     let body = await c.req.json().catch(() => null)
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return c.json({ error: 'Invalid request body' }, 400)
@@ -333,8 +312,7 @@ function buildServerContext(options: ServerOptions) {
   const httpPort = options.httpPort ?? 7600
   const toolPolicy: ToolPolicy = {
     allowEval: options.enableEval ?? false,
-    disabledTools: [...new Set(options.disabledTools)],
-    mode: options.toolMode ?? 'full'
+    disabledTools: [...new Set(options.disabledTools)]
   }
   const mcpRoot = options.mcpRoot ?? null
   // Auto-generated so all transports require auth by default. Override via OPENPENCIL_MCP_AUTH_TOKEN or authToken option.
@@ -386,8 +364,7 @@ function buildServerContext(options: ServerOptions) {
     browserRPC,
     mcpSessions,
     sendToBrowser,
-    toolDescriptors,
-    toolMode: toolPolicy.mode
+    toolDescriptors
   })
   const wss = new WebSocketServer({ noServer: true })
 
@@ -400,8 +377,7 @@ function buildServerContext(options: ServerOptions) {
     app,
     wss,
     authToken,
-    disabledTools: toolPolicy.disabledTools,
-    toolMode: toolPolicy.mode
+    disabledTools: toolPolicy.disabledTools
   }
 }
 
@@ -523,7 +499,6 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
       ctx.authToken,
       MCP_VERSION,
       ctx.disabledTools,
-      ctx.toolMode,
       state
     )
   } catch (err) {

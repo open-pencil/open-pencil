@@ -42,8 +42,7 @@ export function createAutomationEnvironment(
     OPENPENCIL_MCP_AUTH_TOKEN: configuration.authenticationEnabled ? (authToken ?? '') : '',
     OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin,
     OPENPENCIL_MCP_ROOT: configuration.rootDirectory.trim() || process.cwd(),
-    OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(configuration.disabledTools),
-    OPENPENCIL_MCP_MODE: configuration.toolMode
+    OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(configuration.disabledTools)
   }
   if (socketPath) environment.OPENPENCIL_MCP_SOCKET = socketPath
   if (discoveryPath) environment.OPENPENCIL_MCP_DISCOVERY_PATH = discoveryPath
@@ -147,7 +146,6 @@ export function configurationsMatch(
   return (
     current.authenticationEnabled === next.authenticationEnabled &&
     current.rootDirectory === next.rootDirectory &&
-    current.toolMode === next.toolMode &&
     current.disabledTools.length === next.disabledTools.length &&
     current.disabledTools.every((tool, index) => tool === next.disabledTools[index])
   )
@@ -163,8 +161,7 @@ export function automationPlugin(
   let configuration: DevMCPConfiguration = {
     authenticationEnabled: true,
     rootDirectory: '',
-    disabledTools: [],
-    toolMode: 'full'
+    disabledTools: []
   }
 
   function enqueue(operation: () => Promise<void>): Promise<void> {

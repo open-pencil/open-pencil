@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { resolve } from 'node:path'
 
 import type { McpServer, ToolCallback, ToolAnnotations } from '@modelcontextprotocol/server'
@@ -8,12 +9,11 @@ import * as v from 'valibot'
 import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
-import { fail, ok } from '#mcp/result'
+import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
-import { imageToolResult } from '#mcp/tool/result'
 
 export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 
@@ -136,9 +136,29 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
             if (written) return written
           }
-          if (r) {
-            const imageResult = imageToolResult(def.name, r)
-            if (imageResult) return imageResult
+          if (r && 'base64' in r && 'mimeType' in r) {
+            const base64 = String(r.base64)
+            const bytes = Buffer.byteLength(base64, 'utf8')
+            if (bytes > MAX_RESULT_BYTES) {
+              return fail(
+                new Error(
+                  resultTooLargeMessage(
+                    `Image from "${def.name}"`,
+                    bytes,
+                    'Export a smaller region or lower the scale/resolution.'
+                  )
+                )
+              )
+            }
+            return {
+              content: [
+                {
+                  type: 'image' as const,
+                  data: base64,
+                  mimeType: r.mimeType as string
+                }
+              ]
+            }
           }
           return ok(r, def.name)
         } catch (e) {

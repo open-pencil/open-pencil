@@ -8,7 +8,7 @@ import { resolveMCPRoot } from '#mcp/root'
 import { MCP_VERSION, registerTools } from '#mcp/server'
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 import type { ToolPolicy } from '#mcp/tool/metadata'
-import { parseDisabledTools, parseToolMode } from '#mcp/tool/policy'
+import { parseDisabledTools } from '#mcp/tool/policy'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
 
 if (process.argv.includes('--version')) {
@@ -38,17 +38,12 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0)
 }
 
-const discovery = await readDiscoveryFile()
 const toolPolicy: ToolPolicy = {
   allowEval: process.env.OPENPENCIL_MCP_EVAL === '1',
   disabledTools:
     process.env.OPENPENCIL_MCP_DISABLED_TOOLS === undefined
-      ? (discovery?.disabledTools ?? [])
-      : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS),
-  mode:
-    process.env.OPENPENCIL_MCP_MODE === undefined
-      ? (discovery?.toolMode ?? 'full')
-      : parseToolMode(process.env.OPENPENCIL_MCP_MODE)
+      ? ((await readDiscoveryFile())?.disabledTools ?? [])
+      : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS)
 }
 const mcpRoot = resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT)
 // Auth token: undefined → auto-discover from discovery file, empty string →

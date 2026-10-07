@@ -134,49 +134,6 @@ test('MCP exposure exclusions apply to both descriptors and registered tools', a
   }
 })
 
-test('selection-context mode exposes only bounded selection tools and blocks raw RPC', async () => {
-  if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-  const handle = await startServer({
-    httpPort: 0,
-    withTcp: true,
-    socketPath: testSocketPath(),
-    authToken: TEST_CLIENT_AUTH_TOKEN,
-    disabledTools: [],
-    enableEval: false,
-    mcpRoot: null,
-    toolMode: 'selection-context'
-  })
-  const graph = new SceneGraph()
-  const browser = await connectMockBrowser(handle.httpPort, graph, TEST_CLIENT_AUTH_TOKEN)
-  const client = new Client({ name: 'restricted-client', version: '0.0.0' })
-  try {
-    await waitForBrowserRegistration(handle.httpPort)
-    await client.connect(
-      new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${handle.httpPort}/mcp`), {
-        requestInit: { headers: { Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}` } }
-      })
-    )
-    const { tools } = await client.listTools()
-    expect(tools.map((tool) => tool.name).sort()).toEqual([
-      'get_user_selection_details',
-      'see_user_selection'
-    ])
-    const response = await fetch(`http://127.0.0.1:${handle.httpPort}/rpc`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ command: 'selection', args: {} })
-    })
-    expect(response.status).toBe(403)
-  } finally {
-    await client.close().catch(() => undefined)
-    browser.close()
-    await handle.close()
-  }
-})
-
 describe('startServer option validation', () => {
   test('rejects an app wait timeout that is not a safe non-negative integer', async () => {
     await expect(startServer({ appWaitTimeoutMs: -1 })).rejects.toThrow(RangeError)
