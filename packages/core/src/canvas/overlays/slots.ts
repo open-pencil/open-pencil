@@ -7,6 +7,8 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { SLOT_EMPTY_FILL_ALPHA } from '#core/constants'
 import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
+import { inNodeSpace, withScreenStroke } from './outline'
+
 const SLOT_DASH = 4
 
 /**
@@ -49,22 +51,14 @@ export function drawSlotOutlines(
   if (slots.size === 0) return
 
   const geometry = createSceneGeometry(graph, preview)
-  const dash = r.ck.PathEffect.MakeDash([SLOT_DASH / r.zoom, SLOT_DASH / r.zoom], 0)
-  r.auxStroke.setStrokeWidth(1 / r.zoom)
-  r.auxStroke.setColor(r.slotColor())
-  r.auxStroke.setPathEffect(dash)
   r.auxFill.setColor(r.slotColor(SLOT_EMPTY_FILL_ALPHA))
-  try {
+  withScreenStroke(r, { color: r.slotColor(), dash: [SLOT_DASH, SLOT_DASH] }, (paint) => {
     for (const frame of slots.values()) {
-      canvas.save()
-      canvas.concat(geometry.screenMatrix(frame, r))
-      const rect = r.ck.LTRBRect(0, 0, frame.width, frame.height)
-      if (frame.childIds.length === 0) canvas.drawRect(rect, r.auxFill)
-      canvas.drawRect(rect, r.auxStroke)
-      canvas.restore()
+      inNodeSpace(r, canvas, geometry, frame, () => {
+        const rect = r.ck.LTRBRect(0, 0, frame.width, frame.height)
+        if (frame.childIds.length === 0) canvas.drawRect(rect, r.auxFill)
+        canvas.drawRect(rect, paint)
+      })
     }
-  } finally {
-    r.auxStroke.setPathEffect(null)
-    dash.delete()
-  }
+  })
 }

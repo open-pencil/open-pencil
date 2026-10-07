@@ -80,6 +80,7 @@ Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
 
 - Use `@open-pencil/core/geometry` for world/screen transforms, inverses, bounds, and handle placement instead of interpreting ancestor rotations or reflections independently.
 - Label drawing and hit testing share `packages/core/src/canvas/labels/{layout,transform,style}.ts`, including paragraph measurements and unreflected label axes.
+- Editor chrome sized in screen pixels (outlines, borders, carets, highlights) draws in the overlay pass, never in the scene, which is cached and scaled while navigating. Draw outlines with `withScreenStroke` and `inNodeSpace` (`packages/core/src/canvas/overlays/outline.ts`). `open-pencil/no-zoom-in-scene-drawing` enforces it.
 - Selection border width is constant regardless of zoom: divide by scale. Section and frame title text never scales: render at a fixed font size and ellipsize to fit.
 - Rulers are rendered on the canvas with selection range badges that do not overlap tick numbers. Remote cursors are Figma-style colored arrows with a white border and name pill, rendered in screen space.
 

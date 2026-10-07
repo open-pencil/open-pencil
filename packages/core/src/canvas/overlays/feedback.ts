@@ -7,6 +7,8 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
+  DROP_HIGHLIGHT_ALPHA,
+  DROP_HIGHLIGHT_STROKE,
   FLASH_ATTACK_MS,
   FLASH_COLOR,
   FLASH_HOLD_MS,
@@ -15,6 +17,9 @@ import {
   LAYOUT_INDICATOR_STROKE,
   MARQUEE_FILL_ALPHA
 } from '#core/constants'
+import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+
+import { inNodeSpace, withScreenStroke } from './outline'
 
 export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
   if (!guides || guides.length === 0) return
@@ -107,4 +112,37 @@ export function drawLayoutInsertIndicator(
     const y2 = (indicator.y + indicator.length) * r.zoom + r.panY
     canvas.drawLine(x, y1, x, y2, r.auxStroke)
   }
+}
+
+/** The outline of the frame a dragged layer would drop into. */
+export function drawDropTarget(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  dropTargetId?: string | null,
+  preview?: RotationPreview | null
+): void {
+  const node = dropTargetId ? graph.getNode(dropTargetId) : undefined
+  if (!node) return
+  const stroke = { color: r.selColor(DROP_HIGHLIGHT_ALPHA), width: DROP_HIGHLIGHT_STROKE }
+  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () =>
+    withScreenStroke(r, stroke, (paint) =>
+      canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
+    )
+  )
+}
+
+/** The caret and text selection of the text layer being edited, over the layer. */
+export function drawEditingText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  overlays: Pick<RenderOverlays, 'editingTextId' | 'textEditor' | 'rotationPreview'>
+): void {
+  const node = overlays.editingTextId ? graph.getNode(overlays.editingTextId) : undefined
+  const editor = overlays.textEditor
+  if (!node || !editor?.state?.paragraph) return
+  inNodeSpace(r, canvas, createSceneGeometry(graph, overlays.rotationPreview), node, () =>
+    r.drawTextEditOverlay(canvas, node, editor)
+  )
 }

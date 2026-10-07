@@ -12,7 +12,6 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE } from '#core/constants'
 import { createSceneGeometry, nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
@@ -120,28 +119,17 @@ function renderNodeContent(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  nodeId: string,
   overlays: RenderOverlays
 ): void {
   if (node.type === 'SECTION') {
     r.renderSection(canvas, node, graph)
   } else if (node.type === 'COMPONENT_SET' && !overlays.playing) {
-    // A previewing canvas draws a set as a plain frame, without its dashed editing border.
+    // A previewing canvas draws a set as a plain frame.
     r.renderComponentSet(canvas, node, graph)
   } else if (node.type === 'BOOLEAN_OPERATION') {
     renderBooleanOperation(r, canvas, node, graph)
   } else {
     r.renderShape(canvas, node, graph)
-  }
-
-  if (overlays.editingTextId === nodeId && overlays.textEditor?.state?.paragraph) {
-    r.drawTextEditOverlay(canvas, node, overlays.textEditor)
-  }
-
-  if (overlays.dropTargetId === nodeId) {
-    r.auxStroke.setStrokeWidth(DROP_HIGHLIGHT_STROKE / r.zoom)
-    r.auxStroke.setColor(r.selColor(DROP_HIGHLIGHT_ALPHA))
-    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxStroke)
   }
 }
 
@@ -150,13 +138,12 @@ function renderMaskNodeContent(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  nodeId: string,
   overlays: RenderOverlays
 ): void {
   canvas.save()
   canvas.translate(node.x, node.y)
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, nodeId, {})
+  renderNodeContent(r, canvas, graph, node, {})
   canvas.restore()
 }
 
@@ -181,7 +168,7 @@ function renderChildIds(
     (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, hasTransformedAncestor),
     (childId) => {
       const child = graph.getNode(childId)
-      if (child) renderMaskNodeContent(r, canvas, graph, child, childId, overlays)
+      if (child) renderMaskNodeContent(r, canvas, graph, child, overlays)
     },
     (childId) => {
       const child = graph.getNode(childId)
@@ -241,7 +228,7 @@ export function renderNodeSelf(
   canvas.save()
   canvas.translate(node.x, node.y)
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, nodeId, overlays)
+  renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
   canvas.restore()
 }
@@ -374,7 +361,7 @@ export function renderNode(
   }
 
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, nodeId, overlays)
+  renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
   renderChildren(
     r,
