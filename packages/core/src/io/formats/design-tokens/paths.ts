@@ -20,10 +20,14 @@ export function pathName(path: readonly string[]): string {
   return path.filter((segment) => segment !== '$root').join('/')
 }
 
-/** A name as a file name: path separators and characters file systems refuse become `-`. */
+/**
+ * A name as a file name: path separators and characters file systems refuse become `-`, and
+ * leading dots go, so no name such as `..` reaches outside the export's folder.
+ */
 export function fileSegment(name: string): string {
   // eslint-disable-next-line no-control-regex -- Control characters are what file systems refuse.
-  return name.replaceAll(/[/\\:*?"<>|\u0000-\u001F]/g, '-').trim() || 'Untitled'
+  const safe = name.replaceAll(/[/\\:*?"<>|\u0000-\u001F]/g, '-').replace(/^[.\s]+/, '')
+  return safe.trim() || 'Untitled'
 }
 
 /** Where each entry sits in the tree, by key: a path that is also a group's sits at `$root`. */
