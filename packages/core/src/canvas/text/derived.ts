@@ -58,11 +58,16 @@ export function derivedUnderlineRect(node: Pick<SceneNode, 'width'>, baselineY: 
  */
 function derivedTextExtent(node: SceneNode): { x1: number; x2: number } | null {
   const glyphs = node.derivedTextGlyphs ?? []
-  if (glyphs.length === 0 || glyphs.some((glyph) => glyph.advance === undefined)) return null
-  return {
-    x1: Math.min(...glyphs.map((glyph) => glyph.x)),
-    x2: Math.max(...glyphs.map((glyph) => glyph.x + (glyph.advance ?? 0) * (glyph.scaleX ?? 1)))
+  if (glyphs.length === 0) return null
+  // A loop rather than spreading into Math.min/max, which long texts would overflow.
+  let x1 = Infinity
+  let x2 = -Infinity
+  for (const glyph of glyphs) {
+    if (glyph.advance === undefined) return null
+    x1 = Math.min(x1, glyph.x)
+    x2 = Math.max(x2, glyph.x + glyph.advance * (glyph.scaleX ?? 1))
   }
+  return { x1, x2 }
 }
 
 function styleRunX(node: SceneNode, index: number): number {
