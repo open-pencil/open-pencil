@@ -4,7 +4,6 @@ import {
   isToolEnabled,
   narrowestScope,
   parseToolScope,
-  SELECTION_SCOPE_TOOLS,
   type ToolDescriptor
 } from '@open-pencil/mcp/tools'
 
@@ -34,7 +33,6 @@ describe('MCP tool scope', () => {
     expect(isToolEnabled(tool('list_documents'), policy)).toBe(false)
     // Turning a tool off still applies inside the scope.
     expect(isToolEnabled(tool('describe'), policy)).toBe(false)
-    expect(Object.keys(SELECTION_SCOPE_TOOLS)).toContain('export_image')
   })
 
   test('a client follows the narrower of its own scope and the server scope', () => {

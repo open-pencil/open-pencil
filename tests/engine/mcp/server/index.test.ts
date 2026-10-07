@@ -12,7 +12,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
-import { SELECTION_SCOPE_TOOLS, type MCPToolScope } from '#mcp/tool/scope'
+import type { MCPToolScope } from '#mcp/tool/scope'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -339,7 +339,13 @@ describe('MCP server sharing only the selection', () => {
 
   test('lists only the selection read tools', async () => {
     const { tools } = await expectDefined(ctx, 'client').client.listTools()
-    expect(tools.map((tool) => tool.name).sort()).toEqual(Object.keys(SELECTION_SCOPE_TOOLS).sort())
+    expect(tools.map((tool) => tool.name).sort()).toEqual([
+      'describe',
+      'export_image',
+      'get_node',
+      'get_page_tree',
+      'get_selection'
+    ])
   })
 
   test('marks every tool call with the scope for the app to enforce', async () => {
