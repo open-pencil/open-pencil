@@ -4,10 +4,10 @@ export async function measureHitTesting(page: Page, run: () => Promise<void>) {
   const probe = await page.evaluateHandle(() => {
     const graph = window.openPencil?.getStore?.().graph
     if (!graph) throw new Error('OpenPencil graph not initialized')
-    const original = graph.hitTest
+    const original = graph.hitTestSelectable
     let calls = 0
     let totalMs = 0
-    graph.hitTest = (...args) => {
+    graph.hitTestSelectable = (...args) => {
       const start = performance.now()
       const result = original.apply(graph, args)
       totalMs += performance.now() - start
@@ -17,7 +17,7 @@ export async function measureHitTesting(page: Page, run: () => Promise<void>) {
     return {
       read: () => ({ calls, totalMs }),
       dispose: () => {
-        graph.hitTest = original
+        graph.hitTestSelectable = original
       }
     }
   })

@@ -7,15 +7,19 @@ import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
+import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { startServer } from '#mcp/server'
+import { startServer, type ServerHandle } from '#mcp/server'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
+import type { MCPToolScope } from '#mcp/tool/scope'
+import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
+import { expectDefined } from '#tests/helpers/assert'
 import {
   connectMockBrowser,
+  readHealth,
   waitForBrowserRegistration,
-  type HealthResponse,
   type MockBrowser
 } from '#tests/helpers/mcp/server'
 
@@ -35,7 +39,7 @@ function testSocketPath(): string | null {
   return join(SOCKET_DIR, `mcp-test-${process.pid}-${++testCounter}.sock`)
 }
 
-async function createTestClient(disabledTools: string[] = []) {
+async function createTestClient(disabledTools: string[] = [], scope: MCPToolScope = 'document') {
   if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
   const authToken = TEST_CLIENT_AUTH_TOKEN
   const handle = await startServer({
@@ -44,6 +48,7 @@ async function createTestClient(disabledTools: string[] = []) {
     socketPath: testSocketPath(),
     authToken,
     disabledTools,
+    scope,
     enableEval: false,
     mcpRoot: null
   })
@@ -81,6 +86,7 @@ async function createTestClient(disabledTools: string[] = []) {
   const safeBrowser = browser
   return {
     client: safeClient,
+    browser: safeBrowser,
     graph,
     handle,
     close: async () => {
@@ -181,9 +187,14 @@ describe('MCP server', () => {
     expect(byName.get('save_file')?.effect).toBe('write')
     expect(byName.get('open_file')?.effect).toBe('read')
     expect(byName.get('open_file')?.capabilities).toEqual(['filesystem:read', 'document:read'])
-    expect(byName.get('close_file')?.effect).toBe('read')
+    expect(byName.get('close_file')?.effect).toBe('write')
     expect(byName.get('update_node')?.effect).toBe('write')
     expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
+    expect(byName.get('activate_document')?.effect).toBe('read')
+    expect(byName.get('undo')?.capabilities).toEqual(['document:write'])
+    expect(byName.get('redo')?.effect).toBe('write')
+    expect(byName.get('get_settings')?.capabilities).toEqual(['settings:read'])
+    expect(byName.get('update_settings')?.capabilities).toEqual(['settings:write'])
     expect(byName.get('eval')?.availability).toBe('eval')
     expect(byName.get('eval')?.capabilities).toContain('code:execute')
   })
@@ -206,7 +217,7 @@ describe('MCP server', () => {
     const healthResponse = await fetch(`http://127.0.0.1:${ctx.handle.httpPort}/health`, {
       headers: { Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}` }
     })
-    const health = (await healthResponse.json()) as HealthResponse
+    const health = await readHealth(healthResponse)
     const descriptors = health.tools ?? []
     expect(descriptors.find((tool) => tool.name === 'create_shape')?.enabled).toBe(false)
     expect(descriptors.find((tool) => tool.name === 'list_documents')?.enabled).toBe(false)
@@ -314,6 +325,72 @@ describe('MCP server', () => {
 // mcpRoot tests
 // ---------------------------------------------------------------------------
 
+describe('MCP server sharing only the selection', () => {
+  let ctx: Awaited<ReturnType<typeof createTestClient>> | null = null
+
+  beforeEach(async () => {
+    ctx = await createTestClient([], 'selection')
+  })
+
+  afterEach(async () => {
+    await ctx?.close()
+    ctx = null
+  })
+
+  test('lists only the selection read tools', async () => {
+    const { tools } = await expectDefined(ctx, 'client').client.listTools()
+    expect(tools.map((tool) => tool.name).sort()).toEqual([
+      'describe',
+      'export_image',
+      'get_node',
+      'get_page_tree',
+      'get_selection'
+    ])
+  })
+
+  test('marks every tool call with the scope for the app to enforce', async () => {
+    const { client, browser } = expectDefined(ctx, 'client')
+    await client.callTool({ name: 'get_selection', arguments: {} })
+    const call = browser.requests.find((request) => request.command === 'tool')
+    expect(call?.args).toMatchObject({ name: 'get_selection', scope: 'selection' })
+  })
+
+  test('refuses to write an export to a file', async () => {
+    const { client, browser } = expectDefined(ctx, 'client')
+    const result = await client.callTool({
+      name: 'export_image',
+      arguments: { path: 'selection.png' }
+    })
+    expect(result.isError).toBe(true)
+    expect(browser.requests.map((request) => request.command)).not.toContain('tool')
+  })
+
+  test('keeps raw RPC to the selection tools, so it cannot reach settings', async () => {
+    const { browser, handle } = expectDefined(ctx, 'client')
+    const rpc = (body: object) =>
+      fetch(`http://127.0.0.1:${handle.httpPort}/rpc`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }).then((response) => response.json() as Promise<unknown>)
+
+    expect(await rpc({ command: 'update_settings', args: { mcp: {} } })).toMatchObject({
+      ok: false
+    })
+    expect(
+      await rpc({ command: 'tool', args: { name: 'delete_node', args: { id: '0:1' } } })
+    ).toMatchObject({ ok: false })
+    expect(browser.requests.map((request) => request.command)).not.toContain('update_settings')
+
+    await rpc({ command: 'tool', args: { name: 'get_node', args: { id: '0:1' } } })
+    const call = browser.requests.find((request) => request.command === 'tool')
+    expect(call?.args).toMatchObject({ name: 'get_node', scope: 'selection' })
+  })
+})
+
 describe('MCP server with mcpRoot', () => {
   async function withMCPRootServer(
     mcpRoot: string | null,
@@ -366,20 +443,65 @@ describe('MCP server with mcpRoot', () => {
     })
   })
 
-  test('registers close_file as read-only and forwards its document target', async () => {
+  test('registers close_file as destructive and forwards its unsaved choice and target', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const { tools } = await client.listTools()
       const closeFile = tools.find((tool) => tool.name === 'close_file')
-      expect(closeFile?.annotations?.readOnlyHint).toBe(true)
+      expect(closeFile?.annotations?.destructiveHint).toBe(true)
 
       const result = await client.callTool({
         name: 'close_file',
-        arguments: { document_id: 'doc-1' }
+        arguments: { document_id: 'doc-1', unsaved: 'discard' }
       })
       expect(result.isError).not.toBe(true)
       expect(browser.requests.find((item) => item.command === 'close_file')?.args).toEqual({
-        document_id: 'doc-1'
+        document_id: 'doc-1',
+        unsaved: 'discard'
       })
+    })
+  })
+
+  test('close_file keeps a save path inside mcpRoot', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const outside = await client.callTool({
+        name: 'close_file',
+        arguments: { unsaved: 'save', path: '/etc/escape.fig' }
+      })
+      expect(outside.isError).toBe(true)
+      expect(browser.requests.some((item) => item.command === 'close_file')).toBe(false)
+    })
+  })
+
+  test('forwards document activation and history steps with their target', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const activated = await client.callTool({
+        name: 'activate_document',
+        arguments: { document_id: 'doc-2', page_id: '0:5' }
+      })
+      expect(activated.isError).not.toBe(true)
+      expect(browser.requests.find((item) => item.command === 'activate_document')?.args).toEqual({
+        document_id: 'doc-2',
+        page_id: '0:5'
+      })
+
+      const undone = await client.callTool({ name: 'undo', arguments: { document_id: 'doc-2' } })
+      expect(undone.isError).not.toBe(true)
+      expect(JSON.stringify(undone.content)).toContain('Agent: mock')
+      expect(browser.requests.find((item) => item.command === 'undo')?.args).toEqual({
+        document_id: 'doc-2'
+      })
+    })
+  })
+
+  test('forwards settings updates and returns the resulting settings', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const settings = { appearance: { theme: 'light' } }
+      const result = await client.callTool({ name: 'update_settings', arguments: { settings } })
+      expect(result.isError).not.toBe(true)
+      expect(browser.requests.find((item) => item.command === 'update_settings')?.args).toEqual({
+        settings
+      })
+      expect(JSON.stringify(result.content)).toContain('light')
     })
   })
 
@@ -454,7 +576,7 @@ describe('MCP server lifecycle', () => {
   test('close() removes the unix socket file from disk', async () => {
     if (!isUnix) return
     await mkdir(SOCKET_DIR, { recursive: true })
-    const socketPath = testSocketPath()
+    const socketPath = expectDefined(testSocketPath(), 'socket path')
     expect(socketPath).toBeTruthy()
 
     const handle = await startServer({
@@ -477,7 +599,7 @@ describe('MCP server lifecycle', () => {
   test('close() removes socket file when no replacement server is listening', async () => {
     if (!isUnix) return
     await mkdir(SOCKET_DIR, { recursive: true })
-    const socketPath = testSocketPath()
+    const socketPath = expectDefined(testSocketPath(), 'socket path')
 
     const handle1 = await startServer({
       httpPort: 0,
@@ -583,12 +705,8 @@ describe('MCP server concurrent startServer', () => {
       expect(a.httpPort).not.toBe(b.httpPort)
 
       // Each responds on /health with the expected auth state.
-      const aHealth = (await (
-        await fetch(`http://127.0.0.1:${a.httpPort}/health`)
-      ).json()) as HealthResponse
-      const bHealth = (await (
-        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
-      ).json()) as HealthResponse
+      const aHealth = await readHealth(await fetch(`http://127.0.0.1:${a.httpPort}/health`))
+      const bHealth = await readHealth(await fetch(`http://127.0.0.1:${b.httpPort}/health`))
       expect(aHealth.status).toBe('no_app')
       expect(bHealth.status).toBe('no_app')
 
@@ -597,9 +715,11 @@ describe('MCP server concurrent startServer', () => {
       const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
-      const info = (await file.json()) as { pid: number; authToken: string }
+      const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.pid).toBe(process.pid)
-      expect(['token-a', 'token-b']).toContain(info.authToken)
+      expect(['token-a', 'token-b']).toContain(
+        expectDefined(info.authToken, 'discovery auth token')
+      )
     } finally {
       await a.close()
       await b.close()
@@ -639,19 +759,84 @@ describe('MCP server concurrent startServer', () => {
       await a.close()
 
       // Server b should still be healthy and reachable.
-      const bHealth = (await (
-        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
-      ).json()) as HealthResponse
+      const bHealth = await readHealth(await fetch(`http://127.0.0.1:${b.httpPort}/health`))
       expect(bHealth.status).toBe('no_app')
 
       // Discovery file should still exist (owned by server b now).
       const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
-      const info = (await file.json()) as { authToken: string }
+      const info = expectDefined(parseDiscoveryInfo(await file.text()), 'discovery file')
       expect(info.authToken).toBe('token-b')
     } finally {
       await b.close()
     }
   }, 15000)
+})
+
+describe('MCP sessions as agents', () => {
+  async function withAgentClient(
+    headers: Record<string, string>,
+    run: (
+      client: Client,
+      browser: MockBrowser,
+      transport: StreamableHTTPClientTransport
+    ) => Promise<void>
+  ) {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_CLIENT_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = expectDefined(handle.httpPort, 'TCP port')
+    const browser = await connectMockBrowser(httpPort, new SceneGraph(), TEST_CLIENT_AUTH_TOKEN)
+    try {
+      await waitForBrowserRegistration(httpPort)
+      const client = new Client({ name: 'test-client', version: '0.0.0' })
+      const transport = new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${httpPort}/mcp`),
+        {
+          requestInit: {
+            headers: { Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`, ...headers }
+          }
+        }
+      )
+      await client.connect(transport)
+      await run(client, browser, transport)
+    } finally {
+      browser.close()
+      await handle.close()
+    }
+  }
+
+  function agentOf(browser: MockBrowser): unknown {
+    const request = browser.requests.find((item) => item.command === 'tool')
+    return (request?.args as { agent?: unknown } | undefined)?.agent
+  }
+
+  test('a tool call names its session and client, so the app can show it as an agent', async () => {
+    await withAgentClient({}, async (client, browser) => {
+      await client.callTool({ name: 'get_page_tree', arguments: {} })
+      expect(agentOf(browser)).toMatchObject({ kind: 'mcp', client: 'test-client' })
+      expect((agentOf(browser) as { session: unknown }).session).toBeString()
+    })
+  })
+
+  test("the app's ACP chat marks its session, and closing the session tells the app", async () => {
+    await withAgentClient({ [MCP_AGENT_HEADER]: 'acp' }, async (client, browser, transport) => {
+      await client.callTool({ name: 'get_page_tree', arguments: {} })
+      const agent = agentOf(browser) as { session: string; kind: string }
+      expect(agent.kind).toBe('acp')
+
+      await transport.terminateSession()
+      const closed = () => browser.requests.find((item) => item.command === 'agent_session_closed')
+      // The notice reaches the app over its socket after the DELETE is answered.
+      for (let attempt = 0; attempt < 50 && !closed(); attempt++) await Bun.sleep(10)
+      expect(closed()?.args).toEqual({ session: agent.session })
+    })
+  })
 })

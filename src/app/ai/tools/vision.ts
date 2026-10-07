@@ -4,7 +4,7 @@ import * as v from 'valibot'
 
 import { computeContentBounds } from '@open-pencil/core/io'
 
-import { buildReasoningProviderOptions } from '@/app/ai/chat/reasoning'
+import { reasoningCallSettings } from '@/app/ai/chat/reasoning'
 import { createAIModelRuntime } from '@/app/ai/models'
 import { runPageId } from '@/app/ai/tools/run'
 import type { VisionModelDependencies } from '@/app/ai/vision-runtime'
@@ -72,9 +72,9 @@ export async function inspectRenderedDesign(
   const result = await dependencies.inspect({
     model: runtime.model,
     maxOutputTokens: Math.min(runtime.role.profile.maxOutputTokens, MAX_VISION_OUTPUT_TOKENS),
-    providerOptions: buildReasoningProviderOptions(
+    ...reasoningCallSettings(
       runtime.role.connection.providerID,
-      runtime.role.profile.reasoningEffort ?? ''
+      runtime.role.profile.thinkingLevel
     ),
     messages: [
       {

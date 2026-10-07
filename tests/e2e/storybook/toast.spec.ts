@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
 
 test('determinate progress exposes its value and bar width', async ({ page }) => {
-  await page.goto('/iframe.html?id=design-system-toast--download-progress&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--download-progress&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'determinate')
-  await expect(toast.locator('[data-slot="toast-progress-label"]')).toHaveText(
+  await expect(toast.locator('[data-slot="progress-label"]')).toHaveText(
     '42% · 9.6 MiB of 22.9 MiB'
   )
 
@@ -13,26 +13,23 @@ test('determinate progress exposes its value and bar width', async ({ page }) =>
   await expect(bar).toHaveAttribute('aria-valuenow', '42')
   await expect(bar).toHaveAttribute('aria-valuemin', '0')
   await expect(bar).toHaveAttribute('aria-valuemax', '100')
-  await expect(toast.locator('[data-slot="toast-progress-fill"]')).toHaveAttribute(
-    'style',
-    /width: 42%/
-  )
+  await expect(toast.locator('[data-slot="progress-fill"]')).toHaveAttribute('style', /width: 42%/)
 })
 
 test('progress without a known total stays indeterminate', async ({ page }) => {
   await page.goto(
-    '/iframe.html?id=design-system-toast--download-progress-unknown-total&viewMode=story'
+    '/iframe.html?id=design-system-feedback-toast--download-progress-unknown-total&viewMode=story'
   )
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'indeterminate')
   await expect(toast.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow', /\d/)
-  await expect(toast.locator('[data-slot="toast-progress-label"]')).toHaveText('4.2 MiB downloaded')
+  await expect(toast.locator('[data-slot="progress-label"]')).toHaveText('4.2 MiB downloaded')
 })
 
 test('a reported total flips between determinate, indeterminate, and cleared', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/iframe.html?id=design-system-toast--progress-lifecycle&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--progress-lifecycle&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   const bar = toast.getByRole('progressbar')
@@ -42,7 +39,7 @@ test('a reported total flips between determinate, indeterminate, and cleared', a
   // The bar follows the reported work and keeps the toast open instead of expiring.
   await page.getByRole('button', { name: 'Advance download' }).click()
   await expect(bar).toHaveAttribute('aria-valuenow', '13')
-  await expect(toast.locator('[data-slot="toast-progress-label"]')).toHaveText(
+  await expect(toast.locator('[data-slot="progress-label"]')).toHaveText(
     '13% · 2.9 MiB of 22.9 MiB'
   )
   await page.clock.fastForward(3_500)
@@ -63,7 +60,7 @@ test('a reported total flips between determinate, indeterminate, and cleared', a
 
 test('resuming progress cancels the pending auto-dismissal', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/iframe.html?id=design-system-toast--progress-lifecycle&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--progress-lifecycle&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'determinate')
@@ -80,7 +77,7 @@ test('resuming progress cancels the pending auto-dismissal', async ({ page }) =>
 })
 
 test('an action toast renders its action', async ({ page }) => {
-  await page.goto('/iframe.html?id=design-system-toast--with-action&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--with-action&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toContainText('Design file moved to Trash.')

@@ -55,7 +55,6 @@ const SDK_COMPOSABLE_PAGES = [
   { text: 'useEffectsControls', slug: 'use-effects-controls' },
   { text: 'useMask', slug: 'use-mask', canonical: true },
   { text: 'useDocumentWorkspace', slug: 'use-document-workspace', canonical: true },
-  { text: 'useVariablesEditor', slug: 'use-variables-editor' },
   { text: 'usePageList', slug: 'use-page-list' },
   { text: 'useI18n', slug: 'use-i18n' },
 ] as const
@@ -82,8 +81,6 @@ const SDK_ADVANCED_PAGES = [
   { text: 'useNumberField', slug: 'use-number-field', canonical: true },
   { text: 'useOkHCL', slug: 'use-okhcl' },
   { text: 'useVariables', slug: 'use-variables' },
-  { text: 'useVariablesDialogState', slug: 'use-variables-dialog-state' },
-  { text: 'useVariablesTable', slug: 'use-variables-table' },
   { text: 'Locale APIs', slug: 'locale-apis' },
   { text: 'useViewportKind', slug: 'use-viewport-kind' },
 ] as const

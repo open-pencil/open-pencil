@@ -6,5 +6,6 @@
   "pages": "Páginas",
   "goToPage": "Ir a la página…",
   "recentPage": "Reciente",
-  "currentPage": "Página actual"
+  "currentPage": "Página actual",
+  "pageNameLabel": "Nombre de la página"
 }

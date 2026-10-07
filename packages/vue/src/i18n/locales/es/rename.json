@@ -5,6 +5,7 @@
   "match": "Coincidencia",
   "to": "Renombrar como",
   "currentName": "Nombre actual",
+  "layerName": "Nombre de la capa",
   "numberAscending": "Número ↑",
   "numberDescending": "Número ↓",
   "startAscendingFrom": "Comenzar ascendente desde",

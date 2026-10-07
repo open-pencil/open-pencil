@@ -1,11 +1,12 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 
 import { parseFigBuffer } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 
-const fixturePath = resolve(import.meta.dir, '../../../fixtures/gold-preview.fig')
+import { testPath } from '#tests/helpers/paths'
+
+const fixturePath = testPath('fixtures/gold-preview.fig')
 
 test('reports FIG pages before materializing NodeChange objects', () => {
   const bytes = readFileSync(fixturePath)

@@ -10,7 +10,8 @@ export const pageMessageDefaults = {
   pages: 'Pages',
   goToPage: 'Go to page…',
   recentPage: 'Recent',
-  currentPage: 'Current page'
+  currentPage: 'Current page',
+  pageNameLabel: 'Page name'
 } as const
 
 export const pageMessages = i18n('pages', pageMessageDefaults)

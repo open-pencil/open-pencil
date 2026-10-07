@@ -7,8 +7,8 @@ import type { FigPopulationDelta } from '#core/kiwi/fig/population/delta'
 
 export interface FigSessionOpenRequest {
   type: 'open'
-  originalBuffer: ArrayBuffer
-  archiveBuffer: ArrayBuffer
+  /** The file, transferred; the worker keeps its own copy as the original archive. */
+  buffer: ArrayBuffer
   options?: Pick<ParseFigFileOptions, 'populate'>
   port: MessagePort
 }

@@ -1,3 +1,5 @@
+import type { DesignJSXProgram } from '@open-pencil/design-jsx'
+
 export const DESIGN_JSX_MAX_SOURCE_BYTES = 256_000
 export const DESIGN_JSX_MAX_OUTPUT_BYTES = 2_000_000
 export const DESIGN_JSX_MAX_ELEMENTS = 5_000
@@ -47,4 +49,6 @@ export type DesignJSXHelperDescriptor = {
   args: unknown[]
 }
 
-export type DesignJSXSandboxResult = { ok: true; roots: unknown[] } | { ok: false; error: string }
+export type DesignJSXSandboxResult =
+  | { ok: true; roots: unknown[]; lineOffsets: DesignJSXProgram['lineOffsets'] }
+  | { ok: false; error: string }

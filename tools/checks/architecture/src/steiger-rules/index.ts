@@ -332,12 +332,14 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
+// The editor's root and router, plus the desktop Software Update window's page entry.
+const VIEW_ENTRYPOINTS = new Set(['src/App.vue', 'src/main.ts', 'src/router.ts', 'src/updater.ts'])
+
 const noViewsImportedOutsideEntry = createImportRule(
   'open-pencil/no-views-imported-outside-entry',
   (sourceRel, _specifier, resolved) => {
     if (!resolved?.startsWith('src/views/')) return null
-    if (sourceRel === 'src/App.vue' || sourceRel === 'src/main.ts' || sourceRel === 'src/router.ts')
-      return null
+    if (VIEW_ENTRYPOINTS.has(sourceRel)) return null
     return 'Views are top-level composition entrypoints and must not be imported by app services or reusable components.'
   }
 )

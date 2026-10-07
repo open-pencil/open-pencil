@@ -12,6 +12,7 @@ function strokePaintsFromStyle(target: SceneNode, style: SceneNode): SceneNode['
   const fills = style.fills.filter((fill) => fill.type === 'SOLID')
   if (fills.length === 0) return target.strokes
   const fallback = target.strokes[0] ?? {
+    type: 'SOLID' as const,
     color: BLACK,
     weight: 1,
     opacity: 1,

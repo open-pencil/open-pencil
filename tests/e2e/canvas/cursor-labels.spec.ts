@@ -13,10 +13,16 @@ test('collaborator cursor names are shaped and long names end with an ellipsis',
     store.state.panX = 0
     store.state.panY = 0
     store.state.zoom = 1
-    store.state.remoteCursors = [
-      { name: 'Orbit', color: blue, x: 80, y: 80 },
-      { name: 'Ava Yoder', color: red, x: 80, y: 160 },
-      { name: 'A collaborator with a very long display name', color: blue, x: 80, y: 240 }
+    store.state.presenceCursors = [
+      { kind: 'person', name: 'Orbit', color: blue, x: 80, y: 80 },
+      { kind: 'person', name: 'Ava Yoder', color: red, x: 80, y: 160 },
+      {
+        kind: 'person',
+        name: 'A collaborator with a very long display name',
+        color: blue,
+        x: 80,
+        y: 240
+      }
     ]
     store.requestRender()
   })

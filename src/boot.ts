@@ -1,9 +1,12 @@
 import { createHead } from '@unhead/vue/client'
 import { createApp, nextTick } from 'vue'
 
+import { setIdSession } from '@open-pencil/scene-graph'
+import { randomInt } from '@open-pencil/scene-graph/random'
 import { createRetainedScopePlugin } from '@open-pencil/vue'
 
 import './app.css'
+import { recordRuntimeError } from '@/app/diagnostics'
 import { preloadFonts } from '@/app/editor/fonts'
 import { installBundledFonts } from '@/app/editor/fonts/bundled'
 import { observeBootErrors } from '@/app/shell/support/boot'
@@ -19,6 +22,8 @@ import router from './router'
  * evaluates the app bundle and can still show the gate's guidance.
  */
 export async function boot(): Promise<void> {
+  // A session of its own, so layers this window creates never share IDs with a collaborator's.
+  setIdSession(randomInt() >>> 0)
   installBundledFonts()
   preloadFonts()
   const head = createHead()
@@ -32,6 +37,11 @@ export async function boot(): Promise<void> {
   if (failure) {
     await reportBootFailure(failure.error)
     return
+  }
+  // Component errors after boot reach only this handler, not the window; keep them diagnosable.
+  app.config.errorHandler = (error, _instance, info) => {
+    recordRuntimeError(error, 'vue', info)
+    console.error(error)
   }
 
   if (!IS_TAURI) {

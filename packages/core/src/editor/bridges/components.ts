@@ -32,6 +32,15 @@ export function createComponentBridge(
     goToMainComponent: () =>
       components.goToMainComponent(selection.getSelectedNode(), pages.switchPage),
     getComponentSetPropertyDefs: components.getComponentSetPropertyDefs,
+    createSlot: () => components.createSlot(selection.getSelectedNodes()),
+    convertToSlot: components.convertToSlot,
+    updateSlot: components.updateSlot,
+    removeSlot: components.removeSlot,
+    setBehaviour: components.setBehaviour,
+    addBehaviourText: components.addBehaviourText,
+    addBehaviourVariant: components.addBehaviourVariant,
+    addBehaviourPart: components.addBehaviourPart,
+    addBehaviourStates: components.addBehaviourStates,
     addPropertyDefinition: components.addPropertyDefinition,
     removePropertyDefinition: components.removePropertyDefinition,
     renamePropertyDefinition: components.renamePropertyDefinition,
@@ -51,6 +60,9 @@ export function createComponentBridge(
     removeVariant: components.removeVariant,
     getInstanceComponentPropertyDefinitions: components.getInstanceComponentPropertyDefinitions,
     getInstanceComponentPropertyValue: components.getInstanceComponentPropertyValue,
-    setInstanceComponentProperty: components.setInstanceComponentProperty
+    setInstanceComponentProperty: components.setInstanceComponentProperty,
+    resetSlot: components.resetSlot,
+    clearSlot: components.clearSlot,
+    addInstanceToSlot: components.addInstanceToSlot
   }
 }

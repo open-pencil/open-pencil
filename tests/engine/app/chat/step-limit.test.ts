@@ -85,14 +85,15 @@ test('stop condition, warnings and limit detection share the budget captured per
       model,
       effectiveModelID: 'test',
       maxOutputTokens: 100,
-      reasoningEffort: ''
+      thinkingLevel: () => 'default'
     })
     async function send() {
       const stream = await transport.sendMessages({
         trigger: 'submit-message',
         chatId: 'step-limit',
         messageId: undefined,
-        messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Inspect' }] }]
+        messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Inspect' }] }],
+        abortSignal: undefined
       })
       const reader = stream.getReader()
       try {

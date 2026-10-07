@@ -56,6 +56,7 @@
   "arrangeAlignMiddle": "垂直居中",
   "arrangeAlignBottom": "底部对齐",
   "multiplayerCursors": "多人光标",
+  "designIssues": "设计问题",
   "preferences": "偏好设置",
   "snapToGeometry": "吸附到几何图形",
   "snapToObjects": "吸附到对象",
@@ -63,6 +64,7 @@
   "renameSelection": "重命名所选内容…",
   "rulers": "标尺",
   "settings": "设置…",
+  "variables": "变量…",
   "splitRight": "向右拆分",
   "splitDown": "向下拆分",
   "closeView": "关闭视图",
@@ -70,5 +72,6 @@
   "exportSelectionAsPNG": "将所选内容导出为 PNG",
   "exportSelectionAsSVG": "将所选内容导出为 SVG",
   "exportSelectionAsPPTX": "将所选内容导出为 PPTX",
-  "exportSelectionAsFig": "将所选内容导出为 .fig"
+  "exportSelectionAsFig": "将所选内容导出为 .fig",
+  "togglePreview": "预览"
 }

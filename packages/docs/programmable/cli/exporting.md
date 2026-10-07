@@ -88,6 +88,40 @@ Standalone Tailwind output is compiled during export; it does not depend on the 
 
 HTML export is available in file mode.
 
+### Tokens in exported code
+
+HTML and Tailwind JSX write variable-bound properties as the design tokens they come from: a fill bound to `Primary` is `background-color: var(--color-primary)`, and in Tailwind `bg-primary`, or `bg-(--name)` for a token outside Tailwind's namespaces. A layer set to another mode gets that mode's attribute, such as `data-theme="dark"`, so the tokens resolve as the canvas draws them.
+
+A value stays literal where CSS would not reproduce it: the layer no longer draws the variable's value, the token is unitless where a length is needed, or the layer sits in a mode that only its own condition, such as a `@media` query, can select. Standalone HTML includes the stylesheet for the tokens it uses; for fragments and JSX, generate it with `openpencil tokens` (below).
+
+## Design Tokens
+
+Write the document's variables as CSS custom properties:
+
+```sh
+openpencil tokens design.fig > tokens.css
+openpencil tokens design.fig --format tailwind > theme.css
+openpencil tokens design.fig --collection Theme --type COLOR
+```
+
+Each collection's default mode goes in `:root`. Every other mode overrides the values that differ under its condition: `[data-theme="dark"]` for a Theme collection's Dark mode, or the selector or `@media` query the mode names. Aliases stay `var()` references and are declared again in each mode that changes what they point to, so switching `data-theme` on any element restyles everything built on it.
+
+```css
+:root {
+  --color-blue-500: #3B82F5;
+  --color-primary: var(--color-blue-500);
+}
+
+/* Theme: Dark */
+[data-theme="dark"] {
+  --color-primary: var(--color-blue-300);
+}
+```
+
+`--format tailwind` puts tokens with a Tailwind v4 namespace (`--color-*`, `--spacing-*`, `--radius-*`, `--text-*`, …) in `@theme`, so `bg-primary` and `rounded-card` work, and adds a `@custom-variant` per mode, so `dark:bg-surface` follows the same condition. Import the file after `@import "tailwindcss";`. Names come from the variable's code syntax when it names a custom property (`--x` or `var(--x)`), otherwise from its name and type: `Blue/500` as a color is `--color-blue-500`.
+
+Tokens that cannot be written, such as boolean variables or a condition that is not a selector or query, are listed on stderr and left out. The command works in file mode and against the running app.
+
 ## Storybook Export
 
 Generate one CSF3 `.stories.ts` file per component set or component:
@@ -106,7 +140,7 @@ Keep each component's design file in the component's folder and export with `--b
 
 Pass several documents, or a quoted glob such as `'src/**/*.pen'` that OpenPencil expands itself (Node.js 22 or later). Several documents need `--beside` or `--output`; `--page` works with one document only. Documents are exported one after another, and when one fails the rest are still exported before the command exits with an error. `--watch` watches every matched document; a document created after the watch started needs another run.
 
-Each variant of a component set becomes a story, and its variant properties become `select` controls, so switching a control shows the matching variant. Standalone components named with slashes, such as `Button/Primary` and `Button/Secondary`, are grouped into one `Button` file with a `Variant` control. A combination the design has no variant for throws a named error in Storybook rather than showing a different variant.
+Each variant of a component set becomes a story, and its variant properties become `select` controls, so switching a control shows the matching variant. A set with a behaviour gets the control's own props instead: a Switch or Checkbox has a `checked` boolean, a Toggle `pressed`, a Collapsible `open`, and `disabled` when the set draws a disabled state; hover, pressed, and focus stay stories of their own. Standalone components named with slashes, such as `Button/Primary` and `Button/Secondary`, are grouped into one `Button` file with a `Variant` control. A combination the design has no variant for throws a named error in Storybook rather than showing a different variant.
 
 Stories render the component as HTML with inline styles, like `-f html`, so they need no OpenPencil runtime; `--framework` (`react`, `vue`, or `html`) only changes the wrapper and the `Meta`/`StoryObj` import from `@storybook/react-vite`, `@storybook/vue3-vite`, or `@storybook/html-vite`. Text uses the document's font families, which Storybook has to load itself. Text, boolean, and instance-swap properties are not exported yet.
 
@@ -122,7 +156,11 @@ Stories carry `parameters.design` entries for [`@storybook/addon-designs`](https
 Omit the file to export from the running app:
 
 ```sh
-openpencil export -f png    # export from the current document
+openpencil export -f png                       # export the selection in the active document
+openpencil export --page "Components" -f png   # export every layer of a page
+openpencil export --node 1:23 -f png           # export one layer, on any page
 ```
+
+`--page` takes a page name and `--page-id` a page ID from `openpencil documents list`; either exports that page without switching the app to it. Add `--document-id` to export from a document other than the active one.
 
 Live app mode supports PNG, JPG, WEBP, SVG, and PDF. PowerPoint, JSX, HTML, Storybook, and `.fig` exports require a file argument. File-mode thumbnail export is not currently supported.

@@ -19,7 +19,7 @@ const percent = computed(() => preparationPercent(progress))
     :aria-valuemin="percent === null ? undefined : 0"
     :aria-valuemax="percent === null ? undefined : 100"
     aria-label="Preparing document"
-    class="relative flex size-3 shrink-0 items-center justify-center text-accent"
+    class="relative flex size-3 shrink-0 items-center justify-center text-primary"
   >
     <icon-lucide-loader-circle class="size-3" :class="motionStyles.spinner" />
   </span>

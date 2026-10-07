@@ -70,7 +70,8 @@ function invalidateRenderersForChange(
   const invalidation = rendererInvalidationForChanges(changes, { preview: !invalidateNodePicture })
   for (const renderer of renderers) {
     if (invalidation.geometryCache) renderer.invalidateVectorPath(id)
-    if (invalidation.nodePicture) renderer.invalidateNodePicture(id)
+    if (invalidation.nodePicture)
+      renderer.invalidateNodePicture(id, Object.keys(changes) as (keyof SceneNode)[])
     if (Object.keys(changes).some((key) => TILED_CHUNK_TOPOLOGY_KEYS.has(key as keyof SceneNode))) {
       renderer.tiledScene.invalidateStructure()
     } else {
@@ -81,12 +82,32 @@ function invalidateRenderersForChange(
 
 export function createGraphEventSubscription(options: GraphEventOptions) {
   let unbindGraphEvents: (() => void) | null = null
+  let batchRenderPending = false
+
+  /**
+   * A layout pass or a page's layers loading updates many layers at once, and each render
+   * request bumps reactive versions; the batch asks for one render after it, before the next
+   * frame draws.
+   */
+  function requestRenderFor(graph: SceneGraph) {
+    if (!graph.isApplyingLayout && !graph.isApplyingImportedState) {
+      options.requestRender()
+      return
+    }
+    if (batchRenderPending) return
+    batchRenderPending = true
+    queueMicrotask(() => {
+      batchRenderPending = false
+      options.requestRender()
+    })
+  }
 
   function onNodeUpdated(id: string, changes: Partial<SceneNode>) {
-    invalidateRenderersForChange(options.getGraph(), options.getRenderers(), id, changes, true)
+    const graph = options.getGraph()
+    invalidateRenderersForChange(graph, options.getRenderers(), id, changes, true)
     options.emitEditorEvent('node:updated', id, changes)
     options.scheduleComponentSync(id)
-    options.requestRender()
+    requestRenderFor(graph)
   }
 
   function onNodePreviewUpdated(id: string, changes: Partial<SceneNode>) {
@@ -107,7 +128,7 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
       renderer.tiledScene.invalidateStructure()
     }
     options.scheduleComponentSync(nodeId)
-    options.requestRender()
+    requestRenderFor(options.getGraph())
   }
 
   function subscribeToGraph() {

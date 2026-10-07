@@ -1,13 +1,17 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import type { Canvas } from 'canvaskit-wasm'
+
 import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@open-pencil/core'
 import { getWorldMatrix } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
+import { renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
 import { prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
 import { extractExportGraph } from '#core/io/subgraph'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { asDouble } from '#tests/helpers/doubles'
 
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
@@ -36,6 +40,26 @@ beforeAll(async () => {
 })
 
 describe('raster export', () => {
+  test('full-resolution rendering disables previews and restores viewport/mode even on failure', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('RECTANGLE', page.id)
+    const viewport = { x: 1, y: 2, w: 3, h: 4 }
+    const renderer = {
+      viewportImageRendering: true,
+      worldViewport: viewport,
+      renderNode() {
+        expect(this.viewportImageRendering).toBe(false)
+        throw new Error('drawing failed')
+      }
+    }
+    expect(() => renderSceneToCanvas(renderer, asDouble<Canvas>({}), graph, page.id)).toThrow(
+      'drawing failed'
+    )
+    expect(renderer.viewportImageRendering).toBe(true)
+    expect(renderer.worldViewport).toBe(viewport)
+  })
+
   test('preserves transformed top-level nodes when preparing a page export', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -172,7 +196,7 @@ describe('raster export', () => {
     const vector = graph.createNode('VECTOR', page.id, {
       width: 10,
       height: 10,
-      fillGeometry: [{ commandsBlob: rectangleCommandsBlob(1, 1, 8, 8) }],
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: rectangleCommandsBlob(1, 1, 8, 8) }],
       fills: [
         {
           type: 'SOLID',

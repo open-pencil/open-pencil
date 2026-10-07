@@ -1,6 +1,7 @@
 import { groupBy, take } from 'es-toolkit/array'
-import Fuse from 'fuse.js'
 import { computed, ref, type MaybeRefOrGetter, toValue } from 'vue'
+
+import { fuzzySearch } from '#vue/shared/search/fuzzy'
 
 import type { CommandPaletteGroup, CommandPaletteItem, UseCommandPaletteOptions } from './types'
 
@@ -15,14 +16,7 @@ function searchItems(
       resultLimit
     )
 
-  return new Fuse(items, {
-    keys: ['label', 'description', 'keywords'],
-    threshold: 0.2,
-    ignoreLocation: true
-  })
-    .search(query)
-    .slice(0, resultLimit)
-    .map((result) => result.item)
+  return fuzzySearch(items, ['label', 'description', 'keywords'], query).slice(0, resultLimit)
 }
 
 function filterGroups(

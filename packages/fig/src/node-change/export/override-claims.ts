@@ -1,7 +1,12 @@
 import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { forEachInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  forEachInstanceOverride,
+  ownsSlotContent,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { instanceExportAddress } from '../instance/geometry'
@@ -17,6 +22,8 @@ import {
   type SceneNodeToKiwiContext,
   type StyleReference
 } from './context'
+import { fillsOwnSizingAxis } from './fill-sizing'
+import { nodeWithResolvedBindings } from './resolved-bindings'
 
 function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
@@ -42,11 +49,21 @@ function exportedSwapOverride(
   return component ? { guidPath: { guids: path }, overriddenSymbolID: component } : undefined
 }
 
-/** Layout modes are dimensionless; sizing modes map to Figma's implicit-size vocabulary. */
-function layoutModeClaim(raw: string, value: unknown): Record<string, unknown> | undefined {
+/**
+ * Layout modes are dimensionless; sizing modes map to Figma's implicit-size vocabulary, and an
+ * axis the layer fills stays fixed, since Figma applies the override over the fill.
+ */
+function layoutModeClaim(
+  raw: string,
+  value: unknown,
+  graph: SceneGraph,
+  target: SceneNode
+): Record<string, unknown> | undefined {
   if (typeof value !== 'string' && typeof value !== 'number') return undefined
-  if (raw === 'stackPrimarySizing' || raw === 'stackCounterSizing')
-    return { [raw]: value === 'HUG' ? 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE' : 'FIXED' }
+  if (raw === 'stackPrimarySizing' || raw === 'stackCounterSizing') {
+    const hugs = value === 'HUG' && !fillsOwnSizingAxis(graph, target, raw)
+    return { [raw]: hugs ? 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE' : 'FIXED' }
+  }
   return { [raw]: value }
 }
 
@@ -101,7 +118,7 @@ function registryClaim(
     case 'layout-distance':
       return layoutDistanceClaim(raw, target[field], instance)
     case 'layout-mode':
-      return layoutModeClaim(raw, target[field])
+      return layoutModeClaim(raw, target[field], context.graph, target)
     default:
       return undefined
   }
@@ -138,11 +155,15 @@ function bindingClaim(
 }
 
 function overrideClaim(
-  input: ClaimInput,
+  claimed: ClaimInput,
   field: string,
   path: GUID[],
   counter: { value: number }
 ): KiwiSymbolOverridePayload | undefined {
+  const input = {
+    ...claimed,
+    target: nodeWithResolvedBindings(claimed.context.graph, claimed.target)
+  }
   if (field === 'componentId')
     return exportedSwapOverride(input.context, input.target, path, counter)
   const claim = field.startsWith('boundVariables/')
@@ -180,6 +201,8 @@ export function serializeRuntimePropertyOverrides(
         )
         if (claim) result.push(claim)
       })
+    // Slot content the instance owns carries its own values; it has no component address.
+    if (ownsSlotContent(context.graph, node)) return
     for (const child of context.graph.getChildren(node.id)) visit(child)
   }
   visit(instance)

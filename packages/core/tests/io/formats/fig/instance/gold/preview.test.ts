@@ -63,14 +63,10 @@ test('Gold Preview input resolves badge visibility and distinct avatar swaps lik
   const components = new Map(
     [...closure].map(([id, component]) => [id, component.materialized.root.id])
   )
-  const materialized = materializeInstance(
-    graph,
-    page.id,
-    input,
-    components,
+  const materialized = materializeInstance(graph, page.id, input, components, {
     blobs,
-    mapInstanceSourceChildren(input, closure)
-  )
+    sourceChildren: mapInstanceSourceChildren(input, closure)
+  })
   linkInstanceSourceChildren(input, materialized, closure)
   const labels = content.map((node) => named(named(node, 'Placeholder'), 'Placeholder'))
   const first = materialized.nodes.get(labels[0])

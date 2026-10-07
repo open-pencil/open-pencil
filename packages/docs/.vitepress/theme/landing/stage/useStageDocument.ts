@@ -1,9 +1,7 @@
 import { getCurrentInstance, provide } from 'vue'
 
-import { provideEditor } from '@open-pencil/vue'
-
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
-import { provideEditorStore } from '@/app/editor/active-store'
+import { provideTabEditorStore } from '@/app/editor/active-store'
 import { createTab, switchTab } from '@/app/tabs'
 
 import { installAppPlugins } from './app-plugins'
@@ -21,12 +19,8 @@ export function useStageDocument(scene: SceneBuilder) {
   const tab = createTab()
   const store = tab.store
   store.state.showRulers = false
-  provideEditorStore(store)
-  provideEditor(store)
-  provide(
-    COLLAB_KEY,
-    useCollab(() => store)
-  )
+  provideTabEditorStore(store)
+  provide(COLLAB_KEY, useCollab())
 
   // The app's loading overlay shows while a preparation is open, so the canvas is covered
   // from the moment it mounts until the scene is built, and a failed build is reported there.

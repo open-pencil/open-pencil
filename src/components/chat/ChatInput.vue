@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { useI18n, useSelectionState } from '@open-pencil/vue'
 
+import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
@@ -11,8 +12,10 @@ import { designModelProfile } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatNodePreview from '@/components/chat/ChatNodePreview.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
+import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 
 import ChatComposer from './ChatComposer.vue'
 
@@ -20,9 +23,15 @@ const { providerID, providerDef, modelID, customModelID } = useAIChat()
 const { editor, selectedIds } = useSelectionState()
 const { ai } = useI18n()
 
-const { status, disabled = false } = defineProps<{
+const {
+  status,
+  disabled = false,
+  dragging = false
+} = defineProps<{
   status: 'ready' | 'submitted' | 'streaming' | 'error'
   disabled?: boolean
+  /** Whether images are being dragged over the chat, which shows where they will go. */
+  dragging?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -42,14 +51,45 @@ const {
   canToggleSelection: canAddSelection,
   selectionActive: selectionContextActive,
   openImageDialog,
+  addFiles,
   removeImage,
   removeNode: removeReferencedNode,
   toggleSelection: toggleCurrentSelection,
   handlePaste,
-  takeSubmission
+  takeSubmission,
+  restoreSubmission
 } = attachments
 
+const composer = useTemplateRef<{ restoreDraft: (text: string) => boolean }>('composer')
+
+/** Puts back an unsent message with its attachments; releases them if newer text replaced it. */
+function restoreDraft(submission: ChatSubmission): void {
+  if (composer.value?.restoreDraft(submission.displayText)) restoreSubmission(submission)
+  else for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
+}
+
 const isStreaming = computed(() => disabled || status === 'streaming' || status === 'submitted')
+
+/** Why images dropped now would not be attached, or null when they would. */
+const dropRefusal = computed(() => {
+  if (isStreaming.value) return ai.value.dropImagesAfterReply
+  if (images.value.length >= MAX_IMAGE_ATTACHMENTS) {
+    return ai.value.dropImagesLimit({ count: MAX_IMAGE_ATTACHMENTS })
+  }
+  return null
+})
+
+/** Attaches images dropped on the chat, unless they cannot be attached right now. */
+function dropFiles(files: File[]): void {
+  if (dropRefusal.value) {
+    emit('error', dropRefusal.value)
+    return
+  }
+  void addFiles(files)
+}
+
+defineExpose({ restoreDraft, dropFiles })
+
 const isAgentProvider = computed(
   () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
 )
@@ -80,6 +120,7 @@ const selectedProfileName = computed(
 
 <template>
   <ChatComposer
+    ref="composer"
     :status="status"
     :disabled="disabled"
     @submit="emit('submit', takeSubmission($event))"
@@ -132,6 +173,14 @@ const selectedProfileName = computed(
         </div>
       </div>
     </template>
+    <template #overlay>
+      <AppDropOverlay
+        shape="field"
+        :visible="dragging"
+        :accepts="!dropRefusal"
+        :label="dropRefusal ?? ai.dropImagesToAttach"
+      />
+    </template>
     <template #leading>
       <IconButton
         :label="ai.addSelectionContext"
@@ -153,18 +202,21 @@ const selectedProfileName = computed(
       </IconButton>
     </template>
     <template #model>
-      <div class="flex min-w-0 items-center">
+      <div class="@container flex min-w-0 items-center">
         <template v-if="isAgentProvider">
           <div class="flex min-w-0 items-center gap-1 px-1.5 text-[10px] text-muted">
             <icon-lucide-bot class="size-3 shrink-0" />
             <span class="truncate">{{ agentName }}</span>
           </div>
         </template>
-        <ChatProfileSelect v-else>
-          <template #value>
-            <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
-          </template>
-        </ChatProfileSelect>
+        <template v-else>
+          <ChatProfileSelect>
+            <template #value>
+              <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
+            </template>
+          </ChatProfileSelect>
+          <ChatThinkingSelect />
+        </template>
       </div>
     </template>
   </ChatComposer>

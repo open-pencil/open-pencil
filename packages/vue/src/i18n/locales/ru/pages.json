@@ -6,5 +6,6 @@
   "pages": "Страницы",
   "goToPage": "Перейти к странице…",
   "recentPage": "Недавняя",
-  "currentPage": "Текущая страница"
+  "currentPage": "Текущая страница",
+  "pageNameLabel": "Название страницы"
 }

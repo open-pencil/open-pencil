@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
+import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openLibraryReview, useLibraryService } from '@/app/libraries'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 
 import AppearanceSection from './properties/AppearanceSection.vue'
+import BehaviourPanel from './properties/component-properties/behaviour/BehaviourPanel.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
 import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
-import VariantAuthoringSection from './properties/component-properties/VariantAuthoringSection.vue'
+import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
+import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
@@ -29,9 +33,7 @@ import SelectionActionsControl from './properties/SelectionActionsControl.vue'
 import StrokeSection from './properties/stroke/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
-import VariablesDialog from './variables/VariablesDialog.vue'
 
-const variablesOpen = ref(false)
 const store = useEditorStore()
 const libraryService = useLibraryService()
 const activeTool = computed(() => store.state.activeTool)
@@ -126,29 +128,24 @@ const { panels } = useI18n()
             @review="openSelectedInstanceReview"
           />
           <SelectionActionsControl />
+          <template v-if="node.type === 'INSTANCE'">
+            <IconButton
+              :label="goToMainComponent.label"
+              data-test-id="instance-go-to-main"
+              @click="goToMainComponent.run()"
+            >
+              <icon-lucide-crosshair class="size-3.5" />
+            </IconButton>
+            <IconButton
+              :label="detachInstance.label"
+              data-test-id="instance-detach"
+              @click="detachInstance.run()"
+            >
+              <icon-lucide-unlink class="size-3.5" />
+            </IconButton>
+          </template>
         </template>
       </PanelHeader>
-
-      <!-- Component actions -->
-      <div
-        v-if="node.type === 'INSTANCE'"
-        class="flex flex-col gap-1 border-b border-border px-3 py-2"
-      >
-        <button
-          type="button"
-          class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
-          @click="goToMainComponent.run()"
-        >
-          {{ panels.goToMainComponent }}
-        </button>
-        <button
-          type="button"
-          class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
-          @click="detachInstance.run()"
-        >
-          {{ panels.detachInstance }}
-        </button>
-      </div>
 
       <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
       <VariantAuthoringSection
@@ -159,6 +156,9 @@ const { panels } = useI18n()
             store.graph.getNode(node.parentId)?.type === 'COMPONENT_SET')
         "
       />
+
+      <SlotAuthoringSection />
+      <BehaviourPanel v-if="node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'" />
 
       <FramePresetSelect v-if="node.type === 'FRAME'" />
 
@@ -183,9 +183,7 @@ const { panels } = useI18n()
     class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
     <PageSection />
-    <VariablesSection @open-dialog="variablesOpen = true" />
+    <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <ExportSection />
   </div>
-
-  <VariablesDialog v-model:open="variablesOpen" />
 </template>

@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
+import { populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/core/kiwi'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { PageSwitchProgress } from '#core/editor/pages'
@@ -165,4 +168,99 @@ test('loading page nodes for a lookup does not supersede a page switch in progre
   await switching
 
   expect(editor.state.currentPageId).toBe(target.id)
+})
+
+test('preparing a page for rendering loads its fonts and layout once without switching to it', async () => {
+  const graph = new SceneGraph()
+  const firstPage = graph.getPages()[0]
+  if (!firstPage) throw new Error('Expected default page')
+  const target = graph.addPage('Target')
+  const prepared = graph.addPage('Prepared')
+  graph.createNode('TEXT', target.id, { text: 'Loading', fontFamily: 'Loader Test' })
+  const row = graph.createNode('FRAME', prepared.id, {
+    width: 10,
+    height: 10,
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'FIXED'
+  })
+  graph.createNode('FRAME', row.id, { width: 30, height: 10 })
+  graph.createNode('TEXT', prepared.id, { text: 'Label', fontFamily: 'Prepared Font' })
+  const loaded: string[] = []
+  let release: () => void = () => undefined
+  const fontReady = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const editor = createEditor({
+    graph,
+    skipInitialGraphSetup: true,
+    loadFont: async (family) => {
+      loaded.push(family)
+      if (family === 'Loader Test') await fontReady
+      return null
+    }
+  })
+
+  const switching = editor.switchPage(target.id)
+  await Promise.resolve()
+  const concurrent = await Promise.all([
+    editor.preparePageNodes(prepared.id),
+    editor.preparePageNodes(prepared.id)
+  ])
+  const again = await editor.preparePageNodes(prepared.id)
+  release()
+  await switching
+
+  expect([...concurrent, again]).toEqual([true, true, true])
+  expect(loaded.filter((family) => family === 'Prepared Font')).toHaveLength(1)
+  expect(graph.getNode(row.id)?.width).toBe(30)
+  expect(editor.state.currentPageId).toBe(target.id)
+})
+
+test('preparing a page reports failure when the document is replaced meanwhile', async () => {
+  const graph = new SceneGraph()
+  const page = graph.addPage('Prepared')
+  graph.createNode('TEXT', page.id, { text: 'Label', fontFamily: 'Prepared Font' })
+  let release: () => void = () => undefined
+  const fontReady = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const editor = createEditor({
+    graph,
+    skipInitialGraphSetup: true,
+    loadFont: async () => {
+      await fontReady
+      return null
+    }
+  })
+
+  const preparing = editor.preparePageNodes(page.id)
+  await Promise.resolve()
+  editor.replaceGraph(new SceneGraph())
+  release()
+
+  expect(await preparing).toBe(false)
+})
+
+test("loading a page's layers from the opened file asks for one render", async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  const second = source.addPage('Second')
+  for (let i = 0; i < 30; i++) source.createNode('RECTANGLE', second.id, { name: `Layer ${i}` })
+  const bytes = await exportFigFile(source)
+  const graph = await parseFigFile(bytes.slice().buffer, { populate: 'first-page' })
+  const editor = createEditor({ graph })
+  const page = graph.getPages()[1]
+  if (!page) throw new Error('Expected a second page')
+  await Promise.resolve()
+
+  let renders = 0
+  const unbind = editor.onEditorEvent('render:requested', () => renders++)
+  expect(populateFigPage(graph, page.id)).toBe(true)
+  await Promise.resolve()
+  unbind()
+
+  expect(graph.getChildren(page.id)).toHaveLength(30)
+  expect(renders).toBe(1)
+  editor.dispose()
 })

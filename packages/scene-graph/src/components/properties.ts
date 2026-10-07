@@ -1,6 +1,8 @@
 import type { SceneGraph } from '../index'
 import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
 import { findInstanceAncestor } from '../instances'
+import { instanceMainComponent } from '../instances/main-component'
+import { randomHex } from '../random'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
@@ -14,8 +16,8 @@ export interface ComponentPropertyTarget {
 }
 
 export function componentPropertyOwners(graph: SceneGraph, instance: SceneNode): SceneNode[] {
-  if (instance.type !== 'INSTANCE' || !instance.componentId) return []
-  const component = graph.getNode(instance.componentId)
+  if (instance.type !== 'INSTANCE') return []
+  const component = instanceMainComponent(graph, instance)
   if (!component) return []
   const parent = component.parentId ? graph.getNode(component.parentId) : null
   return parent?.type === 'COMPONENT_SET' ? [parent, component] : [component]
@@ -247,4 +249,9 @@ export function removeComponentProperty(
   ]
   for (const node of nodes) removePropertyFromNode(graph, node, propertyId)
   return true
+}
+
+/** A new component property ID, in the `prop:` form the editor, plugin API, and design JSX share. */
+export function createComponentPropertyId(): string {
+  return `prop:${randomHex(8)}`
 }

@@ -3,7 +3,7 @@ import { defineCommand } from 'citty'
 import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 import { calcClusterConfidence } from '@open-pencil/core/tools'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { bold, fmtList, fmtSummary } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 

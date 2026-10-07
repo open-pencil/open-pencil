@@ -63,6 +63,7 @@ export class FontManager {
   private fontProvider: TypefaceFontProvider | null = null
   private bundledFontLocator: BundledFontLocator = defaultBundledFontLocator
   private fontProviders = new Set<TypefaceFontProvider>()
+  private providerCanvasKits = new WeakMap<TypefaceFontProvider, CanvasKit>()
   private registrationGeneration = 0
   private providerRegistrations = new WeakMap<TypefaceFontProvider, Map<string, Set<ArrayBuffer>>>()
   private localFonts: FontInfo[] | null = null
@@ -76,8 +77,9 @@ export class FontManager {
   private arabicFallbackFamilies: string[] = []
   private arabicFallbackPromise: Promise<string[]> | null = null
 
-  attachProvider(_canvasKit: CanvasKit, provider: TypefaceFontProvider): void {
+  attachProvider(canvasKit: CanvasKit, provider: TypefaceFontProvider): void {
     this.fontProviders.add(provider)
+    this.providerCanvasKits.set(provider, canvasKit)
     this.fontProvider = provider
     this.providerRegistrations.set(provider, new Map())
     this.registrationGeneration++
@@ -107,6 +109,15 @@ export class FontManager {
 
   provider(): TypefaceFontProvider | null {
     return this.fontProvider
+  }
+
+  /** The latest attached provider made by `canvasKit`; another build's provider cannot shape with it. */
+  providerFor(canvasKit: CanvasKit): TypefaceFontProvider | null {
+    return (
+      Array.from(this.fontProviders)
+        .reverse()
+        .find((provider) => this.providerCanvasKits.get(provider) === canvasKit) ?? null
+    )
   }
 
   generation(): number {

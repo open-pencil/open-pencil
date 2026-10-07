@@ -8,6 +8,8 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
+import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+
 import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
@@ -17,7 +19,13 @@ import { createMCPSessionManager } from '#mcp/server/sessions'
 import { createToolDescriptors } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
 import { applyToolPolicy } from '#mcp/tool/policy'
-import { registerTools } from '#mcp/tool/registration'
+import {
+  MCP_AGENT_KINDS,
+  registerTools,
+  type MCPAgentKind,
+  type MCPAgentSession
+} from '#mcp/tool/registration'
+import { scopeRPC, type MCPToolScope } from '#mcp/tool/scope'
 
 import packageJSON from '../package.json' with { type: 'json' }
 import {
@@ -58,7 +66,18 @@ function mcpInstallCommand(): Promise<string> {
 
 export { fail, ok, type MCPContent, type MCPResult } from '#mcp/result'
 
-export { registerTools, type RegisterToolsOptions, type RPCSender } from '#mcp/tool/registration'
+export {
+  MCP_AGENT_KINDS,
+  registerTools,
+  type MCPAgentKind,
+  type MCPAgentSession,
+  type RegisterToolsOptions,
+  type RPCSender
+} from '#mcp/tool/registration'
+
+function agentKindFromHeader(value: string | undefined): MCPAgentKind {
+  return MCP_AGENT_KINDS.find((kind) => kind === value) ?? 'mcp'
+}
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
@@ -70,6 +89,8 @@ export interface ServerOptions {
   enableEval?: boolean
   /** Tool names omitted from every MCP session. */
   disabledTools?: Iterable<string>
+  /** What clients can reach: the whole document (default) or only the user's selection. */
+  scope?: MCPToolScope
   mcpRoot?: string | null
   /** Auth token for /mcp and /rpc endpoints. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. */
   authToken?: string | null
@@ -123,7 +144,7 @@ function createHonoApp(options: {
     app.use(
       '*',
       cors({
-        origin: corsOrigin,
+        origin: typeof corsOrigin === 'string' ? corsOrigin : [...corsOrigin],
         allowMethods: MCP_CORS_METHODS,
         allowHeaders: MCP_CORS_HEADERS,
         exposeHeaders: MCP_EXPOSED_HEADERS
@@ -217,7 +238,10 @@ function createHonoApp(options: {
       mcpSessions.touch(sessionId, existing)
       return existing.handleRequest(c.req.raw)
     }
-    const transport = await mcpSessions.resolveTransport(undefined)
+    const transport = await mcpSessions.resolveTransport(
+      undefined,
+      agentKindFromHeader(c.req.header(MCP_AGENT_HEADER))
+    )
     if ('error' in transport) {
       if (transport.error === 'closed') {
         return c.json({ error: 'MCP server is shutting down' }, 503)
@@ -291,7 +315,8 @@ function buildServerContext(options: ServerOptions) {
   const httpPort = options.httpPort ?? 7600
   const toolPolicy: ToolPolicy = {
     allowEval: options.enableEval ?? false,
-    disabledTools: [...new Set(options.disabledTools)]
+    disabledTools: [...new Set(options.disabledTools)],
+    scope: options.scope ?? 'document'
   }
   const mcpRoot = options.mcpRoot ?? null
   // Auto-generated so all transports require auth by default. Override via OPENPENCIL_MCP_AUTH_TOKEN or authToken option.
@@ -315,15 +340,27 @@ function buildServerContext(options: ServerOptions) {
 
   const mcpSessions = createMCPSessionManager({
     serverVersion: MCP_VERSION,
-    registerTools: (mcpServer: McpServer) =>
-      registerTools(mcpServer, { policy: toolPolicy, mcpRoot, sendRPC: sendToBrowser })
+    registerTools: (mcpServer: McpServer, agentSession: MCPAgentSession) =>
+      registerTools(mcpServer, {
+        policy: toolPolicy,
+        mcpRoot,
+        sendRPC: sendToBrowser,
+        agentSession
+      }),
+    onSessionClosed: (sessionId) => {
+      // Best-effort: the app may be gone already, and then it shows no agents anyway.
+      sendToBrowser({ command: 'agent_session_closed', args: { session: sessionId } }).catch(
+        () => undefined
+      )
+    }
   })
   const browserRPC = createBrowserRPCBridge({
     authToken,
     onConnectionChange: mcpSessions.notifyToolsChanged,
     appWaitTimeoutMs: options.appWaitTimeoutMs
   })
-  const sendToBrowser = browserRPC.sendRPC
+  // Every call into the app, from MCP sessions and /rpc alike, stays within the scope.
+  const sendToBrowser = scopeRPC(browserRPC.sendRPC, toolPolicy.scope)
   const toolDescriptors = applyToolPolicy(createToolDescriptors(mcpRoot !== null), toolPolicy)
 
   const app = createHonoApp({
@@ -345,7 +382,8 @@ function buildServerContext(options: ServerOptions) {
     app,
     wss,
     authToken,
-    disabledTools: toolPolicy.disabledTools
+    disabledTools: toolPolicy.disabledTools,
+    scope: toolPolicy.scope
   }
 }
 
@@ -467,6 +505,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
       ctx.authToken,
       MCP_VERSION,
       ctx.disabledTools,
+      ctx.scope,
       state
     )
   } catch (err) {

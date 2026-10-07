@@ -2,7 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { expectPathError } from '#fig-tests/helpers/errors'
 import { guid } from '#fig-tests/helpers/guid'
-import { interpretInstance, type InstancePathDiagnostic } from '#fig/instance-overrides/interpret'
+import { interpretInstance } from '#fig/instance-overrides/interpret'
+import type { InstancePathDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
@@ -61,7 +62,7 @@ test('reports the declaring owner and stale path instead of applying it to anoth
 // while the replacement it names is still present. Figma opens that file, so a swap whose
 // target is gone reports like any other stale record rather than refusing the document.
 test('reports a swap whose target layer is gone instead of refusing the file', () => {
-  const changes: NodeChange[] = [
+  const changes = [
     { guid: guid(1), type: 'SYMBOL', name: 'navbar' },
     { guid: guid(2), type: 'FRAME', name: 'kept', parentIndex: { guid: guid(1), position: '!' } },
     { guid: guid(3), type: 'SYMBOL', name: 'replacement' },
@@ -74,7 +75,7 @@ test('reports a swap whose target layer is gone instead of refusing the file', (
         symbolOverrides: [{ guidPath: { guids: [guid(99)] }, overriddenSymbolID: guid(3) }]
       }
     }
-  ]
+  ] as NodeChange[]
   const diagnostics: InstancePathDiagnostic[] = []
   const root = interpretInstance(changes, '1:4', {
     onUnresolvedAssignment: (diagnostic) => diagnostics.push(diagnostic)
@@ -86,7 +87,7 @@ test('reports a swap whose target layer is gone instead of refusing the file', (
 })
 
 test('an ambiguous swap address is a wrong path, not a stale one', () => {
-  const changes: NodeChange[] = [
+  const changes = [
     { guid: guid(1), type: 'SYMBOL', name: 'navbar' },
     {
       guid: guid(2),
@@ -111,7 +112,7 @@ test('an ambiguous swap address is a wrong path, not a stale one', () => {
         symbolOverrides: [{ guidPath: { guids: [guid(7)] }, overriddenSymbolID: guid(5) }]
       }
     }
-  ]
+  ] as NodeChange[]
   expect(() =>
     interpretInstance(changes, '1:4', { onUnresolvedAssignment: () => undefined })
   ).toThrow('found 2')

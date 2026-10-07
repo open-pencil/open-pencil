@@ -62,7 +62,7 @@ export function useRecordedChat(store: EditorStore, copy: () => RecordedChatCopy
         model,
         effectiveModelID: model.modelId,
         maxOutputTokens: OUTPUT_TOKEN_LIMIT,
-        reasoningEffort: ''
+        thinkingLevel: () => 'off'
       })
     })
     await chat.value.sendMessage({ text: request })

@@ -6,5 +6,6 @@
   "pages": "页面",
   "goToPage": "转到页面…",
   "recentPage": "最近",
-  "currentPage": "当前页面"
+  "currentPage": "当前页面",
+  "pageNameLabel": "页面名称"
 }

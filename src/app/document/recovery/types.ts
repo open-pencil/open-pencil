@@ -2,7 +2,6 @@ export interface RecoverySnapshotMeta {
   id: string
   documentName: string
   updatedAt: string
-  sceneVersion: number
   byteLength: number
   formatVersion: 1
 }
@@ -14,7 +13,6 @@ export interface RecoverySnapshot extends RecoverySnapshotMeta {
 export interface RecoverySnapshotInput {
   id: string
   documentName: string
-  sceneVersion: number
   figBytes: Uint8Array
 }
 

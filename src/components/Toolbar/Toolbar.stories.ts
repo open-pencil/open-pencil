@@ -8,7 +8,7 @@ import IconType from '~icons/lucide/type'
 import ToolButton from './ToolButton.vue'
 
 const meta = {
-  title: 'Editor/Toolbar',
+  title: 'App/Editor/Toolbar',
   render: () => ({
     components: { ToolbarRoot, ToolButton },
     setup: () => ({

@@ -1,6 +1,7 @@
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type {
+  GroupFitOptions,
   SceneGraph,
   SceneNode as CoreSceneNode,
   NodeType,
@@ -9,21 +10,26 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
-import { copyFills, copyStrokes, copyEffects } from '@open-pencil/scene-graph/copy'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
-import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
+import { canMakeBooleanSourceNode, groupFitOptions } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
-import { IS_BROWSER } from '#core/constants'
-import type { RasterExportFormat } from '#core/io/formats/raster'
+import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
+import { newLayerDefaults } from '#core/editor/shapes/defaults'
+import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
+import { wrapNodes } from '#core/editor/structure/container-wrap'
+import { ungroupNode } from '#core/editor/structure/group'
+import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
+import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
+import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
-import { combineComponentsAsVariants, exposeInstanceSwap } from './components'
+import { combineComponentsAsVariants, componentFromNode, exposeInstanceSwap } from './components'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -39,6 +45,7 @@ import type {
   FigmaTextNode,
   FigmaVectorNode
 } from './node-types'
+import { startPendingLayout } from './pending-layout'
 import {
   FigmaNodeProxy,
   INTERNAL_ID,
@@ -47,11 +54,13 @@ import {
   type FigmaFontName,
   type NodeProxyHost
 } from './proxy'
+import type { ExportImageOptions } from './types'
 
 const noop = () => undefined
 
 export { FigmaNodeProxy } from './proxy'
 export type { FigmaEffect } from './effects'
+export type { ExportImageOptions } from './types'
 export type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -59,10 +68,12 @@ export type {
   FigmaEllipseNode,
   FigmaFrameNode,
   FigmaGroupNode,
+  FigmaInstanceNode,
   FigmaLineNode,
   FigmaPolygonNode,
   FigmaRectangleNode,
   FigmaSectionNode,
+  FigmaSlotNode,
   FigmaStarNode,
   FigmaTextNode,
   FigmaVectorNode
@@ -80,17 +91,24 @@ export class FigmaAPI implements NodeProxyHost {
   private _nodeCache = new Map<string, FigmaNodeProxy>()
   private _pageProxies = new WeakSet<FigmaNodeProxy>()
   private _renderer: SkiaRenderer | null = null
+  /** The interface theme new sections take their fill from, as in Figma. */
+  theme: InterfaceTheme = 'light'
 
   readonly mixed = MIXED
 
   constructor(graph: SceneGraph) {
     this.graph = graph
+    startPendingLayout(graph)
     const pages = graph.getPages()
     this._currentPageId = pages[0]?.id ?? graph.rootId
   }
 
   setRenderer(renderer: SkiaRenderer | null): void {
     this._renderer = renderer
+  }
+
+  get groupFitOptions(): GroupFitOptions {
+    return groupFitOptions(this._renderer, this.graph)
   }
 
   get currentPageId(): string {
@@ -147,8 +165,13 @@ export class FigmaAPI implements NodeProxyHost {
 
   // --- Node Creation ---
 
+  /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */
   private _createNode(type: NodeType): FigmaNodeProxy {
-    const node = this.graph.createNode(type, this._currentPageId)
+    const defaults = newLayerDefaults(type, this.theme)
+    // Figma's plugin API makes a line 100 wide with no height, and a section 496 square.
+    if (type === 'LINE') defaults.height = 0
+    if (type === 'SECTION') Object.assign(defaults, { width: 496, height: 496 })
+    const node = this.graph.createNode(type, this._currentPageId, defaults)
     return this.wrapNode(node.id)
   }
 
@@ -165,7 +188,13 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   createText(): FigmaTextNode {
-    return this._createNode('TEXT') as FigmaTextNode
+    const text = this._createNode('TEXT') as FigmaTextNode
+    // Figma's plugin text starts empty at 12px and sizes itself to its content: no width, one
+    // line tall.
+    const node = this.graph.getNode(text.id)
+    const defaults = { fontSize: 12, textAutoResize: 'WIDTH_AND_HEIGHT' as const, width: 0 }
+    this.graph.updateNode(text.id, { ...defaults, ...textAutoResizeChanges(node, defaults) })
+    return text
   }
 
   createLine(): FigmaLineNode {
@@ -194,6 +223,7 @@ export class FigmaAPI implements NodeProxyHost {
 
   createPage(): FigmaNodeProxy {
     const page = this.graph.addPage('Page')
+    setDefaultPageBackground(this.graph, page, this.theme)
     return this.wrapNode(page.id)
   }
 
@@ -223,74 +253,21 @@ export class FigmaAPI implements NodeProxyHost {
   ): FigmaGroupNode {
     const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const groupNode = this.graph.createNode(
-      'GROUP',
-      parentId,
-      members.length > 0 ? getAxisAlignedBoundsInParent(members, parentId, this.graph) : undefined
-    )
-    for (const n of nodes) {
-      this.graph.reparentNode(this._nodeId(n), groupNode.id)
-    }
-    if (index != null) this.graph.reorderChild(groupNode.id, parentId, index)
+    const groupNode = wrapNodes(this.graph, 'GROUP', members, parentId, index)
     return this.wrapNode(groupNode.id) as FigmaGroupNode
   }
 
   ungroup(node: FigmaNodeProxy): FigmaNodeProxy[]
   ungroup(node: SceneNode & ChildrenMixin): Array<SceneNode>
   ungroup(node: (SceneNode & ChildrenMixin) | FigmaNodeProxy): Array<SceneNode> | FigmaNodeProxy[] {
-    const nodeId = this._nodeId(node)
-    const raw = this.graph.getNode(nodeId)
-    if (!raw || raw.childIds.length === 0) return []
-    const parentId = raw.parentId ?? this._currentPageId
-    const children = Array.from(raw.childIds)
-    for (const childId of children) {
-      this.graph.reparentNode(childId, parentId)
-    }
-    this.graph.deleteNode(nodeId)
+    const children = ungroupNode(this.graph, this._nodeId(node)) ?? []
     return children.map((id) => this.wrapNode(id))
   }
 
   createComponentFromNode(node: FigmaNodeProxy): FigmaNodeProxy {
     const raw = this.graph.getNode(node[INTERNAL_ID])
     if (!raw) throw new Error('Node not found')
-    const parentId = raw.parentId ?? this._currentPageId
-    const comp = this.graph.createNode('COMPONENT', parentId)
-    this.graph.updateNode(comp.id, {
-      name: raw.name,
-      width: raw.width,
-      height: raw.height,
-      x: raw.x,
-      y: raw.y,
-      fills: copyFills(raw.fills),
-      strokes: copyStrokes(raw.strokes),
-      effects: copyEffects(raw.effects),
-      cornerRadius: raw.cornerRadius,
-      topLeftRadius: raw.topLeftRadius,
-      topRightRadius: raw.topRightRadius,
-      bottomRightRadius: raw.bottomRightRadius,
-      bottomLeftRadius: raw.bottomLeftRadius,
-      independentCorners: raw.independentCorners,
-      opacity: raw.opacity,
-      layoutMode: raw.layoutMode,
-      primaryAxisAlign: raw.primaryAxisAlign,
-      counterAxisAlign: raw.counterAxisAlign,
-      primaryAxisSizing: raw.primaryAxisSizing,
-      counterAxisSizing: raw.counterAxisSizing,
-      itemSpacing: raw.itemSpacing,
-      paddingTop: raw.paddingTop,
-      paddingRight: raw.paddingRight,
-      paddingBottom: raw.paddingBottom,
-      paddingLeft: raw.paddingLeft,
-      pluginData: structuredClone(raw.pluginData),
-      pluginRelaunchData: structuredClone(raw.pluginRelaunchData),
-      boundVariables: { ...raw.boundVariables },
-      variableModes: { ...raw.variableModes }
-    })
-    for (const childId of raw.childIds) {
-      this.graph.cloneTree(childId, comp.id)
-    }
-    this.graph.deleteNode(node[INTERNAL_ID])
-    return this.wrapNode(comp.id)
+    return this.wrapNode(componentFromNode(this.graph, raw, raw.parentId ?? this._currentPageId).id)
   }
 
   combineAsVariants(
@@ -359,7 +336,7 @@ export class FigmaAPI implements NodeProxyHost {
     const variable = this.graph.variables.get(variableId)
     if (!variable) throw new Error(`Variable "${variableId}" not found`)
     variable.valuesByMode[modeId] = structuredClone(value)
-    reconcileVariableLayouts(this.graph)
+    reconcileVariableLayouts(this.graph, { variables: [variableId] })
   }
 
   deleteVariable(id: string): void {
@@ -376,12 +353,12 @@ export class FigmaAPI implements NodeProxyHost {
 
   bindVariable(nodeId: string, field: string, variableId: string): void {
     this.graph.bindVariable(nodeId, field, variableId)
-    reconcileVariableLayouts(this.graph)
+    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
   }
 
   unbindVariable(nodeId: string, field: string): void {
     this.graph.unbindVariable(nodeId, field)
-    reconcileVariableLayouts(this.graph)
+    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
   }
 
   // --- Boolean Operations ---
@@ -395,15 +372,15 @@ export class FigmaAPI implements NodeProxyHost {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
     const parentId = this._nodeId(parent)
     const members = nodes.map((node) => this._rawNode(node))
-    const group = this.graph.createNode('BOOLEAN_OPERATION', parentId, {
-      name: `Boolean ${operation.toLowerCase()}`,
-      ...getAxisAlignedBoundsInParent(members, parentId, this.graph),
-      booleanOperation: operation
-    })
-    for (const node of nodes) {
-      this.graph.reparentNode(this._nodeId(node), group.id)
-    }
-    if (index != null) this.graph.reorderChild(group.id, parentId, index)
+    const { node: group } = createBooleanOperation(
+      this.graph,
+      members,
+      parentId,
+      operation,
+      index,
+      booleanOperationPaints(operation, members, 'script'),
+      this.groupFitOptions
+    )
     return this.wrapNode(group.id) as FigmaBooleanOperationNode
   }
 
@@ -596,8 +573,8 @@ export class FigmaAPI implements NodeProxyHost {
     return undefined
   }
 
-  exportImage?: (
-    nodeIds: string[],
-    options: { scale?: number; format?: RasterExportFormat; quality?: number }
-  ) => Promise<Uint8Array | null>
+  exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
+  rasterCodec?: RasterCodec
+  /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
+  changeBaseline?: (pageId: string) => SceneGraph | null
 }

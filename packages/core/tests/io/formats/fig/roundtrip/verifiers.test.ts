@@ -24,16 +24,12 @@ function context(a: unknown, b: unknown, generation = 0): VerifierContext {
     fixture: {
       file: '',
       fileSize: 0,
-      nodeCount: 0,
-      nodeTypes: {},
       schemaSize: 0,
       thumbnailSize: 0,
       thumbnailWidth: 0,
       thumbnailHeight: 0,
       imageCount: 0,
-      figKiwiVersion: 0,
-      g1ExportSize: 0,
-      g2ExportSize: 0
+      figKiwiVersion: 0
     }
   }
 }

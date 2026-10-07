@@ -149,6 +149,33 @@ describe('@open-pencil/fig NodeChange policy', () => {
     }
   })
 
+  test("carries a gradient stroke's stops and transform, not a black solid", () => {
+    const paint: Paint = {
+      type: 'GRADIENT_LINEAR',
+      stops: [
+        { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+        { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+      ],
+      transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    }
+    const [stroke] = convertStrokes([paint], 2, 'OUTSIDE')
+
+    expect(stroke.type).toBe('GRADIENT_LINEAR')
+    expect(stroke.gradientStops?.map((stop) => stop.position)).toEqual([0, 1])
+    expect(stroke.gradientStops?.[0].color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect(stroke.gradientTransform).toMatchObject({ m00: 1, m11: 1 })
+    expect(stroke).toMatchObject({ weight: 2, align: 'OUTSIDE' })
+  })
+
+  test("carries an image stroke's hash and scale mode", () => {
+    const paint: Paint = { type: 'IMAGE', image: { hash: 'abc123' }, imageScaleMode: 'FIT' }
+    const [stroke] = convertStrokes([paint], 1, 'INSIDE')
+
+    expect(stroke.type).toBe('IMAGE')
+    expect(stroke.imageHash).toBe('abc123')
+    expect(stroke.imageScaleMode).toBe('FIT')
+  })
+
   test('uses vector-region winding rules for rendered geometry', () => {
     const network = {
       vertices: [

@@ -19,9 +19,11 @@ test('expand while thinking auto-collapses but preserves manual opening', async 
   await expect(trigger).toHaveAttribute('aria-expanded', 'true')
   await trigger.click()
   await trigger.click()
+  // Time the auto-close instead of sleeping past it.
+  await page.clock.install()
   await finishReasoning(page)
   await expect(chat.assistantMessage()).toContainText('Finished inspecting')
-  await page.waitForTimeout(1200)
+  await page.clock.runFor(1500)
   await expect(trigger).toHaveAttribute('aria-expanded', 'true')
 })
 

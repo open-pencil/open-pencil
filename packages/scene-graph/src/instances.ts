@@ -18,6 +18,7 @@ import {
   syncChildren,
   updateSyncedProps
 } from './instances/sync'
+import { detachOwnedSlotContent, restoreOwnedSlotContent } from './slots/frames'
 
 export type { NodeCloneMode } from './copy'
 export {
@@ -114,14 +115,31 @@ export function swapInstanceComponent(
   if (!previousComponent || instance.name === previousComponent.name) updates.name = component.name
 
   const childIds = Array.from(instance.childIds)
+  const slotContent = detachOwnedSlotContent(graph, instance)
   for (const childId of childIds) graph.deleteNode(childId)
   graph.updateNode(instanceId, updates)
   cloneChildrenWithMapping(graph, componentId, instanceId)
+  restoreOwnedSlotContent(graph, instance, slotContent)
 }
 
 const syncingComponentsByGraph = new WeakMap<SceneGraph, Set<string>>()
 
 export function syncInstances(graph: SceneGraph, componentId: string): void {
+  syncInstancesOf(graph, componentId, getInstances(graph, componentId))
+}
+
+/** Syncs one instance from its component, as `syncInstances` does for every instance. */
+export function syncInstance(graph: SceneGraph, instanceId: string): void {
+  const instance = graph.nodes.get(instanceId)
+  if (instance?.type !== 'INSTANCE' || !instance.componentId) return
+  syncInstancesOf(graph, instance.componentId, [instance])
+}
+
+function syncInstancesOf(
+  graph: SceneGraph,
+  componentId: string,
+  instances: Iterable<SceneNode>
+): void {
   const component = graph.nodes.get(componentId)
   if (component?.type !== 'COMPONENT') return
   let syncing = syncingComponentsByGraph.get(graph)
@@ -132,7 +150,7 @@ export function syncInstances(graph: SceneGraph, componentId: string): void {
   if (syncing.has(componentId)) return
   syncing.add(componentId)
   try {
-    for (const instance of getInstances(graph, componentId)) {
+    for (const instance of instances) {
       const enclosing = enclosingInstanceOverrideFields(graph, instance)
       enclosing.push(new Set(instance.instanceOverrides.self.keys()))
       const protectedField = bindingProtection(enclosing)

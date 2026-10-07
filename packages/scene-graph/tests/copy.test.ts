@@ -47,20 +47,29 @@ describe('copy helpers — mutation isolation', () => {
     expect(expectDefined(original.gradientTransform, 'original gradient transform').m00).toBe(1)
   })
 
-  test('copyStroke: dash pattern is independent', () => {
+  /** A stroke is a paint, so its nested paint data copies as deeply as a fill's does. */
+  test('copyStroke: dash pattern and nested paint data are independent', () => {
     const original: Stroke = {
+      type: 'GRADIENT_LINEAR',
       color: { r: 0, g: 0, b: 0, a: 1 },
       weight: 1,
       opacity: 1,
       visible: true,
       align: 'CENTER',
-      dashPattern: [5, 3]
+      dashPattern: [5, 3],
+      gradientStops: [{ color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 }],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     }
     const copy = copyStroke(original)
     expectDefined(copy.dashPattern, 'copied dash pattern').push(99)
     copy.color.g = 1
+    expectDefined(copy.gradientStops?.[0], 'copied gradient stop').color.r = 0
+    expectDefined(copy.gradientTransform, 'copied gradient transform').m00 = 99
+
     expect(original.dashPattern).toEqual([5, 3])
     expect(original.color.g).toBe(0)
+    expect(expectDefined(original.gradientStops?.[0], 'original gradient stop').color.r).toBe(1)
+    expect(expectDefined(original.gradientTransform, 'original gradient transform').m00).toBe(1)
   })
 
   test('copyEffect: offset and color are independent', () => {

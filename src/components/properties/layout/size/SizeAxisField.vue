@@ -119,7 +119,7 @@ function handleSelect(value: SizeSelectValue) {
                   <SelectItemIndicator
                     class="absolute left-1.5 inline-flex items-center justify-center"
                   >
-                    <icon-lucide-check class="size-3 text-accent" />
+                    <icon-lucide-check class="size-3 text-primary" />
                   </SelectItemIndicator>
                   <SelectItemText>{{ option.label }}</SelectItemText>
                 </SelectItem>

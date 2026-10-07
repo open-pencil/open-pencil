@@ -6,8 +6,8 @@ import type { RotationPreview } from '#core/geometry'
 
 import { LabelCache } from './cache'
 import {
-  hasFrameTitle,
   labelLayout,
+  labelViewport,
   type LabelKind,
   type LabelLayout,
   type LabelTextMetrics
@@ -62,7 +62,7 @@ function catalog(graph: SceneGraph, pageId: string, existing?: LabelCache): Labe
   return cache
 }
 
-function catalogHitTest(kind: 'section' | 'component') {
+function catalogHitTest(kind: 'section' | 'component' | 'frame') {
   return function hitTest(
     graph: SceneGraph,
     canvasX: number,
@@ -75,18 +75,24 @@ function catalogHitTest(kind: 'section' | 'component') {
   ): SceneNode | null {
     if (!font) return null
     const cache = catalog(graph, pageId, labelCache)
+    const viewport = options.viewport ? labelViewport(options.viewport, zoom) : undefined
     let candidates: Array<{ nodeId: string; inside: boolean }>
     if (kind === 'section') {
-      const sections = options.viewport
+      const sections = viewport
         ? cache
-            .getSections(graph, options.viewport, options.preview)
+            .getSections(graph, viewport, options.preview)
             .map(({ node, nested }) => ({ nodeId: node.id, nested }))
         : cache.getAllSections()
       candidates = sections.map(({ nodeId, nested }) => ({ nodeId, inside: nested }))
+    } else if (kind === 'frame') {
+      const frames = viewport
+        ? cache.getFrames(graph, viewport, options.preview).map(({ node }) => ({ nodeId: node.id }))
+        : cache.getAllFrames()
+      candidates = frames.map(({ nodeId }) => ({ nodeId, inside: false }))
     } else {
-      const components = options.viewport
+      const components = viewport
         ? cache
-            .getComponents(graph, options.viewport, options.preview)
+            .getComponents(graph, viewport, options.preview)
             .map(({ node }) => ({ nodeId: node.id }))
         : cache.getAllComponents()
       candidates = components.map(({ nodeId }) => ({ nodeId, inside: false }))
@@ -94,7 +100,8 @@ function catalogHitTest(kind: 'section' | 'component') {
     for (let i = candidates.length - 1; i >= 0; i--) {
       const candidate = candidates[i]
       const node = graph.getNode(candidate.nodeId)
-      if (!node?.visible) continue
+      // Locked frames cannot be selected on the canvas, by their name either.
+      if (!node?.visible || (kind === 'frame' && node.locked)) continue
       const hit = hitLabel(
         node,
         graph,
@@ -115,18 +122,8 @@ export const hitTestSectionTitle = catalogHitTest('section')
 
 export const hitTestComponentLabel = catalogHitTest('component')
 
-export function hitTestFrameTitle(
-  graph: SceneGraph,
-  canvasX: number,
-  canvasY: number,
-  zoom: number,
-  selectedIds: Set<string>,
-  font: Font | null,
-  options: LabelHitOptions = {}
-): SceneNode | null {
-  if (!font || selectedIds.size !== 1) return null
-  const node = graph.getNode([...selectedIds][0])
-  if (!node?.visible || !hasFrameTitle(node, node.parentId ? graph.getNode(node.parentId) : null))
-    return null
-  return hitLabel(node, graph, 'frame', false, canvasX, canvasY, zoom, font, options)
-}
+/**
+ * The top-level frame whose name is under a point, selected or not: a frame on the page or in a
+ * section shows its name, and clicking it selects the frame even when its body is a background.
+ */
+export const hitTestFrameTitle = catalogHitTest('frame')

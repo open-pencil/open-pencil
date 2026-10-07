@@ -154,7 +154,10 @@ describe('WebMCP registration', () => {
     const context = host()
     const registration = registerWebMCPTools(
       {
-        async registerTool(tool, options) {
+        async registerTool(
+          tool: WebMCP.ModelContextTool,
+          options?: WebMCP.ModelContextRegisterToolOptions
+        ) {
           if (context.tools.size === 2) throw new Error('Registration denied')
           await context.registerTool(tool, options)
         }

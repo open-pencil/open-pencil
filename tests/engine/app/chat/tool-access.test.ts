@@ -39,7 +39,7 @@ test('a reused AI transport refreshes actual request tools for each message', as
       model,
       effectiveModelID: 'test',
       maxOutputTokens: 100,
-      reasoningEffort: ''
+      thinkingLevel: () => 'default'
     })
     async function send(history: UIMessage[] = []) {
       const stream = await transport.sendMessages({
@@ -49,7 +49,8 @@ test('a reused AI transport refreshes actual request tools for each message', as
         messages: [
           ...history,
           { id: 'user', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }
-        ]
+        ],
+        abortSignal: undefined
       })
       const reader = stream.getReader()
       try {

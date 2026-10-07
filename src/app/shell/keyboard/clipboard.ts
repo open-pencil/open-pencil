@@ -77,20 +77,21 @@ export function bindEditorClipboard(store: EditorStore) {
       return
     }
 
+    // Like Figma, Paste keeps the copied position; Paste here in the canvas menu uses the cursor.
     const html = e.clipboardData?.getData('text/html') ?? ''
     if (html) {
-      void pasteClipboardHTML(store, html, cursorPos)
+      void pasteClipboardHTML(store, html)
       return
     }
 
     if (isTauri()) {
-      void tauriSystemClipboard.paste(store, cursorPos)
+      void tauriSystemClipboard.paste(store, undefined)
       return
     }
 
     const memoryHTML = getInMemoryClipboardHTML()
     if (memoryHTML) {
-      void pasteClipboardHTML(store, memoryHTML, cursorPos)
+      void pasteClipboardHTML(store, memoryHTML)
     }
   })
 }

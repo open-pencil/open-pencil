@@ -13,6 +13,7 @@ export type AppMenuIcon =
   | 'save'
   | 'settings'
   | 'type'
+  | 'variables'
   | 'undo'
   | 'zoom-in'
   | 'zoom-out'
@@ -174,8 +175,18 @@ export const APP_MENU_SCHEMA = [
       { id: 'view-split-right', label: 'Split Right' },
       { id: 'view-split-down', label: 'Split Down' },
       { type: 'separator' },
+      {
+        id: 'variables',
+        label: 'Variables…',
+        palette: {
+          icon: 'variables',
+          keywords: ['tokens', 'design tokens', 'css variables', 'collections', 'modes', 'theme']
+        }
+      },
+      { type: 'separator' },
       { id: 'view-rulers', label: 'Rulers', checkbox: true },
       { id: 'view-multiplayer-cursors', label: 'Multiplayer Cursors', checkbox: true },
+      { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
       { type: 'separator' },
       {
         id: 'theme',
@@ -222,6 +233,7 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       { id: 'toggle-ui', label: 'Toggle UI', shortcut: 'MOD+\\' },
+      { id: 'toggle-preview', label: 'Preview', shortcut: 'MOD+ALT+↩' },
       { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
       {
@@ -329,6 +341,11 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.createInstance',
         label: 'Create Instance',
         command: 'selection.createInstance'
+      },
+      {
+        id: 'selection.createSlot',
+        label: 'Create Slot',
+        command: 'selection.createSlot'
       },
       {
         id: 'selection.goToMainComponent',

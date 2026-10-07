@@ -49,6 +49,7 @@ For each component determine:
 - **Props** — what content varies between instances (text, color, icon, visibility)
 - **Variants** — if the component has multiple states (default/hover/active, small/medium/large)
 - **Slots** — where child content is injected
+- **Behaviour** — `get_behaviour id=<component_id>` tells whether the designer made it a control, after Reka UI's primitives. Build such a component on that Reka primitive (`SwitchRoot` with `SwitchThumb`, `SliderRoot` with `SliderTrack`, `SliderRange`, and `SliderThumb`, `TabsRoot` with `TabsList`, `TabsTrigger`, and `TabsContent`, …): each part is the slot the behaviour names, its values are the properties it binds (`v-model` for the value, `disabled`), and its interaction states map to the variants for `data-state`, `:hover`, `:active`, `:focus-visible`, and `[data-disabled]`. Do not reimplement the control's keyboard and accessibility handling.
 
 ### Step 3 — Extract tokens
 
@@ -202,9 +203,7 @@ assets/
 - `primaryAxisAlign: CENTER` → `justify-content: center`
 - `counterAxisAlign: CENTER` → `align-items: center`
 - `layoutWrap: WRAP` → `flex-wrap: wrap`
-- `primaryAxisSizing: HUG` → no explicit size on primary axis (content-sized)
-- `primaryAxisSizing: FILL` → `flex: 1` or `width: 100%` depending on context
-- `counterAxisSizing: FILL` → `align-self: stretch` or explicit `width/height: 100%`
+- `primaryAxisSizing: HUG` / `counterAxisSizing: HUG` → no explicit size on that axis (content-sized)
 
 **Grid layout**
 
@@ -215,9 +214,8 @@ assets/
 
 **Sizing**
 
-- `layoutGrow > 0` → `flex-grow: 1`
-- `layoutAlignSelf: STRETCH` → cross-axis fill
-- Fixed width/height only when sizing mode is `FIXED`
+- Fill lives on the child: `layoutGrow > 0` fills the parent's primary axis (`flex-grow: 1`), `layoutAlignSelf: STRETCH` fills the cross axis (`align-self: stretch`, no fixed size on that axis). In a grid, `layoutGrow` fills the cell's width and `STRETCH` its height.
+- Fixed width/height only on axes that neither hug nor fill
 
 **Corner radius**
 

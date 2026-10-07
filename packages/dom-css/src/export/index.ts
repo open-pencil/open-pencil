@@ -1,8 +1,15 @@
 // SceneGraph → HTML and JSX without the CSS runtimes, so browsers can bundle it.
 export { sceneGraphToDesignDocument, sceneNodeToDesignDocument } from './projection'
 export { exportHTMLBundle } from './bundle'
-export { designDocumentToTailwindJSX, sceneNodesToTailwindJSX } from './tailwind-jsx'
+export {
+  designDocumentToTailwindJSX,
+  sceneNodesToTailwindJSX,
+  sceneNodesToTailwindJSXWithLayers,
+  type TailwindJSXWithLayers
+} from './tailwind-jsx'
 export { serializeHTML } from './html'
+export * from '../tokens'
+export * from '../behaviours'
 export type {
   ExportHTMLBundle,
   ExportHTMLBundleOptions,

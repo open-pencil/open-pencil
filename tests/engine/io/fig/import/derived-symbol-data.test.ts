@@ -54,7 +54,15 @@ describe('occurrence derived symbol data', () => {
         size: { x: 56, y: 20 },
         derivedTextData: {
           layoutSize: { x: 56, y: 20 },
-          glyphs: [{ commandsBlob: 0, position: { x: 0, y: 10 }, fontSize: 14 }]
+          glyphs: [
+            {
+              commandsBlob: 0,
+              position: { x: 0, y: 10 },
+              fontSize: 14,
+              firstCharacter: 0,
+              advance: 1
+            }
+          ]
         }
       },
       true,
@@ -125,7 +133,7 @@ describe('occurrence derived symbol data', () => {
       [blob]
     )
     expect(child.derivedTextGlyphs).toEqual([
-      { commandsBlob: blob, firstCharacter: 0, x: 4, y: 15, fontSize: 14, rotation: 0 }
+      { commandsBlob: blob, firstCharacter: 0, x: 4, y: 15, fontSize: 14, rotation: 0, advance: 14 }
     ])
   })
 })

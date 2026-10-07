@@ -3,13 +3,17 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core/editor'
 
 import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
-import { resolveObjectPixelSnap } from '#vue/shared/input/snap'
+import {
+  resolveObjectPixelSnap,
+  type ExplicitSnapTarget,
+  type GeometrySnapTarget
+} from '#vue/shared/input/snap'
 
 function pageWithGuide(offset: number, axis: 'X' | 'Y') {
   const editor = createEditor()
   const page = editor.graph.getNode(editor.state.currentPageId)
   if (!page) throw new Error('Page not found')
-  page.guides = [{ axis: axis === 'X' ? 'x' : 'y', position: offset }]
+  page.guides = [{ id: 'guide', axis: axis === 'X' ? 'x' : 'y', position: offset }]
   return editor
 }
 
@@ -56,13 +60,14 @@ describe('explicit snap targets', () => {
     )
 
     expect(result.correction.x).toBe(1.5)
-    expect(result.guides[0]).toEqual({
+    const expectedGeometryGuide: GeometrySnapTarget = {
       kind: 'geometry',
       axis: 'x',
       position: 101.5,
       from: 20,
       to: 20
-    })
+    }
+    expect(result.guides[0]).toEqual(expectedGeometryGuide)
     expect(result.guides.filter((guide) => guide.axis === 'x')).toHaveLength(1)
   })
 
@@ -80,9 +85,10 @@ describe('explicit snap targets', () => {
       ]
     )
 
-    expect(result.guides).toEqual([
+    const expectedGuides: ExplicitSnapTarget[] = [
       { kind: 'canvas-guide', axis: 'x', position: 100, from: 0, to: 20 }
-    ])
+    ]
+    expect(result.guides).toEqual(expectedGuides)
     expect(
       resolveObjectPixelSnap(
         new Set(['moving']),

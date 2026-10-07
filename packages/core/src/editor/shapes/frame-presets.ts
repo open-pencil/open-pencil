@@ -34,10 +34,11 @@ function fixedSizePatch(
   preset: FramePresetDimensions
 ): FrameResizePatch {
   const parent = node.parentId ? ctx.graph.getNode(node.parentId) : undefined
+  // A flex parent set to stretch its children stretches this one too unless it opts out.
   const inheritsStretch =
     node.layoutPositioning !== 'ABSOLUTE' &&
-    parent?.layoutMode !== 'NONE' &&
-    (parent?.layoutMode === 'GRID' || parent?.counterAxisAlign === 'STRETCH')
+    (parent?.layoutMode === 'HORIZONTAL' || parent?.layoutMode === 'VERTICAL') &&
+    parent.counterAxisAlign === 'STRETCH'
 
   return {
     width: preset.width,

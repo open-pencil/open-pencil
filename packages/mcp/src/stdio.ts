@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { randomUUID } from 'node:crypto'
+
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
 
@@ -7,7 +9,13 @@ import { MCP_VERSION, registerTools } from '#mcp/server'
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 import type { ToolPolicy } from '#mcp/tool/metadata'
 import { parseDisabledTools } from '#mcp/tool/policy'
+import { narrowestScope, parseToolScope } from '#mcp/tool/scope'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
+
+if (process.argv.includes('--version')) {
+  process.stdout.write(`${MCP_VERSION}\n`)
+  process.exit(0)
+}
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -18,24 +26,33 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `The MCP server is started by the OpenPencil\n` +
       `desktop app; this bridge only forwards stdio JSON-RPC to it.\n\n` +
       `Options:\n` +
-      `  --help, -h    Show this help message\n\n` +
+      `  --help, -h    Show this help message\n` +
+      `  --version     Print the version\n\n` +
       `Environment variables:\n` +
       `  OPENPENCIL_MCP_SOCKET        Override socket path (auto-discovered from discovery file when unset)\n` +
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools\n` +
       `                               (default: home directory on Windows, cwd elsewhere)\n` +
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n` +
-      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit; defaults to the app setting\n`
+      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit; defaults to the app setting\n` +
+      `  OPENPENCIL_MCP_SCOPE         "selection" to read only the selected layers; defaults to the app setting\n`
   )
   process.exit(0)
 }
 
+const discovery = await readDiscoveryFile()
 const toolPolicy: ToolPolicy = {
   allowEval: process.env.OPENPENCIL_MCP_EVAL === '1',
   disabledTools:
     process.env.OPENPENCIL_MCP_DISABLED_TOOLS === undefined
-      ? ((await readDiscoveryFile())?.disabledTools ?? [])
-      : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS)
+      ? (discovery?.disabledTools ?? [])
+      : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS),
+  // The server enforces its own scope on every call; this keeps the tool list in step with it,
+  // and lets the client limit itself further.
+  scope: narrowestScope(
+    discovery?.scope ?? 'document',
+    parseToolScope(process.env.OPENPENCIL_MCP_SCOPE)
+  )
 }
 const mcpRoot = resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT)
 // Auth token: undefined → auto-discover from discovery file, empty string →
@@ -75,7 +92,13 @@ const bridge = createStdioRPCBridge({
 })
 
 const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-registerTools(mcpServer, { policy: toolPolicy, mcpRoot, sendRPC: bridge.sendRPC })
+// One client per process: its tool calls show as one agent in the app.
+registerTools(mcpServer, {
+  policy: toolPolicy,
+  mcpRoot,
+  sendRPC: bridge.sendRPC,
+  agentSession: { id: randomUUID(), kind: 'mcp' }
+})
 
 const transport = new StdioServerTransport()
 mcpServer.connect(transport).catch((err) => {

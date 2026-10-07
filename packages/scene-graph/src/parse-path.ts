@@ -21,10 +21,18 @@ interface ParseOptions {
  *
  * Uses `svgpath` to normalize all commands to absolute M/L/C/Z
  * (arcs → cubics via `.unarc()`, smooth curves → explicit via `.unshort()`).
+ *
+ * Only closed subpaths form the fill region unless `includeOpenRegions` is set. SVG fills every
+ * subpath as if it were closed, so set it for a filled path to keep holes that an open subpath and
+ * a closed one cut together under the path's fill rule.
  */
-export function parseSVGPath(d: string, windingRule: WindingRule = 'NONZERO'): VectorNetwork {
+export function parseSVGPath(
+  d: string,
+  windingRule: WindingRule = 'NONZERO',
+  options: { includeOpenRegions?: boolean } = {}
+): VectorNetwork {
   const parsed = parsePath(d, windingRule, {
-    includeOpenRegions: false,
+    includeOpenRegions: options.includeOpenRegions ?? false,
     strictCommands: false
   })
   return parsed.ok ? parsed.network : { vertices: [], segments: [], regions: [] }

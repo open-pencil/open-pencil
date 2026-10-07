@@ -1,4 +1,5 @@
 import type { GUID, NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
+import { isUnsetGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 export interface VariableConsumptionMapFields {
@@ -54,6 +55,18 @@ export type ComponentPropValue = {
   textValue?: ComponentPropTextValue
   textDataValue?: { characters?: string }
   guidValue?: GUID
+  /** A slot's content frame; the all-ones GUID means the component's own content. */
+  slotContentIdValue?: { guid?: GUID }
+}
+
+/** Figma's slot value for "the component's own content", the default of every slot property. */
+export const DEFAULT_SLOT_CONTENT: Readonly<GUID> = UNSET_GUID
+
+/** The content frame a slot value names, unless it names the component's own content. */
+export function assignedSlotContent(value: ComponentPropValue | undefined): GUID | undefined {
+  const guid = value?.slotContentIdValue?.guid
+  if (!guid) return undefined
+  return isUnsetGuid(guid) ? undefined : guid
 }
 
 export interface ComponentPropAssignment {
@@ -65,6 +78,7 @@ export interface ComponentPropAssignment {
       textValue?: string
       textDataValue?: { characters?: string }
       symbolIdValue?: { guid?: GUID }
+      slotContentIdValue?: { guid?: GUID }
     }
   }
 }

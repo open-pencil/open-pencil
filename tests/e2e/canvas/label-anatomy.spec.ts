@@ -53,6 +53,7 @@ test('reused Unicode section labels match fresh paragraphs across zoom reversals
           fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
           strokes: [
             {
+              type: 'SOLID',
               color: { r: 0.7, g: 0.7, b: 0.7, a: 1 },
               weight: 1,
               opacity: 1,
@@ -164,6 +165,7 @@ for (const zoom of [0.5, 1, 2]) {
         fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
         strokes: [
           {
+            type: 'SOLID',
             color: { r: 0.7, g: 0.7, b: 0.7, a: 1 },
             weight: 1,
             opacity: 1,

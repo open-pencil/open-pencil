@@ -7,10 +7,14 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/core'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import * as v from 'valibot'
+
+import { FIXTURES } from '../paths'
 
 import { collectAllNodes } from './traversal'
 
-export const FIXTURES = resolve(import.meta.dir, '../../../../../tests/fixtures')
+export { FIXTURES }
 
 export const VALID_NODE_TYPES = new Set<string>([
   'CANVAS',
@@ -33,10 +37,41 @@ export const VALID_NODE_TYPES = new Set<string>([
   'SHAPE_WITH_TEXT'
 ])
 
-/** Read a shared JSON fixture as data; a module import would escape the package root. */
-export function readFixtureJSON<T>(name: string): T {
-  return JSON.parse(readFileSync(resolve(FIXTURES, name), 'utf8')) as T
+/** Read a shared JSON fixture and validate it; a module import would escape the package root. */
+export function readFixture<TSchema extends v.GenericSchema>(
+  name: string,
+  schema: TSchema
+): v.InferOutput<TSchema> {
+  return v.parse(
+    v.pipe(v.string(), v.parseJson(), schema),
+    readFileSync(resolve(FIXTURES, name), 'utf8')
+  )
 }
+
+/** The Kiwi codec validates a node change; a fixture only checks that the record is an object. */
+export const FigNodeChangeFixture = v.custom<NodeChange>(
+  (value) => typeof value === 'object' && value !== null
+)
+
+/** A `{ nodeChanges, blobs }` capture recorded from a live Figma document. */
+export const CapturedFigRecords = v.object({
+  nodeChanges: v.array(FigNodeChangeFixture),
+  blobs: v.array(v.string())
+})
+
+/** `nested-layout-scale.json`: the same document before and after a nested padding edit. */
+export const NestedLayoutScaleFixture = v.object({
+  ids: v.object({
+    page: v.string(),
+    inner: v.string(),
+    outer: v.string(),
+    nested: v.string(),
+    instance: v.string()
+  }),
+  before: v.array(FigNodeChangeFixture),
+  edited: v.array(FigNodeChangeFixture),
+  blobs: v.array(v.string())
+})
 
 export function readFixtureBytes(name: string): Uint8Array {
   return readFileSync(resolve(FIXTURES, name))

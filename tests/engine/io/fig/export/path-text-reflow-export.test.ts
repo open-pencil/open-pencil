@@ -6,13 +6,13 @@ import { exportFigFile } from '#core/io/formats/fig/export'
 import { calibratePathTextLayout, getTextPathData, reflowPathTextGlyphs } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig/fixtures'
+import { loadFigFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 /** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
 function reparse(out: Uint8Array) {
-  return parseFigBuffer(out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength))
+  return parseFigBuffer(uint8ArrayToArrayBuffer(out))
 }
 
 describe('TEXT_PATH reflow export hygiene (optional local)', () => {

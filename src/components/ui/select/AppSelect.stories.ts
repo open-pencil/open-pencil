@@ -6,7 +6,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSelect from './AppSelect.vue'
 
 const meta = {
-  title: 'Design System/Select',
+  title: 'Design System/Selection/Select',
   render: () => ({
     components: { AppSelect, AppButton },
     setup() {

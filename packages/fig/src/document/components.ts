@@ -1,8 +1,8 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
-import type { InstanceOccurrence } from '../instance-overrides/interpret'
-import { occurrences } from '../instance-overrides/occurrence-path'
+import { occurrences } from '../instance-overrides/occurrence/path'
+import type { InstanceOccurrence } from '../instance-overrides/occurrence/types'
 import { parentIdOf } from '../instance-overrides/source-index'
 
 export interface ComponentConstruction {
@@ -14,7 +14,6 @@ export interface ComponentConstruction {
 
 /** Resolve source ownership and dependency order without mutating a destination graph. */
 export function planComponentConstruction(
-  changes: readonly NodeChange[],
   roots: readonly InstanceOccurrence[],
   readComponent: (id: string) => InstanceOccurrence,
   index: ReadonlyMap<string, NodeChange>

@@ -31,8 +31,10 @@ export const menuMessageDefaults = {
   profiler: 'Performance profiler',
   language: 'Language',
   settings: 'Settings…',
+  variables: 'Variables…',
   rulers: 'Rulers',
   multiplayerCursors: 'Multiplayer cursors',
+  designIssues: 'Design issues',
   preferences: 'Preferences',
   snapToGeometry: 'Snap to geometry',
   snapToObjects: 'Snap to objects',
@@ -49,6 +51,7 @@ export const menuMessageDefaults = {
   front: 'Front',
   back: 'Back',
   toggleUI: 'Toggle UI',
+  togglePreview: 'Preview',
 
   bold: 'Bold',
   italic: 'Italic',
