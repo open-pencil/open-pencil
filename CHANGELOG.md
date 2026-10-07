@@ -223,6 +223,7 @@
 - Join the right room from a pasted link that ends in a query, `#`, or `/`, and say so when pasted text is not a room link instead of joining an empty room.
 - Name the layer and page rename fields, the command palette list, and picker lists for screen readers, and announce disabled picker options as disabled.
 - Show a fill's whole hex value and the whole opacity in the Design panel; the last hex digit and the opacity were cut off beside the variable button.
+- Draw the interface in OpenPencil's bundled Inter from the first screen. It used the system font until the editor loaded its fonts, or throughout on machines without Inter installed.
 
 ### Performance
 
