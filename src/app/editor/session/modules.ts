@@ -78,6 +78,8 @@ export function createEditorStoreModules(
     setViewportSize: documentIO.setViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
+    /** Takes the document as it is now as its saved state, so closing it asks nothing. */
+    markDocumentSaved: documentIO.markDocumentSaved,
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
