@@ -58,9 +58,9 @@ export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
   '#core-tests/': 'packages/core/tests/',
   '#fig/': 'packages/fig/',
   '#fig-tests/': 'packages/fig/tests/',
-  '#vue/': 'packages/vue/src/',
-  '#cli/': 'packages/cli/src/',
-  '#mcp/': 'packages/mcp/'
+  '#vue/': 'packages/vue/',
+  '#cli/': 'packages/cli/',
+  '#mcp/': 'packages/mcp/src/'
 }
 
 function normalizePath(filePath: string) {

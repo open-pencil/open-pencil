@@ -8,6 +8,8 @@ import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import type { ChatDocumentEditor } from '@/app/ai/chat/history/document'
 import { createConversationStore } from '@/app/ai/chat/history/idb'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function editor(): ChatDocumentEditor {
   const id = crypto.randomUUID()
   return {
@@ -126,8 +128,9 @@ test('queued chat switches finish on the last requested conversation without los
   await Promise.all(
     Array.from({ length: 20 }, (_, index) => f.history.open(index % 2 === 0 ? first : second))
   )
-  expect(f.history.current.value?.id).toBe(second)
-  expect(await f.store.getSelected(f.history.current.value.documentId)).toBe(second)
+  const current = expectDefined(f.history.current.value, 'current conversation')
+  expect(current.id).toBe(second)
+  expect(await f.store.getSelected(current.documentId)).toBe(second)
   expect(await f.store.read(first)).not.toBeNull()
   expect(f.history.busy.value).toBe(false)
 })

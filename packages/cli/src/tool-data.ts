@@ -7,8 +7,8 @@ import {
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { isAppMode, requireFile, rpc } from '#cli/app-client'
-import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app-target'
+import { isAppMode, requireFile, rpc } from '#cli/app/client'
+import { appTargetRPCArgs, type AppTargetCLIArgs } from '#cli/app/target'
 import { loadDocument, populateWholeDocument } from '#cli/headless'
 
 /** A Figma API over a headless document, with CanvasKit raster export and pixel decoding. */

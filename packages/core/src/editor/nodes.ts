@@ -33,7 +33,8 @@ export function createNodeActions(ctx: EditorContext) {
   const variableBindingActions = createVariableBindingActions(ctx)
 
   function runChangedLayout(id: string, changes: Partial<SceneNode>) {
-    if (changes.variableModes) reconcileVariableLayouts(ctx.graph)
+    // A layer's modes reach the layers inside it.
+    if (changes.variableModes) reconcileVariableLayouts(ctx.graph, { subtrees: [id] })
     ctx.runLayoutForNode(id)
   }
 

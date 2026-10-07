@@ -6,7 +6,7 @@ import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 
-import { createAPI } from '#tests/engine/figma/api/helpers'
+import { asPageNode, createAPI } from '#tests/engine/figma/api/helpers'
 import { expectDefined } from '#tests/helpers/assert'
 
 const CELL_W = 180
@@ -94,13 +94,13 @@ function makePair(name: CaseName, x: number, y: number) {
 function applyOperation(operation: Operation, pair: ReturnType<typeof makePair>) {
   switch (operation) {
     case 'union':
-      return pair.api.union([pair.first, pair.second], pair.api.currentPage)
+      return pair.api.union([pair.first, pair.second], asPageNode(pair.api.currentPage))
     case 'subtract':
-      return pair.api.subtract([pair.first, pair.second], pair.api.currentPage)
+      return pair.api.subtract([pair.first, pair.second], asPageNode(pair.api.currentPage))
     case 'intersect':
-      return pair.api.intersect([pair.first, pair.second], pair.api.currentPage)
+      return pair.api.intersect([pair.first, pair.second], asPageNode(pair.api.currentPage))
     case 'exclude':
-      return pair.api.exclude([pair.first, pair.second], pair.api.currentPage)
+      return pair.api.exclude([pair.first, pair.second], asPageNode(pair.api.currentPage))
   }
 }
 

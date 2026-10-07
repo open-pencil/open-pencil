@@ -33,19 +33,13 @@ export const AdjacentRows: Story = { args: { adjacent: true } }
 export const StateMatrix: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByLabelText('Selected focused').firstElementChild).toHaveAttribute(
-      'data-focused'
-    )
-    await expect(canvas.getByLabelText('Selected unfocused').firstElementChild).toHaveAttribute(
-      'data-selected'
-    )
-    await expect(canvas.getByLabelText('Hidden').firstElementChild).toHaveAttribute('data-hidden')
-    await expect(canvas.getByLabelText('Dragging').firstElementChild).toHaveAttribute(
-      'data-dragging'
-    )
-    await expect(canvas.getByLabelText('Child drop').firstElementChild).toHaveAttribute(
-      'data-drop-position',
-      'child'
-    )
+    // Each row's disclosure is named after its layer.
+    const row = (name: string) =>
+      canvas.getByRole('button', { name }).closest<HTMLElement>('[data-slot="row"]')
+    await expect(row('Selected focused')).toHaveAttribute('data-focused')
+    await expect(row('Selected unfocused')).toHaveAttribute('data-selected')
+    await expect(row('Hidden')).toHaveAttribute('data-hidden')
+    await expect(row('Dragging')).toHaveAttribute('data-dragging')
+    await expect(row('Child drop')).toHaveAttribute('data-drop-position', 'child')
   }
 }

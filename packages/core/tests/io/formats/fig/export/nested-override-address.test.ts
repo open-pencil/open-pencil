@@ -2,9 +2,15 @@ import { expect, test } from 'bun:test'
 
 import { exportFigFile, FigmaAPI, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
+import type { SymbolData } from '@open-pencil/fig/instance-overrides'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import { expectDefined } from '#core-tests/helpers/assert'
+
+/** The Kiwi codec types only `symbolID`; the rest of the symbol payload is read through here. */
+const symbolDataOf = (record: NodeChange): SymbolData | undefined =>
+  record.symbolData as SymbolData | undefined
 
 // Captured from Figma's own clipboard encoding of the same edit: a text override inside a
 // nested instance is addressed as [nested instance, the nested component's child], never as
@@ -18,7 +24,7 @@ test('an override inside a nested instance addresses the definition child', asyn
   graph.createNode('TEXT', badge.id, { name: 'count', text: '1', width: 20, height: 16 })
   const card = graph.createNode('COMPONENT', page.id, { name: 'Card', width: 200, height: 80 })
   graph.createInstance(badge.id, card.id)
-  const instance = graph.createInstance(card.id, page.id)
+  const instance = expectDefined(graph.createInstance(card.id, page.id), 'instance')
   const nestedBadge = expectDefined(graph.getChildren(instance.id)[0], 'nested badge')
   const count = expectDefined(graph.getChildren(nestedBadge.id)[0], 'nested count')
   api.wrapNode(count.id).characters = '42'
@@ -28,12 +34,12 @@ test('an override inside a nested instance addresses the definition child', asyn
   const ids = new Set(nodeChanges.flatMap((node) => (node.guid ? [guidToString(node.guid)] : [])))
   const exported = expectDefined(
     nodeChanges.find(
-      (node) => node.type === 'INSTANCE' && node.symbolData?.symbolOverrides?.length
+      (node) => node.type === 'INSTANCE' && symbolDataOf(node)?.symbolOverrides?.length
     ),
     'exported instance'
   )
   const claim = expectDefined(
-    exported.symbolData?.symbolOverrides?.find((override) => override.textData),
+    symbolDataOf(exported)?.symbolOverrides?.find((override) => override.textData),
     'text claim'
   )
   const path = (claim.guidPath?.guids ?? []).map(guidToString)
@@ -60,9 +66,9 @@ test('a swap of a nested instance is addressed by the nested instance record', a
   const dot = graph.createNode('COMPONENT', page.id, { name: 'Dot', width: 16, height: 16 })
   const star = graph.createNode('COMPONENT', page.id, { name: 'Star', width: 16, height: 16 })
   const panel = graph.createNode('COMPONENT', page.id, { name: 'Panel', width: 200, height: 80 })
-  const marker = graph.createInstance(dot.id, panel.id)
+  const marker = expectDefined(graph.createInstance(dot.id, panel.id), 'marker')
   graph.updateNode(marker.id, { name: 'marker' })
-  const instance = graph.createInstance(panel.id, page.id)
+  const instance = expectDefined(graph.createInstance(panel.id, page.id), 'instance')
   const nestedMarker = expectDefined(graph.getChildren(instance.id)[0], 'nested marker')
   graph.swapInstanceComponent(nestedMarker.id, star.id)
 
@@ -70,12 +76,12 @@ test('a swap of a nested instance is addressed by the nested instance record', a
   const { nodeChanges } = parseFigBuffer(bytes.slice().buffer as ArrayBuffer)
   const exported = expectDefined(
     nodeChanges.find(
-      (node) => node.type === 'INSTANCE' && node.symbolData?.symbolOverrides?.length
+      (node) => node.type === 'INSTANCE' && symbolDataOf(node)?.symbolOverrides?.length
     ),
     'exported instance'
   )
   const swap = expectDefined(
-    exported.symbolData?.symbolOverrides?.find((override) => override.overriddenSymbolID),
+    symbolDataOf(exported)?.symbolOverrides?.find((override) => override.overriddenSymbolID),
     'swap claim'
   )
   const markerRecord = expectDefined(

@@ -51,6 +51,19 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  function setTransforming(transforming: boolean) {
+    if (ctx.state.transforming === transforming) return
+    ctx.state.transforming = transforming
+    ctx.requestRepaint()
+  }
+
+  /** Marks the layer of the code element around the cursor, separately from canvas hover. */
+  function setCodeFocusNode(id: string | null) {
+    if (ctx.state.codeFocusNodeId === id) return
+    ctx.state.codeFocusNodeId = id
+    ctx.requestRepaint()
+  }
+
   function setMeasurementMode(mode: typeof ctx.state.measurementMode) {
     if (ctx.state.measurementMode === mode) return
     ctx.state.measurementMode = mode
@@ -92,6 +105,8 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setSelectedGuide,
     setRotationPreview,
     setHoveredNode,
+    setTransforming,
+    setCodeFocusNode,
     setMeasurementMode,
     setDropTarget,
     setLayoutInsertIndicator,

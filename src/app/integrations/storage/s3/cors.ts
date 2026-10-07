@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit/array'
+
 import { IS_BROWSER, WEB_APP_ORIGIN } from '@/constants'
 
 /** Origins OpenPencil may run from when calling S3 from the browser. */
@@ -22,7 +24,7 @@ export function collectCloudCORSOrigins(extra?: string | null): string[] {
   if (IS_BROWSER && window.location.origin) {
     set.add(window.location.origin)
   }
-  return [...set].filter(Boolean).sort()
+  return compact([...set]).sort()
 }
 
 function escapeXML(value: string): string {

@@ -1,19 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDefaultNode, SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { distanceToGuideSegment, getGuideScreenSegment } from '#core/canvas/guides/geometry'
 import { hitTestGuides } from '#core/canvas/guides/hit-test'
 
 function pageWithGuide(): { graph: SceneGraph; page: SceneNode } {
-  const page = {
-    id: 'page',
-    type: 'CANVAS',
+  const page = createDefaultNode(() => 'page', 'CANVAS', {
     parentId: null,
     childIds: [],
     guides: [{ id: 'guide', axis: 'x', position: 20 }]
-  } as SceneNode
+  })
   const graph = new SceneGraph()
   graph.nodes = new Map([['page', page]])
   graph.rootId = 'page'

@@ -1,6 +1,44 @@
-import type { HarnessSidecarMessage } from '@open-pencil/harness'
+import * as v from 'valibot'
+
+import type { HarnessSidecarMessage, JSONValue } from '@open-pencil/harness'
 
 import { resolvePlatformCommand } from '@/app/tauri/command'
+
+/** Any value `JSON.parse` produced is a JSONValue; only presence needs checking. */
+const jsonValue = v.custom<JSONValue>((value) => value !== undefined)
+
+const HarnessTurnEventSchema = v.variant('type', [
+  v.object({ type: v.literal('text-delta'), text: v.string() }),
+  v.object({ type: v.literal('reasoning-delta'), text: v.string() }),
+  v.object({
+    type: v.literal('tool-call'),
+    toolCallId: v.string(),
+    toolName: v.string(),
+    input: jsonValue
+  }),
+  v.object({
+    type: v.literal('tool-result'),
+    toolCallId: v.string(),
+    toolName: v.string(),
+    output: jsonValue
+  }),
+  v.object({ type: v.literal('finish'), finishReason: v.string() }),
+  v.object({ type: v.literal('error'), message: v.string() })
+])
+
+const HarnessSidecarMessageJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.variant('type', [
+    v.object({
+      type: v.literal('response'),
+      id: v.string(),
+      result: v.optional(jsonValue),
+      error: v.optional(v.string())
+    }),
+    v.object({ type: v.literal('turn.event'), id: v.string(), event: HarnessTurnEventSchema })
+  ])
+) satisfies v.GenericSchema<string, HarnessSidecarMessage>
 
 export type HarnessChild = {
   write(data: number[]): Promise<void>
@@ -39,11 +77,9 @@ export async function spawnHarnessProcess(options: {
     buffer = lines.pop() ?? ''
     for (const line of lines) {
       if (!line.trim()) continue
-      try {
-        controller?.enqueue(JSON.parse(line) as HarnessSidecarMessage)
-      } catch (error) {
-        console.warn('[Harness] Ignoring malformed sidecar output:', error)
-      }
+      const message = v.safeParse(HarnessSidecarMessageJSON, line)
+      if (message.success) controller?.enqueue(message.output)
+      else console.warn('[Harness] Ignoring malformed sidecar output:', v.summarize(message.issues))
     }
   }
 
@@ -52,7 +88,8 @@ export async function spawnHarnessProcess(options: {
   })
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     const text = typeof raw === 'string' ? raw : decoder.decode(new Uint8Array(raw))
-    console.error('[Harness]', text)
+    // Diagnostics only: the companion reports failures as protocol errors.
+    console.warn('[Harness]', text)
   })
   command.on('close', () => {
     controller?.close()

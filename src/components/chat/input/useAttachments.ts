@@ -1,4 +1,5 @@
 import { useFileDialog } from '@vueuse/core'
+import { uniq } from 'es-toolkit'
 import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
@@ -114,6 +115,12 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     }
   }
 
+  /** Takes back a submission that was not sent, ahead of anything attached since. */
+  function restoreSubmission(submission: ChatSubmission): void {
+    images.value = [...submission.images, ...images.value]
+    nodeIds.value = uniq([...submission.nodes.map((node) => node.id), ...nodeIds.value])
+  }
+
   function clear(): void {
     for (const image of images.value) revokeImagePreviewURL(image.previewURL)
     images.value = []
@@ -137,6 +144,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     removeNode,
     toggleSelection,
     handlePaste,
-    takeSubmission
+    takeSubmission,
+    restoreSubmission
   }
 }

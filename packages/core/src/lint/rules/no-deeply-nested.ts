@@ -15,11 +15,13 @@ export default defineRule({
       depth++
       current = context.getParent(current)
     }
-    if (depth > maxDepth) {
+    // Report the layer that crosses the limit, not every descendant below it.
+    if (depth === maxDepth + 1) {
       context.report({
         node,
         message: `Layer nested ${depth} levels deep (max ${maxDepth})`,
-        suggest: 'Flatten structure or extract a component'
+        suggest: 'Flatten structure or extract a component',
+        data: { depth, maxDepth }
       })
     }
   }

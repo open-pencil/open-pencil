@@ -12,7 +12,7 @@ description: Управление настройками экспорта — м
 - настройки экспорта;
 - ID выбранных объектов;
 - имя экспортируемого файла;
-- доступные масштабы и форматы.
+- доступные масштабы и форматы (идентификаторы `formats` и подписанные `formatOptions`).
 
 ## Использование
 
@@ -30,6 +30,7 @@ const {
   nodeName,
   scales,
   formats,
+  formatOptions,
   addSetting,
   updateScale,
   updateFormat,

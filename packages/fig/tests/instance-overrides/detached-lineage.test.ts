@@ -7,7 +7,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 const guid = (sessionID: number, localID: number) => ({ sessionID, localID })
 
 test('detached-symbol lineage retires an obsolete property path only when the live property target is explicit', () => {
-  const records: NodeChange[] = [
+  const records = [
     { guid: guid(1, 1), type: 'SYMBOL' },
     {
       guid: guid(1, 2),
@@ -43,7 +43,7 @@ test('detached-symbol lineage retires an obsolete property path only when the li
         ]
       }
     }
-  ]
+  ] as NodeChange[]
   expect(() => createOccurrenceInterpreter(records).instance('5:1')).toThrow(
     'Expected one instance-path target'
   )

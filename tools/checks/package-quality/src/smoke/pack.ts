@@ -1,5 +1,8 @@
 import { mkdir } from 'node:fs/promises'
+import { availableParallelism } from 'node:os'
 import { isAbsolute, join } from 'node:path'
+
+import { mapAsync } from 'es-toolkit'
 
 import {
   parseNpmPack,
@@ -34,24 +37,36 @@ export async function packPublicPackages(
   packageManager: 'bun' | 'npm'
 ): Promise<PackedPackageSet> {
   await mkdir(outputDirectory, { recursive: true })
-  const tarballs: string[] = []
-  for (const pkg of packages) {
-    const command =
-      packageManager === 'bun'
-        ? ['bun', 'pm', 'pack', '--ignore-scripts', '--destination', outputDirectory, '--quiet']
-        : ['npm', 'pack', '--json', '--ignore-scripts', '--pack-destination', outputDirectory]
-    const result = await runCommand({
-      command: command[0] ?? packageManager,
-      args: command.slice(1),
-      cwd: join(root, pkg.directory),
-      timeoutMs: 60_000
-    })
-    const tarball =
-      packageManager === 'bun'
-        ? tarballFromOutput(result.stdout, outputDirectory)
-        : npmTarballFromOutput(result.stdout, outputDirectory)
-    tarballs.push(tarball)
+  const command =
+    packageManager === 'bun'
+      ? ['bun', 'pm', 'pack', '--ignore-scripts', '--destination', outputDirectory, '--quiet']
+      : ['npm', 'pack', '--json', '--ignore-scripts', '--pack-destination', outputDirectory]
+  // Packing reads only its own package, so packages pack side by side; tarballs keep their order.
+  // Every pack settles before a failure is reported, so none writes into a removed directory.
+  const outcomes = await mapAsync(
+    packages,
+    async (pkg) => {
+      try {
+        const result = await runCommand({
+          command: command[0] ?? packageManager,
+          args: command.slice(1),
+          cwd: join(root, pkg.directory),
+          timeoutMs: 60_000
+        })
+        return packageManager === 'bun'
+          ? tarballFromOutput(result.stdout, outputDirectory)
+          : npmTarballFromOutput(result.stdout, outputDirectory)
+      } catch (error) {
+        return error instanceof Error ? error : new Error(String(error))
+      }
+    },
+    { concurrency: availableParallelism() }
+  )
+  const failures = outcomes.filter((outcome) => outcome instanceof Error)
+  if (failures.length > 0) {
+    throw new AggregateError(failures, failures.map(({ message }) => message).join('\n'))
   }
+  const tarballs = outcomes.filter((outcome) => typeof outcome === 'string')
   const inspections = await Promise.all(tarballs.map(inspectTarball))
   const diagnostics = inspections.flatMap(({ diagnostics }) => diagnostics)
   if (diagnostics.length > 0) {

@@ -15,7 +15,9 @@ const pageListTheme = {
     divider: 'my-1 flex cursor-pointer items-center px-2',
     dividerLine: 'h-px flex-1 bg-border',
     item: 'flex h-6 w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 text-left text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
-    label: 'truncate'
+    label: 'min-w-0 flex-1 truncate',
+    /** Right-aligned page badges, such as who works on the page. */
+    trailing: 'flex shrink-0 items-center gap-1.5'
   },
   variants: {
     active: {

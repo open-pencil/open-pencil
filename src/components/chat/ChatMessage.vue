@@ -2,7 +2,7 @@
 import { refAutoReset, useClipboard } from '@vueuse/core'
 import { isReasoningUIPart, isTextUIPart } from 'ai'
 import type { UIMessage } from 'ai'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useI18n, vTestId } from '@open-pencil/vue'
 
@@ -11,21 +11,32 @@ import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/ty
 import { reasoningDisplay } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
+import { revertOf } from '@/app/ai/chat/turns'
 import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
 import ToolCallGroup from '@/components/chat/tool/ToolCallGroup.vue'
+import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
+import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 const {
   message,
   streaming = false,
-  presentation
+  presentation,
+  canRegenerate = false,
+  canEdit = false
 } = defineProps<{
   message: UIMessage
   streaming?: boolean
   presentation?: { text?: string; attachments?: AttachmentPresentation[] }
+  /** The last reply, when the chat is idle. */
+  canRegenerate?: boolean
+  /** The last user message without attachments, when the chat is idle. */
+  canEdit?: boolean
 }>()
+const emit = defineEmits<{ regenerate: []; revert: []; restore: []; edit: [text: string] }>()
+const editing = ref(false)
 const { ai } = useI18n()
 const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
 const storedAttachments = attachmentsForMessage(message.id)
@@ -36,6 +47,23 @@ const assistantText = computed(() =>
     .map((part) => part.text)
     .join('')
 )
+const userText = computed(
+  () =>
+    presentation?.text ??
+    visibleUserMessageText(
+      message.id,
+      message.parts
+        .filter(isTextUIPart)
+        .map((p) => p.text)
+        .join('')
+    )
+)
+
+function saveEdit(text: string): void {
+  editing.value = false
+  emit('edit', text)
+}
+
 const firstAssistantTextPartIndex = computed(() =>
   message.parts.findIndex((part) => isTextUIPart(part) && part.text.length > 0)
 )
@@ -50,6 +78,7 @@ async function copyResponse(): Promise<void> {
 
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
+const reverted = computed(() => revertOf(message) !== null)
 const groups = computed(() => groupMessageParts(message.parts.map((part) => ({ ...part }))))
 
 function groupKey(group: MessagePartGroup): string {
@@ -67,64 +96,89 @@ function groupKey(group: MessagePartGroup): string {
       :class="message.role === 'user' ? 'max-w-[85%]' : ''"
     >
       <template v-if="message.role === 'assistant'">
-        <template v-for="group in groups" :key="groupKey(group)">
-          <ToolCallGroup
-            v-if="group.kind === 'tools'"
-            :parts="group.parts.map(({ part }) => part)"
-          />
+        <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. -->
+        <div
+          class="space-y-2 transition-opacity motion-reduce:transition-none data-[reverted=true]:opacity-50"
+          data-slot="chat-reply-content"
+          :data-reverted="reverted"
+        >
+          <template v-for="group in groups" :key="groupKey(group)">
+            <ToolCallGroup
+              v-if="group.kind === 'tools'"
+              :parts="group.parts.map(({ part }) => part)"
+            />
 
-          <!-- Reasoning -->
-          <ReasoningBlock
-            v-else-if="isReasoningUIPart(group.part) && group.part.text"
-            :text="group.part.text"
-            :display="reasoningDisplay"
-            :streaming="group.part.state === 'streaming'"
-            :thinking-label="ai.thinking"
-            :reasoning-label="ai.reasoning"
-            :duration-label="(seconds) => ai.thoughtFor({ seconds })"
-          />
+            <!-- Reasoning -->
+            <ReasoningBlock
+              v-else-if="isReasoningUIPart(group.part) && group.part.text"
+              :text="group.part.text"
+              :display="reasoningDisplay"
+              :streaming="group.part.state === 'streaming'"
+              :thinking-label="ai.thinking"
+              :reasoning-label="ai.reasoning"
+              :duration-label="(seconds) => ai.thoughtFor({ seconds })"
+            />
 
-          <!-- Text -->
-          <div
-            v-else-if="isTextUIPart(group.part) && group.part.text"
-            data-test-id="chat-text-bubble"
-            class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
-          >
-            <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-            <IconButton
-              v-if="
-                group.index === firstAssistantTextPartIndex && assistantText && clipboardSupported
-              "
-              :label="copied ? ai.responseCopied : ai.copyResponse"
-              size="xs"
-              data-slot="chat-copy-response"
-              class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
-              @click="copyResponse"
+            <!-- Text -->
+            <div
+              v-else-if="isTextUIPart(group.part) && group.part.text"
+              data-test-id="chat-text-bubble"
+              class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
-              <icon-lucide-check v-if="copied" class="size-3 text-green-400" />
-              <icon-lucide-copy v-else class="size-3" />
-            </IconButton>
-          </div>
-        </template>
+              <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
+              <IconButton
+                v-if="
+                  group.index === firstAssistantTextPartIndex && assistantText && clipboardSupported
+                "
+                :label="copied ? ai.responseCopied : ai.copyResponse"
+                size="xs"
+                data-slot="chat-copy-response"
+                class="absolute right-1 bottom-1 opacity-0 focus-visible:opacity-100 group-hover/response:opacity-100"
+                @click="copyResponse"
+              >
+                <icon-lucide-check v-if="copied" class="size-3 text-green-400" />
+                <icon-lucide-copy v-else class="size-3" />
+              </IconButton>
+            </div>
+          </template>
+        </div>
+        <ChatTurnActions
+          v-if="!streaming"
+          :message-id="message.id"
+          :can-regenerate="canRegenerate"
+          :reverted="reverted"
+          @regenerate="emit('regenerate')"
+          @revert="emit('revert')"
+          @restore="emit('restore')"
+        />
       </template>
 
       <!-- User message -->
       <template v-else-if="message.role === 'user'">
         <AttachmentList v-if="attachments.length" :attachments="attachments" />
-        <div
-          data-test-id="chat-text-bubble"
-          class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
-        >
-          {{
-            presentation?.text ??
-            visibleUserMessageText(
-              message.id,
-              message.parts
-                .filter(isTextUIPart)
-                .map((p) => p.text)
-                .join('')
-            )
-          }}
+        <ChatMessageEditor
+          v-if="editing"
+          :text="userText"
+          @save="saveEdit"
+          @cancel="editing = false"
+        />
+        <div v-else class="group/request relative">
+          <div
+            data-test-id="chat-text-bubble"
+            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
+          >
+            {{ userText }}
+          </div>
+          <IconButton
+            v-if="canEdit"
+            :label="ai.editMessage"
+            size="xs"
+            data-slot="chat-edit-message"
+            class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
+            @click="editing = true"
+          >
+            <icon-lucide-pencil class="size-3" />
+          </IconButton>
         </div>
       </template>
     </div>

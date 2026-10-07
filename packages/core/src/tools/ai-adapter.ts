@@ -6,9 +6,7 @@
 
 // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
-import type { ToolSet, tool as createTool } from 'ai'
-
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 
 import type { FigmaAPI } from '#core/figma-api'
 
@@ -19,6 +17,8 @@ export interface ToolLogEntry {
   args: Record<string, unknown>
   result: unknown
   error?: string
+  /** What the tool threw, kept for diagnostics; the model gets only `error`. */
+  cause?: unknown
   timestamp: number
   durationMs: number
   mutates: boolean
@@ -115,14 +115,14 @@ function emitToolLog(
   figma: FigmaAPI,
   nodeBefore: Record<string, unknown> | undefined,
   execResult: unknown,
-  error?: string
+  failure?: { error: string; cause: unknown }
 ): void {
   if (!options.onToolLog) return
 
   let nodeAfter: Record<string, unknown> | undefined
   let unchangedProps: string[] | undefined
 
-  if (def.mutates && !error) {
+  if (def.mutates && !failure) {
     nodeAfter = captureNodeSnapshot(figma, args)
     if (nodeBefore && nodeAfter) {
       unchangedProps = detectUnchangedProps(def.name, args, nodeBefore, nodeAfter)
@@ -133,7 +133,8 @@ function emitToolLog(
     tool: def.name,
     args,
     result: execResult,
-    error,
+    error: failure?.error,
+    cause: failure?.cause,
     timestamp: startTime,
     durationMs: Date.now() - startTime,
     mutates: !!def.mutates,
@@ -141,6 +142,12 @@ function emitToolLog(
     nodeAfter,
     unchangedProps: unchangedProps?.length ? unchangedProps : undefined
   })
+}
+
+/** Most tools report a failure by returning `{ error }` rather than throwing. */
+function returnedError(result: unknown): string | undefined {
+  if (typeof result !== 'object' || result === null || !('error' in result)) return undefined
+  return typeof result.error === 'string' ? result.error : undefined
 }
 
 function isImageOutput(
@@ -187,14 +194,27 @@ export function toolsToAI(
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)
           }
-          emitToolLog(options, def, args, startTime, figma, nodeBefore, execResult)
+          const error = returnedError(execResult)
+          emitToolLog(
+            options,
+            def,
+            args,
+            startTime,
+            figma,
+            nodeBefore,
+            execResult,
+            error === undefined ? undefined : { error, cause: undefined }
+          )
           if (options.getStepBudget) {
             execResult = appendStepWarning(execResult, options.getStepBudget())
           }
           return execResult
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err)
-          emitToolLog(options, def, args, startTime, figma, nodeBefore, null, errorMsg)
+          emitToolLog(options, def, args, startTime, figma, nodeBefore, null, {
+            error: errorMsg,
+            cause: err
+          })
           return { error: errorMsg }
         } finally {
           await options.onAfterExecute?.(def)
@@ -202,19 +222,24 @@ export function toolsToAI(
       }
     }
 
-    // Image results reach the model as media, with their metadata as text.
-    toolOpts.toModelOutput = ({ output }: { output: unknown }) => {
+    // Image results reach the model as files, with their metadata as text. Typed against the
+    // SDK, because a shape it does not know fails the next step's prompt validation.
+    toolOpts.toModelOutput = ({ output }: { output: unknown }): ToolResultPart['output'] => {
       if (isImageOutput(output)) {
         const { base64, mimeType, ...metadata } = output
-        const media = { type: 'media' as const, mediaType: mimeType, data: base64 }
+        const image = {
+          type: 'file' as const,
+          mediaType: mimeType,
+          data: { type: 'data' as const, data: base64 }
+        }
         return Object.keys(metadata).length > 0
           ? {
-              type: 'content' as const,
-              value: [{ type: 'text' as const, text: JSON.stringify(metadata) }, media]
+              type: 'content',
+              value: [{ type: 'text', text: JSON.stringify(metadata) }, image]
             }
-          : { type: 'content' as const, value: [media] }
+          : { type: 'content', value: [image] }
       }
-      return { type: 'json' as const, value: output as JSONObject }
+      return { type: 'json', value: output as JSONValue }
     }
 
     result[def.name] = tool(toolOpts as never)

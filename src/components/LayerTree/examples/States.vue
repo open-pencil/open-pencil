@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LayerNode } from '@open-pencil/vue'
 
+import type { LayerIssueMark } from '@/app/editor/design-check/layers'
 import LayerTreeNodeRow from '@/components/LayerTree/LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from '@/components/LayerTree/LayerTreeRenameRow.vue'
 import type {
@@ -56,8 +57,35 @@ function chrome(overrides: Partial<LayerTreeChrome> = {}): LayerTreeChrome {
   }
 }
 
-const states = [
+const states: Array<{
+  label: string
+  node: LayerNode
+  selected: boolean
+  chrome: LayerTreeChrome
+  issue?: LayerIssueMark
+}> = [
   { label: 'Normal', node: node('Normal'), selected: false, chrome: chrome() },
+  {
+    label: 'Own error',
+    node: node('Own error'),
+    selected: false,
+    chrome: chrome(),
+    issue: { severity: 'error', count: 2, own: true }
+  },
+  {
+    label: 'Selected own warning',
+    node: node('Selected own warning'),
+    selected: true,
+    chrome: chrome({ focused: true }),
+    issue: { severity: 'warning', count: 1, own: true }
+  },
+  {
+    label: 'Contains error',
+    node: node('Contains error'),
+    selected: false,
+    chrome: chrome(),
+    issue: { severity: 'error', count: 0, own: false }
+  },
   {
     label: 'Selected focused',
     node: node('Selected focused'),
@@ -73,6 +101,12 @@ const states = [
   },
   { label: 'Hidden', node: node('Hidden', { visible: false }), selected: false, chrome: chrome() },
   { label: 'Locked', node: node('Locked', { locked: true }), selected: false, chrome: chrome() },
+  {
+    label: 'Slot',
+    node: node('Slot', { type: 'FRAME', layoutMode: 'VERTICAL', slot: true }),
+    selected: false,
+    chrome: chrome()
+  },
   {
     label: 'Component',
     node: node('Component', { type: 'COMPONENT' }),
@@ -121,7 +155,7 @@ const states = [
       Layer Tree states
     </div>
     <div :class="adjacent ? 'space-y-0' : 'space-y-1'">
-      <div v-for="state in states" :key="state.label" :aria-label="state.label">
+      <div v-for="state in states" :key="state.label">
         <LayerTreeNodeRow
           :node="state.node"
           :level="1"
@@ -131,6 +165,7 @@ const states = [
           :expanded="state.label === 'Normal'"
           :actions="actions"
           :chrome="state.chrome"
+          :issue="state.issue"
         />
       </div>
       <div aria-label="Rename">

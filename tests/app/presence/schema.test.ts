@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { MAX_AGENTS_PER_PEER, parsePeer } from '@/app/presence/schema'
+import { MAX_AGENTS_PER_PEER, MAX_OUTLINE, parsePeer } from '@/app/presence/schema'
 
 const user = { name: 'Ana', color: { r: 1, g: 0, b: 0, a: 1 } }
 const agent = {
@@ -45,5 +45,29 @@ describe('parsePeer', () => {
     }))
     expect(parsePeer(7, { user, agents: tooMany })?.agents).toEqual([])
     expect(parsePeer(7, { user: { name: 'x'.repeat(200) } })?.name).toBe('Anonymous')
+  })
+
+  test('reads the layer tree format a peer syncs, and ignores a malformed one', () => {
+    expect(parsePeer(7, { user, treeFormat: 2 })?.treeFormat).toBe(2)
+    expect(parsePeer(7, { user, treeFormat: 'two' })).toMatchObject({
+      name: 'Ana',
+      treeFormat: undefined
+    })
+    expect(parsePeer(7, { user })?.treeFormat).toBeUndefined()
+  })
+
+  test("reads an agent's outlines of streamed JSX, and drops malformed or too many", () => {
+    const outline = [{ x: 0, y: 10, width: 120, height: 40 }]
+    expect(parsePeer(7, { user, agents: [{ ...agent, outline }] })?.agents[0]?.outline).toEqual(
+      outline
+    )
+    const negative = [{ x: 0, y: 0, width: -5, height: 10 }]
+    expect(
+      parsePeer(7, { user, agents: [{ ...agent, outline: negative }] })?.agents[0]?.outline
+    ).toBeUndefined()
+    const tooMany = Array.from({ length: MAX_OUTLINE + 1 }, () => outline[0])
+    expect(
+      parsePeer(7, { user, agents: [{ ...agent, outline: tooMany }] })?.agents[0]
+    ).toMatchObject({ name: 'Fern', outline: undefined })
   })
 })

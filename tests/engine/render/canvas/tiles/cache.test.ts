@@ -4,12 +4,14 @@ import type { Image as CKImage } from 'canvaskit-wasm'
 
 import { TileImageCache, type RenderedTile } from '#core/canvas/renderer/tiles'
 
+import { asDouble } from '../helpers'
+
 function tile(x: number): RenderedTile {
-  const image: Pick<CKImage, 'width' | 'height' | 'delete'> = {
+  const image = asDouble<CKImage>({
     width: () => 256,
     height: () => 256,
     delete: mock()
-  }
+  })
   return {
     key: { pageId: 'page', level: 1, x, y: 0 },
     image,

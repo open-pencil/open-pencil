@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { compact } from 'es-toolkit/array'
 import { computed, ref } from 'vue'
 
 import { createEditor } from '@open-pencil/core/editor'
@@ -58,9 +59,7 @@ describe('stroke geometry controls', () => {
     const first = graph.createNode('RECTANGLE', pageId, { strokes: [{ ...DEFAULT_STROKE }] })
     const second = graph.createNode('RECTANGLE', pageId, { strokes: [{ ...DEFAULT_STROKE }] })
     const editor = createEditor({ graph })
-    const nodes = computed(() =>
-      [graph.getNode(first.id), graph.getNode(second.id)].filter(Boolean)
-    )
+    const nodes = computed(() => compact([graph.getNode(first.id), graph.getNode(second.id)]))
     const actions = createStrokeGeometryActions(editor, nodes)
 
     actions.setCap('ROUND')
@@ -87,9 +86,7 @@ describe('stroke geometry controls', () => {
       strokeMiterLimit: 8
     })
     const editor = createEditor({ graph })
-    const nodes = computed(() =>
-      [graph.getNode(first.id), graph.getNode(second.id)].filter(Boolean)
-    )
+    const nodes = computed(() => compact([graph.getNode(first.id), graph.getNode(second.id)]))
     const actions = createStrokeGeometryActions(editor, nodes)
 
     actions.updateMiterLimit(12)
@@ -129,7 +126,7 @@ describe('setCap with per-vertex overrides', () => {
       }
     })
     const editor = createEditor({ graph })
-    const nodes = computed(() => [graph.getNode(vector.id)].filter(Boolean))
+    const nodes = computed(() => compact([graph.getNode(vector.id)]))
     const actions = createStrokeGeometryActions(editor, nodes)
 
     actions.setCap('ROUND')
@@ -199,7 +196,7 @@ describe('cap state with per-vertex overrides', () => {
       }
     })
     const editor = createEditor({ graph })
-    const nodes = computed(() => [graph.getNode(vector.id)].filter(Boolean))
+    const nodes = computed(() => compact([graph.getNode(vector.id)]))
     const capState = () =>
       createStrokeGeometryState({ nodes, merged: (key) => merged(nodes.value)(key) }).cap.value
 

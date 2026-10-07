@@ -1,6 +1,7 @@
 import type { ChatTransport, UIMessage } from 'ai'
 
 import type { CollabReturn } from '@/app/collab/context'
+import type { RoomStatus } from '@/app/collab/room/status'
 import type { EditorStore } from '@/app/editor/session/create'
 import { createNavigationBenchmarkHooks } from '@/app/performance/navigation/hooks'
 import type { NavigationBenchmarkHooks } from '@/app/performance/navigation/hooks'
@@ -14,11 +15,18 @@ export interface OpenPencilTestHooks {
   navigation?: NavigationBenchmarkHooks
   collab?: Pick<
     CollabReturn,
-    'connect' | 'disconnect' | 'updateCursor' | 'updateSelection' | 'setLocalName'
+    'disconnect' | 'updateCursor' | 'updateSelection' | 'setLocalName'
   > & {
+    /** Joins a room in a tab of its own, as pasting its link does. */
+    connect: (roomId: string) => boolean
+    /** Puts the active tab's document into the room, as Share does. */
+    share: (roomId: string) => void
     peerCount: () => number
     peerSelections: () => Array<string[] | undefined>
+    status: () => RoomStatus | null
   }
+  /** Sends a request through the MCP bridge's command handler, as an MCP client's call arrives. */
+  automation?: (command: string, args: unknown) => Promise<unknown>
 }
 
 export interface OpenPencilWindowAPI {
@@ -49,18 +57,39 @@ export function setOpenPencilStore(store: EditorStore) {
   }
 }
 
-export function exposeCollaborationActions(collab: CollabReturn) {
+export function exposeCollaborationActions(
+  collab: CollabReturn,
+  joinRoom: (roomId: string) => boolean
+) {
   if (!IS_BROWSER || !import.meta.env.DEV) return
   if (!appRuntimeConfig.test) return
   const testHooks = (windowAPI().test ??= {})
   testHooks.collab = {
-    connect: collab.connect,
+    connect: joinRoom,
     disconnect: collab.disconnect,
     updateCursor: collab.updateCursor,
     updateSelection: collab.updateSelection,
     setLocalName: collab.setLocalName,
     peerCount: () => collab.remotePeers.value.length,
-    peerSelections: () => collab.remotePeers.value.map((peer) => peer.selection)
+    peerSelections: () => collab.remotePeers.value.map((peer) => peer.selection),
+    share: (roomId: string) => {
+      collab.shareCurrentDoc(roomId)
+    },
+    status: () => collab.state.value.status
+  }
+}
+
+/** Test runs send MCP requests the way the bridge delivers them, without a separate server. */
+export function exposeAutomationRequests(
+  handleRequest: (store: EditorStore, command: string, args: unknown) => Promise<unknown>
+) {
+  if (!IS_BROWSER || !import.meta.env.DEV) return
+  if (!appRuntimeConfig.test) return
+  const testHooks = (windowAPI().test ??= {})
+  testHooks.automation = async (command, args) => {
+    const store = windowAPI().getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return handleRequest(store, command, args)
   }
 }
 

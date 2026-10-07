@@ -26,5 +26,6 @@
   "deepLinkPickerDismissed": "リンクをキャンセルしました。ファイルが選択されていません。",
   "deepLinkCancelled": "リンクをキャンセルしました。「{file}」で終わるファイルが必要です。",
   "deepLinkNodeNotFound": "「{file}」にレイヤー「{node}」が見つかりませんでした。",
-  "openQueuedFilesFailed": "OpenPencil に渡されたファイルを開けませんでした: {error}"
+  "openQueuedFilesFailed": "OpenPencil に渡されたファイルを開けませんでした: {error}",
+  "tokensLeftOut": "スタイルシートに含まれていません: {names}"
 }

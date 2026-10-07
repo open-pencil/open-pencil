@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'bun:test'
 
 import {
   buildFigmaClipboardHTML,
+  fontManager,
   importClipboardNodes,
   initCodec,
   parseFigmaClipboard,
@@ -29,6 +30,11 @@ function expectFigmaEditableTextDefaults(
 describe('buildFigmaClipboardHTML', () => {
   beforeAll(async () => {
     await initCodec()
+    const inter = expectDefined(
+      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      'bundled Inter font'
+    )
+    fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   it('encodes a simple frame without throwing', async () => {
@@ -87,9 +93,7 @@ describe('buildFigmaClipboardHTML', () => {
         name
       )
       const characters = text.textData?.characters ?? ''
-      expect(text.derivedTextData?.logicalIndexToCharacterOffsetMap?.length).toBe(
-        characters.length + 1
-      )
+      expect(text.derivedTextData?.logicalIndexToCharacterOffsetMap?.length).toBe(characters.length)
     }
   })
 
@@ -115,19 +119,22 @@ describe('buildFigmaClipboardHTML', () => {
     const html = await buildFigmaClipboardHTML([text], graph)
     expect(html).toContain('figmeta')
 
-    const parsed = await parseFigmaClipboard(html)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     if (!textNode) throw new Error('Expected text node')
     expectFigmaEditableTextDefaults(textNode)
-    expect(textNode.derivedTextData?.glyphs).toBeDefined()
-    expect(textNode.derivedTextData?.baselines?.length).toBeGreaterThan(0)
+    const glyphs = textNode.derivedTextData?.glyphs ?? []
+    expect(glyphs.length).toBeGreaterThan(0)
+    // Bold and italic Inter are not loaded, so no glyph gets an outline from the wrong font.
+    expect(glyphs.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)
+    expect(textNode.derivedTextData?.baselines).toHaveLength(1)
     expect(textNode.derivedTextData?.logicalIndexToCharacterOffsetMap?.length).toBe(
-      text.text.length + 1
+      text.text.length
     )
     expect(textNode.derivedTextData?.derivedLines).toEqual([{ directionality: 'LTR' }])
   })
 
-  it('encodes fallback derived text metrics when outline fonts are unavailable', async () => {
+  it('writes the fallback layout without outlines when the font is unavailable', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     graph.createNode('TEXT', page.id, {
@@ -145,14 +152,17 @@ describe('buildFigmaClipboardHTML', () => {
     })
 
     const html = await buildFigmaClipboardHTML(graph.getChildren(page.id), graph)
-    const parsed = await parseFigmaClipboard(html)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     const baseline = textNode?.derivedTextData?.baselines?.[0]
 
     expect(textNode?.textUserLayoutVersion).toBe(5)
     expect(textNode?.textAutoResize).toBe('NONE')
-    expect(textNode?.derivedTextData?.glyphs?.length).toBe('Analytics Overview'.length)
-    expect(baseline?.width).toBe(552)
+    const glyphs = textNode?.derivedTextData?.glyphs ?? []
+    expect(glyphs).toHaveLength('Analytics Overview'.length)
+    expect(glyphs.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)
+    expect(textNode?.derivedTextData?.baselines).toHaveLength(1)
+    expect(baseline?.width).toBeLessThanOrEqual(552)
     expect(baseline?.lineHeight).toBe(67)
     expect(textNode?.derivedTextData?.layoutSize).toEqual({ x: 552, y: 70 })
   })

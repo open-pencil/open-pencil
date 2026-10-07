@@ -1,4 +1,5 @@
 <script lang="ts">
+import { compact } from 'es-toolkit/array'
 import type { HTMLAttributes } from 'vue'
 
 import type { BindingFieldUI } from './ui'
@@ -33,7 +34,7 @@ const {
 const styles = computed(() =>
   useBindingFieldUI(
     { state: unresolved ? 'unresolved' : 'bound', disabled, derived },
-    { ...ui, pill: [ui?.pill, normalizeClass(className)].filter(Boolean).join(' ') }
+    { ...ui, pill: compact([ui?.pill, normalizeClass(className)]).join(' ') }
   )
 )
 

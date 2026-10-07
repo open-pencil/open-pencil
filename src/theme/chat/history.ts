@@ -1,5 +1,8 @@
 import { tv } from 'tailwind-variants'
 
+import { motionStyles } from '@/theme/motion/styles'
+import { floatingSurface } from '@/theme/overlay'
+
 export const chatHistoryTheme = tv({
   slots: {
     root: 'shrink-0 border-b border-border',
@@ -8,8 +11,7 @@ export const chatHistoryTheme = tv({
       'flex min-w-0 flex-1 items-center gap-1 rounded px-1.5 py-1 text-left text-xs text-surface hover:bg-hover disabled:opacity-50',
     title: 'min-w-0 flex-1 truncate',
     icon: 'size-3.5 shrink-0',
-    content:
-      'z-50 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-border bg-panel p-2 text-surface shadow-lg',
+    content: ['z-50 w-80 max-w-[calc(100vw-1rem)] p-2', floatingSurface, motionStyles.floating],
     input:
       'w-full rounded border border-border bg-input px-2 py-1.5 text-xs outline-none focus:border-accent',
     scope: 'my-2 flex gap-1',
@@ -21,7 +23,6 @@ export const chatHistoryTheme = tv({
     label: 'block truncate text-xs',
     empty: 'px-2 py-4 text-center text-xs text-muted',
     form: 'space-y-2 border-t border-border p-2',
-    actions: 'flex justify-end gap-1',
-    confirmation: 'text-xs text-surface'
+    actions: 'flex justify-end gap-1'
   }
 })

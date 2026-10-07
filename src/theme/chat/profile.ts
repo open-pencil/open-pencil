@@ -1,5 +1,7 @@
 import { tv } from 'tailwind-variants'
 
+import { motionStyles } from '../motion/styles'
+
 export const chatProfileTheme = tv({
   slots: {
     trigger:
@@ -7,7 +9,7 @@ export const chatProfileTheme = tv({
     triggerIcon: 'size-3 shrink-0',
     triggerValue: 'min-w-0 truncate',
     triggerChevron: 'size-2.5 shrink-0',
-    content: 'w-72 max-w-[calc(100vw-1rem)] overflow-hidden',
+    content: ['w-72 max-w-[calc(100vw-1rem)] overflow-hidden', motionStyles.floating],
     viewport: 'max-h-72 p-1',
     header: 'px-2 pt-1.5 pb-2',
     headerLabel: 'text-[9px] font-medium tracking-wide text-muted uppercase',

@@ -7,6 +7,7 @@
   "group": "Сгруппировать",
   "ungroup": "Разгруппировать",
   "createComponent": "Создать компонент",
+  "createSlot": "Создать слот",
   "createComponentSet": "Создать набор компонентов",
   "createInstance": "Создать экземпляр",
   "detachInstance": "Отвязать экземпляр",

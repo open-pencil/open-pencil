@@ -3,6 +3,7 @@ import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
+import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -17,6 +18,8 @@ export type MeasurementMode = 'off' | 'shallow' | 'deep'
 
 /** Where a collaborator or an agent is working, in world coordinates. */
 export interface PresenceCursor {
+  /** Who it is, kept between updates; editors use it to glide a cursor rather than jump it. */
+  id?: string
   kind: 'person' | 'agent'
   name: string
   /** A person's color, or the color of the person who runs the agent. */
@@ -24,10 +27,18 @@ export interface PresenceCursor {
   x: number
   y: number
   selection?: string[]
+  /** Outlines in world coordinates of what is not a layer yet, such as streamed JSX. */
+  outline?: Rect[]
 }
 
 export interface RenderOverlays {
+  /** Whether the canvas previews: it draws the design without labels or editing outlines. */
+  playing?: boolean
+  /** Nodes a previewing canvas draws from its preview session instead of the document. */
+  /** Layers a previewing canvas leaves to its live islands. */
+  playIslands?: ReadonlySet<string>
   hoveredNodeId?: string | null
+  transforming?: boolean
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null
   editingTextId?: string | null
@@ -79,4 +90,6 @@ export interface RenderOverlays {
     hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
   } | null
   presenceCursors?: PresenceCursor[]
+  designIssues?: DesignIssueOverlay | null
+  codeFocusNodeId?: string | null
 }

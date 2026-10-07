@@ -20,8 +20,6 @@ Diese APIs dienen engeren Integrationsaufgaben als die zentralen Komponenten und
 - [useFontPicker](./use-font-picker)
 - [useOkHCL](./use-okhcl)
 - [useVariables](./use-variables)
-- [useVariablesDialogState](./use-variables-dialog-state)
-- [useVariablesTable](./use-variables-table)
 - [Sprach-API](./locale-apis)
 - [useToolbarState](./use-toolbar-state)
 - [useNodeFontStatus](./use-node-font-status)

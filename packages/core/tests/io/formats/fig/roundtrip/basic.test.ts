@@ -174,7 +174,7 @@ describe('roundtrip: export → re-import', () => {
     })
 
     const restored = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
-    const roundTripped = restored.getAllNodes().find((node) => node.name === vector.name)
+    const roundTripped = [...restored.getAllNodes()].find((node) => node.name === vector.name)
 
     expect(roundTripped?.textAlignHorizontal).toBe('CENTER')
     expect(roundTripped?.textAlignVertical).toBe('CENTER')
@@ -198,7 +198,7 @@ describe('roundtrip: export → re-import', () => {
     })
 
     const restored = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
-    const roundTripped = restored.getAllNodes().find((node) => node.name === text.name)
+    const roundTripped = [...restored.getAllNodes()].find((node) => node.name === text.name)
 
     expect(roundTripped?.blendMode).toBe('NORMAL')
     expect(roundTripped?.source.fig.rawNodeFields.blendMode).toBe('NORMAL')
@@ -259,7 +259,7 @@ describe('roundtrip: export → re-import', () => {
 
     const figBytes = await exportFigFile(graph)
     const parsed = await parseFigFile(figBytes.buffer as ArrayBuffer)
-    const parsedSet = parsed.getAllNodes().find((node) => node.name === 'Button')
+    const parsedSet = [...parsed.getAllNodes()].find((node) => node.name === 'Button')
 
     expect(parsedSet).toBeDefined()
     expect(expectDefined(parsedSet, 'parsedSet').type).toBe('COMPONENT_SET')
@@ -275,9 +275,10 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves fills', () => {
-    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
-    expect(headerBg).toBeDefined()
-    expect(expectDefined(headerBg, 'headerBg').fills).toHaveLength(2)
+    const found = reImportedNodes.find((n) => n.name === 'Header BG')
+    expect(found).toBeDefined()
+    const headerBg = expectDefined(found, 'headerBg')
+    expect(headerBg.fills).toHaveLength(2)
     expect(headerBg.fills[0].type).toBe('SOLID')
     expect(headerBg.fills[0].color.r).toBeCloseTo(0.2, 1)
     expect(headerBg.fills[1].type).toBe('GRADIENT_LINEAR')
@@ -286,30 +287,34 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves text content', () => {
-    const title = reImportedNodes.find((n) => n.name === 'Title')
-    expect(title).toBeDefined()
-    expect(expectDefined(title, 'title').text).toBe('Hello World')
+    const found = reImportedNodes.find((n) => n.name === 'Title')
+    expect(found).toBeDefined()
+    const title = expectDefined(found, 'title')
+    expect(title.text).toBe('Hello World')
   })
 
   test('preserves text properties', () => {
-    const title = reImportedNodes.find((n) => n.name === 'Title')
-    expect(title).toBeDefined()
-    expect(expectDefined(title, 'title').fontSize).toBe(18)
+    const found = reImportedNodes.find((n) => n.name === 'Title')
+    expect(found).toBeDefined()
+    const title = expectDefined(found, 'title')
+    expect(title.fontSize).toBe(18)
     expect(title.fontFamily).toBe('Inter')
     expect(title.fontWeight).toBe(700)
     expect(title.textAlignHorizontal).toBe('CENTER')
   })
 
   test('preserves layout mode', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')
-    expect(container).toBeDefined()
-    expect(expectDefined(container, 'container').layoutMode).toBe('VERTICAL')
+    const found = reImportedNodes.find((n) => n.name === 'Container')
+    expect(found).toBeDefined()
+    const container = expectDefined(found, 'container')
+    expect(container.layoutMode).toBe('VERTICAL')
   })
 
   test('preserves layout spacing', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')
-    expect(container).toBeDefined()
-    expect(expectDefined(container, 'container').itemSpacing).toBe(16)
+    const found = reImportedNodes.find((n) => n.name === 'Container')
+    expect(found).toBeDefined()
+    const container = expectDefined(found, 'container')
+    expect(container.itemSpacing).toBe(16)
     expect(container.paddingTop).toBe(24)
     expect(container.paddingRight).toBe(24)
     expect(container.paddingBottom).toBe(24)
@@ -317,24 +322,27 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves min and max size constraints', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')
-    expect(container).toBeDefined()
-    expect(expectDefined(container, 'container').minWidth).toBe(320)
+    const found = reImportedNodes.find((n) => n.name === 'Container')
+    expect(found).toBeDefined()
+    const container = expectDefined(found, 'container')
+    expect(container.minWidth).toBe(320)
     expect(container.minHeight).toBe(240)
     expect(container.maxWidth).toBe(500)
     expect(container.maxHeight).toBeNull()
   })
 
   test('preserves corner radius', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')
-    expect(container).toBeDefined()
-    expect(expectDefined(container, 'container').cornerRadius).toBe(12)
+    const found = reImportedNodes.find((n) => n.name === 'Container')
+    expect(found).toBeDefined()
+    const container = expectDefined(found, 'container')
+    expect(container.cornerRadius).toBe(12)
   })
 
   test('preserves independent corner radii', () => {
-    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
-    expect(headerBg).toBeDefined()
-    expect(expectDefined(headerBg, 'headerBg').independentCorners).toBe(true)
+    const found = reImportedNodes.find((n) => n.name === 'Header BG')
+    expect(found).toBeDefined()
+    const headerBg = expectDefined(found, 'headerBg')
+    expect(headerBg.independentCorners).toBe(true)
     expect(headerBg.topLeftRadius).toBe(8)
     expect(headerBg.topRightRadius).toBe(8)
     expect(headerBg.bottomRightRadius).toBe(0)
@@ -342,18 +350,20 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves effects', () => {
-    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
-    expect(headerBg).toBeDefined()
-    expect(expectDefined(headerBg, 'headerBg').effects).toHaveLength(1)
+    const found = reImportedNodes.find((n) => n.name === 'Header BG')
+    expect(found).toBeDefined()
+    const headerBg = expectDefined(found, 'headerBg')
+    expect(headerBg.effects).toHaveLength(1)
     expect(headerBg.effects[0].type).toBe('DROP_SHADOW')
     expect(headerBg.effects[0].radius).toBe(8)
     expect(headerBg.effects[0].offset.y).toBe(4)
   })
 
   test('preserves dimensions', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')
-    expect(container).toBeDefined()
-    expect(expectDefined(container, 'container').width).toBe(400)
+    const found = reImportedNodes.find((n) => n.name === 'Container')
+    expect(found).toBeDefined()
+    const container = expectDefined(found, 'container')
+    expect(container.width).toBe(400)
     expect(container.height).toBe(300)
   })
 })

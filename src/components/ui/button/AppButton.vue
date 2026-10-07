@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compact } from 'es-toolkit/array'
 import { computed, normalizeClass, useAttrs, type HTMLAttributes } from 'vue'
 
 import {
@@ -40,7 +41,7 @@ const styles = computed(() =>
     variant,
     size,
     shape,
-    ui: { ...ui, base: [ui?.base, normalizeClass(className)].filter(Boolean).join(' ') }
+    ui: { ...ui, base: compact([ui?.base, normalizeClass(className)]).join(' ') }
   })
 )
 const isDisabled = computed(() => disabled || loading)

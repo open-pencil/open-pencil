@@ -5,7 +5,8 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 async function stubGoogleFonts(page: Page) {
   await page.addInitScript(() => {
     const originalFetch = window.fetch.bind(window)
-    window.fetch = async (input, init) => {
+    // The page's `fetch` has no Bun namespace properties, so the stub is asserted, not widened.
+    window.fetch = (async (input, init) => {
       let url: string
       if (typeof input === 'string') url = input
       else if (input instanceof URL) url = input.href
@@ -17,7 +18,7 @@ async function stubGoogleFonts(page: Page) {
         })
       }
       return originalFetch(input, init)
-    }
+    }) as typeof window.fetch
   })
 }
 

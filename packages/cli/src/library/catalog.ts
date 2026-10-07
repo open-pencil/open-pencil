@@ -1,18 +1,24 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, resolve, sep } from 'node:path'
 
+import * as v from 'valibot'
+
 import type {
   ComponentLibraryRevision,
   LibraryCatalog,
   LibrarySummary,
   PublishLibraryInput,
-  SerializedComponentLibraryRevision,
   StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
-  serializeLibraryRevision
+  LibrarySummarySchema,
+  MAX_LIBRARY_REVISION_BYTES,
+  SerializedLibraryRevisionSchema,
+  serializeLibraryRevision,
+  StoredLibraryLatestManifestSchema,
+  validateLibraryRevision
 } from '@open-pencil/core/library'
 
 const catalogPublicationQueues = new Map<string, Promise<void>>()
@@ -43,7 +49,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
 
   async listLibraries(): Promise<LibrarySummary[]> {
     try {
-      return await this.#readJSON<LibrarySummary[]>('libraries.json')
+      return await this.#readJSON('libraries.json', v.array(LibrarySummarySchema))
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return []
       throw error
@@ -53,12 +59,22 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
   async getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
     const resolvedRevisionId =
       revisionId ??
-      (await this.#readJSON<StoredLibraryLatestManifest>(`${libraryId}/manifest.json`)).summary
-        .latestRevisionId
-    const data = await this.#readJSON<SerializedComponentLibraryRevision>(
-      `${libraryId}/revisions/${resolvedRevisionId}.json`
+      (await this.#readJSON(`${libraryId}/manifest.json`, StoredLibraryLatestManifestSchema))
+        .summary.latestRevisionId
+    const data = await this.#readJSON(
+      `${libraryId}/revisions/${resolvedRevisionId}.json`,
+      SerializedLibraryRevisionSchema,
+      MAX_LIBRARY_REVISION_BYTES
     )
-    return deserializeLibraryRevision(data)
+    const revision = deserializeLibraryRevision(data)
+    if (
+      revision.manifest.libraryId !== libraryId ||
+      revision.manifest.revisionId !== resolvedRevisionId
+    ) {
+      throw new Error('Library revision identity mismatch')
+    }
+    await validateLibraryRevision(revision)
+    return revision
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
@@ -107,8 +123,19 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
     return path
   }
 
-  async #readJSON<T>(relative: string): Promise<T> {
-    return JSON.parse(await readFile(this.#path(relative), 'utf8')) as T
+  async #readJSON<TSchema extends v.GenericSchema>(
+    relative: string,
+    schema: TSchema,
+    maxBytes = Number.POSITIVE_INFINITY
+  ): Promise<v.InferOutput<TSchema>> {
+    const bytes = await readFile(this.#path(relative))
+    if (bytes.byteLength > maxBytes)
+      throw new Error(`Library catalog file exceeds size limit: ${relative}`)
+    const text = new TextDecoder().decode(bytes)
+    const result = v.safeParse(v.pipe(v.string(), v.parseJson(), schema), text)
+    if (!result.success)
+      throw new Error(`Invalid library catalog file ${relative}: ${v.summarize(result.issues)}`)
+    return result.output
   }
 
   async #writeJSON(relative: string, value: unknown): Promise<void> {

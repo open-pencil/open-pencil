@@ -172,7 +172,7 @@ describe('raster export', () => {
     const vector = graph.createNode('VECTOR', page.id, {
       width: 10,
       height: 10,
-      fillGeometry: [{ commandsBlob: rectangleCommandsBlob(1, 1, 8, 8) }],
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: rectangleCommandsBlob(1, 1, 8, 8) }],
       fills: [
         {
           type: 'SOLID',

@@ -17,6 +17,7 @@ import {
   type SceneNodeToKiwiContext,
   type StyleReference
 } from './context'
+import { nodeWithResolvedBindings } from './resolved-bindings'
 
 function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
@@ -138,11 +139,15 @@ function bindingClaim(
 }
 
 function overrideClaim(
-  input: ClaimInput,
+  claimed: ClaimInput,
   field: string,
   path: GUID[],
   counter: { value: number }
 ): KiwiSymbolOverridePayload | undefined {
+  const input = {
+    ...claimed,
+    target: nodeWithResolvedBindings(claimed.context.graph, claimed.target)
+  }
   if (field === 'componentId')
     return exportedSwapOverride(input.context, input.target, path, counter)
   const claim = field.startsWith('boundVariables/')

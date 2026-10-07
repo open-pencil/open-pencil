@@ -123,8 +123,19 @@ test('keeps the run and its preview on their page while the user views another',
     expect(await previewKey(chat.page)).toBe('')
     await expect(chat.page.getByTestId('chat-stop-button')).toBeVisible()
 
-    await switchPage(chat.page, pages.current)
+    // Away from the run's page: the chat says where it works, and the page list marks it.
+    const location = chat.page.getByTestId('chat-run-location')
+    await expect(location).toContainText('is working on “Page 1”')
+    await expect(
+      chat.page
+        .getByTestId('pages-row')
+        .filter({ hasText: 'Page 1' })
+        .getByTestId('presence-markers')
+    ).toBeVisible()
+
+    await location.getByRole('button', { name: 'Go to page' }).click()
     await expect.poll(() => previewKey(chat.page)).not.toBe('')
+    await expect(location).toHaveCount(0)
 
     await switchPage(chat.page, pages.added)
     await stream.evaluate((s) => s.complete())
@@ -165,3 +176,48 @@ for (const outcome of ['cancel', 'error', 'disconnect'] as const) {
     }
   })
 }
+
+test("the chat's agent moves through the streamed elements and outlines them", async ({
+  configuredChat: chat
+}) => {
+  await setupCanvas(chat.page)
+  const stream = await installRenderStream(chat.page, scenario)
+  const agentCursor = () =>
+    chat.page.evaluate(() => {
+      const cursor = window.openPencil
+        ?.getStore?.()
+        .state.presenceCursors.find((entry) => entry.kind === 'agent')
+      return cursor
+        ? {
+            x: cursor.x,
+            y: cursor.y,
+            outlines: cursor.outline?.length ?? 0,
+            selection: cursor.selection
+          }
+        : null
+    })
+  try {
+    await chat.submit('Render a card')
+    await expect.poll(() => stream.evaluate((s) => s.ready())).toBe(true)
+    await stream.evaluate((s) => s.advance())
+    await expect.poll(() => previewKey(chat.page)).not.toBe('')
+    // The text streams first: the cursor sits at its trailing corner, inside the outlined card,
+    // so the agent's name does not cover the text being written.
+    await expect.poll(agentCursor).toMatchObject({ outlines: 2 })
+    const onText = await agentCursor()
+    expect(onText?.x).toBeGreaterThan(100)
+    expect(onText?.y).toBeGreaterThan(100)
+
+    await stream.evaluate((s) => s.advance())
+    // The last element to appear is the button bar below the text.
+    await expect.poll(async () => (await agentCursor())?.y).toBeGreaterThan(130)
+
+    await stream.evaluate((s) => s.complete())
+    await expect(chat.assistantMessage()).toContainText('Rendered.')
+    // Once the tool ran, the agent outlines the real layer instead of the preview.
+    await expect.poll(async () => (await agentCursor())?.outlines ?? 0).toBe(0)
+  } finally {
+    await stream.evaluate((s) => s.dispose())
+    await stream.dispose()
+  }
+})

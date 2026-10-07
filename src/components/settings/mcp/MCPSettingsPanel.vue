@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
 
 import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue'
 
-import {
-  mcpAuthenticationEnabled,
-  mcpFollowAgent,
-  mcpRootDirectory,
-  mcpToolMode
-} from '@/app/automation/mcp/preferences'
+import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
@@ -18,7 +12,7 @@ import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 import MCPFailureAlert from './MCPFailureAlert.vue'
@@ -26,7 +20,6 @@ import MCPFailureAlert from './MCPFailureAlert.vue'
 const automation = useAutomationMessages()
 const settings = useSettingsMessages()
 const common = useCommonMessages()
-const { copy, copied } = useClipboard()
 const statusMessage = computed(
   () =>
     ({
@@ -50,14 +43,12 @@ const { restart, chooseRootDirectory } = useMCPSettings()
       >
       <div class="px-3 py-2.5">
         <p class="mb-1 text-xs font-medium text-surface">{{ automation.address }}</p>
-        <div class="flex items-center justify-between gap-2">
-          <code class="min-w-0 select-all break-all text-xs text-surface">{{
-            mcpRuntime.endpoint
-          }}</code>
-          <AppButton size="xs" variant="link" @click="copy(mcpRuntime.endpoint)">{{
-            copied ? common.copied : common.copy
-          }}</AppButton>
-        </div>
+        <AppCopyField
+          look="plain"
+          :value="mcpRuntime.endpoint"
+          :copy-label="common.copy"
+          :copied-label="common.copied"
+        />
       </div>
       <SettingsRow v-if="mcpRuntime.version" :label="automation.version"
         ><code class="text-xs text-surface">{{ mcpRuntime.version }}</code></SettingsRow
@@ -70,19 +61,6 @@ const { restart, chooseRootDirectory } = useMCPSettings()
           v-model="mcpAuthenticationEnabled"
           :label="automation.authentication"
           data-test-id="settings-mcp-authentication"
-        />
-      </SettingsRow>
-      <SettingsRow :label="automation.followAgent" :description="automation.followAgentDescription">
-        <AppSwitch v-model="mcpFollowAgent" :label="automation.followAgent" />
-      </SettingsRow>
-      <SettingsRow :label="automation.toolMode" :description="automation.toolModeDescription">
-        <AppSelect
-          v-model="mcpToolMode"
-          :options="[
-            { label: automation.toolModeFull, value: 'full' },
-            { label: automation.toolModeSelectionContext, value: 'selection-context' }
-          ]"
-          data-test-id="settings-mcp-tool-mode"
         />
       </SettingsRow>
       <div class="flex flex-col gap-2 px-3 py-2.5">

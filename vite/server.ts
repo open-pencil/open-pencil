@@ -33,6 +33,10 @@ export function createDevServerOptions(host: string | undefined, rootDir: string
           port: 1421
         }
       : undefined,
+    // Vite forwards browser logs to the terminal when an agent starts it. Vue warnings carry the
+    // component's props, and serializing the editor state behind them freezes the tab, so only
+    // errors are forwarded.
+    forwardConsole: { unhandledErrors: true, logLevels: ['error'] },
     watch: {
       // Ignore nested checkouts, not an active checkout whose own path contains .worktrees.
       ignored: [...WATCH_IGNORED, `${normalizePath(resolve(rootDir, '.worktrees'))}/**`]

@@ -56,6 +56,7 @@
   "arrangeAlignMiddle": "Centra verticalmente",
   "arrangeAlignBottom": "Allinea in basso",
   "multiplayerCursors": "Cursori multigiocatore",
+  "designIssues": "Problemi di design",
   "preferences": "Preferenze",
   "snapToGeometry": "Aggancia alla geometria",
   "snapToObjects": "Aggancia agli oggetti",
@@ -63,6 +64,7 @@
   "renameSelection": "Rinomina selezione…",
   "rulers": "Righelli",
   "settings": "Impostazioni…",
+  "variables": "Variabili…",
   "splitRight": "Dividi a destra",
   "splitDown": "Dividi in basso",
   "closeView": "Chiudi vista",
@@ -70,5 +72,6 @@
   "exportSelectionAsPNG": "Esporta selezione come PNG",
   "exportSelectionAsSVG": "Esporta selezione come SVG",
   "exportSelectionAsPPTX": "Esporta selezione come PPTX",
-  "exportSelectionAsFig": "Esporta selezione come .fig"
+  "exportSelectionAsFig": "Esporta selezione come .fig",
+  "togglePreview": "Anteprima"
 }

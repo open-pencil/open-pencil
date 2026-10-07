@@ -24,6 +24,10 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 - ACP transport lives under `src/app/ai/acp/**`; provider definitions in `packages/core/src/constants.ts`; profiles in `src/app/ai/models/**`. Keep provider connections, reusable profiles, and role assignments separate, and resolve credentials lazily. ACP process changes require checking `desktop/capabilities/**`.
 - Browser-native WebMCP registration lives under `src/app/automation/webmcp/`, consumes per-tool exposure metadata, and is feature-detected through `document.modelContext`. App completion under `src/app/automation/execution/` loads fonts after commit.
 - Collaboration lives under `src/app/collab/**` on Trystero, Yjs, and awareness; preserve crypto-safe room IDs and peer cleanup.
+- A room is a document: every room tab owns its session (`src/app/collab/rooms.ts`, `session.ts`), joining always opens a new tab, and only Share binds an existing document; the collaboration UI reads the active tab's room through `useCollab()` and publishes cursors through the canvas's own tab (`tests/app/collab/session.test.ts`, `tests/e2e/collab/rooms.spec.ts`).
+- A shared document records each layer's parent history, order key and page, never `parentId` or `childIds`, and only Share or a room's conversion sets its root in `meta`; local edits are written by `writeLocalPlacement` and remote changes applied by `applySharedTree` in `src/app/collab/shared-tree/sync.ts`, which resolve the tree with `LayerTree` from `src/app/collab/tree/` (`tests/app/collab/random-edits.test.ts`).
+- Every agent at work, the built-in chat's and each MCP session's (`src/app/automation/agents.ts`), is registered with `addAgent` in `src/app/presence/registry.ts`, and presence cursors reach the editor only through `showCursors` in `src/app/presence/cursor-motion.ts`, which glides them; never assign `presenceCursors` directly (`tests/app/presence/registry.test.ts`).
+- Changing how a shared document records data bumps `TREE_FORMAT` and `COLLAB_APP_ID` together, so mismatched builds never meet, and converts saved rooms in `src/app/collab/shared-tree/migration.ts` (`tests/app/collab/shared-tree/migration.test.ts`).
 
 ## Browser baseline
 
@@ -33,6 +37,7 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 
 - Browser and native menus share `src/app/shell/menu/schema.ts`; handle IDs in `use.ts` or editor commands, and regenerate `desktop/generated/menu.json` with `bun run generate:tauri-menu`.
 - Motion policy lives in `src/app/shell/motion/`: resolve the persisted System/Off preference and OS reduction once. The root `data-motion` attribute and the Tailwind `motion-safe`/`motion-reduce` variants represent the effective policy, including portalled content. Use the policy-aware Motion adapters rather than repeating preference conditionals in components.
+- Canvas shortcuts stop while a dialog, menu, or listbox is open. A dialog that edits the document listens for undo and redo on its own content with `useDocumentShortcuts`, so keys in menus it portals never reach it; there is one history, the editor's (`src/app/shell/keyboard/document.ts`, `src/components/variables/VariablesDialog.vue`).
 - Keep the app manifest in `vite/pwa.ts`; use `BrandMark` for in-app branding; never symlink web assets to desktop icons (`tools/AGENTS.md`, Brand assets).
 
 ## UI
@@ -47,6 +52,13 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 - `Tip`, not native `title`; Lucide/Iconify components, not raw SVG or Unicode icons; `e.code`, not `e.key`, for modified shortcuts.
 - App dialogs compose the Reka-backed components under `src/components/ui/dialog/` and the typed theme in `src/theme/dialog.ts`. Do not repeat portal, overlay, content, header, or footer infrastructure in feature dialogs.
 - SDK property primitives, binding fields, commands, and i18n: `packages/vue/AGENTS.md`.
+
+### Layout
+
+- Lay a component out by the space it is given, not the window: panels, dialogs, and inspectors appear in docks, split views, and phones alike. Restyle with named Tailwind container queries (`@container/name`, `@2xl/name:`) on the element whose width matters, which for a list beside an inspector is the list itself (`src/theme/tokens-panel.ts`, `src/theme/panel/properties-tabs.ts`).
+- When the width changes structure, such as a side inspector becoming a drill-in, measure the container with VueUse `useElementSize` and keep the threshold beside the theme (`TOKENS_PANEL_COMPACT_WIDTH`).
+- Viewport breakpoints (`md:`, `useViewportKind`) are for app-shell decisions only: dock placement, sheets versus popovers, full-screen dialogs (`src/theme/dialog/index.ts`).
+- Stories for adaptive components render fixed container widths as separate stories rather than relying on the viewport toolbar (`src/components/variables/TokensPanel.stories.ts`).
 
 ### Settings
 
@@ -71,4 +83,5 @@ The supported browser baseline lives in `src/app/shell/support/baseline.ts` and 
 ### Storybook
 
 - Colocate `ComponentName.stories.ts` with `ComponentName.vue`; multipart compositions may use a descriptive family name. Preserve explicit titles and exported story names during moves. Default playgrounds stay static; interaction flows get named stories. Prefer inline story fixtures for small app-local states; use colocated `examples/<Variant>.vue` SFCs for substantial templates or fixtures that need SFC template/slot typing, including app-only fixtures (shared SDK examples follow `packages/vue/AGENTS.md`, Documentation). Story templates compile at runtime, so they must be plain JavaScript with no TypeScript syntax, and `icon-lucide-*` tags do not resolve there; import icons from `~icons/...` and register them.
+- Every story must render and pass its play function: `tests/e2e/storybook/stories.spec.ts` runs them all in `bun run test:storybook`, so a play function asserts behavior that stays true, not copy or obsolete markup.
 - Isolated visual states of feedback components belong in stories, not Playwright application screenshots. Do not add automated tests or snapshot baselines for CSS-only changes (spacing, sizing, colors, breakpoints); verify those visually. Settings E2E covers integration behavior: feedback appearance, validation and focus, retained drafts, successful retries.

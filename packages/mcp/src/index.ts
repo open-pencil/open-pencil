@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 import { resolveMCPRoot } from '#mcp/root'
-import { startServer } from '#mcp/server'
+import { MCP_VERSION, startServer } from '#mcp/server'
 import { readToolPolicyFromEnv } from '#mcp/tool/policy'
 import { resolveCORSOrigins } from '#mcp/transport/origins'
+
+if (process.argv.includes('--version')) {
+  process.stdout.write(`${MCP_VERSION}\n`)
+  process.exit(0)
+}
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -11,7 +16,8 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `On macOS/Linux, the server listens on a Unix domain socket by default\n` +
       `with optional TCP for browser clients. On Windows, only TCP is available.\n\n` +
       `Options:\n` +
-      `  --help, -h    Show this help message\n\n` +
+      `  --help, -h    Show this help message\n` +
+      `  --version     Print the version\n\n` +
       `Environment variables:\n` +
       `  PORT                         TCP port (default: 7600, set to 0 to disable TCP)\n` +
       `  OPENPENCIL_MCP_SOCKET        Override Unix socket path (recorded in the discovery file)\n` +

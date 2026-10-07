@@ -26,13 +26,14 @@ test.describe('OpenRouter chat', { tag: '@real-llm' }, () => {
     )
 
     const assistant = chat.assistantMessage()
-    await expect(assistant.locator('.chat-markdown')).toBeVisible({ timeout: 60_000 })
+    await expect(assistant.locator('[data-slot="chat-markdown"] .markdown-content')).toBeVisible({
+      timeout: 60_000
+    })
     await expect(assistant.locator('.shiki')).toContainText('const ready = true', {
       timeout: 60_000
     })
-    await expect(assistant.locator('.chat-markdown')).toHaveAttribute(
-      'data-chat-markdown-mode',
-      'static'
-    )
+    await expect(
+      assistant.locator('[data-slot="chat-markdown"] .markdown-content')
+    ).toHaveAttribute('data-markdown-mode', 'static')
   })
 })

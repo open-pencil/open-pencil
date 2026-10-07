@@ -1,3 +1,5 @@
+/// <reference types="@wdio/globals/types" />
+
 import type * as TauriAPI from '@tauri-apps/api'
 import type * as TauriOS from '@tauri-apps/plugin-os'
 

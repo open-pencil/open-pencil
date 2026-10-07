@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import type { WorkspacePackage } from '#package-artifacts/manifest/types'
 import {
   discoverPublicPackages,
+  groupPackagesByDependencyLevel,
   orderPackagesByDependencies
 } from '#package-artifacts/workspace/catalog'
 
@@ -66,5 +67,24 @@ describe('orderPackagesByDependencies', () => {
         pkg('two', { one: 'workspace:*' })
       ])
     ).toThrow('Workspace dependency cycle: one -> two -> one')
+  })
+})
+
+describe('groupPackagesByDependencyLevel', () => {
+  test('puts each package one level after its deepest internal dependency', () => {
+    const levels = groupPackagesByDependencyLevel([
+      pkg('cli', { app: 'workspace:*', base: 'workspace:*' }),
+      pkg('app', { left: 'workspace:*', right: 'workspace:*' }),
+      pkg('left', { base: 'workspace:*', external: '^1.0.0' }),
+      pkg('right', { base: 'workspace:*' }),
+      pkg('base'),
+      pkg('standalone')
+    ])
+    expect(levels.map((level) => level.map(({ manifest }) => manifest.name))).toEqual([
+      ['base', 'standalone'],
+      ['left', 'right'],
+      ['app'],
+      ['cli']
+    ])
   })
 })

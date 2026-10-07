@@ -14,7 +14,9 @@ export default defineRule({
       context.report({
         node,
         message: `Text size ${node.fontSize}px is below minimum ${minSize}px`,
-        suggest: `Increase to at least ${minSize}px for readability`
+        suggest: `Increase to at least ${minSize}px for readability`,
+        data: { fontSize: node.fontSize, minSize },
+        suggestions: [{ kind: 'set', changes: { fontSize: minSize } }]
       })
   }
 })

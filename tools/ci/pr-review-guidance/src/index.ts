@@ -1,16 +1,27 @@
 import { readFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
+import * as v from 'valibot'
+
 const CODE_RABBIT_AUTHORS = new Set(['coderabbitai[bot]', 'coderabbitai'])
 const REVIEW_GUIDANCE_PREFIXES = ['pr hygiene', 'pr readability', 'pr description']
 
-export interface GitHubEvent {
-  sender?: { login?: string }
-  review?: { state?: string; body?: string }
-  pull_request?: { number?: number }
-  issue?: { number?: number; pull_request?: unknown }
-  comment?: { body?: string }
-}
+// Webhook payloads send `null` for absent fields, such as the body of a review left without one.
+const GitHubEventJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    sender: v.nullish(v.object({ login: v.nullish(v.string()) })),
+    review: v.nullish(v.object({ state: v.nullish(v.string()), body: v.nullish(v.string()) })),
+    pull_request: v.nullish(v.object({ number: v.nullish(v.number()) })),
+    issue: v.nullish(
+      v.object({ number: v.nullish(v.number()), pull_request: v.nullish(v.unknown()) })
+    ),
+    comment: v.nullish(v.object({ body: v.nullish(v.string()) }))
+  })
+)
+
+export type GitHubEvent = v.InferOutput<typeof GitHubEventJSON>
 
 export interface PullRequestSummary {
   state: string
@@ -19,8 +30,15 @@ export interface PullRequestSummary {
   user: { login: string }
 }
 
+const PullRequestSummarySchema: v.GenericSchema<unknown, PullRequestSummary> = v.object({
+  state: v.string(),
+  author_association: v.string(),
+  title: v.string(),
+  user: v.object({ login: v.string() })
+})
+
 interface EventContext {
-  issueNumber?: number
+  issueNumber?: number | null
   shouldInspect: boolean
   text: string
 }
@@ -113,6 +131,7 @@ async function github<T>(
   token: string,
   path: string,
   fetchImpl: FetchLike,
+  schema: v.GenericSchema<unknown, T>,
   options: RequestInit = {}
 ): Promise<T | null> {
   const response = await fetchImpl(`${apiURL}${path}`, {
@@ -134,7 +153,7 @@ async function github<T>(
   }
 
   if (response.status === 204) return null
-  return response.json() as Promise<T>
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), await response.text())
 }
 
 function repositoryName(repository?: string): string | undefined {
@@ -159,7 +178,7 @@ export async function monitorPRReviewGuidance(options: MonitorOptions = {}): Pro
   const env = requiredEnvironment(options.env ?? process.env)
   const log = options.log ?? ((message: string) => process.stdout.write(`${message}\n`))
   const fetchImpl = options.fetchImpl ?? fetch
-  const event = JSON.parse(await readFile(env.eventPath, 'utf8')) as GitHubEvent
+  const event = v.parse(GitHubEventJSON, await readFile(env.eventPath, 'utf8'))
   const sender = event.sender?.login ?? ''
 
   if (!CODE_RABBIT_AUTHORS.has(sender)) {
@@ -181,11 +200,12 @@ export async function monitorPRReviewGuidance(options: MonitorOptions = {}): Pro
     return
   }
 
-  const pr = await github<PullRequestSummary>(
+  const pr = await github(
     env.apiURL,
     env.token,
     `/repos/${env.owner}/${env.repo}/pulls/${context.issueNumber}`,
-    fetchImpl
+    fetchImpl,
+    PullRequestSummarySchema
   )
   if (!pr) throw new Error(`PR #${context.issueNumber} returned no data`)
 

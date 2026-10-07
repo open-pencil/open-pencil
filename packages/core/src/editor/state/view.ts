@@ -13,6 +13,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     dropTargetId: null,
     layoutInsertIndicator: null,
     hoveredNodeId: null,
+    transforming: false,
     measurementMode: 'off',
     editingTextId: null,
     penState: null,
@@ -28,7 +29,8 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     enteredContainerId: null,
     nodeEditState: null,
     cursorCanvasX: null,
-    cursorCanvasY: null
+    cursorCanvasY: null,
+    play: null
   }
 }
 

@@ -6,6 +6,7 @@ import {
   addAgent,
   follow,
   followedLabel,
+  presenceByPage,
   presenceOf,
   renameAgent,
   setOwnerColor,
@@ -33,7 +34,16 @@ test('draws active agents on their page, in their owner color', () => {
   there.update({ status: 'editing', cursor: { x: 1, y: 1, pageId: other } })
   setOwnerColor(store, red)
   expect(store.state.presenceCursors).toEqual([
-    { kind: 'agent', name: here.name, color: red, x: 5, y: 6, selection: undefined }
+    {
+      id: `agent:${here.id}`,
+      kind: 'agent',
+      name: here.name,
+      color: red,
+      x: 5,
+      y: 6,
+      selection: undefined,
+      outline: undefined
+    }
   ])
 })
 
@@ -244,4 +254,52 @@ test('renames our agents, and their handles report the new name', () => {
   expect(agent.name).toBe('Juniper')
   renameAgent(store, agent.id, '   ')
   expect(agent.name).toBe('Juniper')
+})
+
+test("lists people and working agents by page, knowing an agent's page before its first edit", () => {
+  const { store, pageId, other } = setup()
+  setPeers(store, [
+    {
+      clientId: 5,
+      name: 'Ana',
+      color: red,
+      cursor: { x: 0, y: 0, pageId },
+      agents: [{ id: 'o', name: 'Orbit', kind: 'mcp', status: 'idle', pageId: other }]
+    }
+  ])
+  const thinking = addAgent(store, 'chat')
+  thinking.update({ status: 'thinking', pageId: other })
+  expect(
+    presenceByPage(store)
+      .get(pageId)
+      ?.map((entry) => entry.name)
+  ).toEqual(['Ana'])
+  expect(presenceByPage(store).get(other)).toEqual([
+    { id: `agent:${thinking.id}`, kind: 'agent', name: thinking.name, color: expect.anything() }
+  ])
+})
+
+test('keeps people with the same name apart on a page', () => {
+  const { store, pageId } = setup()
+  const anonymous = { name: 'Anonymous', color: red, agents: [], cursor: { x: 0, y: 0, pageId } }
+  setPeers(store, [
+    { ...anonymous, clientId: 4 },
+    { ...anonymous, clientId: 5 }
+  ])
+  expect(
+    presenceByPage(store)
+      .get(pageId)
+      ?.map((entry) => entry.id)
+  ).toEqual(['person:4', 'person:5'])
+})
+
+test('without animation frames, cursors and following move at once', () => {
+  const { store, pageId } = setup()
+  const agent = addAgent(store, 'chat')
+  agent.update({ status: 'editing', cursor: { x: 5, y: 6, pageId } })
+  agent.update({ status: 'editing', cursor: { x: 50, y: 60, pageId } })
+  expect(store.state.presenceCursors.map(({ x, y }) => ({ x, y }))).toEqual([{ x: 50, y: 60 }])
+
+  follow(store, { kind: 'agent', agentId: agent.id })
+  expect(centered(store)).toEqual({ x: 50, y: 60 })
 })

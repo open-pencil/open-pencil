@@ -12,7 +12,8 @@ export default defineRule({
     context.report({
       node,
       message: `Effect without shared style: ${visibleEffects.map((effect) => `${effect.type} ${effect.radius}px`).join(', ')}`,
-      suggest: 'Extract reusable shadows and blurs into shared presets or variables'
+      suggest: 'Extract reusable shadows and blurs into shared presets or variables',
+      data: { effect: visibleEffects[0].type, count: visibleEffects.length }
     })
   }
 })

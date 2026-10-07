@@ -57,6 +57,15 @@ function hasRenderableGeometry(node: SceneNode): boolean {
   if (INTRINSIC_CONTAINER_TYPES.has(node.type)) return true
   if (node.type === 'GROUP') return false
   if (node.type === 'TEXT') return node.text.length > 0 && node.fills.some((fill) => fill.visible)
+  // A vector without a path draws nothing, whatever its paints.
+  if (
+    node.type === 'VECTOR' &&
+    !node.vectorNetwork?.vertices.length &&
+    node.fillGeometry.length === 0 &&
+    node.strokeGeometry.length === 0
+  ) {
+    return false
+  }
   if (node.fills.some((fill) => fill.visible) || node.strokes.some((stroke) => stroke.visible)) {
     return true
   }

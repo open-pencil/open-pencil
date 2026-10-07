@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import { computed, shallowRef, watch } from 'vue'
+import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
+import { useChatRunLocation } from '@/app/ai/chat/run-location'
+import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { useAIChat } from '@/app/ai/chat/use'
+import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { didHitStepLimit } from '@/app/ai/tools'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -16,11 +20,14 @@ import { activeTab } from '@/app/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
+import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
 const { ai } = useI18n()
+const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const submission = useChatSubmission({
@@ -32,13 +39,33 @@ const submission = useChatSubmission({
   messages: computed(() => ({
     openSettings: ai.value.openProviderSettingsAction,
     requestFailed: ai.value.chatRequestFailed,
-    visionUnavailable: ai.value.visionModelUnavailable
+    visionUnavailable: ai.value.visionModelUnavailable,
+    runSetup: ai.value.aiSetupRun,
+    agentSetup: {
+      'companion-missing': ai.value.chatPiCompanionMissing,
+      'companion-outdated': ai.value.chatPiCompanionOutdated,
+      'mcp-outdated': ai.value.chatMCPOutdated,
+      'pi-sign-in': ai.value.chatPiSignIn,
+      'pi-model': ai.value.chatPiModel
+    }
   })),
   reportError: toast.error,
-  openModelSettings: () => openSettingsDialog('ai')
+  openModelSettings: () => openSettingsDialog('ai'),
+  openSetup: () => openAISetup()
 })
 
+const chatInput = useTemplateRef<{ restoreDraft: (submission: ChatSubmission) => void }>(
+  'chatInput'
+)
 let viewGeneration = 0
+
+/** Puts an unsent message back only in the conversation it was written in. */
+async function submitMessage(message: ChatSubmission) {
+  const generation = viewGeneration
+  if (await submission.submit(message)) return
+  if (generation === viewGeneration) chatInput.value?.restoreDraft(message)
+  else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
+}
 // Restoring local history must not open a provider connection or read credentials.
 void history.initialize().catch(() => {
   toast.error(ai.value.chatHistoryFailed)
@@ -171,7 +198,9 @@ function handleStop() {
       @select="historyAction(() => history.open($event))"
       @rename="renameConversation"
       @delete="historyAction(() => history.remove($event))"
-    />
+    >
+      <template #actions><FollowAgentsToggle /></template>
+    </ChatHistory>
     <p v-if="history.storageError.value" role="alert" class="px-3 py-2 text-xs text-red-400">
       {{ ai.chatStorageFailed }}
     </p>
@@ -190,6 +219,11 @@ function handleStop() {
         :status="status"
         :show-continue="showContinue"
         :nodes-live="!history.readOnly.value"
+        :interactive="chat !== null"
+        @regenerate="submission.regenerate()"
+        @revert="(messageId) => submission.revert(messageId)"
+        @restore="(messageId) => submission.restore(messageId)"
+        @edit="(messageId, text) => submission.resend(messageId, text)"
         @continue="
           submission.submit({
             modelText: 'Continue where you left off',
@@ -206,11 +240,18 @@ function handleStop() {
       <p v-if="history.readOnly.value" role="status" class="px-3 py-2 text-xs text-muted">
         {{ ai.chatReadOnly }}
       </p>
+      <ChatRunLocation
+        v-if="runLocation"
+        :agent="runLocation.agent"
+        :page="runLocation.page"
+        @open="runLocation.open"
+      />
       <ChatInput
         v-if="isConfigured && !agentHistoryReadOnly && !history.readOnly.value"
+        ref="chatInput"
         :status="status"
         :disabled="submission.busy.value || history.busy.value"
-        @submit="submission.submit"
+        @submit="submitMessage"
         @stop="handleStop"
         @error="toast.error"
       />

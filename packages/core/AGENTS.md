@@ -44,6 +44,15 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - Renderer interaction policy uses explicit `beginInteractiveEdit()` leases and `isInteractiveEditing()`, not undo batching. Release leases on every terminal path. Keep live queries callable across app facades that spread editor actions.
 - `packages/core/src/editor/history/atomic-tool.ts` owns synchronous property/variable transactions for AI, MCP, and WebMCP tools; see Tools above.
 
+## OpenPencil API
+
+`OpenPencilAPI` (`packages/core/src/openpencil-api/`) is what OpenPencil adds to the Plugin API, exposed to scripts as the `openpencil` global next to `figma`.
+
+- Keep `figma` Figma-shaped and put OpenPencil-only features on `openpencil`, in the same style: methods and node-like handles with getters and setters, not parallel helper functions. Never add non-Figma members to `FigmaAPI` (`compatibility.ts`).
+- Script runners get both globals only through `compileScript` (`packages/core/src/tools/analyze/eval/wrap.ts`); the `eval` tool, `openpencil eval`, and app automation must not build their own `AsyncFunction`.
+- Members take names, not internal ids, and write through the same scene-graph functions the editor's actions use, such as `behaviourFromSpec`; errors name what exists. Tools for the same feature wrap the `openpencil` API rather than reimplementing it (`packages/core/src/tools/create/behaviours.ts`).
+- A new member updates `packages/docs/programmable/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/openpencil-api/`).
+
 ## Renderer
 
 Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
@@ -55,6 +64,11 @@ Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM.
 - The resize observer uses a rAF throttle, not a debounce; debounce causes canvas skew.
 - Viewport culling skips off-screen nodes; unclipped parents are not culled because children may extend beyond bounds.
 - Overscan images accelerate navigation; settled scenes rasterize existing retained pictures at the live viewport size and origin. Pixel-grid alignment alone does not guarantee Skia anti-aliasing parity. Keep settlement pending until the viewport pass completes; do not add a second viewport image cache.
+
+### Paints
+
+- A gradient or image paint builds a Skia shader through `applyGradientFill` and `applyImageFill` (`packages/core/src/canvas/fills.ts`), which take the target `Paint`, so a stroke reuses them instead of a second shader path.
+- `forVisibleStrokes` (`packages/core/src/canvas/scene.ts`) is where a stroke's shader is set and cleared; stroke draw helpers take an already-configured `strokePaint` and must not reset its shader.
 
 ### Caches
 

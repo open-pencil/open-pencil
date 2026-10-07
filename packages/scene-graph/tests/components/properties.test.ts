@@ -164,3 +164,32 @@ describe('component properties', () => {
     expect(graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({})
   })
 })
+
+describe('nested instances', () => {
+  test('read and apply the properties of the component they show', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const button = graph.createNode('COMPONENT', pageId, {
+      name: 'Button',
+      componentPropertyDefinitions: [
+        { id: 'button:label', name: 'Label', type: 'TEXT', defaultValue: 'OK' }
+      ]
+    })
+    graph.createNode('TEXT', button.id, {
+      name: 'Label',
+      text: 'OK',
+      componentPropertyReferences: [{ propertyId: 'button:label', field: 'TEXT' }]
+    })
+    const toolbar = graph.createNode('COMPONENT', pageId, { name: 'Toolbar' })
+    graph.createInstance(button.id, toolbar.id)
+    const instance = graph.createInstance(toolbar.id, pageId)
+    const [nested] = graph.getChildren(instance?.id ?? '')
+    if (nested.type !== 'INSTANCE') throw new Error('Missing nested instance')
+
+    expect(componentPropertyOwners(graph, nested).map((owner) => owner.id)).toEqual([button.id])
+    expect(componentPropertyDefinitions(graph, nested).map(({ name }) => name)).toEqual(['Label'])
+    const [label] = componentPropertyDefinitions(graph, nested)
+    applyComponentPropertyValue(graph, nested.id, label, 'Save')
+    expect(graph.getChildren(nested.id)[0]?.text).toBe('Save')
+  })
+})

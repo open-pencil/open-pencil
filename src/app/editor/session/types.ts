@@ -5,10 +5,13 @@ import type { PresentationColorSpace } from '@open-pencil/vue'
 import type { EditorPreparation } from '@/app/editor/preparation/types'
 import type { NodeEditState } from '@/app/editor/vector/types'
 import { appPreferences } from '@/app/settings/preferences/store'
+import { resolvedAppTheme } from '@/app/shell/theme'
 
 export function createInitialAppEditorState(pageId: string): AppEditorState {
   return {
     ...createDefaultEditorState(pageId),
+    // New pages and sections take their colors from the interface theme, as in Figma.
+    theme: resolvedAppTheme.value,
     snappingPreferences: { ...appPreferences.value.editing.snapping },
     showUI: true,
     showRulers: true,
@@ -22,6 +25,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     cursorCanvasY: null,
     nodeEditState: null,
     renameSelectionOpen: false,
+    variablesOpen: false,
     renameNodeId: null,
     numberFieldFocused: false,
     preparation: null,
@@ -43,6 +47,8 @@ export type AppEditorState = EditorState & {
   cursorCanvasY: number | null
   nodeEditState: NodeEditState | null
   renameSelectionOpen: boolean
+  /** The variables dialog, opened from the Design panel, the View menu, or the palette. */
+  variablesOpen: boolean
   renameNodeId: string | null
   numberFieldFocused: boolean
   preparation: EditorPreparation | null

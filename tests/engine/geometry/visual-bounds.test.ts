@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { Vector } from '@open-pencil/core'
+import type { Vector } from '@open-pencil/scene-graph'
+import type { VisualBoundsNode } from '@open-pencil/scene-graph/geometry'
 import {
   computeDescendantVisualBounds,
   computeVisualBounds
@@ -74,6 +75,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 10,
               visible: true,
               align: 'OUTSIDE' as const,
@@ -100,6 +102,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 100,
               visible: false,
               align: 'OUTSIDE' as const,
@@ -125,6 +128,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 10,
               visible: true,
               align: 'CENTER' as const,
@@ -151,6 +155,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 10,
               visible: true,
               align: 'INSIDE' as const,
@@ -262,6 +267,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 5,
               visible: true,
               align: 'OUTSIDE' as const,
@@ -309,6 +315,7 @@ describe('computeVisualBounds', () => {
           height: 60,
           strokes: [
             {
+              type: 'SOLID',
               weight: 2,
               visible: true,
               align: 'OUTSIDE' as const,
@@ -316,6 +323,7 @@ describe('computeVisualBounds', () => {
               opacity: 1
             },
             {
+              type: 'SOLID',
               weight: 8,
               visible: true,
               align: 'CENTER' as const,
@@ -323,6 +331,7 @@ describe('computeVisualBounds', () => {
               opacity: 1
             },
             {
+              type: 'SOLID',
               weight: 4,
               visible: true,
               align: 'INSIDE' as const,
@@ -348,7 +357,7 @@ describe('computeVisualBounds', () => {
         ])
       }
     ]
-    const nodes = {
+    const nodes: Record<string, VisualBoundsNode> = {
       inside: {
         id: 'inside',
         type: 'COMPONENT',
@@ -357,6 +366,7 @@ describe('computeVisualBounds', () => {
         visible: true,
         strokes: [
           {
+            type: 'SOLID',
             weight: 1,
             visible: true,
             align: 'INSIDE' as const,
@@ -375,6 +385,7 @@ describe('computeVisualBounds', () => {
         visible: true,
         strokes: [
           {
+            type: 'SOLID',
             weight: 1,
             visible: true,
             align: 'OUTSIDE' as const,
@@ -403,7 +414,7 @@ describe('computeVisualBounds', () => {
   })
 
   test('descendant bounds include arrow overflow', () => {
-    const nodes = {
+    const nodes: Record<string, VisualBoundsNode> = {
       root: {
         id: 'root',
         type: 'FRAME',
@@ -419,7 +430,16 @@ describe('computeVisualBounds', () => {
         height: 0,
         visible: true,
         strokeCap: 'ARROW_EQUILATERAL' as const,
-        strokes: [{ weight: 4, visible: true, align: 'CENTER' as const }],
+        strokes: [
+          {
+            type: 'SOLID',
+            weight: 4,
+            visible: true,
+            align: 'CENTER' as const,
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1
+          }
+        ],
         childIds: []
       }
     }

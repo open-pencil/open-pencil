@@ -1,4 +1,4 @@
-import { es, jsx, type SyntaxNode } from '@open-pencil/codegen'
+import { es, jsx, type SyntaxNode } from '@open-pencil/emit'
 
 /** A paint, effect, or variable helper call inside a prop value, such as `solid("#FF0000")`. */
 export class HelperCall {
@@ -52,7 +52,7 @@ export function plainValue(value: unknown): JSXValue {
   throw new TypeError(`Cannot write a ${typeof value} value as JSX`)
 }
 
-/** The expression for a value, printed through the codegen builders. */
+/** The expression for a value, printed through the emit builders. */
 export function valueSyntax(value: JSXValue): SyntaxNode {
   if (value === null) return { type: 'Literal', value: null }
   if (value instanceof HelperCall) return es.call(value.helper, value.args.map(valueSyntax))

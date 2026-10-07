@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type {
   BlendMode,
   Fill,
@@ -8,6 +10,8 @@ import type {
 import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { parseScriptInput } from './validation'
 
 export type PaintColor = string | Color
 export type PaintStop = readonly [PaintColor, number] | { color: PaintColor; position: number }
@@ -29,6 +33,38 @@ const DEFAULT_GRADIENT_TRANSFORM: GradientTransform = {
   m10: 0,
   m11: 1,
   m12: 0
+}
+
+const colorSchema = v.union([
+  v.string(),
+  v.object({ r: v.number(), g: v.number(), b: v.number(), a: v.number() })
+])
+const stopsSchema = v.array(
+  v.union(
+    [v.tuple([colorSchema, v.number()]), v.object({ color: colorSchema, position: v.number() })],
+    (issue) => `Expected [color, position] or { color, position } but received ${issue.received}`
+  )
+)
+
+const GRADIENT_HELPERS = {
+  GRADIENT_LINEAR: 'linearGradient',
+  GRADIENT_RADIAL: 'radialGradient',
+  GRADIENT_ANGULAR: 'angularGradient',
+  GRADIENT_DIAMOND: 'diamondGradient'
+} as const
+
+type GradientType = keyof typeof GRADIENT_HELPERS
+
+/**
+ * Scripts call the helpers with whatever they guess, so a wrong call says what it expects
+ * and what was wrong, as Valibot describes it.
+ */
+function parseStops(type: GradientType, stops: unknown): PaintStop[] {
+  return parseScriptInput(
+    `${GRADIENT_HELPERS[type]}() expects an array of stops, such as [['#3b82f6', 0], ['#8b5cf6', 1]]`,
+    stopsSchema,
+    stops
+  )
 }
 
 function toColor(color: PaintColor): Color {
@@ -53,10 +89,7 @@ export function solid(color: PaintColor, options: SolidPaintOptions = {}): Fill 
 }
 
 export function gradient(
-  type: Extract<
-    FillType,
-    'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND'
-  >,
+  type: Extract<FillType, GradientType>,
   stops: PaintStop[],
   options: GradientPaintOptions = {}
 ): Fill {
@@ -66,7 +99,7 @@ export function gradient(
     opacity: options.opacity ?? 1,
     visible: options.visible ?? true,
     blendMode: options.blendMode,
-    gradientStops: stops.map(toStop),
+    gradientStops: parseStops(type, stops).map(toStop),
     gradientTransform: options.transform ?? DEFAULT_GRADIENT_TRANSFORM
   }
 }

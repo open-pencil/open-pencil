@@ -19,6 +19,8 @@ function occurrenceMetadata(
   converted: ReturnType<typeof nodeChangeToProps>
 ) {
   const metadata = createDefaultSourceMetadata()
+  // Figma's own sibling key, so re-export keeps the order Figma saved.
+  metadata.orderKey = current.properties.parentIndex?.position ?? null
   metadata.fig.layout = converted.source?.fig.layout ?? null
   metadata.fig.uniformScaleFactor = symbolDataOf(current.properties)?.uniformScaleFactor ?? null
   return metadata

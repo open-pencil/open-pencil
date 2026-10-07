@@ -4,6 +4,7 @@ import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { normalizeFontFamily } from '@open-pencil/scene-graph'
 
+import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { mergeClassNames, serializeHTML, splitWhitespace } from './html'
 
@@ -188,7 +189,22 @@ function classNamesFromHTML(html: string): string[] {
   return [...classes]
 }
 
-async function compileTailwindClasses(classNames: string[]): Promise<string> {
+/**
+ * The stylesheet for the tokens the document references, in the format the page needs: plain
+ * custom properties for inline styles, `@theme` for Tailwind, so token utilities compile.
+ */
+async function tokenCSS(document: DesignDocument, format: TokenStylesheetFormat): Promise<string> {
+  const { tokens, sourceGraph } = document
+  if (!tokens || !sourceGraph || tokens.used.size === 0) return ''
+  const variables = tokens.stylesheetVariables()
+  const { css } = await tokenStylesheet(sourceGraph, {
+    format,
+    include: (variable) => variables.has(variable.id)
+  })
+  return css
+}
+
+async function compileTailwindClasses(classNames: string[], tokens: string): Promise<string> {
   if (classNames.length === 0) return ''
   const [{ compile }, { readFile }] = await Promise.all([
     import('tailwindcss'),
@@ -198,7 +214,7 @@ async function compileTailwindClasses(classNames: string[]): Promise<string> {
     readFile(new URL(import.meta.resolve('tailwindcss/theme.css')), 'utf8'),
     readFile(new URL(import.meta.resolve('tailwindcss/utilities.css')), 'utf8')
   ])
-  const compiler = await compile(`${themeCSS}\n${utilitiesCSS}`)
+  const compiler = await compile(`${themeCSS}\n${tokens}\n${utilitiesCSS}`)
   return compiler.build(classNames)
 }
 
@@ -336,8 +352,12 @@ async function exportStandaloneHTML(
 
   if (options.style === 'tailwind') {
     body = serializeHTML(doc, { style: 'tailwind' })
-    css += await compileTailwindClasses(classNamesFromHTML(body))
+    css += await compileTailwindClasses(
+      classNamesFromHTML(body),
+      await tokenCSS(document, 'tailwind')
+    )
   } else {
+    css += await tokenCSS(document, 'css')
     const rules: string[] = []
     const index = { value: 0 }
     const styledDocument: DesignDocument = {

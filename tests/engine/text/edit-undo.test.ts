@@ -1,10 +1,13 @@
 import { describe, test, expect } from 'bun:test'
 
+import type { CanvasKit } from 'canvaskit-wasm'
+
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
-import type { DerivedTextGlyph, StyleRun } from '@open-pencil/core'
+import type { StyleRun } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
 import { getInstanceOverride } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
 
 import { fontManager } from '#core/text/fonts'
 
@@ -20,7 +23,8 @@ function setup() {
     editingTextId: null,
     currentPageId: pageId,
     renderVersion: 0,
-    sceneVersion: 0
+    sceneVersion: 0,
+    canvasVersion: 0
   } as EditorState
 
   const ctx: EditorContext = {
@@ -30,6 +34,10 @@ function setup() {
     requestRender: () => {
       state.renderVersion++
       state.sceneVersion++
+      state.canvasVersion++
+    },
+    requestRefresh: () => {
+      state.sceneVersion++
     },
     requestRepaint: () => {
       state.renderVersion++
@@ -37,10 +45,18 @@ function setup() {
     getTextEditor: () => textEditor,
     getRenderer: () => null,
     runLayoutForNode: () => undefined,
+    runMutationWithLayout: async (operation) => operation(),
     getCk: () => null,
-    loadFont: async () => undefined,
+    loadFont: async () => null,
     getViewportSize: () => ({ width: 800, height: 600 }),
-    subscribeToGraph: () => undefined
+    subscribeToGraph: () => undefined,
+    resolveFigmaClipboardImages: null,
+    beginInteractiveEdit: () => () => undefined,
+    onEditorEvent: () => () => undefined,
+    emitEditorEvent: () => undefined,
+    setSelectedIds: () => undefined,
+    setActiveTool: () => undefined,
+    setNavigationPhase: () => undefined
   }
 
   const textNode = graph.createNode('TEXT', pageId, {

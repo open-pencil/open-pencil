@@ -19,12 +19,24 @@ const LABEL_SPARKLE_RADIUS = 4
 const LABEL_SPARKLE_GAP = 3
 
 function drawSelection(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, cursor: PresenceCursor) {
-  if (!cursor.selection?.length) return
+  if (!cursor.selection?.length && !cursor.outline?.length) return
   const { r: red, g, b } = cursor.color
   r.auxStroke.setColor(r.ck.Color4f(red, g, b, 0.6))
   r.auxStroke.setStrokeWidth(1.5)
   r.auxStroke.setPathEffect(null)
-  for (const nodeId of cursor.selection) {
+  // Outlines of what is not a layer yet, such as JSX an agent is still streaming.
+  for (const rect of cursor.outline ?? []) {
+    canvas.drawRect(
+      r.ck.XYWHRect(
+        rect.x * r.zoom + r.panX,
+        rect.y * r.zoom + r.panY,
+        rect.width * r.zoom,
+        rect.height * r.zoom
+      ),
+      r.auxStroke
+    )
+  }
+  for (const nodeId of cursor.selection ?? []) {
     const node = graph.getNode(nodeId)
     if (!node) continue
     // Map the corners through the node's world matrix, as the shape is rendered, so the

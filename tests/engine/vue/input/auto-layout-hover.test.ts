@@ -1,14 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode, type SceneNode } from '@open-pencil/scene-graph'
 
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 
 function frame(overrides: Partial<SceneNode> = {}): SceneNode {
-  return {
-    id: 'frame',
-    type: 'FRAME',
+  return createDefaultNode(() => 'frame', 'FRAME', {
     name: 'Frame',
     parentId: 'page',
     childIds: ['title', 'body', 'bar'],
@@ -27,13 +25,11 @@ function frame(overrides: Partial<SceneNode> = {}): SceneNode {
     paddingBottom: 20,
     paddingLeft: 20,
     ...overrides
-  } as SceneNode
+  })
 }
 
 function child(id: string, y: number, height: number): SceneNode {
-  return {
-    id,
-    type: id === 'bar' ? 'RECTANGLE' : 'TEXT',
+  return createDefaultNode(() => id, id === 'bar' ? 'RECTANGLE' : 'TEXT', {
     name: id,
     parentId: 'frame',
     childIds: [],
@@ -46,7 +42,7 @@ function child(id: string, y: number, height: number): SceneNode {
     rotation: 0,
     layoutMode: 'NONE',
     layoutPositioning: 'AUTO'
-  } as SceneNode
+  })
 }
 
 function editor() {

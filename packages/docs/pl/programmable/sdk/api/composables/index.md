@@ -44,6 +44,5 @@ Poniżej znajdują się composables najczęściej używane podczas pracy z `@ope
 
 ## Zmienne, nawigacja i lokalizacja
 
-- [useVariablesEditor](./use-variables-editor)
 - [usePageList](./use-page-list)
 - [useI18n](./use-i18n)
