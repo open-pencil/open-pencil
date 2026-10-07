@@ -2,6 +2,7 @@ import { behaviourArgs } from '#dom-css/behaviours/args'
 import { BUTTON_RESET } from '#dom-css/behaviours/reset'
 import { allElements } from '#dom-css/behaviours/states/layers'
 import { stateStyles } from '#dom-css/behaviours/states/model'
+import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
 import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types'
 import { camelCase } from 'es-toolkit/string'
 
@@ -32,19 +33,69 @@ export interface VariantProp {
   default: string
 }
 
+/**
+ * What the control's root binds, which each framework writes in its own idiom: the two-way
+ * value (`v-model`, or Radix's `checked` and `onCheckedChange`), `disabled`, and a variant
+ * property the component sets as a `data-*` attribute from its prop.
+ */
+export type ComponentBinding =
+  | { type: 'model'; name: string }
+  | { type: 'disabled' }
+  | { type: 'prop'; prop: VariantProp; attribute: string }
+
+/** A layer of the generated markup, before a framework picks its element or component. */
+export interface ComponentElement {
+  type: 'element'
+  /** The behaviour part the layer draws, `root` for the control itself, or null. */
+  part: string | null
+  /** The element the design projects to, used when no library component draws the part. */
+  tag: string
+  /** The readable class the state styles select it by. */
+  className: string
+  /** Attributes the design sets, such as an image's `src` or its own `class`. */
+  attrs: Record<string, string>
+  /** On the root only. */
+  bindings: ComponentBinding[]
+  children: ComponentNode[]
+}
+
+export type ComponentNode = ComponentElement | { type: 'text'; value: string }
+
 /** One component generated from a component set with a behaviour. */
 export interface ComponentModel {
   /** The component's identifier and file name. */
   name: string
   kind: GeneratedKind
   styles: StateStyles
-  /** Each layer's part by the behaviour's part id; the root is `root`. */
-  parts: Map<StateElement, string>
-  /** The boolean the component binds with `v-model` or `onChange`: `checked`, `pressed`, `open`. */
+  /** The markup every framework writes, with each layer's part and the root's bindings. */
+  tree: ComponentElement
+  /** The boolean the component binds two ways: `checked`, `pressed`, or `open`. */
   model: string | null
   /** Whether the set draws a disabled state, so the component takes `disabled`. */
   disabled: boolean
   props: VariantProp[]
+}
+
+function componentTree(
+  node: StateElement,
+  parts: Map<StateElement, string>,
+  classes: Map<StateElement, string>,
+  bindings: ComponentBinding[]
+): ComponentElement {
+  const part = parts.get(node) ?? null
+  return {
+    type: 'element',
+    part,
+    tag: node.tagName,
+    className: classes.get(node) ?? '',
+    attrs: node.attrs,
+    bindings: part === 'root' ? bindings : [],
+    children: node.children.map((child) =>
+      child.type === 'text'
+        ? { type: 'text', value: child.text }
+        : componentTree(child, parts, classes, [])
+    )
+  }
 }
 
 /** Parts each kind renders as a native button, which the reset clears for the design. */
@@ -106,14 +157,24 @@ export function componentModel(graph: SceneGraph, set: SceneNode): ComponentMode
       options: definition.variantOptions ?? [],
       default: definition.defaultValue
     }))
+  const disabled =
+    booleans.some((arg) => arg.name === 'disabled') || args.states?.disabled !== undefined
+  const bindings: ComponentBinding[] = [
+    ...(model ? [{ type: 'model' as const, name: model }] : []),
+    ...(disabled ? [{ type: 'disabled' as const }] : []),
+    ...props.map((prop) => ({
+      type: 'prop' as const,
+      prop,
+      attribute: propAttribute(prop.property)
+    }))
+  ]
   return {
     name: identifierName(set.name, 'Component'),
     kind: behaviour.kind,
     styles,
-    parts,
+    tree: componentTree(styles.root, parts, layerClassNames(styles), bindings),
     model,
-    disabled:
-      booleans.some((arg) => arg.name === 'disabled') || args.states?.disabled !== undefined,
+    disabled,
     props
   }
 }

@@ -1,11 +1,10 @@
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
-import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
-import type { StateElement, StateNode } from '#dom-css/behaviours/states/types'
 import { compact } from 'es-toolkit/array'
+import { omit } from 'es-toolkit/object'
 
 import { es, vue } from '@open-pencil/emit'
 
-import type { ComponentModel, GeneratedKind } from './model'
+import type { ComponentBinding, ComponentModel, ComponentNode, GeneratedKind } from './model'
 
 /** The Reka UI components a kind renders, by part, and the prop its model binds. */
 const REKA: Record<
@@ -34,45 +33,37 @@ const identifier = (name: string) => es.identifier(name)
 /** `disabled || undefined`, so a native button sets `data-disabled` only while disabled. */
 const DISABLED_FLAG = es.parseExpression('disabled || undefined')
 
-function rootAttributes(component: ComponentModel, native: boolean): vue.VueAttribute[] {
-  const reka = REKA[component.kind]
-  const model = component.model && reka.model
+function bindingAttributes(
+  binding: ComponentBinding,
+  kind: GeneratedKind,
+  native: boolean
+): vue.VueAttribute[] {
+  if (binding.type === 'model')
+    return [vue.model(identifier(binding.name), REKA[kind].model === 'open' ? 'open' : undefined)]
+  if (binding.type === 'prop') return [vue.bound(binding.attribute, identifier(binding.prop.name))]
+  // Reka sets `data-disabled` on its own roots; a native button needs it for the state styles.
   return [
-    ...(native ? [vue.attribute('type', 'button')] : []),
-    ...(model
-      ? [vue.model(identifier(component.model ?? ''), model === 'open' ? 'open' : undefined)]
-      : []),
-    ...(component.disabled ? [vue.bound('disabled', identifier('disabled'))] : []),
-    // Reka sets `data-disabled` on its own roots; a native button needs it for the state styles.
-    ...(component.disabled && native ? [vue.bound('data-disabled', DISABLED_FLAG)] : []),
-    ...component.props.map((prop) => vue.bound(propAttribute(prop.property), identifier(prop.name)))
+    vue.bound('disabled', identifier('disabled')),
+    ...(native ? [vue.bound('data-disabled', DISABLED_FLAG)] : [])
   ]
 }
 
-function templateNode(
-  node: StateNode,
-  component: ComponentModel,
-  classes: Map<StateElement, string>,
-  used: Set<string>
-): vue.VueNode {
-  if (node.type === 'text') return vue.text(node.text)
-  const part = component.parts.get(node)
-  const reka = part ? REKA[component.kind].parts[part] : undefined
+function templateNode(node: ComponentNode, kind: GeneratedKind, used: Set<string>): vue.VueNode {
+  if (node.type === 'text') return vue.text(node.value)
+  const reka = node.part ? REKA[kind].parts[node.part] : undefined
   if (reka) used.add(reka)
-  const native = part === 'root' && !reka
-  const className = compact([node.attrs.class, classes.get(node)]).join(' ')
-  const attributes = [
-    ...Object.entries(node.attrs)
-      .filter(([name]) => name !== 'class')
-      .map(([name, value]) => vue.attribute(name, value)),
-    vue.attribute('class', className),
-    ...(part === 'root' ? rootAttributes(component, native) : [])
-  ]
-  const tag = reka ?? (native ? 'button' : node.tagName)
+  const native = node.part === 'root' && !reka
   return vue.element(
-    tag,
-    attributes,
-    node.children.map((child) => templateNode(child, component, classes, used))
+    reka ?? (native ? 'button' : node.tag),
+    [
+      ...(native ? [vue.attribute('type', 'button')] : []),
+      ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
+        vue.attribute(name, value)
+      ),
+      vue.attribute('class', compact([node.attrs.class, node.className]).join(' ')),
+      ...node.bindings.flatMap((binding) => bindingAttributes(binding, kind, native))
+    ],
+    node.children.map((child) => templateNode(child, kind, used))
   )
 }
 
@@ -129,9 +120,8 @@ function script(component: ComponentModel, used: Set<string>): es.SyntaxNode {
  * other variant properties.
  */
 export async function vueComponent(component: ComponentModel): Promise<string> {
-  const classes = layerClassNames(component.styles)
   const used = new Set<string>()
-  const template = templateNode(component.styles.root, component, classes, used)
+  const template = templateNode(component.tree, component.kind, used)
   const { css } = await stateStylesToCSS(component.styles)
   return vue.printComponent({ script: script(component, used), template, style: css })
 }
