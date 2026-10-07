@@ -12,7 +12,7 @@ const hud = useMobileHudContext()
       :key="hud.actionToast"
       class="flex h-8 items-center rounded-full border border-accent/20 bg-panel/70 px-3 shadow-md backdrop-blur-xl"
     >
-      <span class="text-xs whitespace-nowrap text-accent">{{ hud.actionToast }}</span>
+      <span class="text-xs whitespace-nowrap text-primary">{{ hud.actionToast }}</span>
     </div>
   </Transition>
 </template>

@@ -11,7 +11,7 @@ interface Args {
 }
 
 const meta = {
-  title: 'Design System/Inputs/Checkbox card',
+  title: 'Design System/Inputs/Checkbox Card',
   args: {
     label: 'Review designs visually',
     description: 'A model that reads images checks the result against your request.'

@@ -4,7 +4,7 @@ import BrandMark from './BrandMark.vue'
 import type { BrandMarkProps } from './types'
 
 const meta = {
-  title: 'Brand/Mark',
+  title: 'App/Brand/Mark',
   component: BrandMark,
   args: { variant: 'mark', appearance: 'light', class: 'size-32' }
 } satisfies Meta<BrandMarkProps>

@@ -918,6 +918,8 @@ export function sceneNodeToKiwiWithContext(
     transform: exportNodeTransform(context, node)
   }
   if (node.sharedStyleType) nc.styleType = node.sharedStyleType
+  // Readers take a missing blend mode as pass-through, the layer default.
+  if (node.blendMode !== 'PASS_THROUGH') nc.blendMode = node.blendMode
   if (node.type === 'GROUP') {
     nc.resizeToFit = true
   }

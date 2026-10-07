@@ -44,7 +44,7 @@ function setMode(value: string) {
       <div
         v-if="auto"
         data-test-id="layout-gap-input"
-        class="flex h-[26px] items-center rounded border border-border bg-input focus-within:border-accent"
+        class="flex h-[26px] items-center rounded border border-border bg-input focus-within:border-panel-focus"
       >
         <span class="px-[5px] text-muted">
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
@@ -100,7 +100,7 @@ function setMode(value: string) {
             :class="menu.item"
           >
             <SelectItemIndicator class="absolute left-1.5 inline-flex items-center justify-center"
-              ><icon-lucide-check class="size-3 text-accent"
+              ><icon-lucide-check class="size-3 text-primary"
             /></SelectItemIndicator>
             <SelectItemText>{{
               mode === 'AUTO' ? panels.auto : Math.round(ctx.node.itemSpacing)

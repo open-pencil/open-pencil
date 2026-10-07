@@ -182,6 +182,25 @@ function earlierOpenPencilData(characters: string, lineHeight: number): DerivedT
 describe('derived text reader', () => {
   const blobs = [new Uint8Array([0])]
 
+  test("keeps a glyph's own advance through reading and saving", () => {
+    const characters = 'Table item'
+    const data = earlierOpenPencilData(characters, 16)
+    // One offset per character, as Figma writes, so the reader keeps the glyphs.
+    data.logicalIndexToCharacterOffsetMap = data.logicalIndexToCharacterOffsetMap?.slice(0, -1)
+    for (const glyph of data.glyphs ?? []) glyph.advance = 0.5
+
+    const glyphs = convertFigmaDerivedTextGlyphs(data, blobs, characters)
+    expect(glyphs.at(-1)?.advance).toBe(6.5)
+    const saved = expectDefined(
+      buildNodeDerivedTextData(
+        textNode({ text: characters, derivedTextGlyphs: glyphs }),
+        context(null)
+      ),
+      'derived text'
+    )
+    expect(saved.glyphs?.at(-1)?.advance).toBe(0.5)
+  })
+
   test('drops one-line glyphs an earlier OpenPencil wrote without shaping (#914)', () => {
     const characters = 'A sentence long enough that it has to wrap onto a second line.'
 

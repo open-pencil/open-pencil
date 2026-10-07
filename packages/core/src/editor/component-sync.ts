@@ -100,7 +100,10 @@ export function createComponentSyncScheduler(
   function scheduleComponentSync(nodeId: string) {
     // Import/materialization has already resolved component overrides. These updates
     // are not authored component edits and must not reset instances to their defaults.
-    if (isFlushingComponentSync || getGraph().isApplyingImportedState) return
+    // Layout's own writes are results, not edits: it lays out the instances too, and the edit
+    // that made it run has already scheduled its sync.
+    const graph = getGraph()
+    if (isFlushingComponentSync || graph.isApplyingImportedState || graph.isApplyingLayout) return
     if (!pendingComponentSync) {
       pendingComponentSync = new Set()
       queueMicrotask(flushComponentSync)

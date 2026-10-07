@@ -104,17 +104,36 @@ export function createBehaviourCompletionActions(
   }
 
   /**
+   * Add a property under a new id inside a behaviour's owner and bind it, as one undo step:
+   * `create` edits the owner's layers, and `bind` returns the behaviour holding the new id.
+   */
+  function createAndBind(
+    ownerId: string,
+    label: string,
+    create: (owner: SceneNode, id: string) => void,
+    bind: (behaviour: Behaviour, id: string) => Behaviour
+  ): string | null {
+    const found = owned(ownerId)
+    if (!found) return null
+    const { owner, behaviour } = found
+    const id = createComponentPropertyId()
+    ctx.undo.runBatch(label, () => {
+      recordSubtreeEdit(ctx, label, owner.id, () => create(owner, id))
+      setBehaviour(owner.id, bind(behaviour, id))
+    })
+    return id
+  }
+
+  /**
    * Show a text value through a new text property named `name`. Each variant's first text
    * layer that no property shows becomes its target; a variant without one gets a new text
    * layer inset in it.
    */
   function addBehaviourText(ownerId: string, valueId: string, name: string): string | null {
-    const found = owned(ownerId)
-    if (!found) return null
-    const { owner, behaviour } = found
-    const id = createComponentPropertyId()
-    ctx.undo.runBatch(`Add ${name} text`, () => {
-      recordSubtreeEdit(ctx, `Add ${name} text`, owner.id, () => {
+    return createAndBind(
+      ownerId,
+      `Add ${name} text`,
+      (owner, id) => {
         let defaultValue = name
         for (const variant of variantsOf(ctx, owner)) {
           const layer =
@@ -144,13 +163,12 @@ export function createBehaviourCompletionActions(
             { id, name, type: 'TEXT', defaultValue }
           ]
         })
-      })
-      setBehaviour(owner.id, {
+      },
+      (behaviour, id) => ({
         ...behaviour,
         texts: { ...behaviour.texts, [valueId]: { propertyId: id } }
       })
-    })
-    return id
+    )
   }
 
   /**
@@ -186,12 +204,10 @@ export function createBehaviourCompletionActions(
    * variant of a set, all under one slot id so the part is the same slot in every state.
    */
   function addBehaviourPart(ownerId: string, partId: string, name: string): string | null {
-    const found = owned(ownerId)
-    if (!found) return null
-    const { owner, behaviour } = found
-    const id = createComponentPropertyId()
-    ctx.undo.runBatch(`Add ${name} slot`, () => {
-      recordSubtreeEdit(ctx, `Add ${name} slot`, owner.id, () => {
+    return createAndBind(
+      ownerId,
+      `Add ${name} slot`,
+      (owner, id) => {
         for (const variant of variantsOf(ctx, owner)) {
           const frame = ctx.graph.createNode('FRAME', variant.id, {
             name,
@@ -203,10 +219,9 @@ export function createBehaviourCompletionActions(
           })
           createSlotProperty(ctx.graph, frame.id, id)
         }
-      })
-      setBehaviour(owner.id, { ...behaviour, parts: { ...behaviour.parts, [partId]: id } })
-    })
-    return id
+      },
+      (behaviour, id) => ({ ...behaviour, parts: { ...behaviour.parts, [partId]: id } })
+    )
   }
 
   /**

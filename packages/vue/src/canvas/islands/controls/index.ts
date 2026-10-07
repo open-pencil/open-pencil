@@ -28,12 +28,10 @@ import {
 } from 'reka-ui'
 import { h, type Component, type VNode } from 'vue'
 
-import type { DesignElement } from '@open-pencil/dom-css/export'
+import { groupOf, type ControlRole, type DesignElement } from '@open-pencil/dom-css/export'
 import { numberSettings } from '@open-pencil/scene-graph'
 
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
-import type { IslandRole } from '#vue/canvas/islands/roles'
-import { groupOf } from '#vue/canvas/islands/roles'
 
 import { fieldRole, fieldRoot } from './fields'
 import { chooseItem, disabled, interaction, stateOf, type RoleContext } from './shared'
@@ -45,7 +43,7 @@ function asChild(component: Component, props: Record<string, unknown>, child: ()
 
 const ON_OFF: Record<string, Component> = { switch: SwitchRoot, toggle: Toggle }
 
-function root({ island, role, base }: RoleContext<Extract<IslandRole, { type: 'root' }>>): VNode {
+function root({ island, role, base }: RoleContext<Extract<ControlRole, { type: 'root' }>>): VNode {
   const { control } = role
   const state = stateOf(island, control)
   const off = disabled(island, control)
@@ -170,7 +168,7 @@ function groupRoot(
 }
 
 /** An item of a group: a radio, a toggle, or a collapsible inside an accordion. */
-function item({ island, role, base }: RoleContext<Extract<IslandRole, { type: 'item' }>>): VNode {
+function item({ island, role, base }: RoleContext<Extract<ControlRole, { type: 'item' }>>): VNode {
   const state = stateOf(island, role.control)
   const value = String(role.index)
   const pointer = interaction(state)
@@ -187,7 +185,7 @@ const SLIDER_PARTS: Record<string, { component: Component; omit: readonly string
   thumb: { component: SliderThumb, omit: ['left', 'transform'] }
 }
 
-function part({ island, role, base }: RoleContext<Extract<IslandRole, { type: 'part' }>>): VNode {
+function part({ island, role, base }: RoleContext<Extract<ControlRole, { type: 'part' }>>): VNode {
   const { control } = role
   const sliderPart = control.kind === 'slider' ? SLIDER_PARTS[role.part] : undefined
   if (sliderPart) return asChild(sliderPart.component, {}, () => base({ omit: sliderPart.omit }))
@@ -209,7 +207,7 @@ function part({ island, role, base }: RoleContext<Extract<IslandRole, { type: 'p
 /** A collapsible's trigger and content, or an accordion item's when it is one. */
 function disclosurePart(
   island: IslandRenderContext,
-  role: Extract<IslandRole, { type: 'part' }>,
+  role: Extract<ControlRole, { type: 'part' }>,
   base: RoleContext['base']
 ): VNode {
   const inAccordion = groupOf(island.roles, role.control)?.kind === 'accordion'
@@ -227,7 +225,7 @@ function disclosurePart(
 /** Render a layer with the role it has for the controls of its island. */
 export function wrapRole(
   island: IslandRenderContext,
-  role: IslandRole,
+  role: ControlRole,
   element: DesignElement,
   base: (override?: ElementOverride) => VNode
 ): VNode {

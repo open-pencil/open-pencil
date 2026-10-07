@@ -7,7 +7,7 @@ export default {
       md: 'size-8 rounded-md border border-transparent text-base leading-none'
     },
     active: {
-      true: 'border-accent text-accent'
+      true: 'border-accent text-primary'
     },
     disabled: {
       true: 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted'

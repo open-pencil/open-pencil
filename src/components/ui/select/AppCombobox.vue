@@ -158,7 +158,7 @@ function updateOpen(value: boolean): void {
               :class="styles.item({ class: ui?.item })"
             >
               <ComboboxItemIndicator :class="styles.indicator({ class: ui?.indicator })">
-                <icon-lucide-check class="size-3 text-accent" />
+                <icon-lucide-check class="size-3 text-primary" />
               </ComboboxItemIndicator>
               <slot name="option" :option="option">
                 <div class="min-w-0 flex-1">

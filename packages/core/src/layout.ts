@@ -47,7 +47,8 @@ import {
   mapAlign,
   mapAlignSelf,
   mapGridTrack,
-  mapJustify
+  mapJustify,
+  parentStretchedAxis
 } from './layout/yoga-helpers'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
@@ -122,6 +123,11 @@ function buildYogaTree(
     if (frame.layoutMode === 'HORIZONTAL') root.setHeight(frame.height)
     else root.setWidth(frame.width)
   }
+  // Laid out on its own, a frame its parent stretches keeps the size the parent gave it on
+  // that axis, so its content aligns within that size rather than within a hug.
+  const stretchedAxis = parentStretchedAxis(graph, frame)
+  if (stretchedAxis === 'width') root.setWidth(frame.width)
+  if (stretchedAxis === 'height') root.setHeight(frame.height)
 
   configureFlexContainer(root, frame, direction)
 

@@ -214,6 +214,62 @@ const noCoreBrowserGlobals = {
   }
 } satisfies RuleDefinition
 
+/** Modules that draw document content into the cached scene. */
+const SCENE_DRAWING_FILES = [
+  '/packages/core/src/canvas/scene.ts',
+  '/packages/core/src/canvas/strokes.ts',
+  '/packages/core/src/canvas/fills.ts',
+  '/packages/core/src/canvas/boolean.ts'
+]
+const SCENE_DRAWING_DIRECTORIES = ['/packages/core/src/canvas/text/']
+
+/** Whether `node` is an argument of `effectRasterScale(...)`, not inside a function passed to it. */
+function inEffectRasterScale(node: TSESTree.Node): boolean {
+  for (let current = node.parent; current; current = current.parent) {
+    if (
+      current.type === 'ArrowFunctionExpression' ||
+      current.type === 'FunctionExpression' ||
+      current.type === 'FunctionDeclaration'
+    )
+      return false
+    if (
+      current.type === 'CallExpression' &&
+      current.callee.type === 'Identifier' &&
+      current.callee.name === 'effectRasterScale'
+    )
+      return true
+  }
+  return false
+}
+
+const noZoomInSceneDrawing = {
+  meta: {
+    docs: {
+      description:
+        'Disallow reading the zoom where document content is drawn: the scene is cached and scaled, so screen-sized chrome belongs in the overlay pass'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    const scene =
+      SCENE_DRAWING_FILES.some((suffix) => file.endsWith(suffix)) ||
+      SCENE_DRAWING_DIRECTORIES.some((directory) => file.includes(directory))
+    if (!scene) return {}
+
+    return {
+      MemberExpression(node) {
+        if (node.computed || node.property.type !== 'Identifier') return
+        if (node.property.name !== 'zoom' || inEffectRasterScale(node)) return
+        context.report({
+          node,
+          message:
+            'Do not size scene drawing by the zoom; the scene is cached and scaled while navigating. Draw screen-sized chrome in the overlay pass with withScreenStroke.'
+        })
+      }
+    }
+  }
+} satisfies RuleDefinition
+
 const noDirectGraphEmitterSubscriptions = {
   meta: {
     docs: {
@@ -402,6 +458,7 @@ export {
   noReflectDeleteGlobalThisOutsideTests,
   noTsSuppressionComments,
   noCoreBrowserGlobals,
+  noZoomInSceneDrawing,
   noDirectGraphEmitterSubscriptions,
   noOnUnmountedInCompositionRoots,
   noComposableStateWrappers,

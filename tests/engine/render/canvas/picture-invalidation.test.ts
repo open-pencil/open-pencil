@@ -71,8 +71,19 @@ test('node picture invalidation removes pictures that depend on a changed child'
 
   invalidateNodePicture(renderer, 'child')
 
-  expect(textPreparationCache.deleteNode).toHaveBeenCalledWith('child')
+  expect(textPreparationCache.deleteNode).toHaveBeenCalledWith('child', {
+    keepShaping: false
+  })
   expect(parentPicture.delete).toHaveBeenCalledTimes(1)
   expect(childPicture.delete).toHaveBeenCalledTimes(1)
   expect(renderer.nodePictureCache.size).toBe(0)
+
+  invalidateNodePicture(renderer, 'child', ['width', 'height', 'x'])
+  expect(textPreparationCache.deleteNode).toHaveBeenLastCalledWith('child', {
+    keepShaping: true
+  })
+  invalidateNodePicture(renderer, 'child', ['width', 'text'])
+  expect(textPreparationCache.deleteNode).toHaveBeenLastCalledWith('child', {
+    keepShaping: false
+  })
 })

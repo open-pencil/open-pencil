@@ -5,6 +5,7 @@
   "match": "Correspondance",
   "to": "Renommer en",
   "currentName": "Nom actuel",
+  "layerName": "Nom du calque",
   "numberAscending": "Numéro ↑",
   "numberDescending": "Numéro ↓",
   "startAscendingFrom": "Commencer l’ordre croissant à",

@@ -24,7 +24,7 @@ const appPickerTheme = {
     text: 'min-w-0 flex-1',
     label: 'block truncate text-xs text-surface',
     description: 'block truncate text-[10px] text-muted',
-    check: 'size-3 shrink-0 text-accent',
+    check: 'size-3 shrink-0 text-primary',
     empty: 'px-1 py-2 text-[11px] text-muted',
     footer: 'border-t border-border p-1'
   },

@@ -1,9 +1,8 @@
 import { reactive } from 'vue'
 
 import type { InstanceState } from '@open-pencil/core/editor'
+import { booleanOf, type ControlModel } from '@open-pencil/dom-css/export'
 import { numberSettings, type InteractionState } from '@open-pencil/scene-graph'
-
-import { booleanOf, type ControlModel } from './model'
 
 /** What one control of an island holds while it runs. */
 export interface ControlState {

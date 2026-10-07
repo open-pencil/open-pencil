@@ -25,7 +25,7 @@ const appComboboxTheme = {
     item: 'relative flex min-h-8 cursor-pointer items-center gap-2 rounded py-1 pr-2 pl-6 text-surface outline-none select-none data-[disabled]:pointer-events-none data-[highlighted]:bg-hover data-[disabled]:opacity-50',
     indicator: 'absolute left-1.5 inline-flex items-center justify-center',
     description: 'truncate font-mono text-[9px] text-muted',
-    meta: 'shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] text-accent'
+    meta: 'shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] text-primary'
   }
 }
 

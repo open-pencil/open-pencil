@@ -15,6 +15,7 @@ import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
 
 import ChatComposer from './ChatComposer.vue'
 
@@ -22,9 +23,15 @@ const { providerID, providerDef, modelID, customModelID } = useAIChat()
 const { editor, selectedIds } = useSelectionState()
 const { ai } = useI18n()
 
-const { status, disabled = false } = defineProps<{
+const {
+  status,
+  disabled = false,
+  dragging = false
+} = defineProps<{
   status: 'ready' | 'submitted' | 'streaming' | 'error'
   disabled?: boolean
+  /** Whether images are being dragged over the chat, which shows where they will go. */
+  dragging?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -44,6 +51,7 @@ const {
   canToggleSelection: canAddSelection,
   selectionActive: selectionContextActive,
   openImageDialog,
+  addFiles,
   removeImage,
   removeNode: removeReferencedNode,
   toggleSelection: toggleCurrentSelection,
@@ -59,9 +67,29 @@ function restoreDraft(submission: ChatSubmission): void {
   if (composer.value?.restoreDraft(submission.displayText)) restoreSubmission(submission)
   else for (const image of submission.images) revokeImagePreviewURL(image.previewURL)
 }
-defineExpose({ restoreDraft })
 
 const isStreaming = computed(() => disabled || status === 'streaming' || status === 'submitted')
+
+/** Why images dropped now would not be attached, or null when they would. */
+const dropRefusal = computed(() => {
+  if (isStreaming.value) return ai.value.dropImagesAfterReply
+  if (images.value.length >= MAX_IMAGE_ATTACHMENTS) {
+    return ai.value.dropImagesLimit({ count: MAX_IMAGE_ATTACHMENTS })
+  }
+  return null
+})
+
+/** Attaches images dropped on the chat, unless they cannot be attached right now. */
+function dropFiles(files: File[]): void {
+  if (dropRefusal.value) {
+    emit('error', dropRefusal.value)
+    return
+  }
+  void addFiles(files)
+}
+
+defineExpose({ restoreDraft, dropFiles })
+
 const isAgentProvider = computed(
   () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
 )
@@ -144,6 +172,14 @@ const selectedProfileName = computed(
           </IconButton>
         </div>
       </div>
+    </template>
+    <template #overlay>
+      <AppDropOverlay
+        shape="field"
+        :visible="dragging"
+        :accepts="!dropRefusal"
+        :label="dropRefusal ?? ai.dropImagesToAttach"
+      />
     </template>
     <template #leading>
       <IconButton

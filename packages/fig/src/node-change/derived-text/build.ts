@@ -149,6 +149,16 @@ function savedGlyphLayout(
   return { baselines, logicalIndexToCharacterOffsetMap: offsets }
 }
 
+/**
+ * A kept glyph's advance in ems: its own when it has one, else the distance to the next glyph
+ * on its line, else nothing.
+ */
+function savedAdvance(glyph: DerivedTextGlyph, next: DerivedTextGlyph | undefined): number {
+  if (glyph.fontSize <= 0) return 0
+  if (glyph.advance !== undefined) return (glyph.advance * (glyph.scaleX ?? 1)) / glyph.fontSize
+  return next ? Math.max(next.x - glyph.x, 0) / glyph.fontSize : 0
+}
+
 function savedGlyphRecords(
   glyphs: DerivedTextGlyph[],
   context: DerivedTextBuildContext
@@ -172,7 +182,7 @@ function savedGlyphRecords(
       position: { x: glyph.x, y: glyph.y },
       fontSize: glyph.fontSize,
       firstCharacter: glyph.firstCharacter ?? index,
-      advance: sameLine && glyph.fontSize > 0 ? Math.max(next.x - glyph.x, 0) / glyph.fontSize : 0,
+      advance: savedAdvance(glyph, sameLine ? next : undefined),
       // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
       rotation: glyph.rotation ?? 0
     }

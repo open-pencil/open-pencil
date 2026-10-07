@@ -22,7 +22,7 @@ type Args = {
 }
 
 const meta = {
-  title: 'Collaboration/Presence Avatars',
+  title: 'App/Collaboration/Presence Avatars',
   component: PresenceAvatars,
   tags: ['autodocs'],
   args: {

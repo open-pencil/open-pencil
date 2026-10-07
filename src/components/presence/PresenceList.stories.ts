@@ -10,7 +10,7 @@ import type { PresencePersonRow } from './rows'
 type Args = { rows: PresencePersonRow[]; following: FollowTarget | null }
 
 const meta = {
-  title: 'Collaboration/Presence List',
+  title: 'App/Collaboration/Presence List',
   component: PresenceList,
   tags: ['autodocs'],
   args: { rows: room, following: null, onFollow: fn(), onRename: fn() },

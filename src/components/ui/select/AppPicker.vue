@@ -136,12 +136,7 @@ function select(value: AcceptableValue) {
             </AppButton>
           </PopoverClose>
         </div>
-        <ListboxRoot
-          class="flex min-h-0 flex-col"
-          highlight-on-hover
-          :aria-label="heading"
-          @update:model-value="select"
-        >
+        <ListboxRoot class="flex min-h-0 flex-col" highlight-on-hover @update:model-value="select">
           <div :class="styles.search({ class: ui?.search })">
             <icon-lucide-search :class="styles.searchIcon({ class: ui?.searchIcon })" />
             <ListboxFilter
@@ -152,7 +147,7 @@ function select(value: AcceptableValue) {
               :class="styles.input({ class: ui?.input })"
             />
           </div>
-          <ListboxContent :class="styles.list({ class: ui?.list })">
+          <ListboxContent :class="styles.list({ class: ui?.list })" :aria-label="heading">
             <p v-if="groups.length === 0" :class="styles.empty({ class: ui?.empty })">
               {{ emptyLabel }}
             </p>
@@ -160,11 +155,13 @@ function select(value: AcceptableValue) {
               <ListboxGroupLabel v-if="group" :class="styles.groupLabel({ class: ui?.groupLabel })">
                 {{ group }}
               </ListboxGroupLabel>
+              <!-- Reka marks a disabled option only with data-disabled; assistive tech needs aria-disabled. -->
               <ListboxItem
                 v-for="item in entries"
                 :key="item.value"
                 :value="item.value"
                 :disabled="item.disabled"
+                :aria-disabled="item.disabled || undefined"
                 :class="styles.item({ class: ui?.item })"
               >
                 <span v-if="slots.leading" :class="styles.leading({ class: ui?.leading })">

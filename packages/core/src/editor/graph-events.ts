@@ -70,7 +70,8 @@ function invalidateRenderersForChange(
   const invalidation = rendererInvalidationForChanges(changes, { preview: !invalidateNodePicture })
   for (const renderer of renderers) {
     if (invalidation.geometryCache) renderer.invalidateVectorPath(id)
-    if (invalidation.nodePicture) renderer.invalidateNodePicture(id)
+    if (invalidation.nodePicture)
+      renderer.invalidateNodePicture(id, Object.keys(changes) as (keyof SceneNode)[])
     if (Object.keys(changes).some((key) => TILED_CHUNK_TOPOLOGY_KEYS.has(key as keyof SceneNode))) {
       renderer.tiledScene.invalidateStructure()
     } else {

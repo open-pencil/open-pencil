@@ -1,11 +1,8 @@
-import type { Color } from '@open-pencil/scene-graph'
+import type { Color, SceneGraph } from '@open-pencil/scene-graph'
 
-import { DEMO_COLORS } from '@/app/demo/colors'
-import type { EditorStore } from '@/app/editor/session'
+import { DEMO_COLORS } from '../colors'
 
-export function createDemoVariables(store: EditorStore) {
-  const { graph } = store
-
+export function createDemoVariables(graph: SceneGraph) {
   graph.addCollection({
     id: 'col-primitives',
     name: 'Primitives',

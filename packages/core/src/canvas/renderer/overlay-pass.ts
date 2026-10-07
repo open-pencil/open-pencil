@@ -5,6 +5,8 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
+import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
+import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
@@ -96,6 +98,7 @@ export function drawOverlayPass(
     measuring || overlays.hoveredNodeId === overlays.nodeEditState?.nodeId
       ? null
       : overlays.hoveredNodeId
+  drawComponentSetBorders(r, canvas, graph, overlays.rotationPreview)
   drawCodeFocus(r, canvas, graph, overlays.codeFocusNodeId, overlays.rotationPreview)
   if (!measuring)
     drawSlotOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays.rotationPreview)
@@ -103,6 +106,8 @@ export function drawOverlayPass(
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
+  drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
+  drawEditingText(r, canvas, graph, overlays)
   r.profiler.beginPhase('render:selection')
   r.drawSelection(canvas, graph, selectedIds, overlays)
   if (measuring) r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)

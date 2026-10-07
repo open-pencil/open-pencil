@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import Pill from './examples/Pill.vue'
 
 const meta = {
-  title: 'Editor/Workspace Pill',
+  title: 'App/Editor/Workspace Pill',
   component: Pill,
   parameters: {
     docs: {

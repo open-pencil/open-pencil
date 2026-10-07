@@ -12,11 +12,6 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import {
-  COMPONENT_SET_OUTLINE_RADIUS,
-  DROP_HIGHLIGHT_ALPHA,
-  DROP_HIGHLIGHT_STROKE
-} from '#core/constants'
 import { createSceneGeometry, nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
@@ -124,28 +119,17 @@ function renderNodeContent(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  nodeId: string,
   overlays: RenderOverlays
 ): void {
   if (node.type === 'SECTION') {
     r.renderSection(canvas, node, graph)
   } else if (node.type === 'COMPONENT_SET' && !overlays.playing) {
-    // A previewing canvas draws a set as a plain frame, without its dashed editing border.
+    // A previewing canvas draws a set as a plain frame.
     r.renderComponentSet(canvas, node, graph)
   } else if (node.type === 'BOOLEAN_OPERATION') {
     renderBooleanOperation(r, canvas, node, graph)
   } else {
     r.renderShape(canvas, node, graph)
-  }
-
-  if (overlays.editingTextId === nodeId && overlays.textEditor?.state?.paragraph) {
-    r.drawTextEditOverlay(canvas, node, overlays.textEditor)
-  }
-
-  if (overlays.dropTargetId === nodeId) {
-    r.auxStroke.setStrokeWidth(DROP_HIGHLIGHT_STROKE / r.zoom)
-    r.auxStroke.setColor(r.selColor(DROP_HIGHLIGHT_ALPHA))
-    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxStroke)
   }
 }
 
@@ -154,13 +138,12 @@ function renderMaskNodeContent(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  nodeId: string,
   overlays: RenderOverlays
 ): void {
   canvas.save()
   canvas.translate(node.x, node.y)
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, nodeId, {})
+  renderNodeContent(r, canvas, graph, node, {})
   canvas.restore()
 }
 
@@ -185,7 +168,7 @@ function renderChildIds(
     (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, hasTransformedAncestor),
     (childId) => {
       const child = graph.getNode(childId)
-      if (child) renderMaskNodeContent(r, canvas, graph, child, childId, overlays)
+      if (child) renderMaskNodeContent(r, canvas, graph, child, overlays)
     },
     (childId) => {
       const child = graph.getNode(childId)
@@ -245,7 +228,7 @@ export function renderNodeSelf(
   canvas.save()
   canvas.translate(node.x, node.y)
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, nodeId, overlays)
+  renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
   canvas.restore()
 }
@@ -378,7 +361,7 @@ export function renderNode(
   }
 
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, nodeId, overlays)
+  renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
   renderChildren(
     r,
@@ -434,16 +417,25 @@ function forVisibleStrokes(
   }
 }
 
+/** Fill a section's or set's rounded bounds and return them, for its strokes to follow. */
+function fillRoundedBounds(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): Float32Array {
+  const rrect = makeNodeRRect(r, node, node.cornerRadius)
+  drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
+  return rrect
+}
+
 export function renderSection(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rrect = makeNodeRRect(r, node, node.cornerRadius)
-
-  drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
-
+  const rrect = fillRoundedBounds(r, canvas, node, graph)
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     configureStrokePaint(r, node, stroke, color)
 
@@ -458,39 +450,25 @@ export function renderComponentSet(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rrect = makeNodeRRect(r, node, node.cornerRadius)
-
-  drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
-
-  const visibleStrokes = node.strokes.filter((stroke) => stroke.visible)
-  if (visibleStrokes.length > 0) {
-    forVisibleStrokes(r, node, graph, (stroke, color) => {
-      const dashPhase = stroke.dashPattern?.[1] ?? 0
-      if (stroke.dashPattern && stroke.dashPattern.length > 0) {
-        drawDashedRRectWithSolidCorners(
-          r,
-          canvas,
-          node,
-          stroke,
-          color,
-          // Skia fits a rounded rect's radii to its bounds; the dashed outline must match the fill.
-          Math.min(node.cornerRadius, node.width / 2, node.height / 2),
-          dashPhase
-        )
-      } else {
-        drawStyledRRectStroke(r, canvas, rrect, node, stroke, color, dashPhase)
-      }
-    })
-    return
-  }
-
-  r.auxStroke.setStrokeWidth(r.COMPONENT_SET_BORDER_WIDTH / r.zoom)
-  r.auxStroke.setColor(r.compColor())
-  r.auxStroke.setPathEffect(
-    r.ck.PathEffect.MakeDash([r.COMPONENT_SET_DASH / r.zoom, r.COMPONENT_SET_DASH_GAP / r.zoom], 0)
-  )
-  canvas.drawRRect(makeNodeRRect(r, node, COMPONENT_SET_OUTLINE_RADIUS), r.auxStroke)
-  r.auxStroke.setPathEffect(null)
+  const rrect = fillRoundedBounds(r, canvas, node, graph)
+  // A set without a stroke gets its dashed editing border from the overlay pass.
+  forVisibleStrokes(r, node, graph, (stroke, color) => {
+    const dashPhase = stroke.dashPattern?.[1] ?? 0
+    if (stroke.dashPattern && stroke.dashPattern.length > 0) {
+      drawDashedRRectWithSolidCorners(
+        r,
+        canvas,
+        node,
+        stroke,
+        color,
+        // Skia fits a rounded rect's radii to its bounds; the dashed outline must match the fill.
+        Math.min(node.cornerRadius, node.width / 2, node.height / 2),
+        dashPhase
+      )
+    } else {
+      drawStyledRRectStroke(r, canvas, rrect, node, stroke, color, dashPhase)
+    }
+  })
 }
 
 function canRasterCacheEffects(node: SceneNode): boolean {

@@ -2,13 +2,15 @@
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { resolvePlayState } from '@open-pencil/core/editor'
-import { sceneNodeToDesignDocument } from '@open-pencil/dom-css/export'
+import {
+  behaviourControls,
+  controlRoles,
+  sceneNodeToDesignDocument
+} from '@open-pencil/dom-css/export'
 
 import { useEditor } from '#vue/editor/context'
 
-import { islandControls } from './model'
 import { renderNode } from './render'
-import { islandRoles } from './roles'
 import { useShadowContainer } from './shadow'
 import { createIslandState, instanceStates } from './state'
 
@@ -30,9 +32,9 @@ const container = useShadowContainer(useTemplateRef<HTMLElement>('host'), ISLAND
 
 const controls = computed(() => {
   void editor.state.sceneVersion
-  return islandControls(editor.graph, rootId)
+  return behaviourControls(editor.graph, rootId)
 })
-const roles = computed(() => islandRoles(controls.value))
+const roles = computed(() => controlRoles(controls.value))
 const state = shallowRef(createIslandState(controls.value))
 watch(
   () => [rootId, revision, [...controls.value.keys()].join('\n')],

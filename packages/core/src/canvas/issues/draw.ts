@@ -3,6 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { inNodeSpace, withScreenStroke } from '#core/canvas/overlays/outline'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   ISSUE_EDGE_ARROW,
@@ -55,16 +56,11 @@ export function drawIssueHighlight(
   if (!highlight || !node) return
   const color = issueSeverityColor(highlight.severity)
 
-  canvas.save()
-  try {
-    canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
+  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () => {
     r.auxFill.setColor(color4f(r, color, ISSUE_HIGHLIGHT_FILL_ALPHA))
     canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxFill)
-
-    r.auxStroke.setPathEffect(null)
-    r.auxStroke.setColor(color4f(r, color))
-    r.auxStroke.setStrokeWidth(ISSUE_HIGHLIGHT_STROKE_WIDTH / r.zoom)
-    r.strokeNodeShape(canvas, node, r.auxStroke)
+    const stroke = { color: color4f(r, color), width: ISSUE_HIGHLIGHT_STROKE_WIDTH }
+    withScreenStroke(r, stroke, (paint) => r.strokeNodeShape(canvas, node, paint))
 
     const minSize = highlight.minSize
     if (minSize && (node.width < minSize.width || node.height < minSize.height)) {
@@ -72,16 +68,12 @@ export function drawIssueHighlight(
       const height = Math.max(node.height, minSize.height)
       const left = (node.width - width) / 2
       const top = (node.height - height) / 2
-      const dash = r.ck.PathEffect.MakeDash([TARGET_DASH / r.zoom, TARGET_DASH / r.zoom], 0)
-      r.auxStroke.setStrokeWidth(1 / r.zoom)
-      r.auxStroke.setPathEffect(dash)
-      canvas.drawRect(r.ck.LTRBRect(left, top, left + width, top + height), r.auxStroke)
-      r.auxStroke.setPathEffect(null)
-      dash.delete()
+      const target = { color: color4f(r, color), dash: [TARGET_DASH, TARGET_DASH] as const }
+      withScreenStroke(r, target, (paint) =>
+        canvas.drawRect(r.ck.LTRBRect(left, top, left + width, top + height), paint)
+      )
     }
-  } finally {
-    canvas.restore()
-  }
+  })
 }
 
 /**

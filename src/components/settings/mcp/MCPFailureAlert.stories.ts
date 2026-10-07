@@ -29,7 +29,7 @@ const reasons: Record<MCPFailureCode, MCPFailure> = {
 }
 
 const meta = {
-  title: 'Settings/MCP/Failure alert',
+  title: 'App/Settings/MCP/Failure Alert',
   component: MCPFailureAlert,
   args: { failure: reasons.timeout, restarting: false, externallyManaged: false },
   render: (args) => ({

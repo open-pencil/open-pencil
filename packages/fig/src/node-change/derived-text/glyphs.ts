@@ -37,13 +37,16 @@ export function convertFigmaDerivedTextGlyphs(
     const commandsBlob = glyph.commandsBlob === undefined ? undefined : blobs[glyph.commandsBlob]
     // Layout written without outlines, or with some missing, would draw text with gaps.
     if (!commandsBlob) return []
+    // Kiwi stores the advance in ems; files that omit it leave decorations to the layer width.
+    const advance = glyph.advance * glyph.fontSize
     glyphs.push({
       commandsBlob,
       x: glyph.position.x,
       y: glyph.position.y,
       fontSize: glyph.fontSize,
       firstCharacter: glyph.firstCharacter,
-      rotation: glyph.rotation
+      rotation: glyph.rotation,
+      advance: Number.isFinite(advance) ? advance : undefined
     })
   }
   return glyphs

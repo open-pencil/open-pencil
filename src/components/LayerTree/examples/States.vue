@@ -100,6 +100,12 @@ const states: Array<{
     chrome: chrome()
   },
   { label: 'Hidden', node: node('Hidden', { visible: false }), selected: false, chrome: chrome() },
+  {
+    label: 'Selected hidden',
+    node: node('Selected hidden', { visible: false }),
+    selected: true,
+    chrome: chrome({ focused: true })
+  },
   { label: 'Locked', node: node('Locked', { locked: true }), selected: false, chrome: chrome() },
   {
     label: 'Slot',

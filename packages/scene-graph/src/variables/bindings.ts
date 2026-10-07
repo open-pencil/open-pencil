@@ -58,6 +58,31 @@ export function resolvedNumericBindings(
 }
 
 /**
+ * The text and visibility a node's string and boolean bindings resolve to in its mode, for the
+ * fields whose stored value differs. Text or visibility an instance overrides, which typing in a
+ * layer or toggling its eye records, keeps its own value, as an overridden width or height does.
+ * A bound font family is left as stored: changing it needs the font loaded, which resolving a
+ * binding cannot do.
+ */
+export function resolvedValueBindings(
+  graph: SceneGraph,
+  node: SceneNode,
+  fallback: VariableModeFallback = 'active'
+): Partial<SceneNode> {
+  const updates: Partial<SceneNode> = {}
+  const resolve = (field: 'text' | 'visible') => {
+    const variableId = node.boundVariables[field]
+    if (!variableId || hasInstanceOverride(graph, node.id, field)) return undefined
+    return graph.resolveVariableForNode(node.id, variableId, fallback)
+  }
+  const text = node.type === 'TEXT' ? resolve('text') : undefined
+  if (typeof text === 'string' && text !== node.text) updates.text = text
+  const visible = resolve('visible')
+  if (typeof visible === 'boolean' && visible !== node.visible) updates.visible = visible
+  return updates
+}
+
+/**
  * A bound paint takes its whole color from the variable, alpha included, the way Figma stores
  * it: the variable's RGB at full alpha, and its alpha as the paint's opacity.
  */
@@ -142,17 +167,17 @@ function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterab
 }
 
 /**
- * Resolve live numeric bindings in scene units, without authoring instance overrides. A scope
- * limits it to the layers a change can reach, so layers whose saved values differ from their
- * bindings elsewhere in the document are left as saved.
+ * Resolve live numeric, text, and visibility bindings, numbers in scene units, without authoring
+ * instance overrides. A scope limits it to the layers a change can reach, so layers whose saved
+ * values differ from their bindings elsewhere in the document are left as saved.
  */
-export function reconcileNumericVariableBindings(
-  graph: SceneGraph,
-  scope?: BindingScope
-): string[] {
+export function reconcileVariableBindings(graph: SceneGraph, scope?: BindingScope): string[] {
   const changed: string[] = []
   for (const node of scopedNodes(graph, scope)) {
-    const updates = resolvedNumericBindings(graph, node)
+    const updates = {
+      ...resolvedNumericBindings(graph, node),
+      ...resolvedValueBindings(graph, node)
+    }
     if (Object.keys(updates).length === 0) continue
     graph.updateNode(node.id, updates)
     changed.push(node.id)

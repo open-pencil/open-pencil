@@ -66,6 +66,7 @@ export class LabelCache {
   private sections: CachedSection[] = []
   private components: CachedComponent[] = []
   private frames: CachedFrame[] = []
+  private componentSets: CachedFrame[] = []
   private cachedSceneVersion = -1
   private cachedPositionPreviewVersion = -1
   private cachedPageId: string | null = null
@@ -96,6 +97,7 @@ export class LabelCache {
     this.sections = []
     this.components = []
     this.frames = []
+    this.componentSets = []
   }
 
   getSections(
@@ -138,6 +140,15 @@ export class LabelCache {
     return collectVisibleLabels(graph, viewport, this.frames, () => ({}), preview)
   }
 
+  /** Every visible component set on the page in the viewport, wherever it is nested. */
+  getComponentSets(
+    graph: SceneGraph,
+    viewport: Viewport,
+    preview?: RenderOverlays['rotationPreview']
+  ): Array<{ node: SceneNode; absX: number; absY: number }> {
+    return collectVisibleLabels(graph, viewport, this.componentSets, () => ({}), preview)
+  }
+
   getAllFrames(): readonly CachedFrame[] {
     return this.frames
   }
@@ -154,6 +165,7 @@ export class LabelCache {
     this.sections = []
     this.components = []
     this.frames = []
+    this.componentSets = []
 
     const pageNode = graph.getNode(pageId ?? graph.rootId)
     if (!pageNode) return
@@ -180,6 +192,10 @@ export class LabelCache {
         })
         this.walkChildren(graph, childId, true)
       } else if (LABEL_TYPES.has(child.type)) {
+        if (child.type === 'COMPONENT_SET') {
+          const origin = graph.getAbsolutePosition(childId)
+          this.componentSets.push({ nodeId: childId, absX: origin.x, absY: origin.y })
+        }
         if (COMPONENT_LABEL_PARENT_TYPES.has(parentType)) {
           const origin = graph.getAbsolutePosition(childId)
           this.components.push({ nodeId: childId, absX: origin.x, absY: origin.y, parentType })

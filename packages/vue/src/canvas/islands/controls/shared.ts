@@ -1,14 +1,12 @@
 import type { VNode } from 'vue'
 
-import type { DesignElement } from '@open-pencil/dom-css/export'
+import type { ControlModel, ControlRole, DesignElement } from '@open-pencil/dom-css/export'
 
-import type { ControlModel } from '#vue/canvas/islands/model'
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
-import type { IslandRole } from '#vue/canvas/islands/roles'
 import { isDisabled, type ControlState } from '#vue/canvas/islands/state'
 
 /** What a role's wrapper gets: the island, the layer, and how to render it as designed. */
-export interface RoleContext<R extends IslandRole = IslandRole> {
+export interface RoleContext<R extends ControlRole = ControlRole> {
   island: IslandRenderContext
   role: R
   element: DesignElement

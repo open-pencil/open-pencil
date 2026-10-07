@@ -9,6 +9,7 @@ import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import { effectiveFigmaRawNodeFields } from '../source-metadata'
 import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
+import { fillsOwnSizingAxis } from './export/fill-sizing'
 import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
 import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
@@ -218,6 +219,28 @@ function exportSizing(value: SceneNode['primaryAxisSizing']) {
   return value === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
 }
 
+/** Layout fields whose edits decide whether a frame's own sizing still matches its fill. */
+const OWN_SIZING_FIELDS: ReadonlySet<string> = new Set([
+  'layoutMode',
+  'primaryAxisSizing',
+  'counterAxisSizing',
+  'layoutGrow',
+  'layoutAlignSelf',
+  'layoutPositioning'
+])
+
+/**
+ * Writes a frame's own sizing as fixed along an axis it fills, the way Figma stores fill (see
+ * `fillsOwnSizingAxis`). Unedited imported layers keep their stored sizing, since Figma's own
+ * files also hold hugging axes on stretched children.
+ */
+function fixFilledOwnSizing(node: SceneNode, nc: KiwiNodeChange, graph: SceneGraph): void {
+  const imported = Boolean(node.source.fig.layout)
+  if (imported && !node.source.editedFields.some((field) => OWN_SIZING_FIELDS.has(field))) return
+  if (fillsOwnSizingAxis(graph, node, 'stackPrimarySizing')) nc.stackPrimarySizing = 'FIXED'
+  if (fillsOwnSizingAxis(graph, node, 'stackCounterSizing')) nc.stackCounterSizing = 'FIXED'
+}
+
 function applyEditedLayoutFields(node: SceneNode, nc: KiwiNodeChange): void {
   const values: Partial<Record<keyof SceneNode, Partial<KiwiNodeChange>>> = {
     layoutMode: { stackMode: normalizeStackMode(node.layoutMode) },
@@ -295,6 +318,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
     if (figLayout.stackReverseZIndex) nc.stackReverseZIndex = true
     serializeInheritedCounterAxisStretch(node, nc, graph)
     applyEditedLayoutFields(node, nc)
+    fixFilledOwnSizing(node, nc, graph)
     return
   }
   if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
@@ -320,6 +344,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
   } else {
     serializeInheritedCounterAxisStretch(node, nc, graph)
   }
+  fixFilledOwnSizing(node, nc, graph)
 }
 
 function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {

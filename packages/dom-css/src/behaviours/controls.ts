@@ -1,12 +1,13 @@
-import { hasBehaviour, layerPath } from '@open-pencil/core/editor'
 import {
   behaviourContract,
   behaviourOwner,
   behaviourProperties,
   booleanBinding,
   findComponentPropertyTargets,
+  hasBehaviour,
   instanceMainComponent,
   instanceSlotFrames,
+  layerPath,
   partBinding,
   readBehaviour,
   slotPropertyId,
@@ -36,23 +37,23 @@ export interface StatesModel {
   designedDisabled: boolean
 }
 
-/** An instance with a behaviour inside an island, as the island runs it. */
+/** An instance with a behaviour below a root layer: its values, states, and bound layers. */
 export interface ControlModel {
-  /** The instance's layer path below the island root. */
+  /** The instance's layer path below the root. */
   path: string
   kind: Behaviour['kind']
   behaviour: Behaviour
   booleans: Record<string, BooleanModel>
   states: StatesModel | null
-  /** Each bound part's slot frame, by part id, as a layer path below the island root. */
+  /** Each bound part's slot frame, by part id, as a layer path below the root. */
   parts: Record<string, string>
-  /** Each bound text value's text layer, by value id, as a layer path below the island root. */
+  /** Each bound text value's text layer, by value id, as a layer path below the root. */
   texts: Record<string, { path: string; designed: string }>
   /** The children of the items slot that are controls themselves, in order. */
   items: ControlModel[]
   /**
    * Layers the control decides to show, which the design may hide: tab panels, or a
-   * collapsible's content, as layer paths below the island root.
+   * collapsible's content, as layer paths below the root.
    */
   reveal: string[]
   /** For tabs, each panel's layer path, in order. */
@@ -173,10 +174,11 @@ function controlModel(graph: SceneGraph, rootId: string, instance: SceneNode): C
 }
 
 /**
- * The controls of an island, by layer path, outermost first. Items of a group are listed both
- * in the group's `items` and on their own, since each keeps its own state.
+ * The controls below a root layer, by layer path, outermost first. Items of a group are listed
+ * both in the group's `items` and on their own, since each keeps its own state. Preview runs
+ * them as live islands; export generates components from them.
  */
-export function islandControls(graph: SceneGraph, rootId: string): Map<string, ControlModel> {
+export function behaviourControls(graph: SceneGraph, rootId: string): Map<string, ControlModel> {
   const controls = new Map<string, ControlModel>()
   const visit = (node: SceneNode) => {
     if (hasBehaviour(graph, node)) {

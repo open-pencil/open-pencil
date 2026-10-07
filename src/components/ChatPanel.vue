@@ -23,6 +23,7 @@ import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
 import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
+import { useImageDrop } from '@/components/chat/input/useImageDrop'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
@@ -54,9 +55,16 @@ const submission = useChatSubmission({
   openSetup: () => openAISetup()
 })
 
-const chatInput = useTemplateRef<{ restoreDraft: (submission: ChatSubmission) => void }>(
-  'chatInput'
-)
+const chatInput = useTemplateRef<{
+  restoreDraft: (submission: ChatSubmission) => void
+  dropFiles: (files: File[]) => void
+}>('chatInput')
+const panel = useTemplateRef<HTMLElement>('panel')
+// Images dropped anywhere on the chat go to the composer, when there is one to take them.
+const { dragging: draggingImages } = useImageDrop(panel, {
+  enabled: () => chatInput.value !== null,
+  onImages: (files) => chatInput.value?.dropFiles(files)
+})
 let viewGeneration = 0
 
 /** Puts an unsent message back only in the conversation it was written in. */
@@ -188,7 +196,11 @@ function handleStop() {
 </script>
 
 <template>
-  <div data-test-id="chat-panel" class="flex min-w-0 flex-1 flex-col overflow-hidden select-text">
+  <div
+    ref="panel"
+    data-test-id="chat-panel"
+    class="flex min-w-0 flex-1 flex-col overflow-hidden select-text"
+  >
     <ChatHistory
       :saved="history.conversations.value.some((row) => row.id === history.current.value?.id)"
       :conversations="historyOptions"
@@ -250,6 +262,7 @@ function handleStop() {
         v-if="isConfigured && !agentHistoryReadOnly && !history.readOnly.value"
         ref="chatInput"
         :status="status"
+        :dragging="draggingImages"
         :disabled="submission.busy.value || history.busy.value"
         @submit="submitMessage"
         @stop="handleStop"

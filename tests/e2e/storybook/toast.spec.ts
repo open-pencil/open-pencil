@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('determinate progress exposes its value and bar width', async ({ page }) => {
-  await page.goto('/iframe.html?id=design-system-toast--download-progress&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--download-progress&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'determinate')
@@ -18,7 +18,7 @@ test('determinate progress exposes its value and bar width', async ({ page }) =>
 
 test('progress without a known total stays indeterminate', async ({ page }) => {
   await page.goto(
-    '/iframe.html?id=design-system-toast--download-progress-unknown-total&viewMode=story'
+    '/iframe.html?id=design-system-feedback-toast--download-progress-unknown-total&viewMode=story'
   )
 
   const toast = page.locator('[data-slot="toast"]')
@@ -29,7 +29,7 @@ test('progress without a known total stays indeterminate', async ({ page }) => {
 
 test('a reported total flips between determinate, indeterminate, and cleared', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/iframe.html?id=design-system-toast--progress-lifecycle&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--progress-lifecycle&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   const bar = toast.getByRole('progressbar')
@@ -60,7 +60,7 @@ test('a reported total flips between determinate, indeterminate, and cleared', a
 
 test('resuming progress cancels the pending auto-dismissal', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/iframe.html?id=design-system-toast--progress-lifecycle&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--progress-lifecycle&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toHaveAttribute('data-progress', 'determinate')
@@ -77,7 +77,7 @@ test('resuming progress cancels the pending auto-dismissal', async ({ page }) =>
 })
 
 test('an action toast renders its action', async ({ page }) => {
-  await page.goto('/iframe.html?id=design-system-toast--with-action&viewMode=story')
+  await page.goto('/iframe.html?id=design-system-feedback-toast--with-action&viewMode=story')
 
   const toast = page.locator('[data-slot="toast"]')
   await expect(toast).toContainText('Design file moved to Trash.')

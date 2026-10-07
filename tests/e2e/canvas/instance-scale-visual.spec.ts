@@ -5,7 +5,7 @@ import { computeAllLayouts, computeLayout } from '@open-pencil/core/layout'
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
-  reconcileNumericVariableBindings,
+  reconcileVariableBindings,
   rescaleNodeTree,
   type SceneNode,
   type SceneGraph
@@ -112,7 +112,7 @@ test('saved inherited expressions follow token edits without double scaling', as
   expect(nested.paddingLeft).toBe(5)
   const before = renderTree(graph, rootId)
   variable.valuesByMode[graph.getNodeVariableModeId(nested.id, variable.collectionId)] = 40
-  reconcileNumericVariableBindings(graph)
+  reconcileVariableBindings(graph)
   computeLayout(graph, nested.id)
   computeLayout(graph, rootId)
   expect(nested.paddingLeft).toBe(10)
@@ -158,7 +158,7 @@ for (const operation of ['component', 'rescale'] as const) {
     const nested = graph.getChildren(rootId)[0]
     graph.bindVariable(rootId, 'paddingRight', '293742:7')
     graph.bindVariable(nested.id, 'paddingRight', '293742:7')
-    reconcileNumericVariableBindings(graph)
+    reconcileVariableBindings(graph)
     computeLayout(graph, nested.id)
     computeLayout(graph, rootId)
     const before = renderTree(graph, rootId)

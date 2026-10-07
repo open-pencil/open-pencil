@@ -5,7 +5,7 @@ import SlotSettings from './examples/Settings.vue'
 import SlotPropertyStates from './examples/States.vue'
 
 const meta = {
-  title: 'Editor/Properties/Slot Property',
+  title: 'App/Editor/Properties/Slot Property',
   component: SlotPropertyStates,
   tags: ['autodocs'],
   parameters: {

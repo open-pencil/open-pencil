@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  reconcileNumericVariableBindings,
+  reconcileVariableBindings,
   SceneGraph,
   variablesResolvingThrough
 } from '@open-pencil/scene-graph'
@@ -41,7 +41,7 @@ describe('binding scopes', () => {
   test('a variable scope resolves only the layers bound to it or its aliases', () => {
     const { graph, base, frame, child, elsewhere } = drifted()
 
-    expect(reconcileNumericVariableBindings(graph, { variables: [base.id] })).toEqual([frame.id])
+    expect(reconcileVariableBindings(graph, { variables: [base.id] })).toEqual([frame.id])
     expect(frame.width).toBe(40)
     expect([child.width, elsewhere.width]).toEqual([10, 10])
   })
@@ -49,7 +49,7 @@ describe('binding scopes', () => {
   test('a subtree scope resolves the layers inside it and nothing else', () => {
     const { graph, frame, child, elsewhere } = drifted()
 
-    reconcileNumericVariableBindings(graph, { subtrees: [frame.id] })
+    reconcileVariableBindings(graph, { subtrees: [frame.id] })
 
     expect([frame.width, child.width, elsewhere.width]).toEqual([40, 24, 10])
   })

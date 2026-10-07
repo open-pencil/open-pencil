@@ -102,7 +102,7 @@ export async function createAnnouncementComponent(
               ...text,
               name: 'Details',
               w: 'fill',
-              size: 10,
+              size: 12,
               lineHeight: 16,
               color: tokens.muted,
               children: ANNOUNCEMENT.details,

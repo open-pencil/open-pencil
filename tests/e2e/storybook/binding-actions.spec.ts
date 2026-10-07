@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 test('binding picker creates a variable through submit and detaches it', async ({ page }) => {
-  await page.goto('/iframe.html?id=editor-properties-binding-field--picker-actions&viewMode=story')
+  await page.goto(
+    '/iframe.html?id=app-editor-properties-binding-field--picker-actions&viewMode=story'
+  )
   const field = page.getByLabel('Unbound field', { exact: true })
   await field.getByRole('button', { name: 'Apply variable' }).click()
   await page.getByRole('button', { name: 'Create number variable' }).click()

@@ -9,7 +9,7 @@ import { progressPercent, type ProgressAmount } from './progress'
 import type { ToastProps } from './toast'
 
 const meta = {
-  title: 'Design System/Toast',
+  title: 'Design System/Feedback/Toast',
   component: AppToast,
   // A toast only renders inside a provider, and the viewport is where it lands.
   decorators: [

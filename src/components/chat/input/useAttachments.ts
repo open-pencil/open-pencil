@@ -6,6 +6,9 @@ import type { Editor } from '@open-pencil/core/editor'
 
 import {
   createImagePreviewURL,
+  isAttachableImageFile,
+  isSVGFile,
+  rasterizeSVGAttachment,
   revokeImagePreviewURL,
   validateImageAttachmentFile
 } from '@/app/ai/attachment/image/prepare'
@@ -24,6 +27,8 @@ interface AttachmentDraftOptions {
 }
 
 export function useAttachmentDrafts(options: AttachmentDraftOptions) {
+  /** Advances when a message is sent or the draft is cleared, so late images skip it. */
+  let draftGeneration = 0
   const images = ref<ImageAttachmentDraft[]>([])
   const nodeIds = ref<string[]>([])
   const nodes = computed(() => resolveReferencedNodes(options.editor.graph, nodeIds.value))
@@ -45,28 +50,42 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     reset: resetImageDialog,
     onChange: onImageChange
   } = useFileDialog({
-    accept: 'image/png,image/jpeg,image/webp',
+    accept: 'image/png,image/jpeg,image/webp,image/svg+xml',
     multiple: true,
     reset: true
   })
 
-  function addImages(files: File[]): void {
-    const available = MAX_IMAGE_ATTACHMENTS - images.value.length
-    if (available <= 0) {
-      options.reportError(`You can attach up to ${MAX_IMAGE_ATTACHMENTS} images.`)
+  /**
+   * Attaches images chosen, pasted, or dropped, up to the limit: SVGs are drawn as PNGs first,
+   * and each file that cannot be attached says why.
+   */
+  async function addFiles(files: File[]): Promise<void> {
+    const draft = draftGeneration
+    const limitMessage = `You can attach up to ${MAX_IMAGE_ATTACHMENTS} images.`
+    if (images.value.length >= MAX_IMAGE_ATTACHMENTS) {
+      options.reportError(limitMessage)
       resetImageDialog()
       return
     }
-    for (const file of files.slice(0, available)) {
-      const validationError = validateImageAttachmentFile(file)
-      if (validationError) {
-        options.reportError(validationError)
-        continue
+    for (const file of files) {
+      try {
+        const image = isSVGFile(file) ? await rasterizeSVGAttachment(file) : file
+        // The message was sent or cleared while the SVG was drawn: it belongs to no draft now.
+        if (draft !== draftGeneration) return
+        // Checked after the await, since another drop may have filled the slots meanwhile.
+        if (images.value.length >= MAX_IMAGE_ATTACHMENTS) {
+          options.reportError(limitMessage)
+          break
+        }
+        const validationError = validateImageAttachmentFile(image)
+        if (validationError) {
+          options.reportError(validationError)
+          continue
+        }
+        images.value.push({ file: image, previewURL: createImagePreviewURL(image) })
+      } catch (error) {
+        options.reportError(error instanceof Error ? error.message : String(error))
       }
-      images.value.push({ file, previewURL: createImagePreviewURL(file) })
-    }
-    if (files.length > available) {
-      options.reportError(`You can attach up to ${MAX_IMAGE_ATTACHMENTS} images.`)
     }
     resetImageDialog()
   }
@@ -95,13 +114,14 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
 
   function handlePaste(event: ClipboardEvent): void {
     const files = event.clipboardData?.files
-    const pastedImages = files ? [...files].filter((file) => file.type.startsWith('image/')) : []
+    const pastedImages = files ? [...files].filter(isAttachableImageFile) : []
     if (pastedImages.length === 0) return
     event.preventDefault()
-    addImages(pastedImages)
+    void addFiles(pastedImages)
   }
 
   function takeSubmission(text: string): ChatSubmission {
+    draftGeneration++
     const submittedImages = images.value
     const submittedNodes = nodes.value
     images.value = []
@@ -122,6 +142,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
   }
 
   function clear(): void {
+    draftGeneration++
     for (const image of images.value) revokeImagePreviewURL(image.previewURL)
     images.value = []
     nodeIds.value = []
@@ -129,7 +150,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
   }
 
   onImageChange((files) => {
-    if (files) addImages([...files])
+    if (files) void addFiles([...files])
   })
   onBeforeUnmount(clear)
 
@@ -139,7 +160,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     canToggleSelection,
     selectionActive,
     openImageDialog,
-    addImages,
+    addFiles,
     removeImage,
     removeNode,
     toggleSelection,

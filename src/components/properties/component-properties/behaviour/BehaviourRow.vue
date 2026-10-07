@@ -33,6 +33,11 @@ const labels = useBehaviourLabels()
 
 const part = computed(() => ('part' in row ? row.part : null))
 const value = computed(() => ('value' in row ? row.value : null))
+/** A row the control requires that is still unbound; its label shows it. */
+const missing = computed(() => {
+  const control = part.value ?? value.value
+  return !!control && 'required' in control && control.required && !control.propertyId
+})
 const number = computed(() => (value.value?.type === 'number' ? value.value : null))
 const id = computed(() => part.value?.id ?? value.value?.id ?? '')
 const label = computed(() =>
@@ -86,7 +91,12 @@ function numberLabel(field: NumberSetting) {
 </script>
 
 <template>
-  <PanelFieldGroup :label="label" :data-row="id">
+  <PanelFieldGroup
+    :label="label"
+    :data-row="id"
+    :data-missing="missing || undefined"
+    :ui="{ root: 'group', label: 'group-data-[missing]:text-issue-warning' }"
+  >
     <BehaviourBindingField
       v-if="part"
       :label="label"

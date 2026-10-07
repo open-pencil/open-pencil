@@ -50,7 +50,7 @@ defineExpose({ restoreDraft })
 <template>
   <TooltipProvider>
     <div class="shrink-0 border-t border-border p-2.5">
-      <form @submit="handleSubmit" @paste.stop="emit('paste', $event)">
+      <form class="relative" @submit="handleSubmit" @paste.stop="emit('paste', $event)">
         <InputGroup :disabled="isStreaming">
           <template v-if="$slots.attachment" #attachment><slot name="attachment" /></template>
 
@@ -104,6 +104,8 @@ defineExpose({ restoreDraft })
             </IconButton>
           </template>
         </InputGroup>
+        <!-- Over the input while files are dragged onto the chat. -->
+        <slot name="overlay" />
       </form>
     </div>
   </TooltipProvider>

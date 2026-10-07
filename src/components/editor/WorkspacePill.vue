@@ -38,7 +38,7 @@ const { editor } = useI18n()
     </IconButton>
     <template v-else>
       <span
-        class="ml-1 flex h-5 items-center gap-1 rounded bg-accent/15 px-1.5 text-[10px] font-medium text-accent"
+        class="ml-1 flex h-5 items-center gap-1 rounded bg-accent/15 px-1.5 text-[10px] font-medium text-primary"
       >
         <icon-lucide-play class="size-3" />
         {{ editor.previewing }}

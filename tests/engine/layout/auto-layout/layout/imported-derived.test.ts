@@ -29,6 +29,35 @@ describe('imported auto-layout bounds', () => {
     expect(graph.getNode(line.id)).toMatchObject({ x: 0, y: 1, width: 320, height: 0 })
   })
 
+  test('centres content within the width a stretching parent gives a hug frame with a saved size', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const column = graph.createNode('FRAME', page.id, {
+      width: 320,
+      height: 200,
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    const tile = graph.createNode('FRAME', column.id, {
+      width: 320,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      primaryAxisAlign: 'CENTER',
+      paddingLeft: 16,
+      paddingRight: 16,
+      layoutAlignSelf: 'STRETCH',
+      derivedLayout: { x: 0, y: 0, width: 320, height: 100 }
+    })
+    const swatch = graph.createNode('RECTANGLE', tile.id, { width: 200, height: 100 })
+
+    computeAllLayouts(graph)
+
+    expect(graph.getNode(swatch.id)?.x).toBe(60)
+  })
+
   test('preserves visible hug container bounds when hidden children would collapse layout', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

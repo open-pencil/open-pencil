@@ -37,7 +37,6 @@ tests/engine/app/clipboard/references.test.ts
 tests/engine/app/clipboard/styles.test.ts
 tests/engine/app/clipboard/variables.test.ts
 tests/engine/app/code/sandbox.test.ts
-tests/engine/app/demo.test.ts
 tests/engine/app/demo/viewport.test.ts
 tests/engine/app/diagnostics/events.test.ts
 tests/engine/app/diagnostics/recorder.test.ts

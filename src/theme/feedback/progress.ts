@@ -11,7 +11,7 @@ const progressTheme = {
       /** On panels: an accent bar on a quiet track. */
       accent: { track: 'bg-hover', fill: 'bg-accent', label: 'text-muted' },
       /** On coloured surfaces such as toasts: follows the text colour. */
-      current: { track: 'bg-current/25', fill: 'bg-current', label: 'opacity-80' }
+      current: { track: 'bg-current/25', fill: 'bg-current', label: '' }
     }
   },
   defaultVariants: { tone: 'accent' as const }

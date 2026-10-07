@@ -8,7 +8,7 @@ import WebMCPSettingsPanel from './WebMCPSettingsPanel.vue'
 
 type Args = { modelValue: WebMCPMode; state: WebMCPRuntimeState }
 const meta = {
-  title: 'Settings/MCP/WebMCP',
+  title: 'App/Settings/MCP/WebMCP',
   args: { modelValue: 'off', state: { status: 'off', toolCount: 0, error: null } },
   render: (args) => ({
     components: { WebMCPSettingsPanel },

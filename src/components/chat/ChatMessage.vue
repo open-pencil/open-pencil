@@ -96,9 +96,10 @@ function groupKey(group: MessagePartGroup): string {
       :class="message.role === 'user' ? 'max-w-[85%]' : ''"
     >
       <template v-if="message.role === 'assistant'">
-        <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. -->
+        <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. Text
+             dims to the muted color rather than through opacity, so it still reads at 4.5:1. -->
         <div
-          class="space-y-2 transition-opacity motion-reduce:transition-none data-[reverted=true]:opacity-50"
+          class="space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
           data-slot="chat-reply-content"
           :data-reverted="reverted"
         >

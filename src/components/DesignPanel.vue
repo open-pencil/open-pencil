@@ -7,6 +7,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openLibraryReview, useLibraryService } from '@/app/libraries'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 
@@ -127,29 +128,24 @@ const { panels } = useI18n()
             @review="openSelectedInstanceReview"
           />
           <SelectionActionsControl />
+          <template v-if="node.type === 'INSTANCE'">
+            <IconButton
+              :label="goToMainComponent.label"
+              data-test-id="instance-go-to-main"
+              @click="goToMainComponent.run()"
+            >
+              <icon-lucide-crosshair class="size-3.5" />
+            </IconButton>
+            <IconButton
+              :label="detachInstance.label"
+              data-test-id="instance-detach"
+              @click="detachInstance.run()"
+            >
+              <icon-lucide-unlink class="size-3.5" />
+            </IconButton>
+          </template>
         </template>
       </PanelHeader>
-
-      <!-- Component actions -->
-      <div
-        v-if="node.type === 'INSTANCE'"
-        class="flex flex-col gap-1 border-b border-border px-3 py-2"
-      >
-        <button
-          type="button"
-          class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
-          @click="goToMainComponent.run()"
-        >
-          {{ panels.goToMainComponent }}
-        </button>
-        <button
-          type="button"
-          class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
-          @click="detachInstance.run()"
-        >
-          {{ panels.detachInstance }}
-        </button>
-      </div>
 
       <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
       <VariantAuthoringSection

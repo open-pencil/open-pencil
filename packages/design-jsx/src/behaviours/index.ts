@@ -34,7 +34,7 @@ const input = (valueId: string): RekaRole => ({ role: 'input', valueId })
  * `Item` is the component of its items when written on its own, and an item when it names one
  * with `of`, as an `Instance` does.
  */
-export const REKA_ELEMENTS: Readonly<Record<string, Readonly<Record<string, RekaRole>>>> = {
+const REKA_PARTS = {
   Button: { Root: root('button') },
   Toggle: { Root: root('toggle') },
   Switch: { Root: root('switch'), Thumb: part('thumb') },
@@ -70,7 +70,14 @@ export const REKA_ELEMENTS: Readonly<Record<string, Readonly<Record<string, Reka
   },
   TextField: { Root: root('textField'), Input: input('value') },
   Textarea: { Root: root('textarea'), Input: input('value') }
-}
+} as const satisfies Readonly<Record<string, Readonly<Record<string, RekaRole>>>>
+
+/** Each Reka namespace and its parts, as typed elements are built from them. */
+export type RekaNamespaces = typeof REKA_PARTS
+
+/** The same elements, looked up by any element name, as parsing and export do. */
+export const REKA_ELEMENTS: Readonly<Record<string, Readonly<Record<string, RekaRole>>>> =
+  REKA_PARTS
 
 /** The container a repeated part goes in when written directly under its root. */
 const CONTAINER_NAMES: Record<string, string> = { list: 'List', panels: 'Panels', items: 'Items' }
@@ -196,7 +203,8 @@ export const BEHAVIOUR_PROPS = [
   'defaultValue'
 ] as const
 
-type BindingProp = string | { property: string; on?: string; off?: string }
+/** A value bound to a component property by name; a variant property may name its on and off. */
+export type BindingProp = string | { property: string; on?: string; off?: string }
 
 function isBinding(value: unknown): value is BindingProp {
   return (
