@@ -131,6 +131,7 @@
 - Read geometry in scripts after an edit without waiting for the script to finish: `x`, `y`, `width`, `height`, `relativeTransform`, `absoluteTransform`, `absoluteBoundingBox`, and `absoluteRenderBounds` lay out what the script changed first, as in Figma, so a hugging parent reports its new size right after a child is added.
 - Draw segmented controls in the properties panel at the height of the fields beside them.
 - Keep saving AI chat history in Safari Private Browsing after a message with an image or a reply that changed the document. Safari cannot store image data that way in a private window, so the conversation stopped saving from that point and showed "Chat history could not be saved".
+- Keep a component set's dashed border one pixel wide at every zoom; zooming in after opening a page scaled it into thick dashes until the page was redrawn.
 - Keep a layer's blend mode, such as Multiply or Screen, when saving to `.fig`; it was dropped and the layer reopened as pass-through.
 - Stop the underline of saved or Figma text where the text ends instead of running to the edge of its text box.
 - Keep the content of an imported auto layout frame centred, or otherwise aligned, within the width its parent stretches it to, instead of laying it out as if the frame hugged its content.

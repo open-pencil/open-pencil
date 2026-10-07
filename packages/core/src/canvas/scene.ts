@@ -12,11 +12,7 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import {
-  COMPONENT_SET_OUTLINE_RADIUS,
-  DROP_HIGHLIGHT_ALPHA,
-  DROP_HIGHLIGHT_STROKE
-} from '#core/constants'
+import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE } from '#core/constants'
 import { createSceneGeometry, nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
@@ -462,35 +458,24 @@ export function renderComponentSet(
 
   drawVisibleFills(r, node, graph, () => canvas.drawRRect(rrect, r.fillPaint))
 
-  const visibleStrokes = node.strokes.filter((stroke) => stroke.visible)
-  if (visibleStrokes.length > 0) {
-    forVisibleStrokes(r, node, graph, (stroke, color) => {
-      const dashPhase = stroke.dashPattern?.[1] ?? 0
-      if (stroke.dashPattern && stroke.dashPattern.length > 0) {
-        drawDashedRRectWithSolidCorners(
-          r,
-          canvas,
-          node,
-          stroke,
-          color,
-          // Skia fits a rounded rect's radii to its bounds; the dashed outline must match the fill.
-          Math.min(node.cornerRadius, node.width / 2, node.height / 2),
-          dashPhase
-        )
-      } else {
-        drawStyledRRectStroke(r, canvas, rrect, node, stroke, color, dashPhase)
-      }
-    })
-    return
-  }
-
-  r.auxStroke.setStrokeWidth(r.COMPONENT_SET_BORDER_WIDTH / r.zoom)
-  r.auxStroke.setColor(r.compColor())
-  r.auxStroke.setPathEffect(
-    r.ck.PathEffect.MakeDash([r.COMPONENT_SET_DASH / r.zoom, r.COMPONENT_SET_DASH_GAP / r.zoom], 0)
-  )
-  canvas.drawRRect(makeNodeRRect(r, node, COMPONENT_SET_OUTLINE_RADIUS), r.auxStroke)
-  r.auxStroke.setPathEffect(null)
+  // A set without a stroke gets its dashed editing border from the overlay pass.
+  forVisibleStrokes(r, node, graph, (stroke, color) => {
+    const dashPhase = stroke.dashPattern?.[1] ?? 0
+    if (stroke.dashPattern && stroke.dashPattern.length > 0) {
+      drawDashedRRectWithSolidCorners(
+        r,
+        canvas,
+        node,
+        stroke,
+        color,
+        // Skia fits a rounded rect's radii to its bounds; the dashed outline must match the fill.
+        Math.min(node.cornerRadius, node.width / 2, node.height / 2),
+        dashPhase
+      )
+    } else {
+      drawStyledRRectStroke(r, canvas, rrect, node, stroke, color, dashPhase)
+    }
+  })
 }
 
 function canRasterCacheEffects(node: SceneNode): boolean {
