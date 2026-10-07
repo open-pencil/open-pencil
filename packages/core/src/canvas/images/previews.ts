@@ -4,16 +4,32 @@ import { ResourceCache } from '#core/cache/resource'
 
 const PREVIEW_EDGES = [128, 256, 512, 1024, 2048] as const
 const MAX_PENDING = 64
+/** Previews decoding at once; the browser decodes off the main thread. */
+const DECODE_CONCURRENCY = 4
 const PREVIEW_CACHE_BYTES = 64 * 1024 * 1024
+/** Documents with more images, or more encoded image bytes, than these draw previews. */
+const PREVIEW_IMAGE_COUNT = 128
+const PREVIEW_IMAGE_BYTES = 32 * 1024 * 1024
 
-export function useViewportImageRendering(graph: SceneGraph): boolean {
-  if (graph.images.size > 128) return true
+const previewDecisions = new WeakMap<SceneGraph, { count: number; needed: boolean }>()
+
+/**
+ * Whether a document has enough image data to draw previews sized to the view instead of whole
+ * images. Kept per document and image count, since the renderer asks on every frame.
+ */
+export function needsImagePreviews(graph: SceneGraph): boolean {
+  const count = graph.images.size
+  const known = previewDecisions.get(graph)
+  if (known?.count === count) return known.needed
+  let needed = count > PREVIEW_IMAGE_COUNT
   let bytes = 0
   for (const data of graph.images.values()) {
+    if (needed) break
     bytes += data.byteLength
-    if (bytes > 32 * 1024 * 1024) return true
+    needed = bytes > PREVIEW_IMAGE_BYTES
   }
-  return false
+  previewDecisions.set(graph, { count, needed })
+  return needed
 }
 
 export function previewEdge(node: Pick<SceneNode, 'width' | 'height'>, zoom: number, dpr = 1) {
@@ -50,7 +66,7 @@ export class ImagePreviewCache {
   private graph: SceneGraph | null = null
   private queue: PreviewJob[] = []
   private decoder: ImagePreviewDecoder | null = null
-  private active = false
+  private workers = 0
   private disposed = false
   private generation = 0
 
@@ -75,7 +91,7 @@ export class ImagePreviewCache {
     return this.canDecode()
   }
   get idle(): boolean {
-    return !this.active && this.queue.length === 0
+    return this.workers === 0 && this.queue.length === 0
   }
 
   setDecoder(decoder: ImagePreviewDecoder) {
@@ -110,7 +126,7 @@ export class ImagePreviewCache {
       const job = { key, source, edge }
       this.pending.set(key, job)
       this.queue.push(job)
-      void this.drain()
+      this.drain()
     }
     // Keep an available level visible while the requested resolution is decoding.
     for (const candidate of [edge, ...[...PREVIEW_EDGES].reverse().filter((n) => n !== edge)]) {
@@ -122,9 +138,14 @@ export class ImagePreviewCache {
     return undefined
   }
 
-  private async drain() {
-    if (this.active || !this.canDecode()) return
-    this.active = true
+  private drain() {
+    while (this.workers < DECODE_CONCURRENCY && this.queue.length > 0 && this.canDecode()) {
+      this.workers++
+      void this.work()
+    }
+  }
+
+  private async work() {
     try {
       while (this.queue.length && this.canDecode()) {
         const job = this.queue.shift()
@@ -148,7 +169,7 @@ export class ImagePreviewCache {
         if (preview) this.ready()
       }
     } finally {
-      this.active = false
+      this.workers--
     }
   }
 
