@@ -29,10 +29,7 @@ export function createDocumentIOActions(
     state,
     getFilePath: sourceState.getFilePath,
     getFileHandle: sourceState.getFileHandle,
-    setSavedVersion: (version) => {
-      sourceState.setSavedVersion(version)
-      sourceActions.markDocumentSaved()
-    },
+    markDocumentSaved: () => sourceActions.markDocumentSaved(),
     preparationController
   })
   const { startWatchingFile, stopWatchingFile } = createFileWatcher({

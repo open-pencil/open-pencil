@@ -125,7 +125,9 @@
 
 ### Fixed
 
-- Keep the tab alive when crash recovery protects a large document. Recovery no longer snapshots a document until it has unsaved edits, so opening a large `.fig` file no longer copies all of it, and it stores snapshots of any size in IndexedDB, where documents over 127 MiB used to fail and fall back to memory for the rest of the session.
+- Store crash recovery snapshots of any size. Snapshots of documents over 127 MiB failed to save to IndexedDB and stayed in memory for the rest of the session.
+- Keep an opened `.fig` file saved until it is edited. Laying out its first page, which recomputes auto-layout sizes and positions, and showing another page for the first time, which loads its layers from the file, marked it unsaved, so closing it asked to save changes nobody made.
+- Run crash recovery and autosave after edits, not whenever the canvas redraws. Opening a document, laying out a page, or loading a font started a recovery snapshot or an autosave, which encoded the whole document again once another page had loaded. In Safari, where every opened file gets recovery snapshots, a large page froze the browser for minutes after it first appeared.
 - Open image-heavy `.fig` files without the canvas running out of memory (#924). Decoded images stay within a fixed budget, and documents with many large images draw previews sized to the view, decoded in the background a few at a time, while exports keep the full images.
 - Show tables in AI chat replies at the chat's text size and weight, with a light header and copy as their only action, and task lists with a checkbox in place of the bullet. Tooltips, the copy menu, and the confirmation before opening a link follow the app's style, and links no longer load each site's favicon.
 - Keep an opened `.fig` file saved until it is edited. Laying out its first page, which recomputes auto-layout sizes and positions, marked it unsaved, so closing it asked to save changes nobody made.
@@ -133,6 +135,7 @@
 - Resize auto-layout frames that fill across their parent with it: one with a fixed size on that axis kept its old size. A filling child still counts toward a hugging parent's size, as in Figma.
 - Set `layoutSizingHorizontal` and `layoutSizingVertical` in scripts as Figma does: Fill is recorded on the child for that axis instead of on the frame's own sizing, which `.fig` export dropped, text switches its `textAutoResize`, and sizing Figma refuses, such as Hug on a frame without auto layout, throws Figma's error.
 - Read geometry in scripts after an edit without waiting for the script to finish: `x`, `y`, `width`, `height`, `relativeTransform`, `absoluteTransform`, `absoluteBoundingBox`, and `absoluteRenderBounds` lay out what the script changed first, as in Figma, so a hugging parent reports its new size right after a child is added.
+- Size text from scripts as Figma does: `figma.createText()` makes empty 12px text that sizes itself to its content instead of a fixed 100px box, auto-sizing text resizes when its characters, font, or size change, and `resize()` fixes its size.
 - Draw segmented controls in the properties panel at the height of the fields beside them.
 - Keep saving AI chat history in Safari Private Browsing after a message with an image or a reply that changed the document. Safari cannot store image data that way in a private window, so the conversation stopped saving from that point and showed "Chat history could not be saved".
 - Keep a component set's dashed border one pixel wide at every zoom; zooming in after opening a page scaled it into thick dashes until the page was redrawn.
@@ -222,6 +225,7 @@
 
 ### Performance
 
+- Open and draw large pages faster: guides no longer scan every layer of the page on each frame, a layout pass only writes the layers it moved and asks for one redraw, and opening a `.fig` keeps one copy of the file on the main thread instead of three.
 - Edit variables in large documents without stalls: renaming, reordering, or adding a variable, or changing its CSS name, unit, scopes, or conditions, no longer redraws the canvas, and changing a value or mode updates only the layers bound to those variables or to variables aliasing them instead of re-resolving and laying out every bound layer in the document.
 - Open the `/demo` document like any `.fig` file, built ahead of time, instead of generating it in the browser, which froze the page for several seconds.
 - Open large `.fig` files with less memory in the macOS desktop app and Safari: imported layers now share one object layout in JavaScriptCore instead of each being stored as a slower, larger dictionary.

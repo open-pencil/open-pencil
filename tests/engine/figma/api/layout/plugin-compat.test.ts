@@ -46,6 +46,8 @@ describe('Figma Plugin API layout compatibility', () => {
     frame.appendChild(text)
     text.x = 11
     text.y = 13
+    const textWidth = graph.getNode(text.id)?.width ?? 0
+    expect(textWidth).toBeGreaterThan(0)
 
     frame.rescale(2)
 
@@ -70,7 +72,7 @@ describe('Figma Plugin API layout compatibility', () => {
     expect(text.fontSize).toBe(20)
     expect(text.letterSpacing).toBe(4)
     expect(text.lineHeight).toBe(28)
-    expect(graph.getNode(text.id)?.width).toBe(200)
+    expect(graph.getNode(text.id)?.width).toBe(textWidth * 2)
   })
 
   test('rescale rejects occurrence descendants without mutation but permits definition children', () => {

@@ -212,8 +212,20 @@ export function installBasicNodeProxyAccessors(
       const scene = graph(this, internals)
       const node = raw(this, internals)
       const before = containerTransform(node, scene)
-      scene.updateNode(node.id, { width, height })
-      recordInstanceOverride(scene, node.id, ['width', 'height'])
+      // Text given a size stops sizing itself to its content, as in Figma.
+      const fixesText =
+        node.type === 'TEXT' &&
+        (node.textAutoResize === 'WIDTH_AND_HEIGHT' || node.textAutoResize === 'HEIGHT')
+      scene.updateNode(node.id, {
+        width,
+        height,
+        ...(fixesText ? { textAutoResize: 'NONE' as const } : {})
+      })
+      recordInstanceOverride(scene, node.id, [
+        'width',
+        'height',
+        ...(fixesText ? ['textAutoResize'] : [])
+      ])
       setTransform(this, internals, () => before)
     },
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {

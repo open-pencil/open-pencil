@@ -80,7 +80,6 @@ export function createIdbRecoveryStore(): RecoveryStore {
         id: input.id,
         documentName: input.documentName || 'Untitled',
         updatedAt: new Date().toISOString(),
-        sceneVersion: input.sceneVersion,
         byteLength: input.figBytes.byteLength,
         formatVersion: 1
       }

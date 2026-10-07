@@ -31,3 +31,19 @@ test('replacement session populates all remaining pages once', async () => {
   expect(graph.getPages().map((page) => graph.getChildren(page.id).length)).toEqual([1, 1])
   expect(populateAllFigPages(graph)).toBe(false)
 })
+
+test('loading a page keeps saving the opened bytes; an edit encodes the document again', async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  source.createNode('RECTANGLE', source.getPages()[0].id, { name: 'First' })
+  source.createNode('RECTANGLE', source.addPage('Page 2').id, { name: 'Second' })
+  const bytes = await exportFigFile(source)
+  const graph = await parseFigFile(bytes.slice().buffer as ArrayBuffer, { populate: 'first-page' })
+
+  expect(populateFigPage(graph, graph.getPages()[1].id)).toBe(true)
+  expect(await exportFigFile(graph)).toEqual(bytes)
+
+  const [second] = graph.getChildren(graph.getPages()[1].id)
+  graph.updateNode(second.id, { name: 'Renamed' })
+  expect(await exportFigFile(graph)).not.toEqual(bytes)
+})

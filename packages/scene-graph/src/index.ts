@@ -835,6 +835,10 @@ export class SceneGraph {
     Instances.syncInstances(this, componentId)
   }
 
+  syncInstance(instanceId: string): void {
+    Instances.syncInstance(this, instanceId)
+  }
+
   detachInstance(instanceId: string): void {
     Instances.detachInstance(this, instanceId)
   }
