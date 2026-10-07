@@ -2,11 +2,14 @@ import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
 import { watch } from 'vue'
 
+import { loadInterfaceFonts } from '../src/app/shell/fonts'
 import { useAppTheme } from '../src/app/shell/theme'
 
 import '../src/app.css'
 
 const preview: Preview = {
+  // Stories render once, in the interface's own fonts, as the app does.
+  loaders: [loadInterfaceFonts],
   decorators: [
     withThemeByDataAttribute<Renderer>({
       themes: {

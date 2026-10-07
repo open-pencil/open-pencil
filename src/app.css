@@ -147,13 +147,14 @@ body,
 
 /*
  * The interface's own Inter, from the files the canvas also renders with, so the UI does not
- * depend on Inter being installed and does not switch fonts once the editor loads its fonts.
+ * depend on Inter being installed. The app mounts only after these load (`loadInterfaceFonts`),
+ * so no text is ever drawn in a fallback font.
  */
 @font-face {
   font-family: Inter;
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url('/Inter-Regular.ttf') format('truetype');
 }
 
@@ -161,7 +162,7 @@ body,
   font-family: Inter;
   font-style: normal;
   font-weight: 500;
-  font-display: swap;
+  font-display: block;
   src: url('/Inter-Medium.ttf') format('truetype');
 }
 
@@ -169,7 +170,7 @@ body,
   font-family: Inter;
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: block;
   src: url('/Inter-SemiBold.ttf') format('truetype');
 }
 
@@ -177,7 +178,7 @@ body,
   font-family: Inter;
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url('/Inter-Bold.ttf') format('truetype');
 }
 
