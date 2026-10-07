@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import type * as AppTabs from '@/app/tabs'
 
@@ -7,9 +7,36 @@ import { testPath } from '#tests/helpers/paths'
 
 const FIXTURE = 'gold-preview.fig'
 
+async function openFixtureInNewTab(page: Page) {
+  await page.evaluate(async (fixture) => {
+    const tabsURL = '/src/app/tabs/index.ts'
+    const tabs: typeof AppTabs = await import(tabsURL)
+    const response = await fetch(`/__fixtures/${fixture}`)
+    await tabs.openFileInNewTab(new File([await response.arrayBuffer()], fixture))
+  }, FIXTURE)
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        return Boolean(store && store.graph.nodes.size > 100 && !store.state.preparation)
+      })
+    )
+    .toBe(true)
+}
+
+function activeTabRenderers(page: Page) {
+  return page.evaluate(async () => {
+    const tabsURL = '/src/app/tabs/index.ts'
+    const tabs: typeof AppTabs = await import(tabsURL)
+    return tabs.getActiveStore().canvasRenderers.length
+  })
+}
+
 // A closed tab must release its document. CanvasKit's WebGL context table, an editor's global
 // text measurer, store effects created during a component's setup, and app-level event
-// subscriptions each kept every closed document alive: store, graph, canvas, and UI tree.
+// subscriptions each kept every closed document alive: store, graph, canvas, and UI tree. A
+// closing tab's canvas also registered its renderers with the tab that became active, which
+// kept every closed canvas and its whole UI tree alive in the remaining document.
 test('documents closed in tabs are released', async ({ page }) => {
   test.setTimeout(90_000)
   await page.route(`**/__fixtures/${FIXTURE}`, (route) =>
@@ -20,21 +47,13 @@ test('documents closed in tabs are released', async ({ page }) => {
   const cdp = await page.context().newCDPSession(page)
   await page.evaluate(() => Reflect.set(window, '__closedGraphs', []))
 
+  // The first document replaces the empty startup tab and stays open while others close.
+  await openFixtureInNewTab(page)
+  await expect.poll(() => activeTabRenderers(page)).toBeGreaterThan(0)
+  const remainingRenderers = await activeTabRenderers(page)
+
   for (let cycle = 0; cycle < 3; cycle++) {
-    await page.evaluate(async (fixture) => {
-      const tabsURL = '/src/app/tabs/index.ts'
-      const tabs: typeof AppTabs = await import(tabsURL)
-      const response = await fetch(`/__fixtures/${fixture}`)
-      await tabs.openFileInNewTab(new File([await response.arrayBuffer()], fixture))
-    }, FIXTURE)
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const store = window.openPencil?.getStore?.()
-          return Boolean(store && store.graph.nodes.size > 100 && !store.state.preparation)
-        })
-      )
-      .toBe(true)
+    await openFixtureInNewTab(page)
     await page.evaluate(async () => {
       const tabsURL = '/src/app/tabs/index.ts'
       const tabs: typeof AppTabs = await import(tabsURL)
@@ -59,4 +78,6 @@ test('documents closed in tabs are released', async ({ page }) => {
       { timeout: 15_000 }
     )
     .toBe(0)
+  // The remaining tab's canvas remounts when it becomes active again.
+  await expect.poll(() => activeTabRenderers(page)).toBe(remainingRenderers)
 })

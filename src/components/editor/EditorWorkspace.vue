@@ -3,9 +3,9 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { formatShortcut, provideEditor, useI18n, useViewportKind } from '@open-pencil/vue'
+import { formatShortcut, useI18n, useViewportKind } from '@open-pencil/vue'
 
-import { useEditorStore } from '@/app/editor/active-store'
+import { provideTabEditorStore, useEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
@@ -27,12 +27,12 @@ import splitterTheme from '@/theme/splitter'
 import WorkspacePill from './WorkspacePill.vue'
 
 const showChrome = appRuntimeConfig.showChrome
-const store = useEditorStore()
 // WorkspaceView keys this view by tab, so the tab's own store is fixed for its lifetime. Its
 // editor UI stays bound to that document rather than the app-level editor, which follows the
 // active tab and would move these subscriptions to the next document when this tab closes.
 const tab = activeTab.value
-if (tab) provideEditor(tab.store)
+if (tab) provideTabEditorStore(tab.store)
+const store = useEditorStore()
 const { isMobile } = useViewportKind()
 const initialEditorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
