@@ -27,6 +27,8 @@ interface AttachmentDraftOptions {
 }
 
 export function useAttachmentDrafts(options: AttachmentDraftOptions) {
+  /** Advances when a message is sent or the draft is cleared, so late images skip it. */
+  let draftGeneration = 0
   const images = ref<ImageAttachmentDraft[]>([])
   const nodeIds = ref<string[]>([])
   const nodes = computed(() => resolveReferencedNodes(options.editor.graph, nodeIds.value))
@@ -58,6 +60,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
    * and each file that cannot be attached says why.
    */
   async function addFiles(files: File[]): Promise<void> {
+    const draft = draftGeneration
     const limitMessage = `You can attach up to ${MAX_IMAGE_ATTACHMENTS} images.`
     if (images.value.length >= MAX_IMAGE_ATTACHMENTS) {
       options.reportError(limitMessage)
@@ -67,6 +70,8 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
     for (const file of files) {
       try {
         const image = isSVGFile(file) ? await rasterizeSVGAttachment(file) : file
+        // The message was sent or cleared while the SVG was drawn: it belongs to no draft now.
+        if (draft !== draftGeneration) return
         // Checked after the await, since another drop may have filled the slots meanwhile.
         if (images.value.length >= MAX_IMAGE_ATTACHMENTS) {
           options.reportError(limitMessage)
@@ -116,6 +121,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
   }
 
   function takeSubmission(text: string): ChatSubmission {
+    draftGeneration++
     const submittedImages = images.value
     const submittedNodes = nodes.value
     images.value = []
@@ -136,6 +142,7 @@ export function useAttachmentDrafts(options: AttachmentDraftOptions) {
   }
 
   function clear(): void {
+    draftGeneration++
     for (const image of images.value) revokeImagePreviewURL(image.previewURL)
     images.value = []
     nodeIds.value = []
