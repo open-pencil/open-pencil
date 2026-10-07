@@ -1,5 +1,11 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { LayoutMode, LayoutSizing, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import type {
+  AxisSizingMode,
+  LayoutMode,
+  LayoutSizing,
+  SceneNode,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { populateInstanceChildren } from '@open-pencil/scene-graph/instances'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -92,12 +98,14 @@ function applyAutoLayout(
       ? ctx.resolveNumber(pen.gap)
       : ((pen.gap ?? 0) as number)
 
+  // Fill is the child's grow or stretch, set with its parent; the frame itself stays fixed.
+  const own = (sizing: LayoutSizing): AxisSizingMode => (sizing === 'HUG' ? 'HUG' : 'FIXED')
   if (layoutMode === 'VERTICAL') {
-    overrides.primaryAxisSizing = heightSizing
-    overrides.counterAxisSizing = widthSizing
+    overrides.primaryAxisSizing = own(heightSizing)
+    overrides.counterAxisSizing = own(widthSizing)
   } else {
-    overrides.primaryAxisSizing = widthSizing
-    overrides.counterAxisSizing = heightSizing
+    overrides.primaryAxisSizing = own(widthSizing)
+    overrides.counterAxisSizing = own(heightSizing)
   }
 }
 

@@ -3,11 +3,11 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { strokeLayoutChildren } from '#core/canvas/overlays/layout-outlines'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
   AUTO_LAYOUT_HOVER_BLUE,
   AUTO_LAYOUT_HOVER_BLUE_FILL,
-  AUTO_LAYOUT_HOVER_CHILD_DASH,
   AUTO_LAYOUT_HOVER_MAGENTA,
   AUTO_LAYOUT_HOVER_MAGENTA_FILL,
   AUTO_LAYOUT_HOVER_STRIPE_GAP,
@@ -253,27 +253,6 @@ function drawPaddingHover(
   )
 }
 
-function drawChildrenHover(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, node: SceneNode) {
-  r.auxStroke.setStrokeWidth(1)
-  r.auxStroke.setColor(r.selColor())
-  r.auxStroke.setPathEffect(
-    r.ck.PathEffect.MakeDash([AUTO_LAYOUT_HOVER_CHILD_DASH, AUTO_LAYOUT_HOVER_CHILD_DASH], 0)
-  )
-  for (const child of visibleLayoutChildren(node, graph)) {
-    const abs = graph.getAbsolutePosition(child.id)
-    canvas.drawRect(
-      r.ck.LTRBRect(
-        abs.x * r.zoom + r.panX,
-        abs.y * r.zoom + r.panY,
-        (abs.x + child.width) * r.zoom + r.panX,
-        (abs.y + child.height) * r.zoom + r.panY
-      ),
-      r.auxStroke
-    )
-  }
-  r.auxStroke.setPathEffect(null)
-}
-
 export function drawAutoLayoutHover(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -284,7 +263,7 @@ export function drawAutoLayoutHover(
   const node = graph.getNode(hover.nodeId)
   if (!node || (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL')) return
 
-  if (hover.kind === 'children') drawChildrenHover(r, canvas, graph, node)
+  if (hover.kind === 'children') strokeLayoutChildren(r, canvas, graph, node)
   if (hover.kind === 'spacing' || hover.kind === 'spacing-value') {
     drawSpacingHover(r, canvas, graph, node, hover.kind === 'spacing-value')
   }

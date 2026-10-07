@@ -88,6 +88,71 @@ const noDeepParentRelativeImports = createParentRelativeImportRule({
   minDepth: 2
 })
 
+/**
+ * A path that climbs two or more directories, written as `../..`, `..\\..`, or `'..', '..'`.
+ * An unknown part, such as a template expression, ends the run of parent segments.
+ */
+function climbsTwoLevels(values: (string | null)[]): boolean {
+  const joined = values
+    .map((value) => value ?? '\u0000')
+    .join('/')
+    .replaceAll('\\', '/')
+  return /(^|\/)\.\.\/+\.\.(\/|$)/.test(joined)
+}
+
+function staticString(node: TSESTree.Node): string | null {
+  if (node.type === 'Literal' && typeof node.value === 'string') return node.value
+  if (node.type === 'TemplateLiteral') {
+    const head = node.quasis[0]?.value.cooked ?? null
+    return head !== null && node.expressions.length ? `${head}\u0000` : head
+  }
+  return null
+}
+
+/** `import.meta.url`, `.dir`, or `.dirname`, directly or wrapped, as in `dirname(fileURLToPath(import.meta.url))`. */
+function isImportMetaLocation(node: TSESTree.Node): boolean {
+  if (node.type === 'MemberExpression') {
+    if (node.object.type === 'MetaProperty') {
+      return (
+        node.property.type === 'Identifier' &&
+        ['url', 'dir', 'dirname'].includes(node.property.name)
+      )
+    }
+    return isImportMetaLocation(node.object)
+  }
+  if (node.type === 'CallExpression') return node.arguments.some(isImportMetaLocation)
+  return false
+}
+
+const noDeepParentRelativePaths: RuleDefinition = {
+  meta: {
+    docs: {
+      description:
+        'Disallow climbing two or more directories from import.meta — use a path helper or alias'
+    }
+  },
+  create(context: RuleContext) {
+    const message =
+      'Resolve the file through a path helper such as repoPath() or an import alias instead of climbing with ../..'
+    function check(node: TSESTree.Node, relative: TSESTree.CallExpressionArgument[]) {
+      if (relative.length && climbsTwoLevels(relative.map(staticString))) {
+        context.report({ node, message })
+      }
+    }
+    return {
+      NewExpression(node) {
+        if (node.callee.type !== 'Identifier' || node.callee.name !== 'URL') return
+        if (!node.arguments[1] || !isImportMetaLocation(node.arguments[1])) return
+        check(node, node.arguments.slice(0, 1))
+      },
+      CallExpression(node) {
+        const start = node.arguments.findIndex(isImportMetaLocation)
+        if (start !== -1) check(node, node.arguments.slice(start + 1))
+      }
+    }
+  }
+}
+
 const noCoreParentRelativeImports = createParentRelativeImportRule({
   description: 'Disallow parent-relative imports in core internals — use #core/* aliases',
   applies: (file) =>
@@ -214,6 +279,7 @@ export {
   noVueSelfPackageImports,
   noCrossPackageSourceImports,
   noDeepParentRelativeImports,
+  noDeepParentRelativePaths,
   noCoreParentRelativeImports,
   noMcpParentRelativeImports,
   noVueParentRelativeImports,

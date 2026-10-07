@@ -68,7 +68,9 @@ export const AUTO_LAYOUT_HOVER_TICK_LENGTH = 12
 export const AUTO_LAYOUT_HOVER_STRIPE_GAP = 8
 export const AUTO_LAYOUT_HOVER_STRIPE_WIDTH = 1
 export const AUTO_LAYOUT_HOVER_STROKE_WIDTH = 1.5
-export const AUTO_LAYOUT_HOVER_CHILD_DASH = 4
+/** Dash and gap, in screen pixels, of the dotted outlines around auto layout children (Figma 126). */
+export const LAYOUT_OUTLINE_DASH = 1.75
+export const LAYOUT_OUTLINE_GAP = 1.25
 export const AUTO_LAYOUT_HOVER_VALUE_OFFSET = 18
 export const AUTO_LAYOUT_HOVER_VALUE_PILL_HEIGHT = 22
 export const AUTO_LAYOUT_HOVER_VALUE_PILL_RADIUS = 5

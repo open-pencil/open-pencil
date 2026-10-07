@@ -17,6 +17,21 @@ function hasVisibleFillOrStroke(node: SceneNode): boolean {
   return node.fills.some((f) => f.visible) || node.strokes.some((s) => s.visible)
 }
 
+function isTopLevel(graph: SceneGraph, node: SceneNode): boolean {
+  const parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
+  return parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+}
+
+/**
+ * An open container whose empty area still belongs to it, as in Figma: a top-level frame with auto
+ * layout is selected, hovered, and dragged by its gaps and padding, while its children stay one
+ * click away, with or without a fill. A plain top-level frame's empty area is background, and a
+ * nested frame's empty area belongs to it only as a click target (see `frameChildAt`).
+ */
+function ownsItsEmptyArea(graph: SceneGraph, node: SceneNode): boolean {
+  return node.type === 'FRAME' && node.layoutMode !== 'NONE' && isTopLevel(graph, node)
+}
+
 function hasTransformedAncestor(
   node: SceneNode,
   graph: SceneGraph,
@@ -98,7 +113,10 @@ function hitTestTransparentContainer(
     return childHit
   }
 
-  if (containsPoint(px, py, child, graph, transformCache) && hasVisibleFillOrStroke(child))
+  if (
+    containsPoint(px, py, child, graph, transformCache) &&
+    (hasVisibleFillOrStroke(child) || ownsItsEmptyArea(graph, child))
+  )
     return child
   return null
 }
@@ -168,8 +186,58 @@ function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
   if (node.type === 'COMPONENT_SET') return true
   if (node.childIds.length === 0) return false
   if (node.type === 'SECTION') return true
-  const parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
-  return node.type === 'FRAME' && (parent?.type === 'CANVAS' || parent?.type === 'SECTION')
+  return node.type === 'FRAME' && isTopLevel(graph, node)
+}
+
+/**
+ * The topmost frame among a container's children whose bounds hold the point, filled or not: in
+ * Figma a click on the empty area of a frame inside an open container, or of an empty frame on the
+ * page or in a section, selects that frame, while a deep (⌘) click looks through it.
+ */
+function frameChildAt(
+  graph: SceneGraph,
+  container: SceneNode,
+  px: number,
+  py: number
+): SceneNode | null {
+  const transformCache = new Map<string, boolean>()
+  for (let i = container.childIds.length - 1; i >= 0; i--) {
+    const child = graph.nodes.get(container.childIds[i])
+    if (!child || child.internalOnly || !child.visible || child.type !== 'FRAME') continue
+    // A board, such as a top-level frame in a section, keeps its empty area as background.
+    if (opensByItself(graph, child) && !ownsItsEmptyArea(graph, child)) continue
+    if (containsPoint(px, py, child, graph, transformCache)) return child
+  }
+  return null
+}
+
+/**
+ * The containers the selection opens: every ancestor of a selected layer inside the scope, and a
+ * selected container itself, so a click inside it selects the layer under the point, as in Figma.
+ * A selected group or boolean stays closed: clicking inside it keeps it selected.
+ */
+function openedBySelection(
+  graph: SceneGraph,
+  selectedIds: ReadonlySet<string>,
+  scopeId: string
+): Set<string> {
+  const ancestors = new Set<string>()
+  for (const id of selectedIds) {
+    const node = graph.nodes.get(id)
+    if (
+      node &&
+      node.childIds.length > 0 &&
+      node.type !== 'GROUP' &&
+      node.type !== 'BOOLEAN_OPERATION'
+    )
+      ancestors.add(id)
+    let parentId = node?.parentId
+    while (parentId && parentId !== scopeId && !ancestors.has(parentId)) {
+      ancestors.add(parentId)
+      parentId = graph.nodes.get(parentId)?.parentId
+    }
+  }
+  return ancestors
 }
 
 /**
@@ -177,7 +245,8 @@ function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
  * the point and stops at the first layer that is not open. Top-level frames and sections with
  * layers and component sets are open, and so is every ancestor of the selection, so clicks reach
  * the siblings of selected layers. Where every layer under the point is open, a container opened
- * by the selection is selected, and a top-level frame or section is not.
+ * by the selection is selected, so is a top-level frame with auto layout, and a plain top-level
+ * frame or a section is not.
  */
 export function hitTestSelectable(
   graph: SceneGraph,
@@ -187,7 +256,10 @@ export function hitTestSelectable(
   selectedIds: ReadonlySet<string>
 ): SceneNode | null {
   const deepest = hitTestChildren(graph, px, py, scopeId, true)
-  if (!deepest) return null
+  if (!deepest) {
+    const scope = graph.nodes.get(scopeId)
+    return scope ? frameChildAt(graph, scope, px, py) : null
+  }
 
   const chain: SceneNode[] = []
   for (let node: SceneNode | undefined = deepest; node && node.id !== scopeId;) {
@@ -195,22 +267,19 @@ export function hitTestSelectable(
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
 
-  const openedBySelection = new Set<string>()
-  for (const id of selectedIds) {
-    let parentId = graph.nodes.get(id)?.parentId
-    while (parentId && parentId !== scopeId && !openedBySelection.has(parentId)) {
-      openedBySelection.add(parentId)
-      parentId = graph.nodes.get(parentId)?.parentId
-    }
-  }
+  const opened = openedBySelection(graph, selectedIds, scopeId)
 
   for (const node of chain) {
     // A locked layer stands in for everything inside it.
     if (node.locked) return node
-    if (!openedBySelection.has(node.id) && !opensByItself(graph, node)) return node
+    if (!opened.has(node.id) && !opensByItself(graph, node)) return node
   }
   const last = chain.at(-1)
-  return last && openedBySelection.has(last.id) && !opensByItself(graph, last) ? last : null
+  if (!last) return null
+  const frame = frameChildAt(graph, last, px, py)
+  if (frame) return frame
+  if (ownsItsEmptyArea(graph, last)) return last
+  return opened.has(last.id) && !opensByItself(graph, last) ? last : null
 }
 
 /** Whether a click looks into this container rather than selecting it; see `hitTestSelectable`. */
@@ -231,7 +300,7 @@ export function hitTestOpenContainer(
 ): SceneNode | null {
   const deepest = hitTestChildren(graph, px, py, scopeId, true)
   for (let node: SceneNode | undefined = deepest ?? undefined; node && node.id !== scopeId;) {
-    if (!opensByItself(graph, node)) return null
+    if (!opensByItself(graph, node) || ownsItsEmptyArea(graph, node)) return null
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
   return deepest

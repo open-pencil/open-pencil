@@ -45,7 +45,7 @@ export function useLayout() {
     cancelPaddingPreview
   } = createPaddingActions(editor, node)
 
-  const layoutActions = createLayoutActions({ editor, node, isInAutoLayout })
+  const layoutActions = createLayoutActions({ editor, node })
 
   const { updateGridTrack, addTrack, removeTrack } = createGridTrackActions(editor, node)
 

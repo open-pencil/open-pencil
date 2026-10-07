@@ -45,20 +45,17 @@ describe('FILL flexBasis', () => {
       itemSpacing: 0
     })
     autoFrame(graph, frame.id, {
-      primaryAxisSizing: 'FILL' as const,
-      counterAxisSizing: 'FIXED',
+      layoutGrow: 1,
       width: 50,
       height: 100
     })
     autoFrame(graph, frame.id, {
-      primaryAxisSizing: 'FILL' as const,
-      counterAxisSizing: 'FIXED',
+      layoutGrow: 1,
       width: 50,
       height: 100
     })
     autoFrame(graph, frame.id, {
-      primaryAxisSizing: 'FILL' as const,
-      counterAxisSizing: 'FIXED',
+      layoutGrow: 1,
       width: 50,
       height: 100
     })

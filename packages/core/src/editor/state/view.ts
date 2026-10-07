@@ -13,6 +13,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     dropTargetId: null,
     layoutInsertIndicator: null,
     hoveredNodeId: null,
+    transforming: false,
     measurementMode: 'off',
     editingTextId: null,
     penState: null,

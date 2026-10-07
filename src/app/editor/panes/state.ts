@@ -29,6 +29,7 @@ export function cloneCanvasPaneState(id: string, source: CanvasPaneState): Canva
     id,
     selectedIds: new Set<string>(),
     hoveredNodeId: null,
+    transforming: false,
     measurementMode: 'off',
     editingTextId: null,
     marquee: null,

@@ -293,7 +293,8 @@ describe('imported auto-layout bounds', () => {
     expect(graph.getNode(label.id)).toMatchObject({ x: 0, width: 302 })
   })
 
-  test('does not infer authoritative stretch without generated parent bounds', () => {
+  // Stretch is fill, as in Figma, whether or not the parent's bounds came from the file.
+  test('stretches an auto-layout child without generated parent bounds', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const column = graph.createNode('FRAME', page.id, {
@@ -314,7 +315,7 @@ describe('imported auto-layout bounds', () => {
 
     computeAllLayouts(graph)
 
-    expect(graph.getNode(label.id)?.width).toBe(44)
+    expect(graph.getNode(label.id)?.width).toBe(624)
   })
 
   test('preserves hidden child geometry while excluding it from parent flow', () => {

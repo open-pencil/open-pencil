@@ -39,8 +39,7 @@ export default defineConfig({
   format: ['esm'],
   dts: {
     vue: true,
-    sourcemap: true,
-    resolver: 'tsc'
+    sourcemap: true
   },
   sourcemap: true,
   hash: false,

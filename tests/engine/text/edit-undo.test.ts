@@ -23,7 +23,8 @@ function setup() {
     editingTextId: null,
     currentPageId: pageId,
     renderVersion: 0,
-    sceneVersion: 0
+    sceneVersion: 0,
+    canvasVersion: 0
   } as EditorState
 
   const ctx: EditorContext = {
@@ -32,6 +33,10 @@ function setup() {
     state,
     requestRender: () => {
       state.renderVersion++
+      state.sceneVersion++
+      state.canvasVersion++
+    },
+    requestRefresh: () => {
       state.sceneVersion++
     },
     requestRepaint: () => {

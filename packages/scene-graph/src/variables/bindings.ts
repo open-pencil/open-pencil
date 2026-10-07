@@ -94,10 +94,64 @@ export function resolvedPaintBindings(
   return changes
 }
 
-/** Resolve live numeric bindings in scene units, without authoring instance overrides. */
-export function reconcileNumericVariableBindings(graph: SceneGraph): string[] {
+/**
+ * The layers a reconcile looks at: those bound to these variables, directly or through a variable
+ * aliasing them, or the layers in these subtrees. Without a scope, every layer.
+ */
+export type BindingScope = { variables: Iterable<string> } | { subtrees: Iterable<string> }
+
+/** These variables and every variable that aliases one of them, at any depth and in any mode. */
+export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<string>): Set<string> {
+  const found = new Set(ids)
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const variable of graph.variables.values()) {
+      if (found.has(variable.id)) continue
+      const aliases = Object.values(variable.valuesByMode).some(
+        (value) => typeof value === 'object' && 'aliasId' in value && found.has(value.aliasId)
+      )
+      if (aliases) {
+        found.add(variable.id)
+        grew = true
+      }
+    }
+  }
+  return found
+}
+
+function subtreeNodes(graph: SceneGraph, roots: Iterable<string>): SceneNode[] {
+  const nodes: SceneNode[] = []
+  const pending = [...roots]
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    nodes.push(node)
+    pending.push(...node.childIds)
+  }
+  return nodes
+}
+
+function scopedNodes(graph: SceneGraph, scope: BindingScope | undefined): Iterable<SceneNode> {
+  if (!scope) return graph.getAllNodes()
+  if ('subtrees' in scope) return subtreeNodes(graph, scope.subtrees)
+  const variables = variablesResolvingThrough(graph, scope.variables)
+  return [...graph.getAllNodes()].filter((node) =>
+    Object.values(node.boundVariables).some((id) => variables.has(id))
+  )
+}
+
+/**
+ * Resolve live numeric bindings in scene units, without authoring instance overrides. A scope
+ * limits it to the layers a change can reach, so layers whose saved values differ from their
+ * bindings elsewhere in the document are left as saved.
+ */
+export function reconcileNumericVariableBindings(
+  graph: SceneGraph,
+  scope?: BindingScope
+): string[] {
   const changed: string[] = []
-  for (const node of graph.getAllNodes()) {
+  for (const node of scopedNodes(graph, scope)) {
     const updates = resolvedNumericBindings(graph, node)
     if (Object.keys(updates).length === 0) continue
     graph.updateNode(node.id, updates)

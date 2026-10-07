@@ -45,3 +45,36 @@ test('a value edit resolves the layers bound to it', () => {
 
   expect(avatar.width).toBe(48)
 })
+
+test('a value edit leaves layers bound to other variables as saved', () => {
+  const { editor, collection, avatar } = drifted()
+  const gap = editor.graph.createVariable('Gap', 'FLOAT', collection.id, 8)
+
+  editor.updateVariableValue(gap.id, collection.defaultModeId, 12)
+
+  expect(avatar.width).toBe(24)
+})
+
+test('switching the mode of a collection resolves every layer bound to its variables', () => {
+  const { editor, collection, avatar } = drifted()
+
+  editor.setActiveMode(collection.id, collection.defaultModeId)
+
+  expect(avatar.width).toBe(40)
+})
+
+test('renaming or reordering variables refreshes the views and leaves the canvas as drawn', () => {
+  const { editor, collection, size } = drifted()
+  const gap = editor.graph.createVariable('Gap', 'FLOAT', collection.id, 8)
+  const { sceneVersion, canvasVersion } = editor.state
+
+  editor.renameVariable(size.id, 'Icon/Big')
+  editor.setVariableOrder(collection.id, [gap.id, size.id])
+  editor.updateVariableToken(size.id, { codeSyntax: { WEB: 'var(--icon-big)' } })
+
+  expect(editor.state.sceneVersion).toBeGreaterThan(sceneVersion)
+  expect(editor.state.canvasVersion).toBe(canvasVersion)
+
+  editor.updateVariableValue(size.id, collection.defaultModeId, 48)
+  expect(editor.state.canvasVersion).toBeGreaterThan(canvasVersion)
+})

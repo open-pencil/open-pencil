@@ -49,7 +49,13 @@ export interface EditorSharedState {
   rulerTheme?: RulerTheme
   /** The interface theme new sections take their fill from; light when unset. */
   theme?: InterfaceTheme
+  /** Bumped by every document change; views, saving, and recovery follow it. */
   sceneVersion: number
+  /**
+   * Bumped by document changes the canvas draws. Changes it does not draw, such as a variable's
+   * name or CSS name, bump only `sceneVersion`, so the canvas keeps its recorded pictures.
+   */
+  canvasVersion: number
 }
 
 export interface EditorViewState {
@@ -69,6 +75,8 @@ export interface EditorViewState {
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
   hoveredNodeId: string | null
+  /** A pointer move, resize, or rotation is in progress. */
+  transforming: boolean
   measurementMode: MeasurementMode
   editingTextId: string | null
   penState: {
@@ -178,6 +186,8 @@ export interface EditorContext {
   getRenderer: () => SkiaRenderer | null
   getTextEditor: () => TextEditor | null
   requestRender: () => void
+  /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
+  requestRefresh: () => void
   requestRepaint: () => void
   beginInteractiveEdit: () => () => void
   onEditorEvent: <K extends EditorEventName>(event: K, handler: EditorEvents[K]) => () => void

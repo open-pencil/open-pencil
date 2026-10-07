@@ -11,8 +11,9 @@ import { reconcileVariableLayouts } from '#core/layout/variables'
 import type { EditorContext } from './types'
 
 export function createVariableBindingActions(ctx: EditorContext) {
-  function refreshBindings() {
-    reconcileVariableLayouts(ctx.graph)
+  /** A binding change reaches only the layer it is on and the layers inside it. */
+  function refreshBindings(nodeId: string) {
+    reconcileVariableLayouts(ctx.graph, { subtrees: [nodeId] })
     ctx.requestRender()
   }
 
@@ -34,7 +35,7 @@ export function createVariableBindingActions(ctx: EditorContext) {
     const apply = () => {
       if (variableId === undefined) ctx.graph.unbindVariable(nodeId, path)
       else ctx.graph.bindVariable(nodeId, path, variableId)
-      refreshBindings()
+      refreshBindings(nodeId)
     }
     apply()
     ctx.undo.push({
@@ -63,7 +64,7 @@ export function createVariableBindingActions(ctx: EditorContext) {
           )
         )
         ctx.graph.updateNode(nodeId, restored)
-        refreshBindings()
+        refreshBindings(nodeId)
       }
     })
   }

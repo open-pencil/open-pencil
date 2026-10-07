@@ -5,6 +5,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
+import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
@@ -98,6 +99,7 @@ export function drawOverlayPass(
   drawCodeFocus(r, canvas, graph, overlays.codeFocusNodeId, overlays.rotationPreview)
   if (!measuring)
     drawSlotOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays.rotationPreview)
+  if (!measuring) drawLayoutOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays)
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
@@ -112,7 +114,9 @@ export function drawOverlayPass(
   r.drawSnapGuides(canvas, overlays.snapGuides)
   r.drawMarquee(canvas, overlays.marquee)
   r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
-  if (!measuring) r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+  if (!measuring && !overlays.transforming) {
+    r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+  }
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
   r.drawPenOverlay(canvas, overlays.penState)
   updateIssueMarkers(r, graph, overlays)

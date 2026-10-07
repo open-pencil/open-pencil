@@ -129,9 +129,11 @@ function applyFillSizing(
   o: Partial<SceneNode>
 ): void {
   if (dim !== 'fill') return
-  const isPrimary = axis === 'width' ? isRow : isCol
-  const isCross = axis === 'width' ? isCol : isRow
-  if (isGrid || isCross) o.layoutAlignSelf = 'STRETCH'
+  // A grid places its children like a row, so width fills by grow and height by stretch.
+  const rowLike = isRow || isGrid
+  const isPrimary = axis === 'width' ? rowLike : isCol
+  const isCross = axis === 'width' ? isCol : rowLike
+  if (isCross) o.layoutAlignSelf = 'STRETCH'
   else if (isPrimary) o.layoutGrow = 1
   else {
     o.layoutGrow = 1

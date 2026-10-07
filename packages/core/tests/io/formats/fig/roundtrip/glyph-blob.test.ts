@@ -10,8 +10,9 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
 
 import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
+import { corePackagePath } from '#core-tests/helpers/paths'
 
-const INTER_ASSETS = resolve(import.meta.dir, '../../../../../assets')
+const INTER_ASSETS = corePackagePath('assets')
 
 function countGlyphBlobs(bytes: Uint8Array) {
   const parsed = parseFigBuffer(new Uint8Array(bytes).buffer)
