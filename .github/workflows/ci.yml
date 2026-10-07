@@ -19,6 +19,10 @@ jobs:
     name: Classify changes
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: read
     outputs:
       scope: ${{ steps.classify.outputs.scope }}
     steps:
@@ -37,6 +41,10 @@ jobs:
         id: classify
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          # In the merge queue, a tree the pull request's CI already passed skips the suites.
+          CI_EVENT: ${{ github.event_name }}
+          CI_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: bun tools/ci/policy/src/classify.ts
 
   commit-messages:
@@ -260,6 +268,9 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -269,3 +280,10 @@ jobs:
         env:
           CI_NEEDS: ${{ toJSON(needs) }}
         run: bun tools/ci/policy/src/gate.ts
+      # Lets the merge queue skip the suites when it tests this exact tree. Forks cannot write it.
+      - name: Record the verified tree
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bun tools/ci/policy/src/record-verified-tree.ts
