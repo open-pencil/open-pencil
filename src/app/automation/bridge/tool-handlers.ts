@@ -15,6 +15,7 @@ import {
   readAgentSession,
   touchedNodeIds
 } from '@/app/automation/agents'
+import { limitToSelection } from '@/app/automation/bridge/selection-scope'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import {
   AUTOMATION_UNDO_LABEL,
@@ -58,8 +59,13 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
 
   return async function handleTool(target: AutomationTarget, args: unknown): Promise<unknown> {
     const toolName = (args as { name?: string }).name
-    const toolArgs = (args as { args?: Record<string, unknown> }).args ?? {}
+    const requestedArgs = (args as { args?: Record<string, unknown> }).args ?? {}
     if (!toolName) throw new Error('Missing "name" in args')
+    // An MCP server that shares only the selection marks its calls, and they stay inside it.
+    const toolArgs =
+      (args as { scope?: unknown }).scope === 'selection'
+        ? limitToSelection(target.store, toolName, requestedArgs)
+        : requestedArgs
 
     // A call from an MCP session shows as that session's agent, working where the call works.
     const session = readAgentSession((args as { agent?: unknown }).agent)

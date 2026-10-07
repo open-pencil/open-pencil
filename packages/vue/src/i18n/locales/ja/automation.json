@@ -30,6 +30,8 @@
   "version": "バージョン",
   "authentication": "認証を要求",
   "authenticationDescription": "ローカル MCP エンドポイントを Bearer トークンで保護します。信頼できる端末でのみ無効にしてください。変更を反映するにはサーバーを再起動します。",
+  "selectionScope": "選択範囲のみ共有",
+  "selectionScopeDescription": "MCP クライアントが読めるのは選択したレイヤーだけになります。使えるツールは get_selection、get_node、get_page_tree、describe、export_image のみです。変更を反映するにはサーバーを再起動します。",
   "rootDirectory": "MCP ルートディレクトリ",
   "rootDirectoryDefault": "サーバーの既定ディレクトリ",
   "chooseRootDirectory": "フォルダーを選択",

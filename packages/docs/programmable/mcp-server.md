@@ -17,6 +17,12 @@ Use **Settings → Tool access** (select **Local MCP**) to search and toggle the
 
 Restart the MCP server, then reconnect stdio clients, to apply changes. For an externally managed server, restart its owning process. The list reflects the tools discovered from the server; disabling a dedicated tool does not prevent an enabled script tool from performing the same operation. These switches are not a sandbox and do not configure remote MCP servers or WebMCP.
 
+## Share only the selection {#selection-scope}
+
+Turn on **Share only the selection** in **Settings → MCP → Local server** to let MCP clients read only the layers you select. Clients then get `get_selection`, `get_node`, `get_page_tree`, `describe`, and `export_image`, and no tools that edit, open files, list documents, or change settings. Every node a call names must be a selected layer or inside one; `describe` and `export_image` read the selection when given no IDs, and `get_page_tree` needs a `root_id` from the selection. With nothing selected, calls fail and ask the user to select layers.
+
+The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
+
 ## Browser-native WebMCP (experimental) {#webmcp}
 
 WebMCP is **off by default**. Open **Settings → MCP → WebMCP** and choose **Inspect** for read-only access or **Edit** to also allow scoped, undoable changes. **Off** unregisters all browser tools; changing modes revokes the previous registrations immediately. This preference is independent of local MCP authentication, tool switches, and outbound connections.

@@ -30,6 +30,8 @@
   "version": "Version",
   "authentication": "Authentifizierung erforderlich",
   "authenticationDescription": "Den lokalen MCP-Endpunkt mit einem Bearer-Token schützen. Nur auf vertrauenswürdigen Geräten deaktivieren. Server neu starten, um Änderungen anzuwenden.",
+  "selectionScope": "Nur die Auswahl teilen",
+  "selectionScopeDescription": "MCP-Clients nur die ausgewählten Ebenen lesen lassen, mit get_selection, get_node, get_page_tree, describe und export_image und ohne weitere Werkzeuge. Server neu starten, um Änderungen anzuwenden.",
   "rootDirectory": "MCP-Stammverzeichnis",
   "rootDirectoryDefault": "Standardverzeichnis des Servers",
   "chooseRootDirectory": "Ordner auswählen",

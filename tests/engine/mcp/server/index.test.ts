@@ -12,6 +12,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
+import { SELECTION_SCOPE_TOOLS, type MCPToolScope } from '#mcp/tool/scope'
 import { parseDiscoveryInfo } from '#mcp/transport/discovery'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -38,7 +39,7 @@ function testSocketPath(): string | null {
   return join(SOCKET_DIR, `mcp-test-${process.pid}-${++testCounter}.sock`)
 }
 
-async function createTestClient(disabledTools: string[] = []) {
+async function createTestClient(disabledTools: string[] = [], scope: MCPToolScope = 'document') {
   if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
   const authToken = TEST_CLIENT_AUTH_TOKEN
   const handle = await startServer({
@@ -47,6 +48,7 @@ async function createTestClient(disabledTools: string[] = []) {
     socketPath: testSocketPath(),
     authToken,
     disabledTools,
+    scope,
     enableEval: false,
     mcpRoot: null
   })
@@ -84,6 +86,7 @@ async function createTestClient(disabledTools: string[] = []) {
   const safeBrowser = browser
   return {
     client: safeClient,
+    browser: safeBrowser,
     graph,
     handle,
     close: async () => {
@@ -321,6 +324,56 @@ describe('MCP server', () => {
 // ---------------------------------------------------------------------------
 // mcpRoot tests
 // ---------------------------------------------------------------------------
+
+describe('MCP server sharing only the selection', () => {
+  let ctx: Awaited<ReturnType<typeof createTestClient>> | null = null
+
+  beforeEach(async () => {
+    ctx = await createTestClient([], 'selection')
+  })
+
+  afterEach(async () => {
+    await ctx?.close()
+    ctx = null
+  })
+
+  test('lists only the selection read tools', async () => {
+    const { tools } = await expectDefined(ctx, 'client').client.listTools()
+    expect(tools.map((tool) => tool.name).sort()).toEqual(Object.keys(SELECTION_SCOPE_TOOLS).sort())
+  })
+
+  test('marks every tool call with the scope for the app to enforce', async () => {
+    const { client, browser } = expectDefined(ctx, 'client')
+    await client.callTool({ name: 'get_selection', arguments: {} })
+    const call = browser.requests.find((request) => request.command === 'tool')
+    expect(call?.args).toMatchObject({ name: 'get_selection', scope: 'selection' })
+  })
+
+  test('keeps raw RPC to the selection tools, so it cannot reach settings', async () => {
+    const { browser, handle } = expectDefined(ctx, 'client')
+    const rpc = (body: object) =>
+      fetch(`http://127.0.0.1:${handle.httpPort}/rpc`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }).then((response) => response.json() as Promise<unknown>)
+
+    expect(await rpc({ command: 'update_settings', args: { mcp: {} } })).toMatchObject({
+      ok: false
+    })
+    expect(
+      await rpc({ command: 'tool', args: { name: 'delete_node', args: { id: '0:1' } } })
+    ).toMatchObject({ ok: false })
+    expect(browser.requests.map((request) => request.command)).not.toContain('update_settings')
+
+    await rpc({ command: 'tool', args: { name: 'get_node', args: { id: '0:1' } } })
+    const call = browser.requests.find((request) => request.command === 'tool')
+    expect(call?.args).toMatchObject({ name: 'get_node', scope: 'selection' })
+  })
+})
 
 describe('MCP server with mcpRoot', () => {
   async function withMCPRootServer(

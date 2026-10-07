@@ -1,2 +1,9 @@
 export * from './metadata'
-export { serializeDisabledTools } from './policy'
+export { isToolEnabled, serializeDisabledTools } from './policy'
+export {
+  MCP_TOOL_SCOPES,
+  SELECTION_SCOPE_TOOLS,
+  isSelectionScopeTool,
+  parseToolScope,
+  type MCPToolScope
+} from './scope'

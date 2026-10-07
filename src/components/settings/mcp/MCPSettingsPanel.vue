@@ -3,7 +3,11 @@ import { computed } from 'vue'
 
 import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue'
 
-import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp/preferences'
+import {
+  mcpAuthenticationEnabled,
+  mcpRootDirectory,
+  mcpSelectionOnly
+} from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
@@ -61,6 +65,16 @@ const { restart, chooseRootDirectory } = useMCPSettings()
           v-model="mcpAuthenticationEnabled"
           :label="automation.authentication"
           data-test-id="settings-mcp-authentication"
+        />
+      </SettingsRow>
+      <SettingsRow
+        :label="automation.selectionScope"
+        :description="automation.selectionScopeDescription"
+      >
+        <AppSwitch
+          v-model="mcpSelectionOnly"
+          :label="automation.selectionScope"
+          data-test-id="settings-mcp-selection-scope"
         />
       </SettingsRow>
       <div class="flex flex-col gap-2 px-3 py-2.5">

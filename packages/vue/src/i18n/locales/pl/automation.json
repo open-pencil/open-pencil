@@ -30,6 +30,8 @@
   "version": "Wersja",
   "authentication": "Wymagaj uwierzytelnienia",
   "authenticationDescription": "Chroń lokalny punkt MCP tokenem Bearer. Wyłączaj tylko na zaufanym urządzeniu. Uruchom serwer ponownie, aby zastosować zmiany.",
+  "selectionScope": "Udostępniaj tylko zaznaczenie",
+  "selectionScopeDescription": "Klienci MCP odczytują tylko zaznaczone warstwy, za pomocą get_selection, get_node, get_page_tree, describe i export_image, bez innych narzędzi. Uruchom serwer ponownie, aby zastosować zmiany.",
   "rootDirectory": "Katalog główny MCP",
   "rootDirectoryDefault": "Domyślny katalog serwera",
   "chooseRootDirectory": "Wybierz folder",

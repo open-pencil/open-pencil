@@ -1,3 +1,5 @@
+import { MCP_TOOL_SCOPES, type MCPToolScope } from '@open-pencil/mcp/tools'
+
 export const DEV_MCP_RESTART_PATH = '/__openpencil/mcp/restart'
 
 const MAX_ROOT_DIRECTORY_LENGTH = 4_096
@@ -10,6 +12,11 @@ export interface DevMCPConfiguration {
   authenticationEnabled: boolean
   rootDirectory: string
   disabledTools: string[]
+  scope: MCPToolScope
+}
+
+function parseScope(value: unknown): MCPToolScope | null {
+  return MCP_TOOL_SCOPES.find((scope) => scope === value) ?? null
 }
 
 function parseDisabledTools(value: unknown): string[] | null {
@@ -35,13 +42,15 @@ export function parseDevMCPConfiguration(value: unknown): DevMCPConfiguration | 
   const authenticationEnabled = Reflect.get(value, 'authenticationEnabled')
   const rootDirectory = Reflect.get(value, 'rootDirectory')
   const disabledTools = parseDisabledTools(Reflect.get(value, 'disabledTools'))
+  const scope = parseScope(Reflect.get(value, 'scope'))
   if (
     typeof authenticationEnabled !== 'boolean' ||
     typeof rootDirectory !== 'string' ||
     rootDirectory.length > MAX_ROOT_DIRECTORY_LENGTH ||
-    !disabledTools
+    !disabledTools ||
+    !scope
   ) {
     return null
   }
-  return { authenticationEnabled, rootDirectory, disabledTools }
+  return { authenticationEnabled, rootDirectory, disabledTools, scope }
 }

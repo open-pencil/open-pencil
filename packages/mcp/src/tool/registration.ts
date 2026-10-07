@@ -126,7 +126,14 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const { target, args: toolArgs } = splitAutomationTarget(args)
           const result = await sendRPC({
             command: 'tool',
-            args: { ...target, name: def.name, args: toolArgs, agent: agent() }
+            args: {
+              ...target,
+              name: def.name,
+              args: toolArgs,
+              agent: agent(),
+              // A client limited to the selection says so, whatever the server's own scope.
+              ...(policy.scope === 'selection' ? { scope: policy.scope } : {})
+            }
           })
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))

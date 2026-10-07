@@ -28,6 +28,8 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: home directory on Windows, current working directory elsewhere)\n` +
       `  OPENPENCIL_MCP_EVAL           Set to 1 to enable the eval tool\n` +
       `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit\n` +
+      `  OPENPENCIL_MCP_SCOPE         "selection" to let clients read only the selected layers\n` +
+      `                               (default: "document")\n` +
       `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origins, comma-separated.\n` +
       `                               Defaults to the desktop app origin, since the app\n` +
       `                               webview is the only view that calls this server.\n` +
@@ -85,6 +87,7 @@ const handle = await startServer({
   socketPath: process.env.OPENPENCIL_MCP_SOCKET?.trim() || null,
   enableEval: toolPolicy.allowEval,
   disabledTools: toolPolicy.disabledTools,
+  scope: toolPolicy.scope,
   mcpRoot: resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT),
   // Auth token: undefined → auto-generate, empty string → disable auth,
   // non-empty → use trimmed value. Whitespace-only is rejected to prevent a

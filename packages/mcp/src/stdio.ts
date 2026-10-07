@@ -9,6 +9,7 @@ import { MCP_VERSION, registerTools } from '#mcp/server'
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 import type { ToolPolicy } from '#mcp/tool/metadata'
 import { parseDisabledTools } from '#mcp/tool/policy'
+import { parseToolScope } from '#mcp/tool/scope'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
 
 if (process.argv.includes('--version')) {
@@ -33,17 +34,24 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools\n` +
       `                               (default: home directory on Windows, cwd elsewhere)\n` +
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n` +
-      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit; defaults to the app setting\n`
+      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit; defaults to the app setting\n` +
+      `  OPENPENCIL_MCP_SCOPE         "selection" to read only the selected layers; defaults to the app setting\n`
   )
   process.exit(0)
 }
 
+const discovery = await readDiscoveryFile()
 const toolPolicy: ToolPolicy = {
   allowEval: process.env.OPENPENCIL_MCP_EVAL === '1',
   disabledTools:
     process.env.OPENPENCIL_MCP_DISABLED_TOOLS === undefined
-      ? ((await readDiscoveryFile())?.disabledTools ?? [])
-      : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS)
+      ? (discovery?.disabledTools ?? [])
+      : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS),
+  // The server enforces its own scope on every call; this only keeps the tool list in step.
+  scope:
+    process.env.OPENPENCIL_MCP_SCOPE === undefined
+      ? (discovery?.scope ?? 'document')
+      : parseToolScope(process.env.OPENPENCIL_MCP_SCOPE)
 }
 const mcpRoot = resolveMCPRoot(process.env.OPENPENCIL_MCP_ROOT)
 // Auth token: undefined → auto-discover from discovery file, empty string →

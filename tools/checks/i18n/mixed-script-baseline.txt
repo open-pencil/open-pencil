@@ -103,6 +103,7 @@ ja:automation.noConnections
 ja:automation.restart
 ja:automation.rootDirectory
 ja:automation.rootDirectoryDescription
+ja:automation.selectionScopeDescription
 ja:automation.serverURL
 ja:automation.serverURLHint
 ja:automation.toolAccessDescription
@@ -297,6 +298,7 @@ zh-cn:automation.noConnections
 zh-cn:automation.restart
 zh-cn:automation.rootDirectory
 zh-cn:automation.rootDirectoryDescription
+zh-cn:automation.selectionScopeDescription
 zh-cn:automation.serverURL
 zh-cn:automation.serverURLHint
 zh-cn:automation.toolAccessDescription
