@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import process from 'node:process'
 
 import tailwindcss from '@tailwindcss/vite'
@@ -18,6 +19,7 @@ import {
   openPencilAutomationPlugin
 } from './vite/automation'
 import { copyCanvasKitAssetsPlugin } from './vite/canvaskit-assets'
+import { aiIconCollection } from './vite/icons'
 import { openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
@@ -45,8 +47,8 @@ export default defineConfig(async ({ command }) => {
       rawMarkdownPlugin(),
       copyCanvasKitAssetsPlugin(),
       tailwindcss(),
-      Icons({ compiler: 'vue3' }),
-      Components({ resolvers: [IconsResolver({ prefix: 'icon' })] }),
+      Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
+      Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
       openPencilAutomationPlugin(command, host),
       vue(),
       openPencilPwaPlugin()
@@ -55,7 +57,14 @@ export default defineConfig(async ({ command }) => {
     build: {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
-      chunkSizeWarningLimit: 2500
+      chunkSizeWarningLimit: 2500,
+      rolldownOptions: {
+        // The desktop Software Update window is its own page.
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          updater: resolve(__dirname, 'updater.html')
+        }
+      }
     },
     server: createDevServerOptions(host, __dirname)
   }

@@ -5,8 +5,8 @@ import { expect, test } from '#tests/helpers/chat/fixture'
 test('completed responses release streaming parser history', async ({ configuredChat: chat }) => {
   await chat.submit('Show a code block')
 
-  const markdown = chat.page.locator('.chat-markdown').last()
-  await expect(markdown).toHaveAttribute('data-chat-markdown-mode', 'static')
+  const markdown = chat.page.locator('[data-slot="chat-markdown"] .markdown-content').last()
+  await expect(markdown).toHaveAttribute('data-markdown-mode', 'static')
   await expect(markdown.locator('.shiki').first()).toBeVisible()
 })
 
@@ -25,7 +25,9 @@ test('code blocks follow light and dark themes', async ({ configuredChat: chat }
     themeModule.useAppTheme().setTheme('light')
   })
   await chat.page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
-  await expect(chat.page.locator('.chat-markdown').last()).toHaveClass(/light/)
+  await expect(
+    chat.page.locator('[data-slot="chat-markdown"] .markdown-content').last()
+  ).toHaveClass(/light/)
   await expect(code).toHaveCSS('background-color', 'rgb(255, 255, 255)')
 })
 

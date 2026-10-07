@@ -19,7 +19,7 @@ const {
 } = defineProps<{
   label: string
   /** A heading level when the placeholder stands for a whole page or view. */
-  labelAs?: 'p' | 'h2' | 'h3'
+  labelAs?: 'p' | 'h1' | 'h2' | 'h3'
   description?: string
   fill?: boolean
   size?: PlaceholderVariants['size']

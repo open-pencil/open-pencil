@@ -15,6 +15,10 @@ export function setMessageAttachments(
   attachments.set(messageId, nextAttachments)
 }
 
+export function deleteMessageAttachments(messageId: string): void {
+  attachments.delete(messageId)
+}
+
 export function clearMessageAttachments(): void {
   attachments.clear()
 }

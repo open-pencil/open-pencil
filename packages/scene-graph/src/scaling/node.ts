@@ -127,6 +127,7 @@ export function scaleNodeChanges(
     gridTemplateColumns: scaledGridTracks(node.gridTemplateColumns, scale),
     gridTemplateRows: scaledGridTracks(node.gridTemplateRows, scale),
     strokes: scaledStrokes(node.strokes, scale),
+    strokeWeight: node.strokeWeight * scale,
     dashPattern: node.dashPattern.map((value) => value * scale),
     borderTopWeight: node.borderTopWeight * scale,
     borderRightWeight: node.borderRightWeight * scale,

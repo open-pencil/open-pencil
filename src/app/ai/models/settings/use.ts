@@ -1,9 +1,15 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS } from '@open-pencil/core/constants'
 
-import { aiModelSettings, modelConnection, modelConnectionCredentialStatus } from '@/app/ai/models'
+import {
+  aiModelSettings,
+  modelConnection,
+  modelConnectionCredentialStatus,
+  modelCredentialRevision
+} from '@/app/ai/models'
+import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
 export function useModelSettings() {
@@ -16,15 +22,6 @@ export function useModelSettings() {
 
   const statusByConnection = ref<Record<string, CredentialStatus>>({})
 
-  function providerName(providerID: string): string {
-    if (providerID === 'harness:pi') return 'Pi'
-    if (providerID.startsWith('acp:')) {
-      const agentID = providerID.slice('acp:'.length)
-      return ACP_AGENTS.find((agent) => agent.id === agentID)?.name ?? providerID
-    }
-    return AI_PROVIDERS.find((provider) => provider.id === providerID)?.name ?? providerID
-  }
-
   const profiles = computed(() =>
     aiModelSettings.value.models.map((profile) => {
       const connection = modelConnection(profile.connectionId)
@@ -35,7 +32,7 @@ export function useModelSettings() {
       return {
         ...profile,
         providerID: connection?.providerID ?? '',
-        providerName: providerName(connection?.providerID ?? ''),
+        providerName: modelProviderName(connection?.providerID ?? ''),
         modelName
       }
     })
@@ -44,16 +41,22 @@ export function useModelSettings() {
   async function refreshStatuses(): Promise<void> {
     const request = ++version
     const entries = await Promise.all(
-      aiModelSettings.value.connections.map(
-        async (connection) =>
-          [connection.id, await modelConnectionCredentialStatus(connection.id)] as const
-      )
+      aiModelSettings.value.connections.map(async (connection) => {
+        // One unreadable credential marks its own row instead of failing the whole list.
+        const status: CredentialStatus = await modelConnectionCredentialStatus(connection.id).catch(
+          () => 'unavailable'
+        )
+        return [connection.id, status] as const
+      })
     )
     if (!disposed && request === version) statusByConnection.value = Object.fromEntries(entries)
   }
 
   watch(
-    () => aiModelSettings.value.connections.map((connection) => connection.id),
+    () => [
+      aiModelSettings.value.connections.map((connection) => connection.id),
+      modelCredentialRevision.value
+    ],
     () => void refreshStatuses(),
     { immediate: true }
   )

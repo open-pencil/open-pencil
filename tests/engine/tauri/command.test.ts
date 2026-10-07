@@ -5,6 +5,9 @@ import * as v from 'valibot'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
+import { npmInstallArgs } from '@/app/ai/agents/native'
+import { HARNESS_PACKAGE } from '@/app/ai/harness/companion'
+import { MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
 import { repoPath } from '#tests/helpers/paths'
@@ -80,12 +83,37 @@ function spawnScope() {
   return typeof spawn === 'string' ? [] : (spawn?.allow ?? [])
 }
 
+/** The arguments a scope entry lets through for `args`, the way the shell plugin builds them. */
+function allowedArgs(scope: boolean | unknown[] | undefined, args: string[]): unknown[] | null {
+  if (scope === false) return []
+  if (!Array.isArray(scope)) return null
+  return scope.map((allowed, index) => {
+    if (typeof allowed === 'string') return allowed
+    const validator = v.parse(v.object({ validator: v.string() }), allowed).validator
+    const value = args[index] ?? ''
+    return new RegExp(validator).test(value) ? value : { rejected: value }
+  })
+}
+
+const rootPackage = v.parse(
+  v.pipe(v.string(), v.parseJson(), v.object({ version: v.string() })),
+  readFileSync(repoPath('package.json'), 'utf8')
+)
+
 describe('shell scope', () => {
   // Every program the app starts, with the arguments it starts it with.
+  // npm installs only these packages; a build pins the companions to the app's version, which
+  // tests stand in for with a placeholder the scope rightly refuses.
+  const installs = [
+    ...ACP_AGENTS.flatMap((agent) => (agent.adapterPackage ? [agent.adapterPackage] : [])),
+    `${MCP_PACKAGE_NAME}@${rootPackage.version}`,
+    `${HARNESS_PACKAGE}@${rootPackage.version}`
+  ]
   const spawns: [string, string[]][] = [
     ...ACP_AGENTS.map((agent): [string, string[]] => [agent.command, agent.args]),
     ['openpencil-mcp-http', []],
-    ['openpencil-harness', []]
+    ['openpencil-harness', []],
+    ...installs.map((target): [string, string[]] => ['npm', npmInstallArgs(target)])
   ]
 
   for (const userAgent of [WINDOWS_UA, MAC_UA]) {
@@ -94,7 +122,7 @@ describe('shell scope', () => {
         const resolved = resolvePlatformCommand(name, args, userAgent)
         const entry = spawnScope().find((candidate) => candidate.name === resolved.command)
         expect(entry?.cmd).toBe(userAgent === WINDOWS_UA ? 'cmd' : name)
-        expect(entry?.args === false ? [] : entry?.args).toEqual(resolved.args)
+        expect(allowedArgs(entry?.args, resolved.args)).toEqual(resolved.args)
       })
     }
   }
@@ -108,6 +136,19 @@ describe('shell scope', () => {
         .map((entry) => entry.name)
         .sort()
     ).toEqual([...new Set(expected)].sort())
+  })
+
+  test('lets npm install nothing but those packages', () => {
+    const validators = spawnScope().flatMap((entry) =>
+      Array.isArray(entry.args) ? entry.args.filter((arg) => typeof arg !== 'string') : []
+    )
+    expect(validators.length).toBeGreaterThan(0)
+    for (const validator of validators) {
+      const pattern = new RegExp(v.parse(v.object({ validator: v.string() }), validator).validator)
+      for (const target of ['left-pad', '@open-pencil/mcp@0.15.1 & calc', '@open-pencil/mcp']) {
+        expect(pattern.test(target)).toBe(false)
+      }
+    }
   })
 
   test('lets no program take arbitrary arguments', () => {

@@ -9,6 +9,11 @@ import type { ToolPolicy } from '#mcp/tool/metadata'
 import { parseDisabledTools } from '#mcp/tool/policy'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
 
+if (process.argv.includes('--version')) {
+  process.stdout.write(`${MCP_VERSION}\n`)
+  process.exit(0)
+}
+
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
     `openpencil-mcp\n\n` +
@@ -18,7 +23,8 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `The MCP server is started by the OpenPencil\n` +
       `desktop app; this bridge only forwards stdio JSON-RPC to it.\n\n` +
       `Options:\n` +
-      `  --help, -h    Show this help message\n\n` +
+      `  --help, -h    Show this help message\n` +
+      `  --version     Print the version\n\n` +
       `Environment variables:\n` +
       `  OPENPENCIL_MCP_SOCKET        Override socket path (auto-discovered from discovery file when unset)\n` +
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for RPC auth\n` +

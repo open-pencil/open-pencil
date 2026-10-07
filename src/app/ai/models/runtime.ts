@@ -1,4 +1,5 @@
 import type { LanguageModel } from 'ai'
+import { ref } from 'vue'
 
 import { createLanguageModel } from '@/app/ai/chat/model'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
@@ -40,13 +41,20 @@ export async function modelConnectionCredentialStatus(
   return appCredentialServices.manager.status(modelConnectionCredentialRef(connection))
 }
 
+/** Changes whenever a model connection's key is saved or cleared, so status views can refresh. */
+export const modelCredentialRevision = ref(0)
+
 export async function setModelConnectionAPIKey(connectionId: string, value: string): Promise<void> {
   const connection = modelConnection(connectionId)
   if (!connection || connection.providerID.startsWith('acp:')) return
   const reference = modelConnectionCredentialRef(connection)
   const key = value.trim()
-  if (key) await appCredentialServices.manager.set(reference, key)
-  else await appCredentialServices.manager.clear(reference)
+  try {
+    if (key) await appCredentialServices.manager.set(reference, key)
+    else await appCredentialServices.manager.clear(reference)
+  } finally {
+    modelCredentialRevision.value++
+  }
 }
 
 export async function resolveModelConnectionAPIKey(connectionId: string): Promise<string | null> {
