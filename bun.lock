@@ -634,7 +634,6 @@
   "overrides": {
     "@codemirror/view": "6.43.9",
     "protobufjs": "7.5.5",
-    "proxy-addr": "2.0.8",
     "websocket-driver": "0.7.5",
   },
   "packages": {
