@@ -18,12 +18,21 @@ export function defaultNodeName(type: NodeType): string {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
+/** The page a node is on, or the node itself when it is a page. */
+function pageContaining(graph: SceneGraph, nodeId: string): SceneNode | undefined {
+  let node = graph.getNode(nodeId)
+  while (node && node.type !== 'CANVAS')
+    node = node.parentId ? graph.getNode(node.parentId) : undefined
+  return node
+}
+
 /**
  * The name Figma gives a layer made on the canvas: its base name numbered one past the highest
- * number any layer on the page already has with it, so "Group 10" follows a "Group 9" anywhere on
- * the page, whatever that layer is. Scripts get the bare base name instead.
+ * number any layer on its page already has with it, so "Group 10" follows a "Group 9" anywhere on
+ * that page, whatever that layer is. `parentId` is where the new layer goes, which decides the
+ * page. Scripts get the bare base name instead.
  */
-export function nextNumberedName(graph: SceneGraph, pageId: string, base: string): string {
+export function nextNumberedName(graph: SceneGraph, parentId: string, base: string): string {
   const pattern = new RegExp(`^${escapeRegExp(base)} (\\d+)$`)
   let highest = 0
   const visit = (id: string) => {
@@ -33,7 +42,7 @@ export function nextNumberedName(graph: SceneGraph, pageId: string, base: string
     if (number) highest = Math.max(highest, Number(number))
     for (const childId of node.childIds) visit(childId)
   }
-  for (const childId of graph.getNode(pageId)?.childIds ?? []) visit(childId)
+  for (const childId of pageContaining(graph, parentId)?.childIds ?? []) visit(childId)
   return `${base} ${highest + 1}`
 }
 

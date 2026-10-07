@@ -102,7 +102,7 @@ export function wrapSelectionInContainer(
 
   // Figma numbers a group, frame, or component the canvas wraps layers in, as "Group 1".
   const name = NUMBERED_WHEN_WRAPPED.has(containerType)
-    ? nextNumberedName(ctx.graph, ctx.state.currentPageId, CONTAINER_NAMES[containerType])
+    ? nextNumberedName(ctx.graph, parentId, CONTAINER_NAMES[containerType])
     : undefined
   const containerNode = wrapNodes(ctx.graph, containerType, selectedNodes, parentId, index, {
     ...(name ? { name } : {}),

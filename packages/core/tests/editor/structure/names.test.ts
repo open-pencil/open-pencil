@@ -41,6 +41,18 @@ describe('canvas layer names', () => {
     expect(name()).toBe('Component 1')
   })
 
+  test('a layer is numbered by the page it goes on, not the page on screen', () => {
+    const { editor, pageId } = setup()
+    editor.createShape('RECTANGLE', 0, 0, 10, 10, pageId)
+    const other = editor.graph.addPage('Other')
+    const frame = editor.graph.createNode('FRAME', other.id, { name: 'Holder' })
+    const onOther = editor.createShape('RECTANGLE', 0, 0, 10, 10, frame.id)
+    expect(editor.graph.getNode(onOther)?.name).toBe('Rectangle 1')
+    expect(editor.graph.getNode(editor.createShape('RECTANGLE', 0, 0, 10, 10, pageId))?.name).toBe(
+      'Rectangle 2'
+    )
+  })
+
   test('booleans are named after the operation, without a number', () => {
     const { editor, nodes, name } = setup()
     editor.select([nodes[0].id, nodes[1].id])

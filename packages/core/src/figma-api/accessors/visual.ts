@@ -65,13 +65,16 @@ export function installVisualNodeProxyAccessors(
           Partial<Pick<Stroke, 'weight' | 'align'>>)[]
       ) {
         const geometry = newStrokeGeometry(raw(this, internals))
-        const strokes = value.map((stroke) => ({
-          ...stroke,
-          ...paintDefaults(stroke),
-          weight: stroke.weight ?? geometry.weight,
-          align: stroke.align ?? geometry.align,
-          color: normalizeColor(stroke.color)
-        }))
+        // The script keeps its paint objects; the node gets its own copies of every nested value.
+        const strokes = copyStrokes(
+          value.map((stroke) => ({
+            ...stroke,
+            ...paintDefaults(stroke),
+            weight: stroke.weight ?? geometry.weight,
+            align: stroke.align ?? geometry.align,
+            color: normalizeColor(stroke.color)
+          }))
+        )
         const kept = newStrokeGeometry({
           strokes,
           strokeWeight: geometry.weight,

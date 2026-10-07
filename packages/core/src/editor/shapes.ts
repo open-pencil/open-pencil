@@ -21,11 +21,9 @@ const NUMBERED_WHEN_DRAWN: ReadonlySet<NodeType> = new Set([
 ])
 
 export function createShapeActions(ctx: EditorContext) {
-  function drawnLayerName(type: NodeType): string {
+  function drawnLayerName(type: NodeType, parentId: string): string {
     const base = defaultNodeName(type)
-    return NUMBERED_WHEN_DRAWN.has(type)
-      ? nextNumberedName(ctx.graph, ctx.state.currentPageId, base)
-      : base
+    return NUMBERED_WHEN_DRAWN.has(type) ? nextNumberedName(ctx.graph, parentId, base) : base
   }
 
   function createShape(
@@ -48,7 +46,7 @@ export function createShapeActions(ctx: EditorContext) {
       y,
       width: w,
       height: h,
-      name: name ?? drawnLayerName(type)
+      name: name ?? drawnLayerName(type, pid)
     }
     const node = ctx.graph.createNode(type, pid, overrides)
     const id = node.id

@@ -38,6 +38,12 @@ export function getPageColor(page: SceneNode | undefined): Color {
   return { ...paint.color, a: paint.color.a * paint.opacity }
 }
 
+/** Whether a page stores a background of its own, as one opened from a file does. */
+export function hasStoredBackground(page: SceneNode): boolean {
+  const { backgroundPaints, backgroundColor } = page.source.fig.rawNodeFields
+  return backgroundPaints !== undefined || backgroundColor !== undefined
+}
+
 /** Gives a new page Figma's background for the interface theme it is made in. */
 export function setDefaultPageBackground(
   graph: SceneGraph,

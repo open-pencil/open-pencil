@@ -48,6 +48,16 @@ describe('plugin API stroke geometry', () => {
     expect(rect.strokeWeight).toBe(4)
   })
 
+  test('a node keeps its own copy of the strokes a script sets', () => {
+    const rect = api().createRectangle()
+    const paint = { type: 'SOLID', color: { r: 1, g: 0, b: 0 }, dashPattern: [4, 2] }
+    Reflect.set(rect, 'strokes', [paint])
+    paint.color.g = 1
+    paint.dashPattern.push(9)
+    expect(rect.strokes[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect(rect.strokes[0]?.dashPattern).toEqual([4, 2])
+  })
+
   test('rescale scales the weight a node keeps without strokes', () => {
     const rect = api().createRectangle()
     rect.strokeWeight = 3
