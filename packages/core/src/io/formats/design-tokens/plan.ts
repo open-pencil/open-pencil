@@ -168,17 +168,58 @@ interface Planner {
   paths: Array<Map<string, number>>
   existingByCollection: Array<VariableCollection | undefined>
   skipped: ImportSkip[]
+  /** Lookups built once, on first use: large design systems resolve thousands of references. */
+  indexes?: PlannerIndexes
 }
 
-function existingVariable(
-  graph: SceneGraph,
-  collection: VariableCollection | undefined,
-  name: string
-): Variable | undefined {
-  if (!collection) return undefined
-  return compact(collection.variableIds.map((id) => graph.variables.get(id))).find(
-    (variable) => variable.name === name
-  )
+interface PlannerIndexes {
+  /** The document's variables by name. */
+  variables: Map<string, Variable[]>
+  /** Planned collection, then variable, by name, as `[collection, variable]`. */
+  planned: Map<string, Map<string, number>>
+  plannedCollections: Map<string, number>
+  /** Tokens by path in each collection's default mode, then composites, first one winning. */
+  literals: Map<string, ReadToken>
+}
+
+function indexesOf(planner: Planner): PlannerIndexes {
+  if (planner.indexes) return planner.indexes
+  const variables = new Map<string, Variable[]>()
+  for (const variable of planner.graph.variables.values())
+    variables.set(variable.name, [...(variables.get(variable.name) ?? []), variable])
+  const planned = new Map<string, Map<string, number>>()
+  const plannedCollections = new Map<string, number>()
+  planner.collections.forEach((collection, index) => {
+    if (!plannedCollections.has(collection.name)) plannedCollections.set(collection.name, index)
+    planned.set(
+      collection.name,
+      new Map(collection.variables.map((variable, at) => [variable.name, at]))
+    )
+  })
+  const literals = new Map<string, ReadToken>()
+  for (const collection of planner.bundle.collections) {
+    const mode = collection.modes.find((entry) => entry.isDefault) ?? collection.modes.at(0)
+    for (const token of mode?.tokens ?? []) {
+      const key = token.path.join('.')
+      if (!literals.has(key)) literals.set(key, token)
+    }
+  }
+  for (const token of planner.bundle.composites) {
+    const key = token.path.join('.')
+    if (!literals.has(key)) literals.set(key, token)
+  }
+  planner.indexes = { variables, planned, plannedCollections, literals }
+  return planner.indexes
+}
+
+/** A collection's variables by name, the first of any repeated name winning. */
+function variablesByName(graph: SceneGraph, collection: VariableCollection | undefined) {
+  const byName = new Map<string, Variable>()
+  for (const variable of compact(
+    (collection?.variableIds ?? []).map((id) => graph.variables.get(id))
+  ))
+    if (!byName.has(variable.name)) byName.set(variable.name, variable)
+  return byName
 }
 
 /**
@@ -196,20 +237,17 @@ function aliasTarget(
     collection,
     variable
   })
-  const graphVariables = [...planner.graph.variables.values()]
+  const indexes = indexesOf(planner)
   if (value.collection && value.name) {
-    const index = planner.collections.findIndex(
-      (collection) => collection.name === value.collection
-    )
-    const variable = planner.collections
-      .at(index)
-      ?.variables.findIndex((candidate) => candidate.name === value.name)
-    if (variable !== undefined && variable >= 0) return planned(index, variable)
-    const existing = graphVariables.find(
-      (candidate) =>
-        candidate.name === value.name &&
-        planner.graph.variableCollections.get(candidate.collectionId)?.name === value.collection
-    )
+    const index = indexes.plannedCollections.get(value.collection)
+    const variable = indexes.planned.get(value.collection)?.get(value.name)
+    if (index !== undefined && variable !== undefined) return planned(index, variable)
+    const existing = indexes.variables
+      .get(value.name)
+      ?.find(
+        (candidate) =>
+          planner.graph.variableCollections.get(candidate.collectionId)?.name === value.collection
+      )
     if (existing) return { kind: 'variable', variableId: existing.id }
   }
   const key = value.path.join('.')
@@ -220,7 +258,7 @@ function aliasTarget(
     const variable = planner.paths[index]?.get(key)
     if (variable !== undefined) return planned(index, variable)
   }
-  const existing = graphVariables.find((candidate) => candidate.name === pathName(value.path))
+  const existing = indexes.variables.get(pathName(value.path))?.at(0)
   return existing ? { kind: 'variable', variableId: existing.id } : undefined
 }
 
@@ -267,6 +305,7 @@ function planVariables(
   const paths = new Map<string, number>()
   planner.paths[index] = paths
   const rows: Array<{ variable: PlannedVariable; decoded: Array<DecodedVariable | undefined> }> = []
+  const existingByName = variablesByName(planner.graph, planner.existingByCollection[index])
   for (const [name, tokens] of tokensByName(collection, modeIndexes)) {
     const decoded = tokens.map((token) => (token ? decodeVariableToken(token) : undefined))
     const failure = decoded.find((entry) => typeof entry === 'string')
@@ -279,7 +318,7 @@ function planVariables(
       })
       continue
     }
-    const existing = existingVariable(planner.graph, planner.existingByCollection[index], name)
+    const existing = existingByName.get(name)
     if (!existing && !addMissing) {
       planner.skipped.push({ name, collection: collection.name, reason: 'not-added' })
       continue
@@ -427,19 +466,13 @@ function resolveLiteral(
   depth = 0
 ): ResolvedReference | undefined {
   if (depth > 16) return undefined
-  const key = path.join('.')
-  for (const collection of planner.bundle.collections) {
-    const mode = collection.modes.find((entry) => entry.isDefault) ?? collection.modes.at(0)
-    const token = mode?.tokens.find((entry) => entry.path.join('.') === key)
-    if (!token) continue
+  const indexes = indexesOf(planner)
+  const token = indexes.literals.get(path.join('.'))
+  if (token) {
     const next = referencePath(token.value)
     return next ? resolveLiteral(planner, next, depth + 1) : { kind: 'token', token }
   }
-  const composite = planner.bundle.composites.find((token) => token.path.join('.') === key)
-  if (composite) return { kind: 'token', token: composite }
-  const existing = [...planner.graph.variables.values()].find(
-    (variable) => variable.name === pathName(path)
-  )
+  const existing = indexes.variables.get(pathName(path))?.at(0)
   const value = existing && planner.graph.resolveVariable(existing.id)
   return value === undefined ? undefined : { kind: 'value', value }
 }

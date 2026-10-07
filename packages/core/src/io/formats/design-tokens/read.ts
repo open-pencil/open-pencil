@@ -151,6 +151,18 @@ function resolveRef(from: string, ref: string): string {
   return resolved.join('/')
 }
 
+/**
+ * The picked file a `$ref` names: by its path relative to the resolver, or, when files were
+ * picked without their folders, the one picked file with that name.
+ */
+function findRef(reader: Reader, from: string, ref: string): string {
+  const path = resolveRef(from, ref)
+  if (reader.documents.has(path)) return path
+  const name = path.split('/').at(-1)
+  const matches = [...reader.documents.keys()].filter((key) => key.split('/').at(-1) === name)
+  return matches.length === 1 ? matches[0] : path
+}
+
 function isResolver(parsed: Document): boolean {
   return 'resolutionOrder' in parsed && 'version' in parsed
 }
@@ -172,7 +184,7 @@ function sourceTokens(
   for (const source of sources) {
     let parsed: Record<string, unknown> | undefined
     if (typeof source.$ref === 'string') {
-      const path = resolveRef(from, source.$ref)
+      const path = findRef(reader, from, source.$ref)
       parsed = reader.documents.get(path)
       if (!parsed) reader.issues.push({ kind: 'missing-file', file: path, from })
       reader.used.add(path)

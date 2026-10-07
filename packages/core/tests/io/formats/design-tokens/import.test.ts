@@ -64,6 +64,22 @@ describe('reading token files', () => {
     ])
   })
 
+  test('a resolver finds files picked without their folders by name', () => {
+    const bundle = readDesignTokens(
+      files({
+        'tokens.resolver.json': {
+          version: '2025-11-01',
+          sets: { Core: { sources: [{ $ref: 'Core/Mode 1.tokens.json' }] } },
+          resolutionOrder: [{ $ref: '#/sets/Core' }]
+        },
+        'Mode 1.tokens.json': { gap: { $type: 'number', $value: 4 } }
+      })
+    )
+
+    expect(bundle.issues).toEqual([])
+    expect(bundle.collections[0].modes[0].tokens.map((token) => token.name)).toEqual(['gap'])
+  })
+
   test('Tokens Studio themes become modes of their group, and the sets they refer to collections', () => {
     const bundle = readDesignTokens(
       files({
