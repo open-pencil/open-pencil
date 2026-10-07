@@ -1,4 +1,4 @@
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
@@ -510,14 +510,8 @@ function styleRefId(value: unknown): string | null {
   if (!value || typeof value !== 'object' || !('guid' in value)) return null
   const guid = value.guid
   if (!guid || typeof guid !== 'object') return null
-  // Kiwi's all-ones GUID denotes an explicitly cleared style reference.
-  if (
-    'sessionID' in guid &&
-    'localID' in guid &&
-    guid.sessionID === 0xffffffff &&
-    guid.localID === 0xffffffff
-  )
-    return null
+  // The unset GUID denotes an explicitly cleared style reference.
+  if (isUnsetGuid(guid as GUID)) return null
   return guidToString(guid as GUID)
 }
 
@@ -902,11 +896,13 @@ type ComponentMetadataProps = Pick<
   | 'variantPropSpecs'
 >
 
+/** Null for a missing GUID and for the unset GUID, which many layers share and names none. */
 function guidToStringOrNull(value: unknown): string | null {
   if (!value || typeof value !== 'object') return null
   const guid = value as Partial<GUID>
   if (typeof guid.sessionID !== 'number' || typeof guid.localID !== 'number') return null
-  return guidToString({ sessionID: guid.sessionID, localID: guid.localID })
+  const parsed = { sessionID: guid.sessionID, localID: guid.localID }
+  return isUnsetGuid(parsed) ? null : guidToString(parsed)
 }
 
 function stringOrNull(value: unknown): string | null {
