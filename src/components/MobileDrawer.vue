@@ -136,7 +136,7 @@ const drawerTransition = useMotionTransition({
           <TabsTrigger
             data-test-id="mobile-ribbon-layers"
             value="layers"
-            class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs transition-colors outline-none select-none data-[state=active]:text-accent"
+            class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs transition-colors outline-none select-none data-[state=active]:text-primary"
             @click="toggleTab('layers')"
           >
             <icon-lucide-layers class="size-4" />
@@ -145,7 +145,7 @@ const drawerTransition = useMotionTransition({
           <TabsTrigger
             data-test-id="mobile-ribbon-design"
             value="design"
-            class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs transition-colors outline-none select-none data-[state=active]:text-accent"
+            class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs transition-colors outline-none select-none data-[state=active]:text-primary"
             @click="toggleTab('design')"
           >
             <icon-lucide-sliders-horizontal class="size-4" />
@@ -156,7 +156,7 @@ const drawerTransition = useMotionTransition({
           <TabsTrigger
             data-test-id="mobile-ribbon-code"
             value="code"
-            class="flex h-full cursor-pointer items-center justify-center px-3 transition-colors outline-none select-none data-[state=active]:text-accent"
+            class="flex h-full cursor-pointer items-center justify-center px-3 transition-colors outline-none select-none data-[state=active]:text-primary"
             @click="toggleTab('code')"
           >
             <icon-lucide-code class="size-4" />
@@ -165,7 +165,7 @@ const drawerTransition = useMotionTransition({
           <TabsTrigger
             data-test-id="mobile-ribbon-ai"
             value="ai"
-            class="flex h-full cursor-pointer items-center justify-center px-3 transition-colors outline-none select-none data-[state=active]:text-accent"
+            class="flex h-full cursor-pointer items-center justify-center px-3 transition-colors outline-none select-none data-[state=active]:text-primary"
             @click="toggleTab('ai')"
           >
             <icon-lucide-sparkles class="size-4" />

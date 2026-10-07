@@ -43,6 +43,8 @@ const view = useCodeMirror(useTemplateRef('host'), {
   theme: (dark) => [fill ? codeViewerFillTheme : [], codeEditorTheme(dark), codeViewerTheme],
   extensions: [
     EditorState.readOnly.of(true),
+    // The content is already a tab stop; saying so lets checkers see the scroller is reachable.
+    EditorView.contentAttributes.of({ tabindex: '0' }),
     highlightSpecialChars(),
     foldGutter(),
     search({ top: true }),

@@ -32,7 +32,8 @@ const layerTreeTheme = {
     },
     visible: {
       true: {},
-      false: { row: 'opacity-50' }
+      // Dimmed, but its name still reads at 4.5:1.
+      false: { row: 'opacity-65' }
     },
     component: {
       true: { icon: 'text-component opacity-100' },

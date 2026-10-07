@@ -12,7 +12,22 @@ type Story = StoryObj<ChatMarkdownStoryArgs>
 const meta = {
   title: 'Chat/Markdown',
   component: ChatMarkdown,
-  parameters: { layout: 'centered' },
+  parameters: {
+    layout: 'centered',
+    // vue-stream-markdown wraps each code block in its own <header> and <main>, which its
+    // component overrides cannot replace; until upstream drops them they read as page landmarks.
+    a11y: {
+      config: {
+        rules: [
+          'landmark-banner-is-top-level',
+          'landmark-main-is-top-level',
+          'landmark-no-duplicate-banner',
+          'landmark-no-duplicate-main',
+          'landmark-unique'
+        ].map((id) => ({ id, enabled: false }))
+      }
+    }
+  },
   render: (args) => ({
     components: { ChatMarkdown },
     setup: () => ({ args }),

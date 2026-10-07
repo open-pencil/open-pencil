@@ -6,7 +6,7 @@ const toastTheme = {
     icon: 'mt-0.5 size-3 shrink-0',
     content: 'min-w-0 flex-1',
     message: 'select-text',
-    count: 'ml-1.5 opacity-70',
+    count: 'ml-1.5',
     progress: 'mt-1.5',
     action:
       'shrink-0 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium underline-offset-2 hover:underline',

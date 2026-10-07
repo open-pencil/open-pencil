@@ -68,7 +68,7 @@ const statusText = computed(() =>
     >
       <a
         :href="room.desktopLink.value"
-        class="text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+        class="text-primary underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
         data-test-id="collab-open-desktop"
       >
         {{ collab.messages.openInDesktopApp }}
@@ -79,7 +79,7 @@ const statusText = computed(() =>
           :href="room.downloadURL.value"
           target="_blank"
           rel="noopener noreferrer"
-          class="text-accent underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+          class="text-primary underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
           data-test-id="collab-download-desktop"
         >
           {{ collab.messages.downloadDesktopApp }}

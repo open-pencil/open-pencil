@@ -118,6 +118,7 @@
 - Generate Tailwind JSX with the same class mapping as Tailwind HTML export, so both describe a design the same way, and write opaque colors as hex in HTML, CSS, and Tailwind output. `openpencil export -f jsx --style tailwind` now exports a whole page when no `--node` is given.
 - Show download progress with a percentage and transferred size while installing a desktop update, instead of an indeterminate message that lasted until the restart.
 - Opening a share link or joining a room opens it in a tab of its own, so a document you already have open is never changed. Until the room's file arrives the tab says it is joining or, when nobody who has the file is online, explains why it is waiting; reloading rejoins, and leaving a room you joined keeps its file as a local unsaved copy.
+- Text in the dark and light themes meets the WCAG AA contrast ratio of 4.5:1. The dark theme's blue fills are deeper, and its blue, purple, pink, and red text is lighter. Light-theme secondary text and warning amber are darker, and hidden layers in the Layers panel dim less.
 
 ### Fixed
 
@@ -206,6 +207,7 @@
 - Fill the open subpaths of filled, unstroked SVG paths as if they were closed, as SVG does, in icons from `insert_icon` and Design JSX `<Icon>`, inline Design JSX `<svg>`, SVG from `import_svg` or dropped and pasted files, and SVG clip paths. Icons that cut holes with open subpaths, such as some Font Awesome icons, no longer render with those holes filled in, and filled `<polyline>` elements render filled instead of not at all.
 - Keep round and other stroke caps and joins after saving and reopening the file on icons from `insert_icon` and Design JSX `<Icon>`, and on vectors from inline Design JSX `<svg>`, `import_svg`, and dropped or pasted SVG files. They were set only on the stroke paint, which `.fig` does not store, so outline icons such as Lucide's reopened with butt caps and miter joins and showed gaps where their strokes meet.
 - Join the right room from a pasted link that ends in a query, `#`, or `/`, and say so when pasted text is not a room link instead of joining an empty room.
+- Name the layer and page rename fields, the command palette list, and picker lists for screen readers, and announce disabled picker options as disabled.
 
 ### Performance
 

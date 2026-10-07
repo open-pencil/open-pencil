@@ -69,7 +69,7 @@ const items = computed(() => options.map((option) => ({ value: option.id, label:
   <button
     v-else
     type="button"
-    class="flex h-6 w-full items-center gap-1.5 rounded border border-dashed border-border px-2 text-xs text-muted outline-none hover:border-accent hover:text-surface focus-visible:border-accent"
+    class="flex h-6 w-full items-center gap-1.5 rounded border border-dashed border-border px-2 text-xs text-muted outline-none hover:border-accent hover:text-surface focus-visible:border-panel-focus"
     :data-missing="missing || undefined"
     v-bind="$attrs"
     @click="emit('create')"

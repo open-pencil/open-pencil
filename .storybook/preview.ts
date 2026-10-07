@@ -69,7 +69,21 @@ const preview: Preview = {
       }
     },
     a11y: {
-      test: 'error'
+      test: 'error',
+      context: {
+        include: ['body'],
+        exclude: [
+          // Reka's toast viewport brackets its list with empty aria-hidden spans that only pass
+          // focus into the toasts; they never keep it.
+          '[role=region] > span[aria-hidden="true"][tabindex="0"]',
+          // A row being dragged stays behind as a faded placeholder; the drag preview carries it.
+          '[data-dragging]',
+          // Design Check shows the document's own failing text and background colors as a sample.
+          '[data-contrast-sample]',
+          // A reverted reply is dimmed history whose edits are gone.
+          '[data-reverted="true"]'
+        ]
+      }
     }
   }
 }

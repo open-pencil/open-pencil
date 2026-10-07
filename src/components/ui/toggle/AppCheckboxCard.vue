@@ -25,7 +25,12 @@ const id = useId()
 </script>
 
 <template>
-  <label data-slot="checkbox-card" :class="styles.root({ class: ui?.root })">
+  <!-- The whole card is the control, so its description is disabled along with the checkbox. -->
+  <label
+    data-slot="checkbox-card"
+    :aria-disabled="disabled || undefined"
+    :class="styles.root({ class: ui?.root })"
+  >
     <AppCheckbox
       v-model="checked"
       :disabled="disabled"

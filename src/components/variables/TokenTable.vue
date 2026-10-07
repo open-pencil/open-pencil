@@ -181,7 +181,6 @@ function dropEdge(id: string) {
     selection-behavior="replace"
     :class="ui.list()"
     highlight-on-hover
-    :aria-label="collection.name"
     data-test-id="token-list"
     @keydown="onKeydown"
   >
@@ -208,7 +207,11 @@ function dropEdge(id: string) {
       @new-group="emit('newGroup', [...selectedIds])"
       @remove="emit('remove', [...selectedIds])"
     >
-      <ListboxContent ref="content" @contextmenu.capture="onContextMenu">
+      <ListboxContent
+        ref="content"
+        :aria-label="collection.name"
+        @contextmenu.capture="onContextMenu"
+      >
         <ListboxGroup v-for="group in groups" :key="group.path">
           <ListboxGroupLabel v-if="group.path" :class="ui.group()">{{
             group.path

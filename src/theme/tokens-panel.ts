@@ -42,11 +42,11 @@ export default {
     cssStacked: 'truncate font-mono text-[11px] text-muted @2xl/tokens-list:hidden',
     value:
       'flex min-w-0 animate-in items-center gap-1.5 truncate font-mono text-[11px] fade-in duration-150 motion-reduce:animate-none',
-    expression: 'truncate font-mono text-[11px] text-accent',
+    expression: 'truncate font-mono text-[11px] text-primary',
     modeHeader: 'flex min-w-0 flex-col gap-0.5',
     /** When a mode applies: words in the UI font, a selector or query in the code font. */
     modeCondition:
-      'truncate text-[11px] font-normal text-muted data-[code]:font-mono data-[code]:text-[10px] data-[code]:text-muted/80',
+      'truncate text-[11px] font-normal text-muted data-[code]:font-mono data-[code]:text-[10px]',
     section: 'flex flex-col gap-2',
     sectionTitle: 'text-[11px] font-semibold text-muted',
     field: 'flex flex-col gap-1',

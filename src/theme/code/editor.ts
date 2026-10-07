@@ -34,7 +34,7 @@ export function codeEditorTheme(dark: boolean) {
           fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)',
           lineHeight: '1.65'
         },
-        '.cm-content': { padding: '10px 0', caretColor: 'var(--color-accent)' },
+        '.cm-content': { padding: '10px 0', caretColor: 'var(--color-primary)' },
         '.cm-line': { padding: '0 8px' },
         '.cm-gutters': {
           backgroundColor: 'var(--color-panel)',
@@ -50,7 +50,7 @@ export function codeEditorTheme(dark: boolean) {
           backgroundColor: 'var(--color-hover)',
           color: 'var(--color-surface)'
         },
-        '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--color-accent)' },
+        '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--color-primary)' },
         '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
           backgroundColor: 'color-mix(in srgb, var(--color-accent) 22%, transparent)'
         },
@@ -74,6 +74,10 @@ export function codeEditorTheme(dark: boolean) {
         },
         '.cm-searchMatch.cm-searchMatch-selected': {
           backgroundColor: 'color-mix(in srgb, var(--color-accent) 35%, transparent)'
+        },
+        // The merge view's own deletion red is too strong for syntax colors to read on.
+        '.cm-deletedChunk .cm-deletedText': {
+          backgroundColor: 'color-mix(in srgb, var(--color-error) 8%, transparent)'
         },
         '.cm-textfield, .cm-button': {
           background: 'var(--color-input)',

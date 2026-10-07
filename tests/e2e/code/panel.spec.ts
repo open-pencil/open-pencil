@@ -121,7 +121,7 @@ test('keeps the last valid preview while showing invalid-code diagnostics', asyn
   await codeEditor().fill('<Frame>')
   const errorAlert = editor.page.getByTestId('code-panel-error')
   await expect(errorAlert).toBeVisible()
-  await expect(errorAlert).toHaveCSS('color', 'rgb(248, 113, 113)')
+  await expect(errorAlert).toHaveCSS('color', 'rgb(250, 133, 133)')
 
   await editor.page.evaluate(async () => {
     const themeModulePath = '/src/app/shell/theme.ts'

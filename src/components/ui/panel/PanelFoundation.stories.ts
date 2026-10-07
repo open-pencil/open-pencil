@@ -139,7 +139,7 @@ export const StateMatrix: Story = {
           <PanelSection label="Appearance">
             <PanelGrid :columns="2">
               <PanelFieldGroup label="Blend mode">
-                <AppSelect v-model="blendMode" :options="blendModes" data-story-control aria-label="Blend mode" />
+                <AppSelect v-model="blendMode" :options="blendModes" data-story-control label="Blend mode" />
               </PanelFieldGroup>
               <PanelFieldGroup label="Opacity">
                 <AppInput v-model="mixed" tone="panel" size="xs" state="mixed" readonly data-story-control aria-label="Mixed opacity" />

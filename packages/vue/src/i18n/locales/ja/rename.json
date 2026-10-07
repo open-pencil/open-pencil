@@ -5,6 +5,7 @@
   "match": "一致",
   "to": "変更後の名前",
   "currentName": "現在の名前",
+  "layerName": "レイヤー名",
   "numberAscending": "番号 ↑",
   "numberDescending": "番号 ↓",
   "startAscendingFrom": "昇順の開始番号",

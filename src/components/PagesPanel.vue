@@ -136,6 +136,7 @@ function setupPageRowRef(
                   <input
                     ref="pageInput"
                     data-test-id="pages-item-input"
+                    :aria-label="pageMessages.pageNameLabel"
                     :class="pageStyles(pg, currentPageId).renameInput()"
                     :value="pg.name"
                     @blur="rename.commit(pg.id, $event)"

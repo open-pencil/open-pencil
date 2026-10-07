@@ -60,7 +60,7 @@ const pageStates = [
         </div>
         <div aria-label="Rename" :class="pageStyles().renameRow()">
           <icon-lucide-file :class="pageStyles().icon()" />
-          <input :class="pageStyles().renameInput()" value="Rename page" />
+          <input :class="pageStyles().renameInput()" value="Rename page" aria-label="Page name" />
         </div>
       </div>
     </section>

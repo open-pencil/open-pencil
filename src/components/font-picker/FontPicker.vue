@@ -84,7 +84,7 @@ function loadPreviewFont(family: string, source: string) {
         class="flex min-w-0 flex-1 items-center gap-2"
         @vue:mounted="loadPreviewFont(family, source)"
       >
-        <icon-lucide-check v-if="selected" class="size-3 shrink-0 text-accent" />
+        <icon-lucide-check v-if="selected" class="size-3 shrink-0 text-primary" />
         <span v-else class="size-3 shrink-0" />
         <span class="truncate" :style="{ fontFamily: `'${family}', sans-serif` }">{{
           family

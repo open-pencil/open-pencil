@@ -8,6 +8,8 @@ const meta = {
   component: BehaviourStates,
   tags: ['autodocs'],
   parameters: {
+    // The page shows one Behaviour section per demo; the editor only ever shows one.
+    a11y: { config: { rules: [{ id: 'landmark-unique', enabled: false }] } },
     docs: {
       description: {
         component:
