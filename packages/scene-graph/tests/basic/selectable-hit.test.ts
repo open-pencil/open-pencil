@@ -210,6 +210,14 @@ describe('unfilled frames inside a top-level frame', () => {
       fills: []
     })
     add('RECTANGLE', 'Board leaf', board.id, { x: 20, y: 20, width: 60, height: 60 })
+    add('FRAME', 'Empty in section', section.id, {
+      x: 380,
+      y: 50,
+      width: 100,
+      height: 100,
+      fills: []
+    })
+    add('FRAME', 'Empty on page', page, { x: 800, width: 100, height: 100, fills: [] })
     const click = (x: number, y: number) =>
       graph.hitTestSelectable(x, y, page, new Set())?.name ?? null
     const deep = (x: number, y: number) => graph.hitTestDeep(x, y)?.name ?? null
@@ -235,5 +243,11 @@ describe('unfilled frames inside a top-level frame', () => {
   test('the empty area of an unfilled board in a section stays background', () => {
     const { click } = cards()
     expect(click(250, 900)).toBeNull()
+  })
+
+  test('a click selects an empty unfilled frame on the page or in a section', () => {
+    const { click } = cards()
+    expect(click(850, 50)).toBe('Empty on page')
+    expect(click(430, 700)).toBe('Empty in section')
   })
 })

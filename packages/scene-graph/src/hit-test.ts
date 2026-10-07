@@ -191,8 +191,8 @@ function opensByItself(graph: SceneGraph, node: SceneNode): boolean {
 
 /**
  * The topmost frame among a container's children whose bounds hold the point, filled or not: in
- * Figma a click on the empty area of a frame inside an open container selects that frame, while a
- * deep (⌘) click looks through it.
+ * Figma a click on the empty area of a frame inside an open container, or of an empty frame on the
+ * page or in a section, selects that frame, while a deep (⌘) click looks through it.
  */
 function frameChildAt(
   graph: SceneGraph,
@@ -227,7 +227,10 @@ export function hitTestSelectable(
   selectedIds: ReadonlySet<string>
 ): SceneNode | null {
   const deepest = hitTestChildren(graph, px, py, scopeId, true)
-  if (!deepest) return null
+  if (!deepest) {
+    const scope = graph.nodes.get(scopeId)
+    return scope ? frameChildAt(graph, scope, px, py) : null
+  }
 
   const chain: SceneNode[] = []
   for (let node: SceneNode | undefined = deepest; node && node.id !== scopeId;) {
