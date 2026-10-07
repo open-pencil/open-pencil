@@ -35,6 +35,40 @@ test('loading a later page keeps the derived sizes of instances earlier pages pl
   expect(loadedBox().width).toBe(150)
 })
 
+test('loading a later page keeps a live edit to a nested instance layer over its derived size', async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  const library = source.getPages()[0]
+  const inner = source.createNode('COMPONENT', library.id, { name: 'Inner', width: 100 })
+  source.createNode('RECTANGLE', inner.id, { name: 'Box', width: 100, height: 20 })
+  const outer = source.createNode('COMPONENT', library.id, { name: 'Outer', width: 300 })
+  const layer = source.createInstance(inner.id, outer.id)
+  if (!layer) throw new Error('Missing nested instance layer')
+  const placed = source.createInstance(outer.id, source.addPage('Placed').id)
+  if (!placed) throw new Error('Missing placed instance')
+  // Figma derived a wider nested instance in the placed copy, as a fill child would be.
+  const nested = source.getChildren(placed.id)[0]
+  source.updateNode(nested.id, { width: 150 })
+  const bytes = await exportFigFile(source)
+
+  const session = createFigDocumentSession(bytes.buffer as ArrayBuffer, { derivedBounds: true })
+  session.loadPage(session.pages[0].id)
+  const libraryId = session.graphPageId(session.pages[0].id) ?? ''
+  const loadedOuter = session.graph.getChildren(libraryId).find((node) => node.name === 'Outer')
+  const loadedLayer = loadedOuter ? session.graph.getChildren(loadedOuter.id)[0] : undefined
+  if (!loadedLayer) throw new Error('Missing loaded nested instance layer')
+  // Editing the component's layer live, after the file opened.
+  session.graph.updateNode(loadedLayer.id, { width: 120 })
+  expect(session.graph.getNode(loadedLayer.id)?.source.editedFields).toContain('width')
+
+  const placedPage = session.pages.find((page) => page.name === 'Placed')
+  if (!placedPage) throw new Error('Missing placed page')
+  session.loadPage(placedPage.id)
+  const placedId = session.graphPageId(placedPage.id) ?? ''
+  const loadedPlaced = session.graph.getChildren(placedId)[0]
+  expect(session.graph.getChildren(loadedPlaced.id)[0].width).toBe(120)
+})
+
 /**
  * Syncing a whole component visits every instance of it in the graph, including those earlier
  * pages placed, whose sizes Figma derived. A resumed page syncs only the instances it places,

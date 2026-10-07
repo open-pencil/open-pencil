@@ -1,7 +1,10 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { reconcileLiveComponentEdits } from '../instance-overrides/live-component-edits'
+import {
+  reconcileLiveComponentEdits,
+  syncSourceLayers
+} from '../instance-overrides/live-component-edits'
 import { materializeInstance } from '../instance-overrides/materialize-instance'
 import type {
   InstanceOccurrence,
@@ -172,7 +175,8 @@ function createAssemblyState(
 /**
  * Syncing a resumed load's new instances copies their component's sizes over the sizes Figma
  * derived for them, such as a field filling its resized instance. Puts the derived sizes back,
- * except along an axis whose component layer was edited live, which syncing rightly carried over.
+ * except along an axis whose component layer was edited live, which syncing rightly carried over:
+ * the layer an owning instance maps it to, or its own component.
  */
 function restoreDerivedSizes(
   graph: SceneGraph,
@@ -182,11 +186,12 @@ function restoreDerivedSizes(
     for (const [id, size] of derivedSizes) {
       const node = graph.getNode(id)
       if (!node) continue
-      const component = node.componentId ? graph.getNode(node.componentId) : undefined
-      const edited = component?.source.editedFields ?? []
+      const edited = new Set(
+        syncSourceLayers(graph, node).flatMap((layer) => layer.source.editedFields)
+      )
       const updates: Partial<SceneNode> = {}
-      if (node.width !== size.width && !edited.includes('width')) updates.width = size.width
-      if (node.height !== size.height && !edited.includes('height')) updates.height = size.height
+      if (node.width !== size.width && !edited.has('width')) updates.width = size.width
+      if (node.height !== size.height && !edited.has('height')) updates.height = size.height
       if (Object.keys(updates).length > 0) graph.updateNode(id, updates)
     }
   })
