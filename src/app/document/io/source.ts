@@ -158,8 +158,15 @@ export function createDocumentSourceActions({
     state.documentName = documentNameFromFigPath(downloadName)
   }
 
-  /** Save to a new target; when the write fails, the document keeps the source it had. */
+  let retargeting = false
+
+  /**
+   * Save to a new target; when the write fails, the document keeps the source it had. A second
+   * retarget while one is in flight is refused, so a failure never restores another save's target.
+   */
   async function saveToNewTarget(planTarget: () => void): Promise<boolean> {
+    if (retargeting) return false
+    retargeting = true
     const previous = {
       filePath: getFilePath(),
       fileHandle: getFileHandle(),
@@ -183,6 +190,8 @@ export function createDocumentSourceActions({
     } catch (error) {
       restore()
       throw error
+    } finally {
+      retargeting = false
     }
   }
 

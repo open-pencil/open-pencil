@@ -21,6 +21,7 @@ describe('cloud S3 CORS helpers', () => {
     expect(xml).toContain('<AllowedMethod>DELETE</AllowedMethod>')
     expect(xml).toContain('<AllowedHeader>*</AllowedHeader>')
     expect(xml).toContain('<ExposeHeader>ETag</ExposeHeader>')
+    expect(xml).toContain('<ExposeHeader>Content-Range</ExposeHeader>')
   })
 
   test('escapes XML special characters in origins', () => {
@@ -37,7 +38,8 @@ describe('cloud S3 CORS helpers', () => {
           v.object({
             AllowedOrigins: v.array(v.string()),
             AllowedMethods: v.array(v.string()),
-            AllowedHeaders: v.array(v.string())
+            AllowedHeaders: v.array(v.string()),
+            ExposeHeaders: v.array(v.string())
           })
         )
       ),
@@ -45,6 +47,7 @@ describe('cloud S3 CORS helpers', () => {
     )
     expect(json).toHaveLength(1)
     expect(json[0]?.AllowedOrigins).toContain('https://app.openpencil.dev')
+    expect(json[0]?.ExposeHeaders).toEqual(expect.arrayContaining(['ETag', 'Content-Range']))
     expect(json[0]?.AllowedMethods).toEqual(
       expect.arrayContaining(['GET', 'PUT', 'POST', 'DELETE', 'HEAD'])
     )

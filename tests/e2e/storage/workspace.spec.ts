@@ -190,6 +190,9 @@ test('Save to storage uploads the open document and lists it in the workspace', 
       expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\.fig$/),
       expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\.meta\.json$/)
     ])
+  const uploaded = [...objects].find(([key]) => key.endsWith('.fig'))?.[1]
+  // An exported .fig is a zip archive holding the document and its thumbnail.
+  expect(uploaded?.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
 
   file = await openAppMenu(page, 'File')
   await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()

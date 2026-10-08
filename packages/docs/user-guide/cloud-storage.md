@@ -42,7 +42,7 @@ Add a rule like this one, with the origins you open OpenPencil from:
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
     "AllowedOrigins": ["https://app.openpencil.dev"],
-    "ExposeHeaders": ["ETag", "x-amz-request-id", "x-amz-id-2", "x-amz-version-id"],
+    "ExposeHeaders": ["ETag", "Content-Range", "x-amz-request-id", "x-amz-id-2", "x-amz-version-id"],
     "MaxAgeSeconds": 3600
   }
 ]
