@@ -1,16 +1,20 @@
-import type { Component } from 'vue'
+import { defineAsyncComponent, type Component } from 'vue'
 
-import CodePanel from '@/components/CodePanel.vue'
-import DesignCheckPanel from '@/components/design-check/DesignCheckPanel.vue'
-import DesignPanel from '@/components/DesignPanel.vue'
-import LayerTree from '@/components/LayerTree/LayerTree.vue'
-import TokensPanel from '@/components/variables/TokensPanel.vue'
-
-import AiChatPanel from './ai/AiChatPanel.vue'
 import type { SingleStageKind } from './kinds'
-import SdkSnippetPanel from './panels/SdkSnippetPanel.vue'
-import TerminalPanel from './panels/TerminalPanel.vue'
 import { SCENES, type SceneBuilder } from './scenes'
+
+// Each panel is its own chunk, so a stage downloads only the panel it shows: the AI SDK
+// comes with the AI block, CodeMirror with the code blocks, and so on.
+const CodePanel = defineAsyncComponent(() => import('@/components/CodePanel.vue'))
+const DesignCheckPanel = defineAsyncComponent(
+  () => import('@/components/design-check/DesignCheckPanel.vue')
+)
+const DesignPanel = defineAsyncComponent(() => import('@/components/DesignPanel.vue'))
+const LayerTree = defineAsyncComponent(() => import('@/components/LayerTree/LayerTree.vue'))
+const TokensPanel = defineAsyncComponent(() => import('@/components/variables/TokensPanel.vue'))
+const AiChatPanel = defineAsyncComponent(() => import('./ai/AiChatPanel.vue'))
+const SdkSnippetPanel = defineAsyncComponent(() => import('./panels/SdkSnippetPanel.vue'))
+const TerminalPanel = defineAsyncComponent(() => import('./panels/TerminalPanel.vue'))
 
 export interface StageDefinition {
   scene: SceneBuilder

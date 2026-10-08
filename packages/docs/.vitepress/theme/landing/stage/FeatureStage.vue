@@ -2,20 +2,21 @@
 import { useIntersectionObserver, useMediaQuery } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
-import { ref } from 'vue'
+import { defineAsyncComponent, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
-
-import Toolbar from '@/components/Toolbar/Toolbar.vue'
 
 import { STAGES } from './definitions'
 import { prepareEngine } from './engine-assets'
 import type { SingleStageKind } from './kinds'
 import StageCanvas from './StageCanvas.vue'
-import StagePreviewControls from './StagePreviewControls.vue'
 import { useDocsAppearance } from './useDocsAppearance'
 import { useStageDocument } from './useStageDocument'
 import { useWheelEngagement } from './useWheelEngagement'
+
+// Only some stages show the toolbar or the preview pill, so the others never download them.
+const Toolbar = defineAsyncComponent(() => import('@/components/Toolbar/Toolbar.vue'))
+const StagePreviewControls = defineAsyncComponent(() => import('./StagePreviewControls.vue'))
 
 /** Stages mount a screen ahead of the viewport, so a block is live before it scrolls in. */
 const MOUNT_MARGIN = '100% 0px'

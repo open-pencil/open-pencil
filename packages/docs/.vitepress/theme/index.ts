@@ -13,18 +13,14 @@ import SdkFieldGroup from './components/SdkFieldGroup.vue'
 import SdkPropsTable from './components/SdkPropsTable.vue'
 import SdkRelatedLinks from './components/SdkRelatedLinks.vue'
 import SdkSlotsTable from './components/SdkSlotsTable.vue'
-import HomeLayout from './HomeLayout.vue'
-import LandingPage from './landing/LandingPage.vue'
 
 import './tailwind.css'
 import './vars.css'
 
 export default {
   extends: DefaultTheme,
-  Layout: HomeLayout,
   enhanceApp({ app }) {
     app.use(TwoslashFloatingVue)
-    app.component('LandingPage', LandingPage)
     app.component('SdkCard', SdkCard)
     app.component('SdkCardGroup', SdkCardGroup)
     app.component('SdkComponentAPI', SdkComponentAPI)

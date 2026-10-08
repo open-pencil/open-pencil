@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SchemaOrg from '../SchemaOrg.vue'
 import { FEATURE_KINDS } from './content/features'
+import { provideLandingMessages, type LandingMessages } from './content/messages'
 import AgentList from './sections/AgentList.vue'
 import ClosingSection from './sections/ClosingSection.vue'
 import CloudSection from './sections/CloudSection.vue'
@@ -11,6 +11,10 @@ import OwnershipSection from './sections/OwnershipSection.vue'
 import RoadmapSection from './sections/RoadmapSection.vue'
 
 import './landing.css'
+
+/** The copy of the page's locale, imported by that locale's `index.md`. */
+const { messages } = defineProps<{ messages: LandingMessages }>()
+provideLandingMessages(messages)
 </script>
 
 <template>
@@ -30,6 +34,5 @@ import './landing.css'
     <CloudSection />
     <RoadmapSection />
     <ClosingSection />
-    <SchemaOrg />
   </div>
 </template>

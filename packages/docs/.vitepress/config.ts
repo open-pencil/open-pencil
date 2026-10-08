@@ -11,6 +11,7 @@ import { ensureBrandAssets } from '@open-pencil/brand-tools'
 import { ensureDemoDocument } from '@open-pencil/demo-tools'
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
+import { landingPreloads } from './landing-head.ts'
 import { docsLocales } from './locales.ts'
 import { rootThemeConfig } from './root-theme.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
@@ -57,6 +58,7 @@ export default defineConfig({
   head: siteHead,
 
   transformPageData: applyPageSeo,
+  transformHead: landingPreloads,
 
   markdown: {
     codeTransformers: [
