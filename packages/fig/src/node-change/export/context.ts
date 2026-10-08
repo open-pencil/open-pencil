@@ -2,7 +2,12 @@ import { effectiveFigmaRawNodeFields } from '#fig/source-metadata'
 
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  ComponentPropertyDefinition,
+  PluginDataEntry,
+  SceneGraph,
+  SceneNode
+} from '@open-pencil/scene-graph'
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
@@ -62,6 +67,8 @@ export interface SceneNodeToKiwiContext {
    * so the caller re-parents the `isSlotContent` roots there after serializing its nodes.
    */
   slotContentRecords?: KiwiNodeChange[]
+  /** Plugin data a node is written with instead of its own, by node ID. */
+  pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
   /** Nodes with their bindings resolved, kept for the length of one export. */
   resolvedNodes?: WeakMap<SceneNode, SceneNode>
   fractionalPosition: (index: number) => string

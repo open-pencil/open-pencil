@@ -107,6 +107,34 @@ test('edited export loads missing visible pages on an isolated graph', async () 
   releaseFigPopulationWorker(reopened)
 })
 
+test('after the first save, later saves keep internal content without the reader', async () => {
+  const graph = await parseFigFile(await fixture(), { populate: 'first-page' })
+  populateAllFigPages(graph)
+  // The first save of an edit reads the internal page into the document; every page is loaded
+  // after it. An unedited document is saved as the original file and reads nothing.
+  graph.updateNode(graph.getPages()[0].id, { name: 'Edited page' })
+  await exportFigFile(graph)
+  const internal = graph.getPages(true).find((page) => page.internalOnly)
+  expect(graph.getChildren(internal?.id ?? '').map((node) => node.name)).toEqual([
+    'Retained internal content'
+  ])
+  const second = graph.getPages()[1]
+  graph.updateNode(graph.getChildren(second.id)[0].id, { text: 'Edited after loading' })
+
+  const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer as ArrayBuffer)
+
+  const pages = reopened.getPages()
+  expect(reopened.getChildren(pages[1].id)[0].text).toBe('Edited after loading')
+  const reopenedInternal = reopened.getPages(true).find((page) => page.internalOnly)
+  if (!reopenedInternal) throw new Error('Missing internal page')
+  populateFigPage(reopened, reopenedInternal.id)
+  expect(reopened.getChildren(reopenedInternal.id).map((node) => node.name)).toEqual([
+    'Retained internal content'
+  ])
+  releaseFigPopulationWorker(graph)
+  releaseFigPopulationWorker(reopened)
+})
+
 // Figma keeps property defaults that name a deleted component; so does an edited export.
 test('export tolerates a deleted internal default without changing what the document held', async () => {
   const graph = await parseFigFile(await fixture(true), { populate: 'first-page' })

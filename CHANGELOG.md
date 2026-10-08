@@ -227,6 +227,7 @@
 
 ### Performance
 
+- Save large `.fig` documents with less memory: once every page is loaded, the first save releases the decoded original file, and saves write from the document instead of a copy of it, about 1.5 GB less on a 74 MB design kit.
 - Save edited `.fig` documents with many component instances faster: each overridden layer is addressed and its variables resolved once, overrides merge through an index instead of a scan per override, and the components Figma keeps off-canvas are read once instead of on every save. Saving a 74 MB design kit after an edit takes about 8 seconds instead of 13, and later saves about 7.
 - Open and draw large pages faster: guides no longer scan every layer of the page on each frame, a layout pass only writes the layers it moved and asks for one redraw, and opening a `.fig` keeps one copy of the file on the main thread instead of three.
 - Edit variables in large documents without stalls: renaming, reordering, or adding a variable, or changing its CSS name, unit, scopes, or conditions, no longer redraws the canvas, and changing a value or mode updates only the layers bound to those variables or to variables aliasing them instead of re-resolving and laying out every bound layer in the document.

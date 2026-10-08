@@ -8,11 +8,14 @@ import { readerSessionOptions, type FigReaderDiagnostic } from '#core/kiwi/fig/s
  * records that session skipped. Page population, diagnostics and recovery all read it.
  */
 interface ReaderState {
-  bytes: ArrayBuffer
+  /** The archive, until every page is in the graph and nothing is left to read from it. */
+  bytes?: ArrayBuffer
   checkpoint?: FigSessionCheckpoint
   session?: ReturnType<typeof createFigDocumentSession>
   /** Records skipped by sessions this recovery state has opened. */
   diagnostics: FigReaderDiagnostic[]
+  /** Every page is loaded and the reader released; only the diagnostics remain. */
+  complete?: true
 }
 const states = new WeakMap<SceneGraph, ReaderState>()
 
@@ -39,7 +42,7 @@ export function readerDiagnostics(graph: SceneGraph): readonly FigReaderDiagnost
 
 export function isReaderPagePending(graph: SceneGraph, pageId: string): boolean {
   const state = states.get(graph)
-  if (!state) return false
+  if (!state || state.complete) return false
   const checkpoint = state.session?.checkpoint() ?? state.checkpoint
   const sourceId = checkpoint?.sources.find(([, graphId]) => graphId === pageId)?.[0]
   if (!sourceId) return false
@@ -66,31 +69,59 @@ export function populateAllFigPages(graph: SceneGraph): boolean {
 }
 
 /**
+ * Drop the session, its checkpoint, and the archive once every page is in the graph, internal
+ * ones included, which the first save loads. The session keeps every record of the file decoded,
+ * which for a large design kit is gigabytes, and nothing reads it again: no page is pending, and
+ * later saves write from the document.
+ */
+function releaseLoadedReader(state: ReaderState): void {
+  const session = state.session
+  if (!session?.pages.every((page) => session.loadedPageIds.has(page.id))) return
+  state.session = undefined
+  state.checkpoint = undefined
+  state.bytes = undefined
+  state.complete = true
+}
+
+/**
  * Load the pages the editor never shows, such as Figma's internal canvas, into the document's own
  * graph, so a save no longer opens a second session to read them into its copy. Their layers
  * never draw and loading them is not an edit. Only a live session loads them: while a population
  * worker still fills the graph, a second session must not, and the export reads them as before.
  */
 export function populateFigInternalPages(graph: SceneGraph): boolean {
-  const session = states.get(graph)?.session
-  if (!session) return false
+  const state = states.get(graph)
+  const session = state?.session
+  if (!state || !session) return false
   let changed = false
   for (const page of session.pages) {
     if (!page.internalOnly || session.loadedPageIds.has(page.id)) continue
     graph.applyImportedStateDuring(() => session.loadPage(page.id))
     changed = true
   }
+  releaseLoadedReader(state)
   return changed
+}
+
+/**
+ * Whether a save still has pages to read from the archive, which it reads into a copy of the
+ * document: a population worker still fills the graph, or a page is not loaded yet.
+ */
+export function hasPendingReaderPages(graph: SceneGraph): boolean {
+  const state = states.get(graph)
+  if (!state || state.complete) return false
+  const session = state.session
+  return !session || !session.pages.every((page) => session.loadedPageIds.has(page.id))
 }
 
 export function populateReaderExport(source: SceneGraph, target: SceneGraph): boolean {
   const state = states.get(source)
-  if (!state) return false
+  if (!state || state.complete) return false
   const live = state.session
   // Every page is already in the graph the target was copied from.
   if (live?.pages.every((page) => live.loadedPageIds.has(page.id))) return false
   const checkpoint = live?.checkpoint() ?? state.checkpoint
-  if (!checkpoint) throw new Error('Missing reader checkpoint')
+  if (!checkpoint || !state.bytes) throw new Error('Missing reader checkpoint')
   const session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
     graph: target,
     checkpoint
@@ -113,8 +144,9 @@ export function releaseReaderRecovery(graph: SceneGraph): void {
 export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
   const state = states.get(graph)
   if (!state) throw new Error('No reader recovery state')
+  if (state.complete) return false
   if (!state.session) {
-    if (!state.checkpoint) throw new Error('Missing reader checkpoint')
+    if (!state.checkpoint || !state.bytes) throw new Error('Missing reader checkpoint')
     state.session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
       graph,
       checkpoint: state.checkpoint
@@ -126,5 +158,6 @@ export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
   const populated = !session.loadedPageIds.has(page.id)
   // The layers come from the opened file, as they do through the population worker's delta.
   graph.applyImportedStateDuring(() => session.loadPage(page.id))
+  releaseLoadedReader(state)
   return populated
 }
