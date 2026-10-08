@@ -6,6 +6,7 @@ import IconRotateCcw from '~icons/lucide/rotate-ccw'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 import { useLandingMessages } from '#docs/theme/landing/content/messages'
@@ -15,8 +16,9 @@ import { useRecordedChat } from './useRecordedChat'
 const AUTOPLAY_THRESHOLD = 0.6
 
 const messages = useLandingMessages()
+const store = useEditorStore()
 const { messages: transcript, status, running, played, play } = useRecordedChat(
-  useEditorStore(),
+  store,
   () => messages.value.stage.ai
 )
 
@@ -41,6 +43,7 @@ const { stop } = useIntersectionObserver(
       <icon-lucide-sparkles class="size-3.5 text-muted" aria-hidden="true" />
       AI
       <span class="ml-auto font-normal text-muted">{{ messages.stage.ai.recorded }}</span>
+      <FollowAgentsToggle :store="store" />
     </header>
     <ChatTranscript :messages="transcript" :status="status" />
     <div class="flex shrink-0 justify-end border-t border-border px-3 py-2">

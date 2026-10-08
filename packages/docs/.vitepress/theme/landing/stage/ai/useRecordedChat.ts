@@ -66,6 +66,9 @@ export function useRecordedChat(store: EditorStore, copy: () => RecordedChatCopy
       })
     })
     await chat.value.sendMessage({ text: request })
+    // The view follows the agent while it works; afterwards it shows the whole result, which
+    // also ends following, as any view change of the person's own does in the app.
+    if (!disposed) store.zoomToFit()
   }
 
   return { messages, status, running, played, play }

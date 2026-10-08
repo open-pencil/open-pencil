@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import {
   PlayIslands,
@@ -11,14 +11,16 @@ import {
 } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useFollowView } from '@/app/presence/follow-view'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+import FollowFrame from '@/components/presence/FollowFrame.vue'
 
 /**
  * One WebGL canvas per stage. The app's `EditorCanvas` splits the scene and its overlays
  * across two contexts, which is right for a full-window editor but would put a page of
  * stages past the browser's context limit. This is the SDK's single-canvas path with the
- * same input handling, preview islands, lint markers, and the app's loading overlay.
+ * same input handling, preview islands, lint markers, follow frame, and loading overlay.
  */
 const emit = defineEmits<{
   /** The pointer moved over the canvas, in canvas coordinates, for a room's cursor. */
@@ -65,13 +67,16 @@ const { detailMarker, cursor: issueMarkerCursor } = useCanvasIssueMarkers(canvas
   }
 })
 
+// Following a person or an agent frames the canvas and says who, as in the app.
+const followView = useFollowView(useTemplateRef<HTMLElement>('area'), store)
+
 const cursor = computed(() =>
   toolCursor(store.state.activeTool, issueMarkerCursor.value ?? cursorOverride.value)
 )
 </script>
 
 <template>
-  <div class="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+  <div ref="area" class="relative min-h-0 min-w-0 flex-1 overflow-hidden">
     <canvas
       ref="canvasRef"
       tabindex="-1"
@@ -80,6 +85,11 @@ const cursor = computed(() =>
     />
     <PlayIslands :view="store.state" :canvas="canvasRef" />
     <IssueMarkerTooltip :marker="detailMarker" :canvas="canvasRef" />
+    <FollowFrame
+      v-if="followView.label.value"
+      :followed="followView.label.value"
+      @stop="followView.stop"
+    />
     <PreparationOverlay
       v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"
       :preparation="store.state.preparation"

@@ -80,13 +80,6 @@ function publishCursor(x: number, y: number) {
 // The host's agent plays the recorded turn; the guest sees it work through the room.
 const agent = role === 'host' ? useRecordedChat(store, () => messages.value.stage.ai) : null
 
-/** The view follows the agent while it works, so it comes back to the whole card after. */
-async function askAgent() {
-  if (!agent) return
-  await agent.play()
-  store.zoomToFit()
-}
-
 function onPointerDown() {
   engage()
   focus()
@@ -107,7 +100,7 @@ function onPointerDown() {
         size="xs"
         shape="pill"
         :disabled="agent.running.value"
-        @click="askAgent"
+        @click="agent.play"
       >
         <template #leading><IconSparkles /></template>
         {{ messages.stage.collab.askAgent }}
