@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vitepress dev",
     "build": "OPENPENCIL_DOCS_FAST_BUILD=1 NODE_OPTIONS=--max-old-space-size=8192 vitepress build --minify=false --buildConcurrency=8",
-    "build:production": "OPENPENCIL_LANDING_POSTERS=1 NODE_OPTIONS=--max-old-space-size=12288 vitepress build --minify=esbuild --buildConcurrency=8 && bun ../../tools/generate/landing-posters/src/generate.ts",
+    "build:production": "OPENPENCIL_LANDING_POSTERS=1 NODE_OPTIONS=--max-old-space-size=8192 vitepress build --minify=esbuild --buildConcurrency=8 && bun ../../tools/generate/landing-posters/src/generate.ts",
     "check": "bun ../../tools/checks/docs/src/check.ts",
     "preview": "vitepress preview"
   },
