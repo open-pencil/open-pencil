@@ -34,7 +34,7 @@ import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail } from '#core/io/formats/raster'
 import {
   sceneNodeToKiwi,
-  buildFontDigestMap,
+  settleFontDigestMap,
   makeDocumentNodeChange,
   makeCanvasNodeChange
 } from '#core/kiwi/fig/node-change/serialize'
@@ -417,9 +417,9 @@ async function writeFigFile(
     graph = cloneSceneGraphForFigExport(sourceGraph)
     populateReaderExport(sourceGraph, graph)
   }
-  // Awaited before anything else is read, so every record comes from one synchronous pass:
-  // an edit made while the save waits cannot land between two records.
-  const fontDigestMap = await buildFontDigestMap(graph)
+  // The last await before the records: from here to the encoded message every record comes from
+  // one synchronous pass over the document, and the digests cover every font that pass reads.
+  const fontDigestMap = await settleFontDigestMap(graph)
 
   // When the document was imported from a .fig file, preserve the original
   // kiwi schema for both encoding and embedding. For the current version of

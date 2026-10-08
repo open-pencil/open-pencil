@@ -1,8 +1,32 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { createEditor } from '@open-pencil/core/editor'
-import { emptyBehaviour, readBehaviour } from '@open-pencil/scene-graph'
+import { emptyBehaviour, readBehaviour, SceneGraph } from '@open-pencil/scene-graph'
+
+import { settleFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
+import { fontManager } from '#core/text/fonts'
+
+// A save reads the document after its last wait, so the font digests it waits for must cover
+// a font an edit brought in while they loaded.
+test('font digests cover a font added while they load', async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+    'bundled Inter font'
+  )
+  fontManager.markLoaded('Inter', 'Regular', inter)
+  fontManager.markLoaded('Inter', 'Bold', inter)
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+  graph.createNode('TEXT', pageId, { text: 'Body', fontFamily: 'Inter', fontWeight: 400 })
+
+  const settling = settleFontDigestMap(graph)
+  graph.createNode('TEXT', pageId, { text: 'Heading', fontFamily: 'Inter', fontWeight: 700 })
+
+  expect([...(await settling).keys()].toSorted()).toEqual(['Inter|Bold', 'Inter|Regular'])
+})
 
 // With nothing left to read from an archive, a save writes from the document itself, so
 // nothing it writes onto a record may reach the layers it was written from.
@@ -27,7 +51,7 @@ test('saving a document leaves every layer as it was', async () => {
   })
   editor.graph.createNode('RECTANGLE', pageId, {
     name: 'Exported',
-    exportSettings: [{ format: 'PNG', suffix: '', constraint: { type: 'SCALE', value: 2 } }]
+    exportSettings: [{ format: 'png', scale: 2 }]
   })
   editor.graph.createNode('TEXT', pageId, {
     name: 'On a path',

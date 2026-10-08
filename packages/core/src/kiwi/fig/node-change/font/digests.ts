@@ -23,7 +23,8 @@ async function getFontDigest(family: string, style: string): Promise<Uint8Array 
   return digest
 }
 
-export async function buildFontDigestMap(graph: SceneGraph): Promise<Map<string, Uint8Array>> {
+/** Every `family|style` the document's text uses, read synchronously. */
+function documentFontKeys(graph: SceneGraph): Set<string> {
   const fontKeys = new Set<string>()
   for (const node of graph.getAllNodes()) {
     if (node.type !== 'TEXT') continue
@@ -36,12 +37,43 @@ export async function buildFontDigestMap(graph: SceneGraph): Promise<Map<string,
       fontKeys.add(`${family}|${weightToStyle(weight, italic)}`)
     }
   }
+  return fontKeys
+}
 
+export async function buildFontDigestMap(graph: SceneGraph): Promise<Map<string, Uint8Array>> {
   const result = new Map<string, Uint8Array>()
-  for (const key of fontKeys) {
+  await addFontDigests(result, documentFontKeys(graph))
+  return result
+}
+
+async function addFontDigests(
+  digests: Map<string, Uint8Array>,
+  keys: Iterable<string>
+): Promise<void> {
+  for (const key of keys) {
     const [family, style] = key.split('|')
     const digest = await getFontDigest(family, style)
-    if (digest) result.set(key, digest)
+    if (digest) digests.set(key, digest)
   }
-  return result
+}
+
+/** Rounds of font loading a save waits for before it writes what it has. */
+const FONT_DIGEST_ROUNDS = 3
+
+/**
+ * Digests for every font the document uses, read again after each wait: an edit made while
+ * digests load can bring a new font in. Resolves when a synchronous check finds none missing, so
+ * a caller that continues without awaiting writes records that every digest covers. A font with
+ * no digest is looked up once.
+ */
+export async function settleFontDigestMap(graph: SceneGraph): Promise<Map<string, Uint8Array>> {
+  const digests = new Map<string, Uint8Array>()
+  const looked = new Set<string>()
+  for (let round = 0; round < FONT_DIGEST_ROUNDS; round++) {
+    const missing = [...documentFontKeys(graph)].filter((key) => !looked.has(key))
+    if (missing.length === 0) break
+    for (const key of missing) looked.add(key)
+    await addFontDigests(digests, missing)
+  }
+  return digests
 }

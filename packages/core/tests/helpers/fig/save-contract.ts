@@ -38,7 +38,9 @@ export function expectSaveLoadedOnlyInternalPages(
       continue
     }
     expect(now && omit(now, ['childIds'])).toEqual(omit(node, ['childIds']))
-    expect(now?.childIds).toEqual(expect.arrayContaining(node.childIds))
+    // The children it held keep their order; loaded variants may sit between them.
+    const kept = new Set(node.childIds)
+    expect(now?.childIds.filter((id) => kept.has(id))).toEqual(node.childIds)
   }
   const added = [...graph.getAllNodes()].filter((node) => !before.has(node.id))
   expect(added.filter((node) => !internalPages.has(pageOf(graph, node) ?? ''))).toEqual([])
