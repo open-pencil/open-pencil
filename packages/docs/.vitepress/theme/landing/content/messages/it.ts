@@ -106,30 +106,24 @@ export const it: LandingMessages = {
   roadmap: {
     title: 'Roadmap',
     more: 'Roadmap completa',
+    shipped: {
+      label: 'Rilasciato',
+      entries: [
+        { title: 'Componenti interattivi e anteprima' },
+        { title: 'Variabili come design token' },
+        { title: 'Linting con correzioni in un clic' },
+        { title: 'Agenti AI come collaboratori, con modalità segui' },
+        { title: 'Annulla, rigenera e modifica i turni dell’AI' },
+        { title: 'Codice collegato ai livelli' },
+        { title: 'Diff visivo e patch' },
+      ]
+    },
     now: {
       label: 'Ora',
       entries: [
-        {
-          title: 'Agenti AI come collaboratori',
-          detail:
-            'Gli agenti compaiono sulla tela come qualsiasi altro partecipante, e puoi seguire ciò che fanno.'
-        },
-        {
-          title: 'Annulla, rigenera e modifica i turni dell’AI',
-          detail: 'Ogni chiamata a uno strumento mostra che cosa ha cambiato.'
-        },
-        {
-          title: 'Controlli di design in tempo reale',
-          detail: 'Un pannello Lint con indicatori sulla tela e correzioni.'
-        },
-        {
-          title: 'Codice collegato ai livelli',
-          detail: 'Selezione e modifiche si sincronizzano in entrambe le direzioni.'
-        },
-        {
-          title: 'Diff visivo e patch',
-          detail: 'Nell’app, per gli agenti e come openpencil diff.'
-        }
+        { title: 'Design token W3C', detail: 'Importare ed esportare token nel formato W3C.' },
+        { title: 'Storybook da componenti reali', detail: 'Storie che usano Reka UI per Vue e Radix UI per React.' },
+        { title: 'Creazione di componenti', detail: 'Modifica delle varianti più rapida e selezione dentro i componenti.' },
       ]
     },
     next: {

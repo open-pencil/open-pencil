@@ -106,30 +106,24 @@ export const pl: LandingMessages = {
   roadmap: {
     title: 'Plan rozwoju',
     more: 'Pełny plan rozwoju',
+    shipped: {
+      label: 'Wydane',
+      entries: [
+        { title: 'Interaktywne komponenty i podgląd' },
+        { title: 'Zmienne jako tokeny projektowe' },
+        { title: 'Linting z poprawkami jednym kliknięciem' },
+        { title: 'Agenci AI jako współpracownicy, z trybem śledzenia' },
+        { title: 'Cofanie, ponowne generowanie i edycja tur AI' },
+        { title: 'Kod powiązany z warstwami' },
+        { title: 'Wizualny diff i łatki' },
+      ]
+    },
     now: {
       label: 'Teraz',
       entries: [
-        {
-          title: 'Agenci AI jako współpracownicy',
-          detail:
-            'Agenci są widoczni na obszarze roboczym jak każdy inny uczestnik i można śledzić ich pracę.'
-        },
-        {
-          title: 'Cofanie, ponowne generowanie i edycja tur AI',
-          detail: 'Każde wywołanie narzędzia pokazuje, co zmieniło.'
-        },
-        {
-          title: 'Sprawdzanie projektu na żywo',
-          detail: 'Panel Lint ze znacznikami na obszarze roboczym i poprawkami.'
-        },
-        {
-          title: 'Kod powiązany z warstwami',
-          detail: 'Zaznaczenie i zmiany synchronizują się w obie strony.'
-        },
-        {
-          title: 'Wizualny diff i łatki',
-          detail: 'W aplikacji, dla agentów i jako openpencil diff.'
-        }
+        { title: 'Tokeny projektowe W3C', detail: 'Import i eksport tokenów w formacie W3C.' },
+        { title: 'Storybook z prawdziwych komponentów', detail: 'Historie korzystające z Reka UI dla Vue i Radix UI dla React.' },
+        { title: 'Tworzenie komponentów', detail: 'Szybsza edycja wariantów i zaznaczanie wewnątrz komponentów.' },
       ]
     },
     next: {

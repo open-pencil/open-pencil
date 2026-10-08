@@ -106,30 +106,24 @@ export const de: LandingMessages = {
   roadmap: {
     title: 'Roadmap',
     more: 'Vollständige Roadmap',
+    shipped: {
+      label: 'Erschienen',
+      entries: [
+        { title: 'Interaktive Komponenten und Vorschau' },
+        { title: 'Variablen als Design-Tokens' },
+        { title: 'Linting mit Korrekturen per Klick' },
+        { title: 'KI-Agenten als Mitwirkende, mit Folgemodus' },
+        { title: 'KI-Schritte zurücknehmen, neu erzeugen und bearbeiten' },
+        { title: 'Code mit Ebenen verknüpft' },
+        { title: 'Visueller Diff und Patch' },
+      ]
+    },
     now: {
       label: 'Jetzt',
       entries: [
-        {
-          title: 'KI-Agenten als Mitwirkende',
-          detail:
-            'Agenten erscheinen auf der Arbeitsfläche wie jeder andere Teilnehmer, und du kannst ihnen folgen.'
-        },
-        {
-          title: 'KI-Schritte zurücknehmen, neu erzeugen und bearbeiten',
-          detail: 'Jeder Tool-Aufruf zeigt, was er geändert hat.'
-        },
-        {
-          title: 'Design-Prüfungen in Echtzeit',
-          detail: 'Ein Lint-Panel mit Markierungen auf der Arbeitsfläche und Korrekturen.'
-        },
-        {
-          title: 'Code mit Ebenen verknüpft',
-          detail: 'Auswahl und Änderungen werden in beide Richtungen synchronisiert.'
-        },
-        {
-          title: 'Visueller Diff und Patch',
-          detail: 'In der App, für Agenten und als openpencil diff.'
-        }
+        { title: 'W3C-Design-Tokens', detail: 'Tokens im W3C-Format importieren und exportieren.' },
+        { title: 'Storybook aus echten Komponenten', detail: 'Stories mit Reka UI für Vue und Radix UI für React.' },
+        { title: 'Komponenten erstellen', detail: 'Schnelleres Bearbeiten von Varianten und Auswahl innerhalb von Komponenten.' },
       ]
     },
     next: {

@@ -28,7 +28,18 @@ v0.15.0 and v0.15.1 shipped work that earlier versions of this roadmap listed as
 
 ### Current development version
 
-Since v0.15.1, the development branch adds progressive canvas previews while an AI provider streams JSX, Storybook export of components, HTML and Tailwind JSX in the app's export options, a single occurrence-scoped `.fig` reader with faster multi-page opens, wider instance-override and variable-binding export to `.fig`, page navigation from the command palette, and broader variable-font, system-font, and CJK/Arabic fallback rendering. `@open-pencil/design-jsx` is now its own package. These changes are on the development branch but are not part of v0.15.1; `CHANGELOG.md` lists them under Unreleased.
+Since v0.15.1, the development branch adds:
+
+- Behaviours and preview mode: components that run as Reka UI controls, with a Controls page in the demo and Storybook controls for them.
+- Variables modelled as design tokens, edited as tokens, written as a CSS token stylesheet, and used by name in exported code.
+- Live design checks: a Lint panel with canvas markers and one-click fixes.
+- AI agents shown on the canvas and to collaborators, with follow mode for people and agents, per-page presence, and MCP agents in rooms.
+- AI chat turns that can be reverted, regenerated, and edited, with tool calls summarised by what they changed and a thinking level per message.
+- The Code tab linked to canvas layers both ways, and visual diff and patch tools, including `openpencil diff`.
+- Collaboration rooms that sync layer trees as a CRDT and open in their own tab.
+- Slots, progressive canvas previews while an AI provider streams JSX, Storybook export, HTML and Tailwind JSX export, and a faster occurrence-scoped `.fig` reader with wider override and variable export.
+
+These changes are not part of v0.15.1; `CHANGELOG.md` lists them under Unreleased.
 
 See [AI chat](../programmable/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
 
@@ -36,11 +47,10 @@ See [AI chat](../programmable/ai-chat), [exporting](../user-guide/exporting), an
 
 Work with open pull requests. It may change before it merges:
 
-- AI agents as collaborators: agents shown on the canvas and to other participants, follow mode for agents, and per-page presence.
-- AI chat turns that can be reverted, regenerated, and edited, with tool calls shown as summaries of what each edit changed, and a thinking level per message.
-- Live design checks: a Lint panel with canvas markers and fixes.
-- The Code tab linked to canvas layers, with selection and edits syncing both ways.
-- Visual diff and patch tools, including `openpencil diff`.
+- Import and export of W3C design tokens.
+- Storybook stories generated as Reka UI components for Vue and Radix UI components for React.
+- Component authoring: variant editing and canvas selection inside components.
+- The OpenPencil Cloud foundation.
 
 ## Near-term work
 

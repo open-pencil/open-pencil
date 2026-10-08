@@ -10,16 +10,17 @@ const localePath = useLocalePath()
 
 /** The catalog keeps the stages apart so each has its own shape; the timeline wants a list. */
 const stages = computed(() => {
-  const { now, next, later } = messages.value.roadmap
+  const { shipped, now, next, later } = messages.value.roadmap
   return [
-    { label: now.label, current: true, entries: now.entries.map(withoutFeatures) },
+    { label: shipped.label, state: 'done', entries: shipped.entries.map(withoutFeatures) },
+    { label: now.label, state: 'current', entries: now.entries.map(withoutFeatures) },
     {
       label: next.label,
-      current: false,
+      state: 'planned',
       entries: [next.lead, ...next.entries.map(withoutFeatures)]
     },
-    { label: later.label, current: false, entries: later.entries.map(withoutFeatures) }
-  ]
+    { label: later.label, state: 'planned', entries: later.entries.map(withoutFeatures) }
+  ] as const
 })
 
 function withoutFeatures(entry: { title: string; detail?: string }) {
@@ -35,7 +36,7 @@ function withoutFeatures(entry: { title: string; detail?: string }) {
         v-for="stage in stages"
         :key="stage.label"
         class="stage"
-        :data-current="stage.current || undefined"
+        :data-state="stage.state"
       >
         <span class="label">{{ stage.label }}</span>
         <ul>
@@ -104,7 +105,7 @@ function withoutFeatures(entry: { title: string; detail?: string }) {
   content: '';
 }
 
-.stage[data-current]::before {
+.stage[data-state='current']::before {
   border-color: var(--vp-c-brand-1);
   background: var(--vp-c-brand-1);
 }
@@ -121,12 +122,28 @@ function withoutFeatures(entry: { title: string; detail?: string }) {
   text-align: right;
 }
 
-.stage[data-current] .label {
+.stage[data-state='current'] .label {
   color: var(--vp-c-brand-1);
 }
 
 .entry + .entry {
   margin-top: 28px;
+}
+
+/* What has shipped is a short list, not a set of plans. */
+.stage[data-state='done']::before {
+  border-color: var(--vp-c-text-3);
+  background: var(--vp-c-text-3);
+}
+
+.stage[data-state='done'] .entry + .entry {
+  margin-top: 8px;
+}
+
+.stage[data-state='done'] .entry h3 {
+  color: var(--vp-c-text-2);
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .entry h3 {

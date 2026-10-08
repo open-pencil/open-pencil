@@ -106,30 +106,24 @@ export const es: LandingMessages = {
   roadmap: {
     title: 'Hoja de ruta',
     more: 'Hoja de ruta completa',
+    shipped: {
+      label: 'Publicado',
+      entries: [
+        { title: 'Componentes interactivos y vista previa' },
+        { title: 'Variables como tokens de diseño' },
+        { title: 'Linting con correcciones en un clic' },
+        { title: 'Agentes de IA como colaboradores, con modo seguir' },
+        { title: 'Revertir, regenerar y editar turnos de IA' },
+        { title: 'Código vinculado a las capas' },
+        { title: 'Diff visual y parches' },
+      ]
+    },
     now: {
       label: 'Ahora',
       entries: [
-        {
-          title: 'Agentes de IA como colaboradores',
-          detail:
-            'Los agentes aparecen en el lienzo como cualquier otro participante, y puedes seguir lo que hacen.'
-        },
-        {
-          title: 'Revertir, regenerar y editar turnos de IA',
-          detail: 'Cada llamada a una herramienta muestra lo que cambió.'
-        },
-        {
-          title: 'Comprobaciones de diseño en vivo',
-          detail: 'Un panel de lint con marcadores en el lienzo y correcciones.'
-        },
-        {
-          title: 'Código vinculado a las capas',
-          detail: 'La selección y los cambios se sincronizan en ambos sentidos.'
-        },
-        {
-          title: 'Diff visual y parches',
-          detail: 'En la aplicación, para agentes y como openpencil diff.'
-        }
+        { title: 'Tokens de diseño W3C', detail: 'Importar y exportar tokens en el formato W3C.' },
+        { title: 'Storybook con componentes reales', detail: 'Historias que usan Reka UI en Vue y Radix UI en React.' },
+        { title: 'Creación de componentes', detail: 'Edición de variantes más rápida y selección dentro de componentes.' },
       ]
     },
     next: {

@@ -44,6 +44,7 @@ export interface LandingMessages {
   roadmap: {
     title: string
     more: string
+    shipped: { label: string; entries: RoadmapEntryMessages[] }
     now: { label: string; entries: RoadmapEntryMessages[] }
     next: {
       label: string

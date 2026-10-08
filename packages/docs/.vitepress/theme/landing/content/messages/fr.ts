@@ -106,30 +106,24 @@ export const fr: LandingMessages = {
   roadmap: {
     title: 'Feuille de route',
     more: 'Feuille de route complète',
+    shipped: {
+      label: 'Livré',
+      entries: [
+        { title: 'Composants interactifs et aperçu' },
+        { title: 'Variables comme design tokens' },
+        { title: 'Linting avec corrections en un clic' },
+        { title: 'Agents AI comme collaborateurs, avec mode suivi' },
+        { title: 'Annuler, régénérer et modifier les échanges avec l’AI' },
+        { title: 'Code relié aux calques' },
+        { title: 'Diff visuel et correctifs' },
+      ]
+    },
     now: {
       label: 'En cours',
       entries: [
-        {
-          title: 'Des agents AI comme collaborateurs',
-          detail:
-            'Les agents apparaissent sur le canevas comme n’importe quel participant, et vous pouvez suivre ce qu’ils font.'
-        },
-        {
-          title: 'Annuler, régénérer et modifier les échanges avec l’AI',
-          detail: 'Chaque appel d’outil montre ce qu’il a changé.'
-        },
-        {
-          title: 'Vérifications de design en direct',
-          detail: 'Un panneau Lint avec des repères sur le canevas et des corrections.'
-        },
-        {
-          title: 'Code relié aux calques',
-          detail: 'La sélection et les modifications se synchronisent dans les deux sens.'
-        },
-        {
-          title: 'Diff visuel et correctifs',
-          detail: 'Dans l’application, pour les agents et via openpencil diff.'
-        }
+        { title: 'Design tokens W3C', detail: 'Importer et exporter des tokens au format W3C.' },
+        { title: 'Storybook à partir de vrais composants', detail: 'Des stories qui utilisent Reka UI pour Vue et Radix UI pour React.' },
+        { title: 'Création de composants', detail: 'Modification des variantes plus rapide et sélection dans les composants.' },
       ]
     },
     next: {

@@ -105,23 +105,24 @@ export const en: LandingMessages = {
   roadmap: {
     title: 'Roadmap',
     more: 'Full roadmap',
+    shipped: {
+      label: 'Shipped',
+      entries: [
+        { title: 'Interactive components and preview' },
+        { title: 'Variables as design tokens' },
+        { title: 'Linting with one-click fixes' },
+        { title: 'AI agents as collaborators, with follow mode' },
+        { title: 'Revert, regenerate, and edit AI turns' },
+        { title: 'Code linked to canvas layers' },
+        { title: 'Visual diff and patch' },
+      ]
+    },
     now: {
       label: 'Now',
       entries: [
-        {
-          title: 'AI agents as collaborators',
-          detail: 'See agents on the canvas like any other participant, and follow what they do.'
-        },
-        {
-          title: 'Revert, regenerate, and edit AI turns',
-          detail: 'With each tool call showing what it changed.'
-        },
-        { title: 'Live design checks', detail: 'A Lint panel with canvas markers and fixes.' },
-        { title: 'Code linked to canvas layers', detail: 'Selection and edits sync both ways.' },
-        {
-          title: 'Visual diff and patch',
-          detail: 'In the app, for agents, and as openpencil diff.'
-        }
+        { title: 'W3C design tokens', detail: 'Import and export tokens in the W3C format.' },
+        { title: 'Storybook from real components', detail: 'Stories that render Reka UI for Vue and Radix UI for React.' },
+        { title: 'Component authoring', detail: 'Faster variant editing and canvas selection inside components.' },
       ]
     },
     next: {
