@@ -103,10 +103,15 @@ test('missing key opens Media settings and saves through the credential manager'
 
   await rightClickSelected()
   await editor.page.getByTestId('context-vectorize').click()
-  const section = editor.page.locator('[data-vectorize-settings]')
-  await expect(section).toBeVisible()
+  const dialog = editor.page.getByTestId('app-settings-dialog')
+  const vectorizeRow = dialog.locator('[data-vectorize-settings]')
+  await expect(vectorizeRow).toBeVisible()
 
-  await section.getByTestId('provider-settings-api-key').fill('test-recraft-key')
+  // The provider row opens its key editor; saving returns to the Media list.
+  await vectorizeRow.click()
+  await dialog.getByTestId('provider-settings-api-key').fill('test-recraft-key')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(vectorizeRow).toBeVisible()
   await editor.page.getByTestId('app-settings-done').click()
   await expect(editor.page.getByTestId('app-settings-dialog')).toHaveCount(0)
   expect(

@@ -71,6 +71,15 @@ La sélection d’une variable permet de modifier :
 
 Le bas de la boîte de dialogue affiche la collection active sous forme de propriétés personnalisées CSS. Le bouton de copie (**Copier toutes les variables en CSS**) copie les variables de tout le document en CSS ou sous forme de thème Tailwind v4 (**Copier toutes les variables en thème Tailwind**), de sorte que les alias vers d’autres collections sont résolus.
 
+## Importer et exporter des design tokens
+
+Les variables et les styles circulent entre OpenPencil, Figma et le code sous forme de [design tokens W3C](https://www.designtokens.org/) :
+
+- **Exporter :** dans le menu de copie de la feuille de style, choisissez **Exporter en design tokens**. Le zip contient un fichier par mode de collection, que Figma importe comme un mode ; les styles de texte et d’effet en tokens de typographie et d’ombre ; et un resolver qui les combine pour des outils comme Style Dictionary
+- **Importer :** cliquez sur **Importer des design tokens** dans la barre d’outils et choisissez des fichiers de tokens ou un zip. Les fichiers de Figma, un resolver avec les fichiers qu’il nomme et les thèmes Tokens Studio fonctionnent
+- **Choisir la destination :** avant tout changement, la boîte de dialogue montre chaque collection et chaque mode trouvés et où ils vont : dans une nouvelle collection ou un nouveau mode, dans un existant, ou nulle part. Les variables et les styles de même nom sont mis à jour et le reste est ajouté ; rien n’est supprimé. Elle compte ce qui sera ajouté, mis à jour et ignoré, et indique pourquoi chaque token ignoré a été écarté
+- L’import est une seule étape : **Annuler** le reprend en entier
+
 ## Lier des variables aux remplissages
 
 Dans la section Remplissage du panneau des propriétés, utilisez le sélecteur de variables pour lier une variable de couleur au remplissage d’un objet.

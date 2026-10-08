@@ -71,6 +71,15 @@ La selezione di una variabile permette di modificare:
 
 La parte inferiore della finestra mostra la raccolta attiva come proprietà personalizzate CSS. Il pulsante di copia (**Copia tutte le variabili come CSS**) copia le variabili dell’intero documento come CSS o come tema Tailwind v4 (**Copia tutte le variabili come tema Tailwind**), così gli alias verso altre raccolte vengono risolti.
 
+## Importare ed esportare design token
+
+Variabili e stili passano tra OpenPencil, Figma e il codice come [design token W3C](https://www.designtokens.org/):
+
+- **Esportare:** nel menu di copia del foglio di stile scegli **Esporta come design token**. Lo zip contiene un file per ogni modalità di raccolta, che Figma importa come modalità; gli stili di testo ed effetto come token di tipografia e ombra; e un resolver che li combina per strumenti come Style Dictionary
+- **Importare:** fai clic su **Importa design token** nella barra degli strumenti e scegli file di token o uno zip. Funzionano i file di Figma, un resolver con i file che nomina e i temi di Tokens Studio
+- **Scegliere la destinazione:** prima che cambi qualcosa, la finestra mostra ogni raccolta e modalità trovata e dove va: in una nuova raccolta o modalità, in una esistente o da nessuna parte. Variabili e stili con lo stesso nome vengono aggiornati e il resto viene aggiunto; nulla viene eliminato. Conta cosa verrà aggiunto, aggiornato e saltato, e spiega perché ogni token saltato è stato escluso
+- L’importazione è un solo passaggio: **Annulla** la ritira tutta
+
 ## Collegare le variabili ai riempimenti
 
 Nella sezione Riempimento del pannello delle proprietà, usa il selettore delle variabili per collegare una variabile colore al riempimento di un oggetto.

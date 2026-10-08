@@ -122,6 +122,24 @@ Each collection's default mode goes in `:root`. Every other mode overrides the v
 
 Tokens that cannot be written, such as boolean variables or a condition that is not a selector or query, are listed on stderr and left out. The command works in file mode and against the running app.
 
+### W3C design tokens
+
+`--format dtcg` writes the variables and styles as [W3C design tokens](https://www.designtokens.org/tr/2025.10/format/) into a folder:
+
+```sh
+openpencil tokens design.fig --format dtcg --out tokens
+```
+
+Each collection mode is one file, `Theme/Light.tokens.json` and `Theme/Dark.tokens.json`, in the shape Figma imports as a mode: lengths in `px`, times in `s`, booleans as numbers marked `com.figma.type`, and aliases to another collection naming it in `com.figma.aliasData`. Text and effect styles become typography and shadow tokens in `styles.tokens.json`, kept apart because Figma's import refuses composite tokens. `tokens.resolver.json` is a DTCG resolver that switches each collection's modes and layers the rest, for tools such as Style Dictionary. OpenPencil's own fields, such as a token's `rem` unit, CSS name, scopes, or `clamp()` expression, and each mode's condition, ride in `$extensions["dev.openpencil"]`, so the export reads back exactly.
+
+Import token files into a document with the `import_design_tokens` tool, passing each file's path and text:
+
+```sh
+openpencil tool call import_design_tokens design.fig --args-file tokens.json --write
+```
+
+It reads a file per mode grouped by folder, a resolver with the files it refers to, or a Tokens Studio file with `$themes`. Collections and modes with existing names, and variables and styles by name, are updated; the rest is added, and nothing is deleted. The result lists what was added, updated, and skipped, with the reason for each skip.
+
 ## Storybook Export
 
 Generate one CSF3 `.stories.ts` file per component set or component:

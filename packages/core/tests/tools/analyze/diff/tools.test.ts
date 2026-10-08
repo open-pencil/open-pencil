@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, diffDocuments } from '@open-pencil/core/tools'
 import { SceneGraph, type Color } from '@open-pencil/scene-graph'
-
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 
 type DiffResult = { diff?: string | null; message?: string; error?: string }
 type ApplyResult = {
@@ -86,7 +86,9 @@ describe('diff_create and diff_apply', () => {
     const copy = card.clone()
     copy.opacity = 0.5
 
-    await run<ApplyResult>(figma, 'diff_apply', { patch: await createPatch(figma, card.id, copy.id) })
+    await run<ApplyResult>(figma, 'diff_apply', {
+      patch: await createPatch(figma, card.id, copy.id)
+    })
     expect(getNodeOrThrow(graph, card.id).opacity).toBe(0.5)
     expect(card.getPluginData('note')).toBe('kept')
   })

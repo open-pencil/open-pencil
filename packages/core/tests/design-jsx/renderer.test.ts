@@ -7,8 +7,18 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 describe('renderTree onNode', () => {
   test('reports every element with the layer rendered from it', async () => {
     const graph = new SceneGraph()
-    const text: TreeNode = { type: 'text', props: { name: 'Title' }, children: ['Hi'], source: { line: 2 } }
-    const root: TreeNode = { type: 'frame', props: { name: 'Card' }, children: [text], source: { line: 1 } }
+    const text: TreeNode = {
+      type: 'text',
+      props: { name: 'Title' },
+      children: ['Hi'],
+      source: { line: 2 }
+    }
+    const root: TreeNode = {
+      type: 'frame',
+      props: { name: 'Card' },
+      children: [text],
+      source: { line: 1 }
+    }
     const seen: Array<[number | undefined, string]> = []
 
     const result = await renderTree(graph, root, {

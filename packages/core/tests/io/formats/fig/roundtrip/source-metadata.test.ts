@@ -492,10 +492,6 @@ describe('fig roundtrip source metadata', () => {
     const graph = new SceneGraph()
     graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Card' })
     const saved = await exportFigFile(graph)
-    const savedGuidOf = (bytes: Uint8Array, name: string) => {
-      const nodeChange = decodeExport(bytes).nodeChanges.find((change) => change.name === name)
-      return nodeChange?.guid ? guidToString(nodeChange.guid) : undefined
-    }
 
     const reopened = await parseFigFile(saved.slice().buffer)
     const page = reopened.getPages()[0]
@@ -510,4 +506,40 @@ describe('fig roundtrip source metadata', () => {
     expect(insertedGuid).toBeDefined()
     expect(insertedGuid).not.toBe(cardGuid)
   })
+
+  test('keeps the GUIDs of new layers across saves when a sibling is inserted before them', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('FRAME', page.id, { name: 'Card' })
+    const cardGuid = savedGuidOf(await exportFigFile(graph), 'Card')
+
+    const inserted = graph.createNode('RECTANGLE', page.id, { name: 'Inserted' })
+    graph.reorderChild(inserted.id, page.id, 0)
+    const resaved = await exportFigFile(graph)
+
+    expect(cardGuid).toBeDefined()
+    expect(savedGuidOf(resaved, 'Card')).toBe(cardGuid)
+    const insertedGuid = savedGuidOf(resaved, 'Inserted')
+    expect(insertedGuid).toBeDefined()
+    expect(insertedGuid).not.toBe(cardGuid)
+  })
+
+  test('gives an opened layer its saved GUID when a new layer has the same ID', async () => {
+    let next = 0
+    const graph = new SceneGraph(() => `9:${++next}`)
+    const page = graph.getPages()[0]
+    const created = graph.createNode('FRAME', page.id, { name: 'Created' })
+    const opened = graph.createNode('FRAME', page.id, { name: 'Opened' })
+    graph.updateNode(opened.id, { source: { ...opened.source, id: created.id } })
+    const saved = await exportFigFile(graph)
+
+    expect(savedGuidOf(saved, 'Opened')).toBe(created.id)
+    expect(savedGuidOf(saved, 'Created')).toBeDefined()
+    expect(savedGuidOf(saved, 'Created')).not.toBe(created.id)
+  })
 })
+
+function savedGuidOf(bytes: Uint8Array, name: string): string | undefined {
+  const nodeChange = decodeExport(bytes).nodeChanges.find((change) => change.name === name)
+  return nodeChange?.guid ? guidToString(nodeChange.guid) : undefined
+}

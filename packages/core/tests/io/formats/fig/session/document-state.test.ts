@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 
+import { inertPopulationWorker } from '#core-tests/helpers/fig/population-worker'
+
 import { createEditor } from '@open-pencil/core/editor'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
@@ -19,7 +21,6 @@ import {
 } from '#core/kiwi/fig/session/document-state'
 import type { FigSessionPopulateRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
-import { inertPopulationWorker } from '#core-tests/helpers/fig/population-worker'
 
 test('rejected worker response cannot mark an unloaded page loaded in recovery', async () => {
   await initCodec()

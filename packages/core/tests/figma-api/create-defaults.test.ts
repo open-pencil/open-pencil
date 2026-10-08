@@ -13,7 +13,9 @@ const BLACK = [0, 0, 0]
 
 function solid(paints: readonly { type: string; color?: { r: number; g: number; b: number } }[]) {
   return paints.map((paint) =>
-    paint.color ? [paint.color.r, paint.color.g, paint.color.b].map((v) => Math.round(v * 100) / 100) : paint.type
+    paint.color
+      ? [paint.color.r, paint.color.g, paint.color.b].map((v) => Math.round(v * 100) / 100)
+      : paint.type
   )
 }
 

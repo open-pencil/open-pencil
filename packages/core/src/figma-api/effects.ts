@@ -107,6 +107,13 @@ export function parseFigmaEffects(value: unknown): Effect[] {
   return result.output.map(toSceneEffect)
 }
 
+/** `value` as scene effects when it holds valid Figma effects, or null. */
+export function tryParseFigmaEffects(value: unknown): Effect[] | null {
+  if (unsupportedEffect(value)) return null
+  const result = v.safeParse(effectsSchema, value)
+  return result.success ? result.output.map(toSceneEffect) : null
+}
+
 function toSceneEffect(effect: FigmaEffect): Effect {
   if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
     return {

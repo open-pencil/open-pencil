@@ -27,5 +27,7 @@
   "deepLinkCancelled": "Ссылка отменена: ожидался файл с окончанием «{file}».",
   "deepLinkNodeNotFound": "Слой «{node}» не найден в «{file}».",
   "openQueuedFilesFailed": "Не удалось открыть файлы, переданные OpenPencil: {error}",
-  "tokensLeftOut": "Не вошли в таблицу стилей: {names}."
+  "tokensLeftOut": "Не вошли в таблицу стилей: {names}.",
+  "designTokensLeftOut": "Не вошли в дизайн-токены: {names}.",
+  "designTokensImported": "Импортировано дизайн-токенов: {count}."
 }

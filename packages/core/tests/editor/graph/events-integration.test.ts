@@ -2,10 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import {
-  createGraphEventSubscription,
-  type GraphEventRenderer
-} from '#core/editor/graph-events'
+import { createGraphEventSubscription, type GraphEventRenderer } from '#core/editor/graph-events'
 
 function createRenderer() {
   const invalidated: string[] = []

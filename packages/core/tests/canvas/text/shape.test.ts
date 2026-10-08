@@ -1,14 +1,15 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { withFigExportRuntime } from '#core/canvas/text/shape'
-import { getCanvasKit } from '#core/canvaskit'
-import { fontManager } from '#core/text/fonts'
-import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
 
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+
+import { withFigExportRuntime } from '#core/canvas/text/shape'
+import { getCanvasKit } from '#core/canvaskit'
+import { fontManager } from '#core/text/fonts'
+import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
 
 const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.'
 

@@ -71,6 +71,15 @@ Zaznaczenie zmiennej pozwala edytować:
 
 Dół okna pokazuje aktywną kolekcję jako właściwości niestandardowe CSS. Przycisk kopiowania (**Kopiuj wszystkie zmienne jako CSS**) kopiuje zmienne całego dokumentu jako CSS albo motyw Tailwind v4 (**Kopiuj wszystkie zmienne jako motyw Tailwind**), dzięki czemu aliasy do innych kolekcji są rozwiązywane.
 
+## Import i eksport tokenów projektowych
+
+Zmienne i style przechodzą między OpenPencil, Figmą i kodem jako [tokeny projektowe W3C](https://www.designtokens.org/):
+
+- **Eksport:** w menu kopiowania arkusza stylów wybierz **Eksportuj jako tokeny projektowe**. Archiwum zip zawiera po jednym pliku na każdy tryb kolekcji, który Figma importuje jako tryb; style tekstu i efektów jako tokeny typografii i cieni; oraz resolver, który łączy je dla narzędzi takich jak Style Dictionary
+- **Import:** kliknij **Importuj tokeny projektowe** na pasku narzędzi i wybierz pliki tokenów lub zip. Działają pliki z Figmy, resolver z plikami, które wskazuje, oraz motywy Tokens Studio
+- **Wybór miejsca:** zanim cokolwiek się zmieni, okno pokazuje każdą znalezioną kolekcję i tryb oraz to, dokąd trafią: do nowej kolekcji lub trybu, do istniejącego albo nigdzie. Zmienne i style o tej samej nazwie są aktualizowane, a reszta dodawana; nic nie jest usuwane. Okno podaje, co zostanie dodane, zaktualizowane i pominięte, oraz dlaczego pominięto każdy token
+- Import to jeden krok: **Cofnij** wycofuje go w całości
+
 ## Powiązywanie zmiennych z zalewami
 
 W sekcji „Zalew” panelu właściwości użyj wyboru zmiennej, aby powiązać zmienną koloru z zalewem obiektu.

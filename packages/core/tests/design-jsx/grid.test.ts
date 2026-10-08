@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
+
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 test('a repeat() grid places its cells in equal columns, not collapsed ones', async () => {
   const graph = new SceneGraph()

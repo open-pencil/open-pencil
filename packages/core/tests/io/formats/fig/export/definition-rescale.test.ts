@@ -1,14 +1,14 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
+import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
+
 import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
-import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
 
 const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 

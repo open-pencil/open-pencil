@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
-
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
+
+import { createEditor } from '@open-pencil/core/editor'
 
 describe('create shape undo/redo', () => {
   test('batched create+resize undoes in one step', () => {

@@ -8,10 +8,10 @@ test('pages and layers panels scroll inside splitter panes', async ({ page }) =>
   await canvas.waitForInit()
   canvas.errors.length = 0
 
-  await page.evaluate(() => {
+  // Adding a page opens it, so the layers go on the first page and the editor returns there.
+  const firstPageId = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    for (let i = 0; i < 40; i++) store.addPage(`Page ${i + 2}`)
     const pageId = store.state.currentPageId
     for (let i = 0; i < 80; i++) {
       store.graph.createNode('RECTANGLE', pageId, {
@@ -22,8 +22,13 @@ test('pages and layers panels scroll inside splitter panes', async ({ page }) =>
         height: 20
       })
     }
-    store.requestRender()
+    for (let i = 0; i < 40; i++) store.addPage(`Page ${i + 2}`)
+    store.switchPage(pageId)
+    return pageId
   })
+  await expect
+    .poll(() => page.evaluate(() => window.openPencil?.getStore?.()?.state.currentPageId))
+    .toBe(firstPageId)
   await canvas.waitForRender()
 
   const pagesScroller = page.getByTestId('pages-scroll')

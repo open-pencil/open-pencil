@@ -108,6 +108,14 @@ test('supports multiple roots through fragments', async ({ page }) => {
   })
 })
 
+test('evaluates behaviour parts named through their namespace', async ({ page }) => {
+  const result = await evaluate(page, '<Switch.Root name="Toggle"><Switch.Thumb /></Switch.Root>')
+  expect(result).toMatchObject({
+    ok: true,
+    roots: [{ type: 'Switch.Root', children: [{ type: 'Switch.Thumb' }] }]
+  })
+})
+
 test('cannot access the parent or application origin', async ({ page }) => {
   const result = await evaluate(page, '<Frame>{String(window.parent.document)}</Frame>')
   expect(result.ok).toBe(false)

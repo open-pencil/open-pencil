@@ -1,13 +1,13 @@
-import { resolve } from 'node:path'
 import { expect, test } from 'bun:test'
+import { resolve } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core'
 import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io'
 import { materializeDocument } from '@open-pencil/fig'
 
 import { expectDefined } from '../helpers/assert'
-import { FIXTURES } from '../helpers/fig/fixtures'
 import { absoluteConstraintRecords } from '../helpers/fig/absolute-constraints'
+import { FIXTURES } from '../helpers/fig/fixtures'
 
 test('absolute resize constraints match native Figma pixels', async () => {
   const { graph, sources } = materializeDocument(absoluteConstraintRecords())
@@ -38,9 +38,7 @@ test('absolute resize constraints match native Figma pixels', async () => {
       })
     )
     const native = new Uint8Array(
-      await Bun.file(
-        resolve(FIXTURES, 'absolute-constraint-figma.png')
-      ).arrayBuffer()
+      await Bun.file(resolve(FIXTURES, 'absolute-constraint-figma.png')).arrayBuffer()
     )
     expect(decode(png)).toEqual(decode(native))
   } finally {

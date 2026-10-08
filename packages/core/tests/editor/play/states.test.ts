@@ -16,7 +16,13 @@ function switchCard() {
   const set = graph.createNode('COMPONENT_SET', pageId, {
     name: 'Switch',
     componentPropertyDefinitions: [
-      { id: 'state', name: 'State', type: 'VARIANT', defaultValue: 'Off', variantOptions: ['Off', 'On'] },
+      {
+        id: 'state',
+        name: 'State',
+        type: 'VARIANT',
+        defaultValue: 'Off',
+        variantOptions: ['Off', 'On']
+      },
       {
         id: 'interaction',
         name: 'Interaction',

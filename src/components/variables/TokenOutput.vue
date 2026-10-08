@@ -5,6 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuPortal,
   DropdownMenuRoot,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
@@ -23,7 +24,7 @@ const { collectionId, layout = 'side' } = defineProps<{
   /** `full` fills the panel behind a back button on narrow screens. */
   layout?: 'side' | 'full'
 }>()
-const emit = defineEmits<{ copy: [format: TokenStylesheetFormat] }>()
+const emit = defineEmits<{ copy: [format: TokenStylesheetFormat]; export: [] }>()
 
 const { variables } = useI18n()
 const ui = computed(() => tv(tokensPanelTheme)({ layout }))
@@ -78,6 +79,15 @@ const stylesheet = computedAsync(async () => {
             >
               <icon-lucide-wind :class="menu.icon" />
               {{ variables.copyAsTailwindTheme }}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator :class="menu.separator" />
+            <DropdownMenuItem
+              :class="menu.item"
+              data-test-id="variables-export-tokens"
+              @select="emit('export')"
+            >
+              <icon-lucide-file-archive :class="menu.icon" />
+              {{ variables.exportDesignTokens }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenuPortal>

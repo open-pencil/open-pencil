@@ -42,10 +42,11 @@ export function populateWholeDocument(graph: SceneGraph): boolean {
   return changed
 }
 
-function pageNameFromArgs(args: unknown): string | undefined {
+/** A string argument of an RPC command, such as its `page` or `format`. */
+function stringArg(args: unknown, key: string): string | undefined {
   if (!args || typeof args !== 'object' || Array.isArray(args)) return undefined
-  const page = (args as { page?: unknown }).page
-  return typeof page === 'string' ? page : undefined
+  const value: unknown = Reflect.get(args, key)
+  return typeof value === 'string' ? value : undefined
 }
 
 function populateRequestedPage(graph: SceneGraph, pageName?: string): void {
@@ -56,12 +57,14 @@ function populateRequestedPage(graph: SceneGraph, pageName?: string): void {
 
 export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?: unknown): void {
   if (command === 'pages' || command === 'variables') return
+  // A stylesheet holds only variables, which load with the document; pages can take minutes.
+  if (command === 'tokens' && stringArg(args, 'format') !== 'dtcg') return
   if (command === 'tree') {
-    populateRequestedPage(graph, pageNameFromArgs(args))
+    populateRequestedPage(graph, stringArg(args, 'page'))
     return
   }
   if (command === 'find' || command === 'query') {
-    const pageName = pageNameFromArgs(args)
+    const pageName = stringArg(args, 'page')
     if (pageName) populateRequestedPage(graph, pageName)
     else populateWholeDocument(graph)
     return

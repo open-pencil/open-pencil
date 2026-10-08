@@ -102,7 +102,28 @@ export const variablesMessageDefaults = {
   scopeParagraphSpacing: 'Paragraph spacing',
   scopeParagraphIndent: 'Paragraph indent',
   scopeTextContent: 'Text content',
-  scopeFontFamily: 'Font family'
+  scopeFontFamily: 'Font family',
+  exportDesignTokens: 'Export as design tokens',
+  importDesignTokens: 'Import design tokens',
+  importTokensDescription:
+    'Choose where each collection and mode goes. Variables with the same name are updated; nothing is deleted.',
+  importNewCollection: 'New collection',
+  importNewMode: 'New mode',
+  importSkipTarget: 'Don’t import',
+  importAddMissing: 'Add tokens that don’t exist yet',
+  importStyles: params('Make text and effect styles ({count})'),
+  importSummary: params('{added} to add · {updated} to update · {skipped} skipped'),
+  importSkippedTitle: 'Skipped',
+  importReasonUnsupportedType: 'its type has no variable or style',
+  importReasonInvalidValue: 'its value can’t be read',
+  importReasonTypeMismatch: 'a variable of another type has this name',
+  importReasonMissingAlias: 'it points at a token that isn’t there',
+  importReasonNotAdded: 'no variable has this name',
+  importReasonMixedTypes: 'its modes have different types',
+  importInvalidFile: params('{file} isn’t a design token file'),
+  importMissingFile: params('{file}, which {from} refers to, wasn’t picked'),
+  importNothing: 'These files hold no design tokens.',
+  importAction: 'Import'
 } as const
 
 export const variablesMessages = i18n('variables', variablesMessageDefaults)
