@@ -2,6 +2,7 @@ export { materializeFigFragment, type FragmentMaterializationOptions } from './d
 export {
   materializeDocument,
   materializeFigArchive,
+  figCheckpointRecords,
   type FigSessionCheckpoint,
   type FigSessionResume,
   createFigDocumentSession,
@@ -15,6 +16,16 @@ export {
   type FigParseResult,
   type WriteFigArchiveInput
 } from './archive'
+export {
+  figArchiveComponentUsePages,
+  figArchiveRecordInfo,
+  figComponentUsePages,
+  patchFigArchive,
+  patchFigRecords,
+  type FigArchiveRecordInfo,
+  type FigPatchedArchiveInput,
+  type FigRecordPatch
+} from './record-patch'
 export {
   extractFigThumbnailFromReader,
   type FigRangeReader,

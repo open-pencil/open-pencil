@@ -449,6 +449,9 @@ export interface SceneNodeToKiwiOptions {
   slotContentRecords?: KiwiNodeChange[]
   /** Plugin data a node is written with instead of its own, by node ID. */
   pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
+  recordOwners?: ReadonlyMap<string, string>
+  orderKeys?: ReadonlyMap<string, string>
+  writeChildren?: boolean
 }
 
 export function sceneNodeToKiwi(
@@ -472,7 +475,10 @@ export function sceneNodeToKiwi(
     modeIdToGuid,
     propertyIdToGuid = new Map<string, GUID>(),
     slotContentRecords,
-    pluginDataOverrides
+    pluginDataOverrides,
+    recordOwners,
+    orderKeys,
+    writeChildren
   } = options
   // Raw paints retain library asset refs; effects use this map because their
   // Kiwi schema accepts only GUID-backed aliases.
@@ -492,6 +498,9 @@ export function sceneNodeToKiwi(
     propertyIdToGuid,
     slotContentRecords,
     pluginDataOverrides,
+    recordOwners,
+    orderKeys,
+    writeChildren,
     fractionalPosition,
     mapToFigmaType,
     fillToKiwiPaint,
