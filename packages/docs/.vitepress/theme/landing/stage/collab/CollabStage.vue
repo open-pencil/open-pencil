@@ -28,6 +28,14 @@ const peerColor = (index: number): Color => PEER_COLORS[index] ?? { r: 0, g: 0, 
 const you = { name: computed(() => messages.value.stage.collab.you), color: peerColor(1) }
 const teammate = { name: computed(() => TEAMMATE), color: peerColor(4) }
 
+/** Both screens show the shared document, so the page can take down the still. */
+const emit = defineEmits<{ ready: [] }>()
+const panesReady = ref(0)
+function paneReady(): void {
+  panesReady.value += 1
+  if (panesReady.value === 2) emit('ready')
+}
+
 const root = ref<HTMLElement | null>(null)
 const mounted = ref(false)
 const { stop } = useIntersectionObserver(
@@ -57,6 +65,7 @@ const { stop } = useIntersectionObserver(
             :room-id="ROOM_ID"
             :identity="you"
             :label="messages.stage.collab.yourScreen"
+            @ready="paneReady"
           />
           <div class="w-px shrink-0 bg-border max-md:h-px max-md:w-full" />
           <CollabPane
@@ -65,6 +74,7 @@ const { stop } = useIntersectionObserver(
             :room-id="ROOM_ID"
             :identity="teammate"
             :label="messages.stage.collab.theirScreen"
+            @ready="paneReady"
           />
         </template>
       </div>

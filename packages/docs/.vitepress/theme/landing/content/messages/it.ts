@@ -229,6 +229,7 @@ export const it: LandingMessages = {
     cloud: "Iscriviti alla lista d'attesa di Cloud"
   },
   stage: {
+    activate: 'Provalo dal vivo',
     terminal: {
       tree: 'Albero dei livelli',
       restyle: 'Cambia i pulsanti',

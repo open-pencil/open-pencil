@@ -228,6 +228,7 @@ export const de: LandingMessages = {
     cloud: 'Auf die Cloud-Warteliste'
   },
   stage: {
+    activate: 'Live ausprobieren',
     terminal: {
       tree: 'Ebenenbaum',
       restyle: 'Buttons umgestalten',

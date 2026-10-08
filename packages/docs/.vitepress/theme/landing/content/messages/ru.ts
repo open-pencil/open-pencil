@@ -227,6 +227,7 @@ export const ru: LandingMessages = {
     cloud: 'Записаться в лист ожидания Cloud'
   },
   stage: {
+    activate: 'Попробовать вживую',
     terminal: {
       tree: 'Дерево слоёв',
       restyle: 'Изменить кнопки',

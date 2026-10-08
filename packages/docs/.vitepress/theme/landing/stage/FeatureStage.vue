@@ -2,7 +2,7 @@
 import { useIntersectionObserver, useMediaQuery } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
-import { defineAsyncComponent, ref } from 'vue'
+import { defineAsyncComponent, ref, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -22,11 +22,14 @@ const StagePreviewControls = defineAsyncComponent(() => import('./StagePreviewCo
 const MOUNT_MARGIN = '100% 0px'
 
 const { kind } = defineProps<{ kind: SingleStageKind }>()
+/** Its scene is on the canvas, so the page can take down the still it showed in its place. */
+const emit = defineEmits<{ ready: [] }>()
 const definition = STAGES[kind]
 
 useDocsAppearance()
 const { panels } = useI18n()
-const { build, focus } = useStageDocument(definition.scene)
+const { build, focus, ready } = useStageDocument(definition.scene)
+watch(ready, () => emit('ready'), { once: true })
 const { engage, disengage, guardWheel } = useWheelEngagement()
 
 // A stage mounts once, as the visitor approaches it, and then stays mounted: its canvas and
@@ -69,6 +72,7 @@ function onPointerDown() {
         @wheel.capture="guardWheel"
       >
         <div
+          data-poster-part="canvas"
           class="relative flex min-h-0 min-w-0 flex-1 bg-canvas"
           :class="touch && '*:pointer-events-none'"
         >
@@ -81,6 +85,7 @@ function onPointerDown() {
 
         <aside
           v-if="definition.panel"
+          data-poster-part="panel"
           class="flex w-72 shrink-0 flex-col overflow-hidden border-l border-border bg-panel max-md:h-64 max-md:w-full max-md:border-t max-md:border-l-0"
         >
           <template v-if="mounted">

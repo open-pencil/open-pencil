@@ -218,6 +218,7 @@ export const en: LandingMessages = {
     cloud: 'Join the Cloud waitlist'
   },
   stage: {
+    activate: 'Try it live',
     terminal: {
       tree: 'Layer tree',
       restyle: 'Restyle buttons',

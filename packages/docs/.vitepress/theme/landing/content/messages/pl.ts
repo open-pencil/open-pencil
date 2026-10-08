@@ -228,6 +228,7 @@ export const pl: LandingMessages = {
     cloud: 'Zapisz się na listę Cloud'
   },
   stage: {
+    activate: 'Wypróbuj na żywo',
     terminal: {
       tree: 'Drzewo warstw',
       restyle: 'Zmień styl przycisków',

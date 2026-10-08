@@ -20,6 +20,10 @@ jobs:
       - name: Build SDK packages for documentation
         run: bun run build:packages
 
+      # The production build captures stills of the landing's stages in headless Chromium.
+      - name: Install Chromium for landing posters
+        run: bunx playwright install --with-deps chromium
+
       - run: bun run --filter @open-pencil/docs build:production
 
       - uses: cloudflare/wrangler-action@v4

@@ -85,6 +85,8 @@ export interface LandingMessages {
   }
   /** Strings shown inside the live stages, next to the app's own translated panels. */
   stage: {
+    /** Starts a stage from its still on a touch screen, where stages wait to be asked. */
+    activate: string
     terminal: Record<'tree' | 'restyle' | 'addPlan' | 'selection' | 'export', string>
     ai: {
       recorded: string

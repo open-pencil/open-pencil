@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLandingMessages } from '#docs/theme/landing/content/messages'
+import { isPosterCapture } from '#docs/theme/landing/posters'
 import { useIntersectionObserver } from '@vueuse/core'
 import { ref } from 'vue'
 import IconPlay from '~icons/lucide/play'
@@ -25,12 +26,13 @@ const {
   play
 } = useRecordedChat(store, () => messages.value.stage.ai)
 
-// Plays once when the visitor reaches the block, not while it mounts a screen ahead.
+// Plays once when the visitor reaches the block, not while it mounts a screen ahead. A still
+// of the stage shows it before the turn, so the capture never starts it.
 const root = ref<HTMLElement | null>(null)
 const { stop } = useIntersectionObserver(
   root,
   ([entry]) => {
-    if (!entry?.isIntersecting) return
+    if (!entry?.isIntersecting || isPosterCapture()) return
     stop()
     void play()
   },

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLandingMessages } from '#docs/theme/landing/content/messages'
 import { until, useMediaQuery } from '@vueuse/core'
-import { onMounted, onScopeDispose, shallowRef } from 'vue'
+import { onMounted, onScopeDispose, shallowRef, watch } from 'vue'
 import IconSparkles from '~icons/lucide/sparkles'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
@@ -26,6 +26,7 @@ const { role, joinRoom, roomId, identity, label } = defineProps<{
   identity: Pick<ReturnType<typeof useCollabIdentity>, 'name' | 'color'>
   label: string
 }>()
+const emit = defineEmits<{ ready: [] }>()
 
 const messages = useLandingMessages()
 const session = shallowRef<RoomSession | null>(null)
@@ -61,7 +62,8 @@ async function guestScene(store: EditorStore): Promise<void> {
   store.zoomToFit()
 }
 
-const { store, build, focus } = useStageDocument(role === 'host' ? hostScene : guestScene)
+const { store, build, focus, ready } = useStageDocument(role === 'host' ? hostScene : guestScene)
+watch(ready, () => emit('ready'), { once: true })
 const { engage, disengage, guardWheel } = useWheelEngagement()
 const touch = useMediaQuery('(pointer: coarse)')
 

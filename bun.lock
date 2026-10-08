@@ -295,6 +295,7 @@
         "@open-pencil/brand-tools": "workspace:*",
         "@open-pencil/cli": "workspace:*",
         "@open-pencil/demo-tools": "workspace:*",
+        "@open-pencil/landing-posters-tools": "workspace:*",
         "@open-pencil/vite-config": "workspace:*",
         "@shikijs/vitepress-twoslash": "^4.4.3",
         "@tailwindcss/vite": "^4.3.3",
@@ -617,6 +618,19 @@
         "@types/bun": "^1.3.14",
         "@types/node": "^25.9.9",
         "@types/proper-lockfile": "4.1.4",
+        "typescript": "~5.8.3",
+      },
+    },
+    "tools/generate/landing-posters": {
+      "name": "@open-pencil/landing-posters-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "@playwright/test": "^1.63.0",
+        "sharp": "0.34.5",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "@types/node": "^25.9.9",
         "typescript": "~5.8.3",
       },
     },
@@ -1578,6 +1592,8 @@
     "@open-pencil/i18n-tools": ["@open-pencil/i18n-tools@workspace:tools/checks/i18n"],
 
     "@open-pencil/kiwi": ["@open-pencil/kiwi@workspace:packages/kiwi"],
+
+    "@open-pencil/landing-posters-tools": ["@open-pencil/landing-posters-tools@workspace:tools/generate/landing-posters"],
 
     "@open-pencil/lint-tools": ["@open-pencil/lint-tools@workspace:tools/checks/lint"],
 

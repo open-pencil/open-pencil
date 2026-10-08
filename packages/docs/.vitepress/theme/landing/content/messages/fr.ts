@@ -229,6 +229,7 @@ export const fr: LandingMessages = {
     cloud: "Rejoindre la liste d'attente Cloud"
   },
   stage: {
+    activate: 'Essayer en direct',
     terminal: {
       tree: 'Arborescence des calques',
       restyle: 'Restyler les boutons',

@@ -1,4 +1,4 @@
-import { getCurrentInstance, provide } from 'vue'
+import { getCurrentInstance, provide, ref } from 'vue'
 
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { provideTabEditorStore } from '@/app/editor/active-store'
@@ -29,6 +29,8 @@ export function useStageDocument(scene: SceneBuilder) {
     phase: 'materializing'
   })
   let built = false
+  /** The scene is built and on the canvas. */
+  const ready = ref(false)
 
   /** Builds the scene once the canvas has a renderer to load fonts into. Runs once. */
   async function build(): Promise<void> {
@@ -38,6 +40,7 @@ export function useStageDocument(scene: SceneBuilder) {
       await store.canvasReady
       await scene(store)
       preparation.complete()
+      ready.value = true
     } catch (error) {
       preparation.fail({
         code: 'layout-failed',
@@ -52,5 +55,5 @@ export function useStageDocument(scene: SceneBuilder) {
     switchTab(tab.id)
   }
 
-  return { store, build, focus }
+  return { store, build, focus, ready }
 }

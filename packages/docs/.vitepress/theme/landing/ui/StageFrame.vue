@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { defineClientComponent, withBase } from 'vitepress'
+import { defineClientComponent, useData, withBase } from 'vitepress'
+import { computed, onMounted, ref } from 'vue'
 
 import type { FeatureKind } from '../content/features'
 import { useLandingMessages } from '../content/messages'
+import { isPosterCapture } from '../posters'
+import StagePoster from './StagePoster.vue'
 
 /** The editor needs WebGL and CanvasKit, so a stage never renders on the server. */
 const FeatureStage = defineClientComponent(() => import('../stage/FeatureStage.vue'))
@@ -11,18 +14,56 @@ const CollabStage = defineClientComponent(() => import('../stage/collab/CollabSt
 const { kind } = defineProps<{ kind: FeatureKind }>()
 
 const messages = useLandingMessages()
+const { frontmatter, localeIndex } = useData()
+
+/** Set by the production build when it captured stills of the stages; absent in development. */
+const fingerprint = computed((): string | null => {
+  const posters: unknown = frontmatter.value.posters
+  return typeof posters === 'string' ? posters : null
+})
+
+// With stills on the page, the editor waits: on a desktop until the page has loaded, and on a
+// touch screen, where a stage is only watched, until the visitor asks for it. Without stills,
+// or while the generator captures them, stages start as soon as they can.
+const live = ref(fingerprint.value === null)
+const ready = ref(false)
+// Decided after hydration, so the server-rendered poster and the client's first render agree.
+const waiting = ref(false)
+
+function start(): void {
+  waiting.value = false
+  live.value = true
+}
+
+onMounted(() => {
+  if (live.value) return
+  if (isPosterCapture()) start()
+  else if (window.matchMedia('(pointer: coarse)').matches) waiting.value = true
+  else if (document.readyState === 'complete') start()
+  else window.addEventListener('load', start, { once: true })
+})
 </script>
 
 <template>
-  <div class="stage-frame">
+  <div class="stage-frame" :data-kind="kind" :data-ready="ready || undefined">
     <!-- Shown until the editor code arrives. It mirrors the app's canvas loading overlay,
          which takes over once the stage mounts on top of it. -->
-    <div class="stage-loader" role="status" :aria-label="messages.loading">
+    <div v-if="!fingerprint" class="stage-loader" role="status" :aria-label="messages.loading">
       <img :src="withBase('/brand/app-icon.svg')" alt="" />
       <span />
     </div>
-    <CollabStage v-if="kind === 'collab'" />
-    <FeatureStage v-else :kind="kind" />
+    <template v-if="live">
+      <CollabStage v-if="kind === 'collab'" @ready="ready = true" />
+      <FeatureStage v-else :kind="kind" @ready="ready = true" />
+    </template>
+    <StagePoster
+      v-if="fingerprint && !ready"
+      :kind="kind"
+      :fingerprint="fingerprint"
+      :locale="localeIndex"
+      :waiting="waiting"
+      @activate="start"
+    />
   </div>
 </template>
 

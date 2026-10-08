@@ -16,11 +16,15 @@ const ENGINE_ASSETS = [
 /**
  * Preloads the engine on pages that set `landing: true`, so CanvasKit and the fonts download
  * alongside the editor code instead of after it. Core and the font manager request them with
- * `fetch()`, so the hints are `as="fetch"` with CORS to share that request.
+ * `fetch()`, so the hints are `as="fetch"` with CORS to share that request. Touch screens skip
+ * them: there a stage starts only when the visitor asks for it.
  */
 export function landingPreloads({ pageData, assets }: TransformContext): HeadConfig[] {
   if (pageData.frontmatter.landing !== true) return []
   return assets
     .filter((asset) => ENGINE_ASSETS.some((pattern) => pattern.test(asset)))
-    .map((href): HeadConfig => ['link', { rel: 'preload', href, as: 'fetch', crossorigin: '' }])
+    .map((href): HeadConfig => [
+      'link',
+      { rel: 'preload', href, as: 'fetch', crossorigin: '', media: '(pointer: fine)' }
+    ])
 }

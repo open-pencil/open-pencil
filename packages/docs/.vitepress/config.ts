@@ -9,6 +9,7 @@ import llmstxt from 'vitepress-plugin-llms'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
 import { ensureDemoDocument } from '@open-pencil/demo-tools'
+import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fingerprint'
 import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 
 import { landingPreloads } from './landing-head.ts'
@@ -25,6 +26,10 @@ const repoRoot = dirname(packagesRoot)
 // The landing page mounts the app's own components, compiled from source.
 const appSource = appSourceConfig()
 const fastBuild = process.env.OPENPENCIL_DOCS_FAST_BUILD === '1'
+// Production builds show stills of the landing's stages until they are live. The build names
+// the stills by this fingerprint, and `tools/generate/landing-posters` captures them afterwards.
+const posterFingerprint =
+  process.env.OPENPENCIL_LANDING_POSTERS === '1' ? await landingPosterFingerprint(repoRoot) : null
 
 const llmsPlugin = llmstxt({
   domain: BASE,
@@ -57,7 +62,12 @@ export default defineConfig({
 
   head: siteHead,
 
-  transformPageData: applyPageSeo,
+  transformPageData(pageData) {
+    applyPageSeo(pageData)
+    if (posterFingerprint && pageData.frontmatter.landing === true) {
+      pageData.frontmatter.posters = posterFingerprint
+    }
+  },
   transformHead: landingPreloads,
 
   markdown: {
