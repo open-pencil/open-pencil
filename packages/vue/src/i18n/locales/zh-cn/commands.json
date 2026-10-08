@@ -11,6 +11,7 @@
   "createComponentSet": "创建组件集",
   "createInstance": "创建实例",
   "detachInstance": "分离实例",
+  "detachIcon": "分离图标",
   "goToMainComponent": "转到主组件",
   "addAutoLayout": "添加自动布局",
   "bringToFront": "置于顶层",

@@ -13,6 +13,7 @@ function selection(overrides: Partial<CanvasMenuOptions['selection']> = {}) {
     isGroup: ref(false),
     isComponent: ref(false),
     isInstance: ref(false),
+    isIcon: ref(false),
     canCreateComponentSet: ref(false),
     canCreateSlot: ref(false),
     ...overrides
@@ -73,6 +74,15 @@ describe('buildCanvasContextMenu', () => {
         )
       )
     ).toContain('selection.detachInstance')
+  })
+
+  test('offers Detach icon only for icons', () => {
+    expect(
+      itemIds(
+        buildCanvasContextMenu(options({ selection: selection({ isIcon: computed(() => true) }) }))
+      )
+    ).toContain('selection.detachIcon')
+    expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('selection.detachIcon')
   })
 
   test('offers Create slot for layers of a main component', () => {

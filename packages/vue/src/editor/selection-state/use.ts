@@ -1,6 +1,11 @@
 import { computed } from 'vue'
 
-import { canCreateSlot as canBecomeSlot, slotOwner, slotPropertyId } from '@open-pencil/scene-graph'
+import {
+  canCreateSlot as canBecomeSlot,
+  readIcon,
+  slotOwner,
+  slotPropertyId
+} from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
@@ -26,6 +31,8 @@ export function useSelectionState() {
   const selectedNodeType = computed(() => selectedNode.value?.type ?? null)
 
   const isInstance = computed(() => selectedNodeType.value === 'INSTANCE')
+  /** Whether the selection holds an icon, which can be detached into plain artwork. */
+  const isIcon = useSceneComputed(() => editor.getSelectedNodes().some((node) => readIcon(node)))
   const isComponent = computed(() => selectedNodeType.value === 'COMPONENT')
   const isGroup = computed(() => selectedNodeType.value === 'GROUP')
 
@@ -55,6 +62,7 @@ export function useSelectionState() {
     selectedCount,
     selectedNodeType,
     isInstance,
+    isIcon,
     isComponent,
     isGroup,
     canCreateComponentSet,

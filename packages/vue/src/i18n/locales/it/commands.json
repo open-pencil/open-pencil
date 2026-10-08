@@ -11,6 +11,7 @@
   "createComponentSet": "Crea set di componenti",
   "createInstance": "Crea istanza",
   "detachInstance": "Scollega istanza",
+  "detachIcon": "Scollega icona",
   "goToMainComponent": "Vai al componente principale",
   "addAutoLayout": "Aggiungi auto-layout",
   "bringToFront": "Porta in primo piano",

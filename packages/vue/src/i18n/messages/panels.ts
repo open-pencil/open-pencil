@@ -156,6 +156,13 @@ export const panelMessageDefaults = {
   iconColor: 'Icon color',
   swapIcon: 'Swap icon',
   insertIcon: 'Insert icon',
+  iconModified: 'Modified',
+  resetIcon: 'Reset to the original icon',
+  detachIcon: 'Detach icon',
+  swapEditedIconHeading: 'Discard your edits?',
+  swapEditedIconDescription: params(
+    'Swapping draws {name} in place of this icon and discards the changes made to its paths.'
+  ),
   export: 'Export',
   typography: 'Typography',
   fontFamily: 'Font family',

@@ -83,4 +83,16 @@ describe('icons in HTML export', () => {
     expect(html).toContain('fill="currentColor"')
     expect(html).toContain('fill="#FF0000"')
   })
+
+  test('an icon whose paths were edited draws its paths, no longer named as the icon', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const icon = buildIconData({ body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' }, 'test', 'icon', 24, 24, 24)
+    const frame = placeIcon(graph, page, icon, { size: 24, color: parseColor('#000000') })
+    graph.createNode('RECTANGLE', frame.id, { width: 4, height: 4 })
+
+    const { html } = await renderNodesToHTML(graph, [frame.id])
+    expect(html).not.toContain('data-icon')
+    expect(html.match(/<svg/g)?.length).toBe(1)
+  })
 })

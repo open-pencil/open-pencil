@@ -36,7 +36,19 @@ Selecting a placed icon adds an **Icon** section to the Design panel.
 
 Each swap or color change is one undo step; dragging in the color picker undoes as a single change.
 
-An icon is a frame of vector paths, named after the icon, such as `cat`, and marked with a smiley in the layer tree. Unlike other frames on the page, it has no title on the canvas. Its layers, constraints, effects, and the rest of the Design panel work as they do for any frame. Swapping replaces the paths, including any you edited by hand.
+An icon is a frame of vector paths, named after the icon, such as `cat`, and marked with a smiley in the layer tree. Unlike other frames on the page, it has no title on the canvas, and resizing it scales its paths. Its layers, constraints, effects, and the rest of the Design panel work as they do for any frame.
+
+## Editing an Icon's Paths
+
+You can edit an icon's paths like any vector. Once its points, paths, or own colors change, the Icon section says **Modified**:
+
+- The icon exports as the paths it now draws rather than by its name, so the edit is kept.
+- **Reset** (the circular arrow) draws the original icon again, at the same size and color.
+- Swapping asks first, since a swap draws a new icon and discards the edit.
+
+Resizing the icon or changing its color doesn't count as an edit.
+
+**Detach icon**, in the Icon section, the canvas menu, or **Object → Detach Icon**, makes an icon plain artwork: it keeps its paths but is no longer swapped, recolored, or exported as an icon. Like every icon command, it's one undo step.
 
 ## Icons in Exports
 

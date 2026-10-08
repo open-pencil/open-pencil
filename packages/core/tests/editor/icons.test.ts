@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
-import { readIcon, SceneGraph } from '@open-pencil/scene-graph'
+import { isIconModified, readIcon, SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { buildIconData } from '#core/icons/svg'
@@ -61,7 +61,7 @@ describe('icon commands', () => {
 
     expect(frame).toMatchObject({ x: 188, y: 163, width: 24, height: 24 })
     expect(frame.parentId).toBe(editor.state.currentPageId)
-    expect(readIcon(frame)).toEqual({ name: 'test:square' })
+    expect(readIcon(frame)).toMatchObject({ name: 'test:square' })
     expect(editor.state.selectedIds).toEqual(new Set([id]))
 
     editor.undo.undo()
@@ -69,7 +69,7 @@ describe('icon commands', () => {
     expect(editor.state.selectedIds).toEqual(new Set())
 
     editor.undo.redo()
-    expect(readIcon(getNodeOrThrow(editor.graph, id))).toEqual({ name: 'test:square' })
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({ name: 'test:square' })
     expect(editor.graph.getChildren(id)).toHaveLength(1)
   })
 
@@ -95,16 +95,16 @@ describe('icon commands', () => {
 
     await editor.swapIconGlyph(id, 'test:lines')
     const frame = getNodeOrThrow(editor.graph, id)
-    expect(readIcon(frame)).toEqual({ name: 'test:lines' })
+    expect(readIcon(frame)).toMatchObject({ name: 'test:lines' })
     expect(frame).toMatchObject({ x: 188, y: 163, name: 'lines' })
     expect(editor.graph.getChildren(id)[0]?.strokes[0]?.color).toEqual(RED)
 
     editor.undo.undo()
-    expect(readIcon(getNodeOrThrow(editor.graph, id))).toEqual({ name: 'test:square' })
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({ name: 'test:square' })
     expect(editor.graph.getChildren(id).map((path) => path.id)).toEqual(before)
 
     editor.undo.redo()
-    expect(readIcon(getNodeOrThrow(editor.graph, id))).toEqual({ name: 'test:lines' })
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({ name: 'test:lines' })
   })
 
   test('swap keeps the icon at its place among its siblings', async () => {
@@ -169,5 +169,32 @@ describe('icon layer names', () => {
     expect(getNodeOrThrow(editor.graph, named).name).toBe('lines')
     expect(getNodeOrThrow(editor.graph, oldStyle).name).toBe('lines')
     expect(getNodeOrThrow(editor.graph, renamed).name).toBe('Close button')
+  })
+})
+
+describe('editing an icon', () => {
+  test('reset draws the placed glyph again, in one undo step', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square', RED)
+    editor.graph.createNode('RECTANGLE', id, { width: 4, height: 4 })
+    expect(isIconModified(editor.graph, getNodeOrThrow(editor.graph, id))).toBe(true)
+
+    await editor.resetIcon(id)
+    expect(isIconModified(editor.graph, getNodeOrThrow(editor.graph, id))).toBe(false)
+    expect(editor.graph.getChildren(id)).toHaveLength(1)
+    expect(editor.graph.getChildren(id)[0]?.fills[0]?.color).toEqual(RED)
+
+    editor.undo.undo()
+    expect(editor.graph.getChildren(id)).toHaveLength(2)
+  })
+
+  test('detach makes the icon artwork, in one undo step', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square')
+    editor.detachIcon(id)
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toBeNull()
+
+    editor.undo.undo()
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({ name: 'test:square' })
   })
 })

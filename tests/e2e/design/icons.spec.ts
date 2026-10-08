@@ -171,3 +171,34 @@ test('icons in the file and picked lately come first', async () => {
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
 })
+
+test('an edited icon says so, asks before a swap discards the edit, and resets or detaches', async () => {
+  const { page } = ctx
+  await insertSquare(page)
+  const id = (await getSelectedNode(page))?.id ?? ''
+  // An edit to the icon's paths, as drawing or dropping a layer into the frame makes.
+  await page.evaluate((frameId) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.graph.createNode('RECTANGLE', frameId, { width: 4, height: 4 })
+    store.requestRender()
+  }, id)
+  const section = propertySection(page, 'Icon')
+  await expect(propertyField(page, 'icon-modified')).toBeVisible()
+
+  await section.getByRole('button', { name: 'Swap icon' }).click()
+  const swap = page.getByRole('dialog', { name: 'Swap icon' })
+  await swap.getByRole('textbox').fill('shape')
+  await swap.getByRole('option', { name: 'ring' }).click()
+  const confirm = page.getByRole('alertdialog')
+  await expect(confirm).toBeVisible()
+  await confirm.getByRole('button', { name: 'Cancel' }).click()
+  await expect(propertyField(page, 'icon-name')).toContainText('square')
+
+  await section.getByRole('button', { name: 'Reset to the original icon' }).click()
+  await expect(propertyField(page, 'icon-modified')).toBeHidden()
+  expect((await getSelectedNode(page))?.childIds).toHaveLength(1)
+
+  await section.getByRole('button', { name: 'Detach icon' }).click()
+  await expect(section).toBeHidden()
+})

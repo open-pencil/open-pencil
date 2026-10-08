@@ -2,7 +2,7 @@ import { watchImmediate } from '@vueuse/core'
 import { ref } from 'vue'
 
 import { iconColor } from '@open-pencil/core/icons'
-import { readIcon } from '@open-pencil/scene-graph'
+import { isIconModified, readIcon } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
@@ -45,6 +45,29 @@ export function useIcon() {
     setName.value = sets.find((info) => info.prefix === prefix)?.name ?? null
   })
 
+  /** The icon's paths were edited since it was placed; see `isIconModified`. */
+  const modified = useSceneComputed(() => {
+    const node = selectedNode.value
+    const frame = node && name.value ? editor.graph.getNode(node.id) : undefined
+    return frame ? isIconModified(editor.graph, frame) : false
+  })
+
+  /** Draws the icon as it was placed, discarding edits to its paths. */
+  async function reset() {
+    const node = selectedNode.value
+    if (!node || !name.value) return
+    batch.flush()
+    await editor.resetIcon(node.id)
+  }
+
+  /** Makes the icon plain artwork that keeps its paths. */
+  function detach() {
+    const node = selectedNode.value
+    if (!node || !name.value) return
+    batch.flush()
+    editor.detachIcon(node.id)
+  }
+
   async function swap(next: string) {
     const node = selectedNode.value
     if (!node || !name.value || name.value === next) return
@@ -67,5 +90,16 @@ export function useIcon() {
     editor.setIconColor(node.id, next)
   }
 
-  return { name, color, preview, setName, swap, setColor, setColorPicking }
+  return {
+    name,
+    color,
+    preview,
+    setName,
+    modified,
+    swap,
+    reset,
+    detach,
+    setColor,
+    setColorPicking
+  }
 }

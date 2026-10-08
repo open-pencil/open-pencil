@@ -1,4 +1,5 @@
 import {
+  iconGlyph,
   iconLayerName,
   isPlacedIconName,
   readIcon,
@@ -52,6 +53,9 @@ function addPath(graph: SceneGraph, frameId: string, path: IconPath, size: numbe
     width: size,
     height: size,
     vectorNetwork: path.vectorNetwork,
+    // Resizing the icon resizes its glyph, as the frame is the icon.
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'SCALE',
     fills: path.fill ? solid(paint(path.fill, 'fill')) : []
   })
   if (path.stroke) {
@@ -87,9 +91,30 @@ export function placeIcon(
     fills: [],
     ...overrides
   })
-  if (identity) graph.updateNode(frame.id, { pluginData: withIcon(frame, { name }) })
   for (const path of icon.paths) addPath(graph, frame.id, path, size, color)
+  if (identity) recordIcon(graph, frame.id, name)
   return graph.getNode(frame.id) ?? frame
+}
+
+/** Writes the icon `name` on its frame with a fingerprint of the paths it draws now. */
+function recordIcon(graph: SceneGraph, frameId: string, name: string): void {
+  const frame = graph.getNode(frameId)
+  if (!frame) return
+  const glyph = iconGlyph(graph, frame)
+  graph.updateNode(frameId, { pluginData: withIcon(frame, { name, glyph }) })
+}
+
+/**
+ * Makes an icon plain artwork: its frame forgets the icon and its paths their tint, so it is
+ * no longer swapped, recolored as one, or exported as `<Icon>`. The paths stay as drawn.
+ */
+export function detachIcon(graph: SceneGraph, frameId: string): void {
+  const frame = graph.getNode(frameId)
+  if (!frame || !readIcon(frame)) return
+  graph.updateNode(frameId, { pluginData: withIcon(frame, null) })
+  for (const path of graph.getChildren(frameId))
+    if (readIconTint(path).length > 0)
+      graph.updateNode(path.id, { pluginData: withIconTint(path, []) })
 }
 
 /** The color an icon's tinted paths have, or null when none takes the icon's color. */
@@ -129,9 +154,8 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
   const previous = readIcon(frame)
   graph.updateNode(frameId, {
     // A layer still named after its icon takes the new icon's name; a name someone gave stays.
-    name:
-      previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name,
-    pluginData: withIcon(frame, { name })
+    name: previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name
   })
   for (const path of icon.paths) addPath(graph, frameId, path, size, color)
+  recordIcon(graph, frameId, name)
 }

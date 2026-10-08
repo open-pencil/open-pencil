@@ -403,6 +403,10 @@
         "accelerator": "CmdOrCtrl+Alt+B"
       },
       {
+        "id": "selection.detachIcon",
+        "label": "Detach Icon"
+      },
+      {
         "type": "separator"
       },
       {

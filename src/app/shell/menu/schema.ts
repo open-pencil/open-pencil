@@ -363,6 +363,11 @@ export const APP_MENU_SCHEMA = [
         label: 'Detach Instance',
         command: 'selection.detachInstance'
       },
+      {
+        id: 'selection.detachIcon',
+        label: 'Detach Icon',
+        command: 'selection.detachIcon'
+      },
       { type: 'separator' },
       {
         id: 'selection.moveToPage',

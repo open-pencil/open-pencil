@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { sceneNodeToJSX } from '#design-jsx/export/index'
 
-import { SceneGraph, withIcon, withIconTint } from '@open-pencil/scene-graph'
+import { iconGlyph, SceneGraph, withIcon, withIconTint } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /** An icon frame as placing one leaves it: its name on the frame, its tinted path inside. */
@@ -37,6 +37,16 @@ describe('icons in design JSX export', () => {
     expect(sceneNodeToJSX(frame.id, graph)).toBe(
       '<Icon name="lucide:home" size={20} label="Home" />'
     )
+  })
+
+  test('write an icon whose paths were edited as the paths it draws', () => {
+    const { graph, frame } = iconFrame({ r: 0, g: 0, b: 0, a: 1 })
+    const node = graph.getNode(frame.id) ?? frame
+    graph.updateNode(frame.id, {
+      pluginData: withIcon(node, { name: 'lucide:home', glyph: iconGlyph(graph, node) })
+    })
+    graph.createNode('RECTANGLE', frame.id, { name: 'Badge', width: 4, height: 4 })
+    expect(sceneNodeToJSX(frame.id, graph)).not.toContain('<Icon')
   })
 
   test('leave out the name an icon was placed with, in the old style too', () => {
