@@ -1,3 +1,4 @@
+import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { computeContentBounds } from '#core/io/formats/raster'
@@ -509,4 +510,27 @@ export function renderNodesToSVG(
   const svgStr = renderSVGNode(root)
   const xmlDecl = options.xmlDeclaration !== false ? '<?xml version="1.0" encoding="UTF-8"?>\n' : ''
   return xmlDecl + svgStr
+}
+
+/**
+ * One layer as an `<svg>` element sized to its box, for inlining in HTML where the box already
+ * places, rotates, and fades it: the drawing starts at the layer's origin without its rotation
+ * or opacity, and keeps its flips.
+ */
+export function renderNodeSVGElement(
+  graph: SceneGraph,
+  node: SceneNode,
+  { idPrefix, colorSpace = 'srgb' }: { idPrefix: string; colorSpace?: RenderColorSpace }
+): SVGNode | null {
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix }
+  const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
+  if (!drawn) return null
+  const width = round(node.width)
+  const height = round(node.height)
+  return svg(
+    'svg',
+    { width, height, viewBox: `0 0 ${width} ${height}` },
+    ctx.defs.length > 0 ? svg('defs', {}, ...ctx.defs) : null,
+    drawn
+  )
 }

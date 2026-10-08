@@ -100,9 +100,10 @@ function serializeAttrs(node: DesignElement, options: SerializeHTMLOptions): str
 }
 
 function serializeElement(node: DesignElement, options: SerializeHTMLOptions): string {
-  const tagName = node.tagName.toLowerCase()
+  // SVG names such as `linearGradient` keep their case, as an SVG parser needs them.
+  const tagName = node.tagName
   const attrs = serializeAttrs(node, options)
-  if (VOID_ELEMENTS.has(tagName)) return `<${tagName}${attrs}>`
+  if (VOID_ELEMENTS.has(tagName.toLowerCase())) return `<${tagName}${attrs}>`
   return `<${tagName}${attrs}>${node.children.map((child) => serializeNode(child, options)).join('')}</${tagName}>`
 }
 

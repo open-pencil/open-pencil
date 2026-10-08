@@ -8,11 +8,15 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { ExportAsset, HTMLExportOptions } from '#core/io/types'
 import { exportWebFontFaceAssets } from '#core/text/web-font/assets'
 
+import { vectorElement } from './vectors'
+
 function designDocument(graph: SceneGraph, nodeIds: string[]): DesignDocument {
   return {
     type: 'document',
     sourceGraph: graph,
-    children: nodeIds.flatMap((id) => sceneNodeToDesignDocument(graph, id).children)
+    children: nodeIds.flatMap(
+      (id) => sceneNodeToDesignDocument(graph, id, { vectorElement }).children
+    )
   }
 }
 

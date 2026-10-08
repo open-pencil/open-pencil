@@ -1,3 +1,4 @@
+import type { SceneGraphToDesignOptions } from '#dom-css/export/projection'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
@@ -72,14 +73,18 @@ function pruneCombined(rules: StateRule[]): StateRule[] {
  *
  * `null` when no variant shows the rest state, since every look then depends on a condition.
  */
-export function stateStyles(graph: SceneGraph, set: SceneNode): StateStyles | null {
+export function stateStyles(
+  graph: SceneGraph,
+  set: SceneNode,
+  options: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
+): StateStyles | null {
   const conditionsOf = variantConditions(graph, set)
   const variants = graph
     .getChildren(set.id)
     .filter((child) => child.type === 'COMPONENT' && child.visible)
     .flatMap((variant) => {
       const conditions = conditionsOf(variant)
-      const root = conditions && projectVariant(graph, variant)
+      const root = conditions && projectVariant(graph, variant, options)
       return conditions && root ? [{ conditions, root }] : []
     })
   const rest = variants.find((variant) => variant.conditions.length === 0)

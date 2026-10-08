@@ -1,4 +1,7 @@
-import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
+import {
+  sceneNodeToDesignDocument,
+  type SceneGraphToDesignOptions
+} from '#dom-css/export/projection'
 import type { DesignElement, DesignNode, DesignText } from '#dom-css/types'
 import { omit } from 'es-toolkit/object'
 
@@ -46,8 +49,15 @@ function variantLayer(
 }
 
 /** A variant projected to DOM, without where the set places it. */
-export function projectVariant(graph: SceneGraph, variant: SceneNode): VariantLayer | null {
-  const document = sceneNodeToDesignDocument(graph, variant.id, { includeSourceIds: false })
+export function projectVariant(
+  graph: SceneGraph,
+  variant: SceneNode,
+  { vectorElement }: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
+): VariantLayer | null {
+  const document = sceneNodeToDesignDocument(graph, variant.id, {
+    includeSourceIds: false,
+    vectorElement
+  })
   const root = document.children.at(0)
   if (root?.type !== 'element') return null
   const style = root.inlineStyle ?? {}
