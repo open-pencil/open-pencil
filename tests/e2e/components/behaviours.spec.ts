@@ -164,17 +164,23 @@ test('preview islands move with the frames the canvas draws, not ahead of them',
     store.pan(80, 40)
     return preparation
   })
-  await editor.page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      })
-  )
-  expect(await layer.evaluate((element) => element.style.transform)).toBe(placed)
+  try {
+    await editor.page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        })
+    )
+    expect(await layer.evaluate((element) => element.style.transform)).toBe(placed)
 
-  await held.evaluate((preparation) => preparation.complete())
-  await expect.poll(() => layer.evaluate((element) => element.style.transform)).not.toBe(placed)
-  await held.dispose()
+    // Drawing resumes: the islands follow the pan, which the canvas has now drawn.
+    await held.evaluate((preparation) => preparation.complete())
+    await expect.poll(() => layer.evaluate((element) => element.style.transform)).not.toBe(placed)
+  } finally {
+    // Never leave the canvas held for later tests; completing again does nothing.
+    await held.evaluate((preparation) => preparation.complete())
+    await held.dispose()
+  }
   await editor.page.keyboard.press('Escape')
 })
 
