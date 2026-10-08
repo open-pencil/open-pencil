@@ -28,6 +28,8 @@
   "testConnection": "接続をテスト",
   "testingConnection": "テスト中…",
   "search": "検索…",
+  "taskDone": "完了",
+  "taskNotDone": "未完了",
   "noResults": "結果がありません",
   "save": "保存",
   "done": "完了",
