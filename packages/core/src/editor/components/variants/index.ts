@@ -6,6 +6,7 @@ import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 import type { EditorContext } from '#core/editor/types'
 
+import { addVariant, appendVariant } from './add'
 import {
   addPropertyDefinition,
   removePropertyDefinition,
@@ -23,11 +24,13 @@ import {
   getComponentSetVariantConflicts,
   getComponentSetVariants,
   getDefaultVariantForComponentSet,
+  getVariantOptions,
   validateComponentSet,
   variantValues,
   type VariantOptionAvailability,
   type VariantTransitionResult
 } from './model'
+import { addVariantValue, removeVariantValue } from './options'
 
 export type {
   VariantConflict,
@@ -110,45 +113,13 @@ export function createVariantActions(ctx: EditorContext) {
     return { kind: 'changed', componentId: target.id }
   }
 
+  /** A copy of a variant with its values, below the set's last variant, for the caller to set. */
   function duplicateVariant(variantId: string): string | undefined {
-    assertNodeEditable(ctx.graph, variantId)
     const variant = ctx.graph.getNode(variantId)
-    const componentSetId = variant?.parentId
-    if (
-      variant?.type !== 'COMPONENT' ||
-      !componentSetId ||
-      !getComponentSet(ctx.graph, componentSetId)
-    ) {
+    const setId = variant?.parentId
+    if (variant?.type !== 'COMPONENT' || !setId || !getComponentSet(ctx.graph, setId))
       return undefined
-    }
-    const clone = ctx.graph.cloneTree(variantId, componentSetId, {
-      x: variant.x + variant.width + 40,
-      name: variant.name
-    })
-    if (!clone) return undefined
-    const snapshots = snapshotSubtree(ctx.graph, clone.id)
-    ctx.setSelectedIds(new Set([clone.id]))
-    ctx.undo.push({
-      label: 'Add variant',
-      forward: () => {
-        const root = snapshots.get(clone.id)
-        if (root) restoreSubtree(ctx.graph, root, componentSetId, snapshots)
-        ctx.setSelectedIds(new Set([clone.id]))
-        ctx.requestRender()
-      },
-      inverse: () => {
-        ctx.graph.deleteNode(clone.id)
-        ctx.setSelectedIds(new Set([variantId]))
-        ctx.requestRender()
-      }
-    })
-    ctx.requestRender()
-    return clone.id
-  }
-
-  function addVariant(componentSetId: string): string | undefined {
-    const source = getDefaultVariantForComponentSet(ctx.graph, componentSetId)
-    return source ? duplicateVariant(source.id) : undefined
+    return appendVariant(ctx, setId, variant, false)
   }
 
   function removeVariant(variantId: string): boolean {
@@ -216,7 +187,17 @@ export function createVariantActions(ctx: EditorContext) {
       validateComponentSet(ctx.graph, componentSetId),
     getVariantOptionAvailability,
     switchInstanceVariant,
-    addVariant,
+    addVariant: (nodeId: string) => addVariant(ctx, nodeId),
+    getVariantOptions: (componentSetId: string, propertyId: string) =>
+      getVariantOptions(ctx.graph, componentSetId, propertyId),
+    addVariantValue: (componentSetId: string, propertyId: string, value: string) =>
+      addVariantValue(ctx, componentSetId, propertyId, value),
+    removeVariantValue: (
+      componentSetId: string,
+      propertyId: string,
+      value: string,
+      replacement?: string
+    ) => removeVariantValue(ctx, componentSetId, propertyId, value, replacement),
     duplicateVariant,
     removeVariant
   }

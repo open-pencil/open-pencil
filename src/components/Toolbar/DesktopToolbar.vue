@@ -70,6 +70,8 @@ const emit = defineEmits<{
           </Tip>
         </ToolbarItem>
       </template>
+      <!-- Inserting rather than drawing: commands such as placing an icon. -->
+      <slot name="end" />
     </ToolbarRoot>
   </div>
 </template>

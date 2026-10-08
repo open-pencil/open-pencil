@@ -84,11 +84,10 @@ test('edited export loads missing visible pages on an isolated graph', async () 
   const bytes = await exportFigFile(graph)
   expectSaveLoadedOnlyInternalPages(graph, before)
   expect(graph.getChildren(pages[1].id)).toHaveLength(0)
+  // The edit is written into the archive, whose internal content is copied as it is saved.
   const internalPage = graph.getPages(true).find((page) => page.internalOnly)
-  expect(graph.getChildren(internalPage?.id ?? '').map((node) => node.name)).toEqual([
-    'Retained internal content'
-  ])
-  // A second save finds the internal page already loaded and leaves the document as it was.
+  expect(graph.getChildren(internalPage?.id ?? '')).toEqual([])
+  // A second save leaves the document as it was.
   const loaded = snapshotNodes(graph)
   await exportFigFile(graph)
   expect(new Map(graph.nodes)).toEqual(loaded)
@@ -107,17 +106,12 @@ test('edited export loads missing visible pages on an isolated graph', async () 
   releaseFigPopulationWorker(reopened)
 })
 
-test('after the first save, later saves keep internal content without the reader', async () => {
+test('later saves keep internal content they never load', async () => {
   const graph = await parseFigFile(await fixture(), { populate: 'first-page' })
   populateAllFigPages(graph)
-  // The first save of an edit reads the internal page into the document; every page is loaded
-  // after it. An unedited document is saved as the original file and reads nothing.
+  // An edited save writes the edit into the archive and copies the internal content from it.
   graph.updateNode(graph.getPages()[0].id, { name: 'Edited page' })
   await exportFigFile(graph)
-  const internal = graph.getPages(true).find((page) => page.internalOnly)
-  expect(graph.getChildren(internal?.id ?? '').map((node) => node.name)).toEqual([
-    'Retained internal content'
-  ])
   const second = graph.getPages()[1]
   graph.updateNode(graph.getChildren(second.id)[0].id, { text: 'Edited after loading' })
 

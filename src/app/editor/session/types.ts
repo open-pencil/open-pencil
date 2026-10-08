@@ -26,6 +26,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     nodeEditState: null,
     renameSelectionOpen: false,
     variablesOpen: false,
+    iconPickerOpen: false,
     renameNodeId: null,
     numberFieldFocused: false,
     preparation: null,
@@ -49,6 +50,8 @@ export type AppEditorState = EditorState & {
   renameSelectionOpen: boolean
   /** The variables dialog, opened from the Design panel, the View menu, or the palette. */
   variablesOpen: boolean
+  /** The icon picker, opened from the toolbar, the Object menu, or the palette. */
+  iconPickerOpen: boolean
   renameNodeId: string | null
   numberFieldFocused: boolean
   preparation: EditorPreparation | null

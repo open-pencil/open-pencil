@@ -17,6 +17,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 
+import type { SceneGraphToDesignOptions } from '../projection'
 import { identifierName } from '../storybook/names'
 
 /** Kinds generated as components so far; the rest keep static stories. */
@@ -139,10 +140,14 @@ function partPaths(graph: SceneGraph, set: SceneNode, behaviour: Behaviour): Map
  * The component a set with a behaviour generates, or `null` when its kind is not generated
  * yet or its variants have no rest state to start from.
  */
-export function componentModel(graph: SceneGraph, set: SceneNode): ComponentModel | null {
+export function componentModel(
+  graph: SceneGraph,
+  set: SceneNode,
+  options: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
+): ComponentModel | null {
   const behaviour = readBehaviour(set)
   if (!behaviour || !isGenerated(behaviour.kind)) return null
-  const styles = stateStyles(graph, set)
+  const styles = stateStyles(graph, set, options)
   const args = behaviourArgs(graph, set)
   if (!styles || !args) return null
 

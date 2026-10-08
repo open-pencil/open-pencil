@@ -113,6 +113,7 @@ export function useAppMenu() {
     preferences: 'preferences',
     settings: 'settings',
     variables: 'variables',
+    'insert-icon': 'insertIcon',
     'view-rulers': 'rulers',
     'view-multiplayer-cursors': 'multiplayerCursors',
     'view-design-issues': 'designIssues',
@@ -170,6 +171,9 @@ export function useAppMenu() {
     },
     settings: openSettingsDialog,
     variables: () => openVariablesDialog(store),
+    'insert-icon': () => {
+      store.state.iconPickerOpen = true
+    },
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

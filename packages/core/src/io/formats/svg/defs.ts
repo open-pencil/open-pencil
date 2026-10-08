@@ -17,10 +17,14 @@ export interface SVGExportContext {
   defIdCounter: number
   graph: SceneGraph
   colorSpace: RenderColorSpace
+  /** Starts every def id, so SVGs inlined on one page cannot reference each other's defs. */
+  idPrefix?: string
+  /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
+  tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
-  return `${prefix}${ctx.defIdCounter++}`
+  return `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
 }
 
 export function formatColor(

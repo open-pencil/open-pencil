@@ -32,7 +32,9 @@ export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: Readon
     figSchemaDeflated: parsed.figSchemaDeflated,
     reader: createReader(parsed.nodeChanges, 'transfer', pageIds),
     blobs: parsed.blobs,
-    images: parsed.images
+    images: parsed.images,
+    /** The archive's records; the reader shares them, so keeping them costs nothing more. */
+    records: parsed.nodeChanges
   }
 }
 

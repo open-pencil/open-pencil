@@ -64,6 +64,8 @@ function exportOrderKey(
   node: SceneNode,
   childIndex: number
 ): string {
+  const decided = context.orderKeys?.get(node.id)
+  if (decided) return decided
   const parentId = node.parentId
   if (!parentId) return context.fractionalPosition(childIndex)
   const parent = context.graph.getNode(parentId)
@@ -900,6 +902,14 @@ function nodeToSerialize(context: SceneNodeToKiwiContext, source: SceneNode): Sc
   }
 }
 
+/** An instance writes its contents on its own record; a caller may write a record alone. */
+function exportedChildren(node: SceneNode, context: SceneNodeToKiwiContext): SceneNode[] {
+  if (node.type === 'INSTANCE' || context.writeChildren === false) return []
+  return context.graph
+    .getChildren(node.id)
+    .filter((child) => !child.internalOnly && child.sharedStyleType === null)
+}
+
 export function sceneNodeToKiwiWithContext(
   source: SceneNode,
   parentGuid: GUID,
@@ -986,12 +996,7 @@ export function sceneNodeToKiwiWithContext(
   }
 
   const result: KiwiNodeChange[] = [nc]
-  const children =
-    node.type === 'INSTANCE'
-      ? []
-      : context.graph
-          .getChildren(node.id)
-          .filter((child) => !child.internalOnly && child.sharedStyleType === null)
+  const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
     result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
   }

@@ -90,7 +90,8 @@ export function updateVariantName(
       variant.componentPropertyValues[definition.name] ?? ''
     ])
   )
-  ctx.graph.updateNode(variant.id, { name: buildVariantName(values) })
+  if (Object.keys(values).length)
+    ctx.graph.updateNode(variant.id, { name: buildVariantName(values) })
 }
 
 export function refreshVariantOptions(ctx: EditorContext, componentSetId: string): void {
@@ -101,7 +102,7 @@ export function refreshVariantOptions(ctx: EditorContext, componentSetId: string
     if (definition.type !== 'VARIANT') return definition
     const present = collected.get(definition.name) ?? new Set<string>()
     const options = [
-      ...(definition.variantOptions ?? []).filter((value) => present.has(value)),
+      ...(definition.variantOptions ?? []),
       ...[...present].filter((value) => !definition.variantOptions?.includes(value))
     ]
     return {

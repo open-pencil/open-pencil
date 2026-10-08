@@ -27,6 +27,8 @@ export * from './slots/content'
 export * from './slots/authoring'
 export * from './slots/limits'
 export * from './behaviours/kinds'
+export * from './icons/schema'
+export * from './icons/model'
 export * from './behaviours/layers'
 export * from './behaviours/model'
 export * from './behaviours/spec'
@@ -175,6 +177,7 @@ export class SceneGraph {
   private sourceMetadataPreservationDepth = 0
   private importedStateApplicationDepth = 0
   private layoutMutationDepth = 0
+  private derivedLayoutDepth = 0
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
 
@@ -559,6 +562,23 @@ export class SceneGraph {
 
   get isApplyingImportedState(): boolean {
     return this.importedStateApplicationDepth > 0
+  }
+
+  /**
+   * Lays out what the document already holds: a page as it loads, or again once its fonts
+   * arrive. What this writes derives from the document; an edit's own layout is not this.
+   */
+  applyDerivedLayoutDuring(fn: () => void): void {
+    this.derivedLayoutDepth++
+    try {
+      fn()
+    } finally {
+      this.derivedLayoutDepth--
+    }
+  }
+
+  get isApplyingDerivedLayout(): boolean {
+    return this.derivedLayoutDepth > 0
   }
 
   withLayoutMutations(fn: () => void): void {

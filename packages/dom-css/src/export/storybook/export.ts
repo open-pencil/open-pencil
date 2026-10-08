@@ -5,7 +5,7 @@ import { componentModel, type ComponentGenerator } from '../components/model'
 import { reactComponent } from '../components/react'
 import { vueComponent } from '../components/vue'
 import { serializeHTML } from '../html'
-import { sceneNodeToDesignDocument } from '../projection'
+import { sceneNodeToDesignDocument, type VectorElementRenderer } from '../projection'
 import { printComponentStories } from './component'
 import { collectGroups, type StoryGroup } from './groups'
 import {
@@ -32,6 +32,8 @@ export interface ExportStorybookOptions {
   linkPath?: string
   /** Renders a variant to PNG; each story then shows it next to the link as its design. */
   renderDesignImage?: (nodeId: string) => Promise<Uint8Array>
+  /** Draws vector layers as inline SVG, from the engine's SVG export. */
+  vectorElement?: VectorElementRenderer
 }
 
 export interface StorybookFile extends ExportHTMLFile {
@@ -55,6 +57,7 @@ interface ModuleContext {
   storyNames: string[]
   /** Import path of each variant's design image, by variant index. */
   images: string[]
+  vectorElement?: VectorElementRenderer
 }
 
 function designLink(
@@ -91,7 +94,10 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     variants: group.variants.map((variant) => ({
       values: variant.values,
       html: serializeHTML(
-        sceneNodeToDesignDocument(context.graph, variant.node.id, { includeSourceIds: false })
+        sceneNodeToDesignDocument(context.graph, variant.node.id, {
+          includeSourceIds: false,
+          vectorElement: context.vectorElement
+        })
       )
     })),
     metaDesign: designLink(context, group.linkNode),
@@ -136,7 +142,10 @@ export async function exportStorybook(
       if (options.pageId && page.id !== options.pageId) continue
 
       const generate = GENERATORS[framework]
-      const component = generate && group.set ? componentModel(graph, group.set) : null
+      const component =
+        generate && group.set
+          ? componentModel(graph, group.set, { vectorElement: options.vectorElement })
+          : null
       if (generate && component) {
         // The component is imported by the file's name, so the two always match.
         component.name = file

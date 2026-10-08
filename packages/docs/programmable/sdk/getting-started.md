@@ -51,6 +51,8 @@ const editor = createEditor({
 
 Core state is framework-neutral; passing reactive state lets Vue controls observe editor changes. For a resizable editor, have `getViewportSize` return the current canvas container dimensions. `width` and `height` are not `EditorOptions` properties.
 
+Icons come from Iconify by default. To serve them from elsewhere, such as a bundled or self-hosted set, pass an `IconProvider` from `@open-pencil/core/icons` as `icons`; the editor's commands, its icon picker, and its AI tools all use it.
+
 ### 2. Provide it to Vue
 
 ```vue

@@ -265,6 +265,12 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       {
+        id: 'insert-icon',
+        label: 'Insert Icon…',
+        palette: { keywords: ['iconify', 'symbol', 'glyph', 'lucide'] }
+      },
+      { type: 'separator' },
+      {
         id: 'selection.toggleMask',
         label: 'Use as Mask',
         command: 'selection.toggleMask'

@@ -1,3 +1,4 @@
+import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { computeContentBounds } from '#core/io/formats/raster'
@@ -381,6 +382,9 @@ function buildShapeChildren(
   return []
 }
 
+/** The paint CSS `color` sets, for a tinted icon path. */
+const CURRENT_COLOR = 'currentColor'
+
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
 
@@ -395,11 +399,17 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
 
   const visibleFills = node.fills.filter((f) => f.visible)
   const visibleStrokes = node.strokes.filter((s) => s.visible)
-  const fillAttr =
+  const tint = ctx.tint?.(node) ?? []
+  const ownFill =
     visibleFills.length > 0 && !hasPathLevelFills(node)
       ? resolveFill(visibleFills[0], node, ctx)
       : null
-  const strokeAttrs = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace)
+  const fillAttr = ownFill && tint.includes('fill') ? CURRENT_COLOR : ownFill
+  const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace)
+  const strokeAttrs =
+    ownStrokes.stroke && tint.includes('stroke')
+      ? { ...ownStrokes, stroke: CURRENT_COLOR }
+      : ownStrokes
 
   const children: (SVGNode | null)[] = buildShapeChildren(
     node,
@@ -509,4 +519,32 @@ export function renderNodesToSVG(
   const svgStr = renderSVGNode(root)
   const xmlDecl = options.xmlDeclaration !== false ? '<?xml version="1.0" encoding="UTF-8"?>\n' : ''
   return xmlDecl + svgStr
+}
+
+/**
+ * One layer as an `<svg>` element sized to its box, for inlining in HTML where the box already
+ * places, rotates, and fades it: the drawing starts at the layer's origin without its rotation
+ * or opacity, and keeps its flips.
+ */
+export function renderNodeSVGElement(
+  graph: SceneGraph,
+  node: SceneNode,
+  {
+    idPrefix,
+    colorSpace = 'srgb',
+    tint
+  }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: RenderColorSpace }
+): SVGNode | null {
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix, tint }
+  const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
+  if (!drawn) return null
+  // A straight line has no height or width, but its stroke still needs a viewport to draw in.
+  const width = Math.max(1, round(node.width))
+  const height = Math.max(1, round(node.height))
+  return svg(
+    'svg',
+    { width, height, viewBox: `0 0 ${width} ${height}` },
+    ctx.defs.length > 0 ? svg('defs', {}, ...ctx.defs) : null,
+    drawn
+  )
 }

@@ -32,6 +32,7 @@ export const menuMessageDefaults = {
   language: 'Language',
   settings: 'Settings…',
   variables: 'Variables…',
+  insertIcon: 'Insert Icon…',
   rulers: 'Rulers',
   multiplayerCursors: 'Multiplayer cursors',
   designIssues: 'Design issues',

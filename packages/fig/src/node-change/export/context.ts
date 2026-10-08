@@ -63,6 +63,15 @@ export interface SceneNodeToKiwiContext {
   propertyIdToGuid: Map<string, GUID>
   componentPropertyDefinitionsById: ReadonlyMap<string, ComponentPropertyDefinition>
   /**
+   * Writing records into the archive a document came from: the layer each archive GUID
+   * belongs to, so a copy that kept its original's `source.id` gets a GUID of its own.
+   */
+  recordOwners?: ReadonlyMap<string, string>
+  /** Positions the caller decided, kept so untouched siblings keep theirs. */
+  orderKeys?: ReadonlyMap<string, string>
+  /** False to write a layer's record alone, as when only some records change. */
+  writeChildren?: boolean
+  /**
    * Receives the content frames of instance slots. Figma stores them on the internal canvas,
    * so the caller re-parents the `isSlotContent` roots there after serializing its nodes.
    */
@@ -130,7 +139,9 @@ export function getOrCreateNodeGuid(
   if (!node) return undefined
   const existing = context.nodeIdToGuid?.get(nodeId)
   if (existing) return existing
-  const importedGuid = node.source.id ? parseGuidOrNull(node.source.id) : null
+  const ownsSource =
+    !node.source.id || !context.recordOwners || context.recordOwners.get(node.source.id) === nodeId
+  const importedGuid = node.source.id && ownsSource ? parseGuidOrNull(node.source.id) : null
 
   // When source.id maps to a GUID value that is already assigned to a
   // different node (e.g. two nodes from different canvases with the same
