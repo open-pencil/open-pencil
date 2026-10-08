@@ -23,7 +23,9 @@ const USAGE = {
 export interface StreamPace {
   /** Before the first chunk of each step, as a model takes a moment to start answering. */
   start: number
-  /** Before each word of reasoning and of the reply. */
+  /** Before each word of reasoning, which only needs to be skimmed. */
+  reasoning: number
+  /** Before each word of the reply. */
   word: number
   /** Between the reasoning and the tool call, and before the reply starts. */
   pause: number
@@ -56,7 +58,7 @@ function toolStep({ reasoning, render }: RecordedTurn): PacedChunk[] {
     { chunk: { type: 'reasoning-start', id: 'reasoning' } },
     ...(reasoning.match(WORD_CHUNK) ?? []).map((delta): PacedChunk => ({
       chunk: { type: 'reasoning-delta', id: 'reasoning', delta },
-      wait: 'word'
+      wait: 'reasoning'
     })),
     { chunk: { type: 'reasoning-end', id: 'reasoning' } },
     { chunk: { type: 'tool-input-start', id: 'render-call', toolName: 'render' }, wait: 'pause' },

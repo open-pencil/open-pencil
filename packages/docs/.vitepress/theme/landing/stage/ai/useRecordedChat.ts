@@ -13,10 +13,11 @@ import { createRecordedModel, type StreamPace } from './recorded-model'
 const ARTBOARD_NAME = 'Pricing'
 const RESULT_NAME = 'Guarantees'
 /**
- * Slow enough to follow the first time: the reasoning reads at an easy pace and the cards
- * build up on the canvas over a few seconds. A whole turn takes about fifteen seconds.
+ * Slow enough to follow the first time without waiting on the agent: the reasoning streams
+ * quickly enough to skim, the cards build up on the canvas over a few seconds, and the reply
+ * reads at an easy pace. A whole turn takes about ten seconds.
  */
-const PACE: StreamPace = { start: 1200, word: 110, pause: 900, argument: 55 }
+const PACE: StreamPace = { start: 500, reasoning: 35, word: 110, pause: 500, argument: 55 }
 const OUTPUT_TOKEN_LIMIT = 4096
 
 export interface RecordedChatCopy {
