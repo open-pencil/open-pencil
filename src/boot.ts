@@ -8,6 +8,7 @@ import { createRetainedScopePlugin } from '@open-pencil/vue'
 import './app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
 import { preloadFonts } from '@/app/editor/fonts'
+import { loadInterfaceFonts } from '@/app/shell/fonts'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
 import { IS_TAURI } from '@/constants'
@@ -24,6 +25,8 @@ export async function boot(): Promise<void> {
   // A session of its own, so layers this window creates never share IDs with a collaborator's.
   setIdSession(randomInt() >>> 0)
   preloadFonts()
+  // The interface renders once, in its own fonts; the loader stays up until they are in.
+  await loadInterfaceFonts()
   const head = createHead()
   const app = createApp(App)
   const bootErrors = observeBootErrors(app)

@@ -30,6 +30,8 @@ export const commonMessageDefaults = {
   testConnection: 'Test connection',
   testingConnection: 'Testing…',
   search: 'Search…',
+  taskDone: 'Done',
+  taskNotDone: 'Not done',
   noResults: 'No results',
   save: 'Save',
   done: 'Done',

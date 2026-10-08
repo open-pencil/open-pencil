@@ -28,6 +28,8 @@
   "testConnection": "Probar conexión",
   "testingConnection": "Probando…",
   "search": "Buscar…",
+  "taskDone": "Hecho",
+  "taskNotDone": "Pendiente",
   "noResults": "Sin resultados",
   "save": "Guardar",
   "done": "Hecho",

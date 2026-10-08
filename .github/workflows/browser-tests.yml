@@ -1,0 +1,93 @@
+name: Browser tests
+
+# A trial: the app and Storybook Playwright suites run on macOS, where their baselines are
+# recorded, for pull requests labeled e2e and on demand. Once timings are known, the merge queue
+# can require them.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (${{ matrix.shard }}/4)
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')
+    runs-on: macos-15
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          lfs: 'true'
+          cache-scope: browser-tests
+          # One shard saves the dependency cache; the others restore it.
+          cache-save: ${{ matrix.shard == 1 }}
+
+      - name: Build workspace packages
+        run: bun run build:packages
+
+      - name: Install Chromium
+        run: bunx playwright install chromium
+
+      - name: Run app suite
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: bun run test -- --shard="$SHARD/4" --trace=retain-on-failure
+
+      - name: Upload failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-failures-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+  storybook:
+    name: Storybook
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          cache-scope: browser-tests
+          cache-save: 'false'
+
+      - name: Build workspace packages
+        run: bun run build:packages
+
+      - name: Install Chromium
+        run: bunx playwright install chromium
+
+      - name: Run Storybook suite
+        run: bun run test:storybook -- --trace=retain-on-failure
+
+      - name: Upload failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: storybook-failures
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

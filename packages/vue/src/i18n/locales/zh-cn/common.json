@@ -28,6 +28,8 @@
   "testConnection": "测试连接",
   "testingConnection": "正在测试…",
   "search": "搜索…",
+  "taskDone": "已完成",
+  "taskNotDone": "未完成",
   "noResults": "无结果",
   "save": "保存",
   "done": "完成",

@@ -28,6 +28,8 @@
   "testConnection": "Verbindung testen",
   "testingConnection": "Verbindung wird getestet…",
   "search": "Suchen…",
+  "taskDone": "Erledigt",
+  "taskNotDone": "Offen",
   "noResults": "Keine Ergebnisse",
   "save": "Speichern",
   "done": "Fertig",

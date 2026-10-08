@@ -28,6 +28,8 @@
   "testConnection": "Проверить подключение",
   "testingConnection": "Проверка…",
   "search": "Поиск…",
+  "taskDone": "Готово",
+  "taskNotDone": "Не готово",
   "noResults": "Ничего не найдено",
   "save": "Сохранить",
   "done": "Готово",
