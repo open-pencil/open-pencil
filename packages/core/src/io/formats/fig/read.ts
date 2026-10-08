@@ -37,7 +37,9 @@ function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}
   options.signal?.throwIfAborted()
   const bytes = buffer.slice(0)
   registerReaderSession(bytes, reader.session, reader.diagnostics)
-  const archive = localFigArchive(bytes, () => reader.session.archiveRecordInfo())
+  // Taken now, while the records are decoded: the archive outlives the reader's session.
+  const archiveInfo = reader.session.archiveRecordInfo()
+  const archive = localFigArchive(bytes, () => archiveInfo)
   registerFigArchive(reader.graph, archive)
   registerOriginalArchiveRequest(reader.graph, () => archive.original())
   return reader.graph

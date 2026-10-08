@@ -289,7 +289,7 @@ function scanRecord(
   bb: ByteBuffer,
   readSymbolData: boolean
 ): RecordHead {
-  const fields = new Map(skipper.definition(type).fields.map((field) => [field.value, field]))
+  const fields = skipper.fieldsById(type)
   const head: RecordHead = {
     id: undefined,
     parent: undefined,
@@ -323,7 +323,7 @@ function scanMessage(
   data: Uint8Array,
   readSymbolData = false
 ): ScannedMessage {
-  const fields = new Map(skipper.definition('Message').fields.map((field) => [field.value, field]))
+  const fields = skipper.fieldsById('Message')
   const bb = new ByteBuffer(data)
   const scanned: ScannedMessage = { parts: [], records: [], blobs: [], hasBlobs: false }
   for (;;) {

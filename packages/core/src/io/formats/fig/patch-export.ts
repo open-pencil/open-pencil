@@ -270,11 +270,13 @@ async function buildPatch(
   const setup = await prepareFigExport(graph, runtime, {
     nextLocalId: info.nextLocalId,
     blobs: Array.from({ length: info.blobCount }, () => new Uint8Array(0)),
-    recordOwners: archived.byGuid
+    recordOwners: archived.byGuid,
+    archiveResourceIds: changes.resourceIds
   })
   const records = writeRecords(setup, plan)
   if (!records) return null
-  if (changes.documentChanged) {
+  // The document's own fields, its plugin data among them, are written on the document record.
+  if (changes.documentChanged || changes.touched.has(graph.rootId)) {
     const guid = info.documentId ? stringToGuid(info.documentId) : setup.docGuid
     records.unshift({ ...setup.documentNc, guid })
   }

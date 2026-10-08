@@ -5,11 +5,13 @@ import { isEqual } from 'es-toolkit/predicate'
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive'
+import { expectDefined } from '#core-tests/helpers/assert'
 import { hasPendingReaderPages, populateFigInternalPages } from '#core/kiwi/fig/session/document-state'
 
 setDefaultTimeout(60_000)
@@ -31,10 +33,28 @@ async function fixtureBytes(): Promise<Uint8Array> {
   })
   source.createNode('RECTANGLE', component.id, { name: 'Body', width: 100, height: 40 })
   const used = source.addPage('Used')
-  source.createInstance(component.id, used.id)
+  const overridden = source.createInstance(component.id, used.id)
   source.createInstance(component.id, used.id, { x: 200 })
+  // An override on the component's layer, which the instance's record addresses by its GUID.
+  const [overriddenBody] = source.getChildren(overridden?.id ?? '')
+  source.updateNode(overriddenBody.id, { opacity: 0.5 })
   const collection = source.createCollection('Tokens')
-  source.createVariable('brand', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+  const brand = source.createVariable('brand', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+  source.createNode('RECTANGLE', source.addPage('Bound').id, {
+    name: 'Branded',
+    width: 10,
+    height: 10,
+    fills: [
+      {
+        type: 'SOLID',
+        color: { r: 1, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        visible: true,
+        blendMode: 'NORMAL'
+      }
+    ],
+    boundVariables: { 'fills/0/color': brand.id }
+  })
   return exportFigFile(source)
 }
 
@@ -74,6 +94,9 @@ async function shapeOf(bytes: Uint8Array): Promise<Record<string, LayerShape[]>>
     graph.getPages().map((page) => [page.name, graph.getChildren(page.id).map(shape)])
   )
 }
+
+const guidKey = (record: NodeChange) =>
+  record.guid ? guidToString(record.guid) : ''
 
 /** The records of an archive by GUID. */
 function recordsOf(bytes: Uint8Array) {
@@ -177,6 +200,15 @@ describe('writing an edited document into its archive', () => {
         graph.updateNode(body.id, { opacity: 0.5, name: 'Body override' })
       }
     ],
+    [
+      'deleting a layer of a component whose instances are on a page not loaded yet',
+      (graph) => {
+        const library = pageNamed(graph, 'Library')
+        populateFigPage(graph, library.id)
+        const [body] = graph.getChildren(layerNamed(graph, 'Card').id)
+        graph.deleteNode(body.id)
+      }
+    ],
     ['adding a page', (graph) => graph.addPage('Added')]
   ]
   for (const [name, edit] of edits) {
@@ -185,6 +217,87 @@ describe('writing an edited document into its archive', () => {
       expect(await shapeOf(patched)).toEqual(await shapeOf(full))
     })
   }
+
+  test("keeps the document's plugin data an edit sets on it", async () => {
+    const { patched } = await exportBothWays((graph) => {
+      const root = expectDefined(graph.getNode(graph.rootId))
+      graph.updateNode(root.id, {
+        pluginData: [...root.pluginData, { pluginId: 'probe', key: 'note', value: 'kept' }]
+      })
+    })
+    const reopened = await open(patched)
+    expect(reopened.getNode(reopened.rootId)?.pluginData).toContainEqual({
+      pluginId: 'probe',
+      key: 'note',
+      value: 'kept'
+    })
+  })
+
+  test('keeps every archive record its own when new pages and variables take IDs it uses', async () => {
+    const bytes = await fixtureBytes()
+    const graph = await open(bytes)
+    // New IDs that happen to equal records on a page not loaded yet, as a file saved before can
+    // hold: the records must stay theirs.
+    const unloaded = [...recordsOf(bytes)].filter(([, record]) =>
+      ['Bound', 'Branded'].includes(record.name ?? '')
+    )
+    const [pageGuid, variableGuid] = unloaded.map(([guid]) => guid)
+    graph.createNodeWithId(pageGuid, 'CANVAS', graph.rootId, { name: 'Added page' })
+    const [collection] = graph.variableCollections.values()
+    const [existing] = graph.variables.values()
+    graph.addVariable({ ...structuredClone(existing), id: variableGuid, name: 'added' })
+    collection.variableIds.push(variableGuid)
+    const patched = await exportFigFile(graph)
+    const before = recordsOf(bytes)
+    const after = recordsOf(patched)
+    for (const [guid, record] of before) {
+      expect(after.get(guid)?.type).toBe(record.type)
+      expect(after.get(guid)?.name).toBe(record.name)
+    }
+    const added = [...after.values()].filter((record) => !before.has(guidKey(record)))
+    expect(added.map((record) => record.name).toSorted()).toEqual(['Added page', 'added'])
+  })
+
+  test('keeps layers on unopened pages bound to a variable whose value changes', async () => {
+    const { patched } = await exportBothWays((graph) => {
+      const [variable] = graph.variables.values()
+      const [modeId] = Object.keys(variable.valuesByMode)
+      variable.valuesByMode[modeId] = { r: 0, g: 0, b: 1, a: 1 }
+    })
+    const reopened = await open(patched)
+    populateFigPage(reopened, pageNamed(reopened, 'Bound').id)
+    const branded = layerNamed(reopened, 'Branded')
+    const variableId = branded.boundVariables['fills/0/color']
+    expect(reopened.variables.get(variableId)?.name).toBe('brand')
+    expect(Object.values(reopened.variables.get(variableId)?.valuesByMode ?? {})[0]).toEqual({
+      r: 0,
+      g: 0,
+      b: 1,
+      a: 1
+    })
+  })
+
+  test('rewrites instances on unopened pages when their component loses a layer', async () => {
+    const bytes = await fixtureBytes()
+    const graph = await open(bytes)
+    populateFigPage(graph, pageNamed(graph, 'Library').id)
+    const [body] = graph.getChildren(layerNamed(graph, 'Card').id)
+    graph.deleteNode(body.id)
+    const before = recordsOf(bytes)
+    const after = recordsOf(await exportFigFile(graph))
+    const [bodyGuid, bodyRecord] = expectDefined(
+      [...before].find(([, record]) => record.name === 'Body')
+    )
+    const instances = (records: Map<string, NodeChange>) =>
+      [...records.values()].filter((record) => record.type === 'INSTANCE')
+    // Instances address the component's layer by its GUID in their derived geometry.
+    const addressesBody = (record: NodeChange) =>
+      JSON.stringify(record).includes(JSON.stringify(bodyRecord.guid))
+    expect(instances(before).every(addressesBody)).toBe(true)
+    expect(after.has(bodyGuid)).toBe(false)
+    expect(instances(after)).toHaveLength(2)
+    expect(instances(after).some(addressesBody)).toBe(false)
+  })
 
   test('rewrites the variables when one changes', async () => {
     const { patched } = await exportBothWays((graph) => {

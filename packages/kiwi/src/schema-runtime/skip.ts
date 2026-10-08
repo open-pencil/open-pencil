@@ -8,6 +8,8 @@ import { error, quote } from './util'
  */
 export interface SchemaSkipper {
   definition(name: string): Definition
+  /** A definition's fields by their IDs, built once per definition. */
+  fieldsById(name: string): ReadonlyMap<number, Field>
   /** Past one value of a field, its array included. */
   skipField(field: Field, bb: ByteBuffer): void
   /** Past one value of a type: a native type, an enum, a struct or a message. */
@@ -84,5 +86,10 @@ export function createSchemaSkipper(schema: Schema): SchemaSkipper {
     for (let length = bb.readVarUint(); length > 0; length--) skipValue(type, bb)
   }
 
-  return { definition, skipField, skipValue }
+  return {
+    definition,
+    fieldsById: (name) => messageFields(definition(name)),
+    skipField,
+    skipValue
+  }
 }

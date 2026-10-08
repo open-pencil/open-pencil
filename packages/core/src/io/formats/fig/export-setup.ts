@@ -219,7 +219,8 @@ function buildCanvasEntries(
   localIdCounter: { value: number },
   nodeIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
-  sourceGuidValues: ReadonlySet<string>
+  sourceGuidValues: ReadonlySet<string>,
+  ownGuids = true
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
@@ -228,7 +229,7 @@ function buildCanvasEntries(
     const canvasGuid = (() => {
       if (!page.source.id) {
         return (
-          ownGuid(page.id, sourceGuidValues, assignedGuidValues) ?? {
+          (ownGuids ? ownGuid(page.id, sourceGuidValues, assignedGuidValues) : null) ?? {
             sessionID: 0,
             localID: localIdCounter.value++
           }
@@ -342,10 +343,12 @@ export interface FigExportSetupOptions {
   blobs?: Uint8Array[]
   /**
    * The layer each archive GUID belongs to; only that layer writes the archive's record. Writing
-   * into an archive also gives new layers counter GUIDs, past every GUID it holds, rather than
-   * their graph IDs, which a record on a page not loaded may already use.
+   * into an archive also gives new layers and pages counter GUIDs, past every GUID it holds,
+   * rather than their graph IDs, which a record on a page not loaded may already use.
    */
   recordOwners?: ReadonlyMap<string, string>
+  /** Writing into an archive: the variables, collections and modes it holds keep their GUIDs. */
+  archiveResourceIds?: ReadonlySet<string>
 }
 
 /**
@@ -395,7 +398,8 @@ export async function prepareFigExport(
     localIdCounter,
     nodeIdToGuid,
     assignedGuidValues,
-    nodeSourceGuidValues
+    nodeSourceGuidValues,
+    !options.recordOwners
   )
   // Archive records keep their GUIDs: claim them before any copy that kept one can.
   for (const [guid, nodeId] of options.recordOwners ?? []) {
@@ -406,13 +410,15 @@ export async function prepareFigExport(
 
   // Assign variable GUIDs AFTER canvas entries so that source.id-derived
   // canvas GUIDs don't collide with generated variable GUIDs.
+  const archived = options.archiveResourceIds
   assignVariableGuids(
     graph,
     localIdCounter,
     varIdToGuid,
     modeIdToGuid,
     assignedGuidValues,
-    nodeSourceGuidValues
+    nodeSourceGuidValues,
+    archived ? (id) => archived.has(id) : undefined
   )
 
   assignComponentPropertyGuids(

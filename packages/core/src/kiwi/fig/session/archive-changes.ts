@@ -10,6 +10,8 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
  */
 interface ArchiveChanges {
   touched: Set<string>
+  /** The variables, collections and modes the archive holds. */
+  resourceIds: Set<string>
   variables: Map<string, unknown>
   collections: unknown
   settings: unknown
@@ -31,9 +33,19 @@ function collectionsSnapshot(graph: SceneGraph): unknown {
   })
 }
 
+function resourceIdsOf(graph: SceneGraph): Set<string> {
+  const ids = new Set(graph.variables.keys())
+  for (const [id, collection] of graph.variableCollections) {
+    ids.add(id)
+    for (const mode of collection.modes) ids.add(mode.modeId)
+  }
+  return ids
+}
+
 export function trackArchiveChanges(graph: SceneGraph): void {
   const entry: ArchiveChanges = {
     touched: new Set(),
+    resourceIds: resourceIdsOf(graph),
     variables: new Map(
       [...graph.variables].map(([id, variable]) => [id, structuredClone(variable)])
     ),
@@ -47,14 +59,23 @@ export function trackArchiveChanges(graph: SceneGraph): void {
     created: (node) => touch(node.id),
     updated: touch,
     reparented: touch,
-    reordered: touch
+    reordered: touch,
+    // A removed layer has no record of its own to write: the instance or component holding it
+    // changes, and the parent leads there.
+    deleted: (_id, parentId) => {
+      if (parentId) touch(parentId)
+    }
   })
   changes.set(graph, entry)
 }
 
 export interface ArchiveChangeSummary {
-  /** Layers created, updated or moved since the archive opened; some may be gone since. */
+  /**
+   * Layers created, updated or moved since the archive opened, and the parents of layers
+   * removed; some may be gone since.
+   */
   touched: ReadonlySet<string>
+  resourceIds: ReadonlySet<string>
   /** Variables whose value, binding or presence changed. */
   changedVariables: ReadonlySet<string>
   collectionsChanged: boolean
@@ -70,6 +91,7 @@ export function archiveChanges(graph: SceneGraph): ArchiveChangeSummary | undefi
   for (const id of entry.variables.keys()) if (!graph.variables.has(id)) changedVariables.add(id)
   return {
     touched: entry.touched,
+    resourceIds: entry.resourceIds,
     changedVariables,
     collectionsChanged: !isEqual(entry.collections, collectionsSnapshot(graph)),
     documentChanged: !isEqual(entry.settings, settingsSnapshot(graph))
