@@ -57,23 +57,20 @@ async function addFontDigests(
   }
 }
 
-/** Rounds of font loading a save waits for before it writes what it has. */
-const FONT_DIGEST_ROUNDS = 3
-
 /**
  * Digests for every font the document uses, read again after each wait: an edit made while
- * digests load can bring a new font in. Resolves when a synchronous check finds none missing, so
- * a caller that continues without awaiting writes records that every digest covers. A font with
- * no digest is looked up once.
+ * digests load can bring a new font in. Resolves only when a synchronous check finds none
+ * missing, so a caller that continues without awaiting writes records that every digest covers.
+ * Each round looks up only fonts it has not seen, and a font with no digest is looked up once, so
+ * it ends once edits stop bringing in new fonts.
  */
 export async function settleFontDigestMap(graph: SceneGraph): Promise<Map<string, Uint8Array>> {
   const digests = new Map<string, Uint8Array>()
   const looked = new Set<string>()
-  for (let round = 0; round < FONT_DIGEST_ROUNDS; round++) {
+  for (;;) {
     const missing = [...documentFontKeys(graph)].filter((key) => !looked.has(key))
-    if (missing.length === 0) break
+    if (missing.length === 0) return digests
     for (const key of missing) looked.add(key)
     await addFontDigests(digests, missing)
   }
-  return digests
 }
