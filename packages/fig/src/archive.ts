@@ -4,6 +4,7 @@ import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { buildFigKiwi, parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
 import { decodeFigKiwiCanvas, parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
+import type { LazyFields } from '@open-pencil/kiwi/schema-runtime'
 
 import { hasPNGSignature } from './thumbnail'
 
@@ -55,23 +56,28 @@ function isCanonicalCanvasEntry(name: string): boolean {
 
 function parseRawFigKiwi(
   bytes: Uint8Array,
-  onPages?: (pages: FigPageManifestEntry[]) => void
+  onPages?: (pages: FigPageManifestEntry[]) => void,
+  lazy?: LazyFields
 ): FigParseResult | null {
   const chunks = parseFigKiwiChunks(bytes)
   if (!chunks) return null
 
-  const decoded = decodeFigKiwiCanvas(bytes, onPages)
+  const decoded = decodeFigKiwiCanvas(bytes, onPages, lazy)
   const thumbnailPNG = chunks.slice(2).find(hasPNGSignature) ?? null
   return { ...decoded, images: [], thumbnailPNG, metaJSON: null }
 }
 
-/** Parse a complete zipped or legacy raw `.fig` file into its protocol payload and resources. */
+/**
+ * Parse a complete zipped or legacy raw `.fig` file into its protocol payload and resources.
+ * Fields named in `lazy` stay encoded on the records and decode when read.
+ */
 export function parseFigBuffer(
   buffer: ArrayBuffer,
-  onPages?: (pages: FigPageManifestEntry[]) => void
+  onPages?: (pages: FigPageManifestEntry[]) => void,
+  lazy?: LazyFields
 ): FigParseResult {
   const bytes = new Uint8Array(buffer)
-  const raw = parseRawFigKiwi(bytes, onPages)
+  const raw = parseRawFigKiwi(bytes, onPages, lazy)
   if (raw) return raw
 
   const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })
@@ -79,7 +85,7 @@ export function parseFigBuffer(
   let archive: Unzipped
   let decoded: ReturnType<typeof decodeFigKiwiCanvas>
   if (canvasData) {
-    decoded = decodeFigKiwiCanvas(canvasData, onPages)
+    decoded = decodeFigKiwiCanvas(canvasData, onPages, lazy)
     archive = unzipSync(bytes, { filter: ({ name }) => !isCanonicalCanvasEntry(name) })
   } else {
     archive = unzipSync(bytes)
@@ -89,7 +95,7 @@ export function parseFigBuffer(
         `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
       )
     }
-    decoded = decodeFigKiwiCanvas(canvasData, onPages)
+    decoded = decodeFigKiwiCanvas(canvasData, onPages, lazy)
   }
 
   const metaBytes = archive['meta.json']

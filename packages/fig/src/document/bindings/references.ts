@@ -29,16 +29,14 @@ function visitChildren(
   }
 }
 
-/** Normalize supported binding references without mutating archive records or effective values. */
-export function resolveDocumentBindingReferences(
-  changes: readonly NodeChange[],
-  report: (diagnostic: BindingReferenceDiagnostic) => void,
-  ownership: 'copy' | 'transfer' = 'copy'
-): NodeChange[] {
-  const resolve = createResourceResolver(changes)
-  return changes.map((source) => {
-    const node = ownership === 'transfer' ? source : structuredClone(source)
-    const sourceId = source.guid ? guidToString(source.guid) : 'unknown'
+type Report = (diagnostic: BindingReferenceDiagnostic) => void
+
+/** Lazily decoded fields that can hold binding references of their own. */
+const BINDING_FIELDS = new Set(['parameterConsumptionMap', 'derivedSymbolData'])
+
+/** Resolves a record's binding references in place, reporting the ones that name nothing. */
+function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolver>) {
+  return (record: NodeChange, sourceId: string, report?: Report): void => {
     const normalize = (
       reference: NodeChange['variableSetID'],
       field: string,
@@ -47,7 +45,7 @@ export function resolveDocumentBindingReferences(
       if (!reference?.assetRef || reference.guid) return
       const id = resolve(reference)
       if (!id) {
-        report({ sourceId, field, key: reference.assetRef.key, path: structuredClone(path) })
+        report?.({ sourceId, field, key: reference.assetRef.key, path: structuredClone(path) })
         return
       }
       reference.guid = stringToGuid(id)
@@ -78,7 +76,45 @@ export function resolveDocumentBindingReferences(
       }
       visitChildren(node, path, visit)
     }
-    visit(node, [])
-    return node
-  })
+    visit(record, [])
+  }
+}
+
+export interface DocumentBindingReferences {
+  changes: NodeChange[]
+  /**
+   * Resolves the references in a value a lazily decoded field of `record` just produced, as the
+   * document pass resolved the value it read then. That value is not kept, so every read
+   * resolves again; only the document pass reports what names nothing.
+   */
+  prepareLazyField: (record: NodeChange, field: string, value: unknown) => void
+}
+
+/** Normalize supported binding references without mutating archive records or effective values. */
+export function resolveDocumentBindingReferences(
+  changes: readonly NodeChange[],
+  report: Report,
+  ownership: 'copy' | 'transfer' = 'copy'
+): DocumentBindingReferences {
+  const normalizeRecord = createRecordNormalizer(createResourceResolver(changes))
+  return {
+    changes: changes.map((source) => {
+      const node = ownership === 'transfer' ? source : structuredClone(source)
+      normalizeRecord(node, source.guid ? guidToString(source.guid) : 'unknown', report)
+      return node
+    }),
+    prepareLazyField: (record, field, value) => {
+      // A modern parameter entry shadows the legacy entry for the same field, which the document
+      // pass leaves as saved, so the legacy map resolves beside the record's parameter map.
+      if (field === 'variableConsumptionMap')
+        normalizeRecord(
+          {
+            variableConsumptionMap: value,
+            parameterConsumptionMap: record.parameterConsumptionMap
+          } as NodeChange,
+          'lazy'
+        )
+      else if (BINDING_FIELDS.has(field)) normalizeRecord({ [field]: value } as NodeChange, 'lazy')
+    }
+  }
 }

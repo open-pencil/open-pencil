@@ -1,5 +1,6 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import type { LazyFields } from '@open-pencil/kiwi/schema-runtime'
 
 import { parseFigBuffer } from '../archive'
 import { createOccurrenceInterpreter } from '../instance-overrides/interpret'
@@ -13,7 +14,8 @@ import { symbolOverridesOf } from '../instance-overrides/types'
 import { applyStyleRefsToFields } from '../node-change/style/refs'
 import {
   resolveDocumentBindingReferences,
-  type BindingReferenceDiagnostic
+  type BindingReferenceDiagnostic,
+  type DocumentBindingReferences
 } from './bindings/references'
 import { planComponentConstruction } from './components'
 import { collectSceneDependencies } from './dependency-closure'
@@ -25,12 +27,31 @@ export function createDocumentReader(source: readonly NodeChange[], pageIds?: Re
 }
 
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
+/**
+ * Record fields a document reader leaves encoded until read: derived layout and glyphs, which a
+ * layer reads as its page loads, prototype and edit metadata, and variable bindings, resolved
+ * against the document's variables each time they decode. They are most of a design kit's
+ * decoded records, and opening one reads them once and keeps none.
+ */
+export const LAZY_RECORD_FIELDS = [
+  'derivedSymbolData',
+  'derivedTextData',
+  'prototypeInteractions',
+  'editInfo',
+  'parameterConsumptionMap',
+  'variableConsumptionMap'
+] as const
+
 export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: ReadonlySet<string>) {
-  const parsed = parseFigBuffer(bytes)
+  const lazy: LazyFields = { fields: { NodeChange: LAZY_RECORD_FIELDS } }
+  const parsed = parseFigBuffer(bytes, undefined, lazy)
+  const reader = createReader(parsed.nodeChanges, 'transfer', pageIds, (prepare) => {
+    lazy.prepare = (owner, field, value) => prepare(owner as NodeChange, field, value)
+  })
   return {
     figKiwiVersion: parsed.figKiwiVersion,
     figSchemaDeflated: parsed.figSchemaDeflated,
-    reader: createReader(parsed.nodeChanges, 'transfer', pageIds),
+    reader,
     blobs: parsed.blobs,
     images: parsed.images,
     /** The archive's records; the reader shares them, so keeping them costs nothing more. */
@@ -41,15 +62,18 @@ export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: Readon
 function createReader(
   source: readonly NodeChange[],
   ownership: 'copy' | 'transfer',
-  pageIds?: ReadonlySet<string>
+  pageIds?: ReadonlySet<string>,
+  onLazyFields?: (prepare: DocumentBindingReferences['prepareLazyField']) => void
 ) {
   const bindingDiagnostics: BindingReferenceDiagnostic[] = []
   const liveSource = source.filter((node) => node.phase !== 'REMOVED')
-  const changes = resolveDocumentBindingReferences(
+  const bindings = resolveDocumentBindingReferences(
     liveSource,
     (diagnostic) => bindingDiagnostics.push(diagnostic),
     ownership
   )
+  onLazyFields?.(bindings.prepareLazyField)
+  const changes = bindings.changes
   // One index over these records serves inheritance, style lookup, the dependency closure
   // and component planning.
   const index = createSourceIndex(changes)

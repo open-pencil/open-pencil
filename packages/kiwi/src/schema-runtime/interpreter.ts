@@ -1,6 +1,7 @@
 import { ByteBuffer } from './bb'
 import { nativeTypes } from './parser'
 import type { Definition, Field, Schema } from './schema'
+import { createSchemaSkipper, type SchemaSkipper } from './skip'
 import { error, quote } from './util'
 
 type RuntimeEnum = { [name: string]: string | number }
@@ -31,6 +32,61 @@ export type RuntimeCodec = {
   [name: string]: RuntimeEntry
 }
 type Definitions = { [name: string]: Definition }
+
+/**
+ * Fields a message type leaves encoded when decoded. Each becomes a getter that decodes the
+ * field from the message bytes whenever it is read and keeps nothing, so a large message holds
+ * its bytes rather than every value built from them. Assigning a field stores the value.
+ */
+export interface LazyFields {
+  /** Field names by message type. */
+  fields: Readonly<Record<string, readonly string[]>>
+  /**
+   * Runs on every value a lazy field decodes, before it is returned, so values read later see
+   * what the caller applied to them. Set after decoding when it needs the decoded message.
+   */
+  prepare?: (owner: RuntimeMessage, field: string, value: RuntimeValue) => void
+}
+
+/** Where a decoded message's lazy fields start in the bytes it was decoded from. */
+interface LazySlot {
+  bytes: Uint8Array
+  starts: Map<string, number>
+}
+
+const lazySlots = new WeakMap<RuntimeMessage, LazySlot>()
+
+function lazyAccessor(
+  self: RuntimeCodec,
+  definitions: Definitions,
+  field: Field,
+  lazy: LazyFields
+): PropertyDescriptor {
+  return {
+    enumerable: true,
+    configurable: true,
+    get(this: RuntimeMessage): RuntimeValue {
+      const slot = lazySlots.get(this)
+      const start = slot?.starts.get(field.name)
+      if (!slot || start === undefined) throw new Error('Missing lazy field ' + quote(field.name))
+      const buffer = new ByteBuffer(slot.bytes)
+      buffer.offset = start
+      const holder: RuntimeMessage = {}
+      readInto(self, definitions, field, buffer, holder)
+      const value = holder[field.name]
+      lazy.prepare?.(this, field.name, value)
+      return value
+    },
+    set(this: RuntimeMessage, value: RuntimeValue): void {
+      Object.defineProperty(this, field.name, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      })
+    }
+  }
+}
 
 function asDecodeFunction(value: unknown): DecodeFunction {
   return value as DecodeFunction
@@ -220,7 +276,18 @@ function writeFrom(
   writeField(self, definitions, type, value, bb)
 }
 
-function interpretDecode(self: RuntimeCodec, definitions: Definitions, definition: Definition) {
+interface LazyDecoding {
+  lazy: LazyFields
+  skipper: SchemaSkipper
+  accessors: Map<string, PropertyDescriptor>
+}
+
+function interpretDecode(
+  self: RuntimeCodec,
+  definitions: Definitions,
+  definition: Definition,
+  lazyDecoding?: LazyDecoding
+) {
   let fieldsById = new Map<number, Field>()
   for (let i = 0; i < definition.fields.length; i++)
     fieldsById.set(definition.fields[i].value, definition.fields[i])
@@ -229,11 +296,23 @@ function interpretDecode(self: RuntimeCodec, definitions: Definitions, definitio
     let result: RuntimeMessage = {}
 
     if (definition.kind === 'MESSAGE') {
+      let slot: LazySlot | undefined
       while (true) {
         const id = buffer.readVarUint()
         if (id === 0) return result
         const field = fieldsById.get(id)
         if (!field) throw new Error('Attempted to parse invalid message')
+        const accessor = lazyDecoding?.accessors.get(field.name)
+        if (lazyDecoding && accessor && !field.isDeprecated) {
+          if (!slot) {
+            slot = { bytes: buffer.bytes, starts: new Map() }
+            lazySlots.set(result, slot)
+          }
+          slot.starts.set(field.name, buffer.offset)
+          lazyDecoding.skipper.skipField(field, buffer)
+          Object.defineProperty(result, field.name, accessor)
+          continue
+        }
         readInto(self, definitions, field, buffer, result)
       }
     } else {
@@ -268,7 +347,7 @@ function interpretEncode(self: RuntimeCodec, definitions: Definitions, definitio
   }
 }
 
-export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
+export function compileSchemaRuntime(schema: Schema, lazy?: LazyFields): RuntimeCodec {
   let definitions: Definitions = Object.create(null) as Definitions
   for (let i = 0; i < schema.definitions.length; i++) {
     definitions[schema.definitions[i].name] = schema.definitions[i]
@@ -279,6 +358,7 @@ export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
   let result: RuntimeCodec = {
     ByteBuffer: ByteBuffer
   }
+  let skipper: SchemaSkipper | undefined
 
   for (let i = 0; i < schema.definitions.length; i++) {
     let definition = schema.definitions[i]
@@ -297,7 +377,25 @@ export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
 
       case 'STRUCT':
       case 'MESSAGE': {
-        result['decode' + definition.name] = interpretDecode(result, definitions, definition)
+        const lazyNames = definition.kind === 'MESSAGE' ? lazy?.fields[definition.name] : undefined
+        const lazyDecoding =
+          lazy && lazyNames?.length
+            ? {
+                lazy,
+                skipper: (skipper ??= createSchemaSkipper(schema)),
+                accessors: new Map(
+                  definition.fields
+                    .filter((field) => lazyNames.includes(field.name))
+                    .map((field) => [field.name, lazyAccessor(result, definitions, field, lazy)])
+                )
+              }
+            : undefined
+        result['decode' + definition.name] = interpretDecode(
+          result,
+          definitions,
+          definition,
+          lazyDecoding
+        )
         result['encode' + definition.name] = interpretEncode(result, definitions, definition)
         break
       }

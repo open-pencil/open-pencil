@@ -1,6 +1,6 @@
 export type { Schema, Definition, Field } from './schema'
 export { ByteBuffer } from './bb'
-export { compileSchemaRuntime as compileSchema } from './interpreter'
+export { compileSchemaRuntime as compileSchema, type LazyFields } from './interpreter'
 export { decodeBinarySchema, encodeBinarySchema } from './binary'
 export { parseSchema } from './parser'
 export { createSchemaSkipper, type SchemaSkipper } from './skip'
