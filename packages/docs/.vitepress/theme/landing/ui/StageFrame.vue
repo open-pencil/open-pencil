@@ -7,9 +7,18 @@ import { useLandingMessages } from '../content/messages'
 import { isPosterCapture } from '../posters'
 import StagePoster from './StagePoster.vue'
 
-/** The editor needs WebGL and CanvasKit, so a stage never renders on the server. */
-const FeatureStage = defineClientComponent(() => import('../stage/FeatureStage.vue'))
-const CollabStage = defineClientComponent(() => import('../stage/collab/CollabStage.vue'))
+/**
+ * The editor needs WebGL and CanvasKit, so a stage never renders on the server. The server build
+ * leaves the editor out entirely: `import.meta.env.SSR` is fixed at build time, so that branch,
+ * and the whole app it would compile, is dropped there.
+ */
+const SERVER_ONLY = () => Promise.reject(new Error('Landing stages render only in the browser'))
+const FeatureStage = defineClientComponent(() =>
+  import.meta.env.SSR ? SERVER_ONLY() : import('../stage/FeatureStage.vue')
+)
+const CollabStage = defineClientComponent(() =>
+  import.meta.env.SSR ? SERVER_ONLY() : import('../stage/collab/CollabStage.vue')
+)
 
 const { kind } = defineProps<{ kind: FeatureKind }>()
 
