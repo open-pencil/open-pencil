@@ -6,6 +6,7 @@ import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
 import type { StyleRun } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
+import { iconify } from '@open-pencil/core/icons'
 import { getInstanceOverride } from '@open-pencil/scene-graph'
 import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
 
@@ -49,6 +50,7 @@ function setup() {
     getCk: () => null,
     loadFont: async () => null,
     getViewportSize: () => ({ width: 800, height: 600 }),
+    icons: iconify,
     subscribeToGraph: () => undefined,
     resolveFigmaClipboardImages: null,
     beginInteractiveEdit: () => () => undefined,

@@ -4,6 +4,7 @@ import { jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { rekaExport, type RekaExport } from './behaviours'
+import { iconProps } from './icons'
 import { collectProps, NODE_TYPE_TO_TAG, type JSXProp } from './props'
 import { valueSyntax } from './value'
 
@@ -57,6 +58,12 @@ function nodeToJSX(
       .getChildren(node.id)
       .flatMap((child) => nodeToJSX(child, graph, childDepth, layerIds, reka))
   if (reka.flatten.has(node.id)) return children(depth)
+  // An icon is written by name; its paths are the icon set's to draw again.
+  const icon = iconProps(node, graph)
+  if (icon) {
+    layerIds?.push(node.id)
+    return [jsx.element('Icon', icon.map(propAttribute), [], depth)]
+  }
   const tag = reka.tags.get(node.id) ?? NODE_TYPE_TO_TAG[node.type]
   if (!tag) return []
   layerIds?.push(node.id)

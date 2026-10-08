@@ -22,6 +22,7 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 - [Drawing Shapes](./drawing-shapes) — rectangles, ellipses, lines, frames, sections, polygons, and stars
 - [Text Editing](./text-editing) — creating and editing text with rich formatting
 - [Pen Tool](./pen-tool) — drawing vector paths with bezier curves
+- [Icons](./icons) — searching icon sets, inserting icons, and swapping or recoloring them
 
 ## Organizing & Managing
 

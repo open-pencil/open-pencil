@@ -52,6 +52,12 @@ export function isReaderPagePending(graph: SceneGraph, pageId: string): boolean 
     : !checkpoint.loadedPageIds.includes(sourceId)
 }
 
+/** Where the reader stands: which records became which layers, and which pages it loaded. */
+export function readerCheckpoint(graph: SceneGraph): FigSessionCheckpoint | undefined {
+  const state = states.get(graph)
+  return state?.session?.checkpoint() ?? state?.checkpoint
+}
+
 export function hasReaderSession(graph: SceneGraph): boolean {
   return states.has(graph)
 }
@@ -69,16 +75,16 @@ export function populateAllFigPages(graph: SceneGraph): boolean {
 }
 
 /**
- * Drop the session, its checkpoint, and the archive once every page is in the graph, internal
- * ones included, which the first save loads. The session keeps every record of the file decoded,
- * which for a large design kit is gigabytes, and nothing reads it again: no page is pending, and
- * later saves write from the document.
+ * Drop the session and the archive once every page is in the graph, internal ones included, which
+ * the first full save loads. The session keeps every record of the file decoded, which for a
+ * large design kit is gigabytes, and no page is pending. The checkpoint stays: it says which
+ * record each layer came from, which saving only the changed records still reads.
  */
 function releaseLoadedReader(state: ReaderState): void {
   const session = state.session
   if (!session?.pages.every((page) => session.loadedPageIds.has(page.id))) return
+  state.checkpoint = session.checkpoint()
   state.session = undefined
-  state.checkpoint = undefined
   state.bytes = undefined
   state.complete = true
 }

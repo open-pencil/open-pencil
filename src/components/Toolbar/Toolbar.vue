@@ -13,6 +13,7 @@ import type { Tool } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toolIcons } from '@/app/editor/icons'
 import { useActionToast } from '@/app/shell/toast/action'
+import InsertIconButton from '@/components/icon-picker/InsertIconButton.vue'
 import { useToolbarActions } from '@/components/Toolbar/actions'
 import DesktopToolbar from '@/components/Toolbar/DesktopToolbar.vue'
 import MobileToolbar from '@/components/Toolbar/MobileToolbar.vue'
@@ -77,7 +78,11 @@ function onActionTap(item: ToolbarActionItem) {
       :tool-shortcuts="toolShortcuts"
       :ui="toolbarUI"
       @set-tool="actions.setTool"
-    />
+    >
+      <template #end>
+        <InsertIconButton :ui="toolbarUI" />
+      </template>
+    </DesktopToolbar>
 
     <MobileToolbar
       v-else
@@ -98,6 +103,10 @@ function onActionTap(item: ToolbarActionItem) {
       @prev="goPrev"
       @next="goNext"
       @action="onActionTap"
-    />
+    >
+      <template #end>
+        <InsertIconButton mobile :ui="toolbarUI" />
+      </template>
+    </MobileToolbar>
   </ToolbarRoot>
 </template>

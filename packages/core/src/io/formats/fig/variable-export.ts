@@ -23,9 +23,15 @@ export function assignVariableGuid(
   id: string,
   localIdCounter: { value: number },
   assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
+  nodeSourceGuidValues: Set<string>,
+  keepsGuid: (id: string) => boolean = () => true
 ): GUID {
-  if (/^\d+:\d+$/.test(id) && !assignedGuidValues.has(id) && !nodeSourceGuidValues.has(id)) {
+  if (
+    keepsGuid(id) &&
+    /^\d+:\d+$/.test(id) &&
+    !assignedGuidValues.has(id) &&
+    !nodeSourceGuidValues.has(id)
+  ) {
     const guid = stringToGuid(id)
     assignedGuidValues.add(id)
     return guid
@@ -41,14 +47,16 @@ export function assignVariableGuids(
   varIdToGuid: Map<string, GUID>,
   modeIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
+  nodeSourceGuidValues: Set<string>,
+  keepsGuid?: (id: string) => boolean
 ): void {
   for (const [colId, col] of graph.variableCollections) {
     const colGuid = assignVariableGuid(
       colId,
       localIdCounter,
       assignedGuidValues,
-      nodeSourceGuidValues
+      nodeSourceGuidValues,
+      keepsGuid
     )
     varIdToGuid.set(colId, colGuid)
     for (const mode of col.modes) {
@@ -56,7 +64,8 @@ export function assignVariableGuids(
         mode.modeId,
         localIdCounter,
         assignedGuidValues,
-        nodeSourceGuidValues
+        nodeSourceGuidValues,
+        keepsGuid
       )
       modeIdToGuid.set(mode.modeId, modeGuid)
     }
@@ -65,7 +74,8 @@ export function assignVariableGuids(
         varId,
         localIdCounter,
         assignedGuidValues,
-        nodeSourceGuidValues
+        nodeSourceGuidValues,
+        keepsGuid
       )
       varIdToGuid.set(varId, varGuid)
     }

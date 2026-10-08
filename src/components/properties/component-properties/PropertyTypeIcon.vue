@@ -8,6 +8,11 @@ const { kind } = defineProps<{ kind: ComponentPropertyType }>()
     class="size-3.5 shrink-0 text-muted"
     aria-hidden="true"
   />
+  <icon-lucide-diamond
+    v-else-if="kind === 'VARIANT'"
+    class="size-3.5 shrink-0 text-muted"
+    aria-hidden="true"
+  />
   <icon-lucide-type
     v-else-if="kind === 'TEXT'"
     class="size-3.5 shrink-0 text-muted"

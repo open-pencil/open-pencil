@@ -31,6 +31,8 @@ export const userGuideSidebar = (
       { text: labels.text, link: `${prefix}/user-guide/text-editing` },
       { text: labels.pen, link: `${prefix}/user-guide/pen-tool` },
       { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.icons, link: '/user-guide/icons' },
     ],
   },
   {

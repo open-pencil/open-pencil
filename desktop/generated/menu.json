@@ -306,6 +306,13 @@
         "type": "separator"
       },
       {
+        "id": "insert-icon",
+        "label": "Insert Icon…"
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "selection.toggleMask",
         "label": "Use as Mask",
         "accelerator": "CmdOrCtrl+Alt+M"

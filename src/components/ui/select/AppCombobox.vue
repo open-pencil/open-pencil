@@ -40,6 +40,8 @@ interface AppComboboxProps {
   emptyLabel?: string
   disabled?: boolean
   resultLimit?: number
+  /** How the open list lines up with the trigger; `end` for a trigger at the end of a field. */
+  align?: 'start' | 'center' | 'end'
   ui?: ComponentUI<AppComboboxTheme>
 }
 
@@ -53,6 +55,7 @@ const {
   emptyLabel = 'No results',
   disabled = false,
   resultLimit = 100,
+  align = 'start',
   ui
 } = defineProps<AppComboboxProps>()
 
@@ -120,6 +123,7 @@ function updateOpen(value: boolean): void {
     <ComboboxPortal v-if="portalActive">
       <ComboboxContent
         position="popper"
+        :align="align"
         :side-offset="2"
         :class="styles.content({ class: ui?.content })"
       >

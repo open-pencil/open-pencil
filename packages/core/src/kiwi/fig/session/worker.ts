@@ -1,4 +1,5 @@
 import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import { createFigArchiveOperations } from '#core/kiwi/fig/session/archive'
 import type {
   FigSessionOpenRequest,
   FigSessionRequest,
@@ -7,7 +8,7 @@ import type {
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
 
 let session: ReturnType<typeof openReaderSession> | undefined
-let originalArchive: Uint8Array | undefined
+let archive: ReturnType<typeof createFigArchiveOperations> | undefined
 let port: MessagePort | undefined
 
 function respond(message: FigSessionResponse): void {
@@ -25,19 +26,50 @@ function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): vo
   })
 }
 
+type ArchiveRequest = Extract<
+  FigSessionRequest,
+  { type: 'original-archive' | 'archive-info' | 'component-pages' | 'patch-archive' }
+>
+
+function answerArchiveRequest(request: ArchiveRequest): void {
+  const { requestId } = request
+  try {
+    if (!archive) throw new Error('FIG session has no original archive')
+    if (request.type === 'original-archive') {
+      const bytes = archive.original()
+      port?.postMessage({ type: 'original-archive-result', requestId, bytes }, [bytes.buffer])
+    } else if (request.type === 'archive-info') {
+      respond({ type: 'archive-info-result', requestId, info: archive.info() })
+    } else if (request.type === 'component-pages') {
+      const pageIds = archive.componentPages(request.componentIds)
+      respond({ type: 'component-pages-result', requestId, pageIds })
+    } else {
+      const bytes = archive.patch(request.patch, request.input)
+      port?.postMessage({ type: 'patch-archive-result', requestId, bytes }, [bytes.buffer])
+    }
+  } catch (error) {
+    respond({
+      type: 'archive-error',
+      requestId,
+      error: error instanceof Error ? error.message : String(error)
+    })
+  }
+}
+
 function handleRequest(request: FigSessionRequest): void {
   try {
-    if (request.type === 'original-archive') {
-      if (!originalArchive) throw new Error('FIG session has no original archive')
-      const bytes = originalArchive.slice()
-      port?.postMessage({ type: 'original-archive-result', requestId: request.requestId, bytes }, [
-        bytes.buffer
-      ])
+    if (
+      request.type === 'original-archive' ||
+      request.type === 'archive-info' ||
+      request.type === 'component-pages' ||
+      request.type === 'patch-archive'
+    ) {
+      answerArchiveRequest(request)
       return
     }
     if (request.type === 'dispose') {
       session = undefined
-      originalArchive = undefined
+      archive = undefined
       respond({ type: 'disposed' })
       port?.close()
       port = undefined
@@ -45,6 +77,10 @@ function handleRequest(request: FigSessionRequest): void {
       return
     }
     if (request.type === 'cancel') return
+    if (request.type === 'retire') {
+      session = undefined
+      return
+    }
     populate(request)
   } catch (error) {
     respond({
@@ -61,9 +97,11 @@ self.onmessage = (event: MessageEvent<FigSessionOpenRequest>) => {
   port.onmessage = (message: MessageEvent<FigSessionRequest>) => handleRequest(message.data)
   port.start()
   // The worker copies the archive itself, so the main thread sends the file once.
-  originalArchive = new Uint8Array(request.buffer.slice(0))
+  const archiveBytes = request.buffer.slice(0)
   try {
     const opened = openReaderSession(request.buffer, request.options?.populate)
+    const archiveInfo = opened.session.archiveRecordInfo()
+    archive = createFigArchiveOperations(archiveBytes, () => archiveInfo)
     respond({ type: 'page-manifest', pages: opened.pages })
     session =
       request.options?.populate === 'first-page' || request.options?.populate === 'none'
@@ -72,7 +110,8 @@ self.onmessage = (event: MessageEvent<FigSessionOpenRequest>) => {
     respond({
       type: 'graph',
       graph: serializeSceneGraph(opened.graph),
-      checkpoint: opened.checkpoint()
+      checkpoint: opened.checkpoint(),
+      archiveInfo
     })
   } catch (error) {
     respond({ type: 'graph', error: error instanceof Error ? error.message : String(error) })

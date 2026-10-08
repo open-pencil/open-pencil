@@ -3,6 +3,7 @@ export { ByteBuffer } from './bb'
 export { compileSchemaRuntime as compileSchema } from './interpreter'
 export { decodeBinarySchema, encodeBinarySchema } from './binary'
 export { parseSchema } from './parser'
+export { createSchemaSkipper, type SchemaSkipper } from './skip'
 export {
   validateSchema,
   expectFieldNumber,

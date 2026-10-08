@@ -141,6 +141,6 @@ export async function prepareForExport(
   syncFontGeneration(r)
   withTextMeasurer(
     (node, maxWidth) => r.measureTextNode(node, maxWidth),
-    () => computeAllLayouts(graph, pageId)
+    () => graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph, pageId))
   )
 }

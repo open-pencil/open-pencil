@@ -1,6 +1,5 @@
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { IS_BROWSER } from '#core/constants'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
@@ -8,6 +7,11 @@ import {
   registerFigPopulationWorker,
   registerOriginalArchiveRequest
 } from '#core/kiwi/fig/population/client'
+import {
+  localFigArchive,
+  registerFigArchive,
+  workerFigArchive
+} from '#core/kiwi/fig/session/archive'
 import { createFigSessionWorker } from '#core/kiwi/fig/session/client'
 import {
   registerReaderRecovery,
@@ -33,7 +37,11 @@ function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}
   options.signal?.throwIfAborted()
   const bytes = buffer.slice(0)
   registerReaderSession(bytes, reader.session, reader.diagnostics)
-  registerOriginalArchiveRequest(reader.graph, async () => new Uint8Array(bytes.slice(0)))
+  // Taken now, while the records are decoded: the archive outlives the reader's session.
+  const archiveInfo = reader.session.archiveRecordInfo()
+  const archive = localFigArchive(bytes, () => archiveInfo)
+  registerFigArchive(reader.graph, archive)
+  registerOriginalArchiveRequest(reader.graph, () => archive.original())
   return reader.graph
 }
 
@@ -45,7 +53,6 @@ export function parseFigFileViaWorker(
     options.signal?.throwIfAborted()
     const worker = createFigSessionWorker()
     const channel = new MessageChannel()
-    const pendingArchives = new Map<string, (bytes: Uint8Array) => void>()
     const abort = () => {
       channel.port1.postMessage({ type: 'dispose' })
       channel.port1.close()
@@ -55,15 +62,6 @@ export function parseFigFileViaWorker(
     options.signal?.addEventListener('abort', abort, { once: true })
     const cleanupAbort = () => options.signal?.removeEventListener('abort', abort)
 
-    // A listener of its own: registerFigPopulationWorker takes over port1.onmessage
-    // once the graph arrives, and archive requests are made after that.
-    channel.port1.addEventListener('message', (e: MessageEvent<FigSessionResponse>) => {
-      if (e.data.type !== 'original-archive-result') return
-      const resolveArchive = pendingArchives.get(e.data.requestId)
-      if (!resolveArchive) return
-      pendingArchives.delete(e.data.requestId)
-      resolveArchive(e.data.bytes)
-    })
     channel.port1.onmessage = (e: MessageEvent<FigSessionResponse>) => {
       if (e.data.type === 'page-manifest') {
         options.onPages?.(e.data.pages)
@@ -81,18 +79,17 @@ export function parseFigFileViaWorker(
         const graph = deserializeSceneGraph(e.data.graph)
         if (options.populate === 'first-page' || options.populate === 'none') {
           cleanupAbort()
-          if (!e.data.checkpoint) throw new Error('Missing reader checkpoint')
-          registerReaderRecovery(graph, buffer.slice(0), e.data.checkpoint)
-          registerFigPopulationWorker(graph, worker, channel.port1)
-          registerOriginalArchiveRequest(
-            graph,
-            () =>
-              new Promise<Uint8Array>((resolveArchive) => {
-                const requestId = randomHex()
-                pendingArchives.set(requestId, resolveArchive)
-                channel.port1.postMessage({ type: 'original-archive', requestId })
-              })
+          const { checkpoint, archiveInfo } = e.data
+          if (!checkpoint || !archiveInfo) throw new Error('Missing reader checkpoint')
+          const bytes = buffer.slice(0)
+          registerReaderRecovery(graph, bytes, checkpoint)
+          // The worker writes the archive back; without it the main thread does, from its copy.
+          const archive = workerFigArchive(channel.port1, worker, () =>
+            localFigArchive(bytes, () => archiveInfo)
           )
+          registerFigPopulationWorker(graph, worker, channel.port1, () => archive.dropWorker())
+          registerFigArchive(graph, archive)
+          registerOriginalArchiveRequest(graph, () => archive.original())
         } else {
           cleanupAbort()
           channel.port1.close()
