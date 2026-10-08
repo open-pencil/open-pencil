@@ -13,7 +13,7 @@ description: Execute JavaScript with a Figma-compatible Plugin API to query, bat
 openpencil eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-The `-c` flag accepts JavaScript. If the code does not start with `return`, OpenPencil wraps it in an async function and returns the value from that function when present.
+The `-c` flag accepts JavaScript. Its last expression is the result, so `return` is optional; `await` works at the top level. A script whose last statement is not an expression, such as a declaration, has no result and prints nothing.
 
 ```sh
 openpencil eval design.fig -c "
@@ -85,6 +85,31 @@ openpencil eval design.fig -c "return figma.currentPage.children.map((n) => n.na
 
 Use `--quiet` / `-q` to suppress output when only writing a file.
 
+## The `openpencil` API
+
+Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma Plugin API, in the same style. The same global is available to the `eval` tool and the running app's automation.
+
+A main component or component set can [behave as a Reka UI control](/user-guide/components#behaviours-and-preview). Bind it by its own property and slot names:
+
+```sh
+openpencil eval design.fig -w -c '
+  const set = figma.currentPage.findOne((n) => n.type === "COMPONENT_SET" && n.name === "Switch")
+  const behaviour = openpencil.setBehaviour(set, "switch")
+    .bindValue("value", "State")                          // On and Off guessed from the variants
+    .bindPart("thumb", set.findOne((n) => n.name === "Thumb")) // the frame becomes a slot
+  behaviour.states = "Interaction"
+  behaviour.missing
+'
+```
+
+- `openpencil.setBehaviour(node, kindOrSpec)` replaces a component's behaviour: a kind alone, or a spec such as `{ kind: "slider", parts: { track: "Track", thumb: "Thumb" }, numbers: { value: { min: 0, max: 10 } } }`. It returns the behaviour.
+- `openpencil.getBehaviour(node)` reads one, or `null`; a variant reads its set's.
+- A behaviour has `kind`, `spec` (by name), `missing` (required values and parts still unbound), and `states`, and `bindValue(valueId, property, { on, off })`, `bindPart(partId, slotNameOrFrame)`, `setNumber(valueId, { min, max, step, default })`, and `remove()`.
+- `openpencil.behaviourKinds` lists every kind with the values and parts it binds.
+- `openpencil.createSlot(frame)` makes a frame of a main component a slot and returns its name.
+
+Names the component does not have fail with an error that lists the ones it has.
+
 ## Supported API surface
 
 The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil's scene graph and file format.
@@ -128,6 +153,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 ### Components
 
 - `figma.createComponentFromNode(node)`
+- `figma.combineAsVariants(components, parent)` — properties come from names such as `State=On, Size=Large`
 - `component.createInstance()`
 - `instance.mainComponent`
 
@@ -162,7 +188,10 @@ Common node properties are readable/writable through the proxy, including:
 - `figma.createImage(data)`
 - `figma.loadFontAsync(fontName)` no-ops because OpenPencil does not gate text edits on plugin font loading
 - `figma.listAvailableFontsAsync()` returns host-provided fonts when available
+- `figma.getNodeByIdAsync(id)` and `instance.getMainComponentAsync()` resolve to the same nodes as `figma.getNodeById(id)` and `instance.mainComponent`, for scripts written for Figma's dynamic-page mode
 - `figma.notify(message)` logs a warning in headless mode
+- `instance.swapComponent(component)` points an instance at another component
+- `component.createSlot()` adds a slot frame and its `SLOT` property; slot frames read `type: 'SLOT'`, `resetSlot()` brings back an instance slot's component content, and `limitViolations` lists the limits an instance slot breaks. `addComponentProperty` and `editComponentProperty` take a `description` and, for slots, `slotSettings`
 - `figma.viewport`
 
 ## Not yet Figma-compatible
@@ -171,7 +200,6 @@ These Figma APIs are not exposed as compatible helpers yet:
 
 - `node.exportAsync()`
 - `node.setBoundVariable(field, variable)`
-- `node.detachInstance()`
 - `figma.combineAsVariants(components, parent)`
 - Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity

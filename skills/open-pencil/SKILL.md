@@ -54,12 +54,17 @@ Common commands:
 - `find` — find nodes by name/type
 - `query` — XPath selectors for node search
 - `variables` — list variables and collections
+- `tokens` — variables as a CSS custom-property stylesheet or Tailwind v4 theme
 - `export` — export PNG/JPG/WEBP/SVG/PDF/JSX/.fig
 - `convert` — convert between supported document formats
 - `analyze` — colors, typography, spacing, repeated clusters
 - `lint` — consistency, structure, and accessibility checks
 - `formats` — supported document/export formats
 - `eval` — execute JavaScript with the Figma Plugin API
+- `tool` — list, describe, and call any MCP tool from the shell, in app or headless mode
+- `documents` — list, open, create, save, close, and activate documents in the running app
+- `undo` / `redo` — step back through your own (automation) changes in the running app
+- `settings` — read and change editor settings in the running app
 
 ### Inspect
 
@@ -73,6 +78,7 @@ openpencil node --id 1:23  # app mode
 openpencil selection --json
 openpencil variables design.fig
 openpencil variables --collection "Colors" --type COLOR
+openpencil tokens design.fig --format tailwind > theme.css
 ```
 
 ### Search and XPath query
@@ -105,6 +111,8 @@ openpencil export design.fig -f pdf -o page.pdf
 openpencil export design.fig -f fig -o roundtrip.fig
 openpencil export design.fig -f jsx -o component.jsx
 openpencil export design.fig -f jsx --style tailwind -o component.tsx
+openpencil export design.pen -f storybook -o src/stories --watch  # stories + design images per component, re-exported on save
+openpencil export 'src/**/*.pen' -f storybook --beside  # stories next to each design file
 openpencil export design.fig --thumbnail --width 1920 --height 1080
 openpencil export --page "Components" -o components.png
 
@@ -122,7 +130,10 @@ openpencil analyze spacing design.fig --grid 8
 openpencil analyze clusters design.fig --min-count 3
 openpencil lint design.fig
 openpencil lint design.fig --json
+openpencil lint design.fig --fix -o fixed.fig     # bind matching color variables, round to whole pixels
 ```
+
+In MCP and AI chat, `lint` lists findings with their `fix` and `suggestions`; `lint_fix` applies the safe fixes, and the first suggestion of each finding with `suggestions: true`.
 
 ### Eval (Figma Plugin API)
 
@@ -149,6 +160,59 @@ openpencil eval design.fig -o modified.fig -c '...'
 
 # Read code from stdin
 echo 'figma.currentPage.children.map(n => n.name)' | openpencil eval design.fig --stdin
+```
+
+Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma API, in its style. A main component can behave as a Reka UI control, by its own property and slot names:
+
+```bash
+openpencil eval design.fig -w -c '
+  const set = figma.currentPage.findOne(n => n.type === "COMPONENT_SET" && n.name === "Switch");
+  const thumb = set.findOne(n => n.name === "Thumb");
+  const behaviour = openpencil.setBehaviour(set, "switch")
+    .bindValue("value", "State")      // On/Off guessed from the variant values
+    .bindPart("thumb", thumb);        // the frame becomes a slot
+  behaviour.states = "Interaction";
+  behaviour.missing                    // [] when the control is complete
+'
+```
+
+`openpencil.behaviourKinds` lists every kind with its values and parts; `openpencil.getBehaviour(node)` reads one (a variant reads its set's); `openpencil.createSlot(frame)` makes a frame a slot. The `set_behaviour`, `get_behaviour`, and `create_slot` tools do the same over MCP, and design JSX writes controls with Reka's element names (`Switch.Root`, `Switch.Thumb`).
+
+### Diff
+
+Compare nodes and documents, and apply patches:
+
+```bash
+openpencil diff create design.fig --from 1:23 --to 1:87       # JSX attribute patch
+openpencil diff jsx design.fig --from 1:23 --to 1:87          # JSX structure
+openpencil diff show 1:24 design.fig --attributes 'rounded={8}' > fix.diff
+openpencil diff apply fix.diff design.fig --dry-run           # fails on stale values
+openpencil diff apply fix.diff design.fig --write
+openpencil diff visual design.fig --from 1:23 --to 1:87 -o diff.png
+openpencil diff files before.fig after.fig                    # exit 1 when different
+```
+
+### Control the running app
+
+```bash
+openpencil documents list --json                       # tab IDs, paths, pages
+openpencil documents open designs/landing.fig          # new tab; --json returns target.documentId
+openpencil documents new --path designs/draft.fig
+openpencil documents activate tab-123 --page-id 0:4    # bring a tab to the front
+openpencil documents save --document-id tab-123
+openpencil documents close --document-id tab-123 --save   # or --discard; fails on unsaved changes otherwise
+openpencil undo --document-id tab-123                  # also: redo
+openpencil settings get --json
+openpencil settings set editing.snapping.pixelGrid false
+```
+
+`tool` exposes every MCP tool, so the CLI is never limited to its dedicated commands:
+
+```bash
+openpencil tool list
+openpencil tool describe set_fill                      # JSON Schema for the arguments
+openpencil tool call set_fill --document-id tab-123 --args '{"id":"0:5","color":"#2563eb"}'
+openpencil tool call create_page design.fig --args '{"name":"Icons"}' --write   # headless
 ```
 
 Every command that reports structured data supports `--json` when appropriate.
@@ -198,13 +262,14 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 
 ### MCP workflow
 
-1. **Open/create a document** — `open_file { path }` within the effective filesystem root, or `new_document {}`.
+1. **Find or open a document** — `list_documents` for open tabs and their IDs; `open_file { path }` within the effective filesystem root, or `new_document {}`. Pass `document_id` and `page_id` explicitly instead of relying on the active tab; `activate_document { document_id }` brings a tab to the front when the user should see it.
 2. **Query** — `get_page_tree`, `find_nodes`, `query_nodes`, `get_node`, `list_pages`, `get_current_page`.
-3. **Inspect** — `get_jsx`, `diff_jsx`, `describe`, `export_image`, `export_svg`, `export_pdf`.
+3. **Inspect** — `get_jsx`, `diff_jsx`, `diff_create`, `diff_visual`, `describe`, `export_image`, `export_svg`, `export_pdf`.
 4. **Modify** — `render`, `batch_update`, `update_node`, `set_fill`, `set_layout`, `create_shape`, `import_svg`, etc.
-5. **Navigate** — after creating or editing visible canvas content, call `select_nodes` and `viewport_zoom_to_fit { id }` (or `node_bounds` + `viewport_set`) so the user can see the result in the running editor.
-6. **Save/export** — `save_file`, `export_image`, `export_svg`, `export_pdf`, or CLI `export`.
-7. **Close** — `close_file { document_id }` closes a document tab after the workflow; it prompts to save unsaved changes.
+5. **Save/export** — `save_file`, `export_image`, `export_svg`, `export_pdf`, or CLI `export`.
+6. **Close** — `close_file { document_id, unsaved }` closes a document tab after the workflow. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; automation never prompts in the app.
+
+Use `undo` / `redo { document_id }` to step back your own changes. They refuse when the newest step was made by the user in the editor; never work around that. `get_settings` and `update_settings { settings }` read and change editor preferences such as theme, language, and snapping; they never expose credentials, models, or tool access.
 
 ### Browser-native WebMCP (experimental)
 
@@ -224,12 +289,15 @@ Discover available tools and their arguments from the connected server or browse
 
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
 - **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
-- **`diff_jsx`** — compare two nodes structurally before editing.
+- **`diff_jsx` / `diff_create`** — compare two nodes as a JSX line diff or as an appliable patch of JSX attributes; `diff_show` previews setting attributes and `diff_apply` applies a patch only if the nodes still match it.
+- **`diff_visual`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
 - **`batch_update`** — apply multiple node updates efficiently.
 - **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.
-- **`viewport_zoom_to_fit` / `viewport_set` / `viewport_get`** — keep the live editor focused on the created or edited design.
+- **`viewport_zoom_to_fit` / `viewport_set` / `viewport_get`** — move the user's view only when they ask to be shown something.
 - **`get_codegen_prompt`** — retrieve OpenPencil's current JSX/codegen guidance.
+- **`undo` / `redo`** — revert or reapply your newest change; they refuse to touch the user's edits.
+- **`list_documents` / `activate_document`** — discover open tabs and show the one you worked on.
 
 ## JSX Rendering
 
@@ -244,9 +312,8 @@ Use the `render` tool for JSX strings. Use only the APIs exposed by the installe
 - Use `tree --depth 2` or `query_nodes` to avoid overwhelming output on large files.
 - Export specific nodes with `--node` for faster visual checks.
 - Use `export_image` after changes to verify visual quality.
-- After creating a visible design, select it and zoom the editor to it: `select_nodes { ids: [id] }` then `viewport_zoom_to_fit { id }`.
-- If zoom-to-fit is unavailable in a client, use `node_bounds` to calculate the center and call `viewport_set { x, y, zoom }`.
+- The running editor shows each MCP session as an agent at the layers its tools touch, and follows it while it works when the user has Follow agents on. Leave the user's selection and view alone unless they ask to be shown something.
 - Use `analyze colors --similar` to find near-duplicate colors.
-- Use `eval` for Figma Plugin API operations not covered by a dedicated CLI/MCP tool.
+- Use `openpencil tool call` for MCP tools without a dedicated CLI command, and `eval` for Figma Plugin API operations not covered by any tool.
 - Use `--json` when piping CLI output to scripts.
 - In app mode, `eval` and MCP modifications are reflected live in the editor.

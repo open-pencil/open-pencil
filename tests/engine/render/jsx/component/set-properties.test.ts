@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { Component, ComponentSet, Instance, Text, renderTree } from '@open-pencil/core/design-jsx'
+import { renderTree } from '@open-pencil/core/design-jsx'
+import { Component, ComponentSet, Instance, Text } from '@open-pencil/design-jsx'
 import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'

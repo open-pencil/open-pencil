@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Vector } from '@open-pencil/core'
-import { importNodeChanges } from '@open-pencil/core/kiwi'
+import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -77,35 +77,48 @@ function textNode(
 }
 
 describe('FIG text sizing import', () => {
-  test('imports Figma auto-layout text matching derived layout as auto-size', () => {
-    const graph = importNodeChanges([documentNode(), canvasNode(), stackFrame(2), textNode(3, 2)])
+  test('keeps explicit fixed text fixed even when its box matches derived layout', () => {
+    const graph = materializeDocument([
+      documentNode(),
+      canvasNode(),
+      stackFrame(2),
+      textNode(3, 2)
+    ]).graph
 
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     if (!text) throw new Error('Expected text node')
 
-    expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('NONE')
     expect(getNodeOrThrow(graph, text.id).width).toBe(56)
     expect(getNodeOrThrow(graph, text.id).height).toBe(22)
   })
 
-  test('keeps fixed text outside auto-layout fixed', () => {
-    const graph = importNodeChanges([documentNode(), canvasNode(), textNode(3, 1)])
+  test('preserves an explicit auto-size mode inside auto-layout', () => {
+    const textRecord = textNode(3, 2)
+    textRecord.textAutoResize = 'WIDTH_AND_HEIGHT'
+    const { graph } = materializeDocument([documentNode(), canvasNode(), stackFrame(2), textRecord])
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
+    expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+  })
 
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+  test('keeps fixed text outside auto-layout fixed', () => {
+    const graph = materializeDocument([documentNode(), canvasNode(), textNode(3, 1)]).graph
+
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     if (!text) throw new Error('Expected text node')
 
     expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('NONE')
   })
 
   test('keeps explicit larger text boxes inside auto-layout fixed', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       documentNode(),
       canvasNode(),
       stackFrame(2),
       textNode(3, 2, { size: { x: 120, y: 48 }, derivedSize: { x: 56, y: 22 } })
-    ])
+    ]).graph
 
-    const text = graph.getAllNodes().find((node) => node.type === 'TEXT')
+    const text = [...graph.getAllNodes()].find((node) => node.type === 'TEXT')
     if (!text) throw new Error('Expected text node')
 
     expect(getNodeOrThrow(graph, text.id).textAutoResize).toBe('NONE')

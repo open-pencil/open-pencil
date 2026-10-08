@@ -1,5 +1,10 @@
 import { defineRule } from '#core/lint/rule'
-const SCALE = new Set([0, 2, 4, 6, 8, 12, 16, 20, 24, 32, 9999])
+import { nearestValue } from '#core/lint/utils'
+
+/** Radii from the scale; the pill radius is offered only for a layer that already reads as one. */
+const SCALE = [0, 2, 4, 6, 8, 12, 16, 20, 24, 32]
+const PILL_RADIUS = 9999
+
 export default defineRule({
   meta: {
     id: 'consistent-radius',
@@ -8,11 +13,17 @@ export default defineRule({
   },
   match: ['RECTANGLE', 'FRAME', 'COMPONENT', 'INSTANCE'],
   check(node, context) {
-    if (node.cornerRadius > 0 && !SCALE.has(node.cornerRadius))
-      context.report({
-        node,
-        message: `Corner radius ${node.cornerRadius}px is not in scale`,
-        suggest: 'Use a radius token or a scale value'
-      })
+    const radius = node.cornerRadius
+    if (radius <= 0 || radius === PILL_RADIUS || SCALE.includes(radius)) return
+    const pill = radius >= Math.min(node.width, node.height) / 2
+    const suggested = pill ? PILL_RADIUS : nearestValue(radius, SCALE.slice(1))
+    context.report({
+      node,
+      message: `Corner radius ${radius}px is not in scale`,
+      suggest: 'Use a radius token or a scale value',
+      data: { radius },
+      suggestions:
+        suggested === null ? undefined : [{ kind: 'set', changes: { cornerRadius: suggested } }]
+    })
   }
 })

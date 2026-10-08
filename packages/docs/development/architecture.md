@@ -2,6 +2,9 @@
 
 ## System Overview
 
+For source identity, override evaluation, page sessions, and export contracts, see
+[.fig Reader Architecture](./fig-reader).
+
 ```mermaid
 graph TB
     subgraph Tauri["Tauri v2 Shell"]
@@ -74,9 +77,13 @@ Tools are defined once in `packages/core/src/tools/`, split by domain: read, cre
 
 - **AI chat** — valibot schemas, multi-provider (Anthropic, OpenAI, Google AI, OpenRouter, compatible endpoints)
 - **MCP server** — zod schemas, stdio + HTTP transports
-- **CLI** — available via the `eval` command
+- **CLI** — available via the `eval` command, whose scripts get the `figma` Plugin API and the `openpencil` API
 
 90+ core tools + 3 MCP file management tools. Includes XPath query (`query_nodes`), JSX inspection (`get_jsx`, `diff_jsx`), semantic description (`describe`), and vision-based verification (`export_image` returns images to the model).
+
+### Behaviours and Preview
+
+A behaviour stored on a main component makes it work as a Reka UI control. Preview runs top-level layers holding controls as live islands: shadow-DOM projections laid over the canvas, with each control mounted as its Reka UI primitive and drawn by the component's variants. See [Behaviours and Preview](./behaviours-and-preview).
 
 ### Undo/Redo
 
@@ -106,7 +113,7 @@ The headless CLI already supports `analyze colors/typography/spacing/clusters`. 
 
 ### Prototyping
 
-Frame-to-frame transitions, interaction triggers (click, hover, drag), overlay management, and fullscreen preview mode.
+Preview already runs components with behaviours as live controls. Next: reactions and variables that let controls drive the rest of a design, frame-to-frame transitions, interaction triggers, and overlays.
 
 ### Windows Code Signing
 

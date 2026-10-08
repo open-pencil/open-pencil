@@ -1,10 +1,21 @@
 import { mock } from 'bun:test'
 
+import type { InputRect, Paint } from 'canvaskit-wasm'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderEffects } from '#core/canvas/shadows'
 
-export function mockCalls(fn: ReturnType<typeof mock>): unknown[][] {
-  return (fn as { mock: { calls: unknown[][] } }).mock.calls
+import { asRenderer } from '../helpers'
+
+/**
+ * Reads the recorded calls off a stand-in method. The renderer stand-ins are widened to the real
+ * CanvasKit and `SkiaRenderer` shapes, so their members are typed as the plain functions they
+ * replace rather than as mocks, and the mock state has to be recovered at the read.
+ */
+export function mockCalls(fn: unknown): unknown[][] {
+  const calls = (fn as { mock?: { calls?: unknown[][] } }).mock?.calls
+  if (!calls) throw new Error('expected a mock function with recorded calls')
+  return calls
 }
 
 export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer {
@@ -15,7 +26,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     makeStroked = mock(() => new MockPath())
   }
 
-  return {
+  return asRenderer({
     ck: {
       Color4f: mock((r, g, b, a) => new Float32Array([r, g, b, a])),
       LTRBRect: mock((l, t, r, b) => new Float32Array([l, t, r, b])),
@@ -91,6 +102,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     },
     strokePaint: {
       setColor: mock(() => undefined),
+      setShader: mock(() => undefined),
       setStrokeWidth: mock(() => undefined),
       setAlphaf: mock(() => undefined),
       setPathEffect: mock(() => undefined),
@@ -135,7 +147,9 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     renderShape: mock(() => undefined),
     renderSection: mock(() => undefined),
     renderComponentSet: mock(() => undefined),
-    renderEffects: mock((...args) => renderEffects(overrides as SkiaRenderer, ...args)),
+    renderEffects: mock((...args: Parameters<SkiaRenderer['renderEffects']>) =>
+      renderEffects(asRenderer(overrides), ...args)
+    ),
     drawNodeFill: mock(() => undefined),
     drawNodeStroke: mock(() => undefined),
     drawStrokeWithAlign: mock(() => undefined),
@@ -147,7 +161,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     isRectangularType: mock(() => true),
     worldViewport: { x: 0, y: 0, w: 1000, h: 1000 },
     ...overrides
-  } as SkiaRenderer
+  })
 }
 
 export function createMockCanvas() {
@@ -163,7 +177,7 @@ export function createMockCanvas() {
     drawCircle: mock(() => undefined),
     drawRect: mock(() => undefined),
     drawPath: mock(() => undefined),
-    saveLayer: mock(() => undefined),
+    saveLayer: mock((_paint?: Paint, _bounds?: InputRect | null) => undefined),
     clipPath: mock(() => undefined),
     clipRRect: mock(() => undefined),
     clipRect: mock(() => undefined),

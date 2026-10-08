@@ -69,6 +69,7 @@ export function createDocumentSourceActions({
 
   const recovery = createDocumentRecovery({
     state,
+    version: changes.capture,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding()
@@ -76,6 +77,7 @@ export function createDocumentSourceActions({
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
+    version: changes.capture,
     buildFigFile,
     getFilePath,
     setFilePath,
@@ -97,6 +99,7 @@ export function createDocumentSourceActions({
 
   const autosave = createAutosave({
     state,
+    version: changes.capture,
     getSavedVersion,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
     saveCurrentDocument: async (version) => {
@@ -105,6 +108,11 @@ export function createDocumentSourceActions({
       if (await writeFile(data, version)) changes.markSaved(revision)
     }
   })
+
+  function markDocumentSaved() {
+    changes.markSaved()
+    setSavedVersion(changes.capture())
+  }
 
   function setDocumentSource(
     fileName: string,
@@ -119,9 +127,8 @@ export function createDocumentSourceActions({
     setFilePath(isFig ? (path ?? null) : null)
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
-    setSavedVersion(state.sceneVersion)
-    changes.markSaved()
-    void recovery.markProtectedVersion(state.sceneVersion)
+    markDocumentSaved()
+    void recovery.markProtectedVersion(changes.capture())
     if (isFig && (handle || path)) {
       void startWatchingFile()
     }
@@ -136,9 +143,8 @@ export function createDocumentSourceActions({
     setStorageBinding(binding)
     state.documentName = documentName
     state.autosaveEnabled = true
-    setSavedVersion(state.sceneVersion)
-    changes.markSaved()
-    void recovery.markProtectedVersion(state.sceneVersion)
+    markDocumentSaved()
+    void recovery.markProtectedVersion(changes.capture())
   }
 
   function setPlannedFilePath(path: string) {
@@ -149,6 +155,35 @@ export function createDocumentSourceActions({
     const downloadName = downloadNameFromPath(path)
     setDownloadName(downloadName)
     state.documentName = documentNameFromFigPath(downloadName)
+  }
+
+  /** Save to a new path; when the write fails, the document keeps the source it had. */
+  async function saveFigFileToPath(path: string): Promise<boolean> {
+    const previous = {
+      filePath: getFilePath(),
+      fileHandle: getFileHandle(),
+      storageBinding: getStorageBinding(),
+      downloadName: getDownloadName(),
+      documentName: state.documentName
+    }
+    const restore = () => {
+      setStorageBinding(previous.storageBinding)
+      setFileHandle(previous.fileHandle)
+      setFilePath(previous.filePath)
+      setDownloadName(previous.downloadName)
+      state.documentName = previous.documentName
+      if (previous.filePath || previous.fileHandle) void startWatchingFile()
+    }
+    setPlannedFilePath(path)
+    try {
+      const saved = await saveAndTrack(saveFigFile)
+      if (saved) void startWatchingFile()
+      else restore()
+      return saved
+    } catch (error) {
+      restore()
+      throw error
+    }
   }
 
   function startWatchingCurrentFile() {
@@ -166,17 +201,18 @@ export function createDocumentSourceActions({
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,
+    saveFigFileToPath,
     startWatchingCurrentFile,
     disposeDocumentIO,
     saveFigFile: () => saveAndTrack(saveFigFile),
     saveFigFileAs: () => saveAndTrack(saveFigFileAs),
     hasUnsavedChanges: changes.hasUnsavedChanges,
-    markDocumentSaved: changes.markSaved,
+    markDocumentSaved,
     getStorageBinding,
     getRecoveryId: () => recovery.getRecoveryId(),
-    adoptRecoverySnapshot: (id: string, version: number) => {
+    adoptRecoverySnapshot: (id: string) => {
       changes.markChanged()
-      return recovery.adoptRecoverySnapshot(id, version)
+      return recovery.adoptRecoverySnapshot(id)
     },
     persistRecoveryNow: () => recovery.persistNow(),
     discardRecovery: () => recovery.discardRecovery()

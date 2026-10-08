@@ -99,7 +99,7 @@ Do not gate shared CI on absolute timing. Dedicated benchmark hardware may gate 
 Compare two completed runs:
 
 ```sh
-bun tools/navigation-benchmark/src/cli.ts compare \
+bun tools/dev/navigation-benchmark/src/cli.ts compare \
   --baseline artifacts/navigation-benchmark/v0.14.0/metrics.json \
   --candidate artifacts/navigation-benchmark/current/metrics.json \
   --output artifacts/navigation-benchmark/comparison.json

@@ -1,21 +1,20 @@
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 
 import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit } from '@open-pencil/core/io'
-import { populateAllLazyFigImportRoots, populateLazyFigImportRoots } from '@open-pencil/core/kiwi'
+import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+
+import { printError } from '#cli/format'
 
 export { initCanvasKit }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
 /**
- * Parse a document without computing layout. Commands that read geometry call
- * the populate helpers below, which lay out the scope they materialize; every
- * other command would otherwise pay for the whole document.
- *
- * Anything that reads geometry without populating must call
- * `ensureDocumentLayout`.
+ * Parse a document without computing layout, which commands that never read geometry, such as
+ * `pages`, `fonts`, or `variables`, would otherwise pay for across the whole document. Commands
+ * that read geometry populate first, and the populate helpers lay the document out.
  */
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
@@ -23,23 +22,45 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
   return graph
 }
 
+/** `--write` and `--output` for commands that change a headless document. */
+export const documentWriteOptions = {
+  write: { type: 'boolean', alias: 'w', description: 'Write changes back to the input file' },
+  output: { type: 'string', alias: 'o', description: 'Write to a different file', required: false }
+} as const
+
+/** Save a headless document as `.fig`, as `eval --write` and `diff apply --write` do. */
+export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
+  const result = await io.writeDocument('fig', graph)
+  await writeFile(filePath, result.data as Uint8Array)
+}
+
+/** Documents laid out since they were parsed. */
+const laidOut = new WeakSet<SceneGraph>()
+
+/**
+ * Lay a parsed document out once, as parsing used to. Population then lays out only what it adds,
+ * in the order lint findings and exports were measured against.
+ */
+function ensureDocumentLayout(graph: SceneGraph): void {
+  if (laidOut.has(graph)) return
+  computeAllLayouts(graph)
+  laidOut.add(graph)
+}
+
 /** Materialize a page and lay it out when that changed the graph. */
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {
-  const changed = populateLazyFigImportRoots(graph, [pageId])
+  ensureDocumentLayout(graph)
+  const changed = populateFigPage(graph, pageId)
   if (changed) computeAllLayouts(graph, pageId)
   return changed
 }
 
 /** Materialize the document and lay it out when that changed the graph. */
 export function populateWholeDocument(graph: SceneGraph): boolean {
-  const changed = populateAllLazyFigImportRoots(graph)
+  ensureDocumentLayout(graph)
+  const changed = populateAllFigPages(graph)
   if (changed) computeAllLayouts(graph)
   return changed
-}
-
-/** Guarantee layout for commands that read geometry without populating. */
-export function ensureDocumentLayout(graph: SceneGraph): void {
-  computeAllLayouts(graph)
 }
 
 function pageNameFromArgs(args: unknown): string | undefined {
@@ -67,4 +88,19 @@ export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?:
     return
   }
   populateWholeDocument(graph)
+}
+
+export function requirePage(graph: SceneGraph, pageName?: string) {
+  const pages = graph.getPages()
+  const page = pageName ? pages.find((p) => p.name === pageName) : pages[0]
+  if (!page) {
+    const available = pages.map((p) => `"${p.name}"`).join(', ')
+    printError(
+      pageName
+        ? `Page "${pageName}" not found. Available pages: ${available || 'none'}.`
+        : 'Document has no pages.'
+    )
+    process.exit(1)
+  }
+  return page
 }

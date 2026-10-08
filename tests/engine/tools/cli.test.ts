@@ -1,5 +1,7 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 import { cliSourcePath, repoPath } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
 
@@ -23,8 +25,12 @@ async function evalCode(
   return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
 }
 
-function parseJSON<T>(stdout: string): T {
-  return JSON.parse(stdout) as T
+const RecordJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+
+const SolidFills = v.array(v.object({ color: v.object({ r: v.number() }) }))
+
+function parseRecord(stdout: string): Record<string, unknown> {
+  return v.parse(RecordJSON, stdout)
 }
 
 heavy('CLI tool operations via eval', () => {
@@ -38,7 +44,7 @@ heavy('CLI tool operations via eval', () => {
       return r.toJSON()
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.name).toBe('TestRect')
     expect(result.x).toBe(100)
     expect(result.y).toBe(200)
@@ -54,9 +60,10 @@ heavy('CLI tool operations via eval', () => {
       return { fills: r.fills }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
-    expect(result.fills.length).toBe(1)
-    expect(result.fills[0].color.r).toBe(1)
+    const result = parseRecord(stdout)
+    const fills = v.parse(SolidFills, result.fills)
+    expect(fills.length).toBe(1)
+    expect(fills[0].color.r).toBe(1)
   })
 
   test('set layout on a frame', async () => {
@@ -76,7 +83,7 @@ heavy('CLI tool operations via eval', () => {
       }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.layoutMode).toBe('VERTICAL')
     expect(result.itemSpacing).toBe(16)
     expect(result.paddingLeft).toBe(20)
@@ -91,7 +98,7 @@ heavy('CLI tool operations via eval', () => {
       return { name: comp.name, type: comp.type }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.name).toBe('Button')
     expect(result.type).toBe('COMPONENT')
   })
@@ -110,7 +117,7 @@ heavy('CLI tool operations via eval', () => {
       return { groupType, childCount, ungroupedExists: ungrouped !== null }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.groupType).toBe('GROUP')
     expect(result.childCount).toBe(2)
     expect(result.ungroupedExists).toBe(false)
@@ -122,7 +129,7 @@ heavy('CLI tool operations via eval', () => {
       return { count: texts.length, hasTexts: texts.length > 0 }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.hasTexts).toBe(true)
     expect(result.count).toBeGreaterThan(0)
   })
@@ -140,7 +147,7 @@ heavy('CLI tool operations via eval', () => {
       }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.same).toBe(false)
     expect(result.cloneName).toBe('Original')
     expect(result.cloneWidth).toBe(100)
@@ -159,7 +166,7 @@ heavy('CLI tool operations via eval', () => {
       }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.isChild).toBe(true)
   })
 
@@ -171,7 +178,7 @@ heavy('CLI tool operations via eval', () => {
       return r.constraints
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.horizontal).toBe('CENTER')
     expect(result.vertical).toBe('STRETCH')
   })
@@ -186,12 +193,13 @@ heavy('CLI tool operations via eval', () => {
         offset: { x: 0, y: 4 },
         radius: 8,
         spread: 0,
-        visible: true
+        visible: true,
+        blendMode: 'NORMAL'
       }]
       return { count: f.effects.length, type: f.effects[0].type }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.count).toBe(1)
     expect(result.type).toBe('DROP_SHADOW')
   })
@@ -203,7 +211,7 @@ heavy('CLI tool operations via eval', () => {
       return { variables: vars.length, collections: cols.length }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(typeof result.variables).toBe('number')
     expect(typeof result.collections).toBe('number')
   })
@@ -216,7 +224,7 @@ heavy('CLI tool operations via eval', () => {
       return { page: figma.currentPage.name, pageCount: pages.length }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON<Record<string, unknown>>(stdout)
+    const result = parseRecord(stdout)
     expect(result.page).toBeTruthy()
     expect(result.pageCount).toBeGreaterThanOrEqual(1)
   })

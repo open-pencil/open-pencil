@@ -5,7 +5,7 @@ import IconUndo from '~icons/lucide/undo-2'
 import HudButton from './HudButton.vue'
 
 const meta = {
-  title: 'Editor/Mobile HUD/Actions',
+  title: 'App/Editor/Mobile HUD/Actions',
   render: () => ({
     components: { HudButton, IconUndo, IconShare },
     template: `<div class="flex items-center gap-2 bg-canvas p-6">

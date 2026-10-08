@@ -19,7 +19,7 @@ const writeEntries: ToolAccessEntry[] = Array.from({ length: 20 }, (_, index) =>
 }))
 
 const meta = {
-  title: 'Settings/Tool access/List',
+  title: 'App/Settings/Tool Access/List',
   args: {
     disabledTools: [] as string[],
     initiallyCollapsed: false,

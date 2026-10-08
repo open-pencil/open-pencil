@@ -1,3 +1,5 @@
+import type { FontManager } from '#core/text/fonts'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup('/?test&no-chrome&no-rulers')
@@ -5,7 +7,8 @@ const editor = useEditorSetup('/?test&no-chrome&no-rulers')
 test('loads document font families from the browser provider before rendering', async () => {
   test.setTimeout(60_000)
   const result = await editor.page.evaluate(async () => {
-    const { fontManager } = await import('/packages/core/src/text/index.ts')
+    const coreTextURL = '/packages/core/src/text/index.ts'
+    const { fontManager }: { fontManager: FontManager } = await import(coreTextURL)
     fontManager.setOnlineFontProviders({
       google: false,
       fontsource: true,

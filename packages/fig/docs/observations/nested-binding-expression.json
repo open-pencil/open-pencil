@@ -1,0 +1,28 @@
+{
+  "nativeBefore": {
+    "id": "293777:7",
+    "padding": 5,
+    "width": 32.5
+  },
+  "nativeAfter": {
+    "value": 40,
+    "padding": 10,
+    "width": 37.5
+  },
+  "reopened": {
+    "root": {
+      "width": 37.5,
+      "height": 7
+    },
+    "nested": {
+      "padding": 10,
+      "width": 17.5,
+      "boundVariables": {}
+    }
+  },
+  "reopenedEdit": {
+    "value": 60,
+    "padding": 15,
+    "width": 42.5
+  }
+}

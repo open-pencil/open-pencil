@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FRAME_FILL } from '#core/constants'
+import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
+import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group-bounds'
 
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {
@@ -30,19 +31,26 @@ export function createStructureActions(ctx: EditorContext) {
     return !parentId || parentId === ctx.graph.rootId || parentId === ctx.state.currentPageId
   }
 
-  function reparentNodes(nodeIds: string[], newParentId: string) {
+  /** Moves layers under a new parent; refuses the locked part of an instance. */
+  function reparentNodes(nodeIds: string[], newParentId: string): boolean {
     const parent = ctx.graph.getNode(newParentId)
-    for (const id of nodeIds) {
-      const node = ctx.graph.getNode(id)
-      if (
-        node?.type === 'SECTION' &&
-        parent &&
-        parent.type !== 'CANVAS' &&
-        parent.type !== 'SECTION'
-      )
-        continue
-      ctx.graph.reparentNode(id, newParentId)
+    // Sections only go into pages and other sections.
+    const movable = nodeIds.filter(
+      (id) =>
+        ctx.graph.getNode(id)?.type !== 'SECTION' ||
+        !parent ||
+        parent.type === 'CANVAS' ||
+        parent.type === 'SECTION'
+    )
+    if (movable.length === 0) return true
+    const parents = new Set([newParentId])
+    for (const id of movable) {
+      const current = ctx.graph.getNode(id)?.parentId
+      if (current && current !== newParentId) parents.add(current)
     }
+    if (!prepareSlotEdits(ctx, parents)) return false
+    for (const id of movable) ctx.graph.reparentNode(id, newParentId)
+    return true
   }
 
   function wrapSelectionInContainer(
@@ -50,25 +58,42 @@ export function createStructureActions(ctx: EditorContext) {
     selectedNodes: SceneNode[],
     extraProps?: Partial<SceneNode>
   ) {
-    return wrapSelectionInContainerImpl(ctx, isTopLevel, containerType, selectedNodes, extraProps)
+    return wrapSelectionInContainerImpl(ctx, containerType, selectedNodes, extraProps)
   }
 
   function wrapInAutoLayout(selectedNodes: SceneNode[]) {
-    wrapInAutoLayoutImpl(ctx, isTopLevel, selectedNodes)
+    return wrapInAutoLayoutImpl(ctx, selectedNodes)
   }
 
   function groupSelected(selectedNodes: SceneNode[]) {
     return wrapSelectionInContainer('GROUP', selectedNodes)
   }
 
+  /** Figma frames a selection without a fill or clipping, unlike a drawn frame. */
   function frameSelection(selectedNodes: SceneNode[]) {
-    return wrapSelectionInContainer('FRAME', selectedNodes, {
-      fills: [structuredClone(DEFAULT_FRAME_FILL)]
+    return wrapSelectionInContainer('FRAME', selectedNodes)
+  }
+
+  /**
+   * Turns a group into a frame in place. The layer keeps its id, children, bounds and look: a
+   * group has no fill and does not clip, and the frame starts the same way.
+   */
+  function convertGroupToFrame(nodeId: string) {
+    if (ctx.graph.getNode(nodeId)?.type !== 'GROUP') return
+    const apply = (type: 'GROUP' | 'FRAME') => {
+      ctx.graph.updateNode(nodeId, { type })
+      ctx.runLayoutForNode(nodeId)
+    }
+    apply('FRAME')
+    ctx.undo.push({
+      label: 'Convert to frame',
+      forward: () => apply('FRAME'),
+      inverse: () => apply('GROUP')
     })
   }
 
   function booleanOperationSelected(selectedNodes: SceneNode[], operation: BooleanOperation) {
-    return booleanOperationSelectedImpl(ctx, isTopLevel, selectedNodes, operation)
+    return booleanOperationSelectedImpl(ctx, selectedNodes, operation)
   }
 
   function ungroupSelected(selectedNode: SceneNode | undefined) {
@@ -136,12 +161,16 @@ export function createStructureActions(ctx: EditorContext) {
 
   return {
     isTopLevel,
+    acceptsChildren: (parentId: string) => acceptsChildren(ctx, parentId),
+    acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
+    fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroupsWithUndo(ctx, parentIds),
     ...reorderActions,
     reparentNodes,
     wrapSelectionInContainer,
     wrapInAutoLayout,
     groupSelected,
     frameSelection,
+    convertGroupToFrame,
     booleanOperationSelected,
     ungroupSelected,
     flattenSelected,

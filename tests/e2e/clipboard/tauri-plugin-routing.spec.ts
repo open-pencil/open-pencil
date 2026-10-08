@@ -72,7 +72,7 @@ test('Tauri copy writes selected design HTML without requiring ClipboardEvent.cl
 
   await dispatchClipboardEvent(page, 'copy')
 
-  await expect.poll(() => clipboard.snapshot()).toMatchObject({ text: 'Rectangle' })
+  await expect.poll(() => clipboard.snapshot()).toMatchObject({ text: 'Rectangle 1' })
   const snapshot = clipboard.snapshot()
   expect(snapshot.html).toContain('(figma)')
   expect(snapshot.writes.some((entry) => entry.cmd === 'plugin:clipboard-manager|write_html')).toBe(
@@ -86,7 +86,7 @@ test('Tauri paste restores copied design data from plugin clipboard text', async
   const { canvas, clipboard } = await createTauriEditorPage(page)
   await canvas.drawRect(160, 160, 96, 72)
   await dispatchClipboardEvent(page, 'copy')
-  await expect.poll(() => clipboard.snapshot()).toMatchObject({ text: 'Rectangle' })
+  await expect.poll(() => clipboard.snapshot()).toMatchObject({ text: 'Rectangle 1' })
 
   expect(await pageChildren(page)).toHaveLength(1)
   await canvas.deleteSelection()
@@ -96,7 +96,7 @@ test('Tauri paste restores copied design data from plugin clipboard text', async
   await canvas.waitForRender()
 
   const children = await pageChildren(page)
-  expect(children).toEqual([{ name: 'Rectangle', type: 'RECTANGLE' }])
+  expect(children).toEqual([{ name: 'Rectangle 1', type: 'RECTANGLE' }])
   expect(await selectedCount(page)).toBe(1)
   await expect(page.getByText('Clipboard access is blocked in this browser context')).toHaveCount(0)
   canvas.assertNoErrors()
@@ -112,7 +112,7 @@ test('Tauri cut writes design data and deletes the selection', async ({ page }) 
   await expect.poll(() => pageChildren(page)).toEqual([])
   const snapshot = clipboard.snapshot()
   expect(snapshot.html).toContain('(figma)')
-  expect(snapshot.text).toBe('Rectangle')
+  expect(snapshot.text).toBe('Rectangle 1')
   await expect(page.getByText('Clipboard access is blocked in this browser context')).toHaveCount(0)
   canvas.assertNoErrors()
 })
@@ -125,7 +125,7 @@ test('Tauri cut keeps the selection when the clipboard write fails', async ({ pa
   await dispatchClipboardEvent(page, 'cut')
   await canvas.waitForRender()
 
-  await expect.poll(() => pageChildren(page)).toEqual([{ name: 'Rectangle', type: 'RECTANGLE' }])
+  await expect.poll(() => pageChildren(page)).toEqual([{ name: 'Rectangle 1', type: 'RECTANGLE' }])
   expect(await selectedCount(page)).toBe(1)
   const snapshot = clipboard.snapshot()
   expect(snapshot.html).toBe('')
@@ -198,7 +198,7 @@ test('Tauri context-menu copy uses plugin clipboard fallback instead of blocked 
   await page.mouse.click(box.x + 190, box.y + 190, { button: 'right' })
   await page.getByTestId('context-copy').click()
 
-  await expect.poll(() => clipboard.snapshot()).toMatchObject({ text: 'Rectangle' })
+  await expect.poll(() => clipboard.snapshot()).toMatchObject({ text: 'Rectangle 1' })
   await expect(page.getByText('Clipboard access is blocked in this browser context')).toHaveCount(0)
   canvas.assertNoErrors()
 })

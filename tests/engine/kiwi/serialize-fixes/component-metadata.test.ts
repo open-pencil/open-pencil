@@ -48,6 +48,11 @@ describe('component metadata serialization', () => {
         name: 'State',
         type: 'VARIANT',
         initialValue: { textValue: { characters: 'Enabled' } },
+        varValue: {
+          dataType: 'STRING',
+          resolvedDataType: 'STRING',
+          value: { textValue: 'Enabled' }
+        },
         preferredValues: { stringValues: ['Enabled'] }
       }
     ])
@@ -97,12 +102,29 @@ describe('component metadata serialization', () => {
 
     const instanceKiwi = toKiwi(instance, graph)[0]
     expect(instanceKiwi.componentPropAssignments).toEqual([
-      { defID: { sessionID: 80, localID: 1 }, value: { boolValue: false } },
+      {
+        defID: { sessionID: 80, localID: 1 },
+        value: { boolValue: false },
+        varValue: { dataType: 'BOOLEAN', resolvedDataType: 'BOOLEAN', value: { boolValue: false } }
+      },
       {
         defID: { sessionID: 80, localID: 2 },
-        value: { textValue: { characters: 'Changed' } }
+        value: { textValue: { characters: 'Changed' } },
+        varValue: {
+          dataType: 'STRING',
+          resolvedDataType: 'STRING',
+          value: { textValue: 'Changed' }
+        }
       },
-      { defID: { sessionID: 80, localID: 3 }, value: { guidValue: { sessionID: 70, localID: 1 } } }
+      {
+        defID: { sessionID: 80, localID: 3 },
+        value: { guidValue: { sessionID: 70, localID: 1 } },
+        varValue: {
+          dataType: 'SYMBOL_ID',
+          resolvedDataType: 'SYMBOL_ID',
+          value: { symbolIdValue: { guid: { sessionID: 70, localID: 1 } } }
+        }
+      }
     ])
   })
 })

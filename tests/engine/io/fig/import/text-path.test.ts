@@ -10,11 +10,11 @@ import { exportFigFile } from '#core/io/formats/fig/export'
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixtures'
+import { loadFigFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 /** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
 function reparse(out: Uint8Array) {
-  return parseFigBuffer(out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength))
+  return parseFigBuffer(uint8ArrayToArrayBuffer(out))
 }
 
 function emptyBlob(size = 8): Uint8Array {
@@ -74,17 +74,22 @@ describe('TEXT_PATH import mapping', () => {
             commandsBlob: 0,
             position: { x: 10, y: 20 },
             fontSize: 80,
+            firstCharacter: 0,
+            advance: 2,
             rotation: -1.75
           },
           {
             commandsBlob: 0,
             position: { x: 12, y: 22 },
             fontSize: 80,
+            firstCharacter: 1,
+            advance: 2,
             rotation: 0
           }
         ]
       },
-      [blob]
+      [blob],
+      'Hi'
     )
 
     expect(glyphs).toHaveLength(2)

@@ -1,14 +1,15 @@
+import type { FigSessionCheckpoint } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 
-import type { FigImportOptions } from '#core/kiwi/fig/import'
+import type { ParseFigFileOptions } from '#core/io/formats/fig/read'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import type { FigPopulationDelta } from '#core/kiwi/fig/population/delta'
 
 export interface FigSessionOpenRequest {
   type: 'open'
-  originalBuffer: ArrayBuffer
-  archiveBuffer: ArrayBuffer
-  options?: FigImportOptions
+  /** The file, transferred; the worker keeps its own copy as the original archive. */
+  buffer: ArrayBuffer
+  options?: Pick<ParseFigFileOptions, 'populate'>
   port: MessagePort
 }
 
@@ -41,12 +42,18 @@ export type FigSessionRequest =
 
 export type FigSessionResponse =
   | { type: 'page-manifest'; pages: FigPageManifestEntry[] }
-  | { type: 'graph'; graph?: SerializedSceneGraph; error?: string }
+  | {
+      type: 'graph'
+      graph?: SerializedSceneGraph
+      checkpoint?: FigSessionCheckpoint
+      error?: string
+    }
   | {
       type: 'population-result'
       requestId: string
       baseRevision: number
       populated: boolean
+      checkpoint?: FigSessionCheckpoint
       delta: FigPopulationDelta
     }
   | { type: 'population-error'; requestId?: string; error: string }

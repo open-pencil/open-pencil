@@ -2,5 +2,10 @@
   "newPage": "Новая страница",
   "rename": "Переименовать",
   "delete": "Удалить",
-  "pageName": "Страница {number}"
+  "pageName": "Страница {number}",
+  "pages": "Страницы",
+  "goToPage": "Перейти к странице…",
+  "recentPage": "Недавняя",
+  "currentPage": "Текущая страница",
+  "pageNameLabel": "Название страницы"
 }

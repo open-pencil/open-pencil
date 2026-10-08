@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import { computed, shallowRef, watch } from 'vue'
+import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
+import { useChatRunLocation } from '@/app/ai/chat/run-location'
+import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { useAIChat } from '@/app/ai/chat/use'
+import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { didHitStepLimit } from '@/app/ai/tools'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -16,11 +20,15 @@ import { activeTab } from '@/app/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
+import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
+import { useImageDrop } from '@/components/chat/input/useImageDrop'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
 const { ai } = useI18n()
+const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const submission = useChatSubmission({
@@ -32,13 +40,40 @@ const submission = useChatSubmission({
   messages: computed(() => ({
     openSettings: ai.value.openProviderSettingsAction,
     requestFailed: ai.value.chatRequestFailed,
-    visionUnavailable: ai.value.visionModelUnavailable
+    visionUnavailable: ai.value.visionModelUnavailable,
+    runSetup: ai.value.aiSetupRun,
+    agentSetup: {
+      'companion-missing': ai.value.chatPiCompanionMissing,
+      'companion-outdated': ai.value.chatPiCompanionOutdated,
+      'mcp-outdated': ai.value.chatMCPOutdated,
+      'pi-sign-in': ai.value.chatPiSignIn,
+      'pi-model': ai.value.chatPiModel
+    }
   })),
   reportError: toast.error,
-  openModelSettings: () => openSettingsDialog('ai')
+  openModelSettings: () => openSettingsDialog('ai'),
+  openSetup: () => openAISetup()
 })
 
+const chatInput = useTemplateRef<{
+  restoreDraft: (submission: ChatSubmission) => void
+  dropFiles: (files: File[]) => void
+}>('chatInput')
+const panel = useTemplateRef<HTMLElement>('panel')
+// Images dropped anywhere on the chat go to the composer, when there is one to take them.
+const { dragging: draggingImages } = useImageDrop(panel, {
+  enabled: () => chatInput.value !== null,
+  onImages: (files) => chatInput.value?.dropFiles(files)
+})
 let viewGeneration = 0
+
+/** Puts an unsent message back only in the conversation it was written in. */
+async function submitMessage(message: ChatSubmission) {
+  const generation = viewGeneration
+  if (await submission.submit(message)) return
+  if (generation === viewGeneration) chatInput.value?.restoreDraft(message)
+  else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
+}
 // Restoring local history must not open a provider connection or read credentials.
 void history.initialize().catch(() => {
   toast.error(ai.value.chatHistoryFailed)
@@ -129,19 +164,28 @@ watch(
 )
 watch(
   () => [activeTab.value?.id, activeTab.value?.store.state.preparation] as const,
-  async ([, preparation]) => {
+  async ([tabId, preparation], [previousTabId]) => {
     if (preparation) {
       viewGeneration++
       submission.cancel()
       return
     }
     const generation = ++viewGeneration
+    const conversationId = history.current.value?.id
     submission.cancel()
-    chat.value = null
+    if (tabId !== previousTabId) chat.value = null
     try {
       await history.initialize()
     } catch {
-      if (generation === viewGeneration) toast.error(ai.value.chatHistoryFailed)
+      if (generation === viewGeneration) {
+        chat.value = null
+        toast.error(ai.value.chatHistoryFailed)
+      }
+      return
+    }
+    // A page switch keeps the document and its conversation, so a running chat stays attached.
+    if (generation === viewGeneration && history.current.value?.id !== conversationId) {
+      chat.value = null
     }
   }
 )
@@ -152,7 +196,11 @@ function handleStop() {
 </script>
 
 <template>
-  <div data-test-id="chat-panel" class="flex min-w-0 flex-1 flex-col overflow-hidden select-text">
+  <div
+    ref="panel"
+    data-test-id="chat-panel"
+    class="flex min-w-0 flex-1 flex-col overflow-hidden select-text"
+  >
     <ChatHistory
       :saved="history.conversations.value.some((row) => row.id === history.current.value?.id)"
       :conversations="historyOptions"
@@ -162,7 +210,9 @@ function handleStop() {
       @select="historyAction(() => history.open($event))"
       @rename="renameConversation"
       @delete="historyAction(() => history.remove($event))"
-    />
+    >
+      <template #actions><FollowAgentsToggle /></template>
+    </ChatHistory>
     <p v-if="history.storageError.value" role="alert" class="px-3 py-2 text-xs text-red-400">
       {{ ai.chatStorageFailed }}
     </p>
@@ -180,6 +230,12 @@ function handleStop() {
         :messages="messages"
         :status="status"
         :show-continue="showContinue"
+        :nodes-live="!history.readOnly.value"
+        :interactive="chat !== null"
+        @regenerate="submission.regenerate()"
+        @revert="(messageId) => submission.revert(messageId)"
+        @restore="(messageId) => submission.restore(messageId)"
+        @edit="(messageId, text) => submission.resend(messageId, text)"
         @continue="
           submission.submit({
             modelText: 'Continue where you left off',
@@ -196,11 +252,19 @@ function handleStop() {
       <p v-if="history.readOnly.value" role="status" class="px-3 py-2 text-xs text-muted">
         {{ ai.chatReadOnly }}
       </p>
+      <ChatRunLocation
+        v-if="runLocation"
+        :agent="runLocation.agent"
+        :page="runLocation.page"
+        @open="runLocation.open"
+      />
       <ChatInput
         v-if="isConfigured && !agentHistoryReadOnly && !history.readOnly.value"
+        ref="chatInput"
         :status="status"
+        :dragging="draggingImages"
         :disabled="submission.busy.value || history.busy.value"
-        @submit="submission.submit"
+        @submit="submitMessage"
         @stop="handleStop"
         @error="toast.error"
       />

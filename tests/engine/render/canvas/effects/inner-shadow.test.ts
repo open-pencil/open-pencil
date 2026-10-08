@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { renderEffects } from '#core/canvas/shadows'
 
+import { asCanvas } from '../helpers'
 import { createMockCanvas, createMockRenderer } from './helpers'
 
 describe('INNER_SHADOW bug proofs', () => {
@@ -30,7 +29,7 @@ describe('INNER_SHADOW bug proofs', () => {
       ]
     }
 
-    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'front')
+    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'front')
 
     // PROOF: ColorFilter.MakeBlend(black, SrcIn) on DstOut layer paint
     // forces renderText output to solid black without mutating fillPaint.

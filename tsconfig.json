@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": [
@@ -21,8 +23,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "#authoring-reference/*": ["./tools/authoring-reference/src/*"],
-      "#ci/*": ["./tools/ci/src/*"],
       "#vite-config/*": ["./vite/*"],
       "@/*": [
         "./src/*"
@@ -33,6 +33,9 @@
       ],
       "#core/*": [
         "./packages/core/src/*"
+      ],
+      "#fig/*": [
+        "./packages/fig/src/*"
       ],
       "#cli/*": [
         "./packages/cli/src/*"
@@ -79,6 +82,18 @@
       "@open-pencil/scene-graph/*": [
         "./packages/scene-graph/src/*"
       ],
+      "#emit/*": [
+        "./packages/emit/src/*"
+      ],
+      "@open-pencil/emit": [
+        "./packages/emit/src/index.ts"
+      ],
+      "#design-jsx/*": [
+        "./packages/design-jsx/src/*"
+      ],
+      "@open-pencil/design-jsx": [
+        "./packages/design-jsx/src/index.ts"
+      ],
       "#pen/*": [
         "./packages/pen/src/*"
       ],
@@ -96,7 +111,8 @@
     "packages/core/src/global.d.ts",
     "packages/vue/src/global.d.ts",
     "packages/dom-css/src/cssom.d.ts",
-    "packages/dom-css/src/postcss-value-parser.d.ts"
+    "packages/dom-css/src/postcss-value-parser.d.ts",
+    "packages/design-jsx/src/global.d.ts"
   ],
   "references": [
     {

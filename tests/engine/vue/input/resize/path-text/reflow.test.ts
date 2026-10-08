@@ -5,13 +5,18 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
-import type { DragResize, OrigChildState } from '#vue/shared/input/types'
+import type { DragResize } from '#vue/shared/input/types'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
+
+const noopCommitResize: Editor['commitResize'] = () => undefined
+const noopCommitGroupResize: Editor['commitGroupResize'] = () => undefined
 
 const BLACK: Fill = {
   type: 'SOLID',
@@ -22,6 +27,7 @@ const BLACK: Fill = {
 }
 
 const WHITE_STROKE: Stroke = {
+  type: 'SOLID',
   color: { r: 1, g: 1, b: 1, a: 1 },
   weight: 4,
   opacity: 1,
@@ -129,14 +135,14 @@ describe('group resize reflows path text instead of squashing it', () => {
 
     const editor = {
       graph,
-      renderer: undefined,
+      renderer: null,
       requestRepaint: () => undefined,
       updateNode: (id: string, changes: Partial<SceneNode>) => graph.updateNode(id, changes),
-      commitResize: () => undefined,
-      commitGroupResize: () => undefined
+      commitResize: noopCommitResize,
+      commitGroupResize: noopCommitGroupResize
     } as Editor
 
-    const origChild: OrigChildState = {
+    const origChild: ResizeSnapshot = {
       x: 0,
       y: 0,
       width: 256,
@@ -247,11 +253,11 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
 
     const editor = {
       graph,
-      renderer: undefined,
+      renderer: null,
       requestRepaint: () => undefined,
       updateNode: (id: string, changes: Partial<SceneNode>) => graph.updateNode(id, changes),
-      commitResize: () => undefined,
-      commitGroupResize: () => undefined
+      commitResize: noopCommitResize,
+      commitGroupResize: noopCommitGroupResize
     } as Editor
 
     const drag: DragResize = {
@@ -374,11 +380,11 @@ describe('resize + export integration: real commit path clears stale raw payload
 
     const editor = {
       graph,
-      renderer: undefined,
+      renderer: null,
       requestRepaint: () => undefined,
       updateNode: (id: string, changes: Partial<SceneNode>) => graph.updateNode(id, changes),
-      commitResize: () => undefined,
-      commitGroupResize: () => undefined
+      commitResize: noopCommitResize,
+      commitGroupResize: noopCommitGroupResize
     } as Editor
 
     const drag: DragResize = {
@@ -413,7 +419,7 @@ describe('resize + export integration: real commit path clears stale raw payload
     )
 
     const out = await exportFigFile(graph)
-    const reparsed = parseFigBuffer(out)
+    const reparsed = parseFigBuffer(uint8ArrayToArrayBuffer(out))
     const exported = expectDefined(reparsed.nodeChanges.find((nc) => nc.type === 'TEXT_PATH'))
 
     // No stale silhouette geometry resurrected from the raw payload.

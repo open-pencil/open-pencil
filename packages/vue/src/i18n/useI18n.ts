@@ -12,6 +12,7 @@ import {
   commandMessages,
   commonMessages,
   credentialsMessages,
+  designCheckMessages,
   diagnosticsMessages,
   editorMessages,
   filesMessages,
@@ -42,6 +43,7 @@ export const useCollaborationMessages = () => useI18nNamespace(collaborationMess
 export const useCommandMessages = () => useI18nNamespace(commandMessages)
 export const useCommonMessages = () => useI18nNamespace(commonMessages)
 export const useCredentialMessages = () => useI18nNamespace(credentialsMessages)
+export const useDesignCheckMessages = () => useI18nNamespace(designCheckMessages)
 export const useDiagnosticsMessages = () => useI18nNamespace(diagnosticsMessages)
 export const useEditorMessages = () => useI18nNamespace(editorMessages)
 export const useFileMessages = () => useI18nNamespace(filesMessages)

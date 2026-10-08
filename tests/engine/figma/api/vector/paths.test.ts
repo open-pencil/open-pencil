@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { encodePathCommandsBlob } from '@open-pencil/fig/node-change'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { createAPI } from '../helpers'
+import { createAPI, solidFill } from '../helpers'
 
 const CURVED_PATH = 'M10 20 C20 0 40 40 50 20 Z'
 
@@ -104,14 +106,7 @@ describe('vector paths', () => {
         {
           windingRule: 'NONZERO',
           loops: [[0, 1, 2]],
-          fills: [
-            {
-              type: 'SOLID',
-              color: { r: 1, g: 0, b: 0, a: 1 },
-              opacity: 1,
-              visible: true
-            }
-          ]
+          fills: [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
         }
       ]
     }
@@ -223,7 +218,7 @@ describe('vector paths', () => {
 
   test('matches Figma handle mirroring and mixed behavior', () => {
     const api = createAPI()
-    const vector = api.createVector()
+    const vector: FigmaNodeProxy = api.createVector()
 
     vector.handleMirroring = 'ANGLE'
     expect(vector.handleMirroring).toBe('ANGLE')
@@ -235,7 +230,8 @@ describe('vector paths', () => {
       ],
       segments: [{ start: 0, end: 1 }]
     }
-    expect(vector.handleMirroring).toBe(api.mixed)
+    // `api.mixed` widens to `symbol`, so the matcher is typed to accept either side.
+    expect<SceneNode['handleMirroring'] | symbol>(vector.handleMirroring).toBe(api.mixed)
 
     vector.handleMirroring = 'ANGLE_AND_LENGTH'
     expect(vector.handleMirroring).toBe('ANGLE_AND_LENGTH')

@@ -1,0 +1,488 @@
+import { describe, expect, setDefaultTimeout, test } from 'bun:test'
+
+import {
+  exportFigFile,
+  FigmaAPI,
+  initCodec,
+  parseFigFile,
+  SceneGraph,
+  type Variable
+} from '@open-pencil/core'
+import type { Color } from '@open-pencil/scene-graph'
+
+import { expectDefined } from '#core-tests/helpers/assert'
+import { parseFixture } from '#core-tests/helpers/fig/fixtures'
+import { runsHeavyTests } from '#core-tests/helpers/test-utils'
+
+setDefaultTimeout(60_000)
+
+describe('variable roundtrip', () => {
+  test('variables and collections survive export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Design Tokens')
+    graph.createVariable('color/primary', 'COLOR', col.id, { r: 0.23, g: 0.51, b: 0.96, a: 1 })
+    graph.createVariable('spacing/base', 'FLOAT', col.id, 8)
+    graph.createVariable('visible', 'BOOLEAN', col.id, true)
+    graph.createVariable('label', 'STRING', col.id, 'Hello')
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    expect(reimported.variables.size).toBe(4)
+    expect(reimported.variableCollections.size).toBe(1)
+
+    const reimportedCol = [...reimported.variableCollections.values()][0]
+    expect(reimportedCol.name).toBe('Design Tokens')
+    expect(reimportedCol.variableIds).toHaveLength(4)
+
+    const vars = [...reimported.variables.values()]
+    const colorVarMatch = vars.find((v) => v.name === 'color/primary')
+    expect(colorVarMatch).toBeDefined()
+    const colorVar = expectDefined(colorVarMatch, 'colorVar')
+    expect(colorVar.type).toBe('COLOR')
+    const colorVal = Object.values(colorVar.valuesByMode)[0] as Color
+    expect(colorVal.r).toBeCloseTo(0.23, 1)
+
+    const floatVarMatch = vars.find((v) => v.name === 'spacing/base')
+    expect(floatVarMatch).toBeDefined()
+    const floatVar = expectDefined(floatVarMatch, 'floatVar')
+    expect(floatVar.type).toBe('FLOAT')
+    expect(Object.values(floatVar.valuesByMode)[0]).toBe(8)
+
+    const boolVarMatch = vars.find((v) => v.name === 'visible')
+    expect(boolVarMatch).toBeDefined()
+    const boolVar = expectDefined(boolVarMatch, 'boolVar')
+    expect(boolVar.type).toBe('BOOLEAN')
+    expect(Object.values(boolVar.valuesByMode)[0]).toBe(true)
+
+    const strVarMatch = vars.find((v) => v.name === 'label')
+    expect(strVarMatch).toBeDefined()
+    const strVar = expectDefined(strVarMatch, 'strVar')
+    expect(strVar.type).toBe('STRING')
+    expect(Object.values(strVar.valuesByMode)[0]).toBe('Hello')
+  })
+
+  test('text bound to a string variable survives export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Content')
+    const label = graph.createVariable('Badge Count', 'STRING', col.id, '9+')
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, { name: 'Label', text: '9+' })
+    graph.bindVariable(text.id, 'text', label.id)
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+    const node = expectDefined(
+      [...reimported.getAllNodes()].find(
+        (candidate) => candidate.type === 'TEXT' && candidate.name === 'Label'
+      ),
+      'node'
+    )
+    const bound = reimported.variables.get(node.boundVariables.text ?? '')
+    expect(expectDefined(bound, 'bound').name).toBe('Badge Count')
+    expect(node.text).toBe('9+')
+  })
+
+  test('an instance fill override keeps its own variable alias across export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Schemes')
+    const onSurface = graph.createVariable('On Surface', 'COLOR', col.id, {
+      r: 0.11,
+      g: 0.1,
+      b: 0.12,
+      a: 1
+    })
+    const onSurfaceVariant = graph.createVariable('On Surface Variant', 'COLOR', col.id, {
+      r: 0.29,
+      g: 0.27,
+      b: 0.31,
+      a: 1
+    })
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { name: 'Icon' })
+    const icon = graph.createNode('RECTANGLE', component.id, {
+      name: 'icon',
+      width: 24,
+      height: 24,
+      fills: [
+        { type: 'SOLID', color: { r: 0.11, g: 0.1, b: 0.12, a: 1 }, opacity: 1, visible: true }
+      ]
+    })
+    graph.bindVariable(icon.id, 'fills/0/color', onSurface.id)
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    const instanceIcon = expectDefined(graph.getChildren(instance.id)[0], 'instance icon')
+    graph.bindVariable(instanceIcon.id, 'fills/0/color', onSurfaceVariant.id)
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const nameOf = (id: string | undefined) => reimported.variables.get(id ?? '')?.name
+    const nodes = [...reimported.getAllNodes()]
+    const componentIcon = nodes.find(
+      (n) => n.name === 'icon' && n.parentId === nodes.find((c) => c.type === 'COMPONENT')?.id
+    )
+    const pastedInstance = nodes.find((n) => n.type === 'INSTANCE')
+    const pastedIcon = reimported.getChildren(expectDefined(pastedInstance, 'instance').id)[0]
+    expect(nameOf(componentIcon?.boundVariables['fills/0/color'])).toBe('On Surface')
+    expect(nameOf(pastedIcon?.boundVariables['fills/0/color'])).toBe('On Surface Variant')
+    expect(pastedIcon?.fills[0]?.color.r).toBeCloseTo(0.29, 2)
+  })
+
+  test('variable bindings survive export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Tokens')
+    const floatVar = graph.createVariable('radius', 'FLOAT', col.id, 12)
+    const fillVar = graph.createVariable('surface', 'COLOR', col.id, { r: 1, g: 1, b: 1, a: 1 })
+    const strokeVar = graph.createVariable('border', 'COLOR', col.id, {
+      r: 0.1,
+      g: 0.2,
+      b: 0.3,
+      a: 1
+    })
+
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id, {
+      name: 'Bound Rect',
+      width: 100,
+      height: 100,
+      cornerRadius: 12,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 1, b: 1, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ],
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0.1, g: 0.2, b: 0.3, a: 1 },
+          weight: 1,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE',
+          cap: 'NONE',
+          join: 'MITER',
+          dashPattern: []
+        }
+      ]
+    })
+    graph.bindVariable(rect.id, 'cornerRadius', floatVar.id)
+    graph.bindVariable(rect.id, 'fills/0/color', fillVar.id)
+    graph.bindVariable(rect.id, 'strokes/0/color', strokeVar.id)
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const reimportedRectMatch = [...reimported.getAllNodes()].find((n) => n.name === 'Bound Rect')
+    expect(reimportedRectMatch).toBeDefined()
+    const reimportedRect = expectDefined(reimportedRectMatch, 'reimportedRect')
+    expect(Object.keys(reimportedRect.boundVariables)).toContain('cornerRadius')
+    expect(Object.keys(reimportedRect.boundVariables)).toContain('fills/0/color')
+    expect(Object.keys(reimportedRect.boundVariables)).toContain('strokes/0/color')
+  })
+
+  test('node-scoped variable modes survive export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: '4:55',
+      name: 'Theme',
+      modes: [
+        { modeId: '4:1', name: 'Light' },
+        { modeId: '4:2', name: 'Dark' }
+      ],
+      defaultModeId: '4:1',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: '5:1',
+      name: 'Background',
+      type: 'COLOR',
+      collectionId: '4:55',
+      valuesByMode: {
+        '4:1': { r: 1, g: 1, b: 1, a: 1 },
+        '4:2': { r: 0, g: 0, b: 0, a: 1 }
+      },
+      description: '',
+      hiddenFromPublishing: false
+    })
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, {
+      name: 'Dark scope',
+      variableModes: { '4:55': '4:2' }
+    })
+    graph.createNode('RECTANGLE', frame.id, { name: 'Scoped child' })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+    const importedFrame = expectDefined(
+      [...reimported.getAllNodes()].find((node) => node.name === 'Dark scope'),
+      'dark scope'
+    )
+    const importedChild = expectDefined(
+      [...reimported.getAllNodes()].find((node) => node.name === 'Scoped child'),
+      'scoped child'
+    )
+
+    const importedBackground = expectDefined(
+      [...reimported.variables.values()].find((variable) => variable.name === 'Background'),
+      'background variable'
+    )
+    const importedCollection = expectDefined(
+      reimported.variableCollections.get(importedBackground.collectionId),
+      'theme collection'
+    )
+    const importedDarkMode = expectDefined(
+      importedCollection.modes.find((mode) => mode.name === 'Dark'),
+      'dark mode'
+    )
+    expect(importedCollection.id).toBe('4:55')
+    expect(importedBackground.id).toBe('5:1')
+    expect(importedDarkMode.modeId).toBe('4:2')
+    expect(importedFrame.variableModes).toEqual({
+      [importedCollection.id]: importedDarkMode.modeId
+    })
+    expect(reimported.resolveColorVariableForNode(importedChild.id, importedBackground.id)).toEqual(
+      {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 1
+      }
+    )
+  })
+
+  test('variable metadata and plugin data survive export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: '4:60',
+      name: 'Radius',
+      modes: [{ modeId: '4:3', name: 'Base' }],
+      defaultModeId: '4:3',
+      variableIds: [],
+      pluginData: [
+        { pluginId: 'open-pencil', key: 'note', value: 'collection' },
+        { pluginId: 'tokens-studio', key: 'theme', value: 'base' }
+      ]
+    })
+    graph.addVariable({
+      id: '5:2',
+      name: 'Radius/card',
+      type: 'FLOAT',
+      collectionId: '4:60',
+      valuesByMode: { '4:3': 12 },
+      description: 'Cards and sheets',
+      hiddenFromPublishing: true,
+      scopes: ['CORNER_RADIUS'],
+      codeSyntax: { WEB: '--radius-card', iOS: 'Radius.card' },
+      pluginData: [
+        { pluginId: 'open-pencil', key: 'note', value: 'variable' },
+        { pluginId: 'tokens-studio', key: 'path', value: 'radius.card' }
+      ]
+    })
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+
+    const variable = expectDefined(reimported.variables.get('5:2'), 'radius variable')
+    expect(variable).toMatchObject({
+      description: 'Cards and sheets',
+      hiddenFromPublishing: true,
+      scopes: ['CORNER_RADIUS'],
+      codeSyntax: { WEB: '--radius-card', iOS: 'Radius.card' }
+    })
+    expect(variable.pluginData).toEqual(graph.variables.get('5:2')?.pluginData)
+    expect(reimported.variableCollections.get('4:60')?.pluginData).toEqual(
+      graph.variableCollections.get('4:60')?.pluginData
+    )
+  })
+
+  test('token units, expressions and mode conditions survive export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: '4:70',
+      name: 'Theme',
+      modes: [
+        { modeId: '4:7', name: 'Light' },
+        { modeId: '4:8', name: 'Dark', condition: '[data-theme="dark"]' }
+      ],
+      defaultModeId: '4:7',
+      variableIds: [],
+      modeAttribute: 'data-scheme'
+    })
+    const add = (id: string, name: string, extra: Partial<Variable>) =>
+      graph.addVariable({
+        id,
+        name,
+        type: 'FLOAT',
+        collectionId: '4:70',
+        valuesByMode: { '4:7': 16, '4:8': 16 },
+        description: '',
+        hiddenFromPublishing: false,
+        ...extra
+      })
+    add('5:10', 'Space/page', {
+      codeSyntax: { WEB: 'var(--page-gutter)' },
+      unit: 'rem',
+      expressions: { '4:7': { css: 'clamp(1rem, 4vw, 2rem)', resolved: 16 } }
+    })
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+
+    const page = expectDefined(reimported.variables.get('5:10'), 'page token')
+    expect(page).toMatchObject({
+      unit: 'rem',
+      codeSyntax: { WEB: 'var(--page-gutter)' },
+      expressions: { '4:7': { css: 'clamp(1rem, 4vw, 2rem)', resolved: 16 } }
+    })
+    expect(reimported.variableCollections.get('4:70')?.modes).toEqual([
+      { modeId: '4:7', name: 'Light', condition: undefined },
+      { modeId: '4:8', name: 'Dark', condition: '[data-theme="dark"]' }
+    ])
+    expect(reimported.variableCollections.get('4:70')?.modeAttribute).toBe('data-scheme')
+    expect(reimported.variableCollections.get('4:70')?.pluginData).toBeUndefined()
+    // Rebuilt on save, never duplicated into pass-through plugin data.
+    expect(page.pluginData).toBeUndefined()
+  })
+
+  test('a token expression on a value .fig rounds to float32 survives export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Space')
+    const gutter = graph.createVariable('Gutter', 'FLOAT', collection.id, 1234.567)
+    gutter.expressions = {
+      [collection.defaultModeId]: { css: 'calc(100vw / 3)', resolved: 1234.567 }
+    }
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+
+    const imported = [...reimported.variables.values()].find((v) => v.name === 'Gutter')
+    expect(imported?.expressions?.[collection.defaultModeId]?.css).toBe('calc(100vw / 3)')
+  })
+
+  test('a token expression whose value changed elsewhere is dropped on read', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Space')
+    const gutter = graph.createVariable('Gutter', 'FLOAT', collection.id, 20)
+    gutter.expressions = {
+      [collection.defaultModeId]: { css: 'clamp(1rem, 4vw, 2rem)', resolved: 16 }
+    }
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+
+    const imported = [...reimported.variables.values()].find((v) => v.name === 'Gutter')
+    expect(imported?.valuesByMode[collection.defaultModeId]).toBe(20)
+    expect(imported?.expressions).toBeUndefined()
+  })
+
+  test('a default mode that is not first survives export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Theme')
+    graph.addMode(collection.id, 'dark', 'Dark')
+    const background = graph.createVariable('Background', 'COLOR', collection.id, {
+      r: 1,
+      g: 1,
+      b: 1,
+      a: 1
+    })
+    background.valuesByMode.dark = { r: 0, g: 0, b: 0, a: 1 }
+    graph.setDefaultMode(collection.id, 'dark')
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+
+    const imported = expectDefined(
+      [...reimported.variableCollections.values()].find((c) => c.name === 'Theme'),
+      'theme collection'
+    )
+    const defaultMode = imported.modes.find((mode) => mode.modeId === imported.defaultModeId)
+    expect(defaultMode?.name).toBe('Dark')
+    expect(imported.modes.map((mode) => mode.name)).toEqual(['Dark', 'Mode 1'])
+  })
+
+  test.if(runsHeavyTests)(
+    'material3.fig variables survive round-trip',
+    async () => {
+      const original = await parseFixture('material3.fig')
+
+      const exported = await exportFigFile(original)
+      const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+      expect(reimported.variables.size).toBe(original.variables.size)
+      expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
+        [...original.variableCollections.values()].filter((c) => c.variableIds.length > 0).length
+      )
+      const metadata = (graph: typeof original) =>
+        [...graph.variables.values()].map(
+          ({ id, description, hiddenFromPublishing, scopes, codeSyntax }) => ({
+            id,
+            description,
+            hiddenFromPublishing,
+            scopes,
+            codeSyntax
+          })
+        )
+      expect(metadata(original).some((v) => v.codeSyntax)).toBe(true)
+      expect(metadata(original).some((v) => v.description)).toBe(true)
+      expect(metadata(reimported)).toEqual(metadata(original))
+    },
+    120_000
+  )
+
+  test('pluginID casing is consistent across full codec pipeline', async () => {
+    await initCodec()
+
+    // Create a graph with multiple nodes having pluginData entries
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const frame = api.createFrame()
+    frame.name = 'PluginID Test'
+    frame.setPluginData('key1', 'value1')
+    frame.setPluginData('key2', 'value2')
+
+    const rect = api.createRectangle()
+    rect.name = 'Plugin Rect'
+    rect.setPluginData('testKey', 'testValue')
+
+    // Round-trip through the codec
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    // Find all nodes with pluginData
+    let nodesWithPluginData = 0
+    let totalEntries = 0
+    for (const node of reimported.getAllNodes()) {
+      if (node.pluginData && node.pluginData.length > 0) {
+        nodesWithPluginData++
+        for (const entry of node.pluginData) {
+          totalEntries++
+          // Every entry MUST use pluginId (lowercase d, matching SceneGraph type)
+          expect(entry).toHaveProperty('pluginId')
+          expect(typeof entry.pluginId).toBe('string')
+          expect(entry.pluginId.length).toBeGreaterThan(0)
+        }
+      }
+      // Also check pluginRelaunchData entries
+      if (node.pluginRelaunchData && node.pluginRelaunchData.length > 0) {
+        for (const entry of node.pluginRelaunchData) {
+          expect(entry).toHaveProperty('pluginId')
+          expect(typeof entry.pluginId).toBe('string')
+        }
+      }
+    }
+
+    // Should have at least 2 nodes with plugin data (frame + rect)
+    expect(nodesWithPluginData).toBeGreaterThanOrEqual(2)
+    expect(totalEntries).toBeGreaterThanOrEqual(3)
+  })
+})

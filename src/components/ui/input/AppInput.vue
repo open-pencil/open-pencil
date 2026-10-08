@@ -59,11 +59,12 @@ function inputClass() {
     size,
     state,
     density,
+    // An instance's own input classes come last, so they can override the adornment padding.
     class: [
-      ui?.input,
       !slots.leading && !slots.trailing ? normalizeClass(className) : '',
       slots.leading ? 'pl-10' : '',
-      slots.trailing ? 'pr-10 [&::-webkit-search-cancel-button]:appearance-none' : ''
+      slots.trailing ? 'pr-10 [&::-webkit-search-cancel-button]:appearance-none' : '',
+      ui?.input
     ]
   })
 }

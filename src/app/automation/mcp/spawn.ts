@@ -1,14 +1,17 @@
 import { promiseTimeout } from '@vueuse/core'
+import { compact } from 'es-toolkit/array'
+import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { randomHex } from '@open-pencil/core/random'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 import {
   parseToolDescriptor,
   serializeDisabledTools,
   type ToolDescriptor
 } from '@open-pencil/mcp/tools'
+import { randomHex } from '@open-pencil/scene-graph/random'
 
+import { APP_VERSION } from '@/app/runtime/version'
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
@@ -21,7 +24,12 @@ import {
   MCPStartupError,
   type MCPFailure
 } from './failure'
-import { disabledMCPTools, mcpAuthenticationEnabled, mcpRootDirectory } from './preferences'
+import {
+  disabledMCPTools,
+  mcpAuthenticationEnabled,
+  mcpRootDirectory,
+  mcpScope
+} from './preferences'
 
 export interface AutomationHealth {
   status: 'ok' | 'no_app'
@@ -49,8 +57,6 @@ const DEV_AUTOMATION_AUTH_TOKEN =
   import.meta.env.DEV && typeof __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__ === 'string'
     ? __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__
     : null
-const APP_VERSION =
-  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
 const noop = () => undefined
 const MAX_STARTUP_STDERR_LENGTH = 8_192
 const MCP_EXECUTABLE = 'openpencil-mcp-http'
@@ -117,6 +123,13 @@ function rememberStartupError(error: unknown): null {
   return null
 }
 
+/** The one discovery-file field the app reads; the MCP package validates the whole file. */
+const DiscoveryTokenJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.looseObject({ authToken: v.optional(v.nullable(v.string())) })
+) satisfies v.GenericSchema<string, Partial<Pick<DiscoveryInfo, 'authToken'>>>
+
 /**
  * Reads the auth token from the MCP discovery file via Tauri's FS plugin.
  * The discovery file path is computed locally (not from the /health endpoint)
@@ -126,9 +139,8 @@ function rememberStartupError(error: unknown): null {
 async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
   try {
     const { readTextFile } = await import('@tauri-apps/plugin-fs')
-    const raw = await readTextFile(discoveryPath)
-    const info = JSON.parse(raw) as DiscoveryInfo
-    return info.authToken ?? null
+    const info = v.safeParse(DiscoveryTokenJSON, await readTextFile(discoveryPath))
+    return info.success ? (info.output.authToken ?? null) : null
   } catch {
     return null
   }
@@ -406,7 +418,8 @@ async function configureDevMCP(): Promise<AutomationServerHandle> {
   const configuration: DevMCPConfiguration = {
     authenticationEnabled: mcpAuthenticationEnabled.value,
     rootDirectory: mcpRootDirectory.value,
-    disabledTools: [...disabledMCPTools.value]
+    disabledTools: [...disabledMCPTools.value],
+    scope: mcpScope()
   }
   const response = await fetch(DEV_MCP_RESTART_PATH, {
     method: 'POST',
@@ -465,7 +478,8 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
       OPENPENCIL_MCP_TCP: '1',
       OPENPENCIL_MCP_ROOT: mcpRoot,
       OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
-      OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value)
+      OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
+      OPENPENCIL_MCP_SCOPE: mcpScope()
     }
   })
 
@@ -505,9 +519,11 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
         `MCP server exited before startup completed (code ${earlyExit.code ?? 'null'}, signal ${earlyExit.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
         mcpFailure(
           'exited',
-          [`code=${earlyExit.code ?? 'null'}`, `signal=${earlyExit.signal ?? 'null'}`, details]
-            .filter(Boolean)
-            .join(' ')
+          compact([
+            `code=${earlyExit.code ?? 'null'}`,
+            `signal=${earlyExit.signal ?? 'null'}`,
+            details
+          ]).join(' ')
         )
       )
     )

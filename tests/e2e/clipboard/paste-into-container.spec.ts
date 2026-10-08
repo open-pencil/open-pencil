@@ -76,7 +76,7 @@ test('paste into selected frame places node as child', async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const rect = [...store.graph.nodes.values()].find(
-      (n) => n.name === 'Rectangle' && n.type === 'RECTANGLE'
+      (n) => n.name === 'Rectangle 1' && n.type === 'RECTANGLE'
     )
     if (!rect) throw new Error('Rectangle not found')
     store.select([rect.id])
@@ -92,7 +92,7 @@ test('paste into selected frame places node as child', async () => {
   await editor.canvas.waitForRender()
 
   const children = await getNodeChildren(frameId)
-  const pastedChild = children.find((c) => c.name === 'Rectangle')
+  const pastedChild = children.find((c) => c.name === 'Rectangle 1')
   expect(pastedChild).toBeDefined()
   expect(pastedChild?.parentId).toBe(frameId)
 })
@@ -110,7 +110,7 @@ test('paste with child selected places node as sibling in parent frame', async (
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const rect = [...store.graph.nodes.values()].find(
-        (n) => n.name === 'Rectangle' && n.type === 'RECTANGLE'
+        (n) => n.name === 'Rectangle 1' && n.type === 'RECTANGLE'
       )
       if (!rect) throw new Error('Rectangle not found')
       store.select([rect.id])

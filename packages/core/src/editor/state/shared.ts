@@ -5,9 +5,12 @@ export function createDefaultEditorSharedState(): EditorSharedState {
   return {
     activeTool: 'SELECT',
     snappingPreferences: { ...DEFAULT_SNAPPING_PREFERENCES },
-    remoteCursors: [],
+    presenceCursors: [],
     documentName: 'Untitled',
+    designIssues: null,
+    codeFocusNodeId: null,
     rulerTheme: undefined,
-    sceneVersion: 0
+    sceneVersion: 0,
+    canvasVersion: 0
   }
 }

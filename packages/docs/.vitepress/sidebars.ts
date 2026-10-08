@@ -46,6 +46,8 @@ export const userGuideSidebar = (
       { text: labels.autoLayout, link: `${prefix}/user-guide/auto-layout` },
       { text: labels.components, link: `${prefix}/user-guide/components` },
       { text: labels.variables, link: `${prefix}/user-guide/variables` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
     ],
   },
 ]
@@ -62,6 +64,8 @@ export const programmableSidebar = (
       { text: labels.inspecting, link: `${prefix}/programmable/cli/inspecting` },
       { text: labels.exporting, link: `${prefix}/programmable/cli/exporting` },
       { text: labels.analyzing, link: `${prefix}/programmable/cli/analyzing` },
+      { text: labels.comparing, link: '/programmable/cli/comparing' },
+      { text: labels.appControl, link: '/programmable/cli/app-control' },
       { text: labels.scripting, link: `${prefix}/programmable/cli/scripting` },
       { text: labels.jsxRenderer, link: `${prefix}/programmable/jsx-renderer` },
       { text: 'Native JavaScript APIs', link: '/programmable/native-api' },
@@ -70,6 +74,7 @@ export const programmableSidebar = (
       { text: labels.aiChat, link: `${prefix}/programmable/ai-chat` },
       ...(!prefix
         ? [
+            { text: 'Coding agents', link: '/programmable/coding-agents' },
             {
               text: 'BYOK Compatibility',
               link: '/programmable/byok-provider-compatibility',
@@ -111,10 +116,12 @@ export const developmentSidebar = (
       { text: 'Contributing', link: `${prefix}/development/contributing` },
       { text: 'Testing', link: `${prefix}/development/testing` },
       { text: labels.architecture, link: `${prefix}/development/architecture` },
+      { text: '.fig Reader Architecture', link: '/development/fig-reader' },
       { text: labels.techStack, link: `${prefix}/development/tech-stack` },
       ...(!prefix
         ? [
             { text: 'Roadmap', link: '/development/roadmap' },
+            { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },

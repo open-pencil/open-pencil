@@ -8,15 +8,8 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
-import { computed, type Component } from 'vue'
+import { computed } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
-import IconCombine from '~icons/lucide/combine'
-import IconCopyMinus from '~icons/lucide/copy-minus'
-import IconCopyX from '~icons/lucide/copy-x'
-import IconListCollapse from '~icons/lucide/list-collapse'
-import IconSpline from '~icons/lucide/spline'
-import IconSquaresIntersect from '~icons/lucide/squares-intersect'
-import IconTypeOutline from '~icons/lucide/type-outline'
 
 import {
   vTestId,
@@ -58,8 +51,7 @@ function removeSelectedGuide() {
 }
 
 const menuCls = useMenuUI({
-  content:
-    'min-w-56 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95 motion-reduce:animate-none',
+  content: 'min-w-56 max-w-80',
   separator: 'my-1'
 })
 const componentMenu = menu({ tone: 'component' })
@@ -72,28 +64,15 @@ const cls = {
   sep: menuCls.separator
 }
 
-const booleanCommandIcons = {
-  'selection.booleanUnion': IconCombine,
-  'selection.booleanSubtract': IconCopyMinus,
-  'selection.booleanIntersect': IconSquaresIntersect,
-  'selection.booleanExclude': IconCopyX,
-  'selection.flatten': IconListCollapse,
-  'selection.outlineText': IconTypeOutline,
-  'selection.outlineStroke': IconSpline
-} satisfies Partial<Record<EditorCommandId, Component>>
-
 function contextCommandTestId(id: EditorCommandId | undefined): string | undefined {
   return id ? editorCommandMetadata(id).contextTestId : undefined
-}
-
-function contextCommandIcon(id: EditorCommandId | undefined): Component | undefined {
-  if (!id) return undefined
-  return (booleanCommandIcons as Partial<Record<EditorCommandId, Component>>)[id]
 }
 </script>
 
 <template>
-  <ContextMenuContent :class="cls.menu" :side-offset="2" align="start">
+  <!-- Closing hands focus back to the canvas; when that lands just after a quick reopen, it
+       must not close the new menu. Clicks outside and Escape still close it. -->
+  <ContextMenuContent :class="cls.menu" :side-offset="2" align="start" @close-auto-focus.prevent>
     <template v-if="selectedGuide">
       <ContextMenuItem data-property="guide" :class="cls.item" @select="removeSelectedGuide">
         <span>{{ t.removeGuide }}</span>
@@ -173,14 +152,7 @@ function contextCommandIcon(id: EditorCommandId | undefined): Component | undefi
                 @select="!sub.separator && sub.action?.()"
               >
                 <template v-if="!sub.separator">
-                  <span class="flex min-w-0 flex-1 items-center gap-2">
-                    <component
-                      :is="contextCommandIcon(sub.id)"
-                      v-if="contextCommandIcon(sub.id)"
-                      class="size-3.5 shrink-0 text-muted"
-                    />
-                    <span class="truncate">{{ sub.label }}</span>
-                  </span>
+                  <span class="min-w-0 flex-1 truncate">{{ sub.label }}</span>
                   <AppShortcutText v-if="sub.shortcut">{{ sub.shortcut }}</AppShortcutText>
                 </template>
               </ContextMenuItem>
@@ -194,14 +166,7 @@ function contextCommandIcon(id: EditorCommandId | undefined): Component | undefi
           :disabled="item.disabled"
           @select="item.action?.()"
         >
-          <span class="flex min-w-0 flex-1 items-center gap-2">
-            <component
-              :is="contextCommandIcon(item.id)"
-              v-if="contextCommandIcon(item.id)"
-              class="size-3.5 shrink-0 text-muted"
-            />
-            <span class="truncate">{{ item.label }}</span>
-          </span>
+          <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
           <span
             v-if="item.shortcut"
             class="text-[11px]"

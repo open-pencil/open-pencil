@@ -17,6 +17,15 @@ declare module '@acemir/cssom' {
     }
   }
 
+  export class CSSStyleSheet {
+    readonly cssRules: ArrayLike<{
+      readonly style: { setProperty(property: string, value: string): void }
+    }>
+    /** Parses `rule`, throwing on an invalid selector, and returns its index. */
+    insertRule(rule: string, index?: number): number
+    toString(): string
+  }
+
   export interface CSSGroupingRuleLike {
     cssRules: unknown[]
   }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from './helpers'
+import { createAPI, solidFill } from './helpers'
 
 interface SerializedNodeWithChildren {
   children?: unknown[]
@@ -12,7 +12,7 @@ describe('serialization', () => {
     const frame = api.createFrame()
     frame.name = 'Card'
     frame.resize(300, 200)
-    frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    frame.fills = [solidFill({ r: 1, g: 1, b: 1, a: 1 })]
     const json = frame.toJSON()
     expect(json.name).toBe('Card')
     expect(json.width).toBe(300)

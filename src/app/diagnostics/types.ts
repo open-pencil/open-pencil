@@ -15,11 +15,25 @@ export type DiagnosticLevel = 'debug' | 'info' | 'warning' | 'error'
 export type DiagnosticValue = string | number | boolean | null
 export type DiagnosticAttributes = Readonly<Record<string, DiagnosticValue>>
 
+/** Every event the app records; Settings needs a label for each (`summary.ts`). */
+export type DiagnosticEventName =
+  | 'model.step.completed'
+  | 'chat.completed'
+  | 'chat.failed'
+  | 'tool.completed'
+  | 'runtime.error'
+  | 'editor.preparation.finished'
+  | 'document.operation.failed'
+  | 'storage.operation.failed'
+  | 'mcp.connection.failed'
+  | 'acp.transport.failed'
+
 export type DiagnosticEvent = {
   id: string
   timestamp: number
   category: DiagnosticCategory
   level: DiagnosticLevel
+  /** A `DiagnosticEventName`, or an older name read back from storage. */
   name: string
   sessionId?: string
   runId?: string
@@ -27,7 +41,8 @@ export type DiagnosticEvent = {
   attributes: DiagnosticAttributes
 }
 
-export type DiagnosticEventInput = Omit<DiagnosticEvent, 'id' | 'timestamp'> & {
+export type DiagnosticEventInput = Omit<DiagnosticEvent, 'id' | 'timestamp' | 'name'> & {
+  name: DiagnosticEventName
   timestamp?: number
 }
 

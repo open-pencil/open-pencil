@@ -1,11 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import {
-  JSX_REFERENCE as BARREL_REFERENCE,
-  CODEGEN_PROMPT as BARREL_CODEGEN
-} from '@open-pencil/core'
-import { AUTHORING_EXAMPLES, JSX_REFERENCE, renderJSX } from '@open-pencil/core/design-jsx'
+import { CODEGEN_PROMPT as BARREL_CODEGEN } from '@open-pencil/core'
+import { renderJSX } from '@open-pencil/core/design-jsx'
 import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
+import { AUTHORING_EXAMPLES, JSX_REFERENCE } from '@open-pencil/design-jsx'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 
@@ -88,7 +86,6 @@ test('shared bound example retains bindings and resolves the initial inherited m
 })
 
 test('public exports and runtime prompts use the same authoring reference', () => {
-  expect(BARREL_REFERENCE).toBe(JSX_REFERENCE)
   expect(BARREL_CODEGEN).toBe(CODEGEN_PROMPT)
   expect(CODEGEN_PROMPT).toContain(JSX_REFERENCE)
   expect(SYSTEM_PROMPT).toContain(JSX_REFERENCE)

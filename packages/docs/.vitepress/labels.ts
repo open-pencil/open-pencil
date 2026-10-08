@@ -15,6 +15,7 @@ export interface SidebarLabels {
   autoLayout: string
   components: string
   variables: string
+  checkingDesigns: string
   overview: string
   gettingStarted: string
   features: string
@@ -30,6 +31,8 @@ export interface ProgrammableLabels {
   inspecting: string
   exporting: string
   analyzing: string
+  comparing: string
+  appControl: string
   scripting: string
   jsxRenderer: string
   mcpServer: string
@@ -53,6 +56,8 @@ export const EN_PROG: ProgrammableLabels = {
   inspecting: 'Inspecting Files',
   exporting: 'Exporting',
   analyzing: 'Analyzing Designs',
+  comparing: 'Comparing Designs',
+  appControl: 'Controlling the App',
   scripting: 'Scripting',
   jsxRenderer: 'JSX Renderer',
   mcpServer: 'MCP Server',
@@ -65,6 +70,8 @@ export const DE_PROG: ProgrammableLabels = {
   inspecting: 'Dateien inspizieren',
   exporting: 'Exportieren',
   analyzing: 'Designs analysieren',
+  comparing: 'Designs vergleichen',
+  appControl: 'App steuern',
   scripting: 'Skripte',
   jsxRenderer: 'JSX-Renderer',
   mcpServer: 'MCP-Server',
@@ -77,6 +84,8 @@ export const IT_PROG: ProgrammableLabels = {
   inspecting: 'Ispezione file',
   exporting: 'Esportazione',
   analyzing: 'Analisi design',
+  comparing: 'Confronto dei design',
+  appControl: 'Controllare l’app',
   scripting: 'Scripting',
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Server MCP',
@@ -89,6 +98,8 @@ export const FR_PROG: ProgrammableLabels = {
   inspecting: 'Inspecter les fichiers',
   exporting: 'Exporter',
   analyzing: 'Analyser les designs',
+  comparing: 'Comparer des designs',
+  appControl: 'Piloter l’application',
   scripting: 'Scripts',
   jsxRenderer: 'Moteur JSX',
   mcpServer: 'Serveur MCP',
@@ -101,6 +112,8 @@ export const ES_PROG: ProgrammableLabels = {
   inspecting: 'Inspeccionar archivos',
   exporting: 'Exportar',
   analyzing: 'Analizar diseños',
+  comparing: 'Comparar diseños',
+  appControl: 'Controlar la app',
   scripting: 'Scripts',
   jsxRenderer: 'Renderizador JSX',
   mcpServer: 'Servidor MCP',
@@ -113,6 +126,8 @@ export const PL_PROG: ProgrammableLabels = {
   inspecting: 'Inspekcja plików',
   exporting: 'Eksportowanie',
   analyzing: 'Analiza projektów',
+  comparing: 'Porównywanie projektów',
+  appControl: 'Sterowanie aplikacją',
   scripting: 'Skrypty',
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Serwer MCP',
@@ -125,6 +140,8 @@ export const RU_PROG: ProgrammableLabels = {
   inspecting: 'Инспекция файлов',
   exporting: 'Экспорт',
   analyzing: 'Анализ дизайна',
+  comparing: 'Сравнение дизайнов',
+  appControl: 'Управление приложением',
   scripting: 'Скрипты',
   jsxRenderer: 'JSX-рендерер',
   mcpServer: 'MCP-сервер',
@@ -149,6 +166,7 @@ export const EN: SidebarLabels = {
   autoLayout: 'Auto Layout',
   components: 'Components',
   variables: 'Variables',
+  checkingDesigns: 'Checking Designs',
   overview: 'Overview',
   gettingStarted: 'Getting Started',
   features: 'Features',
@@ -174,6 +192,7 @@ export const DE: SidebarLabels = {
   autoLayout: 'Auto-Layout',
   components: 'Komponenten',
   variables: 'Variablen',
+  checkingDesigns: 'Designs prüfen',
   overview: 'Überblick',
   gettingStarted: 'Erste Schritte',
   features: 'Funktionen',
@@ -199,6 +218,7 @@ export const IT: SidebarLabels = {
   autoLayout: 'Auto-layout',
   components: 'Componenti',
   variables: 'Variabili',
+  checkingDesigns: 'Verificare i design',
   overview: 'Panoramica',
   gettingStarted: 'Per iniziare',
   features: 'Funzionalità',
@@ -224,6 +244,7 @@ export const FR: SidebarLabels = {
   autoLayout: 'Mise en page auto',
   components: 'Composants',
   variables: 'Variables',
+  checkingDesigns: 'Vérifier les designs',
   overview: 'Vue d’ensemble',
   gettingStarted: 'Premiers pas',
   features: 'Fonctionnalités',
@@ -249,6 +270,7 @@ export const ES: SidebarLabels = {
   autoLayout: 'Auto-layout',
   components: 'Componentes',
   variables: 'Variables',
+  checkingDesigns: 'Revisar diseños',
   overview: 'Resumen',
   gettingStarted: 'Primeros pasos',
   features: 'Características',
@@ -274,6 +296,7 @@ export const PL: SidebarLabels = {
   autoLayout: 'Auto-layout',
   components: 'Komponenty',
   variables: 'Zmienne',
+  checkingDesigns: 'Sprawdzanie projektów',
   overview: 'Przegląd',
   gettingStarted: 'Rozpoczęcie pracy',
   features: 'Funkcje',
@@ -299,6 +322,7 @@ export const RU: SidebarLabels = {
   autoLayout: 'Авто-раскладка',
   components: 'Компоненты',
   variables: 'Переменные',
+  checkingDesigns: 'Проверка дизайна',
   overview: 'Обзор',
   gettingStarted: 'Начало работы',
   features: 'Возможности',

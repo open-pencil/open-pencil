@@ -42,16 +42,6 @@ export function mapToFigmaType(type: SceneNode['type']): string {
   }
 }
 
-/** Generate a printable, lexicographically ordered parent position. */
-export function fractionalPosition(index: number): string {
-  const BASE = 94
-  const FIRST = 33
-  const TILDE = 126
-  const numTildes = Math.floor(index / BASE)
-  const lastChar = String.fromCharCode(FIRST + (index % BASE))
-  return String.fromCharCode(TILDE).repeat(numTildes) + lastChar
-}
-
 export function computeExportTransform(node: SceneNode): Matrix {
   const sx = node.flipX ? -1 : 1
   const cos = Math.cos((node.rotation * Math.PI) / 180)

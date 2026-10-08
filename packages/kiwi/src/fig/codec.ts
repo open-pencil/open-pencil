@@ -12,11 +12,6 @@ import { compileSchema, encodeBinarySchema } from '../schema-runtime'
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
 import type { Color, GUID, Matrix, Vector } from './types'
-import {
-  encodeVarint,
-  encodePaintWithVariableBinding as encodePaintVariableBinding,
-  encodeNodeChangeWithVariables as encodeNodeChangeVariableBindings
-} from './variable-bindings'
 
 interface CompiledSchema {
   encodeMessage(message: unknown): Uint8Array
@@ -26,14 +21,6 @@ interface CompiledSchema {
 }
 
 let compiledSchema: CompiledSchema | null = null
-
-function bytesToHex(bytes: Uint8Array | number[]): string {
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  return new Uint8Array(hex.match(/.{2}/g)?.map((byte) => Number.parseInt(byte, 16)) ?? [])
-}
 
 /**
  * Initialize the codec (compiles Kiwi schema)
@@ -82,71 +69,7 @@ export function encodeMessage(message: FigmaMessage): Uint8Array {
   if (!compiledSchema) {
     throw new Error('Codec not initialized. Call initCodec() first.')
   }
-
-  // Check if any nodeChange has variable bindings (fill or stroke)
-  const hasVariables = message.nodeChanges?.some(
-    (nc) =>
-      nc.fillPaints?.some((p) => p.colorVariableBinding) ||
-      nc.strokePaints?.some((p) => p.colorVariableBinding)
-  )
-
-  if (!hasVariables) {
-    // Standard encoding
-    const encoded = compiledSchema.encodeMessage(message)
-    return compress(encoded)
-  }
-
-  // Need custom encoding for variable bindings
-  // Strategy: encode each nodeChange separately, then combine
-  const messageWithoutNodes = { ...message, nodeChanges: [] }
-  const baseEncoded = compiledSchema.encodeMessage(messageWithoutNodes)
-  const baseHex = bytesToHex(baseEncoded)
-
-  // Encode nodeChanges with variable support
-  const nodeChangeBytes: Uint8Array[] = []
-  for (const nc of message.nodeChanges || []) {
-    const encoded = encodeNodeChangeWithVariables(nc)
-    nodeChangeBytes.push(encoded)
-  }
-
-  // Combine: base message + nodeChanges
-  // Message structure: type, sessionID, ackID, reconnectSeqNum, nodeChanges[]
-  // nodeChanges is field 5
-
-  // Message structure in kiwi:
-  // - Field 1 (type): enum MessageType
-  // - Field 2 (sessionID): uint
-  // - Field 3 (ackID): uint
-  // - Field 4 (nodeChanges): NodeChange[] - this is what we need to replace
-  // - Field 25 (reconnectSequenceNumber): uint
-  //
-  // Empty array: "04 00" (field 4, length 0)
-  // We need to replace "04 00" with "04 <count> <nodes>"
-
-  const emptyArrayPattern = '0400' // field 4, length 0
-  const emptyArrayIdx = baseHex.indexOf(emptyArrayPattern)
-
-  if (emptyArrayIdx === -1) {
-    // Fallback to standard encoding
-    const encoded = compiledSchema.encodeMessage(message)
-    return compress(encoded)
-  }
-
-  // Build nodeChanges array with our encoded nodes
-  const ncBytes: number[] = [0x04] // field 4
-  ncBytes.push(...encodeVarint(nodeChangeBytes.length)) // array length
-  for (const ncArr of nodeChangeBytes) {
-    ncBytes.push(...Array.from(ncArr))
-  }
-
-  // Replace "0400" with our nodeChanges
-  const beforeArray = baseHex.slice(0, emptyArrayIdx)
-  const afterArray = baseHex.slice(emptyArrayIdx + 4) // skip "0400"
-
-  const ncHex = bytesToHex(ncBytes)
-  const finalHex = beforeArray + ncHex + afterArray
-
-  return compress(hexToBytes(finalHex))
+  return compress(compiledSchema.encodeMessage(message))
 }
 
 /**
@@ -180,10 +103,6 @@ export type { Color, GUID, Matrix, Vector } from './types'
 export interface ParentIndex {
   guid: GUID
   position: string
-}
-
-export interface VariableBinding {
-  variableID: GUID
 }
 
 export interface ImageSource {
@@ -227,7 +146,6 @@ export interface Paint {
   density?: number
   noiseSize?: Vector
   customEffectId?: { guid?: GUID }
-  colorVariableBinding?: VariableBinding
   colorVar?: {
     value?: {
       alias?: {
@@ -258,6 +176,12 @@ export interface VariableAnyValue {
   colorValue?: Color
   alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
   symbolIdValue?: { guid?: GUID }
+  // fig.kiwi PropRefValue: the component property a parameter entry points at.
+  propRefValue?: { defId?: GUID }
+  expressionValue?: {
+    expressionFunction?: string
+    expressionArguments?: VariableDataEntry[]
+  }
 }
 
 export interface VariableDataEntry {
@@ -456,11 +380,17 @@ export interface NodeChange {
   // Variables
   variableData?: VariableDataEntry
   variableConsumptionMap?: { entries?: VariableConsumptionEntry[] }
+  // fig.kiwi declares this as the same VariableDataMap as variableConsumptionMap.
+  parameterConsumptionMap?: { entries?: VariableConsumptionEntry[] }
   variableSetModes?: Array<{ id: GUID; name: string; sortPosition?: string }>
   variableSetID?: { guid?: GUID; assetRef?: { key: string; version?: string } }
   variableResolvedType?: string
   variableDataValues?: { entries?: VariableDataValuesEntry[] }
   variableScopes?: string[]
+  codeSyntax?: { entries?: Array<{ platform: string; value: string }> }
+  description?: string
+  symbolDescription?: string
+  isPublishable?: boolean
   documentColorProfile?: 'SRGB' | 'DISPLAY_P3'
   pluginData?: PluginData[]
   pluginRelaunchData?: PluginRelaunchData[]
@@ -568,25 +498,4 @@ export function createNodeChange(opts: {
   return change
 }
 
-/**
- * Encode a varint (variable-length integer)
- */
-export function encodePaintWithVariableBinding(
-  paint: Paint,
-  variableSessionID: number,
-  variableLocalID: number
-): Uint8Array {
-  if (!compiledSchema) {
-    throw new Error('Codec not initialized. Call initCodec() first.')
-  }
-  return encodePaintVariableBinding(compiledSchema, paint, variableSessionID, variableLocalID)
-}
-
 export { parseVariableId } from './variable-bindings'
-
-export function encodeNodeChangeWithVariables(nodeChange: NodeChange): Uint8Array {
-  if (!compiledSchema) {
-    throw new Error('Codec not initialized. Call initCodec() first.')
-  }
-  return encodeNodeChangeVariableBindings(compiledSchema, nodeChange)
-}

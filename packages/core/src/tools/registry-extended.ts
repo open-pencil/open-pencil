@@ -4,8 +4,10 @@ import {
   analyzeOverlaps,
   analyzeSpacing,
   analyzeTypography,
-  diffCreate,
-  diffShow
+  diffApply,
+  diffShow,
+  lint,
+  lintFix
 } from './analyze'
 import { designToComponentMap, designToTokens } from './codegen'
 import {
@@ -17,10 +19,13 @@ import {
   createVector,
   exposeInstanceSwap,
   combineAsVariants,
+  createSlot,
   fetchIconsTool,
+  getBehaviour,
   importSVG,
   insertIcon,
-  searchIconsTool
+  searchIconsTool,
+  setBehaviour
 } from './create'
 import {
   setBlend,
@@ -38,7 +43,6 @@ import {
   setVisible
 } from './modify'
 import {
-  diffJSX,
   getComponents,
   getCurrentPage,
   getFontStatus,
@@ -120,7 +124,6 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   getFontStatus,
   listFonts,
   listAvailableFonts,
-  diffJSX,
   // Create (advanced)
   createShape,
   searchIconsTool,
@@ -130,6 +133,9 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   createComponent,
   createInstance,
   exposeInstanceSwap,
+  createSlot,
+  getBehaviour,
+  setBehaviour,
   createPage,
   createVector,
   createSlice,
@@ -194,11 +200,13 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   // Analyze & diff
   analyzeColors,
   analyzeTypography,
+  lint,
+  lintFix,
   analyzeSpacing,
   analyzeClusters,
   analyzeOverlaps,
-  diffCreate,
   diffShow,
+  diffApply,
   // Codegen
   designToTokens,
   designToComponentMap

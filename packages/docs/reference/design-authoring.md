@@ -1,8 +1,8 @@
-<!-- Generated from Core design-jsx/reference and renderer metadata. Do not edit; run bun run generate:authoring-reference. -->
+<!-- Generated from design-jsx reference and renderer metadata. Do not edit; run bun run generate:authoring-reference. -->
 
 # OpenPencil design authoring
 
-This reference describes scene creation, not React DOM output. Use the `render` tool for JSX strings, or import `Frame`, `Text`, `renderTree`, and other authoring exports from `@open-pencil/core/design-jsx` in library code. Library exports are not automatically globals in agent `eval`; use only the bindings exposed by that execution environment.
+This reference describes scene creation, not React DOM output. Use the `render` tool for JSX strings, or import `Frame`, `Text`, and other authoring exports from `@open-pencil/design-jsx` and render them with `renderTree` from `@open-pencil/core/design-jsx` in library code. Library exports are not automatically globals in agent `eval`; use only the bindings exposed by that execution environment.
 
 ## Composition and layout
 
@@ -12,16 +12,18 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 - `justify="start"|"end"|"center"|"between"` controls the primary axis; `items="start"|"end"|"center"|"stretch"` controls the cross axis. Distribution needs available space: `between` cannot create extra room in a Hug container.
 - `grow` distributes available space. Avoid circular Hug/Fill dependencies and redundant fixed widths on growing children. Keep Fill sizing through intermediate containers that should stretch.
 - For wrapping text in a column, prefer `w="fill"`; fixed-width text can use `textAutoResize="height"`. `maxLines` / `truncate` are intentional truncation, not fixes for accidental overflow.
-- `wrap` and `rowGap` enable wrapped flex rows. `grid`, `columns`, and `rows` enable grid (for example `columns="1fr 200px 1fr"`). Grid children use `colStart`, `rowStart`, `colSpan`, and `rowSpan`. The current grid `gap` shorthand takes precedence over `columnGap` and `rowGap`.
+- `wrap` and `rowGap` enable wrapped flex rows. `grid`, `columns`, and `rows` enable grid (for example `columns="1fr 200px 1fr"` or `columns="repeat(7, 1fr)"`); tracks are `fr`, pixel lengths, `auto`, `repeat()`, and `minmax()`, which grows like its maximum. Grid children use `colStart`, `rowStart`, `colSpan`, and `rowSpan`. The current grid `gap` shorthand takes precedence over `columnGap` and `rowGap`.
 - `flow="auto"|"ltr"|"rtl"` controls container flow; text `dir` controls writing direction. Preserve these separately.
+- Outside auto-layout, and for `position="absolute"` children, `constraints={{ horizontal, vertical }}` sets how a layer follows its parent's resizing, with Figma's values in lowercase: `"min"`, `"center"`, `"max"`, `"stretch"`, or `"scale"`. `minW`, `maxW`, `minH`, and `maxH` bound a layer's size. `visible={false}` hides a layer and `locked` locks it.
 - Use measured node bounds and the existing `arrange` tool for independent artboards. Prefer layout constraints to calculating child coordinates; ordinary JavaScript arithmetic is appropriate when real geometry calculations are needed.
 
 ## Paint, text, and artwork
 
-- `bg` / `fill`, `stroke`, and text `color` accept colors and supported variable references. Set colors explicitly for predictable contrast. `fills` accepts structured paints; gradient helpers include `linearGradient`, `radialGradient`, `angularGradient`, and `diamondGradient`.
+- `bg` / `fill`, `stroke`, and text `color` accept colors and supported variable references. Set colors explicitly for predictable contrast. `fills` accepts structured paints; gradient helpers include `linearGradient`, `radialGradient`, `angularGradient`, and `diamondGradient`, each taking an array of stops and optional `{ opacity, transform }`: `fills={[linearGradient([['#3b82f6', 0], ['#8b5cf6', 1]])]}`.
+- `stroke` describes one stroke, refined by `strokeWidth`, `strokeAlign` (`"inside"`, `"center"`, `"outside"`), `strokeDash`, `strokeCap`, and `strokeJoin`. `strokes` takes several, as objects with `color`, `weight`, `align`, `dash`, `cap`, `join`, and `visible`; `strokeWeights={{ top, right, bottom, left }}` sets per-side widths. `dashPattern` sets the node's own dash pattern, separate from the per-stroke `strokeDash`.
 - `rounded` and `roundedTL`/`roundedTR`/`roundedBL`/`roundedBR` control corners. `strokeWidth`, `opacity`, `rotate`, and `blendMode` control appearance. `overflow="hidden"` clips content; do not hide accidental text overflow to make a broken layout appear correct.
-- `effects` accepts structured effects such as `dropShadow`, `innerShadow`, and `layerBlur`. `shadow="offsetX offsetY blur #color"` and `blur` are convenient shorthands.
-- Text content belongs inside `Text`. Use `size`, `font`, `weight`, `lineHeight`, `letterSpacing`, `textAlign`, `textDecoration`, and `textCase`. Verify fonts actually load before judging dimensions; do not assume every font is available.
+- `effects` accepts structured effects such as `dropShadow`, `innerShadow`, and `layerBlur`. `shadow` takes a CSS `box-shadow` list, such as `shadow="0 4 8 #0002, inset 0 1 0 #fff"`, and `blur` a layer blur radius; both are convenient shorthands. Effect helpers take `radius`, as Figma's effects do; when a JSX string is rendered, an option a paint or effect helper does not support is reported as a warning.
+- Text content belongs inside `Text`. Use `size`, `font`, `weight`, `italic`, `lineHeight`, `letterSpacing`, `textAlign`, `textAlignVertical`, `textDecoration`, and `textCase`. Verify fonts actually load before judging dimensions; do not assume every font is available.
 - `Icon` uses an Iconify name, size, and color. Prefer icons to emoji when reliable vector output is needed. Image fills belong on appropriate leaf shapes, not containers whose children must remain visible.
 - Design JSX props are the portable authoring interface. Some CSS-style aliases are supported, but this is not a browser CSS engine; do not assume arbitrary HTML, classes, or styles work.
 
@@ -38,6 +40,24 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 - Instance assignments use the native string values (including `'true'` / `'false'` for BOOLEAN properties and component IDs for swaps). For example `Instance({ of: noteId, properties: { message: 'Updated review' } })`. Assignments persist through component synchronization; unknown IDs and invalid values fail rather than silently creating inert overrides. Select variants through component-set variant props, not through instance property assignments.
 - Reuse existing local or library components before recreating them. Keep meaningful text, visibility, and swap properties exposed rather than hand-editing cloned child nodes.
 - Explicit instance `w` / `h` replace the inherited sizing mode on that axis; omitted dimensions retain the main component's sizing. Authored overrides survive component synchronization. Distinguish those placement constraints from the main component's default size, and verify actual bounds in narrower parents. Do not compensate for a sizing mismatch with guessed heights, clipping, or manually positioned siblings.
+
+## Controls
+
+- A main component can behave as a Reka UI control in preview and code. Write it with Reka's names: `Switch.Root` is the component (a component set when its children are `Component` variants), and each Reka part is the slot that draws it, such as `Switch.Thumb`, `Slider.Track`, `Slider.Range`, `Slider.Thumb`, `Tabs.List`, `Collapsible.Trigger`, or `NumberField.Increment`. Parts in different variants share one slot.
+- The root names the properties that hold its values: `modelValue` (`open` on `Collapsible.Root`), `disabled`, and, for text fields, `filled`, as a variant or boolean property name, or `{ property, on, off }` when the variant values are not named like On and Off. `states` names the variant property that draws default, hover, pressed, focus, and disabled; a slider, progress bar, or number field takes `min`, `max`, `step`, and `defaultValue`.
+- `TextField.Input`, `Textarea.Input`, and `NumberField.Input` are the text layers whose text becomes the field's text property. `Tabs.Trigger` goes in `Tabs.List`; `Tabs.Content` panels may sit directly under `Tabs.Root`, the first showing.
+- A group's item component is written on its own (`RadioGroup.Item`, `ToggleGroup.Item`, `Accordion.Item` with its `Accordion.Trigger` and `Accordion.Content`); the group's root then lists items as `<RadioGroup.Item of={radioId} />`.
+
+```tsx
+<Switch.Root name="Switch" modelValue="State" states="Interaction">
+  <Component name="State=Off, Interaction=Default" w={44} h={24} rounded={12} bg="#D0D4DA">
+    <Switch.Thumb x={2} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" />
+  </Component>
+  <Component name="State=On, Interaction=Default" w={44} h={24} rounded={12} bg="#3B6CF6">
+    <Switch.Thumb x={22} y={2} w={20} h={20} rounded={10} bg="#FFFFFF" />
+  </Component>
+</Switch.Root>
+```
 
 ## Verification
 
@@ -66,8 +86,8 @@ The examples below are executed by the authoring-reference tests. Create the nam
 
 Generated from the renderer metadata. This inventory lists accepted names, not arbitrary browser CSS support.
 
-**Elements:** `Frame`, `Text`, `Rectangle`, `Ellipse`, `Line`, `Star`, `Polygon`, `Vector`, `Group`, `Section`, `Component`, `ComponentSet`, `Instance`, `View`, `Rect`, `Icon`.
+**Elements:** `Frame`, `Text`, `Rectangle`, `Ellipse`, `Line`, `Star`, `Polygon`, `Vector`, `Group`, `Section`, `Component`, `ComponentSet`, `Instance`, `View`, `Rect`, `Icon`, `Button.Root`, `Toggle.Root`, `Switch.Root`, `Switch.Thumb`, `Checkbox.Root`, `Checkbox.Indicator`, `RadioGroup.Root`, `RadioGroup.Item`, `RadioGroup.Indicator`, `ToggleGroup.Root`, `ToggleGroup.Item`, `Slider.Root`, `Slider.Track`, `Slider.Range`, `Slider.Thumb`, `Progress.Root`, `Progress.Indicator`, `Tabs.Root`, `Tabs.List`, `Tabs.Trigger`, `Tabs.Content`, `Collapsible.Root`, `Collapsible.Trigger`, `Collapsible.Content`, `Accordion.Root`, `Accordion.Item`, `Accordion.Header`, `Accordion.Trigger`, `Accordion.Content`, `NumberField.Root`, `NumberField.Input`, `NumberField.Increment`, `NumberField.Decrement`, `TextField.Root`, `TextField.Input`, `Textarea.Root`, `Textarea.Input`.
 
 **Helpers:** `solid`, `gradient`, `linearGradient`, `radialGradient`, `angularGradient`, `diamondGradient`, `dropShadow`, `innerShadow`, `layerBlur`, `backgroundBlur`, `foregroundBlur`, `designVar`, `defineVars`.
 
-**Properties:** `name`, `key`, `flex`, `flow`, `dir`, `gap`, `wrap`, `rowGap`, `columnGap`, `justify`, `justifyContent`, `items`, `align`, `alignItems`, `grow`, `w`, `h`, `width`, `height`, `minW`, `maxW`, `minH`, `maxH`, `x`, `y`, `top`, `left`, `position`, `p`, `padding`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `bg`, `fill`, `fills`, `background`, `backgroundColor`, `stroke`, `border`, `borderColor`, `strokeWidth`, `borderWidth`, `strokeAlign`, `strokeDash`, `rounded`, `borderRadius`, `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`, `cornerRadius`, `cornerSmoothing`, `opacity`, `blendMode`, `rotate`, `rotation`, `overflow`, `shadow`, `blur`, `effects`, `size`, `fontSize`, `font`, `fontFamily`, `weight`, `fontWeight`, `color`, `text`, `characters`, `content`, `value`, `title`, `textAlign`, `textAlignHorizontal`, `textHorizontalAlignment`, `textAlignVertical`, `textVerticalAlignment`, `textAutoResize`, `lineHeight`, `letterSpacing`, `textDecoration`, `textCase`, `maxLines`, `truncate`, `grid`, `columns`, `rows`, `colStart`, `rowStart`, `col`, `row`, `colSpan`, `rowSpan`, `points`, `pointCount`, `innerRadius`, `label`, `style`, `bind`, `component`, `componentId`, `properties`, `propertyRefs`, `of`.
+**Properties:** `name`, `key`, `flex`, `flow`, `dir`, `gap`, `wrap`, `rowGap`, `columnGap`, `justify`, `justifyContent`, `items`, `align`, `alignItems`, `grow`, `w`, `h`, `width`, `height`, `minW`, `maxW`, `minH`, `maxH`, `x`, `y`, `top`, `left`, `position`, `constraints`, `p`, `padding`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `bg`, `fill`, `fills`, `background`, `backgroundColor`, `stroke`, `border`, `borderColor`, `strokeWidth`, `borderWidth`, `strokeAlign`, `strokeDash`, `strokeCap`, `strokeJoin`, `dashPattern`, `strokes`, `strokeWeights`, `rounded`, `borderRadius`, `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`, `cornerRadius`, `cornerSmoothing`, `opacity`, `blendMode`, `rotate`, `rotation`, `overflow`, `mask`, `visible`, `locked`, `shadow`, `blur`, `effects`, `size`, `fontSize`, `font`, `fontFamily`, `weight`, `fontWeight`, `italic`, `color`, `text`, `characters`, `content`, `value`, `title`, `textAlign`, `textAlignHorizontal`, `textHorizontalAlignment`, `textAlignVertical`, `textVerticalAlignment`, `textAutoResize`, `lineHeight`, `letterSpacing`, `textDecoration`, `textCase`, `maxLines`, `truncate`, `grid`, `columns`, `rows`, `colStart`, `rowStart`, `col`, `row`, `colSpan`, `rowSpan`, `points`, `pointCount`, `innerRadius`, `label`, `style`, `bind`, `component`, `componentId`, `properties`, `propertyRefs`, `of`, `modelValue`, `open`, `disabled`, `filled`, `states`, `min`, `max`, `step`, `defaultValue`.

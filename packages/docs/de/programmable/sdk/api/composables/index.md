@@ -35,6 +35,5 @@ Diese Composables liefern Zustand und Aktionen, die eigene OpenPencil-Oberfläch
 
 ## Variablen, Navigation und Sprache
 
-- [useVariablesEditor](./use-variables-editor)
 - [usePageList](./use-page-list)
 - [useI18n](./use-i18n)

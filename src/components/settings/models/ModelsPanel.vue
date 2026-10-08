@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { templateRef } from '@vueuse/core'
-import { nextTick, ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, useTemplateRef } from 'vue'
 
+import { HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
+import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { useModelSettings } from '@/app/ai/models/settings/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -11,55 +12,46 @@ import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
-import { modelPanelTransition } from '@/theme/settings/models'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 const { ai, collaboration, common } = useI18n()
 const editing = defineModel<boolean>('editing', { default: false })
 const editingProfileId = ref<string>()
-const editorLeaving = ref(false)
-const panel = templateRef<HTMLElement>('panel')
-let returnFocus: HTMLElement | null = null
-function captureFocus() {
-  returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-}
-async function restoreFocus() {
-  editorLeaving.value = false
-  await nextTick()
-  if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true })
-  returnFocus = null
-}
-async function focusEditor() {
-  await nextTick()
-  panel.value
-    ?.querySelector<HTMLInputElement>('[data-test-id="settings-model-editor"] input')
-    ?.focus({ preventScroll: true })
+const editor = useTemplateRef('editor')
+
+/** The editor opens on its name field rather than the back control. */
+function focusEditor(event: Event): void {
+  if (!editor.value) return
+  event.preventDefault()
+  editor.value.focus()
 }
 onUnmounted(() => {
   editing.value = false
 })
 
 function addModel(): void {
-  captureFocus()
   editingProfileId.value = undefined
   editing.value = true
 }
 
 function editModel(profileId: string): void {
-  captureFocus()
   editingProfileId.value = profileId
   editing.value = true
 }
 
 function statusLabel(connectionId: string, providerID: string): string {
-  if (providerID.startsWith('acp:')) return ai.value.modelAgentConnection
   const status = statusByConnection.value[connectionId]
+  if (providerID.startsWith('acp:')) return ai.value.modelAgentConnection
+  // Pi uses its own sign-ins unless an AI Gateway key is saved.
+  if (providerID === HARNESS_PROVIDER_ID && status !== 'configured') {
+    return ai.value.modelAgentConnection
+  }
   if (status === 'configured') return collaboration.value.connected
   if (status === 'locked' || status === 'unavailable') return common.value.unavailable
   return ai.value.modelNeedsCredential
 }
 
 function closeEditor(): void {
-  editorLeaving.value = true
   editing.value = false
   void refreshStatuses()
 }
@@ -68,23 +60,24 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
 </script>
 
 <template>
-  <div ref="panel" class="relative flex min-h-0 flex-1 flex-col">
-    <Transition
-      v-bind="modelPanelTransition"
-      @after-enter="focusEditor"
-      @after-leave="restoreFocus"
-    >
-      <div v-if="editing" class="absolute inset-0 flex min-h-0 flex-col">
-        <ProfileEditor
-          :key="editingProfileId ?? 'new'"
-          :profile-id="editingProfileId"
-          @done="closeEditor"
-          @deleted="closeEditor"
-        />
-      </div>
-    </Transition>
+  <PanelDrillIn
+    :open="editing"
+    :back="common.back"
+    :parent="ai.modelsTitle"
+    @back="closeEditor"
+    @open-auto-focus="focusEditor"
+  >
+    <template #detail>
+      <ProfileEditor
+        ref="editor"
+        :key="editingProfileId ?? 'new'"
+        :profile-id="editingProfileId"
+        @done="closeEditor"
+        @deleted="closeEditor"
+      />
+    </template>
 
-    <SettingsPage v-show="!editing && !editorLeaving">
+    <SettingsPage>
       <div class="flex flex-col gap-6">
         <SettingsSection>
           <template #title>{{ ai.modelsTitle }}</template>
@@ -158,6 +151,17 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
               </template>
             </AppActionRow>
           </div>
+          <AppButton
+            color="primary"
+            variant="link"
+            size="xs"
+            class="self-start"
+            data-test-id="settings-run-ai-setup"
+            @click="openAISetup()"
+          >
+            <template #leading><icon-lucide-sparkles class="size-3" /></template>
+            {{ ai.aiSetupRun }}
+          </AppButton>
         </SettingsSection>
 
         <SettingsSection>
@@ -168,5 +172,5 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
         <slot />
       </div>
     </SettingsPage>
-  </div>
+  </PanelDrillIn>
 </template>

@@ -9,7 +9,7 @@ import { WebSocket } from 'ws'
 import { startServer, type ServerHandle } from '#mcp/server'
 import { getDiscoveryPath } from '#mcp/transport/paths'
 
-import { socketRequest, type HealthResponse } from '#tests/helpers/mcp/server'
+import { readHealth, socketRequest } from '#tests/helpers/mcp/server'
 
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-lifecycle-${process.pid}`)
@@ -64,7 +64,7 @@ describe('MCP lifecycle failure cleanup', () => {
       // must not have corrupted the first server's listener.
       const health = await fetch(`http://127.0.0.1:${occupiedPort}/health`)
       expect(health.status).toBe(200)
-      const data = (await health.json()) as HealthResponse
+      const data = await readHealth(health)
       expect(data.status).toBe('no_app')
     } finally {
       await handle1.close()

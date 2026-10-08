@@ -1,6 +1,22 @@
+import { compact } from 'es-toolkit/array'
 export function isDefaultName(name: string): boolean {
   return /^(Frame|Rectangle|Ellipse|Line|Text|Group|Vector|Polygon|Star|Section|Component|Instance|Slice)\s*\d*$/i.test(
     name
+  )
+}
+
+/**
+ * Lowercase words of a layer name, split at separators and camelCase humps, so name heuristics
+ * match whole words: "IconButton" and "icon-button" yield `icon`, `button`, "Button2" yields
+ * `button`, `2`, and "Rectangle" does not contain `cta`.
+ */
+export function nameWords(name: string): string[] {
+  return compact(
+    name
+      .replaceAll(/([a-z\d])([A-Z])/g, '$1 $2')
+      .replaceAll(/([a-z])(\d)/gi, '$1 $2')
+      .toLowerCase()
+      .split(/[^a-z\d]+/)
   )
 }
 
@@ -8,6 +24,18 @@ export function isMultipleOf(value: number, base: number, tolerance = 0.01): boo
   if (base === 0) return false
   const remainder = value % base
   return remainder < tolerance || base - remainder < tolerance
+}
+
+/** The candidate closest to `value`; a tie goes to the larger candidate. */
+export function nearestValue(value: number, candidates: Iterable<number>): number | null {
+  let best: number | null = null
+  for (const candidate of candidates) {
+    if (best === null) best = candidate
+    const distance = Math.abs(candidate - value)
+    const bestDistance = Math.abs(best - value)
+    if (distance < bestDistance || (distance === bestDistance && candidate > best)) best = candidate
+  }
+  return best
 }
 
 interface LintPathNode {
@@ -25,22 +53,27 @@ export function getNodePath(node: LintPathNode): string[] {
   return path
 }
 
-export function relativeLuminance(rgb: { r: number; g: number; b: number }): number {
-  const [r, g, b] = [rgb.r, rgb.g, rgb.b].map((c) =>
-    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-  ) as [number, number, number]
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-export function contrastRatio(
-  a: { r: number; g: number; b: number },
-  b: { r: number; g: number; b: number }
-): number {
-  const l1 = relativeLuminance(a)
-  const l2 = relativeLuminance(b)
-  const lighter = Math.max(l1, l2)
-  const darker = Math.min(l1, l2)
-  return (lighter + 0.05) / (darker + 0.05)
-}
-
 export const SPACING_SCALE = [0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96, 128]
+
+const COMPONENT_TREE_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
+
+/** Layer types whose descendants' structure belongs to a component. */
+export function ownsComponentTree(type: string): boolean {
+  return COMPONENT_TREE_TYPES.has(type)
+}
+
+interface LintTreeNode {
+  type: string
+  parent?: LintTreeNode
+}
+
+/**
+ * Whether a layer sits inside a component or an instance, whose structure belongs to the
+ * component: instance layers cannot be removed, and a component property may show a hidden one.
+ */
+export function inComponentTree(node: LintTreeNode): boolean {
+  for (let current = node.parent; current; current = current.parent) {
+    if (ownsComponentTree(current.type)) return true
+  }
+  return false
+}

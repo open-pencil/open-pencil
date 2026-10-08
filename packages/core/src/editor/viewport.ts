@@ -1,9 +1,13 @@
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 import { emitNavigationTrace } from '#core/profiler'
 
 import type { EditorContext } from './types'
+
+/** Space kept between revealed layers and the viewport edge. */
+const REVEAL_MARGIN = 48
 
 export function createViewportActions(ctx: EditorContext) {
   function currentViewport() {
@@ -74,6 +78,22 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
+  /** Put the world point (x, y) at the center of the viewport, at `zoom` (the current one by default). */
+  function centerOn(x: number, y: number, zoom = ctx.state.zoom) {
+    const previous = currentViewport()
+    const { width, height } = ctx.getViewportSize()
+    const nextZoom = Math.max(0.02, Math.min(256, zoom))
+    const panX = width / 2 - x * nextZoom
+    const panY = height / 2 - y * nextZoom
+    // Remote cursors are finite but unbounded; a point that overflows leaves the view alone.
+    if (!Number.isFinite(panX) || !Number.isFinite(panY)) return
+    ctx.state.zoom = nextZoom
+    ctx.state.panX = panX
+    ctx.state.panY = panY
+    ctx.requestRepaint()
+    emitViewportChanged(previous)
+  }
+
   function zoomToFit() {
     const nodes = ctx.graph.getChildren(ctx.state.currentPageId)
     if (nodes.length === 0) return
@@ -89,8 +109,9 @@ export function createViewportActions(ctx: EditorContext) {
 
     const previous = currentViewport()
     ctx.state.zoom = Math.max(0.02, Math.min(256, level))
-    ctx.state.panX = viewW / 2 - centerX
-    ctx.state.panY = viewH / 2 - centerY
+    // Keep the world point at the center of the viewport where it was.
+    ctx.state.panX = viewW / 2 - centerX * ctx.state.zoom
+    ctx.state.panY = viewH / 2 - centerY * ctx.state.zoom
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -111,12 +132,40 @@ export function createViewportActions(ctx: EditorContext) {
     zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
   }
 
+  /**
+   * Brings layers into view: pans to center them when they fit at the current zoom and are not
+   * already visible, and zooms out to fit them only when they do not fit.
+   */
+  function revealNodes(nodeIds: readonly string[], margin = REVEAL_MARGIN) {
+    const nodes = nodeIds.map((id) => ctx.graph.getNode(id)).filter((node) => node !== undefined)
+    if (nodes.length === 0) return
+    const bounds = computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, ctx.graph)))
+    const { width, height } = ctx.getViewportSize()
+    const { zoom, panX, panY } = ctx.state
+    const fits =
+      bounds.width * zoom <= width - margin * 2 && bounds.height * zoom <= height - margin * 2
+    if (!fits) {
+      zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)
+      return
+    }
+    const left = bounds.x * zoom + panX
+    const top = bounds.y * zoom + panY
+    const right = left + bounds.width * zoom
+    const bottom = top + bounds.height * zoom
+    const visible =
+      left >= margin && top >= margin && right <= width - margin && bottom <= height - margin
+    if (visible) return
+    pan(width / 2 - (left + right) / 2, height / 2 - (top + bottom) / 2)
+  }
+
   return {
+    revealNodes,
     screenToCanvas,
     setZoomAroundPoint,
     applyZoom,
     pan,
     zoomToBounds,
+    centerOn,
     zoomToFit,
     zoomTo100,
     zoomToLevel,

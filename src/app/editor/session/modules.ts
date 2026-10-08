@@ -7,6 +7,7 @@ import { createSelectedNodeState } from '@open-pencil/vue'
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'
 import type { ViewportSize } from '@/app/document/io/types'
+import { createDesignCheck } from '@/app/editor/design-check/session'
 import { createFlashActions } from '@/app/editor/flash'
 import { createMobileClipboardActions } from '@/app/editor/mobile-clipboard'
 import { createPenActions } from '@/app/editor/pen'
@@ -65,6 +66,7 @@ export function createEditorStoreModules(
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor)
   const profiler = createProfilerActions(editor)
+  const designCheck = createDesignCheck(editor, state)
 
   return {
     ...flash,
@@ -76,9 +78,12 @@ export function createEditorStoreModules(
     setViewportSize: documentIO.setViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
+    /** Takes the document as it is now as its saved state, so closing it asks nothing. */
+    markDocumentSaved: documentIO.markDocumentSaved,
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
+    hasWritableSource: documentIO.hasWritableSource,
     getSourceIdentity: documentIO.getSourceIdentity,
     getStorageBinding: documentIO.getStorageBinding,
     getRecoveryId: documentIO.getRecoveryId,
@@ -88,8 +93,11 @@ export function createEditorStoreModules(
     setDocumentSource: documentIO.setDocumentSource,
     setStorageDocumentSource: documentIO.setStorageDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
+    saveFigFileToPath: documentIO.saveFigFileToPath,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
+    designCheck,
     dispose: () => {
+      designCheck.dispose()
       editor.releaseGraphResources()
       editor.dispose()
       editor.clearPageViewports()

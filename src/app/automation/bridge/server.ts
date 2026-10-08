@@ -4,11 +4,34 @@
  * Connects to the bridge via WebSocket, receives RPC requests,
  * executes them against the live EditorStore, and sends results back.
  */
-import { randomHex } from '@open-pencil/core/random'
+import * as v from 'valibot'
 
+import { randomHex } from '@open-pencil/scene-graph/random'
+
+import { endAgentSession, readAgentSession } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
+import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
+
+/** Requests from the MCP bridge; other message types (such as the register prompt) are ignored. */
+const AutomationRequestJSON = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({
+    type: v.literal('request'),
+    id: v.pipe(v.string(), v.nonEmpty()),
+    command: v.string(),
+    args: v.optional(v.unknown())
+  })
+)
+
+/**
+ * The connections each MCP session's calls came over, across bridges: restarting MCP opens a new
+ * bridge while the old socket is still closing, and that close must not end a session the new
+ * connection carries, so a session ends only with its last connection.
+ */
+const sessionSockets = new Map<string, Set<WebSocket>>()
 
 export function connectAutomation(
   getStore: () => EditorStore,
@@ -48,13 +71,19 @@ export function connectAutomation(
 
     socket.onmessage = async (event) => {
       try {
-        const msg = JSON.parse(event.data) as {
-          type: string
-          id: string
-          command: string
-          args?: unknown
+        const parsed = v.safeParse(AutomationRequestJSON, event.data)
+        if (!parsed.success) {
+          if (parsed.issues.some((issue) => issue.type === 'parse_json'))
+            console.warn('Failed to parse WebSocket message:', v.summarize(parsed.issues))
+          return
         }
-        if (msg.type !== 'request' || !msg.id) return
+        const msg = parsed.output
+        const session = isUnknownRecord(msg.args) ? readAgentSession(msg.args.agent) : null
+        if (session) {
+          const sockets = sessionSockets.get(session.session) ?? new Set<WebSocket>()
+          sockets.add(socket)
+          sessionSockets.set(session.session, sockets)
+        }
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
           if (socket.readyState !== WebSocket.OPEN) return
@@ -77,6 +106,13 @@ export function connectAutomation(
 
     socket.onclose = (event) => {
       if (ws === socket) ws = null
+      // Sessions that reached the app only over this connection cannot any more, so their agents
+      // leave; ones that also came another way, such as over a newer connection, stay.
+      for (const [id, sockets] of sessionSockets) {
+        if (!sockets.delete(socket) || sockets.size > 0) continue
+        sessionSockets.delete(id)
+        endAgentSession(id)
+      }
       if (intentionalDisconnect || event.code === 1000) return
       console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()

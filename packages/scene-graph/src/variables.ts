@@ -1,10 +1,24 @@
+import { partition } from 'es-toolkit/array'
 import { omit, omitBy } from 'es-toolkit/object'
 
 import { BLACK } from './constants'
 import type { SceneGraph } from './index'
 import { setInstanceOverride } from './instance-overrides'
+import { findInstanceAncestor } from './instances'
 import type { Color } from './primitives'
-import type { Variable, VariableCollection, VariableType, VariableValue } from './types'
+import type {
+  Variable,
+  VariableCollection,
+  VariableCollectionMode,
+  VariableType,
+  VariableValue
+} from './types'
+import {
+  isNumericVariableBindingField,
+  variableBindingOwner,
+  assignVariableBindingUnits
+} from './variables/bindings'
+import { BOOLEAN_BINDING_FIELDS, STRING_BINDING_FIELDS } from './variables/fields'
 
 export function addVariable(graph: SceneGraph, variable: Variable): void {
   graph.variables.set(variable.id, variable)
@@ -29,7 +43,14 @@ export function removeVariable(graph: SceneGraph, id: string): void {
       string,
       string
     >
-    graph.emitter.emit('node:updated', node.id, { boundVariables: { ...node.boundVariables } })
+    node.variableBindingScales = omitBy(
+      node.variableBindingScales,
+      (_, field) => !(field in node.boundVariables)
+    )
+    graph.emitter.emit('node:updated', node.id, {
+      boundVariables: { ...node.boundVariables },
+      variableBindingScales: { ...node.variableBindingScales }
+    })
     markBoundVariablesOverrideOnInstance(graph, node.id)
   }
 }
@@ -114,10 +135,17 @@ export function getActiveModeId(graph: SceneGraph, collectionId: string): string
   return collection?.defaultModeId ?? ''
 }
 
+/**
+ * What a node without an explicit mode falls back to: the mode the editor shows (`active`), or
+ * the collection's default (`default`), which is what a saved document means to other tools.
+ */
+export type VariableModeFallback = 'active' | 'default'
+
 export function getNodeVariableModeId(
   graph: SceneGraph,
   nodeId: string,
-  collectionId: string
+  collectionId: string,
+  fallback: VariableModeFallback = 'active'
 ): string {
   let node = graph.nodes.get(nodeId)
   while (node) {
@@ -125,6 +153,8 @@ export function getNodeVariableModeId(
     if (modeId) return modeId
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
+  if (fallback === 'default')
+    return graph.variableCollections.get(collectionId)?.defaultModeId ?? ''
   return getActiveModeId(graph, collectionId)
 }
 
@@ -150,6 +180,20 @@ export function addMode(
       variable.valuesByMode[sourceModeId] ?? Object.values(variable.valuesByMode)[0]
     )
   }
+}
+
+/** Add a mode with a new ID from `generateId`; undo and redo replay it with `addMode`. */
+export function createMode(
+  graph: SceneGraph,
+  generateId: () => string,
+  collectionId: string,
+  name: string,
+  sourceMode?: string
+): string | undefined {
+  if (!graph.variableCollections.has(collectionId)) return undefined
+  const modeId = generateId()
+  addMode(graph, collectionId, modeId, name, sourceMode)
+  return modeId
 }
 
 export function removeMode(graph: SceneGraph, collectionId: string, modeId: string): void {
@@ -185,6 +229,13 @@ export function setDefaultMode(graph: SceneGraph, collectionId: string, modeId: 
   if (!collection) return
   if (!collection.modes.some((m) => m.modeId === modeId)) return
   collection.defaultModeId = modeId
+  collection.modes = modesDefaultFirst(collection)
+}
+
+/** Figma has no default-mode field: the first mode is the default. */
+export function modesDefaultFirst(collection: VariableCollection): VariableCollectionMode[] {
+  const [defaults, rest] = partition(collection.modes, (m) => m.modeId === collection.defaultModeId)
+  return [...defaults, ...rest]
 }
 
 export function resolveVariable(
@@ -232,11 +283,12 @@ export function resolveNumberVariable(graph: SceneGraph, variableId: string): nu
 export function resolveColorVariableForNode(
   graph: SceneGraph,
   nodeId: string,
-  variableId: string
+  variableId: string,
+  fallback: VariableModeFallback = 'active'
 ): Color | undefined {
   const variable = graph.variables.get(variableId)
   if (!variable) return undefined
-  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId)
+  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
   const value = resolveVariable(graph, variableId, modeId)
   if (value && typeof value === 'object' && 'r' in value) return value
   return undefined
@@ -245,13 +297,37 @@ export function resolveColorVariableForNode(
 export function resolveNumberVariableForNode(
   graph: SceneGraph,
   nodeId: string,
-  variableId: string
+  variableId: string,
+  fallback: VariableModeFallback = 'active'
 ): number | undefined {
   const variable = graph.variables.get(variableId)
   if (!variable) return undefined
-  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId)
+  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
   const value = resolveVariable(graph, variableId, modeId)
   return typeof value === 'number' ? value : undefined
+}
+
+/** A variable's value in the mode a node is in, aliases followed. */
+export function resolveVariableForNode(
+  graph: SceneGraph,
+  nodeId: string,
+  variableId: string,
+  fallback: VariableModeFallback = 'active'
+): VariableValue | undefined {
+  const variable = graph.variables.get(variableId)
+  if (!variable) return undefined
+  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
+  return resolveVariable(graph, variableId, modeId)
+}
+
+export function resolveStringVariableForNode(
+  graph: SceneGraph,
+  nodeId: string,
+  variableId: string,
+  fallback: VariableModeFallback = 'active'
+): string | undefined {
+  const value = resolveVariableForNode(graph, nodeId, variableId, fallback)
+  return typeof value === 'string' ? value : undefined
 }
 
 export function getVariablesForCollection(graph: SceneGraph, collectionId: string): Variable[] {
@@ -265,44 +341,6 @@ export function getVariablesForCollection(graph: SceneGraph, collectionId: strin
 export function getVariablesByType(graph: SceneGraph, type: VariableType): Variable[] {
   return [...graph.variables.values()].filter((v) => v.type === type)
 }
-
-const SCALAR_BINDING_FIELDS: ReadonlySet<string> = new Set([
-  'opacity',
-  'width',
-  'height',
-  'cornerRadius',
-  'fontSize',
-  'letterSpacing',
-  'lineHeight',
-  'itemSpacing',
-  'strokeWeight',
-  'paddingLeft',
-  'paddingRight',
-  'paddingTop',
-  'paddingBottom',
-  'counterAxisSpacing',
-  'topLeftRadius',
-  'topRightRadius',
-  'bottomLeftRadius',
-  'bottomRightRadius',
-  'rotation',
-  'x',
-  'y',
-  'minWidth',
-  'maxWidth',
-  'minHeight',
-  'maxHeight',
-  'borderTopWeight',
-  'borderBottomWeight',
-  'borderLeftWeight',
-  'borderRightWeight',
-  'gridRowGap',
-  'gridColumnGap'
-])
-
-const STRING_BINDING_FIELDS: ReadonlySet<string> = new Set(['fontFamily'])
-
-const BOOLEAN_BINDING_FIELDS: ReadonlySet<string> = new Set(['visible'])
 
 export function bindVariable(
   graph: SceneGraph,
@@ -339,7 +377,7 @@ export function bindVariable(
     }
   }
 
-  if (SCALAR_BINDING_FIELDS.has(field) && variable.type !== 'FLOAT') {
+  if (isNumericVariableBindingField(field) && variable.type !== 'FLOAT') {
     throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
   }
 
@@ -352,7 +390,7 @@ export function bindVariable(
   }
 
   const isKnownField =
-    SCALAR_BINDING_FIELDS.has(field) ||
+    isNumericVariableBindingField(field) ||
     STRING_BINDING_FIELDS.has(field) ||
     BOOLEAN_BINDING_FIELDS.has(field) ||
     colorFieldMatch
@@ -362,8 +400,12 @@ export function bindVariable(
   }
 
   node.boundVariables = { ...node.boundVariables, [field]: variableId }
-  graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
-  markBoundVariablesOverrideOnInstance(graph, nodeId)
+  assignVariableBindingUnits(graph, node, field)
+  markBoundVariablesOverrideOnInstance(graph, nodeId, field)
+  graph.emitter.emit('node:updated', nodeId, {
+    boundVariables: { ...node.boundVariables },
+    variableBindingScales: { ...node.variableBindingScales }
+  })
 }
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
@@ -371,29 +413,33 @@ export function unbindVariable(graph: SceneGraph, nodeId: string, field: string)
   if (!node) return
   if (!(field in node.boundVariables)) return
   node.boundVariables = omit(node.boundVariables, [field])
-  graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
-  markBoundVariablesOverrideOnInstance(graph, nodeId)
+  node.variableBindingScales = omit(node.variableBindingScales, [field])
+  markBoundVariablesOverrideOnInstance(graph, nodeId, field)
+  graph.emitter.emit('node:updated', nodeId, {
+    boundVariables: { ...node.boundVariables },
+    variableBindingScales: { ...node.variableBindingScales }
+  })
 }
 
-function markBoundVariablesOverrideOnInstance(graph: SceneGraph, nodeId: string): void {
+function markBoundVariablesOverrideOnInstance(
+  graph: SceneGraph,
+  nodeId: string,
+  field?: string
+): void {
   const node = graph.nodes.get(nodeId)
   if (!node) return
 
-  // Mark the field on the canonical structured state.
-  if (node.type === 'INSTANCE') {
-    setInstanceOverride(node.instanceOverrides, node.id, node.id, 'boundVariables')
-    return
-  }
-
-  // Walk up to the owning instance for descendant fields.
-  let current = node
-  while (current.parentId) {
-    const parent = graph.nodes.get(current.parentId)
-    if (!parent) break
-    if (parent.type === 'INSTANCE') {
-      setInstanceOverride(parent.instanceOverrides, parent.id, nodeId, 'boundVariables')
-      break
-    }
-    current = parent
-  }
+  const owner = variableBindingOwner(graph, node)
+  if (owner.type !== 'INSTANCE') return
+  const nearest = findInstanceAncestor(graph, nodeId)
+  if (nearest) setInstanceOverride(nearest.instanceOverrides, nearest.id, nodeId, 'boundVariables')
+  setInstanceOverride(owner.instanceOverrides, owner.id, nodeId, 'boundVariables')
+  if (field)
+    setInstanceOverride(
+      owner.instanceOverrides,
+      owner.id,
+      nodeId,
+      `boundVariables/${field}`,
+      node.boundVariables[field] ?? null
+    )
 }

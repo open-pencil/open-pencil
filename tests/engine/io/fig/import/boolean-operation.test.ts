@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { materializeDocument } from '@open-pencil/fig'
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { importNodeChanges } from '#core/kiwi/fig/import'
 
 describe('Figma boolean operation import', () => {
   test('preserves boolean operation nodes', () => {
@@ -21,7 +20,7 @@ describe('Figma boolean operation import', () => {
   })
 
   test('imports boolean operation nodes with children', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
@@ -60,7 +59,7 @@ describe('Figma boolean operation import', () => {
         phase: 'CREATED',
         size: { x: 80, y: 80 }
       }
-    ] as NodeChange[])
+    ] as NodeChange[]).graph
 
     const booleanNode = graph.getChildren(graph.getPages()[0].id)[0]
     const children = graph.getChildren(booleanNode.id)

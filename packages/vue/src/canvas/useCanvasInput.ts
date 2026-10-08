@@ -1,5 +1,5 @@
 import { useEventListener } from '@vueuse/core'
-import { onScopeDispose, ref, type Ref } from 'vue'
+import { onScopeDispose, ref, watch, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -45,8 +45,15 @@ export function useCanvasInput(
   isEnabled: () => boolean = () => true
 ) {
   const drag = ref<DragState | null>(null)
+  // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
+  // layers move, resize, or rotate.
+  watch(
+    () => drag.value?.type,
+    (type) => editor.setTransforming(type === 'move' || type === 'resize' || type === 'rotate')
+  )
   const canvasLabelEdit = createCanvasLabelEdit(editor)
   const cursorOverride = ref<string | null>(null)
+  /** Whether the primary button is held on a preview control, such as a slider thumb. */
   const autoLayoutPaddingEdit = ref<{
     nodeId: string
     side: 'top' | 'right' | 'bottom' | 'left'
@@ -150,7 +157,7 @@ export function useCanvasInput(
     handleRotateMove,
     handleTextSelectMove,
     handleMarqueeMove
-  } = createCanvasTransformInput(editor, canvasToLocal, setDrag)
+  } = createCanvasTransformInput(editor, setDrag)
 
   function paddingValue(node: SceneNode, side: 'top' | 'right' | 'bottom' | 'left') {
     if (side === 'top') return node.paddingTop
@@ -212,6 +219,7 @@ export function useCanvasInput(
   }
 
   function onDblClick(e: MouseEvent) {
+    if (editor.state.play) return
     if (startAutoLayoutPaddingEdit(e)) return
     onTextDblClick(e)
   }
@@ -219,6 +227,11 @@ export function useCanvasInput(
   function onMouseDown(e: MouseEvent) {
     onActivate?.()
     if (!isEnabled()) return
+    // Preview: controls live in islands above the canvas; the canvas itself only pans.
+    if (editor.state.play && e.button === 0 && editor.state.activeTool !== 'HAND') {
+      e.preventDefault()
+      return
+    }
     editor.setMeasurementMode('off')
     const paddingEdit = autoLayoutPaddingEdit.value
     if (paddingEdit) {
@@ -265,6 +278,8 @@ export function useCanvasInput(
     if (onCursorMove) {
       onCursorMove(coords.cx, coords.cy)
     }
+
+    if (editor.state.play && !drag.value) return
 
     if (!drag.value) {
       const { cx, cy } = coords
@@ -315,7 +330,7 @@ export function useCanvasInput(
       return
     }
     if (d.type === 'move') {
-      handleMoveMove(d, cx, cy, sx, sy, editor, e.ctrlKey)
+      handleMoveMove(d, cx, cy, sx, sy, editor, { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey })
       return
     }
     if (d.type === 'text-select') {
@@ -466,6 +481,20 @@ export function useCanvasInput(
     },
     { capture: true }
   )
+  // Space during a move keeps layers in their parents, as in Figma, instead of switching to the hand.
+  function holdParentsDuringMove(event: KeyboardEvent, held: boolean) {
+    if (event.code !== 'Space' || drag.value?.type !== 'move' || !isEnabled()) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    drag.value.keepParents = held
+    if (held) editor.setDropTarget(null)
+  }
+  useEventListener(window, 'keydown', (event) => holdParentsDuringMove(event, true), {
+    capture: true
+  })
+  useEventListener(window, 'keyup', (event) => holdParentsDuringMove(event, false), {
+    capture: true
+  })
   useEventListener(window, 'blur', () => {
     resetMeasurementModifiers()
     cancelPointerInteraction()
@@ -497,17 +526,16 @@ export function useCanvasInput(
     editor.setMeasurementMode('off')
     cancelPointerInteraction()
   })
-  const stopPreviewListeners = (
-    ['selection:changed', 'page:changed', 'graph:replaced'] as const
-  ).map((event) =>
-    editor.onEditorEvent(event, () => {
-      if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
-    })
+  const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
+    (event) =>
+      editor.onEditorEvent(event, () => {
+        if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
+      })
   )
   onScopeDispose(() => {
     stopRotationListener()
     stopToolListener()
-    for (const stop of stopPreviewListeners) stop()
+    for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
   })
 

@@ -1,5 +1,5 @@
 export { IORegistry } from './registry'
-export { extractExportGraph } from './subgraph'
+export { extractExportGraph, findPageId } from './subgraph'
 export {
   BUILTIN_IO_FORMATS,
   type BuiltinIOFormatId,
@@ -15,7 +15,6 @@ export {
 } from './formats'
 export { exportFigFile, parseFigFile, readFigFile, type ParseFigFileOptions } from './formats/fig'
 export { parsePenFile, readPenFile } from '@open-pencil/pen'
-export { sceneNodeToJSX, selectionToJSX } from './formats/jsx'
 export {
   computeContentBounds,
   renderNodesToImage,

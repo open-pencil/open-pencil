@@ -2,14 +2,17 @@ import { useI18n } from '@open-pencil/vue'
 
 import { requestAppExit } from '@/app/document/close/exit'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { setSnappingPreference } from '@/app/settings/preferences/apply'
-import { syncNativeSnappingMenu } from '@/app/settings/preferences/native-menu'
+import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
+import {
+  syncNativeDesignIssuesMenu,
+  syncNativeSnappingMenu
+} from '@/app/settings/preferences/native-menu'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { useAppTheme } from '@/app/shell/theme'
-import { checkForAppUpdate } from '@/app/shell/updater'
+import { checkForAppUpdate } from '@/app/shell/updater/check'
 import { isTauri } from '@/app/tauri/env'
 
 function shellMenuIds(entries: readonly AppMenuEntry[]): string[] {
@@ -33,6 +36,11 @@ export function useShellMenu() {
   void syncNativeSnappingMenu(appPreferences.value.editing.snapping).catch((error: unknown) => {
     console.error('[Menu] Failed to synchronize native snapping preferences:', error)
   })
+  void syncNativeDesignIssuesMenu(appPreferences.value.designCheck.showOnCanvas).catch(
+    (error: unknown) => {
+      console.error('[Menu] Failed to synchronize the native design issues menu:', error)
+    }
+  )
 
   const { setTheme } = useAppTheme()
   const { updates } = useI18n()
@@ -53,6 +61,8 @@ export function useShellMenu() {
       const current = appPreferences.value.editing.snapping.pixelGrid
       setSnappingPreference('pixelGrid', !current)
     },
+    'view-design-issues': () =>
+      setDesignIssuesOnCanvas(!appPreferences.value.designCheck.showOnCanvas),
     'theme-light': () => setTheme('light'),
     'theme-dark': () => setTheme('dark'),
     'theme-auto': () => setTheme('auto'),

@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "updater",
+  "description": "Capability for the Software Update window: check, install, restart, close, and open release notes",
+  "windows": ["updater"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-destroy",
+    "opener:default",
+    "updater:default",
+    "process:allow-restart"
+  ]
+}

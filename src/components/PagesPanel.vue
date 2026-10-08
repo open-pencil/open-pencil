@@ -8,11 +8,17 @@ import {
   ContextMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, ref, watch, type ComponentPublicInstance } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
+import { useActiveEditorStoreRef } from '@/app/editor/active-store'
+import { presenceByPage } from '@/app/presence/registry'
+import { appPreferences } from '@/app/settings/preferences/store'
+import PageIssueBadge from '@/components/design-check/PageIssueBadge.vue'
+import PagePresenceHover from '@/components/presence/PagePresenceHover.vue'
+import PresenceMarkers from '@/components/presence/PresenceMarkers.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import pageListTheme from '@/theme/page-list'
@@ -29,11 +35,23 @@ const pageInput = templateRef<HTMLInputElement>('pageInput')
 const rename = useInlineRename((id, name) => pageActions.value?.rename(id, name))
 const { panels, pages: pageMessages } = useI18n()
 const menuCls = useMenuUI({
-  content: 'min-w-36 shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
+  content: 'min-w-36',
   item: 'justify-start gap-2'
 })
 const pageListStyles = tv(pageListTheme)
 const baseStyles = pageListStyles()
+
+const storeRef = useActiveEditorStoreRef()
+/** Who works on each page: people in the room and active agents. */
+const pagePresence = computed(() =>
+  storeRef.value ? presenceByPage(storeRef.value) : new Map<string, never[]>()
+)
+
+/** Errors and warnings per page, following the View → Design issues toggle like the markers. */
+function pageIssues(pageId: string) {
+  if (!appPreferences.value.designCheck.showOnCanvas) return null
+  return storeRef.value?.designCheck.pages.counts.value.get(pageId) ?? null
+}
 
 const pageActions = ref<Pick<PageActions, 'rename'> | null>(null)
 const currentPages = ref<readonly PageItem[]>([])
@@ -118,6 +136,7 @@ function setupPageRowRef(
                   <input
                     ref="pageInput"
                     data-test-id="pages-item-input"
+                    :aria-label="pageMessages.pageNameLabel"
                     :class="pageStyles(pg, currentPageId).renameInput()"
                     :value="pg.name"
                     @blur="rename.commit(pg.id, $event)"
@@ -132,16 +151,21 @@ function setupPageRowRef(
                 >
                   <div :class="pageStyles(pg, currentPageId).dividerLine()" />
                 </div>
-                <button
-                  v-else
-                  data-test-id="pages-item"
-                  :class="pageStyles(pg, currentPageId).item()"
-                  @click="actions.switch(pg.id)"
-                  @dblclick="startRename(pg, actions.rename)"
-                >
-                  <icon-lucide-file :class="pageStyles(pg, currentPageId).icon()" />
-                  <span :class="pageStyles(pg, currentPageId).label()">{{ pg.name }}</span>
-                </button>
+                <PagePresenceHover v-else :page-id="pg.id">
+                  <button
+                    data-test-id="pages-item"
+                    :class="pageStyles(pg, currentPageId).item()"
+                    @click="actions.switch(pg.id)"
+                    @dblclick="startRename(pg, actions.rename)"
+                  >
+                    <icon-lucide-file :class="pageStyles(pg, currentPageId).icon()" />
+                    <span :class="pageStyles(pg, currentPageId).label()">{{ pg.name }}</span>
+                    <span :class="pageStyles(pg, currentPageId).trailing()">
+                      <PresenceMarkers :entries="pagePresence.get(pg.id) ?? []" />
+                      <PageIssueBadge :counts="pageIssues(pg.id)" />
+                    </span>
+                  </button>
+                </PagePresenceHover>
                 <div
                   v-if="pageDropPosition(pg) === 'after'"
                   data-test-id="pages-drop-indicator"

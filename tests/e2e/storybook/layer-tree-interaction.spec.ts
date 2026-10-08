@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test('virtualized rename commits and selection persists outside the tree', async ({ page }) => {
   await page.goto(
-    '/iframe.html?id=editor-layer-tree--virtualized&viewMode=story&globals=theme:light'
+    '/iframe.html?id=app-editor-layer-tree--virtualized&viewMode=story&globals=theme:light'
   )
   const row = page.getByRole('treeitem').first()
   await row.focus()

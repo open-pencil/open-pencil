@@ -6,7 +6,7 @@ const layoutAlignmentTheme = {
   },
   variants: {
     active: {
-      true: { cell: 'bg-accent/10 text-accent' },
+      true: { cell: 'bg-accent/10 text-primary' },
       false: { cell: 'text-muted hover:bg-hover hover:text-surface' }
     },
     disabled: {

@@ -94,7 +94,7 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
     })
 
     const changes = toKiwi(node, graph)
-    expect(changes[0].fontName.family).toBe('DM Sans')
+    expect(expectDefined(changes[0].fontName, 'fontName').family).toBe('DM Sans')
   })
 })
 

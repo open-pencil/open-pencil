@@ -8,7 +8,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { startServer, type ServerHandle } from '#mcp/server'
 import { getDiscoveryPath } from '#mcp/transport/paths'
 
-import { connectMockBrowser, type HealthResponse } from '#tests/helpers/mcp/server'
+import { connectMockBrowser, readHealth, type HealthResponse } from '#tests/helpers/mcp/server'
 
 // Issue #488: an MCP server spawned by the app but never claimed by one
 // (renderer crash, forced reload) used to squat its port forever with a
@@ -37,7 +37,7 @@ function sleep(ms: number): Promise<void> {
 async function waitForHealthStatus(port: number, status: HealthResponse['status']): Promise<void> {
   for (let attempt = 0; attempt < 20; attempt++) {
     const response = await fetch(`http://127.0.0.1:${port}/health`)
-    const health = (await response.json()) as HealthResponse
+    const health = await readHealth(response)
     if (health.status === status) return
     await sleep(5)
   }
@@ -96,7 +96,7 @@ describe('MCP app-attach watchdog', () => {
 
       const health = await fetch(`http://127.0.0.1:${port}/health`)
       expect(health.status).toBe(200)
-      const data = (await health.json()) as HealthResponse
+      const data = await readHealth(health)
       expect(data.status).toBe('ok')
     } finally {
       browser.close()
@@ -143,7 +143,7 @@ describe('MCP app-attach watchdog', () => {
       await sleep(250)
       const health = await fetch(`http://127.0.0.1:${port}/health`)
       expect(health.status).toBe(200)
-      const data = (await health.json()) as HealthResponse
+      const data = await readHealth(health)
       expect(data.status).toBe('ok')
     } finally {
       secondBrowser.close()

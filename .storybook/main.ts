@@ -18,11 +18,7 @@ const config: StorybookConfig = {
     options: { docgen: false }
   },
   viteFinal(config) {
-    const excludedPluginPrefixes = [
-      'copy-canvaskit-wasm',
-      'open-pencil-automation',
-      'vite-plugin-pwa'
-    ]
+    const excludedPluginPrefixes = ['open-pencil-automation', 'vite-plugin-pwa']
 
     config.plugins = flattenPlugins(config.plugins ?? []).filter((plugin) => {
       if (!plugin || typeof plugin !== 'object' || !('name' in plugin)) return true

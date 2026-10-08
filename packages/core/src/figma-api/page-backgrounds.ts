@@ -3,7 +3,7 @@ import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { CANVAS_BG_COLOR } from '#core/constants'
+import { CANVAS_BG_COLOR, PAGE_DEFAULT_BACKGROUNDS, type InterfaceTheme } from '#core/constants'
 
 function isColor(value: unknown): value is Color {
   if (!value || typeof value !== 'object') return false
@@ -28,6 +28,32 @@ export function getPageBackgrounds(page: SceneNode): readonly Fill[] {
     ? convertFills(rawPaints as Parameters<typeof convertFills>[0])
     : fallbackBackground(page)
   return Object.freeze(copyFills(fills))
+}
+
+/** Project the supported visible solid page paint into editor view state. */
+export function getPageColor(page: SceneNode | undefined): Color {
+  const paint =
+    page && getPageBackgrounds(page).find((fill) => fill.visible && fill.type === 'SOLID')
+  if (!paint) return { ...CANVAS_BG_COLOR }
+  return { ...paint.color, a: paint.color.a * paint.opacity }
+}
+
+/** Whether a page stores a background of its own, as one opened from a file does. */
+export function hasStoredBackground(page: SceneNode): boolean {
+  const { backgroundPaints, backgroundColor } = page.source.fig.rawNodeFields
+  return backgroundPaints !== undefined || backgroundColor !== undefined
+}
+
+/** Gives a new page Figma's background for the interface theme it is made in. */
+export function setDefaultPageBackground(
+  graph: SceneGraph,
+  page: SceneNode,
+  theme: InterfaceTheme = 'light'
+): void {
+  const color = { ...PAGE_DEFAULT_BACKGROUNDS[theme] }
+  setPageBackgrounds(graph, page, [
+    { type: 'SOLID', color, opacity: 1, visible: true, blendMode: 'NORMAL' }
+  ])
 }
 
 export function setPageBackgrounds(

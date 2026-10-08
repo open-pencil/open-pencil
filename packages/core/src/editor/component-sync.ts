@@ -1,17 +1,43 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { computeAllLayouts } from '#core/layout'
+
+const isComponent = (node: SceneNode) => node.type === 'COMPONENT'
+
+function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
+  const dependents = new Map<string, Set<string>>()
+  const discover = (id: string): void => {
+    if (dependents.has(id)) return
+    const parents = new Set<string>()
+    dependents.set(id, parents)
+    for (const instance of graph.getInstances(id)) {
+      const parent = instance.parentId ? graph.closest(instance.parentId, isComponent) : undefined
+      if (parent) parents.add(parent.id)
+    }
+    for (const parent of parents) discover(parent)
+  }
+  for (const id of seeds) discover(id)
+  const result: string[] = []
+  const active = new Set<string>()
+  const visited = new Set<string>()
+  const visit = (id: string): void => {
+    if (active.has(id)) throw new Error('Cyclic component synchronization dependency')
+    if (visited.has(id)) return
+    active.add(id)
+    for (const parent of dependents.get(id) ?? []) visit(parent)
+    active.delete(id)
+    visited.add(id)
+    result.push(id)
+  }
+  for (const id of seeds) visit(id)
+  return result.reverse()
+}
 
 type ComputeLayouts = (graph: SceneGraph, scopeId?: string) => void
 
 /** Pages are `CANVAS` nodes; layout recomputation is scoped to them. */
 function pageIdOf(graph: SceneGraph, nodeId: string): string | null {
-  let current = graph.getNode(nodeId)
-  while (current) {
-    if (current.type === 'CANVAS') return current.id
-    current = current.parentId ? graph.getNode(current.parentId) : undefined
-  }
-  return null
+  return graph.closest(nodeId, (node) => node.type === 'CANVAS')?.id ?? null
 }
 
 /**
@@ -54,16 +80,10 @@ export function createComponentSyncScheduler(
       const graph = getGraph()
       const componentIds = new Set<string>()
       for (const id of ids) {
-        let current = graph.getNode(id)
-        while (current) {
-          if (current.type === 'COMPONENT') {
-            componentIds.add(current.id)
-            break
-          }
-          current = current.parentId ? graph.getNode(current.parentId) : undefined
-        }
+        const component = graph.closest(id, isComponent)
+        if (component) componentIds.add(component.id)
       }
-      for (const compId of componentIds) {
+      for (const compId of componentSyncOrder(graph, componentIds)) {
         graph.syncInstances(compId)
       }
       if (componentIds.size > 0) {
@@ -78,7 +98,12 @@ export function createComponentSyncScheduler(
   }
 
   function scheduleComponentSync(nodeId: string) {
-    if (isFlushingComponentSync) return
+    // Import/materialization has already resolved component overrides. These updates
+    // are not authored component edits and must not reset instances to their defaults.
+    // Layout's own writes are results, not edits: it lays out the instances too, and the edit
+    // that made it run has already scheduled its sync.
+    const graph = getGraph()
+    if (isFlushingComponentSync || graph.isApplyingImportedState || graph.isApplyingLayout) return
     if (!pendingComponentSync) {
       pendingComponentSync = new Set()
       queueMicrotask(flushComponentSync)

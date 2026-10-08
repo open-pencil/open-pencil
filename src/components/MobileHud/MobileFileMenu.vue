@@ -16,7 +16,7 @@ import { menu, useMenuUI } from '@/components/ui/menu/menu'
 const menuMessages = useMenuMessages()
 const hud = useMobileHudContext()
 const menuCls = useMenuUI({
-  content: 'w-48 rounded-xl p-1.5 shadow-xl',
+  content: 'w-48 p-1.5',
   item: 'w-full gap-2.5 rounded-lg border-none bg-transparent px-2.5 py-2 active:bg-hover'
 })
 </script>

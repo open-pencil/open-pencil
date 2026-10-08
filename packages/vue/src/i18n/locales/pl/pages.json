@@ -2,5 +2,10 @@
   "newPage": "Nowa strona",
   "rename": "Zmień nazwę",
   "delete": "Usuń",
-  "pageName": "Strona {number}"
+  "pageName": "Strona {number}",
+  "pages": "Strony",
+  "goToPage": "Przejdź do strony…",
+  "recentPage": "Ostatnio otwarta",
+  "currentPage": "Bieżąca strona",
+  "pageNameLabel": "Nazwa strony"
 }

@@ -9,7 +9,7 @@ const BLUE = { r: 0, g: 0, b: 1, a: 1 }
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 
 function findInstanceAndVector(graph: SceneGraph) {
-  const instance = graph.getAllNodes().find((n) => n.type === 'INSTANCE')
+  const instance = [...graph.getAllNodes()].find((n) => n.type === 'INSTANCE')
   if (!instance) throw new Error('instance not found')
   const vector = graph.getChildren(instance.id)[0]
   return { instance, vector }

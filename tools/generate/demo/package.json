@@ -1,0 +1,27 @@
+{
+  "name": "@open-pencil/demo-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#demo/*": "./src/*.ts"
+  },
+  "exports": {
+    ".": "./src/ensure.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "@open-pencil/design-jsx": "workspace:*",
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
+    "proper-lockfile": "4.1.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.9.9",
+    "@types/proper-lockfile": "4.1.4",
+    "typescript": "~5.8.3"
+  }
+}

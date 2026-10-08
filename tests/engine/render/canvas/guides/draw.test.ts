@@ -1,25 +1,20 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas } from 'canvaskit-wasm'
-
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDefaultNode, SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { drawGuides } from '#core/canvas/guides/draw'
 
 import { createMockCanvas, createMockRenderer, mockCalls } from '../effects/helpers'
+import { asCanvas } from '../helpers'
 
 function graphWithGuides(guides: SceneNode['guides']): SceneGraph {
-  const page = {
-    id: 'page',
-    type: 'CANVAS',
-    childIds: [],
-    guides
-  } as SceneNode
-  return {
-    rootId: 'root',
-    getNode: (id: string) => (id === 'page' ? page : null)
-  } as SceneGraph
+  const graph = new SceneGraph()
+  graph.rootId = 'root'
+  graph.nodes = new Map([
+    ['page', createDefaultNode(() => 'page', 'CANVAS', { childIds: [], guides })]
+  ])
+  return graph
 }
 
 describe('page guide rendering', () => {
@@ -38,7 +33,7 @@ describe('page guide rendering', () => {
       { id: 'y', axis: 'y', position: 84 }
     ])
 
-    drawGuides(r, canvas as Canvas, graph)
+    drawGuides(r, asCanvas(canvas), graph, undefined)
 
     expect(mockCalls(canvas.drawRect)).toHaveLength(2)
     expect(mockCalls(r.ck.LTRBRect)).toEqual([
@@ -49,11 +44,8 @@ describe('page guide rendering', () => {
 
   test('renders nested frame guides', () => {
     const r = createMockRenderer({ pageId: 'page', zoom: 1, panX: 0, panY: 0 })
-    const canvas = createMockCanvas()
-    canvas.drawLine = mock(() => undefined)
-    const nested = {
-      id: 'nested',
-      type: 'FRAME',
+    const canvas = { ...createMockCanvas(), drawLine: mock(() => undefined) }
+    const nested = createDefaultNode(() => 'nested', 'FRAME', {
       parentId: 'frame',
       childIds: [],
       x: 20,
@@ -64,8 +56,8 @@ describe('page guide rendering', () => {
       flipX: false,
       flipY: false,
       guides: [{ id: 'nested-guide', axis: 'x', position: 10 }]
-    } as SceneNode
-    const frame = {
+    })
+    const frame: SceneNode = {
       ...nested,
       id: 'frame',
       parentId: 'page',
@@ -73,8 +65,12 @@ describe('page guide rendering', () => {
       x: 100,
       y: 100,
       guides: []
-    } as SceneNode
-    const page = { id: 'page', parentId: null, childIds: ['frame'], guides: [] } as SceneNode
+    }
+    const page = createDefaultNode(() => 'page', 'CANVAS', {
+      parentId: null,
+      childIds: ['frame'],
+      guides: []
+    })
     const nodes = new Map([
       ['page', page],
       ['frame', frame],
@@ -84,7 +80,7 @@ describe('page guide rendering', () => {
     graph.rootId = 'root'
     graph.nodes = nodes
 
-    drawGuides(r, canvas as Canvas, graph)
+    drawGuides(r, asCanvas(canvas), graph, undefined)
 
     expect(canvas.drawLine).toHaveBeenCalled()
   })
@@ -94,7 +90,7 @@ describe('page guide rendering', () => {
     const canvas = createMockCanvas()
     const graph = graphWithGuides([])
 
-    drawGuides(r, canvas as Canvas, graph)
+    drawGuides(r, asCanvas(canvas), graph, undefined)
 
     expect(canvas.drawRect).not.toHaveBeenCalled()
   })

@@ -1,8 +1,0 @@
-{
-  "name": "@open-pencil/docs-tools",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "bun test tests"
-  }
-}

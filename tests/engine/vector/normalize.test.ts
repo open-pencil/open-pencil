@@ -4,7 +4,8 @@ import {
   decodeVectorNetworkBlob,
   encodeVectorNetworkBlob,
   normalizeVectorNetwork,
-  type VectorNetwork
+  type VectorNetwork,
+  type VectorSegment
 } from '@open-pencil/core'
 
 describe('normalizeVectorNetwork', () => {
@@ -23,28 +24,29 @@ describe('normalizeVectorNetwork', () => {
   })
 
   test('defaults missing tangentStart and tangentEnd to zero', () => {
-    const network = {
+    const network: VectorNetwork = {
       vertices: [
         { x: 0, y: 0 },
         { x: 10, y: 10 }
       ],
-      segments: [{ start: 0, end: 1 }],
+      // `normalizeVectorNetwork` is what supplies the tangents this segment omits.
+      segments: [{ start: 0, end: 1 } as VectorSegment],
       regions: []
-    } as VectorNetwork
+    }
     const result = normalizeVectorNetwork(network)
     expect(result.segments[0].tangentStart).toEqual({ x: 0, y: 0 })
     expect(result.segments[0].tangentEnd).toEqual({ x: 0, y: 0 })
   })
 
   test('defaults only the missing tangent', () => {
-    const network = {
+    const network: VectorNetwork = {
       vertices: [
         { x: 0, y: 0 },
         { x: 10, y: 10 }
       ],
-      segments: [{ start: 0, end: 1, tangentStart: { x: 3, y: 4 } }],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 3, y: 4 } } as VectorSegment],
       regions: []
-    } as VectorNetwork
+    }
     const result = normalizeVectorNetwork(network)
     expect(result.segments[0].tangentStart).toEqual({ x: 3, y: 4 })
     expect(result.segments[0].tangentEnd).toEqual({ x: 0, y: 0 })

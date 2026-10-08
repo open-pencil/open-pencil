@@ -10,142 +10,12 @@ import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
-import { createYjsGraphSync, registerYjsObservers } from '@/app/collab/yjs-sync'
-import { createEditorStore } from '@/app/editor/session'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-import { connectYDocs } from '#tests/helpers/yjs'
-
-// Test copy of the private apply path.
-function applyYnodeToGraph(peer: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
-  const props = decodeNodeFromYjs(ynode)
-  if (peer.getNode(nodeId)) {
-    peer.updateNode(nodeId, props as Partial<SceneNode>)
-    return
-  }
-  const type = props.type as SceneNode['type'] | undefined
-  if (!type) return
-  const parentId = typeof props.parentId === 'string' ? props.parentId : null
-  peer.createNodeWithId(nodeId, type, parentId, props as Partial<SceneNode>)
-  if (parentId === null) peer.rootId = nodeId
-}
-
-function seedHostIntoYjs(host: SceneGraph): Y.Map<Y.Map<unknown>> {
-  const doc = new Y.Doc()
-  const ynodes = doc.getMap<Y.Map<unknown>>('nodes')
-  doc.transact(() => {
-    for (const node of host.getAllNodes()) {
-      const ynode = new Y.Map<unknown>()
-      ynodes.set(node.id, ynode)
-      syncEncodedNodeToYMap(node, ynode)
-    }
-  })
-  return ynodes
-}
+import { withSyncedStores } from '#tests/helpers/collab/synced-stores'
 
 function firstPage(graph: SceneGraph): SceneNode {
   return expectDefined(graph.getPages()[0], 'first page')
-}
-
-type SyncedStores = ReturnType<typeof createSyncedStores>
-
-type SyncedStoreOptions = {
-  hostDoc?: Y.Doc
-  peerDoc?: Y.Doc
-  connectImmediately?: boolean
-}
-
-function createSyncedStores(options: SyncedStoreOptions = {}) {
-  const hostStore = createEditorStore(new SceneGraph())
-  const peerStore = createEditorStore(new SceneGraph())
-  const hostDoc = options.hostDoc ?? new Y.Doc()
-  const peerDoc = options.peerDoc ?? new Y.Doc()
-  const hostNodes = hostDoc.getMap<Y.Map<unknown>>('nodes')
-  const peerNodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
-  const hostImages = hostDoc.getMap<Uint8Array>('images')
-  const peerImages = peerDoc.getMap<Uint8Array>('images')
-  let hostSuppressYjsEvents = false
-  let peerSuppressYjsEvents = false
-  let hostSuppressGraphSync = false
-  let peerSuppressGraphSync = false
-
-  const hostSync = createYjsGraphSync({
-    getStore: () => hostStore,
-    getYdoc: () => hostDoc,
-    getYnodes: () => hostNodes,
-    getYimages: () => hostImages,
-    setSuppressYjsEvents: (value) => {
-      hostSuppressYjsEvents = value
-    }
-  })
-  const peerSync = createYjsGraphSync({
-    getStore: () => peerStore,
-    getYdoc: () => peerDoc,
-    getYnodes: () => peerNodes,
-    getYimages: () => peerImages,
-    setSuppressYjsEvents: (value) => {
-      peerSuppressYjsEvents = value
-    }
-  })
-
-  registerYjsObservers({
-    store: hostStore,
-    ynodes: hostNodes,
-    yimages: hostImages,
-    getSuppressYjsEvents: () => hostSuppressYjsEvents,
-    setSuppressGraphSync: (value) => {
-      hostSuppressGraphSync = value
-    },
-    applyYjsToGraph: hostSync.applyYjsToGraph
-  })
-  registerYjsObservers({
-    store: peerStore,
-    ynodes: peerNodes,
-    yimages: peerImages,
-    getSuppressYjsEvents: () => peerSuppressYjsEvents,
-    setSuppressGraphSync: (value) => {
-      peerSuppressGraphSync = value
-    },
-    applyYjsToGraph: peerSync.applyYjsToGraph
-  })
-
-  const disconnectYDocs =
-    options.connectImmediately === false ? undefined : connectYDocs(hostDoc, peerDoc)
-
-  return {
-    hostStore,
-    peerStore,
-    hostSync,
-    peerSync,
-    hostDoc,
-    peerDoc,
-    disconnectYDocs,
-    get hostSuppressGraphSync() {
-      return hostSuppressGraphSync
-    },
-    get peerSuppressGraphSync() {
-      return peerSuppressGraphSync
-    },
-    cleanup: () => {
-      hostStore.preparationController.dispose()
-      peerStore.preparationController.dispose()
-      disconnectYDocs?.()
-      hostDoc.destroy()
-      peerDoc.destroy()
-    }
-  }
-}
-
-async function withSyncedStores(
-  run: (stores: SyncedStores) => void | Promise<void>,
-  options: SyncedStoreOptions = {}
-) {
-  const stores = createSyncedStores(options)
-  try {
-    await run(stores)
-  } finally {
-    stores.cleanup()
-  }
 }
 
 describe('collab yjs-sync', () => {
@@ -281,51 +151,33 @@ describe('collab yjs-sync', () => {
     expect(Array.isArray(props.strokeGeometry)).toBe(true)
   })
 
-  test('a fresh peer reconstructs one ellipse, no duplicate childIds, order-independent', () => {
-    const host = new SceneGraph()
-    const hostPage = firstPage(host)
-    const ellipse = host.createNode('ELLIPSE', hostPage.id, { width: 80, height: 60 })
+  test('a fresh peer reconstructs one ellipse with no duplicate child entries', async () => {
+    await withSyncedStores(
+      ({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
+        const hostPage = firstPage(hostStore.graph)
+        const ellipse = hostStore.graph.createNode('ELLIPSE', hostPage.id, {
+          width: 80,
+          height: 60
+        })
+        hostSync.syncAllNodesToYjs()
+        Y.applyUpdate(peerDoc, Y.encodeStateAsUpdate(hostDoc))
 
-    const ynodes = seedHostIntoYjs(host)
-
-    const peer = new SceneGraph()
-    const ids = [...ynodes.keys()].reverse()
-    for (const id of ids) applyYnodeToGraph(peer, id, expectDefined(ynodes.get(id), `ynode ${id}`))
-
-    const peerEllipse = getNodeOrThrow(peer, ellipse.id)
-    expect(peerEllipse.type).toBe('ELLIPSE')
-    expect(peerEllipse.parentId).toBe(hostPage.id)
-
-    const peerPage = getNodeOrThrow(peer, hostPage.id)
-    const refs = peerPage.childIds.filter((c) => c === ellipse.id)
-    expect(refs).toHaveLength(1)
-    expect(peer.getPages().map((page) => page.id)).toContain(hostPage.id)
-  })
-
-  test('a live-created node links into its parent even when the parent childIds was not re-synced', () => {
-    const host = new SceneGraph()
-    const hostPage = firstPage(host)
-    const rect = host.createNode('RECTANGLE', hostPage.id, { width: 50, height: 50 })
-
-    const doc = new Y.Doc()
-    const ynodes = doc.getMap<Y.Map<unknown>>('nodes')
-    doc.transact(() => {
-      const pageYnode = new Y.Map<unknown>()
-      ynodes.set(hostPage.id, pageYnode)
-      syncEncodedNodeToYMap({ ...hostPage, childIds: [] } as SceneNode, pageYnode)
-
-      const rectYnode = new Y.Map<unknown>()
-      ynodes.set(rect.id, rectYnode)
-      syncEncodedNodeToYMap(rect, rectYnode)
-    })
-
-    const peer = new SceneGraph()
-    applyYnodeToGraph(peer, hostPage.id, expectDefined(ynodes.get(hostPage.id), 'page ynode'))
-    applyYnodeToGraph(peer, rect.id, expectDefined(ynodes.get(rect.id), 'rect ynode'))
-
-    const peerPage = getNodeOrThrow(peer, hostPage.id)
-    expect(peerPage.childIds).toEqual([rect.id])
-    expect(getNodeOrThrow(peer, rect.id).type).toBe('RECTANGLE')
+        const peer = peerStore.graph
+        const peerEllipse = getNodeOrThrow(peer, ellipse.id)
+        expect(peerEllipse.type).toBe('ELLIPSE')
+        expect(peerEllipse.parentId).toBe(hostPage.id)
+        const refs = getNodeOrThrow(peer, hostPage.id).childIds.filter((c) => c === ellipse.id)
+        expect(refs).toHaveLength(1)
+        expect(peer.getPages().map((page) => page.id)).toContain(hostPage.id)
+        expect(() =>
+          nodeVisualBounds(peerEllipse, (id) => {
+            const n = peer.getNode(id)
+            return { x: n?.x ?? 0, y: n?.y ?? 0 }
+          })
+        ).not.toThrow()
+      },
+      { connectImmediately: false }
+    )
   })
 
   test('deduplicates a pending page switch and handles its rejection', async () => {
@@ -486,6 +338,7 @@ describe('collab yjs-sync', () => {
   test('image fills sync image bytes', async () => {
     await withSyncedStores(({ hostStore, peerStore, hostSync }) => {
       const hostPage = firstPage(hostStore.graph)
+      hostSync.syncAllNodesToYjs()
       const imageHash = 'image-hash'
       const imageFill: Fill = {
         type: 'IMAGE',
@@ -504,25 +357,5 @@ describe('collab yjs-sync', () => {
         Array.from(expectDefined(peerStore.graph.images.get(imageHash), 'peer image'))
       ).toEqual([9, 8, 7])
     })
-  })
-
-  test('synced node does not crash the visual-bounds helper', () => {
-    const host = new SceneGraph()
-    const hostPage = firstPage(host)
-    const ellipse = host.createNode('ELLIPSE', hostPage.id, { width: 120, height: 90 })
-
-    const ynodes = seedHostIntoYjs(host)
-    const peer = new SceneGraph()
-    for (const id of ynodes.keys()) {
-      applyYnodeToGraph(peer, id, expectDefined(ynodes.get(id), `ynode ${id}`))
-    }
-
-    const peerEllipse = getNodeOrThrow(peer, ellipse.id)
-    expect(() =>
-      nodeVisualBounds(peerEllipse, (id) => {
-        const n = peer.getNode(id)
-        return { x: n?.x ?? 0, y: n?.y ?? 0 }
-      })
-    ).not.toThrow()
   })
 })

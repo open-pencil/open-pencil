@@ -1,36 +1,27 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
+import { wrapParentId } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
-export function wrapInAutoLayout(
-  ctx: EditorContext,
-  isTopLevel: (parentId: string | null) => boolean,
-  selectedNodes: SceneNode[]
-) {
-  if (selectedNodes.length === 0) return
-
-  const parentId = selectedNodes[0].parentId ?? ctx.state.currentPageId
-  const sameParent = selectedNodes.every(
-    (n) => (n.parentId ?? ctx.state.currentPageId) === parentId
-  )
-  if (!sameParent) return
+/** Wrap sibling layers in a new auto layout frame; returns the frame, or null if they are not siblings. */
+export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[]): string | null {
+  const parentId = wrapParentId(ctx, selectedNodes)
+  if (!parentId) return null
 
   const prevSelection = new Set(ctx.state.selectedIds)
   const origPositions = selectedNodes.map((n) => ({ id: n.id, x: n.x, y: n.y, parentId }))
 
-  const bounds = computeAbsoluteBounds(selectedNodes, (id) => ctx.graph.getAbsolutePosition(id))
-
-  const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : ctx.graph.getAbsolutePosition(parentId)
+  const bounds = getAxisAlignedBoundsInParent(selectedNodes, parentId, ctx.graph)
 
   const direction: LayoutMode =
     selectedNodes.length <= 1 || bounds.height > bounds.width ? 'VERTICAL' : 'HORIZONTAL'
 
   const frame = ctx.graph.createNode('FRAME', parentId, {
     name: 'Frame',
-    x: bounds.x - parentAbs.x,
-    y: bounds.y - parentAbs.y,
+    x: bounds.x,
+    y: bounds.y,
     width: bounds.width,
     height: bounds.height,
     layoutMode: direction,
@@ -73,4 +64,5 @@ export function wrapInAutoLayout(
       ctx.setSelectedIds(prevSelection)
     }
   })
+  return frameId
 }

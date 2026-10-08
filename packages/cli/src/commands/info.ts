@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { InfoResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app-target'
+import { appTargetOptions } from '#cli/app/target'
 import { bold, fmtHistogram, fmtSummary, kv } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 

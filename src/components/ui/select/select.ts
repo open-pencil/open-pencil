@@ -4,8 +4,6 @@ import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/select'
 
 export interface SelectContentVariants {
-  radius?: keyof typeof theme.variants.radius
-  elevation?: keyof typeof theme.variants.elevation
   padding?: keyof typeof theme.variants.padding
 }
 

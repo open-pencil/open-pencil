@@ -27,7 +27,7 @@ const savedDraft: MCPConnectionDraft = {
   authenticationType: 'bearer'
 }
 const meta = {
-  title: 'Settings/MCP/Connection editor',
+  title: 'App/Settings/MCP/Connection Editor',
   args: { draft: emptyDraft, tokenStatus: 'missing', busy: false, error: '' },
   render: (args) => ({
     components: { MCPConnectionEditor },

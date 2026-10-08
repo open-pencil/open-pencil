@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 import {
   buildCORSConfigurationJSON,
   buildCORSConfigurationXML,
@@ -27,11 +29,20 @@ describe('cloud S3 CORS helpers', () => {
   })
 
   test('builds AWS console JSON', () => {
-    const json = JSON.parse(buildCORSConfigurationJSON(['https://app.openpencil.dev'])) as Array<{
-      AllowedOrigins: string[]
-      AllowedMethods: string[]
-      AllowedHeaders: string[]
-    }>
+    const json = v.parse(
+      v.pipe(
+        v.string(),
+        v.parseJson(),
+        v.array(
+          v.object({
+            AllowedOrigins: v.array(v.string()),
+            AllowedMethods: v.array(v.string()),
+            AllowedHeaders: v.array(v.string())
+          })
+        )
+      ),
+      buildCORSConfigurationJSON(['https://app.openpencil.dev'])
+    )
     expect(json).toHaveLength(1)
     expect(json[0]?.AllowedOrigins).toContain('https://app.openpencil.dev')
     expect(json[0]?.AllowedMethods).toEqual(

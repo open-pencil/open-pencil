@@ -1,7 +1,4 @@
 export { CODEGEN_PROMPT } from './tools/prompts'
-export { JSX_REFERENCE } from './design-jsx/reference'
-
-export { randomHex, randomInt, randomIndex } from './random'
 
 export * from './constants'
 
@@ -72,6 +69,7 @@ export {
 } from '@open-pencil/scene-graph'
 
 export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
+export { BehaviourHandle, OpenPencilAPI, type NodeRef } from './openpencil-api'
 export {
   ALL_TOOLS,
   CORE_TOOLS,
@@ -301,74 +299,12 @@ export {
   decompressFigKiwiDataAsync,
   buildFontDigestMap,
   sceneNodeToKiwi,
-  fractionalPosition,
   mapToFigmaType
 } from './kiwi/fig/node-change/serialize'
-export { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
+export { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+export { withFigExportRuntime } from './canvas/text/shape'
 
-export {
-  createElement,
-  renderTree,
-  renderJSX,
-  renderTreeNode,
-  buildComponent,
-  backgroundBlur,
-  dropShadow,
-  foregroundBlur,
-  innerShadow,
-  layerBlur,
-  angularGradient,
-  diamondGradient,
-  gradient,
-  linearGradient,
-  radialGradient,
-  solid,
-  defineVars,
-  designVar,
-  isVariable,
-  Frame,
-  Text,
-  Rectangle,
-  Ellipse,
-  Line,
-  Star,
-  Polygon,
-  Vector as VectorNode,
-  Group,
-  Section,
-  View,
-  Rect as RectNode,
-  Component,
-  Component as ComponentNode,
-  ComponentSet,
-  ComponentSet as ComponentSetNode,
-  Instance,
-  Instance as InstanceNode,
-  Page as PageNode,
-  INTRINSIC_ELEMENTS,
-  isTreeNode,
-  resolveToTree,
-  node,
-  type TreeNode,
-  type BaseProps,
-  type ComponentProps,
-  type InstanceProps,
-  type TextProps,
-  type StyleProps,
-  type PaintProp,
-  type BlurEffectOptions,
-  type EffectColor,
-  type ShadowEffectOptions,
-  type GradientPaintOptions,
-  type PaintColor,
-  type PaintStop,
-  type SolidPaintOptions,
-  type DesignVariable,
-  type VarDef,
-  type RenderResult,
-  sceneNodeToJSX,
-  selectionToJSX
-} from './design-jsx'
+export { renderJSX, renderTree } from './design-jsx'
 export {
   parseFigmaClipboard,
   importClipboardNodes,
@@ -387,7 +323,6 @@ export { readPenFile, parsePenFile } from '@open-pencil/pen'
 export {
   readFigFile,
   parseFigFile,
-  importNodeChanges,
   initCodec,
   encodeMessage,
   decodeMessage,
@@ -400,14 +335,11 @@ export {
   createNodeChangesMessage,
   createNodeChange,
   parseVariableId,
-  encodePaintWithVariableBinding,
-  encodeNodeChangeWithVariables,
   type NodeChange,
   type GUID as KiwiGUID,
   type Color as KiwiColor,
   type Paint as KiwiPaint,
   type Effect as KiwiEffect,
-  type VariableBinding,
   type ParentIndex,
   type FigmaMessage,
   MESSAGE_TYPES,

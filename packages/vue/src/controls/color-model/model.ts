@@ -193,6 +193,18 @@ export function applySolidStrokeColor(color: Color): Partial<Stroke> {
   return { color, opacity: color.a }
 }
 
+/**
+ * A stroke's geometry survives a paint change; every paint field comes from the new paint, so
+ * the stroke carries exactly what the picker produced rather than a mix of both paints.
+ */
+export function applyStrokePaint(stroke: Stroke, paint: Fill): Stroke {
+  const next: Stroke = { ...paint, weight: stroke.weight, align: stroke.align }
+  if (stroke.cap !== undefined) next.cap = stroke.cap
+  if (stroke.join !== undefined) next.join = stroke.join
+  if (stroke.dashPattern) next.dashPattern = [...stroke.dashPattern]
+  return next
+}
+
 export function toPercent(value: number): number {
   return Math.round(value * 100)
 }

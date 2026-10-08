@@ -1,7 +1,7 @@
 import fsd from '@feature-sliced/steiger-plugin'
 import { defineConfig } from 'steiger'
 
-import { openPencilArchitecturePlugin } from './tools/architecture/src/steiger-rules/index.ts'
+import { openPencilArchitecturePlugin } from './tools/checks/architecture/src/steiger-rules/index.ts'
 
 // OpenPencil is not laid out as canonical Feature-Sliced Design layers.
 // Keep Steiger focused on project-specific architecture boundaries instead of

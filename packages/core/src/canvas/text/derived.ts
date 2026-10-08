@@ -52,10 +52,28 @@ export function derivedUnderlineRect(node: Pick<SceneNode, 'width'>, baselineY: 
   }
 }
 
+/**
+ * Where the drawn text starts and ends, from its glyphs, when every glyph knows its advance;
+ * text narrower than its layer, or aligned to the centre or the end, does not reach its edges.
+ */
+function derivedTextExtent(node: SceneNode): { x1: number; x2: number } | null {
+  const glyphs = node.derivedTextGlyphs ?? []
+  if (glyphs.length === 0) return null
+  // A loop rather than spreading into Math.min/max, which long texts would overflow.
+  let x1 = Infinity
+  let x2 = -Infinity
+  for (const glyph of glyphs) {
+    if (glyph.advance === undefined) return null
+    x1 = Math.min(x1, glyph.x)
+    x2 = Math.max(x2, glyph.x + glyph.advance * (glyph.scaleX ?? 1))
+  }
+  return { x1, x2 }
+}
+
 function styleRunX(node: SceneNode, index: number): number {
   const glyph = node.derivedTextGlyphs?.[index]
   if (glyph) return glyph.x
-  if (index >= node.text.length) return node.width
+  if (index >= node.text.length) return derivedTextExtent(node)?.x2 ?? node.width
   if (node.text.length === 0) return 0
   return (node.width * index) / node.text.length
 }
@@ -104,9 +122,10 @@ function isDecorationSpan(span: DecorationSpan | null): span is DecorationSpan {
 function baseDecorationSpan(node: SceneNode): DecorationSpan | null {
   if (node.textDecoration !== 'UNDERLINE') return null
   const rect = derivedUnderlineRect(node, 0)
+  const extent = derivedTextExtent(node)
   return {
-    x1: rect.x1,
-    x2: rect.x2,
+    x1: extent?.x1 ?? rect.x1,
+    x2: extent?.x2 ?? rect.x2,
     style: node.textDecorationStyle,
     thickness: node.textDecorationThickness ?? rect.y2 - rect.y1,
     offset: node.textUnderlineOffset ?? 0,
@@ -376,12 +395,33 @@ export function drawReflowedPathTextSilhouettes(
  *                            black fills vs white strokeGeometry
  *   4. scale(fontSize,-fs) — font units → px; Y flip (font space is up-positive)
  */
+function savedTextEligibility(node: SceneNode): boolean {
+  return (
+    node.styleRuns.length === 0 ||
+    (node.fills.filter((paint) => paint.visible).length === 1 &&
+      !!node.derivedTextGlyphs?.every((glyph) => glyph.firstCharacter !== undefined) &&
+      node.styleRuns.every(
+        (run) =>
+          !run.style.fills ||
+          run.style.fills.every(
+            (paint) => paint.type === 'SOLID' && (!paint.blendMode || paint.blendMode === 'NORMAL')
+          )
+      ))
+  )
+}
+
+export function canDrawSavedText(node: SceneNode, fill?: Fill): boolean {
+  if (fill && fill.type !== 'SOLID') return false
+  return savedTextEligibility(node)
+}
+
 export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   if (!node.derivedTextGlyphs?.length) return false
 
   // Pixel-snap is for horizontal Figma baselines only — on a curve it stair-steps
   // letter positions and breaks registration with strokeGeometry.
   const snapBaselines = !hasRotatedDerivedGlyphs(node)
+  const savedTextEligible = savedTextEligibility(node)
   let underlineBaselineY = 0
   for (const glyph of node.derivedTextGlyphs) {
     const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
@@ -391,7 +431,29 @@ export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode
     applyGlyphEmTransform(canvas, glyph, glyphY)
     const shouldUseHardCoverage = shouldUseHardDerivedGlyphCoverage(node)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
-    canvas.drawPath(path, r.fillPaint)
+    const run =
+      glyph.firstCharacter === undefined
+        ? undefined
+        : node.styleRuns.find(
+            (run) =>
+              glyph.firstCharacter !== undefined &&
+              glyph.firstCharacter >= run.start &&
+              glyph.firstCharacter < run.start + run.length
+          )
+    const fills = run?.style.fills
+    if (fills && savedTextEligible) {
+      const paint = r.fillPaint.copy()
+      try {
+        for (const fill of fills) {
+          if (!fill.visible || fill.type !== 'SOLID') continue
+          const color = fill.color
+          paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a * fill.opacity))
+          canvas.drawPath(path, paint)
+        }
+      } finally {
+        paint.delete()
+      }
+    } else canvas.drawPath(path, r.fillPaint)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(true)
     canvas.restore()
     path.delete()

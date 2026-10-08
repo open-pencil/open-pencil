@@ -2,8 +2,9 @@ import { IS_BROWSER } from '@open-pencil/core/constants'
 import {
   DESIGN_JSX_ELEMENTS,
   DESIGN_JSX_HELPERS,
-  transformDesignJSXExpression
-} from '@open-pencil/core/design-jsx'
+  transformDesignJSXProgram,
+  type DesignJSXProgram
+} from '@open-pencil/design-jsx'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import {
@@ -32,9 +33,9 @@ export async function evaluateDesignJSX(
     return { ok: false, error: 'Design JSX source is too large.' }
   }
 
-  let code: string
+  let program: DesignJSXProgram
   try {
-    code = transformDesignJSXExpression(source)
+    program = transformDesignJSXProgram(source)
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
@@ -84,7 +85,10 @@ export async function evaluateDesignJSX(
           () => finish({ ok: false, error: 'Design JSX execution timed out.' }),
           timeoutMs
         )
-        iframe.contentWindow?.postMessage({ type: 'open-pencil-design-jsx-run', id, code }, '*')
+        iframe.contentWindow?.postMessage(
+          { type: 'open-pencil-design-jsx-run', id, code: program.code },
+          '*'
+        )
         return
       }
       if (message.type !== 'open-pencil-design-jsx-result' || message.id !== id) return
@@ -94,7 +98,7 @@ export async function evaluateDesignJSX(
       }
       try {
         const roots = validateDesignJSXOutput(message.value, validationLimits)
-        finish({ ok: true, roots })
+        finish({ ok: true, roots, lineOffsets: program.lineOffsets })
       } catch (error) {
         finish({ ok: false, error: error instanceof Error ? error.message : String(error) })
       }

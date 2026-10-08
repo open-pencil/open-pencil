@@ -5,8 +5,8 @@ import { expect, test } from '#tests/helpers/chat/fixture'
 test('completed responses release streaming parser history', async ({ configuredChat: chat }) => {
   await chat.submit('Show a code block')
 
-  const markdown = chat.page.locator('.chat-markdown').last()
-  await expect(markdown).toHaveAttribute('data-chat-markdown-mode', 'static')
+  const markdown = chat.page.locator('[data-slot="chat-markdown"] .markdown-content').last()
+  await expect(markdown).toHaveAttribute('data-markdown-mode', 'static')
   await expect(markdown.locator('.shiki').first()).toBeVisible()
 })
 
@@ -25,7 +25,9 @@ test('code blocks follow light and dark themes', async ({ configuredChat: chat }
     themeModule.useAppTheme().setTheme('light')
   })
   await chat.page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
-  await expect(chat.page.locator('.chat-markdown').last()).toHaveClass(/light/)
+  await expect(
+    chat.page.locator('[data-slot="chat-markdown"] .markdown-content').last()
+  ).toHaveClass(/light/)
   await expect(code).toHaveCSS('background-color', 'rgb(255, 255, 255)')
 })
 
@@ -56,4 +58,19 @@ test('Markdown blocks unsafe links and cross-origin images', async ({ configured
     'href',
     'https://openpencil.dev/'
   )
+})
+
+test('tables read as part of the reply, with copy as their only action', async ({
+  configuredChat: chat
+}) => {
+  await chat.submit('Show a markdown table')
+  const assistant = chat.assistantMessage()
+  const cell = assistant.getByRole('cell', { name: 'Hover', exact: true })
+  await expect(cell).toHaveCSS('font-weight', '400')
+  await expect(cell).toHaveCSS('font-size', '11px')
+  const controls = assistant.locator('[data-stream-markdown="table-controls"] button')
+  await expect(controls).toHaveCount(1)
+  // Links show no favicon: that would request `/favicon.ico` from every linked site.
+  await expect(assistant.getByRole('link', { name: 'the guide' })).toBeVisible()
+  await expect(assistant.locator('[data-stream-markdown="link-favicon"]')).toHaveCount(0)
 })

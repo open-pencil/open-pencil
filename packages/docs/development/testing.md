@@ -20,11 +20,13 @@ Core tests using SceneGraph still belong to Core. Central integration is for con
 
 **Migration status:** much existing coverage remains under `tests/engine/**`, alongside package-local suites. The table is the agreed destination, not a claim that migration is complete. Until a domain migrates, extend its existing suite rather than create a second home. The repository-wide migration is separate from feature work.
 
-Discovery already covers the destinations: `tools/unit-tests/src/shards.ts` groups tests by owner and lists each owner's canonical home (`packages/<owner>/tests`, `tests/app`, `tests/integration`) together with the `tests/engine` directories it still owns, so `bun run test:unit` and the CI shards run a file from either place. Moving a domain is therefore a `git mv` plus import fixes; only a new owner or a new top-level home needs a shard entry. Do not move files into a directory the shard map does not list.
+`bun run check:test-homes` keeps the debt shrinking: every test under `tests/engine` must be listed in `tools/dev/unit-tests/engine-baseline.txt`, so a new test fails the check until it lives in its owner's canonical home, and a moved file must be removed from the baseline. Scene Graph tests have migrated to `packages/scene-graph/tests`, and the editor domain to `packages/core/tests/editor` with its helpers under `packages/core/tests/helpers`; Core's `typecheck` script type-checks those tests.
+
+Discovery already covers the destinations: `tools/dev/unit-tests/src/shards.ts` groups tests by owner and lists each owner's canonical home (`packages/<owner>/tests`, `tests/app`, `tests/integration`) together with the `tests/engine` directories it still owns, so `bun run test:unit` and the CI shards run a file from either place. Moving a domain is therefore a `git mv` plus import fixes; only a new owner or a new top-level home needs a shard entry. Do not move files into a directory the shard map does not list.
 
 `test:unit:quick` runs files in Bun worker processes (`--parallel`), which is the fastest local loop. CI shards still run each group in one process; `test:unit:isolated` (`--isolate`, also run nightly) gives every file a fresh global object and is the check to run when a suite passes alone but fails in a shard. Shards share one Bun process, so module-level state (a `fake-indexeddb/auto` import, an IndexedDB connection left open by `createEditorStore()`, a patched global) leaks into later files in the same shard. A package-local run (`bun test tests` inside the package) is a fresh process and will not reproduce that leak. Close what a test opens and restore what it patches.
 
-Run `bun --filter @open-pencil/core build` before unit tests. Files under `tests/` resolve `@open-pencil/core` and its subpaths to `packages/core/src` through the root tsconfig, but package sources (`packages/dom-css/src`, `packages/mcp/src`, …) use their own tsconfig, where `@open-pencil/core/<subpath>` falls back to the package `exports` and therefore to `dist`. One process can hold both copies; only `packages/vue` maps Core to `src`. Aligning the other package tsconfigs is a packaging change (it affects `tsdown` declaration output), not a test change.
+Run `bun --filter @open-pencil/core build` before unit tests. Files under `tests/` and under `packages/core/tests` resolve `@open-pencil/core` and its subpaths to `packages/core/src` through the root and Core tsconfig path mappings, but other package sources (`packages/dom-css/src`, `packages/mcp/src`, …) use their own tsconfig, where `@open-pencil/core/<subpath>` falls back to the package `exports` and therefore to `dist`. One process can hold both copies; only `packages/vue` maps Core to `src`. Aligning the other package tsconfigs is a packaging change (it affects `tsdown` declaration output), not a test change.
 
 ## Test purpose
 
@@ -88,6 +90,14 @@ Current commands:
 During implementation, run the affected unit files or one representative browser scenario. Inspect discovery changes without executing the whole suite when reorganizing files. Use the final CI gate after integration; do not rerun full suites for each edit. Report commands actually run, and distinguish focused coverage from full acceptance.
 
 Visual changes require inspection and committed coverage. Update only a justified affected snapshot, then rerun that test without update mode. Never relax tolerances or regenerate unrelated baselines to turn a failed run green. Browser GPU parity and real glyph coverage complement CPU rendering tests; they are not redundant merely because both compare pixels.
+
+### When a run disagrees with the code
+
+Two environment faults look exactly like a code regression, and both have cost real debugging time.
+
+Browser suites resolve `@open-pencil/*` through each package's built `dist`, which Vite then pre-bundles. Rebuilding a package does not invalidate that cache, so a Playwright run can execute code from before your change — including throwing on a field you just added. If a browser run contradicts the source you are reading, delete `node_modules/.vite` and run again before believing it.
+
+Heavier `.fig` suites are sensitive to machine load. A full run alongside other work has reported failures that vanish on a quiet re-run, with the same suite taking three times as long. Re-run a failing heavy test alone before concluding anything, and compare against the same test on `master` under the same load rather than against a remembered baseline. Raising its timeout is still never the fix.
 
 ## Server ownership and worktrees
 

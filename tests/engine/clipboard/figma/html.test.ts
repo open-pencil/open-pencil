@@ -2,21 +2,22 @@ import { beforeAll, describe, expect, it } from 'bun:test'
 
 import {
   buildFigmaClipboardHTML,
+  fontManager,
   importClipboardNodes,
   initCodec,
   parseFigmaClipboard,
   SceneGraph
 } from '@open-pencil/core'
+import { slotPropertyId } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
 function expectFigmaEditableTextDefaults(
   textNode: NonNullable<Awaited<ReturnType<typeof parseFigmaClipboard>>>['nodes'][number]
 ) {
-  expect(textNode.textUserLayoutVersion).toBe(5)
+  expect(textNode.textUserLayoutVersion).toBe(4)
   expect(textNode.textExplicitLayoutVersion).toBe(1)
   expect(textNode.textBidiVersion).toBe(1)
-  expect(textNode.textAutoResize).toBe('NONE')
   expect(textNode.lineHeight).toEqual({ value: 100, units: 'PERCENT' })
   expect(textNode.letterSpacing).toEqual({ value: 0, units: 'PIXELS' })
   expect(textNode.fontVariantCommonLigatures).toBe(true)
@@ -28,6 +29,11 @@ function expectFigmaEditableTextDefaults(
 describe('buildFigmaClipboardHTML', () => {
   beforeAll(async () => {
     await initCodec()
+    const inter = expectDefined(
+      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      'bundled Inter font'
+    )
+    fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   it('encodes a simple frame without throwing', async () => {
@@ -45,6 +51,78 @@ describe('buildFigmaClipboardHTML', () => {
     const html = await buildFigmaClipboardHTML([frame], graph)
     expect(html).toContain('figmeta')
     expect(html).toContain('figma')
+  })
+
+  it('writes slot content and pairs every text record with its own text', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const card = graph.createNode('COMPONENT', page.id, {
+      name: 'Card',
+      width: 200,
+      height: 100,
+      componentPropertyDefinitions: [
+        { id: 'card:body', name: 'Body', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    graph.createNode('FRAME', card.id, {
+      name: 'Body',
+      width: 200,
+      height: 100,
+      componentPropertyReferences: [{ propertyId: 'card:body', field: 'SLOT_CONTENT' }]
+    })
+    const instance = expectDefined(graph.createInstance(card.id, page.id), 'instance')
+    const slot = expectDefined(
+      graph.getChildren(instance.id).find((child) => slotPropertyId(child)),
+      'slot'
+    )
+    const style = { fontFamily: 'Inter', fontWeight: 400, fontSize: 16, width: 200, height: 24 }
+    graph.createNode('TEXT', slot.id, { ...style, name: 'Slotted', text: 'In the slot' })
+    graph.updateNode(instance.id, { componentPropertyAssignments: { 'card:body': '' } })
+    const after = graph.createNode('TEXT', page.id, { ...style, name: 'After', text: 'Hi' })
+
+    const parsed = await parseFigmaClipboard(
+      expectDefined(await buildFigmaClipboardHTML([instance, after], graph), 'html')
+    )
+    const records = parsed?.nodes ?? []
+    const content = records.filter((node) => node.isSlotContent === true)
+    expect(content.map((node) => node.name)).toEqual(['Body'])
+    for (const name of ['Slotted', 'After']) {
+      const text = expectDefined(
+        records.find((node) => node.name === name),
+        name
+      )
+      const characters = text.textData?.characters ?? ''
+      expect(text.derivedTextData?.logicalIndexToCharacterOffsetMap?.length).toBe(characters.length)
+    }
+  })
+
+  it('keeps how text resizes, so Figma reflows it in its own font', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const create = (name: string, textAutoResize: 'WIDTH_AND_HEIGHT' | 'HEIGHT' | 'NONE') =>
+      graph.createNode('TEXT', page.id, {
+        name,
+        width: 120,
+        height: 24,
+        text: 'Get started',
+        fontFamily: 'Inter',
+        fontSize: 16,
+        textAutoResize
+      })
+    const nodes = [
+      create('Label', 'WIDTH_AND_HEIGHT'),
+      create('Body', 'HEIGHT'),
+      create('Box', 'NONE')
+    ]
+
+    const html = await buildFigmaClipboardHTML(nodes, graph)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
+    const autoResize = Object.fromEntries(
+      (parsed?.nodes ?? [])
+        .filter((node) => node.type === 'TEXT')
+        .map((node) => [node.name, node.textAutoResize])
+    )
+    expect(autoResize).toEqual({ Label: 'WIDTH_AND_HEIGHT', Body: 'HEIGHT', Box: 'NONE' })
   })
 
   it('encodes text nodes with style runs', async () => {
@@ -69,19 +147,22 @@ describe('buildFigmaClipboardHTML', () => {
     const html = await buildFigmaClipboardHTML([text], graph)
     expect(html).toContain('figmeta')
 
-    const parsed = await parseFigmaClipboard(html)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     if (!textNode) throw new Error('Expected text node')
     expectFigmaEditableTextDefaults(textNode)
-    expect(textNode.derivedTextData?.glyphs).toBeDefined()
-    expect(textNode.derivedTextData?.baselines?.length).toBeGreaterThan(0)
+    const glyphs = textNode.derivedTextData?.glyphs ?? []
+    expect(glyphs.length).toBeGreaterThan(0)
+    // Bold and italic Inter are not loaded, so no glyph gets an outline from the wrong font.
+    expect(glyphs.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)
+    expect(textNode.derivedTextData?.baselines).toHaveLength(1)
     expect(textNode.derivedTextData?.logicalIndexToCharacterOffsetMap?.length).toBe(
-      text.text.length + 1
+      text.text.length
     )
     expect(textNode.derivedTextData?.derivedLines).toEqual([{ directionality: 'LTR' }])
   })
 
-  it('encodes fallback derived text metrics when outline fonts are unavailable', async () => {
+  it('writes the fallback layout without outlines when the font is unavailable', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     graph.createNode('TEXT', page.id, {
@@ -99,14 +180,17 @@ describe('buildFigmaClipboardHTML', () => {
     })
 
     const html = await buildFigmaClipboardHTML(graph.getChildren(page.id), graph)
-    const parsed = await parseFigmaClipboard(html)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
     const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
     const baseline = textNode?.derivedTextData?.baselines?.[0]
 
-    expect(textNode?.textUserLayoutVersion).toBe(5)
-    expect(textNode?.textAutoResize).toBe('NONE')
-    expect(textNode?.derivedTextData?.glyphs?.length).toBe('Analytics Overview'.length)
-    expect(baseline?.width).toBe(552)
+    // The text keeps its auto-resize, so Figma reflows it in its own font instead of fixing the box.
+    expect(textNode?.textAutoResize).toBe('HEIGHT')
+    const glyphs = textNode?.derivedTextData?.glyphs ?? []
+    expect(glyphs).toHaveLength('Analytics Overview'.length)
+    expect(glyphs.every((glyph) => glyph.commandsBlob === undefined)).toBe(true)
+    expect(textNode?.derivedTextData?.baselines).toHaveLength(1)
+    expect(baseline?.width).toBeLessThanOrEqual(552)
     expect(baseline?.lineHeight).toBe(67)
     expect(textNode?.derivedTextData?.layoutSize).toEqual({ x: 552, y: 70 })
   })

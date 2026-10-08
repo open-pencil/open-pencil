@@ -6,6 +6,8 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_COLOR } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
 
+import { withScreenStroke } from './outline'
+
 export function drawTextEditOverlay(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -22,10 +24,9 @@ export function drawTextEditOverlay(
     return
   }
 
-  r.auxStroke.setStrokeWidth(1 / r.zoom)
-  r.auxStroke.setColor(r.selColor())
-  r.auxStroke.setPathEffect(null)
-  canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxStroke)
+  withScreenStroke(r, { color: r.selColor() }, (paint) =>
+    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), paint)
+  )
 
   const selRects = editor.getSelectionRects()
   if (selRects.length > 0) {

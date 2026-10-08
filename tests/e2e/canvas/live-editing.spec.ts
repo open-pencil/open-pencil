@@ -1,10 +1,9 @@
-import { fileURLToPath } from 'node:url'
-
 import type { Page } from '@playwright/test'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { testPath } from '#tests/helpers/paths'
 
 // This size exceeds the 3x overscan budget and previously produced fractional
 // raster offsets, even though the live scene itself was pixel-aligned.
@@ -80,7 +79,7 @@ for (const imported of [false, true]) {
       test.setTimeout(45_000)
       await page.route('**/__fixtures/gold-preview.fig', (route) =>
         route.fulfill({
-          path: fileURLToPath(new URL('../../fixtures/gold-preview.fig', import.meta.url)),
+          path: testPath('fixtures/gold-preview.fig'),
           contentType: 'application/octet-stream'
         })
       )

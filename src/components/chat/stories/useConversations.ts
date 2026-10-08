@@ -45,6 +45,8 @@ export function useConversations(initialChat: string) {
     const chat = chats.value.find((chat) => chat.id === id)
     if (chat) chat.title = title
   }
+  const PREVIEW_REPLY =
+    'This is a **local preview response**. No model was called and no document was changed.'
   function submit(text: string) {
     const chat = selected.value
     if (!chat) return
@@ -60,11 +62,23 @@ export function useConversations(initialChat: string) {
       parts: [
         {
           type: 'text',
-          text: 'This is a **local preview response**. No model was called and no document was changed.'
+          text: PREVIEW_REPLY
         }
       ]
     })
     chat.status = 'ready'
+  }
+  function regenerate() {
+    const reply = selected.value?.messages.findLast((message) => message.role === 'assistant')
+    if (!reply) return
+    reply.parts = [{ type: 'text', text: `${PREVIEW_REPLY} (regenerated)` }]
+  }
+  function resend(messageId: string, text: string) {
+    const chat = selected.value
+    const index = chat?.messages.findIndex((message) => message.id === messageId) ?? -1
+    if (!chat || index === -1) return
+    chat.messages.splice(index)
+    submit(text)
   }
   function stop() {
     const chat = selected.value
@@ -97,6 +111,8 @@ export function useConversations(initialChat: string) {
     newChat,
     removeChat,
     submit,
+    regenerate,
+    resend,
     stop
   }
 }

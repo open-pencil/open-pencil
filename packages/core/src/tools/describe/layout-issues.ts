@@ -1,17 +1,36 @@
-import { wcagLuminance } from 'culori'
 import { sumBy } from 'es-toolkit/math'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { DescribeIssue } from './issues'
 import { CONTAINER_TYPES, findAncestorBackground } from './shared'
 
-const DARK_BG_LUMINANCE = 0.35
+const WCAG_AA_CONTRAST = 4.5
+const WCAG_AA_LARGE_TEXT_CONTRAST = 3
 
-function rgbLuminance(c: Color): number {
-  return wcagLuminance({ mode: 'rgb', r: c.r, g: c.g, b: c.b })
+// Translucent text, through its fill or the node's own opacity, is seen blended with the background.
+function blendOver(fill: Fill, nodeOpacity: number, background: Color): Color {
+  return compositeOver(fill.color, background, fill.opacity * fill.color.a * nodeOpacity)
+}
+
+// Round down so a failing ratio such as 4.499 is not shown as 4.50.
+function formatRatio(ratio: number): string {
+  return (Math.floor(ratio * 100) / 100).toFixed(2)
+}
+
+// WCAG large text is at least 18pt, or 14pt bold (1pt = 4/3px).
+function isLargeSize(fontSize: number, fontWeight: number): boolean {
+  return fontSize >= 24 || (fontSize >= 56 / 3 && fontWeight >= 700)
+}
+
+// Text qualifies only when every range does: the base style and each style run's own size and weight.
+function isLargeText(node: SceneNode): boolean {
+  if (!isLargeSize(node.fontSize, node.fontWeight)) return false
+  return node.styleRuns.every(({ style }) =>
+    isLargeSize(style.fontSize ?? node.fontSize, style.fontWeight ?? node.fontWeight)
+  )
 }
 
 interface LayoutContext {
@@ -124,8 +143,6 @@ function checkGrowInHug(ctx: LayoutContext): void {
 function checkGrowSizeConflict(ctx: LayoutContext): void {
   for (const child of ctx.children) {
     if (child.layoutGrow > 0 && child.layoutMode === 'NONE') {
-      const mainSizing = ctx.isRow ? child.primaryAxisSizing : child.counterAxisSizing
-      if (mainSizing === 'FILL') continue
       const fixedDim = ctx.isRow ? child.width : child.height
       if (fixedDim > 0 && fixedDim !== 100) {
         ctx.issues.push({
@@ -204,7 +221,8 @@ function checkTextVisibility(ctx: LayoutContext): void {
   for (const childId of node.childIds) {
     const child = graph.getNode(childId)
     if (!child?.visible || child.type !== 'TEXT') continue
-    const textFill = child.fills.find((f) => f.visible && f.type === 'SOLID')
+    const textFillIndex = child.fills.findIndex((f) => f.visible && f.type === 'SOLID')
+    const textFill = child.fills[textFillIndex] as Fill | undefined
     if (!textFill) {
       issues.push({
         message: `"${child.name || child.text.slice(0, 20) || 'Text'}" has no color — invisible`,
@@ -212,14 +230,17 @@ function checkTextVisibility(ctx: LayoutContext): void {
       })
       continue
     }
-    const textLum = rgbLuminance(textFill.color)
-    if (textLum > DARK_BG_LUMINANCE) continue
+    // A variable-bound color depends on the active mode, so its static value proves nothing;
+    // the color-contrast lint rule skips it for the same reason.
+    if (child.boundVariables[`fills/${textFillIndex}/color`]) continue
     const bg = findAncestorBackground(child, graph)
     if (!bg) continue
-    if (rgbLuminance(bg) < DARK_BG_LUMINANCE) {
+    const ratio = contrastRatio(blendOver(textFill, child.opacity, bg), bg)
+    const required = isLargeText(child) ? WCAG_AA_LARGE_TEXT_CONTRAST : WCAG_AA_CONTRAST
+    if (ratio < required) {
       issues.push({
-        message: `"${child.name || child.text.slice(0, 20) || 'Text'}" dark on dark (${colorToHex(textFill.color)} on ${colorToHex(bg)})`,
-        suggestion: 'Use a light color'
+        message: `"${child.name || child.text.slice(0, 20) || 'Text'}" contrast ${formatRatio(ratio)}:1 is below WCAG AA ${required}:1 (${colorToHex(textFill.color)} on ${colorToHex(bg)})`,
+        suggestion: 'Increase contrast between text and background'
       })
     }
   }
@@ -315,7 +336,7 @@ function checkFillWithoutFlex(ctx: LayoutContext): void {
   if (node.layoutMode !== 'NONE') return
   for (const child of visibleChildren(node, graph)) {
     if (!CONTAINER_TYPES.has(child.type)) continue
-    if (child.primaryAxisSizing === 'FILL' || child.counterAxisSizing === 'FILL') {
+    if (child.layoutGrow > 0 || child.layoutAlignSelf === 'STRETCH') {
       issues.push({
         message: `"${child.name}" uses fill sizing but parent "${node.name}" has no auto-layout`,
         suggestion: 'Add flex="col" or flex="row" to the parent'
@@ -339,33 +360,19 @@ function effectivelyFillsCrossAxis(child: SceneNode, parent: SceneNode, isRow: b
 
 function childNeedsFill(child: SceneNode, parent: SceneNode, isRow: boolean): boolean {
   if (child.layoutMode === 'NONE') return false
-  const crossDim = isRow ? child.width : child.height
-  const crossSizing = isRow ? child.counterAxisSizing : child.primaryAxisSizing
-  if (crossDim <= 0 && crossSizing !== 'FILL') return false
+  // Along the parent's main axis, fill is grow.
+  if (child.layoutGrow > 0) return false
+  const mainDim = isRow ? child.width : child.height
+  if (mainDim <= 0) return false
   const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
   if (mainSizing === 'FIXED') return false
   if (effectivelyFillsCrossAxis(child, parent, isRow)) return false
   if (child.childIds.length === 0) return false
-  return isRow
-    ? child.width < parent.width * 0.3 &&
-        child.counterAxisSizing !== 'FILL' &&
-        child.layoutGrow <= 0
-    : child.height < parent.height * 0.3 &&
-        child.primaryAxisSizing !== 'FILL' &&
-        child.layoutGrow <= 0
+  return isRow ? child.width < parent.width * 0.3 : child.height < parent.height * 0.3
 }
 
-function hasSiblingWithGrowOrFill(
-  children: SceneNode[],
-  exclude: SceneNode,
-  isRow: boolean
-): boolean {
-  return children.some((c) => {
-    if (c === exclude) return false
-    if (c.layoutGrow > 0) return true
-    const sizing = isRow ? c.counterAxisSizing : c.primaryAxisSizing
-    return sizing === 'FILL'
-  })
+function hasGrowingSibling(children: SceneNode[], exclude: SceneNode): boolean {
+  return children.some((c) => c !== exclude && c.layoutGrow > 0)
 }
 
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
@@ -375,7 +382,7 @@ function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   if (node.layoutWrap === 'WRAP') return
   for (const child of children) {
     if (!childNeedsFill(child, node, isRow)) continue
-    if (hasSiblingWithGrowOrFill(children, child, isRow)) continue
+    if (hasGrowingSibling(children, child)) continue
     issues.push({
       message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
       suggestion: 'Add w="fill" or grow={1}'

@@ -7,7 +7,7 @@ import Yoga, {
   type Node as YogaNode
 } from 'yoga-layout'
 
-import type { GridTrack, SceneNode } from '@open-pencil/scene-graph'
+import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 const yogaConfig = Yoga.Config.create()
 yogaConfig.setPointScaleFactor(0)
@@ -22,6 +22,32 @@ export function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): v
   yogaChild.setPosition(Edge.Top, child.y)
   yogaChild.setWidth(child.width)
   yogaChild.setHeight(child.height)
+}
+
+export function configureNonTextLeaf(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  isRow: boolean,
+  stretchCross: boolean
+): void {
+  const w = child.width
+  const h = child.height
+
+  if (child.layoutGrow > 0) {
+    yogaChild.setFlexGrow(child.layoutGrow)
+    if (!stretchCross) {
+      if (isRow) yogaChild.setHeight(h)
+      else yogaChild.setWidth(w)
+    }
+  } else {
+    if (isRow) {
+      yogaChild.setWidth(w)
+      if (!stretchCross) yogaChild.setHeight(h)
+    } else {
+      yogaChild.setHeight(h)
+      if (!stretchCross) yogaChild.setWidth(w)
+    }
+  }
 }
 
 export function applyMinMaxConstraints(yogaNode: YogaNode, node: SceneNode): void {
@@ -92,4 +118,19 @@ export function mapAlignSelf(alignSelf: string): Align | null {
     default:
       return null
   }
+}
+
+/** The axis a frame's auto layout parent stretches it along, if any. */
+export function parentStretchedAxis(
+  graph: SceneGraph,
+  frame: SceneNode
+): 'width' | 'height' | null {
+  const parent = frame.parentId ? graph.getNode(frame.parentId) : undefined
+  if (!parent || frame.layoutPositioning === 'ABSOLUTE') return null
+  if (parent.layoutMode !== 'HORIZONTAL' && parent.layoutMode !== 'VERTICAL') return null
+  const stretched =
+    frame.layoutAlignSelf === 'STRETCH' ||
+    (frame.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
+  if (!stretched) return null
+  return parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
 }

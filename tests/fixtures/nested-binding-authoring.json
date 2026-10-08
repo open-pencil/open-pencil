@@ -1,0 +1,87 @@
+{
+  "tokenValue": 12,
+  "native": {
+    "root": {
+      "width": 33,
+      "paddingRight": 6,
+      "boundVariables": {
+        "paddingRight": {
+          "type": "VARIABLE_ALIAS",
+          "id": "VariableID:293742:7"
+        }
+      }
+    },
+    "nested": {
+      "width": 17,
+      "paddingRight": 6,
+      "boundVariables": {
+        "paddingLeft": {
+          "type": "VARIABLE_ALIAS",
+          "id": "VariableID:293742:7"
+        },
+        "paddingRight": {
+          "type": "VARIABLE_ALIAS",
+          "id": "VariableID:293742:7"
+        }
+      }
+    }
+  },
+  "reopened": {
+    "root": {
+      "width": 33,
+      "paddingRight": 6,
+      "boundVariables": {
+        "paddingRight": {
+          "type": "VARIABLE_ALIAS",
+          "id": "VariableID:293742:7"
+        }
+      }
+    },
+    "nested": {
+      "width": 17,
+      "paddingRight": 6,
+      "boundVariables": {
+        "paddingLeft": {
+          "type": "VARIABLE_ALIAS",
+          "id": "VariableID:293742:7"
+        },
+        "paddingRight": {
+          "type": "VARIABLE_ALIAS",
+          "id": "VariableID:293742:7"
+        }
+      }
+    }
+  },
+  "componentEdit": {
+    "sourcePaddingTop": 8,
+    "paddingTop": 2,
+    "paddingRight": 6,
+    "height": 8,
+    "boundVariables": {
+      "paddingLeft": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:293742:7"
+      },
+      "paddingRight": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:293742:7"
+      }
+    }
+  },
+  "componentReopened": {
+    "width": 33,
+    "height": 8,
+    "paddingTop": 2,
+    "paddingRight": 6,
+    "boundVariables": {
+      "paddingLeft": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:293742:7"
+      },
+      "paddingRight": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:293742:7"
+      }
+    }
+  }
+}

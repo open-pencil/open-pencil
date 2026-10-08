@@ -5,7 +5,7 @@ import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { makeBooleanSourcePath, makeStrokeOutlinePath, nodePathTransform } from './boolean'
 import type { SkiaRenderer } from './renderer'
 
-type VectorFlattenProps = Pick<
+export type VectorFlattenProps = Pick<
   SceneNode,
   'name' | 'x' | 'y' | 'width' | 'height' | 'fills' | 'vectorNetwork'
 >

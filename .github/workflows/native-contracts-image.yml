@@ -5,7 +5,7 @@ on:
   push:
     branches: [master]
     paths:
-      - 'tools/ci-images/native-contracts/Dockerfile'
+      - 'tools/ci/images/native-contracts/Dockerfile'
       - '.github/workflows/native-contracts-image.yml'
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
 
       - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
-          context: tools/ci-images/native-contracts
+          context: tools/ci/images/native-contracts
           push: true
           tags: |
             ghcr.io/open-pencil/native-contracts-ci:ubuntu-24.04

@@ -1,9 +1,9 @@
 import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { computeHeadlessStyles } from '../headless-css'
-import { serializeHTML } from '../serialize'
-import { parseStyleAttribute } from '../style-attribute'
+import { serializeHTML } from '../export/html'
+import { parseStyleAttribute } from '../import/style-attribute'
 import type { CSSRuntime, DesignDocument, DesignElement, DesignNode } from '../types'
+import { computeHeadlessStyles } from './headless-css'
 
 function attrsToRecord(attrs: DefaultTreeAdapterTypes.Element['attrs']): Record<string, string> {
   const result: Record<string, string> = {}

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { SceneNode } from '@open-pencil/core'
 import { applyPadding, isVarRef, type VarContext } from '@open-pencil/pen'
+import type { Variable } from '@open-pencil/scene-graph'
 
 /**
  * Regression test for open-pencil/open-pencil#201
@@ -23,12 +24,20 @@ function makeNode(): SceneNode {
 }
 
 function makeVarContext(vars: Record<string, number>): VarContext {
-  const byName = new Map<
-    string,
-    { id: string; variable: { valuesByMode: Record<string, number> } }
-  >()
+  const byName = new Map<string, { id: string; variable: Variable }>()
   for (const [name, value] of Object.entries(vars)) {
-    byName.set(name, { id: name, variable: { valuesByMode: { default: value } } })
+    byName.set(name, {
+      id: name,
+      variable: {
+        id: name,
+        name,
+        type: 'FLOAT',
+        collectionId: 'test',
+        valuesByMode: { default: value },
+        description: '',
+        hiddenFromPublishing: false
+      }
+    })
   }
   return {
     byName,
@@ -44,7 +53,7 @@ function makeVarContext(vars: Record<string, number>): VarContext {
     },
     resolveString: () => '',
     setActiveTheme: () => undefined
-  } as VarContext
+  }
 }
 
 const ctx = makeVarContext({

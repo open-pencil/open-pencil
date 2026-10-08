@@ -12,6 +12,8 @@ type SaveDocumentState = EditorState & { documentName: string }
 
 type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
   state: SaveDocumentState
+  /** The document's content revision, recorded as the saved version. */
+  version: () => number
   buildFigFile: () => Uint8Array | Promise<Uint8Array>
   startWatchingFile: () => void
   onWriteSuccess?: (version: number) => void | Promise<void>
@@ -20,6 +22,7 @@ type SaveActionsOptions = Omit<DocumentSourceAccess, 'getSavedVersion'> & {
 
 export function createSaveActions({
   state,
+  version: currentVersion,
   buildFigFile,
   getFilePath,
   setFilePath,
@@ -47,7 +50,7 @@ export function createSaveActions({
   })
 
   async function buildVersionedFigFile() {
-    const version = state.sceneVersion
+    const version = currentVersion()
     return { data: await buildFigFile(), version }
   }
 

@@ -5,12 +5,12 @@ const constraintsTheme = {
     pin: 'absolute flex cursor-pointer items-center justify-center rounded-sm border border-transparent bg-transparent text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
     pinMark: 'block rounded-full bg-current',
     scaleBadge:
-      'pointer-events-none absolute inset-2 flex items-center justify-center text-[9px] font-medium tracking-wide text-accent uppercase',
+      'pointer-events-none absolute inset-2 flex items-center justify-center text-[9px] font-medium tracking-wide text-primary uppercase',
     selects: 'grid min-w-0 gap-1.5'
   },
   variants: {
     active: {
-      true: { pin: 'border-accent bg-accent/12 text-accent' },
+      true: { pin: 'border-accent bg-accent/12 text-primary' },
       false: {}
     },
     scale: {

@@ -1,4 +1,5 @@
 import { assertNodeEditable } from '#core/editor/capabilities'
+import { prepareSlotEdits } from '#core/editor/components/slots'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
@@ -30,6 +31,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
     const origX = node.x
     const origY = node.y
     const origIndex = ctx.graph.getNode(origParentId)?.childIds.indexOf(nodeId) ?? -1
+    if (!prepareSlotEdits(ctx, [origParentId, parentId])) return
 
     doReorderChild(nodeId, parentId, insertIndex)
 
@@ -57,6 +59,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const origParentId = node.parentId ?? ctx.state.currentPageId
+    if (!prepareSlotEdits(ctx, [origParentId, newParentId])) return
     const origIndex = ctx.graph.getNode(origParentId)?.childIds.indexOf(nodeId) ?? 0
     const origX = node.x
     const origY = node.y

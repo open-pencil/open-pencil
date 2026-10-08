@@ -225,12 +225,25 @@ export function measureTextNode(
   if (!r.fontsLoaded || !r.fontProvider || !isNodeFontLoaded(r, node)) return null
   if (node.type !== 'TEXT' || !node.text) return null
 
-  const paragraph = buildParagraph(r, node)
-  paragraph.layout(resolveParagraphLayoutWidth(node, maxWidth))
-  const width = paragraph.getLongestLine()
-  const height = paragraph.getHeight()
-  paragraph.delete()
-  return { width: Math.ceil(width), height: Math.ceil(height) }
+  const layoutWidth = resolveParagraphLayoutWidth(node, maxWidth)
+  const measure = () => {
+    const paragraph = buildParagraph(r, node)
+    paragraph.layout(layoutWidth)
+    const width = paragraph.getLongestLine()
+    const height = paragraph.getHeight()
+    paragraph.delete()
+    return { width: Math.ceil(width), height: Math.ceil(height) }
+  }
+  // Layout asks for the same text at the same width many times per pass.
+  return r.textPreparationCache
+    ? r.textPreparationCache.measure(
+        node,
+        layoutWidth,
+        fontManager.generation(),
+        r.fontProvider,
+        measure
+      )
+    : measure()
 }
 
 export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array | null {
@@ -252,6 +265,14 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const bytes = picture.serialize()
   picture.delete()
   return bytes ?? null
+}
+
+/** Offset that places laid-out text of `contentHeight` in the node box by vertical alignment. */
+export function textVerticalOffset(node: SceneNode, contentHeight: number): number {
+  const available = Math.max(0, node.height - contentHeight)
+  if (node.textAlignVertical === 'CENTER') return available / 2
+  if (node.textAlignVertical === 'BOTTOM') return available
+  return 0
 }
 
 function resolveParagraphLayoutWidth(node: ParagraphNode, maxWidth?: number): number {

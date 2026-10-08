@@ -1,13 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
-import {
-  protectField,
-  syncNodeProps,
-  type ProtectionMap
-} from '@open-pencil/fig/instance-overrides'
+import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph): string {
@@ -31,6 +26,7 @@ const blueFill: Fill = {
 }
 
 const redStroke: Stroke = {
+  type: 'SOLID',
   color: { r: 1, g: 0, b: 0, a: 1 },
   weight: 1,
   opacity: 1,
@@ -42,6 +38,7 @@ const redStroke: Stroke = {
 }
 
 const blueStroke: Stroke = {
+  type: 'SOLID',
   color: { r: 0, g: 0, b: 1, a: 1 },
   weight: 1,
   opacity: 1,
@@ -54,7 +51,7 @@ const blueStroke: Stroke = {
 
 describe('fig import override field protection', () => {
   test('explicit instance strokes survive component synchronization', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Document' } as NodeChange,
       {
         guid: { sessionID: 0, localID: 1 },
@@ -77,7 +74,7 @@ describe('fig import override field protection', () => {
         symbolData: { symbolID: { sessionID: 1, localID: 1 } },
         strokePaints: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.4 }]
       } as NodeChange
-    ])
+    ]).graph
 
     const instance = graph
       .getChildren(graph.getPages()[0].id)
@@ -88,20 +85,29 @@ describe('fig import override field protection', () => {
 
   test('protected text still inherits fills', () => {
     const graph = new SceneGraph()
-    const source = graph.createNode('TEXT', pageId(graph), {
+    const component = graph.createNode('COMPONENT', pageId(graph))
+    graph.createNode('TEXT', component.id, {
       text: 'Source',
       fills: [redFill],
       boundVariables: { 'fills/0/color': 'source-color' }
     })
-    const target = graph.createNode('TEXT', pageId(graph), {
+    const instance = graph.createInstance(component.id, pageId(graph))
+    if (!instance) throw new Error('Missing instance')
+    const target = graph.getChildren(instance.id)[0]
+    graph.updateNode(target.id, {
       text: 'Override',
       fills: [blueFill],
       boundVariables: { 'fills/0/color': 'target-color', width: 'target-width' }
     })
-    const protections: ProtectionMap = new Map()
-    protectField(protections, target.id, 'text')
-
-    syncNodeProps(graph, source, target, protections)
+    setInstanceOverride(instance.instanceOverrides, instance.id, target.id, 'text', true)
+    setInstanceOverride(
+      instance.instanceOverrides,
+      instance.id,
+      target.id,
+      'boundVariables/width',
+      true
+    )
+    graph.syncInstances(component.id)
 
     const synced = graph.getNode(target.id)
     expect(synced?.text).toBe('Override')
@@ -114,18 +120,20 @@ describe('fig import override field protection', () => {
 
   test('protected strokes still inherit visibility', () => {
     const graph = new SceneGraph()
-    const source = graph.createNode('RECTANGLE', pageId(graph), {
+    const component = graph.createNode('COMPONENT', pageId(graph))
+    graph.createNode('RECTANGLE', component.id, {
       visible: false,
       strokes: [redStroke]
     })
-    const target = graph.createNode('RECTANGLE', pageId(graph), {
+    const instance = graph.createInstance(component.id, pageId(graph))
+    if (!instance) throw new Error('Missing instance')
+    const target = graph.getChildren(instance.id)[0]
+    graph.updateNode(target.id, {
       visible: true,
       strokes: [blueStroke]
     })
-    const protections: ProtectionMap = new Map()
-    protectField(protections, target.id, 'strokes')
-
-    syncNodeProps(graph, source, target, protections)
+    setInstanceOverride(instance.instanceOverrides, instance.id, target.id, 'strokes', true)
+    graph.syncInstances(component.id)
 
     const synced = graph.getNode(target.id)
     expect(synced?.visible).toBe(false)

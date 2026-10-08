@@ -10,11 +10,8 @@ import {
 } from '@/app/editor/clipboard/memory'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand, type SystemClipboard } from '@/app/editor/clipboard/system'
-import {
-  createBrowserSystemClipboard,
-  type BrowserClipboardIO
-} from '@/app/editor/clipboard/system/browser'
-import type { ClipboardPayload } from '@/app/editor/clipboard/system/types'
+import { createBrowserSystemClipboard } from '@/app/editor/clipboard/system/browser'
+import type { BrowserClipboardIO, ClipboardPayload } from '@/app/editor/clipboard/system/types'
 import { createEditorStore } from '@/app/editor/session/create'
 import { toast } from '@/app/shell/ui'
 

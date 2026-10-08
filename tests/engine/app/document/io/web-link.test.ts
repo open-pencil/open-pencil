@@ -113,6 +113,26 @@ describe('openWebLink', () => {
     expect(notices[0]).toContain('raw.githubusercontent.com')
   })
 
+  test('reports a failed layer search as an error, not a missing layer', async () => {
+    const open = mock(async (): Promise<void> => undefined)
+    const notices: [string, string][] = []
+
+    await openWebLink(
+      target,
+      {
+        selectByName: async () => {
+          throw new Error('page failed to load')
+        },
+        notify: (m, level) => notices.push([m, level])
+      },
+      { open }
+    )
+
+    expect(notices).toHaveLength(1)
+    expect(notices[0]?.[0]).toContain('page failed to load')
+    expect(notices[0]?.[1]).toBe('error')
+  })
+
   test('notifies when the node is missing', async () => {
     const open = mock(async (): Promise<void> => undefined)
     const notices: string[] = []

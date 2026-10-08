@@ -5,6 +5,7 @@
   "match": "Совпадение",
   "to": "Новое имя",
   "currentName": "Текущее имя",
+  "layerName": "Название слоя",
   "numberAscending": "Номер ↑",
   "numberDescending": "Номер ↓",
   "startAscendingFrom": "Начать по возрастанию с",

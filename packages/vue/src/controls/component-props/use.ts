@@ -54,7 +54,12 @@ export function useComponentProperties() {
   const definitionSets = useSceneComputed(() =>
     instances.value.map((instance) => editor.getInstanceComponentPropertyDefinitions(instance.id))
   )
-  const definitions = computed(() => compatibleComponentPropertyDefinitions(definitionSets.value))
+  // Slots render as their own rows (useSlotProperties), not as value controls.
+  const definitions = computed(() =>
+    compatibleComponentPropertyDefinitions(definitionSets.value).filter(
+      (definition) => definition.type !== 'SLOT'
+    )
+  )
   const active = computed(() => allSelectedAreInstances.value && definitions.value.length > 0)
   const controls = useSceneComputed<ComponentPropertyControl[]>(() => {
     if (!active.value || instances.value.length === 0) return []

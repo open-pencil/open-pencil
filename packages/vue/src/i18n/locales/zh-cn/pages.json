@@ -2,5 +2,10 @@
   "newPage": "新建页面",
   "rename": "重命名",
   "delete": "删除",
-  "pageName": "页面 {number}"
+  "pageName": "页面 {number}",
+  "pages": "页面",
+  "goToPage": "转到页面…",
+  "recentPage": "最近",
+  "currentPage": "当前页面",
+  "pageNameLabel": "页面名称"
 }

@@ -29,9 +29,10 @@ Requires macOS 13 or later with current Safari updates, Windows 10 or later, or 
 
 - **Opens `.fig` and `.pen` files** — read and write native Figma files, open supported Pencil documents from the app or OS file browser, copy & paste nodes between apps
 - **AI builds designs** — describe what you want in chat, 100+ tools create and modify nodes. Connect OpenRouter, Anthropic, OpenAI, Google AI, DeepSeek, Z.ai, MiniMax, or compatible endpoints
-- **Fully programmable** — headless CLI, XPath queries, Figma Plugin API via `eval`, MCP server for AI agents, and desktop agent integrations for Claude Code, Codex, and Gemini CLI
+- **Fully programmable** — headless CLI, XPath queries, Figma Plugin API plus an `openpencil` API via `eval`, MCP server for AI agents, and desktop agent integrations for Claude Code, Codex, and Gemini CLI
 - **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
 - **Components and variants** — create reusable components, group variants into component sets, insert local assets as instances, and switch variants from the inspector
+- **Working controls** — give a component a Reka UI behaviour (switch, slider, tabs, text field, …) and preview it live over the canvas, with real inputs, focus, and keyboard
 - **Image vectorization** — convert image layers into editable vector layers with Recraft or fal.ai
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
@@ -68,67 +69,34 @@ openpencil info design.fig
 
 ### Query with XPath
 
-Use XPath selectors to find nodes by type, attributes, and structure:
+Find nodes by type, attributes, and structure:
 
 ```sh
-openpencil query design.fig "//FRAME"                              # All frames
-openpencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px
-openpencil query design.fig "//TEXT[contains(@name, 'Button')]"     # Text with 'Button' in name
-openpencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
-openpencil query design.fig "//SECTION//TEXT"                       # Text inside sections
+openpencil query design.fig "//FRAME[@width < 300]"  # Frames under 300px
+openpencil query design.fig "//SECTION//TEXT"        # Text inside sections
 ```
 
-### Export
+### Export, convert, and import
 
-Render to PNG, JPG, WEBP, SVG, PDF, PPTX, HTML, JSX, or `.fig` — or export selections/pages as `.fig` and convert whole documents between supported formats:
+Render to PNG, JPG, WEBP, SVG, PDF, PPTX, HTML, JSX, Storybook stories, or `.fig`, convert between document formats, and turn HTML/CSS into editable layers:
 
 ```sh
-openpencil export design.fig                           # PNG
-openpencil export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
-openpencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
-openpencil export design.fig -f jsx --style tailwind   # Tailwind JSX
-openpencil export design.fig -f html --css tailwind    # Tailwind HTML fragment
-openpencil export design.fig -f html --html standalone --assets external # HTML + assets
-openpencil convert design.pen output.fig               # Convert between document formats
-openpencil import page.html --css styles.css -o page.fig # HTML/CSS → editable .fig
+openpencil export design.fig                  # PNG
+openpencil export design.fig -f jpg -s 2      # JPG at 2x
+openpencil export design.fig -f tailwind-jsx  # Tailwind JSX
+openpencil export design.fig -f storybook     # Storybook stories per component
+openpencil convert design.pen design.fig      # Between document formats
+openpencil import card.html --css card.css    # HTML/CSS → editable .fig
 ```
 
-DOM/CSS input flows through `@open-pencil/dom-css`, so HTML, authored CSS, and Tailwind utility CSS can become editable OpenPencil layers:
+### Lint and analyze
+
+Catch naming, layout, and accessibility issues, and audit a design system's real palette, type scale, spacing, and repeated components:
 
 ```sh
-openpencil import card.html --css card.css -o card.fig
-openpencil import card.html --tailwind "flex flex-col gap-3 w-80 p-6 rounded-xl bg-white" -o card.fig
-```
-
-```html
-<div className="flex flex-col gap-4 p-6 bg-white rounded-xl">
-  <p className="text-2xl font-bold text-[#1D1B20]">Card Title</p>
-  <p className="text-sm text-[#49454F]">Description text</p>
-</div>
-```
-
-### Lint design files
-
-Catch naming, layout, structure, and accessibility issues from the terminal:
-
-```sh
-openpencil lint design.fig
-openpencil lint design.pen --preset strict
-openpencil lint design.fig --rule color-contrast
-openpencil lint design.fig --list-rules
-```
-
-### Analyze and extract design tokens
-
-Audit an entire design system from the terminal — find inconsistencies, extract the real palette, and spot components waiting to be extracted:
-
-```sh
-openpencil analyze colors design.fig
-openpencil analyze typography design.fig
-openpencil analyze spacing design.fig
-openpencil analyze clusters design.fig
-openpencil analyze overlaps design.fig
-openpencil variables design.fig
+openpencil lint design.fig --preset strict  # Naming, layout, accessibility
+openpencil analyze colors design.fig        # Also typography, spacing, clusters
+openpencil variables design.fig             # Variables and collections
 ```
 
 ```
@@ -136,34 +104,29 @@ openpencil variables design.fig
 #49454f  ██████████████████████████████ 9814×
 #ffffff  ██████████████████████████████ 8620×
 #6750a4  ██████████████████████████████ 3967×
-
-3771× frame "container" (100% match)
-     size: 40×40, structure: Frame > [Frame]
-
-2982× instance "Checkboxes" (100% match)
-     size: 48×48, structure: Instance > [Frame]
 ```
 
-### Script with Figma Plugin API
+### Script with the Figma Plugin API
 
-`eval` gives you the full Figma Plugin API. Modify the file, write it back:
+`eval` runs JavaScript against the document with Figma's Plugin API; `-w` writes the result back:
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
 openpencil eval design.fig -c "figma.currentPage.selection.forEach(n => n.opacity = 0.5)" -w
 ```
 
 ### Control the running app
 
-When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas. Useful for automation scripts, CI pipelines, or AI agents that need to interact with the editor:
+Omit the file argument and the CLI works on the document open in the editor:
 
 ```sh
-openpencil tree                               # Inspect the live document
-openpencil export -f png                      # Screenshot the current canvas
-openpencil eval -c "figma.currentPage.name"   # Query the editor
+openpencil tree                                 # Inspect the live document
+openpencil documents list                       # Also open, new, save, close, activate
+openpencil tool call get_selection              # Run any MCP tool
+openpencil undo                                 # Undo the newest automation change
+openpencil settings set appearance.theme light  # Change editor settings
 ```
 
-All commands support `--json` for machine-readable output.
+Every command supports `--json`. See the [CLI reference](https://openpencil.dev/reference/cli) for all commands and options.
 
 ## AI & MCP
 
@@ -177,7 +140,7 @@ Not every provider works in the browser, and not every model streams tool calls 
 
 Use Claude Code, Codex, or Gemini CLI directly in the chat panel. The agent connects to the editor's MCP server and uses all 100+ design tools. Requires the desktop app and the agent CLI installed locally.
 
-Pi is also available as an optional AI SDK Harness provider. Install its companion CLI with `npm install -g @open-pencil/harness`, then add a **Pi** model profile in **Settings → AI & agents**. The companion is installed separately so OpenPencil does not bundle a JavaScript runtime for users who do not enable Harness providers.
+Pi works too: choose it in guided setup (**Settings → AI & agents → Run guided setup**), which installs the `@open-pencil/harness` companion with one click and uses the providers you signed in to in Pi. The companion needs Node.js 22.15 or later; see [Coding agents](packages/docs/programmable/coding-agents.md#pi).
 
 **Setup (Claude Code):**
 
@@ -221,9 +184,7 @@ For other MCP clients:
 openpencil-mcp-http   # Unix socket on macOS/Linux + http://127.0.0.1:7600/mcp
 ```
 
-Local clients discover the private Unix socket automatically and fall back to localhost TCP. Set `PORT=0` to disable TCP on macOS/Linux.
-
-**File access:** Set `OPENPENCIL_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. Defaults to the current working directory.
+Set `OPENPENCIL_MCP_ROOT` to limit file access to one directory; it defaults to the current working directory.
 
 ### [AI agent skill](skills/open-pencil/SKILL.md)
 
@@ -262,52 +223,13 @@ See the [roadmap](https://openpencil.dev/development/roadmap) for product direct
 
 ## Contributing
 
-### Setup
-
 ```sh
 bun install
 bun run dev:portless  # Web editor at https://open-pencil.localhost
-bun run dev           # Direct Vite server at http://localhost:1420
 bun run tauri dev     # Desktop app (requires Rust)
 ```
 
-The first Portless run creates and trusts a local HTTPS certificate. Linked Git worktrees automatically receive branch-prefixed URLs such as `https://fix-ui.open-pencil.localhost`, so concurrent development servers do not compete for port 1420. Their development MCP bridges are exposed through matching sibling URLs such as `https://fix-ui.mcp.open-pencil.localhost`, with isolated TCP ports and runtime socket files. Run `bunx portless doctor` if local routing or certificate trust fails.
-
-Alternatively, open the repository in any [Dev Container](https://containers.dev/)-compatible tool. The container pins Bun, installs the workspace dependencies, and forwards the direct web editor on port 1420. Start it with `bun run dev` after the container is ready.
-
-The Dev Container supports the web editor, packages, CLI, and automated checks. Native Tauri development still requires the host setup described below because desktop windows and platform WebView dependencies are not provided in the container.
-
-### Quality gates
-
-| Command                   | Description                                                 |
-| ------------------------- | ----------------------------------------------------------- |
-| `bun run check`           | Full gate: lint, typecheck, package, docs, and arch checks  |
-| `bun run test:unit:quick` | Unit tests in parallel, heavy fixtures skipped (about 15 s) |
-| `bun run test:unit`       | Every unit test, heavy fixtures included                    |
-| `bun run test`            | E2E visual regression                                       |
-| `bun run format`          | Code formatting                                             |
-
-### Project structure
-
-```
-packages/
-  scene-graph/    @open-pencil/scene-graph — nodes, primitives, hit testing, copy/snap/undo
-  pen/            @open-pencil/pen — Pencil document format helpers
-  kiwi/           @open-pencil/kiwi — Kiwi runtime and low-level .fig container parsing
-  fig/            @open-pencil/fig — .fig archives, SceneGraph conversion, instances, metadata
-  core/           @open-pencil/core — editor engine, renderer, layout, tools, RPC, document I/O
-  dom-css/        @open-pencil/dom-css — HTML/CSS/Tailwind to editable design documents
-  vue/            @open-pencil/vue — headless Vue SDK
-  cli/            @open-pencil/cli — headless CLI
-  mcp/            @open-pencil/mcp — MCP server (stdio + HTTP)
-  harness/        @open-pencil/harness — companion CLI for coding-agent Harness sessions
-  docs/           Documentation site (openpencil.dev)
-src/              Vue app (editor shell, AI, collaboration, document I/O)
-desktop/          Tauri v2 desktop app (Rust + config)
-skills/           Agent skill (npx skills add open-pencil/open-pencil)
-tools/            Repository tooling: CI, release, lint, and test infrastructure
-tests/            E2E, visual, and engine tests
-```
+[CONTRIBUTING.md](CONTRIBUTING.md) covers setup, quality gates, pull requests, and commits. [AGENTS.md](AGENTS.md) maps the repository and links the guide inside each package. Desktop builds need [Rust](https://rustup.rs/) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/); run `bun run tauri build`.
 
 ### Tech stack
 
@@ -320,14 +242,6 @@ tests/            E2E, visual, and engine tests
 | Collaboration | Trystero (WebRTC P2P) + Yjs (CRDT)                                                |
 | Desktop       | Tauri v2                                                                          |
 | AI/MCP        | Vercel AI SDK (multi-provider BYOK), MCP SDK, Hono                                |
-
-### Desktop builds
-
-Requires [Rust](https://rustup.rs/) and platform-specific prerequisites ([Tauri v2 guide](https://v2.tauri.app/start/prerequisites/)).
-
-```sh
-bun run tauri build
-```
 
 ## Acknowledgments
 

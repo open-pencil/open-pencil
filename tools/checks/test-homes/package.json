@@ -1,0 +1,12 @@
+{
+  "name": "@open-pencil/test-homes-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/unit-tests-tools": "workspace:*"
+  }
+}

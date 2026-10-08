@@ -18,6 +18,8 @@ export type ToolCapability =
   | 'filesystem:write'
   | 'network:access'
   | 'code:execute'
+  | 'settings:read'
+  | 'settings:write'
 
 export type ToolExecution =
   | { kind: 'sync'; mutation: 'none' | 'view' | 'properties' | 'document' }
@@ -63,8 +65,23 @@ export function defineTool<P extends v.ObjectEntries, R>(
     get mutates() {
       return def.execution.mutation !== 'none'
     },
-    execute: (figma, args) => def.execute(figma, v.parse(def.input, args))
+    execute: (figma, args) => def.execute(figma, parseToolArgs(def.name, def.input, args))
   }
+}
+
+/**
+ * Every tool run goes through here, so a wrong call from AI chat, the CLI, or WebMCP names the
+ * tool and lists each problem with its argument, as `v.summarize` formats them. MCP clients get
+ * the MCP SDK's own report, which validates the same schema before the handler runs.
+ */
+export function parseToolArgs<S extends v.GenericSchema>(
+  name: string,
+  schema: S,
+  args: unknown
+): v.InferOutput<S> {
+  const result = v.safeParse(schema, args)
+  if (result.success) return result.output
+  throw new Error(`Invalid arguments for ${name}:\n${v.summarize(result.issues)}`)
 }
 
 export function toolChangesDocument(def: Pick<ToolDef, 'execution'>): boolean {

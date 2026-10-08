@@ -4,9 +4,9 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     browser: './src/browser.ts',
-    export: './src/export.ts',
-    'jsx-runtime': './src/jsx/runtime.ts',
-    'jsx-dev-runtime': './src/jsx/dev-runtime.ts'
+    export: './src/export/index.ts',
+    'jsx-runtime': './src/import/jsx/runtime.ts',
+    'jsx-dev-runtime': './src/import/jsx/dev-runtime.ts'
   },
   platform: 'neutral',
   format: ['esm'],

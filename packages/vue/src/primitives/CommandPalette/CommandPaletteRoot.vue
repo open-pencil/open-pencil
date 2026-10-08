@@ -47,8 +47,8 @@ provide(COMMAND_PALETTE_KEY, {
 })
 
 function select(item: CommandPaletteItem) {
-  palette.select(item)
-  emit('select', item)
+  // Opening a nested step is navigation, not a selection the host should close on.
+  if (palette.select(item)) emit('select', item)
 }
 </script>
 
@@ -56,7 +56,6 @@ function select(item: CommandPaletteItem) {
   <ListboxRoot
     v-model="palette.selectedId.value"
     :class="ui?.root"
-    :aria-label="labels.paletteLabel"
     :data-searching="palette.searchTerm.value ? '' : undefined"
   >
     <div v-if="palette.isNested.value" :class="ui?.back">
@@ -77,7 +76,7 @@ function select(item: CommandPaletteItem) {
       </ListboxFilter>
       <slot name="search-trailing" />
     </div>
-    <ListboxContent :class="ui?.content">
+    <ListboxContent :class="ui?.content" :aria-label="labels.paletteLabel">
       <template v-if="palette.filteredGroups.value.length">
         <ListboxGroup
           v-for="group in palette.filteredGroups.value"
@@ -92,6 +91,7 @@ function select(item: CommandPaletteItem) {
             :key="item.id"
             :value="item.id"
             :disabled="item.disabled"
+            :aria-disabled="item.disabled || undefined"
             :class="ui?.item"
             @select="select(item)"
           >

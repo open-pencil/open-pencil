@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, TRANSPARENT } from '@open-pencil/scene-graph'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -27,7 +27,14 @@ function cardGraph() {
     width: 40,
     height: 40,
     fills: [
-      { type: 'IMAGE', imageHash: 'pixel', imageScaleMode: 'FILL', opacity: 1, visible: true }
+      {
+        type: 'IMAGE',
+        imageHash: 'pixel',
+        imageScaleMode: 'FILL',
+        color: TRANSPARENT,
+        opacity: 1,
+        visible: true
+      }
     ]
   })
   return { graph, page, card }

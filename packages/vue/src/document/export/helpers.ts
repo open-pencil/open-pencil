@@ -7,7 +7,9 @@ import {
   EXPORT_FORMAT_IDS,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
-  clampExportScale
+  OPEN_PENCIL_PLUGIN_DATA,
+  clampExportScale,
+  withPluginData
 } from '@open-pencil/scene-graph'
 import type { ExportFormatId, ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
 
@@ -23,9 +25,6 @@ export interface ExportFormatOption {
 }
 
 export type ExportPanelTarget = 'selection' | 'page'
-
-const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
-const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
 
 // Re-exported from core so the UI and the .fig file-format boundary share one
 // definition of the export-scale bounds (see scene-graph/export-scale).
@@ -124,19 +123,11 @@ function syncExportSettingsPluginData(
   pluginData: PluginDataEntry[],
   settings: ExportSetting[]
 ): PluginDataEntry[] {
-  const withoutExportSettings = pluginData.filter(
-    (entry) =>
-      !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === EXPORT_SETTINGS_PLUGIN_KEY)
+  return withPluginData(
+    pluginData,
+    OPEN_PENCIL_PLUGIN_DATA.exportSettings,
+    settings.length > 0 ? settings : undefined
   )
-  if (settings.length === 0) return withoutExportSettings
-  return [
-    ...withoutExportSettings,
-    {
-      pluginId: OPEN_PENCIL_PLUGIN_ID,
-      key: EXPORT_SETTINGS_PLUGIN_KEY,
-      value: JSON.stringify(settings)
-    }
-  ]
 }
 
 function updateEveryTarget(

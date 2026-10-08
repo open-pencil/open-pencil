@@ -4,8 +4,9 @@ import * as v from 'valibot'
 
 import { computeContentBounds } from '@open-pencil/core/io'
 
-import { buildReasoningProviderOptions } from '@/app/ai/chat/reasoning'
+import { reasoningCallSettings } from '@/app/ai/chat/reasoning'
 import { createAIModelRuntime } from '@/app/ai/models'
+import { runPageId } from '@/app/ai/tools/run'
 import type { VisionModelDependencies } from '@/app/ai/vision-runtime'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -50,9 +51,11 @@ export async function inspectRenderedDesign(
     return { error: 'Configure a vision-capable model in Settings to inspect rendered designs.' }
   }
 
-  const pageId = store.state.currentPageId
+  const pageId = runPageId(store)
   let nodeIds = request.ids ?? []
-  if (nodeIds.length === 0) nodeIds = [...store.state.selectedIds]
+  // The user's selection belongs to the page on screen, which may not be the run's page.
+  if (nodeIds.length === 0 && pageId === store.state.currentPageId)
+    nodeIds = [...store.state.selectedIds]
   if (nodeIds.length === 0) {
     nodeIds = store.graph.getChildren(pageId).map((node) => node.id)
   }
@@ -69,9 +72,9 @@ export async function inspectRenderedDesign(
   const result = await dependencies.inspect({
     model: runtime.model,
     maxOutputTokens: Math.min(runtime.role.profile.maxOutputTokens, MAX_VISION_OUTPUT_TOKENS),
-    providerOptions: buildReasoningProviderOptions(
+    ...reasoningCallSettings(
       runtime.role.connection.providerID,
-      runtime.role.profile.reasoningEffort ?? ''
+      runtime.role.profile.thinkingLevel
     ),
     messages: [
       {

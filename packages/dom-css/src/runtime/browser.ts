@@ -1,4 +1,4 @@
-import { serializeHTML } from '../serialize'
+import { serializeHTML } from '../export/html'
 import type {
   CSSComputeOptions,
   CSSRuntime,

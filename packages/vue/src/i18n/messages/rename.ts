@@ -9,6 +9,7 @@ export const renameMessageDefaults = {
   match: 'Match',
   to: 'Rename to',
   currentName: 'Current name',
+  layerName: 'Layer name',
   numberAscending: 'Number ↑',
   numberDescending: 'Number ↓',
   startAscendingFrom: 'Start ascending from',

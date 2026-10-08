@@ -8,6 +8,8 @@ import { createToolLoopTransport } from '@/app/ai/chat/transports'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { createEditorStore } from '@/app/editor/session/create'
 
+import { MOCK_USAGE } from '#tests/helpers/chat/usage'
+
 test('a reused AI transport refreshes actual request tools for each message', async () => {
   const previous = aiToolOverrides.value
   const store = createEditorStore()
@@ -23,10 +25,7 @@ test('a reused AI transport refreshes actual request tools for each message', as
           {
             type: 'finish',
             finishReason: { unified: 'stop', raw: undefined },
-            usage: {
-              inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
-              outputTokens: { total: 1, text: 1, reasoning: undefined }
-            }
+            usage: MOCK_USAGE
           }
         ]
       })
@@ -40,7 +39,7 @@ test('a reused AI transport refreshes actual request tools for each message', as
       model,
       effectiveModelID: 'test',
       maxOutputTokens: 100,
-      reasoningEffort: ''
+      thinkingLevel: () => 'default'
     })
     async function send(history: UIMessage[] = []) {
       const stream = await transport.sendMessages({
@@ -50,7 +49,8 @@ test('a reused AI transport refreshes actual request tools for each message', as
         messages: [
           ...history,
           { id: 'user', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }
-        ]
+        ],
+        abortSignal: undefined
       })
       const reader = stream.getReader()
       try {

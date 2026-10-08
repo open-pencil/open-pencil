@@ -1,3 +1,6 @@
+import { uniq } from 'es-toolkit/array'
+import * as v from 'valibot'
+
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
@@ -34,6 +37,21 @@ type ModelsDevProvider = {
 
 type ModelsDevCatalog = Record<string, ModelsDevProvider>
 
+const ModelsDevCatalogSchema = v.record(
+  v.string(),
+  v.object({
+    models: v.optional(
+      v.record(
+        v.string(),
+        v.looseObject({
+          modalities: v.optional(v.looseObject({ output: v.optional(v.unknown()) })),
+          limit: v.optional(v.looseObject({ output: v.optional(v.unknown()) }))
+        })
+      )
+    )
+  })
+) satisfies v.GenericSchema<unknown, ModelsDevCatalog>
+
 let catalogPromise: Promise<ModelsDevCatalog | null> | null = null
 
 function normalizedStatus(status: unknown): ModelOption['status'] {
@@ -64,8 +82,9 @@ async function loadCatalog(
   options: { useCache: boolean }
 ): Promise<ModelsDevCatalog | null> {
   if (options.useCache) {
-    const cached = await readCacheJSON<ModelsDevCatalog>(
+    const cached = await readCacheJSON(
       MODELS_DEV_CACHE_KEY,
+      ModelsDevCatalogSchema,
       MODELS_DEV_CACHE_TTL_MS
     )
     if (cached) return cached
@@ -73,7 +92,11 @@ async function loadCatalog(
   try {
     const response = await fetcher(MODELS_DEV_URL)
     if (!response.ok) throw new Error(`models.dev catalog request failed: ${response.status}`)
-    const catalog = (await response.json()) as ModelsDevCatalog
+    // Validated like the cached copy, so a bad entry falls back instead of crashing the list.
+    const catalog = v.parse(
+      v.pipe(v.string(), v.parseJson(), ModelsDevCatalogSchema),
+      await response.text()
+    )
     if (options.useCache) await writeCacheJSON(MODELS_DEV_CACHE_KEY, catalog)
     return catalog
   } catch {
@@ -102,14 +125,12 @@ function modelIDCandidates(providerKey: string, modelID: string): string[] {
   const unprefixed = modelID.startsWith(`${providerKey}/`)
     ? modelID.slice(providerKey.length + 1)
     : modelID
-  return [
-    ...new Set([
-      modelID,
-      unprefixed,
-      unprefixed.replace(/-\d{8}$/, ''),
-      unprefixed.replace(/:[a-z0-9-]+$/, '')
-    ])
-  ]
+  return uniq([
+    modelID,
+    unprefixed,
+    unprefixed.replace(/-\d{8}$/, ''),
+    unprefixed.replace(/:[a-z0-9-]+$/, '')
+  ])
 }
 
 function curatedProviderModels(providerID: AIProviderID): ModelOption[] {

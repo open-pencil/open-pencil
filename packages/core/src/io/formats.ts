@@ -1,6 +1,5 @@
+import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { parsePenFile } from '@open-pencil/pen'
-
-import { sceneNodeToJSX, selectionToJSX } from '#core/design-jsx'
 
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'

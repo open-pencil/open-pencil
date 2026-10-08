@@ -6,32 +6,48 @@ import { toUint8Array } from 'js-base64'
 import { compressFigDataSync } from '@open-pencil/fig'
 import {
   buildComponentPropIndex,
+  placeSlotContent,
   exportCanvasGuides,
   importCanvasGuides,
-  stringToGuid
+  stringToGuid,
+  type FigNodeChangeExportRuntime
 } from '@open-pencil/fig/node-change'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
-import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
+import {
+  ownsSlotContent,
+  readBehaviour,
+  renameBehaviourProperties,
+  withBehaviour,
+  type SceneGraph
+} from '@open-pencil/scene-graph'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
+import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
 import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail } from '#core/io/formats/raster'
-import { populateAllLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
   sceneNodeToKiwi,
-  fractionalPosition,
   buildFontDigestMap,
-  safeColor,
   makeDocumentNodeChange,
   makeCanvasNodeChange
 } from '#core/kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
+import { populateReaderExport } from '#core/kiwi/fig/session/document-state'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
+
+import {
+  appendVariableNodeChanges,
+  sequentialPositions,
+  assignSharedStyleGuids,
+  assignVariableGuid,
+  assignVariableGuids
+} from './variable-export'
 
 const THUMBNAIL_1X1 = toUint8Array(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
@@ -44,39 +60,6 @@ interface CanvasExportEntry {
   page: FigExportPage
   canvasGuid: GUID
   canvasNc: KiwiNodeChange
-}
-
-function variableValueToKiwi(
-  value: VariableValue,
-  type: string,
-  varIdToGuid: Map<string, GUID>
-): { value: Record<string, unknown>; dataType: string; resolvedDataType: string } {
-  if (value && typeof value === 'object' && 'aliasId' in value) {
-    const aliasGuid = varIdToGuid.get(value.aliasId) ?? stringToGuid(value.aliasId)
-    return {
-      value: { alias: { guid: aliasGuid } },
-      dataType: 'ALIAS',
-      resolvedDataType: { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }[type] ?? 'FLOAT'
-    }
-  }
-  if (type === 'COLOR' && typeof value === 'object' && 'r' in value) {
-    return {
-      value: { colorValue: safeColor(value) },
-      dataType: 'COLOR',
-      resolvedDataType: 'COLOR'
-    }
-  }
-  if (type === 'BOOLEAN') {
-    return { value: { boolValue: !!value }, dataType: 'BOOLEAN', resolvedDataType: 'BOOLEAN' }
-  }
-  if (type === 'STRING') {
-    return {
-      value: { textValue: typeof value === 'string' ? value : JSON.stringify(value) },
-      dataType: 'STRING',
-      resolvedDataType: 'STRING'
-    }
-  }
-  return { value: { floatValue: Number(value) }, dataType: 'FLOAT', resolvedDataType: 'FLOAT' }
 }
 
 function collectImageEntries(graph: SceneGraph): Array<{ name: string; data: Uint8Array }> {
@@ -112,84 +95,66 @@ async function renderFigThumbnail(
   )
 }
 
-function assignVariableGuid(
+/**
+ * The GUID a layer that was never opened from a file is saved under: its graph ID, which has
+ * Figma's `sessionID:localID` shape and never changes, so later saves keep it. Saved GUIDs of
+ * opened layers and GUIDs already written win over it.
+ */
+function ownGuid(
   id: string,
-  localIdCounter: { value: number },
-  assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
-): GUID {
-  if (/^\d+:\d+$/.test(id) && !assignedGuidValues.has(id) && !nodeSourceGuidValues.has(id)) {
-    const guid = stringToGuid(id)
-    assignedGuidValues.add(id)
-    return guid
-  }
-  const guid = { sessionID: 0, localID: localIdCounter.value++ }
-  assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
-  return guid
+  sourceGuidValues: ReadonlySet<string>,
+  assignedGuidValues: ReadonlySet<string>
+): GUID | null {
+  if (!/^\d+:\d+$/.test(id)) return null
+  const guid = stringToGuid(id)
+  const key = `${guid.sessionID}:${guid.localID}`
+  return sourceGuidValues.has(key) || assignedGuidValues.has(key) ? null : guid
 }
 
-function assignVariableGuids(
+function assignOwnLayerGuids(
   graph: SceneGraph,
-  localIdCounter: { value: number },
-  varIdToGuid: Map<string, GUID>,
-  modeIdToGuid: Map<string, GUID>,
-  assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
+  sourceGuidValues: ReadonlySet<string>,
+  nodeIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>
 ): void {
-  for (const [colId, col] of graph.variableCollections) {
-    const colGuid = assignVariableGuid(
-      colId,
-      localIdCounter,
-      assignedGuidValues,
-      nodeSourceGuidValues
-    )
-    varIdToGuid.set(colId, colGuid)
-    for (const mode of col.modes) {
-      const modeGuid = assignVariableGuid(
-        mode.modeId,
-        localIdCounter,
-        assignedGuidValues,
-        nodeSourceGuidValues
-      )
-      modeIdToGuid.set(mode.modeId, modeGuid)
-    }
-    for (const varId of col.variableIds) {
-      const varGuid = assignVariableGuid(
-        varId,
-        localIdCounter,
-        assignedGuidValues,
-        nodeSourceGuidValues
-      )
-      varIdToGuid.set(varId, varGuid)
-    }
+  for (const node of graph.nodes.values()) {
+    if (node.source.id || node.id === graph.rootId || nodeIdToGuid.has(node.id)) continue
+    const guid = ownGuid(node.id, sourceGuidValues, assignedGuidValues)
+    if (!guid) continue
+    nodeIdToGuid.set(node.id, guid)
+    assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
   }
 }
 
-interface ComponentPropertyGuidState {
-  ids: string[]
-  maxLocalId0: number
-  maxLocalId1: number
+/**
+ * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
+ * ID that layers, collections, modes, variables and component properties are saved under.
+ */
+function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
+  const ids = [...propertyIds]
+  for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
+  for (const [collectionId, collection] of graph.variableCollections) {
+    ids.push(collectionId, ...collection.modes.map((mode) => mode.modeId))
+    ids.push(...collection.variableIds)
+  }
+  let last = 0
+  for (const id of ids) {
+    if (!/^\d+:\d+$/.test(id)) continue
+    const guid = stringToGuid(id)
+    if (guid.sessionID <= 1) last = Math.max(last, guid.localID)
+  }
+  return last + 1
 }
 
-function collectComponentPropertyGuidState(graph: SceneGraph): ComponentPropertyGuidState {
+function collectComponentPropertyIds(graph: SceneGraph): string[] {
   const ids = new Set<string>()
-  let maxLocalId0 = 0
-  let maxLocalId1 = 0
   for (const node of graph.getAllNodes()) {
     for (const definition of node.componentPropertyDefinitions) ids.add(definition.id)
     for (const reference of node.componentPropertyReferences) ids.add(reference.propertyId)
     for (const propertyId of Object.keys(node.componentPropertyAssignments)) ids.add(propertyId)
     for (const spec of node.variantPropSpecs) ids.add(spec.propDefId)
   }
-  for (const propertyId of ids) {
-    const match = /^(\d+):(\d+)$/.exec(propertyId)
-    if (!match) continue
-    const sessionID = Number.parseInt(match[1], 10)
-    const localID = Number.parseInt(match[2], 10)
-    if (sessionID === 0) maxLocalId0 = Math.max(maxLocalId0, localID)
-    if (sessionID === 1) maxLocalId1 = Math.max(maxLocalId1, localID)
-  }
-  return { ids: [...ids], maxLocalId0, maxLocalId1 }
+  return [...ids]
 }
 
 function assignComponentPropertyGuids(
@@ -210,93 +175,22 @@ function assignComponentPropertyGuids(
   }
 }
 
-function appendVariableNodeChanges(
-  graph: SceneGraph,
-  nodeChanges: KiwiNodeChange[],
-  internalCanvasGuid: GUID,
-  varIdToGuid: Map<string, GUID>,
-  modeIdToGuid: Map<string, GUID>
-): void {
-  let collIdx = 0
-  for (const [colId, col] of graph.variableCollections) {
-    const colGuid = varIdToGuid.get(colId) ?? stringToGuid(colId)
-    nodeChanges.push({
-      guid: colGuid,
-      parentIndex: { guid: internalCanvasGuid, position: fractionalPosition(collIdx++) },
-      type: 'VARIABLE_SET',
-      name: col.name,
-      phase: 'CREATED',
-      strokeAlign: 'CENTER',
-      strokeJoin: 'BEVEL',
-      variableSetModes: col.modes.map((m, i) => {
-        const mGuid = modeIdToGuid.get(m.modeId) ?? stringToGuid(m.modeId)
-        return { id: mGuid, name: m.name, sortPosition: fractionalPosition(i) }
-      })
-    })
-
-    appendVariablesForCollection(
-      graph,
-      nodeChanges,
-      colGuid,
-      internalCanvasGuid,
-      col.variableIds,
-      varIdToGuid,
-      modeIdToGuid
-    )
+/** Behaviours bind component properties by id, so they follow the ids' new GUIDs. */
+function renameBehaviourPropertyIds(graph: SceneGraph, propertyIdToGuid: Map<string, GUID>): void {
+  const rename = (propertyId: string) => {
+    const guid = propertyIdToGuid.get(propertyId)
+    return guid ? `${guid.sessionID}:${guid.localID}` : propertyId
   }
-}
-
-function appendVariablesForCollection(
-  graph: SceneGraph,
-  nodeChanges: KiwiNodeChange[],
-  colGuid: GUID,
-  parentGuid: GUID,
-  variableIds: string[],
-  varIdToGuid: Map<string, GUID>,
-  modeIdToGuid: Map<string, GUID>
-): void {
-  let varIdx = 0
-  for (const varId of variableIds) {
-    const variable = graph.variables.get(varId)
-    if (!variable) continue
-
-    const varGuid = varIdToGuid.get(varId) ?? stringToGuid(varId)
-    const typeMap: Record<string, string> = {
-      COLOR: 'COLOR',
-      BOOLEAN: 'BOOLEAN',
-      STRING: 'STRING'
-    }
-    const resolvedType = typeMap[variable.type] ?? 'FLOAT'
-
-    const entries = Object.entries(variable.valuesByMode).map(([modeId, value]) => ({
-      modeID: modeIdToGuid.get(modeId) ?? stringToGuid(modeId),
-      variableData: variableValueToKiwi(value, variable.type, varIdToGuid)
-    }))
-
-    const nc: KiwiNodeChange = {
-      guid: varGuid,
-      parentIndex: { guid: parentGuid, position: fractionalPosition(varIdx++) },
-      type: 'VARIABLE',
-      name: variable.name,
-      phase: 'CREATED',
-      strokeAlign: 'CENTER',
-      strokeJoin: 'BEVEL',
-      variableSetID: { guid: colGuid },
-      variableResolvedType: resolvedType,
-      variableDataValues: { entries },
-      variableScopes: ['ALL_SCOPES']
-    }
-    // Preserve library key/version on VARIABLE NodeChanges so that
-    // buildAssetRefMap can resolve assetRef to guid on reimport.
-    if (variable.key) nc.key = variable.key
-    if (variable.version) nc.version = variable.version
-    nodeChanges.push(nc)
+  for (const node of graph.getAllNodes()) {
+    const behaviour = readBehaviour(node)
+    if (behaviour)
+      graph.updateNode(node.id, {
+        pluginData: withBehaviour(node, renameBehaviourProperties(behaviour, rename))
+      })
   }
 }
 
 function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange): void {
-  if (!page.source.id) return
-  if (!('pageType' in page.source.fig.rawNodeFields)) delete canvasNc.pageType
   if ('backgroundColor' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundColor = structuredClone(page.source.fig.rawNodeFields.backgroundColor)
   }
@@ -305,6 +199,8 @@ function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange
       page.source.fig.rawNodeFields.backgroundPaints
     ) as NodeChange['backgroundPaints']
   }
+  if (!page.source.id) return
+  if (!('pageType' in page.source.fig.rawNodeFields)) delete canvasNc.pageType
   if (page.guides.length > 0) {
     const normalized = exportCanvasGuides(page.guides)
     const raw = page.source.fig.rawNodeFields.guides
@@ -325,14 +221,22 @@ function buildCanvasEntries(
   docGuid: GUID,
   localIdCounter: { value: number },
   nodeIdToGuid: Map<string, GUID>,
-  assignedGuidValues: Set<string>
+  assignedGuidValues: Set<string>,
+  sourceGuidValues: ReadonlySet<string>
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
   for (let p = 0; p < pages.length; p++) {
     const page = pages[p]
     const canvasGuid = (() => {
-      if (!page.source.id) return { sessionID: 0, localID: localIdCounter.value++ }
+      if (!page.source.id) {
+        return (
+          ownGuid(page.id, sourceGuidValues, assignedGuidValues) ?? {
+            sessionID: 0,
+            localID: localIdCounter.value++
+          }
+        )
+      }
 
       const importedGuid = stringToGuid(page.source.id)
       const key = `${importedGuid.sessionID}:${importedGuid.localID}`
@@ -367,7 +271,11 @@ function buildCanvasEntries(
   }
 
   const hasSharedStyles = [...graph.nodes.values()].some((node) => node.sharedStyleType !== null)
-  if ((graph.variableCollections.size > 0 || hasSharedStyles) && internalCanvasGuid === null) {
+  const hasSlotContent = [...graph.nodes.values()].some((node) => ownsSlotContent(graph, node))
+  if (
+    (graph.variableCollections.size > 0 || hasSharedStyles || hasSlotContent) &&
+    internalCanvasGuid === null
+  ) {
     internalCanvasGuid = { sessionID: 0, localID: localIdCounter.value++ }
     assignedGuidValues.add(`${internalCanvasGuid.sessionID}:${internalCanvasGuid.localID}`)
     canvasEntries.push({
@@ -401,30 +309,55 @@ interface InternalResourceContext {
   assignedGuidValues: Set<string>
   componentPropertyDefinitionsById: ReturnType<typeof buildComponentPropIndex>
   propertyIdToGuid: Map<string, GUID>
+  runtime: FigNodeChangeExportRuntime
+}
+
+/**
+ * Children already written under a canvas. Shared styles, variables and the canvas's own
+ * layers all append to the internal canvas from separate passes, so each continues this
+ * count rather than numbering from zero and handing siblings the same order key.
+ */
+function countCanvasChildren(changes: readonly NodeChange[], canvas: GUID): number {
+  let count = 0
+  for (const change of changes) {
+    const parent = change.parentIndex?.guid
+    if (parent?.sessionID === canvas.sessionID && parent.localID === canvas.localID) count++
+  }
+  return count
 }
 
 function appendInternalResources(context: InternalResourceContext): void {
   const { graph, internalCanvasGuid, nodeChanges } = context
   if (!internalCanvasGuid) return
+  const written = countCanvasChildren(nodeChanges, internalCanvasGuid)
   const sharedStyleNodes = [...graph.nodes.values()].filter((node) => node.sharedStyleType !== null)
+  assignSharedStyleGuids(
+    sharedStyleNodes,
+    context.localIdCounter,
+    context.nodeIdToGuid,
+    context.assignedGuidValues
+  )
   for (let index = 0; index < sharedStyleNodes.length; index++) {
     nodeChanges.push(
       ...sceneNodeToKiwi(
         sharedStyleNodes[index],
         internalCanvasGuid,
-        index,
+        written + index,
         context.localIdCounter,
         graph,
         context.blobs,
-        context.nodeIdToGuid,
-        context.fontDigestMap,
-        context.varIdToGuid,
-        context.glyphBlobMap,
-        context.blobIndexByHex,
-        context.assignedGuidValues,
-        context.componentPropertyDefinitionsById,
-        context.modeIdToGuid,
-        context.propertyIdToGuid
+        {
+          nodeIdToGuid: context.nodeIdToGuid,
+          fontDigestMap: context.fontDigestMap,
+          varIdToGuid: context.varIdToGuid,
+          glyphBlobMap: context.glyphBlobMap,
+          blobIndexByHex: context.blobIndexByHex,
+          assignedGuidValues: context.assignedGuidValues,
+          componentPropertyDefinitionsById: context.componentPropertyDefinitionsById,
+          modeIdToGuid: context.modeIdToGuid,
+          propertyIdToGuid: context.propertyIdToGuid,
+          runtime: context.runtime
+        }
       )
     )
   }
@@ -434,7 +367,8 @@ function appendInternalResources(context: InternalResourceContext): void {
       nodeChanges,
       internalCanvasGuid,
       context.varIdToGuid,
-      context.modeIdToGuid
+      context.modeIdToGuid,
+      sequentialPositions(written + sharedStyleNodes.length)
     )
   }
 }
@@ -448,8 +382,21 @@ export async function exportFigFile(
 ): Promise<Uint8Array> {
   const originalArchive = await originalFigArchive(sourceGraph)
   if (originalArchive) return originalArchive.slice()
+  return withFigExportRuntime(sourceGraph, ck, (runtime) =>
+    writeFigFile(sourceGraph, runtime, ck, renderer, pageId, renderHeadlessThumbnail)
+  )
+}
+
+async function writeFigFile(
+  sourceGraph: SceneGraph,
+  runtime: FigNodeChangeExportRuntime,
+  ck: CanvasKit | undefined,
+  renderer: SkiaRenderer | undefined,
+  pageId: string | undefined,
+  renderHeadlessThumbnail: boolean
+): Promise<Uint8Array> {
   const graph = cloneSceneGraphForFigExport(sourceGraph)
-  populateAllLazyFigImportRoots(graph)
+  populateReaderExport(sourceGraph, graph)
   await initCodec()
 
   // When the document was imported from a .fig file, preserve the original
@@ -494,29 +441,13 @@ export async function exportFigFile(
   const blobIndexByHex = new Map<string, number>()
   const componentPropertyDefinitionsById = buildComponentPropIndex(graph)
 
-  // Scan ALL imported source.ids BEFORE any new GUID assignment to find
-  // max sessionID:0 and sessionID:1 localID values. This guarantees the
-  // counter is past every imported GUID before any canvas, variable, or
-  // node claims a new counter-based GUID — preventing collisions.
-  let maxLocalId0 = localIdCounter.value - 1
-  let maxLocalId1 = localIdCounter.value - 1
   const nodeSourceGuidValues = new Set<string>()
   for (const node of graph.nodes.values()) {
-    if (node.source.id) {
-      nodeSourceGuidValues.add(node.source.id)
-      const g = stringToGuid(node.source.id)
-      if (g.sessionID === 0 && g.localID > maxLocalId0) {
-        maxLocalId0 = g.localID
-      }
-      if (g.sessionID === 1 && g.localID > maxLocalId1) {
-        maxLocalId1 = g.localID
-      }
-    }
+    if (node.source.id) nodeSourceGuidValues.add(node.source.id)
   }
-  const propertyGuidState = collectComponentPropertyGuidState(graph)
-  maxLocalId0 = Math.max(maxLocalId0, propertyGuidState.maxLocalId0)
-  maxLocalId1 = Math.max(maxLocalId1, propertyGuidState.maxLocalId1)
-  localIdCounter.value = Math.max(localIdCounter.value, maxLocalId0 + 1, maxLocalId1 + 1)
+  const propertyIds = collectComponentPropertyIds(graph)
+  // Before any canvas, variable or layer takes a counter GUID, so none collides.
+  localIdCounter.value = Math.max(localIdCounter.value, firstUnclaimedLocalId(graph, propertyIds))
 
   const { canvasEntries, internalCanvasGuid } = buildCanvasEntries(
     graph,
@@ -524,7 +455,8 @@ export async function exportFigFile(
     docGuid,
     localIdCounter,
     nodeIdToGuid,
-    assignedGuidValues
+    assignedGuidValues,
+    nodeSourceGuidValues
   )
 
   // Assign variable GUIDs AFTER canvas entries so that source.id-derived
@@ -539,43 +471,16 @@ export async function exportFigFile(
   )
 
   assignComponentPropertyGuids(
-    propertyGuidState.ids,
+    propertyIds,
     localIdCounter,
     propertyIdToGuid,
     assignedGuidValues,
     nodeSourceGuidValues
   )
+  renameBehaviourPropertyIds(graph, propertyIdToGuid)
+  assignOwnLayerGuids(graph, nodeSourceGuidValues, nodeIdToGuid, assignedGuidValues)
 
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
-
-  const orderedCanvasEntries = [
-    ...canvasEntries.filter((entry) => entry.page.internalOnly),
-    ...canvasEntries.filter((entry) => !entry.page.internalOnly)
-  ]
-  for (const { page, canvasGuid } of orderedCanvasEntries) {
-    const children = graph.getChildren(page.id).filter((child) => !child.internalOnly)
-    for (let i = 0; i < children.length; i++) {
-      nodeChanges.push(
-        ...sceneNodeToKiwi(
-          children[i],
-          canvasGuid,
-          i,
-          localIdCounter,
-          graph,
-          blobs,
-          nodeIdToGuid,
-          fontDigestMap,
-          varIdToGuid,
-          glyphBlobMap,
-          blobIndexByHex,
-          assignedGuidValues,
-          componentPropertyDefinitionsById,
-          modeIdToGuid,
-          propertyIdToGuid
-        )
-      )
-    }
-  }
 
   appendInternalResources({
     graph,
@@ -591,8 +496,43 @@ export async function exportFigFile(
     blobIndexByHex,
     assignedGuidValues,
     componentPropertyDefinitionsById,
-    propertyIdToGuid
+    propertyIdToGuid,
+    runtime
   })
+
+  const orderedCanvasEntries = [
+    ...canvasEntries.filter((entry) => entry.page.internalOnly),
+    ...canvasEntries.filter((entry) => !entry.page.internalOnly)
+  ]
+  const slotContentRecords: KiwiNodeChange[] = []
+  for (const { page, canvasGuid } of orderedCanvasEntries) {
+    const children = graph
+      .getChildren(page.id)
+      .filter((child) => !child.internalOnly && child.sharedStyleType === null)
+    const base = countCanvasChildren(nodeChanges, canvasGuid)
+    for (let i = 0; i < children.length; i++) {
+      nodeChanges.push(
+        ...sceneNodeToKiwi(children[i], canvasGuid, base + i, localIdCounter, graph, blobs, {
+          nodeIdToGuid,
+          fontDigestMap,
+          varIdToGuid,
+          glyphBlobMap,
+          blobIndexByHex,
+          assignedGuidValues,
+          componentPropertyDefinitionsById,
+          modeIdToGuid,
+          propertyIdToGuid,
+          slotContentRecords,
+          runtime
+        })
+      )
+    }
+  }
+  if (internalCanvasGuid) {
+    const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
+    placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
+    nodeChanges.push(...slotContentRecords)
+  }
 
   const msg: Record<string, unknown> = {
     type: 'NODE_CHANGES',

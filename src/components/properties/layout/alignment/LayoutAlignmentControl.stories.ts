@@ -7,7 +7,7 @@ import LayoutAlignmentControl from './LayoutAlignmentControl.vue'
 
 const positions = ['MIN', 'CENTER', 'MAX'] as const
 const meta = {
-  title: 'Editor/Properties/Layout Alignment',
+  title: 'App/Editor/Properties/Layout Alignment',
   render: () => ({
     components: { LayoutAlignmentControl },
     setup() {

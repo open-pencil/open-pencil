@@ -180,6 +180,13 @@
         "type": "separator"
       },
       {
+        "id": "variables",
+        "label": "Variables…"
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "view-rulers",
         "label": "Rulers",
         "checkbox": true
@@ -187,6 +194,11 @@
       {
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
+        "checkbox": true
+      },
+      {
+        "id": "view-design-issues",
+        "label": "Design Issues",
         "checkbox": true
       },
       {
@@ -252,6 +264,11 @@
         "id": "toggle-ui",
         "label": "Toggle UI",
         "accelerator": "CmdOrCtrl+\\"
+      },
+      {
+        "id": "toggle-preview",
+        "label": "Preview",
+        "accelerator": "CmdOrCtrl+Alt+Enter"
       },
       {
         "type": "separator"
@@ -364,6 +381,10 @@
       {
         "id": "selection.createInstance",
         "label": "Create Instance"
+      },
+      {
+        "id": "selection.createSlot",
+        "label": "Create Slot"
       },
       {
         "id": "selection.goToMainComponent",

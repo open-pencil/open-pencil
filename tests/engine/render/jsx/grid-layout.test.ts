@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 
-import {
-  renderTree,
-  renderJSX,
-  computeLayout,
-  computeAllLayouts,
-  Frame,
-  Rectangle
-} from '@open-pencil/core'
+import { renderTree, renderJSX, computeLayout, computeAllLayouts } from '@open-pencil/core'
+import { Frame, Rectangle } from '@open-pencil/design-jsx'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'
@@ -224,33 +218,32 @@ describe('grid layout rendering', () => {
     expect(updated.height).toBe(150)
   })
 
-  it('grid children with flex stretch to cell width', async () => {
+  // A hugging card keeps its content width in a grid cell, as in live Figma; w="fill" fills it.
+  it('grid children with flex hug their content unless they fill the cell', async () => {
     const g = makeSceneGraph()
+    const card = (name: string, w?: 'fill') =>
+      Frame({
+        name,
+        ...(w ? { w } : {}),
+        flex: 'col',
+        gap: 4,
+        p: 8,
+        children: [Rectangle({ name: `${name} content`, w: 10, h: 20 })]
+      })
     const tree = Frame(
       { name: 'Grid', w: 200, grid: true, columns: '1fr 1fr', gap: 0 },
-      Frame({
-        name: 'A',
-        flex: 'col',
-        gap: 4,
-        p: 8,
-        children: [Rectangle({ name: 'R1', w: 10, h: 20 })]
-      }),
-      Frame({
-        name: 'B',
-        flex: 'col',
-        gap: 4,
-        p: 8,
-        children: [Rectangle({ name: 'R2', w: 10, h: 20 })]
-      })
+      card('A'),
+      card('B', 'fill')
     )
     const result = await renderTree(g, tree)
     computeAllLayouts(g)
 
     const children = g.getChildren(result.id)
-    expect(children[0].width).toBe(100)
+    expect(children[0].width).toBe(26)
     expect(children[1].width).toBe(100)
     expect(children[0].x).toBe(0)
     expect(children[1].x).toBe(100)
+    expect(children[1].height).toBe(36)
   })
 
   it('grid prop takes precedence over padding-triggered auto-layout', async () => {

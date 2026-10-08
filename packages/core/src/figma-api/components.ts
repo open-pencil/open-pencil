@@ -1,4 +1,7 @@
+import { uniq } from 'es-toolkit/array'
+
 import type {
+  ComponentPropertyReferenceField,
   ComponentPropertyDefinition,
   ComponentPropertyType,
   SceneGraph,
@@ -7,26 +10,34 @@ import type {
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
-  removeComponentProperty
+  removeComponentProperty,
+  createComponentPropertyId
 } from '@open-pencil/scene-graph'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
-import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
+import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
-import { randomHex } from '#core/random'
+import { becomesComponent, componentWrapProps } from '#core/editor/components/create'
+import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'
+import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
 import { graph, raw, updateNode } from './accessor-utils'
 import type { FigmaNodeProxy } from './proxy'
+import {
+  assertSlotSettings,
+  figmaSlotSettings,
+  mergeSlotSettings,
+  type FigmaSlotSettings
+} from './slots'
 
 type InstanceSwapPreferredValue = { type: 'COMPONENT' | 'COMPONENT_SET'; key: string }
-
-const COMPONENT_SET_PADDING = 40
 
 interface FigmaComponentPropertyDefinition {
   type: ComponentPropertyType
   defaultValue: string | boolean
   preferredValues?: InstanceSwapPreferredValue[]
   variantOptions?: string[]
+  description?: string
+  slotSettings?: FigmaSlotSettings
 }
 
 interface FigmaComponentProperty {
@@ -68,7 +79,7 @@ export function exposeInstanceSwap(
     )
   )
     throw new Error('Candidates must be COMPONENT or COMPONENT_SET nodes')
-  const candidateIds = [...new Set(candidateNodes.map((node) => node.id))]
+  const candidateIds = uniq(candidateNodes.map((node) => node.id))
   if (candidateIds.length !== candidateNodes.length) throw new Error('Candidates must be distinct')
   const host = findPropertyHost(graph, slotNodes[0].parentId)
   if (!host) throw new Error('Instance must be nested inside a COMPONENT or COMPONENT_SET')
@@ -77,7 +88,7 @@ export function exposeInstanceSwap(
   if (!slotNodes.every((node) => findPropertyHost(graph, node.parentId)?.id === host.id))
     throw new Error('All instances must belong to the same component or component set')
   const definition: ComponentPropertyDefinition = {
-    id: `prop:${randomHex(8)}`,
+    id: createComponentPropertyId(),
     name,
     type: 'INSTANCE_SWAP',
     defaultValue: slotNodes[0].componentId ?? candidateIds[0],
@@ -139,8 +150,16 @@ function propertyMetadata(
   internals: NodeProxyInternals,
   definition: ComponentPropertyDefinition,
   includeVariantOptions: boolean
-): Pick<FigmaComponentPropertyDefinition, 'preferredValues' | 'variantOptions'> {
-  const metadata: Pick<FigmaComponentPropertyDefinition, 'preferredValues' | 'variantOptions'> = {}
+): Pick<
+  FigmaComponentPropertyDefinition,
+  'preferredValues' | 'variantOptions' | 'description' | 'slotSettings'
+> {
+  const metadata: Pick<
+    FigmaComponentPropertyDefinition,
+    'preferredValues' | 'variantOptions' | 'description' | 'slotSettings'
+  > = {}
+  if (definition.description) metadata.description = definition.description
+  if (definition.slotSettings) metadata.slotSettings = figmaSlotSettings(definition.slotSettings)
   if (definition.preferredValues) {
     metadata.preferredValues = preferredValues(graph(target, internals), definition.preferredValues)
   }
@@ -218,6 +237,8 @@ function editPropertyDefinitions(
     name?: string
     defaultValue?: string | boolean
     preferredValues?: InstanceSwapPreferredValue[]
+    description?: string
+    slotSettings?: FigmaSlotSettings
   }
 ): string {
   const node = raw(target, internals)
@@ -244,6 +265,10 @@ function editPropertyDefinitions(
   if (changes.preferredValues) {
     updated.preferredValues = changes.preferredValues.map((value) => value.key)
   }
+  if (changes.description !== undefined) updated.description = changes.description
+  assertSlotSettings(definition.type, changes.slotSettings)
+  if (changes.slotSettings)
+    updated.slotSettings = mergeSlotSettings(definition.slotSettings, changes.slotSettings)
   updateNode(target, internals, {
     componentPropertyDefinitions: node.componentPropertyDefinitions.map((item) =>
       item.id === definition.id ? updated : item
@@ -251,13 +276,36 @@ function editPropertyDefinitions(
   })
   return propertyName(updated)
 }
-function propertyReferenceField(field: string): 'TEXT' | 'VISIBLE' | 'INSTANCE_SWAP' {
+function propertyReferenceField(field: string): ComponentPropertyReferenceField {
   if (field === 'mainComponent') return 'INSTANCE_SWAP'
+  if (field === 'slotContentId') return 'SLOT_CONTENT'
   return field === 'characters' ? 'TEXT' : 'VISIBLE'
 }
 
-function propertyReferenceName(field: 'TEXT' | 'VISIBLE' | 'INSTANCE_SWAP'): string {
+/**
+ * Definitions a layer's references can name: those of the component it is part of, or of the
+ * instance's component when it is a layer of an instance.
+ */
+function referableDefinitions(g: SceneGraph, node: SceneNode): ComponentPropertyDefinition[] {
+  let owner = node.parentId ? g.getNode(node.parentId) : undefined
+  while (owner && owner.type !== 'CANVAS') {
+    if (owner.type === 'INSTANCE') return sharedComponentPropertyDefinitions(g, owner)
+    if (owner.type === 'COMPONENT') {
+      const set = owner.parentId ? g.getNode(owner.parentId) : undefined
+      return [
+        ...owner.componentPropertyDefinitions,
+        ...(set?.type === 'COMPONENT_SET' ? set.componentPropertyDefinitions : [])
+      ]
+    }
+    owner = owner.parentId ? g.getNode(owner.parentId) : undefined
+  }
+  return []
+}
+
+/** Figma's names: `slotContentId` is what a slot frame reports for its slot property. */
+function propertyReferenceName(field: ComponentPropertyReferenceField): string {
   if (field === 'INSTANCE_SWAP') return 'mainComponent'
+  if (field === 'SLOT_CONTENT') return 'slotContentId'
   return field === 'TEXT' ? 'characters' : 'visible'
 }
 function applyProperty(
@@ -298,11 +346,16 @@ export function installComponentPropertyAccessors(
           node.type !== 'TEXT'
         )
           return null
+        // References name properties by key, `Name#id`, as componentPropertyDefinitions does.
+        const definitions = referableDefinitions(graph(this, internals), node)
         return Object.fromEntries(
-          node.componentPropertyReferences.map((reference) => [
-            propertyReferenceName(reference.field),
-            reference.propertyId
-          ])
+          node.componentPropertyReferences.map((reference) => {
+            const definition = definitions.find((item) => item.id === reference.propertyId)
+            return [
+              propertyReferenceName(reference.field),
+              definition ? propertyName(definition) : reference.propertyId
+            ]
+          })
         )
       },
       set(this: ProxyThis, value: Record<string, string> | null) {
@@ -310,9 +363,11 @@ export function installComponentPropertyAccessors(
           updateNode(this, internals, { componentPropertyReferences: [] })
           return
         }
+        const definitions = referableDefinitions(graph(this, internals), raw(this, internals))
         updateNode(this, internals, {
-          componentPropertyReferences: Object.entries(value).map(([field, propertyId]) => ({
-            propertyId,
+          componentPropertyReferences: Object.entries(value).map(([field, key]) => ({
+            propertyId:
+              definitions.find((definition) => propertyName(definition) === key)?.id ?? key,
             field: propertyReferenceField(field)
           }))
         })
@@ -384,13 +439,17 @@ export function installComponentPropertyAccessors(
         name: string,
         type: ComponentPropertyType,
         defaultValue: string | boolean,
-        options?: { preferredValues?: InstanceSwapPreferredValue[] }
+        options?: {
+          preferredValues?: InstanceSwapPreferredValue[]
+          description?: string
+          slotSettings?: FigmaSlotSettings
+        }
       ) {
         const node = raw(this, internals)
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('addComponentProperty() can only be called on components')
         const definition: ComponentPropertyDefinition = {
-          id: `prop:${randomHex(8)}`,
+          id: createComponentPropertyId(),
           name: name.trim(),
           type,
           defaultValue:
@@ -400,6 +459,12 @@ export function installComponentPropertyAccessors(
         }
         if (options?.preferredValues) {
           definition.preferredValues = options.preferredValues.map((value) => value.key)
+        }
+        if (options?.description !== undefined) definition.description = options.description
+        assertSlotSettings(type, options?.slotSettings)
+        if (type === 'SLOT') {
+          definition.preferredValues ??= []
+          definition.slotSettings = mergeSlotSettings(undefined, options?.slotSettings ?? {})
         }
         updateNode(this, internals, {
           componentPropertyDefinitions: [...node.componentPropertyDefinitions, definition]
@@ -411,7 +476,13 @@ export function installComponentPropertyAccessors(
       value(
         this: ProxyThis,
         name: string,
-        changes: { name?: string; defaultValue?: string | boolean }
+        changes: {
+          name?: string
+          defaultValue?: string | boolean
+          preferredValues?: InstanceSwapPreferredValue[]
+          description?: string
+          slotSettings?: FigmaSlotSettings
+        }
       ) {
         return editPropertyDefinitions(this, internals, name, changes)
       }
@@ -438,35 +509,43 @@ export function combineComponentsAsVariants(
   const parent = graph.getNode(parentId)
   if (!parent) throw new Error('Parent node not found')
 
-  const bounds = computeAbsoluteBounds(components, (id) => graph.getAbsolutePosition(id))
-  const parentPosition =
-    parentId === graph.rootId || parent.type === 'CANVAS'
-      ? { x: 0, y: 0 }
-      : graph.getAbsolutePosition(parentId)
-  const componentSet = graph.createNode('COMPONENT_SET', parentId, {
-    name: components[0].name.split('/')[0]?.trim() || 'Component Set',
-    x: bounds.x - parentPosition.x - COMPONENT_SET_PADDING,
-    y: bounds.y - parentPosition.y - COMPONENT_SET_PADDING,
-    width: bounds.width + COMPONENT_SET_PADDING * 2,
-    height: bounds.height + COMPONENT_SET_PADDING * 2,
-    fills: [
-      {
-        type: 'SOLID',
-        color: { r: 0.96, g: 0.96, b: 0.96, a: 1 },
-        opacity: 1,
-        visible: true
-      }
-    ]
-  })
-
-  for (const component of components) graph.reparentNode(component.id, componentSet.id)
-  if (index !== undefined) graph.reorderChild(componentSet.id, parentId, index)
-
-  const derived = deriveSlashVariantProperties(components, () => `prop:${randomHex(8)}`)
-  if (derived) {
-    for (const [nodeId, changes] of derived.variants) graph.updateNode(nodeId, changes)
-    graph.updateNode(componentSet.id, { componentPropertyDefinitions: derived.definitions })
-  }
+  // The plugin API wraps the variants exactly; see `variantSetProps`.
+  const componentSet = wrapNodes(
+    graph,
+    'COMPONENT_SET',
+    components,
+    parentId,
+    index,
+    variantSetProps(graph, components, parentId, 'script')
+  )
+  applyVariantProperties(graph, components, componentSet.id)
 
   return componentSet
+}
+
+/**
+ * Makes a component from a layer as Figma's `createComponentFromNode` does: a frame or group
+ * becomes a new component with its look and children in its place in the stack, and any other
+ * layer is wrapped; see `becomesComponent`. Unlike the canvas command, the component takes a new id.
+ */
+export function componentFromNode(graph: SceneGraph, node: SceneNode, parentId: string): SceneNode {
+  const index = graph.getNode(parentId)?.childIds.indexOf(node.id) ?? -1
+  if (!becomesComponent(node)) {
+    return wrapNodes(
+      graph,
+      'COMPONENT',
+      [node],
+      parentId,
+      index < 0 ? undefined : index,
+      componentWrapProps([node])
+    )
+  }
+  const component = graph.createNode('COMPONENT', parentId, {
+    ...cloneNodeProps(node, null),
+    type: 'COMPONENT'
+  })
+  for (const childId of node.childIds) graph.reparentNode(childId, component.id)
+  if (index >= 0) graph.insertChildAt(component.id, parentId, index)
+  graph.deleteNode(node.id)
+  return component
 }

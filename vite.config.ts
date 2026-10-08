@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import process from 'node:process'
 
 import tailwindcss from '@tailwindcss/vite'
@@ -8,6 +9,7 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
 import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { ensureDemoDocument } from '@open-pencil/demo-tools'
 
 import packageJson from './package.json'
 import { viteBuildTarget } from './src/app/shell/support/baseline'
@@ -18,6 +20,7 @@ import {
   openPencilAutomationPlugin
 } from './vite/automation'
 import { copyCanvasKitAssetsPlugin } from './vite/canvaskit-assets'
+import { aiIconCollection } from './vite/icons'
 import { openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
@@ -26,7 +29,7 @@ const host = process.env.TAURI_DEV_HOST
 const automationRoute = localAutomationRoute(host)
 
 export default defineConfig(async ({ command }) => {
-  await ensureBrandAssets(['web'])
+  await Promise.all([ensureBrandAssets(['web']), ensureDemoDocument()])
   return {
     resolve: {
       alias: createOpenPencilAliases(__dirname)
@@ -39,12 +42,14 @@ export default defineConfig(async ({ command }) => {
         automationRoute.browserURL.replace(/^ws/, 'http')
       )
     },
+    // Dynamic browser fixtures must not trigger a dependency-optimizer reload mid-test.
+    optimizeDeps: { include: ['ai/test'] },
     plugins: [
       rawMarkdownPlugin(),
       copyCanvasKitAssetsPlugin(),
       tailwindcss(),
-      Icons({ compiler: 'vue3' }),
-      Components({ resolvers: [IconsResolver({ prefix: 'icon' })] }),
+      Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
+      Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
       openPencilAutomationPlugin(command, host),
       vue(),
       openPencilPwaPlugin()
@@ -53,7 +58,14 @@ export default defineConfig(async ({ command }) => {
     build: {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
-      chunkSizeWarningLimit: 2500
+      chunkSizeWarningLimit: 2500,
+      rolldownOptions: {
+        // The desktop Software Update window is its own page.
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          updater: resolve(__dirname, 'updater.html')
+        }
+      }
     },
     server: createDevServerOptions(host, __dirname)
   }

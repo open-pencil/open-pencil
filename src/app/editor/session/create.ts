@@ -13,6 +13,7 @@ import {
 import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
 import { bindClipboardNotifications } from '@/app/editor/clipboard/notifications'
 import { loadFont } from '@/app/editor/fonts'
+import { createRecentPages } from '@/app/editor/pages/recent'
 import { createCanvasPaneRegistry } from '@/app/editor/panes/registry'
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
 import {
@@ -26,6 +27,7 @@ import {
   createEditorStoreModules,
   defineEditorStoreAccessors
 } from '@/app/editor/session/modules'
+import { scopedStoreFactory } from '@/app/editor/session/scope'
 import { createInitialAppEditorState, type AppEditorState } from '@/app/editor/session/types'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -35,7 +37,7 @@ import { IS_BROWSER, IS_TAURI } from '@/constants'
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core/editor'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core/editor'
 
-export function createEditorStore(initialGraph?: SceneGraph) {
+function buildEditorStore(initialGraph?: SceneGraph) {
   const graph = initialGraph ?? new SceneGraph()
 
   const state = shallowReactive<AppEditorState>(createInitialAppEditorState(graph.getPages()[0].id))
@@ -77,6 +79,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     syncDocumentColorSpace
   )
   editor.onEditorEvent('graph:replaced', syncDocumentColorSpace)
+  const recentPages = createRecentPages(editor)
 
   const preparationEvents = createEditorPreparationEvents()
   const preparationLifecycle = new Map<
@@ -179,7 +182,12 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       }
       succeeded = true
     } catch (error) {
-      if (preparation.signal.aborted) throw error
+      if (preparation.signal.aborted) {
+        // Another switch took over; its page is the one to show, so this one ends quietly.
+        // A caller's own preparation reports its cancellation itself.
+        if (ownsPreparation) return
+        throw error
+      }
       if (ownsPreparation) {
         const presentationTimedOut =
           error instanceof Error && error.message === 'The operation was timed out'
@@ -224,6 +232,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     getPaneRenderState: panes.getPaneRenderState,
     setActivePane: panes.setActivePane,
     switchPage,
+    recentPages: recentPages.ids,
     splitPane: panes.splitPane,
     closePane: panes.closePane,
     resizePane: panes.resizePane,
@@ -233,6 +242,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     ...modules,
     dispose() {
       stopColorSpaceSync()
+      recentPages.dispose()
       disposeSelection()
       modules.dispose()
     }
@@ -242,6 +252,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
 
   return store
 }
+
+export const createEditorStore = scopedStoreFactory(buildEditorStore)
 
 export type EditorStore = ReturnType<typeof createEditorStore>
 

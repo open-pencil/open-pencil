@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { guideOwnersOnPage, type CanvasGuide } from '@open-pencil/scene-graph/guides'
 
 import { distanceToGuideSegment, getGuideScreenSegment, type GuideViewport } from './geometry'
 
@@ -23,7 +23,7 @@ export function hitTestGuides(
   if (!page) return null
   let closest: GuideHit | null = null
 
-  const visit = (owner: SceneNode) => {
+  for (const owner of guideOwnersOnPage(graph, page.id)) {
     for (const guide of owner.guides) {
       const distance = distanceToGuideSegment(
         x,
@@ -40,12 +40,6 @@ export function hitTestGuides(
         }
       }
     }
-    for (const childId of owner.childIds) {
-      const child = graph.getNode(childId)
-      if (child) visit(child)
-    }
   }
-
-  visit(page)
   return closest
 }

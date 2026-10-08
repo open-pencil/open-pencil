@@ -1,0 +1,14 @@
+{
+  "name": "@open-pencil/ci-policy-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#ci/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*"
+  }
+}

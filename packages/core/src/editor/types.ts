@@ -14,8 +14,11 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
+import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type { MeasurementMode, RenderOverlays } from '#core/canvas/renderer/types'
+import type { MeasurementMode, PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
+import type { InterfaceTheme } from '#core/constants'
+import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
@@ -37,16 +40,22 @@ export type Tool =
 export interface EditorSharedState {
   activeTool: Tool
   snappingPreferences: SnappingPreferences
-  remoteCursors: Array<{
-    name: string
-    color: Color
-    x: number
-    y: number
-    selection?: string[]
-  }>
+  presenceCursors: PresenceCursor[]
   documentName: string
+  /** Design check markers and highlight, shared by every canvas pane. */
+  designIssues: DesignIssueOverlay | null
+  /** The layer of the code element around the cursor in a code editor, shown in every pane. */
+  codeFocusNodeId: string | null
   rulerTheme?: RulerTheme
+  /** The interface theme new sections take their fill from; light when unset. */
+  theme?: InterfaceTheme
+  /** Bumped by every document change; views, saving, and recovery follow it. */
   sceneVersion: number
+  /**
+   * Bumped by document changes the canvas draws. Changes it does not draw, such as a variable's
+   * name or CSS name, bump only `sceneVersion`, so the canvas keeps its recorded pictures.
+   */
+  canvasVersion: number
 }
 
 export interface EditorViewState {
@@ -66,6 +75,8 @@ export interface EditorViewState {
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
   hoveredNodeId: string | null
+  /** A pointer move, resize, or rotation is in progress. */
+  transforming: boolean
   measurementMode: MeasurementMode
   editingTextId: string | null
   penState: {
@@ -97,6 +108,8 @@ export interface EditorViewState {
   nodeEditState?: RenderOverlays['nodeEditState'] | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
+  /** This canvas's preview, or null while it edits. */
+  play: PlayState | null
 }
 
 export type NavigationPhase = 'idle' | 'pan' | 'zoom' | 'momentum' | 'settling'
@@ -173,6 +186,8 @@ export interface EditorContext {
   getRenderer: () => SkiaRenderer | null
   getTextEditor: () => TextEditor | null
   requestRender: () => void
+  /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
+  requestRefresh: () => void
   requestRepaint: () => void
   beginInteractiveEdit: () => () => void
   onEditorEvent: <K extends EditorEventName>(event: K, handler: EditorEvents[K]) => () => void

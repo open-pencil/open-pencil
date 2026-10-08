@@ -3,7 +3,8 @@ import {
   cloneInstanceOverrideState,
   componentPropertyDefinitions,
   findComponentPropertyTarget,
-  resolveComponentPropertyValue
+  resolveComponentPropertyValue,
+  setInstanceOverride
 } from '@open-pencil/scene-graph'
 import type {
   ComponentPropertyDefinition,
@@ -120,11 +121,11 @@ export function createComponentPropertyActions(
       inverse: () => {
         const live = ctx.graph.getNode(instanceId)
         if (live) {
+          const restoredTarget = propertyTarget(ctx, live, propertyId)
           ctx.graph.updateNode(instanceId, {
             componentPropertyAssignments: previousAssignments,
             instanceOverrides: cloneInstanceOverrideState(previousOverrides)
           })
-          const restoredTarget = propertyTarget(ctx, live, propertyId)
           if (restoredTarget?.field === 'TEXT' && restoredTarget.node.type === 'TEXT') {
             ctx.graph.updateNode(restoredTarget.node.id, { text: previousValue })
           } else if (restoredTarget?.field === 'VISIBLE') {
@@ -133,6 +134,14 @@ export function createComponentPropertyActions(
             const componentId = swapTargetId(ctx, previousValue)
             if (componentId && restoredTarget.node.type === 'INSTANCE') {
               ctx.graph.swapInstanceComponent(restoredTarget.node.id, componentId)
+              setInstanceOverride(
+                live.instanceOverrides,
+                live.id,
+                restoredTarget.node.id,
+                'sourceComponentId',
+                restoredTarget.source.id
+              )
+              ctx.graph.updateNode(live.id, { instanceOverrides: live.instanceOverrides })
             }
           }
         }
