@@ -23,9 +23,9 @@ Pick one to place it, 24 × 24, in the middle of the view, inside the frame you'
 
 ## Choosing an Icon Set
 
-The set selector under the search narrows the picker to one set. Type in it to find a set by name, such as `material` or `tabler`; each set shows its license and how many icons it has.
+The set button at the end of the search field (**All icon sets** at first) narrows the picker to one set. Sets are grouped by kind, such as Material or Logos; type to find one by name, such as `tabler`. Each set shows how many icons it has.
 
-With a set chosen, the picker shows the whole set as a grid, loading more as you scroll, and a search looks only in that set. Hover over an icon, or move to it with the arrow keys, to see its name below the grid. The picker remembers the set you chose last, and **Swap icon** opens on the set of the icon you're swapping.
+With a set chosen, the picker shows the whole set, loading more as you scroll, and a search looks only in that set. Hover over an icon, or move to it with the arrow keys, to see its name, set, and license below the grid. The picker remembers the set you chose last, and **Swap icon** opens on the set of the icon you're swapping.
 
 ## The Icon Section
 

@@ -416,6 +416,8 @@
   "noFontsFound": "Keine Schriften gefunden",
   "searchIcons": "Symbole suchen...",
   "searchingIcons": "Suche…",
+  "loadingIcons": "Symbole werden geladen…",
+  "loadingIconSets": "Symbolsätze werden geladen…",
   "noIconsFound": "Keine Symbole gefunden",
   "iconSearchHint": "Tippen, um über 200.000 Open-Source-Symbole zu durchsuchen",
   "iconSearchFailed": "Symbole konnten nicht geladen werden. Prüfe deine Verbindung.",
@@ -426,9 +428,10 @@
   "noIconSetsFound": "Keine Symbolsätze gefunden",
   "recentIcons": "Zuletzt verwendet",
   "iconsInFile": "In dieser Datei",
-  "iconSetCount": {
-    "one": "{count} Symbol",
-    "many": "{count} Symbole"
+  "otherIconSets": "Andere",
+  "iconResultCount": {
+    "one": "{count} Ergebnis",
+    "many": "{count} Ergebnisse"
   },
   "noLocalFontsAvailable": "Keine lokalen Schriften verfügbar.",
   "localFontsAccessHint": "Verwende die Desktop-App oder Chrome/Edge, um auf Systemschriften zuzugreifen.",

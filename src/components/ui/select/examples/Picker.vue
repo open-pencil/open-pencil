@@ -33,7 +33,7 @@ const variables: AppPickerItem[] = [
   { value: 'space/lg', label: 'Space/lg', group: 'Spacing' },
   { value: 'radius/md', label: 'Radius/md', group: 'Radius', disabled: true }
 ]
-// Two rows of the grid, so moving a row by keyboard lands on a known shape.
+// More than a row of the grid, so moving a row by keyboard lands on a known shape.
 const SHAPE_ICONS = [IconCircle, IconSquare, IconTriangle, IconHexagon, IconStar, IconHeart]
 const shapes: AppPickerItem[] = ['Circle', 'Square', 'Triangle', 'Hexagon', 'Star', 'Heart']
   .flatMap((name) => [name, `${name} outline`])

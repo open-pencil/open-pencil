@@ -26,12 +26,14 @@ export interface AppPickerProps {
   tooltip?: string
   density?: 'compact' | 'comfortable'
   /**
-   * `grid` shows each item's thumbnail alone, six to a row, with the highlighted item's label
+   * `grid` shows each item's thumbnail alone, eight to a row, with the highlighted item's label
    * passed to the footer; for browsing many items by sight, such as icons.
    */
   layout?: 'list' | 'grid'
   /** More items follow the shown ones; scrolling near the end emits `loadMore`. */
   hasMore?: boolean
+  /** The items are on their way: placeholders stand in for them, and `emptyLabel` is announced. */
+  loading?: boolean
   /**
    * `local` filters `items` by the query; `remote` shows them as given, for a list the owner
    * searches itself through `v-model:query`.
@@ -47,8 +49,8 @@ export interface AppPickerSlots {
   trigger(): VNode[]
   /** Thumbnail or icon before an item's label. */
   leading?(props: { item: AppPickerItem }): VNode[]
-  /** Controls between the search and the list that narrow it, such as a category. */
-  filters?(): VNode[]
+  /** A control at the end of the search field that narrows the list, such as a category. */
+  'search-trailing'?(): VNode[]
   /** Actions or details below the list; `highlighted` is the item under the pointer or keys. */
   footer?(props: { close: () => void; highlighted: AppPickerItem | null }): VNode[]
 }
@@ -90,6 +92,7 @@ const {
   density = 'comfortable',
   layout = 'list',
   hasMore = false,
+  loading = false,
   search = 'local',
   side = 'left',
   align = 'start',
@@ -128,6 +131,9 @@ watch(matches, () => {
 function highlight(payload: { value: AcceptableValue } | undefined) {
   highlighted.value = matches.value.find((item) => item.value === payload?.value) ?? null
 }
+
+/** Placeholders shown while loading: the grid's visible rows, or a few list rows. */
+const LOADING_PLACEHOLDERS = computed(() => (layout === 'grid' ? APP_PICKER_GRID_COLUMNS * 7 : 3))
 
 const ROW_KEYS = new Map([
   ['ArrowDown', 1],
@@ -196,7 +202,7 @@ function select(value: AcceptableValue) {
         </div>
         <ListboxRoot
           ref="listboxRoot"
-          class="flex min-h-0 flex-col"
+          class="flex min-h-0 flex-1 flex-col"
           highlight-on-hover
           :orientation="layout === 'grid' ? 'horizontal' : 'vertical'"
           @update:model-value="select"
@@ -212,16 +218,23 @@ function select(value: AcceptableValue) {
               :aria-label="searchPlaceholder"
               :class="styles.input({ class: ui?.input })"
             />
-          </div>
-          <div v-if="slots.filters" :class="styles.filters({ class: ui?.filters })">
-            <slot name="filters" />
+            <slot name="search-trailing" />
           </div>
           <ListboxContent
             ref="listContent"
             :class="styles.list({ class: ui?.list })"
             :aria-label="heading"
           >
-            <p v-if="groups.length === 0" :class="styles.empty({ class: ui?.empty })">
+            <div v-if="groups.length === 0 && loading" :class="styles.group({ class: ui?.group })">
+              <span class="sr-only" role="status">{{ emptyLabel }}</span>
+              <span
+                v-for="index in LOADING_PLACEHOLDERS"
+                :key="index"
+                aria-hidden="true"
+                :class="styles.placeholder({ class: ui?.placeholder })"
+              />
+            </div>
+            <p v-else-if="groups.length === 0" :class="styles.empty({ class: ui?.empty })">
               {{ emptyLabel }}
             </p>
             <ListboxGroup

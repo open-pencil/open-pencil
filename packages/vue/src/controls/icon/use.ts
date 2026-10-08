@@ -28,10 +28,18 @@ export function useIcon() {
 
   /** The selected icon's SVG markup, for showing which icon it is. */
   const preview = ref<string | null>(null)
+  /** The name of the set the icon comes from, such as Lucide, once the catalogue is in. */
+  const setName = ref<string | null>(null)
   watchImmediate(name, async (current) => {
     if (!current) return
-    const drawn = (await editor.iconProvider.previews([current]).catch(() => null))?.get(current)
-    if (name.value === current) preview.value = drawn ?? null
+    const prefix = current.slice(0, current.indexOf(':'))
+    const [drawn, sets] = await Promise.all([
+      editor.iconProvider.previews([current]).catch(() => null),
+      editor.iconProvider.collections().catch(() => [])
+    ])
+    if (name.value !== current) return
+    preview.value = drawn?.get(current) ?? null
+    setName.value = sets.find((info) => info.prefix === prefix)?.name ?? null
   })
 
   async function swap(next: string) {
@@ -56,5 +64,5 @@ export function useIcon() {
     editor.setIconColor(node.id, next)
   }
 
-  return { name, color, preview, swap, setColor, setColorPicking }
+  return { name, color, preview, setName, swap, setColor, setColorPicking }
 }

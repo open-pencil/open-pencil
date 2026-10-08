@@ -422,6 +422,8 @@
   "noFontsFound": "Nie znaleziono czcionek",
   "searchIcons": "Szukaj ikon...",
   "searchingIcons": "Wyszukiwanie…",
+  "loadingIcons": "Wczytywanie ikon…",
+  "loadingIconSets": "Wczytywanie zestawów ikon…",
   "noIconsFound": "Nie znaleziono ikon",
   "iconSearchHint": "Wpisz, aby przeszukać ponad 200 000 ikon open source",
   "iconSearchFailed": "Nie udało się wczytać ikon. Sprawdź połączenie.",
@@ -432,10 +434,11 @@
   "noIconSetsFound": "Nie znaleziono zestawów ikon",
   "recentIcons": "Ostatnie",
   "iconsInFile": "W tym pliku",
-  "iconSetCount": {
-    "one": "{count} ikona",
-    "few": "{count} ikony",
-    "many": "{count} ikon"
+  "otherIconSets": "Inne",
+  "iconResultCount": {
+    "one": "{count} wynik",
+    "few": "{count} wyniki",
+    "many": "{count} wyników"
   },
   "noLocalFontsAvailable": "Brak dostępnych czcionek lokalnych.",
   "localFontsAccessHint": "Użyj aplikacji komputerowej lub Chrome/Edge, aby uzyskać dostęp do czcionek systemowych.",

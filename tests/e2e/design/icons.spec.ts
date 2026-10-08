@@ -63,7 +63,7 @@ async function pick(page: Page, picker: string, query: string, icon: string) {
 async function insertSquare(page: Page) {
   await page.getByRole('button', { name: 'Insert icon' }).click()
   await pick(page, 'Insert icon', 'shape', 'square')
-  await expect(propertyField(page, 'icon-name')).toContainText('test:square')
+  await expect(propertyField(page, 'icon-name')).toContainText('square')
 }
 
 test('the toolbar inserts a picked icon, selected, as one undo step', async () => {
@@ -97,7 +97,7 @@ test('the Icon section swaps the glyph in place, undoably', async () => {
   await propertySection(page, 'Icon').getByRole('button', { name: 'Swap icon' }).click()
   await pick(page, 'Swap icon', 'shape', 'ring')
 
-  await expect(propertyField(page, 'icon-name')).toContainText('test:ring')
+  await expect(propertyField(page, 'icon-name')).toContainText('ring')
   expect(await getSelectedNode(page)).toMatchObject({
     id: before?.id,
     x: before?.x,
@@ -106,7 +106,7 @@ test('the Icon section swaps the glyph in place, undoably', async () => {
   })
 
   await canvas.undo()
-  await expect(propertyField(page, 'icon-name')).toContainText('test:square')
+  await expect(propertyField(page, 'icon-name')).toContainText('square')
 })
 
 test('the Icon section recolors the icon', async () => {

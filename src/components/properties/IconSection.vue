@@ -11,7 +11,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import theme from '@/theme/select/app'
 
 const panels = usePanelMessages()
-const { name, color, preview, swap, setColor, setColorPicking } = useIcon()
+const { name, color, preview, setName, swap, setColor, setColorPicking } = useIcon()
 const styles = tv(theme)()
 </script>
 
@@ -33,7 +33,10 @@ const styles = tv(theme)()
             :class="styles.trigger()"
           >
             <IconPreview :svg="preview" class="mr-1.5 size-3.5 text-surface" />
-            <span :class="styles.value()">{{ name }}</span>
+            <span :class="styles.value()">
+              {{ name.slice(name.indexOf(':') + 1) }}
+              <span class="text-muted">{{ setName ?? name.slice(0, name.indexOf(':')) }}</span>
+            </span>
             <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
           </button>
         </template>

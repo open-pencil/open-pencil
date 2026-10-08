@@ -32,11 +32,13 @@ export function useIconSearch() {
   let version = 0
 
   const sets = shallowRef<IconCollection[]>([])
+  const setsLoading = ref(false)
   /** Set names by prefix, from the catalogue and from search answers. */
   const setNames = shallowRef<ReadonlyMap<string, string>>(new Map())
 
   async function loadSets() {
-    if (sets.value.length > 0) return
+    if (sets.value.length > 0 || setsLoading.value) return
+    setsLoading.value = true
     try {
       sets.value = await provider().collections()
       setNames.value = new Map([
@@ -46,6 +48,8 @@ export function useIconSearch() {
     } catch (error) {
       // Searching every set still works without the catalogue.
       console.warn('Icon sets could not be loaded', error)
+    } finally {
+      setsLoading.value = false
     }
   }
 
@@ -96,7 +100,9 @@ export function useIconSearch() {
   tryOnScopeDispose(() => version++)
 
   const visible = computed(() => results.value?.slice(0, shown.value) ?? [])
-  const hasMore = computed(() => (results.value?.length ?? 0) > shown.value)
+  /** How many icons the query or set found, shown or not. */
+  const found = computed(() => results.value?.length ?? 0)
+  const hasMore = computed(() => found.value > shown.value)
   function loadMore() {
     if (hasMore.value) shown.value += PAGE_SIZE
   }
@@ -139,9 +145,12 @@ export function useIconSearch() {
     query,
     set,
     sets,
+    /** The set catalogue is on its way. */
+    setsLoading,
     loadSets,
     /** The icons to show now; more follow on `loadMore` while `hasMore`. */
     visible,
+    found,
     hasMore,
     loadMore,
     loading,

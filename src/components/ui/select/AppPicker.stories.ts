@@ -67,8 +67,8 @@ export const Grid: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Insert shape' }))
     const search = await page.findByPlaceholderText('Search shapes')
     await waitFor(() => expect(search).toHaveFocus())
-    // The first shape is highlighted on opening; down moves a row of six, to the seventh.
+    // The first shape is highlighted on opening; down moves a row of eight, to the ninth.
     await userEvent.keyboard('{ArrowDown}{Enter}')
-    await waitFor(() => expect(canvas.getByText(/^Chosen:/)).toHaveTextContent('Chosen: hexagon'))
+    await waitFor(() => expect(canvas.getByText(/^Chosen:/)).toHaveTextContent('Chosen: star'))
   }
 }

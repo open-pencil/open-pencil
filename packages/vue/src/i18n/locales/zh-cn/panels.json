@@ -410,6 +410,8 @@
   "noFontsFound": "未找到字体",
   "searchIcons": "搜索图标...",
   "searchingIcons": "正在搜索…",
+  "loadingIcons": "正在加载图标…",
+  "loadingIconSets": "正在加载图标集…",
   "noIconsFound": "未找到图标",
   "iconSearchHint": "输入以搜索超过 20 万个开源图标",
   "iconSearchFailed": "无法加载图标，请检查网络连接。",
@@ -420,8 +422,9 @@
   "noIconSetsFound": "未找到图标集",
   "recentIcons": "最近使用",
   "iconsInFile": "此文件中",
-  "iconSetCount": {
-    "many": "{count} 个图标"
+  "otherIconSets": "其他",
+  "iconResultCount": {
+    "many": "{count} 个结果"
   },
   "noLocalFontsAvailable": "没有可用的本地字体。",
   "localFontsAccessHint": "请使用桌面应用或 Chrome/Edge 访问系统字体。",

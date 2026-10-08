@@ -416,6 +416,8 @@
   "noFontsFound": "Nessun font trovato",
   "searchIcons": "Cerca icone...",
   "searchingIcons": "Ricerca…",
+  "loadingIcons": "Caricamento icone…",
+  "loadingIconSets": "Caricamento set di icone…",
   "noIconsFound": "Nessuna icona trovata",
   "iconSearchHint": "Digita per cercare tra oltre 200.000 icone open source",
   "iconSearchFailed": "Impossibile caricare le icone. Controlla la connessione.",
@@ -426,9 +428,10 @@
   "noIconSetsFound": "Nessun set di icone trovato",
   "recentIcons": "Recenti",
   "iconsInFile": "In questo file",
-  "iconSetCount": {
-    "one": "{count} icona",
-    "many": "{count} icone"
+  "otherIconSets": "Altri",
+  "iconResultCount": {
+    "one": "{count} risultato",
+    "many": "{count} risultati"
   },
   "noLocalFontsAvailable": "Nessun font locale disponibile.",
   "localFontsAccessHint": "Usa l’app desktop o Chrome/Edge per accedere ai font di sistema.",

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { compact } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
 import { iconNames } from '@open-pencil/scene-graph'
@@ -6,6 +7,7 @@ import { useCommonMessages, useIconSearch, usePanelMessages } from '@open-pencil
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { lastIconSet, recentIcons, rememberIcon } from '@/app/editor/icon-picker/history'
+import { formatNumber } from '@/app/i18n/number'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import type { AppComboboxOption } from '@/components/ui/select/AppCombobox.vue'
 import AppPicker from '@/components/ui/select/AppPicker.vue'
@@ -40,7 +42,7 @@ const store = useEditorStore()
 const panels = usePanelMessages()
 const common = useCommonMessages()
 const search = useIconSearch()
-const { query, visible, hasMore, loadMore, loading, failed, previews } = search
+const { query, visible, hasMore, loadMore, loading, failed, previews, setsLoading } = search
 
 /** The icons placed in the document, read when the picker opens. */
 const placed = ref<string[]>([])
@@ -52,13 +54,15 @@ watch(open, (isOpen) => {
   search.want([...placed.value, ...recentIcons.value])
 })
 
+/** Sets by prefix, for their names and licenses in the footer. */
+const setsByPrefix = computed(() => new Map(search.sets.value.map((info) => [info.prefix, info])))
 const setOptions = computed<AppComboboxOption[]>(() => [
   { value: ALL_SETS, label: panels.value.allIconSets },
   ...search.sets.value.map((info) => ({
     value: info.prefix,
     label: info.name,
-    description: info.license ?? undefined,
-    meta: panels.value.iconSetCount(info.total)
+    meta: formatNumber(info.total),
+    group: info.category ?? panels.value.otherIconSets
   }))
 ])
 const chosenSet = computed({
@@ -80,7 +84,8 @@ function item(name: string, group?: string): AppPickerItem {
 }
 /**
  * Before a query, the icons placed in the file and picked lately come first, from the chosen
- * set only, and then the rest of that set. A query shows only what it finds.
+ * set only, and then the rest of that set. A query shows only what it finds. Groups are named
+ * only when there are several.
  */
 const items = computed<AppPickerItem[]>(() => {
   if (query.value.trim()) return visible.value.map((name) => item(name))
@@ -89,19 +94,35 @@ const items = computed<AppPickerItem[]>(() => {
   const inFile = placed.value.filter(inSet)
   const recent = recentIcons.value.filter((name) => inSet(name) && !inFile.includes(name))
   const shown = new Set([...inFile, ...recent])
-  const setLabel = prefix ? search.setName(`${prefix}:`) : undefined
+  const rest = visible.value.filter((name) => !shown.has(name))
+  const named = [inFile, recent, rest].filter((group) => group.length > 0).length > 1
+  const setLabel = named && prefix ? search.setName(`${prefix}:`) : undefined
   return [
     ...inFile.map((name) => item(name, panels.value.iconsInFile)),
     ...recent.map((name) => item(name, panels.value.recentIcons)),
-    ...visible.value.filter((name) => !shown.has(name)).map((name) => item(name, setLabel))
+    ...rest.map((name) => item(name, setLabel))
   ]
 })
-// A search over every set lists each icon with its set; anything narrower is browsed by sight.
-const layout = computed(() => (query.value.trim() && !search.set.value ? 'list' : 'grid'))
+
+/** What the footer says with nothing highlighted: the results, the set, or how to start. */
+const summary = computed(() => {
+  if (query.value.trim())
+    return loading.value ? '' : panels.value.iconResultCount(search.found.value)
+  const info = search.set.value ? setsByPrefix.value.get(search.set.value) : undefined
+  if (info) return compact([info.name, info.license, formatNumber(info.total)]).join(' · ')
+  return panels.value.iconSearchHint
+})
+/** The set and license of a highlighted icon. */
+function details(name: string) {
+  const info = setsByPrefix.value.get(name.slice(0, name.indexOf(':')))
+  return compact([search.setName(name), info?.license]).join(' · ')
+}
 
 const emptyLabel = computed(() => {
   if (failed.value) return panels.value.iconSearchFailed
-  if (loading.value) return panels.value.searchingIcons
+  // Typing searches; choosing a set loads it.
+  if (loading.value)
+    return query.value.trim() ? panels.value.searchingIcons : panels.value.loadingIcons
   return query.value.trim() || search.set.value
     ? panels.value.noIconsFound
     : panels.value.iconSearchHint
@@ -118,8 +139,9 @@ function pick(name: string) {
     v-model:open="open"
     v-model:query="query"
     search="remote"
-    :layout="layout"
+    layout="grid"
     :has-more="hasMore"
+    :loading="loading"
     :heading="heading"
     :items="items"
     :selected="selected"
@@ -135,25 +157,38 @@ function pick(name: string) {
     <template #trigger>
       <slot name="trigger" />
     </template>
-    <template #filters>
+    <template #search-trailing>
       <AppCombobox
         v-model="chosenSet"
         :options="setOptions"
         :label="panels.iconSet"
         :search-placeholder="panels.searchIconSets"
-        :empty-label="panels.noIconSetsFound"
+        :empty-label="setsLoading ? panels.loadingIconSets : panels.noIconSetsFound"
         :result-limit="setOptions.length"
-      />
+        align="end"
+        :ui="{
+          trigger:
+            'mr-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
+          value: 'text-muted',
+          content: 'w-64'
+        }"
+      >
+        <template #option="{ option }">
+          <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
+          <span class="shrink-0 text-muted tabular-nums">{{ option.meta }}</span>
+        </template>
+      </AppCombobox>
     </template>
     <template #leading="{ item: entry }">
       <IconPreview :svg="previews.get(entry.value)" class="size-5 text-surface" />
     </template>
-    <template v-if="layout === 'grid' && items.length > 0" #footer="{ highlighted }">
-      <p class="flex h-5 items-center gap-1 truncate px-1 text-[11px]">
+    <template v-if="items.length > 0" #footer="{ highlighted }">
+      <p class="flex h-5 items-center gap-1.5 truncate px-1 text-[11px] text-muted">
         <template v-if="highlighted">
           <span class="truncate text-surface">{{ highlighted.label }}</span>
-          <span class="truncate text-muted">{{ highlighted.description }}</span>
+          <span class="truncate">{{ details(highlighted.value) }}</span>
         </template>
+        <span v-else class="truncate">{{ summary }}</span>
       </p>
     </template>
   </AppPicker>
