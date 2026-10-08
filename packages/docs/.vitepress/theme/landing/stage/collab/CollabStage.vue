@@ -28,8 +28,8 @@ const peerColor = (index: number): Color => PEER_COLORS[index] ?? { r: 0, g: 0, 
 const you = { name: computed(() => messages.value.stage.collab.you), color: peerColor(1) }
 const teammate = { name: computed(() => TEAMMATE), color: peerColor(4) }
 
-/** Both screens show the shared document, so the page can take down the still. */
-const emit = defineEmits<{ ready: [] }>()
+/** `start`: it begins loading as it nears the viewport. `ready`: both screens show the document. */
+const emit = defineEmits<{ start: []; ready: [] }>()
 const panesReady = ref(0)
 function paneReady(): void {
   panesReady.value += 1
@@ -43,6 +43,7 @@ const { stop } = useIntersectionObserver(
   async ([entry]) => {
     if (!entry?.isIntersecting) return
     stop()
+    emit('start')
     await prepareEngine()
     mounted.value = true
   },

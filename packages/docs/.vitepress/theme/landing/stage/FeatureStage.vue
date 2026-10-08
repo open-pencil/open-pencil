@@ -22,8 +22,8 @@ const StagePreviewControls = defineAsyncComponent(() => import('./StagePreviewCo
 const MOUNT_MARGIN = '100% 0px'
 
 const { kind } = defineProps<{ kind: SingleStageKind }>()
-/** Its scene is on the canvas, so the page can take down the still it showed in its place. */
-const emit = defineEmits<{ ready: [] }>()
+/** `start`: it begins loading as it nears the viewport. `ready`: its scene is on screen. */
+const emit = defineEmits<{ start: []; ready: [] }>()
 const definition = STAGES[kind]
 
 useDocsAppearance()
@@ -41,6 +41,7 @@ const { stop } = useIntersectionObserver(
   async ([entry]) => {
     if (!entry?.isIntersecting) return
     stop()
+    emit('start')
     await prepareEngine()
     mounted.value = true
     void build()

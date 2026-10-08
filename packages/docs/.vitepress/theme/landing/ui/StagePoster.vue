@@ -22,13 +22,16 @@ const {
   kind,
   fingerprint,
   locale,
-  waiting = false
+  waiting = false,
+  loading = false
 } = defineProps<{
   kind: FeatureKind
   fingerprint: string
   locale: string
   /** The stage starts only when asked, as on a phone; the poster offers to start it. */
   waiting?: boolean
+  /** The live stage is on its way; a slow one shows a quiet progress line. */
+  loading?: boolean
 }>()
 const emit = defineEmits<{ activate: [] }>()
 
@@ -51,15 +54,64 @@ function source(theme: PosterTheme, layout: 'desktop' | 'phone', part: PosterPar
     <button v-if="waiting" type="button" class="activate" @click="emit('activate')">
       <IconPlay aria-hidden="true" />{{ messages.stage.activate }}
     </button>
+    <span v-else-if="loading" class="progress" role="status" :aria-label="messages.loading" />
   </div>
 </template>
 
 <style scoped>
 .stage-poster {
   position: absolute;
-  z-index: 1;
+  /* Above the app's loading overlay (z-50), which the still stands in for. */
+  z-index: 60;
   inset: 0;
   background: var(--vp-c-bg);
+}
+
+/*
+ * Most stages are ready within a second; only a slow one shows that it is coming, with the
+ * app loader's bar along the still's bottom edge.
+ */
+.progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  animation: poster-progress-in 200ms ease-out 1s forwards;
+}
+
+.progress::after {
+  position: absolute;
+  inset: 0 70% 0 0;
+  background: var(--vp-c-brand-1);
+  animation: poster-progress-slide 1.2s ease-in-out infinite;
+  content: '';
+}
+
+@keyframes poster-progress-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes poster-progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress::after {
+    inset: 0;
+    animation: none;
+    opacity: 0.4;
+  }
 }
 
 .layer {

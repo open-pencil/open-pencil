@@ -8,7 +8,11 @@
  * Inter, so panels look the same on every platform, and so do the stills captured of them.
  */
 .op-app {
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .landing {

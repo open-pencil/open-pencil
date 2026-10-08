@@ -35,6 +35,8 @@ const fingerprint = computed((): string | null => {
 // touch screen, where a stage is only watched, until the visitor asks for it. Without stills,
 // or while the generator captures them, stages start as soon as they can.
 const live = ref(fingerprint.value === null)
+/** The stage is loading its engine and scene, which it does as it nears the viewport. */
+const loading = ref(false)
 const ready = ref(false)
 // Decided after hydration, so the server-rendered poster and the client's first render agree.
 const waiting = ref(false)
@@ -62,17 +64,21 @@ onMounted(() => {
       <span />
     </div>
     <template v-if="live">
-      <CollabStage v-if="kind === 'collab'" @ready="ready = true" />
-      <FeatureStage v-else :kind="kind" @ready="ready = true" />
+      <CollabStage v-if="kind === 'collab'" @start="loading = true" @ready="ready = true" />
+      <FeatureStage v-else :kind="kind" @start="loading = true" @ready="ready = true" />
     </template>
-    <StagePoster
-      v-if="fingerprint && !ready"
-      :kind="kind"
-      :fingerprint="fingerprint"
-      :locale="localeIndex"
-      :waiting="waiting"
-      @activate="start"
-    />
+    <!-- The live stage is already drawn underneath, so the still fades into it. -->
+    <Transition name="stage-poster">
+      <StagePoster
+        v-if="fingerprint && !ready"
+        :kind="kind"
+        :fingerprint="fingerprint"
+        :locale="localeIndex"
+        :waiting="waiting"
+        :loading="loading"
+        @activate="start"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -129,7 +135,19 @@ onMounted(() => {
   }
 }
 
+.stage-poster-leave-active {
+  transition: opacity 250ms ease-out;
+}
+
+.stage-poster-leave-to {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .stage-poster-leave-active {
+    transition: none;
+  }
+
   .stage-loader span::after {
     animation: none;
   }
