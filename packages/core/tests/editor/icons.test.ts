@@ -19,6 +19,8 @@ const BODIES: Record<string, string> = {
 /** Icons drawn from fixed bodies, so the commands run without the network. */
 const provider: IconProvider = {
   search: async () => ({ icons: Object.keys(BODIES), total: 2, collections: {} }),
+  collections: async () => [],
+  browse: async () => Object.keys(BODIES),
   previews: async (names) =>
     new Map(names.flatMap((name) => (BODIES[name] ? [[name, `<svg>${BODIES[name]}</svg>`]] : []))),
   async icons(names, size) {

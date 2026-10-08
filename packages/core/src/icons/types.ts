@@ -37,6 +37,19 @@ export interface IconSearchResult {
   collections: Record<string, { name: string; total: number; category?: string }>
 }
 
+/** An icon set: what a picker shows to choose one. */
+export interface IconCollection {
+  /** The set's part of an icon name, such as `lucide`. */
+  prefix: string
+  name: string
+  total: number
+  category: string | null
+  /** The license's title, such as `MIT`. */
+  license: string | null
+  /** Drawn in the set's own colors, which an icon color does not change. */
+  multicolor: boolean
+}
+
 export interface IconPathInfo {
   d: string
   fill: string | null

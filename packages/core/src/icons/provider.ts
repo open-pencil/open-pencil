@@ -1,8 +1,9 @@
 import { iconToHTML, iconToSVG } from '@iconify/utils'
+import { chunk } from 'es-toolkit'
 
 import { createIconifyAPIClient } from './api'
 import { buildIconData } from './svg'
-import type { IconData, IconifyIconEntry, IconSearchResult } from './types'
+import type { IconCollection, IconData, IconifyIconEntry, IconSearchResult } from './types'
 
 export interface IconSearchOptions {
   limit?: number
@@ -24,6 +25,10 @@ export interface IconProvider {
    * takes its color; names the source lacks are left out.
    */
   previews(names: readonly string[]): Promise<Map<string, string>>
+  /** The icon sets to choose from, for filtering a search or browsing one set. */
+  collections(): Promise<IconCollection[]>
+  /** Every icon in the set `prefix`, as `prefix:name`, for browsing without a query. */
+  browse(prefix: string): Promise<string[]>
 }
 
 /** `prefix:name` split, or null when the name has no set. */
@@ -32,6 +37,9 @@ export function parseIconName(name: string): { prefix: string; iconName: string 
   if (colon <= 0 || colon === name.length - 1) return null
   return { prefix: name.slice(0, colon), iconName: name.slice(colon + 1) }
 }
+
+/** Names per request, so the query string of a long list stays well within URL limits. */
+const NAMES_PER_REQUEST = 100
 
 /** An icon's body and box, with the set's default box filled in. */
 type IconEntry = Required<IconifyIconEntry>
@@ -43,6 +51,14 @@ type IconEntry = Required<IconifyIconEntry>
 export function createIconifyProvider(client = createIconifyAPIClient()): IconProvider {
   const entries = new Map<string, IconEntry>()
   const built = new Map<string, IconData>()
+  // Shared answers; a failed one is dropped so the next call asks again.
+  let catalogue: Promise<IconCollection[]> | null = null
+  const sets = new Map<string, Promise<string[]>>()
+
+  function remember<T>(promise: Promise<T>, forget: () => void): Promise<T> {
+    void promise.catch(forget)
+    return promise
+  }
 
   async function load(names: readonly string[]): Promise<void> {
     const missing = new Map<string, string[]>()
@@ -55,8 +71,11 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         )
       missing.set(parsed.prefix, [...(missing.get(parsed.prefix) ?? []), parsed.iconName])
     }
+    const requests = [...missing].flatMap(([prefix, iconNames]) =>
+      chunk(iconNames, NAMES_PER_REQUEST).map((part) => ({ prefix, iconNames: part }))
+    )
     await Promise.all(
-      [...missing].map(async ([prefix, iconNames]) => {
+      requests.map(async ({ prefix, iconNames }) => {
         const collection = await client.fetchCollection(prefix, iconNames)
         for (const iconName of iconNames) {
           const parent = collection.aliases?.[iconName]?.parent
@@ -91,6 +110,21 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
         found.set(name, icon)
       }
       return found
+    },
+
+    collections() {
+      catalogue ??= remember(client.collections(), () => {
+        catalogue = null
+      })
+      return catalogue
+    },
+
+    browse(prefix) {
+      const cached = sets.get(prefix)
+      if (cached) return cached
+      const listed = remember(client.collectionIcons(prefix), () => sets.delete(prefix))
+      sets.set(prefix, listed)
+      return listed
     },
 
     async previews(names) {

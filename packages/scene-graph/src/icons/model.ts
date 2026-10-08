@@ -13,6 +13,16 @@ export function withIcon(node: SceneNode, icon: Icon | null): SceneNode['pluginD
   return withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.icon, icon ?? undefined)
 }
 
+/** The names of the icons among `nodes`, each once, in the order they are first met. */
+export function iconNames(nodes: Iterable<SceneNode>): string[] {
+  const names = new Set<string>()
+  for (const node of nodes) {
+    const icon = readIcon(node)
+    if (icon) names.add(icon.name)
+  }
+  return [...names]
+}
+
 /** The paints of an icon path that its icon's color sets; none when it keeps its own colors. */
 export function readIconTint(node: SceneNode): readonly IconPaint[] {
   return readPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.iconTint) ?? []
