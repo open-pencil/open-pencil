@@ -28,6 +28,7 @@ import ExportSection from './properties/ExportSection.vue'
 import FillSection from './properties/FillSection.vue'
 import FramePresetSelect from './properties/frame-presets/FramePresetSelect.vue'
 import FramePresetsSection from './properties/frame-presets/FramePresetsSection.vue'
+import IconSection from './properties/IconSection.vue'
 import LayoutGridSection from './properties/layout/guides/LayoutGridSection.vue'
 import LayoutSection from './properties/layout/LayoutSection.vue'
 import MaskSection from './properties/MaskSection.vue'
@@ -188,6 +189,7 @@ const { panels } = useI18n()
 
       <FramePresetSelect v-if="node.type === 'FRAME'" />
 
+      <IconSection />
       <PositionSection />
       <ConstraintsSection />
       <LayoutSection />

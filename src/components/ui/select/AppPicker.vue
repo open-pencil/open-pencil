@@ -25,6 +25,11 @@ export interface AppPickerProps {
   /** Tooltip on the trigger; wraps the popover trigger so both reach the same element. */
   tooltip?: string
   density?: 'compact' | 'comfortable'
+  /**
+   * `local` filters `items` by the query; `remote` shows them as given, for a list the owner
+   * searches itself through `v-model:query`.
+   */
+  search?: 'local' | 'remote'
   side?: 'left' | 'right' | 'top' | 'bottom'
   align?: 'start' | 'center' | 'end'
   ui?: ComponentUI<AppPickerTheme>
@@ -56,7 +61,7 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 
 import { fuzzySearch, useRetainedPopup } from '@open-pencil/vue'
 
@@ -73,6 +78,7 @@ const {
   selected,
   tooltip,
   density = 'comfortable',
+  search = 'local',
   side = 'left',
   align = 'start',
   ui
@@ -81,7 +87,7 @@ const emit = defineEmits<{ select: [value: string] }>()
 const slots = defineSlots<AppPickerSlots>()
 const open = defineModel<boolean>('open', { default: false })
 const { portalActive } = useRetainedPopup(open, () => close())
-const query = ref('')
+const query = defineModel<string>('query', { default: '' })
 // However the list closes, by the user or from outside through v-model, it reopens unfiltered.
 watch(open, (isOpen) => {
   if (!isOpen) query.value = ''
@@ -90,7 +96,9 @@ const styles = computed(() => tv(theme)({ density }))
 
 const matches = computed(() => {
   const term = query.value.trim()
-  return term ? fuzzySearch(items, ['label', 'description', 'group'], term) : items
+  return term && search === 'local'
+    ? fuzzySearch(items, ['label', 'description', 'group'], term)
+    : items
 })
 const groups = computed(() => {
   const byGroup = new Map<string, AppPickerItem[]>()
