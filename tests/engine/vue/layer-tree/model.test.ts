@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { withIcon } from '@open-pencil/scene-graph'
 import {
   buildLayerTreeModel,
   layerSelectionForTarget,
@@ -10,6 +11,25 @@ import {
 import { createRect, firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 
 describe('layer tree model', () => {
+  test('marks icon frames, so rows can show them as icons', () => {
+    const graph = makeSceneGraph()
+    const pageId = firstPageId(graph)
+    const frame = graph.createNode('FRAME', pageId, { name: 'Frame' })
+    const icon = graph.createNode('FRAME', pageId, { name: 'cat' })
+    graph.updateNode(icon.id, { pluginData: withIcon(icon, { name: 'mdi:cat' }) })
+
+    const model = buildLayerTreeModel(graph, pageId)
+    expect(model.byId.get(icon.id)?.icon).toBe(true)
+    expect(model.byId.get(frame.id)?.icon).toBe(false)
+
+    const row = model.byId.get(frame.id)
+    const frameNode = graph.getNode(frame.id)
+    if (!row || !frameNode) throw new Error('Expected the frame in the model')
+    graph.updateNode(frame.id, { pluginData: withIcon(frameNode, { name: 'mdi:home' }) })
+    expect(patchLayerNode(row, graph.getNode(frame.id) ?? frameNode)).toBe(true)
+    expect(row.icon).toBe(true)
+  })
+
   test('builds indexed nested items in scene order', () => {
     const graph = makeSceneGraph()
     const pageId = firstPageId(graph)

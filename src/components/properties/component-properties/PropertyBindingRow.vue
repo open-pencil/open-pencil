@@ -2,7 +2,7 @@
 import type { ComponentBinding } from '@open-pencil/vue'
 import { usePanelMessages } from '@open-pencil/vue'
 
-import { nodeIcon } from '@/app/editor/icons'
+import { sceneNodeIcon } from '@/app/editor/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
@@ -20,7 +20,7 @@ const panels = usePanelMessages()
       :aria-label="binding.variantName ? `${binding.variantName}: ${binding.name}` : binding.name"
       @click="$emit('select', binding.nodeId)"
     >
-      <component :is="nodeIcon(binding.node)" class="size-3.5 shrink-0" aria-hidden="true" />
+      <component :is="sceneNodeIcon(binding.node)" class="size-3.5 shrink-0" aria-hidden="true" />
       <span class="min-w-0 truncate text-left"
         >{{ binding.variantName ? `${binding.variantName} / ` : '' }}{{ binding.name }}</span
       >

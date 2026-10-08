@@ -36,7 +36,7 @@ Selecting a placed icon adds an **Icon** section to the Design panel.
 
 Each swap or color change is one undo step; dragging in the color picker undoes as a single change.
 
-An icon is a frame of vector paths, so its layers, constraints, effects, and the rest of the Design panel work as they do for any frame. Swapping replaces the paths, including any you edited by hand.
+An icon is a frame of vector paths, named after the icon, such as `cat`, and marked with a smiley in the layer tree. Unlike other frames on the page, it has no title on the canvas. Its layers, constraints, effects, and the rest of the Design panel work as they do for any frame. Swapping replaces the paths, including any you edited by hand.
 
 ## Icons in Exports
 

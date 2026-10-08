@@ -9,7 +9,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 function iconFrame(color: Color, name?: string) {
   const graph = new SceneGraph()
   const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
-    name: name ?? 'Icon / lucide:home',
+    name: name ?? 'home',
     width: 20,
     height: 20
   })
@@ -37,5 +37,10 @@ describe('icons in design JSX export', () => {
     expect(sceneNodeToJSX(frame.id, graph)).toBe(
       '<Icon name="lucide:home" size={20} label="Home" />'
     )
+  })
+
+  test('leave out the name an icon was placed with, in the old style too', () => {
+    const { graph, frame } = iconFrame({ r: 0, g: 0, b: 0, a: 1 }, 'Icon / lucide:home')
+    expect(sceneNodeToJSX(frame.id, graph)).toBe('<Icon name="lucide:home" size={20} />')
   })
 })

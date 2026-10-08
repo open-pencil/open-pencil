@@ -96,7 +96,7 @@ describe('icon commands', () => {
     await editor.swapIconGlyph(id, 'test:lines')
     const frame = getNodeOrThrow(editor.graph, id)
     expect(readIcon(frame)).toEqual({ name: 'test:lines' })
-    expect(frame).toMatchObject({ x: 188, y: 163, name: 'Icon / test:lines' })
+    expect(frame).toMatchObject({ x: 188, y: 163, name: 'lines' })
     expect(editor.graph.getChildren(id)[0]?.strokes[0]?.color).toEqual(RED)
 
     editor.undo.undo()
@@ -152,5 +152,22 @@ describe('icon commands across a document change', () => {
 
     expect(await inserting).toBeNull()
     expect([...replacement.getAllNodes()].some((node) => readIcon(node))).toBe(false)
+  })
+})
+
+describe('icon layer names', () => {
+  test('a swap renames a layer named after its icon, old style or new, but keeps a given name', async () => {
+    const editor = setup()
+    const named = await insert(editor, 'test:square')
+    const oldStyle = await insert(editor, 'test:square')
+    const renamed = await insert(editor, 'test:square')
+    editor.graph.updateNode(oldStyle, { name: 'Icon / test:square' })
+    editor.graph.updateNode(renamed, { name: 'Close button' })
+
+    for (const id of [named, oldStyle, renamed]) await editor.swapIconGlyph(id, 'test:lines')
+
+    expect(getNodeOrThrow(editor.graph, named).name).toBe('lines')
+    expect(getNodeOrThrow(editor.graph, oldStyle).name).toBe('lines')
+    expect(getNodeOrThrow(editor.graph, renamed).name).toBe('Close button')
   })
 })

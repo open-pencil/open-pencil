@@ -71,7 +71,7 @@ test('the toolbar inserts a picked icon, selected, as one undo step', async () =
   await insertSquare(page)
 
   const icon = await getSelectedNode(page)
-  expect(icon).toMatchObject({ type: 'FRAME', name: 'Icon / test:square', width: 24 })
+  expect(icon).toMatchObject({ type: 'FRAME', name: 'square', width: 24 })
   expect(icon?.childIds).toHaveLength(1)
   // The search previews and the placed icon load the set once between them.
   expect(requests).toMatchObject({ search: 1, sets: 1 })
@@ -86,7 +86,7 @@ test('the Object menu opens the same picker', async () => {
   await menu.getByRole('menuitem', { name: 'Insert Icon…' }).click()
   await pick(page, 'Insert icon', 'shape', 'ring')
 
-  expect(await getSelectedNode(page)).toMatchObject({ name: 'Icon / test:ring' })
+  expect(await getSelectedNode(page)).toMatchObject({ name: 'ring' })
 })
 
 test('the Icon section swaps the glyph in place, undoably', async () => {
@@ -102,7 +102,7 @@ test('the Icon section swaps the glyph in place, undoably', async () => {
     id: before?.id,
     x: before?.x,
     y: before?.y,
-    name: 'Icon / test:ring'
+    name: 'ring'
   })
 
   await canvas.undo()

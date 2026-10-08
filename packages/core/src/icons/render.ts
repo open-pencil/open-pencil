@@ -1,4 +1,6 @@
 import {
+  iconLayerName,
+  isPlacedIconName,
   readIcon,
   readIconTint,
   withIcon,
@@ -79,7 +81,7 @@ export function placeIcon(
 ): SceneNode {
   const name = `${icon.prefix}:${icon.name}`
   const frame = graph.createNode('FRAME', parentId, {
-    name: identity ? `Icon / ${name}` : icon.name,
+    name: identity ? iconLayerName(name) : icon.name,
     width: size,
     height: size,
     fills: [],
@@ -124,8 +126,11 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
   const size = icon.width
   for (const child of graph.getChildren(frameId)) graph.deleteNode(child.id)
   const name = `${icon.prefix}:${icon.name}`
+  const previous = readIcon(frame)
   graph.updateNode(frameId, {
-    name: frame.name.startsWith('Icon / ') ? `Icon / ${name}` : frame.name,
+    // A layer still named after its icon takes the new icon's name; a name someone gave stays.
+    name:
+      previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name,
     pluginData: withIcon(frame, { name })
   })
   for (const path of icon.paths) addPath(graph, frameId, path, size, color)

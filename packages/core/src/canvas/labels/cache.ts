@@ -3,6 +3,8 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderOverlays } from '#core/canvas/renderer'
 import { createSceneGeometry } from '#core/geometry'
 
+import { hasFrameTitle } from './layout'
+
 export interface CachedSection {
   nodeId: string
   absX: number
@@ -32,7 +34,6 @@ interface Viewport {
 }
 
 const LABEL_TYPES = new Set(['COMPONENT', 'COMPONENT_SET'])
-const FRAME_TITLE_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
 const COMPONENT_LABEL_PARENT_TYPES = new Set(['CANVAS', 'SECTION', 'COMPONENT_SET'])
 
 function isInViewport(absX: number, absY: number, w: number, h: number, vp: Viewport): boolean {
@@ -204,7 +205,7 @@ export class LabelCache {
           this.walkChildren(graph, childId, insideSection)
         }
       } else {
-        if (child.type === 'FRAME' && FRAME_TITLE_PARENT_TYPES.has(parentType)) {
+        if (hasFrameTitle(child, parentType)) {
           const origin = graph.getAbsolutePosition(childId)
           this.frames.push({ nodeId: childId, absX: origin.x, absY: origin.y })
         }
