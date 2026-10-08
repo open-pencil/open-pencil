@@ -1,65 +1,35 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 import { useI18n, useVariantAuthoring } from '@open-pencil/vue'
 
-import AppButton from '@/components/ui/button/AppButton.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
-const {
-  active,
-  variant,
-  definitions,
-  diagnostics,
-  addProperty,
-  renameProperty,
-  removeProperty,
-  reorderProperties,
-  renameValue,
-  reorderValues,
-  setVariantValue,
-  addVariant,
-  duplicateVariant
-} = useVariantAuthoring()
+/**
+ * The selected variant's own values. The set's variant properties and their values are edited
+ * in the Properties list, and Add variant sits in the panel header.
+ */
+const { variant, definitions, diagnostics, setVariantValue } = useVariantAuthoring()
 const { panels } = useI18n()
-const propertyNames = reactive<Record<string, string>>({})
-const propertyValues = reactive<Record<string, string>>({})
 const selectedValues = reactive<Record<string, string>>({})
 const mutationConflictIds = ref<string[]>([])
-const conflictIds = computed(
-  () =>
-    new Set([
-      ...diagnostics.value.flatMap((diagnostic) => diagnostic.componentIds),
-      ...mutationConflictIds.value
-    ])
-)
 const selectedHasConflict = computed(() => {
   const variantId = variant.value?.id
-  return variantId ? conflictIds.value.has(variantId) : false
+  if (!variantId) return false
+  return (
+    mutationConflictIds.value.includes(variantId) ||
+    diagnostics.value.some((diagnostic) => diagnostic.componentIds.includes(variantId))
+  )
 })
 
 watch(
-  definitions,
-  (items) => {
+  [definitions, variant],
+  ([items, selected]) => {
     for (const definition of items) {
-      propertyNames[definition.id] = definition.name
-      for (const value of definition.values) propertyValues[`${definition.id}:${value}`] = value
       selectedValues[definition.id] =
-        variant.value?.componentPropertyValues[definition.name] ?? definition.values[0] ?? ''
-    }
-  },
-  { immediate: true }
-)
-watch(
-  variant,
-  (selected) => {
-    if (!selected) return
-    for (const definition of definitions.value) {
-      selectedValues[definition.id] =
-        selected.componentPropertyValues[definition.name] ?? definition.values[0] ?? ''
+        selected?.componentPropertyValues[definition.name] ?? definition.values[0] ?? ''
     }
   },
   { immediate: true }
@@ -68,46 +38,6 @@ watch(
 function blurInput(event: KeyboardEvent) {
   const target = event.currentTarget
   if (target instanceof HTMLInputElement) target.blur()
-}
-
-function commitPropertyName(propertyId: string) {
-  const name = propertyNames[propertyId]?.trim()
-  const definition = definitions.value.find((item) => item.id === propertyId)
-  if (!name || !definition || !renameProperty(propertyId, name)) {
-    if (definition) propertyNames[propertyId] = definition.name
-  }
-}
-
-function moveProperty(propertyId: string, offset: -1 | 1) {
-  const ids = definitions.value.map((definition) => definition.id)
-  const index = ids.indexOf(propertyId)
-  const destination = index + offset
-  if (index === -1 || destination < 0 || destination >= ids.length) return
-  const [moved] = ids.splice(index, 1)
-  if (!moved) return
-  ids.splice(destination, 0, moved)
-  reorderProperties(ids)
-}
-
-function moveValue(propertyId: string, value: string, offset: -1 | 1) {
-  const definition = definitions.value.find((item) => item.id === propertyId)
-  if (!definition) return
-  const values = [...definition.values]
-  const index = values.indexOf(value)
-  const destination = index + offset
-  if (index === -1 || destination < 0 || destination >= values.length) return
-  const [moved] = values.splice(index, 1)
-  if (!moved) return
-  values.splice(destination, 0, moved)
-  reorderValues(propertyId, values)
-}
-
-function commitPropertyValue(propertyId: string, previousValue: string) {
-  const key = `${propertyId}:${previousValue}`
-  const value = propertyValues[key]?.trim()
-  if (!value || !renameValue(propertyId, previousValue, value)) {
-    propertyValues[key] = previousValue
-  }
 }
 
 function commitSelectedValue(propertyId: string) {
@@ -120,36 +50,11 @@ function commitSelectedValue(propertyId: string) {
     selectedValues[propertyId] = variant.value?.componentPropertyValues[definition.name] ?? ''
   }
 }
-
-/** Add Property N and put the cursor in its name, so typing renames it right away. */
-async function createProperty() {
-  const id = addProperty()
-  if (!id) return
-  await nextTick()
-  nameInputs.get(id)?.select()
-}
-
-/** Name fields of the listed properties, so a new one can be selected for typing. */
-type SelectableInput = { select(): void }
-const nameInputs = new Map<string, SelectableInput>()
-function nameInputRef(id: string, input: SelectableInput | null) {
-  if (input) nameInputs.set(id, input)
-  else nameInputs.delete(id)
-}
 </script>
 
 <template>
-  <PanelSection v-if="active" :label="panels.variants" :empty="definitions.length === 0">
-    <template #actions>
-      <IconButton
-        :label="variant ? panels.duplicateVariant : panels.addVariantProperty"
-        @click="variant ? duplicateVariant() : createProperty()"
-      >
-        <icon-lucide-plus class="size-3.5" />
-      </IconButton>
-    </template>
-
-    <div v-if="variant" class="flex flex-col gap-1.5">
+  <PanelSection v-if="variant && definitions.length" :label="panels.variants">
+    <div class="flex flex-col gap-1.5">
       <PanelFieldGroup
         v-for="definition in definitions"
         :key="definition.id"
@@ -174,91 +79,5 @@ function nameInputRef(id: string, input: SelectableInput | null) {
         {{ panels.duplicateVariantValues }}. {{ panels.variantConflictHelp }}.
       </p>
     </div>
-
-    <div v-else-if="definitions.length" class="flex flex-col gap-2">
-      <div
-        v-for="definition in definitions"
-        :key="definition.id"
-        class="flex flex-col gap-1.5 rounded border border-border p-1.5"
-        :data-property="definition.id"
-      >
-        <div class="flex items-center gap-1">
-          <AppInput
-            :ref="(input) => nameInputRef(definition.id, input as SelectableInput | null)"
-            v-model="propertyNames[definition.id]"
-            size="sm"
-            tone="panel"
-            :aria-label="panels.variantPropertyName"
-            @change="commitPropertyName(definition.id)"
-            @enter="blurInput"
-          />
-          <IconButton
-            :label="panels.moveVariantPropertyUp"
-            :disabled="definitions[0]?.id === definition.id"
-            @click="moveProperty(definition.id, -1)"
-          >
-            <icon-lucide-chevron-up class="size-3.5" />
-          </IconButton>
-          <IconButton
-            :label="panels.moveVariantPropertyDown"
-            :disabled="definitions.at(-1)?.id === definition.id"
-            @click="moveProperty(definition.id, 1)"
-          >
-            <icon-lucide-chevron-down class="size-3.5" />
-          </IconButton>
-          <IconButton :label="panels.removeVariantProperty" @click="removeProperty(definition.id)">
-            <icon-lucide-minus class="size-3.5" />
-          </IconButton>
-        </div>
-        <div
-          v-for="(value, valueIndex) in definition.values"
-          :key="value"
-          class="flex items-center gap-1"
-        >
-          <AppInput
-            v-model="propertyValues[`${definition.id}:${value}`]"
-            size="sm"
-            tone="panel"
-            :aria-label="`${definition.name}: ${value}`"
-            @change="commitPropertyValue(definition.id, value)"
-            @enter="blurInput"
-          />
-          <IconButton
-            :label="panels.moveVariantValueUp"
-            :disabled="valueIndex === 0"
-            @click="moveValue(definition.id, value, -1)"
-          >
-            <icon-lucide-chevron-up class="size-3.5" />
-          </IconButton>
-          <IconButton
-            :label="panels.moveVariantValueDown"
-            :disabled="valueIndex === definition.values.length - 1"
-            @click="moveValue(definition.id, value, 1)"
-          >
-            <icon-lucide-chevron-down class="size-3.5" />
-          </IconButton>
-        </div>
-      </div>
-      <p
-        v-if="diagnostics.length"
-        role="alert"
-        class="rounded bg-danger/10 px-2 py-1.5 text-[10px] leading-4 text-danger"
-      >
-        {{ panels.duplicateVariantValues }}. {{ panels.variantConflictHelp }}.
-      </p>
-    </div>
-
-    <p v-else class="py-1 text-[10px] text-muted">{{ panels.noVariantProperties }}</p>
-
-    <AppButton
-      v-if="!variant"
-      size="xs"
-      variant="soft"
-      class="mt-2 self-start"
-      @click="addVariant()"
-    >
-      <icon-lucide-plus class="size-3.5" />
-      {{ panels.addVariant }}
-    </AppButton>
   </PanelSection>
 </template>

@@ -49,6 +49,72 @@ export function useComponentPropertyAuthoring() {
         })
     )
   )
+  /** The set the selection belongs to, whose variant properties the list shows too. */
+  const componentSet = computed(() =>
+    context.value?.owner.type === 'COMPONENT_SET' ? context.value.owner : null
+  )
+  const variantProperties = useSceneComputed(() => {
+    const set = componentSet.value
+    if (!set) return []
+    const used = editor.collectVariantOptions(set.id)
+    return set.componentPropertyDefinitions
+      .filter((definition) => definition.type === 'VARIANT')
+      .map((definition) => ({
+        id: definition.id,
+        name: definition.name,
+        values: editor.getVariantOptions(set.id, definition.id),
+        used: [...(used.get(definition.name) ?? [])]
+      }))
+  })
+  type VariantProperty = (typeof variantProperties.value)[number]
+  type AuthoredProperty = (typeof definitions.value)[number]
+  type PropertyRow =
+    | { kind: 'variant'; id: string; variant: VariantProperty }
+    | { kind: 'property'; id: string; property: AuthoredProperty }
+  /** Every row of the list in the owner's order: variant properties and authored ones. */
+  const rows = computed((): PropertyRow[] => {
+    const owner = context.value?.owner
+    if (!owner) return []
+    const variantById = new Map(variantProperties.value.map((item) => [item.id, item]))
+    const authoredById = new Map(definitions.value.map((item) => [item.id, item]))
+    const ownRows = owner.componentPropertyDefinitions.flatMap((definition): PropertyRow[] => {
+      const variant = variantById.get(definition.id)
+      if (variant) return [{ kind: 'variant' as const, id: variant.id, variant }]
+      const property = authoredById.get(definition.id)
+      return property ? [{ kind: 'property' as const, id: property.id, property }] : []
+    })
+    // Properties a variant owns on its own come after the set's shared ones.
+    const localRows = definitions.value
+      .filter((item) => item.ownerId !== owner.id)
+      .map((property) => ({ kind: 'property' as const, id: property.id, property }))
+    return [...ownRows, ...localRows]
+  })
+  const conflicts = useSceneComputed(() => {
+    const set = componentSet.value
+    if (!set) return []
+    return editor.getComponentSetVariantConflicts(set.id).map((conflict) => ({
+      label: Object.entries(conflict.values)
+        .map(([name, value]) => `${name}=${value}`)
+        .join(', '),
+      componentIds: conflict.componentIds
+    }))
+  })
+
+  /** Figma names a new variant property Property 1, Property 2, … with the value Default. */
+  function addVariantProperty() {
+    const set = componentSet.value
+    if (!set) return undefined
+    const taken = new Set(set.componentPropertyDefinitions.map((definition) => definition.name))
+    let index = 1
+    while (taken.has(`Property ${index}`)) index++
+    return editor.addPropertyDefinition(set.id, `Property ${index}`, 'VARIANT', 'Default')
+  }
+
+  function withSet<T>(run: (setId: string) => T): T | undefined {
+    const set = componentSet.value
+    return set ? run(set.id) : undefined
+  }
+
   const components = useSceneComputed(() =>
     [...editor.graph.getAllNodes()].filter((node) => node.type === 'COMPONENT')
   )
@@ -94,6 +160,23 @@ export function useComponentPropertyAuthoring() {
   return {
     context,
     definitions,
+    rows,
+    componentSet,
+    conflicts,
+    addVariantProperty,
+    renameVariantProperty: (propertyId: string, name: string) =>
+      withSet((setId) => editor.renamePropertyDefinition(setId, propertyId, name)),
+    removeVariantProperty: (propertyId: string) =>
+      withSet((setId) => editor.removePropertyDefinition(setId, propertyId)),
+    renameVariantValue: (propertyId: string, previous: string, value: string) =>
+      withSet((setId) => editor.renameVariantValue(setId, propertyId, previous, value)),
+    reorderVariantValues: (propertyId: string, values: string[]) =>
+      withSet((setId) => editor.reorderVariantValues(setId, propertyId, values)),
+    addVariantValue: (propertyId: string, value: string) =>
+      withSet((setId) => editor.addVariantValue(setId, propertyId, value)),
+    removeVariantValue: (propertyId: string, value: string, replacement?: string) =>
+      withSet((setId) => editor.removeVariantValue(setId, propertyId, value, replacement)),
+    selectNodes: (nodeIds: string[]) => editor.select(nodeIds),
     nestedInstances,
     variantCount: computed(() => variants.value.length),
     editable: computed(() => !!context.value?.editable),

@@ -19,7 +19,7 @@ import {
   getComponentSet,
   getComponentSetVariants,
   getVariantDefinitions,
-  hasDuplicateCombination,
+  getVariantOptions,
   variantValues,
   type VariantMutationResult
 } from './model'
@@ -70,7 +70,7 @@ export function reorderVariantValues(
   const definition = getVariantDefinitions(ctx.graph, componentSetId).find(
     (item) => item.id === propertyId
   )
-  const currentValues = definition?.variantOptions ?? []
+  const currentValues = getVariantOptions(ctx.graph, componentSetId, propertyId)
   const before = captureVariantSnapshot(ctx, componentSetId)
   if (!componentSet || !definition || !before) return false
   if (
@@ -234,17 +234,8 @@ export function renameVariantValue(
     previousValue === normalizedValue
   )
     return false
-  if (
-    hasDuplicateCombination(ctx.graph, componentSetId, (variant) => ({
-      ...variantValues(ctx.graph, componentSetId, variant),
-      [definition.name]:
-        variant.componentPropertyValues[definition.name] === previousValue
-          ? normalizedValue
-          : (variant.componentPropertyValues[definition.name] ?? '')
-    }))
-  ) {
-    return false
-  }
+  const options = getVariantOptions(ctx.graph, componentSetId, propertyId)
+  if (!options.includes(previousValue) || options.includes(normalizedValue)) return false
 
   ctx.graph.updateNode(componentSetId, {
     componentPropertyDefinitions: componentSet.componentPropertyDefinitions.map((item) =>
@@ -252,7 +243,7 @@ export function renameVariantValue(
         ? {
             ...item,
             defaultValue: item.defaultValue === previousValue ? normalizedValue : item.defaultValue,
-            variantOptions: item.variantOptions?.map((option) =>
+            variantOptions: options.map((option) =>
               option === previousValue ? normalizedValue : option
             )
           }

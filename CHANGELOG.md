@@ -37,6 +37,7 @@
 
 ### Added
 
+- Add a variant to a standalone component from the header's **Add variant** button, as in Figma (#847): it becomes a component set named after it, whose existing instances and properties carry over, with a `Property 1=Variant2` copy below. A set's variant properties are rows of its **Properties** list, each opening to rename it and add, rename, reorder, or remove its values; removing a value variants still use moves them to another value. Variants that share a combination of values are named in a notice that selects them.
 - Create and edit a component's text, boolean, and instance swap properties from the properties panel, as in Figma (#847). A layer in a main component links its text content, visibility, or swapped component to a new or existing property from the Typography and Appearance sections and the instance header, and shows the linked property in place of the value. The component lists its properties, each opening to rename it, change its default, see and unlink the layers it drives, or delete it, and reorders them by dragging. Expose nested instances so their properties show, grouped under the instance's name, on instances of the component. Typing into text a property drives sets the property: its default in the main component, the instance's value in an instance.
 - Attach images to an AI chat message by dropping them anywhere on the chat panel: an outline over the composer shows where they go, or why they cannot be attached while a reply is running or four images are already attached. SVG images are drawn as PNGs when dropped, pasted, or chosen. Documents dropped on the chat still open in a new tab.
 - Share only the selected layers with MCP clients: **Share only the selection** under **Settings → MCP → Local server**, or `OPENPENCIL_MCP_SCOPE=selection` for a server you start yourself, limits clients to `get_selection`, `get_node`, `get_page_tree`, `describe`, and `export_image` on the selected layers and what they hold, enforced by the server for MCP sessions, stdio clients, and `/rpc` alike.
@@ -86,6 +87,7 @@
 
 ### Changed
 
+- **Add variant** on a component set copies its last variant below it, 20 px apart, with the next free value such as `Variant3`, and grows the set to hold it, as Figma does. It used to place a copy with the same values to the right, which made a duplicate combination.
 - The `get_selection` tool returns the selected layers with their direct children by default instead of their whole subtrees, and takes a `depth` for more or fewer levels, so agents can start from what the user selected without reading the full tree.
 - The width and height menus in the properties panel offer Hug only for auto-layout frames and text, as in Figma; on a frame without auto layout it had no effect.
 - Confirm deleting an AI conversation in the standard confirmation dialog, which names the conversation, instead of a prompt inside the chat panel.
@@ -236,6 +238,7 @@
 ### Performance
 
 - Save an edited `.fig` file by rewriting only the layers that changed and copying the rest from the file it was opened from, as it is stored, without decoding it; in the browser that work runs off the main thread. Saving the 109 MB Preline UI kit after an edit takes about 3 seconds instead of over two minutes, and crash recovery no longer freezes Safari after the first edit to a large file. Editing a component also rewrites its instances on pages that were not opened yet.
+- Open `.fig` design kits with less memory: layers inside instances hold their component layers' paints, glyphs, and other unchanged values instead of a copy each, about a third fewer objects and an eighth less memory per loaded page.
 - Save large `.fig` documents with less memory: once every page is loaded, the first save releases the decoded original file, and saves write from the document instead of a copy of it, about 1.5 GB less on a 74 MB design kit.
 - Save edited `.fig` documents with many component instances faster: each overridden layer is addressed and its variables resolved once, overrides merge through an index instead of a scan per override, and the components Figma keeps off-canvas are read once instead of on every save. Saving a 74 MB design kit after an edit takes about 8 seconds instead of 13, and later saves about 7.
 - Open and draw large pages faster: guides no longer scan every layer of the page on each frame, a layout pass only writes the layers it moved and asks for one redraw, and opening a `.fig` keeps one copy of the file on the main thread instead of three.
