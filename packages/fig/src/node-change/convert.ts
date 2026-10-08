@@ -891,6 +891,7 @@ type ComponentMetadataProps = Pick<
   | 'publishedVersion'
   | 'isPublishable'
   | 'isSymbolPublishable'
+  | 'isExposedInstance'
   | 'symbolDescription'
   | 'symbolLinks'
   | 'variantPropSpecs'
@@ -928,6 +929,7 @@ function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
     publishedVersion: stringOrNull(nc.publishedVersion),
     isPublishable: booleanOrFalse(nc.isPublishable),
     isSymbolPublishable: booleanOrFalse(nc.isSymbolPublishable),
+    isExposedInstance: booleanOrFalse(nc.propsAreBubbled),
     symbolDescription: stringOrEmpty(nc.symbolDescription),
     symbolLinks: symbolLinks
       .filter((link): link is SymbolLink => typeof link.uri === 'string')

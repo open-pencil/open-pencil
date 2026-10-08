@@ -11,7 +11,9 @@ import {
   applyComponentPropertyValue,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
   removeComponentProperty,
-  createComponentPropertyId
+  createComponentPropertyId,
+  exposedInstances,
+  instanceExposureIssue
 } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
@@ -381,44 +383,36 @@ export function installComponentPropertyAccessors(
     isExposedInstance: {
       get(this: ProxyThis) {
         const node = raw(this, internals)
-        return (
-          node.type === 'INSTANCE' &&
-          node.componentPropertyReferences.some((reference) => reference.field === 'INSTANCE_SWAP')
-        )
+        if (node.type !== 'INSTANCE') return false
+        if (node.isExposedInstance) return true
+        // A copy inside an instance reports what its source in the component says.
+        const owner = node.parentId
+          ? graph(this, internals).closest(node.parentId, (item) => item.type === 'INSTANCE')
+          : undefined
+        return !!owner && exposedInstances(graph(this, internals), owner).includes(node)
       },
       set(this: ProxyThis, value: boolean) {
         const node = raw(this, internals)
         if (node.type !== 'INSTANCE')
           throw new Error('isExposedInstance is only supported on instances')
-        if (!value)
-          updateNode(this, internals, {
-            componentPropertyReferences: node.componentPropertyReferences.filter(
-              (reference) => reference.field !== 'INSTANCE_SWAP'
-            )
-          })
+        const issue = instanceExposureIssue(graph(this, internals), node)
+        if (issue === 'not-in-component')
+          throw new Error(
+            'Instance must be contained within a component or component set to be exposed.'
+          )
+        if (issue === 'not-primary') throw new Error('Can only expose primary instances.')
+        if (value && issue)
+          throw new Error(
+            'Can only expose instances that have exposed nested instances or children with component property references.'
+          )
+        updateNode(this, internals, { isExposedInstance: value })
       }
     },
     exposedInstances: {
       get(this: ProxyThis) {
         const node = raw(this, internals)
-        if (node.type !== 'INSTANCE') return []
-        const result: FigmaNodeProxy[] = []
-        const visit = (id: string): void => {
-          const child = graph(this, internals).getNode(id)
-          if (!child) return
-          if (
-            child.type === 'INSTANCE' &&
-            child.componentPropertyReferences.some(
-              (reference) => reference.field === 'INSTANCE_SWAP'
-            )
-          )
-            result.push(
-              (this[internals.api] as { wrapNode(id: string): FigmaNodeProxy }).wrapNode(child.id)
-            )
-          child.childIds.forEach(visit)
-        }
-        node.childIds.forEach(visit)
-        return result
+        const api = this[internals.api] as { wrapNode(id: string): FigmaNodeProxy }
+        return exposedInstances(graph(this, internals), node).map((item) => api.wrapNode(item.id))
       }
     },
     setProperties: {

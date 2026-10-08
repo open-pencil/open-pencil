@@ -186,6 +186,7 @@ export function createDefaultNode(
     librarySource: null,
     isPublishable: false,
     isSymbolPublishable: false,
+    isExposedInstance: false,
     symbolDescription: '',
     symbolLinks: [],
     variantPropSpecs: [],
