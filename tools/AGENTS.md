@@ -39,7 +39,7 @@ The `/demo` document is built from `tools/generate/demo/src/document/` into the 
 
 ## Landing posters
 
-`tools/generate/landing-posters/` captures WebP stills of every docs landing stage, per locale, theme, and layout, from a production docs build served locally in headless Chromium with software WebGL. `build:production` in `packages/docs` runs it after `vitepress build`; it reuses `.cache/landing-posters/<fingerprint>` when the inputs in `src/fingerprint.ts` are unchanged and copies the stills into `dist`, and `generate:landing-posters` forces a capture. The docs deploy workflow installs Chromium for it. A stage that starts depending on a new source tree adds it to `LANDING_POSTER_INPUTS`.
+`tools/generate/landing-posters/` captures WebP stills of every docs landing stage, per locale, theme, and layout, from a production docs build served locally in headless Chromium with software WebGL. `build:production` in `packages/docs` runs it after `vitepress build`; it reuses `.cache/landing-posters/<fingerprint>` when the inputs in `src/fingerprint.ts` are unchanged and copies the stills into `dist`, and `generate:landing-posters` forces a capture. The docs deploy workflow installs Chromium for it; dispatching it with `dry-run` builds and captures without deploying and keeps the stills as an artifact. A stage that starts depending on a new source tree adds it to `LANDING_POSTER_INPUTS`.
 
 ## Brand assets
 
