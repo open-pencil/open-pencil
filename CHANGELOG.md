@@ -126,6 +126,7 @@
 
 ### Fixed
 
+- List storage documents as soon as storage settings are saved. The home tab kept asking to configure storage until it next refreshed, which happened on window focus or up to a minute later.
 - Open S3 storage documents and show their previews on servers that answer a byte-range read with `200` instead of `206`, such as `rclone serve s3`. Previews failed to load, and the browser cached the partial reply as the whole document, so opening it failed with "Invalid fig-kiwi container". Storage requests now skip the browser cache, and a `200` whose `Content-Range` matches the request is accepted.
 - Keep a layer's `.fig` ID the same across saves (#890). Layers created in OpenPencil were numbered in tree order on each save until the file was reopened, so inserting a layer shifted the IDs of the layers after it; variable collections and modes could also be renumbered.
 - Store crash recovery snapshots of any size. Snapshots of documents over 127 MiB failed to save to IndexedDB and stayed in memory for the rest of the session.

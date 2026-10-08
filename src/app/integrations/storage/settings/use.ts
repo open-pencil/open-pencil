@@ -13,6 +13,7 @@ import { appCredentialServices } from '@/app/settings/credentials/app'
 import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { resumeStorageSync } from '@/app/storage/sync'
+import { emitStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 import { testStorageDraft } from './draft'
 
@@ -22,9 +23,12 @@ const storageSettingsServices = {
   statuses: storageCredentialStatuses,
   manager: appCredentialServices.manager,
   test: testStorageDraft,
-  resume: resumeStorageSync
+  resume: resumeStorageSync,
+  changed: (providerId: StorageProviderID) =>
+    emitStorageWorkspaceEvent({ providerId, kind: 'changed' })
 }
 
+import type { StorageProviderID } from '@/app/integrations/storage/types'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
 export function useStorageSettings(
@@ -154,6 +158,8 @@ export function useStorageSettings(
       return result
     } finally {
       operation.value = null
+      // The home workspace stays mounted and lists storage only when told to.
+      if (persisted) services.changed(target.id)
     }
   }
 

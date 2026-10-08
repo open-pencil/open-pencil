@@ -96,7 +96,6 @@ test('configured storage lists previews through ranges before opening the docume
 
   await page.getByTestId('settings-storage-open-workspace').click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
   const entry = page.getByRole('button', { name: /Remote design/ })
   await expect(entry).toBeVisible()
   const preview = entry.locator('img')
