@@ -133,7 +133,7 @@ describe('icon commands', () => {
 
 describe('icon commands across a document change', () => {
   test('an icon still loading when the document is replaced is not inserted into the new one', async () => {
-    let release = () => {}
+    let release: (() => void) | undefined
     const loaded = new Promise<void>((resolve) => {
       release = resolve
     })
@@ -148,7 +148,7 @@ describe('icon commands across a document change', () => {
     const inserting = editor.insertIcon('test:square')
     const replacement = new SceneGraph()
     editor.replaceGraph(replacement)
-    release()
+    release?.()
 
     expect(await inserting).toBeNull()
     expect([...replacement.getAllNodes()].some((node) => readIcon(node))).toBe(false)
