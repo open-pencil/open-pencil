@@ -43,7 +43,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
-import { nodeWithResolvedBindings } from './resolved-bindings'
+import { exportedNode } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
@@ -893,7 +893,7 @@ export function sceneNodeToKiwiWithContext(
   localIdCounter: { value: number },
   context: SceneNodeToKiwiContext
 ): KiwiNodeChange[] {
-  const node = nodeWithResolvedBindings(context.graph, source)
+  const node = exportedNode(context, source)
   const guid = getOrCreateNodeGuid(context, node.id, localIdCounter) ?? {
     sessionID: 1,
     localID: localIdCounter.value++

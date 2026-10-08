@@ -62,6 +62,8 @@ export interface SceneNodeToKiwiContext {
    * so the caller re-parents the `isSlotContent` roots there after serializing its nodes.
    */
   slotContentRecords?: KiwiNodeChange[]
+  /** Nodes with their bindings resolved, kept for the length of one export. */
+  resolvedNodes?: WeakMap<SceneNode, SceneNode>
   fractionalPosition: (index: number) => string
   mapToFigmaType: (type: SceneNode['type']) => string
   fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint
