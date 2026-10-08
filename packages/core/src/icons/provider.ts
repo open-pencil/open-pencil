@@ -60,36 +60,60 @@ export function createIconifyProvider(client = createIconifyAPIClient()): IconPr
     return promise
   }
 
+  /** Names the source answered without, so they are not asked for again. */
+  const absent = new Set<string>()
+  /** Requests on their way, by the names they ask for, so overlapping calls share them. */
+  const loading = new Map<string, Promise<void>>()
+
+  async function request(prefix: string, iconNames: string[]): Promise<void> {
+    const collection = await client.fetchCollection(prefix, iconNames)
+    for (const iconName of iconNames) {
+      const parent = collection.aliases?.[iconName]?.parent
+      const entry = collection.icons[iconName] ?? (parent ? collection.icons[parent] : undefined)
+      const name = `${prefix}:${iconName}`
+      if (!entry) {
+        absent.add(name)
+        continue
+      }
+      entries.set(name, {
+        body: entry.body,
+        width: entry.width ?? collection.width ?? 24,
+        height: entry.height ?? collection.height ?? 24
+      })
+    }
+  }
+
   async function load(names: readonly string[]): Promise<void> {
-    const missing = new Map<string, string[]>()
+    const waiting = new Set<Promise<void>>()
+    const needed = new Map<string, string[]>()
     for (const name of names) {
-      if (entries.has(name)) continue
+      if (entries.has(name) || absent.has(name)) continue
+      const pending = loading.get(name)
+      if (pending) {
+        waiting.add(pending)
+        continue
+      }
       const parsed = parseIconName(name)
       if (!parsed)
         throw new Error(
           `Invalid icon name "${name}". Use prefix:name format (e.g. lucide:heart, mdi:home)`
         )
-      missing.set(parsed.prefix, [...(missing.get(parsed.prefix) ?? []), parsed.iconName])
+      needed.set(parsed.prefix, [...(needed.get(parsed.prefix) ?? []), parsed.iconName])
     }
-    const requests = [...missing].flatMap(([prefix, iconNames]) =>
-      chunk(iconNames, NAMES_PER_REQUEST).map((part) => ({ prefix, iconNames: part }))
-    )
-    await Promise.all(
-      requests.map(async ({ prefix, iconNames }) => {
-        const collection = await client.fetchCollection(prefix, iconNames)
-        for (const iconName of iconNames) {
-          const parent = collection.aliases?.[iconName]?.parent
-          const entry =
-            collection.icons[iconName] ?? (parent ? collection.icons[parent] : undefined)
-          if (!entry) continue
-          entries.set(`${prefix}:${iconName}`, {
-            body: entry.body,
-            width: entry.width ?? collection.width ?? 24,
-            height: entry.height ?? collection.height ?? 24
-          })
+    for (const [prefix, iconNames] of needed) {
+      for (const part of chunk(iconNames, NAMES_PER_REQUEST)) {
+        const pending = request(prefix, part)
+        const keys = part.map((iconName) => `${prefix}:${iconName}`)
+        for (const key of keys) loading.set(key, pending)
+        // Settled either way, the names leave the queue; a failure can be asked for again.
+        const settle = () => {
+          for (const key of keys) if (loading.get(key) === pending) loading.delete(key)
         }
-      })
-    )
+        void pending.then(settle, settle)
+        waiting.add(pending)
+      }
+    }
+    await Promise.all(waiting)
   }
 
   return {

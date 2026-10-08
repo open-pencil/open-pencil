@@ -74,6 +74,27 @@ describe('Iconify provider', () => {
     expect(requests).toHaveLength(3)
   })
 
+  test('overlapping loads share requests, and a name the set lacks is not asked for again', async () => {
+    const { provider, requests } = setup()
+    await Promise.all([
+      provider.previews(['test:square', 'test:gone']),
+      provider.icons(['test:square'], 24)
+    ])
+    await provider.previews(['test:gone'])
+
+    expect(requests).toHaveLength(1)
+  })
+
+  test('a failed load is asked for again', async () => {
+    const { provider, requests, failing } = setup()
+    failing.add('/test.json')
+    await expect(provider.previews(['test:square'])).rejects.toThrow('500')
+
+    failing.clear()
+    expect((await provider.previews(['test:square'])).has('test:square')).toBe(true)
+    expect(requests).toHaveLength(2)
+  })
+
   test('a name without a set is refused', async () => {
     const { provider } = setup()
     await expect(provider.previews(['square'])).rejects.toThrow('prefix:name')

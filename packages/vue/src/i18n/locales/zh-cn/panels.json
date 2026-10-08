@@ -426,6 +426,7 @@
   "iconResultCount": {
     "many": "{count} 个结果"
   },
+  "iconResultCountCapped": "{count}+ 个结果",
   "noLocalFontsAvailable": "没有可用的本地字体。",
   "localFontsAccessHint": "请使用桌面应用或 Chrome/Edge 访问系统字体。",
   "editColor": "编辑颜色",

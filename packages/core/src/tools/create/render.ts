@@ -33,7 +33,8 @@ export const render = defineTool({
     jsx: v.pipe(v.string(), v.description('JSX string to render'))
   }),
   execute: async (figma, args) => {
-    const { renderJSX } = await import('#core/design-jsx')
+    const { designJSXRenderer } = await import('#core/design-jsx')
+    const { renderJSX } = designJSXRenderer(figma.icons)
 
     const placement = resolveRenderPlacement(figma.graph, args, figma.currentPageId)
     const results = await renderJSX(figma.graph, args.jsx, placement)

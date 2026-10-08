@@ -440,6 +440,7 @@
     "few": "{count} wyniki",
     "many": "{count} wyników"
   },
+  "iconResultCountCapped": "{count}+ wyników",
   "noLocalFontsAvailable": "Brak dostępnych czcionek lokalnych.",
   "localFontsAccessHint": "Użyj aplikacji komputerowej lub Chrome/Edge, aby uzyskać dostęp do czcionek systemowych.",
   "editColor": "Edytuj kolor",

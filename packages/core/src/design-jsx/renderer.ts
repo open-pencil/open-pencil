@@ -1,6 +1,6 @@
 import { createDesignJSXRenderer, type SVGSource } from '@open-pencil/design-jsx'
 
-import { iconify, placeIcon } from '#core/icons'
+import { iconify, placeIcon, type IconProvider } from '#core/icons'
 import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
 import { computeAllLayouts } from '#core/layout'
@@ -37,20 +37,39 @@ function svgIconData({ body, elements, props }: SVGSource, size: number): IconDa
   }
 }
 
-/** Design JSX rendering with OpenPencil's icons, SVG conversion, and layout. */
-export const { renderJSX, renderTree } = createDesignJSXRenderer<IconData>({
-  async icon(name, size) {
-    const icon = (await iconify.icons([name], size)).get(name)
-    return icon && icon.paths.length > 0 ? icon : null
-  },
-  svg: svgIconData,
-  createArtwork: (graph, icon, { parentId, size, color, overrides }) =>
-    placeIcon(graph, parentId, icon, {
-      size,
-      color,
-      overrides,
-      // Inline SVG is artwork, not an icon from a set.
-      identity: icon.prefix !== INLINE_SVG
-    }),
-  layout: computeAllLayouts
-})
+function createRenderer(icons: IconProvider) {
+  return createDesignJSXRenderer<IconData>({
+    async icon(name, size) {
+      const icon = (await icons.icons([name], size)).get(name)
+      return icon && icon.paths.length > 0 ? icon : null
+    },
+    svg: svgIconData,
+    createArtwork: (graph, icon, { parentId, size, color, overrides }) =>
+      placeIcon(graph, parentId, icon, {
+        size,
+        color,
+        overrides,
+        // Inline SVG is artwork, not an icon from a set.
+        identity: icon.prefix !== INLINE_SVG
+      }),
+    layout: computeAllLayouts
+  })
+}
+
+const renderers = new WeakMap<IconProvider, ReturnType<typeof createRenderer>>()
+
+/**
+ * Design JSX rendering with OpenPencil's SVG conversion and layout, drawing `<Icon>` from
+ * `icons`, such as the `FigmaAPI`'s provider, so a host's own icons render too.
+ */
+export function designJSXRenderer(icons: IconProvider = iconify) {
+  let renderer = renderers.get(icons)
+  if (!renderer) {
+    renderer = createRenderer(icons)
+    renderers.set(icons, renderer)
+  }
+  return renderer
+}
+
+/** Design JSX rendering with Iconify's icons. */
+export const { renderJSX, renderTree } = designJSXRenderer()

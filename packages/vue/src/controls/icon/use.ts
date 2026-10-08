@@ -31,6 +31,9 @@ export function useIcon() {
   /** The name of the set the icon comes from, such as Lucide, once the catalogue is in. */
   const setName = ref<string | null>(null)
   watchImmediate(name, async (current) => {
+    // The last icon's preview never stands in for the next one while it loads.
+    preview.value = null
+    setName.value = null
     if (!current) return
     const prefix = current.slice(0, current.indexOf(':'))
     const [drawn, sets] = await Promise.all([

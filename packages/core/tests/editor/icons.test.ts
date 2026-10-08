@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
-import { readIcon } from '@open-pencil/scene-graph'
+import { readIcon, SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { buildIconData } from '#core/icons/svg'
@@ -46,10 +46,17 @@ function setup() {
   return editor
 }
 
+/** Inserts an icon that must be placed, as it is when the document stays the same. */
+async function insert(editor: ReturnType<typeof setup>, name: string, color?: Color) {
+  const id = await editor.insertIcon(name, color)
+  if (!id) throw new Error(`Icon "${name}" was not inserted`)
+  return id
+}
+
 describe('icon commands', () => {
   test('insert places the icon at the middle of the view, selected, in one undo step', async () => {
     const editor = setup()
-    const id = await editor.insertIcon('test:square')
+    const id = await insert(editor, 'test:square')
     const frame = getNodeOrThrow(editor.graph, id)
 
     expect(frame).toMatchObject({ x: 188, y: 163, width: 24, height: 24 })
@@ -70,7 +77,7 @@ describe('icon commands', () => {
     const editor = setup()
     const containerId = editor.createShape('FRAME', 100, 100, 400, 400)
     editor.state.enteredContainerId = containerId
-    const frame = getNodeOrThrow(editor.graph, await editor.insertIcon('test:square'))
+    const frame = getNodeOrThrow(editor.graph, await insert(editor, 'test:square'))
 
     expect(frame.parentId).toBe(containerId)
     expect(frame).toMatchObject({ x: 88, y: 63 })
@@ -83,7 +90,7 @@ describe('icon commands', () => {
 
   test('swap draws another glyph in place and undo brings the old one back', async () => {
     const editor = setup()
-    const id = await editor.insertIcon('test:square', RED)
+    const id = await insert(editor, 'test:square', RED)
     const before = editor.graph.getChildren(id).map((path) => path.id)
 
     await editor.swapIconGlyph(id, 'test:lines')
@@ -102,7 +109,7 @@ describe('icon commands', () => {
 
   test('swap keeps the icon at its place among its siblings', async () => {
     const editor = setup()
-    const id = await editor.insertIcon('test:square')
+    const id = await insert(editor, 'test:square')
     const after = editor.createShape('RECTANGLE', 0, 0, 10, 10)
     const pageId = editor.state.currentPageId
 
@@ -113,7 +120,7 @@ describe('icon commands', () => {
 
   test('color recolors the tinted paths in one undo step', async () => {
     const editor = setup()
-    const id = await editor.insertIcon('test:square')
+    const id = await insert(editor, 'test:square')
     const pathId = editor.graph.getChildren(id)[0]?.id ?? ''
 
     editor.setIconColor(id, RED)
@@ -121,5 +128,29 @@ describe('icon commands', () => {
 
     editor.undo.undo()
     expect(getNodeOrThrow(editor.graph, pathId).fills[0]?.color).toMatchObject({ r: 0, g: 0, b: 0 })
+  })
+})
+
+describe('icon commands across a document change', () => {
+  test('an icon still loading when the document is replaced is not inserted into the new one', async () => {
+    let release = () => {}
+    const loaded = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const slow: IconProvider = {
+      ...provider,
+      async icons(names, size) {
+        await loaded
+        return provider.icons(names, size)
+      }
+    }
+    const editor = createEditor({ getViewportSize: () => ({ width: 1000, height: 800 }), icons: slow })
+    const inserting = editor.insertIcon('test:square')
+    const replacement = new SceneGraph()
+    editor.replaceGraph(replacement)
+    release()
+
+    expect(await inserting).toBeNull()
+    expect([...replacement.getAllNodes()].some((node) => readIcon(node))).toBe(false)
   })
 })

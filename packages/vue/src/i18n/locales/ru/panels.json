@@ -440,6 +440,7 @@
     "few": "{count} результата",
     "many": "{count} результатов"
   },
+  "iconResultCountCapped": "{count}+ результатов",
   "noLocalFontsAvailable": "Локальные шрифты недоступны.",
   "localFontsAccessHint": "Используйте настольное приложение или Chrome/Edge для доступа к системным шрифтам.",
   "editColor": "Изменить цвет",

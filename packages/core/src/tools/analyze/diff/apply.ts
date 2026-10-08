@@ -219,7 +219,8 @@ type Placed = Plan & { place: Placement }
  * is committed, so a patch never half-applies.
  */
 async function renderAdditions(figma: FigmaAPI, plans: Placed[]): Promise<boolean> {
-  const { renderJSX } = await import('#core/design-jsx')
+  const { designJSXRenderer } = await import('#core/design-jsx')
+  const { renderJSX } = designJSXRenderer(figma.icons)
   const rendered: string[] = []
   for (const plan of plans) {
     const { jsx, parentId } = plan.place

@@ -426,6 +426,7 @@
   "iconResultCount": {
     "many": "{count} 件の結果"
   },
+  "iconResultCountCapped": "{count} 件以上の結果",
   "noLocalFontsAvailable": "利用できるローカルフォントがありません。",
   "localFontsAccessHint": "システムフォントにアクセスするには、デスクトップアプリまたはChrome/Edgeを使用してください。",
   "editColor": "色を編集",

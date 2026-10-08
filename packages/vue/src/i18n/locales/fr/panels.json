@@ -433,6 +433,7 @@
     "one": "{count} résultat",
     "many": "{count} résultats"
   },
+  "iconResultCountCapped": "{count}+ résultats",
   "noLocalFontsAvailable": "Aucune police locale disponible.",
   "localFontsAccessHint": "Utilisez l’application de bureau ou Chrome/Edge pour accéder aux polices système.",
   "editColor": "Modifier la couleur",

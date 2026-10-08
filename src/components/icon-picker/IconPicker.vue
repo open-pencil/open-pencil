@@ -44,12 +44,24 @@ const common = useCommonMessages()
 const search = useIconSearch()
 const { query, visible, hasMore, loadMore, loading, failed, previews, setsLoading } = search
 
+/** The set restored from the last visit, as opposed to one the caller asked for. */
+let remembered: string | null = null
+// A remembered set that no longer loads, such as one the source has since dropped, gives way
+// to every set rather than leaving each later visit failed. A set the caller asked for stays.
+watch(failed, (isFailed) => {
+  if (!isFailed || !remembered || query.value.trim() || search.set.value !== remembered) return
+  remembered = null
+  lastIconSet.value = ''
+  search.set.value = null
+})
+
 /** The icons placed in the document, read when the picker opens. */
 const placed = ref<string[]>([])
 watch(open, (isOpen) => {
   if (!isOpen) return
   void search.loadSets()
-  search.set.value = initialSet ?? (lastIconSet.value || null)
+  remembered = initialSet ? null : lastIconSet.value || null
+  search.set.value = initialSet ?? remembered
   placed.value = iconNames(store.graph.getAllNodes())
   search.want([...placed.value, ...recentIcons.value])
 })
@@ -69,6 +81,8 @@ const chosenSet = computed({
   get: () => search.set.value ?? ALL_SETS,
   set: (value: string) => {
     const prefix = value === ALL_SETS ? null : value
+    // A set chosen here is the person's choice, which a failed load does not undo.
+    remembered = null
     search.set.value = prefix
     lastIconSet.value = prefix ?? ''
   }
@@ -106,8 +120,13 @@ const items = computed<AppPickerItem[]>(() => {
 
 /** What the footer says with nothing highlighted: the results, the set, or how to start. */
 const summary = computed(() => {
-  if (query.value.trim())
-    return loading.value ? '' : panels.value.iconResultCount(search.found.value)
+  if (query.value.trim()) {
+    if (loading.value) return ''
+    const count = search.found.value
+    return search.capped.value
+      ? panels.value.iconResultCountCapped({ count })
+      : panels.value.iconResultCount(count)
+  }
   const info = search.set.value ? setsByPrefix.value.get(search.set.value) : undefined
   if (info) return compact([info.name, info.license, formatNumber(info.total)]).join(' · ')
   return panels.value.iconSearchHint

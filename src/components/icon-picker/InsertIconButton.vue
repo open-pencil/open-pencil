@@ -11,7 +11,7 @@ import type { ToolbarUI } from '@/components/Toolbar/types'
 import IconPicker from './IconPicker.vue'
 
 /** The toolbar's icon picker, also opened by the Insert Icon command. */
-const { ui } = defineProps<{ ui?: ToolbarUI }>()
+const { ui, mobile = false } = defineProps<{ ui?: ToolbarUI; mobile?: boolean }>()
 const store = useEditorStore()
 const panels = usePanelMessages()
 
@@ -34,6 +34,7 @@ function insert(name: string) {
         :icon="IconSmilePlus"
         :label="panels.insertIcon"
         :active="store.state.iconPickerOpen"
+        :mobile="mobile"
         :ui="ui"
       />
     </template>

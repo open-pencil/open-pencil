@@ -433,6 +433,7 @@
     "one": "{count} risultato",
     "many": "{count} risultati"
   },
+  "iconResultCountCapped": "{count}+ risultati",
   "noLocalFontsAvailable": "Nessun font locale disponibile.",
   "localFontsAccessHint": "Usa l’app desktop o Chrome/Edge per accedere ai font di sistema.",
   "editColor": "Modifica colore",

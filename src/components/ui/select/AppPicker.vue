@@ -188,6 +188,7 @@ function select(value: AcceptableValue) {
         :side="side"
         :align="align"
         :side-offset="8"
+        :collision-padding="8"
         :aria-label="heading"
         :class="styles.content({ class: ui?.content })"
         @open-auto-focus.prevent

@@ -112,14 +112,16 @@ export function recolorIcon(graph: SceneGraph, frameId: string, color: Color): v
 }
 
 /**
- * Draws another icon in an icon's frame, keeping its size, position, and color, so the
- * swap reads as a change of glyph. Does nothing to a frame that is not an icon.
+ * Draws another icon in an icon's frame, keeping its position and color, so the swap reads as
+ * a change of glyph. `icon` is drawn at the size it was built for, which should be the frame's.
+ * Does nothing to a frame that is not an icon.
  */
 export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): void {
   const frame = graph.getNode(frameId)
   if (!frame || !readIcon(frame)) return
   const color = iconColor(graph, frame) ?? BLACK
-  const size = Math.min(frame.width, frame.height)
+  // The paths are scaled to the size the icon was built at; their boxes must match it.
+  const size = icon.width
   for (const child of graph.getChildren(frameId)) graph.deleteNode(child.id)
   const name = `${icon.prefix}:${icon.name}`
   graph.updateNode(frameId, {

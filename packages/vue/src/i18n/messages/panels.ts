@@ -517,6 +517,8 @@ export const panelMessageDefaults = {
   iconsInFile: 'In this file',
   otherIconSets: 'Other',
   iconResultCount: count({ one: '{count} result', many: '{count} results' }),
+  /** More icons match than a search returns. */
+  iconResultCountCapped: params('{count}+ results'),
   noLocalFontsAvailable: 'No local fonts available.',
   localFontsAccessHint: 'Use the desktop app or Chrome/Edge to access system fonts.',
   editColor: 'Edit color',

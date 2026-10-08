@@ -26,6 +26,11 @@ export function useIconSearch() {
   const set = ref<string | null>(null)
   /** The icon names found, or null before anything is asked. */
   const results = shallowRef<string[] | null>(null)
+  /**
+   * The search filled its limit, so more icons match than were returned; Iconify reports only
+   * how many it returned, not how many match.
+   */
+  const capped = ref(false)
   const loading = ref(false)
   const failed = ref(false)
   const shown = ref(PAGE_SIZE)
@@ -70,8 +75,9 @@ export function useIconSearch() {
     try {
       let names: string[]
       if (term) {
+        const limit = prefix ? SET_SEARCH_LIMIT : SEARCH_LIMIT
         const found = await provider().search(term, {
-          limit: prefix ? SET_SEARCH_LIMIT : SEARCH_LIMIT,
+          limit,
           prefix: prefix ?? undefined
         })
         if (request === version)
@@ -80,8 +86,10 @@ export function useIconSearch() {
             ...Object.entries(found.collections).map(([key, info]) => [key, info.name] as const)
           ])
         names = found.icons
+        if (request === version) capped.value = names.length >= limit
       } else {
         names = prefix ? await provider().browse(prefix) : []
+        if (request === version) capped.value = false
       }
       if (request === version) results.value = names
     } catch {
@@ -100,9 +108,7 @@ export function useIconSearch() {
   tryOnScopeDispose(() => version++)
 
   const visible = computed(() => results.value?.slice(0, shown.value) ?? [])
-  /** How many icons the query or set found, shown or not. */
-  const found = computed(() => results.value?.length ?? 0)
-  const hasMore = computed(() => found.value > shown.value)
+  const hasMore = computed(() => (results.value?.length ?? 0) > shown.value)
   function loadMore() {
     if (hasMore.value) shown.value += PAGE_SIZE
   }
@@ -150,7 +156,9 @@ export function useIconSearch() {
     loadSets,
     /** The icons to show now; more follow on `loadMore` while `hasMore`. */
     visible,
-    found,
+    /** How many icons were found. */
+    found: computed(() => results.value?.length ?? 0),
+    capped,
     hasMore,
     loadMore,
     loading,

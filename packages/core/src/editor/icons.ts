@@ -44,10 +44,13 @@ export function createIconActions(ctx: EditorContext) {
 
   /**
    * Places the icon `name` at the middle of the view, in the container being edited or the
-   * page, and selects it.
+   * page, and selects it; null when the document was replaced while the icon loaded.
    */
-  async function insertIcon(name: string, color: Color = BLACK) {
+  async function insertIcon(name: string, color: Color = BLACK): Promise<string | null> {
+    const graph = ctx.graph
     const icon = await fetchIcon(name, ICON_SIZE)
+    // Opening another document while the icon loaded leaves nothing to insert it into.
+    if (ctx.graph !== graph) return null
     const { width, height } = ctx.getViewportSize()
     const parentId = ctx.state.enteredContainerId ?? ctx.state.currentPageId
     const origin =
@@ -84,10 +87,13 @@ export function createIconActions(ctx: EditorContext) {
 
   /** Draws the icon `name` in the icon `frameId`, keeping its size, position, and color. */
   async function swapIconGlyph(frameId: string, name: string) {
-    const frame = ctx.graph.getNode(frameId)
+    const graph = ctx.graph
+    const frame = graph.getNode(frameId)
     if (!frame || !readIcon(frame)) return
-    const icon = await fetchIcon(name, Math.round(Math.min(frame.width, frame.height)))
-    changeIcon('Swap icon', frameId, () => swapIcon(ctx.graph, frameId, icon))
+    const icon = await fetchIcon(name, Math.min(frame.width, frame.height))
+    // The document or the frame may have been replaced while the icon loaded.
+    if (ctx.graph !== graph || graph.getNode(frameId) !== frame) return
+    changeIcon('Swap icon', frameId, () => swapIcon(graph, frameId, icon))
   }
 
   /**

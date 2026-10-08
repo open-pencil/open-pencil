@@ -103,6 +103,10 @@ function onActionTap(item: ToolbarActionItem) {
       @prev="goPrev"
       @next="goNext"
       @action="onActionTap"
-    />
+    >
+      <template #end>
+        <InsertIconButton mobile :ui="toolbarUI" />
+      </template>
+    </MobileToolbar>
   </ToolbarRoot>
 </template>
