@@ -519,7 +519,9 @@ describe('fig roundtrip source metadata', () => {
 
     expect(cardGuid).toBeDefined()
     expect(savedGuidOf(resaved, 'Card')).toBe(cardGuid)
-    expect(savedGuidOf(resaved, 'Inserted')).not.toBe(cardGuid)
+    const insertedGuid = savedGuidOf(resaved, 'Inserted')
+    expect(insertedGuid).toBeDefined()
+    expect(insertedGuid).not.toBe(cardGuid)
   })
 
   test('gives an opened layer its saved GUID when a new layer has the same ID', async () => {
