@@ -47,19 +47,3 @@ export function createIconifyAPIClient(
     }
   }
 }
-
-const iconifyAPIClient = createIconifyAPIClient()
-
-export function fetchIconifyCollection(
-  prefix: string,
-  iconNames: string[]
-): Promise<IconifyResponse> {
-  return iconifyAPIClient.fetchCollection(prefix, iconNames)
-}
-
-export function searchIconify(
-  query: string,
-  options?: { limit?: number; prefix?: string }
-): Promise<IconSearchResult> {
-  return iconifyAPIClient.search(query, options)
-}

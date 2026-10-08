@@ -1,8 +1,18 @@
 import { describe, expect, test, beforeAll } from 'bun:test'
 
-import { fetchIcon, fetchIcons, searchIcons, searchIconsBatch } from '@open-pencil/core'
+import { createIconifyProvider } from '@open-pencil/core'
 
-import { expectDefined } from '#tests/helpers/assert'
+const provider = createIconifyProvider()
+const fetchIcons = (names: string[], size = 24) => provider.icons(names, size)
+const searchIcons = (query: string, options?: { limit?: number; prefix?: string }) =>
+  provider.search(query, options)
+
+/** One icon, failing like a caller that needs it. */
+async function fetchIcon(name: string, size = 24) {
+  const icon = (await fetchIcons([name], size)).get(name)
+  if (!icon) throw new Error(`Icon "${name}" not found`)
+  return icon
+}
 
 let hasNetwork = true
 beforeAll(async () => {
@@ -124,14 +134,5 @@ describe('searchIcons', () => {
     for (const icon of result.icons) {
       expect(icon.startsWith('lucide:')).toBe(true)
     }
-  })
-})
-
-describe('searchIconsBatch', () => {
-  networkTest('searches multiple queries in parallel', async () => {
-    const results = await searchIconsBatch(['heart', 'arrow'], { limit: 5 })
-    expect(results.size).toBe(2)
-    expect(expectDefined(results.get('heart'), 'heart results').icons.length).toBeGreaterThan(0)
-    expect(expectDefined(results.get('arrow'), 'arrow results').icons.length).toBeGreaterThan(0)
   })
 })

@@ -282,14 +282,19 @@ export {
 export { svg, renderSVGNode, type SVGNode } from './io/formats/svg/node'
 export { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 export {
-  fetchIcon,
-  fetchIcons,
-  searchIcons,
-  searchIconsBatch,
-  clearIconCache,
+  createIconifyProvider,
+  iconColor,
+  iconify,
+  parseIconName,
+  placeIcon,
+  recolorIcon,
+  swapIcon,
   type IconData,
   type IconPath,
-  type IconSearchResult
+  type IconProvider,
+  type IconSearchOptions,
+  type IconSearchResult,
+  type PlaceIconOptions
 } from './icons'
 export { exportFigFile, compressFigData, compressFigDataSync } from './io/formats/fig/export'
 export {
