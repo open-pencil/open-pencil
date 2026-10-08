@@ -118,11 +118,15 @@ export function appendVariant(
     getVariantDefinitions(ctx.graph, setId).map((item) => [item.name, values[item.name] ?? ''])
   )
   const laidOut = set.layoutMode !== 'NONE'
-  const clone = ctx.graph.cloneTree(source.id, setId, {
-    ...(laidOut ? {} : { x: source.x, y: bottom + VARIANT_SET_PADDING }),
+  const fields: Partial<SceneNode> = {
     name: buildVariantName(ordered),
     componentPropertyValues: values
-  })
+  }
+  if (!laidOut) {
+    fields.x = source.x
+    fields.y = bottom + VARIANT_SET_PADDING
+  }
+  const clone = ctx.graph.cloneTree(source.id, setId, fields)
   if (!clone) return undefined
   const setBefore = setFields(set)
   const setAfter: SetFields = {
