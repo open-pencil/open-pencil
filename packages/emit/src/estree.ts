@@ -11,7 +11,8 @@ export interface SyntaxNode {
 
 const TSParser = Parser.extend(tsPlugin())
 
-function isNode(value: unknown): value is SyntaxNode {
+/** Whether a value is a syntax node, as opposed to a primitive field of one. */
+export function isNode(value: unknown): value is SyntaxNode {
   return typeof value === 'object' && value !== null && 'type' in value
 }
 
@@ -67,12 +68,15 @@ export function fill<T extends SyntaxNode>(
   const replacement = (node: SyntaxNode): SyntaxNode | undefined => {
     const value = holeOf(node)
     if (!value || value === OMIT) return undefined
-    // `$name: Story` keeps its annotation when the identifier is filled.
-    return node.typeAnnotation ? { ...value, typeAnnotation: node.typeAnnotation } : value
+    // `$name: Story` keeps its annotation when the identifier is filled, with its own holes filled.
+    const annotation = child(node, 'typeAnnotation')
+    return annotation
+      ? { ...structuredClone(value), typeAnnotation: visit(annotation) }
+      : structuredClone(value)
   }
-  const visit = (node: SyntaxNode): SyntaxNode => {
+  function visit(node: SyntaxNode): SyntaxNode {
     const filled = replacement(node)
-    if (filled) return structuredClone(filled)
+    if (filled) return filled
     const copy: SyntaxNode = { ...node }
     for (const [key, value] of Object.entries(node)) {
       if (Array.isArray(value))
@@ -88,6 +92,16 @@ export function fill<T extends SyntaxNode>(
 
 export function printModule(program: SyntaxNode): string {
   return print(program, ts(), { indent: '  ' }).code
+}
+
+/** One expression, as a template binding or another host language embeds it. */
+export function printExpression(expression: SyntaxNode): string {
+  const program = {
+    type: 'Program',
+    sourceType: 'module',
+    body: [{ type: 'ExpressionStatement', expression }]
+  }
+  return printModule(program).trim().replace(/;$/, '')
 }
 
 export const identifier = (name: string): SyntaxNode => ({ type: 'Identifier', name })
@@ -129,13 +143,15 @@ export function stringUnionType(values: string[]): SyntaxNode {
     : { type: 'TSUnionType', types: literals }
 }
 
-export function objectType(entries: [string, SyntaxNode][]): SyntaxNode {
+/** An object type; a member whose third element is `true` is optional. */
+export function objectType(entries: [string, SyntaxNode, boolean?][]): SyntaxNode {
   return {
     type: 'TSTypeLiteral',
-    members: entries.map(([key, typeAnnotation]) => ({
+    members: entries.map(([key, typeAnnotation, optional = false]) => ({
       type: 'TSPropertySignature',
       key: propertyKey(key),
       computed: false,
+      optional,
       typeAnnotation: { type: 'TSTypeAnnotation', typeAnnotation }
     }))
   }

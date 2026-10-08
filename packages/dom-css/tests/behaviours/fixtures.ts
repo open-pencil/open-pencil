@@ -59,7 +59,8 @@ export function switchSet() {
     {
       ...emptyBehaviour('switch'),
       booleans: { value: { propertyId: 'state', on: 'On', off: 'Off' } },
-      states: { propertyId: 'interaction', rest: 'Default', hover: 'Hover', disabled: 'Disabled' }
+      states: { propertyId: 'interaction', rest: 'Default', hover: 'Hover', disabled: 'Disabled' },
+      parts: { thumb: 'thumb-slot' }
     },
     (graph, variant, { State, Interaction }) => {
       const offFills = Interaction === 'Hover' ? COLORS.hover : COLORS.off
@@ -67,6 +68,7 @@ export function switchSet() {
       graph.updateNode(variant, { fills, opacity: Interaction === 'Disabled' ? 0.5 : 1 })
       graph.createNode('FRAME', variant, {
         name: 'Thumb',
+        componentPropertyReferences: [{ propertyId: 'thumb-slot', field: 'SLOT_CONTENT' }],
         x: State === 'On' ? 20 : 2,
         y: 2,
         width: 18,
@@ -132,5 +134,36 @@ export function buttonSet() {
       })
     },
     ({ Size, Interaction }) => Size === 'Large' && Interaction === 'Hover'
+  )
+}
+
+/** A collapsible whose content shows only when open. */
+export function collapsibleSet() {
+  const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+  return componentSet(
+    'Disclosure',
+    { Open: ['No', 'Yes'] },
+    {
+      ...emptyBehaviour('collapsible'),
+      booleans: { open: { propertyId: 'open', on: 'Yes', off: 'No' } },
+      parts: { trigger: 'trigger-slot', content: 'content-slot' }
+    },
+    (graph, variant, { Open }) => {
+      const trigger = graph.createNode('FRAME', variant, {
+        name: 'Trigger',
+        componentPropertyReferences: slot('trigger-slot'),
+        width: 40,
+        height: 10
+      })
+      graph.createNode('TEXT', trigger.id, { name: 'Title', text: 'Details' })
+      if (Open === 'Yes')
+        graph.createNode('FRAME', variant, {
+          name: 'Content',
+          componentPropertyReferences: slot('content-slot'),
+          y: 12,
+          width: 40,
+          height: 10
+        })
+    }
   )
 }

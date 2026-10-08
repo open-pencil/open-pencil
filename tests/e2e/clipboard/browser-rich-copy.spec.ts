@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { openAppMenu } from '#tests/helpers/menu'
 
 const editor = useEditorSetup('/?test')
 
@@ -11,21 +12,29 @@ test('browser menu copy writes rich and plain OpenPencil clipboard formats', asy
   await editor.canvas.drawRect(100, 100, 120, 80)
   await editor.canvas.waitForRender()
 
-  await editor.page.getByTestId('menubar-edit').click()
-  await editor.page.getByRole('menuitem', { name: /^Copy/ }).click()
+  const copyMenu = await openAppMenu(editor.page, 'Edit')
+  await copyMenu.getByRole('menuitem', { name: /^Copy/ }).click()
 
-  const clipboard = await editor.page.evaluate(async () => {
-    const items = await navigator.clipboard.read()
-    const item = items[0]
-    if (!item) return { types: [], html: '', plainText: '' }
-    const html = item.types.includes('text/html')
-      ? await (await item.getType('text/html')).text()
-      : ''
-    const plainText = item.types.includes('text/plain')
-      ? await (await item.getType('text/plain')).text()
-      : ''
-    return { types: item.types, html, plainText }
-  })
+  // Copy writes once the document is encoded; until then the clipboard is empty, and a read that
+  // overlaps the write fails because the data changed under it.
+  const readClipboard = () =>
+    editor.page.evaluate(async () => {
+      try {
+        const [item] = await navigator.clipboard.read()
+        if (!item) return { types: [], html: '', plainText: '' }
+        const html = item.types.includes('text/html')
+          ? await (await item.getType('text/html')).text()
+          : ''
+        const plainText = item.types.includes('text/plain')
+          ? await (await item.getType('text/plain')).text()
+          : ''
+        return { types: item.types, html, plainText }
+      } catch {
+        return { types: [], html: '', plainText: '' }
+      }
+    })
+  await expect.poll(async () => (await readClipboard()).types).toContain('text/html')
+  const clipboard = await readClipboard()
 
   expect(clipboard.types).toContain('text/html')
   expect(clipboard.types).toContain('text/plain')
@@ -37,8 +46,8 @@ test('browser menu copy writes rich and plain OpenPencil clipboard formats', asy
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).length
   })
-  await editor.page.getByTestId('menubar-edit').click()
-  await editor.page.getByRole('menuitem', { name: /^Paste\s+(?:⌘|Ctrl)/ }).click()
+  const pasteMenu = await openAppMenu(editor.page, 'Edit')
+  await pasteMenu.getByRole('menuitem', { name: /^Paste\s+(?:⌘|Ctrl)/ }).click()
   await expect
     .poll(() =>
       editor.page.evaluate(() => {

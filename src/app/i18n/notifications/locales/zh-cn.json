@@ -27,5 +27,7 @@
   "deepLinkCancelled": "已取消链接：需要以“{file}”结尾的文件。",
   "deepLinkNodeNotFound": "在“{file}”中未找到图层“{node}”。",
   "openQueuedFilesFailed": "无法打开传递给 OpenPencil 的文件：{error}",
-  "tokensLeftOut": "未写入样式表：{names}"
+  "tokensLeftOut": "未写入样式表：{names}",
+  "designTokensLeftOut": "未写入设计令牌：{names}",
+  "designTokensImported": "已导入 {count} 个设计令牌。"
 }

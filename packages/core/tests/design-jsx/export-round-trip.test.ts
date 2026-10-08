@@ -1,12 +1,12 @@
 import { describe, expect, it, test } from 'bun:test'
+
+import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
+import { findByName, PROPERTY_CASES } from '#core-tests/helpers/property-cases'
 import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
-import { findByName, PROPERTY_CASES } from '#core-tests/helpers/property-cases'
 
 describe('attribute string round-trip', () => {
   it.each([

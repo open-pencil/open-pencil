@@ -1,10 +1,11 @@
 import { h, type VNode } from 'vue'
 
-import type {
-  ControlModel,
-  ControlRole,
-  DesignElement,
-  DesignNode
+import {
+  BUTTON_RESET,
+  type ControlModel,
+  type ControlRole,
+  type DesignElement,
+  type DesignNode
 } from '@open-pencil/dom-css/export'
 import { layerPath, type SceneGraph } from '@open-pencil/scene-graph'
 
@@ -28,18 +29,6 @@ export interface ElementOverride {
   /** Style properties the wrapping component sets itself, removed from the design's. */
   omit?: readonly string[]
   children?: () => (VNode | string)[]
-}
-
-/** Element styles a native `<button>` adds, cleared so the design's own styles show. */
-const BUTTON_RESET: Record<string, string> = {
-  border: 'none',
-  padding: '0',
-  margin: '0',
-  background: 'none',
-  font: 'inherit',
-  color: 'inherit',
-  'text-align': 'inherit',
-  cursor: 'pointer'
 }
 
 /** Render an element as the design draws it, with a role's changes applied. */

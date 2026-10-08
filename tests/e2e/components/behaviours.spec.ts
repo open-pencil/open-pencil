@@ -15,9 +15,12 @@ async function startPreview() {
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toBeVisible()
 }
 
-/** A Switch set whose State=On and State=Off variants differ, and an Off instance below it. */
-async function createSwitch() {
-  return editor.page.evaluate(() => {
+/**
+ * A Switch set whose State=On and State=Off variants differ, and an Off instance below it,
+ * either on the page or inside a frame, as a settings row holds one.
+ */
+async function createSwitch({ nested = false } = {}) {
+  return editor.page.evaluate((inFrame) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const graph = store.graph
@@ -64,23 +67,43 @@ async function createSwitch() {
     }
     variant('On', 0, true)
     const off = variant('Off', 1, false)
-    const instance = graph.createInstance(off.id, pageId, { x: 120, y: 260 })
+    const row = inFrame
+      ? graph.createNode('FRAME', pageId, {
+          name: 'Settings',
+          x: 120,
+          y: 260,
+          width: 200,
+          height: 60
+        })
+      : undefined
+    const instance = row
+      ? graph.createInstance(off.id, row.id, { x: 12, y: 12 })
+      : graph.createInstance(off.id, pageId, { x: 120, y: 260 })
     if (!instance) throw new Error('Instance not created')
     store.select([set.id])
-    return { setId: set.id, offId: off.id, instanceId: instance.id }
-  })
+    return {
+      setId: set.id,
+      offId: off.id,
+      instanceId: instance.id,
+      islandId: row?.id ?? instance.id
+    }
+  }, nested)
 }
 
-test('a Switch behaviour flips in preview and leaves the document alone', async () => {
-  const ids = await createSwitch()
-  await editor.canvas.waitForRender()
-
+/** Adds the Switch behaviour to the selected set, binding its value to State. */
+async function addSwitchBehaviour() {
   const section = propertySection(editor.page, 'Behaviour')
   await section.getByRole('button', { name: 'Add behaviour' }).click()
   await editor.page.getByRole('option', { name: /Switch/ }).click()
   await section.getByRole('combobox', { name: 'Checked' }).click()
   await editor.page.getByRole('option', { name: 'State' }).click()
   await expect(section.getByText('Ready', { exact: true })).toBeVisible()
+}
+
+test('a Switch behaviour flips in preview and leaves the document alone', async () => {
+  const ids = await createSwitch()
+  await editor.canvas.waitForRender()
+  await addSwitchBehaviour()
 
   await startPreview()
   // The instance runs as Reka UI's Switch, drawn by the set's variants.
@@ -104,6 +127,61 @@ test('a Switch behaviour flips in preview and leaves the document alone', async 
   await expect(editor.page.getByRole('button', { name: /Leave preview/ })).toHaveCount(0)
   // Editing again: the panels and their Preview button are back.
   await expect(editor.page.getByRole('button', { name: /^Preview/ })).toBeVisible()
+})
+
+test('a switch inside a frame, named after its variant, toggles both ways in preview', async () => {
+  // Its layer path includes its name, which a variant switch used to rename to State=On.
+  const ids = await createSwitch({ nested: true })
+  await editor.canvas.waitForRender()
+  await addSwitchBehaviour()
+
+  await startPreview()
+  const control = island(ids.islandId).getByRole('switch')
+  for (const checked of ['true', 'false', 'true']) {
+    await control.click()
+    await expect(control).toHaveAttribute('aria-checked', checked)
+  }
+  await editor.page.keyboard.press('Escape')
+})
+
+test('preview islands move with the frames the canvas draws, not ahead of them', async () => {
+  const ids = await createSwitch({ nested: true })
+  await editor.canvas.waitForRender()
+  await addSwitchBehaviour()
+  await startPreview()
+  await expect(island(ids.islandId).getByRole('switch')).toBeVisible()
+
+  const layer = editor.page.getByTestId('play-islands').locator(':scope > div')
+  const placed = await layer.evaluate((element) => element.style.transform)
+  // Hold the canvas's drawing, as a slow frame does, and move the view meanwhile.
+  const held = await editor.page.evaluateHandle(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const preparation = store.preparationController.begin({
+      kind: 'document-open',
+      phase: 'materializing'
+    })
+    store.pan(80, 40)
+    return preparation
+  })
+  try {
+    await editor.page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        })
+    )
+    expect(await layer.evaluate((element) => element.style.transform)).toBe(placed)
+
+    // Drawing resumes: the islands follow the pan, which the canvas has now drawn.
+    await held.evaluate((preparation) => preparation.complete())
+    await expect.poll(() => layer.evaluate((element) => element.style.transform)).not.toBe(placed)
+  } finally {
+    // Never leave the canvas held for later tests; completing again does nothing.
+    await held.evaluate((preparation) => preparation.complete())
+    await held.dispose()
+  }
+  await editor.page.keyboard.press('Escape')
 })
 
 test('a Button behaviour maps its states and shows them in preview', async () => {

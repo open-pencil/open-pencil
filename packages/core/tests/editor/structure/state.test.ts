@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-
 import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { rect } from '#core-tests/helpers/layout'
+
+import { createEditor } from '@open-pencil/core/editor'
+import { computeAllLayouts } from '@open-pencil/core/layout'
 
 describe('structure state actions', () => {
   test('toggleNodeVisibility reflows HUG auto-layout instance slots', async () => {

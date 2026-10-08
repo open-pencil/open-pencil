@@ -66,7 +66,11 @@ describe('issue marker layout', () => {
       height: 50
     })
 
-    const placed = layoutIssueMarkers(graph, [warning(outside.id), warning(overflowing.id)], options)
+    const placed = layoutIssueMarkers(
+      graph,
+      [warning(outside.id), warning(overflowing.id)],
+      options
+    )
 
     expect(placed.map((marker) => marker.nodeIds)).toEqual([[overflowing.id]])
     expect(placed[0]?.anchor).toEqual({ x: 300, y: 200 })

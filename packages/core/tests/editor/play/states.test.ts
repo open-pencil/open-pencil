@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/core/editor'
 import {
   emptyBehaviour,
+  findLayerByPath,
   instanceMainComponent,
   layerPath,
   SceneGraph
@@ -16,7 +17,13 @@ function switchCard() {
   const set = graph.createNode('COMPONENT_SET', pageId, {
     name: 'Switch',
     componentPropertyDefinitions: [
-      { id: 'state', name: 'State', type: 'VARIANT', defaultValue: 'Off', variantOptions: ['Off', 'On'] },
+      {
+        id: 'state',
+        name: 'State',
+        type: 'VARIANT',
+        defaultValue: 'Off',
+        variantOptions: ['Off', 'On']
+      },
       {
         id: 'interaction',
         name: 'Interaction',
@@ -61,6 +68,24 @@ describe('preview islands', () => {
     const copy = shown.getChildren(card.id)[0]
     expect(copy && instanceMainComponent(shown, copy)?.id).toBe(on.id)
     expect(instanceMainComponent(graph, instance)?.id).toBe(off.id)
+  })
+
+  test('an instance named after its variant keeps its path through a state switch', () => {
+    const { graph, card, off, on } = switchCard()
+    // Left with its default name, which is its variant's, as instances placed from a set are.
+    const instance = graph.createInstance(off.id, card.id)
+    if (!instance) throw new Error('No instance')
+    const path = layerPath(graph, card.id, instance.id)
+    expect(instance.name).toBe(off.name)
+
+    const shown = resolvePlayState(graph, card.id, new Map([[path, { variants: { State: 'On' } }]]))
+    const copy = findLayerByPath(shown, card.id, path)
+    expect(copy && instanceMainComponent(shown, copy)?.id).toBe(on.id)
+    expect(copy?.name).toBe(off.name)
+    // The same path switches it back, so a control toggles both ways.
+    const back = resolvePlayState(graph, card.id, new Map([[path, { variants: { State: 'Off' } }]]))
+    const restored = findLayerByPath(back, card.id, path)
+    expect(restored && instanceMainComponent(back, restored)?.id).toBe(off.id)
   })
 
   test('a preferred state shows only where the set draws it with the required values', () => {

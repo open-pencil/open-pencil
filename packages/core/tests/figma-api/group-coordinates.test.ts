@@ -26,12 +26,7 @@ function setup() {
   return { figma, frame, group, a, b, rect }
 }
 
-const box = (node: Rect) => [
-  node.x,
-  node.y,
-  node.width,
-  node.height
-]
+const box = (node: Rect) => [node.x, node.y, node.width, node.height]
 
 describe('group children in the plugin API', () => {
   test('report positions and transforms in the container', () => {

@@ -1,16 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { formatOperations, parseOperations } from '#core/tools/analyze/diff/format'
 import { deltaOperations, type DiffOperation } from '#core/tools/analyze/diff/operations'
-import {
-  diffProjections,
-  projectTree,
-  type DiffMatch
-} from '#core/tools/analyze/diff/projection'
-import { expectDefined } from '#core-tests/helpers/assert'
+import { diffProjections, projectTree, type DiffMatch } from '#core/tools/analyze/diff/projection'
 
 /** Operations for what `edit` changes; a projection is plain data, so it snapshots the tree. */
 function operations(graph: SceneGraph, rootId: string, match: DiffMatch, edit: () => void) {
@@ -39,7 +36,13 @@ describe('diff engine', () => {
     const child = expectDefined(root.children[0], 'child')
 
     expect(operations(graph, root.id, 'id', () => (child.name = 'Renamed'))).toEqual([
-      { kind: 'update', path: '/Card/A', id: child.id, removed: ['name="A"'], added: ['name="Renamed"'] }
+      {
+        kind: 'update',
+        path: '/Card/A',
+        id: child.id,
+        removed: ['name="A"'],
+        added: ['name="Renamed"']
+      }
     ])
   })
 
@@ -48,10 +51,7 @@ describe('diff engine', () => {
     const child = expectDefined(root.children[0], 'child')
     const ops = operations(graph, root.id, 'path', () => (child.name = 'Renamed'))
 
-    expect(ops.map((op) => op.kind).toSorted()).toEqual([
-      'add',
-      'remove'
-    ])
+    expect(ops.map((op) => op.kind).toSorted()).toEqual(['add', 'remove'])
   })
 
   test('a reordered child is one move, not a change to every sibling', () => {
@@ -77,7 +77,13 @@ describe('diff engine', () => {
 describe('patch format', () => {
   test('parses what it prints', () => {
     const ops: DiffOperation[] = [
-      { kind: 'update', path: '/Card', id: '1:2', removed: ['w={1}'], added: ['w={2}', 'clipsContent'] },
+      {
+        kind: 'update',
+        path: '/Card',
+        id: '1:2',
+        removed: ['w={1}'],
+        added: ['w={2}', 'clipsContent']
+      },
       { kind: 'move', path: '/Card/Badge', id: '1:3', index: 0 },
       // Names that look like header endings still parse, because headers anchor on the end.
       { kind: 'remove', path: '/Card/Old #9:9 removed', id: '1:4' },

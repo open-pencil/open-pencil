@@ -38,7 +38,10 @@ describe('OpenPencil clipboard parsing', () => {
     ],
     [
       'a node with an unknown type',
-      JSON.stringify({ format: 'openpencil/v1', nodes: [{ id: '0:1', type: 'WIDGET', x: 5, y: 6 }] })
+      JSON.stringify({
+        format: 'openpencil/v1',
+        nodes: [{ id: '0:1', type: 'WIDGET', x: 5, y: 6 }]
+      })
     ],
     [
       'a malformed child',

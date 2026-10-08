@@ -2,10 +2,11 @@ import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
   findLayerByPath,
-  SceneGraph,
+  type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
 
+import { extractPageContext, findPageId } from '#core/io/subgraph'
 import { computeAllLayouts } from '#core/layout'
 
 /** How one instance of an island is shown: the variant, properties, and layers it displays. */
@@ -21,47 +22,6 @@ export interface InstanceState {
   properties?: Record<string, string>
   /** Layers, by path below the island root, shown even where the design hides them. */
   reveal?: string[]
-}
-
-/** The root's layers and every component they show, so instances can switch variant. */
-function closure(source: SceneGraph, rootId: string): Set<string> {
-  const ids = new Set<string>()
-  const visit = (id: string) => {
-    if (ids.has(id)) return
-    const node = source.getNode(id)
-    if (!node) return
-    ids.add(id)
-    for (const child of node.childIds) visit(child)
-    if (node.componentId) {
-      const component = source.getNode(node.componentId)
-      const set = component?.parentId ? source.getNode(component.parentId) : undefined
-      visit(set?.type === 'COMPONENT_SET' ? set.id : node.componentId)
-    }
-  }
-  visit(rootId)
-  return ids
-}
-
-function copyGraph(source: SceneGraph, ids: Set<string>): SceneGraph {
-  const graph = new SceneGraph()
-  // Fills, images, and bindings resolve against the document's own tables.
-  graph.variables = source.variables
-  graph.variableCollections = source.variableCollections
-  graph.activeMode = source.activeMode
-  graph.images = source.images
-  graph.documentColorSpace = source.documentColorSpace
-  for (const id of ids) {
-    const node = source.getNode(id)
-    if (!node) continue
-    const copy = structuredClone(node)
-    graph.nodes.set(id, copy)
-    if (copy.type === 'INSTANCE' && copy.componentId) {
-      const instances = graph.instanceIndex.get(copy.componentId) ?? new Set<string>()
-      instances.add(id)
-      graph.instanceIndex.set(copy.componentId, instances)
-    }
-  }
-  return graph
 }
 
 /**
@@ -115,7 +75,8 @@ function applyState(
   if (state.variants || state.prefer) {
     const variant = variantFor(graph, instance, state.variants ?? {}, state.prefer ?? {})
     if (variant && variant.id !== instance.componentId) {
-      graph.swapInstanceComponent(instance.id, variant.id)
+      // Its layer path names the control, so the instance keeps its name in every variant.
+      graph.swapInstanceComponent(instance.id, variant.id, { keepName: true })
       reflow(graph, instance.id)
     }
   }
@@ -146,7 +107,13 @@ export function resolvePlayState(
   rootId: string,
   states: ReadonlyMap<string, InstanceState>
 ): SceneGraph {
-  const graph = copyGraph(source, closure(source, rootId))
+  // The root's page context with every variant its instances can switch to, reading the
+  // document's own variables and images, since a state never changes them.
+  const pageId = findPageId(source, rootId) ?? source.rootId
+  const graph = extractPageContext(source, pageId, [rootId], {
+    componentSets: true,
+    shareTables: true
+  })
   const ordered = [...states].sort(([a], [b]) => a.split('/').length - b.split('/').length)
   for (const [path, state] of ordered) {
     const instance = findLayerByPath(graph, rootId, path)

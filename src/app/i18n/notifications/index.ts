@@ -11,6 +11,8 @@ export const notificationMessageDefaults = {
   clipboardAccessBlocked: 'Clipboard access is blocked in this browser context.',
   copiedAs: params('Copied as {format}.'),
   tokensLeftOut: params('Left out of the stylesheet: {names}.'),
+  designTokensLeftOut: params('Left out of the design tokens: {names}.'),
+  designTokensImported: params('Imported {count} design tokens.'),
   nodeID: 'node ID',
   nodeIDs: 'node IDs',
   xPath: 'XPath',

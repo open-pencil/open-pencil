@@ -71,28 +71,32 @@ const MODULE = es.parseModule(dedent`
 const IMAGE = es.parseModule(`const $name = new URL($path, import.meta.url).href`)
 const STORY = es.parseModule(`export const $name: Story = $story`)
 
-const FRAMEWORKS: Record<
-  StorybookFramework,
-  { storybook: string; imports: es.SyntaxNode[]; render: es.SyntaxNode }
-> = {
-  react: {
-    storybook: '@storybook/react-vite',
-    imports: es.parseModule(`import { createElement } from 'react'`).body,
-    render: es.parseExpression(
-      `createElement('div', { dangerouslySetInnerHTML: { __html: variantHTML(args) } })`
-    )
-  },
-  vue: {
-    storybook: '@storybook/vue3-vite',
-    imports: es.parseModule(`import { h } from 'vue'`).body,
-    render: es.parseExpression(`{ setup: () => () => h('div', { innerHTML: variantHTML(args) }) }`)
-  },
-  html: {
-    storybook: '@storybook/html-vite',
-    imports: [],
-    render: es.parseExpression('variantHTML(args)')
-  }
+/** The Storybook renderer package each framework's stories import their types from. */
+export const STORYBOOK_PACKAGES: Record<StorybookFramework, string> = {
+  react: '@storybook/react-vite',
+  vue: '@storybook/vue3-vite',
+  html: '@storybook/html-vite'
 }
+
+const FRAMEWORKS: Record<StorybookFramework, { imports: es.SyntaxNode[]; render: es.SyntaxNode }> =
+  {
+    react: {
+      imports: es.parseModule(`import { createElement } from 'react'`).body,
+      render: es.parseExpression(
+        `createElement('div', { dangerouslySetInnerHTML: { __html: variantHTML(args) } })`
+      )
+    },
+    vue: {
+      imports: es.parseModule(`import { h } from 'vue'`).body,
+      render: es.parseExpression(
+        `{ setup: () => () => h('div', { innerHTML: variantHTML(args) }) }`
+      )
+    },
+    html: {
+      imports: [],
+      render: es.parseExpression('variantHTML(args)')
+    }
+  }
 
 const imageName = (variant: number) => `design${variant}`
 
@@ -214,7 +218,7 @@ function argsType(data: StoryModuleData): es.SyntaxNode {
 export function printStoryModule(data: StoryModuleData): string {
   const framework = FRAMEWORKS[data.framework]
   const [storybookImport, ...body] = es.fill(MODULE, {
-    $storybook: es.string(framework.storybook),
+    $storybook: es.string(STORYBOOK_PACKAGES[data.framework]),
     $Args: argsType(data),
     $variants: es.object(
       data.variants.map((variant) => [JSON.stringify(variant.values), es.string(variant.html)])

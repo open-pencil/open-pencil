@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { jsx } from '#emit/index'
+import { es, jsx } from '#emit/index'
 
 const card = (attributes: ReturnType<typeof jsx.attribute>[], children = [jsx.text('Hi')]) =>
   jsx.printJSX(jsx.element('Card', attributes, children, 0, true))
@@ -43,6 +43,44 @@ describe('JSX elements', () => {
     const child = jsx.element('Item', [], [], 1)
     expect(jsx.printJSX(jsx.element('List', [], [child, child], 0))).toBe(
       '<List>\n  <Item />\n  <Item />\n</List>'
+    )
+  })
+})
+
+describe('JSX modules', () => {
+  test('print namespaced tags, spreads, and JSX inside a TypeScript module', () => {
+    const body = jsx.element(
+      'Switch.Root',
+      [jsx.spread(es.identifier('props')), jsx.attribute('className', jsx.stringValue('switch'))],
+      [jsx.element('Switch.Thumb', [], [], 2)],
+      1
+    )
+    const module = es.fill(
+      es.parseModule('export function Toggle(props: Props) { return $body }'),
+      {
+        $body: body
+      }
+    )
+    expect(jsx.printModule(module)).toBe(
+      [
+        'export function Toggle(props: Props) {',
+        '  return <Switch.Root {...props} className="switch">',
+        '    <Switch.Thumb />',
+        '  </Switch.Root>;',
+        '}'
+      ].join('\n')
+    )
+  })
+})
+
+describe('filling templates', () => {
+  test('fill holes inside the annotation of a filled identifier', () => {
+    const module = es.fill(es.parseModule("import a from 'a'\nfunction f($params: $Props) {}"), {
+      $params: es.identifier('props'),
+      $Props: es.identifier('ButtonProps')
+    })
+    expect(jsx.printModule(module)).toBe(
+      ['import a from "a";', '', 'function f(props: ButtonProps) {}'].join('\n')
     )
   })
 })

@@ -94,10 +94,20 @@ function recordNestedSwap(graph: SceneGraph, instance: SceneNode, componentId: s
   graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
 }
 
+export interface SwapInstanceOptions {
+  /**
+   * Keep the instance's name even when it is its old component's. A swap otherwise renames such
+   * an instance after the new component, as Figma does; a view that only shows another variant,
+   * such as preview, keeps names so layer paths stay the same.
+   */
+  keepName?: boolean
+}
+
 export function swapInstanceComponent(
   graph: SceneGraph,
   instanceId: string,
-  componentId: string
+  componentId: string,
+  { keepName = false }: SwapInstanceOptions = {}
 ): void {
   const instance = graph.nodes.get(instanceId)
   const component = graph.nodes.get(componentId)
@@ -112,7 +122,8 @@ export function swapInstanceComponent(
     copyProp(updates, source, key)
   }
 
-  if (!previousComponent || instance.name === previousComponent.name) updates.name = component.name
+  if (!keepName && (!previousComponent || instance.name === previousComponent.name))
+    updates.name = component.name
 
   const childIds = Array.from(instance.childIds)
   const slotContent = detachOwnedSlotContent(graph, instance)
