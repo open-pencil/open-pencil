@@ -109,4 +109,20 @@ describe('font lifecycle', () => {
     expect(nodeFontReadiness({}, node)).toBe('ready')
     fontResolver.reset(demand)
   })
+
+  test('shares one bundled font request between concurrent loads', async () => {
+    const manager = new FontManager()
+
+    const [first, second] = await Promise.all([
+      manager.fetchBundledFont('/Inter-Regular.ttf'),
+      manager.fetchBundledFont('/Inter-Regular.ttf')
+    ])
+    expect(first).not.toBeNull()
+    expect(second).toBe(first)
+
+    // A settled request is not kept, so a later load (or a retry after a failure) reads again.
+    const later = await manager.fetchBundledFont('/Inter-Regular.ttf')
+    expect(later).not.toBe(first)
+    expect(later?.byteLength).toBe(first?.byteLength)
+  })
 })

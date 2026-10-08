@@ -62,6 +62,7 @@ export class FontManager {
   private blockedNodeIds = new Set<string>()
   private fontProvider: TypefaceFontProvider | null = null
   private bundledFontLocator: BundledFontLocator = defaultBundledFontLocator
+  private readonly bundledFontRequests = new Map<string, Promise<ArrayBuffer | null>>()
   private fontProviders = new Set<TypefaceFontProvider>()
   private providerCanvasKits = new WeakMap<TypefaceFontProvider, CanvasKit>()
   private registrationGeneration = 0
@@ -246,7 +247,19 @@ export class FontManager {
     this.webFonts.preloadFamilies()
   }
 
-  async fetchBundledFont(url: string): Promise<ArrayBuffer | null> {
+  /**
+   * Reads a bundled font. Concurrent loads of one face share a request, so they get the same
+   * buffer; it is forgotten once settled, so a failed request can be retried.
+   */
+  fetchBundledFont(url: string): Promise<ArrayBuffer | null> {
+    const pending = this.bundledFontRequests.get(url)
+    if (pending) return pending
+    const request = this.readBundledFont(url).finally(() => this.bundledFontRequests.delete(url))
+    this.bundledFontRequests.set(url, request)
+    return request
+  }
+
+  private async readBundledFont(url: string): Promise<ArrayBuffer | null> {
     if (IS_BROWSER) {
       const response = await fetch(this.bundledFontLocator(url.replace(/^\//, '')))
       return response.arrayBuffer()
