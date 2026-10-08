@@ -268,6 +268,26 @@ function propertyDrivenFields(
   return driven
 }
 
+/**
+ * The text and visibility enclosing assignments give an existing child whose layer a property
+ * drives. A layer linked to a property after the instance was made would otherwise keep what it
+ * showed before, since synchronising leaves driven fields alone.
+ */
+function assignedFieldValues(
+  graph: SceneGraph,
+  instChild: SceneNode,
+  compChild: SceneNode
+): Partial<SceneNode> {
+  const values: Partial<SceneNode> = {}
+  for (const reference of compChild.componentPropertyReferences) {
+    const value = enclosingAssignment(graph, instChild, reference.propertyId)
+    if (value === undefined) continue
+    if (reference.field === 'TEXT' && instChild.type === 'TEXT') values.text = value
+    else if (reference.field === 'VISIBLE') values.visible = value === 'true'
+  }
+  return values
+}
+
 function childBindingProtection(
   graph: SceneGraph,
   child: SceneNode,
@@ -485,6 +505,7 @@ export function syncChildren(
 
       copyProp(updates, source, key)
     }
+    Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
     updateSyncedProps(graph, instChild, updates)
 
     if (
