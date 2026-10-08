@@ -46,7 +46,7 @@ jobs:
       - name: Run app suite
         env:
           SHARD: ${{ matrix.shard }}
-        run: bun run test -- --shard="$SHARD/4"
+        run: bun run test -- --shard="$SHARD/4" --trace=retain-on-failure
 
       - name: Upload failures
         if: failure()
@@ -80,7 +80,7 @@ jobs:
         run: bunx playwright install chromium
 
       - name: Run Storybook suite
-        run: bun run test:storybook
+        run: bun run test:storybook -- --trace=retain-on-failure
 
       - name: Upload failures
         if: failure()
