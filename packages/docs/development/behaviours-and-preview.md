@@ -32,7 +32,7 @@ All of them write the same model.
 
 Preview is a per-pane mode (`EditorViewState.play`). It runs controls as real components; it never simulates them on the canvas.
 
-1. **Islands.** `playIslandRoots` (Core) picks the top-level layers of the page that hold an instance with a behaviour. The renderer skips them while the pane previews, and `PlayIslands` (`packages/vue/src/canvas/islands/`) mounts one island per root, laid over the canvas at the pane's pan and zoom.
+1. **Islands.** `playIslandRoots` (Core) picks the top-level layers of the page that hold an instance with a behaviour. The renderer skips them while the pane previews, and `PlayIslands` (`packages/vue/src/canvas/islands/`) mounts one island per root, laid over the canvas at the pan and zoom of the canvas's last drawn frame, so the islands never run ahead of a canvas still catching up while panning and zooming.
 2. **Shadow DOM.** Each island renders into its own shadow root: app CSS does not reach in, island CSS does not leak out, fonts already loaded by the app apply, and the island moves with the canvas in the same frame. Wheel gestures over an island are passed to the canvas.
 3. **State to design.** An island keeps each control's state (values, choice, number, typed text, hover, pressed, focus). Core's `resolvePlayState` copies the island's layers into a private graph and shows each instance in its state: the matching variant, boolean properties, and layers a control reveals, such as tab panels. The document is never changed.
 4. **Design to DOM.** The private graph is projected to DOM through `@open-pencil/dom-css`, the same projection HTML export uses, so island fidelity and export fidelity improve together.

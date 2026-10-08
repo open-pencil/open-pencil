@@ -7,7 +7,7 @@ import {
   PopoverPortal,
   PopoverRoot
 } from 'reka-ui'
-import { computed, onUnmounted, ref, useTemplateRef, watch, type Component } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch, type Component } from 'vue'
 import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
 import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
@@ -17,6 +17,7 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
 } from '@open-pencil/core/constants'
+import type { ViewportTransform } from '@open-pencil/core/geometry'
 import {
   PlayIslands,
   toolCursor,
@@ -82,8 +83,14 @@ const shouldSuspendRender = () =>
   store.state.preparation.kind !== 'font-retry' &&
   store.state.preparation.phase !== 'preparing-render'
 
+/** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
+const drawnView = shallowRef<ViewportTransform | null>(null)
+
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
+  onFrame: (view) => {
+    drawnView.value = view
+  },
   sceneRenderer: appRuntimeConfig.sceneRenderer,
   onReady: store.markCanvasReady,
   shouldSuspendRender,
@@ -230,7 +237,7 @@ const cursor = computed(() =>
           :style="{ cursor }"
           class="absolute inset-0 block size-full touch-none outline-none"
         />
-        <PlayIslands :view="paneView" :canvas="canvasRef" />
+        <PlayIslands :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
         <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
         <CanvasLabelEditor

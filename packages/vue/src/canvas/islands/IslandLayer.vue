@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import { playIslandRoots, type PlayState } from '@open-pencil/core/editor'
+import type { ViewportTransform } from '@open-pencil/core/geometry'
 
 import { useEditor } from '#vue/editor/context'
 
@@ -11,11 +12,18 @@ import Island from './Island.vue'
  * The live islands of a previewing canvas pane, laid over the canvas at its pan and zoom. The
  * canvas leaves these layers to the islands; wheel gestures over them still pan and zoom it.
  */
-const { view, canvas } = defineProps<{
+const { view, canvas, drawn } = defineProps<{
   view: { panX: number; panY: number; zoom: number; currentPageId: string; play: PlayState | null }
   /** The canvas that wheel gestures over the islands are passed on to. */
   canvas: HTMLElement | null
+  /**
+   * The pan and zoom of the canvas's last drawn frame. The islands follow it rather than the
+   * live view, which runs ahead of the drawing while panning and zooming fast.
+   */
+  drawn?: ViewportTransform | null
 }>()
+
+const placement = computed(() => drawn ?? view)
 const editor = useEditor()
 
 const islands = computed(() => {
@@ -43,7 +51,9 @@ function forwardWheel(event: WheelEvent) {
   >
     <div
       class="absolute top-0 left-0 origin-top-left"
-      :style="{ transform: `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})` }"
+      :style="{
+        transform: `translate(${placement.panX}px, ${placement.panY}px) scale(${placement.zoom})`
+      }"
     >
       <Island
         v-for="island in islands"

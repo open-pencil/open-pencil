@@ -144,6 +144,40 @@ test('a switch inside a frame, named after its variant, toggles both ways in pre
   await editor.page.keyboard.press('Escape')
 })
 
+test('preview islands move with the frames the canvas draws, not ahead of them', async () => {
+  const ids = await createSwitch({ nested: true })
+  await editor.canvas.waitForRender()
+  await addSwitchBehaviour()
+  await startPreview()
+  await expect(island(ids.islandId).getByRole('switch')).toBeVisible()
+
+  const layer = editor.page.getByTestId('play-islands').locator(':scope > div')
+  const placed = await layer.evaluate((element) => element.style.transform)
+  // Hold the canvas's drawing, as a slow frame does, and move the view meanwhile.
+  const held = await editor.page.evaluateHandle(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const preparation = store.preparationController.begin({
+      kind: 'document-open',
+      phase: 'materializing'
+    })
+    store.pan(80, 40)
+    return preparation
+  })
+  await editor.page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
+  expect(await layer.evaluate((element) => element.style.transform)).toBe(placed)
+
+  await held.evaluate((preparation) => preparation.complete())
+  await expect.poll(() => layer.evaluate((element) => element.style.transform)).not.toBe(placed)
+  await held.dispose()
+  await editor.page.keyboard.press('Escape')
+})
+
 test('a Button behaviour maps its states and shows them in preview', async () => {
   const ids = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

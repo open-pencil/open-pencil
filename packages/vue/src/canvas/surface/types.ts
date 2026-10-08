@@ -1,4 +1,5 @@
 import type { EditorState } from '@open-pencil/core/editor'
+import type { ViewportTransform } from '@open-pencil/core/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { PresentationColorSpace } from '#vue/canvas/surface/color-space'
@@ -53,6 +54,12 @@ export interface UseCanvasOptions {
    * document graph, history, and editor event bus.
    */
   getRenderState?: () => EditorState
+  /**
+   * Called after each frame this canvas draws, with the pan and zoom it was drawn at. DOM laid
+   * over the canvas, such as preview islands, follows these to stay in step with the drawing
+   * instead of running ahead of it while the canvas is still catching up.
+   */
+  onFrame?: (view: ViewportTransform) => void
   /**
    * Receives this canvas surface's CSS viewport size after creation and resize.
    */
