@@ -28,14 +28,14 @@
     "vue-component-meta": "^3.3.10"
   },
   "dependencies": {
-    "@ai-sdk/vue": "^4.0.66",
+    "@ai-sdk/vue": "^4.0.127",
     "@iconify/vue": "^5.0.1",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/design-jsx": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@vueuse/core": "^14.4.0",
-    "ai": "^7.0.66",
+    "ai": "^7.0.127",
     "canvaskit-wasm": "^0.41.1",
     "dedent": "^1.7.2",
     "tinykeys": "^3.1.0",
