@@ -76,6 +76,8 @@ async function capturePage(browser: Browser, origin: string, target: PosterTarge
       await page
         .locator(`.stage-frame[data-kind="${kind}"][data-ready]`)
         .waitFor({ timeout: STAGE_TIMEOUT_MS })
+      // The page's web fonts swap in when they arrive; a still must show the final ones.
+      await page.evaluate(() => document.fonts.ready)
       await page.waitForTimeout(SETTLE_MS)
       for (const part of posterParts(kind)) {
         const element = part === 'frame' ? frame : frame.locator(`[data-poster-part="${part}"]`)

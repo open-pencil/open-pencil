@@ -65,7 +65,7 @@ function onPointerDown() {
       <!-- Typography and selection behaviour the app sets on `body` in `src/app.css`. -->
       <div
         ref="root"
-        class="op-app relative flex h-full overflow-hidden bg-canvas font-sans text-[13px] leading-normal text-surface select-none max-md:flex-col"
+        class="op-app relative flex h-full overflow-hidden bg-canvas text-[13px] leading-normal text-surface select-none max-md:flex-col"
         @pointerdown.capture="onPointerDown"
         @focusin.capture="focus"
         @pointerleave="disengage"

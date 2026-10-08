@@ -3,6 +3,14 @@
  * styles would otherwise apply, and the section rhythm. Section-specific rules live in the
  * section components.
  */
+/*
+ * A stage's UI uses the app's font, as `body` does in `src/app.css`. VitePress already loads
+ * Inter, so panels look the same on every platform, and so do the stills captured of them.
+ */
+.op-app {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
 .landing {
   max-width: 1200px;
   margin: 0 auto;
