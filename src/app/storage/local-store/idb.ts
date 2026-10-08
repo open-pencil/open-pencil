@@ -1,6 +1,13 @@
 import type { DBSchema, IDBPDatabase } from 'idb'
 
-import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
+import {
+  APP_DATABASE_NAMES,
+  binaryStorage,
+  defineAppDatabase,
+  openAppDatabase,
+  readStoredBinary,
+  type StoredBinary
+} from '@/app/storage/idb'
 import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
@@ -19,8 +26,6 @@ const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
   }
 })
 
-type StoredBinary = ArrayBuffer | Uint8Array | Blob
-
 interface LocalCanvasDatabase extends DBSchema {
   meta: {
     key: string
@@ -36,14 +41,6 @@ interface LocalCanvasDatabase extends DBSchema {
   }
 }
 
-/** Stored rows may use older ArrayBuffer/Blob representations. */
-async function storedBinaryToBytes(row: StoredBinary | undefined): Promise<Uint8Array | null> {
-  if (!row) return null
-  if (row instanceof ArrayBuffer) return new Uint8Array(row)
-  if (row instanceof Uint8Array) return Uint8Array.from(row)
-  return new Uint8Array(await row.arrayBuffer())
-}
-
 function openDatabase(): Promise<IDBPDatabase<LocalCanvasDatabase>> {
   return openAppDatabase(localCanvasDatabase)
 }
@@ -53,7 +50,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
   const database = openDatabase()
 
   async function readBinary(storeName: 'fig' | 'thumb', id: string): Promise<Uint8Array | null> {
-    return storedBinaryToBytes(await (await database).get(storeName, id))
+    return readStoredBinary(await (await database).get(storeName, id))
   }
 
   return {
@@ -74,6 +71,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     },
 
     async writeCanvas(input: LocalCanvasWriteInput) {
+      const storeBinary = await binaryStorage()
       const transaction = (await database).transaction(['meta', 'fig', 'thumb'], 'readwrite')
       const figStore = transaction.objectStore('fig')
       const thumbStore = transaction.objectStore('thumb')
@@ -81,11 +79,11 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       const existing = (await metaStore.get(input.id)) ?? null
 
       let hasThumb = existing?.hasThumb ?? false
-      await figStore.put(Uint8Array.from(input.figBytes), input.id)
+      await figStore.put(storeBinary(input.figBytes), input.id)
 
       if (input.thumbBytes != null) {
         if (input.thumbBytes.byteLength > 0) {
-          await thumbStore.put(Uint8Array.from(input.thumbBytes), input.id)
+          await thumbStore.put(storeBinary(input.thumbBytes), input.id)
           hasThumb = true
         } else {
           await thumbStore.delete(input.id)
@@ -110,6 +108,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     },
 
     async writeThumb(id: string, thumbBytes: Uint8Array) {
+      const storeBinary = await binaryStorage()
       const transaction = (await database).transaction(['meta', 'thumb'], 'readwrite')
       const metaStore = transaction.objectStore('meta')
       const existing = await metaStore.get(id)
@@ -117,7 +116,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         await transaction.done
         return null
       }
-      await transaction.objectStore('thumb').put(Uint8Array.from(thumbBytes), id)
+      await transaction.objectStore('thumb').put(storeBinary(thumbBytes), id)
       // Thumb freshness is tracked by its own outbox job — never demote the
       // document's syncStatus here (it orphaned rows as 'pending' forever).
       const meta: LocalCanvasMeta = { ...existing, hasThumb: true }
