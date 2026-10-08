@@ -23,6 +23,8 @@ Mindestens zwei Komponenten auswählen und <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</k
 
 Unterstützt werden Text, boolesche Sichtbarkeit und Instanztausch. Eine Eigenschaft kann mit einem untergeordneten Feld verbunden und anschließend in einer Instanz verändert werden, ohne die Verbindung zu lösen.
 
+Verknüpft wird mit der Raute-Schaltfläche dort, wo das Feld steht: **Typografie** für den Textinhalt, **Darstellung** für die Sichtbarkeit und der Kopf einer Instanz für die ausgetauschte Komponente. Die Hauptkomponente listet ihre **Eigenschaften**; ein Klick öffnet Name, Standardwert und verknüpfte Ebenen. Über **+ → Verschachtelte Instanzen** zeigen Instanzen der Komponente auch die Eigenschaften einer verschachtelten Instanz, wie in Figma.
+
 ## Bibliotheken
 
 Bibliotheken veröffentlichen Komponenten als unveränderliche Versionen. In **Assets → Manage libraries → Publish library** werden eine dauerhafte Kennung und ein Name festgelegt und die zu veröffentlichenden Änderungen ausgewählt.

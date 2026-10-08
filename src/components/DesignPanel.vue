@@ -14,7 +14,10 @@ import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import BehaviourPanel from './properties/component-properties/behaviour/BehaviourPanel.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
+import ComponentPropertyListSection from './properties/component-properties/ComponentPropertyListSection.vue'
 import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
+import PropertyBindButton from './properties/component-properties/PropertyBindButton.vue'
+import PropertyBoundField from './properties/component-properties/PropertyBoundField.vue'
 import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
@@ -120,6 +123,10 @@ const { panels } = useI18n()
         </template>
         <span role="heading" aria-level="2">{{ node.name }}</span>
         <template #actions>
+          <template v-if="node.type === 'INSTANCE'">
+            <PropertyBoundField field="INSTANCE_SWAP" compact />
+            <PropertyBindButton field="INSTANCE_SWAP" />
+          </template>
           <InstanceUpdateAction
             v-if="node.type === 'INSTANCE'"
             :node="node"
@@ -157,6 +164,7 @@ const { panels } = useI18n()
         "
       />
 
+      <ComponentPropertyListSection />
       <SlotAuthoringSection />
       <BehaviourPanel v-if="node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'" />
 

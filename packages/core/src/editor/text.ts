@@ -9,6 +9,7 @@ import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/c
 import { weightToStyle } from '#core/text/fonts'
 import { hasGlyphOutlines } from '#core/text/opentype'
 
+import { applyBoundTextEdit } from './components/authoring/text-edit'
 import { pathTextEditChanges } from './text/path-edit'
 import {
   createTextEditSession,
@@ -178,26 +179,30 @@ export function createTextActions(ctx: EditorContext) {
     ctx.state.editingTextId = null
     activeSession = null
 
-    ctx.undo.push({
-      label: 'Edit text',
-      forward: () => {
-        ctx.graph.updateNode(result.nodeId, {
-          text: after.text,
-          styleRuns: after.styleRuns,
-          ...after.size,
-          ...afterPathText
-        })
-        restoreInstanceOverrides(ctx, instanceOverridesAfter)
-      },
-      inverse: () => {
-        ctx.graph.updateNode(result.nodeId, {
-          text: before.text,
-          styleRuns: before.styleRuns,
-          ...before.size,
-          ...beforePathText
-        })
-        restoreInstanceOverrides(ctx, instanceOverridesBefore)
-      }
+    // Text a property drives becomes the property's value too, in the same undo step.
+    ctx.undo.runBatch('Edit text', () => {
+      ctx.undo.push({
+        label: 'Edit text',
+        forward: () => {
+          ctx.graph.updateNode(result.nodeId, {
+            text: after.text,
+            styleRuns: after.styleRuns,
+            ...after.size,
+            ...afterPathText
+          })
+          restoreInstanceOverrides(ctx, instanceOverridesAfter)
+        },
+        inverse: () => {
+          ctx.graph.updateNode(result.nodeId, {
+            text: before.text,
+            styleRuns: before.styleRuns,
+            ...before.size,
+            ...beforePathText
+          })
+          restoreInstanceOverrides(ctx, instanceOverridesBefore)
+        }
+      })
+      if (before.text !== after.text) applyBoundTextEdit(ctx, result.nodeId, after.text)
     })
   }
 

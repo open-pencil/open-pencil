@@ -31,7 +31,13 @@ Use the component properties panel to add, rename, reorder, and remove variant d
 
 ## Component Properties
 
-Components and component sets support reusable text, boolean visibility, instance-swap, and slot properties. Link a property to a descendant field, then select an instance to edit its assigned value without detaching it. Properties and assignments are preserved when saving and reopening `.fig` files.
+Components and component sets support reusable text, boolean visibility, instance-swap, and slot properties. Select an instance to edit its values without detaching it. Properties and their values are preserved when saving and reopening `.fig` files.
+
+To link a layer of a main component to a property, use the diamond button where its field lives: **Typography** for text content, **Appearance** for visibility, and the instance header for the swapped component. Create a property from the layer's current value or pick an existing one; the field then shows the property instead of its value. Typing into linked text sets the property — its default in the main component, the instance's value in an instance.
+
+Select the main component to see its **Properties**. Click a property to rename it, change its default, see and unlink the layers it drives, or delete it, and drag properties to reorder them. **+** adds a text, boolean, or instance-swap property.
+
+To show a nested instance's properties on instances of the component, choose **+ → Nested instances** and tick it, as Figma's **Expose properties from nested instances** does. Instances of the component then list its properties under its name. Only an instance whose component has properties can be exposed.
 
 ## Slots
 
