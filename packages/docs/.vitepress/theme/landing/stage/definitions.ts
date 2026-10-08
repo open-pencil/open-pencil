@@ -7,7 +7,7 @@ import LayerTree from '@/components/LayerTree/LayerTree.vue'
 import TokensPanel from '@/components/variables/TokensPanel.vue'
 
 import AiChatPanel from './ai/AiChatPanel.vue'
-import type { StageKind } from './kinds'
+import type { SingleStageKind } from './kinds'
 import SdkSnippetPanel from './panels/SdkSnippetPanel.vue'
 import TerminalPanel from './panels/TerminalPanel.vue'
 import { SCENES, type SceneBuilder } from './scenes'
@@ -25,7 +25,7 @@ export interface StageDefinition {
   preview?: boolean
 }
 
-export const STAGES: Record<StageKind, StageDefinition> = {
+export const STAGES: Record<SingleStageKind, StageDefinition> = {
   hero: { scene: SCENES.announcement, toolbar: true },
   figma: { scene: SCENES.figma, panel: LayerTree, layersHeading: true },
   design: { scene: SCENES.pricingSelected, panel: DesignPanel, toolbar: true },

@@ -10,6 +10,7 @@ export const FEATURE_KINDS: FeatureKind[] = [
   'tokens',
   'linting',
   'ai',
+  'collab',
   'code',
   'script',
   'sdk'

@@ -6,6 +6,7 @@ import type { StageKind } from '../stage/kinds'
 
 /** The editor needs WebGL and CanvasKit, so a stage never renders on the server. */
 const FeatureStage = defineClientComponent(() => import('../stage/FeatureStage.vue'))
+const CollabStage = defineClientComponent(() => import('../stage/collab/CollabStage.vue'))
 
 const { kind } = defineProps<{ kind: StageKind }>()
 
@@ -20,7 +21,8 @@ const messages = useLandingMessages()
       <img :src="withBase('/brand/app-icon.svg')" alt="" />
       <span />
     </div>
-    <FeatureStage :kind="kind" />
+    <CollabStage v-if="kind === 'collab'" />
+    <FeatureStage v-else :kind="kind" />
   </div>
 </template>
 

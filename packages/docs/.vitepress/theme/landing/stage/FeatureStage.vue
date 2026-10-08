@@ -10,7 +10,7 @@ import Toolbar from '@/components/Toolbar/Toolbar.vue'
 
 import { STAGES } from './definitions'
 import { prepareEngine } from './engine-assets'
-import type { StageKind } from './kinds'
+import type { SingleStageKind } from './kinds'
 import StageCanvas from './StageCanvas.vue'
 import StagePreviewControls from './StagePreviewControls.vue'
 import { useDocsAppearance } from './useDocsAppearance'
@@ -20,7 +20,7 @@ import { useWheelEngagement } from './useWheelEngagement'
 /** Stages mount a screen ahead of the viewport, so a block is live before it scrolls in. */
 const MOUNT_MARGIN = '100% 0px'
 
-const { kind } = defineProps<{ kind: StageKind }>()
+const { kind } = defineProps<{ kind: SingleStageKind }>()
 const definition = STAGES[kind]
 
 useDocsAppearance()

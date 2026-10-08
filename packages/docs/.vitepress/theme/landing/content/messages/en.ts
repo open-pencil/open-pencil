@@ -46,6 +46,12 @@ export const en: LandingMessages = {
         'Ask in plain language and the agent edits the document with the same tools you use, previewing its work on the canvas as it streams. Connect any provider with your own key, or bring the coding agent you already use.',
       hint: 'A recorded turn plays through the real agent loop. Watch the canvas build as it streams.'
     },
+    collab: {
+      title: 'Work together, with people and agents',
+      detail:
+        'Share a link and everyone edits the same document, peer to peer, with live cursors, selections, and follow mode. AI agents join the same way: you see where they work, on every screen in the room.',
+      hint: 'Both screens are yours to use. Drag a layer on one and watch it move on the other, then ask the agent.'
+    },
     code: {
       title: 'From design to code',
       detail:
@@ -184,6 +190,12 @@ export const en: LandingMessages = {
         'The plans sit in an auto-layout column, so a row of three cards can go right below them.',
       reply:
         'Added a **Guarantees** row under the plans: three cards that share the plan cards’ background and radius.'
+    },
+    collab: {
+      you: 'You',
+      yourScreen: 'Your screen',
+      theirScreen: 'Sam’s screen',
+      askAgent: 'Ask the agent',
     },
     sdk: {
       copy: 'Copy',

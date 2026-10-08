@@ -46,6 +46,12 @@ export const pl: LandingMessages = {
         'Opisz zadanie zwykłym językiem, a agent edytuje dokument tymi samymi narzędziami co Ty i pokazuje efekty na obszarze roboczym już w trakcie generowania. Podłącz dowolnego dostawcę własnym kluczem albo użyj agenta programistycznego, z którego już korzystasz.',
       hint: 'Nagrana tura przechodzi przez prawdziwą pętlę agenta. Zobacz, jak obszar roboczy powstaje w trakcie strumieniowania.'
     },
+    collab: {
+      title: 'Współpraca ludzi i agentów',
+      detail:
+        'Udostępnij link, a wszyscy edytują ten sam dokument, peer-to-peer, z kursorami na żywo, zaznaczeniami i trybem śledzenia. Agenci AI dołączają tak samo: widzisz, gdzie pracują, na każdym ekranie w pokoju.',
+      hint: 'Oba ekrany są Twoje. Przeciągnij warstwę na jednym i zobacz, jak przesuwa się na drugim, a potem poproś agenta.'
+    },
     code: {
       title: 'Od projektu do kodu',
       detail:
@@ -199,6 +205,12 @@ export const pl: LandingMessages = {
         'Plany leżą w kolumnie z auto-layoutem, więc rząd trzech kart zmieści się tuż pod nimi.',
       reply:
         'Dodałem pod planami rząd **Guarantees**: trzy karty z takim samym tłem i promieniem jak karty planów.'
+    },
+    collab: {
+      you: 'Ty',
+      yourScreen: 'Twój ekran',
+      theirScreen: 'Ekran Sama',
+      askAgent: 'Poproś agenta',
     },
     sdk: {
       copy: 'Kopiuj',

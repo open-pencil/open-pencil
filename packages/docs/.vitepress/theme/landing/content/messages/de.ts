@@ -46,6 +46,12 @@ export const de: LandingMessages = {
         'Beschreibe in normaler Sprache, was du willst: Der Agent bearbeitet das Dokument mit denselben Werkzeugen wie du und zeigt seine Arbeit schon während des Streamings auf der Arbeitsfläche. Verbinde einen beliebigen Anbieter mit deinem eigenen Schlüssel oder nutze den Coding-Agenten, den du ohnehin verwendest.',
       hint: 'Ein aufgezeichneter Durchgang läuft durch die echte Agentenschleife. Sieh zu, wie die Arbeitsfläche beim Streamen entsteht.'
     },
+    collab: {
+      title: 'Gemeinsam arbeiten, mit Menschen und Agenten',
+      detail:
+        'Teile einen Link, und alle bearbeiten dasselbe Dokument, Peer-to-Peer, mit Live-Cursorn, Auswahlen und Folgemodus. KI-Agenten kommen genauso dazu: Du siehst auf jedem Bildschirm im Raum, wo sie arbeiten.',
+      hint: 'Beide Bildschirme gehören dir. Zieh auf einem eine Ebene und sieh zu, wie sie sich auf dem anderen bewegt; dann frag den Agenten.'
+    },
     code: {
       title: 'Vom Design zum Code',
       detail:
@@ -198,6 +204,12 @@ export const de: LandingMessages = {
         'Die Tarife liegen in einer Auto-Layout-Spalte, also passt eine Reihe mit drei Karten direkt darunter.',
       reply:
         'Unter den Tarifen gibt es jetzt eine Reihe **Guarantees**: drei Karten mit dem Hintergrund und Radius der Tarifkarten.'
+    },
+    collab: {
+      you: 'Du',
+      yourScreen: 'Dein Bildschirm',
+      theirScreen: 'Sams Bildschirm',
+      askAgent: 'Agenten fragen',
     },
     sdk: {
       copy: 'Kopieren',

@@ -46,6 +46,12 @@ export const fr: LandingMessages = {
         'Demandez en langage courant : l’agent modifie le document avec les mêmes outils que vous et affiche son travail sur le canevas au fil de la génération. Connectez le fournisseur de votre choix avec votre propre clé, ou utilisez l’agent de code que vous employez déjà.',
       hint: 'Un échange enregistré passe par la vraie boucle de l’agent. Regardez le canevas se construire au fil du flux.'
     },
+    collab: {
+      title: 'Travailler ensemble, humains et agents',
+      detail:
+        'Partagez un lien et chacun modifie le même document, en pair à pair, avec curseurs en direct, sélections et mode suivi. Les agents AI rejoignent de la même façon : vous voyez où ils travaillent, sur chaque écran du salon.',
+      hint: 'Les deux écrans sont à vous. Faites glisser un calque sur l’un et regardez-le bouger sur l’autre, puis sollicitez l’agent.'
+    },
     code: {
       title: 'Du design au code',
       detail:
@@ -199,6 +205,12 @@ export const fr: LandingMessages = {
         'Les offres sont dans une colonne en auto-layout, donc une rangée de trois cartes peut se placer juste en dessous.',
       reply:
         'J’ai ajouté une rangée **Guarantees** sous les offres : trois cartes qui reprennent le fond et le rayon des cartes d’offre.'
+    },
+    collab: {
+      you: 'Vous',
+      yourScreen: 'Votre écran',
+      theirScreen: 'L’écran de Sam',
+      askAgent: 'Demander à l’agent',
     },
     sdk: {
       copy: 'Copier',

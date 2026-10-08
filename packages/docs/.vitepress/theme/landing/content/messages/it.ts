@@ -46,6 +46,12 @@ export const it: LandingMessages = {
         'Chiedi con parole tue e l’agente modifica il documento con gli stessi strumenti che usi tu, mostrando il lavoro sulla tela man mano che arriva. Collega qualsiasi provider con la tua chiave, oppure usa l’agente di programmazione che già utilizzi.',
       hint: 'Un turno registrato passa per il vero ciclo dell’agente. Guarda la tela costruirsi mentre arriva.'
     },
+    collab: {
+      title: 'Lavorare insieme, persone e agenti',
+      detail:
+        'Condividi un link e tutti modificano lo stesso documento, peer to peer, con cursori in tempo reale, selezioni e modalità segui. Gli agenti AI si uniscono allo stesso modo: vedi dove lavorano, su ogni schermo della stanza.',
+      hint: 'Entrambi gli schermi sono tuoi. Trascina un livello su uno e guardalo muoversi sull’altro, poi chiedi all’agente.'
+    },
     code: {
       title: 'Dal design al codice',
       detail:
@@ -199,6 +205,12 @@ export const it: LandingMessages = {
         'I piani sono in una colonna con auto-layout, quindi una riga di tre schede può stare subito sotto.',
       reply:
         'Ho aggiunto una riga **Guarantees** sotto i piani: tre schede con lo stesso sfondo e raggio delle schede dei piani.'
+    },
+    collab: {
+      you: 'Tu',
+      yourScreen: 'Il tuo schermo',
+      theirScreen: 'Lo schermo di Sam',
+      askAgent: 'Chiedi all’agente',
     },
     sdk: {
       copy: 'Copia',

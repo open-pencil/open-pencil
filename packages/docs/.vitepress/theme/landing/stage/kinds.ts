@@ -10,6 +10,10 @@ export type StageKind =
   | 'tokens'
   | 'linting'
   | 'ai'
+  | 'collab'
   | 'code'
   | 'script'
   | 'sdk'
+
+/** Stages with one editor; the collaboration stage composes two of its own. */
+export type SingleStageKind = Exclude<StageKind, 'collab'>

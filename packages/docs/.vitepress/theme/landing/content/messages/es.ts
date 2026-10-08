@@ -46,6 +46,12 @@ export const es: LandingMessages = {
         'Pide lo que necesitas con tus propias palabras y el agente edita el documento con las mismas herramientas que tú, mostrando su trabajo en el lienzo a medida que llega. Conecta cualquier proveedor con tu propia clave o usa el agente de programación que ya utilizas.',
       hint: 'Un turno grabado se reproduce con el bucle real del agente. Mira cómo se construye el lienzo mientras llega.'
     },
+    collab: {
+      title: 'Trabajad juntos, personas y agentes',
+      detail:
+        'Comparte un enlace y todos editan el mismo documento, de igual a igual, con cursores en vivo, selecciones y modo seguir. Los agentes de IA se unen igual: ves dónde trabajan en cada pantalla de la sala.',
+      hint: 'Las dos pantallas son tuyas. Arrastra una capa en una y mira cómo se mueve en la otra; después pregunta al agente.'
+    },
     code: {
       title: 'Del diseño al código',
       detail:
@@ -199,6 +205,12 @@ export const es: LandingMessages = {
         'Los planes están en una columna con auto-layout, así que una fila de tres tarjetas cabe justo debajo.',
       reply:
         'He añadido una fila **Guarantees** debajo de los planes: tres tarjetas con el mismo fondo y radio que las tarjetas de los planes.'
+    },
+    collab: {
+      you: 'Tú',
+      yourScreen: 'Tu pantalla',
+      theirScreen: 'Pantalla de Sam',
+      askAgent: 'Preguntar al agente',
     },
     sdk: {
       copy: 'Copiar',

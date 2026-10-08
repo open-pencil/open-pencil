@@ -20,6 +20,11 @@ import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
  * stages past the browser's context limit. This is the SDK's single-canvas path with the
  * same input handling, preview islands, lint markers, and the app's loading overlay.
  */
+const emit = defineEmits<{
+  /** The pointer moved over the canvas, in canvas coordinates, for a room's cursor. */
+  cursor: [x: number, y: number]
+}>()
+
 const store = useEditorStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -43,7 +48,8 @@ const { cursorOverride } = useCanvasInput(
   store,
   hitTestSectionTitle,
   hitTestComponentLabel,
-  hitTestFrameTitle
+  hitTestFrameTitle,
+  (x, y) => emit('cursor', x, y)
 )
 useTextEdit(canvasRef, store)
 

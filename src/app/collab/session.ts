@@ -58,6 +58,8 @@ export interface RoomSessionOptions {
   store: EditorStore
   origin: RoomOrigin
   joinRoom?: JoinCollabRoom
+  /** Who this tab is in the room; the device's own identity unless a host stands in for one. */
+  identity?: Pick<ReturnType<typeof useCollabIdentity>, 'name' | 'color'>
   openSavedCopy?: (roomId: string, ydoc: Y.Doc) => RoomSavedCopy
   /** How long the tab tries to reach the service that introduces peers before saying it cannot. */
   unreachableMs?: number
@@ -76,11 +78,11 @@ export function openRoomSession({
   store,
   origin,
   joinRoom,
+  identity = useCollabIdentity(),
   openSavedCopy = openIndexedDBCopy,
   unreachableMs = ROOM_UNREACHABLE_MS,
   tickMs = ROOM_STATUS_TICK_MS
 }: RoomSessionOptions): RoomSession {
-  const identity = useCollabIdentity()
   const ydoc = new Y.Doc()
   const awareness = new awarenessProtocol.Awareness(ydoc)
   const ynodes: YNodes = ydoc.getMap('nodes')
