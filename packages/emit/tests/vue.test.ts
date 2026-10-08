@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { es, vue } from '#emit/index'
 import { createSSRApp } from 'vue'
+import { parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
 
 /** Renders printed markup with Vue's own template compiler and server renderer. */
@@ -72,5 +73,32 @@ describe('Vue templates', () => {
         ''
       ].join('\n')
     )
+  })
+
+  test('keep text next to elements without adding a space', async () => {
+    const node = vue.element(
+      'div',
+      [],
+      [vue.element('p', [], [vue.text('Hello'), vue.element('strong', [], [vue.text('!')])])]
+    )
+    expect(await render(node)).toBe('<div><p>Hello<strong>!</strong></p></div>')
+  })
+
+  test('keep closing tags in script strings and style values inside their blocks', () => {
+    const script = es.fill(es.parseModule('const label = $label'), {
+      $label: es.string('</script> and </STYLE>')
+    })
+    const source = vue.printComponent({
+      script,
+      template: vue.element('div'),
+      style: '.label::after { content: "</style>"; }'
+    })
+    const { descriptor, errors } = parse(source)
+    expect(errors).toEqual([])
+    expect(descriptor.scriptSetup?.content).toContain('<\\/script> and <\\/STYLE>')
+    expect(descriptor.styles.map((style) => style.content.trim())).toEqual([
+      '.label::after { content: "<\\/style>"; }'
+    ])
+    expect(descriptor.template?.content.trim()).toBe('<div />')
   })
 })

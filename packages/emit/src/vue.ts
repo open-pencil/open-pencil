@@ -63,15 +63,22 @@ function printAttribute(item: VueAttribute): string {
   return `${item.argument ? `v-model:${item.argument}` : 'v-model'}="${value}"`
 }
 
+/** Markup with nothing added around it, as text content needs. */
+function printInline(node: VueNode): string {
+  if (node.type === 'text') return templateText(node.value)
+  const open = [node.tag, ...node.attributes.map(printAttribute)].join(' ')
+  if (node.children.length === 0) return `<${open} />`
+  return `<${open}>${node.children.map(printInline).join('')}</${node.tag}>`
+}
+
 function printNode(node: VueNode, depth: number): string {
   const indent = '  '.repeat(depth)
-  if (node.type === 'text') return `${indent}${templateText(node.value)}`
+  // Vue renders whitespace between text and elements as a space, so an element with text
+  // content keeps its children on its own line, exactly as given.
+  if (node.type === 'text' || node.children.some((child) => child.type === 'text'))
+    return `${indent}${printInline(node)}`
   const open = [node.tag, ...node.attributes.map(printAttribute)].join(' ')
   if (node.children.length === 0) return `${indent}<${open} />`
-  const only = node.children.at(0)
-  // A lone text child stays on the element's line, so no whitespace is added around it.
-  if (node.children.length === 1 && only?.type === 'text')
-    return `${indent}<${open}>${templateText(only.value)}</${node.tag}>`
   const children = node.children.map((child) => printNode(child, depth + 1))
   return [`${indent}<${open}>`, ...children, `${indent}</${node.tag}>`].join('\n')
 }
@@ -89,12 +96,20 @@ export interface VueComponent {
   style?: string
 }
 
+/**
+ * A raw block's content, which ends at the first closing tag for its element. Strings in the
+ * script and values in the stylesheet can come from an imported design, so a closing tag in
+ * them is written `<\\/`, which JavaScript strings and CSS both read back as `</`.
+ */
+const rawBlock = (tag: string, content: string) =>
+  `<${tag}>\n${content.trim().replace(/<\/(?=script|style)/gi, '<\\/')}\n</${tag.split(' ')[0]}>`
+
 /** A single-file component: script setup, template, and scoped style. */
 export function printComponent({ script, template, style }: VueComponent): string {
   const blocks = [
-    `<script setup lang="ts">\n${printModule(script).trim()}\n</script>`,
+    rawBlock('script setup lang="ts"', printModule(script)),
     `<template>\n${printNode(template, 1)}\n</template>`,
-    ...(style ? [`<style scoped>\n${style.trim()}\n</style>`] : [])
+    ...(style ? [rawBlock('style scoped', style)] : [])
   ]
   return `${blocks.join('\n\n')}\n`
 }
