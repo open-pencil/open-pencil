@@ -1,7 +1,8 @@
 import type { SceneGraph } from '../index'
-import { getInstanceOverride, setInstanceOverride } from '../instance-overrides'
+import { setInstanceOverride } from '../instance-overrides'
 import { findInstanceAncestor } from '../instances'
 import { instanceMainComponent } from '../instances/main-component'
+import { walkInstanceSources } from '../instances/source-walk'
 import { randomHex } from '../random'
 import type {
   ComponentPropertyDefinition,
@@ -67,36 +68,19 @@ export function findComponentPropertyTargets(
   instance: SceneNode,
   propertyId: string
 ): ComponentPropertyTarget[] {
-  if (instance.type !== 'INSTANCE' || !instance.componentId) return []
-  const component = graph.getNode(instance.componentId)
-  if (!component) return []
   const targets: ComponentPropertyTarget[] = []
-  const visit = (sourceParent: SceneNode, instanceParent: SceneNode): void => {
-    const bySource = new Map<string, SceneNode>()
-    for (const child of graph.getChildren(instanceParent.id)) {
-      const mapped = getInstanceOverride(
-        instance.instanceOverrides,
-        instance.id,
-        child.id,
-        'sourceComponentId'
-      )
-      const sourceId = typeof mapped === 'string' ? mapped : child.componentId
-      if (!sourceId) continue
-      if (bySource.has(sourceId)) throw new Error(`Ambiguous component-property target ${sourceId}`)
-      bySource.set(sourceId, child)
-    }
-    for (const childId of sourceParent.childIds) {
-      const source = graph.getNode(childId)
-      const target = bySource.get(childId)
-      if (!source || !target) continue
+  walkInstanceSources(
+    graph,
+    instance,
+    (source, target) => {
       const reference = source.componentPropertyReferences.find(
         (candidate) => candidate.propertyId === propertyId
       )
       if (reference) targets.push({ node: target, field: reference.field, source })
-      visit(source, target)
-    }
-  }
-  visit(component, instance)
+      return true
+    },
+    true
+  )
   return targets
 }
 

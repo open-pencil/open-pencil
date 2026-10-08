@@ -27,6 +27,9 @@ de:panels.colorFormatHsb
 de:panels.colorFormatHsl
 de:panels.colorFormatOkhcl
 de:panels.colorFormatRgb
+de:panels.componentPropertyBoolean
+de:panels.componentPropertyName
+de:panels.componentPropertyText
 de:panels.design
 de:panels.export
 de:panels.frame
@@ -142,6 +145,7 @@ fr:panels.maskTypeAlpha
 fr:panels.maskTypeLuminance
 fr:panels.maxHeightShort
 fr:panels.minHeightShort
+fr:panels.nestedInstance
 fr:panels.page
 fr:panels.pages
 fr:panels.position

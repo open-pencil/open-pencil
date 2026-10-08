@@ -38,6 +38,7 @@ describe('component property control model', () => {
     })
     expect(
       instanceSwapOptions(
+        graph,
         [secondary, preferred],
         {
           id: '1:3',

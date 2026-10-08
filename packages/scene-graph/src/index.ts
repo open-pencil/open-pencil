@@ -16,6 +16,13 @@ export * from './images'
 export * from './components/properties'
 export * from './slots/frames'
 export { instanceMainComponent } from './instances/main-component'
+export { canCreateInstance } from './instances/cycles'
+export {
+  exposableInstances,
+  exposedInstances,
+  instanceExposureIssue,
+  type InstanceExposureIssue
+} from './components/exposure'
 export * from './slots/content'
 export * from './slots/authoring'
 export * from './slots/limits'

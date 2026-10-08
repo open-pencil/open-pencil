@@ -243,8 +243,11 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
-  useComponentProperties
+  useComponentProperties,
+  useComponentPropertyAuthoring,
+  useExposedInstances
 } from '#vue/controls/component-props'
+export type { ComponentBinding, ComponentBindingGroup } from '#vue/controls/component-props'
 export {
   slotInstanceOptions,
   slotLimits,

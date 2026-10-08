@@ -27,6 +27,8 @@ Każdy komponent w zestawie może określać kilka wymiarów wariantu, na przyk�
 
 Komponenty obsługują właściwości tekstu, widoczności logicznej i zamiany egzemplarza. Powiąż właściwość z polem obiektu potomnego, aby zmieniać jej wartość w egzemplarzu bez odłączania.
 
+Powiązanie tworzy przycisk z rombem przy polu: **Typografia** dla treści tekstu, **Wygląd** dla widoczności i nagłówek egzemplarza dla zamienianego komponentu. Komponent główny pokazuje swoje **Właściwości**; kliknięcie otwiera nazwę, wartość domyślną i powiązane warstwy. **+ → Zagnieżdżone instancje** pokazuje właściwości zagnieżdżonego egzemplarza w egzemplarzach komponentu, jak w Figmie.
+
 ## Biblioteki
 
 Biblioteka publikuje komponenty jako niezmienne wersje. Każdy zasób ma stałe identyfikatory biblioteki, zasobu i wersji, dlatego różne egzemplarze mogą pozostać na różnych wersjach do jawnej aktualizacji.
