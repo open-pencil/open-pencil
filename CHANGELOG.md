@@ -130,6 +130,7 @@
 ### Fixed
 
 - Show when the browser menubar has more menus than fit in the left panel. The clipped side fades out and a chevron scrolls to the hidden menus; before, Arrange and Text could be cut off with no sign the bar scrolls.
+- List storage documents as soon as storage settings are saved. The home tab kept asking to configure storage until it next refreshed, which happened on window focus or up to a minute later.
 - Keep a Figma file's exposed nested instances when it is saved from OpenPencil; their properties stopped showing on the outer component's instances in Figma.
 - Offer only components that fit in an instance swap's list: one that would contain itself, such as the component the swapped layer sits in, is left out, and a variant is named with its set, as in `Badge / State=Info`.
 - Undo a change to a property that drives several layers of an instance on all of them, and show an instance's value on a layer linked to that property after the instance was made.
