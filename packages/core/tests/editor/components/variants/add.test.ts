@@ -83,6 +83,49 @@ describe('Add variant', () => {
     expect(set.componentPropertyDefinitions[0]?.variantOptions).toEqual(['Default', 'Variant2'])
   })
 
+  test('in a set with auto layout, the copy follows the last variant where layout puts it', async () => {
+    const editor = createEditor()
+    const page = editor.state.currentPageId
+    const set = editor.graph.createNode('COMPONENT_SET', page, {
+      name: 'Badge',
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 16,
+      paddingTop: 16,
+      paddingRight: 16,
+      paddingBottom: 16,
+      paddingLeft: 16,
+      componentPropertyDefinitions: [
+        {
+          id: 'variant:state',
+          name: 'State',
+          type: 'VARIANT',
+          defaultValue: 'Info',
+          variantOptions: ['Info', 'Warning']
+        }
+      ]
+    })
+    for (const state of ['Info', 'Warning'])
+      editor.graph.createNode('COMPONENT', set.id, {
+        name: `State=${state}`,
+        width: 71,
+        height: 25,
+        componentPropertyValues: { State: state }
+      })
+    await Promise.resolve()
+    editor.runLayoutForNode(set.id)
+    const width = set.width
+
+    const added = defined(editor.addVariant(set.id))
+    const copy = defined(editor.graph.getNode(added))
+    expect(copy).toMatchObject({ name: 'State=Variant2', x: 16 + 2 * (71 + 16), y: 16 })
+    expect(set.width).toBe(width + 71 + 16)
+    editor.undo.undo()
+    expect(editor.graph.getNode(added)).toBeUndefined()
+    expect(set.width).toBe(width)
+  })
+
   test('a duplicated variant keeps its values for the caller to change', () => {
     const { editor, chip } = setup()
     const second = defined(editor.addVariant(chip.id))

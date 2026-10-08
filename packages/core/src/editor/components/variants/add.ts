@@ -92,7 +92,8 @@ function nextVariantValue(options: readonly string[]): string {
 }
 
 /**
- * Copy `source` below the set's last variant, 20 apart, and grow the set to hold it. With
+ * Copy `source` after the set's last variant. A set with auto layout places the copy itself; one
+ * without, as Figma makes them, gets it 20 below the last variant and grows to hold it. With
  * `nextValue`, the copy takes the next free value of the set's first variant property, as Figma's
  * Add variant does; without, it keeps the source's values for the caller to change.
  */
@@ -116,9 +117,9 @@ export function appendVariant(
   const ordered = Object.fromEntries(
     getVariantDefinitions(ctx.graph, setId).map((item) => [item.name, values[item.name] ?? ''])
   )
+  const laidOut = set.layoutMode !== 'NONE'
   const clone = ctx.graph.cloneTree(source.id, setId, {
-    x: source.x,
-    y: bottom + VARIANT_SET_PADDING,
+    ...(laidOut ? {} : { x: source.x, y: bottom + VARIANT_SET_PADDING }),
     name: buildVariantName(ordered),
     componentPropertyValues: values
   })
@@ -130,10 +131,17 @@ export function appendVariant(
         ? { ...item, variantOptions: [...(item.variantOptions ?? []), value] }
         : item
     ),
-    width: Math.max(set.width, clone.x + clone.width + VARIANT_SET_PADDING),
-    height: Math.max(set.height, clone.y + clone.height + VARIANT_SET_PADDING)
+    width: laidOut ? set.width : Math.max(set.width, clone.x + clone.width + VARIANT_SET_PADDING),
+    height: laidOut
+      ? set.height
+      : Math.max(set.height, clone.y + clone.height + VARIANT_SET_PADDING)
   }
-  ctx.graph.updateNode(setId, structuredClone(setAfter))
+  // Auto layout sizes the set and places the copy; the stored size is only a starting point.
+  const apply = (fields: SetFields) => {
+    ctx.graph.updateNode(setId, structuredClone(fields))
+    if (laidOut) ctx.runLayoutForNode(setId)
+  }
+  apply(setAfter)
   const snapshots = snapshotSubtree(ctx.graph, clone.id)
   ctx.setSelectedIds(new Set([clone.id]))
   ctx.undo.push({
@@ -141,13 +149,13 @@ export function appendVariant(
     forward: () => {
       const root = snapshots.get(clone.id)
       if (root) restoreSubtree(ctx.graph, root, setId, snapshots)
-      ctx.graph.updateNode(setId, structuredClone(setAfter))
+      apply(setAfter)
       ctx.setSelectedIds(new Set([clone.id]))
       ctx.requestRender()
     },
     inverse: () => {
       ctx.graph.deleteNode(clone.id)
-      ctx.graph.updateNode(setId, structuredClone(setBefore))
+      apply(setBefore)
       ctx.setSelectedIds(new Set([source.id]))
       ctx.requestRender()
     }
