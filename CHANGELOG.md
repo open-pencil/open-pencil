@@ -227,7 +227,7 @@
 
 ### Performance
 
-- `openpencil pages`, `variables`, and `fonts` no longer lay out the whole document before answering.
+- `openpencil pages`, `variables`, `fonts`, and `tokens` stylesheets no longer lay out the whole document before answering.
 - Open and draw large pages faster: guides no longer scan every layer of the page on each frame, a layout pass only writes the layers it moved and asks for one redraw, and opening a `.fig` keeps one copy of the file on the main thread instead of three.
 - Edit variables in large documents without stalls: renaming, reordering, or adding a variable, or changing its CSS name, unit, scopes, or conditions, no longer redraws the canvas, and changing a value or mode updates only the layers bound to those variables or to variables aliasing them instead of re-resolving and laying out every bound layer in the document.
 - Open the `/demo` document like any `.fig` file, built ahead of time, instead of generating it in the browser, which froze the page for several seconds.
