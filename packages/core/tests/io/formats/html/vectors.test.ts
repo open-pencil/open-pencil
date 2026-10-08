@@ -33,4 +33,33 @@ describe('vector layers in HTML export', () => {
     expect(new Set(ids).size).toBe(2)
     for (const id of ids) expect(html).toContain(`url(#${id})`)
   })
+
+  test('keep def ids apart for layer ids that differ only in punctuation', async () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Card', width: 200, height: 100 })
+    for (const [id, x] of [['a:b', 0], ['a-b', 100]] as const)
+      graph.createNodeWithId(id, 'STAR', frame.id, { name: 'Star', x, width: 80, height: 80, fills: [gradient] })
+
+    const { html } = await renderNodesToHTML(graph, [frame.id])
+    const ids = [...html.matchAll(/<linearGradient[^>]* id="([^"]+)"/g)].map((match) => match[1])
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  test('give a straight line a viewport to draw its stroke in', async () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Card', width: 200, height: 100 })
+    graph.createNode('VECTOR', frame.id, {
+      name: 'Rule',
+      width: 120,
+      height: 0,
+      vectorNetwork: {
+        vertices: [{ x: 0, y: 0 }, { x: 120, y: 0 }],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      },
+      strokes: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, weight: 2, align: 'CENTER' }]
+    })
+    const { html } = await renderNodesToHTML(graph, [frame.id])
+    expect(html).toMatch(/<svg width="120" height="1" viewBox="0 0 120 1"/)
+  })
 })

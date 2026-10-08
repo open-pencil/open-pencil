@@ -16,12 +16,20 @@ function designNode(node: SVGNode | string): DesignNode {
 }
 
 /**
+ * A layer id as an id-safe string, one to one: letters, digits, and `-` stay, and anything
+ * else, `_` included, becomes `_<code point>_`, so `a:b` and `a-b` never meet.
+ */
+function idPart(id: string): string {
+  return id.replace(/[^A-Za-z0-9-]/gu, (char) => `_${char.codePointAt(0)?.toString(16) ?? ''}_`)
+}
+
+/**
  * Vector layers in HTML exports as inline SVG from the SVG export, so paths, gradients, and
  * shadows draw as they do there. Def ids start with the layer's id, so several SVGs on one page
  * never pick up each other's gradients or filters.
  */
 export const vectorElement: VectorElementRenderer = (graph, node) => {
-  const idPrefix = `${node.id.replace(/[^\w-]/g, '-')}-`
+  const idPrefix = `${idPart(node.id)}-`
   const drawn = renderNodeSVGElement(graph, node, {
     idPrefix,
     colorSpace: graph.documentColorSpace

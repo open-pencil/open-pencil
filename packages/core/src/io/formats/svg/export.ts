@@ -525,8 +525,9 @@ export function renderNodeSVGElement(
   const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
-  const width = round(node.width)
-  const height = round(node.height)
+  // A straight line has no height or width, but its stroke still needs a viewport to draw in.
+  const width = Math.max(1, round(node.width))
+  const height = Math.max(1, round(node.height))
   return svg(
     'svg',
     { width, height, viewBox: `0 0 ${width} ${height}` },
