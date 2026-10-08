@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { getNodeEditCapability } from '@open-pencil/core/editor'
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -52,6 +53,10 @@ const isComponentType = computed(() => {
   const type = node.value?.type
   return type ? COMPONENT_TYPES.has(type) : false
 })
+// A library's components are edited in the library, so Add variant has nothing to change here.
+const canAddVariant = computed(
+  () => !!node.value && getNodeEditCapability(store.graph, node.value.id).editable
+)
 const selectedIcon = computed(() => (node.value ? nodeIcon(node.value) : undefined))
 function openSelectedInstanceReview() {
   const instance = node.value
@@ -134,6 +139,7 @@ const { panels } = useI18n()
             v-if="node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'"
             :label="panels.addVariant"
             data-test-id="add-variant"
+            :disabled="!canAddVariant"
             @click="store.addVariant(node.id)"
           >
             <icon-lucide-diamond-plus class="size-3.5" />

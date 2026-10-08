@@ -83,6 +83,20 @@ describe('Add variant', () => {
     expect(set.componentPropertyDefinitions[0]?.variantOptions).toEqual(['Default', 'Variant2'])
   })
 
+  test('skips values variants use even when the set does not list them', () => {
+    const { editor, chip } = setup()
+    editor.addVariant(chip.id)
+    const set = defined(editor.graph.getNode(defined(chip.parentId)))
+    // As some files save it: Variant2 is in use but missing from the declared options.
+    const [variant, ...rest] = set.componentPropertyDefinitions
+    editor.graph.updateNode(set.id, {
+      componentPropertyDefinitions: [{ ...defined(variant), variantOptions: ['Default'] }, ...rest]
+    })
+    const added = defined(editor.addVariant(set.id))
+    expect(defined(editor.graph.getNode(added)).name).toBe('Property 1=Variant3')
+    expect(editor.getComponentSetVariantConflicts(set.id)).toEqual([])
+  })
+
   test('in a set with auto layout, the copy follows the last variant where layout puts it', async () => {
     const editor = createEditor()
     const page = editor.state.currentPageId

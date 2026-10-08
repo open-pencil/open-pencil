@@ -7,7 +7,12 @@ import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/va
 import { wrapSelectionInContainer } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 
-import { getComponentSet, getComponentSetVariants, getVariantDefinitions } from './model'
+import {
+  getComponentSet,
+  getComponentSetVariants,
+  getVariantDefinitions,
+  getVariantOptions
+} from './model'
 
 type SetFields = Pick<
   SceneNode,
@@ -113,7 +118,10 @@ export function appendVariant(
   assertNodeEditable(ctx.graph, source.id)
   const variants = getComponentSetVariants(ctx.graph, setId)
   const bottom = Math.max(...variants.map((variant) => variant.y + variant.height))
-  const value = definition && nextValue ? nextVariantValue(definition.variantOptions ?? []) : null
+  const value =
+    definition && nextValue
+      ? nextVariantValue(getVariantOptions(ctx.graph, setId, definition.id))
+      : null
   const values =
     definition && value
       ? { ...source.componentPropertyValues, [definition.name]: value }

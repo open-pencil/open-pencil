@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { omit } from 'es-toolkit'
 import { ref, type ComponentPublicInstance } from 'vue'
 
 import type { VariantMutationResult } from '@open-pencil/core/editor'
@@ -52,7 +53,9 @@ function setupRow(element: Element | ComponentPublicInstance | null, value: stri
 
 function commitRename(value: string) {
   const next = drafts.value[value]?.trim()
-  if (next && next !== value && !rename(value, next)) drafts.value[value] = value
+  if (next && next !== value) rename(value, next)
+  // The row shows the stored value again, renamed or not.
+  drafts.value = omit(drafts.value, [value])
 }
 
 function commitAdd() {
