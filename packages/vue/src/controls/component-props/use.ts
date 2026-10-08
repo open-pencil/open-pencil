@@ -1,6 +1,6 @@
 import { computed, watch } from 'vue'
 
-import { exposedInstances } from '@open-pencil/scene-graph'
+import { exposedInstances, findComponentPropertyTargets } from '@open-pencil/scene-graph'
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
 
 import {
@@ -82,7 +82,19 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
         options = variantOptions(editor, firstInstance, definition.name)
       } else if (definition.type === 'INSTANCE_SWAP') {
         componentNodes ??= [...editor.graph.getAllNodes()]
-        options = instanceSwapOptions(componentNodes, definition, value === MIXED ? '' : value)
+        // Each layer the property swaps, in every selected instance, must not hold its own choice.
+        const parentIds = instances.value.flatMap((instance) =>
+          findComponentPropertyTargets(editor.graph, instance, definition.id).flatMap((target) =>
+            target.node.parentId ? [target.node.parentId] : []
+          )
+        )
+        options = instanceSwapOptions(
+          editor.graph,
+          componentNodes,
+          definition,
+          value === MIXED ? '' : value,
+          parentIds
+        )
       }
       return {
         id: definition.id,

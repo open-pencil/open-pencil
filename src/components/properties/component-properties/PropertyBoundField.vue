@@ -37,7 +37,12 @@ const chip =
 <template>
   <DropdownMenuRoot v-if="compact && binding.available.value && binding.definition.value">
     <DropdownMenuTrigger as-child>
-      <button type="button" :class="[chip, 'max-w-28']" :data-property-bound="field">
+      <button
+        type="button"
+        :class="[chip, 'max-w-40']"
+        :aria-label="`${binding.fieldLabel.value}: ${binding.definition.value.name}`"
+        :data-property-bound="field"
+      >
         <PropertyTypeIcon :kind="binding.definition.value.type" class="!text-component" />
         <span class="truncate">{{ binding.definition.value.name }}</span>
       </button>

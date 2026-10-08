@@ -129,6 +129,7 @@
 ### Fixed
 
 - Keep a Figma file's exposed nested instances when it is saved from OpenPencil; their properties stopped showing on the outer component's instances in Figma.
+- Offer only components that fit in an instance swap's list: one that would contain itself, such as the component the swapped layer sits in, is left out, and a variant is named with its set, as in `Badge / State=Info`.
 - Undo a change to a property that drives several layers of an instance on all of them, and show an instance's value on a layer linked to that property after the instance was made.
 - Open S3 storage documents and show their previews on servers that answer a byte-range read with `200` instead of `206`, such as `rclone serve s3`. Previews failed to load, and the browser cached the partial reply as the whole document, so opening it failed with "Invalid fig-kiwi container". Storage requests now skip the browser cache, and a `200` whose `Content-Range` matches the request is accepted.
 - Keep a layer's `.fig` ID the same across saves (#890). Layers created in OpenPencil were numbered in tree order on each save until the file was reopened, so inserting a layer shifted the IDs of the layers after it; variable collections and modes could also be renumbered.

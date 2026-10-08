@@ -1,17 +1,13 @@
 import { uniqBy } from 'es-toolkit/array'
 import { computed } from 'vue'
 
-import {
-  canCreateInstance,
-  instanceExposureIssue,
-  type ComponentPropertyType,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import { instanceExposureIssue, type ComponentPropertyType } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 import { groupComponentBindings } from './bindings'
+import { instanceSwapOptions, swapOptionLabel } from './model'
 
 const AUTHORED_TYPES = new Set<ComponentPropertyType>(['TEXT', 'BOOLEAN', 'INSTANCE_SWAP'])
 
@@ -72,20 +68,20 @@ export function useComponentPropertyAuthoring() {
     }))
   })
 
-  /** Components a swap property can show, without one that would contain itself. */
+  /** Components a swap property's default can show, without one that would contain itself. */
   function swapOptions(propertyId: string) {
-    const layers =
-      definitions.value
-        .find((item) => item.id === propertyId)
-        ?.bindingGroups.flatMap((group) => group.bindings.map((binding) => binding.node)) ?? []
-    return components.value.map((node) => ({
-      value: node.id,
-      label: node.name,
-      disabled: layers.some(
-        (layer: SceneNode) =>
-          !!layer.parentId && !canCreateInstance(editor.graph, node.id, layer.parentId)
-      )
-    }))
+    const definition = definitions.value.find((item) => item.id === propertyId)
+    const parentIds =
+      definition?.bindingGroups.flatMap((group) =>
+        group.bindings.flatMap((binding) => (binding.node.parentId ? [binding.node.parentId] : []))
+      ) ?? []
+    return instanceSwapOptions(
+      editor.graph,
+      components.value,
+      definition ?? { id: '', name: '', type: 'INSTANCE_SWAP', defaultValue: '' },
+      definition?.defaultValue ?? '',
+      parentIds
+    )
   }
 
   return {
@@ -95,7 +91,10 @@ export function useComponentPropertyAuthoring() {
     variantCount: computed(() => variants.value.length),
     editable: computed(() => !!context.value?.editable),
     swapOptions,
-    componentName: (id: string) => components.value.find((node) => node.id === id)?.name ?? id,
+    componentName: (id: string) => {
+      const node = editor.graph.getNode(id)
+      return node ? swapOptionLabel(editor.graph, node) : id
+    },
     create: editor.createComponentProperty,
     expose: editor.exposeComponentProperty,
     bind: editor.bindComponentProperty,

@@ -19,6 +19,7 @@ import InstanceUpdateAction from './properties/component-properties/instance-upd
 import PropertyBindButton from './properties/component-properties/PropertyBindButton.vue'
 import PropertyBoundField from './properties/component-properties/PropertyBoundField.vue'
 import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
+import { usePropertyBinding } from './properties/component-properties/usePropertyBinding'
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
@@ -41,6 +42,8 @@ const store = useEditorStore()
 const libraryService = useLibraryService()
 const activeTool = computed(() => store.state.activeTool)
 const { selectedNode: node, selectedCount: multiCount } = useSelectionState()
+const swapBinding = usePropertyBinding('INSTANCE_SWAP')
+const swapLinked = computed(() => !!swapBinding.definition.value)
 const showBooleanOperations = computed(() => multiCount.value >= 2)
 const { getCommand } = useEditorCommands()
 const goToMainComponent = getCommand('selection.goToMainComponent')
@@ -121,12 +124,13 @@ const { panels } = useI18n()
             </span>
           </Tip>
         </template>
-        <span role="heading" aria-level="2">{{ node.name }}</span>
+        <span role="heading" aria-level="2" class="min-w-0">
+          <!-- A swap linked to a property shows the property in place of the layer, as Figma does. -->
+          <PropertyBoundField v-if="swapLinked" field="INSTANCE_SWAP" compact />
+          <template v-else>{{ node.name }}</template>
+        </span>
         <template #actions>
-          <template v-if="node.type === 'INSTANCE'">
-            <PropertyBoundField field="INSTANCE_SWAP" compact />
-            <PropertyBindButton field="INSTANCE_SWAP" />
-          </template>
+          <PropertyBindButton v-if="node.type === 'INSTANCE'" field="INSTANCE_SWAP" />
           <InstanceUpdateAction
             v-if="node.type === 'INSTANCE'"
             :node="node"

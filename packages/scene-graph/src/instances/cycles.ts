@@ -1,6 +1,11 @@
 import type { SceneGraph } from '../'
+import { instanceMainComponent } from './main-component'
 
-/** Whether placing this definition's instance would introduce a component dependency cycle. */
+/**
+ * Whether placing this definition's instance under `parentId` would make a component contain
+ * itself. Both components and instances above the parent count: an instance's layers are its
+ * component's, so a swap inside one may not bring that component back in.
+ */
 export function canCreateInstance(
   graph: SceneGraph,
   componentId: string,
@@ -8,11 +13,14 @@ export function canCreateInstance(
 ): boolean {
   if (graph.getNode(componentId)?.type !== 'COMPONENT') return false
   const ancestors = new Set<string>()
-  let parent = graph.getNode(parentId)
-  while (parent) {
-    if (parent.type === 'COMPONENT') ancestors.add(parent.id)
-    parent = parent.parentId ? graph.getNode(parent.parentId) : undefined
-  }
+  graph.closest(parentId, (node) => {
+    if (node.type === 'COMPONENT') ancestors.add(node.id)
+    if (node.type === 'INSTANCE') {
+      const main = instanceMainComponent(graph, node)
+      if (main) ancestors.add(main.id)
+    }
+    return false
+  })
   const visited = new Set<string>()
   function reachesAncestor(id: string): boolean {
     if (ancestors.has(id)) return true
