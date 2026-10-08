@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { toolCursor, useCanvas, useCanvasInput, useTextEdit } from '@open-pencil/vue'
+import {
+  PlayIslands,
+  toolCursor,
+  useCanvas,
+  useCanvasInput,
+  useCanvasIssueMarkers,
+  useTextEdit
+} from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 
 /**
  * One WebGL canvas per stage. The app's `EditorCanvas` splits the scene and its overlays
  * across two contexts, which is right for a full-window editor but would put a page of
  * stages past the browser's context limit. This is the SDK's single-canvas path with the
- * same input handling and the app's loading overlay.
+ * same input handling, preview islands, lint markers, and the app's loading overlay.
  */
 const store = useEditorStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -20,18 +28,15 @@ const shouldSuspendRender = () =>
   store.state.preparation.kind !== 'font-retry' &&
   store.state.preparation.phase !== 'preparing-render'
 
-const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
-  canvasRef,
-  store,
-  {
+const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker } =
+  useCanvas(canvasRef, store, {
     showRulers: false,
     shouldSuspendRender,
     onReady: store.markCanvasReady,
     onViewportResize: (width, height) => store.setViewportSize(width, height),
     onPresented: ({ sceneVersion }) =>
       store.preparationController.acknowledgePresentation(sceneVersion)
-  }
-)
+  })
 
 const { cursorOverride } = useCanvasInput(
   canvasRef,
@@ -42,7 +47,21 @@ const { cursorOverride } = useCanvasInput(
 )
 useTextEdit(canvasRef, store)
 
-const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))
+// The same marker behaviour as the app's canvas, minus switching a properties tab: a stage's
+// lint panel is always the one beside it.
+const { detailMarker, cursor: issueMarkerCursor } = useCanvasIssueMarkers(canvasRef, store, {
+  hitTest: hitTestIssueMarker,
+  onHover: (marker) => store.designCheck.highlightMarker(marker?.nodeIds ?? null),
+  onActivate: (marker) => {
+    const nodeIds = marker.direction ? marker.nodeIds.slice(0, 1) : marker.nodeIds
+    store.designCheck.openMarker(nodeIds)
+    if (marker.direction) store.revealNodes(nodeIds)
+  }
+})
+
+const cursor = computed(() =>
+  toolCursor(store.state.activeTool, issueMarkerCursor.value ?? cursorOverride.value)
+)
 </script>
 
 <template>
@@ -53,6 +72,8 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
       :style="{ cursor }"
       class="absolute inset-0 block size-full touch-none outline-none"
     />
+    <PlayIslands :view="store.state" :canvas="canvasRef" />
+    <IssueMarkerTooltip :marker="detailMarker" :canvas="canvasRef" />
     <PreparationOverlay
       v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"
       :preparation="store.state.preparation"

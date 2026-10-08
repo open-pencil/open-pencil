@@ -22,11 +22,23 @@ export const fr: LandingMessages = {
         'Auto-layout, contraintes, remplissages, contours, effets et typographie, avec les commandes là où vous les attendez. Tout est annulable, et rien n’attend un serveur.',
       hint: 'Sélectionnez un calque et modifiez son remplissage, son rayon ou sa marge intérieure.'
     },
-    components: {
-      title: 'Composants et variables',
+    interactive: {
+      title: 'Des composants qui fonctionnent',
       detail:
-        'Constituez une bibliothèque avec des variantes et des propriétés de composant, liez couleurs et espacements à des variables et changez de mode. Les instances suivent leur source à mesure que vous la modifiez.',
-      hint: 'Cherchez dans les ressources, puis faites glisser un composant sur le canevas.'
+        'Donnez un comportement à un composant, comme un interrupteur, une case à cocher, un curseur, des onglets ou un champ de texte, et l’aperçu l’exécute comme un vrai contrôle Reka UI. Les variantes deviennent ses états, et les mêmes composants s’exportent vers Storybook avec des contrôles cliquables.',
+      hint: 'Ce canevas est en aperçu : basculez l’interrupteur, faites glisser le curseur. Quittez l’aperçu pour modifier.'
+    },
+    tokens: {
+      title: 'Les variables sont des design tokens',
+      detail:
+        'Couleurs, espacements et typographie vivent dans des collections avec des modes et se modifient comme des tokens. Le code exporté écrit les valeurs liées comme propriétés personnalisées CSS, si bien que le code reprend les noms du design.',
+      hint: 'Modifiez la valeur d’un token ou changez de mode, et chaque calque qui y est lié suit.'
+    },
+    linting: {
+      title: 'Linting',
+      detail:
+        'OpenPencil vérifie le design pendant que vous travaillez : contraste, texte trop petit, noms par défaut, calques masqués et vides, groupes superflus. Les problèmes sont signalés sur le canevas, beaucoup se corrigent en un clic, et les mêmes règles tournent dans la CLI et pour les agents.',
+      hint: 'Cliquez sur un repère du canevas, ou appliquez une correction depuis la liste.'
     },
     ai: {
       title: 'Concevez avec l’AI, avec vos clés',
@@ -37,8 +49,8 @@ export const fr: LandingMessages = {
     code: {
       title: 'Du design au code',
       detail:
-        'Chaque sélection est disponible en Tailwind JSX, en HTML ou en JSX de design, et les composants s’exportent en stories Storybook. Modifiez le JSX et le canevas suit.',
-      hint: 'Sélectionnez un autre calque et regardez le code changer.'
+        'Chaque sélection est disponible en Tailwind JSX, en HTML ou en JSX de design, avec les variables écrites comme tokens, et les composants s’exportent en stories Storybook. Code et canevas restent liés : sélectionnez une ligne et son calque est sélectionné, modifiez le JSX et le canevas suit.',
+      hint: 'Sélectionnez un autre calque et regardez le code suivre.'
     },
     script: {
       title: 'Tout piloter par script',

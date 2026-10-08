@@ -22,11 +22,23 @@ export const es: LandingMessages = {
         'Auto-layout, restricciones, rellenos, trazos, efectos y tipografía, con los controles donde esperas encontrarlos. Todo se puede deshacer y nada espera a un servidor.',
       hint: 'Selecciona una capa y cambia su relleno, radio o espaciado interior.'
     },
-    components: {
-      title: 'Componentes y variables',
+    interactive: {
+      title: 'Componentes que funcionan',
       detail:
-        'Crea una biblioteca con variantes y propiedades de componente, vincula colores y espaciados a variables y cambia de modo. Las instancias siguen a su origen mientras lo editas.',
-      hint: 'Busca en los recursos y arrastra un componente al lienzo.'
+        'Dale a un componente un comportamiento, como un interruptor, una casilla, un deslizador, pestañas o un campo de texto, y la vista previa lo ejecuta como un control real de Reka UI. Las variantes pasan a ser sus estados, y los mismos componentes se exportan a Storybook con controles en los que se puede hacer clic.',
+      hint: 'Este lienzo está en vista previa: activa el interruptor, arrastra el deslizador. Sal de la vista previa para editar.'
+    },
+    tokens: {
+      title: 'Las variables son tokens de diseño',
+      detail:
+        'Colores, espaciados y tipografía viven en colecciones con modos y se editan como tokens. El código exportado escribe los valores vinculados como propiedades personalizadas de CSS, así que el código usa los mismos nombres que el diseño.',
+      hint: 'Cambia el valor de un token o el modo, y cada capa vinculada a él lo sigue.'
+    },
+    linting: {
+      title: 'Linting',
+      detail:
+        'OpenPencil revisa el diseño mientras trabajas: contraste, texto demasiado pequeño, nombres por defecto, capas ocultas y vacías, grupos sobrantes. Los problemas se marcan en el lienzo, muchos se corrigen con un clic, y las mismas reglas funcionan en la CLI y para los agentes.',
+      hint: 'Haz clic en una marca del lienzo o aplica una corrección de la lista.'
     },
     ai: {
       title: 'Diseña con IA, con tus claves',
@@ -37,8 +49,8 @@ export const es: LandingMessages = {
     code: {
       title: 'Del diseño al código',
       detail:
-        'Cada selección está disponible como Tailwind JSX, HTML o JSX de diseño, y los componentes se exportan como historias de Storybook. Edita el JSX y el lienzo lo sigue.',
-      hint: 'Selecciona otra capa y observa cómo cambia el código.'
+        'Cada selección está disponible como Tailwind JSX, HTML o JSX de diseño, con las variables escritas como tokens, y los componentes se exportan como historias de Storybook. Código y lienzo siguen enlazados: selecciona una línea y se selecciona su capa; edita el JSX y el lienzo lo sigue.',
+      hint: 'Selecciona otra capa y observa cómo la sigue el código.'
     },
     script: {
       title: 'Automatízalo todo',

@@ -22,11 +22,23 @@ export const pl: LandingMessages = {
         'Auto-layout, ograniczenia, wypełnienia, obrysy, efekty i typografia, z kontrolkami tam, gdzie się ich spodziewasz. Wszystko można cofnąć i nic nie czeka na serwer.',
       hint: 'Zaznacz warstwę i zmień jej wypełnienie, promień lub odstęp wewnętrzny.'
     },
-    components: {
-      title: 'Komponenty i zmienne',
+    interactive: {
+      title: 'Komponenty, które działają',
       detail:
-        'Zbuduj bibliotekę z wariantami i właściwościami komponentów, powiąż kolory i odstępy ze zmiennymi i przełączaj tryby. Instancje podążają za źródłem, gdy je edytujesz.',
-      hint: 'Wyszukaj zasób, a potem przeciągnij komponent na obszar roboczy.'
+        'Nadaj komponentowi zachowanie, na przykład przełącznika, pola wyboru, suwaka, kart lub pola tekstowego, a podgląd uruchomi go jako prawdziwą kontrolkę Reka UI. Warianty stają się jego stanami, a te same komponenty eksportują się do Storybooka z klikalnymi kontrolkami.',
+      hint: 'Ten obszar roboczy jest w podglądzie: przełącz przełącznik, przesuń suwak. Wyjdź z podglądu, aby edytować.'
+    },
+    tokens: {
+      title: 'Zmienne to tokeny projektowe',
+      detail:
+        'Kolory, odstępy i typografia żyją w kolekcjach z trybami i edytuje się je jako tokeny. Wyeksportowany kod zapisuje powiązane wartości jako niestandardowe właściwości CSS, więc kod używa tych samych nazw co projekt.',
+      hint: 'Zmień wartość tokenu albo tryb, a każda powiązana z nim warstwa podąży za zmianą.'
+    },
+    linting: {
+      title: 'Linting',
+      detail:
+        'OpenPencil sprawdza projekt w trakcie pracy: kontrast, zbyt mały tekst, domyślne nazwy, ukryte i puste warstwy, zbędne grupy. Problemy są oznaczane na obszarze roboczym, wiele z nich naprawisz jednym kliknięciem, a te same reguły działają w CLI i dla agentów.',
+      hint: 'Kliknij znacznik na obszarze roboczym albo zastosuj poprawkę z listy.'
     },
     ai: {
       title: 'Projektuj z AI, na własnych kluczach',
@@ -37,8 +49,8 @@ export const pl: LandingMessages = {
     code: {
       title: 'Od projektu do kodu',
       detail:
-        'Każde zaznaczenie jest dostępne jako Tailwind JSX, HTML lub JSX projektu, a komponenty można wyeksportować jako historie Storybooka. Zmień JSX, a obszar roboczy podąży za zmianą.',
-      hint: 'Zaznacz inną warstwę i zobacz, jak zmienia się kod.'
+        'Każde zaznaczenie jest dostępne jako Tailwind JSX, HTML lub JSX projektu, ze zmiennymi zapisanymi jako tokeny, a komponenty można wyeksportować jako historie Storybooka. Kod i obszar roboczy pozostają połączone: zaznacz linię, a zaznaczy się jej warstwa; zmień JSX, a obszar roboczy podąży za zmianą.',
+      hint: 'Zaznacz inną warstwę i zobacz, jak kod za nią podąża.'
     },
     script: {
       title: 'Wszystko da się oskryptować',

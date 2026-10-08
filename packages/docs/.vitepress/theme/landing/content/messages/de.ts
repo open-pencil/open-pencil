@@ -22,11 +22,23 @@ export const de: LandingMessages = {
         'Auto-Layout, Constraints, Füllungen, Konturen, Effekte und Typografie, mit den Bedienelementen dort, wo du sie erwartest. Alles lässt sich rückgängig machen, und nichts wartet auf einen Server.',
       hint: 'Wähle eine Ebene aus und ändere Füllung, Radius oder Innenabstand.'
     },
-    components: {
-      title: 'Komponenten und Variablen',
+    interactive: {
+      title: 'Komponenten, die funktionieren',
       detail:
-        'Baue eine Bibliothek mit Varianten und Komponenteneigenschaften auf, binde Farben und Abstände an Variablen und wechsle zwischen Modi. Instanzen folgen ihrer Quelle, während du sie bearbeitest.',
-      hint: 'Durchsuche die Assets und ziehe eine Komponente auf die Arbeitsfläche.'
+        'Gib einer Komponente ein Verhalten, etwa Schalter, Checkbox, Schieberegler, Tabs oder Textfeld, und die Vorschau führt sie als echtes Reka-UI-Steuerelement aus. Varianten werden zu ihren Zuständen, und dieselben Komponenten lassen sich mit klickbaren Steuerelementen nach Storybook exportieren.',
+      hint: 'Diese Arbeitsfläche ist in der Vorschau: Lege den Schalter um, zieh den Regler. Verlasse die Vorschau zum Bearbeiten.'
+    },
+    tokens: {
+      title: 'Variablen sind Design-Tokens',
+      detail:
+        'Farben, Abstände und Schrift liegen in Sammlungen mit Modi und werden als Tokens bearbeitet. Exportierter Code schreibt gebundene Werte als CSS-Custom-Properties, sodass der Code dieselben Namen verwendet wie das Design.',
+      hint: 'Ändere den Wert eines Tokens oder wechsle den Modus, und jede daran gebundene Ebene folgt.'
+    },
+    linting: {
+      title: 'Linting',
+      detail:
+        'OpenPencil prüft das Design, während du arbeitest: Kontrast, zu kleine Schrift, Standardnamen, versteckte und leere Ebenen, überflüssige Gruppen. Probleme werden auf der Arbeitsfläche markiert, viele lassen sich mit einem Klick beheben, und dieselben Regeln laufen in der CLI und für Agenten.',
+      hint: 'Klicke auf eine Markierung auf der Arbeitsfläche oder wende eine Korrektur aus der Liste an.'
     },
     ai: {
       title: 'Gestalten mit KI, mit deinen Schlüsseln',
@@ -37,8 +49,8 @@ export const de: LandingMessages = {
     code: {
       title: 'Vom Design zum Code',
       detail:
-        'Jede Auswahl steht als Tailwind JSX, HTML oder Design-JSX bereit, und Komponenten lassen sich als Storybook-Stories exportieren. Bearbeite das JSX, und die Arbeitsfläche folgt.',
-      hint: 'Wähle eine andere Ebene aus und sieh zu, wie sich der Code ändert.'
+        'Jede Auswahl steht als Tailwind JSX, HTML oder Design-JSX bereit, Variablen als Tokens, und Komponenten lassen sich als Storybook-Stories exportieren. Code und Arbeitsfläche bleiben verknüpft: Wähle eine Zeile aus, und ihre Ebene wird ausgewählt; bearbeite das JSX, und die Arbeitsfläche folgt.',
+      hint: 'Wähle eine andere Ebene aus und sieh zu, wie der Code folgt.'
     },
     script: {
       title: 'Alles per Skript',

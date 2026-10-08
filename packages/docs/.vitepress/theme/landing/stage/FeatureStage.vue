@@ -12,6 +12,7 @@ import { STAGES } from './definitions'
 import { prepareEngine } from './engine-assets'
 import type { StageKind } from './kinds'
 import StageCanvas from './StageCanvas.vue'
+import StagePreviewControls from './StagePreviewControls.vue'
 import { useDocsAppearance } from './useDocsAppearance'
 import { useStageDocument } from './useStageDocument'
 import { useWheelEngagement } from './useWheelEngagement'
@@ -73,12 +74,14 @@ function onPointerDown() {
           <template v-if="mounted">
             <StageCanvas />
             <Toolbar v-if="definition.toolbar && !touch && !narrow" />
+            <StagePreviewControls v-if="definition.preview" />
           </template>
         </div>
 
         <aside
           v-if="definition.panel"
-          class="flex w-72 shrink-0 flex-col overflow-hidden border-l border-border bg-panel max-md:h-64 max-md:w-full max-md:border-t max-md:border-l-0"
+          class="flex w-72 shrink-0 flex-col overflow-hidden border-l border-border bg-panel max-md:h-64 max-md:w-full max-md:border-t max-md:border-l-0 data-wide:w-[420px]"
+          :data-wide="definition.widePanel || undefined"
         >
           <template v-if="mounted">
             <header
@@ -87,7 +90,7 @@ function onPointerDown() {
             >
               {{ panels.layers }}
             </header>
-            <component :is="definition.panel" />
+            <component :is="definition.panel" v-bind="definition.panelProps" />
           </template>
         </aside>
       </div>

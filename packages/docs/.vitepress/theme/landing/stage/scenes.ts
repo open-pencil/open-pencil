@@ -25,7 +25,7 @@ export const GUARANTEES_JSX = [
   '</Frame>'
 ].join('\n')
 
-function pricingJSX(): string {
+function pricingJSX(extra = ''): string {
   return dedent`
     <Frame name="Pricing" w={720} h="hug" flex="col" gap={28} p={40} bg="#FFFFFF" rounded={24}>
       <Frame name="Header" w="fill" h="hug" flex="col" gap={10}>
@@ -57,6 +57,7 @@ function pricingJSX(): string {
           </Frame>
         </Frame>
       </Frame>
+      ${extra}
     </Frame>
   `
 }
@@ -116,9 +117,9 @@ export function findByName(store: EditorStore, name: string): string | null {
   return null
 }
 
-async function pricing(store: EditorStore): Promise<void> {
+async function pricing(store: EditorStore, extra = ''): Promise<void> {
   await loadInter()
-  await renderJSX(store.graph, pricingJSX(), {
+  await renderJSX(store.graph, pricingJSX(extra), {
     parentId: store.state.currentPageId,
     x: 0,
     y: 0
@@ -133,12 +134,53 @@ async function pricingWithSelection(store: EditorStore): Promise<void> {
   if (plan) store.select([plan])
 }
 
+/**
+ * Problems the recommended lint preset reports, planted in a footer: low contrast, text too
+ * small to read, a default layer name, a hidden layer, an empty frame, a fractional size, and
+ * a group where a frame belongs.
+ */
+const LINT_FOOTER = dedent`
+  <Frame name="Frame 12" w="fill" h="hug" flex="row" gap={12} items="center">
+    <Text name="Fine print" grow={1} size={9} color="#C9CCD6">Prices exclude VAT. Cancel anytime.</Text>
+    <Frame name="Promo" w={96.5} h={28} rounded={8} bg="#FDE68A" visible={false} />
+    <Frame name="Spacer" w={24} h={24} />
+    <Group name="Badges">
+      <Frame name="Badge" w={20} h={20} rounded={10} bg="#3B5BDB" />
+    </Group>
+  </Frame>
+`
+
+async function linting(store: EditorStore): Promise<void> {
+  await pricing(store, LINT_FOOTER)
+}
+
+/** A little room around the framed card. */
+const CARD_MARGIN = 16
+
+/** The demo's Controls page in preview, with the Switch component's behaviour in the panel. */
+async function controls(store: EditorStore): Promise<void> {
+  await demoPage(store, '04 · Controls')
+  // Frame the card the preview runs, at a size its controls are easy to use.
+  const card = findByName(store, 'Account settings')
+  const node = card ? store.graph.getNode(card) : undefined
+  if (node) {
+    const { x, y } = store.graph.getAbsolutePosition(node.id)
+    const margin = CARD_MARGIN
+    store.zoomToBounds(x - margin, y - margin, x + node.width + margin, y + node.height + margin)
+  }
+  const toggle = findByName(store, 'Switch')
+  if (toggle) store.select([toggle])
+  store.startPlay()
+}
+
 export type SceneBuilder = (store: EditorStore) => Promise<void>
 
 export const SCENES = {
   announcement: (store) => demoSection(store, 'Announcement system'),
   figma: (store) => demoPage(store, '03 · Paint & effects'),
-  components: (store) => demoSection(store, 'Components'),
+  controls,
+  tokens: (store) => demoSection(store, 'Components'),
+  linting,
   pricing: (store) => pricing(store),
   pricingSelected: pricingWithSelection
 } satisfies Record<string, SceneBuilder>

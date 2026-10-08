@@ -6,7 +6,9 @@ export type FeatureKind = Exclude<StageKind, 'hero'>
 export const FEATURE_KINDS: FeatureKind[] = [
   'figma',
   'design',
-  'components',
+  'interactive',
+  'tokens',
+  'linting',
   'ai',
   'code',
   'script',

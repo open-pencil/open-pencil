@@ -22,11 +22,23 @@ export const en: LandingMessages = {
         'Auto layout, constraints, fills, strokes, effects, and typography, with the controls where you expect them. Everything is undoable, and nothing waits on a server.',
       hint: 'Select a layer and change its fill, radius, or padding.'
     },
-    components: {
-      title: 'Components and variables',
+    interactive: {
+      title: 'Components that work',
       detail:
-        'Build a library with variants and component properties, bind colours and spacing to variables, and switch modes. Instances follow their source as you edit it.',
-      hint: 'Search the assets, then drag a component onto the canvas.'
+        'Give a component a behaviour, such as a switch, checkbox, slider, tabs, or text field, and preview runs it as a real Reka UI control. Variants become its states, and the same components export to Storybook with controls you can click.',
+      hint: 'This canvas is in preview: flip the switch, drag the slider. Leave preview to edit.'
+    },
+    tokens: {
+      title: 'Variables are design tokens',
+      detail:
+        'Colours, spacing, and type live in collections with modes and are edited as tokens. Exported code writes bound values as CSS custom properties, so the code uses the same names as the design.',
+      hint: 'Change a token’s value or switch a mode, and every layer bound to it follows.'
+    },
+    linting: {
+      title: 'Linting',
+      detail:
+        'OpenPencil checks the design as you work: contrast, text too small to read, default names, hidden and empty layers, stray groups. Problems are marked on the canvas, many come with a fix you apply in one click, and the same rules run in the CLI and for agents.',
+      hint: 'Click a marker on the canvas, or apply a fix from the list.'
     },
     ai: {
       title: 'Design with AI, on your keys',
@@ -37,8 +49,8 @@ export const en: LandingMessages = {
     code: {
       title: 'From design to code',
       detail:
-        'Every selection is available as Tailwind JSX, HTML, or design JSX, and components export as Storybook stories. Edit the JSX and the canvas follows.',
-      hint: 'Select another layer and watch the code change.'
+        'Every selection is available as Tailwind JSX, HTML, or design JSX, with variables written as tokens, and components export as Storybook stories. Code and canvas stay linked: select a line and its layer is selected, edit the JSX and the canvas follows.',
+      hint: 'Select another layer and watch the code follow.'
     },
     script: {
       title: 'Script everything',
