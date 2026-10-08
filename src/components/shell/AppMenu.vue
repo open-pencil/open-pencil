@@ -203,14 +203,16 @@ function scrollMenubar() {
           </MenubarMenu>
         </MenubarRoot>
       </div>
-      <!-- Pointer affordance only: arrow keys already move through the menus and scroll them into view. -->
+      <!-- Sits beside the hidden menus; it keeps its width when it switches sides, so the bar's overflow never flips back.
+           Pointer affordance only: arrow keys already move through the menus and scroll them into view. -->
       <button
         v-if="overflowStart || overflowEnd"
         type="button"
         tabindex="-1"
         aria-hidden="true"
         data-test-id="app-menubar-scroll"
-        class="flex h-6 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
+        class="flex h-6 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted hover:bg-hover hover:text-surface data-start:order-first"
+        :data-start="!overflowEnd || undefined"
         @click="scrollMenubar"
       >
         <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5" />
