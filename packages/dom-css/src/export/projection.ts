@@ -1,6 +1,11 @@
 import { fromUint8Array } from 'js-base64'
 
-import { layoutSizingInParent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  layoutSizingInParent,
+  readIcon,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
@@ -23,7 +28,7 @@ export interface SceneGraphToDesignOptions {
   includeSourceIds?: boolean
   /** Write variable-bound values as `var(--name)` where CSS resolves them as drawn. Default true. */
   tokens?: boolean
-  /** Vector, boolean, star, and polygon layers as inline SVG; without it they project as boxes. */
+  /** Vector, boolean, star, polygon, and icon layers as inline SVG; without it they project as boxes. */
   vectorElement?: VectorElementRenderer
 }
 
@@ -414,7 +419,8 @@ function sceneNodeToDesignNode(
     }
   }
 
-  if (VECTOR_SHAPES.has(node.type)) {
+  // An icon is one drawing, however many paths it has.
+  if (VECTOR_SHAPES.has(node.type) || readIcon(node)) {
     const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(node, parent, css))
     if (vector) return vector
   }

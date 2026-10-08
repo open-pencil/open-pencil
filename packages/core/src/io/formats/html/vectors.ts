@@ -1,5 +1,8 @@
 import type { DesignElement, DesignNode, VectorElementRenderer } from '@open-pencil/dom-css/export'
+import { readIcon, readIconTint } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 
+import { iconColor } from '#core/icons/render'
 import { renderNodeSVGElement } from '#core/io/formats/svg/export'
 import type { SVGNode } from '#core/io/formats/svg/node'
 
@@ -24,18 +27,26 @@ function idPart(id: string): string {
 }
 
 /**
- * Vector layers in HTML exports as inline SVG from the SVG export, so paths, gradients, and
- * shadows draw as they do there. Def ids start with the layer's id, so several SVGs on one page
- * never pick up each other's gradients or filters.
+ * Vector layers and icons in HTML exports as inline SVG from the SVG export, so paths,
+ * gradients, and shadows draw as they do there. An icon is one SVG named by `data-icon`, whose
+ * tinted paths take `currentColor`, so a page recolors it with CSS `color`. Def ids start with
+ * the layer's id, so several SVGs on one page never pick up each other's gradients or filters.
  */
 export const vectorElement: VectorElementRenderer = (graph, node) => {
   const idPrefix = `${idPart(node.id)}-`
+  const icon = readIcon(node)
   const drawn = renderNodeSVGElement(graph, node, {
     idPrefix,
-    colorSpace: graph.documentColorSpace
+    colorSpace: graph.documentColorSpace,
+    tint: icon ? readIconTint : undefined
   })
   const element = drawn && designNode(drawn)
   if (element?.type !== 'element') return null
-  // Strokes and shadows can reach past the layer's box, which an inline SVG would clip.
-  return { ...element, inlineStyle: { overflow: 'visible' } } satisfies DesignElement
+  const color = icon ? iconColor(graph, node) : null
+  return {
+    ...element,
+    attrs: icon ? { ...element.attrs, 'data-icon': icon.name } : element.attrs,
+    // Strokes and shadows can reach past the layer's box, which an inline SVG would clip.
+    inlineStyle: { overflow: 'visible', ...(color ? { color: colorToHex(color) } : {}) }
+  } satisfies DesignElement
 }
