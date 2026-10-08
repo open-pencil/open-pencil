@@ -115,7 +115,8 @@ function applyState(
   if (state.variants || state.prefer) {
     const variant = variantFor(graph, instance, state.variants ?? {}, state.prefer ?? {})
     if (variant && variant.id !== instance.componentId) {
-      graph.swapInstanceComponent(instance.id, variant.id)
+      // Its layer path names the control, so the instance keeps its name in every variant.
+      graph.swapInstanceComponent(instance.id, variant.id, { keepName: true })
       reflow(graph, instance.id)
     }
   }

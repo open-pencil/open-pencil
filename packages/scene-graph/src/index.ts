@@ -827,8 +827,12 @@ export class SceneGraph {
     Instances.populateInstanceChildren(this, instanceId, componentId, mode)
   }
 
-  swapInstanceComponent(instanceId: string, componentId: string): void {
-    Instances.swapInstanceComponent(this, instanceId, componentId)
+  swapInstanceComponent(
+    instanceId: string,
+    componentId: string,
+    options?: Instances.SwapInstanceOptions
+  ): void {
+    Instances.swapInstanceComponent(this, instanceId, componentId, options)
   }
 
   syncInstances(componentId: string): void {
