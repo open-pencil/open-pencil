@@ -63,7 +63,12 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 // A narrow panel clips the menubar; fade the clipped side and offer a chevron so it reads as scrollable.
 const menubar = useTemplateRef<HTMLElement>('menubar')
 const { arrivedState, measure } = useScroll(menubar)
+// Labels change width with the language, so watch the menus as well as the space they get.
 useResizeObserver(menubar, measure)
+useResizeObserver(() => {
+  const content = menubar.value?.firstElementChild
+  return content instanceof HTMLElement ? content : null
+}, measure)
 const overflowStart = computed(() => !arrivedState.left)
 const overflowEnd = computed(() => !arrivedState.right)
 
