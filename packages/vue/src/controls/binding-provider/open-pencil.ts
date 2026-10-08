@@ -86,6 +86,7 @@ export function createOpenPencilBindingProvider<V>(
   return {
     revision,
     listVariables: variables,
+    collectionName: (variable) => editor.getCollection(variable.collectionId)?.name,
     filterVariables,
     getBindingId: (target) => editor.getNode(target.nodeId)?.boundVariables[target.path],
     getBound,

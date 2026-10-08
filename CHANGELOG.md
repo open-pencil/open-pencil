@@ -86,6 +86,7 @@
 
 ### Changed
 
+- The properties panel's variable picker groups variables by collection and shows each color variable's swatch, and the variables dialog points a value at another variable with the same picker, detaching it from the picker's footer.
 - The `get_selection` tool returns the selected layers with their direct children by default instead of their whole subtrees, and takes a `depth` for more or fewer levels, so agents can start from what the user selected without reading the full tree.
 - The width and height menus in the properties panel offer Hug only for auto-layout frames and text, as in Figma; on a frame without auto layout it had no effect.
 - Confirm deleting an AI conversation in the standard confirmation dialog, which names the conversation, instead of a prompt inside the chat panel.

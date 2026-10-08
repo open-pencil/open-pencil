@@ -64,7 +64,7 @@ export default {
       'w-full min-w-0 rounded border border-accent bg-input px-1.5 py-0.5 text-xs text-surface outline-none',
     /** A mode's value control beside the button that points it at a variable. */
     valueRow: 'flex items-center gap-1 [&>*:first-child]:min-w-0 [&>*:first-child]:flex-1',
-    valueControl: 'flex min-w-0 items-center gap-1',
+    valueControl: 'flex min-w-0 items-center gap-1.5',
     empty: 'px-4 py-8 text-center text-xs text-muted'
   },
   variants: {
