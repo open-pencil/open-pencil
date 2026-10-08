@@ -43,8 +43,8 @@ function moduleClass(className: string): es.SyntaxNode {
   }
 }
 
-/** The design's own classes before the state styles' module class. */
-const CLASS_NAMES = es.parseExpression('$design + $state')
+/** Several classes on one element, skipping a caller's that is absent. */
+const CLASS_NAMES = es.parseExpression("$classes.filter(Boolean).join(' ')")
 
 /** A Radix primitive's part, a native button for a root without one, or the design's tag. */
 function tagOf(node: ComponentElement, kind: GeneratedKind): string {
@@ -63,13 +63,15 @@ function element(node: ComponentNode, kind: GeneratedKind, depth: number): es.Sy
   const part = node.part ? radix?.parts[node.part] : undefined
   const root = node.part === 'root'
   const native = root && !part
-  const designClass = node.attrs.class
-  const className = designClass
-    ? es.fill(CLASS_NAMES, {
-        $design: es.string(`${designClass} `),
-        $state: moduleClass(node.className)
-      })
-    : moduleClass(node.className)
+  // The design's own classes, the state styles' module class, and on the root the caller's,
+  // which the spread would otherwise lose to the generated one.
+  const classes = [
+    ...(node.attrs.class ? [es.string(node.attrs.class)] : []),
+    moduleClass(node.className),
+    ...(root ? [es.parseExpression('props.className')] : [])
+  ]
+  const only = classes.length === 1 ? classes.at(0) : undefined
+  const className = only ?? es.fill(CLASS_NAMES, { $classes: es.array(classes) })
   const attributes = [
     ...(native ? [jsx.attribute('type', jsx.stringValue('button'))] : []),
     // The root passes the caller's props on, such as `checked` or `onClick`.

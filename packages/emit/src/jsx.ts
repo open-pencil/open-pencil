@@ -1,7 +1,7 @@
 import { print } from 'esrap'
 import tsx from 'esrap/languages/tsx'
 
-import type { SyntaxNode } from './estree'
+import { isNode, type SyntaxNode } from './estree'
 
 /**
  * JSX attribute strings end at `"`, decode `&` entities, and keep backslashes literally,
@@ -104,16 +104,11 @@ function withoutRawStrings(node: SyntaxNode): SyntaxNode {
   if (node.type === 'Literal' && typeof node.value === 'string') delete copy.raw
   for (const [key, value] of Object.entries(node)) {
     if (Array.isArray(value))
-      copy[key] = value.map((item: unknown) =>
-        isSyntaxNode(item) ? withoutRawStrings(item) : item
-      )
-    else if (isSyntaxNode(value)) copy[key] = withoutRawStrings(value)
+      copy[key] = value.map((item: unknown) => (isNode(item) ? withoutRawStrings(item) : item))
+    else if (isNode(value)) copy[key] = withoutRawStrings(value)
   }
   return copy
 }
-
-const isSyntaxNode = (value: unknown): value is SyntaxNode =>
-  typeof value === 'object' && value !== null && 'type' in value
 
 /**
  * A TSX module, such as a component built with `es` templates and JSX from this module. Strings

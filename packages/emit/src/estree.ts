@@ -11,7 +11,8 @@ export interface SyntaxNode {
 
 const TSParser = Parser.extend(tsPlugin())
 
-function isNode(value: unknown): value is SyntaxNode {
+/** Whether a value is a syntax node, as opposed to a primitive field of one. */
+export function isNode(value: unknown): value is SyntaxNode {
   return typeof value === 'object' && value !== null && 'type' in value
 }
 

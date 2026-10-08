@@ -113,29 +113,70 @@ function disclosureGraph(): SceneGraph {
 
 type Framework = 'vue' | 'react'
 
-/** How each framework's app mounts the generated component twice: as is, and disabled. */
+/**
+ * Runs the stories' Default story in `#story` the way Storybook does: with its args, then its
+ * play function given Storybook's own `within` and `userEvent`. The outcome is recorded on
+ * `#story` as `data-played`.
+ */
+const PLAY_DEFAULT = [
+  "import { userEvent, within } from 'storybook/test'",
+  'export async function playDefault(story: HTMLElement, play?: (context: object) => Promise<void>) {',
+  '  // React renders asynchronously; Storybook runs play only once the story is in the page.',
+  '  while (!story.firstElementChild) await new Promise((resolve) => setTimeout(resolve, 10))',
+  '  try {',
+  '    await play?.({ canvasElement: story, canvas: within(story), userEvent })',
+  "    story.dataset.played = 'yes'",
+  '  } catch (error) {',
+  '    story.dataset.played = String(error)',
+  '  }',
+  '}'
+].join('\n')
+
+/**
+ * How each framework's app mounts the generated component with a caller's class, disabled,
+ * and as the stories' Default story, whose play function it then runs.
+ */
 const APPS: Record<
   Framework,
-  { entry: string; main: (path: string) => string; plugin: () => PluginOption }
+  {
+    entry: string
+    main: (component: string, stories: string) => string
+    plugin: () => PluginOption
+  }
 > = {
   vue: {
     entry: 'main.ts',
-    main: (path) =>
+    main: (component, stories) =>
       [
         "import { createApp, h } from 'vue'",
-        `import Control from './${path}'`,
-        "createApp({ render: () => [h('div', { id: 'enabled' }, h(Control)), h('div', { id: 'disabled' }, h(Control, { disabled: true }))] }).mount('#app')"
+        `import Control from './${component}'`,
+        `import * as stories from './${stories}'`,
+        "import { playDefault } from './play'",
+        "createApp({ render: () => [h('div', { id: 'enabled' }, h(Control, { class: 'custom' })), h('div', { id: 'disabled' }, h(Control, { disabled: true }))] }).mount('#app')",
+        "const story = document.getElementById('story')",
+        'if (story) {',
+        '  createApp({ render: () => h(Control, { ...stories.default.args, ...stories.Default.args }) }).mount(story)',
+        '  void playDefault(story, stories.Default.play)',
+        '}'
       ].join('\n'),
     plugin: () => vue()
   },
   react: {
     entry: 'main.tsx',
-    main: (path) =>
+    main: (component, stories) =>
       [
         "import { createRoot } from 'react-dom/client'",
-        `import * as Module from './${path.replace(/\.tsx$/, '')}'`,
-        'const Control = Object.values(Module)[0] as (props: { disabled?: boolean }) => JSX.Element',
-        'createRoot(document.getElementById(\'app\')!).render(<><div id="enabled"><Control /></div><div id="disabled"><Control disabled /></div></>)'
+        `import * as Module from './${component.replace(/\.tsx$/, '')}'`,
+        `import * as stories from './${stories}'`,
+        "import { playDefault } from './play'",
+        'const Control = Object.values(Module)[0] as (props: Record<string, unknown>) => JSX.Element',
+        "const app = document.getElementById('app')",
+        "const story = document.getElementById('story')",
+        'if (app && story) {',
+        '  createRoot(app).render(<><div id="enabled"><Control className="custom" /></div><div id="disabled"><Control disabled /></div></>)',
+        '  createRoot(story).render(<Control {...stories.default.args} {...stories.Default.args} />)',
+        '  void playDefault(story, stories.Default.play)',
+        '}'
       ].join('\n'),
     plugin: () => react()
   }
@@ -153,14 +194,19 @@ async function serveComponent(
 ): Promise<ViteDevServer> {
   const files = await exportStorybook(graph, { framework })
   const component = files.find((file) => /\.(vue|tsx)$/.test(file.path))
-  if (!component) throw new Error('No component was generated')
+  const stories = files.find((file) => file.path.endsWith('.stories.ts'))
+  if (!component || !stories) throw new Error('No component was generated')
   await mkdir(folder, { recursive: true })
   for (const file of files) await writeFile(join(folder, file.path), file.content)
   const app = APPS[framework]
-  await writeFile(join(folder, app.entry), app.main(component.path))
+  await writeFile(join(folder, 'play.ts'), PLAY_DEFAULT)
+  await writeFile(
+    join(folder, app.entry),
+    app.main(component.path, stories.path.replace(/\.ts$/, ''))
+  )
   await writeFile(
     join(folder, 'index.html'),
-    `<!doctype html><div id="app"></div><script type="module" src="/${app.entry}"></script>`
+    `<!doctype html><div id="app"></div><div id="story"></div><script type="module" src="/${app.entry}"></script>`
   )
   const server = await createServer({
     root: folder,
@@ -190,6 +236,9 @@ for (const framework of ['vue', 'react'] as const) {
       const thumb = page.locator('#enabled [class*="switch__thumb"]')
       await expect(control).toHaveAttribute('data-state', 'unchecked')
       await expect(thumb).toHaveCSS('left', '2px')
+      // A caller's class joins the generated one, which still styles the root.
+      await expect(control).toHaveClass(/custom/)
+      await expect(control).toHaveCSS('width', '40px')
 
       await control.click()
       await expect(control).toHaveAttribute('data-state', 'checked')
@@ -199,6 +248,16 @@ for (const framework of ['vue', 'react'] as const) {
       const disabled = page.locator('#disabled').getByRole('switch')
       await disabled.click({ force: true })
       await expect(disabled).toHaveAttribute('data-state', 'unchecked')
+    })
+
+    test("the default story's play function turns the switch on", async ({ page }, info) => {
+      server = await serveComponent(switchGraph(), framework, info.outputPath('story'))
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await expect(page.locator('#story')).toHaveAttribute('data-played', 'yes')
+      await expect(page.locator('#story').getByRole('switch')).toHaveAttribute(
+        'data-state',
+        'checked'
+      )
     })
 
     test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {

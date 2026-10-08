@@ -55,6 +55,8 @@ describe('generated React components', () => {
     expect(render(component, { defaultChecked: true })).toContain('data-state="checked"')
     expect(render(component, { checked: true })).toContain('aria-checked="true"')
     expect(render(component, { disabled: true })).toContain('data-disabled=""')
+    // Bun loads CSS modules as empty objects, so the generated classes are checked in the browser.
+    expect(render(component, { className: 'custom' })).toContain('class="custom"')
   })
 
   test('a collapsible opens its content', async () => {
