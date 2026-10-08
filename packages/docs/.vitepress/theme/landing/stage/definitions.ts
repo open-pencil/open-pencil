@@ -18,19 +18,16 @@ export interface StageDefinition {
   panelProps?: Record<string, unknown>
   /** The app nests the layer tree under a "Layers" heading; the stage supplies it. */
   layersHeading?: boolean
-  /** Panels laid out for a dialog, such as the token editor, get more room. */
-  widePanel?: boolean
   toolbar?: boolean
   /** The scene starts in preview, with the app's pill to reset it or go back to editing. */
   preview?: boolean
 }
 
 export const STAGES: Record<SingleStageKind, StageDefinition> = {
-  hero: { scene: SCENES.announcement, toolbar: true },
   figma: { scene: SCENES.figma, panel: LayerTree, layersHeading: true },
   design: { scene: SCENES.pricingSelected, panel: DesignPanel, toolbar: true },
   interactive: { scene: SCENES.controls, panel: DesignPanel, preview: true },
-  tokens: { scene: SCENES.tokens, panel: TokensPanel, widePanel: true },
+  tokens: { scene: SCENES.tokens, panel: TokensPanel },
   // The Lint tab is always open: a stage's panel is always the one on screen.
   linting: { scene: SCENES.linting, panel: DesignCheckPanel, panelProps: { active: true } },
   ai: { scene: SCENES.pricing, panel: AiChatPanel },

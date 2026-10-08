@@ -40,10 +40,8 @@ export function createDocumentIOActions(
       void reloadFromDisk()
     }
   })
-  const { setViewportSize, fitCurrentPageToViewport } = createDocumentViewportActions(
-    editor,
-    viewportSize
-  )
+  const { setViewportSize, getViewportSize, fitCurrentPageToViewport } =
+    createDocumentViewportActions(editor, viewportSize)
   const sourceActions = createDocumentSourceActions({
     editor,
     state,
@@ -70,6 +68,7 @@ export function createDocumentIOActions(
   return {
     downloadBlob,
     setViewportSize,
+    getViewportSize,
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,
     getSourceIdentity: sourceState.getSourceIdentity,

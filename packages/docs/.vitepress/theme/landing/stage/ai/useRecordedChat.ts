@@ -5,13 +5,18 @@ import { computed, onScopeDispose, shallowRef } from 'vue'
 
 import { createToolLoopTransport } from '@/app/ai/chat/transports'
 import type { EditorStore } from '@/app/editor/active-store'
+import { getTabForStore, switchTab } from '@/app/tabs'
 
 import { findByName, GUARANTEES_JSX } from '../scenes'
-import { createRecordedModel } from './recorded-model'
+import { createRecordedModel, type StreamPace } from './recorded-model'
 
 const ARTBOARD_NAME = 'Pricing'
 const RESULT_NAME = 'Guarantees'
-const CHUNK_DELAY_MS = 28
+/**
+ * Slow enough to follow the first time: the reasoning reads at an easy pace and the cards
+ * build up on the canvas over a few seconds. A whole turn takes about fifteen seconds.
+ */
+const PACE: StreamPace = { start: 1200, word: 110, pause: 900, argument: 55 }
 const OUTPUT_TOKEN_LIMIT = 4096
 
 export interface RecordedChatCopy {
@@ -50,10 +55,13 @@ export function useRecordedChat(store: EditorStore, copy: () => RecordedChatCopy
     const parentId = findByName(store, ARTBOARD_NAME)
     if (running.value || disposed || !parentId) return
     clearPreviousResult()
+    // The canvas previews streamed JSX only for the active document, as the app's chat does.
+    const tab = getTabForStore(store)
+    if (tab) switchTab(tab.id)
     const { request, reasoning, reply } = copy()
     const model = createRecordedModel(
       { reasoning, reply, render: { parent_id: parentId, jsx: GUARANTEES_JSX } },
-      reducedMotion.value === 'reduce' ? null : CHUNK_DELAY_MS
+      reducedMotion.value === 'reduce' ? null : PACE
     )
     chat.value = new Chat<UIMessage>({
       transport: createToolLoopTransport({

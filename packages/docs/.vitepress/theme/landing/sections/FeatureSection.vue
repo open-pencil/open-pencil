@@ -6,7 +6,8 @@ import type { FeatureKind } from '../content/features'
 import { useLandingMessages } from '../content/messages'
 import StageFrame from '../ui/StageFrame.vue'
 
-const { kind } = defineProps<{ kind: FeatureKind }>()
+/** `flipped` puts the copy before the stage, on the left. */
+const { kind, flipped = false } = defineProps<{ kind: FeatureKind; flipped?: boolean }>()
 
 const messages = useLandingMessages()
 const block = computed(() => messages.value.features[kind])
@@ -15,15 +16,15 @@ const block = computed(() => messages.value.features[kind])
 <template>
   <section class="landing-section">
     <h2>{{ block.title }}</h2>
-    <div class="body">
+    <div class="body" :data-flipped="flipped || undefined">
       <div class="stage">
         <StageFrame :kind="kind" />
       </div>
       <div class="copy">
         <p>{{ block.detail }}</p>
-        <!-- Supporting detail for one block, such as a list of agents or commands. -->
-        <slot />
         <p class="hint"><IconMousePointerClick aria-hidden="true" />{{ block.hint }}</p>
+        <!-- Supporting detail for one block, such as a list of agents or commands, comes last. -->
+        <slot />
       </div>
     </div>
   </section>
@@ -38,8 +39,16 @@ const block = computed(() => messages.value.features[kind])
   margin-top: 36px;
 }
 
+.body[data-flipped] {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
 .stage {
   height: 460px;
+}
+
+.body[data-flipped] .copy {
+  order: -1;
 }
 
 .copy {
@@ -68,7 +77,8 @@ const block = computed(() => messages.value.features[kind])
 
 @media (max-width: 860px) {
   /* Text first on a phone: read what the block is, then meet the canvas. */
-  .body {
+  .body,
+  .body[data-flipped] {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     margin-top: 20px;

@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -21,7 +22,8 @@ const {
   showContinue = false,
   presentations,
   interactive = false,
-  nodesLive = true
+  nodesLive = true,
+  reasoningDisplay
 } = defineProps<{
   messages: UIMessage[]
   status: ChatStatus
@@ -31,6 +33,8 @@ const {
   interactive?: boolean
   /** False for a conversation from another document: its layer IDs are not this document's. */
   nodesLive?: boolean
+  /** Overrides the reasoning display preference, for a surface that always shows it. */
+  reasoningDisplay?: ReasoningDisplay
 }>()
 const emit = defineEmits<{
   continue: []
@@ -98,6 +102,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           :streaming="running && msg.role === 'assistant' && index === messages.length - 1"
           :can-regenerate="idle && msg.id === lastReplyId"
           :can-edit="idle && msg.id === editableRequestId"
+          :reasoning-display="reasoningDisplay"
           @regenerate="emit('regenerate')"
           @revert="emit('revert', msg.id)"
           @restore="emit('restore', msg.id)"

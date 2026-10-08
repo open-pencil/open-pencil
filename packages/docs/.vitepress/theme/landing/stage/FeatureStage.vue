@@ -80,8 +80,7 @@ function onPointerDown() {
 
         <aside
           v-if="definition.panel"
-          class="flex w-72 shrink-0 flex-col overflow-hidden border-l border-border bg-panel max-md:h-64 max-md:w-full max-md:border-t max-md:border-l-0 data-wide:w-[420px]"
-          :data-wide="definition.widePanel || undefined"
+          class="flex w-72 shrink-0 flex-col overflow-hidden border-l border-border bg-panel max-md:h-64 max-md:w-full max-md:border-t max-md:border-l-0"
         >
           <template v-if="mounted">
             <header

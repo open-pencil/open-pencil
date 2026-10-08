@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { useLandingMessages } from '#docs/theme/landing/content/messages'
 import { nextTick, ref } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
-import { useLandingMessages } from '#docs/theme/landing/content/messages'
 import { EDITOR_COMMANDS } from './terminal-commands'
 import { useTerminalSession } from './useTerminalSession'
 

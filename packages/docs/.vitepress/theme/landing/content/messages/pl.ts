@@ -115,15 +115,21 @@ export const pl: LandingMessages = {
         { title: 'Agenci AI jako współpracownicy, z trybem śledzenia' },
         { title: 'Cofanie, ponowne generowanie i edycja tur AI' },
         { title: 'Kod powiązany z warstwami' },
-        { title: 'Wizualny diff i łatki' },
+        { title: 'Wizualny diff i łatki' }
       ]
     },
     now: {
       label: 'Teraz',
       entries: [
         { title: 'Tokeny projektowe W3C', detail: 'Import i eksport tokenów w formacie W3C.' },
-        { title: 'Storybook z prawdziwych komponentów', detail: 'Historie korzystające z Reka UI dla Vue i Radix UI dla React.' },
-        { title: 'Tworzenie komponentów', detail: 'Szybsza edycja wariantów i zaznaczanie wewnątrz komponentów.' },
+        {
+          title: 'Storybook z prawdziwych komponentów',
+          detail: 'Historie korzystające z Reka UI dla Vue i Radix UI dla React.'
+        },
+        {
+          title: 'Tworzenie komponentów',
+          detail: 'Szybsza edycja wariantów i zaznaczanie wewnątrz komponentów.'
+        }
       ]
     },
     next: {
@@ -155,13 +161,13 @@ export const pl: LandingMessages = {
         {
           title: 'Historia wersji',
           detail: 'Automatyczne migawki, nazwane punkty kontrolne i przywracanie.'
-        },
-        {
-          title: 'Opcjonalny OpenPencil Cloud',
-          detail:
-            'Hostowana synchronizacja i udostępnianie dla zespołów, które tego chcą. Nigdy obowiązkowo.'
         }
-      ]
+      ],
+      cloud: {
+        title: 'OpenPencil Cloud',
+        detail:
+          'Hostowana przestrzeń dla zespołów: synchronizacja na żywo, udostępnianie, biblioteki i AI, bez utrzymywania czegokolwiek.'
+      }
     },
     later: {
       label: 'Później',
@@ -177,10 +183,49 @@ export const pl: LandingMessages = {
       ]
     }
   },
+  cloud: {
+    badge: 'Wczesny dostęp',
+    title: 'OpenPencil Cloud',
+    lede: 'Przestrzeń projektowa Twojego zespołu, hostowana za Ciebie. Wszyscy edytują te same pliki na żywo, udostępniają je linkiem i projektują z AI, bez instalowania i utrzymywania czegokolwiek. Pliki pozostają otwarte: eksportuj je do .fig, kiedy chcesz.',
+    features: [
+      {
+        title: 'Synchronizacja zespołu w czasie rzeczywistym',
+        detail: 'Każda zmiana od razu trafia do całego zespołu, na każdym urządzeniu.'
+      },
+      {
+        title: 'Linki i komentarze',
+        detail: 'Wyślij link do przeglądu projektu i omawiajcie go bezpośrednio na płótnie.'
+      },
+      {
+        title: 'Biblioteki zespołu',
+        detail: 'Opublikuj komponenty, style i tokeny raz i używaj ich w każdym pliku.'
+      },
+      {
+        title: 'Hostowane AI',
+        detail: 'Agenci, którzy projektują z Tobą, bez zarządzania kluczami API.'
+      },
+      {
+        title: 'SSO i kontrola administracyjna',
+        detail: 'Logowanie jednokrotne, role i kontrola nad tym, kto co widzi.'
+      }
+    ]
+  },
+  waitlist: {
+    label: 'Adres e-mail',
+    placeholder: 'ty@przyklad.pl',
+    submit: 'Zapisz się na listę',
+    invalid: 'Wpisz poprawny adres e-mail.',
+    joined: 'Jesteś na liście',
+    joinedDetail: 'Napiszemy, gdy OpenPencil Cloud wystartuje.',
+    failed: 'Nie udało się zapisać',
+    failedDetail: 'Spróbuj ponownie za chwilę.',
+    privacy: 'Piszemy tylko w sprawie OpenPencil Cloud.'
+  },
   closing: {
     title: 'Zabierz swoje projekty ze sobą.',
     download: 'Pobierz OpenPencil',
-    docs: 'Czytaj dokumentację'
+    docs: 'Czytaj dokumentację',
+    cloud: 'Zapisz się na listę Cloud'
   },
   stage: {
     terminal: {
@@ -196,7 +241,7 @@ export const pl: LandingMessages = {
       replay: 'Odtwórz ponownie',
       request: 'Dodaj trzy gwarancje pod planami.',
       reasoning:
-        'Plany leżą w kolumnie z auto-layoutem, więc rząd trzech kart zmieści się tuż pod nimi.',
+        'Plany leżą w kolumnie z auto-layoutem, więc rząd trzech kart zmieści się tuż pod nimi i dopasuje do układu. Każda karta dostanie krótki tytuł i jedną linijkę opisu, z tłem i zaokrągleniem kart planów, żeby rząd wyglądał jak część strony.',
       reply:
         'Dodałem pod planami rząd **Guarantees**: trzy karty z takim samym tłem i promieniem jak karty planów.'
     },
@@ -204,7 +249,7 @@ export const pl: LandingMessages = {
       you: 'Ty',
       yourScreen: 'Twój ekran',
       theirScreen: 'Ekran Sama',
-      askAgent: 'Poproś agenta',
+      askAgent: 'Poproś agenta'
     },
     sdk: {
       copy: 'Kopiuj',

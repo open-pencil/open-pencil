@@ -114,15 +114,21 @@ export const en: LandingMessages = {
         { title: 'AI agents as collaborators, with follow mode' },
         { title: 'Revert, regenerate, and edit AI turns' },
         { title: 'Code linked to canvas layers' },
-        { title: 'Visual diff and patch' },
+        { title: 'Visual diff and patch' }
       ]
     },
     now: {
       label: 'Now',
       entries: [
         { title: 'W3C design tokens', detail: 'Import and export tokens in the W3C format.' },
-        { title: 'Storybook from real components', detail: 'Stories that render Reka UI for Vue and Radix UI for React.' },
-        { title: 'Component authoring', detail: 'Faster variant editing and canvas selection inside components.' },
+        {
+          title: 'Storybook from real components',
+          detail: 'Stories that render Reka UI for Vue and Radix UI for React.'
+        },
+        {
+          title: 'Component authoring',
+          detail: 'Faster variant editing and canvas selection inside components.'
+        }
       ]
     },
     next: {
@@ -151,12 +157,13 @@ export const en: LandingMessages = {
         {
           title: 'Version history',
           detail: 'Automatic snapshots, named checkpoints, and restore.'
-        },
-        {
-          title: 'Optional OpenPencil Cloud',
-          detail: 'Hosted sync and sharing for teams that want it. Never required.'
         }
-      ]
+      ],
+      cloud: {
+        title: 'OpenPencil Cloud',
+        detail:
+          'The hosted workspace for teams: live sync, sharing, libraries, and AI, with nothing to run.'
+      }
     },
     later: {
       label: 'Later',
@@ -169,10 +176,46 @@ export const en: LandingMessages = {
       ]
     }
   },
+  cloud: {
+    badge: 'Early access',
+    title: 'OpenPencil Cloud',
+    lede: "Your team's design workspace, hosted for you. Everyone edits the same files live, shares them with a link, and designs with AI, with nothing to install or run. Your files stay open: export them as .fig whenever you like.",
+    features: [
+      {
+        title: 'Real-time team sync',
+        detail: 'Every change reaches every teammate as it happens, on any device.'
+      },
+      {
+        title: 'Share links and comments',
+        detail: 'Send a link to review a design and discuss it right on the canvas.'
+      },
+      {
+        title: 'Team libraries',
+        detail: 'Publish components, styles, and tokens once and use them in every file.'
+      },
+      { title: 'Hosted AI', detail: 'Agents that design with you, with no API keys to manage.' },
+      {
+        title: 'SSO and admin controls',
+        detail: 'Single sign-on, roles, and control over who sees what.'
+      }
+    ]
+  },
+  waitlist: {
+    label: 'Email address',
+    placeholder: 'you@example.com',
+    submit: 'Join the waitlist',
+    invalid: 'Enter a valid email address.',
+    joined: "You're on the list",
+    joinedDetail: "We'll email you when OpenPencil Cloud opens.",
+    failed: "Couldn't join the waitlist",
+    failedDetail: 'Try again in a moment.',
+    privacy: 'We only email you about OpenPencil Cloud.'
+  },
   closing: {
     title: 'Take your designs with you.',
     download: 'Download OpenPencil',
-    docs: 'Read the docs'
+    docs: 'Read the docs',
+    cloud: 'Join the Cloud waitlist'
   },
   stage: {
     terminal: {
@@ -188,7 +231,7 @@ export const en: LandingMessages = {
       replay: 'Replay',
       request: 'Add three guarantees under the plans.',
       reasoning:
-        'The plans sit in an auto-layout column, so a row of three cards can go right below them.',
+        'The plans sit in an auto-layout column, so a row of three cards can go right below them and follow the layout. I’ll give each card a short title and one line of detail, with the plan cards’ background and corner radius, so the row looks like part of the page.',
       reply:
         'Added a **Guarantees** row under the plans: three cards that share the plan cards’ background and radius.'
     },
@@ -196,7 +239,7 @@ export const en: LandingMessages = {
       you: 'You',
       yourScreen: 'Your screen',
       theirScreen: 'Sam’s screen',
-      askAgent: 'Ask the agent',
+      askAgent: 'Ask the agent'
     },
     sdk: {
       copy: 'Copy',

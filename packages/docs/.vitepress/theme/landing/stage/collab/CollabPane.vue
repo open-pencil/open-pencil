@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLandingMessages } from '#docs/theme/landing/content/messages'
 import { until, useMediaQuery } from '@vueuse/core'
 import { onMounted, onScopeDispose, shallowRef } from 'vue'
 import IconSparkles from '~icons/lucide/sparkles'
@@ -11,21 +12,13 @@ import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { EditorStore } from '@/app/editor/active-store'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
-import { useLandingMessages } from '#docs/theme/landing/content/messages'
-
 import { useRecordedChat } from '../ai/useRecordedChat'
 import { SCENES } from '../scenes'
 import StageCanvas from '../StageCanvas.vue'
 import { useStageDocument } from '../useStageDocument'
 import { useWheelEngagement } from '../useWheelEngagement'
 
-const {
-  role,
-  joinRoom,
-  roomId,
-  identity,
-  label
-} = defineProps<{
+const { role, joinRoom, roomId, identity, label } = defineProps<{
   /** The host shares its document into the room; the guest opens it from there. */
   role: 'host' | 'guest'
   joinRoom: JoinCollabRoom
@@ -41,7 +34,14 @@ const session = shallowRef<RoomSession | null>(null)
 const memoryCopy = () => ({ whenSynced: Promise.resolve(), destroy: () => undefined })
 
 function openRoom(store: EditorStore, origin: 'shared' | 'joined'): RoomSession {
-  const opened = openRoomSession({ roomId, store, origin, joinRoom, identity, openSavedCopy: memoryCopy })
+  const opened = openRoomSession({
+    roomId,
+    store,
+    origin,
+    joinRoom,
+    identity,
+    openSavedCopy: memoryCopy
+  })
   session.value = opened
   return opened
 }

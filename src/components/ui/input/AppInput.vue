@@ -11,7 +11,7 @@ interface AppInputProps {
   class?: HTMLAttributes['class']
   ui?: { root?: string; input?: string; leading?: string; trailing?: string }
   id?: string
-  type?: 'text' | 'password' | 'number' | 'search' | 'url'
+  type?: 'text' | 'password' | 'number' | 'search' | 'url' | 'email'
   placeholder?: string
   ariaLabel?: string
   readonly?: boolean

@@ -115,15 +115,21 @@ export const it: LandingMessages = {
         { title: 'Agenti AI come collaboratori, con modalità segui' },
         { title: 'Annulla, rigenera e modifica i turni dell’AI' },
         { title: 'Codice collegato ai livelli' },
-        { title: 'Diff visivo e patch' },
+        { title: 'Diff visivo e patch' }
       ]
     },
     now: {
       label: 'Ora',
       entries: [
         { title: 'Design token W3C', detail: 'Importare ed esportare token nel formato W3C.' },
-        { title: 'Storybook da componenti reali', detail: 'Storie che usano Reka UI per Vue e Radix UI per React.' },
-        { title: 'Creazione di componenti', detail: 'Modifica delle varianti più rapida e selezione dentro i componenti.' },
+        {
+          title: 'Storybook da componenti reali',
+          detail: 'Storie che usano Reka UI per Vue e Radix UI per React.'
+        },
+        {
+          title: 'Creazione di componenti',
+          detail: 'Modifica delle varianti più rapida e selezione dentro i componenti.'
+        }
       ]
     },
     next: {
@@ -155,13 +161,13 @@ export const it: LandingMessages = {
         {
           title: 'Cronologia delle versioni',
           detail: 'Istantanee automatiche, checkpoint con nome e ripristino.'
-        },
-        {
-          title: 'OpenPencil Cloud, facoltativo',
-          detail:
-            'Sincronizzazione e condivisione ospitate per i team che le vogliono. Mai obbligatorio.'
         }
-      ]
+      ],
+      cloud: {
+        title: 'OpenPencil Cloud',
+        detail:
+          'Lo spazio ospitato per i team: sincronizzazione in diretta, condivisione, librerie e IA, senza nulla da gestire.'
+      }
     },
     later: {
       label: 'Più avanti',
@@ -177,10 +183,50 @@ export const it: LandingMessages = {
       ]
     }
   },
+  cloud: {
+    badge: 'Accesso anticipato',
+    title: 'OpenPencil Cloud',
+    lede: 'Lo spazio di design del tuo team, ospitato per te. Tutti modificano gli stessi file in diretta, li condividono con un link e progettano con l’IA, senza nulla da installare o gestire. I tuoi file restano aperti: esportali come .fig quando vuoi.',
+    features: [
+      {
+        title: 'Sincronizzazione del team in tempo reale',
+        detail:
+          'Ogni modifica raggiunge tutto il team nel momento in cui avviene, su qualsiasi dispositivo.'
+      },
+      {
+        title: 'Link di condivisione e commenti',
+        detail: 'Invia un link per rivedere un design e discuterne direttamente sulla tela.'
+      },
+      {
+        title: 'Librerie del team',
+        detail: 'Pubblica componenti, stili e token una volta e usali in ogni file.'
+      },
+      {
+        title: 'IA ospitata',
+        detail: 'Agenti che progettano con te, senza chiavi API da gestire.'
+      },
+      {
+        title: 'SSO e controlli di amministrazione',
+        detail: 'Single sign-on, ruoli e controllo su chi vede cosa.'
+      }
+    ]
+  },
+  waitlist: {
+    label: 'Indirizzo email',
+    placeholder: 'tu@esempio.it',
+    submit: "Iscriviti alla lista d'attesa",
+    invalid: 'Inserisci un indirizzo email valido.',
+    joined: 'Sei nella lista',
+    joinedDetail: 'Ti scriveremo quando OpenPencil Cloud aprirà.',
+    failed: 'Iscrizione non riuscita',
+    failedDetail: 'Riprova tra un momento.',
+    privacy: 'Ti scriveremo solo riguardo a OpenPencil Cloud.'
+  },
   closing: {
     title: 'Porta i tuoi design con te.',
     download: 'Scarica OpenPencil',
-    docs: 'Leggi la documentazione'
+    docs: 'Leggi la documentazione',
+    cloud: "Iscriviti alla lista d'attesa di Cloud"
   },
   stage: {
     terminal: {
@@ -196,7 +242,7 @@ export const it: LandingMessages = {
       replay: 'Riproduci di nuovo',
       request: 'Aggiungi tre garanzie sotto i piani.',
       reasoning:
-        'I piani sono in una colonna con auto-layout, quindi una riga di tre schede può stare subito sotto.',
+        'I piani sono in una colonna con auto-layout, quindi una riga di tre schede può stare subito sotto e seguire il layout. Ogni scheda avrà un titolo breve e una riga di dettaglio, con lo sfondo e il raggio degli angoli delle schede dei piani, così la riga sembra parte della pagina.',
       reply:
         'Ho aggiunto una riga **Guarantees** sotto i piani: tre schede con lo stesso sfondo e raggio delle schede dei piani.'
     },
@@ -204,7 +250,7 @@ export const it: LandingMessages = {
       you: 'Tu',
       yourScreen: 'Il tuo schermo',
       theirScreen: 'Lo schermo di Sam',
-      askAgent: 'Chiedi all’agente',
+      askAgent: 'Chiedi all’agente'
     },
     sdk: {
       copy: 'Copia',

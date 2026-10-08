@@ -283,6 +283,7 @@
         "canvaskit-wasm": "^0.41.1",
         "dedent": "^1.7.2",
         "tinykeys": "^3.1.0",
+        "valibot": "^1.5.0",
       },
       "devDependencies": {
         "@iconify-json/simple-icons": "^1.2.98",

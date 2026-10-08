@@ -1,3 +1,5 @@
+// The app's own demo, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
+import demoFigURL from '#app-public/demo.fig?url'
 import dedent from 'dedent'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
@@ -5,8 +7,6 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { loadFont } from '@/app/editor/fonts'
-// The app's own demo, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
-import demoFigURL from '#app-public/demo.fig?url'
 
 const GUARANTEES = [
   { title: 'Opens .fig', detail: 'Bring your Figma files with you.' },
@@ -117,6 +117,28 @@ export function findByName(store: EditorStore, name: string): string | null {
   return null
 }
 
+/** How deep the Figma block's layers open: the page's frame, its sections, and their cards. */
+const FIGMA_LAYER_DEPTH = 2
+
+/**
+ * Opens the layer tree down to `depth`, where 0 is the page's top-level layers. The tree opens
+ * the ancestors of whatever is selected and keeps them open, so selecting the layers at that
+ * depth and then nothing leaves them showing, with no selection on the canvas.
+ */
+function revealLayers(store: EditorStore, depth: number): void {
+  let level = store.graph.getChildren(store.state.currentPageId).map((node) => node.id)
+  for (let current = 0; current < depth; current++) {
+    level = level.flatMap((id) => store.graph.getNode(id)?.childIds ?? [])
+  }
+  store.select(level)
+  store.clearSelection()
+}
+
+async function figma(store: EditorStore): Promise<void> {
+  await demoPage(store, '03 · Paint & effects')
+  revealLayers(store, FIGMA_LAYER_DEPTH)
+}
+
 async function pricing(store: EditorStore, extra = ''): Promise<void> {
   await loadInter()
   await renderJSX(store.graph, pricingJSX(extra), {
@@ -154,8 +176,9 @@ async function linting(store: EditorStore): Promise<void> {
   await pricing(store, LINT_FOOTER)
 }
 
-/** A little room around the framed card. */
+/** Room around the framed card, and above it for the preview's workspace pill. */
 const CARD_MARGIN = 16
+const PREVIEW_PILL_INSET = 56
 
 /** The demo's Controls page in preview, with the Switch component's behaviour in the panel. */
 async function controls(store: EditorStore): Promise<void> {
@@ -164,9 +187,16 @@ async function controls(store: EditorStore): Promise<void> {
   const card = findByName(store, 'Account settings')
   const node = card ? store.graph.getNode(card) : undefined
   if (node) {
+    // Fill the canvas with the card, past the 100% that fitting stops at, so nothing else on
+    // the page shows around it and the pill above does not cover it.
     const { x, y } = store.graph.getAbsolutePosition(node.id)
-    const margin = CARD_MARGIN
-    store.zoomToBounds(x - margin, y - margin, x + node.width + margin, y + node.height + margin)
+    const { width, height } = store.getViewportSize()
+    const zoom = Math.min(
+      (width - CARD_MARGIN * 2) / node.width,
+      (height - CARD_MARGIN * 2 - PREVIEW_PILL_INSET) / node.height
+    )
+    const centerY = y + node.height / 2 - PREVIEW_PILL_INSET / 2 / zoom
+    store.centerOn(x + node.width / 2, centerY, zoom)
   }
   const toggle = findByName(store, 'Switch')
   if (toggle) store.select([toggle])
@@ -176,8 +206,7 @@ async function controls(store: EditorStore): Promise<void> {
 export type SceneBuilder = (store: EditorStore) => Promise<void>
 
 export const SCENES = {
-  announcement: (store) => demoSection(store, 'Announcement system'),
-  figma: (store) => demoPage(store, '03 · Paint & effects'),
+  figma,
   controls,
   tokens: (store) => demoSection(store, 'Components'),
   linting,

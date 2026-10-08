@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLandingMessages } from '#docs/theme/landing/content/messages'
 import { useIntersectionObserver } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
@@ -7,8 +8,6 @@ import { computed, ref } from 'vue'
 import type { Color } from '@open-pencil/scene-graph'
 
 import { PEER_COLORS } from '@/constants'
-
-import { useLandingMessages } from '#docs/theme/landing/content/messages'
 
 import { prepareEngine } from '../engine-assets'
 import CollabPane from './CollabPane.vue'

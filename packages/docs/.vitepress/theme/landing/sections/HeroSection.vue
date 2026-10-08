@@ -5,8 +5,7 @@ import IconPenTool from '~icons/lucide/pen-tool'
 
 import { LINKS } from '../content/links'
 import { useLandingMessages } from '../content/messages'
-import ActionLink from '../ui/ActionLink.vue'
-import StageFrame from '../ui/StageFrame.vue'
+import ActionButton from '../ui/ActionButton.vue'
 
 const messages = useLandingMessages()
 </script>
@@ -16,16 +15,15 @@ const messages = useLandingMessages()
     <h1>{{ messages.hero.title }}</h1>
     <p class="lede">{{ messages.hero.lede }}</p>
     <div class="landing-actions">
-      <ActionLink :href="LINKS.app" :icon="IconPenTool" primary>
+      <ActionButton :href="LINKS.app" :icon="IconPenTool" primary>
         {{ messages.hero.open }}
-      </ActionLink>
-      <ActionLink :href="LINKS.download" :icon="IconDownload">
+      </ActionButton>
+      <ActionButton :href="LINKS.download" :icon="IconDownload">
         {{ messages.hero.download }}
-      </ActionLink>
-      <ActionLink :href="LINKS.github" :icon="IconGithub">{{ messages.hero.github }}</ActionLink>
-    </div>
-    <div class="hero-stage">
-      <StageFrame kind="hero" />
+      </ActionButton>
+      <ActionButton :href="LINKS.github" :icon="IconGithub">{{
+        messages.hero.github
+      }}</ActionButton>
     </div>
   </section>
 </template>
@@ -50,21 +48,9 @@ h1 {
   line-height: 1.55;
 }
 
-.hero-stage {
-  height: min(560px, 64vh);
-  min-height: 380px;
-  margin-top: 56px;
-}
-
 @media (max-width: 860px) {
   .hero {
     padding-top: 40px;
-  }
-
-  .hero-stage {
-    height: 320px;
-    min-height: 0;
-    margin-top: 36px;
   }
 }
 </style>

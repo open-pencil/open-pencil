@@ -4,50 +4,61 @@ import IconArrowRight from '~icons/lucide/arrow-right'
 
 import { LINKS } from '../content/links'
 import { useLandingMessages, useLocalePath } from '../content/messages'
+import type { TitledDetail } from '../content/messages/types'
+import WaitlistForm from '../waitlist/WaitlistForm.vue'
 
 const messages = useLandingMessages()
 const localePath = useLocalePath()
 
-/** The catalog keeps the stages apart so each has its own shape; the timeline wants a list. */
-const stages = computed(() => {
-  const { shipped, now, next, later } = messages.value.roadmap
-  return [
-    { label: shipped.label, state: 'done', entries: shipped.entries.map(withoutFeatures) },
-    { label: now.label, state: 'current', entries: now.entries.map(withoutFeatures) },
-    {
-      label: next.label,
-      state: 'planned',
-      entries: [next.lead, ...next.entries.map(withoutFeatures)]
-    },
-    { label: later.label, state: 'planned', entries: later.entries.map(withoutFeatures) }
-  ] as const
-})
-
-function withoutFeatures(entry: { title: string; detail?: string }) {
-  return { ...entry, features: undefined }
+/** One row of the timeline; a lead entry is set larger, as a feature of its own. */
+interface TimelineEntry {
+  title: string
+  detail?: string
+  lead?: boolean
+  features?: TitledDetail[]
+  /** Shows the Cloud waitlist form under the entry. */
+  waitlist?: boolean
 }
+
+interface TimelineStage {
+  label: string
+  state: 'done' | 'current' | 'planned'
+  entries: TimelineEntry[]
+}
+
+/** The catalog keeps the stages apart so each has its own shape; the timeline wants a list. */
+const stages = computed((): TimelineStage[] => {
+  const { shipped, now, next, later } = messages.value.roadmap
+  const planned: TimelineEntry[] = [
+    { ...next.lead, lead: true },
+    { ...next.cloud, lead: true, waitlist: true },
+    ...next.entries
+  ]
+  return [
+    { label: shipped.label, state: 'done', entries: shipped.entries },
+    { label: now.label, state: 'current', entries: now.entries },
+    { label: next.label, state: 'planned', entries: planned },
+    { label: later.label, state: 'planned', entries: later.entries }
+  ]
+})
 </script>
 
 <template>
   <section class="landing-section">
     <h2>{{ messages.roadmap.title }}</h2>
     <ol class="timeline">
-      <li
-        v-for="stage in stages"
-        :key="stage.label"
-        class="stage"
-        :data-state="stage.state"
-      >
+      <li v-for="stage in stages" :key="stage.label" class="stage" :data-state="stage.state">
         <span class="label">{{ stage.label }}</span>
         <ul>
           <li
             v-for="entry in stage.entries"
             :key="entry.title"
             class="entry"
-            :data-lead="entry.features ? true : undefined"
+            :data-lead="entry.lead || undefined"
           >
             <h3>{{ entry.title }}</h3>
             <p v-if="entry.detail">{{ entry.detail }}</p>
+            <WaitlistForm v-if="entry.waitlist" class="waitlist" />
             <dl v-if="entry.features" class="landing-facts">
               <div v-for="feature in entry.features" :key="feature.title">
                 <dt>{{ feature.title }}</dt>
@@ -190,6 +201,10 @@ function withoutFeatures(entry: { title: string; detail?: string }) {
   font-size: 15px;
   font-weight: 500;
   text-decoration: none;
+}
+
+.entry .waitlist {
+  margin-top: 20px;
 }
 
 @media (max-width: 860px) {

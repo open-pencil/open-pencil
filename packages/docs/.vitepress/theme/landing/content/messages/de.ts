@@ -115,15 +115,21 @@ export const de: LandingMessages = {
         { title: 'KI-Agenten als Mitwirkende, mit Folgemodus' },
         { title: 'KI-Schritte zurücknehmen, neu erzeugen und bearbeiten' },
         { title: 'Code mit Ebenen verknüpft' },
-        { title: 'Visueller Diff und Patch' },
+        { title: 'Visueller Diff und Patch' }
       ]
     },
     now: {
       label: 'Jetzt',
       entries: [
         { title: 'W3C-Design-Tokens', detail: 'Tokens im W3C-Format importieren und exportieren.' },
-        { title: 'Storybook aus echten Komponenten', detail: 'Stories mit Reka UI für Vue und Radix UI für React.' },
-        { title: 'Komponenten erstellen', detail: 'Schnelleres Bearbeiten von Varianten und Auswahl innerhalb von Komponenten.' },
+        {
+          title: 'Storybook aus echten Komponenten',
+          detail: 'Stories mit Reka UI für Vue und Radix UI für React.'
+        },
+        {
+          title: 'Komponenten erstellen',
+          detail: 'Schnelleres Bearbeiten von Varianten und Auswahl innerhalb von Komponenten.'
+        }
       ]
     },
     next: {
@@ -155,12 +161,13 @@ export const de: LandingMessages = {
         {
           title: 'Versionsverlauf',
           detail: 'Automatische Snapshots, benannte Checkpoints und Wiederherstellung.'
-        },
-        {
-          title: 'Optionale OpenPencil Cloud',
-          detail: 'Gehostete Synchronisierung und Freigabe für Teams, die das möchten. Nie Pflicht.'
         }
-      ]
+      ],
+      cloud: {
+        title: 'OpenPencil Cloud',
+        detail:
+          'Der gehostete Arbeitsbereich für Teams: Live-Synchronisierung, Freigabe, Bibliotheken und KI, ohne eigenen Betrieb.'
+      }
     },
     later: {
       label: 'Später',
@@ -176,10 +183,49 @@ export const de: LandingMessages = {
       ]
     }
   },
+  cloud: {
+    badge: 'Früher Zugang',
+    title: 'OpenPencil Cloud',
+    lede: 'Der Design-Arbeitsbereich deines Teams, für dich gehostet. Alle bearbeiten dieselben Dateien live, teilen sie per Link und gestalten mit KI, ohne etwas zu installieren oder zu betreiben. Deine Dateien bleiben offen: Exportiere sie jederzeit als .fig.',
+    features: [
+      {
+        title: 'Team-Synchronisierung in Echtzeit',
+        detail: 'Jede Änderung erreicht sofort alle im Team, auf jedem Gerät.'
+      },
+      {
+        title: 'Freigabelinks und Kommentare',
+        detail: 'Schick einen Link zur Durchsicht und diskutiert direkt auf der Leinwand.'
+      },
+      {
+        title: 'Team-Bibliotheken',
+        detail: 'Komponenten, Stile und Tokens einmal veröffentlichen und in jeder Datei nutzen.'
+      },
+      {
+        title: 'Gehostete KI',
+        detail: 'Agenten, die mit dir gestalten, ohne API-Schlüssel zu verwalten.'
+      },
+      {
+        title: 'SSO und Admin-Steuerung',
+        detail: 'Single Sign-on, Rollen und Kontrolle darüber, wer was sieht.'
+      }
+    ]
+  },
+  waitlist: {
+    label: 'E-Mail-Adresse',
+    placeholder: 'du@beispiel.de',
+    submit: 'Auf die Warteliste',
+    invalid: 'Gib eine gültige E-Mail-Adresse ein.',
+    joined: 'Du stehst auf der Liste',
+    joinedDetail: 'Wir schreiben dir, sobald OpenPencil Cloud startet.',
+    failed: 'Eintragen fehlgeschlagen',
+    failedDetail: 'Versuch es gleich noch einmal.',
+    privacy: 'Wir schreiben dir nur zu OpenPencil Cloud.'
+  },
   closing: {
     title: 'Nimm deine Designs mit.',
     download: 'OpenPencil herunterladen',
-    docs: 'Dokumentation lesen'
+    docs: 'Dokumentation lesen',
+    cloud: 'Auf die Cloud-Warteliste'
   },
   stage: {
     terminal: {
@@ -195,7 +241,7 @@ export const de: LandingMessages = {
       replay: 'Erneut abspielen',
       request: 'Füge drei Garantien unter den Tarifen hinzu.',
       reasoning:
-        'Die Tarife liegen in einer Auto-Layout-Spalte, also passt eine Reihe mit drei Karten direkt darunter.',
+        'Die Tarife liegen in einer Auto-Layout-Spalte, also passt eine Reihe mit drei Karten direkt darunter und folgt dem Layout. Jede Karte bekommt einen kurzen Titel und eine Zeile Text, mit Hintergrund und Eckenradius der Tarifkarten, damit die Reihe zur Seite gehört.',
       reply:
         'Unter den Tarifen gibt es jetzt eine Reihe **Guarantees**: drei Karten mit dem Hintergrund und Radius der Tarifkarten.'
     },
@@ -203,7 +249,7 @@ export const de: LandingMessages = {
       you: 'Du',
       yourScreen: 'Dein Bildschirm',
       theirScreen: 'Sams Bildschirm',
-      askAgent: 'Agenten fragen',
+      askAgent: 'Agenten fragen'
     },
     sdk: {
       copy: 'Kopieren',

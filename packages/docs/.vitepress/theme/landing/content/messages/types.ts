@@ -51,13 +51,37 @@ export interface LandingMessages {
       /** The entry presented as a feature block of its own. */
       lead: TitledDetail & { features: TitledDetail[] }
       entries: RoadmapEntryMessages[]
+      /** OpenPencil Cloud, after self-hosting, with the waitlist form under it. */
+      cloud: TitledDetail
     }
     later: { label: string; entries: RoadmapEntryMessages[] }
+  }
+  /** The hosted product, with its waitlist. */
+  cloud: {
+    badge: string
+    title: string
+    lede: string
+    features: TitledDetail[]
+  }
+  /** The OpenPencil Cloud waitlist form in the Cloud section. */
+  waitlist: {
+    /** Accessible name of the email field. */
+    label: string
+    placeholder: string
+    submit: string
+    invalid: string
+    joined: string
+    joinedDetail: string
+    failed: string
+    failedDetail: string
+    privacy: string
   }
   closing: {
     title: string
     download: string
     docs: string
+    /** Links to the Cloud section's waitlist. */
+    cloud: string
   }
   /** Strings shown inside the live stages, next to the app's own translated panels. */
   stage: {

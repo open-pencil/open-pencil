@@ -115,15 +115,21 @@ export const es: LandingMessages = {
         { title: 'Agentes de IA como colaboradores, con modo seguir' },
         { title: 'Revertir, regenerar y editar turnos de IA' },
         { title: 'Código vinculado a las capas' },
-        { title: 'Diff visual y parches' },
+        { title: 'Diff visual y parches' }
       ]
     },
     now: {
       label: 'Ahora',
       entries: [
         { title: 'Tokens de diseño W3C', detail: 'Importar y exportar tokens en el formato W3C.' },
-        { title: 'Storybook con componentes reales', detail: 'Historias que usan Reka UI en Vue y Radix UI en React.' },
-        { title: 'Creación de componentes', detail: 'Edición de variantes más rápida y selección dentro de componentes.' },
+        {
+          title: 'Storybook con componentes reales',
+          detail: 'Historias que usan Reka UI en Vue y Radix UI en React.'
+        },
+        {
+          title: 'Creación de componentes',
+          detail: 'Edición de variantes más rápida y selección dentro de componentes.'
+        }
       ]
     },
     next: {
@@ -155,13 +161,13 @@ export const es: LandingMessages = {
         {
           title: 'Historial de versiones',
           detail: 'Instantáneas automáticas, puntos de control con nombre y restauración.'
-        },
-        {
-          title: 'OpenPencil Cloud opcional',
-          detail:
-            'Sincronización y uso compartido alojados para los equipos que lo quieran. Nunca obligatorio.'
         }
-      ]
+      ],
+      cloud: {
+        title: 'OpenPencil Cloud',
+        detail:
+          'El espacio alojado para equipos: sincronización en directo, uso compartido, bibliotecas e IA, sin nada que mantener.'
+      }
     },
     later: {
       label: 'Más adelante',
@@ -177,10 +183,49 @@ export const es: LandingMessages = {
       ]
     }
   },
+  cloud: {
+    badge: 'Acceso anticipado',
+    title: 'OpenPencil Cloud',
+    lede: 'El espacio de diseño de tu equipo, alojado por nosotros. Todos editan los mismos archivos en directo, los comparten con un enlace y diseñan con IA, sin nada que instalar ni mantener. Tus archivos siguen abiertos: expórtalos como .fig cuando quieras.',
+    features: [
+      {
+        title: 'Sincronización del equipo en tiempo real',
+        detail: 'Cada cambio llega a todo el equipo al instante, en cualquier dispositivo.'
+      },
+      {
+        title: 'Enlaces para compartir y comentarios',
+        detail: 'Envía un enlace para revisar un diseño y coméntalo sobre el lienzo.'
+      },
+      {
+        title: 'Bibliotecas del equipo',
+        detail: 'Publica componentes, estilos y tokens una vez y úsalos en todos los archivos.'
+      },
+      {
+        title: 'IA alojada',
+        detail: 'Agentes que diseñan contigo, sin claves de API que gestionar.'
+      },
+      {
+        title: 'SSO y controles de administración',
+        detail: 'Inicio de sesión único, roles y control de quién ve qué.'
+      }
+    ]
+  },
+  waitlist: {
+    label: 'Correo electrónico',
+    placeholder: 'tu@ejemplo.com',
+    submit: 'Unirme a la lista',
+    invalid: 'Introduce un correo electrónico válido.',
+    joined: 'Ya estás en la lista',
+    joinedDetail: 'Te escribiremos cuando abra OpenPencil Cloud.',
+    failed: 'No se pudo unir a la lista',
+    failedDetail: 'Inténtalo de nuevo en un momento.',
+    privacy: 'Solo te escribiremos sobre OpenPencil Cloud.'
+  },
   closing: {
     title: 'Llévate tus diseños contigo.',
     download: 'Descargar OpenPencil',
-    docs: 'Leer la documentación'
+    docs: 'Leer la documentación',
+    cloud: 'Unirme a la lista de Cloud'
   },
   stage: {
     terminal: {
@@ -196,7 +241,7 @@ export const es: LandingMessages = {
       replay: 'Repetir',
       request: 'Añade tres garantías debajo de los planes.',
       reasoning:
-        'Los planes están en una columna con auto-layout, así que una fila de tres tarjetas cabe justo debajo.',
+        'Los planes están en una columna con auto-layout, así que una fila de tres tarjetas cabe justo debajo y sigue el diseño. Cada tarjeta tendrá un título corto y una línea de detalle, con el fondo y el radio de las tarjetas de los planes, para que la fila parezca parte de la página.',
       reply:
         'He añadido una fila **Guarantees** debajo de los planes: tres tarjetas con el mismo fondo y radio que las tarjetas de los planes.'
     },
@@ -204,7 +249,7 @@ export const es: LandingMessages = {
       you: 'Tú',
       yourScreen: 'Tu pantalla',
       theirScreen: 'Pantalla de Sam',
-      askAgent: 'Preguntar al agente',
+      askAgent: 'Preguntar al agente'
     },
     sdk: {
       copy: 'Copiar',

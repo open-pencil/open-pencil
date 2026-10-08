@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { defineClientComponent, withBase } from 'vitepress'
 
+import type { FeatureKind } from '../content/features'
 import { useLandingMessages } from '../content/messages'
-import type { StageKind } from '../stage/kinds'
 
 /** The editor needs WebGL and CanvasKit, so a stage never renders on the server. */
 const FeatureStage = defineClientComponent(() => import('../stage/FeatureStage.vue'))
 const CollabStage = defineClientComponent(() => import('../stage/collab/CollabStage.vue'))
 
-const { kind } = defineProps<{ kind: StageKind }>()
+const { kind } = defineProps<{ kind: FeatureKind }>()
 
 const messages = useLandingMessages()
 </script>

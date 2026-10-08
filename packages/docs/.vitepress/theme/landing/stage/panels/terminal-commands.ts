@@ -1,3 +1,4 @@
+import type { LandingMessages } from '#docs/theme/landing/content/messages'
 import type { Component } from 'vue'
 import IconCode from '~icons/lucide/code'
 import IconCopyPlus from '~icons/lucide/copy-plus'
@@ -10,8 +11,6 @@ import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-
-import type { LandingMessages } from '#docs/theme/landing/content/messages'
 
 /**
  * The CLI reaches a running app through `createAutomationCommandHandlers`. The landing page

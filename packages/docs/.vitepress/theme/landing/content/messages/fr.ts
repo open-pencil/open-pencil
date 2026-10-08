@@ -115,15 +115,21 @@ export const fr: LandingMessages = {
         { title: 'Agents AI comme collaborateurs, avec mode suivi' },
         { title: 'Annuler, régénérer et modifier les échanges avec l’AI' },
         { title: 'Code relié aux calques' },
-        { title: 'Diff visuel et correctifs' },
+        { title: 'Diff visuel et correctifs' }
       ]
     },
     now: {
       label: 'En cours',
       entries: [
         { title: 'Design tokens W3C', detail: 'Importer et exporter des tokens au format W3C.' },
-        { title: 'Storybook à partir de vrais composants', detail: 'Des stories qui utilisent Reka UI pour Vue et Radix UI pour React.' },
-        { title: 'Création de composants', detail: 'Modification des variantes plus rapide et sélection dans les composants.' },
+        {
+          title: 'Storybook à partir de vrais composants',
+          detail: 'Des stories qui utilisent Reka UI pour Vue et Radix UI pour React.'
+        },
+        {
+          title: 'Création de composants',
+          detail: 'Modification des variantes plus rapide et sélection dans les composants.'
+        }
       ]
     },
     next: {
@@ -155,13 +161,13 @@ export const fr: LandingMessages = {
         {
           title: 'Historique des versions',
           detail: 'Instantanés automatiques, points de contrôle nommés et restauration.'
-        },
-        {
-          title: 'OpenPencil Cloud, en option',
-          detail:
-            'Synchronisation et partage hébergés pour les équipes qui le souhaitent. Jamais obligatoire.'
         }
-      ]
+      ],
+      cloud: {
+        title: 'OpenPencil Cloud',
+        detail:
+          "L'espace hébergé pour les équipes : synchronisation en direct, partage, bibliothèques et IA, sans rien à faire tourner."
+      }
     },
     later: {
       label: 'Plus tard',
@@ -177,10 +183,50 @@ export const fr: LandingMessages = {
       ]
     }
   },
+  cloud: {
+    badge: 'Accès anticipé',
+    title: 'OpenPencil Cloud',
+    lede: "L'espace de design de votre équipe, hébergé pour vous. Tout le monde modifie les mêmes fichiers en direct, les partage par lien et conçoit avec l'IA, sans rien à installer ni à faire tourner. Vos fichiers restent ouverts : exportez-les en .fig quand vous voulez.",
+    features: [
+      {
+        title: "Synchronisation d'équipe en temps réel",
+        detail:
+          'Chaque modification parvient à toute l’équipe dès qu’elle a lieu, sur tous les appareils.'
+      },
+      {
+        title: 'Liens de partage et commentaires',
+        detail: 'Envoyez un lien pour relire un design et en discuter directement sur le canevas.'
+      },
+      {
+        title: "Bibliothèques d'équipe",
+        detail: 'Publiez composants, styles et tokens une fois et utilisez-les dans chaque fichier.'
+      },
+      {
+        title: 'IA hébergée',
+        detail: 'Des agents qui conçoivent avec vous, sans clés d’API à gérer.'
+      },
+      {
+        title: "SSO et contrôles d'administration",
+        detail: 'Authentification unique, rôles et contrôle de qui voit quoi.'
+      }
+    ]
+  },
+  waitlist: {
+    label: 'Adresse e-mail',
+    placeholder: 'vous@exemple.fr',
+    submit: "Rejoindre la liste d'attente",
+    invalid: 'Saisissez une adresse e-mail valide.',
+    joined: 'Vous êtes sur la liste',
+    joinedDetail: "Nous vous écrirons à l'ouverture d'OpenPencil Cloud.",
+    failed: "Impossible de rejoindre la liste d'attente",
+    failedDetail: 'Réessayez dans un instant.',
+    privacy: "Nous ne vous écrirons qu'au sujet d'OpenPencil Cloud."
+  },
   closing: {
     title: 'Emportez vos designs avec vous.',
     download: 'Télécharger OpenPencil',
-    docs: 'Lire la documentation'
+    docs: 'Lire la documentation',
+    cloud: "Rejoindre la liste d'attente Cloud"
   },
   stage: {
     terminal: {
@@ -196,7 +242,7 @@ export const fr: LandingMessages = {
       replay: 'Rejouer',
       request: 'Ajoute trois garanties sous les offres.',
       reasoning:
-        'Les offres sont dans une colonne en auto-layout, donc une rangée de trois cartes peut se placer juste en dessous.',
+        'Les offres sont dans une colonne en auto-layout, donc une rangée de trois cartes peut se placer juste en dessous et suivre la mise en page. Chaque carte aura un titre court et une ligne de détail, avec le fond et l’arrondi des cartes d’offre, pour que la rangée fasse partie de la page.',
       reply:
         'J’ai ajouté une rangée **Guarantees** sous les offres : trois cartes qui reprennent le fond et le rayon des cartes d’offre.'
     },
@@ -204,7 +250,7 @@ export const fr: LandingMessages = {
       you: 'Vous',
       yourScreen: 'Votre écran',
       theirScreen: 'L’écran de Sam',
-      askAgent: 'Demander à l’agent',
+      askAgent: 'Demander à l’agent'
     },
     sdk: {
       copy: 'Copier',

@@ -1,23 +1,38 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 
-/** VitePress's `VPButton` takes no icon, so this mirrors its look from the same theme variables. */
+/**
+ * VitePress's `VPButton` takes no icon, so this mirrors its look from the same theme variables.
+ * With an `href` it is a link; without one it submits the form it sits in.
+ */
 const {
   href,
   icon,
-  primary = false
+  primary = false,
+  disabled = false
 } = defineProps<{
-  href: string
+  href?: string
   icon: Component
   primary?: boolean
+  disabled?: boolean
 }>()
 </script>
 
 <template>
-  <a class="action" :href="href" :data-primary="primary || undefined">
+  <a v-if="href" class="action" :href="href" :data-primary="primary || undefined">
     <component :is="icon" aria-hidden="true" />
     <slot />
   </a>
+  <button
+    v-else
+    class="action"
+    type="submit"
+    :disabled="disabled"
+    :data-primary="primary || undefined"
+  >
+    <component :is="icon" aria-hidden="true" />
+    <slot />
+  </button>
 </template>
 
 <style scoped>
@@ -57,6 +72,11 @@ const {
   border-color: var(--vp-button-brand-hover-border);
   background-color: var(--vp-button-brand-hover-bg);
   color: var(--vp-button-brand-hover-text);
+}
+
+.action:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }
 
 .action svg {
