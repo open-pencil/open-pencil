@@ -1,4 +1,4 @@
-import { deleteDB, openDB } from 'idb'
+import { deleteDB, openDB, type IDBPDatabase } from 'idb'
 
 import { APP_DATABASE_NAMES } from './database-names'
 
@@ -27,23 +27,28 @@ const asBlob: StoreBinary = (bytes) => new Blob([plainBytes(bytes)])
  * Whether the engine stores Blobs, found by storing one in a database of its own. WebKit fails a
  * Blob write in a private context with "Error preparing Blob/File data to be stored in object
  * store", and when the transaction holds another pending request it never aborts, blocking
- * every later write to those stores, so an app write cannot try a Blob and fall back.
+ * every later write to those stores, so an app write cannot try a Blob and fall back. Any failed
+ * Blob write means byte arrays; a probe database that cannot open or be removed says nothing
+ * about Blobs.
  */
 async function probeBlobs(): Promise<boolean> {
   const name = APP_DATABASE_NAMES.blobProbe
+  let database: IDBPDatabase
   try {
-    const database = await openDB(name, 1, {
+    database = await openDB(name, 1, {
       upgrade: (upgrading) => upgrading.createObjectStore('probe')
     })
-    try {
-      await database.put('probe', new Blob([new Uint8Array(1)]), 'probe')
-      return true
-    } finally {
-      database.close()
-      await deleteDB(name)
-    }
-  } catch (error) {
-    return !(error instanceof DOMException && error.message.includes('Blob/File data'))
+  } catch {
+    return true
+  }
+  try {
+    await database.put('probe', new Blob([new Uint8Array(1)]), 'probe')
+    return true
+  } catch {
+    return false
+  } finally {
+    database.close()
+    await deleteDB(name).catch(() => undefined)
   }
 }
 
