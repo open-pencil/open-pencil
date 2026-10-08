@@ -116,6 +116,12 @@ describe('Add variant', () => {
     await Promise.resolve()
     editor.runLayoutForNode(set.id)
     const width = set.width
+    // As loaded from a .fig: layout prefers the geometry the file saved.
+    for (const variant of editor.graph.getChildren(set.id))
+      editor.graph.updateNode(variant.id, {
+        derivedLayout: { x: variant.x, y: variant.y, width: variant.width, height: variant.height }
+      })
+    editor.graph.updateNode(set.id, { derivedLayout: { width, height: set.height } })
 
     const added = defined(editor.addVariant(set.id))
     const copy = defined(editor.graph.getNode(added))
@@ -124,6 +130,7 @@ describe('Add variant', () => {
     editor.undo.undo()
     expect(editor.graph.getNode(added)).toBeUndefined()
     expect(set.width).toBe(width)
+    expect(set.derivedLayout).toEqual({ width, height: set.height })
   })
 
   test('a duplicated variant keeps its values for the caller to change', () => {

@@ -9,7 +9,10 @@ import type { EditorContext } from '#core/editor/types'
 
 import { getComponentSet, getComponentSetVariants, getVariantDefinitions } from './model'
 
-type SetFields = Pick<SceneNode, 'componentPropertyDefinitions' | 'width' | 'height'>
+type SetFields = Pick<
+  SceneNode,
+  'componentPropertyDefinitions' | 'width' | 'height' | 'derivedLayout'
+>
 type VariantFields = Pick<
   SceneNode,
   'name' | 'componentPropertyValues' | 'componentPropertyDefinitions'
@@ -23,7 +26,8 @@ function setFields(node: SceneNode): SetFields {
   return {
     componentPropertyDefinitions: structuredClone(node.componentPropertyDefinitions),
     width: node.width,
-    height: node.height
+    height: node.height,
+    derivedLayout: structuredClone(node.derivedLayout)
   }
 }
 
@@ -120,7 +124,9 @@ export function appendVariant(
   const laidOut = set.layoutMode !== 'NONE'
   const fields: Partial<SceneNode> = {
     name: buildVariantName(ordered),
-    componentPropertyValues: values
+    componentPropertyValues: values,
+    // A new layer has no geometry a file saved for it; the source's would pin it in place.
+    derivedLayout: null
   }
   if (!laidOut) {
     fields.x = source.x
@@ -138,7 +144,8 @@ export function appendVariant(
     width: laidOut ? set.width : Math.max(set.width, clone.x + clone.width + VARIANT_SET_PADDING),
     height: laidOut
       ? set.height
-      : Math.max(set.height, clone.y + clone.height + VARIANT_SET_PADDING)
+      : Math.max(set.height, clone.y + clone.height + VARIANT_SET_PADDING),
+    derivedLayout: laidOut ? null : set.derivedLayout
   }
   // Auto layout sizes the set and places the copy; the stored size is only a starting point.
   const apply = (fields: SetFields) => {
