@@ -38,7 +38,10 @@ import {
   makeCanvasNodeChange
 } from '#core/kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
-import { populateReaderExport } from '#core/kiwi/fig/session/document-state'
+import {
+  populateFigInternalPages,
+  populateReaderExport
+} from '#core/kiwi/fig/session/document-state'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
 import {
@@ -395,6 +398,7 @@ async function writeFigFile(
   pageId: string | undefined,
   renderHeadlessThumbnail: boolean
 ): Promise<Uint8Array> {
+  populateFigInternalPages(sourceGraph)
   const graph = cloneSceneGraphForFigExport(sourceGraph)
   populateReaderExport(sourceGraph, graph)
   await initCodec()

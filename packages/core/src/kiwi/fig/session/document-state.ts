@@ -65,10 +65,31 @@ export function populateAllFigPages(graph: SceneGraph): boolean {
   return changed
 }
 
+/**
+ * Load the pages the editor never shows, such as Figma's internal canvas, into the document's own
+ * graph, so a save no longer opens a second session to read them into its copy. Their layers
+ * never draw and loading them is not an edit. Only a live session loads them: while a population
+ * worker still fills the graph, a second session must not, and the export reads them as before.
+ */
+export function populateFigInternalPages(graph: SceneGraph): boolean {
+  const session = states.get(graph)?.session
+  if (!session) return false
+  let changed = false
+  for (const page of session.pages) {
+    if (!page.internalOnly || session.loadedPageIds.has(page.id)) continue
+    graph.applyImportedStateDuring(() => session.loadPage(page.id))
+    changed = true
+  }
+  return changed
+}
+
 export function populateReaderExport(source: SceneGraph, target: SceneGraph): boolean {
   const state = states.get(source)
   if (!state) return false
-  const checkpoint = state.session?.checkpoint() ?? state.checkpoint
+  const live = state.session
+  // Every page is already in the graph the target was copied from.
+  if (live?.pages.every((page) => live.loadedPageIds.has(page.id))) return false
+  const checkpoint = live?.checkpoint() ?? state.checkpoint
   if (!checkpoint) throw new Error('Missing reader checkpoint')
   const session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
     graph: target,

@@ -1,5 +1,10 @@
 import { expect, test } from 'bun:test'
 
+import {
+  expectSaveLoadedOnlyInternalPages,
+  snapshotNodes
+} from '#core-tests/helpers/fig/save-contract'
+
 import { exportFigFile } from '@open-pencil/core/io'
 import {
   parseFigFile,
@@ -70,15 +75,23 @@ for (const populate of ['all', 'first-page', 'none'] as const) {
   })
 }
 
-test('edited export loads missing pages on an isolated graph', async () => {
+test('edited export loads missing visible pages on an isolated graph', async () => {
   const graph = await parseFigFile(await fixture(), { populate: 'first-page' })
   const pages = graph.getPages()
   const first = graph.getChildren(pages[0].id)[0]
   graph.updateNode(first.id, { text: 'Edited' })
-  const before = structuredClone([...graph.nodes])
+  const before = snapshotNodes(graph)
   const bytes = await exportFigFile(graph)
-  expect([...graph.nodes]).toEqual(before)
+  expectSaveLoadedOnlyInternalPages(graph, before)
   expect(graph.getChildren(pages[1].id)).toHaveLength(0)
+  const internalPage = graph.getPages(true).find((page) => page.internalOnly)
+  expect(graph.getChildren(internalPage?.id ?? '').map((node) => node.name)).toEqual([
+    'Retained internal content'
+  ])
+  // A second save finds the internal page already loaded and leaves the document as it was.
+  const loaded = snapshotNodes(graph)
+  await exportFigFile(graph)
+  expect(new Map(graph.nodes)).toEqual(loaded)
   const reopened = await parseFigFile(bytes.slice().buffer as ArrayBuffer)
   const reopenedPages = reopened.getPages()
   expect(reopened.getChildren(reopenedPages[0].id)[0].text).toBe('Edited')
@@ -95,14 +108,14 @@ test('edited export loads missing pages on an isolated graph', async () => {
 })
 
 // Figma keeps property defaults that name a deleted component; so does an edited export.
-test('export tolerates a deleted internal default without changing the live graph', async () => {
+test('export tolerates a deleted internal default without changing what the document held', async () => {
   const graph = await parseFigFile(await fixture(true), { populate: 'first-page' })
   const page = graph.getPages()[0]
   graph.updateNode(page.id, { name: 'Edited' })
-  const before = structuredClone([...graph.nodes])
+  const before = snapshotNodes(graph)
   const bytes = await exportFigFile(graph)
   expect(bytes.byteLength).toBeGreaterThan(0)
-  expect([...graph.nodes]).toEqual(before)
+  expectSaveLoadedOnlyInternalPages(graph, before)
   releaseFigPopulationWorker(graph)
 })
 
