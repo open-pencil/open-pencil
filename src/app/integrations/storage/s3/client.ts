@@ -1,6 +1,6 @@
 import type { S3Client } from '@aws-sdk/client-s3'
 
-import { storageFetch } from '@/app/integrations/storage/s3/fetch'
+import { asFetch, storageFetch } from '@/app/integrations/storage/s3/fetch'
 import type * as S3SDK from '@/app/integrations/storage/s3/sdk'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
 import type { LibraryObjectWriteOptions } from '@/app/integrations/storage/types'
@@ -36,7 +36,7 @@ export type UploadProgress = { sentBytes: number; totalBytes: number | null }
  * XMLHttpRequest when a progress callback is attached (uploads only).
  */
 function xhrFetch(onUploadProgress: (progress: UploadProgress) => void): typeof fetch {
-  return async (input) => {
+  return asFetch(async (input) => {
     if (!(input instanceof Request)) throw new TypeError('Expected a signed S3 request')
     // A Blob has a known size, so the browser sends Content-Length (required by B2).
     const body = await input.blob()
@@ -57,7 +57,7 @@ function xhrFetch(onUploadProgress: (progress: UploadProgress) => void): typeof 
       xhr.onerror = () => reject(new TypeError('Failed to fetch'))
       xhr.send(body)
     })
-  }
+  })
 }
 
 async function send<Output>(
