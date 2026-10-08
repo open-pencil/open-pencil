@@ -243,17 +243,21 @@ export function createComponentAuthoringActions(ctx: EditorContext) {
     return true
   }
 
-  /** Move a text, boolean or swap property among its siblings; `.fig` keeps the order. */
+  /**
+   * Move a property among its siblings; slots keep their place. `.fig` keeps the order, and a
+   * set's variant names follow its variant properties' order.
+   */
   function moveComponentProperty(ownerId: string, propertyId: string, index: number): boolean {
-    const editable = editableProperty(ownerId, propertyId)
-    if (!editable) return false
-    const { owner } = editable
+    const owner = ctx.graph.getNode(ownerId)
+    if (owner?.type !== 'COMPONENT' && owner?.type !== 'COMPONENT_SET') return false
+    assertNodeEditable(ctx.graph, ownerId)
     const ids = owner.componentPropertyDefinitions.map((definition) => definition.id)
     const movable = new Set(
       owner.componentPropertyDefinitions
-        .filter((definition) => AUTHORED_TYPES.has(definition.type))
+        .filter((definition) => definition.type !== 'SLOT')
         .map((definition) => definition.id)
     )
+    if (!movable.has(propertyId)) return false
     const order = moveWithin(ids, movable, propertyId, index)
     if (!order || isEqual(order, ids)) return !!order
     if (owner.type === 'COMPONENT_SET') return reorderPropertyDefinitions(ctx, owner.id, order)
