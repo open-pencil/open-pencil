@@ -34,6 +34,10 @@
         "accelerator": "CmdOrCtrl+Shift+S"
       },
       {
+        "id": "save-to-storage",
+        "label": "Save to Storage…"
+      },
+      {
         "type": "separator"
       },
       {

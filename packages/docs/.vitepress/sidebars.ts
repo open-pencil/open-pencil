@@ -38,6 +38,8 @@ export const userGuideSidebar = (
     items: [
       { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
       { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
+      // English only until translated; locales link to the canonical page.
+      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' },
     ],
   },
   {

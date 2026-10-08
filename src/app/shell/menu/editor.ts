@@ -11,6 +11,7 @@ import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { SHELL_MENU_IDS } from '@/app/shell/menu/shell'
 import { useAppTheme } from '@/app/shell/theme'
+import { saveDocumentToStorage } from '@/app/storage/workspace/save'
 import { createTab, closeTab, activeTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
@@ -42,6 +43,7 @@ export function useEditorMenu() {
     },
     save: () => void store.saveFigFile(),
     'save-as': () => void store.saveFigFileAs(),
+    'save-to-storage': () => void saveDocumentToStorage(store),
     'export-selection': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
     },
