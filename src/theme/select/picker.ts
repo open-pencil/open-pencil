@@ -10,8 +10,9 @@ const appPickerTheme = {
       floatingSurface,
       motionStyles.floating
     ],
-    header: 'flex items-center gap-1.5 border-b border-border px-3 py-2',
-    title: 'text-xs font-semibold text-surface',
+    // The title and close button line up with the panel's section headers and the search field.
+    header: 'flex h-9 shrink-0 items-center gap-1.5 border-b border-border pr-2 pl-3',
+    title: 'min-w-0 flex-1 truncate text-[11px] font-semibold text-surface',
     search: [panelFieldBase, 'relative m-2 flex h-7 shrink-0 items-center'],
     searchIcon: 'pointer-events-none absolute left-2 size-3.5 text-muted',
     input:
