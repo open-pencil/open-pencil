@@ -47,7 +47,11 @@ export const MapState: Story = {
 export const CreateMissing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('status')).toHaveTextContent('Still needed: Text.')
+    // Each demo section reports what it still needs; this one is the textarea's missing text.
+    const statuses = canvas.getAllByRole('status')
+    await expect(statuses.map((status) => status.textContent?.trim())).toContain(
+      'Still needed: Text.'
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Add text layer' }))
     await waitFor(() => expect(canvas.getByText('create text Text for value')).toBeVisible())
   }
