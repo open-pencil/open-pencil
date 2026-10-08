@@ -24,13 +24,14 @@ export function usePropertyBinding(field: BindableField) {
 
   /** A name no property of the component uses yet, from the layer's own name. */
   function suggestedName() {
-    const node = context.value?.node
-    const base =
-      field === 'VISIBLE' ? panels.value.showLayer({ name: node?.name ?? '' }) : node?.name
+    const name = context.value?.node.name.trim()
+    const stem =
+      (field === 'VISIBLE' && name ? panels.value.showLayer({ name }) : name) ||
+      fieldLabels.value[field]
     const taken = new Set(authoring.definitions.value.map((item) => item.name))
-    let name = base?.trim() || fieldLabels.value[field]
-    for (let suffix = 2; taken.has(name); suffix++) name = `${base} ${suffix}`
-    return name
+    let candidate = stem
+    for (let suffix = 2; taken.has(candidate); suffix++) candidate = `${stem} ${suffix}`
+    return candidate
   }
 
   return {

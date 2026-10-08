@@ -68,19 +68,26 @@ export function useComponentPropertyAuthoring() {
     }))
   })
 
-  /** Components a swap property's default can show, without one that would contain itself. */
+  /**
+   * Components a swap property's default can show. A linked layer must not end up holding its own
+   * component, and a property with no layers yet must still fit inside every owning component.
+   */
   function swapOptions(propertyId: string) {
     const definition = definitions.value.find((item) => item.id === propertyId)
-    const parentIds =
+    const layerParents =
       definition?.bindingGroups.flatMap((group) =>
         group.bindings.flatMap((binding) => (binding.node.parentId ? [binding.node.parentId] : []))
       ) ?? []
+    const owners = variants.value.length ? variants.value : (context.value?.owners ?? [])
     return instanceSwapOptions(
       editor.graph,
       components.value,
       definition ?? { id: '', name: '', type: 'INSTANCE_SWAP', defaultValue: '' },
       definition?.defaultValue ?? '',
-      parentIds
+      [
+        ...layerParents,
+        ...owners.filter((owner) => owner.type === 'COMPONENT').map((owner) => owner.id)
+      ]
     )
   }
 

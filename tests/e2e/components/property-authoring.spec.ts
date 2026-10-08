@@ -1,47 +1,22 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import {
+  componentPropertyDefinitions,
+  createPropertyAuthoringScene,
+  nestedInstanceText,
+  selectNode,
+  type PropertyAuthoringScene
+} from '#tests/helpers/components/properties'
 import { propertySection } from '#tests/helpers/properties'
-
-interface Fixture {
-  buttonId: string
-  labelId: string
-  cardId: string
-  cardInstanceId: string
-}
 
 let page: Page
 let canvas: CanvasHelper
-let ids: Fixture
+let ids: PropertyAuthoringScene
 
 async function select(nodeId: string) {
-  await page.evaluate((id) => window.openPencil?.getStore?.()?.select([id]), nodeId)
+  await selectNode(page, nodeId)
   await canvas.waitForRender()
-}
-
-async function definitions(componentId: string) {
-  return page.evaluate(
-    (id) =>
-      window.openPencil
-        ?.getStore?.()
-        ?.graph.getNode(id)
-        ?.componentPropertyDefinitions.map(({ name, type, defaultValue }) => ({
-          name,
-          type,
-          defaultValue
-        })) ?? [],
-    componentId
-  )
-}
-
-async function nestedLabel(instanceId: string) {
-  return page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    const action = store?.graph.getChildren(id).find((node) => node.name === 'Action')
-    return action
-      ? store?.graph.getChildren(action.id).find((node) => node.type === 'TEXT')?.text
-      : null
-  }, instanceId)
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -51,23 +26,7 @@ test.beforeAll(async ({ browser }) => {
   canvas = new CanvasHelper(page)
   await page.goto('/?test')
   await canvas.waitForInit()
-  ids = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const pageId = store.state.currentPageId
-    const button = store.graph.createNode('COMPONENT', pageId, { name: 'Button', width: 120 })
-    const label = store.graph.createNode('TEXT', button.id, { name: 'Label', text: 'Button' })
-    const card = store.graph.createNode('COMPONENT', pageId, { name: 'Card', y: 120, width: 200 })
-    const action = store.graph.createInstance(button.id, card.id, { name: 'Action' })
-    const cardInstance = store.graph.createInstance(card.id, pageId, { x: 300, y: 120 })
-    if (!action || !cardInstance) throw new Error('Expected instances')
-    return {
-      buttonId: button.id,
-      labelId: label.id,
-      cardId: card.id,
-      cardInstanceId: cardInstance.id
-    }
-  })
+  ids = await createPropertyAuthoringScene(page)
   await canvas.waitForRender()
 })
 
@@ -83,7 +42,7 @@ test('links a layer field to a new property from the section that owns the field
 
   await expect(typography.getByRole('button', { name: 'Detach property' })).toBeVisible()
   await expect
-    .poll(() => definitions(ids.buttonId))
+    .poll(() => componentPropertyDefinitions(page, ids.buttonId))
     .toEqual([{ name: 'Label', type: 'TEXT', defaultValue: 'Button' }])
 })
 
@@ -106,7 +65,7 @@ test('edits a property from its row and adds another from the section menu', asy
   await page.getByRole('menuitem', { name: 'Boolean' }).click()
 
   await expect
-    .poll(() => definitions(ids.buttonId))
+    .poll(() => componentPropertyDefinitions(page, ids.buttonId))
     .toEqual([
       { name: 'Caption', type: 'TEXT', defaultValue: 'Continue' },
       { name: 'Boolean', type: 'BOOLEAN', defaultValue: 'true' }
@@ -131,5 +90,5 @@ test('exposes a nested instance and sets its properties from the outer instance'
   const caption = instance.getByRole('textbox', { name: 'Caption' })
   await caption.fill('Upgrade')
   await caption.press('Enter')
-  await expect.poll(() => nestedLabel(ids.cardInstanceId)).toBe('Upgrade')
+  await expect.poll(() => nestedInstanceText(page, ids.cardInstanceId, 'Action')).toBe('Upgrade')
 })

@@ -1,6 +1,6 @@
 import type { SceneGraph } from '../index'
-import { getInstanceOverride } from '../instance-overrides'
 import { instanceMainComponent } from '../instances/main-component'
+import { walkInstanceSources } from '../instances/source-walk'
 import type { SceneNode } from '../types'
 import { componentPropertyDefinitions } from './properties'
 
@@ -25,34 +25,12 @@ export function exposableInstances(graph: SceneGraph, componentId: string): Scen
  * layer order. Each is matched to its source the way instance sync matches children.
  */
 export function exposedInstances(graph: SceneGraph, instance: SceneNode): SceneNode[] {
-  if (instance.type !== 'INSTANCE' || !instance.componentId) return []
-  const component = graph.getNode(instance.componentId)
-  if (!component) return []
   const found: SceneNode[] = []
-  const visit = (sourceParent: SceneNode, instanceParent: SceneNode): void => {
-    const bySource = new Map<string, SceneNode>()
-    for (const child of graph.getChildren(instanceParent.id)) {
-      const mapped = getInstanceOverride(
-        instance.instanceOverrides,
-        instance.id,
-        child.id,
-        'sourceComponentId'
-      )
-      const sourceId = typeof mapped === 'string' ? mapped : child.componentId
-      if (sourceId) bySource.set(sourceId, child)
-    }
-    for (const sourceId of sourceParent.childIds) {
-      const source = graph.getNode(sourceId)
-      const target = bySource.get(sourceId)
-      if (!source || !target) continue
-      if (source.type === 'INSTANCE') {
-        if (source.isExposedInstance) found.push(target)
-      } else {
-        visit(source, target)
-      }
-    }
-  }
-  visit(component, instance)
+  walkInstanceSources(graph, instance, (source, target) => {
+    if (source.type !== 'INSTANCE') return true
+    if (source.isExposedInstance) found.push(target)
+    return false
+  })
   return found
 }
 

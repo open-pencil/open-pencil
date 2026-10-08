@@ -1,3 +1,5 @@
+import { pick } from 'es-toolkit/object'
+
 import {
   applyComponentPropertyValue,
   cloneInstanceOverrideState,
@@ -9,6 +11,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { EditorContext } from '#core/editor/types'
 
 import { componentAuthoringContext, componentPropertySources } from './context'
+import { componentPropertyTextChanges } from './values'
 
 /**
  * Text typed into a layer a text property drives becomes the property's value, as in Figma:
@@ -25,6 +28,24 @@ export function applyBoundTextEdit(ctx: EditorContext, nodeId: string, text: str
   else setInstanceValue(ctx, node, propertyId, text)
 }
 
+interface LayerChanges {
+  id: string
+  changes: Partial<SceneNode>
+}
+
+/** What showing `text` changes on each layer, resizing included, and what it changes back. */
+function layerTextChanges(layers: SceneNode[], text: string) {
+  const after: LayerChanges[] = layers.map((layer) => ({
+    id: layer.id,
+    changes: componentPropertyTextChanges(layer, text)
+  }))
+  const before: LayerChanges[] = after.map(({ id, changes }, index) => ({
+    id,
+    changes: pick(layers[index], Object.keys(changes) as (keyof SceneNode)[])
+  }))
+  return { before, after }
+}
+
 function setDefault(ctx: EditorContext, node: SceneNode, propertyId: string, text: string) {
   const context = componentAuthoringContext(ctx.graph, node.id)
   const owner = context?.owners.find((item) =>
@@ -36,23 +57,22 @@ function setDefault(ctx: EditorContext, node: SceneNode, propertyId: string, tex
   const after = before.map((item) =>
     item.id === propertyId ? { ...item, defaultValue: text } : item
   )
-  // Every other layer the property drives shows the same default.
-  const others = componentPropertySources(ctx.graph, owner.id, propertyId).filter(
-    (source) => source.node.id !== node.id && source.node.type === 'TEXT'
+  // Every other layer the property drives shows the same default, resized as an edit would be.
+  const others = componentPropertySources(ctx.graph, owner.id, propertyId).flatMap((source) =>
+    source.node.id !== node.id && source.node.type === 'TEXT' ? [source.node] : []
   )
-  const othersBefore = others.map((source) => [source.node.id, source.node.text] as const)
-  const apply = (definitions: typeof before, texts: (readonly [string, string])[]) => {
+  const { before: othersBefore, after: othersAfter } = layerTextChanges(others, text)
+  const apply = (definitions: typeof before, layers: LayerChanges[]) => {
     ctx.graph.updateNode(owner.id, { componentPropertyDefinitions: structuredClone(definitions) })
-    for (const [id, value] of texts) ctx.graph.updateNode(id, { text: value })
+    for (const layer of layers) {
+      ctx.graph.updateNode(layer.id, structuredClone(layer.changes))
+      ctx.runLayoutForNode(layer.id)
+    }
     ctx.requestRender()
   }
   ctx.undo.execute({
     label: 'Edit text',
-    forward: () =>
-      apply(
-        after,
-        othersBefore.map(([id]) => [id, text] as const)
-      ),
+    forward: () => apply(after, othersAfter),
     inverse: () => apply(before, othersBefore)
   })
 }
@@ -76,26 +96,26 @@ function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: strin
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
     instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
   }
-  // Other layers the property drives in this instance change with it, and undo with it.
-  const othersBefore = findComponentPropertyTargets(ctx.graph, instance, propertyId)
-    .filter((target) => target.node.id !== node.id && target.node.type === 'TEXT')
-    .map((target) => [target.node.id, target.node.text] as const)
+  // Other layers the property drives in this instance change and resize with it, and undo with it.
+  const others = findComponentPropertyTargets(ctx.graph, instance, propertyId).flatMap((target) =>
+    target.node.id !== node.id && target.node.type === 'TEXT' ? [target.node] : []
+  )
+  const { before: othersBefore, after: othersAfter } = layerTextChanges(others, text)
+  const apply = (values: typeof before, layers: LayerChanges[]) => {
+    ctx.graph.updateNode(instance.id, structuredClone(values))
+    for (const layer of layers) ctx.graph.updateNode(layer.id, structuredClone(layer.changes))
+    ctx.runLayoutForNode(instance.id)
+    ctx.requestRender()
+  }
   applyComponentPropertyValue(ctx.graph, instance.id, definition, text)
   const after = {
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
     instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
   }
+  apply(after, othersAfter)
   ctx.undo.push({
     label: 'Edit text',
-    forward: () => {
-      applyComponentPropertyValue(ctx.graph, instance.id, definition, text)
-      ctx.graph.updateNode(instance.id, structuredClone(after))
-      ctx.requestRender()
-    },
-    inverse: () => {
-      ctx.graph.updateNode(instance.id, structuredClone(before))
-      for (const [id, value] of othersBefore) ctx.graph.updateNode(id, { text: value })
-      ctx.requestRender()
-    }
+    forward: () => apply(after, othersAfter),
+    inverse: () => apply(before, othersBefore)
   })
 }
