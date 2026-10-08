@@ -126,7 +126,11 @@ describe('touch-target-size', () => {
     const pageId = graph.getPages()[0].id
     graph.createNode('RECTANGLE', pageId, { name: 'Rectangle', width: 1, height: 80 })
     graph.createNode('FRAME', pageId, { name: 'Tablet preview', width: 20, height: 20 })
-    const iconButton = graph.createNode('FRAME', pageId, { name: 'IconButton2', width: 32, height: 32 })
+    const iconButton = graph.createNode('FRAME', pageId, {
+      name: 'IconButton2',
+      width: 32,
+      height: 32
+    })
 
     expect(lint(graph, 'touch-target-size').map((message) => message.nodeId)).toEqual([
       iconButton.id

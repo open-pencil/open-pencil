@@ -1,11 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { getCanvasKit } from '#core/canvaskit'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
-
-import { SceneGraph } from '@open-pencil/scene-graph'
 
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 

@@ -118,6 +118,11 @@
       "import": "./dist/io/formats/raster/index.js",
       "default": "./dist/io/formats/raster/index.js"
     },
+    "./io/formats/design-tokens": {
+      "types": "./dist/io/formats/design-tokens/index.d.ts",
+      "import": "./dist/io/formats/design-tokens/index.js",
+      "default": "./dist/io/formats/design-tokens/index.js"
+    },
     "./io/formats/svg": {
       "types": "./dist/io/formats/svg/index.d.ts",
       "import": "./dist/io/formats/svg/index.js",

@@ -98,7 +98,8 @@ openpencil tokens [file] [options]
 
 | Option | Description |
 |--------|-------------|
-| `--format` | `css` (default), or `tailwind` for a Tailwind v4 `@theme` with a `@custom-variant` per mode |
+| `--format` | `css` (default), `tailwind` for a Tailwind v4 `@theme` with a `@custom-variant` per mode, or `dtcg` for W3C design token files |
+| `--out`, `-o` | Folder the `dtcg` files are written to; required for that format |
 | `--collection` | Filter by collection name |
 | `--type` | Filter by type: `COLOR`, `FLOAT`, `STRING`, `BOOLEAN` |
 | `--json` | Output `{ css, tokenCount, issues }` as JSON |

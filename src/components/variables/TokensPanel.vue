@@ -40,7 +40,7 @@ import tokensPanelTheme, {
   TOKENS_PANEL_SIDEBAR_WIDTH
 } from '@/theme/tokens-panel'
 
-const emit = defineEmits<{ copy: [format: TokenStylesheetFormat] }>()
+const emit = defineEmits<{ copy: [format: TokenStylesheetFormat]; export: [] }>()
 
 const { variables: messages, common } = useI18n()
 const ui = tv(tokensPanelTheme)()
@@ -375,6 +375,7 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
           :collection-id="collection.id"
           layout="full"
           @copy="emit('copy', $event)"
+          @export="emit('export')"
         />
       </template>
 
@@ -511,7 +512,11 @@ const groupOptions = computed(() => groupEntries.value.map((entry) => entry.path
           />
         </Transition>
       </div>
-      <TokenOutput :collection-id="collection.id" @copy="emit('copy', $event)" />
+      <TokenOutput
+        :collection-id="collection.id"
+        @copy="emit('copy', $event)"
+        @export="emit('export')"
+      />
     </template>
   </div>
 </template>

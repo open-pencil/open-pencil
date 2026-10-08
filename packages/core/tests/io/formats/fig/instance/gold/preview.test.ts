@@ -1,13 +1,20 @@
 import { expect, test } from 'bun:test'
 
-import { interpretInstance, linkInstanceSourceChildren, mapInstanceSourceChildren, materializeComponentClosure, materializeInstance, type InstanceOccurrence } from '@open-pencil/fig/instance-overrides'
+import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
+
 import { FigmaAPI } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
+import {
+  interpretInstance,
+  linkInstanceSourceChildren,
+  mapInstanceSourceChildren,
+  materializeComponentClosure,
+  materializeInstance,
+  type InstanceOccurrence
+} from '@open-pencil/fig/instance-overrides'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
 
 function named(node: InstanceOccurrence, name: string): InstanceOccurrence {
   const child = node.children.find((candidate) => candidate.properties.name === name)

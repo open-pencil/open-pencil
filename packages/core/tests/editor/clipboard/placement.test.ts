@@ -36,10 +36,17 @@ describe('duplicate placement', () => {
   test('duplicates a layer on top of the original', () => {
     const page = setup()
     const frame = node('FRAME', page, { width: 200, height: 200 })
-    for (const original of [node('RECTANGLE', page, { x: 100, y: 100 }), node('FRAME', frame.id, { x: 50, y: 50 })]) {
+    for (const original of [
+      node('RECTANGLE', page, { x: 100, y: 100 }),
+      node('FRAME', frame.id, { x: 50, y: 50 })
+    ]) {
       editor.select([original.id])
       editor.duplicateSelected()
-      expect(selected()).toMatchObject({ parentId: original.parentId, x: original.x, y: original.y })
+      expect(selected()).toMatchObject({
+        parentId: original.parentId,
+        x: original.x,
+        y: original.y
+      })
     }
   })
 

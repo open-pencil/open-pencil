@@ -54,7 +54,7 @@ Common commands:
 - `find` — find nodes by name/type
 - `query` — XPath selectors for node search
 - `variables` — list variables and collections
-- `tokens` — variables as a CSS custom-property stylesheet or Tailwind v4 theme
+- `tokens` — variables as a CSS custom-property stylesheet, a Tailwind v4 theme, or W3C design token files (`--format dtcg --out <folder>`)
 - `export` — export PNG/JPG/WEBP/SVG/PDF/JSX/.fig
 - `convert` — convert between supported document formats
 - `analyze` — colors, typography, spacing, repeated clusters
@@ -79,6 +79,7 @@ openpencil selection --json
 openpencil variables design.fig
 openpencil variables --collection "Colors" --type COLOR
 openpencil tokens design.fig --format tailwind > theme.css
+openpencil tokens design.fig --format dtcg --out tokens  # W3C design tokens; import_design_tokens reads them back
 ```
 
 ### Search and XPath query

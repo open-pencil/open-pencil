@@ -1,12 +1,21 @@
 <script setup lang="ts">
+import { useFileDialog } from '@vueuse/core'
 import { DialogTitle } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { computed, defineAsyncComponent, ref, shallowRef } from 'vue'
 
+import type { DesignTokenBundle } from '@open-pencil/core/io/formats/design-tokens'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTokenCopy } from '@/app/editor/tokens/copy'
+import {
+  DESIGN_TOKEN_FILE_ACCEPT,
+  exportDesignTokenArchive,
+  readDesignTokenFiles
+} from '@/app/editor/tokens/design-tokens'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { useDocumentShortcuts } from '@/app/shell/keyboard/document'
+import { toast } from '@/app/shell/ui'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppDialogClose, AppDialogRoot } from '@/components/ui/dialog'
 import TokensPanel from '@/components/variables/TokensPanel.vue'
@@ -26,6 +35,37 @@ const { variables, common } = useI18n()
 /** Expanding gives a large design system most of the window; it is kept for this session. */
 const expanded = ref(false)
 const copyTokens = createTokenCopy(store)
+
+const TokenImportDialog = defineAsyncComponent(
+  () => import('@/components/variables/TokenImportDialog.vue')
+)
+const importBundle = shallowRef<DesignTokenBundle | null>(null)
+const importOpen = ref(false)
+
+function reportFailure(error: unknown) {
+  toast.error(
+    notificationMessages
+      .get()
+      .operationFailed({ error: error instanceof Error ? error.message : String(error) })
+  )
+}
+
+/** Token files, a folder's worth, or a zip of them; the import dialog shows what they would do. */
+const tokenFiles = useFileDialog({ accept: DESIGN_TOKEN_FILE_ACCEPT, multiple: true, reset: true })
+tokenFiles.onChange((files) => {
+  if (!files?.length) return
+  const picked = [...files]
+  void (async () => {
+    const sources = await readDesignTokenFiles(picked)
+    const { readDesignTokens } = await import('@open-pencil/core/io/formats/design-tokens')
+    importBundle.value = readDesignTokens(sources)
+    importOpen.value = true
+  })().catch(reportFailure)
+})
+
+function exportTokens() {
+  exportDesignTokenArchive(store).catch(reportFailure)
+}
 </script>
 
 <template>
@@ -38,8 +78,15 @@ const copyTokens = createTokenCopy(store)
     :aria-describedby="undefined"
   >
     <DialogTitle class="sr-only">{{ variables.localVariables }}</DialogTitle>
-    <TokensPanel @copy="copyTokens">
+    <TokensPanel @copy="copyTokens" @export="exportTokens">
       <template #actions>
+        <IconButton
+          :label="variables.importDesignTokens"
+          data-test-id="variables-import-tokens"
+          @click="tokenFiles.open()"
+        >
+          <icon-lucide-file-input class="size-3.5" />
+        </IconButton>
         <IconButton
           :label="expanded ? variables.collapse : variables.expand"
           data-test-id="variables-expand"
@@ -51,5 +98,6 @@ const copyTokens = createTokenCopy(store)
         <AppDialogClose :ariaLabel="common.close" />
       </template>
     </TokensPanel>
+    <TokenImportDialog v-if="importBundle" v-model:open="importOpen" :bundle="importBundle" />
   </AppDialogRoot>
 </template>

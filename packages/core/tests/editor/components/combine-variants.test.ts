@@ -8,7 +8,12 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 function components(editor: ReturnType<typeof createEditor>) {
   const page = editor.state.currentPageId
-  const a = editor.graph.createNode('COMPONENT', page, { name: 'v=a', x: 200, width: 60, height: 60 })
+  const a = editor.graph.createNode('COMPONENT', page, {
+    name: 'v=a',
+    x: 200,
+    width: 60,
+    height: 60
+  })
   const b = editor.graph.createNode('COMPONENT', page, {
     name: 'v=b',
     x: 300,

@@ -27,5 +27,7 @@
   "deepLinkCancelled": "Link annullato: era atteso un file che termina con «{file}».",
   "deepLinkNodeNotFound": "Il livello «{node}» non è stato trovato in «{file}».",
   "openQueuedFilesFailed": "Impossibile aprire i file passati a OpenPencil: {error}",
-  "tokensLeftOut": "Esclusi dal foglio di stile: {names}."
+  "tokensLeftOut": "Esclusi dal foglio di stile: {names}.",
+  "designTokensLeftOut": "Esclusi dai design token: {names}.",
+  "designTokensImported": "Importati {count} design token."
 }

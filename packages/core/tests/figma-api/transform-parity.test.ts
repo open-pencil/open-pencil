@@ -9,8 +9,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 const round = (value: number) => Math.round(value * 1000) / 1000
 const rounded = (rows: readonly (readonly number[])[]) => rows.map((row) => row.map(round))
-const box = (rect: Rect) =>
-  [rect.x, rect.y, rect.width, rect.height].map(round)
+const box = (rect: Rect) => [rect.x, rect.y, rect.width, rect.height].map(round)
 
 function rectangle() {
   const figma = new FigmaAPI(new SceneGraph())
