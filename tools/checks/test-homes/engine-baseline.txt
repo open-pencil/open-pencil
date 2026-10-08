@@ -70,7 +70,6 @@ tests/engine/app/integrations/mcp-connections.test.ts
 tests/engine/app/integrations/pi-mcp.test.ts
 tests/engine/app/integrations/storage/cancellation.test.ts
 tests/engine/app/integrations/storage/cors.test.ts
-tests/engine/app/integrations/storage/list-objects.test.ts
 tests/engine/app/integrations/storage/namespace.test.ts
 tests/engine/app/integrations/storage/region.test.ts
 tests/engine/app/integrations/storage/registry.test.ts

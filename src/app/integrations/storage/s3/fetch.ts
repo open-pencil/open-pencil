@@ -21,7 +21,9 @@ export async function storageFetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const { signal, timedOut } = storageFetchSignal(init?.signal)
+  const { signal, timedOut } = storageFetchSignal(
+    init?.signal ?? (input instanceof Request ? input.signal : null)
+  )
   try {
     if (isTauri()) {
       const { tauriFetch } = await import('@/app/tauri/http')

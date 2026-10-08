@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { createS3StorageAdapter } from '@/app/integrations/storage/s3/adapter'
-import { readDownloadResponse } from '@/app/integrations/storage/s3/client'
+import { readDownloadStream } from '@/app/integrations/storage/s3/client'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 
 test('mid-stream cancellation discards partial bytes and stops progress', async () => {
@@ -17,9 +17,9 @@ test('mid-stream cancellation discards partial bytes and stops progress', async 
       cancelled = true
     }
   })
-  const response = new Response(stream, { headers: { 'content-length': '4' } })
-  const reading = readDownloadResponse(
-    response,
+  const reading = readDownloadStream(
+    stream,
+    4,
     ({ receivedBytes }) => {
       progress.push(receivedBytes)
       abort.abort()
