@@ -36,6 +36,7 @@ const {
   totalVariants?: number
   disabled?: boolean
 }>()
+defineSlots<{ default?(): unknown }>()
 const emit = defineEmits<{
   rename: [name: string]
   update: [value: string]
@@ -112,18 +113,21 @@ const shownValue = computed(() => {
               @enter="commitName"
             />
           </PanelFieldGroup>
-          <PanelFieldGroup :label="panels.componentPropertyDefault">
-            <div class="flex">
-              <PropertyValueField
-                :kind="kind"
-                :value="value"
-                :label="panels.componentPropertyDefault"
-                :options="options"
-                :disabled="disabled"
-                @update="emit('update', $event)"
-              />
-            </div>
-          </PanelFieldGroup>
+          <!-- A variant property edits its values here instead of a default. -->
+          <slot>
+            <PanelFieldGroup :label="panels.componentPropertyDefault">
+              <div class="flex">
+                <PropertyValueField
+                  :kind="kind"
+                  :value="value"
+                  :label="panels.componentPropertyDefault"
+                  :options="options"
+                  :disabled="disabled"
+                  @update="emit('update', $event)"
+                />
+              </div>
+            </PanelFieldGroup>
+          </slot>
           <PanelFieldGroup v-if="groups.length" :label="panels.layers">
             <div class="flex flex-col gap-0.5">
               <PropertyBindings

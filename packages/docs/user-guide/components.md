@@ -27,7 +27,7 @@ Select two or more components and press <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>
 
 Each component in a set can define values across multiple variant dimensions, such as `Size=Small`, `State=Hover`, and `Theme=Dark`. OpenPencil supports sparse combinations, so a set does not need every possible combination. The top-left variant is the default and is used as the fallback when an update no longer contains an exact combination.
 
-Use the component properties panel to add, rename, reorder, and remove variant dimensions and values. Duplicate combinations are rejected.
+Select a component and press **Add variant** in the panel header to turn it into a component set, as Figma does: the component becomes `Property 1=Default` and a copy named `Property 1=Variant2` appears below it. On a set, **Add variant** copies its last variant with the next value. The set's variant properties are rows of its **Properties** list; click one to rename it or to add, rename, drag to reorder, or remove its values. Removing a value variants still use moves them to another value first, and variants that share every value are named in a notice that selects them.
 
 ## Component Properties
 

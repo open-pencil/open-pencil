@@ -21,15 +21,17 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 import PropertyRow from './PropertyRow.vue'
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
+import VariantValueList from './variant/VariantValueList.vue'
 
 /** A main component's text, boolean and swap properties, and the nested instances it exposes. */
 const authoring = useComponentPropertyAuthoring()
-const { context, definitions, nestedInstances, editable } = authoring
+const { context, definitions, rows, conflicts, componentSet, nestedInstances, editable } = authoring
 const { panels, common } = useI18n()
 const menu = useMenuUI({ content: 'min-w-44' })
 const item = menuItem({ justify: 'start' })
@@ -52,8 +54,11 @@ const nestedStyles = usePopoverUI({
 const isComponent = computed(
   () => context.value?.node.type === 'COMPONENT' || context.value?.node.type === 'COMPONENT_SET'
 )
-const ownDefinitions = computed(() =>
-  definitions.value.filter((definition) => definition.ownerId === context.value?.owner.id)
+/** Rows the owner holds itself; a variant's own properties keep their place. */
+const ownRows = computed(() =>
+  rows.value.filter(
+    (row) => row.kind === 'variant' || row.property.ownerId === context.value?.owner.id
+  )
 )
 const exposed = computed(() => nestedInstances.value.filter((node) => node.exposed))
 const NEW_PROPERTIES: { type: ComponentPropertyType; label: () => string }[] = [
@@ -63,14 +68,14 @@ const NEW_PROPERTIES: { type: ComponentPropertyType; label: () => string }[] = [
 ]
 
 const reorder = useFlatReorderDrag({
-  items: () => ownDefinitions.value,
+  items: () => ownRows.value,
   onMove: (propertyId, index) => {
     if (context.value) authoring.move(context.value.owner.id, propertyId, index)
   }
 })
 
 function setupRow(element: Element | ComponentPublicInstance | null, propertyId: string) {
-  if (!ownDefinitions.value.some((definition) => definition.id === propertyId)) return
+  if (!ownRows.value.some((row) => row.id === propertyId)) return
   reorder.setupItem(element instanceof HTMLElement ? element : null, () => ({ id: propertyId }))
 }
 
@@ -137,6 +142,15 @@ function valueLabel(type: ComponentPropertyType, value: string) {
                   <PropertyTypeIcon :kind="option.type" />
                   {{ option.label() }}
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  v-if="componentSet"
+                  :class="item"
+                  data-property-type="VARIANT"
+                  @select="authoring.addVariantProperty()"
+                >
+                  <PropertyTypeIcon kind="VARIANT" />
+                  {{ panels.componentPropertyVariant }}
+                </DropdownMenuItem>
                 <template v-if="nestedInstances.length">
                   <DropdownMenuSeparator :class="menu.separator" />
                   <DropdownMenuItem
@@ -153,33 +167,85 @@ function valueLabel(type: ComponentPropertyType, value: string) {
           </DropdownMenuRoot>
         </template>
 
-        <div v-if="definitions.length" class="-mx-1.5 flex flex-col">
+        <div
+          v-for="conflict in conflicts"
+          :key="conflict.label"
+          role="alert"
+          class="flex items-start gap-1.5 rounded bg-issue-warning/10 px-2 py-1.5 text-[11px] leading-4 text-issue-warning"
+        >
+          <icon-lucide-triangle-alert class="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+          <span class="min-w-0 flex-1">
+            {{
+              panels.variantsShareValues({
+                count: conflict.componentIds.length,
+                values: conflict.label
+              })
+            }}
+          </span>
+          <button
+            type="button"
+            class="shrink-0 underline-offset-2 hover:underline"
+            @click="authoring.selectNodes(conflict.componentIds)"
+          >
+            {{ panels.selectVariants }}
+          </button>
+        </div>
+
+        <div v-if="rows.length" class="-mx-1.5 flex flex-col">
           <div
-            v-for="definition in definitions"
-            :key="definition.id"
-            :ref="(element) => setupRow(element, definition.id)"
+            v-for="row in rows"
+            :key="row.id"
+            :ref="(element) => setupRow(element, row.id)"
             class="relative data-[dragging]:opacity-50"
-            :data-dragging="reorder.draggingId.value === definition.id || undefined"
+            :data-dragging="reorder.draggingId.value === row.id || undefined"
           >
             <div
-              v-if="dropPosition(definition.id)"
+              v-if="dropPosition(row.id)"
               class="pointer-events-none absolute inset-x-1 z-10 h-0.5 rounded-full bg-accent"
-              :class="dropPosition(definition.id) === 'before' ? 'top-0' : 'bottom-0'"
+              :class="dropPosition(row.id) === 'before' ? 'top-0' : 'bottom-0'"
             />
             <PropertyRow
-              :name="definition.name"
-              :kind="definition.type"
-              :value="definition.defaultValue"
-              :value-label="valueLabel(definition.type, definition.defaultValue)"
+              v-if="row.kind === 'variant'"
+              :name="row.variant.name"
+              kind="VARIANT"
+              :value="row.variant.values[0] ?? ''"
+              :value-label="row.variant.values.join(', ')"
+              :disabled="!editable"
+              @rename="authoring.renameVariantProperty(row.id, $event)"
+              @remove="authoring.removeVariantProperty(row.id)"
+            >
+              <PanelFieldGroup :label="panels.variantValues">
+                <VariantValueList
+                  :name="row.variant.name"
+                  :values="row.variant.values"
+                  :used="row.variant.used"
+                  :disabled="!editable"
+                  :rename="
+                    (previous, value) => authoring.renameVariantValue(row.id, previous, value)
+                  "
+                  :reorder="(values) => authoring.reorderVariantValues(row.id, values)"
+                  :add="(value) => authoring.addVariantValue(row.id, value)"
+                  :remove="
+                    (value, replacement) => authoring.removeVariantValue(row.id, value, replacement)
+                  "
+                />
+              </PanelFieldGroup>
+            </PropertyRow>
+            <PropertyRow
+              v-else
+              :name="row.property.name"
+              :kind="row.property.type"
+              :value="row.property.defaultValue"
+              :value-label="valueLabel(row.property.type, row.property.defaultValue)"
               :options="
-                definition.type === 'INSTANCE_SWAP' ? authoring.swapOptions(definition.id) : []
+                row.property.type === 'INSTANCE_SWAP' ? authoring.swapOptions(row.property.id) : []
               "
-              :groups="definition.bindingGroups"
+              :groups="row.property.bindingGroups"
               :total-variants="authoring.variantCount.value"
               :disabled="!editable"
-              @rename="authoring.rename(definition.ownerId, definition.id, $event)"
-              @update="authoring.setDefault(definition.ownerId, definition.id, $event)"
-              @remove="authoring.remove(definition.ownerId, definition.id)"
+              @rename="authoring.rename(row.property.ownerId, row.property.id, $event)"
+              @update="authoring.setDefault(row.property.ownerId, row.property.id, $event)"
+              @remove="authoring.remove(row.property.ownerId, row.property.id)"
               @select="authoring.select"
               @unbind="
                 (binding) =>

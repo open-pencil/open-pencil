@@ -33,7 +33,7 @@ const item = menuItem({ justify: 'start' })
         :disabled="!binding.editable.value"
         :data-property-bind="field"
       >
-        <icon-lucide-diamond-plus class="size-3.5" />
+        <icon-lucide-link class="size-3.5" />
       </IconButton>
     </DropdownMenuTrigger>
     <DropdownMenuPortal>

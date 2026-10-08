@@ -130,6 +130,14 @@ const { panels } = useI18n()
           <template v-else>{{ node.name }}</template>
         </span>
         <template #actions>
+          <IconButton
+            v-if="node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'"
+            :label="panels.addVariant"
+            data-test-id="add-variant"
+            @click="store.addVariant(node.id)"
+          >
+            <icon-lucide-diamond-plus class="size-3.5" />
+          </IconButton>
           <PropertyBindButton v-if="node.type === 'INSTANCE'" field="INSTANCE_SWAP" />
           <InstanceUpdateAction
             v-if="node.type === 'INSTANCE'"
