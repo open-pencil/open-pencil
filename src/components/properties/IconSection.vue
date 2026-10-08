@@ -18,7 +18,12 @@ const styles = tv(theme)()
 <template>
   <PanelSection v-if="name" :label="panels.icon">
     <PanelFieldGroup :label="panels.swapIcon">
-      <IconPicker :heading="panels.swapIcon" :selected="name" @select="swap">
+      <IconPicker
+        :heading="panels.swapIcon"
+        :selected="name"
+        :set="name.slice(0, name.indexOf(':'))"
+        @select="swap"
+      >
         <template #trigger>
           <button
             type="button"

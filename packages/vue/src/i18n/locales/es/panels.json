@@ -420,6 +420,16 @@
   "iconSearchHint": "Escribe para buscar entre más de 200.000 iconos de código abierto",
   "iconSearchFailed": "No se pudieron cargar los iconos. Comprueba tu conexión.",
   "insertIconFailed": "No se pudo insertar el icono.",
+  "iconSet": "Conjunto de iconos",
+  "allIconSets": "Todos los conjuntos",
+  "searchIconSets": "Buscar conjuntos de iconos...",
+  "noIconSetsFound": "No se encontraron conjuntos",
+  "recentIcons": "Recientes",
+  "iconsInFile": "En este archivo",
+  "iconSetCount": {
+    "one": "{count} icono",
+    "many": "{count} iconos"
+  },
   "noLocalFontsAvailable": "No hay fuentes locales disponibles.",
   "localFontsAccessHint": "Usa la aplicación de escritorio o Chrome/Edge para acceder a las fuentes del sistema.",
   "editColor": "Editar color",

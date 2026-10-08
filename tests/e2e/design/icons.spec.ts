@@ -17,13 +17,15 @@ const SET = {
 }
 
 const ctx = useEditorSetupWithClear()
-const requests = { search: 0, sets: 0 }
+/** Requests per endpoint, and the set each search was limited to. */
+const requests = { search: 0, sets: 0, searchPrefixes: [] as (string | null)[] }
 
 test.beforeAll(async () => {
   await ctx.page.route('https://api.iconify.design/**', async (route) => {
     const url = new URL(route.request().url())
     if (url.pathname === '/search') {
       requests.search++
+      requests.searchPrefixes.push(url.searchParams.get('prefix'))
       await route.fulfill({
         json: {
           icons: ['test:square', 'test:ring'],
@@ -31,16 +33,23 @@ test.beforeAll(async () => {
           collections: { test: { name: 'Test Icons', total: 2 } }
         }
       })
-      return
+    } else if (url.pathname === '/collections') {
+      await route.fulfill({
+        json: { test: { name: 'Test Icons', total: 2, license: { title: 'MIT' } } }
+      })
+    } else if (url.pathname === '/collection') {
+      await route.fulfill({ json: { uncategorized: ['square', 'ring'] } })
+    } else {
+      requests.sets++
+      await route.fulfill({ json: SET })
     }
-    requests.sets++
-    await route.fulfill({ json: SET })
   })
 })
 
 test.beforeEach(() => {
   requests.search = 0
   requests.sets = 0
+  requests.searchPrefixes = []
 })
 
 async function pick(page: Page, picker: string, query: string, icon: string) {
@@ -65,7 +74,7 @@ test('the toolbar inserts a picked icon, selected, as one undo step', async () =
   expect(icon).toMatchObject({ type: 'FRAME', name: 'Icon / test:square', width: 24 })
   expect(icon?.childIds).toHaveLength(1)
   // The search previews and the placed icon load the set once between them.
-  expect(requests).toEqual({ search: 1, sets: 1 })
+  expect(requests).toMatchObject({ search: 1, sets: 1 })
 
   await canvas.undo()
   expect(await getPageChildren(page)).toEqual([])
@@ -119,4 +128,46 @@ test('the Icon section recolors the icon', async () => {
   await expect
     .poll(async () => (await getNodeById(page, pathId))?.fills[0]?.color)
     .toMatchObject({ r: 0, g: 0, b: 0 })
+})
+
+test('a chosen set is browsed without a query, and a query searches only it', async () => {
+  const { page } = ctx
+  await page.getByRole('button', { name: 'Insert icon' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Insert icon' })
+  await dialog.getByRole('button', { name: 'Icon set' }).click()
+  await page.getByRole('option', { name: /Test Icons/ }).click()
+
+  // Each icon of the set shows once, under the set or ahead of it as recent.
+  await expect(dialog.getByRole('option')).toHaveCount(2)
+  expect(requests.search).toBe(0)
+
+  await dialog.getByRole('textbox').fill('shape')
+  await expect.poll(() => requests.searchPrefixes).toEqual(['test'])
+  await expect(dialog.getByRole('option')).toHaveCount(2)
+
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+})
+
+test('icons in the file and picked lately come first', async () => {
+  const { page, canvas } = ctx
+  await insertSquare(page)
+  await page.getByRole('button', { name: 'Insert icon' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Insert icon' })
+  await expect(
+    dialog.getByRole('group', { name: 'In this file' }).getByRole('option', { name: 'square' })
+  ).toBeVisible()
+  // Canvas shortcuts wait for the picker to finish closing.
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+
+  // With the icon gone from the file, it is still among the recent ones.
+  await canvas.clearCanvas()
+  expect(await getPageChildren(page)).toEqual([])
+  await page.getByRole('button', { name: 'Insert icon' }).click()
+  await expect(
+    dialog.getByRole('group', { name: 'Recent' }).getByRole('option', { name: 'square' })
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
 })

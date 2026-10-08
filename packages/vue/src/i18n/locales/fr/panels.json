@@ -420,6 +420,16 @@
   "iconSearchHint": "Tapez pour rechercher parmi plus de 200 000 icônes open source",
   "iconSearchFailed": "Impossible de charger les icônes. Vérifiez votre connexion.",
   "insertIconFailed": "Impossible d'insérer l'icône.",
+  "iconSet": "Jeu d'icônes",
+  "allIconSets": "Tous les jeux d'icônes",
+  "searchIconSets": "Rechercher des jeux d'icônes...",
+  "noIconSetsFound": "Aucun jeu d'icônes trouvé",
+  "recentIcons": "Récentes",
+  "iconsInFile": "Dans ce fichier",
+  "iconSetCount": {
+    "one": "{count} icône",
+    "many": "{count} icônes"
+  },
   "noLocalFontsAvailable": "Aucune police locale disponible.",
   "localFontsAccessHint": "Utilisez l’application de bureau ou Chrome/Edge pour accéder aux polices système.",
   "editColor": "Modifier la couleur",

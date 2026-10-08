@@ -420,6 +420,16 @@
   "iconSearchHint": "Tippen, um über 200.000 Open-Source-Symbole zu durchsuchen",
   "iconSearchFailed": "Symbole konnten nicht geladen werden. Prüfe deine Verbindung.",
   "insertIconFailed": "Das Symbol konnte nicht eingefügt werden.",
+  "iconSet": "Symbolsatz",
+  "allIconSets": "Alle Symbolsätze",
+  "searchIconSets": "Symbolsätze suchen...",
+  "noIconSetsFound": "Keine Symbolsätze gefunden",
+  "recentIcons": "Zuletzt verwendet",
+  "iconsInFile": "In dieser Datei",
+  "iconSetCount": {
+    "one": "{count} Symbol",
+    "many": "{count} Symbole"
+  },
   "noLocalFontsAvailable": "Keine lokalen Schriften verfügbar.",
   "localFontsAccessHint": "Verwende die Desktop-App oder Chrome/Edge, um auf Systemschriften zuzugreifen.",
   "editColor": "Farbe bearbeiten",

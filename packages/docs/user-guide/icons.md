@@ -17,7 +17,15 @@ Open the icon picker in any of these ways:
 - Choose **Object → Insert Icon…**
 - Search for **Insert Icon** in the command palette (<kbd>⌘</kbd><kbd>K</kbd>)
 
-Type what you're looking for, such as `arrow` or `heart`. Each result shows a preview and the set it comes from. Pick one to place it, 24 × 24, in the middle of the view, inside the frame you're editing if you've entered one. The new icon is selected, and <kbd>⌘</kbd><kbd>Z</kbd> removes it in one step.
+Before you type, the picker shows the icons already placed in this file and the ones you picked lately. Type what you're looking for, such as `arrow` or `heart`, to search every set; each result shows a preview and the set it comes from.
+
+Pick one to place it, 24 × 24, in the middle of the view, inside the frame you're editing if you've entered one. The new icon is selected, and <kbd>⌘</kbd><kbd>Z</kbd> removes it in one step.
+
+## Choosing an Icon Set
+
+The set selector under the search narrows the picker to one set. Type in it to find a set by name, such as `material` or `tabler`; each set shows its license and how many icons it has.
+
+With a set chosen, the picker shows the whole set as a grid, loading more as you scroll, and a search looks only in that set. Hover over an icon, or move to it with the arrow keys, to see its name below the grid. The picker remembers the set you chose last, and **Swap icon** opens on the set of the icon you're swapping.
 
 ## The Icon Section
 

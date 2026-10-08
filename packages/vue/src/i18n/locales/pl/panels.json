@@ -426,6 +426,17 @@
   "iconSearchHint": "Wpisz, aby przeszukać ponad 200 000 ikon open source",
   "iconSearchFailed": "Nie udało się wczytać ikon. Sprawdź połączenie.",
   "insertIconFailed": "Nie udało się wstawić ikony.",
+  "iconSet": "Zestaw ikon",
+  "allIconSets": "Wszystkie zestawy ikon",
+  "searchIconSets": "Szukaj zestawów ikon...",
+  "noIconSetsFound": "Nie znaleziono zestawów ikon",
+  "recentIcons": "Ostatnie",
+  "iconsInFile": "W tym pliku",
+  "iconSetCount": {
+    "one": "{count} ikona",
+    "few": "{count} ikony",
+    "many": "{count} ikon"
+  },
   "noLocalFontsAvailable": "Brak dostępnych czcionek lokalnych.",
   "localFontsAccessHint": "Użyj aplikacji komputerowej lub Chrome/Edge, aby uzyskać dostęp do czcionek systemowych.",
   "editColor": "Edytuj kolor",

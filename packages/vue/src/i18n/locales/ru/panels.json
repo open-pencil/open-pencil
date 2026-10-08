@@ -426,6 +426,17 @@
   "iconSearchHint": "Начните вводить, чтобы искать среди более чем 200 000 открытых иконок",
   "iconSearchFailed": "Не удалось загрузить иконки. Проверьте подключение.",
   "insertIconFailed": "Не удалось вставить иконку.",
+  "iconSet": "Набор иконок",
+  "allIconSets": "Все наборы иконок",
+  "searchIconSets": "Искать наборы иконок...",
+  "noIconSetsFound": "Наборы иконок не найдены",
+  "recentIcons": "Недавние",
+  "iconsInFile": "В этом файле",
+  "iconSetCount": {
+    "one": "{count} иконка",
+    "few": "{count} иконки",
+    "many": "{count} иконок"
+  },
   "noLocalFontsAvailable": "Локальные шрифты недоступны.",
   "localFontsAccessHint": "Используйте настольное приложение или Chrome/Edge для доступа к системным шрифтам.",
   "editColor": "Изменить цвет",

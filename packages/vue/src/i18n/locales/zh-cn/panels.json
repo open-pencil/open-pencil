@@ -414,6 +414,15 @@
   "iconSearchHint": "输入以搜索超过 20 万个开源图标",
   "iconSearchFailed": "无法加载图标，请检查网络连接。",
   "insertIconFailed": "无法插入图标。",
+  "iconSet": "图标集",
+  "allIconSets": "所有图标集",
+  "searchIconSets": "搜索图标集...",
+  "noIconSetsFound": "未找到图标集",
+  "recentIcons": "最近使用",
+  "iconsInFile": "此文件中",
+  "iconSetCount": {
+    "many": "{count} 个图标"
+  },
   "noLocalFontsAvailable": "没有可用的本地字体。",
   "localFontsAccessHint": "请使用桌面应用或 Chrome/Edge 访问系统字体。",
   "editColor": "编辑颜色",
