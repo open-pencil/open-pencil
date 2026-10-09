@@ -194,6 +194,30 @@ describe('undo and redo', () => {
     expect(graph.getNode(frame.id)?.childIds).toEqual([])
   })
 
+  test('undo reverts a render that replaces a layer on another page', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    const otherPage = graph.addPage('Other')
+    const frame = graph.createNode('FRAME', otherPage.id, { width: 200, height: 200 })
+    const placeholder = graph.createNode('RECTANGLE', frame.id, { width: 40, height: 40 })
+    // replace_id decides where the layer goes, so its page records the change.
+    const rendered = await request('tool', {
+      document_id: tab.id,
+      name: 'render',
+      args: {
+        jsx: '<Frame name="Rendered" w={40} h={40} />',
+        replace_id: placeholder.id,
+        parent_id: tab.store.state.currentPageId
+      }
+    })
+    const id = String(rendered.result.id)
+    expect(graph.getNode(id)?.parentId).toBe(frame.id)
+
+    await request('undo', { document_id: tab.id })
+    expect(graph.getNode(id)).toBeUndefined()
+    expect(graph.getNode(frame.id)?.childIds).toEqual([placeholder.id])
+  })
+
   test('a read-only eval leaves the history unchanged', async () => {
     const tab = createTab()
     await request('eval', { document_id: tab.id, code: 'return figma.currentPage.name' })

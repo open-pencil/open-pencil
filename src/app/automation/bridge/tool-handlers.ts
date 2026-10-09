@@ -104,7 +104,8 @@ function writtenPageId(
   graph: AutomationTarget['store']['graph'],
   args: Record<string, unknown>
 ): string | null {
-  const nodeId = args.parent_id ?? args.replace_id
+  // As render places it: a replaced layer's parent wins over parent_id.
+  const nodeId = args.replace_id ?? args.parent_id
   return typeof nodeId === 'string' ? pageIdOf(graph, nodeId) : null
 }
 
