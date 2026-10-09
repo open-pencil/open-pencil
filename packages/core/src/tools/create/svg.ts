@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { createSVGNodes } from '#core/io/formats/svg'
+import { createSVGNodesFromImport, prepareSVGImport, svgImportFonts } from '#core/io/formats/svg'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
 
@@ -36,12 +36,20 @@ export const importSVG = defineTool({
   execute: async (figma, args) => {
     if (!args.svg || typeof args.svg !== 'string') return { error: 'svg parameter is required' }
 
-    const frame = createSVGNodes(figma.graph, args.parent_id ?? figma.currentPage.id, args.svg, {
-      name: args.name,
-      defaultColor: args.color,
-      x: args.x,
-      y: args.y
-    })
+    const data = prepareSVGImport(args.svg, { defaultColor: args.color })
+    // Text is measured and placed as it is created, so its fonts load first.
+    await Promise.all(
+      (data ? svgImportFonts(data) : []).map(({ family, style }) =>
+        figma.loadFontAsync({ family, style })
+      )
+    )
+    const frame =
+      data &&
+      createSVGNodesFromImport(figma.graph, args.parent_id ?? figma.currentPage.id, data, {
+        name: args.name,
+        x: args.x,
+        y: args.y
+      })
     if (!frame) return { error: 'No supported SVG elements found in the markup' }
     return { id: frame.id, name: frame.name, type: frame.type }
   }
