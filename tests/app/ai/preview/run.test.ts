@@ -53,6 +53,18 @@ describe("the chat run's preview", () => {
     expect(events.at(-1)).toEqual({ type: 'finish', agentId, callId: 'call-1' })
   })
 
+  test('a call that finished publishes nothing more when its request stops later', () => {
+    const { store, events, preview } = recordedRun()
+    startRun(store, 10)
+    const request = new AbortController()
+
+    preview.start('call-1', request.signal)
+    preview.finish('call-1')
+    request.abort()
+
+    expect(events.filter((event) => event.type === 'finish')).toHaveLength(1)
+  })
+
   test('publishes nothing before a run has an agent', () => {
     const { events, preview } = recordedRun()
     preview.start('call-1')

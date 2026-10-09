@@ -31,6 +31,22 @@ export function encodeAgentPreview(event: AgentPreviewEvent): Uint8Array {
   return encoder.encode(JSON.stringify(event))
 }
 
+/**
+ * The messages that carry `event`. A model's chunk can exceed what peers accept, so a long
+ * delta goes as several in order; JSON escapes a surrogate pair split between two of them.
+ */
+export function encodeAgentPreviewMessages(event: AgentPreviewEvent): Uint8Array[] {
+  if (event.type !== 'delta' || event.text.length <= MAX_PREVIEW_DELTA_LENGTH) {
+    return [encodeAgentPreview(event)]
+  }
+  const messages: Uint8Array[] = []
+  for (let offset = 0; offset < event.text.length; offset += MAX_PREVIEW_DELTA_LENGTH) {
+    const text = event.text.slice(offset, offset + MAX_PREVIEW_DELTA_LENGTH)
+    messages.push(encodeAgentPreview({ ...event, text }))
+  }
+  return messages
+}
+
 /** The event a peer sent, or null when it is malformed or out of bounds. */
 export function decodeAgentPreview(data: Uint8Array): AgentPreviewEvent | null {
   const result = v.safeParse(AgentPreviewMessageSchema, decoder.decode(data))
@@ -121,7 +137,9 @@ export function shareAgentPreviews(
     const event = decodeAgentPreview(data)
     if (event) router.receive(event, peerId)
   })
-  const stopLocal = onAgentPreview(store, (event) => send(encodeAgentPreview(event)))
+  const stopLocal = onAgentPreview(store, (event) => {
+    for (const message of encodeAgentPreviewMessages(event)) send(message)
+  })
   const stopLeave = connection.onPeerLeave((peerId) => router.peerLeft(peerId))
   return () => {
     disposed = true

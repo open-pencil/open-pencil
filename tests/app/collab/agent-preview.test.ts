@@ -9,6 +9,7 @@ import {
   createRemotePreviewRouter,
   decodeAgentPreview,
   encodeAgentPreview,
+  encodeAgentPreviewMessages,
   MAX_PREVIEW_DELTA_LENGTH,
   shareAgentPreviews,
   type RemotePreviewController
@@ -65,6 +66,17 @@ describe('agent preview messages', () => {
       )
     ).toBeNull()
   })
+})
+
+test('a delta longer than peers accept goes as several that rejoin intact', () => {
+  // A surrogate pair straddles the first split, as an emoji in streamed text can.
+  const text = `${'x'.repeat(MAX_PREVIEW_DELTA_LENGTH - 1)}😀${'y'.repeat(MAX_PREVIEW_DELTA_LENGTH)}`
+  const messages = encodeAgentPreviewMessages({ type: 'delta', agentId: 'a1', callId: 'c1', text })
+
+  expect(messages).toHaveLength(3)
+  const decoded = messages.map((message) => decodeAgentPreview(message))
+  expect(decoded.every((event) => event?.type === 'delta')).toBe(true)
+  expect(decoded.map((event) => (event?.type === 'delta' ? event.text : '')).join('')).toBe(text)
 })
 
 describe('remote preview routing', () => {

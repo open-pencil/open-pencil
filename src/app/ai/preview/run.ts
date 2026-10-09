@@ -16,6 +16,14 @@ export function createRunPreview(store: EditorStore) {
     (focus) => markRunPreview(store, focus)
   )
 
+  /** Stops each call's abort listener; the request's signal outlives the calls it covers. */
+  const stopAbortListeners = new Map<string, () => void>()
+
+  function stopAbortListener(callId: string): void {
+    stopAbortListeners.get(callId)?.()
+    stopAbortListeners.delete(callId)
+  }
+
   return {
     start(callId: string, signal?: AbortSignal): void {
       preview.start(callId, signal)
@@ -24,11 +32,18 @@ export function createRunPreview(store: EditorStore) {
       publishAgentPreview(store, { type: 'start', agentId, callId, pageId: runPageId(store) })
       // A stopped call ends its preview here, so it ends everywhere else too.
       if (signal) {
-        useEventListener(
-          signal,
-          'abort',
-          () => publishAgentPreview(store, { type: 'finish', agentId, callId }),
-          { once: true }
+        stopAbortListener(callId)
+        stopAbortListeners.set(
+          callId,
+          useEventListener(
+            signal,
+            'abort',
+            () => {
+              stopAbortListeners.delete(callId)
+              publishAgentPreview(store, { type: 'finish', agentId, callId })
+            },
+            { once: true }
+          )
         )
       }
     },
@@ -38,11 +53,13 @@ export function createRunPreview(store: EditorStore) {
       if (agentId) publishAgentPreview(store, { type: 'delta', agentId, callId, text })
     },
     finish(callId: string): void {
+      stopAbortListener(callId)
       preview.finish(callId)
       const agentId = runAgentId(store)
       if (agentId) publishAgentPreview(store, { type: 'finish', agentId, callId })
     },
     clear(): void {
+      for (const callId of [...stopAbortListeners.keys()]) stopAbortListener(callId)
       preview.clear()
       const agentId = runAgentId(store)
       if (agentId) publishAgentPreview(store, { type: 'clear', agentId })
