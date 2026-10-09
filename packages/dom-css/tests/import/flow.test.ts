@@ -96,6 +96,18 @@ describe('HTML flow as auto layout', () => {
     expect(textIn(graph, badge).textAutoResize).toBe('WIDTH_AND_HEIGHT')
   })
 
+  it('gives text only what CSS inherits, centering it in a button', async () => {
+    const { graph, byName } = await importHTML(
+      `<div style="position:relative;width:200px"><div id="badge" style="position:absolute;left:120px;top:8px;opacity:0.5;color:#ff0000">Popular</div></div>
+       <button id="send" style="width:200px">Send</button>`
+    )
+    const text = textIn(graph, byName('badge'))
+    // The badge's position and opacity are its own; its color is the text's.
+    expect(text).toMatchObject({ layoutPositioning: 'AUTO', x: 0, y: 0, opacity: 1 })
+    expect(text.fills[0]?.type).toBe('SOLID')
+    expect(textIn(graph, byName('send')).textAlignHorizontal).toBe('CENTER')
+  })
+
   it('fills a 100% width and leaves out display: none', async () => {
     const { graph, byName, sizing } = await importHTML(
       `<div style="display:flex"><div id="wide" style="width:100%">A</div><div id="hidden" style="display:none">B</div></div>`

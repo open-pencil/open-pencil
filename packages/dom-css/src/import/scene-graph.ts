@@ -18,6 +18,7 @@ import {
   applyFlowSizing,
   elementDisplay,
   flowOf,
+  inheritedTextStyle,
   type ParentFlow
 } from './flow'
 
@@ -471,7 +472,7 @@ function createElementNode(
   applyFlowSizing(graph, node, style, display, parentFlow)
 
   for (const child of element.children) {
-    createDesignNode(graph, node.id, child, flow ?? 'none', style)
+    createDesignNode(graph, node.id, child, flow ?? 'none', inheritedTextStyle(element, style))
   }
 
   return node

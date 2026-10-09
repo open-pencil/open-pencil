@@ -1,3 +1,5 @@
+import { pick } from 'es-toolkit'
+
 import {
   autoLayoutSizingFields,
   fillSizingFields,
@@ -45,6 +47,37 @@ const INLINE_TAGS = new Set([
 const INLINE_BLOCK_TAGS = new Set(['button', 'img', 'input', 'select', 'textarea'])
 /** Elements browsers center their text in by default. */
 const CENTERED_TAGS = new Set(['button'])
+
+/** What a run of text takes from its element: the properties CSS inherits, and decoration. */
+const TEXT_PROPERTIES = [
+  'color',
+  'font-family',
+  'font-size',
+  'font-style',
+  'font-weight',
+  'letter-spacing',
+  'line-height',
+  'text-align',
+  'text-decoration-line',
+  'text-shadow',
+  'text-transform',
+  'white-space'
+]
+
+/**
+ * The style a run of text directly inside an element takes from it. The element's own box,
+ * position, and opacity stay on the element, so the text is neither placed nor faded twice.
+ */
+export function inheritedTextStyle(
+  element: DesignElement,
+  style: DesignStyleDeclaration
+): DesignStyleDeclaration {
+  const inherited = pick(style, TEXT_PROPERTIES)
+  if (!inherited['text-align'] && CENTERED_TAGS.has(element.tagName.toLowerCase())) {
+    inherited['text-align'] = 'center'
+  }
+  return inherited
+}
 
 /** The element's `display`, or the one browsers give its tag by default. */
 export function elementDisplay(element: DesignElement, style: DesignStyleDeclaration): string {
