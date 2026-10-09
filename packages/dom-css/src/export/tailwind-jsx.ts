@@ -3,10 +3,25 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { DesignDocument, DesignElement, DesignNode } from '../types'
 import { mergeClassNames, serializeTailwindClasses } from './html'
-import { sceneNodeToDesignDocument } from './projection'
+import { sceneNodeToDesignDocument, type SceneGraphToDesignOptions } from './projection'
+
+/** Engine services the projection takes, such as drawing vector layers as SVG. */
+type ProjectionServices = Pick<SceneGraphToDesignOptions, 'vectorElement'>
 
 /** HTML attribute names that JSX spells differently. */
-const JSX_ATTRIBUTE_NAMES: Record<string, string> = { class: 'className', for: 'htmlFor' }
+const JSX_ATTRIBUTE_NAMES: Record<string, string> = {
+  class: 'className',
+  for: 'htmlFor',
+  'xlink:href': 'xlinkHref'
+}
+
+/** React spells SVG's dashed attributes in camel case, such as `fillRule`; data and ARIA stay. */
+function jsxAttributeName(name: string): string {
+  const named = JSX_ATTRIBUTE_NAMES[name]
+  if (named) return named
+  if (name.startsWith('data-') || name.startsWith('aria-')) return name
+  return name.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
+}
 
 /** Scene text layers become paragraphs; Tailwind's preflight removes their margins. */
 function tagName(node: DesignElement): string {
@@ -22,9 +37,7 @@ function attributes(node: DesignElement, themeVariables: readonly string[]): Syn
     ['className', mergeClassNames(className, serializeTailwindClasses(node, themeVariables))]
   ]
   return entries.flatMap(([key, value]) =>
-    value === undefined
-      ? []
-      : [jsx.attribute(JSX_ATTRIBUTE_NAMES[key] ?? key, jsx.stringValue(value))]
+    value === undefined ? [] : [jsx.attribute(jsxAttributeName(key), jsx.stringValue(value))]
   )
 }
 
@@ -52,8 +65,12 @@ export function designDocumentToTailwindJSX(document: DesignDocument): string {
 }
 
 /** Tailwind JSX for scene nodes, separated by blank lines. */
-export function sceneNodesToTailwindJSX(graph: SceneGraph, nodeIds: string[]): string {
-  return sceneNodesToTailwindJSXWithLayers(graph, nodeIds).code
+export function sceneNodesToTailwindJSX(
+  graph: SceneGraph,
+  nodeIds: string[],
+  options: ProjectionServices = {}
+): string {
+  return sceneNodesToTailwindJSXWithLayers(graph, nodeIds, options).code
 }
 
 /** Tailwind JSX with the layer behind each element, in the order elements open. */
@@ -71,12 +88,16 @@ function collectLayerIds(node: DesignNode, layerIds: Array<string | null>): void
 
 export function sceneNodesToTailwindJSXWithLayers(
   graph: SceneGraph,
-  nodeIds: string[]
+  nodeIds: string[],
+  { vectorElement }: ProjectionServices = {}
 ): TailwindJSXWithLayers {
   const layerIds: Array<string | null> = []
   const blocks: string[] = []
   for (const id of nodeIds) {
-    const document = sceneNodeToDesignDocument(graph, id, { includeSourceIds: false })
+    const document = sceneNodeToDesignDocument(graph, id, {
+      includeSourceIds: false,
+      vectorElement
+    })
     const code = designDocumentToTailwindJSX(document)
     if (!code) continue
     blocks.push(code)

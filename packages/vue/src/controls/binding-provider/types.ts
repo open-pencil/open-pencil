@@ -23,6 +23,8 @@ export interface BindingProvider<V = unknown> {
   /** Optional reactive revision consumed by BindableValueRoot. */
   revision?: Readonly<Ref<unknown>>
   listVariables(): Variable[]
+  /** The name of the collection a variable belongs to, which pickers group variables by. */
+  collectionName?(variable: Variable): string | undefined
   filterVariables(term: string): Variable[]
   getBindingId(target: BindingTarget): string | undefined
   getBound(target: BindingTarget): Variable | undefined

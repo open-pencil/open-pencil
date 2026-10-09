@@ -11,6 +11,7 @@
   "createComponentSet": "Создать набор компонентов",
   "createInstance": "Создать экземпляр",
   "detachInstance": "Отвязать экземпляр",
+  "detachIcon": "Отсоединить иконку",
   "goToMainComponent": "Перейти к компоненту",
   "addAutoLayout": "Добавить авто-раскладку",
   "bringToFront": "На передний план",

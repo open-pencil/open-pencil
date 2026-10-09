@@ -23,7 +23,7 @@ import {
   type StyleReference
 } from './context'
 import { fillsOwnSizingAxis } from './fill-sizing'
-import { nodeWithResolvedBindings } from './resolved-bindings'
+import { exportedNode } from './resolved-bindings'
 
 function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
@@ -162,7 +162,7 @@ function overrideClaim(
 ): KiwiSymbolOverridePayload | undefined {
   const input = {
     ...claimed,
-    target: nodeWithResolvedBindings(claimed.context.graph, claimed.target)
+    target: exportedNode(claimed.context, claimed.target)
   }
   if (field === 'componentId')
     return exportedSwapOverride(input.context, input.target, path, counter)
@@ -180,13 +180,20 @@ export function serializeRuntimePropertyOverrides(
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
   const resolveGuid = instanceGuidResolver(context, localIdCounter)
-  const resolveTarget = (owner: SceneNode, nodeId: string) => {
-    const targetId = nodeId || owner.id
+  // A layer with several overridden fields is addressed once; the resolver keeps the GUIDs it makes.
+  const targets = new Map<string, { target: SceneNode; path: GUID[] } | undefined>()
+  const findTarget = (targetId: string) => {
     const target = context.graph.getNode(targetId)
     if (!target || (target.id !== instance.id && !isDescendantOf(context, targetId, instance.id)))
       return undefined
     const path = instanceExportAddress(context.graph, instance, target, resolveGuid)
     return path ? { target, path } : undefined
+  }
+  const resolveTarget = (owner: SceneNode, nodeId: string) => {
+    const targetId = nodeId || owner.id
+    if (!targets.has(targetId)) targets.set(targetId, findTarget(targetId))
+    const found = targets.get(targetId)
+    return found && { target: found.target, path: [...found.path] }
   }
   const visit = (node: SceneNode): void => {
     if (node.type === 'INSTANCE')
@@ -220,18 +227,19 @@ export function mergeOverrides(
   symbolOverrides: KiwiSymbolOverridePayload[],
   newOverrides: KiwiSymbolOverridePayload[]
 ): void {
+  // The last override at each path, indexed once: instances can carry thousands of overrides.
+  const lastAt = new Map<string, number>()
+  symbolOverrides.forEach((existing, index) => {
+    const key = overridePathKey(existing)
+    if (key) lastAt.set(key, index)
+  })
   for (const override of newOverrides) {
     const pathKey = overridePathKey(override)
-    let existingIndex = -1
-    if (pathKey) {
-      for (let index = symbolOverrides.length - 1; index >= 0; index--) {
-        if (overridePathKey(symbolOverrides[index]) !== pathKey) continue
-        existingIndex = index
-        break
-      }
-    }
-    if (existingIndex < 0) symbolOverrides.push(override)
-    else
+    const existingIndex = pathKey ? (lastAt.get(pathKey) ?? -1) : -1
+    if (existingIndex < 0) {
+      if (pathKey) lastAt.set(pathKey, symbolOverrides.length)
+      symbolOverrides.push(override)
+    } else
       symbolOverrides[existingIndex] = {
         ...symbolOverrides[existingIndex],
         ...override,

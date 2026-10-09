@@ -34,6 +34,10 @@
         "accelerator": "CmdOrCtrl+Shift+S"
       },
       {
+        "id": "save-to-storage",
+        "label": "Save to Storage…"
+      },
+      {
         "type": "separator"
       },
       {
@@ -302,6 +306,13 @@
         "type": "separator"
       },
       {
+        "id": "insert-icon",
+        "label": "Insert Icon…"
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "selection.toggleMask",
         "label": "Use as Mask",
         "accelerator": "CmdOrCtrl+Alt+M"
@@ -394,6 +405,10 @@
         "id": "selection.detachInstance",
         "label": "Detach Instance",
         "accelerator": "CmdOrCtrl+Alt+B"
+      },
+      {
+        "id": "selection.detachIcon",
+        "label": "Detach Icon"
       },
       {
         "type": "separator"

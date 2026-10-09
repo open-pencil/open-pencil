@@ -153,6 +153,26 @@ describe('undo and redo', () => {
     expect(tab.store.graph.getNode(id)).toBeUndefined()
   })
 
+  test('undo and redo of a deletion leave the layers it did not touch alone', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    const kept = tab.store.createShape('RECTANGLE', 0, 0, 40, 40)
+    const deleted = tab.store.createShape('RECTANGLE', 60, 0, 40, 40)
+    const keptNode = graph.getNode(kept)
+    const pageId = tab.store.state.currentPageId
+    const order = [...(graph.getNode(pageId)?.childIds ?? [])]
+    await request('tool', { document_id: tab.id, name: 'delete_node', args: { id: deleted } })
+
+    await request('undo', { document_id: tab.id })
+    expect(graph.getNode(deleted)?.x).toBe(60)
+    expect(graph.getNode(pageId)?.childIds).toEqual(order)
+    expect(graph.getNode(kept)).toBe(keptNode)
+
+    await request('redo', { document_id: tab.id })
+    expect(graph.getNode(deleted)).toBeUndefined()
+    expect(graph.getNode(kept)).toBe(keptNode)
+  })
+
   test('undo reverts a render into a frame on another page', async () => {
     const tab = createTab()
     const graph = tab.store.graph

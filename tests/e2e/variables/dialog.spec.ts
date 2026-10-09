@@ -220,22 +220,25 @@ test('the View menu opens the variables dialog', async () => {
   editor.canvas.assertNoErrors()
 })
 
+/** The first mode's variable picker in the inspector. */
+function useVariable() {
+  return editor.page.getByTestId('token-inspector').getByTestId('variables-use-variable').first()
+}
+
 test('a value points at another variable and detaches to what it showed', async () => {
   await variableRows().filter({ hasText: 'SwatchVar' }).click()
   await expect(inspectorName()).toHaveValue('SwatchVar')
 
-  await editor.page
-    .getByTestId('token-inspector')
-    .getByTestId('variables-use-variable')
-    .first()
-    .click()
+  await useVariable().click()
   await editor.page
     .getByRole('dialog', { name: 'Use a variable' })
     .getByRole('option', { name: /brand-color/ })
     .click()
   await expect(variableRows().filter({ hasText: 'SwatchVar' })).toContainText('brand-color')
 
-  await editor.page.getByTestId('variables-detach-variable').first().click()
+  // Detach sits in the same picker, as in the Properties panel.
+  await useVariable().click()
+  await editor.page.getByRole('button', { name: 'Detach variable' }).click()
   await expect(variableRows().filter({ hasText: 'SwatchVar' })).toContainText('#FF0000')
   editor.canvas.assertNoErrors()
 })

@@ -393,7 +393,8 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
-    const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds)
+    const { vectorElement } = await import('#core/io/formats/html/vectors')
+    const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds, { vectorElement })
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'tailwind-jsx',

@@ -1,6 +1,7 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { selectNode } from '#tests/helpers/components/properties'
 import { propertySection } from '#tests/helpers/properties'
 
 test('authors multiple variant dimensions and reports duplicate combinations', async ({ page }) => {
@@ -55,25 +56,24 @@ test('authors multiple variant dimensions and reports duplicate combinations', a
   })
   await canvas.waitForRender()
 
-  const section = propertySection(page, 'Variants')
-  await expect(section).toBeVisible()
-  const propertyRows = section.locator('[data-property]')
-  await expect(propertyRows).toHaveCount(2)
-  await propertyRows.nth(0).getByRole('textbox', { name: 'Property name' }).fill('Type')
-  await propertyRows.nth(0).getByRole('textbox', { name: 'Property name' }).blur()
-  await canvas.waitForRender()
-  await propertyRows.nth(1).getByRole('textbox', { name: 'Property name' }).fill('Size')
-  await propertyRows.nth(1).getByRole('textbox', { name: 'Property name' }).blur()
-  await canvas.waitForRender()
+  // The set's variant properties are rows of the Properties list; each opens to rename it.
+  const properties = propertySection(page, 'Properties')
+  async function renameProperty(from: string, to: string) {
+    await properties.getByRole('button', { name: new RegExp(`^${from}`) }).click()
+    const name = page.getByRole('dialog', { name: from }).getByRole('textbox', { name: 'Name' })
+    await name.fill(to)
+    await name.press('Enter')
+    await page.keyboard.press('Escape')
+    await canvas.waitForRender()
+  }
+  await renameProperty('Variant', 'Type')
+  await renameProperty('Property 2', 'Size')
 
-  // The header + adds Property 1 with the value Default and selects its name for typing.
-  await section.getByRole('button', { name: 'Add variant property' }).click()
-  const added = propertyRows.nth(2).getByRole('textbox', { name: 'Property name' })
-  await expect(added).toHaveValue('Property 1')
-  await expect(added).toBeFocused()
-  await page.keyboard.type('State')
-  await added.blur()
+  // The section's + adds a variant property named Property 1 with the value Default.
+  await properties.getByRole('button', { name: 'Create property…' }).click()
+  await page.getByRole('menuitem', { name: 'Variant', exact: true }).click()
   await canvas.waitForRender()
+  await renameProperty('Property 1', 'State')
 
   const definitions = await page.evaluate((componentSetId) => {
     const store = window.openPencil?.getStore?.()
@@ -123,3 +123,62 @@ test('authors multiple variant dimensions and reports duplicate combinations', a
   await expect(variantSection.getByRole('alert')).toHaveCount(0)
   await expect(variantSection.getByRole('textbox', { name: 'Size' })).toHaveValue('Large')
 })
+
+test('adds a variant to a standalone component the way Figma does', async ({ page }) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('/?test')
+  await canvas.waitForInit()
+  const chipId = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const chip = store.graph.createNode('COMPONENT', store.state.currentPageId, {
+      name: 'Chip',
+      x: 40,
+      y: 40,
+      width: 80,
+      height: 32
+    })
+    return chip.id
+  })
+  await selectNode(page, chipId)
+  await canvas.waitForRender()
+
+  await page.getByRole('button', { name: 'Add variant' }).click()
+  await canvas.waitForRender()
+
+  const properties = propertySection(page, 'Properties')
+  await selectNode(page, await setOf(page, chipId))
+  await expect(properties.getByRole('button', { name: /^Property 1/ })).toContainText(
+    'Default, Variant2'
+  )
+  expect(await variantNames(page, chipId)).toEqual(['Property 1=Default', 'Property 1=Variant2'])
+
+  // A value variants use moves them to another value first.
+  await properties.getByRole('button', { name: /^Property 1/ }).click()
+  const values = page.getByRole('dialog', { name: 'Property 1' })
+  await values.getByRole('textbox', { name: 'Add value' }).fill('Hover')
+  await values.getByRole('textbox', { name: 'Add value' }).press('Enter')
+  await values.getByRole('button', { name: 'Remove Variant2' }).click()
+  await values.getByRole('combobox', { name: /Move variants with Variant2/ }).click()
+  await page.getByRole('option', { name: 'Hover', exact: true }).click()
+  await expect
+    .poll(() => variantNames(page, chipId))
+    .toEqual(['Property 1=Default', 'Property 1=Hover'])
+})
+
+async function setOf(page: Page, componentId: string): Promise<string> {
+  const id = await page.evaluate(
+    (nodeId) => window.openPencil?.getStore?.()?.graph.getNode(nodeId)?.parentId,
+    componentId
+  )
+  if (!id) throw new Error('Expected a component set')
+  return id
+}
+
+function variantNames(page: Page, componentId: string) {
+  return page.evaluate((nodeId) => {
+    const graph = window.openPencil?.getStore?.()?.graph
+    const setId = graph?.getNode(nodeId)?.parentId
+    return setId ? (graph?.getChildren(setId).map((node) => node.name) ?? []) : []
+  }, componentId)
+}

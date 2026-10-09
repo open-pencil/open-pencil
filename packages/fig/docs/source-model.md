@@ -69,12 +69,22 @@ component sets. Current hierarchy and reference semantics must be considered ind
 ## Ownership
 
 - Record-based reading copies caller-supplied records.
-- Archive-owned reading takes ownership of records it parses, avoiding a second full tree.
+- Archive-owned reading keeps each record as a header: its identity, place, type, and asset key
+  (`RECORD_HEADER_FIELDS`). The whole record is decoded from the archive bytes when a read
+  needs it and prepared as a record read whole is: bindings resolved, property definitions
+  inherited, style references applied. Opening decodes every record once to check its
+  bindings and keeps none; a page read keeps the records it decoded only while it runs, and
+  the components and styles the shared interpreter reads stay for the document.
 - Exposed source/resource snapshots are copied.
 - Evaluations produce independently mutable occurrence data.
 - Blob and image references must remain valid across transfer and export.
 
-Do not replace copying with shared mutable objects merely to improve memory measurements.
+Do not replace copying of source records or occurrence data with shared mutable objects merely
+to improve memory measurements: the interpreter and the materializer write into what they are
+given. The materialized SceneGraph is different. A layer inside an instance holds its component
+layer's own value for every field no override changed (`shareUnchanged` in
+`../src/instance-overrides/materialize-instance.ts`), so a layer's values are replaced, never
+written into, once it exists.
 
 ## Implementation and tests
 

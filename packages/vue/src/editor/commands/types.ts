@@ -14,6 +14,7 @@ export type EditorCommandId =
   | 'selection.createComponentSet'
   | 'selection.createInstance'
   | 'selection.detachInstance'
+  | 'selection.detachIcon'
   | 'selection.goToMainComponent'
   | 'selection.createSlot'
   | 'selection.wrapInAutoLayout'

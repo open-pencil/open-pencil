@@ -29,16 +29,11 @@ function visitChildren(
   }
 }
 
-/** Normalize supported binding references without mutating archive records or effective values. */
-export function resolveDocumentBindingReferences(
-  changes: readonly NodeChange[],
-  report: (diagnostic: BindingReferenceDiagnostic) => void,
-  ownership: 'copy' | 'transfer' = 'copy'
-): NodeChange[] {
-  const resolve = createResourceResolver(changes)
-  return changes.map((source) => {
-    const node = ownership === 'transfer' ? source : structuredClone(source)
-    const sourceId = source.guid ? guidToString(source.guid) : 'unknown'
+type Report = (diagnostic: BindingReferenceDiagnostic) => void
+
+/** Resolves a record's binding references in place, reporting the ones that name nothing. */
+function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolver>) {
+  return (record: NodeChange, sourceId: string, report?: Report): void => {
     const normalize = (
       reference: NodeChange['variableSetID'],
       field: string,
@@ -47,7 +42,7 @@ export function resolveDocumentBindingReferences(
       if (!reference?.assetRef || reference.guid) return
       const id = resolve(reference)
       if (!id) {
-        report({ sourceId, field, key: reference.assetRef.key, path: structuredClone(path) })
+        report?.({ sourceId, field, key: reference.assetRef.key, path: structuredClone(path) })
         return
       }
       reference.guid = stringToGuid(id)
@@ -78,7 +73,29 @@ export function resolveDocumentBindingReferences(
       }
       visitChildren(node, path, visit)
     }
-    visit(node, [])
+    visit(record, [])
+  }
+}
+
+/**
+ * Resolves the binding references of one whole record in place, as the document pass resolves
+ * every record: against the given records' variables, reporting what names nothing when asked.
+ */
+export function createBindingNormalizer(resources: readonly NodeChange[]) {
+  const normalizeRecord = createRecordNormalizer(createResourceResolver(resources))
+  return (record: NodeChange, report?: Report): void =>
+    normalizeRecord(record, record.guid ? guidToString(record.guid) : 'unknown', report)
+}
+
+/** Normalize supported binding references without mutating archive records or effective values. */
+export function resolveDocumentBindingReferences(
+  changes: readonly NodeChange[],
+  report: Report
+): NodeChange[] {
+  const normalize = createBindingNormalizer(changes)
+  return changes.map((source) => {
+    const node = structuredClone(source)
+    normalize(node, report)
     return node
   })
 }

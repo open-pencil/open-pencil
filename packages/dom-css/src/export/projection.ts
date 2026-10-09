@@ -1,23 +1,44 @@
 import { fromUint8Array } from 'js-base64'
 
-import { layoutSizingInParent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  layoutSizingInParent,
+  readIcon,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
-import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '../types'
+import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { cssColor, dropShadowToCSS, effectsToCSS, fillToCSS, strokeColorToCSS } from './css'
 import { addGridContainer, addGridPlacement } from './grid'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 
+/**
+ * Draws a vector-shaped layer as an inline `<svg>` element sized to the layer, from the
+ * engine's own SVG export. dom-css cannot depend on that engine, so it comes in as an option.
+ */
+export type VectorElementRenderer = (graph: SceneGraph, node: SceneNode) => DesignElement | null
+
 export interface SceneGraphToDesignOptions {
   rootId?: string
   includeSourceIds?: boolean
   /** Write variable-bound values as `var(--name)` where CSS resolves them as drawn. Default true. */
   tokens?: boolean
+  /** Vector, boolean, star, polygon, and icon layers as inline SVG; without it they project as boxes. */
+  vectorElement?: VectorElementRenderer
+  /** Hidden layers to project as shown, such as the tab panels a component reveals itself. */
+  shown?: ReadonlySet<string>
 }
+
+/** Layers whose shape only paths describe, which CSS boxes cannot draw. */
+const VECTOR_SHAPES = new Set<SceneNode['type']>(['VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'POLYGON'])
+
+/** What a box draws itself, which the SVG of a vector layer draws instead. */
+const BOX_PAINT = /^(background|border|box-shadow|outline|filter)/
 
 /** A field's CSS: its token reference where one is faithful, otherwise the literal value. */
 type FieldCSS = (field: string, literal: string) => string
@@ -347,6 +368,32 @@ interface ProjectionContext {
   graph: SceneGraph
   includeSourceIds: boolean
   tokens: DesignTokens | undefined
+  vectorElement: VectorElementRenderer | undefined
+  shown: ReadonlySet<string> | undefined
+}
+
+/**
+ * A vector layer as the renderer's `<svg>`, placed where the layer's box would be: its
+ * position, size, opacity, and transform stay, and its paint is the SVG's, not the box's.
+ */
+function vectorDesignNode(
+  context: ProjectionContext,
+  node: SceneNode,
+  attrs: Record<string, string>,
+  style: DesignStyleDeclaration
+): DesignElement | null {
+  const drawn = context.vectorElement?.(context.graph, node)
+  if (!drawn) return null
+  const placement = Object.fromEntries(
+    Object.entries(style).filter(([property]) => !BOX_PAINT.test(property))
+  )
+  return {
+    ...drawn,
+    attrs: { ...drawn.attrs, ...attrs },
+    inlineStyle: { ...drawn.inlineStyle, ...placement },
+    sourceSceneNodeId: node.id,
+    sourceSceneNode: node
+  }
 }
 
 function sceneNodeToDesignNode(
@@ -355,7 +402,7 @@ function sceneNodeToDesignNode(
   inherited: CSSModes,
   root: boolean
 ): DesignNode | null {
-  if (!node.visible || node.internalOnly) return null
+  if ((!node.visible && !context.shown?.has(node.id)) || node.internalOnly) return null
   const { graph, includeSourceIds, tokens } = context
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   const entered = tokens?.enter(node, inherited, root)
@@ -373,6 +420,12 @@ function sceneNodeToDesignNode(
       sourceSceneNode: node,
       children: [{ type: 'text', text: node.text }]
     }
+  }
+
+  // An icon is one drawing, however many paths it has.
+  if (VECTOR_SHAPES.has(node.type) || readIcon(node)) {
+    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(node, parent, css))
+    if (vector) return vector
   }
 
   const children = nodeChildren(graph, node)
@@ -403,9 +456,15 @@ function sceneNodeToDesignNode(
 
 function projectionContext(
   graph: SceneGraph,
-  { includeSourceIds = true, tokens = true }: SceneGraphToDesignOptions
+  { includeSourceIds = true, tokens = true, vectorElement, shown }: SceneGraphToDesignOptions
 ): ProjectionContext {
-  return { graph, includeSourceIds, tokens: tokens ? new DesignTokens(graph) : undefined }
+  return {
+    graph,
+    includeSourceIds,
+    tokens: tokens ? new DesignTokens(graph) : undefined,
+    vectorElement,
+    shown
+  }
 }
 
 export function sceneGraphToDesignDocument(

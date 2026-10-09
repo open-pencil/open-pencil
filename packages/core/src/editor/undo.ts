@@ -8,6 +8,11 @@ import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import {
+  capturePageChange as startPageChange,
+  restorePageChange as applyPageChangeToEditor,
+  type PageChange
+} from './history/page-change'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
   restorePageFromSnapshot as restorePageSnapshot,
@@ -30,6 +35,42 @@ type ResizeOriginal = Rect &
       | 'textPathBox'
     >
   >
+
+/**
+ * Records root subtrees that were just created: redo re-creates any that are missing and selects
+ * them, undo deletes them and restores the previous selection.
+ */
+export function pushCreatedSubtreesUndo(
+  ctx: EditorContext,
+  label: string,
+  rootIds: string[],
+  previousSelection: Set<string>
+) {
+  const snapshots = new Map<string, SceneNode>()
+  for (const id of rootIds) {
+    const subtree = snapshotSubtree(ctx.graph, id)
+    for (const [nodeId, snapshot] of subtree) snapshots.set(nodeId, snapshot)
+  }
+  const nextSelection = new Set(rootIds)
+
+  ctx.undo.push({
+    label,
+    forward: () => {
+      for (const id of rootIds) {
+        if (ctx.graph.getNode(id)) continue
+        const snapshot = snapshots.get(id)
+        if (!snapshot) continue
+        restoreSubtree(ctx.graph, snapshot, snapshot.parentId ?? ctx.state.currentPageId, snapshots)
+        ctx.runLayoutForNode(id)
+      }
+      ctx.setSelectedIds(new Set(nextSelection))
+    },
+    inverse: () => {
+      for (const id of rootIds.toReversed()) ctx.graph.deleteNode(id)
+      ctx.setSelectedIds(new Set(previousSelection))
+    }
+  })
+}
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
@@ -66,35 +107,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitDuplicateMove(rootIds: string[], previousSelection: Set<string>) {
-    const snapshots = new Map<string, SceneNode>()
-    for (const id of rootIds) {
-      const subtree = snapshotSubtree(ctx.graph, id)
-      for (const [nodeId, snapshot] of subtree) snapshots.set(nodeId, snapshot)
-    }
-    const nextSelection = new Set(rootIds)
-
-    ctx.undo.push({
-      label: 'Duplicate',
-      forward: () => {
-        for (const id of rootIds) {
-          if (ctx.graph.getNode(id)) continue
-          const snapshot = snapshots.get(id)
-          if (!snapshot) continue
-          restoreSubtree(
-            ctx.graph,
-            snapshot,
-            snapshot.parentId ?? ctx.state.currentPageId,
-            snapshots
-          )
-          ctx.runLayoutForNode(id)
-        }
-        ctx.setSelectedIds(new Set(nextSelection))
-      },
-      inverse: () => {
-        for (const id of rootIds.toReversed()) ctx.graph.deleteNode(id)
-        ctx.setSelectedIds(new Set(previousSelection))
-      }
-    })
+    pushCreatedSubtreesUndo(ctx, 'Duplicate', rootIds, previousSelection)
   }
 
   function commitResize(nodeId: string, original: ResizeOriginal) {
@@ -228,6 +241,15 @@ export function createUndoActions(ctx: EditorContext) {
     restorePageSnapshot(ctx, snapshot)
   }
 
+  /** Starts recording an edit to a page; the returned function ends it with what changed. */
+  function capturePageChange(pageId = ctx.state.currentPageId): () => PageChange {
+    return startPageChange(ctx.graph, pageId)
+  }
+
+  function restorePageChange(change: PageChange, side: 'before' | 'after') {
+    applyPageChangeToEditor(ctx, change, side)
+  }
+
   function pushUndoEntry(entry: UndoEntry) {
     ctx.undo.push(entry)
   }
@@ -244,6 +266,8 @@ export function createUndoActions(ctx: EditorContext) {
     redoAction,
     snapshotPage,
     restorePageFromSnapshot,
+    capturePageChange,
+    restorePageChange,
     pushUndoEntry
   }
 }

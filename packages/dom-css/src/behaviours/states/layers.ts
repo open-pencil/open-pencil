@@ -1,8 +1,20 @@
-import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
+import {
+  sceneNodeToDesignDocument,
+  type SceneGraphToDesignOptions
+} from '#dom-css/export/projection'
 import type { DesignElement, DesignNode, DesignText } from '#dom-css/types'
 import { omit } from 'es-toolkit/object'
 
-import { layerPath, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  behaviourOwner,
+  instanceSlotFrames,
+  layerPath,
+  partBinding,
+  readBehaviour,
+  slotPropertyId,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import type { StateElement } from './types'
 
@@ -45,9 +57,31 @@ function variantLayer(
   }
 }
 
+/**
+ * The tab panels a variant draws hidden behind the first. The generated tabs show each when its
+ * tab is chosen, so they are projected as drawn.
+ */
+function tabPanels(graph: SceneGraph, variant: SceneNode): Set<string> {
+  const owner = behaviourOwner(graph, variant)
+  const behaviour = owner && readBehaviour(owner)
+  const propertyId = behaviour?.kind === 'tabs' ? partBinding(behaviour, 'panels') : undefined
+  const panels = propertyId
+    ? instanceSlotFrames(graph, variant).find((frame) => slotPropertyId(frame) === propertyId)
+    : undefined
+  return new Set(panels?.childIds)
+}
+
 /** A variant projected to DOM, without where the set places it. */
-export function projectVariant(graph: SceneGraph, variant: SceneNode): VariantLayer | null {
-  const document = sceneNodeToDesignDocument(graph, variant.id, { includeSourceIds: false })
+export function projectVariant(
+  graph: SceneGraph,
+  variant: SceneNode,
+  { vectorElement }: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
+): VariantLayer | null {
+  const document = sceneNodeToDesignDocument(graph, variant.id, {
+    includeSourceIds: false,
+    vectorElement,
+    shown: tabPanels(graph, variant)
+  })
   const root = document.children.at(0)
   if (root?.type !== 'element') return null
   const style = root.inlineStyle ?? {}

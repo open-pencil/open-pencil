@@ -42,12 +42,29 @@ describe('components', () => {
     instance.setProperties({ [visibleName]: false })
     expect(instance.componentProperties[visibleName]?.value).toBe(false)
 
-    const nested = api.createComponent()
-    const slot = nested.createInstance()
-    slot.componentPropertyReferences = { mainComponent: textName }
-    expect(slot.isExposedInstance).toBe(true)
-    slot.isExposedInstance = false
-    expect(slot.isExposedInstance).toBe(false)
+    // Live Figma 126: only an instance in a component's own layers, whose component has
+    // properties, can be exposed; its copies report it but cannot change it.
+    expect(() => {
+      instance.isExposedInstance = true
+    }).toThrow('Instance must be contained within a component or component set to be exposed.')
+    const card = api.createComponent()
+    const bare = api.createComponent().createInstance()
+    card.appendChild(bare)
+    expect(() => {
+      bare.isExposedInstance = true
+    }).toThrow('Can only expose instances that have exposed nested instances')
+    const action = component.createInstance()
+    card.appendChild(action)
+    action.isExposedInstance = true
+    expect(action.isExposedInstance).toBe(true)
+    const cardInstance = card.createInstance()
+    const [copy] = cardInstance.exposedInstances
+    expect(copy?.isExposedInstance).toBe(true)
+    expect(() => {
+      if (copy) copy.isExposedInstance = false
+    }).toThrow('Can only expose primary instances.')
+    action.isExposedInstance = false
+    expect(cardInstance.exposedInstances).toEqual([])
 
     const editedName = component.editComponentProperty(visibleName, { name: 'Shown' })
     expect(editedName).toContain('Shown#')

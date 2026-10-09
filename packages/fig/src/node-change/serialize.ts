@@ -32,7 +32,12 @@ export {
 } from '@open-pencil/kiwi/fig/container'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  ComponentPropertyDefinition,
+  PluginDataEntry,
+  SceneGraph,
+  SceneNode
+} from '@open-pencil/scene-graph'
 import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -442,6 +447,11 @@ export interface SceneNodeToKiwiOptions {
   modeIdToGuid?: Map<string, GUID>
   propertyIdToGuid?: Map<string, GUID>
   slotContentRecords?: KiwiNodeChange[]
+  /** Plugin data a node is written with instead of its own, by node ID. */
+  pluginDataOverrides?: ReadonlyMap<string, PluginDataEntry[]>
+  recordOwners?: ReadonlyMap<string, string>
+  orderKeys?: ReadonlyMap<string, string>
+  writeChildren?: boolean
 }
 
 export function sceneNodeToKiwi(
@@ -464,7 +474,11 @@ export function sceneNodeToKiwi(
     componentPropertyDefinitionsById = buildComponentPropIndex(graph),
     modeIdToGuid,
     propertyIdToGuid = new Map<string, GUID>(),
-    slotContentRecords
+    slotContentRecords,
+    pluginDataOverrides,
+    recordOwners,
+    orderKeys,
+    writeChildren
   } = options
   // Raw paints retain library asset refs; effects use this map because their
   // Kiwi schema accepts only GUID-backed aliases.
@@ -483,6 +497,10 @@ export function sceneNodeToKiwi(
     componentPropertyDefinitionsById,
     propertyIdToGuid,
     slotContentRecords,
+    pluginDataOverrides,
+    recordOwners,
+    orderKeys,
+    writeChildren,
     fractionalPosition,
     mapToFigmaType,
     fillToKiwiPaint,

@@ -218,11 +218,13 @@ function reusableTabStore(): { store: EditorStore; created: boolean } {
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
   const imported = await readFigDocument(file, signal)
   const firstPageId = imported.getPages()[0]?.id
-  if (firstPageId) computeAllLayouts(imported, firstPageId)
+  const layOut = (pageId: string) =>
+    imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
+  if (firstPageId) layOut(firstPageId)
   const coverPageId = findFigThumbnailPageId(imported.getPages())
   if (coverPageId && coverPageId !== firstPageId) {
     populateFigPage(imported, coverPageId)
-    computeAllLayouts(imported, coverPageId)
+    layOut(coverPageId)
   }
   return imported
 }

@@ -1,3 +1,4 @@
+import type { SceneGraphToDesignOptions } from '#dom-css/export/projection'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
@@ -66,21 +67,33 @@ function pruneCombined(rules: StateRule[]): StateRule[] {
 }
 
 /**
+ * The variants a behaviour's owner draws: a set's components, or a standalone component, such
+ * as a radio group or tabs, which is its own only variant.
+ */
+export function ownerVariants(graph: SceneGraph, owner: SceneNode): SceneNode[] {
+  if (owner.type === 'COMPONENT') return [owner]
+  return graph.getChildren(owner.id).filter((child) => child.type === 'COMPONENT')
+}
+
+/**
  * A component set's variants as one markup tree with a rest style per layer and a rule per
  * variant holding only what that variant changes, under the conditions that show it. Layers
  * only some variants draw stay in the tree, hidden where absent.
  *
  * `null` when no variant shows the rest state, since every look then depends on a condition.
  */
-export function stateStyles(graph: SceneGraph, set: SceneNode): StateStyles | null {
+export function stateStyles(
+  graph: SceneGraph,
+  set: SceneNode,
+  options: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
+): StateStyles | null {
   const conditionsOf = variantConditions(graph, set)
-  const variants = graph
-    .getChildren(set.id)
-    .filter((child) => child.type === 'COMPONENT' && child.visible)
+  const variants = ownerVariants(graph, set)
+    .filter((variant) => variant.visible)
     .flatMap((variant) => {
       const conditions = conditionsOf(variant)
-      const root = conditions && projectVariant(graph, variant)
-      return conditions && root ? [{ conditions, root }] : []
+      const root = conditions && projectVariant(graph, variant, options)
+      return conditions && root ? [{ id: variant.id, conditions, root }] : []
     })
   const rest = variants.find((variant) => variant.conditions.length === 0)
   if (!rest) return null
@@ -99,5 +112,5 @@ export function stateStyles(graph: SceneGraph, set: SceneNode): StateStyles | nu
     }
   }
   for (const element of elements) element.rules = pruneCombined(element.rules)
-  return { name: set.name, root }
+  return { name: set.name, restId: rest.id, root }
 }

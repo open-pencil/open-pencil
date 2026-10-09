@@ -20,6 +20,9 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
+import PropertyBindButton from './component-properties/PropertyBindButton.vue'
+import PropertyBoundField from './component-properties/PropertyBoundField.vue'
+
 const { panels, menu } = useI18n()
 const fontLoader = { load: loadFont }
 const alignmentOptions = computed(() => [
@@ -57,6 +60,10 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
 <template>
   <TypographyControlsRoot v-slot="ctx" :font-loader="fontLoader">
     <PanelSection v-if="ctx.node.value" :label="panels.typography">
+      <template #actions>
+        <PropertyBindButton field="TEXT" />
+      </template>
+      <PropertyBoundField field="TEXT" :label="panels.content" />
       <SharedStyleField kind="text" :label="panels.textStyle" />
 
       <div class="mb-1.5 flex min-w-0 items-center gap-1.5">

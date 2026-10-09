@@ -11,6 +11,7 @@
   "createComponentSet": "Komponentensatz erstellen",
   "createInstance": "Instanz erstellen",
   "detachInstance": "Instanz lösen",
+  "detachIcon": "Symbol lösen",
   "goToMainComponent": "Zur Hauptkomponente",
   "addAutoLayout": "Auto-Layout hinzufügen",
   "bringToFront": "In den Vordergrund",

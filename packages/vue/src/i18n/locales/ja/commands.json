@@ -11,6 +11,7 @@
   "createComponentSet": "コンポーネントセットを作成",
   "createInstance": "インスタンスを作成",
   "detachInstance": "インスタンスの切り離し",
+  "detachIcon": "アイコンを切り離す",
   "goToMainComponent": "メインコンポーネントに移動",
   "addAutoLayout": "オートレイアウトを追加",
   "bringToFront": "最前面へ移動",

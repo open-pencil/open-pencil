@@ -3,7 +3,8 @@ import { unzipSync, zipSync, type Unzipped, type Zippable } from 'fflate'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { buildFigKiwi, parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
-import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
+import { decodeFigKiwiCanvas, parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
+import type { HeaderFields } from '@open-pencil/kiwi/schema-runtime'
 
 import { hasPNGSignature } from './thumbnail'
 
@@ -55,23 +56,28 @@ function isCanonicalCanvasEntry(name: string): boolean {
 
 function parseRawFigKiwi(
   bytes: Uint8Array,
-  onPages?: (pages: FigPageManifestEntry[]) => void
+  onPages?: (pages: FigPageManifestEntry[]) => void,
+  headers?: HeaderFields
 ): FigParseResult | null {
   const chunks = parseFigKiwiChunks(bytes)
   if (!chunks) return null
 
-  const decoded = decodeFigKiwiCanvas(bytes, onPages)
+  const decoded = decodeFigKiwiCanvas(bytes, onPages, headers)
   const thumbnailPNG = chunks.slice(2).find(hasPNGSignature) ?? null
   return { ...decoded, images: [], thumbnailPNG, metaJSON: null }
 }
 
-/** Parse a complete zipped or legacy raw `.fig` file into its protocol payload and resources. */
+/**
+ * Parse a complete zipped or legacy raw `.fig` file into its protocol payload and resources.
+ * Records decoded as `headers` keep only the named fields; `decodeWhole` reads one in full.
+ */
 export function parseFigBuffer(
   buffer: ArrayBuffer,
-  onPages?: (pages: FigPageManifestEntry[]) => void
+  onPages?: (pages: FigPageManifestEntry[]) => void,
+  headers?: HeaderFields
 ): FigParseResult {
   const bytes = new Uint8Array(buffer)
-  const raw = parseRawFigKiwi(bytes, onPages)
+  const raw = parseRawFigKiwi(bytes, onPages, headers)
   if (raw) return raw
 
   const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })
@@ -79,7 +85,7 @@ export function parseFigBuffer(
   let archive: Unzipped
   let decoded: ReturnType<typeof decodeFigKiwiCanvas>
   if (canvasData) {
-    decoded = decodeFigKiwiCanvas(canvasData, onPages)
+    decoded = decodeFigKiwiCanvas(canvasData, onPages, headers)
     archive = unzipSync(bytes, { filter: ({ name }) => !isCanonicalCanvasEntry(name) })
   } else {
     archive = unzipSync(bytes)
@@ -89,7 +95,7 @@ export function parseFigBuffer(
         `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
       )
     }
-    decoded = decodeFigKiwiCanvas(canvasData, onPages)
+    decoded = decodeFigKiwiCanvas(canvasData, onPages, headers)
   }
 
   const metaBytes = archive['meta.json']
@@ -102,6 +108,58 @@ export function parseFigBuffer(
     images,
     thumbnailPNG: archive['thumbnail.png'] ?? null,
     metaJSON: Object.hasOwn(archive, 'meta.json') ? new TextDecoder().decode(metaBytes) : null
+  }
+}
+
+/** A `.fig` file's parts with its Kiwi message still encoded, for copying records as bytes. */
+export interface FigArchiveParts {
+  schemaDeflated: Uint8Array
+  /** The inflated Kiwi message. */
+  dataRaw: Uint8Array
+  figKiwiVersion: number
+  images: Array<[string, Uint8Array]>
+  thumbnailPNG: Uint8Array | null
+  metaJSON: string | null
+}
+
+function canvasParts(canvasData: Uint8Array) {
+  const payload = parseFigKiwiContainer(canvasData)
+  if (!payload) throw new Error('Invalid fig-kiwi container')
+  return {
+    schemaDeflated: payload.schemaDeflated,
+    dataRaw: payload.dataRaw,
+    figKiwiVersion: payload.version
+  }
+}
+
+export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
+  const bytes = new Uint8Array(buffer)
+  const chunks = parseFigKiwiChunks(bytes)
+  if (chunks) {
+    const thumbnailPNG = chunks.slice(2).find(hasPNGSignature) ?? null
+    return { ...canvasParts(bytes), images: [], thumbnailPNG, metaJSON: null }
+  }
+  const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })
+  const canonical = findCanvasData(canvasArchive)
+  const archive = unzipSync(
+    bytes,
+    canonical ? { filter: ({ name }) => !isCanonicalCanvasEntry(name) } : undefined
+  )
+  const canvasData = canonical ?? findCanvasData(archive)
+  if (!canvasData)
+    throw new Error(
+      `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
+    )
+  const images = Object.entries(archive)
+    .filter(([name]) => name.startsWith('images/') && name !== 'images/')
+    .map(([name, data]) => [name.slice('images/'.length), data] as [string, Uint8Array])
+  return {
+    ...canvasParts(canvasData),
+    images,
+    thumbnailPNG: archive['thumbnail.png'] ?? null,
+    metaJSON: Object.hasOwn(archive, 'meta.json')
+      ? new TextDecoder().decode(archive['meta.json'])
+      : null
   }
 }
 

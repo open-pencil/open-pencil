@@ -1,5 +1,6 @@
 import { computed, watch } from 'vue'
 
+import { exposedInstances, findComponentPropertyTargets } from '@open-pencil/scene-graph'
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
 
 import {
@@ -27,7 +28,11 @@ function batchKey(propertyId: string, targets: SceneNode[]): string {
   return [propertyId, ...targets.map((node) => node.id)].join(':')
 }
 
-export function useComponentProperties() {
+/**
+ * Value controls for the selected instances, or for `targets` when given, such as an exposed
+ * nested instance shown under the instance that contains it.
+ */
+export function useComponentProperties(targets?: () => SceneNode[]) {
   const editor = useEditor()
   const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
   const retainedActivity = useRetainedActivity()
@@ -45,11 +50,12 @@ export function useComponentProperties() {
     )
   }
   const instances = useSceneComputed(() =>
-    editor.getSelectedNodes().filter((node) => node.type === 'INSTANCE')
+    (targets ? targets() : editor.getSelectedNodes()).filter((node) => node.type === 'INSTANCE')
   )
   const selectedCount = computed(() => editor.state.selectedIds.size)
   const allSelectedAreInstances = computed(
-    () => instances.value.length > 0 && instances.value.length === selectedCount.value
+    () =>
+      instances.value.length > 0 && (!!targets || instances.value.length === selectedCount.value)
   )
   const definitionSets = useSceneComputed(() =>
     instances.value.map((instance) => editor.getInstanceComponentPropertyDefinitions(instance.id))
@@ -76,7 +82,19 @@ export function useComponentProperties() {
         options = variantOptions(editor, firstInstance, definition.name)
       } else if (definition.type === 'INSTANCE_SWAP') {
         componentNodes ??= [...editor.graph.getAllNodes()]
-        options = instanceSwapOptions(componentNodes, definition, value === MIXED ? '' : value)
+        // Each layer the property swaps, in every selected instance, must not hold its own choice.
+        const parentIds = instances.value.flatMap((instance) =>
+          findComponentPropertyTargets(editor.graph, instance, definition.id).flatMap((target) =>
+            target.node.parentId ? [target.node.parentId] : []
+          )
+        )
+        options = instanceSwapOptions(
+          editor.graph,
+          componentNodes,
+          definition,
+          value === MIXED ? '' : value,
+          parentIds
+        )
       }
       return {
         id: definition.id,
@@ -135,4 +153,17 @@ export function useComponentProperties() {
   }
 
   return { active, controls, setValue, setTextValue, flush: batch.flush }
+}
+
+/** The exposed nested instances of the one selected instance, each shown as its own group. */
+export function useExposedInstances() {
+  const editor = useEditor()
+  return useSceneComputed(() => {
+    const selected = editor.getSelectedNodes()
+    if (selected.length !== 1 || selected[0].type !== 'INSTANCE') return []
+    return exposedInstances(editor.graph, selected[0]).map((node) => ({
+      id: node.id,
+      name: node.name
+    }))
+  })
 }

@@ -38,6 +38,7 @@ import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
+import { saveDocumentToStorage } from '@/app/storage/workspace/save'
 import { closeTab, activeTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
@@ -100,6 +101,7 @@ export function useAppMenu() {
     'open-storage-workspace': 'openStorageWorkspace',
     save: 'save',
     'save-as': 'saveAs',
+    'save-to-storage': 'saveToStorage',
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',
@@ -113,6 +115,7 @@ export function useAppMenu() {
     preferences: 'preferences',
     settings: 'settings',
     variables: 'variables',
+    'insert-icon': 'insertIcon',
     'view-rulers': 'rulers',
     'view-multiplayer-cursors': 'multiplayerCursors',
     'view-design-issues': 'designIssues',
@@ -163,6 +166,7 @@ export function useAppMenu() {
     'open-storage-workspace': () => openStorageWorkspace(router),
     save: () => void store.saveFigFile(),
     'save-as': () => void store.saveFigFileAs(),
+    'save-to-storage': () => void saveDocumentToStorage(store),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
     close: () => {
@@ -170,6 +174,9 @@ export function useAppMenu() {
     },
     settings: openSettingsDialog,
     variables: () => openVariablesDialog(store),
+    'insert-icon': () => {
+      store.state.iconPickerOpen = true
+    },
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

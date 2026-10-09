@@ -12,3 +12,12 @@ export const BUTTON_RESET: Record<string, string> = {
   'text-align': 'inherit',
   cursor: 'pointer'
 }
+
+/**
+ * Element styles the heading around an accordion trigger adds, cleared so the trigger lays
+ * out as designed while the heading keeps its level.
+ */
+export const HEADING_RESET: Record<string, string> = {
+  margin: '0',
+  font: 'inherit'
+}

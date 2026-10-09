@@ -1,5 +1,9 @@
 import { beforeAll, afterAll, describe, expect, test, spyOn, setDefaultTimeout } from 'bun:test'
 
+import {
+  expectSaveLoadedOnlyInternalPages,
+  snapshotNodes
+} from '#core-tests/helpers/fig/save-contract'
 import { unzipSync } from 'fflate'
 
 import {
@@ -536,16 +540,16 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(g2Export).toEqual(g1Export)
     })
 
-    test('edited export re-encodes the document without mutating unloaded source pages', async () => {
+    test('edited export re-encodes the document without loading unloaded visible pages', async () => {
       await g0Ready
       const edited = await parseFigFile(g0Bytes.slice(0), { populate: 'first-page' })
       const page = edited.getPages()[0]
       const name = `${page.name} (edited)`
       edited.updateNode(page.id, { name })
-      const before = structuredClone([...edited.nodes])
+      const before = snapshotNodes(edited)
       const bytes = await exportFigFile(edited)
       expect(bytes).not.toEqual(new Uint8Array(g0Bytes))
-      expect([...edited.nodes]).toEqual(before)
+      expectSaveLoadedOnlyInternalPages(edited, before)
       const reopened = await parseFigFile(bytes.slice().buffer as ArrayBuffer)
       expect(reopened.getPages()[0].name).toBe(name)
       expect(reopened.figSchemaDeflated).toEqual(edited.figSchemaDeflated)

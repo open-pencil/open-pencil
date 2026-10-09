@@ -10,6 +10,25 @@ export type FigReaderDiagnostic =
   | { kind: 'component'; diagnostic: Parameters<Handler<'onMissingComponent'>>[0] }
   | { kind: 'slot-content'; diagnostic: Parameters<Handler<'onMissingSlotContent'>>[0] }
 
+/** Each sink's entries, so a record reported again is not listed twice. */
+const reported = new WeakMap<FigReaderDiagnostic[], Set<string>>()
+
+/**
+ * Opening a file, recovering a page, and every save read records through sessions that share
+ * one sink, so the same skipped record can reach it more than once.
+ */
+function report(sink: FigReaderDiagnostic[], entry: FigReaderDiagnostic): void {
+  let keys = reported.get(sink)
+  if (!keys) {
+    keys = new Set(sink.map((existing) => JSON.stringify(existing)))
+    reported.set(sink, keys)
+  }
+  const key = JSON.stringify(entry)
+  if (keys.has(key)) return
+  keys.add(key)
+  sink.push(entry)
+}
+
 /**
  * Figma retains override and binding records that address nodes it later deleted, and
  * instances of deleted components, and the reader has no replacement to guess at. Opening
@@ -21,10 +40,10 @@ export type FigReaderDiagnostic =
 export function readerSessionOptions(sink: FigReaderDiagnostic[]): DocumentAssemblyOptions {
   return {
     derivedBounds: true,
-    onUnresolvedProperty: (diagnostic) => sink.push({ kind: 'property', diagnostic }),
-    onUnresolvedAssignment: (diagnostic) => sink.push({ kind: 'assignment', diagnostic }),
-    onUnresolvedBinding: (diagnostic) => sink.push({ kind: 'binding', diagnostic }),
-    onMissingComponent: (diagnostic) => sink.push({ kind: 'component', diagnostic }),
-    onMissingSlotContent: (diagnostic) => sink.push({ kind: 'slot-content', diagnostic })
+    onUnresolvedProperty: (diagnostic) => report(sink, { kind: 'property', diagnostic }),
+    onUnresolvedAssignment: (diagnostic) => report(sink, { kind: 'assignment', diagnostic }),
+    onUnresolvedBinding: (diagnostic) => report(sink, { kind: 'binding', diagnostic }),
+    onMissingComponent: (diagnostic) => report(sink, { kind: 'component', diagnostic }),
+    onMissingSlotContent: (diagnostic) => report(sink, { kind: 'slot-content', diagnostic })
   }
 }

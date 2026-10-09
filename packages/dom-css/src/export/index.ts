@@ -1,5 +1,10 @@
 // SceneGraph → HTML and JSX without the CSS runtimes, so browsers can bundle it.
-export { sceneGraphToDesignDocument, sceneNodeToDesignDocument } from './projection'
+export {
+  sceneGraphToDesignDocument,
+  sceneNodeToDesignDocument,
+  type SceneGraphToDesignOptions,
+  type VectorElementRenderer
+} from './projection'
 export { exportHTMLBundle } from './bundle'
 export {
   designDocumentToTailwindJSX,

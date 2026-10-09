@@ -6,7 +6,14 @@ import type {
   RecoverySnapshotMeta,
   RecoveryStore
 } from '@/app/document/recovery/types'
-import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
+import {
+  APP_DATABASE_NAMES,
+  binaryStorage,
+  defineAppDatabase,
+  openAppDatabase,
+  readStoredBinary,
+  type StoredBinary
+} from '@/app/storage/idb'
 
 const recoveryDatabase = defineAppDatabase<RecoveryDatabase>({
   name: APP_DATABASE_NAMES.recovery,
@@ -27,28 +34,8 @@ interface RecoveryDatabase extends DBSchema {
   }
   fig: {
     key: string
-    value: StoredFig
+    value: StoredBinary
   }
-}
-
-/**
- * A snapshot as IndexedDB stores it. Chromium refuses a single value over 127 MiB, which a
- * document's archive passes easily, but keeps a Blob as a file at any size, and faster.
- * Snapshots from earlier versions are byte arrays.
- */
-type StoredFig = Blob | Uint8Array
-
-/** A Blob of the snapshot without copying it; bytes over a shared buffer are copied first. */
-function figBlob(bytes: Uint8Array): Blob {
-  const plain =
-    bytes.buffer instanceof ArrayBuffer
-      ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-      : bytes.slice()
-  return new Blob([plain])
-}
-
-async function figBytesOf(stored: StoredFig): Promise<Uint8Array> {
-  return stored instanceof Blob ? new Uint8Array(await stored.arrayBuffer()) : stored
 }
 
 export function createIdbRecoveryStore(): RecoveryStore {
@@ -68,13 +55,13 @@ export function createIdbRecoveryStore(): RecoveryStore {
         transaction.objectStore('fig').get(id)
       ])
       await transaction.done
-      return metadata && stored
-        ? ({ ...metadata, figBytes: await figBytesOf(stored) } satisfies RecoverySnapshot)
-        : null
+      const figBytes = await readStoredBinary(stored)
+      return metadata && figBytes ? ({ ...metadata, figBytes } satisfies RecoverySnapshot) : null
     },
 
     async write(input: RecoverySnapshotInput) {
       const db = await database
+      const storeBinary = await binaryStorage()
       const transaction = db.transaction(['meta', 'fig'], 'readwrite')
       const metadata: RecoverySnapshotMeta = {
         id: input.id,
@@ -85,7 +72,7 @@ export function createIdbRecoveryStore(): RecoveryStore {
       }
       await Promise.all([
         transaction.objectStore('meta').put(metadata),
-        transaction.objectStore('fig').put(figBlob(input.figBytes), input.id),
+        transaction.objectStore('fig').put(storeBinary(input.figBytes), input.id),
         transaction.done
       ])
       return metadata

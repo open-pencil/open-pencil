@@ -1,5 +1,7 @@
 import type { LintFix, LintFixRequest } from '@open-pencil/core/lint'
-import { locale, type useDesignCheckMessages } from '@open-pencil/vue'
+import type { useDesignCheckMessages } from '@open-pencil/vue'
+
+import { formatNumber } from '@/app/i18n/number'
 
 import type { DesignIssue } from './issues'
 
@@ -51,19 +53,6 @@ const SPACING_DETAIL = {
 
 /** Figma's geometry field labels, which stay untranslated across its locales. */
 const GEOMETRY_LABELS: Record<string, string> = { x: 'X', y: 'Y', width: 'W', height: 'H' }
-
-const numberFormats = new Map<string, Intl.NumberFormat>()
-
-/** Numbers follow the app's language, not the browser's, like the rest of the panel. */
-function formatNumber(value: number): string {
-  const language = locale.get()
-  let format = numberFormats.get(language)
-  if (!format) {
-    format = new Intl.NumberFormat(language, { maximumFractionDigits: 2 })
-    numberFormats.set(language, format)
-  }
-  return format.format(value)
-}
 
 function numberAt(issue: DesignIssue, key: string): number | undefined {
   const value = issue.data?.[key]

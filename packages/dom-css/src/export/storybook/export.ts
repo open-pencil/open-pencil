@@ -1,11 +1,12 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { ExportHTMLFile } from '../bundle'
-import { componentModel, type ComponentGenerator } from '../components/model'
+import { componentModel, type ComponentGenerator, type ComponentModel } from '../components/model'
 import { reactComponent } from '../components/react'
+import type { ComponentReferences } from '../components/references'
 import { vueComponent } from '../components/vue'
 import { serializeHTML } from '../html'
-import { sceneNodeToDesignDocument } from '../projection'
+import { sceneNodeToDesignDocument, type VectorElementRenderer } from '../projection'
 import { printComponentStories } from './component'
 import { collectGroups, type StoryGroup } from './groups'
 import {
@@ -32,6 +33,8 @@ export interface ExportStorybookOptions {
   linkPath?: string
   /** Renders a variant to PNG; each story then shows it next to the link as its design. */
   renderDesignImage?: (nodeId: string) => Promise<Uint8Array>
+  /** Draws vector layers as inline SVG, from the engine's SVG export. */
+  vectorElement?: VectorElementRenderer
 }
 
 export interface StorybookFile extends ExportHTMLFile {
@@ -55,6 +58,7 @@ interface ModuleContext {
   storyNames: string[]
   /** Import path of each variant's design image, by variant index. */
   images: string[]
+  vectorElement?: VectorElementRenderer
 }
 
 function designLink(
@@ -91,7 +95,10 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     variants: group.variants.map((variant) => ({
       values: variant.values,
       html: serializeHTML(
-        sceneNodeToDesignDocument(context.graph, variant.node.id, { includeSourceIds: false })
+        sceneNodeToDesignDocument(context.graph, variant.node.id, {
+          includeSourceIds: false,
+          vectorElement: context.vectorElement
+        })
       )
     })),
     metaDesign: designLink(context, group.linkNode),
@@ -108,6 +115,74 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
   })
 }
 
+/** A story file to write: its group, the page it comes from, and its claimed file name. */
+interface StoryEntry {
+  page: SceneNode
+  group: StoryGroup
+  file: string
+}
+
+/**
+ * Every group's story file, with names claimed on every page so a one-page export picks the
+ * same names as a full one, kept for the pages the export covers.
+ */
+function storyEntries(graph: SceneGraph, pageId: string | undefined): StoryEntry[] {
+  const takenFiles = new Set<string>()
+  const takenIds = new Set<string>()
+  const entries: StoryEntry[] = []
+  for (const page of graph.getPages()) {
+    for (const group of collectGroups(graph, page)) {
+      // Storybook ids ignore case and punctuation, so `Library/Card` and `library/card` collide.
+      group.title = claimName(group.title, takenIds, { separator: ' ', key: storyId })
+      // File names are compared ignoring case for case-insensitive file systems.
+      const file = claimName(identifierName(group.name, 'Component'), takenFiles, {
+        key: (name) => name.toLowerCase()
+      })
+      if (!pageId || page.id === pageId) entries.push({ page, group, file })
+    }
+  }
+  return entries
+}
+
+/**
+ * The component each entry's set generates, by set id, built twice: first alone, so each
+ * knows its props, then knowing all the others, so an instance of one uses it rather than
+ * drawing its layers.
+ */
+function generatedModels(
+  graph: SceneGraph,
+  entries: readonly StoryEntry[],
+  vectorElement: VectorElementRenderer | undefined
+): Map<string, ComponentModel> {
+  // Components are imported by their files' names, so the two always match. A group's item
+  // component gets a file of its own, named apart from every story file.
+  const taken = new Set(entries.map((entry) => entry.file.toLowerCase()))
+  const itemNames = new Map(
+    entries.map((entry) => [
+      entry.file,
+      claimName(`${entry.file}Item`, taken, { key: (name) => name.toLowerCase() })
+    ])
+  )
+  const model = (set: SceneNode, file: string, references?: ComponentReferences) =>
+    componentModel(graph, set, {
+      vectorElement,
+      references,
+      name: file,
+      itemName: itemNames.get(file)
+    })
+  const alone = new Map<string, ComponentModel>()
+  for (const { group, file } of entries) {
+    const component = group.set && model(group.set, file)
+    if (group.set && component) alone.set(group.set.id, component)
+  }
+  const models = new Map<string, ComponentModel>()
+  for (const { group, file } of entries) {
+    const component = group.set && alone.has(group.set.id) && model(group.set, file, alone)
+    if (group.set && component) models.set(group.set.id, component)
+  }
+  return models
+}
+
 /**
  * Generate one CSF3 `.stories.ts` file per component or component set, plus a
  * `<Name>.design/` folder of variant images when `renderDesignImage` is given.
@@ -118,57 +193,45 @@ export async function exportStorybook(
 ): Promise<StorybookFile[]> {
   const framework = options.framework ?? 'react'
   const uniqueNames = uniqueLayerNames(graph)
-  const takenFiles = new Set<string>()
-  const takenIds = new Set<string>()
   const files: StorybookFile[] = []
   const add = (page: SceneNode, path: string, content: string | Uint8Array) =>
     files.push({ path, content, page: page.name })
 
-  // Names are claimed on every page, so a one-page export picks the same names as a full one.
-  for (const page of graph.getPages()) {
-    for (const group of collectGroups(graph, page)) {
-      // Storybook ids ignore case and punctuation, so `Library/Card` and `library/card` collide.
-      group.title = claimName(group.title, takenIds, { separator: ' ', key: storyId })
-      // File names are compared ignoring case for case-insensitive file systems.
-      const file = claimName(identifierName(group.name, 'Component'), takenFiles, {
-        key: (name) => name.toLowerCase()
-      })
-      if (options.pageId && page.id !== options.pageId) continue
+  const entries = storyEntries(graph, options.pageId)
+  const generate = GENERATORS[framework]
+  const models = generate ? generatedModels(graph, entries, options.vectorElement) : new Map()
 
-      const generate = GENERATORS[framework]
-      const component = generate && group.set ? componentModel(graph, group.set) : null
-      if (generate && component) {
-        // The component is imported by the file's name, so the two always match.
-        component.name = file
-        const generated = await generate(component)
-        for (const item of generated.files) add(page, item.path, item.content)
-        const design = designLink({ linkPath: options.linkPath, uniqueNames }, group.linkNode)
-        add(
-          page,
-          `${file}.stories.ts`,
-          printComponentStories({
-            storybook: STORYBOOK_PACKAGES[framework],
-            title: group.title,
-            component,
-            generated,
-            design: design.flatMap((entry) =>
-              entry.type === 'link' ? [{ name: 'OpenPencil', type: 'link', url: entry.url }] : []
-            )
-          })
-        )
-        continue
-      }
-
-      const names = storyNames(group)
-      const render = options.renderDesignImage
-      const images = render ? names.map((name) => `${file}.design/${name}.png`) : []
-      if (render) {
-        for (const [i, variant] of group.variants.entries())
-          add(page, images[i] ?? '', await render(variant.node.id))
-      }
-      const context = { ...options, graph, framework, uniqueNames, storyNames: names, images }
-      add(page, `${file}.stories.ts`, storyModule(group, context))
+  for (const { page, group, file } of entries) {
+    const component = group.set && models.get(group.set.id)
+    if (generate && component) {
+      const generated = await generate(component)
+      for (const item of generated.files) add(page, item.path, item.content)
+      const design = designLink({ linkPath: options.linkPath, uniqueNames }, group.linkNode)
+      add(
+        page,
+        `${file}.stories.ts`,
+        printComponentStories({
+          storybook: STORYBOOK_PACKAGES[framework],
+          title: group.title,
+          component,
+          generated,
+          design: design.flatMap((entry) =>
+            entry.type === 'link' ? [{ name: 'OpenPencil', type: 'link', url: entry.url }] : []
+          )
+        })
+      )
+      continue
     }
+
+    const names = storyNames(group)
+    const render = options.renderDesignImage
+    const images = render ? names.map((name) => `${file}.design/${name}.png`) : []
+    if (render) {
+      for (const [i, variant] of group.variants.entries())
+        add(page, images[i] ?? '', await render(variant.node.id))
+    }
+    const context = { ...options, graph, framework, uniqueNames, storyNames: names, images }
+    add(page, `${file}.stories.ts`, storyModule(group, context))
   }
   return files
 }

@@ -105,6 +105,8 @@ export { useLayout } from '#vue/controls/layout/use'
 export type { LayoutAxis, SizeLimitProp } from '#vue/controls/layout/helpers'
 export { useAppearance } from '#vue/controls/appearance/use'
 export { useMask } from '#vue/controls/mask/use'
+export { useIcon } from '#vue/controls/icon/use'
+export { useIconSearch } from '#vue/controls/icon/search'
 export { useTypography } from '#vue/controls/typography/use'
 export type { UseTypographyOptions } from '#vue/controls/typography/use'
 export { useDocumentWorkspace } from '#vue/document/workspace/use'
@@ -243,8 +245,11 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
-  useComponentProperties
+  useComponentProperties,
+  useComponentPropertyAuthoring,
+  useExposedInstances
 } from '#vue/controls/component-props'
+export type { ComponentBinding, ComponentBindingGroup } from '#vue/controls/component-props'
 export {
   slotInstanceOptions,
   slotLimits,

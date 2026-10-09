@@ -129,11 +129,20 @@ export function runBaseline(store: EditorStore, pageId: string): PageSnapshot | 
   return getRunState(store).baselines.get(pageId) ?? null
 }
 
-/** Note the entry an edit just pushed, if it carries the run's label (`AI: <tool>`). */
-export function recordRunUndoEntry(store: EditorStore, label: string): void {
+/**
+ * Note the entry an edit just pushed, if it carries the run's label (`AI: <tool>`). An edit that
+ * changed nothing pushes none, so the entry on top before it, `previous`, is not the edit's.
+ */
+export function recordRunUndoEntry(
+  store: EditorStore,
+  label: string,
+  previous: UndoEntry | undefined
+): void {
   const entry = store.undo.peekUndo()
   const { undoEntries } = getRunState(store)
-  if (entry?.label === label && !undoEntries.includes(entry)) undoEntries.push(entry)
+  if (entry !== previous && entry?.label === label && !undoEntries.includes(entry)) {
+    undoEntries.push(entry)
+  }
 }
 
 export function runUndoEntries(store: EditorStore): readonly UndoEntry[] {

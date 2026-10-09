@@ -2,9 +2,7 @@ import type { StorageDocument } from '@/app/integrations/storage'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
-  storageCredentialStatuses,
-  storagePreferencesComplete,
-  storageProviderRegistry
+  isStorageConfigured
 } from '@/app/integrations/storage'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
@@ -27,13 +25,7 @@ export function createStorageWorkspaceSource(
 
     async refresh(): Promise<StorageDocument[] | null> {
       const providerID = activeStorageProviderID.value
-      const provider = storageProviderRegistry.get(providerID)
-      const statuses = await storageCredentialStatuses(providerID)
-      const configured =
-        storagePreferencesComplete(providerID) &&
-        provider.credentialFields.every(
-          (field) => !field.required || statuses[field.id] === 'configured'
-        )
+      const configured = await isStorageConfigured(providerID)
       const localStore = getLocalCanvasStore()
       const local = (await localStore.listMetas(true)).filter(
         (metadata) => metadata.providerId === providerID

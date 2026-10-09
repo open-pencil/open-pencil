@@ -73,6 +73,7 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
+      { id: 'save-to-storage', label: 'Save to Storage…' },
       { type: 'separator' },
       {
         id: 'export-selection',
@@ -265,6 +266,12 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       {
+        id: 'insert-icon',
+        label: 'Insert Icon…',
+        palette: { keywords: ['iconify', 'symbol', 'glyph', 'lucide'] }
+      },
+      { type: 'separator' },
+      {
         id: 'selection.toggleMask',
         label: 'Use as Mask',
         command: 'selection.toggleMask'
@@ -356,6 +363,11 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.detachInstance',
         label: 'Detach Instance',
         command: 'selection.detachInstance'
+      },
+      {
+        id: 'selection.detachIcon',
+        label: 'Detach Icon',
+        command: 'selection.detachIcon'
       },
       { type: 'separator' },
       {

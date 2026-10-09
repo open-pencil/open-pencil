@@ -65,6 +65,13 @@ Only an accepted delta advances the receiver's checkpoint. Original archive byte
 available for recovery and are released with session ownership. Recovery never replaces the
 edited graph.
 
+An edited export writes every page. With a live session, it first reads internal-only pages into
+the edited graph: their layers never draw and loading is not an edit. Once every page is loaded,
+the session and the archive are released, and saves write from the document graph without a
+copy. Visible pages that are still unloaded are read only into a copy of the graph made for that
+save; a save never loads one into the document. While a population worker still fills the graph
+there is no live session, and internal pages are read into the copy too.
+
 Checkpoints contain source-to-node mappings, loaded pages, saved-size tracking, and component
 topology addressed by complete source-identity paths. Occurrence property payloads are
 reconstructed from source records when recovery is needed. Restore validates paths, component

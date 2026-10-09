@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openAppMenu } from '#tests/helpers/menu'
 
 test('configured storage lists previews through ranges before opening the document', async ({
   page
@@ -96,7 +97,6 @@ test('configured storage lists previews through ranges before opening the docume
 
   await page.getByTestId('settings-storage-open-workspace').click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
   const entry = page.getByRole('button', { name: /Remote design/ })
   await expect(entry).toBeVisible()
   const preview = entry.locator('img')
@@ -124,4 +124,78 @@ test('storage workspace directs unconfigured users to Settings', async ({ page }
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
+})
+
+test('Save to storage uploads the open document and lists it in the workspace', async ({
+  page
+}) => {
+  const objects = new Map<string, Buffer>()
+  await page.route('https://s3.example.com/**', async (route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+    const key = decodeURIComponent(url.pathname.replace(/^\/designs\/?/, ''))
+    const prefix = url.searchParams.get('prefix')
+    if (url.searchParams.get('list-type') === '2' && prefix !== null) {
+      const contents = [...objects]
+        .filter(([name]) => name.startsWith(prefix))
+        .map(
+          ([name, body]) =>
+            `<Contents><Key>${name}</Key><LastModified>2026-01-02T03:04:05.000Z</LastModified><Size>${body.byteLength}</Size></Contents>`
+        )
+      await route.fulfill({
+        contentType: 'application/xml',
+        body: `<ListBucketResult><IsTruncated>false</IsTruncated>${contents.join('')}</ListBucketResult>`
+      })
+      return
+    }
+    if (request.method() === 'PUT') {
+      objects.set(key, request.postDataBuffer() ?? Buffer.alloc(0))
+      await route.fulfill({ status: 200, headers: { ETag: '"etag"' } })
+      return
+    }
+    const body = objects.get(key)
+    if (!body) {
+      await route.fulfill({ status: 404 })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      headers: { 'Content-Length': String(body.byteLength) },
+      body: request.method() === 'HEAD' ? undefined : body
+    })
+  })
+
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  // Before storage is configured, the command opens storage settings.
+  let file = await openAppMenu(page, 'File')
+  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  const panel = page.getByTestId('settings-storage-panel')
+  await expect(panel).toBeVisible()
+  await panel.getByRole('button', { name: /S3 storage/ }).click()
+  await panel.getByLabel('Endpoint').fill('https://s3.example.com')
+  await panel.getByLabel('Bucket').fill('designs')
+  await panel.getByLabel('Access key ID').fill('access-key')
+  await panel.getByLabel('Secret access key').fill('secret-key')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByTestId('app-settings-done').click()
+
+  file = await openAppMenu(page, 'File')
+  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  await expect
+    .poll(() => [...objects.keys()].filter((key) => key.includes('/canvases/')).sort())
+    .toEqual([
+      expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\.fig$/),
+      expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\.meta\.json$/)
+    ])
+  const uploaded = [...objects].find(([key]) => key.endsWith('.fig'))?.[1]
+  // An exported .fig is a zip archive holding the document and its thumbnail.
+  expect(uploaded?.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
+
+  file = await openAppMenu(page, 'File')
+  await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+  await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Untitled/ }).first()).toBeVisible()
 })

@@ -2,7 +2,11 @@ import { appCredentialServices } from '@/app/settings/credentials/app'
 import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialRef, CredentialStatus } from '@/app/settings/credentials/types'
 
-import { activeStorageProviderID, readStoragePreferences } from './preferences'
+import {
+  activeStorageProviderID,
+  readStoragePreferences,
+  storagePreferencesComplete
+} from './preferences'
 import { storageProviderRegistry } from './providers'
 import type { StorageAdapter, StorageProviderID } from './types'
 
@@ -29,6 +33,15 @@ export async function storageCredentialStatuses(
     })
   )
   return Object.fromEntries(entries)
+}
+
+/** Required preferences are filled in and every required credential is saved. */
+export async function isStorageConfigured(providerID: StorageProviderID): Promise<boolean> {
+  if (!storagePreferencesComplete(providerID)) return false
+  const statuses = await storageCredentialStatuses(providerID)
+  return storageProviderRegistry
+    .get(providerID)
+    .credentialFields.every((field) => !field.required || statuses[field.id] === 'configured')
 }
 
 export function createActiveStorageAdapter(

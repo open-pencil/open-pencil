@@ -185,6 +185,8 @@ function navigationClass(disabled: boolean) {
             />
           </motion.div>
         </AnimatePresence>
+        <!-- Inserting rather than drawing, in every category: commands such as placing an icon. -->
+        <slot name="end" />
       </motion.div>
     </ToolbarRoot>
 

@@ -14,8 +14,10 @@ export {
 } from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
 export { executeAtomicTool } from './history/atomic-tool'
+export type { PageChange } from './history/page-change'
+export { isEmptyPageChange } from './history/page-change'
 export type { PageSnapshot } from './history/snapshot'
-export { graphFromPageSnapshot } from './history/snapshot-graph'
+export { graphFromPageChange, graphFromPageSnapshot } from './history/snapshot-graph'
 export type { ClipboardPayload, ClipboardSnapshot } from './clipboard/copy'
 export { resolvePasteTarget } from './clipboard/paste-target'
 export { playIslandRoots } from './play/islands'
@@ -32,7 +34,11 @@ export type { NodePreview } from './node-preview'
 export { EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
-export type { VariantConflict, VariantValidationIssue } from './components/variants'
+export type {
+  VariantConflict,
+  VariantMutationResult,
+  VariantValidationIssue
+} from './components/variants'
 export type {
   ClipboardImageResolution,
   EditorContext,

@@ -579,6 +579,11 @@ export interface SceneNode {
   librarySource: LibraryAssetSource | null
   isPublishable: boolean
   isSymbolPublishable: boolean
+  /**
+   * On an instance inside a component: its properties show on instances of that component,
+   * as Figma's `isExposedInstance`.
+   */
+  isExposedInstance: boolean
   symbolDescription: string
   symbolLinks: SymbolLink[]
   variantPropSpecs: VariantPropSpec[]

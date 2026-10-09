@@ -22,12 +22,14 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 - [Drawing Shapes](./drawing-shapes) — rectangles, ellipses, lines, frames, sections, polygons, and stars
 - [Text Editing](./text-editing) — creating and editing text with rich formatting
 - [Pen Tool](./pen-tool) — drawing vector paths with bezier curves
+- [Icons](./icons) — searching icon sets, inserting icons, and swapping or recoloring them
 
 ## Organizing & Managing
 
 - [Layers & Pages](./layers-and-pages) — the layers panel, pages, and properties panel
 - [Context Menu](./context-menu) — right-click actions for clipboard, grouping, components, and more
 - [Exporting](./exporting) — image export and .fig file operations
+- [Cloud Storage](./cloud-storage) — documents and libraries in your own S3-compatible bucket
 
 ## Advanced Features
 

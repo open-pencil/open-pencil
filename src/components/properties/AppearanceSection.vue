@@ -11,6 +11,9 @@ import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import PropertyBindButton from './component-properties/PropertyBindButton.vue'
+import PropertyBoundField from './component-properties/PropertyBoundField.vue'
+
 const { panels } = useI18n()
 type BlendModeSelectValue = BlendMode | 'MIXED'
 
@@ -42,6 +45,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
   >
     <PanelSection v-if="active" :label="panels.appearance">
       <template #actions>
+        <PropertyBindButton field="VISIBLE" />
         <IconButton
           :label="panels.toggleVisibility"
           :active="visibilityState === 'hidden'"
@@ -52,6 +56,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
           <icon-lucide-eye v-else class="size-3.5 opacity-50" />
         </IconButton>
       </template>
+      <PropertyBoundField field="VISIBLE" />
 
       <PanelGrid :columns="2" distribution="wide-first">
         <PanelFieldGroup :label="panels.blendMode">

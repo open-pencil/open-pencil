@@ -43,7 +43,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
-import { nodeWithResolvedBindings } from './resolved-bindings'
+import { exportedNode } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
@@ -64,6 +64,8 @@ function exportOrderKey(
   node: SceneNode,
   childIndex: number
 ): string {
+  const decided = context.orderKeys?.get(node.id)
+  if (decided) return decided
   const parentId = node.parentId
   if (!parentId) return context.fractionalPosition(childIndex)
   const parent = context.graph.getNode(parentId)
@@ -654,6 +656,7 @@ function applyComponentMetadata(
   if (node.type === 'COMPONENT' || node.isSymbolPublishable) {
     nc.isSymbolPublishable = node.isSymbolPublishable
   }
+  if (node.isExposedInstance) nc.propsAreBubbled = true
   if (node.symbolDescription) nc.symbolDescription = node.symbolDescription
   if (node.symbolLinks.length > 0) nc.symbolLinks = structuredClone(node.symbolLinks)
   const componentPropDefs = node.componentPropertyDefinitions.map((def) => {
@@ -886,6 +889,27 @@ function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): s
   return isPathText ? 'TEXT_PATH' : context.mapToFigmaType(node.type)
 }
 
+/**
+ * The node a record is written from. Serializing writes plugin data onto the node it is given,
+ * and the export reads the live document, so each record gets a copy that lives only while it is
+ * written, carrying any plugin data the export renamed.
+ */
+function nodeToSerialize(context: SceneNodeToKiwiContext, source: SceneNode): SceneNode {
+  const resolved = exportedNode(context, source)
+  return {
+    ...resolved,
+    pluginData: context.pluginDataOverrides?.get(source.id) ?? resolved.pluginData
+  }
+}
+
+/** An instance writes its contents on its own record; a caller may write a record alone. */
+function exportedChildren(node: SceneNode, context: SceneNodeToKiwiContext): SceneNode[] {
+  if (node.type === 'INSTANCE' || context.writeChildren === false) return []
+  return context.graph
+    .getChildren(node.id)
+    .filter((child) => !child.internalOnly && child.sharedStyleType === null)
+}
+
 export function sceneNodeToKiwiWithContext(
   source: SceneNode,
   parentGuid: GUID,
@@ -893,7 +917,7 @@ export function sceneNodeToKiwiWithContext(
   localIdCounter: { value: number },
   context: SceneNodeToKiwiContext
 ): KiwiNodeChange[] {
-  const node = nodeWithResolvedBindings(context.graph, source)
+  const node = nodeToSerialize(context, source)
   const guid = getOrCreateNodeGuid(context, node.id, localIdCounter) ?? {
     sessionID: 1,
     localID: localIdCounter.value++
@@ -972,12 +996,7 @@ export function sceneNodeToKiwiWithContext(
   }
 
   const result: KiwiNodeChange[] = [nc]
-  const children =
-    node.type === 'INSTANCE'
-      ? []
-      : context.graph
-          .getChildren(node.id)
-          .filter((child) => !child.internalOnly && child.sharedStyleType === null)
+  const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
     result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
   }

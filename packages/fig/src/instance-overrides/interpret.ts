@@ -83,7 +83,11 @@ export function interpretComponent(
 
 /** One source index per document; evaluation state remains local to each call. */
 export function createOccurrenceInterpreter(changes: readonly NodeChange[]) {
-  const index = createSourceIndex(changes)
+  return createIndexedOccurrenceInterpreter(createSourceIndex(changes))
+}
+
+/** An interpreter over an index built elsewhere, such as one that decodes records as read. */
+export function createIndexedOccurrenceInterpreter(index: SourceIndex) {
   return {
     instance: (id: string, options: InterpretInstanceOptions = {}) =>
       interpretRoot(index, id, 'INSTANCE', options),

@@ -29,14 +29,13 @@ import { useI18n } from '@open-pencil/vue'
 import type { AliasCandidate, TokenRow } from '@/app/editor/tokens/model'
 import { SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
-import BindingPill from '@/components/ui/binding/BindingPill.vue'
+import { BindingPill, VariablePicker } from '@/components/ui/binding'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
+import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
-import TokenAliasPicker from '@/components/variables/TokenAliasPicker.vue'
 import tokensPanelTheme from '@/theme/tokens-panel'
 
 const {
@@ -224,6 +223,11 @@ function alias(modeId: string) {
   return row.values.find((value) => value.modeId === modeId)?.alias
 }
 
+/** The color an aliased value resolves to, shown beside the variable as the panel does. */
+function aliasColor(modeId: string): Color | undefined {
+  return row.values.find((value) => value.modeId === modeId)?.color
+}
+
 function aliasId(modeId: string): string | undefined {
   const value = variable.value.valuesByMode[modeId]
   return typeof value === 'object' && 'aliasId' in value ? value.aliasId : undefined
@@ -305,14 +309,17 @@ function cssNameDone(event: KeyboardEvent) {
         <span v-if="!singleMode" :class="ui.label()">{{ mode.name }}</span>
         <div :class="ui.valueRow()">
           <div v-if="alias(mode.modeId)" :class="ui.valueControl()">
-            <BindingPill :label="alias(mode.modeId) ?? ''" />
-            <IconButton
-              :label="variables.detachVariable"
-              data-test-id="variables-detach-variable"
-              @click="emit('detach', mode.modeId)"
-            >
-              <icon-lucide-unlink class="size-3.5" />
-            </IconButton>
+            <FillSwatch
+              v-if="aliasColor(mode.modeId)"
+              :fill="{
+                type: 'SOLID',
+                visible: true,
+                opacity: aliasColor(mode.modeId)?.a ?? 1,
+                color: aliasColor(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }
+              }"
+              :ui="{ root: 'size-5 shrink-0' }"
+            />
+            <BindingPill class="min-w-0 flex-1" :label="alias(mode.modeId) ?? ''" />
           </div>
           <ColorInput
             v-else-if="color(mode.modeId)"
@@ -339,11 +346,20 @@ function cssNameDone(event: KeyboardEvent) {
               <span :class="ui.hint()">{{ numberUnit }}</span>
             </template>
           </AppInput>
-          <TokenAliasPicker
-            :candidates="aliasCandidates"
+          <VariablePicker
+            :items="aliasCandidates"
             :selected="aliasId(mode.modeId)"
-            :label="singleMode ? variables.useVariable : `${mode.name}: ${variables.useVariable}`"
+            :state="aliasId(mode.modeId) ? 'bound' : 'unbound'"
+            :trigger-label="
+              singleMode ? variables.useVariable : `${mode.name}: ${variables.useVariable}`
+            "
+            :search-placeholder="variables.searchVariables"
+            :empty-label="variables.noMatchingVariables"
+            :detach-label="variables.detachVariable"
+            side="left"
+            data-test-id="variables-use-variable"
             @select="emit('alias', mode.modeId, $event)"
+            @detach="emit('detach', mode.modeId)"
           />
         </div>
         <AppInput

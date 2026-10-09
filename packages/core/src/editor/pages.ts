@@ -176,7 +176,7 @@ export function createPageActions(ctx: EditorContext) {
     if (generation !== pageSwitchGeneration) return null
     if (ctx.getRenderer() || populated) {
       options.onProgress?.({ phase: 'layout', detail: page.name })
-      computeAllLayouts(ctx.graph, pageId)
+      ctx.graph.applyDerivedLayoutDuring(() => computeAllLayouts(ctx.graph, pageId))
     }
     throwIfAborted(options.signal)
     return generation === pageSwitchGeneration ? { pageId, generation } : null
@@ -213,7 +213,7 @@ export function createPageActions(ctx: EditorContext) {
     if (populated === null || graph !== ctx.graph) return false
     await resolvePageFonts(page.id, page.name, {})
     if (graph !== ctx.graph) return false
-    computeAllLayouts(graph, page.id)
+    graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph, page.id))
     return true
   }
 

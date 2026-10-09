@@ -1,4 +1,4 @@
-import { slotPropertyId } from '@open-pencil/scene-graph'
+import { readIcon, slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { LayerNode, LayerRow, LayerSelectionMode } from '#vue/primitives/LayerTree/context'
@@ -10,6 +10,7 @@ function nodeToLayerNode(node: SceneNode): LayerNode {
     type: node.type,
     layoutMode: node.layoutMode,
     slot: !!slotPropertyId(node),
+    icon: !!readIcon(node),
     visible: node.visible,
     locked: node.locked
   }
@@ -59,6 +60,7 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
     target.type !== source.type ||
     target.layoutMode !== source.layoutMode ||
     target.slot !== !!slotPropertyId(source) ||
+    target.icon !== !!readIcon(source) ||
     target.visible !== source.visible ||
     target.locked !== source.locked
   if (!changed) return false
@@ -66,6 +68,7 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
   target.type = source.type
   target.layoutMode = source.layoutMode
   target.slot = !!slotPropertyId(source)
+  target.icon = !!readIcon(source)
   target.visible = source.visible
   target.locked = source.locked
   return true

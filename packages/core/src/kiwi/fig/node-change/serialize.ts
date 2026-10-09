@@ -11,4 +11,4 @@ export {
   type KiwiNodeChange,
   type SceneNodeToKiwiOptions
 } from '@open-pencil/fig/node-change'
-export { buildFontDigestMap } from './font/digests'
+export { buildFontDigestMap, settleFontDigestMap } from './font/digests'

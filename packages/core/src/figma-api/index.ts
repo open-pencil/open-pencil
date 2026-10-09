@@ -25,6 +25,7 @@ import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group'
 import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
+import { iconify, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
@@ -574,6 +575,8 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
+  /** Where icon tools search and fetch icons; hosts may pass a self-hosted or bundled set. */
+  icons: IconProvider = iconify
   rasterCodec?: RasterCodec
   /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
   changeBaseline?: (pageId: string) => SceneGraph | null

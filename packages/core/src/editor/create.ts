@@ -13,6 +13,7 @@ import {
   hasStoredBackground,
   setDefaultPageBackground
 } from '#core/figma-api/page-backgrounds'
+import { iconify } from '#core/icons'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { installTextMeasurer } from '#core/layout'
@@ -36,6 +37,7 @@ import { createDesignTokenActions } from './design-tokens'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
+import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
@@ -219,6 +221,7 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
+    icons: options?.icons ?? iconify,
     getCk: () => _ck,
     getRenderer: () => _renderer,
     getTextEditor: () => _textEditor,
@@ -253,6 +256,7 @@ export function createEditor(options?: EditorOptions) {
   const variables = createVariableActions(ctx)
   const designTokens = createDesignTokenActions(ctx, variables, nodes)
   const vectorize = createVectorizeActions(ctx)
+  const icons = createIconActions(ctx)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
@@ -386,6 +390,7 @@ export function createEditor(options?: EditorOptions) {
 
     // Bitmap-to-vector replacement
     ...vectorize,
+    ...icons,
 
     // Variables
     ...variables,
