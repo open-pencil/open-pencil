@@ -1,6 +1,6 @@
 import { tool } from 'ai'
 
-import { graphFromPageSnapshot } from '@open-pencil/core/editor'
+import { graphFromPageSnapshot, isEmptyPageChange } from '@open-pencil/core/editor'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   registerComponentCatalog,
@@ -86,23 +86,23 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
         if (toolChangesDocument(def) && !runBaseline(store, pageId)) {
           recordRunBaseline(store, store.snapshotPage(pageId))
         }
+        const undoBefore = store.undo.peekUndo()
         const finishChange = store.capturePageChange(pageId)
         try {
           return await runTool(def, figma, args, pageId)
         } finally {
           const change = finishChange()
-          // Atomic tools record their own undo entry.
-          if (!isAtomicTool(def)) {
+          // Atomic tools record their own undo entry; an edit that changed nothing records none.
+          if (!isAtomicTool(def) && !isEmptyPageChange(change)) {
             store.pushUndoEntry({
               label: `AI: ${def.name}`,
               forward: () => store.restorePageChange(change, 'after'),
               inverse: () => store.restorePageChange(change, 'before')
             })
           }
-          // Every entry the run pushes belongs to its turn, view changes included: one left on
-          // top, such as a closing zoom to fit, would otherwise keep the turn from reverting.
-          // Atomic and snapshot edits both label their entries this way.
-          recordRunUndoEntry(store, `AI: ${def.name}`)
+          // Every entry the run pushes belongs to its turn; atomic and page edits both label
+          // their entries this way. View tools change nothing on the page and push none.
+          recordRunUndoEntry(store, `AI: ${def.name}`, undoBefore)
           // View tools (selection, viewport, pages) cannot change the document.
           if (toolChangesDocument(def)) {
             try {
