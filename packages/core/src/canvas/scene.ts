@@ -138,12 +138,16 @@ function renderMaskNodeContent(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  overlays: RenderOverlays
+  overlays: RenderOverlays,
+  absX: number,
+  absY: number
 ): void {
   canvas.save()
   canvas.translate(node.x, node.y)
   applyNodeTransforms(canvas, node, overlays)
   renderNodeContent(r, canvas, graph, node, {})
+  // A group or frame used as a mask masks with what its layers draw, as in Figma.
+  renderChildren(r, canvas, graph, node, {}, absX + node.x, absY + node.y, true)
   canvas.restore()
 }
 
@@ -168,7 +172,7 @@ function renderChildIds(
     (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, hasTransformedAncestor),
     (childId) => {
       const child = graph.getNode(childId)
-      if (child) renderMaskNodeContent(r, canvas, graph, child, overlays)
+      if (child) renderMaskNodeContent(r, canvas, graph, child, overlays, absX, absY)
     },
     (childId) => {
       const child = graph.getNode(childId)
