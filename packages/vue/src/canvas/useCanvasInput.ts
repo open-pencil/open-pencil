@@ -89,6 +89,11 @@ export function useCanvasInput(
     )
   }
 
+  /** ⌘ or Ctrl held: hover reaches the deepest layer, the one a click would select, as in Figma. */
+  function hoverDeep(e?: MouseEvent) {
+    return e ? e.metaKey || e.ctrlKey : metaHeld || controlHeld
+  }
+
   function refreshMeasurement() {
     const mode = altHeld && canMeasure() ? (metaHeld || controlHeld ? 'deep' : 'shallow') : 'off'
     editor.setMeasurementMode(mode)
@@ -100,7 +105,7 @@ export function useCanvasInput(
       pointer.cy,
       editor,
       hitFns,
-      mode === 'deep'
+      mode === 'deep' || hoverDeep()
     )
     editor.setAutoLayoutHover(
       mode === 'off' ? resolveAutoLayoutHover(pointer.cx, pointer.cy, editor) : null
@@ -145,6 +150,7 @@ export function useCanvasInput(
     hitTestInScope,
     hitTestSectionTitle,
     hitTestComponentLabel,
+    hitTestFrameTitle,
     getClickCount,
     wasSelectedBeforeClickSequence: (id) => selectedIdsBeforeClickSequence.value.has(id),
     onEditCanvasLabel: canvasLabelEdit.start,
@@ -296,7 +302,13 @@ export function useCanvasInput(
       const guideCursor = guideInput.updateHover(sx, sy)
       cursorOverride.value =
         guideCursor ??
-        updateHoverCursor(cx, cy, editor, hitFns, editor.state.measurementMode === 'deep')
+        updateHoverCursor(
+          cx,
+          cy,
+          editor,
+          hitFns,
+          editor.state.measurementMode === 'deep' || hoverDeep(e)
+        )
       editor.setAutoLayoutHover(
         editor.state.measurementMode === 'off' ? resolveAutoLayoutHover(cx, cy, editor) : null
       )

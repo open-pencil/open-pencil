@@ -61,13 +61,34 @@ export function createClipboardPlacementActions(ctx: EditorContext) {
     return { x: -panX / zoom, y: -panY / zoom, width: width / zoom, height: height / zoom }
   }
 
+  /** Centers layers of `parentId` over another layer, wherever that layer sits. */
+  function centerOver(nodeIds: string[], parentId: string, overId: string) {
+    const over = ctx.graph.getNode(overId)
+    if (!over) return
+    const at = ctx.graph.getAbsolutePosition(over.id)
+    centerNodesAtCanvasPoint(nodeIds, parentId, {
+      x: at.x + over.width / 2,
+      y: at.y + over.height / 2
+    })
+  }
+
   /**
    * Places pasted layers as Figma does. Layers copied out of a frame keep their offset inside the
    * frame they are pasted into; top-level layers keep their place on the canvas. An axis that
    * does not fit inside the destination frame is centered in it, and layers that would land out
-   * of view are centered in the view.
+   * of view are centered in the view. A paste that could not go into the selected layer
+   * (`requestedId`), such as an instance into its own main component, lands over that layer.
    */
-  function placePasted(nodeIds: string[], sourceParentId: string | undefined, targetId: string) {
+  function placePasted(
+    nodeIds: string[],
+    sourceParentId: string | undefined,
+    targetId: string,
+    requestedId = targetId
+  ) {
+    if (requestedId !== targetId) {
+      centerOver(nodeIds, targetId, requestedId)
+      return
+    }
     const items = nodeIds.map((id) => ctx.graph.getNode(id)).filter(isNotNil)
     if (items.length === 0) return
     const target = ctx.graph.getNode(targetId)

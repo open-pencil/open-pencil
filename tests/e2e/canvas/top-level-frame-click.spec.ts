@@ -137,8 +137,9 @@ test('the empty area of a plain top-level frame stays background', async () => {
   editor.canvas.assertNoErrors()
 })
 
-test('repeated clicks at one point reach deeper layers, one level at a time', async () => {
-  const ids = await editor.page.evaluate(() => {
+/** A top-level board holding a grid, a cell, and a label, one inside the other. */
+async function createNestedBoard() {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const fill = (r: number, g: number, b: number) => [
@@ -181,6 +182,10 @@ test('repeated clicks at one point reach deeper layers, one level at a time', as
     store.requestRender()
     return { grid: grid.id, cell: cell.id, label: label.id }
   })
+}
+
+test('repeated clicks at one point reach deeper layers, one level at a time', async () => {
+  const ids = await createNestedBoard()
   await editor.canvas.waitForRender()
   const point = await at(ids.label, 20, 20)
 
@@ -190,5 +195,19 @@ test('repeated clicks at one point reach deeper layers, one level at a time', as
     // Apart enough not to count as a double-click, which goes one level deeper by itself.
     await editor.page.waitForTimeout(600)
   }
+  editor.canvas.assertNoErrors()
+})
+
+test('holding Cmd hovers the deepest layer, the one a Cmd-click selects', async () => {
+  const ids = await createNestedBoard()
+  await editor.canvas.waitForRender()
+  const point = await at(ids.label, 20, 20)
+
+  await editor.canvas.hover(point.x, point.y)
+  await expect.poll(async () => (await state()).hovered).toBe(ids.grid)
+  await editor.page.keyboard.down('Meta')
+  await expect.poll(async () => (await state()).hovered).toBe(ids.label)
+  await editor.page.keyboard.up('Meta')
+  await expect.poll(async () => (await state()).hovered).toBe(ids.grid)
   editor.canvas.assertNoErrors()
 })

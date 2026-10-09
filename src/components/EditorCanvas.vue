@@ -15,7 +15,9 @@ import IconLucidePanelTop from '~icons/lucide/panel-top'
 
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
-  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
+  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y,
+  COMPONENT_LABEL_ICON_GAP,
+  COMPONENT_LABEL_ICON_SIZE
 } from '@open-pencil/core/constants'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import {
@@ -177,11 +179,16 @@ const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
   const abs = store.graph.getAbsolutePosition(node.id)
-  return { x: abs.x, y: abs.y }
+  // A component's name starts after its diamond, which keeps its screen size at any zoom.
+  const icon =
+    canvasLabelEdit.value?.kind === 'component-label'
+      ? (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / store.state.zoom
+      : 0
+  return { x: abs.x + icon, y: abs.y }
 })
 const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
 const canvasLabelEditPresentation = computed(() =>
-  canvasLabelPresentation(store, canvasLabelEditNode.value ?? null)
+  canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
 )
 
 const paddingEditorAnchor = computed(() => {

@@ -160,4 +160,22 @@ describe('paste placement', () => {
     await editor.pasteSnapshot(snapshot, { x: 400, y: 200 })
     expect(selected()).toMatchObject({ parentId: target.id, x: 80, y: 80 })
   })
+
+  test('an instance pasted into its own main component lands over it in its parent', async () => {
+    const page = setup()
+    const card = node('COMPONENT', page, { x: 260, width: 160, height: 100 })
+    const instance = editor.graph.createInstance(card.id, page, { x: 460 })
+    if (!instance) throw new Error('Expected an instance')
+    const snapshot = await copy(instance.id)
+    editor.select([card.id])
+    await editor.pasteSnapshot(snapshot)
+    expect(selected()).toMatchObject({ type: 'INSTANCE', parentId: page, x: 260, y: 0 })
+
+    // Inside a frame in the component, the paste climbs to the component's own parent.
+    const frame = node('FRAME', card.id, { x: 10, y: 10, width: 100, height: 60 })
+    editor.select([frame.id])
+    await editor.pasteSnapshot(snapshot)
+    expect(selected()).toMatchObject({ parentId: page, x: 240, y: -10 })
+    expect(editor.graph.getChildren(card.id).map((child) => child.id)).toEqual([frame.id])
+  })
 })

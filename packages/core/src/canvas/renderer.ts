@@ -431,10 +431,22 @@ export class SkiaRenderer {
     return this.ck.Color4f(SLOT_COLOR.r, SLOT_COLOR.g, SLOT_COLOR.b, alpha)
   }
 
-  /** The outline colour for a node: pink for slots, purple for components, blue otherwise. */
-  outlineColor(node: SceneNode) {
+  /**
+   * The outline colour for a node: pink for slots, purple for components, instances and every
+   * layer inside them, as in Figma, blue otherwise.
+   */
+  outlineColor(node: SceneNode, graph: SceneGraph) {
     if (slotPropertyId(node)) return this.slotColor()
-    return this.isComponentType(node.type) ? this.compColor() : this.selColor()
+    return this.isInComponent(node, graph) ? this.compColor() : this.selColor()
+  }
+
+  /** A component, instance or set, or a layer inside one; content placed in a slot is not. */
+  isInComponent(node: SceneNode, graph: SceneGraph): boolean {
+    const owner = graph.closest(
+      node.id,
+      (layer) => this.isComponentType(layer.type) || slotPropertyId(layer) !== undefined
+    )
+    return owner !== undefined && !slotPropertyId(owner)
   }
 
   isComponentType(type: string): boolean {

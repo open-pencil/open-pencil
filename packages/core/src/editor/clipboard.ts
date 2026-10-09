@@ -16,7 +16,11 @@ import { createClipboardFontActions } from './clipboard/fonts'
 import { deleteIds, recreateSnapshots, restoreDeletedEntries } from './clipboard/history'
 import type { PasteHistoryOperation } from './clipboard/paste-replace'
 import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboard/paste-replace'
-import { resolvePasteTarget } from './clipboard/paste-target'
+import {
+  instanceSafeParent,
+  pastedComponentIds,
+  resolvePasteTarget
+} from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
@@ -243,7 +247,12 @@ export function createClipboardActions(ctx: EditorContext) {
       return node.id
     }
 
-    const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+    const requestedTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
+    const pasteTarget = instanceSafeParent(
+      ctx.graph,
+      requestedTarget,
+      pastedComponentIds(ctx.graph, [...nodes, ...dependencies])
+    )
     if (!prepareSlotEdits(ctx, [pasteTarget])) return created
     const dependencyRootIds: string[] = []
     for (const dependency of dependencies)
@@ -286,7 +295,13 @@ export function createClipboardActions(ctx: EditorContext) {
     }
 
     if (cursorPos) placementActions.centerNodesAtCanvasPoint(created, pasteTarget, cursorPos)
-    else placementActions.placePasted(created, nodes[0]?.parentId ?? undefined, pasteTarget)
+    else
+      placementActions.placePasted(
+        created,
+        nodes[0]?.parentId ?? undefined,
+        pasteTarget,
+        requestedTarget
+      )
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     ctx.setSelectedIds(new Set(created))
 

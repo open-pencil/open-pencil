@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 
-const { modelValue, label } = defineProps<{
+const {
+  modelValue,
+  label,
+  compact = false
+} = defineProps<{
   modelValue: string
   label: string
+  /** The 11px text of a frame or component name instead of a section title's 12px. */
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -36,14 +42,16 @@ watch(
   <div class="grid h-full">
     <span
       aria-hidden="true"
-      class="invisible col-start-1 row-start-1 h-full whitespace-pre px-2 text-xs leading-6"
+      class="invisible col-start-1 row-start-1 h-full whitespace-pre"
+      :class="compact ? 'px-0.5 text-[11px] leading-[16px]' : 'px-2 text-xs leading-6'"
       >{{ modelValue || ' ' }}</span
     >
     <input
       ref="input"
       :value="modelValue"
       :aria-label="label"
-      class="col-start-1 row-start-1 h-full w-0 min-w-full bg-transparent px-2 text-xs leading-6 outline-none"
+      class="col-start-1 row-start-1 h-full w-0 min-w-full bg-transparent outline-none"
+      :class="compact ? 'px-0.5 text-[11px] leading-[16px]' : 'px-2 text-xs leading-6'"
       @input="updateValue"
       @keydown.enter.prevent="emit('commit')"
       @keydown.escape.prevent="emit('cancel')"
