@@ -93,51 +93,60 @@ export function componentPropertyScope(
   return undefined
 }
 
-/**
- * Saving to `.fig` replaces authored property IDs with GUIDs, so an assignment
- * also matches one property by its name, which survives a reload.
- */
-function assignedDefinition(
+/** The one property with this name; a name several properties share is an error. */
+function namedDefinition(
   definitions: readonly ComponentPropertyDefinition[],
-  key: string
-): ComponentPropertyDefinition {
-  const byId = definitions.find((item) => item.id === key)
-  if (byId) return byId
-  const byName = definitions.filter((item) => item.name === key)
-  if (byName.length === 1) return byName[0]
-  if (byName.length > 1)
+  name: string
+): ComponentPropertyDefinition | undefined {
+  const matches = definitions.filter((item) => item.name === name)
+  if (matches.length > 1)
     throw new Error(
-      `Component property name ${key} is ambiguous; use one of the IDs: ${byName.map((item) => item.id).join(', ')}`
+      `Component property name ${name} is ambiguous; use one of the IDs: ${matches.map((item) => item.id).join(', ')}`
     )
-  throw new Error(`Unknown component property: ${key}`)
+  return matches[0]
+}
+
+function assignValue(
+  graph: SceneGraph,
+  instance: SceneNode,
+  definition: ComponentPropertyDefinition,
+  key: string,
+  value: string
+): void {
+  if (definition.type === 'VARIANT')
+    throw new Error('Select a component-set variant when creating the instance')
+  if (definition.type === 'BOOLEAN' && value !== 'true' && value !== 'false')
+    throw new Error(`Expected true or false for component property: ${key}`)
+  if (!applyComponentPropertyValue(graph, instance.id, definition, value))
+    throw new Error(`Cannot assign component property: ${key}`)
 }
 
 /**
- * Text, boolean, and swap values an instance sets by naming the property, as in
+ * Set text, boolean, and swap properties an instance names as props, as in
  * `Title="Hello"`, the way it picks a variant; design JSX props keep their meaning.
  */
-export function namedPropertyAssignments(
+export function assignNamedProperties(
   graph: SceneGraph,
   instance: SceneNode,
   props: Record<string, unknown>
-): Record<string, unknown> | undefined {
-  const names = new Set(
-    componentPropertyDefinitions(graph, instance)
-      .filter((definition) => definition.type !== 'VARIANT')
-      .map((definition) => definition.name)
+): void {
+  const definitions = componentPropertyDefinitions(graph, instance).filter(
+    (definition) => definition.type !== 'VARIANT'
   )
-  const entries = Object.entries(props).filter(
-    ([key]) => names.has(key) && !DESIGN_JSX_SUPPORTED_PROPERTIES.has(key)
-  )
-  if (entries.length === 0) return undefined
-  return Object.fromEntries(
-    entries.map(([key, value]) => [
-      key,
-      typeof value === 'boolean' || typeof value === 'number' ? String(value) : value
-    ])
-  )
+  for (const [key, value] of Object.entries(props)) {
+    if (DESIGN_JSX_SUPPORTED_PROPERTIES.has(key)) continue
+    const definition = namedDefinition(definitions, key)
+    if (!definition) continue
+    if (typeof value !== 'string' && typeof value !== 'boolean' && typeof value !== 'number')
+      throw new Error(`Expected a string or boolean for component property: ${key}`)
+    assignValue(graph, instance, definition, key, String(value))
+  }
 }
 
+/**
+ * Keys are property IDs or, because saving to `.fig` replaces authored IDs
+ * with GUIDs, names, which survive a reload.
+ */
 export function assignComponentProperties(
   graph: SceneGraph,
   instance: SceneNode,
@@ -150,13 +159,10 @@ export function assignComponentProperties(
     input
   )
   const definitions = componentPropertyDefinitions(graph, instance)
-  for (const [id, value] of Object.entries(assignments)) {
-    const definition = assignedDefinition(definitions, id)
-    if (definition.type === 'VARIANT')
-      throw new Error('Select a component-set variant when creating the instance')
-    if (definition.type === 'BOOLEAN' && value !== 'true' && value !== 'false')
-      throw new Error(`Expected true or false for component property: ${id}`)
-    if (!applyComponentPropertyValue(graph, instance.id, definition, value))
-      throw new Error(`Cannot assign component property: ${id}`)
+  for (const [key, value] of Object.entries(assignments)) {
+    const definition =
+      definitions.find((item) => item.id === key) ?? namedDefinition(definitions, key)
+    if (!definition) throw new Error(`Unknown component property: ${key}`)
+    assignValue(graph, instance, definition, key, value)
   }
 }

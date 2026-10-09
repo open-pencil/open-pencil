@@ -65,7 +65,7 @@ test('assigns properties by ID or by name', async () => {
   ).rejects.toThrow('Unknown component property: title')
 })
 
-test('prefers a property ID over another property with that name', async () => {
+test('properties prefers an ID; a prop always names the property', async () => {
   const graph = new SceneGraph()
   const component = await renderTree(
     graph,
@@ -87,6 +87,10 @@ test('prefers a property ID over another property with that name', async () => {
   )
   expect(graph.getChildren(instance.id)[0]?.text).toBe('Label')
   expect(graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({ Title: 'Changed' })
+
+  const named = await renderTree(graph, Instance({ of: component.id, Title: 'By name' }))
+  expect(graph.getChildren(named.id)[0]?.text).toBe('By name')
+  expect(graph.getNode(named.id)?.componentPropertyAssignments).toEqual({ label: 'By name' })
 })
 
 test('rejects a property name that more than one property has', async () => {

@@ -16,8 +16,8 @@ import { renderRekaNode } from './behaviours/render'
 import {
   assignComponentProperties,
   componentMetadata,
-  componentPropertyScope,
-  namedPropertyAssignments
+  assignNamedProperties,
+  componentPropertyScope
 } from './component-properties'
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { prepareScalarBindings } from './scalar-bindings'
@@ -455,7 +455,7 @@ async function renderInstanceNode(
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
     applyBindings(graph, instance.id, bindings)
     applyInstanceOverrides(graph, instance, tree.props.overrides)
-    assignComponentProperties(graph, instance, namedPropertyAssignments(graph, instance, props))
+    assignNamedProperties(graph, instance, props)
     assignComponentProperties(graph, instance, props.properties)
     return instance
   } catch (error) {
