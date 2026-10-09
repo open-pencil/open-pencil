@@ -13,6 +13,7 @@ function selection(overrides: Partial<CanvasMenuOptions['selection']> = {}) {
     isGroup: ref(false),
     isComponent: ref(false),
     isInstance: ref(false),
+    isIcon: ref(false),
     canCreateComponentSet: ref(false),
     canCreateSlot: ref(false),
     ...overrides

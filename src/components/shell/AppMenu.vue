@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { templateRef, useResizeObserver, useScroll } from '@vueuse/core'
+import { templateRef } from '@vueuse/core'
 import {
   MenubarCheckboxItem,
   MenubarContent,
@@ -14,7 +14,7 @@ import {
   MenubarSubTrigger,
   MenubarTrigger
 } from 'reka-ui'
-import { computed, useTemplateRef, watch } from 'vue'
+import { useTemplateRef, watch } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { vTestId, useI18n } from '@open-pencil/vue'
@@ -36,9 +36,9 @@ import {
   updateMenuChecked
 } from '@/app/shell/menu/entry'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
-import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
+import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -62,24 +62,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 
 // A narrow panel clips the menubar; fade the clipped side and offer a chevron so it reads as scrollable.
 const menubar = useTemplateRef<HTMLElement>('menubar')
-const { arrivedState, measure } = useScroll(menubar)
-// Labels change width with the language, so watch the menus as well as the space they get.
-useResizeObserver(menubar, measure)
-useResizeObserver(() => {
-  const content = menubar.value?.firstElementChild
-  return content instanceof HTMLElement ? content : null
-}, measure)
-const overflowStart = computed(() => !arrivedState.left)
-const overflowEnd = computed(() => !arrivedState.right)
-
-function scrollMenubar() {
-  const element = menubar.value
-  if (!element) return
-  element.scrollBy({
-    left: overflowEnd.value ? element.clientWidth : -element.scrollWidth,
-    behavior: animationsEnabled.value ? 'smooth' : 'auto'
-  })
-}
+const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(menubar)
 </script>
 
 <template>
@@ -218,7 +201,7 @@ function scrollMenubar() {
         data-test-id="app-menubar-scroll"
         class="flex h-6 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted hover:bg-hover hover:text-surface data-start:order-first"
         :data-start="!overflowEnd || undefined"
-        @click="scrollMenubar"
+        @click="scrollTowardHidden"
       >
         <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5" />
         <icon-lucide-chevron-left v-else class="size-3.5" />

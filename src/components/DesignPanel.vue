@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 
 import { getNodeEditCapability } from '@open-pencil/core/editor'
+import { readIcon } from '@open-pencil/scene-graph'
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
+import { COMPONENT_TYPES, sceneNodeIcon } from '@/app/editor/icons'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openLibraryReview, useLibraryService } from '@/app/libraries'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -58,7 +59,7 @@ const isComponentType = computed(() => {
 const canAddVariant = computed(
   () => !!node.value && getNodeEditCapability(store.graph, node.value.id).editable
 )
-const selectedIcon = computed(() => (node.value ? nodeIcon(node.value) : undefined))
+const selectedIcon = computed(() => (node.value ? sceneNodeIcon(node.value) : undefined))
 function openSelectedInstanceReview() {
   const instance = node.value
   if (instance?.type !== 'INSTANCE' || !instance.componentId) return
@@ -187,7 +188,8 @@ const { panels } = useI18n()
       <SlotAuthoringSection />
       <BehaviourPanel v-if="node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'" />
 
-      <FramePresetSelect v-if="node.type === 'FRAME'" />
+      <!-- Presets size artboards; an icon is a glyph. -->
+      <FramePresetSelect v-if="node.type === 'FRAME' && !readIcon(node)" />
 
       <IconSection />
       <PositionSection />

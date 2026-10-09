@@ -1,5 +1,5 @@
 import type { DesignElement, DesignNode, VectorElementRenderer } from '@open-pencil/dom-css/export'
-import { readIcon, readIconTint } from '@open-pencil/scene-graph'
+import { isIconModified, readIcon, readIconTint } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
 import { iconColor } from '#core/icons/render'
@@ -28,9 +28,10 @@ function idPart(id: string): string {
 
 /**
  * Vector layers and icons in HTML exports as inline SVG from the SVG export, so paths,
- * gradients, and shadows draw as they do there. An icon is one SVG named by `data-icon`, whose
- * tinted paths take `currentColor`, so a page recolors it with CSS `color`. Def ids start with
- * the layer's id, so several SVGs on one page never pick up each other's gradients or filters.
+ * gradients, and shadows draw as they do there. An icon is one SVG whose tinted paths take
+ * `currentColor`, so a page recolors it with CSS `color`, named by `data-icon` unless its paths
+ * were edited. Def ids start with the layer's id, so several SVGs on one page never pick up each
+ * other's gradients or filters.
  */
 export const vectorElement: VectorElementRenderer = (graph, node) => {
   const idPrefix = `${idPart(node.id)}-`
@@ -45,7 +46,11 @@ export const vectorElement: VectorElementRenderer = (graph, node) => {
   const color = icon ? iconColor(graph, node) : null
   return {
     ...element,
-    attrs: icon ? { ...element.attrs, 'data-icon': icon.name } : element.attrs,
+    // An icon whose paths were edited no longer draws the named icon, so it goes unnamed.
+    attrs:
+      icon && !isIconModified(graph, node)
+        ? { ...element.attrs, 'data-icon': icon.name }
+        : element.attrs,
     // Strokes and shadows can reach past the layer's box, which an inline SVG would clip.
     inlineStyle: { overflow: 'visible', ...(color ? { color: colorToHex(color) } : {}) }
   } satisfies DesignElement

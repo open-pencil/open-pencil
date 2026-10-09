@@ -13,6 +13,19 @@ export function withIcon(node: SceneNode, icon: Icon | null): SceneNode['pluginD
   return withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.icon, icon ?? undefined)
 }
 
+/** The layer name an icon is placed with: its name in the set, such as `cat` for `mdi:cat`. */
+export function iconLayerName(name: string): string {
+  return name.slice(name.indexOf(':') + 1)
+}
+
+/**
+ * Whether `layerName` is the name an icon `name` was placed with, rather than one someone gave
+ * it: `cat`, or `Icon / mdi:cat` as icons were named before.
+ */
+export function isPlacedIconName(layerName: string, name: string): boolean {
+  return layerName === iconLayerName(name) || layerName === `Icon / ${name}`
+}
+
 /** The names of the icons among `nodes`, each once, in the order they are first met. */
 export function iconNames(nodes: Iterable<SceneNode>): string[] {
   const names = new Set<string>()
