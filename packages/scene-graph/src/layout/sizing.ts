@@ -1,5 +1,5 @@
-import type { SceneGraph } from './index'
-import type { LayoutSizing, SceneNode, TextAutoResize } from './types'
+import type { SceneGraph } from '../index'
+import type { LayoutSizing, SceneNode, TextAutoResize } from '../types'
 
 /**
  * How a node sizes along one screen axis, as Figma's `layoutSizingHorizontal` and

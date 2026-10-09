@@ -89,11 +89,11 @@
       "import": "./dist/guides.js",
       "default": "./dist/guides.js"
     },
-    "./layout-guides": {
-      "types": "./dist/layout-guides.d.ts",
-      "bun": "./src/layout-guides.ts",
-      "import": "./dist/layout-guides.js",
-      "default": "./dist/layout-guides.js"
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "bun": "./src/layout/index.ts",
+      "import": "./dist/layout.js",
+      "default": "./dist/layout.js"
     },
     "./types": {
       "types": "./dist/types.d.ts",

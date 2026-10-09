@@ -1,4 +1,4 @@
-import type { LayoutGrid, SceneNode } from './types'
+import type { LayoutGrid, SceneNode } from '../types'
 
 export interface LayoutGuideLine {
   axis: 'x' | 'y'

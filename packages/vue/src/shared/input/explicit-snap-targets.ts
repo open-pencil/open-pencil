@@ -1,7 +1,7 @@
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { layoutGuideLines } from '@open-pencil/scene-graph/layout-guides'
+import { layoutGuideLines } from '@open-pencil/scene-graph/layout'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 

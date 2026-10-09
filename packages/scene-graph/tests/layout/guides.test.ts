@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { layoutGuideLines, layoutGuideSections } from '@open-pencil/scene-graph/layout-guides'
+import { layoutGuideLines, layoutGuideSections } from '@open-pencil/scene-graph/layout'
 
 describe('layout guide geometry bounds', () => {
   test('normalizes fractional section counts', () => {

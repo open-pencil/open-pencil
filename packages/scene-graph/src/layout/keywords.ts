@@ -1,4 +1,4 @@
-import type { LayoutAlign, LayoutAlignSelf, LayoutCounterAlign, SceneNode } from './types'
+import type { LayoutAlign, LayoutAlignSelf, LayoutCounterAlign, SceneNode } from '../types'
 
 /**
  * Auto layout as the formats that author it spell it: flexbox keywords from CSS, design JSX,
