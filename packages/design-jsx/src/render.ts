@@ -6,7 +6,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { REKA_ELEMENTS } from './behaviours'
 import { designJSXHelpers } from './helpers'
 import * as React from './mini-react'
-import { renderRoots, renderTree, variantPropNames, type RenderResult } from './renderer'
+import { renderRoots, renderTree, componentPropNames, type RenderResult } from './renderer'
 import { DESIGN_JSX_SUPPORTED_PROPERTIES } from './schema'
 import type { DesignJSXServices } from './services'
 import { isTreeNode, resolveToTree, type TreeNode } from './tree'
@@ -46,10 +46,10 @@ function collectUnsupportedPropWarnings(
   warnings: string[]
 ): void {
   const supportedProps = tree.type === 'svg' ? SVG_ROOT_PROPS : SUPPORTED_PROPS
-  // An instance chooses its variant by the set's variant properties, such as `State="On"`.
-  const variants = variantPropNames(graph, tree.props)
+  // An instance sets its component's properties by name, such as `State="On"` or `Title="Hi"`.
+  const properties = componentPropNames(graph, tree.props)
   for (const key of Object.keys(tree.props)) {
-    if (!supportedProps.has(key) && !variants.includes(key)) {
+    if (!supportedProps.has(key) && !properties.includes(key)) {
       warnings.push(`Unsupported prop "${key}" on <${tree.type}> is ignored.`)
     }
   }

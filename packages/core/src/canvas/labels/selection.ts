@@ -74,7 +74,7 @@ export function drawSingleSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['sizeFont']>
 ): void {
   const sizeText = `${Math.round(node.width)} × ${Math.round(node.height)}`
-  const pillColor = r.outlineColor(node)
+  const pillColor = r.outlineColor(node, graph)
   const transform = frameLabelPlacement(node, graph, overlays.rotationPreview, {
     x: 0.5,
     y: 1
@@ -90,6 +90,7 @@ export function drawSingleSelectionSize(
 function drawMultiSelectionSize(
   r: SkiaRenderer,
   canvas: Canvas,
+  graph: SceneGraph,
   nodes: SceneNode[],
   minX: number,
   minY: number,
@@ -102,7 +103,7 @@ function drawMultiSelectionSize(
   const sx2 = maxX * r.zoom + r.panX
   const sy2 = maxY * r.zoom + r.panY
   const smx = (sx1 + sx2) / 2
-  const allComponents = nodes.length > 0 && nodes.every((n) => r.isComponentType(n.type))
+  const allComponents = nodes.length > 0 && nodes.every((n) => r.isInComponent(n, graph))
   const pillColor = allComponents ? r.compColor() : r.selColor()
 
   drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor)
@@ -131,5 +132,5 @@ export function drawSelectionLabels(
     return
   }
 
-  drawMultiSelectionSize(r, canvas, nodes, minX, minY, maxX, maxY, sizeFont)
+  drawMultiSelectionSize(r, canvas, graph, nodes, minX, minY, maxX, maxY, sizeFont)
 }

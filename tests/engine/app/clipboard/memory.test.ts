@@ -6,7 +6,9 @@ import {
   clearInMemoryClipboardHTML,
   getInMemoryClipboardHTML,
   hasInMemoryClipboardHTML,
-  setInMemoryClipboardHTML
+  matchingClipboardSnapshot,
+  setInMemoryClipboardHTML,
+  setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand, type SystemClipboard } from '@/app/editor/clipboard/system'
@@ -32,6 +34,21 @@ const memoryIO: BrowserClipboardIO = {
 const memoryClipboard = createBrowserSystemClipboard(memoryIO)
 
 describe('in-memory clipboard', () => {
+  test('recognizes its own copy after the browser rewrites the HTML', async () => {
+    const store = createEditorStore()
+    const rect = store.graph.createNode('RECTANGLE', store.state.currentPageId, { name: 'Card' })
+    store.select([rect.id])
+    const payload = await store.prepareCopy()
+    setInMemoryClipboardPayload(payload)
+    // What Chrome returns from navigator.clipboard.read(): double quotes and escaped markup.
+    const rewritten = payload.html
+      .replace("charset='utf-8'", 'charset="utf-8"')
+      .replaceAll('<!--', '&lt;!--')
+    expect(rewritten).not.toBe(payload.html)
+    expect(matchingClipboardSnapshot(rewritten)).toBe(payload.snapshot)
+    expect(matchingClipboardSnapshot(rewritten.replace('(figma)', '(figma)A'))).toBeUndefined()
+  })
+
   test('stores, retrieves, and clears clipboard HTML', () => {
     expect(hasInMemoryClipboardHTML()).toBe(false)
     expect(getInMemoryClipboardHTML()).toBe('')

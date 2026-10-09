@@ -16,6 +16,7 @@ import { renderRekaNode } from './behaviours/render'
 import {
   assignComponentProperties,
   componentMetadata,
+  assignNamedProperties,
   componentPropertyScope
 } from './component-properties'
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
@@ -403,13 +404,11 @@ function resolveComponent(
   return named?.type === 'COMPONENT_SET' ? findVariantInSet(graph, named, props) : named
 }
 
-/** The variant properties an element chooses its component's variant by, such as `State`. */
-export function variantPropNames(graph: SceneGraph, props: Record<string, unknown>): string[] {
-  const named = namedComponent(graph, props)
-  if (named?.type !== 'COMPONENT_SET') return []
-  return named.componentPropertyDefinitions
-    .filter((definition) => definition.type === 'VARIANT')
-    .map((definition) => definition.name)
+/** The component properties an element sets by name, such as `State` or `Title`. */
+export function componentPropNames(graph: SceneGraph, props: Record<string, unknown>): string[] {
+  const component = resolveComponent(graph, props)
+  if (!component) return []
+  return (componentPropertyScope(graph, component.id) ?? []).map((definition) => definition.name)
 }
 
 async function renderInstanceNode(
@@ -456,6 +455,7 @@ async function renderInstanceNode(
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
     applyBindings(graph, instance.id, bindings)
     applyInstanceOverrides(graph, instance, tree.props.overrides)
+    assignNamedProperties(graph, instance, props)
     assignComponentProperties(graph, instance, props.properties)
     return instance
   } catch (error) {
