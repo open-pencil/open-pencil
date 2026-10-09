@@ -104,7 +104,7 @@ async function pasteSelection(
       await pasteClipboardHTML(store, result.html, cursorPos)
       return true
     }
-    return result.text !== null && pasteSVGText(store, result.text, cursorPos)
+    return result.text !== null && (await pasteSVGText(store, result.text, cursorPos))
   }
 
   const memoryHTML = getInMemoryClipboardHTML()

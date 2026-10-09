@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { compact } from 'es-toolkit/array'
 
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { createSVGNodes } from '@open-pencil/core/io'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
@@ -244,4 +245,118 @@ test('imports SVG files that start with an XML declaration and doctype', () => {
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect id="mark" width="10" height="10"/></svg>`
   )
   expect(graph.getChildren(frame?.id ?? '').map((node) => node.name)).toEqual(['mark'])
+})
+
+describe('SVG text imports as the text layers Figma makes', () => {
+  function textLayers(svg: string) {
+    const graph = new SceneGraph()
+    const root = createSVGNodes(graph, graph.getPages()[0].id, svg)
+    if (!root) throw new Error('Nothing imported')
+    const texts = [...graph.getAllNodes()].filter((node) => node.type === 'TEXT')
+    return { graph, root, texts }
+  }
+
+  test('a text layer named by id, else its characters, its top a font size above the baseline', () => {
+    const { texts } = textLayers(
+      '<svg viewBox="0 0 200 90"><text x="10" y="30" font-family="Inter" font-size="20">Hello</text><text id="title" x="10" y="70" font-size="20" font-weight="700" fill="#f00">Bold</text></svg>'
+    )
+    expect(
+      texts.map(({ name, text, x, y, fontFamily, fontSize, fontWeight, textAutoResize }) => ({
+        name,
+        text,
+        x,
+        y,
+        fontFamily,
+        fontSize,
+        fontWeight,
+        textAutoResize
+      }))
+    ).toEqual([
+      {
+        name: 'Hello',
+        text: 'Hello',
+        x: 10,
+        y: 10,
+        fontFamily: 'Inter',
+        fontSize: 20,
+        fontWeight: 400,
+        textAutoResize: 'WIDTH_AND_HEIGHT'
+      },
+      {
+        name: 'title',
+        text: 'Bold',
+        x: 10,
+        y: 50,
+        fontFamily: 'Inter',
+        fontSize: 20,
+        fontWeight: 700,
+        textAutoResize: 'WIDTH_AND_HEIGHT'
+      }
+    ])
+    expect(texts[1]?.fills[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+  })
+
+  test('text without a font is Inter at 12px', () => {
+    const [text] = textLayers(
+      '<svg viewBox="0 0 200 60"><text x="10" y="30">Default</text></svg>'
+    ).texts
+    expect(text).toMatchObject({ fontFamily: 'Inter', fontSize: 12, y: 18 })
+  })
+
+  test('text-anchor aligns the layer and places that edge on x', () => {
+    const [middle, end] = textLayers(
+      '<svg viewBox="0 0 200 90"><text x="100" y="30" font-size="20" text-anchor="middle">Mid</text><text x="190" y="70" font-size="20" text-anchor="end">End</text></svg>'
+    ).texts
+    expect(middle?.textAlignHorizontal).toBe('CENTER')
+    expect((middle?.x ?? 0) + (middle?.width ?? 0) / 2).toBeCloseTo(100)
+    expect(end?.textAlignHorizontal).toBe('RIGHT')
+    expect((end?.x ?? 0) + (end?.width ?? 0)).toBeCloseTo(190)
+  })
+
+  test('same-line tspans style one layer; a tspan that moves starts another, grouped', () => {
+    const { graph, root, texts } = textLayers(
+      '<svg viewBox="0 0 300 90"><text x="10" y="30" font-size="20">Plain <tspan font-weight="700" fill="#00f">bold blue</tspan> end<tspan x="10" dy="30">second line</tspan></text></svg>'
+    )
+    const [group] = graph.getChildren(root.id)
+    expect(group).toMatchObject({ type: 'GROUP', name: 'Group' })
+    const figma = new FigmaAPI(graph)
+    const placed = texts.map(({ id, text }) => {
+      const proxy = figma.getNodeById(id)
+      return { text, x: proxy?.x, y: proxy?.y }
+    })
+    expect(placed).toEqual([
+      { text: 'Plain bold blue end', x: 10, y: 10 },
+      { text: 'second line', x: 10, y: 40 }
+    ])
+    expect(texts[0]?.styleRuns).toEqual([
+      {
+        start: 6,
+        length: 9,
+        style: {
+          fontWeight: 700,
+          fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
+        }
+      }
+    ])
+  })
+
+  test('keeps italic, underline, and the rotation of a transform', () => {
+    const { graph, texts } = textLayers(
+      '<svg viewBox="0 0 200 200"><text transform="translate(50 100) rotate(-30)" style="font-size: 20px; font-style: italic; text-decoration: underline">Turned</text></svg>'
+    )
+    const [text] = texts
+    expect(text).toMatchObject({ italic: true, textDecoration: 'UNDERLINE' })
+    const proxy = new FigmaAPI(graph).getNodeById(text?.id ?? '')
+    expect(proxy).toMatchObject({ rotation: expect.closeTo(30) })
+    expect(proxy?.x).toBeCloseTo(40)
+    expect(proxy?.y).toBeCloseTo(82.68)
+  })
+
+  test('collapses whitespace and imports an SVG of only text as a group', () => {
+    const { root, texts } = textLayers(
+      '<svg><text x="10" y="30">  lots   of\n   space  </text></svg>'
+    )
+    expect(root.type).toBe('GROUP')
+    expect(texts.map((text) => text.text)).toEqual(['lots of space'])
+  })
 })

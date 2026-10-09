@@ -10,6 +10,7 @@ import {
   createSVGNodesFromImport,
   isSVGMarkup,
   prepareSVGImport,
+  svgImportFonts,
   type SVGImportData
 } from '#core/io/formats/svg'
 import { computeAllLayouts } from '#core/layout'
@@ -172,23 +173,31 @@ export function createClipboardAssetActions(
     return true
   }
 
+  /** Load the fonts of imported SVG text, so it is measured and placed with them. */
+  async function loadSVGFonts(assets: PreparedAsset[]) {
+    const fonts = assets.flatMap((asset) =>
+      asset.kind === 'svg' ? svgImportFonts(asset.data) : []
+    )
+    await Promise.all(
+      fonts.map((font) => ctx.loadFont(font.family, font.style, font.characters).catch(() => null))
+    )
+  }
+
   async function placeFiles(files: File[], cx: number, cy: number) {
     const prepared = (await Promise.all(files.map(prepareAsset))).filter(
       (asset): asset is PreparedAsset => asset !== null
     )
+    await loadSVGFonts(prepared)
     placeAssets(prepared, cx, cy, 'Place files')
   }
 
   /** Paste SVG markup as layers, as Figma does; false when the text is not SVG. */
-  function pasteSVG(markup: string, cx: number, cy: number): boolean {
+  async function pasteSVG(markup: string, cx: number, cy: number): Promise<boolean> {
     const data = isSVGMarkup(markup) ? prepareSVGImport(markup) : null
     if (!data) return false
-    return placeAssets(
-      [{ kind: 'svg', data, width: data.width, height: data.height }],
-      cx,
-      cy,
-      'Paste SVG'
-    )
+    const asset: PreparedAsset = { kind: 'svg', data, width: data.width, height: data.height }
+    await loadSVGFonts([asset])
+    return placeAssets([asset], cx, cy, 'Paste SVG')
   }
 
   function placeImageFiles(files: File[], cx: number, cy: number) {

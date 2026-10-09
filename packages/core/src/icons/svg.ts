@@ -1,10 +1,5 @@
 import { iconToSVG } from '@iconify/utils'
-import {
-  DOMImplementation,
-  type Document as XMLDocument,
-  type Element,
-  type Node
-} from '@xmldom/xmldom'
+import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
 import svgpath from 'svgpath'
 
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -12,12 +7,24 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
 
+import {
+  combinedTransform,
+  DEFAULT_PRESENTATION,
+  isElement,
+  normalizeSVGPaint,
+  num,
+  opacityValue,
+  presentationFor
+} from './svg/presentation'
+import { elementLayer, type Scope, type Traversal } from './svg/scope'
+import { textInfo } from './svg/text'
 import type {
   IconData,
   IconifyIconEntry,
   IconPathInfo,
   SVGClipPathRegion,
-  SVGElementLayer
+  SVGElementLayer,
+  SVGTextInfo
 } from './types'
 
 interface SVGElementInput {
@@ -36,91 +43,8 @@ const JSX_ATTRIBUTE_NAMES: Readonly<Record<string, string>> = {
   xlinkHref: 'xlink:href'
 }
 
-interface PresentationAttributes {
-  fill: string
-  stroke: string
-  strokeWidth: string
-  strokeCap: string
-  strokeJoin: string
-  fillRule: string
-  fillOpacity: string
-  strokeOpacity: string
-}
-
-const DEFAULT_PRESENTATION: PresentationAttributes = {
-  fill: 'currentColor',
-  stroke: 'none',
-  strokeWidth: '1',
-  strokeCap: 'butt',
-  strokeJoin: 'miter',
-  fillRule: 'nonzero',
-  fillOpacity: '1',
-  strokeOpacity: '1'
-}
-
 const SHAPE_NAMES = new Set(['path', 'circle', 'ellipse', 'rect', 'line', 'polygon', 'polyline'])
 const NON_RENDERED_CONTAINERS = new Set(['defs', 'clipPath', 'mask', 'symbol'])
-
-function isElement(node: Node): node is Element {
-  return node.nodeType === node.ELEMENT_NODE
-}
-
-function inlineStyles(element: Element): ReadonlyMap<string, string> {
-  const styles = new Map<string, string>()
-  for (const declaration of (element.getAttribute('style') ?? '').split(';')) {
-    const separator = declaration.indexOf(':')
-    if (separator <= 0) continue
-    const name = declaration.slice(0, separator).trim()
-    const value = declaration.slice(separator + 1).trim()
-    if (name && value) styles.set(name, value)
-  }
-  return styles
-}
-
-function inheritedAttribute(
-  element: Element,
-  styles: ReadonlyMap<string, string>,
-  name: string,
-  inherited: string
-): string {
-  return (
-    styles.get(name) ??
-    (element.hasAttribute(name) ? (element.getAttribute(name) ?? inherited) : inherited)
-  )
-}
-
-function presentationFor(
-  element: Element,
-  inherited: PresentationAttributes
-): PresentationAttributes {
-  const styles = inlineStyles(element)
-  return {
-    fill: inheritedAttribute(element, styles, 'fill', inherited.fill),
-    stroke: inheritedAttribute(element, styles, 'stroke', inherited.stroke),
-    strokeWidth: inheritedAttribute(element, styles, 'stroke-width', inherited.strokeWidth),
-    strokeCap: inheritedAttribute(element, styles, 'stroke-linecap', inherited.strokeCap),
-    strokeJoin: inheritedAttribute(element, styles, 'stroke-linejoin', inherited.strokeJoin),
-    fillRule: inheritedAttribute(element, styles, 'fill-rule', inherited.fillRule),
-    fillOpacity: inheritedAttribute(element, styles, 'fill-opacity', inherited.fillOpacity),
-    strokeOpacity: inheritedAttribute(element, styles, 'stroke-opacity', inherited.strokeOpacity)
-  }
-}
-
-/** An SVG opacity, a number or a percentage, clamped to 0–1. */
-function opacityValue(value: string | null | undefined): number {
-  if (!value) return 1
-  const parsed = Number.parseFloat(value)
-  if (!Number.isFinite(parsed)) return 1
-  const opacity = value.trim().endsWith('%') ? parsed / 100 : parsed
-  return Math.min(1, Math.max(0, opacity))
-}
-
-function num(element: Element, attr: string, fallback = 0): number {
-  const value = element.getAttribute(attr)
-  if (value === null) return fallback
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : fallback
-}
 
 function circleToD(element: Element): string | null {
   const cx = num(element, 'cx')
@@ -188,49 +112,6 @@ function shapeToD(tagName: string, element: Element): string | null {
       return pointsToD(element, false)
     default:
       return null
-  }
-}
-
-function combinedTransform(parent: string | null, element: Element): string | null {
-  const current = element.getAttribute('transform')
-  if (parent && current) return `${parent} ${current}`
-  return current ?? parent
-}
-
-function normalizeSVGPaint(value: string | null): string | null {
-  return value?.trim().toLowerCase() === 'none' ? null : value
-}
-
-interface Traversal {
-  root: Element
-  elementsById: ReadonlyMap<string, Element>
-  nextKey: number
-}
-
-/** What an element inherits from the elements around it. */
-interface Scope {
-  presentation: PresentationAttributes
-  transform: string | null
-  clipPaths: SVGClipPathRegion[]
-  elements: SVGElementLayer[]
-  useStack: ReadonlySet<Element>
-  /** Drawn through `<use>` or inside a `<clipPath>`, so ids name the source, not this copy. */
-  referenced: boolean
-}
-
-function elementLayer(
-  traversal: Traversal,
-  element: Element,
-  kind: SVGElementLayer['kind'],
-  scope: Pick<Scope, 'referenced'>,
-  clip: number | null
-): SVGElementLayer {
-  return {
-    key: traversal.nextKey++,
-    kind,
-    name: scope.referenced ? null : element.getAttribute('id') || null,
-    opacity: opacityValue(inlineStyles(element).get('opacity') ?? element.getAttribute('opacity')),
-    clip
   }
 }
 
@@ -337,6 +218,14 @@ function collectPaths(
     clipPaths
   }
 
+  if (tagName === 'text') {
+    const text = textInfo(element, scope, result.length)
+    if (text) {
+      const layer = elementLayer(traversal, element, 'shape', scope, clip)
+      traversal.texts.push({ ...text, elements: [...scope.elements, layer] })
+    }
+    return
+  }
   if (SHAPE_NAMES.has(tagName)) {
     appendShapePath(
       tagName,
@@ -378,13 +267,20 @@ function appendSVGElement(svgDocument: XMLDocument, parent: Element, input: SVGE
   parent.appendChild(element)
 }
 
-function collectDocumentPaths(root: Element): IconPathInfo[] {
+/** The shapes and text an SVG draws, in drawing order. */
+export interface SVGContent {
+  paths: IconPathInfo[]
+  texts: SVGTextInfo[]
+}
+
+function collectDocument(root: Element): SVGContent {
   const elementsById = new Map<string, Element>()
   for (const element of Array.from(root.getElementsByTagName('*'))) {
     const id = element.getAttribute('id')
     if (id) elementsById.set(id, element)
   }
-  const result: IconPathInfo[] = []
+  const paths: IconPathInfo[] = []
+  const traversal: Traversal = { root, elementsById, nextKey: 0, texts: [] }
   collectPaths(
     root,
     {
@@ -395,10 +291,10 @@ function collectDocumentPaths(root: Element): IconPathInfo[] {
       useStack: new Set(),
       referenced: false
     },
-    { root, elementsById, nextKey: 0 },
-    result
+    traversal,
+    paths
   )
-  return result
+  return { paths, texts: traversal.texts }
 }
 
 export function extractPathsFromElements(
@@ -409,12 +305,16 @@ export function extractPathsFromElements(
   const root = svgDocument.documentElement
   if (!root) return []
   appendSVGElement(svgDocument, root, { type: 'svg', props: rootProps, children: elements })
-  return collectDocumentPaths(root)
+  return collectDocument(root).paths
+}
+
+export function extractSVGContent(svgBody: string): SVGContent {
+  const root = parseSVGFragment(svgBody)?.documentElement
+  return root ? collectDocument(root) : { paths: [], texts: [] }
 }
 
 export function extractPaths(svgBody: string): IconPathInfo[] {
-  const root = parseSVGFragment(svgBody)?.documentElement
-  return root ? collectDocumentPaths(root) : []
+  return extractSVGContent(svgBody).paths
 }
 
 export function buildIconData(

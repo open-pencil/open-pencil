@@ -13,10 +13,13 @@ import {
   svgToVectorPaths,
   type SVGVectorizeResult,
   type VectorizedClip,
-  type VectorizedPath
+  type VectorizedPath,
+  type VectorizedText
 } from '#core/vector/vectorize/svg/to-vectors'
 
+import { parseSVGDocument } from './document'
 import { parseSVGSize, svgRootId } from './metadata'
+import { createSVGText } from './text'
 
 export type SVGImportData = SVGVectorizeResult &
   Size & {
@@ -31,12 +34,16 @@ export interface SVGImportOptions {
   defaultColor?: string
   x?: number
   y?: number
+  /** Keep the frame of an SVG that draws nothing, as `figma.createNodeFromSvg` does. */
+  keepEmpty?: boolean
 }
 
+/** The layers SVG markup draws, or null when it does not parse as SVG. */
 export function prepareSVGImport(
   source: string,
   options: Pick<SVGImportOptions, 'defaultColor'> = {}
 ): SVGImportData | null {
+  if (!parseSVGDocument(source)) return null
   const sized = parseSVGSize(source, { width: 0, height: 0 }).width > 0
   const { width, height } = parseSVGSize(source)
   const vectorized = svgToVectorPaths(
@@ -46,8 +53,8 @@ export function prepareSVGImport(
       defaultColor: options.defaultColor,
       preserveAspectRatio: true
     }
-  )
-  return vectorized ? { width, height, name: svgRootId(source), sized, ...vectorized } : null
+  ) ?? { paths: [], texts: [], contentBounds: { x: 0, y: 0, width: 0, height: 0 } }
+  return { width, height, name: svgRootId(source), sized, ...vectorized }
 }
 
 function createGroup(graph: SceneGraph, parentId: string, props: Partial<SceneNode>): string {
@@ -73,20 +80,66 @@ function createClipGroup(
   return groupId
 }
 
-function clipFor(path: VectorizedPath, element: SVGElementLayer): VectorizedClip | null {
-  return element.clip === null ? null : (path.clips?.[element.clip] ?? null)
+function clipFor(
+  clips: VectorizedClip[] | undefined,
+  element: SVGElementLayer
+): VectorizedClip | null {
+  const clip = element.clip === null ? null : clips?.[element.clip]
+  return clip && clip.shapes.length > 0 ? clip : null
+}
+
+/** A path or a text, with the elements it was drawn in. */
+interface Drawable {
+  elements: SVGElementLayer[]
+  clips?: VectorizedClip[]
+  create: (parentId: string, element: SVGElementLayer) => void
+}
+
+/** Paths and texts in drawing order: each text goes before the path it preceded. */
+function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string>): Drawable[] {
+  const pathDrawable = (path: VectorizedPath): Drawable => ({
+    elements: path.elements,
+    clips: path.clips,
+    create: (parentId, element) => {
+      const vector = createPlacedVector(graph, parentId, path.vectorNetwork, {
+        name: element.name ?? 'Vector',
+        opacity: element.opacity,
+        ...vectorizedPathPaints(path)
+      })
+      if (vector) parentIds.add(parentId)
+    }
+  })
+  const textDrawable = (text: VectorizedText): Drawable => ({
+    elements: text.elements,
+    clips: text.clips,
+    create: (parentId, element) => {
+      createSVGText(graph, parentId, text, element, (groupParentId, props) => {
+        const groupId = createGroup(graph, groupParentId, props)
+        parentIds.add(groupId)
+        return groupId
+      })
+      parentIds.add(parentId)
+    }
+  })
+  const textsAt = (index: number) =>
+    data.texts.filter((text) => text.pathIndex === index).map(textDrawable)
+  return [
+    ...data.paths.flatMap((path, index) => [...textsAt(index), pathDrawable(path)]),
+    ...textsAt(data.paths.length)
+  ]
 }
 
 /**
- * Builds the layers Figma makes from SVG: a group per `<g>`, a vector per shape, each named by
- * its `id`, and a clip group around anything clipped. Groups are fitted to their layers last.
+ * Builds the layers Figma makes from SVG: a group per `<g>`, a vector per shape and a text layer
+ * per text, each named by its `id`, and a clip group around anything clipped. Groups are fitted
+ * to their layers last.
  */
 function createSVGLayers(graph: SceneGraph, rootId: string, data: SVGImportData): void {
   const open: Array<{ key: number; parentId: string }> = []
   const parentIds = new Set<string>()
-  for (const path of data.paths) {
-    const groups = path.elements.slice(0, -1)
-    const shape = path.elements.at(-1)
+  for (const drawable of drawables(graph, data, parentIds)) {
+    const groups = drawable.elements.slice(0, -1)
+    const shape = drawable.elements.at(-1)
     if (!shape) continue
     let depth = 0
     while (depth < open.length && depth < groups.length && open[depth].key === groups[depth].key) {
@@ -95,7 +148,7 @@ function createSVGLayers(graph: SceneGraph, rootId: string, data: SVGImportData)
     open.length = depth
     let parentId = open.at(-1)?.parentId ?? rootId
     for (const element of groups.slice(depth)) {
-      const clip = clipFor(path, element)
+      const clip = clipFor(drawable.clips, element)
       if (clip) parentId = createClipGroup(graph, parentId, clip, parentIds)
       parentId = createGroup(graph, parentId, {
         name: element.name ?? 'Group',
@@ -103,14 +156,8 @@ function createSVGLayers(graph: SceneGraph, rootId: string, data: SVGImportData)
       })
       open.push({ key: element.key, parentId })
     }
-    const clip = clipFor(path, shape)
-    const vectorParentId = clip ? createClipGroup(graph, parentId, clip, parentIds) : parentId
-    const vector = createPlacedVector(graph, vectorParentId, path.vectorNetwork, {
-      name: shape.name ?? 'Vector',
-      opacity: shape.opacity,
-      ...vectorizedPathPaints(path)
-    })
-    if (vector) parentIds.add(vectorParentId)
+    const clip = clipFor(drawable.clips, shape)
+    drawable.create(clip ? createClipGroup(graph, parentId, clip, parentIds) : parentId, shape)
   }
   fitEnclosingGroups(graph, [...parentIds])
 }
@@ -139,7 +186,7 @@ export function createSVGNodesFromImport(
   try {
     createSVGLayers(graph, root.id, data)
     const created = graph.getNode(root.id)
-    if (created && graph.getChildren(root.id).length > 0) return created
+    if (created && (options.keepEmpty || graph.getChildren(root.id).length > 0)) return created
     if (created) graph.deleteNode(root.id)
     return null
   } catch (error) {

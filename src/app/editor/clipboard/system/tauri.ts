@@ -44,7 +44,7 @@ async function pasteSelection(store: EditorStore, cursorPos?: Vector): Promise<b
       await pasteClipboardHTML(store, text, cursorPos)
       return true
     }
-    if (text && pasteSVGText(store, text, cursorPos)) return true
+    if (text && (await pasteSVGText(store, text, cursorPos))) return true
     const matchingMemoryHTML = getInMemoryClipboardHTML(text ?? '')
     if (matchingMemoryHTML && isDesignClipboardHTML(matchingMemoryHTML)) {
       await pasteClipboardHTML(store, matchingMemoryHTML, cursorPos)

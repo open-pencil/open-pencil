@@ -27,7 +27,11 @@ export function pastePoint(editor: Editor, cursorPos?: Vector): Vector {
 }
 
 /** Paste SVG markup, such as Figma's Copy as SVG, as layers; false when the text is not SVG. */
-export function pasteSVGText(editor: Editor, text: string, cursorPos?: Vector): boolean {
+export async function pasteSVGText(
+  editor: Editor,
+  text: string,
+  cursorPos?: Vector
+): Promise<boolean> {
   if (!isSVGMarkup(text)) return false
   const { x, y } = pastePoint(editor, cursorPos)
   return editor.pasteSVG(text, x, y)
