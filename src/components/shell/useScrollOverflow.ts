@@ -1,13 +1,13 @@
-import { useResizeObserver, useScroll } from '@vueuse/core'
+import { useMutationObserver, useResizeObserver, useScroll } from '@vueuse/core'
 import { computed, ref, type ShallowRef } from 'vue'
 
 import { animationsEnabled } from '@/app/shell/motion'
 
 /**
  * Tracks which ends of a horizontally scrolling row hide content, for an edge fade and a chevron
- * that scrolls toward the hidden side. The row's first child is watched as well as the row, so
- * content that changes width without resizing the row (another language, a renamed tab) is
- * remeasured.
+ * that scrolls toward the hidden side. The row's first child is watched as well as the row, and
+ * its items are watched as they come and go, so content that changes width without resizing a
+ * box (another language, a tab opened or closed while the row overflows) is remeasured.
  */
 export function useScrollOverflow(scroller: Readonly<ShallowRef<HTMLElement | null>>) {
   const { arrivedState, measure } = useScroll(scroller)
@@ -19,10 +19,12 @@ export function useScrollOverflow(scroller: Readonly<ShallowRef<HTMLElement | nu
     overflowing.value = !!element && element.scrollWidth > element.clientWidth
   }
   useResizeObserver(scroller, remeasure)
-  useResizeObserver(() => {
-    const content = scroller.value?.firstElementChild
-    return content instanceof HTMLElement ? content : null
-  }, remeasure)
+  const content = () => {
+    const element = scroller.value?.firstElementChild
+    return element instanceof HTMLElement ? element : null
+  }
+  useResizeObserver(content, remeasure)
+  useMutationObserver(content, remeasure, { childList: true })
 
   const overflowStart = computed(() => !arrivedState.left)
   const overflowEnd = computed(() => !arrivedState.right)

@@ -7,9 +7,10 @@ const TAB_COUNT = 20
 /** Horizontal position of the tab row and whether the active tab and new-tab button are fully shown. */
 function tabRowState(page: Page) {
   return page.evaluate(() => {
-    const scroller = document.querySelector('[role="tablist"]')?.parentElement
-    const active = document.querySelector('[data-slot="tab-item"][data-active]')
-    const newTab = document.querySelector('[data-test-id="tabbar-new"]')
+    const tabBar = document.querySelector('[data-slot="tab-bar"]')
+    const scroller = tabBar?.querySelector('[role="tablist"]')?.parentElement
+    const active = tabBar?.querySelector('[data-slot="tab-item"][data-active]')
+    const newTab = tabBar?.querySelector('[data-test-id="tabbar-new"]')
     if (!scroller || !active || !newTab) throw new Error('Tab bar is missing')
     const row = scroller.getBoundingClientRect()
     const tab = active.getBoundingClientRect()
@@ -26,7 +27,9 @@ function tabRowState(page: Page) {
 /** Scroll the tab row to its start and report where it is two frames later. */
 function scrollTabsToStart(page: Page) {
   return page.evaluate(async () => {
-    const scroller = document.querySelector('[role="tablist"]')?.parentElement
+    const scroller = document
+      .querySelector('[data-slot="tab-bar"]')
+      ?.querySelector('[role="tablist"]')?.parentElement
     if (!scroller) throw new Error('Tab bar is missing')
     scroller.scrollLeft = 0
     for (let frame = 0; frame < 2; frame++) {

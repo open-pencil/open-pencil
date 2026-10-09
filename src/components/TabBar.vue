@@ -64,6 +64,7 @@ function onClose(e: MouseEvent, tabId: string) {
   <TabsRoot
     v-if="tabs.length > 0"
     v-model="modelValue"
+    data-slot="tab-bar"
     activation-mode="automatic"
     :class="baseStyles.root()"
   >
