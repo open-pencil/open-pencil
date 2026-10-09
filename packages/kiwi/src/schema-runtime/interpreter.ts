@@ -48,29 +48,53 @@ export interface LazyFields {
   prepare?: (owner: RuntimeMessage, field: string, value: RuntimeValue) => void
 }
 
-/** Where a decoded message's lazy fields start in the bytes it was decoded from. */
-interface LazySlot {
-  bytes: Uint8Array
-  starts: Map<string, number>
+/**
+ * The bytes a message with lazy fields was decoded from, and where it starts in them. They are
+ * hidden properties of the message rather than an entry in a side table, so each costs a slot
+ * on the object; neither spread nor `structuredClone` copies them.
+ */
+const LAZY_BYTES = Symbol('lazy message bytes')
+const LAZY_START = Symbol('lazy message start')
+
+function hide(message: RuntimeMessage, key: symbol, value: unknown): void {
+  Reflect.defineProperty(message, key, { value, enumerable: false })
 }
 
-const lazySlots = new WeakMap<RuntimeMessage, LazySlot>()
+/** Moves `buffer` to `field` in the message that starts where it is, past the fields before it. */
+function seekField(
+  buffer: ByteBuffer,
+  fieldsById: ReadonlyMap<number, Field>,
+  field: Field,
+  skipper: SchemaSkipper
+): void {
+  for (let id = buffer.readVarUint(); id !== 0; id = buffer.readVarUint()) {
+    if (id === field.value) return
+    const other = fieldsById.get(id)
+    if (!other) throw new Error('Attempted to parse invalid message')
+    skipper.skipField(other, buffer)
+  }
+  throw new Error('Missing lazy field ' + quote(field.name))
+}
 
 function lazyAccessor(
   self: RuntimeCodec,
   definitions: Definitions,
+  fieldsById: ReadonlyMap<number, Field>,
   field: Field,
-  lazy: LazyFields
+  lazy: LazyFields,
+  skipper: SchemaSkipper
 ): PropertyDescriptor {
   return {
     enumerable: true,
     configurable: true,
     get(this: RuntimeMessage): RuntimeValue {
-      const slot = lazySlots.get(this)
-      const start = slot?.starts.get(field.name)
-      if (!slot || start === undefined) throw new Error('Missing lazy field ' + quote(field.name))
-      const buffer = new ByteBuffer(slot.bytes)
+      const bytes: unknown = Reflect.get(this, LAZY_BYTES)
+      const start: unknown = Reflect.get(this, LAZY_START)
+      if (!(bytes instanceof Uint8Array) || typeof start !== 'number')
+        throw new Error('Missing lazy field ' + quote(field.name))
+      const buffer = new ByteBuffer(bytes)
       buffer.offset = start
+      seekField(buffer, fieldsById, field, skipper)
       const holder: RuntimeMessage = {}
       readInto(self, definitions, field, buffer, holder)
       const value = holder[field.name]
@@ -296,7 +320,8 @@ function interpretDecode(
     let result: RuntimeMessage = {}
 
     if (definition.kind === 'MESSAGE') {
-      let slot: LazySlot | undefined
+      const start = buffer.offset
+      let hidden = false
       while (true) {
         const id = buffer.readVarUint()
         if (id === 0) return result
@@ -304,11 +329,11 @@ function interpretDecode(
         if (!field) throw new Error('Attempted to parse invalid message')
         const accessor = lazyDecoding?.accessors.get(field.name)
         if (lazyDecoding && accessor && !field.isDeprecated) {
-          if (!slot) {
-            slot = { bytes: buffer.bytes, starts: new Map() }
-            lazySlots.set(result, slot)
+          if (!hidden) {
+            hide(result, LAZY_BYTES, buffer.bytes)
+            hide(result, LAZY_START, start)
+            hidden = true
           }
-          slot.starts.set(field.name, buffer.offset)
           lazyDecoding.skipper.skipField(field, buffer)
           Object.defineProperty(result, field.name, accessor)
           continue
@@ -378,18 +403,23 @@ export function compileSchemaRuntime(schema: Schema, lazy?: LazyFields): Runtime
       case 'STRUCT':
       case 'MESSAGE': {
         const lazyNames = definition.kind === 'MESSAGE' ? lazy?.fields[definition.name] : undefined
-        const lazyDecoding =
-          lazy && lazyNames?.length
-            ? {
-                lazy,
-                skipper: (skipper ??= createSchemaSkipper(schema)),
-                accessors: new Map(
-                  definition.fields
-                    .filter((field) => lazyNames.includes(field.name))
-                    .map((field) => [field.name, lazyAccessor(result, definitions, field, lazy)])
-                )
-              }
-            : undefined
+        let lazyDecoding: LazyDecoding | undefined
+        if (lazy && lazyNames?.length) {
+          const fieldSkipper = (skipper ??= createSchemaSkipper(schema))
+          const fieldsById = new Map(definition.fields.map((field) => [field.value, field]))
+          lazyDecoding = {
+            lazy,
+            skipper: fieldSkipper,
+            accessors: new Map(
+              definition.fields
+                .filter((field) => lazyNames.includes(field.name))
+                .map((field) => [
+                  field.name,
+                  lazyAccessor(result, definitions, fieldsById, field, lazy, fieldSkipper)
+                ])
+            )
+          }
+        }
         result['decode' + definition.name] = interpretDecode(
           result,
           definitions,
