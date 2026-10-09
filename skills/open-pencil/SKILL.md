@@ -191,6 +191,7 @@ openpencil diff apply fix.diff design.fig --dry-run           # fails on stale v
 openpencil diff apply fix.diff design.fig --write
 openpencil diff visual design.fig --from 1:23 --to 1:87 -o diff.png
 openpencil diff files before.fig after.fig                    # exit 1 when different
+openpencil diff snapshot design.fig -o design.review.json     # deterministic saved-record review
 ```
 
 ### Control the running app

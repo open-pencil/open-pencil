@@ -10,6 +10,25 @@ function sequence(prefix: string): () => string {
 }
 
 describe('SceneGraph ID generator', () => {
+  test('scopes imported allocation through nested work and restores authoring after errors', () => {
+    const graph = new SceneGraph(sequence('7'))
+    const page = pageId(graph)
+    const imported = sequence('12')
+    expect(() => graph.applyImportedStateDuring(() => {
+      expect(graph.createNode('RECTANGLE', page).id).toBe('12:1')
+      graph.applyImportedStateDuring(() => {
+        expect(graph.createNode('RECTANGLE', page).id).toBe('12:2')
+      })
+      graph.applyImportedStateDuring(() => {
+        expect(graph.createNode('RECTANGLE', page).id).toBe('13:1')
+      }, sequence('13'))
+      expect(graph.createNode('RECTANGLE', page).id).toBe('12:3')
+      throw new Error('Interrupted import')
+    }, imported)).toThrow('Interrupted import')
+    expect(graph.isApplyingImportedState).toBe(false)
+    expect(graph.createNode('RECTANGLE', page).id).toBe('7:3')
+  })
+
   test('uses an injected generator for the root, pages, nodes, variables, and collections', () => {
     const graph = new SceneGraph(sequence('7'))
 
@@ -55,12 +74,18 @@ describe('SceneGraph ID generator', () => {
     expect(graph.createNode('RECTANGLE', pageId(graph)).id).toBe('7:6')
   })
 
-  test('the default generator keeps the shared session-zero scheme', () => {
+  test('the default generator uses uint32 GUID pairs outside the reserved sessions', () => {
     const first = new SceneGraph()
     const second = new SceneGraph()
     const ids = [first.rootId, pageId(first), second.rootId, pageId(second)]
 
-    for (const id of ids) expect(id).toMatch(/^0:\d+$/)
+    for (const id of ids) {
+      const [session, local] = id.split(':').map(Number)
+      expect(session).toBeGreaterThanOrEqual(2)
+      expect(session).toBeLessThan(2 ** 32)
+      expect(local).toBeGreaterThanOrEqual(0)
+      expect(local).toBeLessThan(2 ** 32)
+    }
     expect(new Set(ids).size).toBe(ids.length)
   })
 
@@ -71,9 +96,9 @@ describe('SceneGraph ID generator', () => {
       const ids = [graph.rootId, pageId(graph), graph.createCollection('Colors').id]
       for (const id of ids) expect(id).toMatch(/^4000000000:\d+$/)
     } finally {
-      setIdSession(0)
+      setIdSession()
     }
-    expect(new SceneGraph().rootId).toMatch(/^0:\d+$/)
+    expect(new SceneGraph().rootId).not.toMatch(/^0:\d+$/)
   })
 
   test('rejects an ID session that is not an unsigned 32-bit integer', () => {

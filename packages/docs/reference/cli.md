@@ -233,6 +233,16 @@ openpencil analyze clusters [file] [options]
 | `--min-count` | Min instances to form a cluster (default: 2) |
 | `--json` | Output as JSON |
 
+## diff snapshot
+
+Write a deterministic review artifact of every saved FIG record and embedded resource. Requires a file; omitting `--output` writes JSON to stdout.
+
+```sh
+openpencil diff snapshot design.fig [--output design.review.json]
+```
+
+The artifact uses saved GUIDs, defined key ordering and number formatting, and excludes timestamps and thumbnails. It has no editable-document loader. See [document identity and review snapshots](../development/document-identity).
+
 ## diff create
 
 Patch that turns one node tree into another, as JSX attribute changes plus moved, added, and removed children. Children match by name; see [Comparing designs](/programmable/cli/comparing) for the format.

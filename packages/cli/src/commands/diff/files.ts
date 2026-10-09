@@ -23,8 +23,8 @@ export default defineCommand({
       printError(`--depth must be a non-negative integer, got "${args.depth}"`)
       process.exit(2)
     }
-    // Load in order: node IDs count up per process, so the first document gets the IDs a
-    // single load gives it, and the patch applies to it with `diff apply`.
+    // Each import retains reproducible runtime handles, so patches address the same layers
+    // when the original document is loaded again by `diff apply`.
     const before = await loadDocument(args.before)
     const after = await loadDocument(args.after)
     populateWholeDocument(before)

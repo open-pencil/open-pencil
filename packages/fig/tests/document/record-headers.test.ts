@@ -75,7 +75,7 @@ test('an archive reader with record headers builds the document records decoded 
 
     expect(canonical(lazy.graph)).toBe(canonical(whole.graph))
   } finally {
-    setIdSession(0)
+    setIdSession()
   }
 })
 

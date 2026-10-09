@@ -9,6 +9,16 @@ The `diff` commands compare two nodes, preview or apply changes as patches, rend
 
 ## Patches
 
+For a deterministic saved-record review artifact, run:
+
+```sh
+openpencil diff snapshot design.fig -o design.review.json
+```
+
+The JSON covers all saved FIG records and embedded resources, keyed by saved GUID, without timestamps or thumbnails. It is a review artifact with no loader or merge driver; [identity and serialization rules](../../development/document-identity) define its ordering, number formatting, and collaboration boundary.
+
+The output must be a different file from the input FIG, including symlink and hard-link aliases. An existing review file is replaced only after the new artifact has been written successfully.
+
 ```sh
 openpencil diff create design.fig --from 1:23 --to 1:87
 ```

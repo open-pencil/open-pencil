@@ -25,6 +25,7 @@ export function loadPageTransaction(
   const components = new Map(state.components)
   const componentIds = new Map(state.componentIds)
   const sizes = new Set(state.savedSizeNodes)
+  const nextImportedId = state.nextImportedId
   graph.withBufferedEvents(() => {
     try {
       action()
@@ -47,6 +48,7 @@ export function loadPageTransaction(
       state.components = components
       state.componentIds = componentIds
       state.savedSizeNodes = sizes
+      state.nextImportedId = nextImportedId
       for (const [id, entries] of graph.instanceIndex)
         if (!entries.size) graph.instanceIndex.delete(id)
       graph.clearAbsPosCache()

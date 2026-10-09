@@ -12,6 +12,31 @@ import {
   applyFigPopulationDelta
 } from '#core/kiwi/fig/population/delta'
 
+test('resuming preserves consumed import handles after the highest imported node is deleted', async () => {
+  await initCodec()
+  const source = new SceneGraph()
+  source.createNode('RECTANGLE', source.getPages()[0].id, { name: 'Deleted' })
+  source.createNode('RECTANGLE', source.addPage('Pending').id, { name: 'Pending node' })
+  const bytes = await exportFigFile(source)
+  const session = createFigDocumentSession(Uint8Array.from(bytes).buffer)
+  session.loadPage(session.pages[0].id)
+  const loaded = session.graph.getChildren(session.graph.getPages()[0].id)[0]
+  session.graph.deleteNode(loaded.id)
+  const restored = deserializeSceneGraph(serializeSceneGraph(session.graph))
+  const resumed = createFigDocumentSession(
+    Uint8Array.from(bytes).buffer,
+    {},
+    {
+      graph: restored,
+      checkpoint: structuredClone(session.checkpoint())
+    }
+  )
+  session.loadPage(session.pages[1].id)
+  resumed.loadPage(resumed.pages[1].id)
+  const expected = session.graph.getChildren(session.graph.getPages()[1].id)[0].id
+  expect(restored.getChildren(restored.getPages()[1].id)[0].id).toBe(expected)
+  expect(expected).not.toBe(loaded.id)
+})
 test('new-reader page loads transfer through the worker delta contract', async () => {
   await initCodec()
   const source = new SceneGraph()
@@ -73,6 +98,9 @@ test('new-reader page loads transfer through the worker delta contract', async (
   const secondJournal = installFigMutationJournal(session.graph)
   try {
     session.loadPage(session.pages[1].id)
+    expect(
+      recoveryGraph.getChildren(recoveryGraph.getPages()[1].id).map((node) => node.id)
+    ).toEqual(session.graph.getChildren(session.graph.getPages()[1].id).map((node) => node.id))
     applyFigPopulationDelta(
       receiver,
       structuredClone(
@@ -91,4 +119,5 @@ test('new-reader page loads transfer through the worker delta contract', async (
   } finally {
     secondJournal.stop()
   }
+  expect(recoveryGraph.createNode('RECTANGLE', pageId).id).not.toMatch(/^0:/)
 })

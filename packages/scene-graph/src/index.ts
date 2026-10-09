@@ -84,6 +84,7 @@ import * as Instances from './instances'
 import Matrix, { type Mat3 } from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
+import { randomIndex } from './random'
 import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
 import { GLYPH_AFFECTING_KEYS, invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
@@ -126,23 +127,32 @@ export {
 
 const MAX_ID_SESSION = 0xffffffff
 
-let idSession = 0
+let idSession: number | undefined
 let nextLocalID = 1
 
 /**
  * Sets the session part of the IDs this process mints, as in Figma's `sessionID:localID` GUIDs.
- * Headless tools keep session 0, so a file's layers get the same IDs on every run. The editor
- * picks a random session at startup, as Yjs picks each document's `clientID`, so peers editing
- * one shared room never mint the same ID. Call it before creating any graph.
+ * Explicit sequential allocation for compatibility and reproducible fixtures. Production
+ * defaults to a fresh random numeric GUID per entity, including in headless tools.
+ * Call without an argument to restore random allocation. Prefer a graph's injected generator
+ * for deterministic authoring; neither allocator remints IDs already in a document.
  */
-export function setIdSession(sessionId: number): void {
-  if (!Number.isInteger(sessionId) || sessionId < 0 || sessionId > MAX_ID_SESSION) {
+export function setIdSession(sessionId?: number): void {
+  if (
+    sessionId !== undefined &&
+    (!Number.isInteger(sessionId) || sessionId < 0 || sessionId > MAX_ID_SESSION)
+  ) {
     throw new RangeError('sessionId must be an unsigned 32-bit integer')
   }
   idSession = sessionId
 }
 
 export function generateId(): string {
+  if (idSession === undefined) {
+    // Sessions 0 and 1 hold reserved FIG document/resource IDs. Each half is uint32.
+    return `${2 + randomIndex(MAX_ID_SESSION - 1)}:${randomIndex(MAX_ID_SESSION + 1)}`
+  }
+  if (nextLocalID > MAX_ID_SESSION) throw new RangeError('Sequential ID namespace exhausted')
   return `${idSession}:${nextLocalID++}`
 }
 
@@ -177,6 +187,7 @@ export class SceneGraph {
   private previewObservers: NodePreviewObserver[] = []
   private sourceMetadataPreservationDepth = 0
   private importedStateApplicationDepth = 0
+  private importedIdGenerator: (() => string) | undefined
   private layoutMutationDepth = 0
   private derivedLayoutDepth = 0
   positionPreviewVersion = 0
@@ -431,7 +442,7 @@ export class SceneGraph {
   private generateEntityId(issued?: Set<string>): string {
     let limit = Infinity
     for (let attempt = 0; attempt < limit; attempt++) {
-      const id = this.idGenerator()
+      const id = (this.importedIdGenerator ?? this.idGenerator)()
       if (this.isEntityIdTaken(id) || issued?.has(id)) {
         if (limit === Infinity) limit = this.entityIdCount() + (issued?.size ?? 0) + 1
         continue
@@ -540,10 +551,10 @@ export class SceneGraph {
       this.previewMutationDepth--
     }
   }
-  preserveSourceMetadataDuring(fn: () => void): void {
+  preserveSourceMetadataDuring<T>(fn: () => T): T {
     this.sourceMetadataPreservationDepth++
     try {
-      fn()
+      return fn()
     } finally {
       this.sourceMetadataPreservationDepth--
     }
@@ -552,12 +563,15 @@ export class SceneGraph {
     return this.sourceMetadataPreservationDepth > 0
   }
 
-  applyImportedStateDuring(fn: () => void): void {
+  applyImportedStateDuring<T>(fn: () => T, idGenerator?: () => string): T {
+    const previousGenerator = this.importedIdGenerator
+    this.importedIdGenerator = idGenerator ?? previousGenerator
     this.importedStateApplicationDepth++
     try {
-      this.preserveSourceMetadataDuring(fn)
+      return this.preserveSourceMetadataDuring(fn)
     } finally {
       this.importedStateApplicationDepth--
+      this.importedIdGenerator = previousGenerator
     }
   }
 

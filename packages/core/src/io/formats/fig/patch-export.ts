@@ -271,6 +271,7 @@ async function buildPatch(
     nextLocalId: info.nextLocalId,
     blobs: Array.from({ length: info.blobCount }, () => new Uint8Array(0)),
     recordOwners: archived.byGuid,
+    archiveRecordIds: info.recordIds,
     archiveResourceIds: changes.resourceIds
   })
   const records = writeRecords(setup, plan)

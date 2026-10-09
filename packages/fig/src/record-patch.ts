@@ -31,6 +31,8 @@ export interface FigRecordPatch {
 
 /** Archive facts a patch is built against: where new blob indices and new GUIDs start. */
 export interface FigArchiveRecordInfo {
+  /** Record identities on every page, including pages not materialized in the graph. */
+  recordIds: string[]
   blobCount: number
   /** Above every local ID the archive uses with session 0 or 1, the sessions new GUIDs take. */
   nextLocalId: number
@@ -84,6 +86,9 @@ export function figArchiveRecordInfo(archive: {
   imageHashes: readonly string[]
 }): FigArchiveRecordInfo {
   return {
+    recordIds: archive.records.flatMap((record) =>
+      record.guid ? [guidToString(record.guid)] : []
+    ),
     blobCount: archive.blobCount,
     nextLocalId: highestLocalId(archive.records) + 1,
     imageHashes: [...archive.imageHashes],

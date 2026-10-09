@@ -1,20 +1,52 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { parseFigBuffer } from '@open-pencil/fig'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { createFigReview, parseFigBuffer } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive'
-import { expectDefined } from '#core-tests/helpers/assert'
-import { hasPendingReaderPages, populateFigInternalPages } from '#core/kiwi/fig/session/document-state'
+import {
+  hasPendingReaderPages,
+  populateFigInternalPages
+} from '#core/kiwi/fig/session/document-state'
 
 setDefaultTimeout(60_000)
+
+test('independent headless branches preserve distinct new GUIDs across patched saves', async () => {
+  const bytes = await fixtureBytes()
+  const first = await open(bytes)
+  const second = await open(bytes)
+  // Imported handles remain usable by headless scripts; only newly authored identities differ.
+  expect(layerNamed(first, 'A').id).toBe(layerNamed(second, 'A').id)
+  const left = first.createNode('RECTANGLE', first.getPages()[0].id, { name: 'Left branch' })
+  const right = second.createNode('RECTANGLE', second.getPages()[0].id, { name: 'Right branch' })
+  expect(left.id).not.toBe(right.id)
+  const savedLeft = await exportFigFile(first)
+  const savedRight = await exportFigFile(second)
+  const leftRecord = parseFigBuffer(Uint8Array.from(savedLeft).buffer).nodeChanges.find(
+    (record) => record.name === left.name
+  )
+  const rightRecord = parseFigBuffer(Uint8Array.from(savedRight).buffer).nodeChanges.find(
+    (record) => record.name === right.name
+  )
+  expect(guidToString(expectDefined(leftRecord?.guid))).toBe(left.id)
+  expect(guidToString(expectDefined(rightRecord?.guid))).toBe(right.id)
+  const reopened = await open(savedLeft)
+  expect(layerNamed(reopened, left.name).source.id).toBe(left.id)
+  const review = createFigReview(Uint8Array.from(savedLeft).buffer)
+  const repeated = await exportFigFile(first)
+  expect(createFigReview(Uint8Array.from(repeated).buffer)).toBe(review)
+  // The review includes the unopened pages too, without populating the editor.
+  expect(review).toContain('"name":"Body"')
+  expect(hasPendingReaderPages(first)).toBe(true)
+})
 
 /** A document over three pages: a frame of layers, a component, and a page of its instances. */
 async function fixtureBytes(): Promise<Uint8Array> {
@@ -95,8 +127,7 @@ async function shapeOf(bytes: Uint8Array): Promise<Record<string, LayerShape[]>>
   )
 }
 
-const guidKey = (record: NodeChange) =>
-  record.guid ? guidToString(record.guid) : ''
+const guidKey = (record: NodeChange) => (record.guid ? guidToString(record.guid) : '')
 
 /** The records of an archive by GUID. */
 function recordsOf(bytes: Uint8Array) {

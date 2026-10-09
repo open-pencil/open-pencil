@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+
 - The app renders `render` JSX itself and no longer accepts the pre-rendered tree that earlier versions of `openpencil-mcp` send, so an older `openpencil-mcp` fails to render into this app version; update it with the app.
 - `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
 - `SceneNode` from `@open-pencil/scene-graph` has `isExposedInstance`, whether an instance inside a component shows its properties on instances of that component, so code that builds `SceneNode` objects itself must include it. In the plugin API, `isExposedInstance` and `exposedInstances` follow that flag and Figma's rules instead of treating an instance whose swap is bound to a property as exposed: only an instance in a component's own layers whose component has properties can be exposed, and its copies in instances report it but cannot change it.
@@ -38,8 +39,10 @@
 - The `updates` messages from `@open-pencil/vue` no longer include `availableTitle`, `installPrompt`, `installedTitle`, and `downloading`, which only the system update dialogs and download toast used; `installed` now takes only `{ version }`, and `install` reads "Install Update". The Software Update window uses the new `windowTitle`, `currentVersion`, `whatsNew`, `installAndRestart`, `restartNow`, and related messages.
 - `fetchIcon`, `fetchIcons`, `searchIcons`, `searchIconsBatch`, and `clearIconCache` are removed from `@open-pencil/core`. Icons come from an `IconProvider` instead: `iconify` is the default Iconify provider, `createIconifyProvider()` makes one with its own cache, and `placeIcon` places an icon that keeps its name. A custom provider also implements `previews()`, `collections()`, and `browse()`, which give pickers each icon's SVG markup, the sets, and a set's icons.
 - `defineTool` from `@open-pencil/core/tools` takes its `input` as a `v.strictObject` instead of a `v.object`, and `ToolDef.input` is a strict object schema, so a tool rejects arguments it does not declare.
+- New entity IDs use random numeric GUIDs in all runtimes, including headless tools; reproducible authoring can inject a `SceneGraph` ID generator or explicitly call `setIdSession`. Existing saved GUIDs and imported CLI handles are retained (#770).
 
 ### Added
+
 
 - Paste SVG markup copied as text, such as from a code editor or Figma's Copy as SVG, as layers.
 - Show the pixel grid when zoomed in, as in Figma: from 800% on a standard display and 400% on a Retina one, toggled with **View → Pixel Grid** or <kbd>⇧</kbd><kbd>'</kbd>. <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> toggles **Snap to Pixel Grid**. The zoom menu in the properties panel lists both, with Figma's shortcuts, and labels its shortcuts for zoom to fit (<kbd>⇧</kbd><kbd>1</kbd>) and 100% (<kbd>⌘</kbd><kbd>0</kbd>); <kbd>⇧</kbd><kbd>R</kbd> toggles rulers and <kbd>⌥</kbd><kbd>⌘</kbd><kbd>\\</kbd> multiplayer cursors.
@@ -93,6 +96,7 @@
 - Be in several shared rooms at once, each in its own tab and syncing in the background. Join a room from Home with **Join room…**, and from a browser on a computer open it in the desktop app with **Open in desktop app** (`openpencil://join?room=<id>`).
 - See how auto layout arranges layers, as in Figma: hovering a horizontal or vertical auto layout frame outlines its visible direct children with dotted lines, and selecting a single layer dots the border of its auto layout parent, in purple for components and instances. The outlines, and the padding and gap markers of a selected frame, hide while layers move, resize, or rotate.
 - Join a shared room right away under a generated name such as *Teal Fox*, and set the one name every room shows in Settings or the share panel.
+- Export deterministic saved-record review artifacts with `openpencil diff snapshot`, covering all FIG pages and embedded resources without archive timestamps or thumbnails (#770).
 
 ### Changed
 
