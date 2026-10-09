@@ -72,6 +72,8 @@ export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
     color.a,
     r.dpr
   ])
+  // Skia scales a shader by the paint's alpha, which earlier overlays may have left translucent.
+  r.auxFill.setAlphaf(1)
   r.auxFill.setShader(shader)
   canvas.drawRect(r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight), r.auxFill)
   r.auxFill.setShader(null)
