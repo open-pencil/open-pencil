@@ -27,6 +27,7 @@ import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import { iconify, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
+import { createSVGNodes } from '#core/io/formats/svg'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
@@ -212,6 +213,14 @@ export class FigmaAPI implements NodeProxyHost {
 
   createVector(): FigmaVectorNode {
     return this._createNode('VECTOR') as FigmaVectorNode
+  }
+
+  /** The layers Figma makes from SVG markup, on the current page at its origin. */
+  // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Figma Plugin API name.
+  createNodeFromSvg(svg: string): FigmaFrameNode {
+    const node = createSVGNodes(this.graph, this._currentPageId, svg, { keepEmpty: true })
+    if (!node) throw new Error('in createNodeFromSvg: Failed to convert SVG file')
+    return this.wrapNode(node.id) as FigmaFrameNode
   }
 
   createComponent(): FigmaComponentNode {

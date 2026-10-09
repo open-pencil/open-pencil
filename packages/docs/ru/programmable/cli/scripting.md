@@ -85,6 +85,7 @@ API намеренно близок к Figma Plugin API, но работает �
 - `figma.createPolygon()`
 - `figma.createStar()`
 - `figma.createVector()`
+- `figma.createNodeFromSvg(svg)`
 - `figma.createComponent()`
 - `figma.createSection()`
 

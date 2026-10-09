@@ -132,6 +132,7 @@ The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil'
 - `figma.createPolygon()`
 - `figma.createStar()`
 - `figma.createVector()`
+- `figma.createNodeFromSvg(svg)`
 - `figma.createComponent()`
 - `figma.createSection()`
 

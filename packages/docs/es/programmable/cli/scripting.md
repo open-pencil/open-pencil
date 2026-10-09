@@ -84,6 +84,7 @@ La API sigue el modelo de Figma Plugin API, pero actúa sobre SceneGraph y los f
 - `figma.createPolygon()`
 - `figma.createStar()`
 - `figma.createVector()`
+- `figma.createNodeFromSvg(svg)`
 - `figma.createComponent()`
 - `figma.createSection()`
 
