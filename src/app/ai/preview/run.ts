@@ -59,7 +59,8 @@ export function createRunPreview(store: EditorStore) {
       if (agentId) publishAgentPreview(store, { type: 'finish', agentId, callId })
     },
     clear(): void {
-      for (const callId of [...stopAbortListeners.keys()]) stopAbortListener(callId)
+      for (const stop of stopAbortListeners.values()) stop()
+      stopAbortListeners.clear()
       preview.clear()
       const agentId = runAgentId(store)
       if (agentId) publishAgentPreview(store, { type: 'clear', agentId })
