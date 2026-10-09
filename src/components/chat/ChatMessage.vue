@@ -18,6 +18,7 @@ import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
 import ToolCallGroup from '@/components/chat/tool/ToolCallGroup.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 const {
@@ -25,6 +26,7 @@ const {
   streaming = false,
   presentation,
   canRegenerate = false,
+  canRetry = false,
   canEdit = false
 } = defineProps<{
   message: UIMessage
@@ -32,6 +34,8 @@ const {
   presentation?: { text?: string; attachments?: AttachmentPresentation[] }
   /** The last reply, when the chat is idle. */
   canRegenerate?: boolean
+  /** The last message, a request that got no reply, when the chat is idle. */
+  canRetry?: boolean
   /** The last user message without attachments, when the chat is idle. */
   canEdit?: boolean
 }>()
@@ -79,6 +83,8 @@ async function copyResponse(): Promise<void> {
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
 const reverted = computed(() => revertOf(message) !== null)
+// A request that failed once its reply had started leaves the reply without content.
+const empty = computed(() => message.parts.every((part) => part.type === 'step-start'))
 const groups = computed(() => groupMessageParts(message.parts.map((part) => ({ ...part }))))
 
 function groupKey(group: MessagePartGroup): string {
@@ -147,6 +153,7 @@ function groupKey(group: MessagePartGroup): string {
           v-if="!streaming"
           :message-id="message.id"
           :can-regenerate="canRegenerate"
+          :empty="empty"
           :reverted="reverted"
           @regenerate="emit('regenerate')"
           @revert="emit('revert')"
@@ -180,6 +187,17 @@ function groupKey(group: MessagePartGroup): string {
           >
             <icon-lucide-pencil class="size-3" />
           </IconButton>
+        </div>
+        <div v-if="canRetry && !editing" class="flex justify-end">
+          <AppButton
+            size="xs"
+            variant="ghost"
+            data-test-id="chat-retry"
+            @click="emit('regenerate')"
+          >
+            <template #leading><icon-lucide-refresh-cw aria-hidden="true" /></template>
+            {{ ai.retryRequest }}
+          </AppButton>
         </div>
       </template>
     </div>

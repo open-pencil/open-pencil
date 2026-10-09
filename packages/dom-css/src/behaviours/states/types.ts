@@ -8,7 +8,10 @@ import type { DesignStyleDeclaration, DesignText } from '#dom-css/types'
 export type StateCondition =
   | { type: 'state'; value: string }
   | { type: 'disabled' }
-  | { type: 'interaction'; state: 'hover' | 'pressed' | 'focus' }
+  /** `within` when focus lands on a layer inside the control, such as a field's input. */
+  | { type: 'interaction'; state: 'hover' | 'pressed' | 'focus'; within?: boolean }
+  /** A field whose input holds text. */
+  | { type: 'filled' }
   | { type: 'prop'; name: string; value: string }
 
 /** What a variant changes on a layer, and the conditions that show that variant. */
@@ -19,6 +22,8 @@ export interface StateRule {
    * that Reka and Radix mark active itself: the layer the rule styles, or one around it.
    */
   on?: StateElement
+  /** The part of the layer the rule styles: an input's placeholder, or a number input's spinner. */
+  pseudo?: 'placeholder' | '-webkit-inner-spin-button'
   style: DesignStyleDeclaration
 }
 

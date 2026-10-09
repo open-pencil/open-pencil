@@ -8,12 +8,18 @@ import {
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
+  numberFieldComponent,
+  progressComponent,
+  sliderComponent,
+  textareaComponent,
+  textFieldSet,
   radioGroupComponent,
   settingsSectionSet,
   switchSet,
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
+import { cssRules } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
@@ -135,13 +141,27 @@ describe('generated Vue components', () => {
     expect(checked(await render(component, { value: 'team' }))).toEqual([false, false, true])
   })
 
-  test('an item edited directly shows its own words and is chosen by them', async () => {
+  test('an item takes the words its label property assigns, before its layer is synced', async () => {
+    const fixture = radioGroupComponent()
+    const { graph } = fixture
+    const [items] = graph.getChildren(fixture.set.id)
+    const last = graph.getChildren(items?.id ?? '').at(-1)
+    if (!last) throw new Error('Expected the last item')
+    graph.updateNode(last.id, {
+      componentPropertyAssignments: { ...last.componentPropertyAssignments, label: 'Scale' }
+    })
+    const { component } = await generate(fixture)
+    expect(await render(component, { value: 'scale' })).toContain('Scale')
+  })
+
+  test('an item without its label assigned shows the words its layer reads', async () => {
     const fixture = radioGroupComponent()
     const { graph } = fixture
     const [items] = graph.getChildren(fixture.set.id)
     const last = graph.getChildren(items?.id ?? '').at(-1)
     const label = graph.getChildren(last?.id ?? '').find((layer) => layer.type === 'TEXT')
-    if (!label) throw new Error('Expected the item to show its label')
+    if (!last || !label) throw new Error('Expected the item to show its label')
+    graph.updateNode(last.id, { componentPropertyAssignments: {} })
     graph.updateNode(label.id, { text: 'Enterprise' })
 
     const { component } = await generate(fixture)
@@ -193,6 +213,70 @@ describe('generated Vue components', () => {
     const large = await render(component, { size: 'Large' })
     expect(large).toMatch(/^<button[^>]*type="button"/)
     expect(large).toContain('data-size="Large"')
+  })
+})
+
+/** The rules of a single-file component's scoped stylesheet, by selector. */
+const styleOf = (files: { path: string; content: string | Uint8Array }[], path: string) =>
+  cssRules(
+    /<style scoped>([\s\S]*)<\/style>/.exec(
+      String(files.find((file) => file.path === path)?.content)
+    )?.[1] ?? ''
+  )
+
+describe('generated Vue form controls', () => {
+  test('a slider binds one number within its range, the thumb and range placed by Reka', async () => {
+    const { files, component } = await generate(sliderComponent())
+    // Reka shows its thumb once mounted; its range already reaches the value on the server.
+    const range = (html: string) => /style="([^"]*)" class="volume__range"/.exec(html)?.[1]
+    expect(range(await render(component))).toBe('left:0%;right:40%;')
+    expect(range(await render(component, { value: 25 }))).toBe('left:0%;right:75%;')
+    expect(await render(component)).toContain('aria-valuemax="100"')
+    const css = styleOf(files, 'Volume.vue')
+    // Reka sets where they are from the value, so the place the design draws them at goes.
+    expect(css.get('.volume .volume__thumb')?.left).toBeUndefined()
+    expect(css.get('.volume .volume__range')?.width).toBeUndefined()
+    // Its root is a span, which lays out as the block the design draws.
+    expect(css.get('.volume')?.display).toBe('block')
+    expect(css.get('.volume .volume__thumb')?.['box-sizing']).toBe('border-box')
+  })
+
+  test("a progress bar's indicator reaches the value's share of its range", async () => {
+    const { component } = await generate(progressComponent())
+    expect(await render(component)).toMatch(
+      /class="upload__indicator"[^>]*style="width:25%;"|style="width:25%;"[^>]*class="upload__indicator"/
+    )
+    expect(await render(component, { value: 150 })).toContain('width:75%;')
+    // A value past the end fills the indicator, and no further.
+    expect(await render(component, { value: 500 })).toContain('width:100%')
+  })
+
+  test('a number field shows its value in its input, and its root hugs it', async () => {
+    const { files, component } = await generate(numberFieldComponent())
+    expect(await render(component)).toMatch(/<input[^>]*value="2"/)
+    expect(await render(component, { value: 7 })).toMatch(/<input[^>]*value="7"/)
+    expect(styleOf(files, 'Quantity.vue').get('.quantity')?.width).toBe('fit-content')
+  })
+
+  test('a text field starts empty with its placeholder, and looks filled while it has words', async () => {
+    const { files, component } = await generate(textFieldSet())
+    const html = await render(component)
+    expect(html).toMatch(/<input[^>]*placeholder="Email"/)
+    expect(html).not.toContain('ada@example.com')
+    expect(await render(component, { value: 'grace@example.com' })).toContain(
+      'value="grace@example.com"'
+    )
+    const css = styleOf(files, 'Email.vue')
+    const input = [...css].find(([selector]) => /^\.email \.email__value[^:]*$/.test(selector))?.[1]
+    const placeholder = [...css].find(([selector]) => selector.endsWith('::placeholder'))?.[1]
+    // Typed words take the filled look; the empty look is the placeholder's.
+    expect(input?.color).toBe('#121726')
+    expect(placeholder?.color).toBe('#9CA3B0')
+  })
+
+  test('a textarea starts with its words', async () => {
+    const { component } = await generate(textareaComponent())
+    expect(await render(component)).toMatch(/<textarea[^>]*>Tell us more<\/textarea>/)
   })
 })
 

@@ -1,6 +1,7 @@
 import {
   behaviourProperties,
   readBehaviour,
+  type BehaviourKind,
   type ComponentPropertyDefinition,
   type SceneGraph,
   type SceneNode
@@ -18,6 +19,9 @@ const DATA_STATE_ON: Partial<Record<string, string>> = {
 
 const INTERACTIONS = ['hover', 'pressed', 'focus'] as const
 
+/** Controls whose focus lands on a layer inside them: a slider's thumb, a field's input. */
+const FOCUS_WITHIN = new Set<BehaviourKind>(['slider', 'textField', 'textarea', 'numberField'])
+
 /** The condition a variant property's value adds, or `null` for its rest value. */
 type ValueCondition = (value: string) => StateCondition | null
 
@@ -32,12 +36,17 @@ function booleanCondition(arg: BooleanArg): ValueCondition {
 
 /** The interaction-state property's values: hover, pressed, focus, and disabled. */
 function interactionCondition(set: SceneNode, states: NonNullable<BehaviourArgs['states']>) {
-  const stored = readBehaviour(set)?.states
+  const behaviour = readBehaviour(set)
+  const within = behaviour ? FOCUS_WITHIN.has(behaviour.kind) : false
   const byValue = new Map<string, StateCondition>()
   for (const state of INTERACTIONS) {
-    const value = stored?.[state]
+    const value = behaviour?.states?.[state]
     if (value !== undefined && value !== states.rest)
-      byValue.set(value, { type: 'interaction', state })
+      byValue.set(value, {
+        type: 'interaction',
+        state,
+        ...(state === 'focus' && within ? { within } : {})
+      })
   }
   if (states.disabled !== undefined) byValue.set(states.disabled, { type: 'disabled' })
   const name = states.property
@@ -68,6 +77,9 @@ export function variantConditions(
     const boolean = args?.booleans.get(definition.name)
     if (boolean) return booleanCondition(boolean)
     if (args?.states?.property === definition.name) return interactionCondition(set, args.states)
+    const filled = args?.filled
+    if (filled?.property === definition.name)
+      return (value) => (value === filled.on ? { type: 'filled' } : null)
     return propCondition(definition)
   }
   const byProperty = new Map(

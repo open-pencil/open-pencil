@@ -8,17 +8,19 @@ const toastTheme = {
     message: 'select-text',
     count: 'ml-1.5',
     progress: 'mt-1.5',
+    // A filled button that darkens the toast, so its text keeps the toast's contrast.
     action:
-      'shrink-0 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium underline-offset-2 hover:underline',
+      'shrink-0 cursor-pointer rounded px-2 py-0.5 text-[11px] leading-4 font-medium transition-colors focus-visible:outline-1 focus-visible:outline-current',
     control: 'mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100'
   },
   variants: {
     tone: {
-      default: { root: 'bg-accent text-white' },
+      default: { root: 'bg-accent text-white', action: 'bg-black/20 hover:bg-black/30' },
       warning: {
-        root: 'border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]'
+        root: 'border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]',
+        action: 'bg-current/10 hover:bg-current/15'
       },
-      error: { root: 'bg-red-600 text-white' }
+      error: { root: 'bg-red-600 text-white', action: 'bg-black/20 hover:bg-black/30' }
     },
     // Work in progress spins the icon; AppProgress draws the bar.
     progress: {

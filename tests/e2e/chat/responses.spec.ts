@@ -78,3 +78,23 @@ test('transport errors show a safe localized toast', async ({ configuredChat: ch
     })
   ).toBeVisible()
 })
+
+test('a request that failed before any reply can be retried', async ({ configuredChat: chat }) => {
+  await chat.submit('Hello there')
+  await expect(chat.assistantMessage()).toContainText('mock response')
+  await chat.submit('Flaky request')
+
+  const toast = chat.page.locator('[data-slot="toast"]')
+  await expect(toast.getByRole('button', { name: 'Retry' })).toBeVisible()
+  // The failed request offers the retry; the earlier reply does not offer to regenerate itself.
+  await expect(chat.userMessage().getByTestId('chat-retry')).toBeVisible()
+  await expect(chat.page.getByTestId('chat-regenerate')).toHaveCount(0)
+
+  await chat.userMessage().getByTestId('chat-retry').click()
+  await expect(chat.assistantMessage()).toContainText('Flaky request')
+  await expect(chat.page.getByTestId('chat-message-user')).toHaveCount(2)
+  await expect(chat.page.getByTestId('chat-message-assistant')).toHaveCount(2)
+  await expect(chat.page.getByTestId('chat-message-assistant').first()).toContainText('Hello there')
+  await expect(chat.page.getByTestId('chat-retry')).toHaveCount(0)
+  await expect(chat.assistantMessage().getByTestId('chat-regenerate')).toBeVisible()
+})

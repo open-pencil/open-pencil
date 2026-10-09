@@ -12,7 +12,13 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
 
-import type { IconData, IconifyIconEntry, IconPathInfo, SVGClipPathRegion } from './types'
+import type {
+  IconData,
+  IconifyIconEntry,
+  IconPathInfo,
+  SVGClipPathRegion,
+  SVGElementLayer
+} from './types'
 
 interface SVGElementInput {
   type: string
@@ -37,6 +43,8 @@ interface PresentationAttributes {
   strokeCap: string
   strokeJoin: string
   fillRule: string
+  fillOpacity: string
+  strokeOpacity: string
 }
 
 const DEFAULT_PRESENTATION: PresentationAttributes = {
@@ -45,7 +53,9 @@ const DEFAULT_PRESENTATION: PresentationAttributes = {
   strokeWidth: '1',
   strokeCap: 'butt',
   strokeJoin: 'miter',
-  fillRule: 'nonzero'
+  fillRule: 'nonzero',
+  fillOpacity: '1',
+  strokeOpacity: '1'
 }
 
 const SHAPE_NAMES = new Set(['path', 'circle', 'ellipse', 'rect', 'line', 'polygon', 'polyline'])
@@ -90,8 +100,19 @@ function presentationFor(
     strokeWidth: inheritedAttribute(element, styles, 'stroke-width', inherited.strokeWidth),
     strokeCap: inheritedAttribute(element, styles, 'stroke-linecap', inherited.strokeCap),
     strokeJoin: inheritedAttribute(element, styles, 'stroke-linejoin', inherited.strokeJoin),
-    fillRule: inheritedAttribute(element, styles, 'fill-rule', inherited.fillRule)
+    fillRule: inheritedAttribute(element, styles, 'fill-rule', inherited.fillRule),
+    fillOpacity: inheritedAttribute(element, styles, 'fill-opacity', inherited.fillOpacity),
+    strokeOpacity: inheritedAttribute(element, styles, 'stroke-opacity', inherited.strokeOpacity)
   }
+}
+
+/** An SVG opacity, a number or a percentage, clamped to 0–1. */
+function opacityValue(value: string | null | undefined): number {
+  if (!value) return 1
+  const parsed = Number.parseFloat(value)
+  if (!Number.isFinite(parsed)) return 1
+  const opacity = value.trim().endsWith('%') ? parsed / 100 : parsed
+  return Math.min(1, Math.max(0, opacity))
 }
 
 function num(element: Element, attr: string, fallback = 0): number {
@@ -180,17 +201,49 @@ function normalizeSVGPaint(value: string | null): string | null {
   return value?.trim().toLowerCase() === 'none' ? null : value
 }
 
+interface Traversal {
+  root: Element
+  elementsById: ReadonlyMap<string, Element>
+  nextKey: number
+}
+
+/** What an element inherits from the elements around it. */
+interface Scope {
+  presentation: PresentationAttributes
+  transform: string | null
+  clipPaths: SVGClipPathRegion[]
+  elements: SVGElementLayer[]
+  useStack: ReadonlySet<Element>
+  /** Drawn through `<use>` or inside a `<clipPath>`, so ids name the source, not this copy. */
+  referenced: boolean
+}
+
+function elementLayer(
+  traversal: Traversal,
+  element: Element,
+  kind: SVGElementLayer['kind'],
+  scope: Pick<Scope, 'referenced'>,
+  clip: number | null
+): SVGElementLayer {
+  return {
+    key: traversal.nextKey++,
+    kind,
+    name: scope.referenced ? null : element.getAttribute('id') || null,
+    opacity: opacityValue(inlineStyles(element).get('opacity') ?? element.getAttribute('opacity')),
+    clip
+  }
+}
+
 function appendShapePath(
   tagName: string,
   element: Element,
-  presentation: PresentationAttributes,
-  transform: string | null,
-  clipPaths: SVGClipPathRegion[],
+  scope: Scope,
+  layer: SVGElementLayer,
   result: IconPathInfo[]
 ): void {
-  if (!SHAPE_NAMES.has(tagName)) return
   const pathData = tagName === 'path' ? element.getAttribute('d') : shapeToD(tagName, element)
   if (!pathData) return
+  const { presentation } = scope
   const strokeWidth = Number.parseFloat(presentation.strokeWidth)
   result.push({
     d: pathData,
@@ -200,51 +253,44 @@ function appendShapePath(
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
     fillRule: presentation.fillRule === 'evenodd' ? 'EVENODD' : 'NONZERO',
-    transform,
-    clipPaths: clipPaths.length > 0 ? clipPaths : undefined
+    fillOpacity: opacityValue(presentation.fillOpacity),
+    strokeOpacity: opacityValue(presentation.strokeOpacity),
+    transform: scope.transform,
+    clipPaths: scope.clipPaths.length > 0 ? scope.clipPaths : undefined,
+    elements: [...scope.elements, layer]
   })
 }
 
 function collectUsePaths(
   element: Element,
-  presentation: PresentationAttributes,
-  transform: string | null,
-  result: IconPathInfo[],
-  elementsById: ReadonlyMap<string, Element>,
-  useStack: ReadonlySet<Element>,
-  clipPaths: SVGClipPathRegion[]
-): boolean {
-  const tagName = element.localName || element.tagName
-  if (tagName !== 'use') return false
+  scope: Scope,
+  traversal: Traversal,
+  result: IconPathInfo[]
+): void {
   const x = num(element, 'x')
   const y = num(element, 'y')
-  const useTransform =
-    x !== 0 || y !== 0 ? `${transform ?? ''} translate(${x} ${y})`.trim() : transform
+  const transform =
+    x !== 0 || y !== 0 ? `${scope.transform ?? ''} translate(${x} ${y})`.trim() : scope.transform
   const href = element.getAttribute('href') ?? element.getAttribute('xlink:href')
-  const target = href?.startsWith('#') ? elementsById.get(href.slice(1)) : null
-  if (target && !useStack.has(target)) {
+  const target = href?.startsWith('#') ? traversal.elementsById.get(href.slice(1)) : null
+  if (target && !scope.useStack.has(target)) {
     collectPaths(
       target,
-      presentation,
-      useTransform,
-      result,
-      elementsById,
-      new Set([...useStack, target]),
-      true,
-      clipPaths
+      { ...scope, transform, useStack: new Set([...scope.useStack, target]), referenced: true },
+      traversal,
+      result
     )
   }
-  return true
 }
 
 function collectClipPath(
   value: string | null,
   parentTransform: string | null,
-  elementsById: ReadonlyMap<string, Element>
+  traversal: Traversal
 ): SVGClipPathRegion | null {
   const match = value?.trim().match(/^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/)
-  const target = match ? elementsById.get(match[1]) : null
-  if (!target || (target.localName || target.tagName) !== 'clipPath') return null
+  const target = match ? traversal.elementsById.get(match[1]) : null
+  if (!match || !target || (target.localName || target.tagName) !== 'clipPath') return null
 
   const units =
     target.getAttribute('clipPathUnits') === 'objectBoundingBox'
@@ -253,14 +299,19 @@ function collectClipPath(
   const paths: IconPathInfo[] = []
   collectPaths(
     target,
-    { ...DEFAULT_PRESENTATION, fill: '#000000' },
-    units === 'objectBoundingBox' ? null : parentTransform,
-    paths,
-    elementsById,
-    new Set([target]),
-    true
+    {
+      presentation: { ...DEFAULT_PRESENTATION, fill: '#000000' },
+      transform: units === 'objectBoundingBox' ? null : parentTransform,
+      clipPaths: [],
+      elements: [],
+      useStack: new Set([target]),
+      referenced: true
+    },
+    traversal,
+    paths
   )
   return {
+    id: match[1],
     paths: paths.map(({ d, fillRule, transform }) => ({ d, fillRule, transform })),
     units
   }
@@ -268,38 +319,45 @@ function collectClipPath(
 
 function collectPaths(
   element: Element,
-  inherited: PresentationAttributes,
-  parentTransform: string | null,
-  result: IconPathInfo[],
-  elementsById: ReadonlyMap<string, Element>,
-  useStack: ReadonlySet<Element> = new Set(),
-  referenced = false,
-  inheritedClipPaths: SVGClipPathRegion[] = []
+  inherited: Scope,
+  traversal: Traversal,
+  result: IconPathInfo[]
 ): void {
   const tagName = element.localName || element.tagName
-  if (NON_RENDERED_CONTAINERS.has(tagName) && !referenced) return
+  if (NON_RENDERED_CONTAINERS.has(tagName) && !inherited.referenced) return
 
-  const presentation = presentationFor(element, inherited)
-  const transform = combinedTransform(parentTransform, element)
-  const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, elementsById)
-  const clipPaths = ownClipPath ? [...inheritedClipPaths, ownClipPath] : inheritedClipPaths
-  if (collectUsePaths(element, presentation, transform, result, elementsById, useStack, clipPaths))
+  const transform = combinedTransform(inherited.transform, element)
+  const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, traversal)
+  const clipPaths = ownClipPath ? [...inherited.clipPaths, ownClipPath] : inherited.clipPaths
+  const clip = ownClipPath ? clipPaths.length - 1 : null
+  const scope: Scope = {
+    ...inherited,
+    presentation: presentationFor(element, inherited.presentation),
+    transform,
+    clipPaths
+  }
+
+  if (SHAPE_NAMES.has(tagName)) {
+    appendShapePath(
+      tagName,
+      element,
+      scope,
+      elementLayer(traversal, element, 'shape', scope, clip),
+      result
+    )
     return
-  appendShapePath(tagName, element, presentation, transform, clipPaths, result)
-
+  }
+  // A group is a layer; another container only becomes one to keep its clip or opacity.
+  const layer = elementLayer(traversal, element, 'group', scope, clip)
+  const isLayer =
+    tagName === 'g' || clip !== null || (layer.opacity !== 1 && element !== traversal.root)
+  const childScope = isLayer ? { ...scope, elements: [...scope.elements, layer] } : scope
+  if (tagName === 'use') {
+    collectUsePaths(element, childScope, traversal, result)
+    return
+  }
   for (const child of Array.from(element.childNodes)) {
-    if (isElement(child)) {
-      collectPaths(
-        child,
-        presentation,
-        transform,
-        result,
-        elementsById,
-        useStack,
-        referenced,
-        clipPaths
-      )
-    }
+    if (isElement(child)) collectPaths(child, childScope, traversal, result)
   }
 }
 
@@ -327,7 +385,19 @@ function collectDocumentPaths(root: Element): IconPathInfo[] {
     if (id) elementsById.set(id, element)
   }
   const result: IconPathInfo[] = []
-  collectPaths(root, DEFAULT_PRESENTATION, null, result, elementsById)
+  collectPaths(
+    root,
+    {
+      presentation: DEFAULT_PRESENTATION,
+      transform: null,
+      clipPaths: [],
+      elements: [],
+      useStack: new Set(),
+      referenced: false
+    },
+    { root, elementsById, nextKey: 0 },
+    result
+  )
   return result
 }
 

@@ -38,6 +38,7 @@
   "restoreTurn": "Rétablir les modifications",
   "regenerate": "Régénérer",
   "revertAndRegenerate": "Annuler et régénérer",
+  "retryRequest": "Réessayer",
   "editMessage": "Modifier le message",
   "cancelEdit": "Annuler",
   "resendMessage": "Renvoyer",

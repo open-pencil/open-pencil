@@ -84,3 +84,11 @@ describe('filling templates', () => {
     )
   })
 })
+
+describe('numbers', () => {
+  test('print as source writes them, a negative one with its sign', () => {
+    expect(es.printExpression(es.number(2.5))).toBe('2.5')
+    expect(es.printExpression(es.number(-10))).toBe('-10')
+    expect(() => es.number(Number.NaN)).toThrow()
+  })
+})

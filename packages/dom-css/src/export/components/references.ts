@@ -4,6 +4,7 @@ import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
+  behaviourOwner,
   findComponentPropertyTargets,
   findLayerByPath,
   instanceMainComponent,
@@ -82,18 +83,22 @@ function ownerId(graph: SceneGraph, component: SceneNode): string {
 }
 
 /**
- * The words an instance shows for a text property: what its bound text layer reads, which an
- * assignment or a direct edit sets, else the assignment itself.
+ * The words an instance shows for a text property: an assignment that overrides the default,
+ * else what its bound text layer reads, which a direct edit changes, else the assignment.
  */
 export function shownText(
   graph: SceneGraph,
   instance: SceneNode,
   propertyId: string
 ): string | undefined {
+  const assigned = instance.componentPropertyAssignments[propertyId]
+  const main = instanceMainComponent(graph, instance)
+  const owner = main && behaviourOwner(graph, main)
+  const definition = owner?.componentPropertyDefinitions.find((item) => item.id === propertyId)
+  if (typeof assigned === 'string' && assigned !== definition?.defaultValue) return assigned
   const target = findComponentPropertyTargets(graph, instance, propertyId).find(
     (item) => item.field === 'TEXT' && item.node.type === 'TEXT'
   )
-  const assigned = instance.componentPropertyAssignments[propertyId]
   return target?.node.text ?? (typeof assigned === 'string' ? assigned : undefined)
 }
 

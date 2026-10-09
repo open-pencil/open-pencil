@@ -47,7 +47,7 @@ const REKA_PARTS = {
     Range: part('range'),
     Thumb: part('thumb')
   },
-  Progress: { Root: root('progress'), Indicator: part('indicator') },
+  Progress: { Root: root('progress'), Track: part('track'), Indicator: part('indicator') },
   Tabs: {
     Root: root('tabs'),
     List: part('list'),

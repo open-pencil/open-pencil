@@ -147,18 +147,27 @@ const showContinue = computed(() => {
   return last.role === 'assistant' && didHitStepLimit()
 })
 
+// Asking again clears the failure, and its notice goes with it.
+let failureToast: number | null = null
+/** The notice outlives a switch to another tab, whose chat its Retry must not touch. */
+function retryFailed(messageId: string | undefined): void {
+  if (messageId && chat.value?.messages.at(-1)?.id === messageId) void submission.regenerate()
+}
 watch(
   () => chatFailure.value?.reason,
   (reason) => {
+    if (failureToast !== null) toast.remove(failureToast)
+    failureToast = null
     if (!reason) return
-    toast.error(
+    const failedId = chat.value?.messages.at(-1)?.id
+    failureToast = toast.error(
       failureMessage.value ?? ai.value.chatRequestFailed,
       failureHasSettingsAction.value
         ? {
             label: ai.value.openProviderSettingsAction,
             run: () => openSettingsDialog('ai')
           }
-        : undefined
+        : { label: ai.value.retryRequest, run: () => retryFailed(failedId) }
     )
   }
 )
@@ -231,7 +240,7 @@ function handleStop() {
         :status="status"
         :show-continue="showContinue"
         :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null"
+        :interactive="chat !== null && !submission.busy.value"
         @regenerate="submission.regenerate()"
         @revert="(messageId) => submission.revert(messageId)"
         @restore="(messageId) => submission.restore(messageId)"

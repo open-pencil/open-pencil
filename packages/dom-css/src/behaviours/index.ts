@@ -6,6 +6,6 @@ export {
   type ControlModel,
   type StatesModel
 } from './controls'
-export { BUTTON_RESET } from './reset'
+export { BUTTON_RESET, INPUT_RESET } from './reset'
 export { controlRoles, groupOf, type ControlRole } from './roles'
 export * from './states'

@@ -66,6 +66,18 @@ export const WithAction: Story = {
   args: { message: 'Design file moved to Trash.', actionLabel: 'Undo' }
 }
 
+export const ErrorWithAction: Story = {
+  args: {
+    message: 'Your provider API key is invalid or expired. Replace it in Settings.',
+    variant: 'error',
+    actionLabel: 'Open settings',
+    copyable: true,
+    copyLabel: 'Copy message',
+    copiedLabel: 'Copied',
+    closeLabel: 'Close'
+  }
+}
+
 export const RepeatedMessage: Story = {
   args: {
     message: 'Lost connection to the collaboration room',

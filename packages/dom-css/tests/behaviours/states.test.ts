@@ -19,6 +19,7 @@ import {
   componentSet,
   switchSet,
   tabsComponent,
+  textFieldSet,
   toggleSet
 } from './fixtures'
 
@@ -172,6 +173,14 @@ describe('state stylesheet', () => {
     )
   })
 
+  test("shows a field's filled look while its input or textarea has words", async () => {
+    const rules = cssRules((await stateStylesToCSS(styles(textFieldSet()))).css)
+    const filled = [...rules].filter(([selector]) =>
+      selector.startsWith('.email:has(:is(input, textarea):not(:placeholder-shown))')
+    )
+    expect(filled.length).toBeGreaterThan(0)
+  })
+
   test('writes a prop condition as the data attribute a component sets', async () => {
     const rules = cssRules((await stateStylesToCSS(styles(buttonSet()))).css)
     expect(rules.get('.button[data-size="Large"]')).toEqual({ width: '160px' })
@@ -187,6 +196,24 @@ describe('state stylesheet', () => {
 })
 
 describe('state Tailwind', () => {
+  test('writes the filled look as a variant Tailwind compiles to the same condition', async () => {
+    const document = stateStylesToTailwind(styles(textFieldSet()))
+    const classes = elements(document.children[0] ?? { type: 'text', text: '' }).flatMap(
+      (element) => element.attrs.class.split(' ')
+    )
+    const filled = classes.filter((item) =>
+      item.includes('has-[:is(input,textarea):not(:placeholder-shown)]')
+    )
+    expect(filled.length).toBeGreaterThan(0)
+    const rules = compiledRules(await compileTailwindCSS(filled))
+    // Tailwind writes the condition as the stylesheet does, inside an `:is()` of its own.
+    expect(
+      rules.some(([selector]) =>
+        selector.includes(':has(:is(:is(input, textarea):not(:placeholder-shown)))')
+      )
+    ).toBe(true)
+  })
+
   test('names a group for the layer a rule tests, which the layers inside it test', async () => {
     const document = stateStylesToTailwind(anchoredTabs().root)
     const [, , trigger, label] = elements(document.children[0] ?? { type: 'text', text: '' })

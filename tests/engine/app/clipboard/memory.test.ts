@@ -29,7 +29,7 @@ const unavailableClipboard: SystemClipboard = {
 
 const memoryIO: BrowserClipboardIO = {
   write: async () => true,
-  readHTML: async () => ({ available: false })
+  read: async () => ({ available: false })
 }
 const memoryClipboard = createBrowserSystemClipboard(memoryIO)
 
@@ -80,7 +80,7 @@ describe('in-memory clipboard', () => {
     const write = mock(async (_payload: Promise<ClipboardPayload>) => true)
     const clipboard = createBrowserSystemClipboard({
       write,
-      readHTML: async () => ({ available: false })
+      read: async () => ({ available: false })
     })
     const success = await clipboard.copy(store)
 
@@ -104,7 +104,7 @@ describe('in-memory clipboard', () => {
         await payload
         return true
       },
-      readHTML: async () => ({ available: false })
+      read: async () => ({ available: false })
     })
     const copying = clipboard.copy(store)
     expect(writerStarted).toBe(true)
@@ -124,7 +124,7 @@ describe('in-memory clipboard', () => {
         await payload
         return true
       },
-      readHTML: async () => ({ available: false })
+      read: async () => ({ available: false })
     })
     expect(await executeClipboardCommand(store, 'cut', undefined, clipboard)).toBe(false)
     expect(store.graph.getNode(node.id)).toBeDefined()
@@ -205,7 +205,7 @@ describe('in-memory clipboard', () => {
         await payload
         return false
       },
-      readHTML: async () => ({ available: false })
+      read: async () => ({ available: false })
     })
     expect(await failing.copy(second)).toBe(false)
     expect(getInMemoryClipboardHTML()).toBe('')
@@ -225,7 +225,7 @@ describe('in-memory clipboard', () => {
 
     const clipboard = createBrowserSystemClipboard({
       write: async () => false,
-      readHTML: async () => ({ available: false })
+      read: async () => ({ available: false })
     })
     const success = await clipboard.copy(store)
     expect(success).toBe(false)
@@ -238,7 +238,7 @@ describe('in-memory clipboard', () => {
     store.pasteFromHTML = paste
     const clipboard = createBrowserSystemClipboard({
       write: async () => true,
-      readHTML: async () => ({ available: true, html: '<p>ordinary current clipboard</p>' })
+      read: async () => ({ available: true, html: '<p>ordinary current clipboard</p>', text: null })
     })
 
     expect(await clipboard.paste(store)).toBe(false)
@@ -252,7 +252,7 @@ describe('in-memory clipboard', () => {
     store.pasteFromHTML = paste
     const clipboard = createBrowserSystemClipboard({
       write: async () => true,
-      readHTML: async () => ({ available: true, html: null })
+      read: async () => ({ available: true, html: null, text: null })
     })
 
     expect(await clipboard.paste(store)).toBe(false)

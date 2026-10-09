@@ -9,10 +9,13 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 const {
   messageId,
   canRegenerate = false,
+  empty = false,
   reverted = false
 } = defineProps<{
   messageId: string
   canRegenerate?: boolean
+  /** The reply failed before any content, so asking again is a retry. */
+  empty?: boolean
   /** The reply's edits were reverted; it stays in the chat, marked. */
   reverted?: boolean
 }>()
@@ -67,7 +70,7 @@ const restorable = computed(() => edits.value?.restorable === true)
       @click="emit('regenerate')"
     >
       <template #leading><icon-lucide-refresh-cw aria-hidden="true" /></template>
-      {{ revertable ? ai.revertAndRegenerate : ai.regenerate }}
+      {{ empty ? ai.retryRequest : revertable ? ai.revertAndRegenerate : ai.regenerate }}
     </AppButton>
   </div>
 </template>

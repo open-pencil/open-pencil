@@ -8,16 +8,17 @@ import {
 } from '@open-pencil/scene-graph/resize'
 
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { buildIconData } from '#core/icons/svg'
 
 const BLACK = parseColor('#000000')
 const OUTLINE = '<path fill="none" stroke="currentColor" stroke-width="2" d="M4 4h16v16H4z"/>'
 const LOGO = '<path fill="#e11d48" d="M2 2h20v20H2z"/><path fill="currentColor" d="M8 8h8v8H8z"/>'
 
-function placed(body: string) {
+function placed(body: string, size = 24) {
   const graph = new SceneGraph()
-  const icon = buildIconData({ body }, 'test', 'icon', 24, 24, 24)
-  const frame = placeIcon(graph, graph.getPages()[0].id, icon, { size: 24, color: BLACK })
+  const icon = buildIconData({ body }, 'test', 'icon', 24, 24, size)
+  const frame = placeIcon(graph, graph.getPages()[0].id, icon, { size, color: BLACK })
   const modified = () => isIconModified(graph, graph.getNode(frame.id) ?? frame)
   return { graph, frame, modified }
 }
@@ -36,6 +37,25 @@ function resize(graph: SceneGraph, id: string, width: number, height: number) {
 }
 
 describe('icon glyphs', () => {
+  test('a placed icon is as placed after saving and loading the document', async () => {
+    // Lucide's save icon, whose curves land near rounding boundaries once stored as floats.
+    const SAVE =
+      '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7"/></g>'
+    for (const [body, size] of [
+      [OUTLINE, 24],
+      [LOGO, 24],
+      [SAVE, 16]
+    ] as const) {
+      const { graph, frame } = placed(body, size)
+      const loaded = await parseFigFile((await exportFigFile(graph)).slice().buffer)
+      const icon = [...loaded.getAllNodes()].find((node) => readIcon(node)?.name === readIcon(frame)?.name)
+      if (!icon) throw new Error('Expected the icon to load')
+      // An icon without a glyph also reads as unedited, so the glyph itself has to survive.
+      expect(readIcon(icon)?.glyph).toBe(readIcon(frame)?.glyph ?? 'missing')
+      expect(isIconModified(loaded, icon)).toBe(false)
+    }
+  })
+
   test('a placed icon is as placed, and stays so when recolored or resized, unevenly too', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     expect(readIcon(graph.getNode(frame.id) ?? frame)?.glyph).toMatch(/^[0-9a-f]{8}$/)

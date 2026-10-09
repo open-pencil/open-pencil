@@ -3,7 +3,12 @@ import { compact } from 'es-toolkit/array'
 
 import { es } from '@open-pencil/emit'
 
-import type { ComponentModel, GeneratedComponent, GeneratedKind } from '../components/model'
+import type {
+  ComponentModel,
+  ComponentNode,
+  GeneratedComponent,
+  GeneratedKind
+} from '../components/model'
 import { claimName, identifierName } from './names'
 
 /** Tells readers the file is generated; nothing parses it. */
@@ -49,12 +54,75 @@ const PLAY = es.parseExpression(dedent`
   }
 `)
 
+/** A slider's Home key moves it to its minimum, as Reka and Radix both handle it. */
+const SLIDER_PLAY = es.parseExpression(dedent`
+  async ({ canvas, userEvent }) => {
+    const thumb = canvas.getByRole('slider')
+    thumb.focus()
+    await userEvent.keyboard('{Home}')
+    await expect(thumb).toHaveAttribute('aria-valuenow', $min)
+  }
+`)
+
+/**
+ * A stepper steps a number field. Both Reka's and the native field's steppers are named by
+ * what they do, where a key would only step Reka's input, not a native number input.
+ */
+const NUMBER_PLAY = es.parseExpression(dedent`
+  async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: $stepper }))
+    await expect(canvas.getByRole('spinbutton')).toHaveDisplayValue($value)
+  }
+`)
+
+/** Whether the component draws a part, such as a number field's increment. */
+function drawsPart(node: ComponentNode, part: string): boolean {
+  return (
+    node.type === 'element' &&
+    (node.part === part || node.children.some((child) => drawsPart(child, part)))
+  )
+}
+
+/** Typing replaces a text field's words. */
+const TEXT_PLAY = es.parseExpression(dedent`
+  async ({ canvas, userEvent }) => {
+    const field = canvas.getByRole('textbox')
+    await userEvent.clear(field)
+    await userEvent.type(field, 'Hello')
+    await expect(field).toHaveValue('Hello')
+  }
+`)
+
+/** The play function that operates a generated component, if it has one. */
+function playOf(component: ComponentModel): es.SyntaxNode | undefined {
+  const interaction = INTERACTIONS[component.kind]
+  if (interaction)
+    return es.fill(PLAY, {
+      $role: es.string(interaction.role),
+      $state: es.string(interaction.state)
+    })
+  const { range } = component
+  if (component.kind === 'slider' && range)
+    return es.fill(SLIDER_PLAY, { $min: es.string(String(range.min)) })
+  if (component.kind === 'numberField' && range) {
+    const up = range.default + range.step <= range.max
+    const part = up ? 'increment' : 'decrement'
+    if (!drawsPart(component.tree, part)) return undefined
+    return es.fill(NUMBER_PLAY, {
+      $stepper: es.string(up ? 'Increase' : 'Decrease'),
+      $value: es.string(String(up ? range.default + range.step : range.default - range.step))
+    })
+  }
+  if (component.kind === 'textField' || component.kind === 'textarea') return TEXT_PLAY
+  return undefined
+}
+
 export interface ComponentStoriesData {
   /** The Storybook renderer package the stories import their types from. */
   storybook: string
   title: string
   component: ComponentModel
-  generated: Pick<GeneratedComponent, 'entry' | 'valueArg'>
+  generated: Pick<GeneratedComponent, 'entry' | 'valueArg' | 'valueList'>
   /** Design links for the whole file, as `parameters.design` entries. */
   design: { name: string; type: string; url: string }[]
 }
@@ -62,14 +130,27 @@ export interface ComponentStoriesData {
 const FALSE = es.parseExpression('false')
 const TRUE = es.parseExpression('true')
 
-/** A model's value at rest: off, the option a choice starts on, or none for an open choice. */
-function restValue(component: ComponentModel): es.SyntaxNode | null {
+/** A number model's value as its prop takes it: on its own, or in a list for a slider. */
+const numberArg = (value: number, list: boolean) =>
+  list ? es.array([es.number(value)]) : es.number(value)
+
+/**
+ * A model's value at rest: off, the option a choice starts on, none for an open choice, the
+ * number a range starts at, or the words a field starts with.
+ */
+function restValue(component: ComponentModel, list: boolean): es.SyntaxNode | null {
+  if (component.range) return numberArg(component.range.default, list)
+  if (component.text) return es.string(component.text.default)
   if (!component.choice) return FALSE
   return component.choice.default === null ? null : es.string(component.choice.default)
 }
 
-function restArgs(component: ComponentModel, model: string | null): [string, es.SyntaxNode][] {
-  const rest = restValue(component)
+function restArgs(
+  component: ComponentModel,
+  model: string | null,
+  list: boolean
+): [string, es.SyntaxNode][] {
+  const rest = restValue(component, list)
   return [
     ...(model && rest ? [[model, rest] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', FALSE] as [string, es.SyntaxNode]] : []),
@@ -78,16 +159,41 @@ function restArgs(component: ComponentModel, model: string | null): [string, es.
   ]
 }
 
-function argTypes(component: ComponentModel, model: string | null): es.SyntaxNode {
+/** The control a model's value gets: a choice's options, a range, text, or a boolean. */
+function modelControl(component: ComponentModel, list: boolean): es.SyntaxNode {
+  const control = (type: string) => es.object([['control', es.string(type)]])
+  const { choice, range } = component
+  if (choice)
+    return es.object([
+      ['control', es.string('select')],
+      ['options', es.array(choice.options.map(es.string))]
+    ])
+  // A slider's list of values is edited as one, not as a range.
+  if (range && list) return control('object')
+  if (range)
+    return es.object([
+      [
+        'control',
+        es.object([
+          ['type', es.string('range')],
+          ['min', es.number(range.min)],
+          ['max', es.number(range.max)],
+          ['step', es.number(range.step)]
+        ])
+      ]
+    ])
+  return control(component.text ? 'text' : 'boolean')
+}
+
+function argTypes(component: ComponentModel, model: string | null, list: boolean): es.SyntaxNode {
   const boolean = es.object([['control', es.string('boolean')]])
   const select = (options: readonly string[]) =>
     es.object([
       ['control', es.string('select')],
       ['options', es.array(options.map(es.string))]
     ])
-  const modelControl = component.choice ? select(component.choice.options) : boolean
   return es.object([
-    ...(model ? [[model, modelControl] as [string, es.SyntaxNode]] : []),
+    ...(model ? [[model, modelControl(component, list)] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', boolean] as [string, es.SyntaxNode]] : []),
     ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, select(prop.options)]),
     ...component.texts.map((text): [string, es.SyntaxNode] => [
@@ -100,7 +206,8 @@ function argTypes(component: ComponentModel, model: string | null): es.SyntaxNod
 /** A story per state worth seeing: at rest, each boolean on, disabled, and each prop value. */
 function stories(
   component: ComponentModel,
-  model: string | null
+  model: string | null,
+  list: boolean
 ): { name: string; story: es.SyntaxNode }[] {
   const taken = new Set<string>()
   const story = (label: string, args: [string, es.SyntaxNode][], play?: es.SyntaxNode) => ({
@@ -110,16 +217,21 @@ function stories(
       ...(play ? [['play', play] as [string, es.SyntaxNode]] : [])
     ])
   })
-  const interaction = INTERACTIONS[component.kind]
+  const { range } = component
+  const boolean = !component.choice && !range && !component.text
   return [
-    story(
-      'Default',
-      [],
-      interaction &&
-        es.fill(PLAY, { $role: es.string(interaction.role), $state: es.string(interaction.state) })
-    ),
-    ...(component.model && model && !component.choice
-      ? [story(component.model, [[model, TRUE]])]
+    story('Default', [], playOf(component)),
+    ...(component.model && model && boolean ? [story(component.model, [[model, TRUE]])] : []),
+    // A range gets a story at each end it does not start at.
+    ...(range && model
+      ? (
+          [
+            ['Minimum', range.min],
+            ['Maximum', range.max]
+          ] as const
+        )
+          .filter(([, value]) => value !== range.default)
+          .map(([label, value]) => story(label, [[model, numberArg(value, list)]]))
       : []),
     // A choice gets a story per option it does not start on, such as each other tab.
     ...(component.choice && model
@@ -157,24 +269,25 @@ export function printComponentStories(data: ComponentStoriesData): string {
         ])
       : es.OMIT
   const { entry, valueArg: model } = data.generated
+  const list = data.generated.valueList ?? false
   const body = es.fill(MODULE, {
     $storybook: es.string(data.storybook),
     $Component: es.identifier(component.name),
     $title: es.string(data.title),
     $parameters: parameters,
-    $args: es.object(restArgs(component, model)),
-    $argTypes: argTypes(component, model)
+    $args: es.object(restArgs(component, model, list)),
+    $argTypes: argTypes(component, model, list)
   }).body
   const componentImport = es.fill(entry.named ? IMPORT_NAMED : IMPORT_DEFAULT, {
     $Component: es.identifier(component.name),
     $path: es.string(entry.path)
   }).body
-  const exported = stories(component, model).flatMap(
+  const exported = stories(component, model, list).flatMap(
     (item) => es.fill(STORY, { $name: es.identifier(item.name), $story: item.story }).body
   )
   // Only a control with a play function uses `expect`.
   const [types, expectImport, ...rest] = body
-  const imports = INTERACTIONS[component.kind] ? [types, expectImport] : [types]
+  const imports = playOf(component) ? [types, expectImport] : [types]
   const module = es.printModule({
     type: 'Program',
     sourceType: 'module',

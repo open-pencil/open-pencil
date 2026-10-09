@@ -406,6 +406,35 @@ describe('MCP server sharing only the selection', () => {
   })
 })
 
+describe('raw RPC', () => {
+  test('forwards render JSX to the app as written, with its placement', async () => {
+    const ctx = await createTestClient()
+    try {
+      const { browser, handle } = ctx
+      const args = {
+        jsx: "<Frame w={100} h={100} fill={designVar('Brand/primary')} />",
+        replace_id: '0:1',
+        insert_index: 0
+      }
+      await fetch(`http://127.0.0.1:${handle.httpPort}/rpc`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: 'tool', args: { name: 'render', args } })
+      })
+      // The app renders it, so variable references survive; a tree sent as JSON would lose them.
+      const call = expectDefined(browser, 'browser').requests.find(
+        (request) => request.command === 'tool'
+      )
+      expect(call?.args).toEqual({ name: 'render', args })
+    } finally {
+      await ctx.close()
+    }
+  })
+})
+
 describe('MCP server with mcpRoot', () => {
   async function withMCPRootServer(
     mcpRoot: string | null,

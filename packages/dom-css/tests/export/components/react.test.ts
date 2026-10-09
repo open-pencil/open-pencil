@@ -6,6 +6,11 @@ import { dirname, join } from 'node:path'
 import {
   accordionComponent,
   badgeToggleSet,
+  numberFieldComponent,
+  progressComponent,
+  sliderComponent,
+  textareaComponent,
+  textFieldSet,
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
@@ -86,6 +91,59 @@ async function typeErrors(folder: string, name: string): Promise<string[]> {
 
 const render = (component: ComponentType<Props>, props: Props = {}) =>
   renderToStaticMarkup(createElement(component, props))
+
+describe('generated React form controls', () => {
+  test('type-check against Radix and React', async () => {
+    for (const fixture of [
+      sliderComponent(),
+      progressComponent(),
+      numberFieldComponent(),
+      textFieldSet(),
+      textareaComponent()
+    ]) {
+      const { folder } = await generate(fixture)
+      expect(await typeErrors(folder, fixture.set.name)).toEqual([])
+    }
+  })
+
+  test("a slider starts at the design's value as Radix's list, within its range", async () => {
+    const { component } = await generate(sliderComponent())
+    // Radix places its range from the value, already on the server.
+    expect(render(component)).toContain('right:40%')
+    expect(render(component, { defaultValue: [25] })).toContain('right:75%')
+  })
+
+  test("a progress bar's indicator reaches the value's share of its range", async () => {
+    const { component } = await generate(progressComponent())
+    expect(render(component)).toContain('width:25%')
+    expect(render(component, { value: 150 })).toContain('width:75%')
+    // A value past the end fills the indicator, and no further.
+    expect(render(component, { value: 500 })).toContain('width:100%')
+  })
+
+  test('a number field is a native number input between steppers named for what they do', async () => {
+    const { component } = await generate(numberFieldComponent())
+    const html = render(component)
+    expect(html).toMatch(/<input[^>]*type="number"[^>]*value="2"/)
+    expect(html).toMatch(/<input[^>]*min="1"[^>]*max="10"/)
+    expect(html).toContain('aria-label="Decrease"')
+    expect(html).toContain('aria-label="Increase"')
+    expect(render(component, { defaultValue: 7 })).toMatch(/<input[^>]*value="7"/)
+  })
+
+  test('a text field takes its props on its input, starting empty with its placeholder', async () => {
+    const { component } = await generate(textFieldSet())
+    const html = render(component, { name: 'email', className: 'custom' })
+    expect(html).toMatch(/<input[^>]*placeholder="Email"[^>]*name="email"/)
+    // The caller's class goes on the root, as on every generated component.
+    expect(html).toMatch(/^<div class="[^"]*custom/)
+  })
+
+  test('a textarea starts with its words', async () => {
+    const { component } = await generate(textareaComponent())
+    expect(render(component)).toMatch(/<textarea[^>]*>Tell us more<\/textarea>/)
+  })
+})
 
 describe('generated React components', () => {
   test('a switch is a Radix switch whose state follows its props', async () => {

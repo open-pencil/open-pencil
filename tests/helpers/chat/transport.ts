@@ -5,6 +5,7 @@ export async function injectMockChatTransport(page: Page): Promise<void> {
     const setChatTransport = window.openPencil?.setChatTransport
     if (!setChatTransport) throw new Error('Transport override not available')
     let messageCounter = 0
+    let flakyFailed = false
 
     setChatTransport(() => ({
       async sendMessages({
@@ -34,6 +35,11 @@ export async function injectMockChatTransport(page: Page): Promise<void> {
         }
         if (normalized.includes('missing agent')) {
           throw new Error('Mock agent unavailable')
+        }
+        // Fails the first time only, before any reply, as a dropped connection does.
+        if (normalized.includes('flaky request') && !flakyFailed) {
+          flakyFailed = true
+          throw new Error('Mock connection dropped')
         }
 
         return new ReadableStream({

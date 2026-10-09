@@ -38,6 +38,7 @@
   "restoreTurn": "Вернуть изменения",
   "regenerate": "Сгенерировать заново",
   "revertAndRegenerate": "Отменить и сгенерировать заново",
+  "retryRequest": "Повторить",
   "editMessage": "Изменить сообщение",
   "cancelEdit": "Отмена",
   "resendMessage": "Отправить снова",

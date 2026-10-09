@@ -40,3 +40,18 @@ export function parseSVGSize(svg: string, fallback: Size = { width: 24, height: 
   if (viewBox) return { width: viewBox.width, height: viewBox.height }
   return fallback
 }
+
+/** The root `<svg>` element's `id`. */
+export function svgRootId(svg: string): string | null {
+  return rootElement(svg)?.getAttribute('id') || null
+}
+
+/** Whether text is an SVG document, such as markup copied from a code editor or Figma's Copy as SVG. */
+export function isSVGMarkup(text: string): boolean {
+  if (
+    !/^\s*(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*(?:<!DOCTYPE[^>]*>\s*)?<svg[\s>]/i.test(text)
+  ) {
+    return false
+  }
+  return (rootElement(text)?.localName ?? '') === 'svg'
+}

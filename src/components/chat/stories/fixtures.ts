@@ -104,6 +104,29 @@ export function conversations(): Conversation[] {
       ]
     },
     {
+      id: 'failed-request',
+      title: 'Card spacing',
+      status: 'error',
+      messages: [
+        {
+          id: 'failed-first-request',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Add a card.' }]
+        },
+        {
+          id: 'failed-first-response',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Added a card to the page.' }]
+        },
+        {
+          id: 'failed-request-unanswered',
+          role: 'user',
+          // The request failed before any reply, so the chat ends with it.
+          parts: [{ type: 'text', text: 'Give it more padding.' }]
+        }
+      ]
+    },
+    {
       id: 'reverted',
       title: 'Blue header',
       status: 'ready',
