@@ -166,6 +166,8 @@ describe('generated Vue components', () => {
       [...html.matchAll(/<button[^>]*aria-expanded="(true|false)"/g)].map((match) => match[1])
     expect(states(await render(component))).toEqual(['false', 'false'])
     expect(states(await render(component, { value: 'usage' }))).toEqual(['false', 'true'])
+    // The heading around each trigger keeps its level but not its own margins.
+    expect(await render(component)).toMatch(/<h3[^>]*style="margin:0;font:inherit;?"/)
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

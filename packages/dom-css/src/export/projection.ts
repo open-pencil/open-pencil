@@ -30,6 +30,8 @@ export interface SceneGraphToDesignOptions {
   tokens?: boolean
   /** Vector, boolean, star, polygon, and icon layers as inline SVG; without it they project as boxes. */
   vectorElement?: VectorElementRenderer
+  /** Hidden layers to project as shown, such as the tab panels a component reveals itself. */
+  shown?: ReadonlySet<string>
 }
 
 /** Layers whose shape only paths describe, which CSS boxes cannot draw. */
@@ -367,6 +369,7 @@ interface ProjectionContext {
   includeSourceIds: boolean
   tokens: DesignTokens | undefined
   vectorElement: VectorElementRenderer | undefined
+  shown: ReadonlySet<string> | undefined
 }
 
 /**
@@ -399,7 +402,7 @@ function sceneNodeToDesignNode(
   inherited: CSSModes,
   root: boolean
 ): DesignNode | null {
-  if (!node.visible || node.internalOnly) return null
+  if ((!node.visible && !context.shown?.has(node.id)) || node.internalOnly) return null
   const { graph, includeSourceIds, tokens } = context
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   const entered = tokens?.enter(node, inherited, root)
@@ -453,13 +456,14 @@ function sceneNodeToDesignNode(
 
 function projectionContext(
   graph: SceneGraph,
-  { includeSourceIds = true, tokens = true, vectorElement }: SceneGraphToDesignOptions
+  { includeSourceIds = true, tokens = true, vectorElement, shown }: SceneGraphToDesignOptions
 ): ProjectionContext {
   return {
     graph,
     includeSourceIds,
     tokens: tokens ? new DesignTokens(graph) : undefined,
-    vectorElement
+    vectorElement,
+    shown
   }
 }
 

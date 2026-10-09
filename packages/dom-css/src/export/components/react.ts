@@ -1,7 +1,8 @@
+import { HEADING_RESET } from '#dom-css/behaviours/reset'
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import dedent from 'dedent'
 import { omit } from 'es-toolkit/object'
-import { upperFirst } from 'es-toolkit/string'
+import { camelCase, upperFirst } from 'es-toolkit/string'
 
 import { es, jsx } from '@open-pencil/emit'
 
@@ -50,6 +51,14 @@ const ROOT_ATTRIBUTES: Partial<Record<GeneratedKind, es.SyntaxNode[]>> = {
 }
 
 const PRIMITIVE = (namespace: string) => `${namespace}Primitive`
+
+const HEADING_STYLE = jsx.container(
+  es.object(
+    Object.entries(HEADING_RESET).map(
+      ([property, value]) => [camelCase(property), es.string(value)] as const
+    )
+  )
+)
 
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
 
@@ -192,7 +201,12 @@ function designElement(node: ComponentElement, uses: MarkupUses, depth: number):
     inline
   )
   if (!header) return drawn
-  return jsx.element(`${PRIMITIVE('Accordion')}.Header`, [], [drawn], depth)
+  return jsx.element(
+    `${PRIMITIVE('Accordion')}.Header`,
+    [jsx.attribute('style', HEADING_STYLE)],
+    [drawn],
+    depth
+  )
 }
 
 const MODULE = es.parseModule(dedent`
@@ -211,18 +225,38 @@ const RADIX_IMPORT = es.parseModule(`import { $Namespace as $Primitive } from 'r
 const ICONIFY_IMPORT = es.parseModule(`import { Icon as ${ICONIFY} } from '@iconify/react'`).body
 const IMPORT_COMPONENT = es.parseModule(`import { $Component } from '$path'`)
 
+/**
+ * The props of a group that fixes one choice at a time, without the `type` it fixes. The
+ * root's own props join the single and multiple choice, which a single value can't satisfy.
+ */
+const SINGLE_PROPS: Partial<Record<GeneratedKind, string>> = {
+  toggleGroup: 'ToggleGroupSingleProps',
+  accordion: 'AccordionSingleProps'
+}
+
+const qualified = (namespace: string, name: string) => ({
+  type: 'TSQualifiedName',
+  left: es.identifier(PRIMITIVE(namespace)),
+  right: es.identifier(name)
+})
+
+/** The root's own props, or a single choice group's. */
+function rootPropsType(kind: GeneratedKind): es.SyntaxNode {
+  const radix = RADIX[kind]
+  if (!radix) return es.parseType("ComponentProps<'button'>")
+  const single = SINGLE_PROPS[kind]
+  if (single)
+    return es.fill(es.parseType("Omit<$Props, 'type'>"), {
+      $Props: qualified(radix.namespace, single)
+    })
+  return es.fill(es.parseType('ComponentProps<typeof $Root>'), {
+    $Root: qualified(radix.namespace, radix.parts.root)
+  })
+}
+
 /** The root's own props, extended with the component's variant props when it has any. */
 function propsType(component: ComponentModel): es.SyntaxNode {
-  const radix = RADIX[component.kind]
-  const base = radix
-    ? es.fill(es.parseType('ComponentProps<typeof $Root>'), {
-        $Root: {
-          type: 'TSQualifiedName',
-          left: es.identifier(PRIMITIVE(radix.namespace)),
-          right: es.identifier(radix.parts.root)
-        }
-      })
-    : es.parseType("ComponentProps<'button'>")
+  const base = rootPropsType(component.kind)
   if (component.props.length === 0 && component.texts.length === 0) return base
   return {
     type: 'TSIntersectionType',
@@ -314,7 +348,8 @@ export const reactComponent: ComponentGenerator = async (component) => {
   const program = {
     type: 'Program',
     sourceType: 'module',
-    body: [typeImport, ...imports, stylesImport, ...rest]
+    // A single choice group's props come from Radix's own type, not `ComponentProps`.
+    body: [...(SINGLE_PROPS[component.kind] ? [] : [typeImport]), ...imports, stylesImport, ...rest]
   }
   const { css } = await stateStylesToCSS(component.styles)
   const model = component.model

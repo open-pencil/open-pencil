@@ -17,13 +17,22 @@ import {
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import ts from 'typescript'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
-const APP_PACKAGES = ['react', 'react-dom', 'radix-ui', '@iconify/react', 'storybook']
+const APP_PACKAGES = [
+  'react',
+  'react-dom',
+  'radix-ui',
+  '@iconify/react',
+  'storybook',
+  '@types/react'
+]
 
 const output = await mkdtemp(join(tmpdir(), 'open-pencil-react-'))
 await mkdir(join(output, 'node_modules'))
 await mkdir(join(output, 'node_modules', '@iconify'))
+await mkdir(join(output, 'node_modules', '@types'))
 for (const name of APP_PACKAGES)
   await symlink(
     dirname(Bun.resolveSync(`${name}/package.json`, import.meta.dir)),
@@ -46,7 +55,31 @@ async function generate(fixture: ReturnType<typeof switchSet>) {
   )
   const component = module[name]
   if (!component) throw new Error(`${name}.tsx exports no ${name}`)
-  return { files, component, stories }
+  return { files, component, stories, folder }
+}
+
+const CSS_MODULES =
+  "declare module '*.module.css' { const styles: Record<string, string>; export default styles }"
+
+/** A generated component's type errors, checked as an app's strict TypeScript would. */
+async function typeErrors(folder: string, name: string): Promise<string[]> {
+  await writeFile(join(folder, 'css-modules.d.ts'), CSS_MODULES)
+  const program = ts.createProgram(
+    [join(folder, `${name}.tsx`), join(folder, 'css-modules.d.ts')],
+    {
+      strict: true,
+      noEmit: true,
+      skipLibCheck: true,
+      jsx: ts.JsxEmit.ReactJSX,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      target: ts.ScriptTarget.ES2022,
+      types: []
+    }
+  )
+  return ts
+    .getPreEmitDiagnostics(program)
+    .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'))
 }
 
 const render = (component: ComponentType<Props>, props: Props = {}) =>
@@ -140,6 +173,15 @@ describe('generated React components', () => {
       [...html.matchAll(/<button[^>]*aria-expanded="(true|false)"/g)].map((match) => match[1])
     expect(states(render(component))).toEqual(['false', 'false'])
     expect(states(render(component, { defaultValue: 'usage' }))).toEqual(['false', 'true'])
+    // The heading around each trigger keeps its level but not its own margins.
+    expect(render(component)).toMatch(/<h3[^>]*style="margin:0;font:inherit"/)
+  })
+
+  test('a single choice group takes the single choice props Radix types', async () => {
+    for (const fixture of [accordionComponent(), toggleGroupComponent()]) {
+      const { folder } = await generate(fixture)
+      expect(await typeErrors(folder, fixture.set.name)).toEqual([])
+    }
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

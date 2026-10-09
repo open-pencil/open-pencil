@@ -1,3 +1,4 @@
+import { HEADING_RESET } from '#dom-css/behaviours/reset'
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import { compact } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
@@ -56,6 +57,10 @@ const ROOT_ATTRIBUTES: Partial<Record<GeneratedKind, vue.VueAttribute[]>> = {
 }
 
 const identifier = (name: string) => es.identifier(name)
+
+const HEADING_STYLE = Object.entries(HEADING_RESET)
+  .map(([property, value]) => `${property}: ${value}`)
+  .join('; ')
 
 /** `disabled || undefined`, so a native button sets `data-disabled` only while disabled. */
 const DISABLED_FLAG = es.parseExpression('disabled || undefined')
@@ -140,7 +145,7 @@ function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
   // Reka puts an accordion item's trigger in a header, which carries the heading level.
   if (uses.kind !== 'accordionItem' || node.part !== 'trigger') return element
   uses.reka.add('AccordionHeader')
-  return vue.element('AccordionHeader', [], [element])
+  return vue.element('AccordionHeader', [vue.attribute('style', HEADING_STYLE)], [element])
 }
 
 function propsType(component: ComponentModel): es.SyntaxNode {

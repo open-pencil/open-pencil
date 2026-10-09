@@ -259,7 +259,13 @@ export function tabsComponent() {
       fills: index === 0 ? COLORS.on : COLORS.off
     })
     graph.createNode('TEXT', trigger.id, { name: 'Label', text: label })
-    const panel = graph.createNode('FRAME', panels.id, { name: 'Panel', width: 200, height: 80 })
+    // Only the first tab's panel shows as designed, as design JSX draws tabs.
+    const panel = graph.createNode('FRAME', panels.id, {
+      name: 'Panel',
+      width: 200,
+      height: 80,
+      visible: index === 0
+    })
     graph.createNode('TEXT', panel.id, { name: 'Body', text: `${label} settings` })
   }
   graph.updateNode(tabs.id, {
