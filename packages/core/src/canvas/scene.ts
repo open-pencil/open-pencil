@@ -19,6 +19,7 @@ import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
 import { renderBooleanOperation } from './boolean'
+import { blurSigma } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
@@ -154,7 +155,7 @@ function renderMaskNodeContent(
     const padding = (blur?.radius ?? 0) * 2
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blur.radius / 2) : null)
+    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
     canvas.saveLayer(
       r.opacityPaint,
       r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
@@ -376,7 +377,7 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(r.getCachedBlur(layerBlur.radius / 2))
+    r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
     const blurPadding = layerBlur.radius * 2
     canvas.saveLayer(
       r.effectLayerPaint,

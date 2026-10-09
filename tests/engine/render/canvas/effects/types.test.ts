@@ -318,7 +318,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       getNode: mock(() => node as SceneNode)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
-    expect(r.getCachedBlur).toHaveBeenCalledWith(5)
+    // Figma draws a blur radius as a Gaussian of 0.43 × radius.
+    expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(4.3))
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-20, -20, 120, 120)
   })
@@ -352,7 +353,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       getNode: mock(() => node as SceneNode)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
-    expect(r.getCachedBlur).toHaveBeenCalledWith(10)
+    expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(8.6))
     expect(canvas.saveLayer).toHaveBeenCalledWith(r.effectLayerPaint, expect.any(Float32Array))
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(-40, -40, 140, 140)
   })
