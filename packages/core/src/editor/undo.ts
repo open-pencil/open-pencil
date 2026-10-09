@@ -19,7 +19,7 @@ import {
   snapshotPage as createPageSnapshot,
   type PageSnapshot
 } from './history/snapshot'
-import { textAutoResizeChanges } from './text/auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import type { EditorContext } from './types'
 
 type ResizeOriginal = Rect &

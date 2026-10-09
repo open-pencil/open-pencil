@@ -28,6 +28,6 @@ export interface DesignJSXServices<Artwork> {
   svg(source: SVGSource, size: number): Artwork | null
   /** Vector nodes for the artwork, created under the placement's parent. */
   createArtwork(graph: SceneGraph, artwork: Artwork, placement: ArtworkPlacement): SceneNode
-  /** Lay out the graph once rendered nodes are in place. */
-  layout(graph: SceneGraph): void
+  /** Size and lay out the rendered roots once they are in place. */
+  layout(graph: SceneGraph, rootIds: readonly string[]): void
 }

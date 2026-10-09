@@ -2,7 +2,7 @@ import type { RenderResult } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { findPageId } from '#core/io/subgraph'
-import { computeAllLayouts } from '#core/layout'
+import { layoutAuthoredNodes } from '#core/layout'
 
 /** Placement fields shared by the render tool and its speculative preview. */
 export interface RenderPlacementInput {
@@ -15,6 +15,8 @@ export interface RenderPlacementInput {
 
 export interface RenderPlacement {
   parentId: string
+  /** Leave layout to `finishRenderPlacement`, which runs it once the roots are in order. */
+  deferLayout?: boolean
   pageId: string
   replaceId?: string
   insertIndex?: number
@@ -45,6 +47,7 @@ export function resolveRenderPlacement(
   validateInsertIndex(insertIndex)
   return {
     parentId,
+    deferLayout: true,
     pageId,
     replaceId: replacement?.id,
     insertIndex,
@@ -65,5 +68,8 @@ export function finishRenderPlacement(
     }
   }
   if (placement.replaceId) graph.deleteNode(placement.replaceId)
-  computeAllLayouts(graph, placement.pageId)
+  layoutAuthoredNodes(
+    graph,
+    results.map((result) => result.id)
+  )
 }

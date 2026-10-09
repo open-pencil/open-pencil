@@ -23,6 +23,7 @@ import {
 import { usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
+import { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
   estimateTextSize,
   getTextMeasurer,
@@ -87,6 +88,24 @@ export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
       computeLayoutsBottomUp(graph, rootId, new Set())
     }
   })
+}
+
+/**
+ * Gives content an author wrote, such as design JSX, HTML, or a `.pen` file, the sizes and
+ * positions its layout implies, which the source does not store, measuring its text first.
+ * Documents that store their geometry, such as `.fig` files, keep theirs and do not come here.
+ */
+export function layoutAuthoredNodes(graph: SceneGraph, rootIds: Iterable<string>): void {
+  const pageIds = new Set<string>()
+  let outsidePages = false
+  for (const id of rootIds) {
+    sizeAutoResizingText(graph, id)
+    const page = graph.closest(id, (node) => node.type === 'CANVAS')
+    if (page) pageIds.add(page.id)
+    else outsidePages = true
+  }
+  if (outsidePages) computeAllLayouts(graph)
+  else for (const pageId of pageIds) computeAllLayouts(graph, pageId)
 }
 
 function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {

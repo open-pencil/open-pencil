@@ -481,8 +481,6 @@ export async function openFileInNewTab(
       sourceFormat = result.sourceFormat
     }
 
-    const firstPageId = imported.getPages()[0]?.id
-    if (!isFig && firstPageId) computeAllLayouts(imported, firstPageId)
     await showImportedGraph(
       store,
       imported,

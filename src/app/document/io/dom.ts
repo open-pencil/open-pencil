@@ -1,4 +1,5 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { layoutAuthoredNodes } from '@open-pencil/core/layout'
 import { browserHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
@@ -67,6 +68,10 @@ export function createDOMOpenActions({
       signal: load.signal
     })
     load.signal.throwIfAborted()
+    layoutAuthoredNodes(
+      graph,
+      graph.getPages().map((page) => page.id)
+    )
     await yieldToUI()
     await applyImportedDocument(editor, graph, load)
     state.documentName = pageName

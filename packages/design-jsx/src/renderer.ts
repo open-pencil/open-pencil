@@ -94,7 +94,8 @@ export async function renderRoots<Artwork>(
     nodes.push(node)
   }
 
-  services.layout(graph)
+  const rootIds = nodes.map((node) => node.id)
+  if (!options.deferLayout) services.layout(graph, rootIds)
 
   return nodes.map((node) => ({
     id: node.id,

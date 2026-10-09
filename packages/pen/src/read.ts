@@ -262,17 +262,8 @@ function createSceneNode(
   applyCornerRadius(node, pen.cornerRadius, ctx)
   applyPadding(node, pen.padding, ctx)
 
-  if (isTextLike) {
-    applyTextProps(node, pen, ctx)
-    if (parentLayout === 'NONE' && pen.width === undefined && !pen.textGrowth) {
-      node.textAutoResize = 'NONE'
-      node.width = estimateTextWidth(node)
-      node.height = node.fontSize * (node.lineHeight ? node.lineHeight / node.fontSize : 1.2)
-    } else if (pen.width === undefined) {
-      // Headless layout keeps stored sizes, so an omitted width starts from the content.
-      node.width = estimateTextWidth(node)
-    }
-  }
+  // Text without a width resizes to its content, which laying out the document measures.
+  if (isTextLike) applyTextProps(node, pen, ctx)
 
   if (pen.type === 'path' && pen.geometry) {
     const vectorNetwork = parseSVGPath(pen.geometry)
@@ -477,10 +468,6 @@ function fixInstanceWidths(graph: SceneGraph): void {
     node.strokes = copyStrokes(node.strokes)
     node.effects = copyEffects(node.effects)
   }
-}
-
-function estimateTextWidth(node: SceneNode): number {
-  return node.text.length * node.fontSize * 0.65
 }
 
 export function parsePenFile(json: string): SceneGraph {

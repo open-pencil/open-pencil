@@ -1,6 +1,6 @@
-import { TEXT_METRIC_FIELDS, type SceneNode } from '@open-pencil/scene-graph'
+import { TEXT_METRIC_FIELDS, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
-import { estimateTextSize, getTextMeasurer } from '#core/layout/text-measurement'
+import { estimateTextSize, getTextMeasurer } from './text-measurement'
 
 export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
@@ -48,4 +48,24 @@ export function textAutoResizeChanges(
   if (measured.height > 0) resized.height = measured.height
 
   return resized
+}
+
+/**
+ * Measures the text under `rootId` that resizes to its content. Auto layout measures the text
+ * it holds when it lays out; text anywhere else keeps the size it was created with otherwise.
+ */
+export function sizeAutoResizingText(graph: SceneGraph, rootId: string): void {
+  const stack = [rootId]
+  for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    stack.push(...node.childIds)
+    if (node.type !== 'TEXT') continue
+    // Wrapping text the source gave no width wraps at the width its content takes.
+    const unsized = node.textAutoResize === 'HEIGHT' && node.width <= 0
+    const changes = textAutoResizeChanges(node, {
+      textAutoResize: unsized ? 'WIDTH_AND_HEIGHT' : node.textAutoResize
+    })
+    if (changes.width !== undefined || changes.height !== undefined) graph.updateNode(id, changes)
+  }
 }

@@ -1,7 +1,7 @@
 import { canCreateInstance, resolveComponentPropertyValue } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { pathTextEditChanges } from '#core/editor/text/path-edit'
 import type { EditorContext } from '#core/editor/types'
 

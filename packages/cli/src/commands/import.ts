@@ -4,14 +4,7 @@ import { basename, dirname, extname, resolve } from 'node:path'
 import { defineCommand } from 'citty'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import {
-  createHeadlessCSSRuntime,
-  htmlToDesignDocument,
-  htmlToSceneGraph,
-  tailwindHTMLToDesignDocument,
-  tailwindHTMLToSceneGraph,
-  type DesignDocument
-} from '@open-pencil/dom-css'
+import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
 
 import { requireFile } from '#cli/app/client'
 import { fmtList, ok, printError } from '#cli/format'
@@ -57,44 +50,22 @@ async function tailwindCandidatesForArgs(args: ImportArgs): Promise<string[] | u
   return classes.length > 0 ? classes : undefined
 }
 
-function childCount(document: DesignDocument): number {
-  return document.children.length
+async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
+  return readHTMLDocument(await readTextFile(requireFile(args.file)), {
+    cssText: await cssTextForArgs(args),
+    tailwind: await tailwindCandidatesForArgs(args),
+    pageName: args.pageName
+  })
 }
 
-async function importHTML(args: ImportArgs) {
-  const file = requireFile(args.file)
-  const html = await readTextFile(file)
-  const runtime = createHeadlessCSSRuntime()
-  const tailwind = await tailwindCandidatesForArgs(args)
-  const cssText = await cssTextForArgs(args)
-
-  if (tailwind) {
-    const options = { ...args, css: cssText, runtime }
-    return {
-      document: await tailwindHTMLToDesignDocument(html, tailwind, options),
-      graph: await tailwindHTMLToSceneGraph(html, tailwind, options)
-    }
-  }
-
-  const options = { cssText, runtime, pageName: args.pageName }
-  return {
-    document: await htmlToDesignDocument(html, options),
-    graph: await htmlToSceneGraph(html, options)
-  }
-}
-
-async function writeOutput(
-  args: ImportArgs,
-  document: DesignDocument,
-  graph: Awaited<ReturnType<typeof htmlToSceneGraph>>
-) {
+async function writeOutput(args: ImportArgs, { styled, graph }: ReadHTMLResult) {
   const format = args.format.toLowerCase()
   const output = args.output ? resolve(args.output) : defaultOutput(requireFile(args.file), format)
 
   await mkdir(dirname(output), { recursive: true })
 
   if (format === 'json') {
-    await writeFile(output, `${JSON.stringify(document, null, 2)}\n`)
+    await writeFile(output, `${JSON.stringify(styled, null, 2)}\n`)
     return output
   }
 
@@ -160,15 +131,15 @@ export default defineCommand({
       process.exit(1)
     }
 
-    const { document, graph } = await importHTML(args)
-    const output = await writeOutput(args, document, graph)
-    const pages = graph.getPages()
+    const imported = await importHTML(args)
+    const output = await writeOutput(args, imported)
+    const pages = imported.graph.getPages()
     const summary = {
       input: requireFile(args.file),
       output,
       format,
       pages: pages.length,
-      rootElements: childCount(document)
+      rootElements: imported.styled.children.length
     }
 
     if (args.json) {

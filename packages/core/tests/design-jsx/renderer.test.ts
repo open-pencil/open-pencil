@@ -32,3 +32,22 @@ describe('renderTree onNode', () => {
     expect(graph.getNode(result.id)?.name).toBe('Card')
   })
 })
+
+describe('renderTree sizing', () => {
+  test('text in a frame without auto layout takes its content size', async () => {
+    const graph = new SceneGraph()
+    const root: TreeNode = {
+      type: 'frame',
+      props: { w: 300, h: 200 },
+      children: [{ type: 'text', props: { size: 28 }, children: ['Hello world'] }]
+    }
+
+    const result = await renderTree(graph, root)
+    const text = graph.getNode(graph.getNode(result.id)?.childIds[0] ?? '')
+
+    expect(text?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    expect(text?.width).not.toBe(100)
+    expect(text?.height).toBeLessThan(100)
+    expect(text?.width).toBeGreaterThan(text?.height ?? 0)
+  })
+})

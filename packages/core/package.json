@@ -113,6 +113,11 @@
       "import": "./dist/io/formats/fig/index.js",
       "default": "./dist/io/formats/fig/index.js"
     },
+    "./io/formats/html/import": {
+      "types": "./dist/io/formats/html/import.d.ts",
+      "import": "./dist/io/formats/html/import.js",
+      "default": "./dist/io/formats/html/import.js"
+    },
     "./io/formats/raster": {
       "types": "./dist/io/formats/raster/index.d.ts",
       "import": "./dist/io/formats/raster/index.js",
