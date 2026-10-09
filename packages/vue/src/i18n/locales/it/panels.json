@@ -91,7 +91,7 @@
   "effectStyle": "Stile effetto",
   "gridStyle": "Stile griglia",
   "missingStyle": "Stile mancante ({id})",
-  "layersCount": "{count} livelli",
+  "selectedCount": "{count} selezionati",
   "goToMainComponent": "Vai al componente principale",
   "solid": "Pieno",
   "linearGradient": "Lineare",

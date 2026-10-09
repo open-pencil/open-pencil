@@ -91,7 +91,7 @@
   "effectStyle": "Effektstil",
   "gridStyle": "Rasterstil",
   "missingStyle": "Fehlender Stil ({id})",
-  "layersCount": "{count} Ebenen",
+  "selectedCount": "{count} ausgewählt",
   "goToMainComponent": "Zur Hauptkomponente",
   "solid": "Vollton",
   "linearGradient": "Linear",

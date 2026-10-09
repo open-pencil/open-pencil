@@ -19,6 +19,7 @@ const {
   sensitivity,
   placeholder,
   nodeId,
+  nodeIds,
   bindingPath,
   bindingPaths
 } = defineProps<{
@@ -32,6 +33,8 @@ const {
   sensitivity?: number
   placeholder?: string
   nodeId: string
+  /** Every layer the field edits, when it is more than `nodeId`; a variable binds to all. */
+  nodeIds?: readonly string[]
   bindingPath: NumberBindingPath
   bindingPaths?: readonly NumberBindingPath[]
 }>()
@@ -46,7 +49,9 @@ const { panels, common } = useI18n()
 const provider = useNumberBindingProvider()
 const attrs = useAttrs()
 const targets = computed<BindingTarget[]>(() =>
-  (bindingPaths ?? [bindingPath]).map((path) => ({ nodeId, path }))
+  (nodeIds ?? [nodeId]).flatMap((id) =>
+    (bindingPaths ?? [bindingPath]).map((path) => ({ nodeId: id, path }))
+  )
 )
 const accessibleLabel = computed(() => {
   const ariaLabel = attrs['aria-label']

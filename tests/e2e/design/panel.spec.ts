@@ -438,7 +438,7 @@ test('multi-select shows mixed header and boolean operations', async () => {
 
   const multiHeader = editor.page
     .getByTestId('design-panel-multi')
-    .getByRole('heading', { name: /layers/ })
+    .getByRole('heading', { name: /selected/ })
   await expect(multiHeader).toBeVisible()
 
   const booleanOperations = editor.page.getByTestId('boolean-operations-trigger')

@@ -428,7 +428,7 @@ export const panelMessageDefaults = {
   effectStyle: 'Effect style',
   gridStyle: 'Grid style',
   missingStyle: params('Missing style ({id})'),
-  layersCount: params('{count} layers'),
+  selectedCount: params('{count} selected'),
   goToMainComponent: 'Go to main component',
 
   gap: 'Gap',

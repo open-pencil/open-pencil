@@ -104,7 +104,7 @@
   "effectStyle": "Стиль эффекта",
   "gridStyle": "Стиль сетки",
   "missingStyle": "Недоступный стиль ({id})",
-  "layersCount": "{count} слоёв",
+  "selectedCount": "Выбрано: {count}",
   "goToMainComponent": "Перейти к главному компоненту",
   "solid": "Сплошной",
   "linearGradient": "Линейный",

@@ -91,7 +91,7 @@
   "effectStyle": "Style d’effet",
   "gridStyle": "Style de grille",
   "missingStyle": "Style manquant ({id})",
-  "layersCount": "{count} calques",
+  "selectedCount": "{count} sélectionnés",
   "goToMainComponent": "Aller au composant principal",
   "solid": "Uni",
   "linearGradient": "Linéaire",

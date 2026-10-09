@@ -104,7 +104,7 @@
   "effectStyle": "效果样式",
   "gridStyle": "网格样式",
   "missingStyle": "缺失样式 ({id})",
-  "layersCount": "{count} 个图层",
+  "selectedCount": "已选择 {count} 个",
   "goToMainComponent": "转到主组件",
   "solid": "纯色",
   "linearGradient": "线性",

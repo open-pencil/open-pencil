@@ -104,7 +104,7 @@
   "effectStyle": "Estilo de efecto",
   "gridStyle": "Estilo de cuadrícula",
   "missingStyle": "Estilo no disponible ({id})",
-  "layersCount": "{count} capas",
+  "selectedCount": "{count} seleccionados",
   "goToMainComponent": "Ir al componente principal",
   "solid": "Sólido",
   "linearGradient": "Lineal",

@@ -91,7 +91,7 @@
   "effectStyle": "Styl efektu",
   "gridStyle": "Styl siatki",
   "missingStyle": "Brakujący styl ({id})",
-  "layersCount": "{count} warstw",
+  "selectedCount": "Zaznaczono: {count}",
   "goToMainComponent": "Przejdź do głównego komponentu",
   "solid": "Jednolity",
   "linearGradient": "Liniowy",

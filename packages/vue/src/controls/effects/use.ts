@@ -1,5 +1,7 @@
 import { ref, shallowRef } from 'vue'
 
+import type { Effect } from '@open-pencil/scene-graph'
+
 import {
   EFFECT_OPTIONS,
   createDefaultEffect,
@@ -8,6 +10,7 @@ import {
   isShadow,
   type EffectEditSnapshot
 } from '#vue/controls/effects/helpers'
+import { useNodeProps } from '#vue/controls/node-props/use'
 import { useEditor } from '#vue/editor/context'
 
 /**
@@ -20,7 +23,8 @@ export function useEffectsControls() {
   const editor = useEditor()
 
   const expandedIndex = ref<number | null>(null)
-  const effectsBeforeScrub = shallowRef<EffectEditSnapshot | null>(null)
+  const { nodes } = useNodeProps()
+  const effectsBeforeScrub = shallowRef<Map<string, EffectEditSnapshot> | null>(null)
   const editActions = createEffectEditActions(editor, effectsBeforeScrub)
   const controlActions = createEffectControlActions(expandedIndex)
 
@@ -29,7 +33,12 @@ export function useEffectsControls() {
     effectOptions: EFFECT_OPTIONS,
     createDefaultEffect,
     isShadow,
-    ...editActions,
+    /** Previews a change to one effect on every selected layer. */
+    scrubEffect: (index: number, changes: Partial<Effect>) =>
+      editActions.scrubEffect(nodes.value, index, changes),
+    /** Applies a change to one effect on every selected layer in one undo step. */
+    commitEffect: (index: number, changes: Partial<Effect>) =>
+      editActions.commitEffect(nodes.value, index, changes),
     ...controlActions
   }
 }

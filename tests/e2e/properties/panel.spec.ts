@@ -49,6 +49,8 @@ test('appearance fields share control height and show variable actions', async (
   const triggerBox = expectDefined(await applyVariable.boundingBox(), 'variable trigger bounds')
   const pickerBox = expectDefined(await picker.boundingBox(), 'variable picker bounds')
   expect(pickerBox.x + pickerBox.width).toBeLessThanOrEqual(triggerBox.x)
+  // Escape closes the picker once it holds focus, as it does for a person.
+  await expect(picker.getByRole('textbox', { name: 'Search…' })).toBeFocused()
   await editor.page.keyboard.press('Escape')
   await expect(picker).toBeHidden()
 
@@ -60,6 +62,7 @@ test('appearance fields share control height and show variable actions', async (
   try {
     await applyVariable.click()
     await expect(picker).toBeVisible()
+    await expect(picker.getByRole('textbox', { name: 'Search…' })).toBeFocused()
     const shifted = expectDefined(await picker.boundingBox(), 'shifted picker bounds')
     expect(shifted.y).toBeGreaterThanOrEqual(0)
     expect(shifted.y + shifted.height).toBeLessThanOrEqual(height)

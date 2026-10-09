@@ -15,7 +15,8 @@ import { usePopoverUI } from '@/components/ui/overlay/popover'
 import { useSelectUI } from '@/components/ui/select/select'
 
 const { panels } = useI18n()
-const { label: labelProp } = defineProps<{ label?: string }>()
+/** The placeholder shows while no family is set, such as Mixed for texts in different fonts. */
+const { label: labelProp, placeholder } = defineProps<{ label?: string; placeholder?: string }>()
 const label = computed(() => labelProp ?? panels.value.fontFamily)
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
@@ -73,7 +74,9 @@ function loadPreviewFont(family: string, source: string) {
         :aria-label="label"
         :class="selectCls.trigger"
       >
-        <span class="truncate">{{ modelValue }}</span>
+        <span class="truncate" :class="{ 'text-muted': !modelValue }">{{
+          modelValue || placeholder
+        }}</span>
         <icon-lucide-chevron-down class="size-3 shrink-0 text-muted" />
       </button>
     </template>
