@@ -89,6 +89,25 @@ describe('icon glyphs', () => {
     expect(modified()).toBe(false)
   })
 
+  test('rotating or fading a path is an edit', () => {
+    for (const change of [{ rotation: 15 }, { opacity: 0.5 }]) {
+      const { graph, frame, modified } = placed(OUTLINE)
+      const path = graph.getChildren(frame.id)[0]
+      if (!path) throw new Error('Expected a path')
+      graph.updateNode(path.id, change)
+      expect(modified()).toBe(true)
+    }
+  })
+
+  test('a swap into an unevenly resized icon stretches the glyph to it', () => {
+    const { graph, frame, modified } = placed(OUTLINE)
+    resize(graph, frame.id, 40, 20)
+    swapIcon(graph, frame.id, buildIconData({ body: OUTLINE }, 'test', 'other', 24, 24, 20))
+
+    expect(graph.getChildren(frame.id)[0]).toMatchObject({ width: 40, height: 20 })
+    expect(modified()).toBe(false)
+  })
+
   test('an icon placed before glyphs were recorded counts as unedited', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     const node = graph.getNode(frame.id) ?? frame

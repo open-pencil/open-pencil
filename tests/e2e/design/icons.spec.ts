@@ -60,6 +60,11 @@ async function pick(page: Page, picker: string, query: string, icon: string) {
   await expect(dialog).toBeHidden()
 }
 
+/** The layer tree row named `name`. */
+function layerRow(page: Page, name: string) {
+  return page.locator('[data-node-id]').filter({ hasText: name }).first()
+}
+
 async function insertSquare(page: Page) {
   await page.getByRole('button', { name: 'Insert icon' }).click()
   await pick(page, 'Insert icon', 'shape', 'square')
@@ -175,14 +180,16 @@ test('icons in the file and picked lately come first', async () => {
 test('an edited icon says so, asks before a swap discards the edit, and resets or detaches', async () => {
   const { page } = ctx
   await insertSquare(page)
-  const id = (await getSelectedNode(page))?.id ?? ''
-  // An edit to the icon's paths, as drawing or dropping a layer into the frame makes.
-  await page.evaluate((frameId) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    store.graph.createNode('RECTANGLE', frameId, { width: 4, height: 4 })
-    store.requestRender()
-  }, id)
+  // Rotate the icon's path, as someone editing its artwork would, then select the icon again.
+  const iconRow = layerRow(page, 'square')
+  await iconRow.locator('[data-slot="disclosure"]').click()
+  await layerRow(page, 'path').click()
+  const rotationField = propertyField(page, 'rotation')
+  await rotationField.click()
+  const rotation = rotationField.getByRole('spinbutton', { name: 'Rotation' })
+  await rotation.fill('15')
+  await rotation.press('Enter')
+  await iconRow.click()
   const section = propertySection(page, 'Icon')
   await expect(propertyField(page, 'icon-modified')).toBeVisible()
 

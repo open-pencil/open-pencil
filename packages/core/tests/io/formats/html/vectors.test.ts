@@ -89,10 +89,17 @@ describe('icons in HTML export', () => {
     const page = graph.getPages()[0].id
     const icon = buildIconData({ body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' }, 'test', 'icon', 24, 24, 24)
     const frame = placeIcon(graph, page, icon, { size: 24, color: parseColor('#000000') })
-    graph.createNode('RECTANGLE', frame.id, { width: 4, height: 4 })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 4,
+      height: 4,
+      fills: [{ type: 'SOLID', color: parseColor('#16a34a'), opacity: 1, visible: true }]
+    })
 
     const { html } = await renderNodesToHTML(graph, [frame.id])
     expect(html).not.toContain('data-icon')
     expect(html.match(/<svg/g)?.length).toBe(1)
+    // The added layer is drawn with the icon's own path.
+    expect(html).toContain('fill="#16A34A"')
+    expect(html).toContain('fill="currentColor"')
   })
 })

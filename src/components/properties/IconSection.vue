@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 import { iconLayerName } from '@open-pencil/scene-graph'
 import { useCommonMessages, useIcon, usePanelMessages } from '@open-pencil/vue'
@@ -16,12 +16,28 @@ import theme from '@/theme/select/app'
 
 const panels = usePanelMessages()
 const common = useCommonMessages()
-const { name, color, preview, setName, modified, swap, reset, detach, setColor, setColorPicking } =
-  useIcon()
+const {
+  frameId,
+  name,
+  color,
+  preview,
+  setName,
+  modified,
+  swap,
+  reset,
+  detach,
+  setColor,
+  setColorPicking
+} = useIcon()
 const styles = tv(theme)()
 
 /** An icon picked to replace an edited one, waiting for the edits to be given up. */
 const pendingSwap = ref<string | null>(null)
+// The question is about the icon selected when it was asked; another selection drops it, so a
+// confirmation never swaps an icon it did not describe.
+watch(frameId, () => {
+  pendingSwap.value = null
+})
 
 function pick(next: string) {
   if (modified.value) pendingSwap.value = next

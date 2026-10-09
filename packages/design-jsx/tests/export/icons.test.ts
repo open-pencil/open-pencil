@@ -46,7 +46,11 @@ describe('icons in design JSX export', () => {
       pluginData: withIcon(node, { name: 'lucide:home', glyph: iconGlyph(graph, node) })
     })
     graph.createNode('RECTANGLE', frame.id, { name: 'Badge', width: 4, height: 4 })
-    expect(sceneNodeToJSX(frame.id, graph)).not.toContain('<Icon')
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).not.toContain('<Icon')
+    // Both the icon's path and the added badge are written out.
+    expect(jsx).toContain('name="path"')
+    expect(jsx).toContain('name="Badge"')
   })
 
   test('leave out the name an icon was placed with, in the old style too', () => {

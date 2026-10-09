@@ -1,5 +1,5 @@
 import { watchImmediate } from '@vueuse/core'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { iconColor } from '@open-pencil/core/icons'
 import { isIconModified, readIcon } from '@open-pencil/scene-graph'
@@ -44,6 +44,9 @@ export function useIcon() {
     preview.value = drawn?.get(current) ?? null
     setName.value = sets.find((info) => info.prefix === prefix)?.name ?? null
   })
+
+  /** The selected icon's layer, so a question asked about it can be dropped if it changes. */
+  const frameId = computed(() => (name.value ? (selectedNode.value?.id ?? null) : null))
 
   /** The icon's paths were edited since it was placed; see `isIconModified`. */
   const modified = useSceneComputed(() => {
@@ -91,6 +94,7 @@ export function useIcon() {
   }
 
   return {
+    frameId,
     name,
     color,
     preview,

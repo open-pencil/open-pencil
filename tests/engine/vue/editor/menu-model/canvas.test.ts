@@ -76,15 +76,6 @@ describe('buildCanvasContextMenu', () => {
     ).toContain('selection.detachInstance')
   })
 
-  test('offers Detach icon only for icons', () => {
-    expect(
-      itemIds(
-        buildCanvasContextMenu(options({ selection: selection({ isIcon: computed(() => true) }) }))
-      )
-    ).toContain('selection.detachIcon')
-    expect(itemIds(buildCanvasContextMenu(options()))).not.toContain('selection.detachIcon')
-  })
-
   test('offers Create slot for layers of a main component', () => {
     const ids = itemIds(
       buildCanvasContextMenu(

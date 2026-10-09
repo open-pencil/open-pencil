@@ -67,9 +67,9 @@ function hash(text: string): string {
 /**
  * A fingerprint of what an icon frame draws: which paths it holds and their shapes, stroke ends,
  * and paints. Resizing the icon, however unevenly, or changing its color leaves it unchanged;
- * editing points, adding or removing a path, or changing a color of the icon's own changes it.
- * Moving a whole path or changing its stroke weight does not count, since resizing changes those
- * by rounded amounts too.
+ * editing points, rotating or fading a path, adding or removing one, or changing a color of the
+ * icon's own changes it. Moving a whole path or changing its stroke weight does not count, since
+ * resizing changes those by rounded amounts too.
  */
 export function iconGlyph(graph: IconGraph, frame: SceneNode): string {
   const description = graph.getChildren(frame.id).map((path) => {
@@ -80,6 +80,9 @@ export function iconGlyph(graph: IconGraph, frame: SceneNode): string {
       fills: path.fills.map((fill) => paint(fill, tint.includes('fill'))),
       strokes: path.strokes.map((stroke) => paint(stroke, tint.includes('stroke'))),
       ends: [path.strokeCap, path.strokeJoin],
+      // Resizing leaves these alone, so they count, unlike a path's place and stroke weight.
+      rotation: round(path.rotation),
+      opacity: round(path.opacity),
       visible: path.visible
     }
   })

@@ -13,6 +13,11 @@ import {
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  createResizeSnapshot,
+  scaledChildRect,
+  scaledGeometryChanges
+} from '@open-pencil/scene-graph/resize'
 
 import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
 
@@ -140,8 +145,8 @@ export function recolorIcon(graph: SceneGraph, frameId: string, color: Color): v
 
 /**
  * Draws another icon in an icon's frame, keeping its position and color, so the swap reads as
- * a change of glyph. `icon` is drawn at the size it was built for, which should be the frame's.
- * Does nothing to a frame that is not an icon.
+ * a change of glyph. `icon` is built square, at the frame's shorter side, and stretched to the
+ * frame. Does nothing to a frame that is not an icon.
  */
 export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): void {
   const frame = graph.getNode(frameId)
@@ -157,5 +162,29 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
     name: previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name
   })
   for (const path of icon.paths) addPath(graph, frameId, path, size, color)
+  fitPaths(graph, frameId, size)
   recordIcon(graph, frameId, name)
+}
+
+/**
+ * Stretches paths drawn in a `size` square to their frame, as a resize would, so an icon that
+ * was resized unevenly is swapped or reset at the shape it has rather than as a square.
+ */
+function fitPaths(graph: SceneGraph, frameId: string, size: number): void {
+  const frame = graph.getNode(frameId)
+  if (!frame || (frame.width === size && frame.height === size)) return
+  const square = { width: size, height: size }
+  for (const path of graph.getChildren(frameId)) {
+    const rect = scaledChildRect(path, square, frame)
+    graph.updateNode(path.id, {
+      ...rect,
+      ...scaledGeometryChanges(
+        createResizeSnapshot(path),
+        path.width,
+        path.height,
+        rect.width,
+        rect.height
+      )
+    })
+  }
 }
