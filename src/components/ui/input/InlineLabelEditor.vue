@@ -43,7 +43,7 @@ watch(
     <span
       aria-hidden="true"
       class="invisible col-start-1 row-start-1 h-full whitespace-pre"
-      :class="compact ? 'px-0.5 text-[11px] leading-[16px]' : 'px-2 text-xs leading-6'"
+      :class="compact ? 'px-0.5 text-[11px] leading-[18px] font-normal' : 'px-2 text-xs leading-6'"
       >{{ modelValue || ' ' }}</span
     >
     <input
@@ -51,7 +51,7 @@ watch(
       :value="modelValue"
       :aria-label="label"
       class="col-start-1 row-start-1 h-full w-0 min-w-full bg-transparent outline-none"
-      :class="compact ? 'px-0.5 text-[11px] leading-[16px]' : 'px-2 text-xs leading-6'"
+      :class="compact ? 'px-0.5 text-[11px] leading-[18px] font-normal' : 'px-2 text-xs leading-6'"
       @input="updateValue"
       @keydown.enter.prevent="emit('commit')"
       @keydown.escape.prevent="emit('cancel')"
