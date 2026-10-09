@@ -20,7 +20,12 @@ export function useSelectionColors() {
   const editor = useEditor()
   const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
   const ids = useSceneComputed(() => [...editor.state.selectedIds])
-  const live = useSceneComputed(() => selectionColors(editor.graph, ids.value))
+  // A move, resize, or rotation changes no colour, so the list is not walked again mid-drag.
+  let last: SelectionColor[] = []
+  const live = useSceneComputed(() => {
+    if (!editor.state.transforming) last = selectionColors(editor.graph, ids.value)
+    return last
+  })
   const frozen = shallowRef<SelectionColor[] | null>(null)
   const colors = computed(() => frozen.value ?? live.value)
   const shown = useSceneComputed(

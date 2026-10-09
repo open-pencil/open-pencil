@@ -1,5 +1,4 @@
 import type { Color, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 
 /**
  * Figma's Selection colors: every solid fill and stroke colour of the selected layers and their
@@ -22,8 +21,14 @@ function paintOpacity(paint: Fill) {
   return paint.opacity * paint.color.a
 }
 
+// Integer channels instead of a formatted hex: this runs for every paint in a selection that can
+// hold thousands of layers, on each change while the panel is open.
 function colorKey(color: Color, opacity: number) {
-  return `${colorToHexRaw(color)}:${Math.round(opacity * 100)}`
+  const channel = (value: number) => Math.round(value * 255)
+  return (
+    ((channel(color.r) << 16) | (channel(color.g) << 8) | channel(color.b)) * 101 +
+    Math.round(opacity * 100)
+  )
 }
 
 function listed(node: SceneNode, kind: PaintKind, index: number, paint: Fill) {
@@ -44,7 +49,7 @@ function eachNode(graph: SceneGraph, ids: readonly string[], visit: (node: Scene
 }
 
 export function selectionColors(graph: SceneGraph, ids: readonly string[]): SelectionColor[] {
-  const colors = new Map<string, SelectionColor>()
+  const colors = new Map<number, SelectionColor>()
   eachNode(graph, ids, (node) => {
     for (const kind of PAINT_KINDS) {
       node[kind].forEach((paint, index) => {
@@ -59,7 +64,7 @@ export function selectionColors(graph: SceneGraph, ids: readonly string[]): Sele
   })
   // Most used first; ties in hex order, as Figma lists them.
   return [...colors.entries()]
-    .sort(([keyA, a], [keyB, b]) => b.count - a.count || keyA.localeCompare(keyB))
+    .sort(([keyA, a], [keyB, b]) => b.count - a.count || keyA - keyB)
     .map(([, color]) => color)
 }
 
