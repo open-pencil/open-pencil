@@ -1,3 +1,5 @@
+import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { ExportHTMLFile } from '../bundle'
@@ -91,6 +93,25 @@ function storyLabel(group: StoryGroup, values: string[]): string {
   return group.props.map((prop, i) => `${prop.name}=${values[i] ?? ''}`).join(', ')
 }
 
+/**
+ * A variant drawn on its own, as a story shows it: its root hugs its content where the design
+ * gives it no width, rather than filling the story's canvas, and sizes include padding and
+ * borders, which no page reset around the story says.
+ */
+function standalone(document: DesignDocument): DesignDocument {
+  const visit = (node: DesignNode, root: boolean) => {
+    if (node.type !== 'element') return
+    const style: DesignStyleDeclaration = { ...node.inlineStyle }
+    const has = (property: string) => Object.hasOwn(style, property)
+    if ((has('width') || has('height')) && !has('box-sizing')) style['box-sizing'] = 'border-box'
+    if (root && !has('width')) style.width = 'fit-content'
+    node.inlineStyle = style
+    for (const child of node.children) visit(child, false)
+  }
+  for (const child of document.children) visit(child, true)
+  return document
+}
+
 function storyModule(group: StoryGroup, context: ModuleContext): string {
   return printStoryModule({
     framework: context.framework,
@@ -100,10 +121,12 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     variants: group.variants.map((variant) => ({
       values: variant.values,
       html: serializeHTML(
-        sceneNodeToDesignDocument(context.graph, variant.node.id, {
-          includeSourceIds: false,
-          vectorElement: context.vectorElement
-        })
+        standalone(
+          sceneNodeToDesignDocument(context.graph, variant.node.id, {
+            includeSourceIds: false,
+            vectorElement: context.vectorElement
+          })
+        )
       )
     })),
     metaDesign: designLink(context, group.linkNode),

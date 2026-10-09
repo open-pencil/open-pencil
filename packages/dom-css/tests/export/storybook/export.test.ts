@@ -160,6 +160,41 @@ describe('exportStorybook', () => {
     })
   })
 
+  it('draws a variant as it stands alone: hugging its content, sized with its borders', async () => {
+    const graph = new SceneGraph()
+    const page = graph.addPage('Library')
+    const tag = graph.createNode('COMPONENT', page.id, {
+      name: 'Tag',
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      paddingLeft: 8,
+      paddingRight: 8
+    })
+    graph.createNode('FRAME', tag.id, {
+      name: 'Dot',
+      width: 20,
+      height: 20,
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          weight: 2,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE'
+        }
+      ]
+    })
+    const [file] = await exportStorybook(graph, { framework: 'html' })
+    const html = (await importStory(String(file?.content))).default.render({})
+    // The design hugs the tag, where a block would fill the story's canvas.
+    expect(html).toMatch(/^<div style="[^"]*width: fit-content/)
+    // The dot is 20px with its border, as the design draws it.
+    const dot = /<div style="([^"]*width: 20px[^"]*)">/.exec(html)?.[1] ?? ''
+    expect(dot).toContain('box-sizing: border-box')
+  })
+
   it('groups slash-named components and keeps standalone ones apart', async () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Icons')
