@@ -92,6 +92,26 @@ export function componentPropertyScope(
   return undefined
 }
 
+/**
+ * Saving to `.fig` replaces authored property IDs with GUIDs, so an assignment
+ * also matches one property by name, ignoring case, to keep working after a reload.
+ */
+function assignedDefinition(
+  definitions: readonly ComponentPropertyDefinition[],
+  key: string
+): ComponentPropertyDefinition {
+  const byId = definitions.find((item) => item.id === key)
+  if (byId) return byId
+  const name = key.toLowerCase()
+  const byName = definitions.filter((item) => item.name.toLowerCase() === name)
+  if (byName.length === 1) return byName[0]
+  if (byName.length > 1)
+    throw new Error(
+      `Component property name ${key} is ambiguous; use one of the IDs: ${byName.map((item) => item.id).join(', ')}`
+    )
+  throw new Error(`Unknown component property: ${key}`)
+}
+
 export function assignComponentProperties(
   graph: SceneGraph,
   instance: SceneNode,
@@ -105,8 +125,7 @@ export function assignComponentProperties(
   )
   const definitions = componentPropertyDefinitions(graph, instance)
   for (const [id, value] of Object.entries(assignments)) {
-    const definition = definitions.find((item) => item.id === id)
-    if (!definition) throw new Error(`Unknown component property: ${id}`)
+    const definition = assignedDefinition(definitions, id)
     if (definition.type === 'VARIANT')
       throw new Error('Select a component-set variant when creating the instance')
     if (definition.type === 'BOOLEAN' && value !== 'true' && value !== 'false')
