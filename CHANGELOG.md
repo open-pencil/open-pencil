@@ -136,7 +136,7 @@
 
 ### Fixed
 
-- Renaming a section title on the canvas keeps the title's size, weight, and place. Section titles draw in Inter SemiBold rather than an emboldened regular weight, and canvas labels sit on whole pixels, so they stay crisp.
+- Renaming a section title on the canvas keeps the title's size, weight, and place. Section titles draw in Inter SemiBold rather than an emboldened regular weight, and labels that are not rotated sit on whole pixels, so they stay crisp.
 - Reject an argument an AI, MCP, CLI, or WebMCP tool does not take, such as `properties: { y: 500 }` for `update_node` or `font: { family }` for `set_font`, and name it, instead of reporting success without changing anything (#977).
 - Choose an instance's variant by its variant property in design JSX, such as `<Instance component="Button" State="Pressed" />`, without a warning that the property is unsupported.
 - Keep memory flat while the AI chat or an MCP client edits a document (#587). Each edit kept two copies of its whole page in the undo history, about 10 MB a call on a 400-layer page, until the 200-step history limit, so long sessions grew until the app ran out of memory; an edit now keeps only the layers it changed, and undoing it leaves the other layers as they are.
