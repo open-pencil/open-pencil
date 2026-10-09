@@ -25,6 +25,7 @@ async function createEditorWithRenderer() {
   editor.setCanvasKit(ck, renderer)
   cleanups.push(() => {
     editor.dispose()
+    renderer.destroy()
   })
   return { editor }
 }
