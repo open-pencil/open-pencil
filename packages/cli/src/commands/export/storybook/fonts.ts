@@ -20,3 +20,17 @@ export const storyFonts: WebFontFaceResolver = async (fonts, assetBasePath) => {
     )
   return assets
 }
+
+/**
+ * The folder a document's font files go in, named by its path relative to the output, such as
+ * `fonts/kit-design` for `../kit/design.fig`, so documents exported into one folder, even ones
+ * with the same name, never share one; a one-page export adds the page.
+ */
+export function fontFolder(source: string, page: string | undefined): string {
+  const name = [source.replace(/\.[^./]*$/, ''), page ?? '']
+    .join('-')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `fonts/${name || 'document'}`
+}

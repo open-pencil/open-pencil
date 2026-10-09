@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 import { exportStorybook } from '#dom-css/index'
 
+import { es } from '@open-pencil/emit'
 import { emptyBehaviour, SceneGraph, withBehaviour } from '@open-pencil/scene-graph'
 
 function buttonGraph() {
@@ -57,6 +58,14 @@ interface StoryModule {
 
 function storyExport(module: StoryModule, name: string): Story {
   return module[name] as Story
+}
+
+/** The modules a story file imports, read from its syntax rather than its text. */
+function importSources(content: string): string[] {
+  return es
+    .children(es.parseModule(content), 'body')
+    .filter((node) => node.type === 'ImportDeclaration')
+    .map((node) => String(es.child(node, 'source')?.value))
 }
 
 async function importStory(content: string): Promise<StoryModule> {
@@ -172,7 +181,24 @@ describe('exportStorybook', () => {
     expect(css).toContain('url("inter-400.woff2")')
     expect(css).toContain('font-display: block')
     const story = String(files.find((file) => file.path === 'Button.stories.ts')?.content)
-    expect(story).toContain("import './fonts/kit/fonts.css'")
+    expect(importSources(story)).toContain('./fonts/kit/fonts.css')
+
+    // A caller exporting several documents into one place names each one's folder.
+    const named = await exportStorybook(graph, {
+      framework: 'html',
+      fontFolder: 'fonts/kit-design',
+      fonts: (fonts, folder) =>
+        Promise.resolve(
+          fonts.map((font) => ({
+            ...font,
+            style: 'normal',
+            format: 'woff2' as const,
+            path: `${folder}/face.woff2`,
+            content: new Uint8Array([1])
+          }))
+        )
+    })
+    expect(named.map((file) => file.path)).toContain('fonts/kit-design/fonts.css')
 
     // With no font files found, nothing is written and stories import nothing.
     const without = await exportStorybook(graph, {
@@ -180,7 +206,7 @@ describe('exportStorybook', () => {
       fonts: () => Promise.resolve([])
     })
     expect(without.map((file) => file.path)).toEqual(['Button.stories.ts'])
-    expect(String(without[0]?.content)).not.toContain('fonts.css')
+    expect(importSources(String(without[0]?.content))).not.toContain('./fonts/kit/fonts.css')
   })
 
   it('gives a component with a behaviour its own props instead of variant selects', async () => {

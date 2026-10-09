@@ -60,6 +60,11 @@ export interface ExportStorybookOptions {
    * whatever fonts Storybook's page has.
    */
   fonts?: WebFontFaceResolver
+  /**
+   * The folder the font files go in, which must differ for each document exported into the
+   * same place; `fonts/<document>` by default.
+   */
+  fontFolder?: string
 }
 
 /** How a story file shows its component: every variant, Default alone, a gallery, or not. */
@@ -304,7 +309,7 @@ async function storyFonts(
   if (requests.size === 0) return null
   const page = options.pageId ? graph.getNode(options.pageId)?.name : undefined
   const named = compact([options.document ?? 'document', page]).map((name) => storyId(name))
-  const folder = `fonts/${named.join('-')}`
+  const folder = options.fontFolder ?? `fonts/${named.join('-')}`
   const assets = await options.fonts([...requests.values()], folder)
   if (assets.length === 0) return null
   const css = await fontFaceStylesheet(assets, { from: folder, display: 'block' })

@@ -25,7 +25,7 @@ import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
-import { storyFonts } from './fonts'
+import { fontFolder, storyFonts } from './fonts'
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
 import { readStoryRules, storyPlan } from './rules'
 
@@ -158,11 +158,14 @@ async function writeStories(
   }
   // Read on every export, so a watch picks up edited rules with the next save.
   const rules = await readStoryRules(args.rules)
+  // Relative to the output, the document's path tells apart documents exported there together.
+  const source = toPosix(relative(outputDir, resolve(file)))
   const files = await exportStorybook(graph, {
     framework,
     pageId,
     plan: rules ? storyPlan(rules) : undefined,
     fonts: args.fonts === 'none' ? undefined : storyFonts,
+    fontFolder: fontFolder(source, args.page),
     // Titled by the document, so stories of documents exported together stay apart.
     document: basename(file, extname(file)),
     linkPath: linkPath(file),
@@ -183,7 +186,7 @@ async function writeStories(
     throw new Error(`No components found in ${args.page ? `page "${args.page}"` : 'the document'}.`)
 
   // Relative to the output, the document's path is the same on every machine and cwd.
-  const scope = { source: toPosix(relative(outputDir, resolve(file))), page: args.page }
+  const scope = { source, page: args.page }
   await mkdir(outputDir, { recursive: true })
   // Staged next to the output so a failed write leaves the previous export in place,
   // and in a dot folder, which Storybook's story globs skip.
