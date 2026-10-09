@@ -4,6 +4,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import type { EditorContext } from '#core/editor/types'
+import { pushCreatedSubtreesUndo } from '#core/editor/undo'
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import type { IconData } from '#core/icons/types'
 
@@ -65,21 +66,7 @@ export function createIconActions(ctx: EditorContext) {
       color,
       overrides: { x: Math.round(x), y: Math.round(y) }
     })
-    const created = snapshotSubtree(ctx.graph, frame.id)
-    ctx.undo.push({
-      label: 'Insert icon',
-      forward: () => {
-        const root = created.get(frame.id)
-        if (root && !ctx.graph.getNode(frame.id)) restoreSubtree(ctx.graph, root, parentId, created)
-        ctx.setSelectedIds(new Set([frame.id]))
-        ctx.requestRender()
-      },
-      inverse: () => {
-        if (ctx.graph.getNode(frame.id)) ctx.graph.deleteNode(frame.id)
-        ctx.setSelectedIds(previousSelection)
-        ctx.requestRender()
-      }
-    })
+    pushCreatedSubtreesUndo(ctx, 'Insert icon', [frame.id], previousSelection)
     ctx.setSelectedIds(new Set([frame.id]))
     ctx.requestRender()
     return frame.id
