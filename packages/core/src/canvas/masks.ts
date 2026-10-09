@@ -90,6 +90,13 @@ export function renderMaskedChildIds(
           r.effectLayerPaint.setColorFilter(lumaFilter)
           canvas.saveLayer(r.effectLayerPaint, layerBounds)
           renderMask(mask.id)
+          // Skia's luma is that of the premultiplied color; Figma also scales it by the mask's
+          // alpha, so a mask at half opacity shows a quarter of what it masks.
+          resetMaskPaint(r)
+          r.effectLayerPaint.setBlendMode(r.ck.BlendMode.DstIn)
+          canvas.saveLayer(r.effectLayerPaint, layerBounds)
+          renderMask(mask.id)
+          canvas.restore()
           canvas.restore()
           continue
         }

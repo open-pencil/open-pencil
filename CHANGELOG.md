@@ -143,6 +143,7 @@
 ### Fixed
 
 - Draw layers masked by a group, such as Figma's clip path groups, instead of hiding them; a group used as a mask masks with what its layers draw.
+- Draw what a mask masks through the mask's opacity and layer blur, as Figma does, so a half-transparent or blurred mask fades or softens its layers instead of masking them fully. An outline mask ignores how opaque its fill is, and a luminance mask counts its opacity twice, as in Figma.
 - Import SVG files that start with an XML declaration or doctype, such as Illustrator and Inkscape exports, instead of reporting no supported elements.
 - Keep `fill-opacity` and `stroke-opacity` when importing SVG instead of drawing those paints opaque.
 - Use an API key saved in Settings for the open AI chat right away, including when asking again after a failed request, instead of only after reloading; the failure's notice closes once the request is sent again.

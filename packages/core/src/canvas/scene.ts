@@ -144,11 +144,37 @@ function renderMaskNodeContent(
 ): void {
   canvas.save()
   canvas.translate(node.x, node.y)
+  // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
+  const blur = node.effects.find(
+    (effect) =>
+      effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+  )
+  const layered = node.opacity < 1 || blur !== undefined
+  if (layered) {
+    const padding = (blur?.radius ?? 0) * 2
+    r.opacityPaint.setAlphaf(node.opacity)
+    r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blur.radius / 2) : null)
+    canvas.saveLayer(
+      r.opacityPaint,
+      r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
+    )
+    r.opacityPaint.setImageFilter(null)
+  }
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, {})
+  renderNodeContent(r, canvas, graph, node.maskType === 'VECTOR' ? opaqueFills(node) : node, {})
   // A group or frame used as a mask masks with what its layers draw, as in Figma.
   renderChildren(r, canvas, graph, node, overlays, absX + node.x, absY + node.y, true)
+  if (layered) canvas.restore()
   canvas.restore()
+}
+
+/** An outline mask masks with its shape alone, so Figma ignores how opaque its fills are. */
+function opaqueFills(node: SceneNode): SceneNode {
+  return {
+    ...node,
+    fills: node.fills.map((fill) => ({ ...fill, opacity: 1, color: { ...fill.color, a: 1 } }))
+  }
 }
 
 function renderChildIds(

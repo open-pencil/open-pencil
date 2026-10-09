@@ -240,3 +240,65 @@ test('luminance masks and transformed tile fills', async () => {
   await editor.canvas.waitForRender()
   await expectCanvas('luminance-masks-and-transformed-tile-fills')
 })
+
+test('a mask applies its opacity and blur to what it masks', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const solid = (r: number, g: number, b: number, opacity = 1) => ({
+      type: 'SOLID' as const,
+      color: { r, g, b, a: 1 },
+      opacity,
+      visible: true
+    })
+    const variants = [
+      { maskType: 'ALPHA' as const, mask: { opacity: 0.5 } },
+      { maskType: 'VECTOR' as const, mask: { fills: [solid(0, 0, 0, 0.3)] } },
+      { maskType: 'LUMINANCE' as const, mask: { opacity: 0.5 } },
+      {
+        maskType: 'ALPHA' as const,
+        mask: {
+          effects: [
+            {
+              type: 'LAYER_BLUR' as const,
+              radius: 12,
+              spread: 0,
+              offset: { x: 0, y: 0 },
+              color: { r: 0, g: 0, b: 0, a: 1 },
+              visible: true
+            }
+          ]
+        }
+      }
+    ]
+    for (const [index, { maskType, mask }] of variants.entries()) {
+      const group = store.graph.createNode('GROUP', pageId, {
+        name: `${maskType} mask`,
+        x: 80 + index * 130,
+        y: 100,
+        width: 110,
+        height: 110
+      })
+      store.graph.createNode('ELLIPSE', group.id, {
+        x: 10,
+        y: 10,
+        width: 90,
+        height: 90,
+        fills: [maskType === 'LUMINANCE' ? solid(1, 1, 1) : solid(0, 0, 0)],
+        isMask: true,
+        maskType,
+        ...mask
+      })
+      store.graph.createNode('RECTANGLE', group.id, {
+        width: 110,
+        height: 110,
+        fills: [solid(0.31, 0.27, 0.9)]
+      })
+    }
+    store.clearSelection()
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('mask-opacity-and-blur')
+})
