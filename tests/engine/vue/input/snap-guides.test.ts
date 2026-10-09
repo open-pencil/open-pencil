@@ -6,8 +6,23 @@ import { computeSnap, createDefaultNode } from '@open-pencil/scene-graph'
 import { computePixelGridSnap, resolveObjectPixelSnap } from '#vue/shared/input/snap'
 
 describe('move snap guide presentation', () => {
+  // Figma desktop 126 ends a move on whole pixels at any zoom, even from a fractional start.
+  test('pixel rounding applies however far zoomed in', () => {
+    const editor = createEditor()
+    editor.state.snappingPreferences = { geometry: false, objects: true, pixelGrid: true }
+    editor.state.zoom = 16
+    const result = resolveObjectPixelSnap(
+      new Set(['frame']),
+      { x: 10.4, y: 20.6, width: 100, height: 80 },
+      [],
+      editor
+    )
+    expect(result.correction.x).toBeCloseTo(-0.4)
+    expect(result.correction.y).toBeCloseTo(0.4)
+  })
+
   test('pixel rounding adjusts a lone frame without drawing self-alignment guides', () => {
-    const pixel = computePixelGridSnap({ x: 10.25, y: 20.4, width: 100, height: 80 }, 5)
+    const pixel = computePixelGridSnap({ x: 10.25, y: 20.4, width: 100, height: 80 })
     expect(pixel.delta).toEqual({ x: -0.25, y: -0.3999999999999986 })
     expect(pixel.guides).toEqual([])
     const editor = createEditor()

@@ -5,6 +5,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
   return {
     activeTool: 'SELECT',
     snappingPreferences: { ...DEFAULT_SNAPPING_PREFERENCES },
+    showPixelGrid: true,
     presenceCursors: [],
     documentName: 'Untitled',
     designIssues: null,

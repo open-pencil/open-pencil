@@ -8,6 +8,7 @@ import type { EditorCommandId } from '@open-pencil/vue'
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
+import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { isButtonActivation, isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
@@ -142,6 +143,21 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('toggle-preview') ?? '$mod+Alt+Enter',
       run: ({ actions }) => actions.togglePlay(),
       preview: true
+    },
+    // Figma's keys, matched by key position since Shift turns ' into ".
+    {
+      id: 'toggle-pixel-grid',
+      keys: 'Shift+Quote',
+      run: ({ store }) => {
+        store.state.showPixelGrid = store.state.showPixelGrid === false
+        store.requestRepaint()
+      }
+    },
+    {
+      id: 'toggle-pixel-grid-snap',
+      keys: '$mod+Shift+Quote',
+      run: ({ store }) =>
+        setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid)
     },
     {
       id: 'toggle-ui',

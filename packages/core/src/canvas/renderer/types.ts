@@ -38,6 +38,8 @@ export interface RenderOverlays {
   /** Layers a previewing canvas leaves to its live islands. */
   playIslands?: ReadonlySet<string>
   hoveredNodeId?: string | null
+  /** Draw the pixel grid when zoomed in far enough. */
+  showPixelGrid?: boolean
   transforming?: boolean
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null

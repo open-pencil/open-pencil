@@ -20,6 +20,36 @@ function start(editor: Editor, tool: Tool = 'FRAME') {
 }
 
 describe('draw creation previews', () => {
+  // Figma desktop 126: dragging from (3.3, 50.4) to (30.7, 71.8) draws 28 × 22 at (3, 50).
+  test('rounds both corners to whole pixels while snapping to the pixel grid', () => {
+    for (const [pixelGrid, expected] of [
+      [true, { x: 3, y: 50, width: 28, height: 22 }],
+      [false, { x: 3.3, y: 50.4 }]
+    ] as const) {
+      const editor = createEditor()
+      try {
+        editor.state.snappingPreferences = { geometry: true, objects: true, pixelGrid }
+        editor.setTool('RECTANGLE')
+        const state: { drag: DragState | null } = { drag: null }
+        startShapeDraw(3.3, 50.4, editor, (drag) => {
+          state.drag = drag
+        })
+        const drag = state.drag
+        if (drag?.type !== 'draw') throw new Error('Expected drawing interaction')
+        handleDrawMove(drag, 30.7, 71.8, false)
+        drag.commit()
+        const node = editor.graph.getNode(drag.nodeId)
+        expect(node).toMatchObject(expected)
+        if (!pixelGrid) {
+          expect(node?.width).toBeCloseTo(27.4)
+          expect(node?.height).toBeCloseTo(21.4)
+        }
+      } finally {
+        editor.dispose()
+      }
+    }
+  })
+
   test('graph replacement discards pending draw batches without replaying or deleting history', () => {
     const editor = createEditor()
     try {

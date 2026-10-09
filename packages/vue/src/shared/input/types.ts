@@ -24,6 +24,8 @@ export interface DragDraw {
   toLocal: (x: number, y: number) => Vector
   /** A line is drawn by its length and angle, as in Figma, not as a box. */
   line?: boolean
+  /** Lands a coordinate on the pixel grid while Snap to pixel grid is on. */
+  snap: (value: number) => number
   nodeId: string
   update: (changes: Partial<SceneNode>) => void
   commit: () => void

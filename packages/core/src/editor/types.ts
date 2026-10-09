@@ -41,6 +41,8 @@ export type Tool =
 export interface EditorSharedState {
   activeTool: Tool
   snappingPreferences: SnappingPreferences
+  /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
+  showPixelGrid?: boolean
   presenceCursors: PresenceCursor[]
   documentName: string
   /** Design check markers and highlight, shared by every canvas pane. */

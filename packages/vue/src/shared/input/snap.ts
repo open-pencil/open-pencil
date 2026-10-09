@@ -12,16 +12,13 @@ export interface PixelSnapResult {
   guides: SnapGuide[]
 }
 
-export function computePixelGridSnap(bounds: Rect, threshold: number): PixelSnapResult {
-  const roundedX = Math.round(bounds.x)
-  const roundedY = Math.round(bounds.y)
-  const dx = roundedX - bounds.x
-  const dy = roundedY - bounds.y
+/**
+ * Lands the bounds on whole pixels, as Figma's Snap to pixel grid does at any zoom: a move ends on
+ * a whole position and a resized edge on a whole size, even from a fractional start.
+ */
+export function computePixelGridSnap(bounds: Rect): PixelSnapResult {
   return {
-    delta: {
-      x: Math.abs(dx) < threshold ? dx : 0,
-      y: Math.abs(dy) < threshold ? dy : 0
-    },
+    delta: { x: Math.round(bounds.x) - bounds.x, y: Math.round(bounds.y) - bounds.y },
     // Pixel rounding is not alignment with another object or an explicit guide.
     guides: []
   }
@@ -133,7 +130,7 @@ export function resolveObjectPixelSnap(
     ? computeSnap(movingIds, movingBounds, targets, threshold)
     : { dx: 0, dy: 0, guides: [] }
   const pixelSnap = editor.state.snappingPreferences.pixelGrid
-    ? computePixelGridSnap(movingBounds, threshold)
+    ? computePixelGridSnap(movingBounds)
     : { delta: { x: 0, y: 0 }, guides: [] }
   const objectX = objectSnap.guides.some((guide) => guide.axis === 'x')
   const objectY = objectSnap.guides.some((guide) => guide.axis === 'y')

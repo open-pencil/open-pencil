@@ -9,6 +9,7 @@ import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
+import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
@@ -98,6 +99,8 @@ export function drawOverlayPass(
     measuring || overlays.hoveredNodeId === overlays.nodeEditState?.nodeId
       ? null
       : overlays.hoveredNodeId
+  // Over the design and under every editing outline, as in Figma.
+  if (overlays.showPixelGrid) drawPixelGrid(r, canvas)
   drawComponentSetBorders(r, canvas, graph, overlays.rotationPreview)
   drawCodeFocus(r, canvas, graph, overlays.codeFocusNodeId, overlays.rotationPreview)
   if (!measuring)

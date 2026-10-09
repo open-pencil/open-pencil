@@ -186,6 +186,8 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       { id: 'view-rulers', label: 'Rulers', checkbox: true },
+      // Figma's View › Pixel grid, shown once zoomed in far enough.
+      { id: 'view-pixel-grid', label: 'Pixel Grid', checkbox: true, shortcut: "SHIFT+'" },
       { id: 'view-multiplayer-cursors', label: 'Multiplayer Cursors', checkbox: true },
       { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
       { type: 'separator' },
@@ -220,6 +222,7 @@ export const APP_MENU_SCHEMA = [
             id: 'snap-pixel-grid',
             label: 'Snap to Pixel Grid',
             checkbox: true,
+            shortcut: "MOD+SHIFT+'",
             handler: 'shell'
           },
           { type: 'separator' },

@@ -39,6 +39,7 @@
 
 ### Added
 
+- Show the pixel grid when zoomed in, as in Figma: from 800% on a standard display and 400% on a Retina one, toggled with **View → Pixel Grid** or <kbd>⇧</kbd><kbd>'</kbd>. <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> toggles **Snap to Pixel Grid**.
 - Save the open document to cloud storage with **File → Save to storage…**. The tab stays bound to the stored copy, so Save and auto-save write to the bucket; before storage is configured, the command opens its settings. A new Cloud Storage guide covers connecting a bucket, CORS, syncing, and provider notes.
 - Add a variant to a standalone component from the header's **Add variant** button, as in Figma (#847): it becomes a component set named after it, whose existing instances and properties carry over, with a `Property 1=Variant2` copy below. A set's variant properties are rows of its **Properties** list, each opening to rename it and add, rename, reorder, or remove its values; removing a value variants still use moves them to another value. Variants that share a combination of values are named in a notice that selects them.
 - Create and edit a component's text, boolean, and instance swap properties from the properties panel, as in Figma (#847). A layer in a main component links its text content, visibility, or swapped component to a new or existing property from the Typography and Appearance sections and the instance header, and shows the linked property in place of the value. The component lists its properties, each opening to rename it, change its default, see and unlink the layers it drives, or delete it, and reorders them by dragging. Expose nested instances so their properties show, grouped under the instance's name, on instances of the component. Typing into text a property drives sets the property: its default in the main component, the instance's value in an instance.
@@ -91,6 +92,7 @@
 
 ### Changed
 
+- With **Snap to Pixel Grid** on, moved layers and resized edges land on whole pixels at any zoom, and drawn layers start and end on whole pixels, as in Figma; zoomed in, moves and resizes could leave fractions before, and drawing was not snapped.
 - The properties panel's variable picker groups variables by collection and shows each color variable's swatch, and the variables dialog points a value at another variable with the same picker, detaching it from the picker's footer.
 - **Add variant** on a component set copies its last variant below it, 20 px apart, with the next free value such as `Variant3`, and grows the set to hold it, as Figma does. It used to place a copy with the same values to the right, which made a duplicate combination.
 - The `get_selection` tool returns the selected layers with their direct children by default instead of their whole subtrees, and takes a `depth` for more or fewer levels, so agents can start from what the user selected without reading the full tree.
