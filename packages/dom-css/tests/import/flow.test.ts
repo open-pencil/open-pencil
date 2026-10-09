@@ -43,11 +43,28 @@ describe('HTML flow as auto layout', () => {
       `<div><button id="send" style="padding:14px">Enviar</button><span id="tag" style="padding:4px">New</span></div>`
     )
     const send = byName('send')
-    expect(send.layoutMode).toBe('HORIZONTAL')
-    expect(send.primaryAxisAlign).toBe('CENTER')
+    expect(send).toMatchObject({ primaryAxisAlign: 'CENTER', counterAxisAlign: 'CENTER' })
     expect(sizing(send)).toEqual(['HUG', 'HUG'])
-    expect(sizing(byName('tag'))).toEqual(['HUG', 'HUG'])
+    const tag = byName('tag')
+    expect(tag.layoutMode).toBe('HORIZONTAL')
+    expect(sizing(tag)).toEqual(['HUG', 'HUG'])
     expect(textIn(graph, send).textAutoResize).toBe('WIDTH_AND_HEIGHT')
+  })
+
+  it('stacks block children inside an inline-block, which sits in a line itself', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div style="width:300px"><div id="chip" style="display:inline-block"><div>Title</div><div>Detail</div></div></div>`
+    )
+    const chip = byName('chip')
+    expect(chip.layoutMode).toBe('VERTICAL')
+    expect(sizing(chip)).toEqual(['HUG', 'HUG'])
+  })
+
+  it('adds padding to a size derived from aspect-ratio', async () => {
+    const { byName } = await importHTML(
+      `<div id="square" style="width:100px;aspect-ratio:1;padding:10px"></div>`
+    )
+    expect(byName('square')).toMatchObject({ width: 120, height: 120 })
   })
 
   it('stretches flex items across unless they set their own cross size', async () => {

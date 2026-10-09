@@ -88,9 +88,13 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }
 
+/**
+ * The flow an element lays its own children out in. An `inline-block` sits in a line but holds
+ * a block of its own, so only a plain `inline` element lays its children out in a line.
+ */
 export function flowOf(display: string): FlowKind {
   if (display === 'flex' || display === 'inline-flex') return 'flex'
-  return display.startsWith('inline') ? 'inline' : 'block'
+  return display === 'inline' ? 'inline' : 'block'
 }
 
 /** Whether the element sits in a line rather than on its own row, so it hugs its content. */
@@ -123,6 +127,11 @@ export function applyContainerLayout(
   }
   if (flow === 'block') {
     node.layoutMode = 'VERTICAL'
+    // Browsers center a button's content both ways.
+    if (CENTERED_TAGS.has(element.tagName.toLowerCase())) {
+      node.primaryAxisAlign = 'CENTER'
+      node.counterAxisAlign = 'CENTER'
+    }
     return
   }
   // Inline content runs in a line, aligned by `text-align`.

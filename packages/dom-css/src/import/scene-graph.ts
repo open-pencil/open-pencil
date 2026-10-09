@@ -220,13 +220,17 @@ function contentBoxExtras(style: DesignStyleDeclaration): { width: number; heigh
 /** Explicit sizes count the padding and borders CSS places outside them. */
 function applyBoxSizing(node: SceneNode, style: DesignStyleDeclaration): void {
   const extras = contentBoxExtras(style)
+  const width = firstCSSNumber(style, 'width')
+  const height = firstCSSNumber(style, 'height')
+  // A size `aspect-ratio` derives from the other is a content size too.
+  const ratio = aspectRatioFromCSS(pickStyle(style, 'aspect-ratio')) !== null
   if (extras.width > 0) {
-    if (firstCSSNumber(style, 'width') !== null) node.width += extras.width
+    if (width !== null || (ratio && height !== null)) node.width += extras.width
     if (node.minWidth !== null) node.minWidth += extras.width
     if (node.maxWidth !== null) node.maxWidth += extras.width
   }
   if (extras.height > 0) {
-    if (firstCSSNumber(style, 'height') !== null) node.height += extras.height
+    if (height !== null || (ratio && width !== null)) node.height += extras.height
     if (node.minHeight !== null) node.minHeight += extras.height
     if (node.maxHeight !== null) node.maxHeight += extras.height
   }
