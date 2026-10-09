@@ -2,7 +2,7 @@ import { difference } from '#dom-css/behaviours/states/model'
 import type { StateElement, StateNode } from '#dom-css/behaviours/states/types'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { zip } from 'es-toolkit/array'
-import { omitBy } from 'es-toolkit/object'
+import { omit, omitBy, pickBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 import { kebabCase } from 'es-toolkit/string'
 
@@ -73,11 +73,11 @@ function applied(
   base: DesignStyleDeclaration,
   change: DesignStyleDeclaration
 ): DesignStyleDeclaration {
-  const style = { ...base }
-  for (const [property, value] of Object.entries(change))
-    if (value === 'unset') delete style[property]
-    else style[property] = value
-  return style
+  const unset = (value: string) => value === 'unset'
+  return {
+    ...omit(base, Object.keys(pickBy(change, unset))),
+    ...omitBy(change, unset)
+  }
 }
 
 /**
