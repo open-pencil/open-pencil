@@ -6,3 +6,4 @@ export {
   type SVGImportData,
   type SVGImportOptions
 } from './import'
+export { isSVGMarkup } from './metadata'
