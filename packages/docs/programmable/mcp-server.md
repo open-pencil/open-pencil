@@ -19,7 +19,7 @@ Restart the MCP server, then reconnect stdio clients, to apply changes. For an e
 
 ## Share only the selection {#selection-scope}
 
-Turn on **Share only the selection** in **Settings → MCP → Local server** to let MCP clients read only the layers you select. Clients then get `get_selection`, `get_node`, `get_page_tree`, `describe`, and `export_image`, and no tools that edit, open files, list documents, or change settings. Every node a call names must be a selected layer or inside one; `describe` and `export_image` read the selection when given no IDs, and `get_page_tree` needs a `root_id` from the selection. `export_image` returns the image but cannot write it to a file. With nothing selected, calls fail and ask the user to select layers.
+Turn on **Share only the selection** in **Settings → MCP → Local server** to let MCP clients read only the layers you select. Clients then get `get_selection`, `get_node`, `get_page_tree`, `describe`, `export_text`, and `export_image`, and no tools that edit, open files, list documents, or change settings. Every node a call names must be a selected layer or inside one; `describe`, `export_text`, and `export_image` read the selection when given no IDs, and `get_page_tree` needs a `root_id` from the selection. `export_image` returns the image but cannot write it to a file. With nothing selected, calls fail and ask the user to select layers.
 
 The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
 
@@ -306,7 +306,20 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | Tool | Description |
 |------|-------------|
 | `export_image` | Export nodes as PNG, JPG, or WEBP. Returns base64-encoded image data |
+| `export_text` | Read plain text from nodes and their descendants without rendering or changing selection |
 | `export_svg` | Export nodes as SVG markup |
+
+Read a frame's words before deciding whether an image is needed:
+
+```json
+{"ids":["frame-id"]}
+```
+
+`export_text` returns `{ "text": "Heading\n\nLabel", "textNodeCount": 2, "truncated": false }`. Omit `ids` to read the current page's top-level nodes (the selection in selection scope). Like `export_image`, it accepts `document_id` and `page_id` for targeting through MCP.
+
+Overlapping roots are deduplicated, even if a descendant is listed before its ancestor. Remaining roots follow the requested order and descendants follow layer-tree order, not reconstructed visual reading order. Two newlines separate text nodes; their original whitespace and internal line breaks are preserved. Hidden nodes and nodes under hidden ancestors are excluded unless `includeHidden: true`.
+
+`maxChars` bounds the response to at most 32,000 UTF-16 code units, including separators, without splitting a surrogate pair. `maxNodes` bounds traversal to at most 10,000 layers, including non-text layers. Both default to their maximum and can be lowered; ancestor checks are separately limited to 10,000 steps and requests to 1,000 roots. `textNodeCount` counts included text nodes, including a partially returned final node. Any incomplete export reports `truncated: true`; use smaller roots to continue inspection.
 
 ### Viewport
 

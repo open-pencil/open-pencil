@@ -184,6 +184,8 @@ describe('MCP server', () => {
     expect(byName.get('switch_page')?.effect).toBe('read')
     expect(byName.get('viewport_set')?.effect).toBe('read')
     expect(byName.get('export_image')?.effect).toBe('read')
+    expect(byName.get('export_text')?.effect).toBe('read')
+    expect(byName.get('export_text')?.capabilities).toEqual(['document:read'])
     expect(byName.get('save_file')?.effect).toBe('write')
     expect(byName.get('open_file')?.effect).toBe('read')
     expect(byName.get('open_file')?.capabilities).toEqual(['filesystem:read', 'document:read'])
@@ -254,6 +256,19 @@ describe('MCP server', () => {
     const node = graph.getNode(data.id)
     expect(node).toBeDefined()
     expect(node?.name).toBe('Test')
+  })
+
+  test('exports plain text through MCP without rendering', async () => {
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id)
+    graph.createNode('TEXT', frame.id, { text: 'Heading\nSubtitle' })
+    graph.createNode('TEXT', frame.id, { text: 'Label' })
+    const result = await client.callTool({ name: 'export_text', arguments: { ids: [frame.id] } })
+    expect(result.isError).not.toBe(true)
+    expect(parseResult(result)).toEqual({
+      text: 'Heading\nSubtitle\n\nLabel',
+      textNodeCount: 2,
+      truncated: false
+    })
   })
 
   test('set_fill validates and applies color', async () => {
@@ -357,6 +372,7 @@ describe('MCP server sharing only the selection', () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       'describe',
       'export_image',
+      'export_text',
       'get_node',
       'get_page_tree',
       'get_selection'
@@ -368,6 +384,24 @@ describe('MCP server sharing only the selection', () => {
     await client.callTool({ name: 'get_selection', arguments: {} })
     const call = browser.requests.find((request) => request.command === 'tool')
     expect(call?.args).toMatchObject({ name: 'get_selection', scope: 'selection' })
+  })
+
+  test('forwards text extraction with its scope and document/page target', async () => {
+    const { client, browser, graph } = expectDefined(ctx, 'client')
+    const page = graph.getPages()[0]
+    const node = graph.createNode('TEXT', page.id, { text: 'Shared words' })
+    await client.callTool({
+      name: 'export_text',
+      arguments: { ids: [node.id], document_id: 'shared-document', page_id: page.id }
+    })
+    const call = browser.requests.find((request) => request.command === 'tool')
+    expect(call?.args).toMatchObject({
+      name: 'export_text',
+      scope: 'selection',
+      document_id: 'shared-document',
+      page_id: page.id,
+      args: { ids: [node.id] }
+    })
   })
 
   test('refuses to write an export to a file', async () => {

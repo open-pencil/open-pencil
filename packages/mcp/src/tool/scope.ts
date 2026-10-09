@@ -14,7 +14,8 @@ export const SELECTION_SCOPE_TOOLS: Readonly<Record<string, readonly string[]>> 
   get_node: ['id'],
   get_page_tree: ['root_id'],
   describe: ['id', 'ids'],
-  export_image: ['ids']
+  export_image: ['ids'],
+  export_text: ['ids']
 }
 
 export function isSelectionScopeTool(name: string): boolean {

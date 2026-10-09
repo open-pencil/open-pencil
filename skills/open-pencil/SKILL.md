@@ -293,6 +293,7 @@ Discover available tools and their arguments from the connected server or browse
 - **`diff_jsx` / `diff_create`** — compare two nodes as a JSX line diff or as an appliable patch of JSX attributes; `diff_show` previews setting attributes and `diff_apply` applies a patch only if the nodes still match it.
 - **`diff_visual`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
+- **`export_text`** — read a frame's text before requesting an image: `{ "ids": ["frame-id"] }`. Returns `text`, `textNodeCount`, and `truncated`, without rendering or changing selection. Hidden layers are excluded by default; `includeHidden` opts in. Text nodes are separated by two newlines in layer-tree order, not visual reading order. Overlapping roots are deduplicated. Lower `maxChars` (up to 32000) or `maxNodes` (up to 10000) to bound inspection; inspect smaller subtrees when `truncated` is true. In selection scope, omitted IDs read only the selection and explicit IDs must stay inside it.
 - **`batch_update`** — apply multiple node updates efficiently.
 - **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.
 - **`viewport_zoom_to_fit` / `viewport_set` / `viewport_get`** — move the user's view only when they ask to be shown something.

@@ -7,7 +7,11 @@ import {
 import type { EditorStore } from '@/app/editor/active-store'
 
 /** Tools that read the selection itself when a call names no nodes. */
-const READS_SELECTION_BY_DEFAULT: ReadonlySet<string> = new Set(['describe', 'export_image'])
+const READS_SELECTION_BY_DEFAULT: ReadonlySet<string> = new Set([
+  'describe',
+  'export_image',
+  'export_text'
+])
 
 function namedIds(value: unknown): string[] {
   if (typeof value === 'string') return [value]
@@ -18,7 +22,7 @@ function namedIds(value: unknown): string[] {
 /**
  * A tool call's arguments limited to the user's selection, for an MCP server that shares only the
  * selection: every node the call names must be a selected layer or inside one, and `describe` and
- * `export_image` read the selection when they name none. Throws when the call reaches further.
+ * the export tools read the selection when they name none. Throws when the call reaches further.
  */
 export function limitToSelection(
   store: EditorStore,
