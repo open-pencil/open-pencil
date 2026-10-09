@@ -22,7 +22,8 @@ export interface ShapedTextGlyph {
   x: number
   y: number
   fontSize: number
-  firstCharacter: number
+  /** The character the glyph draws, left out for a list marker. */
+  firstCharacter?: number
   /** Horizontal advance in pixels. */
   advance: number
 }
@@ -122,14 +123,28 @@ function savedGlyphLines(glyphs: SavedGlyph[]): SavedGlyph[][] {
   )
 }
 
+/**
+ * The character each saved glyph draws. Glyphs from shapers that record no characters stand
+ * one for one for the text; among glyphs that do, one without a character is a list marker.
+ */
+function savedGlyphCharacters(glyphs: DerivedTextGlyph[]): Array<number | undefined> {
+  const indexed = glyphs.some((glyph) => glyph.firstCharacter !== undefined)
+  return glyphs.map((glyph, index) => glyph.firstCharacter ?? (indexed ? undefined : index))
+}
+
 function savedGlyphLayout(
   node: SceneNode,
   glyphs: DerivedTextGlyph[]
 ): Pick<ShapedText, 'baselines' | 'logicalIndexToCharacterOffsetMap'> {
   const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
   const offsets = Array.from({ length: node.text.length }, () => 0)
+  const characters = savedGlyphCharacters(glyphs)
+  // Markers stand before their item's text; a line starts where its characters do.
   const lines = savedGlyphLines(
-    glyphs.map((glyph, index) => ({ glyph, character: glyph.firstCharacter ?? index }))
+    glyphs.flatMap((glyph, index) => {
+      const character = characters[index]
+      return character === undefined ? [] : [{ glyph, character }]
+    })
   )
   const baselines = lines.map((line, lineIndex) => {
     const startX = Math.min(...line.map(({ glyph }) => glyph.x))
@@ -163,6 +178,7 @@ function savedGlyphRecords(
   glyphs: DerivedTextGlyph[],
   context: DerivedTextBuildContext
 ): DerivedTextGlyphRecord[] {
+  const characters = savedGlyphCharacters(glyphs)
   return glyphs.map((glyph, index) => {
     const next = glyphs[index + 1]
     const sameLine =
@@ -181,7 +197,7 @@ function savedGlyphRecords(
       ),
       position: { x: glyph.x, y: glyph.y },
       fontSize: glyph.fontSize,
-      firstCharacter: glyph.firstCharacter ?? index,
+      firstCharacter: characters[index],
       advance: savedAdvance(glyph, sameLine ? next : undefined),
       // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
       rotation: glyph.rotation ?? 0

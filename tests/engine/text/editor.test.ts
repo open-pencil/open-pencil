@@ -1,9 +1,11 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit, Paragraph, RectWithDirection } from 'canvaskit-wasm'
+import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from 'canvaskit-wasm'
 
 import { TextEditor, type SceneNode } from '@open-pencil/core'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+
+import { TextLayout } from '#core/canvas/text/layout/text-layout'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { asDouble } from '#tests/helpers/doubles'
@@ -12,6 +14,19 @@ const mockCk = asDouble<CanvasKit>({
   RectHeightStyle: { Max: 0 },
   RectWidthStyle: { Tight: 0 }
 })
+
+/** A layout of one native paragraph double holding `length` characters. */
+function layoutOf(native: Partial<Paragraph>, length: number): TextLayout {
+  const paragraph = asDouble<Paragraph>({
+    layout: () => undefined,
+    didExceedMaxLines: () => false,
+    getLongestLine: () => 0,
+    ...native
+  })
+  const layout = TextLayout.ofParagraph(mockCk, paragraph, length)
+  layout.layout(100)
+  return layout
+}
 
 function createEditor(text = 'Hello World') {
   const editor = new TextEditor(mockCk)
@@ -33,20 +48,22 @@ function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']
     left: 3,
     startIndex: 0
   }
-  const paragraph = asDouble<Paragraph>({
-    delete: () => undefined,
-    getGlyphPositionAtCoordinate: (_x: number, y: number) => {
-      hitTestYs.push(y)
-      return { pos: Math.round(y) }
-    },
-    getHeight: () => 20,
-    getLineMetrics: () => [lineMetrics],
-    getLineMetricsAt: () => lineMetrics,
-    getLineNumberAt: () => 0,
-    getRectsForRange: () => rects
-  })
   const renderer = asDouble<Parameters<TextEditor['setRenderer']>[0]>({
-    buildParagraph: () => paragraph,
+    buildParagraph: (node: SceneNode) =>
+      layoutOf(
+        {
+          delete: () => undefined,
+          getGlyphPositionAtCoordinate: (_x: number, y: number) => {
+            hitTestYs.push(y)
+            return asDouble({ pos: Math.round(y) })
+          },
+          getHeight: () => 20,
+          getLineMetrics: () => [asDouble(lineMetrics)],
+          getLineNumberAt: () => 0,
+          getRectsForRange: () => rects
+        },
+        node.text.length
+      ),
     fontGeneration: 1
   })
   const editor = new TextEditor(mockCk)
@@ -190,20 +207,21 @@ describe('TextEditor', () => {
   })
 
   test('places the caret of empty text, which CanvasKit lays out no line for', () => {
-    const empty = asDouble<Paragraph>({
+    const empty = {
       delete: () => undefined,
       getHeight: () => 0,
       getLineMetrics: () => []
-    })
-    const space = asDouble<Paragraph>({
+    }
+    const space = {
       delete: () => undefined,
       getHeight: () => 17,
-      getLineMetrics: () => [{ height: 17, left: 0 }]
-    })
+      getLineMetrics: () => [asDouble<LineMetrics>({ height: 17, left: 0 })]
+    }
     const editor = new TextEditor(mockCk)
     editor.setRenderer(
       asDouble<Parameters<TextEditor['setRenderer']>[0]>({
-        buildParagraph: (node: SceneNode) => (node.text === '' ? empty : space),
+        buildParagraph: (node: SceneNode) =>
+          node.text === '' ? layoutOf(empty, 0) : layoutOf(space, 1),
         fontGeneration: 1
       })
     )

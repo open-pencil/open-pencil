@@ -156,6 +156,10 @@ export class FigmaNodeProxy {
   declare textCase: string
   declare textDecoration: string
   declare maxLines: number | null
+  declare listSpacing: number
+  declare paragraphSpacing: number
+  declare paragraphIndent: number
+  declare hangingList: boolean
   declare textTruncation: string
   declare autoRename: boolean
 
@@ -192,6 +196,24 @@ export class FigmaNodeProxy {
 
   deleteCharacters(start: number, end: number): void {
     TextProxy.deleteCharacters(this[INTERNAL_GRAPH], this._raw(), start, end)
+  }
+
+  getRangeListOptions(start: number, end: number): TextListOptions | symbol {
+    return TextProxy.getRangeListOptions(this._raw(), start, end, MIXED)
+  }
+
+  setRangeListOptions(start: number, end: number, value: TextListOptions): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    TextProxy.setRangeListOptions(this[INTERNAL_GRAPH], this._raw(), start, end, value)
+  }
+
+  getRangeIndentation(start: number, end: number): number | symbol {
+    return TextProxy.getRangeIndentation(this._raw(), start, end, MIXED)
+  }
+
+  setRangeIndentation(start: number, end: number, value: number): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    TextProxy.setRangeIndentation(this[INTERNAL_GRAPH], this._raw(), start, end, value)
   }
 
   get isMask(): boolean {

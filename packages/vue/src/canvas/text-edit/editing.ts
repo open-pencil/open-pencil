@@ -3,7 +3,7 @@ import type { ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { paragraphStylesAfterTextChange, type SceneNode } from '@open-pencil/scene-graph'
 
 const CARET_BLINK_MS = 530
 
@@ -143,6 +143,11 @@ export function createTextEditActions(store: Editor) {
   function syncText(nodeId: string, text: string, runs?: SceneNode['styleRuns']) {
     const changes: Partial<SceneNode> = { text }
     if (runs !== undefined) changes.styleRuns = runs
+    const node = store.graph.getNode(nodeId)
+    // A new paragraph continues the list it is typed in; a joined one keeps the first's style.
+    if (node && node.textParagraphs.length > 0) {
+      changes.textParagraphs = paragraphStylesAfterTextChange(node.textParagraphs, node.text, text)
+    }
     store.updateTextEditNode(nodeId, changes)
     const updated = store.graph.getNode(nodeId)
     if (updated) store.textEditor?.rebuildParagraph(updated)

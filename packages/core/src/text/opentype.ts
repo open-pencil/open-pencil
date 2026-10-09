@@ -204,6 +204,18 @@ export function glyphOutlineSourceSync(family: string, style: string): GlyphOutl
   }
 }
 
+/** The advance of glyph `glyphId` of a loaded font at `fontSize`, or `null` when it has none. */
+export function glyphAdvanceSync(
+  family: string,
+  style: string,
+  glyphId: number,
+  fontSize: number
+): number | null {
+  const font = getParsedFont(family, style)
+  const glyph = font?.glyphs.get(glyphId)
+  return font && glyph ? glyphAdvanceWidth(font, glyph, fontSize) : null
+}
+
 export async function probeGlyphOutlineCommands(
   family: string,
   style: string,

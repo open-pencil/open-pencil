@@ -5,6 +5,7 @@ import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph
 import { applyFontFeaturesToKiwi } from '../font/features'
 import { weightToFigmaStyle } from '../font/style'
 import { stringToFigmaAxisTag } from '../font/variations'
+import { exportTextLines } from './lines'
 
 export function fontVariationToKiwi(variation: SceneNode['fontVariations'][number]) {
   const axisTag = stringToFigmaAxisTag(variation.axis)
@@ -92,11 +93,10 @@ function collectTextStyleOverrides(node: SceneNode): {
 
 export function exportTextData(
   node: SceneNode,
-  textLines: (text: string) => NonNullable<NodeChange['textData']>['lines'],
   fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint
 ): NodeChange['textData'] {
   if (node.styleRuns.length === 0) {
-    return { characters: node.text, lines: textLines(node.text) }
+    return { characters: node.text, lines: exportTextLines(node) }
   }
 
   const { charIds, styleMap } = collectTextStyleOverrides(node)
@@ -106,7 +106,7 @@ export function exportTextData(
 
   return {
     characters: node.text,
-    lines: textLines(node.text),
+    lines: exportTextLines(node),
     characterStyleIDs: charIds,
     styleOverrideTable: overrideTable
   }

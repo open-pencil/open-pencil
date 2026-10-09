@@ -1,4 +1,4 @@
-import type { Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Size } from '@open-pencil/scene-graph/primitives'
@@ -13,12 +13,13 @@ const MAX_PREPARED_TEXT_UNITS = 262_144
 // Layout measures a text at a few widths; more than this means the widths are not repeating.
 const MAX_MEASURED_WIDTHS = 16
 
+import type { TextLayout } from './layout/text-layout'
 import { PARAGRAPH_INPUT_KEYS, shapingInputs } from './paragraph-inputs'
 
 type PreparationInput = SceneNode[(typeof PARAGRAPH_INPUT_KEYS)[number]]
 
 export interface PreparedText {
-  paragraph: Paragraph
+  paragraph: TextLayout
   missingGlyphs?: ReturnType<typeof missingGlyphOccurrences>
 }
 
@@ -68,7 +69,7 @@ export class TextPreparationCache {
     variant: string,
     generation: number,
     provider: TypefaceFontProvider,
-    build: () => Paragraph,
+    build: () => TextLayout,
     consume: (prepared: PreparedText) => T
   ): T {
     this.useScope(generation, provider)

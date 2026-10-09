@@ -272,6 +272,7 @@ export function cloneNodeProps(
     dashPattern: copyOpt(src.dashPattern, (a) => [...a]),
     fontVariations: copyOpt(src.fontVariations, (a) => a.map((v) => ({ ...v }))),
     fontFeatures: copyOpt(src.fontFeatures, (a) => a.map((v) => ({ ...v }))),
+    textParagraphs: copyOpt(src.textParagraphs, (a) => a.map((v) => ({ ...v }))),
     textDecorationFills: copyOpt(src.textDecorationFills, copyFills),
     fillGeometry: copyOpt(src.fillGeometry, copyGeometryPaths),
     strokeGeometry: copyOpt(src.strokeGeometry, copyGeometryPaths),

@@ -9,7 +9,7 @@ import {
   SkiaRenderer as SkiaRendererClass
 } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -47,7 +47,14 @@ function createMockCanvas() {
 }
 
 function createMockParagraph() {
-  return { delete: mock(() => undefined), getHeight: mock(() => 20) }
+  const paragraph = {
+    delete: mock(() => undefined),
+    getHeight: mock(() => 20),
+    draw: mock((canvas: { drawParagraph: (...args: unknown[]) => void }, x: number, y: number) =>
+      canvas.drawParagraph(paragraph, x, y)
+    )
+  }
+  return paragraph
 }
 
 function createMockPicture() {
@@ -97,8 +104,7 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
-  return {
-    type: 'TEXT',
+  return createDefaultNode(() => '0:1', 'TEXT', {
     text: 'Hello 你好',
     fontSize: 16,
     fontFamily: 'Arial',
@@ -112,9 +118,8 @@ function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
     textDecoration: 'NONE',
     textDirection: 'AUTO',
     styleRuns: [],
-    source: createDefaultSourceMetadata(),
     ...overrides
-  } as SceneNode
+  })
 }
 
 async function createTextRenderer() {

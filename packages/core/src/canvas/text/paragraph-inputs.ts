@@ -23,6 +23,11 @@ export const PARAGRAPH_INPUT_KEYS = [
   'textDecorationFills',
   'textTruncation',
   'maxLines',
+  'textParagraphs',
+  'listSpacing',
+  'paragraphSpacing',
+  'paragraphIndent',
+  'hangingList',
   'textAutoResize',
   'width',
   'height'

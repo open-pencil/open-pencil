@@ -1,10 +1,11 @@
-import type { CanvasKit, Paragraph } from 'canvaskit-wasm'
+import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import type { SkiaRenderer } from '#core/canvas'
+import type { TextLayout } from '#core/canvas/text/layout/text-layout'
 
 export interface TextCaret {
   x: number
@@ -17,7 +18,7 @@ export interface TextEditorState {
   text: string
   cursor: number
   selectionAnchor: number | null
-  paragraph: Paragraph | null
+  paragraph: TextLayout | null
   paragraphFontGeneration: number
   textDirection: 'LTR' | 'RTL'
 }
@@ -344,7 +345,7 @@ export class TextEditor {
    * The caret of empty text. CanvasKit lays out no line for an empty paragraph, so a line
    * holding one space gives the caret's height, and the alignment its place.
    */
-  private emptyCaret(paragraph: Paragraph): TextCaret | null {
+  private emptyCaret(paragraph: TextLayout): TextCaret | null {
     const node = this.paragraphNode
     const line = paragraph.getLineMetrics().at(0)
     if (line) {
@@ -374,37 +375,10 @@ export class TextEditor {
 
     if (text.length === 0) return this.emptyCaret(s.paragraph)
 
-    let lo: number
-    let hi: number
-    let useRight = false
-
-    if (cursor === 0) {
-      lo = 0
-      hi = 1
-      useRight = s.textDirection === 'RTL'
-    } else if (cursor >= text.length) {
-      lo = text.length - 1
-      hi = text.length
-      useRight = s.textDirection !== 'RTL'
-    } else {
-      lo = cursor
-      hi = cursor + 1
-    }
-
-    const rects = s.paragraph.getRectsForRange(
-      lo,
-      hi,
-      this.ck.RectHeightStyle.Max,
-      this.ck.RectWidthStyle.Tight
-    )
-    if (rects.length === 0) return null
-    const [left, top, right, bottom] = rects[0].rect
+    const caret = s.paragraph.getCaretRect(cursor, s.textDirection === 'RTL')
+    if (!caret) return null
     const offsetY = this.paragraphVerticalOffset()
-    return {
-      x: useRight ? right : left,
-      y0: top + offsetY,
-      y1: bottom + offsetY
-    }
+    return { x: caret.x, y0: caret.top + offsetY, y1: caret.bottom + offsetY }
   }
 
   getSelectionRects(): Rect[] {

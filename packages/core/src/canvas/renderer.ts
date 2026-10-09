@@ -53,8 +53,7 @@ import type {
   SkPicture,
   ImageFilter,
   MaskFilter,
-  RuntimeEffect,
-  Paragraph
+  RuntimeEffect
 } from 'canvaskit-wasm'
 
 export interface SubtreePictureCacheEntry {
@@ -697,7 +696,7 @@ export class SkiaRenderer {
     node: SceneNode,
     color?: Float32Array,
     opts?: RenderText.ParagraphBuildOptions
-  ): Paragraph {
+  ): RenderText.TextLayout {
     return RenderText.buildParagraph(this, node, color, opts)
   }
 

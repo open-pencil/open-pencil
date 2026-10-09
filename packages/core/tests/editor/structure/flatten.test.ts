@@ -201,6 +201,34 @@ describe('flattenSelected', () => {
     expect(editor.graph.getNode(text.id)).toBeUndefined()
   })
 
+  test('flattens a list with its bullets, as the canvas draws it', async () => {
+    await loadInterRegular()
+    const { editor } = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const text = editor.graph.createNode('TEXT', pageId, {
+      x: 100,
+      text: 'One\nTwo',
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 16,
+      width: 120,
+      height: 40,
+      textParagraphs: [
+        { listType: 'UNORDERED', indentation: 1 },
+        { listType: 'UNORDERED', indentation: 1 }
+      ]
+    })
+
+    editor.select([text.id])
+    editor.flattenSelected()
+
+    const [vectorId] = [...editor.state.selectedIds]
+    const vector = editor.graph.getNode(vectorId)
+    // The bullets sit in the first 24px of indent, left of the items' text.
+    expect(vector?.x).toBeGreaterThan(100)
+    expect(vector?.x).toBeLessThan(112)
+  })
+
   test('wraps loaded text style runs as outlines', async () => {
     await loadInterRegular()
     await loadInterBold()

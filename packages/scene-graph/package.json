@@ -95,6 +95,12 @@
       "import": "./dist/layout.js",
       "default": "./dist/layout.js"
     },
+    "./text": {
+      "types": "./dist/text.d.ts",
+      "bun": "./src/text/index.ts",
+      "import": "./dist/text.js",
+      "default": "./dist/text.js"
+    },
     "./types": {
       "types": "./dist/types.d.ts",
       "bun": "./src/types.ts",
@@ -127,7 +133,7 @@
     },
     "./text-picture": {
       "types": "./dist/text-picture.d.ts",
-      "bun": "./src/text-picture.ts",
+      "bun": "./src/text/picture.ts",
       "import": "./dist/text-picture.js",
       "default": "./dist/text-picture.js"
     },
@@ -199,7 +205,7 @@
     },
     "./text-direction": {
       "types": "./dist/text-direction.d.ts",
-      "bun": "./src/text-direction.ts",
+      "bun": "./src/text/direction.ts",
       "import": "./dist/text-direction.js",
       "default": "./dist/text-direction.js"
     }

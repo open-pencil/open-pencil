@@ -8,10 +8,30 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import type { FigmaFontName } from '#core/figma-api/fonts'
-import { getFontName, setFontName } from '#core/figma-api/text'
+import { getFontName, paragraphStylesForCharacters, setFontName } from '#core/figma-api/text'
 
 function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
   return target[internals.graph] as SceneGraph
+}
+
+/** Getter/setter pair for a spacing Figma keeps at zero or more. */
+function spacing(
+  internals: NodeProxyInternals,
+  name: 'listSpacing' | 'paragraphSpacing' | 'paragraphIndent'
+) {
+  return {
+    get(this: ProxyThis): number {
+      return raw(this, internals)[name]
+    },
+    set(this: ProxyThis, value: number) {
+      if (!(value >= 0)) {
+        throw new Error(
+          `in set_${name}: Property "${name}" failed validation: Number must be greater than or equal to 0`
+        )
+      }
+      updateNode(this, internals, { [name]: value })
+    }
+  }
 }
 
 /** Getter/setter pair for a text property stored verbatim on the node. */
@@ -36,7 +56,8 @@ export function installTextNodeProxyAccessors(
         return raw(this, internals).text
       },
       set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { text: value })
+        const textParagraphs = paragraphStylesForCharacters(raw(this, internals), value)
+        updateNode(this, internals, { text: value, textParagraphs })
       }
     },
     fontName: {
@@ -66,6 +87,10 @@ export function installTextNodeProxyAccessors(
     textCase: field(internals, 'textCase'),
     textDecoration: field(internals, 'textDecoration'),
     maxLines: field(internals, 'maxLines'),
+    listSpacing: spacing(internals, 'listSpacing'),
+    paragraphSpacing: spacing(internals, 'paragraphSpacing'),
+    paragraphIndent: spacing(internals, 'paragraphIndent'),
+    hangingList: field(internals, 'hangingList'),
     textTruncation: field(internals, 'textTruncation'),
     autoRename: field(internals, 'autoRename')
   })

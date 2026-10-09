@@ -142,7 +142,12 @@ export function createTextActions(ctx: EditorContext) {
       return
     }
     const result = { nodeId: textState.nodeId, text: textState.text }
-    const before = activeSession?.before ?? { text: '', styleRuns: [], size: {} }
+    const before = activeSession?.before ?? {
+      text: '',
+      styleRuns: [],
+      textParagraphs: [],
+      size: {}
+    }
     const beforePathText = activeSession?.beforePathText ?? null
     const node = ctx.graph.getNode(result.nodeId)
     const after = snapshotTextNode(node, result.text)
@@ -166,6 +171,7 @@ export function createTextActions(ctx: EditorContext) {
     updateTextEditNode(result.nodeId, {
       text: after.text,
       styleRuns: after.styleRuns,
+      textParagraphs: after.textParagraphs,
       ...sizeChanges
     })
     const afterPathText = snapshotPathText(
@@ -187,6 +193,7 @@ export function createTextActions(ctx: EditorContext) {
           ctx.graph.updateNode(result.nodeId, {
             text: after.text,
             styleRuns: after.styleRuns,
+            textParagraphs: after.textParagraphs,
             ...after.size,
             ...afterPathText
           })
@@ -196,6 +203,7 @@ export function createTextActions(ctx: EditorContext) {
           ctx.graph.updateNode(result.nodeId, {
             text: before.text,
             styleRuns: before.styleRuns,
+            textParagraphs: before.textParagraphs,
             ...before.size,
             ...beforePathText
           })

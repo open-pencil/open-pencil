@@ -49,11 +49,6 @@ import {
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
 import { toKiwiWindingRule } from './vector/geometry'
 
-function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
-  const lineCount = Math.max(1, text.split('\n').length)
-  return Array.from({ length: lineCount }, () => ({ lineType: 'PLAIN' }))
-}
-
 function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
   const anyIndividual =
     node.topLeftRadius > 0 ||
@@ -84,6 +79,14 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
   }
 }
 
+/** Paragraph spacing and list layout, which `.fig` keeps beside the lines in `textData`. */
+function serializeParagraphProps(node: SceneNode, nc: KiwiNodeChange): void {
+  if (node.paragraphSpacing !== 0) nc.paragraphSpacing = node.paragraphSpacing
+  if (node.paragraphIndent !== 0) nc.paragraphIndent = node.paragraphIndent
+  if (node.listSpacing !== 0) nc.listSpacing = node.listSpacing
+  if (node.hangingList) nc.hangingList = true
+}
+
 function serializeTextProps(
   node: SceneNode,
   nc: KiwiNodeChange,
@@ -104,7 +107,7 @@ function serializeTextProps(
     style: weightToFigmaStyle(node.fontWeight, node.italic),
     postscript: ''
   }
-  nc.textData = exportTextData(node, textLines, fillToKiwiPaint)
+  nc.textData = exportTextData(node, fillToKiwiPaint)
   if (node.fontVariations.length > 0) {
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
@@ -127,6 +130,7 @@ function serializeTextProps(
   if (node.textCase !== 'ORIGINAL') nc.textCase = node.textCase
   if (node.textTruncation === 'ENDING') nc.textTruncation = 'ENDING'
   if (node.maxLines != null) nc.maxLines = node.maxLines
+  serializeParagraphProps(node, nc)
   if (fontDigestMap) {
     nc.derivedTextData = buildNodeDerivedTextData(node, {
       digestMap: fontDigestMap,

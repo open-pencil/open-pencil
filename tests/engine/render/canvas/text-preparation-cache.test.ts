@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { CanvasKit, Paragraph } from 'canvaskit-wasm'
+import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import { buildParagraph, nodeFontReadiness } from '#core/canvas/text'
+import { TextLayout } from '#core/canvas/text/layout/text-layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph-inputs'
 import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
 import { fontManager } from '#core/text/fonts'
@@ -22,18 +23,18 @@ async function fixture(maxEntries = 8, maxUnits = 1000) {
     height: 50
   })
   const cache = new TextPreparationCache(maxEntries, maxUnits)
-  const built: Paragraph[] = []
+  const built: TextLayout[] = []
   function build() {
     const builder = ck.ParagraphBuilder.MakeFromFontProvider(
       new ck.ParagraphStyle({ textStyle: { fontSize: 16 } }),
       provider
     )
     builder.addText(node.text)
-    const paragraph = builder.build()
+    const layout = TextLayout.ofParagraph(ck, builder.build(), node.text.length)
     builder.delete()
-    paragraph.layout(node.width)
-    built.push(paragraph)
-    return paragraph
+    layout.layout(node.width)
+    built.push(layout)
+    return layout
   }
   function use(variant = 'draw', generation = 1) {
     return cache.use(node, variant, generation, provider, build, ({ paragraph }) =>
@@ -234,6 +235,11 @@ describe('text preparation cache', () => {
         ],
         textTruncation: 'ENDING',
         maxLines: 2,
+        textParagraphs: [{ listType: 'UNORDERED', indentation: 1 }],
+        listSpacing: 4,
+        paragraphSpacing: 6,
+        paragraphIndent: 8,
+        hangingList: true,
         textAutoResize: 'WIDTH_AND_HEIGHT',
         width: 100,
         height: 80,

@@ -221,6 +221,16 @@ export interface AssetRef {
 
 export type StyleReference = { guid: GUID; assetRef?: never } | { guid?: never; assetRef: AssetRef }
 
+/** One paragraph of a text: whether it is a list item, and how deeply it nests. */
+export interface TextLineData {
+  lineType?: 'PLAIN' | 'ORDERED_LIST' | 'UNORDERED_LIST' | 'BLOCKQUOTE' | 'HEADER'
+  styleId?: number
+  indentationLevel?: number
+  sourceDirectionality?: string
+  listStartOffset?: number
+  isFirstLineOfList?: boolean
+}
+
 export interface NodeChange {
   [key: string]: unknown
   guid?: GUID
@@ -288,7 +298,7 @@ export interface NodeChange {
   textAutoResize?: string
   textData?: {
     characters: string
-    lines?: Array<{ lineType?: string; styleId?: number; indentationLevel?: number }>
+    lines?: TextLineData[]
     characterStyleIDs?: number[]
     styleOverrideTable?: NodeChange[]
   }
@@ -307,7 +317,8 @@ export interface NodeChange {
       commandsBlob?: number
       position: Vector
       fontSize: number
-      firstCharacter: number
+      /** The character the glyph draws; Figma leaves it out for list markers. */
+      firstCharacter?: number
       advance: number
       /** Radians along the text path; kiwi omits the field for axis-aligned text. */
       rotation?: number
@@ -356,6 +367,10 @@ export interface NodeChange {
   emojiImageSet?: string
   lineHeight?: { value: number; units: string }
   letterSpacing?: { value: number; units: string }
+  paragraphSpacing?: number
+  paragraphIndent?: number
+  listSpacing?: number
+  hangingList?: boolean
   // Symbol/Instance
   symbolData?: { symbolID: GUID }
   // ComponentSet

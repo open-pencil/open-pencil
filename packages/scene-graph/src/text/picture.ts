@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import { TEXT_SHAPING_FIELDS, TEXT_LAYOUT_FIELDS } from './fields/text'
-import type { SceneNode } from './types'
+import { TEXT_SHAPING_FIELDS, TEXT_LAYOUT_FIELDS } from '../fields/text'
+import type { SceneNode } from '../types'
 
 /**
  * Invalidate cached Skia textPicture (Paragraph snapshot). Includes width/height

@@ -26,6 +26,7 @@ import {
   readNodeChangePluginData
 } from './plugin-data'
 import { importStyleRuns } from './style/runs'
+import { importParagraphStyles } from './text/lines'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
 import {
   alignGeometryWindingRules,
@@ -316,6 +317,11 @@ type TextProps = Pick<
   | 'lineHeight'
   | 'letterSpacing'
   | 'maxLines'
+  | 'textParagraphs'
+  | 'listSpacing'
+  | 'paragraphSpacing'
+  | 'paragraphIndent'
+  | 'hangingList'
   | 'styleRuns'
   | 'fontVariations'
   | 'fontFeatures'
@@ -346,6 +352,21 @@ function convertTextDecorationProps(
   }
 }
 
+function convertParagraphProps(
+  nc: NodeChange
+): Pick<
+  SceneNode,
+  'textParagraphs' | 'listSpacing' | 'paragraphSpacing' | 'paragraphIndent' | 'hangingList'
+> {
+  return {
+    textParagraphs: importParagraphStyles(nc.textData?.lines),
+    listSpacing: nc.listSpacing ?? 0,
+    paragraphSpacing: nc.paragraphSpacing ?? 0,
+    paragraphIndent: nc.paragraphIndent ?? 0,
+    hangingList: nc.hangingList ?? false
+  }
+}
+
 function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   return {
     text: nc.textData?.characters ?? '',
@@ -366,6 +387,7 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     lineHeight: importedTextLineHeight(nc),
     letterSpacing: convertLetterSpacing(nc.letterSpacing, nc.fontSize),
     maxLines: (nc.maxLines ?? null) as number | null,
+    ...convertParagraphProps(nc),
     styleRuns: importStyleRuns(nc),
     fontVariations: convertFontVariations(nc),
     fontFeatures: convertFontFeatures(nc),

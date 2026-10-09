@@ -108,3 +108,15 @@ const _slotSurfaceMatch: SlotSurfaceMatch = true
 // `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
 type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
 const _effectShapeMatch: EffectShapeMatch = true
+
+type TextListKeys =
+  | 'setRangeListOptions'
+  | 'setRangeIndentation'
+  | 'listSpacing'
+  | 'paragraphSpacing'
+  | 'paragraphIndent'
+  | 'hangingList'
+type TextListSurfaceMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, TextListKeys>, Pick<TextNode, TextListKeys>>
+>
+const _textListSurfaceMatch: TextListSurfaceMatch = true

@@ -1,4 +1,4 @@
-import { textCacheInvalidationChanges } from './text-picture'
+import { textCacheInvalidationChanges } from './text/picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
 

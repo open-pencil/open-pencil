@@ -235,6 +235,15 @@ export type TextDecorationStyle = 'SOLID' | 'DOTTED' | 'WAVY'
 export type LeadingTrim = 'NONE' | 'CAP_HEIGHT'
 export type TextDirection = 'AUTO' | 'LTR' | 'RTL'
 export type LayoutDirection = 'AUTO' | 'LTR' | 'RTL'
+/** Whether a paragraph is an item of a numbered list, a bulleted list, or no list. */
+export type TextListType = 'NONE' | 'ORDERED' | 'UNORDERED'
+
+/** How one paragraph of a text node (a line ending at a newline) sits in a list. */
+export interface TextParagraphStyle {
+  listType: TextListType
+  /** Nesting level: 1–5 for list items; kept but not drawn for plain paragraphs. */
+  indentation: number
+}
 
 export interface FontVariation {
   axis: string
@@ -484,6 +493,19 @@ export interface SceneNode {
   lineHeight: number | null
   letterSpacing: number
   maxLines: number | null
+  /**
+   * One entry per paragraph of `text`, in order. Missing entries are plain paragraphs, so text
+   * without lists keeps this empty.
+   */
+  textParagraphs: TextParagraphStyle[]
+  /** Space between two list items. */
+  listSpacing: number
+  /** Space between paragraphs other than two list items. */
+  paragraphSpacing: number
+  /** Indent of the first line of each plain paragraph. */
+  paragraphIndent: number
+  /** Whether list markers hang outside the text box instead of indenting the items. */
+  hangingList: boolean
 
   styleRuns: StyleRun[]
   fontVariations: FontVariation[]
