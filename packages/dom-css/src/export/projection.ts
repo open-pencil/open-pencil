@@ -258,6 +258,22 @@ function addLayoutChild(
   if (node.rotation !== 0) style.transform = `rotate(${node.rotation}deg)`
 }
 
+const SIZE_PROPERTIES = ['width', 'height', 'min-width', 'max-width', 'min-height', 'max-height']
+
+/**
+ * A layer's size includes its padding and stroke, as auto layout measures it. CSS sizes the
+ * content box unless told otherwise, so a sized box with padding or a border says so.
+ */
+function addBoxSizing(style: DesignStyleDeclaration): void {
+  const sized = SIZE_PROPERTIES.some((property) => Object.hasOwn(style, property))
+  const boxed = Object.keys(style).some(
+    (property) =>
+      property.startsWith('padding') ||
+      (property.startsWith('border') && !property.endsWith('radius'))
+  )
+  if (sized && boxed) style['box-sizing'] = 'border-box'
+}
+
 function styleFromSceneNode(
   node: SceneNode,
   parent: SceneNode | undefined,
@@ -297,6 +313,7 @@ function styleFromSceneNode(
     addPadding(style, node, css)
   }
 
+  addBoxSizing(style)
   return style
 }
 

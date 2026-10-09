@@ -191,8 +191,9 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(card?.type).toBe('FRAME')
     if (card?.type !== 'FRAME') return
-    expect(card.width).toBe(320)
-    expect(card.height).toBe(180)
+    // CSS sizes the content box: padding and borders come on top.
+    expect(card.width).toBe(320 + 2 * 24 + 2 * 1)
+    expect(card.height).toBe(180 + 2 * 24 + 2 * 1)
     expect(card.layoutMode).toBe('VERTICAL')
     expect(card.itemSpacing).toBe(12)
     expect(card.paddingLeft).toBe(24)
@@ -221,8 +222,8 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(card?.type).toBe('FRAME')
     if (card?.type !== 'FRAME') return
     expect(card.name).toBe('card')
-    expect(card.width).toBe(280)
-    expect(card.height).toBe(140)
+    expect(card.width).toBe(280 + 2 * 20)
+    expect(card.height).toBe(140 + 2 * 20)
     expect(card.itemSpacing).toBe(10)
     expect(card.paddingLeft).toBe(20)
     expect(graph.getChildren(page.id)).toHaveLength(1)
@@ -243,7 +244,7 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(input?.type).toBe('FRAME')
     if (navbar?.type !== 'FRAME' || input?.type !== 'FRAME') return
     expect(navbar.primaryAxisAlign).toBe('SPACE_BETWEEN')
-    expect(input.width).toBe(312)
+    expect(input.width).toBe(312 + 2 * 12 + 2 * 1)
     expect(input.paddingLeft).toBe(12)
 
     const badge = graph.getChildren(navbar.id)[1]

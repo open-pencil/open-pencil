@@ -110,6 +110,22 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(section.inlineStyle?.width).toBe('320px')
   })
 
+  it('applies the universal selector below any tag or class', async () => {
+    const runtime = createHeadlessCSSRuntime()
+    const parsed = runtime.parseHTML('<div class="card"><p>Text</p></div>')
+    const document = await runtime.computeStyles(
+      parsed,
+      `*, ::before, ::after { box-sizing: border-box; margin: 0; }
+       p { margin: 4px; }`
+    )
+    const card = document.children[0]
+    expect(card?.type).toBe('element')
+    if (card?.type !== 'element') return
+    expect(card.computedStyle?.['box-sizing']).toBe('border-box')
+    const text = card.children.find((child) => child.type === 'element')
+    expect(text?.type === 'element' ? text.computedStyle?.margin : undefined).toBe('4px')
+  })
+
   it('computes selector specificity, inheritance, and shorthands', async () => {
     const runtime = createHeadlessCSSRuntime()
     const parsed = runtime.parseHTML(`

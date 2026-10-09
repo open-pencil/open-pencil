@@ -8,18 +8,18 @@ import {
   type Stroke
 } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
-import {
-  parseCSSAlignItems,
-  parseCSSAlignSelf,
-  parseCSSFlexDirection,
-  parseCSSJustifyContent,
-  parseCSSNumber,
-  parseCSSShadows
-} from '@open-pencil/scene-graph/css'
+import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
+import {
+  applyContainerLayout,
+  applyFlowSizing,
+  elementDisplay,
+  flowOf,
+  type ParentFlow
+} from './flow'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
@@ -198,6 +198,40 @@ function applyPositioning(node: SceneNode, style: DesignStyleDeclaration): void 
   if (top !== null) node.y = top
 }
 
+/**
+ * What CSS adds outside an explicit size: padding and borders, unless `box-sizing: border-box`
+ * puts them inside it as auto layout does.
+ */
+function contentBoxExtras(style: DesignStyleDeclaration): { width: number; height: number } {
+  if (pickStyle(style, 'box-sizing')?.trim() === 'border-box') return { width: 0, height: 0 }
+  // Counted where a border is drawn: it has a color and is not turned off.
+  const borderStyle = borderStyleFromCSS(style)
+  const bordered =
+    firstStrokeColor(style) !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
+  const side = (name: 'top' | 'right' | 'bottom' | 'left', axis: 'block' | 'inline') =>
+    (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
+    (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
+  return {
+    width: side('left', 'inline') + side('right', 'inline'),
+    height: side('top', 'block') + side('bottom', 'block')
+  }
+}
+
+/** Explicit sizes count the padding and borders CSS places outside them. */
+function applyBoxSizing(node: SceneNode, style: DesignStyleDeclaration): void {
+  const extras = contentBoxExtras(style)
+  if (extras.width > 0) {
+    if (firstCSSNumber(style, 'width') !== null) node.width += extras.width
+    if (node.minWidth !== null) node.minWidth += extras.width
+    if (node.maxWidth !== null) node.maxWidth += extras.width
+  }
+  if (extras.height > 0) {
+    if (firstCSSNumber(style, 'height') !== null) node.height += extras.height
+    if (node.minHeight !== null) node.minHeight += extras.height
+    if (node.maxHeight !== null) node.maxHeight += extras.height
+  }
+}
+
 function applyPadding(node: SceneNode, style: DesignStyleDeclaration): void {
   node.paddingTop = firstCSSNumber(style, 'padding-top', 'padding-block', 'padding') ?? 0
   node.paddingRight = firstCSSNumber(style, 'padding-right', 'padding-inline', 'padding') ?? 0
@@ -263,6 +297,7 @@ function applyElementStyle(
   style: DesignStyleDeclaration
 ): void {
   setNodeBox(node, style)
+  applyBoxSizing(node, style)
   applyPositioning(node, style)
   applyPadding(node, style)
 
@@ -297,15 +332,6 @@ function applyElementStyle(
 
   const alignSelf = parseCSSAlignSelf(pickStyle(style, 'align-self')) ?? 'AUTO'
   if (alignSelf !== 'AUTO') node.layoutAlignSelf = alignSelf
-
-  const display = pickStyle(style, 'display')
-  if (display === 'flex' || display === 'inline-flex') {
-    node.layoutMode = parseCSSFlexDirection(pickStyle(style, 'flex-direction')) ?? 'HORIZONTAL'
-    node.primaryAxisAlign = parseCSSJustifyContent(pickStyle(style, 'justify-content')) ?? 'MIN'
-    node.counterAxisAlign = parseCSSAlignItems(pickStyle(style, 'align-items')) ?? 'MIN'
-    node.layoutWrap = pickStyle(style, 'flex-wrap') === 'wrap' ? 'WRAP' : 'NO_WRAP'
-    applyFlexGap(node, style)
-  }
 }
 
 function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
@@ -358,15 +384,13 @@ function createTextNode(
   graph: SceneGraph,
   parentId: string,
   text: string,
-  style: DesignStyleDeclaration
+  style: DesignStyleDeclaration,
+  display: string,
+  parentFlow: ParentFlow
 ) {
-  const node = graph.createNode('TEXT', parentId, {
-    name: text.slice(0, 32) || 'Text',
-    text,
-    width: Math.max(text.length * 8, 1),
-    height: 20
-  })
+  const node = graph.createNode('TEXT', parentId, { name: text.slice(0, 32) || 'Text', text })
   applyTextStyle(node, style)
+  applyFlowSizing(graph, node, style, display, parentFlow)
   return node
 }
 
@@ -413,14 +437,25 @@ function hasBoxStyle(style: DesignStyleDeclaration): boolean {
   ].some((property) => pickStyle(style, property) !== undefined)
 }
 
-function createElementNode(graph: SceneGraph, parentId: string, element: DesignElement): SceneNode {
+function hasContent(element: DesignElement): boolean {
+  return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
+}
+
+function createElementNode(
+  graph: SceneGraph,
+  parentId: string,
+  element: DesignElement,
+  parentFlow: ParentFlow
+): SceneNode | null {
   const style = mergedStyle(element)
+  const display = elementDisplay(element, style)
+  if (display === 'none') return null
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(style) &&
     element.children.every((child) => child.type === 'text')
   ) {
-    return createTextNode(graph, parentId, textContent(element), style)
+    return createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
   }
 
   const node = graph.createNode('FRAME', parentId, {
@@ -428,9 +463,16 @@ function createElementNode(graph: SceneGraph, parentId: string, element: DesignE
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
+  // A box without content keeps its own size, as an image does, unless it declares a layout.
+  const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
+  if (flow) {
+    applyContainerLayout(node, element, style, flow)
+    if (flow === 'flex') applyFlexGap(node, style)
+  }
+  applyFlowSizing(graph, node, style, display, parentFlow)
 
   for (const child of element.children) {
-    createDesignNode(graph, node.id, child, style)
+    createDesignNode(graph, node.id, child, flow ?? 'none', style)
   }
 
   return node
@@ -440,14 +482,17 @@ function createDesignNode(
   graph: SceneGraph,
   parentId: string,
   node: DesignNode,
+  parentFlow: ParentFlow,
   inheritedStyle: DesignStyleDeclaration = {}
 ): SceneNode | null {
   if (node.type === 'text') {
     if (node.text.trim().length === 0) return null
-    return createTextNode(graph, parentId, node.text, inheritedStyle)
+    // Text runs in block flow and flex containers are blocks of their own, as CSS boxes them.
+    const display = parentFlow === 'inline' ? 'inline' : 'block'
+    return createTextNode(graph, parentId, node.text, inheritedStyle, display, parentFlow)
   }
 
-  return createElementNode(graph, parentId, node)
+  return createElementNode(graph, parentId, node, parentFlow)
 }
 
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
@@ -467,7 +512,7 @@ export function designDocumentToSceneGraph(
   page.name = options.pageName ?? 'DesignDOM'
 
   for (const child of document.children) {
-    createDesignNode(graph, page.id, child)
+    createDesignNode(graph, page.id, child, 'none')
   }
 
   fitPageToChildren(page, graph)

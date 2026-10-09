@@ -123,6 +123,8 @@ function expandStyleShorthands(style: DesignStyleDeclaration): DesignStyleDeclar
   const result = { ...style }
   expandBoxShorthand(result, 'margin')
   expandBoxShorthand(result, 'padding')
+  expandLogicalShorthand(result, 'margin')
+  expandLogicalShorthand(result, 'padding')
   expandBorderShorthand(result)
   expandBackgroundShorthand(result)
   return result
@@ -140,6 +142,24 @@ function expandBoxShorthand(style: DesignStyleDeclaration, property: 'margin' | 
   style[`${property}-right`] ??= right
   style[`${property}-bottom`] ??= bottom
   style[`${property}-left`] ??= left
+}
+
+/**
+ * `padding-inline` and `padding-block` as the physical sides they set in left-to-right,
+ * horizontal text, so a rule that sets them overrides a less specific rule's sides.
+ */
+function expandLogicalShorthand(style: DesignStyleDeclaration, property: 'margin' | 'padding') {
+  for (const [axis, start, end] of [
+    ['inline', 'left', 'right'],
+    ['block', 'top', 'bottom']
+  ] as const) {
+    const value = style[`${property}-${axis}`]
+    if (!value) continue
+    const [first, second = first] = splitCSSValue(value)
+    if (!first || !second) continue
+    style[`${property}-${start}`] ??= first
+    style[`${property}-${end}`] ??= second
+  }
 }
 
 function expandBorderShorthand(style: DesignStyleDeclaration) {
@@ -180,7 +200,7 @@ function selectorSpecificity(selector: string): number {
   const classCount = selector.match(/\.[\w-]+/g)?.length ?? 0
   const tagCount = selector
     .split(/[\s>]+/)
-    .filter((part) => part && !part.startsWith('.') && !part.startsWith('#')).length
+    .filter((part) => part && part !== '*' && !part.startsWith('.') && !part.startsWith('#')).length
   return idCount * 100 + classCount * 10 + tagCount
 }
 
@@ -195,7 +215,8 @@ function matchesSimpleSelector(element: DesignElement, selector: string): boolea
   if (!classes.every((name) => elementClasses.has(name.slice(1)))) return false
 
   const tag = selector.replace(/#[\w-]+/g, '').replace(/\.[\w-]+/g, '')
-  return tag.length === 0 || element.tagName.toLowerCase() === tag.toLowerCase()
+  // The universal selector, as Tailwind's preflight uses for `box-sizing`, matches any element.
+  return tag.length === 0 || tag === '*' || element.tagName.toLowerCase() === tag.toLowerCase()
 }
 
 function matchesSelector(
