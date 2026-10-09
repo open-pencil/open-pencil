@@ -39,6 +39,7 @@ function buttonGraph() {
 
 interface Story {
   name: string
+  tags?: string[]
   args: Record<string, string | boolean>
   parameters?: { design: { name: string; type: string; url: string }[] }
 }
@@ -46,6 +47,7 @@ interface Story {
 interface StoryModule {
   default: {
     title: string
+    tags: string[]
     args: Record<string, string | boolean>
     argTypes: Record<string, unknown>
     render: (args: object) => string
@@ -90,6 +92,20 @@ describe('exportStorybook', () => {
     expect(large).toContain('width: 160px')
     expect(large).toContain('&lt;b&gt;Large&lt;/b&gt;')
     expect(() => story.default.render({ Size: 'Huge' })).toThrow('Button has no variant ["Huge"]')
+  })
+
+  it('tags its stories so Storybook can show one per component, or hide a page', async () => {
+    const { graph } = buttonGraph()
+    const [file] = await exportStorybook(graph, { framework: 'html' })
+    const story = await importStory(String(file?.content))
+    expect(story.default.tags).toEqual(['openpencil', 'page:library'])
+    // The variant the design shows at rest is the Default story; each other one is a variant.
+    expect(storyExport(story, 'Default')).toMatchObject({
+      name: 'Default',
+      args: { Size: 'Small' }
+    })
+    expect(storyExport(story, 'Default').tags).toBeUndefined()
+    expect(storyExport(story, 'Large').tags).toEqual(['variant'])
   })
 
   it('gives a component with a behaviour its own props instead of variant selects', async () => {
@@ -252,7 +268,7 @@ describe('exportStorybook', () => {
     })
 
     expect(files.map((file) => file.path)).toEqual([
-      'Button.design/Small.png',
+      'Button.design/Default.png',
       'Button.design/Large.png',
       'Button.stories.ts'
     ])

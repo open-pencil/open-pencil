@@ -17,7 +17,7 @@ import {
   type StoryDesign,
   type StorybookFramework
 } from './module'
-import { claimName, identifierName, storyId } from './names'
+import { claimName, fileTags, identifierName, storyId, VARIANT_TAG } from './names'
 
 export { STORYBOOK_FRAMEWORKS, type StorybookFramework } from './module'
 
@@ -82,14 +82,15 @@ function designLink(
 function storyNames(group: StoryGroup): string[] {
   const taken = new Set<string>()
   const key = (name: string) => name.toLowerCase()
-  return group.variants.map((variant) => {
-    const text = group.props.length === 0 ? 'Default' : variant.values.join(' ')
+  return group.variants.map((variant, index) => {
+    // The first variant, the one the design shows at rest, is the file's Default story.
+    const text = index === 0 || group.props.length === 0 ? 'Default' : variant.values.join(' ')
     return claimName(identifierName(text, 'Variant'), taken, { key })
   })
 }
 
-function storyLabel(group: StoryGroup, values: string[]): string {
-  if (group.props.length === 0) return 'Default'
+function storyLabel(group: StoryGroup, values: string[], index: number): string {
+  if (index === 0 || group.props.length === 0) return 'Default'
   return group.props.map((prop, i) => `${prop.name}=${values[i] ?? ''}`).join(', ')
 }
 
@@ -116,6 +117,7 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
   return printStoryModule({
     framework: context.framework,
     title: group.title,
+    tags: fileTags(group.page.name),
     name: group.name,
     props: group.props,
     variants: group.variants.map((variant) => ({
@@ -133,7 +135,8 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     images: context.images,
     stories: group.variants.map((variant, i) => ({
       exportName: context.storyNames[i] ?? '',
-      label: storyLabel(group, variant.values),
+      label: storyLabel(group, variant.values, i),
+      tags: i === 0 ? [] : [VARIANT_TAG],
       values: variant.values,
       design: [
         ...designLink(context, variant.node.name, group.linkNode),
@@ -252,6 +255,7 @@ export async function exportStorybook(
         printComponentStories({
           storybook: STORYBOOK_PACKAGES[framework],
           title: group.title,
+          tags: fileTags(group.page.name),
           component,
           generated,
           design: design.flatMap((entry) =>

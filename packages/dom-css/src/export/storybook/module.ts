@@ -27,6 +27,8 @@ export interface StoryProp {
 export interface StoryModuleData {
   framework: StorybookFramework
   title: string
+  /** Tags on the whole file, which its stories inherit. */
+  tags: string[]
   /** Group name used in the missing-variant error. */
   name: string
   props: StoryProp[]
@@ -34,7 +36,13 @@ export interface StoryModuleData {
   metaDesign: StoryDesign[]
   /** Import path of each design image, by variant index. */
   images: string[]
-  stories: { exportName: string; label: string; values: string[]; design: StoryDesign[] }[]
+  stories: {
+    exportName: string
+    label: string
+    values: string[]
+    design: StoryDesign[]
+    tags: string[]
+  }[]
 }
 
 export type StoryDesign =
@@ -58,6 +66,7 @@ const MODULE = es.parseModule(dedent`
 
   const meta = {
     title: $title,
+    tags: $tags,
     parameters: $parameters,
     args: $args,
     argTypes: $argTypes,
@@ -226,6 +235,7 @@ export function printStoryModule(data: StoryModuleData): string {
     $key: es.array(data.props.map((prop) => propValue(data, prop))),
     $missing: es.string(`${data.name} has no variant `),
     $title: es.string(data.title),
+    $tags: es.array(data.tags.map(es.string)),
     $parameters: data.metaDesign.length > 0 ? parameters(data.metaDesign) : es.OMIT,
     $args: argsObject(data, data.variants[0]?.values ?? []),
     $argTypes: argTypes(data),
@@ -241,6 +251,9 @@ export function printStoryModule(data: StoryModuleData): string {
         $name: es.identifier(story.exportName),
         $story: es.object([
           ['name', es.string(story.label)],
+          ...(story.tags.length > 0
+            ? [['tags', es.array(story.tags.map(es.string))] as const]
+            : []),
           ...(story.design.length > 0 ? [['parameters', parameters(story.design)] as const] : []),
           ['args', argsObject(data, story.values)]
         ])

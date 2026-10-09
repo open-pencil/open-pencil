@@ -37,3 +37,15 @@ export function storyId(title: string): string {
     .replace(/^-+/, '')
     .replace(/-+$/, '')
 }
+
+/**
+ * Tags a story file carries, which Storybook's sidebar filter and `main.ts` `tags` options
+ * select by: every exported file, and the page it comes from.
+ */
+export const fileTags = (page: string) => ['openpencil', `page:${storyId(page)}`]
+
+/**
+ * The tag every story but a file's first carries: each other variant or state. Excluding it
+ * in Storybook leaves one story per component, the one the design shows at rest.
+ */
+export const VARIANT_TAG = 'variant'

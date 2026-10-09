@@ -152,6 +152,20 @@ openpencil export design.pen -f storybook -o src/stories --watch  # re-export on
 openpencil export 'src/**/*.pen' -f storybook --beside --watch    # stories next to each design
 ```
 
+### Fewer stories in the sidebar
+
+Each story file opens with a `Default` story, the variant the design shows at rest, with every control. Every other variant or state story is tagged `variant`, and each file is tagged `openpencil` and `page:<page>`, such as `page:icons`. Storybook's sidebar filter selects by these tags, and `.storybook/main.ts` can set what it shows by default, such as one story per component and no icons page:
+
+```ts
+const config: StorybookConfig = {
+  // …
+  tags: {
+    variant: { defaultFilterSelection: 'exclude' },
+    'page:icons': { excludeFromSidebar: true }
+  }
+}
+```
+
 ### Designs next to their stories
 
 Keep each component's design file in the component's folder and export with `--beside`: each document's stories, design images, and `.openpencil-stories.json` manifest go into that document's own folder, next to the component's code. A Storybook `stories` glob such as `../src/**/*.stories.ts` in `.storybook/main.ts` then picks them up without further configuration.

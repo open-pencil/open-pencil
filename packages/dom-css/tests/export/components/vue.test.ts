@@ -295,4 +295,13 @@ describe('generated Vue stories', () => {
     expect(stories.Checked?.args).toEqual({ checked: true })
     expect(typeof stories.Default?.play).toBe('function')
   })
+
+  test('tag every state after Default, so Storybook can show one story per component', async () => {
+    const { stories } = await generate(switchSet())
+    const tags = (name: string) => (stories[name] as { tags?: string[] } | undefined)?.tags
+    expect((stories.default as { tags: string[] }).tags).toContain('openpencil')
+    expect(tags('Default')).toBeUndefined()
+    expect(tags('Checked')).toEqual(['variant'])
+    expect(tags('Disabled')).toEqual(['variant'])
+  })
 })
