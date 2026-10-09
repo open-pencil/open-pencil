@@ -8,7 +8,7 @@ export const deleteNode = defineTool({
 
   description: 'Delete a node by ID.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Node ID to delete'))
   }),
   execute: (figma, { id }) => {
@@ -24,7 +24,7 @@ export const cloneNode = defineTool({
 
   description: 'Clone (duplicate) a node.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Node ID to clone'))
   }),
   execute: (figma, { id }) => {
@@ -40,7 +40,7 @@ export const renameNode = defineTool({
 
   description: 'Rename a node in the layers panel.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     name: v.pipe(v.string(), v.description('New name'))
   }),
@@ -69,7 +69,7 @@ export const nodeMove = defineTool({
 
   description: 'Move a node to new coordinates.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     x: toolNumber(v.pipe(v.number(), v.description('X position'))),
     y: toolNumber(v.pipe(v.number(), v.description('Y position')))
@@ -88,7 +88,7 @@ export const nodeResize = defineTool({
 
   description: 'Resize a node.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width'))),
     height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height')))

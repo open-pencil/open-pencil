@@ -11,7 +11,7 @@ export const getFontStatus = defineTool({
     'loaded, and affected nodes.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({}),
+  input: v.strictObject({}),
   execute: (figma) => figma.getFontStatus()
 })
 
@@ -20,7 +20,7 @@ export const listFonts = defineTool({
   description: 'List fonts used in the current page.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     family: v.optional(v.pipe(v.string(), v.description('Filter by family name (substring)')))
   }),
   execute: (figma, args) => {
@@ -57,7 +57,7 @@ export const listAvailableFonts = defineTool({
     'which only reports families currently used in the page.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     family: v.optional(
       v.pipe(v.string(), v.description('Filter by family name (substring, case-insensitive)'))
     )

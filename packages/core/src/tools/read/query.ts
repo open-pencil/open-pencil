@@ -18,7 +18,7 @@ Examples:
 //TEXT[contains(@text, 'Hello')] — text nodes containing "Hello"`,
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     selector: v.pipe(v.string(), v.description('XPath selector')),
     page: v.optional(v.pipe(v.string(), v.description('Page name (default: current page)'))),
     limit: v.optional(toolNumber(v.pipe(v.number(), v.description('Max results (default: 1000)'))))

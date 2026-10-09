@@ -37,7 +37,7 @@ export const analyzeColors = defineTool({
   description:
     'Analyze color palette usage across the current page. Shows frequency, variable bindings, and optionally clusters similar colors.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     limit: analysisLimitInput,
     show_similar: v.optional(
       v.pipe(v.boolean(), v.description('Include similar-color clusters for potential merging'))

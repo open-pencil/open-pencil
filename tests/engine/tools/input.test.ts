@@ -63,13 +63,14 @@ describe('native tool input contracts', () => {
     { name: 'update_node', field: 'font_weight', invalid: [99, 901], valid: [100, 900] }
   ])('$name validates $field before execution', ({ name, field, invalid, valid }) => {
     const input = getTool(name).input
+    const base = 'id' in input.entries ? { id: 'node' } : {}
     for (const value of invalid) {
-      expect(v.safeParse(input, { id: 'node', [field]: value }).success).toBe(false)
-      expect(v.safeParse(input, { id: 'node', [field]: String(value) }).success).toBe(false)
+      expect(v.safeParse(input, { ...base, [field]: value }).success).toBe(false)
+      expect(v.safeParse(input, { ...base, [field]: String(value) }).success).toBe(false)
     }
     for (const value of valid) {
-      expect(v.safeParse(input, { id: 'node', [field]: value }).success).toBe(true)
-      expect(v.safeParse(input, { id: 'node', [field]: String(value) }).success).toBe(true)
+      expect(v.safeParse(input, { ...base, [field]: value }).success).toBe(true)
+      expect(v.safeParse(input, { ...base, [field]: String(value) }).success).toBe(true)
     }
   })
 

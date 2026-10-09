@@ -35,6 +35,7 @@
 - `buildDerivedTextDataV4` is removed from `@open-pencil/core`, and `sceneNodeToKiwi` no longer writes glyph outlines by itself: pass the `runtime` that `withFigExportRuntime(graph, canvasKit, write)` hands its callback. In `@open-pencil/fig/node-change`, `FigNodeChangeExportRuntime` takes `shapeText(node)` instead of `getGlyphOutlineMetrics`, `buildDerivedTextData` takes the `baselines` it writes, and `convertFigmaDerivedTextGlyphs` takes the text's characters.
 - The `updates` messages from `@open-pencil/vue` no longer include `availableTitle`, `installPrompt`, `installedTitle`, and `downloading`, which only the system update dialogs and download toast used; `installed` now takes only `{ version }`, and `install` reads "Install Update". The Software Update window uses the new `windowTitle`, `currentVersion`, `whatsNew`, `installAndRestart`, `restartNow`, and related messages.
 - `fetchIcon`, `fetchIcons`, `searchIcons`, `searchIconsBatch`, and `clearIconCache` are removed from `@open-pencil/core`. Icons come from an `IconProvider` instead: `iconify` is the default Iconify provider, `createIconifyProvider()` makes one with its own cache, and `placeIcon` places an icon that keeps its name. A custom provider also implements `previews()`, `collections()`, and `browse()`, which give pickers each icon's SVG markup, the sets, and a set's icons.
+- `defineTool` from `@open-pencil/core/tools` takes its `input` as a `v.strictObject` instead of a `v.object`, and `ToolDef.input` is a strict object schema, so a tool rejects arguments it does not declare.
 
 ### Added
 
@@ -134,6 +135,7 @@
 
 ### Fixed
 
+- Reject an argument an AI, MCP, CLI, or WebMCP tool does not take, such as `properties: { y: 500 }` for `update_node` or `font: { family }` for `set_font`, and name it, instead of reporting success without changing anything (#977).
 - Keep memory flat while the AI chat or an MCP client edits a document (#587). Each edit kept two copies of its whole page in the undo history, about 10 MB a call on a 400-layer page, until the 200-step history limit, so long sessions grew until the app ran out of memory; an edit now keeps only the layers it changed, and undoing it leaves the other layers as they are.
 - Keep the new-tab button and the active tab in view when many documents are open. Tabs shrink before the tab bar scrolls, the clipped side fades with a chevron that scrolls to hidden tabs, and the new-tab button is a compact button beside the last tab instead of scrolling away with the tabs.
 - Show when the browser menubar has more menus than fit in the left panel. The clipped side fades out and a chevron scrolls to the hidden menus; before, Arrange and Text could be cut off with no sign the bar scrolls.

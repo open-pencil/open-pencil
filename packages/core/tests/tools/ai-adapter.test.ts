@@ -21,7 +21,7 @@ function adapt(output: unknown): ModelOutputTool {
     name: 'image_tool',
     description: 'Returns a fixed result',
     execution: { kind: 'sync', mutation: 'none' },
-    input: v.object({}),
+    input: v.strictObject({}),
     execute: () => output
   })
   const figma = new FigmaAPI(new SceneGraph())
@@ -95,7 +95,7 @@ async function runLogged(execute: () => unknown) {
     name: 'logged_tool',
     description: 'Runs the given body',
     execution: { kind: 'sync', mutation: 'none' },
-    input: v.object({}),
+    input: v.strictObject({}),
     execute
   })
   const figma = new FigmaAPI(new SceneGraph())

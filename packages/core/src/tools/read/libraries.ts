@@ -9,7 +9,7 @@ export const listLibraries = defineTool({
   description: 'List available published component libraries.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({}),
+  input: v.strictObject({}),
   execute: async (figma) => {
     const catalog = getComponentCatalog(figma.graph)
     const libraries = catalog ? await catalog.listLibraries() : []
@@ -23,7 +23,7 @@ export const insertLibraryComponent = defineTool({
     'Insert a reusable component from an enabled library by stable library and asset identity.',
 
   execution: { kind: 'async', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     library_id: v.pipe(v.string(), v.description('Library ID')),
     revision_id: v.optional(v.pipe(v.string(), v.description('Pinned revision ID'))),
     asset_key: v.pipe(v.string(), v.description('Stable asset key')),

@@ -270,6 +270,21 @@ describe('MCP server', () => {
     expect(fill.isError).not.toBe(true)
   })
 
+  test('rejects arguments a tool does not take instead of dropping them', async () => {
+    const create = await client.callTool({
+      name: 'create_shape',
+      arguments: { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }
+    })
+    const { id } = parseResult(create) as { id: string }
+
+    const update = await client.callTool({
+      name: 'update_node',
+      arguments: { id, properties: { x: 0, y: 500 } }
+    })
+    expect(update.isError).toBe(true)
+    expect(graph.getNode(id)?.y).toBe(0)
+  })
+
   test('get_page_tree returns page structure', async () => {
     await client.callTool({
       name: 'create_shape',

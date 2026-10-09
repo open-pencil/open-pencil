@@ -7,7 +7,7 @@ export const nodeReplaceWith = defineTool({
 
   description: 'Replace a node with JSX content.',
   execution: { kind: 'async', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Node ID to replace')),
     jsx: v.pipe(v.string(), v.description('JSX string for the replacement'))
   }),

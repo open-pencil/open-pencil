@@ -39,7 +39,7 @@ interface ToolMetadata {
 }
 
 export interface ToolDef extends ToolMetadata {
-  input: v.ObjectSchema<v.ObjectEntries, undefined>
+  input: v.StrictObjectSchema<v.ObjectEntries, undefined>
   /** Derived from execution metadata, never declared independently by a tool. */
   readonly mutates: boolean
   execute: (figma: FigmaAPI, args: Record<string, unknown>) => unknown
@@ -50,9 +50,9 @@ type ToolDefinitionMetadata = Omit<ToolMetadata, 'exposure' | 'capabilities' | '
 
 export function defineTool<P extends v.ObjectEntries, R>(
   def: ToolDefinitionMetadata & {
-    input: v.ObjectSchema<P, undefined>
+    input: v.StrictObjectSchema<P, undefined>
     execution: ToolExecution & (R extends PromiseLike<unknown> ? { kind: 'async' } : unknown)
-    execute: (figma: FigmaAPI, args: v.InferOutput<v.ObjectSchema<P, undefined>>) => R
+    execute: (figma: FigmaAPI, args: v.InferOutput<v.StrictObjectSchema<P, undefined>>) => R
   }
 ): ToolDef {
   return {
@@ -72,7 +72,8 @@ export function defineTool<P extends v.ObjectEntries, R>(
 /**
  * Every tool run goes through here, so a wrong call from AI chat, the CLI, or WebMCP names the
  * tool and lists each problem with its argument, as `v.summarize` formats them. MCP clients get
- * the MCP SDK's own report, which validates the same schema before the handler runs.
+ * the MCP SDK's own report, which validates the same schema before the handler runs. Inputs are
+ * strict objects, so a misspelled or mis-nested argument fails here instead of being dropped.
  */
 export function parseToolArgs<S extends v.GenericSchema>(
   name: string,

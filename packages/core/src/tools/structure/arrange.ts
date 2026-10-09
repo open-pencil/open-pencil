@@ -10,7 +10,7 @@ export const arrangeNodes = defineTool({
   description:
     'Arrange top-level nodes on the canvas in a grid, row, or column layout. Useful after batch creation to tidy up overlapping frames.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     ids: v.optional(
       v.pipe(
         v.array(v.string()),

@@ -13,7 +13,7 @@ export const setText = defineTool({
 
   description: 'Set text content of a text node.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     text: v.pipe(v.string(), v.description('Text content'))
   }),
@@ -30,7 +30,7 @@ export const setFont = defineTool({
 
   description: 'Set font properties of a text node.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     family: v.optional(v.pipe(v.string(), v.description('Font family name'))),
     size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Font size')))),
@@ -58,7 +58,7 @@ export const setFontRange = defineTool({
 
   description: 'Set font properties for a text range.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     start: toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Start character index'))),
     end: toolNumber(v.pipe(v.number(), v.minValue(0), v.description('End character index'))),
@@ -94,7 +94,7 @@ export const setTextResize = defineTool({
 
   description: 'Set text auto-resize mode.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     mode: v.pipe(
       v.picklist(['NONE', 'WIDTH_AND_HEIGHT', 'HEIGHT', 'TRUNCATE']),
@@ -115,7 +115,7 @@ export const setTextProperties = defineTool({
   description:
     'Set text layout properties: alignment, auto-resize, text case, decoration, truncation.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Text node ID')),
     align_horizontal: v.optional(
       v.pipe(

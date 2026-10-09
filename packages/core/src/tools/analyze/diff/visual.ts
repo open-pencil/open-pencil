@@ -77,7 +77,7 @@ export const diffVisual = defineTool({
   description:
     'Pixel diff between two rendered nodes. Returns a PNG with changed pixels in red over a faded copy of the source, the changed pixel ratio, and the changed region in source-node coordinates. Use it to confirm an edit only touched the intended area.',
   execution: { kind: 'async', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     ...nodeComparisonInput.entries,
     ...rasterScaleInputs,
     threshold: v.optional(

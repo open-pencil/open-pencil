@@ -26,7 +26,7 @@ export const stockPhoto = defineTool({
     'Containers with content, text, lines, and structural nodes are rejected.',
   execution: { kind: 'async', mutation: 'document' },
   capabilities: ['document:write', 'network:access'],
-  input: v.object({
+  input: v.strictObject({
     requests: v.pipe(
       v.string(),
       v.description(
