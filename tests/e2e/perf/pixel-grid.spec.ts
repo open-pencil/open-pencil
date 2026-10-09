@@ -16,7 +16,10 @@ test('the pixel grid adds no CPU time to panning frames', async ({ page }) => {
     const profiler = store?.renderer?.profiler
     if (!store || !profiler) throw new Error('OpenPencil renderer not initialized')
     profiler.setVisible(true)
-    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+    const frame = () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
     // The densest grid: a line every 8 device pixels.
     store.state.zoom = 4
     async function averageFrameCpu(showPixelGrid: boolean) {
