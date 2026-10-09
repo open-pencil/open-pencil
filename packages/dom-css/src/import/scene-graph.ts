@@ -1,10 +1,6 @@
 import { isValid, toUint8Array } from 'js-base64'
 
 import {
-  parseAutoLayoutDirection,
-  parseCounterAxisAlign,
-  parseLayoutAlignSelf,
-  parsePrimaryAxisAlign,
   SceneGraph,
   type Fill,
   type ImageScaleMode,
@@ -12,7 +8,14 @@ import {
   type Stroke
 } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
-import { parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
+import {
+  parseCSSAlignItems,
+  parseCSSAlignSelf,
+  parseCSSFlexDirection,
+  parseCSSJustifyContent,
+  parseCSSNumber,
+  parseCSSShadows
+} from '@open-pencil/scene-graph/css'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -292,14 +295,14 @@ function applyElementStyle(
   const overflow = pickStyle(style, 'overflow')
   if (overflow === 'hidden' || overflow === 'clip') node.clipsContent = true
 
-  const alignSelf = parseLayoutAlignSelf(pickStyle(style, 'align-self')) ?? 'AUTO'
+  const alignSelf = parseCSSAlignSelf(pickStyle(style, 'align-self')) ?? 'AUTO'
   if (alignSelf !== 'AUTO') node.layoutAlignSelf = alignSelf
 
   const display = pickStyle(style, 'display')
   if (display === 'flex' || display === 'inline-flex') {
-    node.layoutMode = parseAutoLayoutDirection(pickStyle(style, 'flex-direction')) ?? 'HORIZONTAL'
-    node.primaryAxisAlign = parsePrimaryAxisAlign(pickStyle(style, 'justify-content')) ?? 'MIN'
-    node.counterAxisAlign = parseCounterAxisAlign(pickStyle(style, 'align-items')) ?? 'MIN'
+    node.layoutMode = parseCSSFlexDirection(pickStyle(style, 'flex-direction')) ?? 'HORIZONTAL'
+    node.primaryAxisAlign = parseCSSJustifyContent(pickStyle(style, 'justify-content')) ?? 'MIN'
+    node.counterAxisAlign = parseCSSAlignItems(pickStyle(style, 'align-items')) ?? 'MIN'
     node.layoutWrap = pickStyle(style, 'flex-wrap') === 'wrap' ? 'WRAP' : 'NO_WRAP'
     applyFlexGap(node, style)
   }
