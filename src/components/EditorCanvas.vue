@@ -17,7 +17,9 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y,
   COMPONENT_LABEL_ICON_GAP,
-  COMPONENT_LABEL_ICON_SIZE
+  COMPONENT_LABEL_ICON_SIZE,
+  SECTION_TITLE_GAP,
+  SECTION_TITLE_HEIGHT
 } from '@open-pencil/core/constants'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import {
@@ -179,12 +181,21 @@ const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
   const abs = store.graph.getAbsolutePosition(node.id)
+  const zoom = store.state.zoom
+  const kind = canvasLabelEdit.value?.kind
   // A component's name starts after its diamond, which keeps its screen size at any zoom.
-  const icon =
-    canvasLabelEdit.value?.kind === 'component-label'
-      ? (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / store.state.zoom
-      : 0
-  return { x: abs.x + icon, y: abs.y }
+  if (kind === 'component-label')
+    return { x: abs.x + (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / zoom, y: abs.y }
+  // A section inside another draws its title inside its top-left corner instead of above it.
+  const nested = node.parentId && store.graph.closest(node.parentId, (n) => n.type === 'SECTION')
+  if (kind === 'section-title' && nested) {
+    const inset = SECTION_TITLE_GAP / zoom
+    return {
+      x: abs.x + inset,
+      y: abs.y + inset + (SECTION_TITLE_HEIGHT + SECTION_TITLE_GAP) / zoom
+    }
+  }
+  return { x: abs.x, y: abs.y }
 })
 const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
 const canvasLabelEditPresentation = computed(() =>

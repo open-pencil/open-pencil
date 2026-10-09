@@ -72,7 +72,7 @@ const emit = defineEmits<{
         <InlineLabelEditor
           :model-value="edit.value"
           label="Layer name"
-          :compact="compact"
+          :variant="compact ? 'name' : 'section'"
           @update:model-value="emit('update', $event)"
           @commit="emit('commit')"
           @cancel="emit('cancel')"

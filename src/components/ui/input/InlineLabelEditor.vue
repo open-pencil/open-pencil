@@ -4,13 +4,19 @@ import { nextTick, ref, watch } from 'vue'
 const {
   modelValue,
   label,
-  compact = false
+  variant = 'section'
 } = defineProps<{
   modelValue: string
   label: string
-  /** The 11px text of a frame or component name instead of a section title's 12px. */
-  compact?: boolean
+  /** The typography of the label it edits: a section title's pill or a frame's plain name. */
+  variant?: 'section' | 'name'
 }>()
+
+// The canvas draws section titles in 11px semibold with 6px padding, names in 11px regular.
+const TEXT = {
+  section: 'px-1.5 text-[11px] font-semibold leading-6',
+  name: 'px-0.5 text-[11px] font-normal leading-[18px]'
+}
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -43,7 +49,7 @@ watch(
     <span
       aria-hidden="true"
       class="invisible col-start-1 row-start-1 h-full whitespace-pre"
-      :class="compact ? 'px-0.5 text-[11px] leading-[18px] font-normal' : 'px-2 text-xs leading-6'"
+      :class="TEXT[variant]"
       >{{ modelValue || ' ' }}</span
     >
     <input
@@ -51,7 +57,7 @@ watch(
       :value="modelValue"
       :aria-label="label"
       class="col-start-1 row-start-1 h-full w-0 min-w-full bg-transparent outline-none"
-      :class="compact ? 'px-0.5 text-[11px] leading-[18px] font-normal' : 'px-2 text-xs leading-6'"
+      :class="TEXT[variant]"
       @input="updateValue"
       @keydown.enter.prevent="emit('commit')"
       @keydown.escape.prevent="emit('cancel')"

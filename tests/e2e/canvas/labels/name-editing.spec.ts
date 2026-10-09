@@ -39,9 +39,9 @@ test('editing section labels preserve dark and light label presentation', async 
     await expect(editorPill).toHaveCSS('height', '24px')
     await expect(editorPill).toHaveCSS('background-color', item.background)
     await expect(input).toHaveCSS('color', item.foreground)
-    const width = await editorPill.evaluate((element) => element.getBoundingClientRect().width)
-    expect(width).toBeGreaterThan(80)
-    expect(width).toBeLessThan(100)
+    // The canvas title's own type, so the name does not change size when the field opens.
+    await expect(input).toHaveCSS('font-size', '11px')
+    await expect(input).toHaveCSS('font-weight', '600')
     await input.press('Escape')
     await expect(input).toBeHidden()
   }
