@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 
 import {
   accordionComponent,
+  badgeToggleSet,
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
@@ -158,6 +159,16 @@ describe('generated React components', () => {
     expect([first?.rest?.left, second?.rest?.left]).toEqual(['0px', '90px'])
     expect(first?.active).toEqual({ 'background-color': '#4F45E6' })
     expect(second?.active).toEqual(first?.active)
+  })
+
+  test('a layer drawn as a frame in one state and an instance in another is both', async () => {
+    const { files, component } = await generate(badgeToggleSet())
+    const css = cssRules(String(files.find((file) => file.path === 'Alert.module.css')?.content))
+    // The pressed state uses the generated switch where the resting one draws its own badge.
+    expect(render(component)).toContain('role="switch"')
+    expect(css.get('.alert .alert__badge')?.display).toBe('none')
+    expect(css.get('.alert[data-state="on"] .alert__badge')).toEqual({ display: 'revert' })
+    expect(css.get('.alert[data-state="on"] .alert__badge-2')).toEqual({ display: 'none' })
   })
 
   test('a radio group writes an item component and chooses among its labelled items', async () => {

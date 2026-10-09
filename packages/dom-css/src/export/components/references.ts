@@ -1,3 +1,4 @@
+import { layerKind } from '#dom-css/behaviours/states/layers'
 import type { StateElement } from '#dom-css/behaviours/states/types'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
@@ -53,9 +54,18 @@ const PLACEMENT =
 /** Whether a declaration places a layer rather than drawing it. */
 export const isPlacement = (property: string) => PLACEMENT.test(property)
 
+/** Whether a declaration hides or shows a layer by state, which the parent decides too. */
+const isVisibility = (property: string, value: string) =>
+  property === 'display' && (value === 'none' || value === 'revert')
+
+/** Keeps only where the parent places a layer, and whether a state shows it. */
 export function placementOnly(element: StateElement): void {
   const placement = (style: DesignStyleDeclaration): DesignStyleDeclaration =>
-    Object.fromEntries(Object.entries(style).filter(([property]) => isPlacement(property)))
+    Object.fromEntries(
+      Object.entries(style).filter(
+        ([property, value]) => isPlacement(property) || isVisibility(property, value)
+      )
+    )
   element.base = placement(element.base)
   element.rules = element.rules
     .map((rule) => ({ ...rule, style: placement(rule.style) }))
@@ -125,7 +135,8 @@ export type UsedLayer = Omit<ComponentReference, 'className'> | Omit<IconReferen
 
 /**
  * What the layer at `element` uses in place of drawing itself, if anything, read from the first
- * variant that draws it: the rest state, or the one that shows it, such as open content.
+ * variant that draws it as that element: the rest state, or the one that shows it, such as open
+ * content.
  */
 function usedLayer(
   graph: SceneGraph,
@@ -134,9 +145,10 @@ function usedLayer(
   references: ComponentReferences
 ): UsedLayer | null {
   const path = element.key.split('\0')[0] ?? ''
+  // The variant's layer at that path drawn as this element is: a frame, or that instance or icon.
   const node = variantIds
     .map((id) => findLayerByPath(graph, id, path))
-    .find((found) => found !== undefined)
+    .find((found) => found !== undefined && layerKind(graph, found) === element.kind)
   if (!node) return null
   const main = node.type === 'INSTANCE' ? instanceMainComponent(graph, node) : undefined
   const component = main ? references.get(ownerId(graph, main)) : undefined
