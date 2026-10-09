@@ -230,6 +230,23 @@ describe('exportStorybook', () => {
     expect(link?.url).toEndWith('node=Button')
   })
 
+  it('titles stories by the document, and by page when several have components', async () => {
+    const { graph } = buttonGraph()
+    const title = async (files: { content: string | Uint8Array }[], index = 0) =>
+      (await importStory(String(files[index]?.content))).default.title
+    expect(await title(await exportStorybook(graph, { framework: 'html', document: 'Kit' }))).toBe(
+      'Kit/Button'
+    )
+
+    const forms = graph.addPage('Forms')
+    graph.createNode('COMPONENT', forms.id, { name: 'Input', width: 10, height: 10 })
+    const files = await exportStorybook(graph, { framework: 'html', document: 'Kit' })
+    expect([await title(files, 0), await title(files, 1)]).toEqual([
+      'Kit/Library/Button',
+      'Kit/Forms/Input'
+    ])
+  })
+
   it('gives same-named components on a page distinct titles', async () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Library')

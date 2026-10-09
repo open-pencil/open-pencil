@@ -29,6 +29,11 @@ export interface ExportStorybookOptions {
   framework?: StorybookFramework
   /** Limit the export to one page. Defaults to every page. */
   pageId?: string
+  /**
+   * The document's name, which titles its stories, such as `Pricing/Plan picker`, with each
+   * page's name between when it has several. Without it, stories are titled by page.
+   */
+  document?: string
   /** Repository-relative `.fig`/`.pen` path; adds an `openpencil://` design link to stories. */
   linkPath?: string
   /** Renders a variant to PNG; each story then shows it next to the link as its design. */
@@ -126,12 +131,23 @@ interface StoryEntry {
  * Every group's story file, with names claimed on every page so a one-page export picks the
  * same names as a full one, kept for the pages the export covers.
  */
-function storyEntries(graph: SceneGraph, pageId: string | undefined): StoryEntry[] {
+function storyEntries(
+  graph: SceneGraph,
+  pageId: string | undefined,
+  document: string | undefined
+): StoryEntry[] {
   const takenFiles = new Set<string>()
   const takenIds = new Set<string>()
   const entries: StoryEntry[] = []
-  for (const page of graph.getPages()) {
-    for (const group of collectGroups(graph, page)) {
+  const pages = graph.getPages()
+  // Pages without components, such as an empty first page, add no level to the titles.
+  const storied = pages.filter((page) => collectGroups(graph, page).length > 0)
+  const section = (page: SceneNode) => {
+    if (document === undefined) return page.name
+    return storied.length > 1 ? `${document}/${page.name}` : document
+  }
+  for (const page of pages) {
+    for (const group of collectGroups(graph, page, section(page))) {
       // Storybook ids ignore case and punctuation, so `Library/Card` and `library/card` collide.
       group.title = claimName(group.title, takenIds, { separator: ' ', key: storyId })
       // File names are compared ignoring case for case-insensitive file systems.
@@ -197,7 +213,7 @@ export async function exportStorybook(
   const add = (page: SceneNode, path: string, content: string | Uint8Array) =>
     files.push({ path, content, page: page.name })
 
-  const entries = storyEntries(graph, options.pageId)
+  const entries = storyEntries(graph, options.pageId, options.document)
   const generate = GENERATORS[framework]
   const models = generate ? generatedModels(graph, entries, options.vectorElement) : new Map()
 
