@@ -244,7 +244,7 @@
 
 ### Performance
 
-- Open large `.fig` files with a fraction of the memory: records stay in the file's bytes except for the few fields indexing needs, and are decoded whole only for the pages being read and the components they use. Opening the Nuxt UI design kit takes 0.7 GB instead of 2.2 GB, and its first twelve pages 1.2 GB instead of 2.6 GB.
+- Open large `.fig` files with a fraction of the memory: records stay in the file's bytes except for the few fields indexing needs, and are decoded whole when read, kept only for the pages being read and the components they use. Opening the Nuxt UI design kit takes 0.7 GB instead of 2.2 GB, and its first twelve pages 1.2 GB instead of 2.6 GB.
 - Save an edited `.fig` file by rewriting only the layers that changed and copying the rest from the file it was opened from, as it is stored, without decoding it; in the browser that work runs off the main thread. Saving the 109 MB Preline UI kit after an edit takes about 3 seconds instead of over two minutes, and crash recovery no longer freezes Safari after the first edit to a large file. Editing a component also rewrites its instances on pages that were not opened yet.
 - Open `.fig` design kits with less memory: layers inside instances hold their component layers' paints, glyphs, and other unchanged values instead of a copy each, about a third fewer objects and an eighth less memory per loaded page.
 - Save large `.fig` documents with less memory: once every page is loaded, the first save releases the decoded original file, and saves write from the document instead of a copy of it, about 1.5 GB less on a 74 MB design kit.

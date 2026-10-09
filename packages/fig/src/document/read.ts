@@ -123,10 +123,14 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   }
 }
 
-/** A header's whole record, read again from the archive bytes, its plugin data deduplicated. */
+/**
+ * A header's whole record, read again from the archive bytes, its plugin data deduplicated. A
+ * header that lost those bytes, as a copy does, holds only its header fields, so it fails here
+ * rather than read as a record without its contents.
+ */
 function decodeRecord(header: NodeChange): NodeChange {
   const record = decodeWhole(header) as NodeChange | undefined
-  if (!record) return header
+  if (!record) throw new Error('Record header has no archive bytes to read it whole')
   deduplicateNodeChangePluginData([record])
   return record
 }
@@ -151,27 +155,31 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
   const styles = new DecodedMap(index.sources, (header) =>
     header.styleType ? shared(header) : header
   )
+  /** Records whose preparation is running: preparing an ancestor reaches them only in a cycle. */
+  const preparing = new Set<NodeChange>()
   const prepare = (header: NodeChange, whole: WholeRecord): NodeChange => {
-    const record = decodeRecord(header)
-    normalize(record)
-    const ancestors: NodeChange[] = []
-    const visited = new Set<NodeChange>([header])
-    for (
-      let parent = index.sources.get(parentIdOf(header) ?? '');
-      parent;
-      parent = index.sources.get(parentIdOf(parent) ?? '')
-    ) {
-      if (visited.has(parent)) throw new Error('Cyclic component-property ancestry')
-      visited.add(parent)
-      ancestors.push(whole(parent))
+    if (preparing.has(header)) throw new Error('Cyclic component-property ancestry')
+    preparing.add(header)
+    try {
+      const record = decodeRecord(header)
+      normalize(record)
+      const ancestors: NodeChange[] = []
+      for (
+        let parent = index.sources.get(parentIdOf(header) ?? '');
+        parent;
+        parent = index.sources.get(parentIdOf(parent) ?? '')
+      )
+        ancestors.push(whole(parent))
+      inheritFromAncestors(record, ancestors)
+      const resolveStyles = (node: NodeChange): void => {
+        applyStyleRefsToFields(styles, node, assets)
+        for (const override of symbolOverridesOf(node)) resolveStyles(override as NodeChange)
+      }
+      resolveStyles(record)
+      return record
+    } finally {
+      preparing.delete(header)
     }
-    inheritFromAncestors(record, ancestors)
-    const resolveStyles = (node: NodeChange): void => {
-      applyStyleRefsToFields(styles, node, assets)
-      for (const override of symbolOverridesOf(node)) resolveStyles(override as NodeChange)
-    }
-    resolveStyles(record)
-    return record
   }
   const shared: WholeRecord = (header) => {
     let record = kept.get(header)
