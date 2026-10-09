@@ -102,6 +102,7 @@ export type { TestId } from '#vue/testing/test-id'
 /** Property-panel composables. */
 export { usePosition } from '#vue/controls/position/use'
 export { useLayout } from '#vue/controls/layout/use'
+export { useSelectionColors } from '#vue/controls/selection-colors/use'
 export {
   LAYOUT_CONTAINER_TYPES,
   textResizeMode,

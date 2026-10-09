@@ -17,7 +17,8 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 /**
  * Layout of several selected layers, as in Figma: flow when all can hold an auto layout, resizing
- * for the text among them, their sizes, and clip content for those that can clip.
+ * for the text among them, their sizes, the spacing of a row or column, and clip content for
+ * those that can clip.
  */
 const layout = useSelectionLayout()
 const { getCommand } = useEditorCommands()
@@ -70,6 +71,29 @@ const { panels } = useI18n()
         </Tip>
       </PanelGrid>
     </PositionControlsRoot>
+
+    <template v-if="layout.spacingAxis.value">
+      <div class="mt-2 mb-1 text-[11px] text-muted">{{ panels.spacing }}</div>
+      <PanelGrid :columns="2">
+        <Tip :label="panels.spacing">
+          <NumberField
+            data-property="selection-spacing"
+            :aria-label="panels.spacing"
+            :model-value="layout.spacing.value"
+            @update:model-value="layout.setSpacing($event)"
+            @commit="layout.flushSpacing()"
+          >
+            <template #icon>
+              <icon-lucide-move-horizontal
+                v-if="layout.spacingAxis.value === 'horizontal'"
+                class="size-3"
+              />
+              <icon-lucide-move-vertical v-else class="size-3" />
+            </template>
+          </NumberField>
+        </Tip>
+      </PanelGrid>
+    </template>
 
     <ClipContentControl v-if="layout.clipsContent.value !== undefined" />
   </PanelSection>

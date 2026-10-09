@@ -39,7 +39,7 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
   const isMixed = computed(() => isNodeArrayMixed(shownNodes.value, propKey))
   const items = computed<PropertyListItemFor<K>[]>(() => {
     if (isMixed.value) return []
-    const [shown] = shownNodes.value
+    const shown = shownNodes.value.at(0)
     return (shown?.[propKey] ?? []) as PropertyListItemFor<K>[]
   })
 

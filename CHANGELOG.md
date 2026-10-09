@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `useStrokeControls` from `@open-pencil/vue` acts on the whole selection: `updateAlign`, `selectSide`, and `updateBorderWeight` no longer take a node, and `currentAlign()` and `borderWeight(side)` read the selection and return `MIXED` when it differs. `useEffectsControls().scrubEffect` and `commitEffect` no longer take a node. `useTypography` edits every selected text layer and adds `nodes`, `merged`, and `fontFeature`. The `panels.layersCount` message is now `panels.selectedCount`.
 - The app renders `render` JSX itself and no longer accepts the pre-rendered tree that earlier versions of `openpencil-mcp` send, so an older `openpencil-mcp` fails to render into this app version; update it with the app.
 - `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGVectorizeResult` adds `texts`, the SVG's text placed in the target space, and `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
 - `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
@@ -43,6 +44,7 @@
 
 ### Added
 
+- Edit several layers at once as in Figma: the properties panel gives a multi-selection a Layout section with sizes, text resizing, flow, clip content, and a Spacing field that spaces a row or column evenly; Typography for the text among it; corner radius for the layers that have one; the stroke of the layers that have strokes; and Selection colors, which lists every fill and stroke colour in the selection and its children and recolours one everywhere it is used. The panel's header reads "N selected".
 - Edit gradients on the canvas, as in Figma: while a fill or stroke gradient's picker is open, the layer shows the gradient's line or ellipse with its end dots and stop squares. Dragging a dot moves it, <kbd>Shift</kbd> turns it in 15° steps, and dragging a square slides its stop; the stop selected on the canvas is the one selected in the picker.
 - Paste SVG markup copied as text, such as from a code editor or Figma's Copy as SVG, as layers.
 - Show the pixel grid when zoomed in, as in Figma: from 800% on a standard display and 400% on a Retina one, toggled with **View → Pixel Grid** or <kbd>⇧</kbd><kbd>'</kbd>. <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> toggles **Snap to Pixel Grid**. The zoom menu in the properties panel lists both, with Figma's shortcuts, and labels its shortcuts for zoom to fit (<kbd>⇧</kbd><kbd>1</kbd>) and 100% (<kbd>⌘</kbd><kbd>0</kbd>); <kbd>⇧</kbd><kbd>R</kbd> toggles rulers and <kbd>⌥</kbd><kbd>⌘</kbd><kbd>\\</kbd> multiplayer cursors.
@@ -149,6 +151,7 @@
 
 ### Fixed
 
+- Changing stroke position, per-side stroke weights, or an effect with several layers selected changes all of them, not only the first.
 - Draw layer blur, drop and inner shadows, and background blur with Figma's falloff. They spread about 15% too far, with a long faint edge Figma does not draw; SVG export keeps Figma's own `stdDeviation` of half the radius.
 - Load the fonts of SVG text before placing it from `import_svg`, so centred and right-aligned text sits where Figma puts it; `figma.loadFontAsync` in scripts now loads the font instead of doing nothing.
 - Gradient stops in the fill picker show their full position and opacity, such as 100%, instead of cutting them off; each stop's colour, hex, and opacity share one field as in the properties panel.

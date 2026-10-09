@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import type { LayoutMode, NodeType, SceneNode } from '@open-pencil/scene-graph'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
+import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useEditor } from '#vue/editor/context'
+import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 /** Layers that can hold an auto layout and clip their content. */
 export const LAYOUT_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
@@ -35,12 +37,13 @@ function shared<T>(values: readonly T[]): MixedValue<T> | undefined {
 
 /**
  * Layout of a multi-selection, as Figma's panel shows it: text resizing for its text layers,
- * flow when every layer can hold an auto layout, and clip content for those that can clip. Each
- * edit changes the layers it applies to in one undo step.
+ * flow when every layer can hold an auto layout, clip content for those that can clip, and the
+ * spacing of a row or column. Each edit changes the layers it applies to in one undo step.
  */
 export function useSelectionLayout() {
   const editor = useEditor()
   const { nodes } = useNodeProps()
+  const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
 
   const texts = computed(() => nodes.value.filter((node) => node.type === 'TEXT'))
   const containers = computed(() =>
@@ -56,6 +59,26 @@ export function useSelectionLayout() {
   const layoutMode = computed(() =>
     allContainers.value ? shared(containers.value.map((node) => node.layoutMode)) : undefined
   )
+  const rowSpacing = useSceneComputed(() =>
+    editor.selectionSpacing(nodes.value.map((node) => node.id))
+  )
+  /** The axis of a row or column, or undefined when the layers are not one. */
+  const spacingAxis = computed(() => rowSpacing.value?.axis)
+  /** The gap between neighbours, MIXED when they differ. */
+  const spacing = computed<MixedValue<number>>(() => {
+    const gaps = rowSpacing.value?.gaps.map((gap) => Math.round(gap * 100) / 100) ?? []
+    return shared(gaps) ?? MIXED
+  })
+
+  /** Spaces the row evenly from its first layer; a scrub is one undo step. */
+  function setSpacing(gap: number) {
+    batch.ensure('selection-spacing', 'Change spacing')
+    editor.setSelectionSpacing(
+      nodes.value.map((node) => node.id),
+      gap
+    )
+  }
+
   /** Undefined when nothing selected can clip. */
   const clipsContent = computed(() => shared(containers.value.map((node) => node.clipsContent)))
 
@@ -89,6 +112,10 @@ export function useSelectionLayout() {
     textResize,
     layoutMode,
     clipsContent,
+    spacingAxis,
+    spacing,
+    setSpacing,
+    flushSpacing: batch.flush,
     setTextResize,
     setLayoutMode,
     toggleClipsContent

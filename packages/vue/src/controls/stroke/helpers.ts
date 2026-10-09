@@ -150,7 +150,7 @@ export function updateAlign(editor: Editor, nodes: readonly SceneNode[], align: 
 
 /** The alignment the nodes share, MIXED when they differ, as Figma's Position field shows. */
 export function currentAlign(nodes: readonly SceneNode[]): MixedValue<Stroke['align']> {
-  const [first] = nodes
+  const first = nodes.at(0)
   if (!first) return 'CENTER'
   const align = alignOf(first)
   return nodes.every((node) => alignOf(node) === align) ? align : MIXED
@@ -213,7 +213,7 @@ export function borderWeight(
   nodes: readonly SceneNode[],
   side: (typeof BORDER_SIDES)[number]
 ): MixedValue<number> {
-  const [first] = nodes
+  const first = nodes.at(0)
   if (!first) return 0
   const key = borderKey(side)
   return nodes.every((node) => node[key] === first[key]) ? first[key] : MIXED

@@ -36,6 +36,7 @@ import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
 import RetainedPanel from './properties/panel/RetainedPanel.vue'
 import PositionSection from './properties/PositionSection.vue'
+import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
 import StrokeSection from './properties/stroke/StrokeSection.vue'
@@ -116,6 +117,7 @@ const { panels } = useI18n()
     <FillSection />
     <StrokeSection />
     <EffectsSection />
+    <SelectionColorsSection />
     <ExportSection />
   </div>
 
@@ -205,6 +207,7 @@ const { panels } = useI18n()
       <StrokeSection />
       <LayoutGridSection v-if="supportsLayoutGuides" />
       <EffectsSection />
+      <SelectionColorsSection />
 
       <ExportSection />
     </div>
