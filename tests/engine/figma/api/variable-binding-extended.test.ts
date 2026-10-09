@@ -426,7 +426,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
     })
     const n = getNodeOrThrow(graph, node.id)
     // Bind a hypothetical non-color sub-path at index 1
-    n.boundVariables['fills/1/somethingElse'] = 'v1'
+    n.boundVariables = { ...n.boundVariables, ['fills/1/somethingElse']: 'v1' }
 
     // Remove all fills — index 1 is now beyond the array (1 > 0)
     graph.updateNode(node.id, { fills: [] })
@@ -458,7 +458,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
     })
     const n = getNodeOrThrow(graph, node.id)
     // Simulate a malformed binding key from legacy data — non-numeric index portion
-    n.boundVariables['fills/blendMode'] = 'v1'
+    n.boundVariables = { ...n.boundVariables, ['fills/blendMode']: 'v1' }
 
     // Any fills change triggers cleanup — malformed key must be removed
     graph.updateNode(node.id, {
@@ -476,7 +476,7 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
     })
     const n = getNodeOrThrow(graph, node.id)
     // Simulate a malformed binding key from legacy data — negative index
-    n.boundVariables['fills/-1/color'] = 'v1'
+    n.boundVariables = { ...n.boundVariables, ['fills/-1/color']: 'v1' }
 
     // Any fills change triggers cleanup — negative index must be removed
     graph.updateNode(node.id, {

@@ -241,7 +241,7 @@ describe('bindVariable validation', () => {
     })
     const n = getNodeOrThrow(graph, node.id)
     // Set top-level dead data first
-    n.boundVariables['fills'] = 'v-color'
+    n.boundVariables = { ...n.boundVariables, ['fills']: 'v-color' }
     // Now set a proper indexed binding — should auto-remove top-level
     graph.bindVariable(node.id, 'fills/0/color', 'v-color')
     expect(n.boundVariables['fills']).toBeUndefined()

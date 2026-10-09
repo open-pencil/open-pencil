@@ -18,7 +18,7 @@ const red: Color = { r: 1, g: 0, b: 0, a: 1 }
 function importedGraph() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  page.source.fig.rawNodeFields.backgroundColor = { ...navy }
+  page.source.fig.rawNodeFields = { ...page.source.fig.rawNodeFields, backgroundColor: { ...navy } }
   return graph
 }
 

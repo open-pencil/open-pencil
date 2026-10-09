@@ -450,10 +450,16 @@ function resolveNodeVars(node: SceneNode, graph: SceneGraph, ctx: VarContext): v
       variable.valuesByMode[ctx.activeModeId] ?? Object.values(variable.valuesByMode)[0]
     if (key.startsWith('fills[') && typeof modeVal === 'object' && 'r' in modeVal) {
       const idx = Number.parseInt(key.match(/\d+/)?.[0] ?? '0', 10)
-      if (node.fills[idx]) node.fills[idx].color = modeVal
+      if (node.fills[idx])
+        node.fills = node.fills.map((fill, index) =>
+          index === idx ? { ...fill, color: modeVal } : fill
+        )
     } else if (key.startsWith('strokes[') && typeof modeVal === 'object' && 'r' in modeVal) {
       const idx = Number.parseInt(key.match(/\d+/)?.[0] ?? '0', 10)
-      if (node.strokes[idx]) node.strokes[idx].color = modeVal
+      if (node.strokes[idx])
+        node.strokes = node.strokes.map((stroke, index) =>
+          index === idx ? { ...stroke, color: modeVal } : stroke
+        )
     }
   }
   for (const childId of node.childIds) {

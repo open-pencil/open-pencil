@@ -13,8 +13,11 @@ export function applyDocumentMetadata(graph: SceneGraph, document: NodeChange | 
       key: entry.key,
       value: entry.value
     })) ?? []
-  root.source.fig.rawNodeFields.strokeJoin = document.strokeJoin
-  root.source.fig.rawNodeFields.strokeWeight = document.strokeWeight
+  root.source.fig.rawNodeFields = {
+    ...root.source.fig.rawNodeFields,
+    strokeJoin: document.strokeJoin,
+    strokeWeight: document.strokeWeight
+  }
   const bindings = readNodeChangePluginData(document, OPEN_PENCIL_PLUGIN_DATA.enabledLibraries)
   for (const binding of bindings ?? []) graph.enabledLibraries.set(binding.libraryId, binding)
 }

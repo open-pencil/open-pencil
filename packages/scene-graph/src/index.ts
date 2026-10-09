@@ -82,7 +82,7 @@ import * as HitTest from './hit-test'
 export type { DropTargetOptions } from './hit-test'
 import * as Instances from './instances'
 import Matrix, { type Mat3 } from './matrix'
-import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
+import { CONTAINER_TYPES, createDefaultNode, shareEmptyValues } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
@@ -663,7 +663,7 @@ export class SceneGraph {
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
-    Object.assign(node, changes)
+    Object.assign(node, shareEmptyValues(changes))
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     for (const key of absent) Reflect.deleteProperty(node, key)

@@ -250,11 +250,10 @@ function applyImageFill(
   const bytes = bytesFromDataURL(source)
   if (!bytes) {
     if (source) {
-      node.pluginData.push({
-        pluginId: DOM_CSS_PLUGIN_ID,
-        key: IMAGE_SOURCE_URL_KEY,
-        value: source
-      })
+      node.pluginData = [
+        ...node.pluginData,
+        { pluginId: DOM_CSS_PLUGIN_ID, key: IMAGE_SOURCE_URL_KEY, value: source }
+      ]
     }
     return
   }

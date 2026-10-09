@@ -6,7 +6,7 @@ import {
   OPEN_PENCIL_PLUGIN_DATA,
   styleToWeight
 } from '@open-pencil/scene-graph'
-import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { createDefaultSourceMetadata, shareEmpty } from '@open-pencil/scene-graph/node-defaults'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -67,7 +67,8 @@ import type {
   SymbolLink,
   VariantPropSpec,
   VariableModeMap,
-  Vector
+  Vector,
+  FigmaLayoutMetadata
 } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -948,8 +949,11 @@ function isComponentSet(nc: NodeChange): boolean {
   return defs.some((d) => d.type === 'VARIANT')
 }
 
-function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig']['layout'] {
-  return {
+/** What a layer without auto-layout records: one frozen value every such layer shares. */
+const NO_FIGMA_LAYOUT: FigmaLayoutMetadata = Object.freeze({})
+
+function extractFigmaLayoutMetadata(nc: NodeChange): FigmaLayoutMetadata {
+  const layout: FigmaLayoutMetadata = {
     stackMode: nc.stackMode,
     stackSpacing: nc.stackSpacing,
     stackPadding: nc.stackPadding,
@@ -971,6 +975,7 @@ function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig'][
     bordersTakeSpace: nc.bordersTakeSpace as boolean | undefined,
     stackReverseZIndex: nc.stackReverseZIndex as boolean | undefined
   }
+  return Object.values(layout).every((value) => value === undefined) ? NO_FIGMA_LAYOUT : layout
 }
 
 function extractOccurrenceMetadata(nc: NodeChange): SceneNode['source'] {
@@ -981,10 +986,10 @@ function extractOccurrenceMetadata(nc: NodeChange): SceneNode['source'] {
 
 function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['source'] {
   return {
+    ...createDefaultSourceMetadata(),
     format: 'fig',
     id: nc.guid ? guidToString(nc.guid) : null,
     orderKey: nc.parentIndex?.position ?? null,
-    editedFields: [],
     fig: {
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
@@ -1166,7 +1171,7 @@ function extractFigmaRawGeometry(
   return {
     rawSize: nc.size ? { ...nc.size } : null,
     rawTransform: nc.transform ? { ...nc.transform } : null,
-    rawNodeFields
+    rawNodeFields: shareEmpty(rawNodeFields)
   }
 }
 
@@ -1183,12 +1188,15 @@ function extractFigmaSymbolMetadata(
 > {
   const sd = nc.symbolData as RawSymbolData | undefined
   return {
-    symbolOverrides: preserveFigmaPayloadBlobs(sd?.symbolOverrides ?? [], blobs) as unknown[],
-    componentPropAssignments: preserveFigmaPayloadBlobs(
-      nc.componentPropAssignments ?? [],
-      blobs
-    ) as unknown[],
-    derivedSymbolData: preserveFigmaPayloadBlobs(nc.derivedSymbolData ?? [], blobs) as unknown[],
+    symbolOverrides: shareEmpty(
+      preserveFigmaPayloadBlobs(sd?.symbolOverrides ?? [], blobs) as unknown[]
+    ),
+    componentPropAssignments: shareEmpty(
+      preserveFigmaPayloadBlobs(nc.componentPropAssignments ?? [], blobs) as unknown[]
+    ),
+    derivedSymbolData: shareEmpty(
+      preserveFigmaPayloadBlobs(nc.derivedSymbolData ?? [], blobs) as unknown[]
+    ),
     derivedSymbolDataLayoutVersion:
       typeof nc.derivedSymbolDataLayoutVersion === 'number'
         ? nc.derivedSymbolDataLayoutVersion

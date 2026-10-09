@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
 import { guidToString } from '@open-pencil/fig/node-change'
-import type { Vector } from '@open-pencil/scene-graph'
+import type { SceneNode, Vector } from '@open-pencil/scene-graph'
 
 /** The codec types only the fields it writes; raw passthrough metadata is read through these. */
 interface RawLayoutGrid {
@@ -28,6 +28,12 @@ interface RawTransitionInfo {
   type?: string
 }
 
+/** A node's raw passthrough fields, made its own so the test can write into them. */
+function rawFields(node: SceneNode): Record<string, unknown> {
+  node.source.fig.rawNodeFields = { ...node.source.fig.rawNodeFields }
+  return node.source.fig.rawNodeFields
+}
+
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(new Uint8Array(bytes).buffer)
 }
@@ -46,19 +52,19 @@ describe('fig roundtrip source metadata', () => {
     if (!root) return
 
     root.source.format = 'fig'
-    root.source.fig.rawNodeFields.strokeJoin = 'BEVEL'
-    root.source.fig.rawNodeFields.strokeWeight = 0
+    rawFields(root).strokeJoin = 'BEVEL'
+    rawFields(root).strokeWeight = 0
 
     page.source.format = 'fig'
     page.source.id = '4:463'
     page.source.orderKey = '~"'
-    page.source.fig.rawNodeFields.backgroundColor = {
+    rawFields(page).backgroundColor = {
       r: 0.9750000238418579,
       g: 0.9750000238418579,
       b: 0.9750000238418579,
       a: 1
     }
-    page.source.fig.rawNodeFields.backgroundPaints = [
+    rawFields(page).backgroundPaints = [
       {
         type: 'SOLID',
         color: { r: 0.5, g: 0.75, b: 1, a: 1 },
@@ -71,8 +77,8 @@ describe('fig roundtrip source metadata', () => {
       { id: 'x', axis: 'x', position: 42 },
       { id: 'y', axis: 'y', position: 84 }
     ]
-    page.source.fig.rawNodeFields.strokeJoin = 'BEVEL'
-    page.source.fig.rawNodeFields.strokeWeight = 0
+    rawFields(page).strokeJoin = 'BEVEL'
+    rawFields(page).strokeWeight = 0
 
     const first = graph.createNode('COMPONENT', page.id, { name: 'icon/accessibility' })
     first.source.format = 'fig'
@@ -140,7 +146,7 @@ describe('fig roundtrip source metadata', () => {
     rect.source.id = '4:500'
     rect.source.fig.rawSize = { x: 80, y: 40 }
     rect.source.fig.rawTransform = { m00: 1, m01: 0, m02: 1, m10: 0, m11: 1, m12: 2 }
-    rect.source.fig.rawNodeFields.fillPaints = [
+    rawFields(rect).fillPaints = [
       {
         type: 'SOLID',
         color: { r: 1, g: 0, b: 0, a: 1 },
@@ -181,8 +187,8 @@ describe('fig roundtrip source metadata', () => {
     const frame = graph.createNode('FRAME', page.id, { name: 'Cleared constraints' })
     frame.source.format = 'fig'
     frame.source.id = '4:501'
-    frame.source.fig.rawNodeFields.minSize = { value: { x: 120, y: 80 } }
-    frame.source.fig.rawNodeFields.maxSize = {
+    rawFields(frame).minSize = { value: { x: 120, y: 80 } }
+    rawFields(frame).maxSize = {
       value: { x: 500, y: Number.POSITIVE_INFINITY }
     }
 
@@ -208,9 +214,9 @@ describe('fig roundtrip source metadata', () => {
     })
     text.source.format = 'fig'
     text.source.id = '4:502'
-    text.source.fig.rawNodeFields.leadingTrim = 'CAP_HEIGHT'
-    text.source.fig.rawNodeFields.textDecorationStyle = 'WAVY'
-    text.source.fig.rawNodeFields.textDecorationFillPaints = [
+    rawFields(text).leadingTrim = 'CAP_HEIGHT'
+    rawFields(text).textDecorationStyle = 'WAVY'
+    rawFields(text).textDecorationFillPaints = [
       {
         type: 'PATTERN',
         color: { r: 1, g: 0, b: 0, a: 1 },
@@ -218,13 +224,13 @@ describe('fig roundtrip source metadata', () => {
         sourceNodeId: { sessionID: 4, localID: 900 }
       }
     ]
-    text.source.fig.rawNodeFields.textUnderlineOffset = { value: 2, units: 'PIXELS' }
-    text.source.fig.rawNodeFields.textDecorationThickness = { value: 1.5, units: 'PIXELS' }
-    text.source.fig.rawNodeFields.toggledOnOTFeatures = ['DLIG']
-    text.source.fig.rawNodeFields.toggledOffOTFeatures = ['LIGA']
-    text.source.fig.rawNodeFields.semanticWeight = 'BOLD'
-    text.source.fig.rawNodeFields.semanticItalic = 'ITALIC'
-    text.source.fig.rawNodeFields.derivedTextData = {
+    rawFields(text).textUnderlineOffset = { value: 2, units: 'PIXELS' }
+    rawFields(text).textDecorationThickness = { value: 1.5, units: 'PIXELS' }
+    rawFields(text).toggledOnOTFeatures = ['DLIG']
+    rawFields(text).toggledOffOTFeatures = ['LIGA']
+    rawFields(text).semanticWeight = 'BOLD'
+    rawFields(text).semanticItalic = 'ITALIC'
+    rawFields(text).derivedTextData = {
       layoutSize: { x: 80, y: 20 },
       derivedLines: [{ directionality: 'LTR' }]
     }
@@ -254,7 +260,7 @@ describe('fig roundtrip source metadata', () => {
     const frame = graph.createNode('FRAME', page.id, { name: 'Imported metadata frame' })
     frame.source.format = 'fig'
     frame.source.id = '4:505'
-    frame.source.fig.rawNodeFields.layoutGrids = [
+    rawFields(frame).layoutGrids = [
       {
         type: 'MIN',
         axis: 'X',
@@ -267,7 +273,7 @@ describe('fig roundtrip source metadata', () => {
         pattern: 'STRIPES'
       }
     ]
-    frame.source.fig.rawNodeFields.exportSettings = [
+    rawFields(frame).exportSettings = [
       {
         suffix: '@2x',
         imageType: 'PNG',
@@ -276,8 +282,8 @@ describe('fig roundtrip source metadata', () => {
         useAbsoluteBounds: false
       }
     ]
-    frame.source.fig.rawNodeFields.prototypeStartNodeID = { sessionID: 4, localID: 900 }
-    frame.source.fig.rawNodeFields.transitionInfo = { type: 'DISSOLVE', duration: 0.2 }
+    rawFields(frame).prototypeStartNodeID = { sessionID: 4, localID: 900 }
+    rawFields(frame).transitionInfo = { type: 'DISSOLVE', duration: 0.2 }
 
     const decoded = decodeExport(await exportFigFile(graph))
     const exported = decoded.nodeChanges.find(
@@ -299,10 +305,10 @@ describe('fig roundtrip source metadata', () => {
     const frame = graph.createNode('FRAME', page.id, { name: 'Edited metadata frame' })
     frame.source.format = 'fig'
     frame.source.id = '4:506'
-    frame.source.fig.rawNodeFields.fillPaints = [{ type: 'SOLID' }]
-    frame.source.fig.rawNodeFields.layoutGrids = [{ type: 'MIN', axis: 'X', visible: true }]
-    frame.source.fig.rawNodeFields.exportSettings = [{ suffix: '@2x' }]
-    frame.source.fig.rawNodeFields.prototypeInteractions = [{ trigger: 'ON_CLICK' }]
+    rawFields(frame).fillPaints = [{ type: 'SOLID' }]
+    rawFields(frame).layoutGrids = [{ type: 'MIN', axis: 'X', visible: true }]
+    rawFields(frame).exportSettings = [{ suffix: '@2x' }]
+    rawFields(frame).prototypeInteractions = [{ trigger: 'ON_CLICK' }]
 
     graph.updateNode(frame.id, {
       fills: [
@@ -341,7 +347,7 @@ describe('fig roundtrip source metadata', () => {
     })
     rect.source.format = 'fig'
     rect.source.id = '4:503'
-    rect.source.fig.rawNodeFields.effects = [
+    rawFields(rect).effects = [
       {
         type: 'NOISE',
         visible: true,
@@ -373,7 +379,7 @@ describe('fig roundtrip source metadata', () => {
     const rect = graph.createNode('RECTANGLE', page.id, { name: 'Edited effect metadata' })
     rect.source.format = 'fig'
     rect.source.id = '4:504'
-    rect.source.fig.rawNodeFields.effects = [
+    rawFields(rect).effects = [
       {
         type: 'NOISE',
         visible: true,
@@ -410,8 +416,8 @@ describe('fig roundtrip source metadata', () => {
     const rect = graph.createNode('RECTANGLE', page.id, { name: 'Independent stroke metadata' })
     rect.source.format = 'fig'
     rect.source.id = '4:507'
-    rect.source.fig.rawNodeFields.fillGeometry = [{ windingRule: 'NONZERO', commands: [] }]
-    rect.source.fig.rawNodeFields.strokeGeometry = [{ windingRule: 'NONZERO', commands: [] }]
+    rawFields(rect).fillGeometry = [{ windingRule: 'NONZERO', commands: [] }]
+    rawFields(rect).strokeGeometry = [{ windingRule: 'NONZERO', commands: [] }]
 
     graph.updateNode(rect.id, {
       independentStrokeWeights: true,
@@ -437,7 +443,7 @@ describe('fig roundtrip source metadata', () => {
     })
     text.source.format = 'fig'
     text.source.id = '4:501'
-    text.source.fig.rawNodeFields.fontVariations = [{ axisName: 'wght', value: 900 }]
+    rawFields(text).fontVariations = [{ axisName: 'wght', value: 900 }]
 
     graph.updateNode(text.id, { fontVariations: [{ axis: 'wght', value: 650 }] })
 
@@ -471,7 +477,7 @@ describe('fig roundtrip source metadata', () => {
     })
     vector.source.format = 'fig'
     vector.source.id = '4:465'
-    vector.source.fig.rawNodeFields.vectorData = {
+    rawFields(vector).vectorData = {
       normalizedSize: { x: 0, y: 0 },
       vectorNetworkBlob: { __openPencilFigmaBlob: rawVectorBlob }
     }

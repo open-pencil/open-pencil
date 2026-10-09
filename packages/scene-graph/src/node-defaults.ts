@@ -1,3 +1,5 @@
+import { isEmptyObject } from 'es-toolkit/predicate'
+
 import {
   BLACK,
   DEFAULT_FONT_FAMILY,
@@ -7,20 +9,52 @@ import {
 import { createInstanceOverrideState } from './instance-overrides'
 import type { NodeType, SceneNode, SourceMetadata } from './types'
 
+/** Freezes a default value and everything in it, so layers can share one copy. */
+function frozen<T>(value: T): T {
+  if (value !== null && typeof value === 'object') {
+    for (const entry of Object.values(value)) frozen(entry)
+    Object.freeze(value)
+  }
+  return value
+}
+
+/**
+ * Default values every new layer shares rather than allocating its own. They are frozen: a
+ * change replaces a field's value, never writes into one, so a write into a default throws.
+ */
+const EMPTY = frozen([]) as never[]
+const EMPTY_RECORD = frozen({}) as Record<string, never>
+const TEXT_FILLS = frozen([
+  { type: 'SOLID' as const, color: { ...BLACK }, opacity: 1, visible: true }
+])
+
+/**
+ * The shared empty value for an empty array or plain object, so the layers that hold one do not
+ * each keep their own; anything else is returned as it is.
+ */
+export function shareEmpty<T>(value: T): T {
+  if (Array.isArray(value)) return value.length === 0 ? (EMPTY as T) : value
+  return isEmptyObject(value) ? (EMPTY_RECORD as T) : value
+}
+
+/**
+ * Source metadata with nothing recorded. The objects holding it are each layer's own, so a field
+ * can be assigned; the empty lists and records in it are shared and frozen.
+ */
 export function createDefaultSourceMetadata(): SourceMetadata {
   return {
     format: null,
     id: null,
     orderKey: null,
-    editedFields: [],
+    editedFields: EMPTY,
     fig: {
       rawSize: null,
       rawTransform: null,
-      rawNodeFields: {},
+      rawNodeFields: EMPTY_RECORD,
       layout: null,
-      symbolOverrides: [],
-      componentPropAssignments: [],
-      derivedSymbolData: [],
+      symbolOverrides: EMPTY,
+      componentPropAssignments: EMPTY,
+      derivedSymbolData: EMPTY,
       derivedSymbolDataLayoutVersion: null,
       uniformScaleFactor: null
     }
@@ -69,12 +103,11 @@ export function createDefaultNode(
     rotation: 0,
     source: createDefaultSourceMetadata(),
     derivedLayout: null,
-    fills:
-      type === 'TEXT' ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }] : [],
-    strokes: [],
-    effects: [],
-    layoutGrids: [],
-    guides: [],
+    fills: type === 'TEXT' ? TEXT_FILLS : EMPTY,
+    strokes: EMPTY,
+    effects: EMPTY,
+    layoutGrids: EMPTY,
+    guides: EMPTY,
     fillStyleId: null,
     strokeStyleId: null,
     textStyleId: null,
@@ -122,8 +155,8 @@ export function createDefaultNode(
     layoutAlignSelf: 'AUTO',
     vectorNetwork: null,
     handleMirroring: 'NONE',
-    fillGeometry: [],
-    strokeGeometry: [],
+    fillGeometry: EMPTY,
+    strokeGeometry: EMPTY,
     arcData: null,
     textAlignVertical: 'TOP',
     textAutoResize: 'NONE',
@@ -131,18 +164,18 @@ export function createDefaultNode(
     textDecoration: 'NONE',
     textDecorationStyle: 'SOLID',
     textDecorationThickness: null,
-    textDecorationFills: [],
+    textDecorationFills: EMPTY,
     textDecorationSkipInk: true,
     textUnderlineOffset: null,
     maxLines: null,
-    styleRuns: [],
-    fontVariations: [],
-    fontFeatures: [],
+    styleRuns: EMPTY,
+    fontVariations: EMPTY,
+    fontFeatures: EMPTY,
     horizontalConstraint: 'MIN',
     verticalConstraint: 'MIN',
     strokeCap: 'NONE',
     strokeJoin: 'MITER',
-    dashPattern: [],
+    dashPattern: EMPTY,
     borderTopWeight: 0,
     borderRightWeight: 0,
     borderBottomWeight: 0,
@@ -158,8 +191,8 @@ export function createDefaultNode(
     isMask: false,
     maskType: 'ALPHA',
     maskIsOutline: false,
-    gridTemplateColumns: [],
-    gridTemplateRows: [],
+    gridTemplateColumns: EMPTY,
+    gridTemplateRows: EMPTY,
     gridColumnGap: 0,
     gridRowGap: 0,
     gridPosition: null,
@@ -173,10 +206,10 @@ export function createDefaultNode(
     starInnerRadius: 0.38,
     componentId: null,
     instanceOverrides: createInstanceOverrideState(),
-    componentPropertyDefinitions: [],
-    componentPropertyReferences: [],
-    componentPropertyAssignments: {},
-    componentPropertyValues: {},
+    componentPropertyDefinitions: EMPTY,
+    componentPropertyReferences: EMPTY,
+    componentPropertyAssignments: EMPTY_RECORD,
+    componentPropertyValues: EMPTY_RECORD,
     componentKey: null,
     sourceLibraryKey: null,
     publishId: null,
@@ -188,16 +221,16 @@ export function createDefaultNode(
     isSymbolPublishable: false,
     isExposedInstance: false,
     symbolDescription: '',
-    symbolLinks: [],
-    variantPropSpecs: [],
-    boundVariables: {},
-    variableBindingScales: {},
-    variableAssignmentScales: {},
+    symbolLinks: EMPTY,
+    variantPropSpecs: EMPTY,
+    boundVariables: EMPTY_RECORD,
+    variableBindingScales: EMPTY_RECORD,
+    variableAssignmentScales: EMPTY_RECORD,
     componentScale: 1,
-    variableModes: {},
-    exportSettings: [],
-    pluginData: [],
-    pluginRelaunchData: [],
+    variableModes: EMPTY_RECORD,
+    exportSettings: EMPTY,
+    pluginData: EMPTY,
+    pluginRelaunchData: EMPTY,
     internalOnly: false,
     flipX: false,
     flipY: false,
@@ -206,8 +239,19 @@ export function createDefaultNode(
     textPathData: null,
     textPathBox: null,
     booleanOperation: undefined,
-    ...overrides
+    ...shareEmptyValues(overrides)
   } satisfies CompleteNodeFields
+}
+
+/**
+ * Values to store on a layer, with empty lists and records swapped for the shared ones. A layer's
+ * children are its own, as they are written in place.
+ */
+export function shareEmptyValues(values: Partial<SceneNode>): Partial<SceneNode> {
+  const shared: Record<string, unknown> = {}
+  for (const [field, value] of Object.entries(values))
+    shared[field] = field === 'childIds' ? value : shareEmpty(value)
+  return shared
 }
 
 /** Containers whose bounds follow their children and that set no coordinate space, as in Figma. */

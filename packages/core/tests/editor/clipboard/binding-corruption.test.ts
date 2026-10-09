@@ -321,7 +321,7 @@ describe('set_fill/set_stroke clean up stale bindings', () => {
     const n = getNodeOrThrow(graph, node.id)
 
     // Set a top-level 'fills' binding (dead data — renderer never reads this)
-    n.boundVariables['fills'] = 'v1'
+    n.boundVariables = { ...n.boundVariables, ['fills']: 'v1' }
 
     // Replace fills via updateNode (same path tools use)
     graph.updateNode(node.id, {

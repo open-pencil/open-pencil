@@ -113,6 +113,7 @@ describe('Figma Plugin API layout compatibility', () => {
     const page = graph.getNode(api.currentPage.id)
     expect(page).toBeDefined()
     if (!page) return
+    page.source.fig.rawNodeFields = { ...page.source.fig.rawNodeFields }
     page.source.fig.rawNodeFields.backgroundPaints = [
       {
         type: 'SOLID',
