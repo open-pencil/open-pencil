@@ -52,7 +52,8 @@ test('export CLI writes Storybook stories with design images', async () => {
   expect(stdout).toContain('Exported 1 story files')
   const story = await Bun.file(join(output, 'Badge.stories.ts')).text()
   expect(story).toContain("from '@storybook/vue3-vite'")
-  expect(story).toContain("title: 'Library/Badge'")
+  // Titled by the document's file name; its one page with components adds no level.
+  expect(story).toContain("title: 'library/Badge'")
   const manifest: unknown = JSON.parse(await Bun.file(join(output, MANIFEST)).text())
   expect(manifest).toEqual({
     version: 1,
