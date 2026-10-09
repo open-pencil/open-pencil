@@ -9,6 +9,7 @@ import { camelCase } from 'es-toolkit/string'
 import {
   behaviourContract,
   behaviourProperties,
+  findLayerByPath,
   layerPath,
   readBehaviour,
   slotPropertyId,
@@ -18,7 +19,7 @@ import {
 } from '@open-pencil/scene-graph'
 
 import type { SceneGraphToDesignOptions } from '../projection'
-import { identifierName } from '../storybook/names'
+import { claimName, identifierName } from '../storybook/names'
 
 /** Kinds generated as components so far; the rest keep static stories. */
 export const GENERATED_KINDS = ['button', 'switch', 'checkbox', 'toggle', 'collapsible'] as const
@@ -60,7 +61,20 @@ export interface ComponentElement {
   children: ComponentNode[]
 }
 
-export type ComponentNode = ComponentElement | { type: 'text'; value: string }
+/** A text property the component takes as a string prop and draws in the layers bound to it. */
+export interface TextProp {
+  /** The prop's identifier. */
+  name: string
+  /** The text property's name. */
+  property: string
+  default: string
+}
+
+export type ComponentNode =
+  | ComponentElement
+  | { type: 'text'; value: string }
+  /** The value of a text prop, drawn where the design binds a text layer to it. */
+  | { type: 'textProp'; name: string }
 
 /** One component generated from a component set with a behaviour. */
 export interface ComponentModel {
@@ -75,28 +89,75 @@ export interface ComponentModel {
   /** Whether the set draws a disabled state, so the component takes `disabled`. */
   disabled: boolean
   props: VariantProp[]
+  texts: TextProp[]
+}
+
+interface TreeLabels {
+  parts: Map<StateElement, string>
+  classes: Map<StateElement, string>
+  /** The text prop each bound text layer draws, by layer. */
+  texts: Map<StateElement, string>
 }
 
 function componentTree(
   node: StateElement,
-  parts: Map<StateElement, string>,
-  classes: Map<StateElement, string>,
+  labels: TreeLabels,
   bindings: ComponentBinding[]
 ): ComponentElement {
-  const part = parts.get(node) ?? null
+  const part = labels.parts.get(node) ?? null
+  const text = labels.texts.get(node)
   return {
     type: 'element',
     part,
     tag: node.tagName,
-    className: classes.get(node) ?? '',
+    className: labels.classes.get(node) ?? '',
     attrs: node.attrs,
     bindings: part === 'root' ? bindings : [],
-    children: node.children.map((child) =>
-      child.type === 'text'
-        ? { type: 'text', value: child.text }
-        : componentTree(child, parts, classes, [])
-    )
+    // A bound text layer draws its prop in place of the design's words and their runs.
+    children: text
+      ? [{ type: 'textProp', name: text }]
+      : node.children.map((child) =>
+          child.type === 'text'
+            ? { type: 'text', value: child.text }
+            : componentTree(child, labels, [])
+        )
   }
+}
+
+/**
+ * The set's text properties as props, and the layers bound to each. A layer is bound when it
+ * is in any variant, found by the path every variant shares.
+ */
+function textProps(
+  graph: SceneGraph,
+  set: SceneNode,
+  elements: readonly StateElement[],
+  taken: Set<string>
+): { texts: TextProp[]; bound: Map<StateElement, string> } {
+  const definitions = behaviourProperties(graph, set).filter((item) => item.type === 'TEXT')
+  const texts = definitions.map((definition) => ({
+    name: claimName(camelCase(identifierName(definition.name, 'Text')), taken),
+    property: definition.name,
+    default: definition.defaultValue
+  }))
+  const byId = new Map(definitions.map((definition, i) => [definition.id, texts[i]]))
+  const variants = graph.getChildren(set.id)
+  const bound = new Map<StateElement, string>()
+  for (const element of elements) {
+    // A key ends with the words a layer reads, which a text prop draws in every variant.
+    const path = element.key.split('\0')[0] ?? ''
+    for (const variant of variants) {
+      const reference = findLayerByPath(graph, variant.id, path)?.componentPropertyReferences.find(
+        (item) => item.field === 'TEXT'
+      )
+      const prop = reference && byId.get(reference.propertyId)
+      if (prop) {
+        bound.set(element, prop.name)
+        break
+      }
+    }
+  }
+  return { texts, bound }
 }
 
 /** A generated component's files, and what its stories need to know about it. */
@@ -165,10 +226,11 @@ export function componentModel(
   const booleans = [...args.booleans.values()]
   const model = booleans.find((arg) => arg.name !== 'disabled')?.name ?? null
   const bound = new Set([...args.booleans.keys(), args.states?.property])
+  const taken = new Set([...(model ? [model] : []), 'disabled'])
   const props = behaviourProperties(graph, set)
     .filter((definition) => definition.type === 'VARIANT' && !bound.has(definition.name))
     .map((definition) => ({
-      name: camelCase(identifierName(definition.name, 'Prop')),
+      name: claimName(camelCase(identifierName(definition.name, 'Prop')), taken),
       property: definition.name,
       options: definition.variantOptions ?? [],
       default: definition.defaultValue
@@ -184,13 +246,19 @@ export function componentModel(
       attribute: propAttribute(prop.property)
     }))
   ]
+  const texts = textProps(graph, set, allElements(styles.root), taken)
   return {
     name: identifierName(set.name, 'Component'),
     kind: behaviour.kind,
     styles,
-    tree: componentTree(styles.root, parts, layerClassNames(styles), bindings),
+    tree: componentTree(
+      styles.root,
+      { parts, classes: layerClassNames(styles), texts: texts.bound },
+      bindings
+    ),
     model,
     disabled,
-    props
+    props,
+    texts: texts.texts
   }
 }

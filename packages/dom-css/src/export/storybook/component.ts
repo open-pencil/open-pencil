@@ -66,7 +66,8 @@ function restArgs(component: ComponentModel, model: string | null): [string, es.
   return [
     ...(model ? [[model, FALSE] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', FALSE] as [string, es.SyntaxNode]] : []),
-    ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, es.string(prop.default)])
+    ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, es.string(prop.default)]),
+    ...component.texts.map((text): [string, es.SyntaxNode] => [text.name, es.string(text.default)])
   ]
 }
 
@@ -81,6 +82,10 @@ function argTypes(component: ComponentModel, model: string | null): es.SyntaxNod
         ['control', es.string('select')],
         ['options', es.array(prop.options.map(es.string))]
       ])
+    ]),
+    ...component.texts.map((text): [string, es.SyntaxNode] => [
+      text.name,
+      es.object([['control', es.string('text')]])
     ])
   ])
 }

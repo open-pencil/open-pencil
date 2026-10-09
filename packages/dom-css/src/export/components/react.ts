@@ -59,6 +59,7 @@ const DISABLED_FLAG = es.parseExpression('props.disabled || undefined')
 
 function element(node: ComponentNode, kind: GeneratedKind, depth: number): es.SyntaxNode {
   if (node.type === 'text') return jsx.text(node.value)
+  if (node.type === 'textProp') return jsx.container(es.identifier(node.name))
   const radix = RADIX[kind]
   const part = node.part ? radix?.parts[node.part] : undefined
   const root = node.part === 'root'
@@ -89,7 +90,7 @@ function element(node: ComponentNode, kind: GeneratedKind, depth: number): es.Sy
       return []
     })
   ]
-  const inline = node.children.length === 1 && node.children[0]?.type === 'text'
+  const inline = node.children.length === 1 && node.children[0]?.type !== 'element'
   return jsx.element(
     tagOf(node, kind),
     attributes,
@@ -125,25 +126,38 @@ function propsType(component: ComponentModel): es.SyntaxNode {
         }
       })
     : es.parseType("ComponentProps<'button'>")
-  if (component.props.length === 0) return base
+  if (component.props.length === 0 && component.texts.length === 0) return base
   return {
     type: 'TSIntersectionType',
     types: [
       base,
-      es.objectType(
-        component.props.map((prop) => [prop.name, es.stringUnionType(prop.options), true])
-      )
+      es.objectType([
+        ...component.props.map((prop): [string, es.SyntaxNode, boolean] => [
+          prop.name,
+          es.stringUnionType(prop.options),
+          true
+        ]),
+        ...component.texts.map((text): [string, es.SyntaxNode, boolean] => [
+          text.name,
+          es.parseType('string'),
+          true
+        ])
+      ])
     ]
   }
 }
 
-/** `{ size = 'Small', ...props }`: variant props with their defaults, the rest passed on. */
+/**
+ * `{ size = 'Small', label = 'Save', ...props }`: variant and text props with their defaults,
+ * kept off the root, and the rest passed on.
+ */
 function parameters(component: ComponentModel): es.SyntaxNode {
-  if (component.props.length === 0) return es.identifier('props')
+  const own = [...component.props, ...component.texts]
+  if (own.length === 0) return es.identifier('props')
   return {
     type: 'ObjectPattern',
     properties: [
-      ...component.props.map((prop) => ({
+      ...own.map((prop) => ({
         type: 'Property',
         kind: 'init',
         key: es.identifier(prop.name),

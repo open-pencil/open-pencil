@@ -3,7 +3,12 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-import { buttonSet, collapsibleSet, switchSet } from '#dom-css-tests/behaviours/fixtures'
+import {
+  buttonSet,
+  collapsibleSet,
+  labelledButtonSet,
+  switchSet
+} from '#dom-css-tests/behaviours/fixtures'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -63,6 +68,16 @@ describe('generated React components', () => {
     const { component } = await generate(collapsibleSet())
     expect(render(component)).toContain('data-state="closed"')
     expect(render(component, { defaultOpen: true })).toMatch(/^<div data-state="open"/)
+  })
+
+  test('a text property is a prop the bound layer draws, kept off the root element', async () => {
+    const { component, stories } = await generate(labelledButtonSet())
+    expect(render(component)).toMatch(/>Save</)
+    const sent = render(component, { label: 'Send <now>' })
+    expect(sent).toMatch(/>Send &lt;now&gt;</)
+    expect(sent).not.toContain('label=')
+    const meta = stories.default as { args?: Record<string, unknown> }
+    expect(meta.args).toMatchObject({ label: 'Save' })
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

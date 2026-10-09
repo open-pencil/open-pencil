@@ -137,6 +137,34 @@ export function buttonSet() {
   )
 }
 
+/** A button whose label is a text property, drawn by a text layer in every variant. */
+export function labelledButtonSet() {
+  const fixture = componentSet(
+    'Action',
+    { Interaction: ['Default', 'Hover'] },
+    {
+      ...emptyBehaviour('button'),
+      states: { propertyId: 'interaction', rest: 'Default', hover: 'Hover' }
+    },
+    (graph, variant, { Interaction }) => {
+      graph.updateNode(variant, { fills: Interaction === 'Hover' ? COLORS.hover : COLORS.off })
+      graph.createNode('TEXT', variant, {
+        name: 'Label',
+        text: 'Save',
+        componentPropertyReferences: [{ propertyId: 'label', field: 'TEXT' }]
+      })
+    }
+  )
+  const { graph, set } = fixture
+  graph.updateNode(set.id, {
+    componentPropertyDefinitions: [
+      ...set.componentPropertyDefinitions,
+      { id: 'label', name: 'Label', type: 'TEXT', defaultValue: 'Save' }
+    ]
+  })
+  return { graph, set: graph.getNode(set.id) ?? set }
+}
+
 /** A collapsible whose content shows only when open. */
 export function collapsibleSet() {
   const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]

@@ -3,7 +3,12 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-import { buttonSet, collapsibleSet, switchSet } from '#dom-css-tests/behaviours/fixtures'
+import {
+  buttonSet,
+  collapsibleSet,
+  labelledButtonSet,
+  switchSet
+} from '#dom-css-tests/behaviours/fixtures'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
@@ -69,6 +74,20 @@ describe('generated Vue components', () => {
     const open = await render(component, { open: true })
     expect(open).toMatch(/^<div data-state="open" class="disclosure"/)
     expect(content(open)).not.toContain(' hidden ')
+  })
+
+  test('a text property is a prop the bound layer draws, the design value by default', async () => {
+    const { component, stories } = await generate(labelledButtonSet())
+    expect(await render(component)).toMatch(/>Save</)
+    const sent = await render(component, { label: 'Send <now>' })
+    expect(sent).toMatch(/>Send &lt;now&gt;</)
+    expect(sent).not.toContain('Save')
+    const meta = stories.default as {
+      args: Record<string, unknown>
+      argTypes: Record<string, unknown>
+    }
+    expect(meta.args).toMatchObject({ label: 'Save' })
+    expect(meta.argTypes).toMatchObject({ label: { control: 'text' } })
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

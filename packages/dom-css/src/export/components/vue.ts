@@ -56,6 +56,7 @@ function bindingAttributes(
 
 function templateNode(node: ComponentNode, kind: GeneratedKind, used: Set<string>): vue.VueNode {
   if (node.type === 'text') return vue.text(node.value)
+  if (node.type === 'textProp') return vue.interpolation(identifier(node.name))
   const reka = node.part ? REKA[kind].parts[node.part] : undefined
   if (reka) used.add(reka)
   const native = node.part === 'root' && !reka
@@ -80,13 +81,15 @@ function propsType(component: ComponentModel): es.SyntaxNode {
     true
   ])
   if (component.disabled) members.unshift(['disabled', es.parseType('boolean'), true])
+  for (const text of component.texts) members.push([text.name, es.parseType('string'), true])
   return es.objectType(members)
 }
 
 function propsDefaults(component: ComponentModel): es.SyntaxNode {
   return es.object([
     ...(component.disabled ? [['disabled', es.parseExpression('false')] as const] : []),
-    ...component.props.map((prop) => [prop.name, es.string(prop.default)] as const)
+    ...component.props.map((prop) => [prop.name, es.string(prop.default)] as const),
+    ...component.texts.map((text) => [text.name, es.string(text.default)] as const)
   ])
 }
 
@@ -110,7 +113,7 @@ function script(component: ComponentModel, used: Set<string>): es.SyntaxNode {
         ]
       : []
   const props =
-    component.disabled || component.props.length > 0
+    component.disabled || component.props.length > 0 || component.texts.length > 0
       ? es.fill(PROPS, { $Props: propsType(component), $defaults: propsDefaults(component) }).body
       : []
   const model = component.model
