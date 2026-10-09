@@ -1,6 +1,7 @@
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import dedent from 'dedent'
 import { omit } from 'es-toolkit/object'
+import { upperFirst } from 'es-toolkit/string'
 
 import { es, jsx } from '@open-pencil/emit'
 
@@ -11,6 +12,7 @@ import type {
   ComponentNode,
   GeneratedKind
 } from './model'
+import type { ComponentReference } from './references'
 
 /**
  * The Radix primitive a kind renders, from the unified `radix-ui` package, and the component
@@ -57,9 +59,53 @@ function tagOf(node: ComponentElement, kind: GeneratedKind): string {
 /** `props.disabled || undefined`, so a native button sets `data-disabled` only while disabled. */
 const DISABLED_FLAG = es.parseExpression('props.disabled || undefined')
 
-function element(node: ComponentNode, kind: GeneratedKind, depth: number): es.SyntaxNode {
+/** What a component's markup uses, which its module imports. */
+interface MarkupUses {
+  kind: GeneratedKind
+  /** Other generated components. */
+  components: Set<string>
+  icons: boolean
+}
+
+/** The Iconify component, named apart from any component the design calls `Icon`. */
+const ICONIFY = 'IconifyIcon'
+
+/** `defaultChecked`: Radix's uncontrolled value, which a nested control starts from. */
+const defaultOf = (model: string) => `default${upperFirst(model)}`
+
+function reference(node: ComponentReference, uses: MarkupUses, depth: number): es.SyntaxNode {
+  uses.components.add(node.component)
+  return jsx.element(
+    node.component,
+    [
+      jsx.attribute('className', jsx.container(moduleClass(node.className))),
+      ...node.props.map((prop) =>
+        jsx.attribute(prop.name, prop.value === true ? null : jsx.stringValue(prop.value))
+      ),
+      ...(node.model ? [jsx.attribute(defaultOf(node.model), null)] : [])
+    ],
+    [],
+    depth
+  )
+}
+
+function element(node: ComponentNode, uses: MarkupUses, depth: number): es.SyntaxNode {
   if (node.type === 'text') return jsx.text(node.value)
   if (node.type === 'textProp') return jsx.container(es.identifier(node.name))
+  if (node.type === 'reference') return reference(node, uses, depth)
+  if (node.type === 'icon') {
+    uses.icons = true
+    return jsx.element(
+      ICONIFY,
+      [
+        jsx.attribute('icon', jsx.stringValue(node.icon)),
+        jsx.attribute('className', jsx.container(moduleClass(node.className)))
+      ],
+      [],
+      depth
+    )
+  }
+  const kind = uses.kind
   const radix = RADIX[kind]
   const part = node.part ? radix?.parts[node.part] : undefined
   const root = node.part === 'root'
@@ -90,11 +136,14 @@ function element(node: ComponentNode, kind: GeneratedKind, depth: number): es.Sy
       return []
     })
   ]
-  const inline = node.children.length === 1 && node.children[0]?.type !== 'element'
+  // Words alone stay on the element's line, where a line break would add a space.
+  const inline =
+    node.children.length === 1 &&
+    (node.children[0]?.type === 'text' || node.children[0]?.type === 'textProp')
   return jsx.element(
     tagOf(node, kind),
     attributes,
-    node.children.map((child) => element(child, kind, depth + 1)),
+    node.children.map((child) => element(child, uses, depth + 1)),
     depth,
     inline
   )
@@ -113,6 +162,8 @@ const MODULE = es.parseModule(dedent`
 `)
 
 const RADIX_IMPORT = es.parseModule(`import { $Namespace as $Primitive } from 'radix-ui'`)
+const ICONIFY_IMPORT = es.parseModule(`import { Icon as ${ICONIFY} } from '@iconify/react'`).body
+const IMPORT_COMPONENT = es.parseModule(`import { $Component } from '$path'`)
 
 /** The root's own props, extended with the component's variant props when it has any. */
 function propsType(component: ComponentModel): es.SyntaxNode {
@@ -183,19 +234,31 @@ function parameters(component: ComponentModel): es.SyntaxNode {
 export const reactComponent: ComponentGenerator = async (component) => {
   const radix = RADIX[component.kind]
   const stylesPath = `${component.name}.module.css`
-  const imports = radix
-    ? es.fill(RADIX_IMPORT, {
-        $Namespace: es.identifier(radix.namespace),
-        $Primitive: es.identifier(PRIMITIVE(radix.namespace))
-      }).body
-    : []
+  const uses: MarkupUses = { kind: component.kind, components: new Set(), icons: false }
+  const body = element(component.tree, uses, 1)
+  const imports = [
+    ...(uses.icons ? ICONIFY_IMPORT : []),
+    ...(radix
+      ? es.fill(RADIX_IMPORT, {
+          $Namespace: es.identifier(radix.namespace),
+          $Primitive: es.identifier(PRIMITIVE(radix.namespace))
+        }).body
+      : []),
+    ...[...uses.components].sort().flatMap(
+      (name) =>
+        es.fill(IMPORT_COMPONENT, {
+          $Component: es.identifier(name),
+          $path: es.string(`./${name}`)
+        }).body
+    )
+  ]
   const [typeImport, stylesImport, ...rest] = es.fill(MODULE, {
     $styles: es.string(`./${stylesPath}`),
     $Props: es.identifier(`${component.name}Props`),
     $Type: propsType(component),
     $Name: es.identifier(component.name),
     $params: parameters(component),
-    $body: element(component.tree, component.kind, 1)
+    $body: body
   }).body
   const program = {
     type: 'Program',
@@ -211,6 +274,6 @@ export const reactComponent: ComponentGenerator = async (component) => {
     ],
     entry: { path: `./${component.name}`, named: true },
     // Radix's uncontrolled value, so a story's control and its play function can both change it.
-    valueArg: model ? `default${model.charAt(0).toUpperCase()}${model.slice(1)}` : null
+    valueArg: model ? defaultOf(model) : null
   }
 }

@@ -28,9 +28,9 @@ function controlSet(
   name: string,
   property: { name: string; values: string[] },
   behaviour: Behaviour,
-  draw: (graph: SceneGraph, variantId: string, value: string) => void
+  draw: (graph: SceneGraph, variantId: string, value: string) => void,
+  graph = new SceneGraph()
 ): SceneGraph {
-  const graph = new SceneGraph()
   const set = graph.createNode('COMPONENT_SET', graph.getPages()[0].id, {
     name,
     componentPropertyDefinitions: [
@@ -56,7 +56,7 @@ function controlSet(
   return graph
 }
 
-function switchGraph(): SceneGraph {
+function switchGraph(graph?: SceneGraph): SceneGraph {
   return controlSet(
     'Switch',
     { name: 'State', values: ['Off', 'On'] },
@@ -78,7 +78,43 @@ function switchGraph(): SceneGraph {
         height: 18,
         fills: fill(1, 1, 1)
       })
-    }
+    },
+    graph
+  )
+}
+
+/** A collapsible section whose content holds a switch drawn on, with the switch's set beside it. */
+function sectionGraph(): SceneGraph {
+  const graph = switchGraph()
+  const on = [...graph.getAllNodes()].find((node) => node.name === 'State=On')
+  if (!on) throw new Error('Expected the switch drawn on')
+  return controlSet(
+    'Section',
+    { name: 'Open', values: ['No', 'Yes'] },
+    {
+      ...emptyBehaviour('collapsible'),
+      booleans: { open: { propertyId: 'value', on: 'Yes', off: 'No' } },
+      parts: { trigger: 'trigger', content: 'content' }
+    },
+    (graph, variantId, value) => {
+      graph.updateNode(variantId, { width: 120, height: 60 })
+      graph.createNode('FRAME', variantId, {
+        name: 'Trigger',
+        componentPropertyReferences: slot('trigger'),
+        width: 120,
+        height: 20
+      })
+      if (value !== 'Yes') return
+      const content = graph.createNode('FRAME', variantId, {
+        name: 'Content',
+        componentPropertyReferences: slot('content'),
+        y: 24,
+        width: 120,
+        height: 30
+      })
+      graph.createInstance(on.id, content.id, { name: 'Switch' })
+    },
+    graph
   )
 }
 
@@ -190,11 +226,13 @@ const APPS: Record<
 async function serveComponent(
   graph: SceneGraph,
   framework: Framework,
-  folder: string
+  folder: string,
+  name?: string
 ): Promise<ViteDevServer> {
   const files = await exportStorybook(graph, { framework })
-  const component = files.find((file) => /\.(vue|tsx)$/.test(file.path))
-  const stories = files.find((file) => file.path.endsWith('.stories.ts'))
+  const named = (file: { path: string }) => !name || file.path.startsWith(`${name}.`)
+  const component = files.find((file) => named(file) && /\.(vue|tsx)$/.test(file.path))
+  const stories = files.find((file) => named(file) && file.path.endsWith('.stories.ts'))
   if (!component || !stories) throw new Error('No component was generated')
   await mkdir(folder, { recursive: true })
   for (const file of files) await writeFile(join(folder, file.path), file.content)
@@ -258,6 +296,27 @@ for (const framework of ['vue', 'react'] as const) {
         'data-state',
         'checked'
       )
+    })
+
+    test('a switch in the content of a section is the generated switch, operable', async ({
+      page
+    }, info) => {
+      server = await serveComponent(
+        sectionGraph(),
+        framework,
+        info.outputPath('section'),
+        'Section'
+      )
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await page.locator('#enabled').getByRole('button').first().click()
+      const nested = page.locator('#enabled').getByRole('switch')
+      // It starts as the design draws it and keeps working as a switch.
+      await expect(nested).toHaveAttribute('data-state', 'checked')
+      await nested.click()
+      await expect(nested).toHaveAttribute('data-state', 'unchecked')
+      await expect(page.locator('#enabled [class*="switch__thumb"]')).toHaveCSS('left', '2px')
+      // The section only places the switch; its own state styles still paint it.
+      await expect(nested).toHaveCSS('background-color', 'rgb(204, 214, 224)')
     })
 
     test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {

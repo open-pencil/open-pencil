@@ -7,6 +7,7 @@ import {
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
+  settingsSectionSet,
   switchSet
 } from '#dom-css-tests/behaviours/fixtures'
 import { exportStorybook } from '#dom-css/index'
@@ -14,10 +15,11 @@ import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
-const APP_PACKAGES = ['react', 'react-dom', 'radix-ui', 'storybook']
+const APP_PACKAGES = ['react', 'react-dom', 'radix-ui', '@iconify/react', 'storybook']
 
 const output = await mkdtemp(join(tmpdir(), 'open-pencil-react-'))
 await mkdir(join(output, 'node_modules'))
+await mkdir(join(output, 'node_modules', '@iconify'))
 for (const name of APP_PACKAGES)
   await symlink(
     dirname(Bun.resolveSync(`${name}/package.json`, import.meta.dir)),
@@ -78,6 +80,17 @@ describe('generated React components', () => {
     expect(sent).not.toContain('label=')
     const meta = stories.default as { args?: Record<string, unknown> }
     expect(meta.args).toMatchObject({ label: 'Save' })
+  })
+
+  test('an instance of another generated component uses it, even in open-only content, and an icon uses Iconify', async () => {
+    const { files, component } = await generate(settingsSectionSet())
+    const source = String(files.find((file) => file.path === 'Section.tsx')?.content)
+    expect(source).toContain(`import { Switch } from "./Switch"`)
+    expect(source).toContain('@iconify/react')
+    const html = render(component, { defaultOpen: true })
+    // The switch is the generated one, drawn on as the design places it, and only once.
+    expect(html.match(/role="switch"/g)?.length).toBe(1)
+    expect(html).toContain('data-state="checked"')
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

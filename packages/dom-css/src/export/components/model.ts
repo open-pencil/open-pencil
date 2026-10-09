@@ -1,4 +1,4 @@
-import { behaviourArgs } from '#dom-css/behaviours/args'
+import { behaviourArgs, type BehaviourArgs } from '#dom-css/behaviours/args'
 import { BUTTON_RESET } from '#dom-css/behaviours/reset'
 import { allElements } from '#dom-css/behaviours/states/layers'
 import { stateStyles } from '#dom-css/behaviours/states/model'
@@ -20,6 +20,13 @@ import {
 
 import type { SceneGraphToDesignOptions } from '../projection'
 import { claimName, identifierName } from '../storybook/names'
+import {
+  referencedLayers,
+  type ComponentReference,
+  type ComponentReferences,
+  type IconReference,
+  type UsedLayer
+} from './references'
 
 /** Kinds generated as components so far; the rest keep static stories. */
 export const GENERATED_KINDS = ['button', 'switch', 'checkbox', 'toggle', 'collapsible'] as const
@@ -65,6 +72,8 @@ export interface ComponentElement {
 export interface TextProp {
   /** The prop's identifier. */
   name: string
+  /** The text property's id, which instances assign values by. */
+  id: string
   /** The text property's name. */
   property: string
   default: string
@@ -75,6 +84,8 @@ export type ComponentNode =
   | { type: 'text'; value: string }
   /** The value of a text prop, drawn where the design binds a text layer to it. */
   | { type: 'textProp'; name: string }
+  | ComponentReference
+  | IconReference
 
 /** One component generated from a component set with a behaviour. */
 export interface ComponentModel {
@@ -90,6 +101,8 @@ export interface ComponentModel {
   disabled: boolean
   props: VariantProp[]
   texts: TextProp[]
+  /** The variant properties that draw its booleans and states, which references set. */
+  args: BehaviourArgs
 }
 
 interface TreeLabels {
@@ -97,6 +110,8 @@ interface TreeLabels {
   classes: Map<StateElement, string>
   /** The text prop each bound text layer draws, by layer. */
   texts: Map<StateElement, string>
+  /** Layers that use another component or an icon in place of drawing themselves. */
+  used: Map<StateElement, UsedLayer>
 }
 
 function componentTree(
@@ -117,11 +132,15 @@ function componentTree(
     children: text
       ? [{ type: 'textProp', name: text }]
       : node.children.map((child) =>
-          child.type === 'text'
-            ? { type: 'text', value: child.text }
-            : componentTree(child, labels, [])
+          child.type === 'text' ? { type: 'text', value: child.text } : childNode(child, labels)
         )
   }
+}
+
+function childNode(element: StateElement, labels: TreeLabels): ComponentNode {
+  const used = labels.used.get(element)
+  if (!used) return componentTree(element, labels, [])
+  return { ...used, className: labels.classes.get(element) ?? '' }
 }
 
 /**
@@ -137,6 +156,7 @@ function textProps(
   const definitions = behaviourProperties(graph, set).filter((item) => item.type === 'TEXT')
   const texts = definitions.map((definition) => ({
     name: claimName(camelCase(identifierName(definition.name, 'Text')), taken),
+    id: definition.id,
     property: definition.name,
     default: definition.defaultValue
   }))
@@ -201,10 +221,18 @@ function partPaths(graph: SceneGraph, set: SceneNode, behaviour: Behaviour): Map
  * The component a set with a behaviour generates, or `null` when its kind is not generated
  * yet or its variants have no rest state to start from.
  */
+export interface ComponentModelOptions extends Pick<SceneGraphToDesignOptions, 'vectorElement'> {
+  /**
+   * The other components generated alongside, which instances of them use rather than
+   * drawing their layers.
+   */
+  references?: ComponentReferences
+}
+
 export function componentModel(
   graph: SceneGraph,
   set: SceneNode,
-  options: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
+  options: ComponentModelOptions = {}
 ): ComponentModel | null {
   const behaviour = readBehaviour(set)
   if (!behaviour || !isGenerated(behaviour.kind)) return null
@@ -246,6 +274,14 @@ export function componentModel(
       attribute: propAttribute(prop.property)
     }))
   ]
+  const used = options.references
+    ? referencedLayers(
+        graph,
+        styles.root,
+        [styles.restId, ...graph.getChildren(set.id).map((variant) => variant.id)],
+        options.references
+      )
+    : new Map<StateElement, UsedLayer>()
   const texts = textProps(graph, set, allElements(styles.root), taken)
   return {
     name: identifierName(set.name, 'Component'),
@@ -253,12 +289,13 @@ export function componentModel(
     styles,
     tree: componentTree(
       styles.root,
-      { parts, classes: layerClassNames(styles), texts: texts.bound },
+      { parts, classes: layerClassNames(styles), texts: texts.bound, used },
       bindings
     ),
     model,
     disabled,
     props,
-    texts: texts.texts
+    texts: texts.texts,
+    args
   }
 }

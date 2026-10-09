@@ -85,7 +85,7 @@ export function stateStyles(
     .flatMap((variant) => {
       const conditions = conditionsOf(variant)
       const root = conditions && projectVariant(graph, variant, options)
-      return conditions && root ? [{ conditions, root }] : []
+      return conditions && root ? [{ id: variant.id, conditions, root }] : []
     })
   const rest = variants.find((variant) => variant.conditions.length === 0)
   if (!rest) return null
@@ -104,5 +104,5 @@ export function stateStyles(
     }
   }
   for (const element of elements) element.rules = pruneCombined(element.rules)
-  return { name: set.name, root }
+  return { name: set.name, restId: rest.id, root }
 }

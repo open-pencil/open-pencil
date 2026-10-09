@@ -1,4 +1,10 @@
-import { emptyBehaviour, SceneGraph, withBehaviour, type Behaviour } from '@open-pencil/scene-graph'
+import {
+  emptyBehaviour,
+  SceneGraph,
+  withBehaviour,
+  withIcon,
+  type Behaviour
+} from '@open-pencil/scene-graph'
 
 const solid = (r: number, g: number, b: number) => [
   { type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }
@@ -17,9 +23,9 @@ export function componentSet(
   axes: Record<string, string[]>,
   behaviour: Behaviour,
   draw: (graph: SceneGraph, variant: string, values: Record<string, string>) => void,
-  skip: (values: Record<string, string>) => boolean = () => false
+  skip: (values: Record<string, string>) => boolean = () => false,
+  graph = new SceneGraph()
 ) {
-  const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const set = graph.createNode('COMPONENT_SET', pageId, {
     name,
@@ -52,7 +58,7 @@ export function componentSet(
   return { graph, set: graph.getNode(set.id) ?? set }
 }
 
-export function switchSet() {
+export function switchSet(graph?: SceneGraph) {
   return componentSet(
     'Switch',
     { State: ['Off', 'On'], Interaction: ['Default', 'Hover', 'Disabled'] },
@@ -75,7 +81,9 @@ export function switchSet() {
         height: 18,
         fills: COLORS.white
       })
-    }
+    },
+    undefined,
+    graph
   )
 }
 
@@ -163,6 +171,55 @@ export function labelledButtonSet() {
     ]
   })
   return { graph, set: graph.getNode(set.id) ?? set }
+}
+
+/**
+ * A collapsible section whose trigger holds an icon and a label and whose content, shown only
+ * when open, holds a switch drawn on, with the switch's own set in the same document, so the
+ * section's component can use the switch's rather than draw it.
+ */
+export function settingsSectionSet() {
+  const graph = new SceneGraph()
+  const toggle = switchSet(graph)
+  const on = graph
+    .getChildren(toggle.set.id)
+    .find((variant) => variant.name === 'State=On, Interaction=Default')
+  if (!on) throw new Error('Expected the switch drawn on')
+  const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+  const section = componentSet(
+    'Section',
+    { Open: ['No', 'Yes'] },
+    {
+      ...emptyBehaviour('collapsible'),
+      booleans: { open: { propertyId: 'open', on: 'Yes', off: 'No' } },
+      parts: { trigger: 'trigger-slot', content: 'content-slot' }
+    },
+    (graph, variant, { Open }) => {
+      graph.updateNode(variant, { width: 160, height: 60 })
+      const trigger = graph.createNode('FRAME', variant, {
+        name: 'Trigger',
+        componentPropertyReferences: slot('trigger-slot'),
+        width: 160,
+        height: 20
+      })
+      const icon = graph.createNode('FRAME', trigger.id, { name: 'bell', width: 16, height: 16 })
+      graph.updateNode(icon.id, { pluginData: withIcon(icon, { name: 'lucide:bell' }) })
+      graph.createNode('VECTOR', icon.id, { name: 'path', width: 16, height: 16 })
+      graph.createNode('TEXT', trigger.id, { name: 'Title', text: 'Notifications', x: 20 })
+      if (Open !== 'Yes') return
+      const content = graph.createNode('FRAME', variant, {
+        name: 'Content',
+        componentPropertyReferences: slot('content-slot'),
+        y: 24,
+        width: 160,
+        height: 30
+      })
+      graph.createInstance(on.id, content.id, { name: 'Switch' })
+    },
+    undefined,
+    graph
+  )
+  return { graph, set: section.set, switchSet: toggle.set }
 }
 
 /** A collapsible whose content shows only when open. */

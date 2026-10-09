@@ -7,6 +7,7 @@ import {
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
+  settingsSectionSet,
   switchSet
 } from '#dom-css-tests/behaviours/fixtures'
 import { exportStorybook } from '#dom-css/index'
@@ -15,10 +16,11 @@ import { compileScript, parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
-const APP_PACKAGES = ['vue', 'reka-ui', 'storybook']
+const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook']
 
 const output = await mkdtemp(join(tmpdir(), 'open-pencil-vue-'))
 await mkdir(join(output, 'node_modules'))
+await mkdir(join(output, 'node_modules', '@iconify'))
 for (const name of APP_PACKAGES)
   await symlink(
     dirname(Bun.resolveSync(`${name}/package.json`, import.meta.dir)),
@@ -32,13 +34,16 @@ async function generate(fixture: ReturnType<typeof switchSet>) {
   const source = (suffix: string) =>
     String(files.find((file) => file.path.endsWith(suffix))?.content)
   const name = fixture.set.name
-  const { descriptor, errors } = parse(source('.vue'), { filename: `${name}.vue` })
-  expect(errors).toEqual([])
-  const script = compileScript(descriptor, { id: name, inlineTemplate: true })
   // Bun caches a folder's listing once it imports from it, so each export gets its own.
   const folder = await mkdtemp(join(output, `${name}-`))
-  // `./Name.vue` resolves to `Name.vue.ts`, so the stories import the compiled component.
-  await writeFile(join(folder, `${name}.vue.ts`), script.content)
+  // `./Name.vue` resolves to `Name.vue.ts`, so components and stories import compiled ones.
+  for (const file of files.filter((item) => item.path.endsWith('.vue'))) {
+    const id = file.path.slice(0, -'.vue'.length)
+    const { descriptor, errors } = parse(String(file.content), { filename: file.path })
+    expect(errors).toEqual([])
+    const script = compileScript(descriptor, { id, inlineTemplate: true })
+    await writeFile(join(folder, `${file.path}.ts`), script.content)
+  }
   await writeFile(join(folder, `${name}.stories.ts`), source('.stories.ts'))
   const component: { default: Component } = await import(join(folder, `${name}.vue.ts`))
   const stories: Record<string, { args?: Record<string, unknown>; play?: unknown }> = await import(
@@ -88,6 +93,17 @@ describe('generated Vue components', () => {
     }
     expect(meta.args).toMatchObject({ label: 'Save' })
     expect(meta.argTypes).toMatchObject({ label: { control: 'text' } })
+  })
+
+  test('an instance of another generated component uses it, even in open-only content, and an icon uses Iconify', async () => {
+    const { files, component } = await generate(settingsSectionSet())
+    const source = String(files.find((file) => file.path === 'Section.vue')?.content)
+    expect(source).toContain(`import Switch from './Switch.vue'`)
+    expect(source).toContain('@iconify/vue')
+    const html = await render(component, { open: true })
+    // The switch is the generated one, drawn on as the design places it, and only once.
+    expect(html.match(/role="switch"/g)?.length).toBe(1)
+    expect(html).toContain('data-state="checked"')
   })
 
   test('a button sets its other variant properties as data attributes', async () => {
