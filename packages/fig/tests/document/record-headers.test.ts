@@ -1,10 +1,22 @@
 import { expect, test } from 'bun:test'
 
 import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
-import { parseFigBuffer } from '#fig/archive'
+import { parseFigBuffer, writeFigArchive } from '#fig/archive'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
-import { RECORD_HEADER_FIELDS } from '#fig/document/read'
+import {
+  createArchiveDocumentReader,
+  createDocumentReader,
+  RECORD_HEADER_FIELDS
+} from '#fig/document/read'
+import { deflateSync } from 'fflate'
 
+import {
+  createNodeChangesMessage,
+  encodeMessage,
+  getSchemaBytes,
+  initCodec,
+  type NodeChange
+} from '@open-pencil/kiwi/fig/codec'
 import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 import { decodeWhole } from '@open-pencil/kiwi/schema-runtime'
 import { setIdSession, type SceneGraph } from '@open-pencil/scene-graph'
@@ -65,4 +77,29 @@ test('an archive reader with record headers builds the document records decoded 
   } finally {
     setIdSession(0)
   }
+})
+
+// A file whose layers each name the other as parent cannot be read; reading those records must
+// fail as a document read whole fails, not by recursing until the stack runs out. The archive
+// reader decodes a record when it is read, so no page reaching them lets the file open.
+test('an archive reader rejects a cyclic parent chain as a document read whole does', async () => {
+  await initCodec()
+  const guid = (localID: number) => ({ sessionID: 0, localID })
+  const under = (parent: number) => ({ guid: guid(parent), position: '!' })
+  const records: NodeChange[] = [
+    { guid: guid(0), type: 'DOCUMENT', phase: 'CREATED', name: 'Document' },
+    { guid: guid(1), type: 'CANVAS', phase: 'CREATED', name: 'Page', parentIndex: under(0) },
+    { guid: guid(2), type: 'FRAME', phase: 'CREATED', name: 'A', parentIndex: under(3) },
+    { guid: guid(3), type: 'FRAME', phase: 'CREATED', name: 'B', parentIndex: under(2) }
+  ]
+  const bytes = writeFigArchive({
+    schemaDeflated: deflateSync(getSchemaBytes()),
+    kiwiData: encodeMessage(createNodeChangesMessage(0, 0, records)),
+    thumbnailPNG: new Uint8Array([1]),
+    metaJSON: '{}'
+  })
+
+  expect(() => createDocumentReader(records)).toThrow('Cyclic component-property ancestry')
+  const { reader } = createArchiveDocumentReader(bytes.slice().buffer)
+  expect(() => reader.sourceRecords).toThrow('Cyclic component-property ancestry')
 })

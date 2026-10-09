@@ -8,6 +8,11 @@ import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import {
+  capturePageChange as startPageChange,
+  restorePageChange as applyPageChangeToEditor,
+  type PageChange
+} from './history/page-change'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
   restorePageFromSnapshot as restorePageSnapshot,
@@ -236,6 +241,15 @@ export function createUndoActions(ctx: EditorContext) {
     restorePageSnapshot(ctx, snapshot)
   }
 
+  /** Starts recording an edit to a page; the returned function ends it with what changed. */
+  function capturePageChange(pageId = ctx.state.currentPageId): () => PageChange {
+    return startPageChange(ctx.graph, pageId)
+  }
+
+  function restorePageChange(change: PageChange, side: 'before' | 'after') {
+    applyPageChangeToEditor(ctx, change, side)
+  }
+
   function pushUndoEntry(entry: UndoEntry) {
     ctx.undo.push(entry)
   }
@@ -252,6 +266,8 @@ export function createUndoActions(ctx: EditorContext) {
     redoAction,
     snapshotPage,
     restorePageFromSnapshot,
+    capturePageChange,
+    restorePageChange,
     pushUndoEntry
   }
 }

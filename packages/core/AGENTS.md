@@ -6,6 +6,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - CanvasKit runtime loading is centralized in `@open-pencil/core/canvaskit`. Headless raster export may dynamically load `canvaskit-wasm/full`; elsewhere `import type` and pass CanvasKit in.
 - Drawing and input share preview-aware geometry through `@open-pencil/core/geometry`, built on Scene Graph matrices. Use it for world/screen transforms, inverses, bounds, and handle placement.
 - Copies of part of a document, such as previews, history snapshots, and exports, come from `extractPageContext` or `extractExportGraph` in `packages/core/src/io/subgraph.ts`, not another copier. Pass `componentSets` when instances must switch variant and `shareTables` for a read-only view rebuilt often (`packages/core/tests/io/subgraph.test.ts`).
+- Undo for structural AI and MCP edits records only the layers an edit touches with `capturePageChange`, whose capture shares unchanged values instead of deep-copying the page, since a page copy per tool call grows memory with every call. It relies on every change emitting a graph event and on values being replaced rather than written into, apart from the child lists, source metadata, and override maps it copies (`packages/core/tests/editor/history/page-change.test.ts`).
 
 ## Layout
 
