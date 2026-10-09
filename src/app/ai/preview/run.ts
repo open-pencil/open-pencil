@@ -10,11 +10,9 @@ import { publishAgentPreview } from '@/app/presence/preview-stream'
  * pointing at what it builds, and published so a room shows it to everyone else as it streams.
  */
 export function createRunPreview(store: EditorStore) {
-  const preview = createCanvasJSXPreview(
-    store,
-    () => runPageId(store),
-    (focus) => markRunPreview(store, focus)
-  )
+  const preview = createCanvasJSXPreview(store, () => runPageId(store), {
+    onFocus: (focus) => markRunPreview(store, focus)
+  })
 
   /** Stops each call's abort listener; the request's signal outlives the calls it covers. */
   const stopAbortListeners = new Map<string, () => void>()

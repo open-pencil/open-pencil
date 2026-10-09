@@ -121,7 +121,7 @@ export function shareAgentPreviews(
   connection: Pick<CollabRoomConnection, 'agentPreview' | 'onPeerLeave'>,
   /** Draws remote previews; the canvas preview the chat run uses unless a test supplies one. */
   createController: (pageId: () => string) => RemotePreviewController = (pageId) =>
-    createCanvasJSXPreview(store, pageId)
+    createCanvasJSXPreview(store, pageId, { activeTabOnly: false })
 ): () => void {
   const [send, receive] = connection.agentPreview
   let page = store.state.currentPageId
