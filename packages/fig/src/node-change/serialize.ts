@@ -10,6 +10,11 @@ import { effectiveFigmaRawNodeFields } from '../source-metadata'
 import { computeExportTransform, mapToFigmaType } from './basics'
 import { buildNodeDerivedTextData } from './derived-text/build'
 import { fillsOwnSizingAxis } from './export/fill-sizing'
+import {
+  normalizeStackCounterAlign,
+  normalizeStackCounterAlignItems,
+  normalizeStackJustify
+} from './export/layout-values'
 import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
 import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
@@ -163,20 +168,6 @@ function normalizeStackSizing(value: string | undefined): KiwiNodeChange['stackP
     value === 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE'
     ? value
     : undefined
-}
-
-function normalizeStackJustify(value: string | undefined): string | undefined {
-  return value === 'SPACE_EVENLY' ? 'SPACE_BETWEEN' : value
-}
-
-function normalizeStackCounterAlign(value: string | undefined): string | undefined {
-  return value === 'SPACE_EVENLY' ? 'SPACE_BETWEEN' : value
-}
-
-function normalizeStackCounterAlignItems(value: string | undefined): string | undefined {
-  const normalized = normalizeStackCounterAlign(value)
-  // Figma models cross-axis stretch on each child, not on counterAxisAlignItems.
-  return normalized === 'STRETCH' ? 'MIN' : normalized
 }
 
 function serializeInheritedCounterAxisStretch(

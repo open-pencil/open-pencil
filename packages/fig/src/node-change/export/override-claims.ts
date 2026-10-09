@@ -1,7 +1,7 @@
 import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
+import { normalizeFontFamily, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { forEachExportedOverride, instanceExportAddress } from '../instance/geometry'
@@ -16,20 +16,38 @@ import {
   type SceneNodeToKiwiContext,
   type StyleReference
 } from './context'
+import { weightToFigmaStyle } from '../font/style'
+import { kiwiEffects } from './effects'
 import { fillsOwnSizingAxis } from './fill-sizing'
+import { normalizeStackCounterAlignItems, normalizeStackJustify } from './layout-values'
+import { serializeVariableModes } from './variable-modes'
 import { exportedNode } from './resolved-bindings'
 
-function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
+function exportedStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
   const mapped = context.nodeIdToGuid?.get(id)
   if (mapped) return { guid: mapped }
   return context.styleReferences.get(id) ?? { guid: stringToGuid(id) }
 }
 
-function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
+/** The uniform scale an instance draws its component at; claims are written without it. */
+function instanceScale(instance: SceneNode): number {
   const scale = instance.componentScale
   if (!Number.isFinite(scale) || scale <= 0) throw new Error('Invalid instance uniform scale')
+  return scale
+}
+
+function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
+  const scale = instanceScale(instance)
   return { x: target.width / scale, y: target.height / scale }
+}
+
+/** A length, or a list of them, in the instance's own space. */
+function unscaledLength(value: unknown, scale: number): unknown {
+  if (typeof value === 'number') return value / scale
+  if (Array.isArray(value))
+    return value.map((item: unknown) => (typeof item === 'number' ? item / scale : item))
+  return value
 }
 
 function exportedSwapOverride(
@@ -94,15 +112,56 @@ function registryClaim(
   const { raw, field: definition } = entry
   switch (definition.kind) {
     case 'scalar':
-      return { [raw]: target[field] }
+      return {
+        [raw]: definition.length
+          ? unscaledLength(target[field], instanceScale(instance))
+          : target[field]
+      }
     case 'visible':
       return { visible: target.visible }
     case 'text':
       return { textData: { characters: typeof value === 'string' ? value : target.text } }
     case 'text-style':
       return target.textStyleId
-        ? { styleIdForText: exportedTextStyleReference(context, target.textStyleId) }
+        ? { styleIdForText: exportedStyleReference(context, target.textStyleId) }
         : undefined
+    case 'style': {
+      const id = target[field]
+      // A style the instance took off is the unset GUID, as Figma writes it.
+      return { [raw]: typeof id === 'string' ? exportedStyleReference(context, id) : { guid: UNSET_GUID } }
+    }
+    case 'effects':
+      return { effects: kiwiEffects(context, target.effects, instanceScale(instance)) }
+    case 'layout-align':
+      return raw === 'stackPrimaryAlignItems'
+        ? { stackPrimaryAlignItems: normalizeStackJustify(target.primaryAxisAlign) }
+        : { stackCounterAlignItems: normalizeStackCounterAlignItems(target.counterAxisAlign) }
+    case 'positioning':
+      return { stackPositioning: target.layoutPositioning }
+    case 'font':
+      return {
+        fontName: {
+          family: normalizeFontFamily(target.fontFamily),
+          style: weightToFigmaStyle(target.fontWeight, target.italic),
+          postscript: ''
+        }
+      }
+    case 'text-length': {
+      const value = target[field]
+      return typeof value === 'number'
+        ? { [raw]: { value: value / instanceScale(instance), units: 'PIXELS' } }
+        : undefined
+    }
+    case 'text-decoration':
+      return { textDecoration: target.textDecoration }
+    case 'variable-modes':
+      return {
+        variableModeBySetMap: serializeVariableModes(
+          target,
+          context.varIdToGuid,
+          context.modeIdToGuid
+        ) ?? { entries: [] }
+      }
     case 'paint':
       return raw === 'fillPaints'
         ? { fillPaints: createFillPaints(context, target) }

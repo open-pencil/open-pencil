@@ -6,10 +6,12 @@ import type { KiwiNodeChange, KiwiSymbolOverridePayload } from '#fig/node-change
 import { mergeOverrides } from '#fig/node-change/export/override-claims'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
+import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import {
   claimSlotContent,
   recordInstanceOverride,
   SceneGraph,
+  setLayerOverride,
   slotScope
 } from '@open-pencil/scene-graph'
 
@@ -95,5 +97,56 @@ describe('claims around slot content', () => {
     expect(claims([change])).toEqual([])
     expect(placed).toHaveLength(1)
     expect(claims(placed)).toMatchObject([{ opacity: 0.5 }])
+  })
+})
+
+const CLAIMED = {
+  strokeWeight: 4,
+  cornerRadius: 8,
+  dashPattern: [2, 6],
+  fillStyleId: null,
+  fontFamily: 'Inter',
+  fontWeight: 700,
+  italic: true,
+  lineHeight: 40,
+  letterSpacing: 2,
+  textCase: 'UPPER'
+} as const
+
+describe('writing override claims', () => {
+  test('claims on a scaled instance are written in its own space, as Figma reads them', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id)
+    graph.createNode('TEXT', component.id, { text: 'Label', fillStyleId: '9:1' })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    graph.updateNode(instance.id, { componentScale: 2 })
+    const layerId = expectDefined(graph.getChildren(instance.id)[0], 'copy').id
+    graph.updateNode(layerId, { ...CLAIMED, dashPattern: [...CLAIMED.dashPattern] })
+    for (const field of Object.keys(CLAIMED) as (keyof typeof CLAIMED)[])
+      setLayerOverride(graph, expectDefined(graph.getNode(layerId), 'copy'), field)
+
+    const [change] = sceneNodeToKiwi(
+      expectDefined(graph.getNode(instance.id), 'instance'),
+      { sessionID: 1, localID: 1 },
+      0,
+      { value: 2 },
+      graph,
+      [],
+      { nodeIdToGuid: new Map(), assignedGuidValues: new Set() }
+    )
+
+    const claims = symbolDataOf(change)?.symbolOverrides ?? []
+    expect(claims).toHaveLength(1)
+    expect(claims[0]).toMatchObject({
+      strokeWeight: 2,
+      cornerRadius: 4,
+      dashPattern: [1, 3],
+      styleIdForFill: { guid: UNSET_GUID },
+      fontName: { family: 'Inter', style: 'Bold Italic' },
+      lineHeight: { value: 20, units: 'PIXELS' },
+      letterSpacing: { value: 1, units: 'PIXELS' },
+      textCase: 'UPPER'
+    })
   })
 })

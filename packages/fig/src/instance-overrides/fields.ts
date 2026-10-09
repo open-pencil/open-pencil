@@ -12,10 +12,18 @@ export interface OverrideField {
     | 'visible'
     | 'text'
     | 'text-style'
+    | 'style'
     | 'paint'
+    | 'effects'
     | 'size'
     | 'layout-distance'
     | 'layout-mode'
+    | 'layout-align'
+    | 'positioning'
+    | 'font'
+    | 'text-length'
+    | 'text-decoration'
+    | 'variable-modes'
   /** A placed-space distance that an instance's uniform scale multiplies. */
   readonly length?: true
 }
@@ -41,7 +49,46 @@ export const OVERRIDE_FIELDS = {
   stackChildPrimaryGrow: { scene: ['layoutGrow'], kind: 'layout-mode' },
   stackPrimarySizing: { scene: ['primaryAxisSizing'], kind: 'layout-mode' },
   stackCounterSizing: { scene: ['counterAxisSizing'], kind: 'layout-mode' },
-  stackChildAlignSelf: { scene: ['layoutAlignSelf'], kind: 'layout-mode' }
+  stackChildAlignSelf: { scene: ['layoutAlignSelf'], kind: 'layout-mode' },
+  stackPrimaryAlignItems: { scene: ['primaryAxisAlign'], kind: 'layout-align' },
+  stackCounterAlignItems: { scene: ['counterAxisAlign'], kind: 'layout-align' },
+  stackPositioning: { scene: ['layoutPositioning'], kind: 'positioning' },
+  locked: { scene: ['locked'], kind: 'scalar' },
+  blendMode: { scene: ['blendMode'], kind: 'scalar' },
+  autoRename: { scene: ['autoRename'], kind: 'scalar' },
+  strokeWeight: { scene: ['strokeWeight'], kind: 'scalar', length: true },
+  strokeAlign: { scene: ['strokeAlign'], kind: 'scalar' },
+  strokeCap: { scene: ['strokeCap'], kind: 'scalar' },
+  strokeJoin: { scene: ['strokeJoin'], kind: 'scalar' },
+  miterLimit: { scene: ['strokeMiterLimit'], kind: 'scalar' },
+  dashPattern: { scene: ['dashPattern'], kind: 'scalar', length: true },
+  borderStrokeWeightsIndependent: { scene: ['independentStrokeWeights'], kind: 'scalar' },
+  borderTopWeight: { scene: ['borderTopWeight'], kind: 'scalar', length: true },
+  borderRightWeight: { scene: ['borderRightWeight'], kind: 'scalar', length: true },
+  borderBottomWeight: { scene: ['borderBottomWeight'], kind: 'scalar', length: true },
+  borderLeftWeight: { scene: ['borderLeftWeight'], kind: 'scalar', length: true },
+  cornerRadius: { scene: ['cornerRadius'], kind: 'scalar', length: true },
+  cornerSmoothing: { scene: ['cornerSmoothing'], kind: 'scalar' },
+  rectangleCornerRadiiIndependent: { scene: ['independentCorners'], kind: 'scalar' },
+  rectangleTopLeftCornerRadius: { scene: ['topLeftRadius'], kind: 'scalar', length: true },
+  rectangleTopRightCornerRadius: { scene: ['topRightRadius'], kind: 'scalar', length: true },
+  rectangleBottomLeftCornerRadius: { scene: ['bottomLeftRadius'], kind: 'scalar', length: true },
+  rectangleBottomRightCornerRadius: { scene: ['bottomRightRadius'], kind: 'scalar', length: true },
+  effects: { scene: ['effects'], kind: 'effects' },
+  styleIdForFill: { scene: ['fillStyleId'], kind: 'style' },
+  styleIdForStrokeFill: { scene: ['strokeStyleId'], kind: 'style' },
+  styleIdForEffect: { scene: ['effectStyleId'], kind: 'style' },
+  styleIdForGrid: { scene: ['gridStyleId'], kind: 'style' },
+  fontName: { scene: ['fontFamily', 'fontWeight', 'italic'], kind: 'font' },
+  lineHeight: { scene: ['lineHeight'], kind: 'text-length', length: true },
+  letterSpacing: { scene: ['letterSpacing'], kind: 'text-length', length: true },
+  textDecoration: { scene: ['textDecoration'], kind: 'text-decoration' },
+  textAlignHorizontal: { scene: ['textAlignHorizontal'], kind: 'scalar' },
+  textAlignVertical: { scene: ['textAlignVertical'], kind: 'scalar' },
+  textCase: { scene: ['textCase'], kind: 'scalar' },
+  textTruncation: { scene: ['textTruncation'], kind: 'scalar' },
+  maxLines: { scene: ['maxLines'], kind: 'scalar' },
+  variableModeBySetMap: { scene: ['variableModes'], kind: 'variable-modes' }
 } as const satisfies Record<string, OverrideField>
 
 export type RawOverrideField = keyof typeof OVERRIDE_FIELDS
