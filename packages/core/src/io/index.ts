@@ -28,6 +28,7 @@ export {
 export {
   createSVGNodes,
   createSVGNodesFromImport,
+  isSVGMarkup,
   prepareSVGImport,
   renderNodesToSVG,
   geometryBlobToSVGPath,

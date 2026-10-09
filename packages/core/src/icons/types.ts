@@ -58,15 +58,33 @@ export interface IconPathInfo {
   strokeCap: string
   strokeJoin: string
   fillRule: WindingRule
+  fillOpacity: number
+  strokeOpacity: number
   /** Nested SVG clip regions, ordered from outermost to innermost. */
   clipPaths?: SVGClipPathRegion[]
   /** Raw transform attribute from the source SVG element. */
   transform?: string | null
+  /** The `<g>` elements around the shape, outermost first, then the shape itself. */
+  elements: SVGElementLayer[]
+}
+
+/** An element an import turns into a layer: a group or the shape. */
+export interface SVGElementLayer {
+  /** Shared by every path drawn inside the same element. */
+  key: number
+  kind: 'group' | 'shape'
+  /** The element's `id`, when it is drawn directly rather than through `<use>`. */
+  name: string | null
+  opacity: number
+  /** The clip region this element adds to `clipPaths`, by index. */
+  clip: number | null
 }
 
 export type SVGClipPathInfo = Pick<IconPathInfo, 'd' | 'fillRule' | 'transform'>
 
 export interface SVGClipPathRegion {
+  /** The `<clipPath>` element's `id`. */
+  id: string
   paths: SVGClipPathInfo[]
   units: 'userSpaceOnUse' | 'objectBoundingBox'
 }

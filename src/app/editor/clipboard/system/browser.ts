@@ -9,7 +9,7 @@ import {
   getInMemoryClipboardHTML,
   setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
+import { pasteClipboardHTML, pasteSVGText } from '@/app/editor/clipboard/paste'
 import type {
   BrowserClipboardIO,
   BrowserClipboardReadResult,
@@ -46,7 +46,11 @@ async function writeBrowserClipboard(payload: Promise<ClipboardPayload>): Promis
   })
 }
 
-async function readBrowserClipboardHTML(): Promise<BrowserClipboardReadResult> {
+async function readItemText(item: ClipboardItem, type: string): Promise<string | null> {
+  return item.types.includes(type) ? (await item.getType(type)).text() : null
+}
+
+async function readBrowserClipboard(): Promise<BrowserClipboardReadResult> {
   if (
     typeof navigator === 'undefined' ||
     typeof (navigator as Partial<Navigator>).clipboard?.read !== 'function'
@@ -54,12 +58,13 @@ async function readBrowserClipboardHTML(): Promise<BrowserClipboardReadResult> {
     return { available: false }
   }
   try {
-    const items = await navigator.clipboard.read()
-    for (const item of items) {
-      if (!item.types.includes('text/html')) continue
-      return { available: true, html: await (await item.getType('text/html')).text() }
+    const item = (await navigator.clipboard.read()).at(0)
+    if (!item) return { available: true, html: null, text: null }
+    return {
+      available: true,
+      html: await readItemText(item, 'text/html'),
+      text: await readItemText(item, 'text/plain')
     }
-    return { available: true, html: null }
   } catch (error) {
     console.warn('Browser clipboard read failed', error)
     return { available: false }
@@ -68,7 +73,7 @@ async function readBrowserClipboardHTML(): Promise<BrowserClipboardReadResult> {
 
 const browserClipboardIO: BrowserClipboardIO = {
   write: writeBrowserClipboard,
-  readHTML: readBrowserClipboardHTML
+  read: readBrowserClipboard
 }
 
 async function copySelection(store: EditorStore, io: BrowserClipboardIO): Promise<boolean> {
@@ -93,13 +98,13 @@ async function pasteSelection(
   cursorPos: Vector | undefined,
   io: BrowserClipboardIO
 ): Promise<boolean> {
-  const result = await io.readHTML()
+  const result = await io.read()
   if (result.available) {
     if (result.html && isDesignClipboardHTML(result.html)) {
       await pasteClipboardHTML(store, result.html, cursorPos)
       return true
     }
-    return false
+    return result.text !== null && pasteSVGText(store, result.text, cursorPos)
   }
 
   const memoryHTML = getInMemoryClipboardHTML()

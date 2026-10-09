@@ -3,8 +3,9 @@ import { useEventListener } from '@vueuse/core'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
+import { pasteClipboardHTML, pastePoint, pasteSVGText } from '@/app/editor/clipboard/paste'
 import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
@@ -71,14 +72,21 @@ export function bindEditorClipboard(store: EditorStore) {
 
     const imageFiles = extractImageFilesFromClipboard(e)
     if (imageFiles.length) {
-      const cx = cursorPos?.x ?? (-store.state.panX + window.innerWidth / 2) / store.state.zoom
-      const cy = cursorPos?.y ?? (-store.state.panY + window.innerHeight / 2) / store.state.zoom
-      void store.placeImageFiles(imageFiles, cx, cy)
+      const { x, y } = pastePoint(store, cursorPos)
+      void store.placeImageFiles(imageFiles, x, y)
       return
     }
 
     // Like Figma, Paste keeps the copied position; Paste here in the canvas menu uses the cursor.
     const html = e.clipboardData?.getData('text/html') ?? ''
+    if (html && isDesignClipboardHTML(html)) {
+      void pasteClipboardHTML(store, html)
+      return
+    }
+
+    const text = e.clipboardData?.getData('text/plain') ?? ''
+    if (pasteSVGText(store, text, cursorPos)) return
+
     if (html) {
       void pasteClipboardHTML(store, html)
       return

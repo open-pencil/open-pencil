@@ -19,6 +19,9 @@ export function parseSVGDocument(source: string): Document | null {
   return xmlDocument?.documentElement?.localName === 'svg' ? xmlDocument : null
 }
 
+/** An XML declaration or doctype, which is only valid at the start of a document. */
+const XML_PROLOG = /^\s*(?:<\?xml[^>]*\?>\s*)?(?:<!DOCTYPE[^>[]*(?:\[[^\]]*\])?\s*>)?/i
+
 export function parseSVGFragment(source: string): Document | null {
-  return parseXML(`<svg xmlns="${SVG_NAMESPACE}">${source}</svg>`)
+  return parseXML(`<svg xmlns="${SVG_NAMESPACE}">${source.replace(XML_PROLOG, '')}</svg>`)
 }

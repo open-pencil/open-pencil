@@ -45,6 +45,16 @@ function fittedAncestors(graph: SceneGraph, parentIds: Iterable<string>): SceneN
   return [...found.values()].sort((a, b) => b.depth - a.depth).map(({ node }) => node)
 }
 
+/**
+ * The layers a group's box covers. A mask hides the layers above it outside its shape, so, as in
+ * Figma, they count only through the mask: the box is the layers below it and the masks.
+ */
+function boundingChildren(children: SceneNode[]): SceneNode[] {
+  const firstMask = children.findIndex((child) => child.isMask)
+  if (firstMask === -1) return children
+  return [...children.slice(0, firstMask), ...children.slice(firstMask).filter((c) => c.isMask)]
+}
+
 /** Moves the group to its children's bounds, shifting them back so they stay put. */
 function fitGroup(
   graph: SceneGraph,
@@ -56,7 +66,7 @@ function fitGroup(
   if (!group.parentId || group.rotation !== 0 || group.flipX || group.flipY) return
   const bounds =
     (group.type === 'BOOLEAN_OPERATION' ? options.booleanBounds?.(group) : null) ??
-    getAxisAlignedBoundsInParent(children, group.parentId, graph)
+    getAxisAlignedBoundsInParent(boundingChildren(children), group.parentId, graph)
   const dx = bounds.x - group.x
   const dy = bounds.y - group.y
   if (dx === 0 && dy === 0 && bounds.width === group.width && bounds.height === group.height) {

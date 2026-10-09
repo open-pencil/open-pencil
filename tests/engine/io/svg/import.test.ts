@@ -37,7 +37,7 @@ describe('import_svg', () => {
     ).toBeGreaterThan(0)
   })
 
-  test('flattens compatible filled shapes into one vector', async () => {
+  test('imports each filled shape as its own vector', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg viewBox="0 0 100 100">
         <rect x="0" y="0" width="50" height="50" fill="#ff0000"/>
@@ -47,15 +47,10 @@ describe('import_svg', () => {
     })) as { id: string }
 
     const children = graph.getChildren(result.id)
-    expect(children).toHaveLength(1)
-    const vector = expectDefined(children[0])
-    expect(vector.type).toBe('VECTOR')
-    expect(expectDefined(vector.vectorNetwork).regions).toHaveLength(3)
-    expect(vector.fillGeometry).toHaveLength(3)
-    expect(expectDefined(vector.fillGeometry[0]?.fills?.[0]).color.r).toBeCloseTo(1)
-    expect(expectDefined(vector.fillGeometry[1]?.fills?.[0]).color.g).toBeCloseTo(1)
-    expect(expectDefined(vector.fillGeometry[2]?.fills?.[0]).color.b).toBeCloseTo(1)
-    expect(vector.fillGeometry.every(({ commandsBlob }) => commandsBlob.length > 0)).toBe(true)
+    expect(children.map((child) => child.type)).toEqual(['VECTOR', 'VECTOR', 'VECTOR'])
+    expect(expectDefined(children[0].fills[0]).color.r).toBeCloseTo(1)
+    expect(expectDefined(children[1].fills[0]).color.g).toBeCloseTo(1)
+    expect(expectDefined(children[2].fills[0]).color.b).toBeCloseTo(1)
 
     const page = expectDefined(graph.getPages()[0])
     const exported = expectDefined(renderNodesToSVG(graph, page.id, [result.id]))
@@ -64,21 +59,19 @@ describe('import_svg', () => {
     expect(exported.match(/fill="#0000FF"/g)).toHaveLength(1)
   })
 
-  test('flattens a real multi-path provider SVG', async () => {
+  test('imports a real multi-path provider SVG shape by shape', async () => {
     const svg = readFileSync(
       join(process.cwd(), 'tests/fixtures/vectorize/euro_shield.recraft.svg'),
       'utf8'
     )
     const result = (await importSVG.execute(figma, { svg })) as { id: string }
 
-    const vector = expectDefined(graph.getChildren(result.id)[0])
-    const network = expectDefined(vector.vectorNetwork)
-    expect(graph.getChildren(result.id)).toHaveLength(1)
-    expect(network.regions.length).toBeGreaterThan(10)
-    expect(vector.fillGeometry).toHaveLength(network.regions.length)
+    const children = graph.getChildren(result.id)
+    expect(children).toHaveLength(svg.match(/<path\b/g)?.length ?? 0)
+    expect(children.every((child) => child.type === 'VECTOR')).toBe(true)
   })
 
-  test('preserves paint order around stroked paths', async () => {
+  test('keeps paint order around stroked paths', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg viewBox="0 0 100 100">
         <rect x="0" y="0" width="20" height="20" fill="#ff0000"/>
@@ -90,24 +83,20 @@ describe('import_svg', () => {
     })) as { id: string }
 
     const children = graph.getChildren(result.id)
-    expect(children).toHaveLength(3)
-    expect(expectDefined(children[0]).fillGeometry).toHaveLength(2)
-    expect(expectDefined(children[1]).strokes).toHaveLength(1)
-    expect(expectDefined(children[2]).fillGeometry).toHaveLength(2)
+    expect(children.map((child) => child.strokes.length)).toEqual([0, 0, 1, 0, 0])
+    expect(children.map((child) => Math.round(child.y))).toEqual([0, 0, 30, 40, 40])
   })
 
-  test('remaps path gradients into flattened vector bounds', async () => {
+  test('maps each shape gradient to its own vector bounds', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg viewBox="0 0 100 50"><defs><linearGradient id="g"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect width="50" height="50" fill="url(#g)"/><rect x="50" width="50" height="50" fill="url(#g)"/></svg>`
     })) as { id: string }
 
-    const vector = expectDefined(graph.getChildren(result.id)[0])
-    const left = expectDefined(vector.fillGeometry[0]?.fills?.[0]?.gradientTransform)
-    const right = expectDefined(vector.fillGeometry[1]?.fills?.[0]?.gradientTransform)
-    expect(left.m00).toBeCloseTo(0.5)
-    expect(left.m02).toBeCloseTo(0)
-    expect(right.m00).toBeCloseTo(0.5)
-    expect(right.m02).toBeCloseTo(0.5)
+    for (const vector of graph.getChildren(result.id)) {
+      const transform = expectDefined(vector.fills[0]?.gradientTransform)
+      expect(transform.m00).toBeCloseTo(1)
+      expect(transform.m02).toBeCloseTo(0)
+    }
 
     const page = expectDefined(graph.getPages()[0])
     const exported = expectDefined(renderNodesToSVG(graph, page.id, [result.id]))
@@ -212,10 +201,10 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
-    // SVG fills a polyline as if it were closed, so both flatten into one filled vector.
+    // SVG fills a polyline as if it were closed.
     const children = graph.getChildren(result.id)
-    expect(children).toHaveLength(1)
-    expect(expectDefined(children[0].vectorNetwork).regions).toHaveLength(2)
+    expect(children).toHaveLength(2)
+    for (const child of children) expect(expectDefined(child.vectorNetwork).regions).toHaveLength(1)
   })
 
   test('applies nested transforms through the XML tree', async () => {
@@ -265,7 +254,7 @@ describe('import_svg', () => {
     expect(path.fills[0].color.b).toBeCloseTo(1)
   })
 
-  test('imports clip paths as masks for clipped paint runs', async () => {
+  test('imports a clip path as a mask group around the clipped layers', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg viewBox="0 0 100 100">
         <defs><path id="mark" d="M10 10H90V90H10Z"/></defs>
@@ -278,20 +267,19 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
-    const children = graph.getChildren(result.id)
-    expect(children).toHaveLength(2)
-    const clippedGroup = expectDefined(children[0])
-    expect(clippedGroup.type).toBe('FRAME')
-    const clippedChildren = graph.getChildren(clippedGroup.id)
-    expect(clippedChildren).toHaveLength(2)
-    expect(clippedChildren[0].isMask).toBe(true)
-    expect(clippedChildren[0].maskType).toBe('VECTOR')
-    expect(expectDefined(clippedChildren[0].vectorNetwork).regions).toHaveLength(1)
-    expect(clippedChildren[1].fillGeometry).toHaveLength(2)
-    expect(children[1].isMask).toBe(false)
+    const [clipGroup, circle] = graph.getChildren(result.id)
+    expect(clipGroup?.name).toBe('Clip path group')
+    const [mask, content] = graph.getChildren(expectDefined(clipGroup).id)
+    expect(mask?.type).toBe('GROUP')
+    expect(mask?.name).toBe('clip')
+    expect(mask?.isMask).toBe(true)
+    expect(mask?.maskType).toBe('VECTOR')
+    expect(graph.getChildren(expectDefined(mask).id)).toHaveLength(1)
+    expect(graph.getChildren(expectDefined(content).id)).toHaveLength(2)
+    expect(circle?.isMask).toBe(false)
   })
 
-  test('preserves inherited clips when expanding use elements', async () => {
+  test('keeps an inherited clip when expanding use elements', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg viewBox="0 0 100 100">
         <defs>
@@ -302,11 +290,11 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
-    const clipFrame = expectDefined(graph.getChildren(result.id)[0])
-    const clippedChildren = graph.getChildren(clipFrame.id)
-    expect(clippedChildren).toHaveLength(2)
-    expect(clippedChildren[0].isMask).toBe(true)
-    expect(clippedChildren[1].fills[0].color.r).toBeCloseTo(1)
+    const clipGroup = expectDefined(graph.getChildren(result.id)[0])
+    const [mask, content] = graph.getChildren(clipGroup.id)
+    expect(mask?.isMask).toBe(true)
+    const [tile] = graph.getChildren(expectDefined(content).id)
+    expect(tile?.fills[0]?.color.r).toBeCloseTo(1)
   })
 
   test('applies nested clip paths from outermost to innermost', async () => {
@@ -322,14 +310,13 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
-    const outerFrame = expectDefined(graph.getChildren(result.id)[0])
-    const outerChildren = graph.getChildren(outerFrame.id)
-    expect(outerChildren[0].isMask).toBe(true)
-    const innerFrame = expectDefined(outerChildren[1])
-    expect(innerFrame.type).toBe('FRAME')
-    const innerChildren = graph.getChildren(innerFrame.id)
-    expect(innerChildren[0].isMask).toBe(true)
-    expect(innerChildren[1].type).toBe('VECTOR')
+    const outer = expectDefined(graph.getChildren(result.id)[0])
+    const [outerMask, outerContent] = graph.getChildren(outer.id)
+    expect(outerMask?.name).toBe('outer')
+    const inner = expectDefined(graph.getChildren(expectDefined(outerContent).id)[0])
+    const [innerMask, rect] = graph.getChildren(inner.id)
+    expect(innerMask?.name).toBe('inner')
+    expect(rect?.type).toBe('VECTOR')
   })
 
   test('maps objectBoundingBox clip paths to each painted path bounds', async () => {
@@ -345,17 +332,17 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
-    const [leftFrame, rightFrame] = graph.getChildren(result.id)
-    const leftMask = expectDefined(graph.getChildren(expectDefined(leftFrame).id)[0])
-    const rightMask = expectDefined(graph.getChildren(expectDefined(rightFrame).id)[0])
-    expect(leftMask.x).toBeCloseTo(20)
-    expect(leftMask.y).toBeCloseTo(10)
-    expect(leftMask.width).toBeCloseTo(30)
-    expect(leftMask.height).toBeCloseTo(80)
-    expect(rightMask.x).toBeCloseTo(120)
-    expect(rightMask.y).toBeCloseTo(20)
-    expect(rightMask.width).toBeCloseTo(20)
-    expect(rightMask.height).toBeCloseTo(60)
+    const masks = graph
+      .getChildren(result.id)
+      .map((clipGroup) => expectDefined(graph.getChildren(clipGroup.id)[0]))
+    expect(masks.map(({ x, y, width, height }) => [x, y, width, height])).toEqual([
+      [0, 0, 30, 80],
+      [0, 0, 20, 60]
+    ])
+    expect(graph.getChildren(result.id).map(({ x, y }) => [x, y])).toEqual([
+      [20, 10],
+      [120, 20]
+    ])
   })
 
   test('imports gradient fills through the shared SVG pipeline', async () => {

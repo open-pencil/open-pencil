@@ -5,6 +5,7 @@
 ### Breaking changes
 
 - The app renders `render` JSX itself and no longer accepts the pre-rendered tree that earlier versions of `openpencil-mcp` send, so an older `openpencil-mcp` fails to render into this app version; update it with the app.
+- `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
 - `SceneNode` from `@open-pencil/scene-graph` has `isExposedInstance`, whether an instance inside a component shows its properties on instances of that component, so code that builds `SceneNode` objects itself must include it. In the plugin API, `isExposedInstance` and `exposedInstances` follow that flag and Figma's rules instead of treating an instance whose swap is bound to a property as exposed: only an instance in a component's own layers whose component has properties can be exposed, and its copies in instances report it but cannot change it.
 - `usePosition` from `@open-pencil/vue` reports and edits `x`, `y`, and `rotation` as Figma's properties panel does: the turned layer's box on the canvas, measured from its frame or page, and its counterclockwise angle. `getDefaultCanvasBgColor` and `CANVAS_BG_COLOR_DARK` are removed from `@open-pencil/core/constants`; new pages use `PAGE_DEFAULT_BACKGROUNDS`, keyed by interface theme.
 - `SkiaRenderer.hitTestFrameTitle` no longer takes the selected IDs: it finds the name of any frame on the page or in a section under a point, selected or not.
@@ -40,6 +41,7 @@
 
 ### Added
 
+- Paste SVG markup copied as text, such as from a code editor or Figma's Copy as SVG, as layers.
 - Show the pixel grid when zoomed in, as in Figma: from 800% on a standard display and 400% on a Retina one, toggled with **View → Pixel Grid** or <kbd>⇧</kbd><kbd>'</kbd>. <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> toggles **Snap to Pixel Grid**. The zoom menu in the properties panel lists both, with Figma's shortcuts, and labels its shortcuts for zoom to fit (<kbd>⇧</kbd><kbd>1</kbd>) and 100% (<kbd>⌘</kbd><kbd>0</kbd>); <kbd>⇧</kbd><kbd>R</kbd> toggles rulers and <kbd>⌥</kbd><kbd>⌘</kbd><kbd>\\</kbd> multiplayer cursors.
 - Set a component's text, boolean, and swap properties on a design JSX `<Instance>` by name, as variants are set, such as `<Instance of="Card" Title="Hello" Badge={false} />`; `properties` accepts names too. An instance written this way still works after the document is saved to `.fig` and reopened, which gives each property a new ID ([#750](https://github.com/open-pencil/open-pencil/issues/750)).
 - Save the open document to cloud storage with **File → Save to storage…**. The tab stays bound to the stored copy, so Save and auto-save write to the bucket; before storage is configured, the command opens its settings. A new Cloud Storage guide covers connecting a bucket, CORS, syncing, and provider notes.
@@ -94,6 +96,7 @@
 
 ### Changed
 
+- Import SVG as editable layers, as pasting it into Figma does, from `import_svg`, dropped files, and pasted markup ([#734](https://github.com/open-pencil/open-pencil/issues/734)). Each `<g>` becomes a group and each shape its own vector, named after its `id`, element opacity is kept, and clipped content sits in a clip path group whose mask is drawn from the clip's shapes. The imported frame is white, clips its content, and is named after the root `<svg>` `id`; an SVG without a size imports as a group. Shapes are no longer merged into one multi-color vector.
 - With **Snap to Pixel Grid** on, moved layers and resized edges land on whole pixels at any zoom, and drawn layers start and end on whole pixels, as in Figma; zoomed in, moves and resizes could leave fractions before, and drawing was not snapped.
 - Layers inside components and instances are outlined in purple when hovered or selected, with a purple size label, as in Figma; they were blue.
 - The properties panel's variable picker groups variables by collection and shows each color variable's swatch, and the variables dialog points a value at another variable with the same picker, detaching it from the picker's footer.
@@ -106,7 +109,7 @@
 - The desktop app shows an available update in a Software Update window with formatted, scrollable release notes, a link to the full notes, and download progress you can cancel, instead of a system dialog that showed raw Markdown and could grow taller than the screen (#743). On macOS and Linux the update installs first and you choose when to restart; restarting, and on Windows installing, first asks about unsaved documents as Quit does.
 - Show Go to main component and Detach instance as buttons in an instance's panel header instead of a row of links below it.
 - `openpencil eval` prints the value of a script's last expression, as the `eval` tool and app automation already do, so `-c 'figma.currentPage.children.length'` prints the count without a `return`.
-- In scripts, children of groups and booleans report `x`, `y`, and `relativeTransform` in their container's space, as in Figma, and a group refits whenever a script moves, resizes, rotates, adds, or removes one of its children; a group left without children is removed. The canvas and the plugin API share the refit.
+- In scripts, children of groups and booleans report `x`, `y`, and `relativeTransform` in their container's space, as in Figma, and a group refits whenever a script moves, resizes, rotates, adds, or removes one of its children; a group left without children is removed, and a group with a mask spans the mask and the layers below it, not the masked layers. The canvas and the plugin API share the refit.
 - The properties panel shows and edits X, Y, and rotation as Figma's does: X and Y are the top-left of a turned layer's box on the canvas, measured from its frame or page through any groups, rotation is counterclockwise, and a typed rotation turns the layer about its center. Previously a layer Figma shows at 30° read −30°, and a turned layer's X and Y were those of its unturned box.
 - New pages and new documents take Figma's background for the interface theme: #1E1E1E in the dark theme and #F5F5F5 in the light one, from the canvas and from scripts. Existing pages keep theirs.
 - In scripts, layers turn, move, and resize as in Figma: `rotation` turns a layer counterclockwise about its top-left corner, `x` and `y` are that corner in the parent, `resize()` keeps it in place, `relativeTransform` can be set, and `absoluteBoundingBox` covers the turned layer. `appendChild()` and `insertChild()` keep a layer's `x`, `y`, and rotation in its new parent, so it moves with that parent, instead of keeping its place on the canvas. The AI and MCP `create_shape`, `create_slice`, and vector tools likewise place a layer given a `parent_id` at `x` and `y` inside that parent, and `reparent_node` keeps its position inside the new parent.
@@ -141,6 +144,9 @@
 ### Fixed
 
 - Keep design variable bindings and honor `replace_id` and `insert_index` when `render` runs through the stdio MCP server (`openpencil-mcp`) against the desktop or web app, as it already did through the HTTP endpoint (#830).
+- Draw layers masked by a group, such as Figma's clip path groups, instead of hiding them; a group used as a mask masks with what its layers draw.
+- Import SVG files that start with an XML declaration or doctype, such as Illustrator and Inkscape exports, instead of reporting no supported elements.
+- Keep `fill-opacity` and `stroke-opacity` when importing SVG instead of drawing those paints opaque.
 - Use an API key saved in Settings for the open AI chat right away, including when asking again after a failed request, instead of only after reloading; the failure's notice closes once the request is sent again.
 - Renaming a section title on the canvas keeps the title's size, weight, and place. Section titles draw in Inter SemiBold rather than an emboldened regular weight, and labels that are not rotated sit on whole pixels, so they stay crisp.
 - Reject an argument an AI, MCP, CLI, or WebMCP tool does not take, such as `properties: { y: 500 }` for `update_node` or `font: { family }` for `set_font`, and name it, instead of reporting success without changing anything (#977).
