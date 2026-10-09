@@ -81,6 +81,7 @@ export class SkiaRenderer {
   surface: Surface
   declare fillPaint: Paint
   diamondGradientEffect: RuntimeEffect | null = null
+  pixelGridEffect: RuntimeEffect | null = null
   declare strokePaint: Paint
   declare selectionPaint: Paint
   declare parentOutlinePaint: Paint

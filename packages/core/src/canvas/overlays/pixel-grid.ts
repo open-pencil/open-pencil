@@ -20,18 +20,29 @@ export function pixelGridVisible(zoom: number, dpr: number): boolean {
 }
 
 /**
- * Screen positions, in CSS pixels, of the document pixel boundaries across `extent`, each on a
- * whole device pixel so every line is one device pixel wide.
+ * One line per document pixel, decided per device pixel: the line for document pixel k sits on
+ * device pixel round(offset + k · step), the same rounding a drawn rectangle would get. Computing
+ * it in the shader keeps the grid one draw call, whatever the zoom or viewport.
  */
-export function pixelGridLines(pan: number, zoom: number, extent: number, dpr: number): number[] {
-  if (!pixelGridVisible(zoom, dpr) || extent <= 0) return []
-  const first = Math.ceil(-pan / zoom)
-  const lines: number[] = []
-  for (let pixel = first; pixel * zoom + pan <= extent; pixel++) {
-    lines.push(Math.round((pixel * zoom + pan) * dpr) / dpr)
-  }
-  return lines
+const PIXEL_GRID_SHADER = `
+uniform float2 gridOffset;
+uniform float2 gridSpacing;
+uniform float4 lineColor;
+uniform float dpr;
+
+bool onLine(float device, float origin, float spacing) {
+  float pixel = floor(device);
+  float nearest = floor((pixel - origin) / spacing + 0.5);
+  return pixel == floor(origin + nearest * spacing + 0.5);
 }
+
+half4 main(float2 position) {
+  float2 device = position * dpr;
+  if (onLine(device.x, gridOffset.x, gridSpacing.x) || onLine(device.y, gridOffset.y, gridSpacing.y))
+    return half4(lineColor.rgb * lineColor.a, lineColor.a);
+  return half4(0);
+}
+`
 
 function lineColor(page: Color): Color {
   const luminance = 0.2126 * page.r + 0.7152 * page.g + 0.0722 * page.b
@@ -41,17 +52,28 @@ function lineColor(page: Color): Color {
 /** Figma's pixel grid: a line at every document pixel once zoomed in far enough to tell them apart. */
 export function drawPixelGrid(r: SkiaRenderer, canvas: Canvas): void {
   if (!pixelGridVisible(r.zoom, r.dpr)) return
+  if (!r.pixelGridEffect) {
+    let error = ''
+    r.pixelGridEffect = r.ck.RuntimeEffect.Make(PIXEL_GRID_SHADER, (message) => {
+      error = message
+    })
+    if (!r.pixelGridEffect) throw new Error(`Cannot compile the pixel grid: ${error}`)
+  }
   const color = lineColor(r.pageColor)
-  const width = 1 / r.dpr
-  const path = new r.ck.PathBuilder()
-  for (const x of pixelGridLines(r.panX, r.zoom, r.viewportWidth, r.dpr)) {
-    path.addRect(r.ck.LTRBRect(x, 0, x + width, r.viewportHeight))
-  }
-  for (const y of pixelGridLines(r.panY, r.zoom, r.viewportHeight, r.dpr)) {
-    path.addRect(r.ck.LTRBRect(0, y, r.viewportWidth, y + width))
-  }
-  const lines = path.detachAndDelete()
-  r.auxFill.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-  canvas.drawPath(lines, r.auxFill)
-  lines.delete()
+  const step = r.zoom * r.dpr
+  const shader = r.pixelGridEffect.makeShader([
+    r.panX * r.dpr,
+    r.panY * r.dpr,
+    step,
+    step,
+    color.r,
+    color.g,
+    color.b,
+    color.a,
+    r.dpr
+  ])
+  r.auxFill.setShader(shader)
+  canvas.drawRect(r.ck.LTRBRect(0, 0, r.viewportWidth, r.viewportHeight), r.auxFill)
+  r.auxFill.setShader(null)
+  shader.delete()
 }
