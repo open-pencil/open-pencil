@@ -4,6 +4,7 @@ import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
+import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
@@ -196,6 +197,7 @@ export function openRoomSession({
     if (cursor) awareness.setLocalStateField('cursor', { ...cursor, zoom: viewport.zoom })
   })
   const stopAgentSync = publishLocalAgents(store, () => awareness, identity.color)
+  const stopAgentPreviews = shareAgentPreviews(store, connection)
   const unbindGraphEvents = bindCollabGraphEvents({
     store,
     getYdoc: () => (disposed ? null : ydoc),
@@ -231,6 +233,7 @@ export function openRoomSession({
       stopNameWatch()
       stopZoomWatch()
       stopAgentSync()
+      stopAgentPreviews()
       meta.unobserve(refreshDocument)
       unregisterYjsObservers()
       // Destroying the awareness can emit a last change; nothing here should react to it.
