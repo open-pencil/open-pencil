@@ -180,9 +180,14 @@ const canvasLabelEditNode = computed(() => {
 const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
-  const abs = store.graph.getAbsolutePosition(node.id)
-  const zoom = store.state.zoom
+  const origin = store.graph.getAbsolutePosition(node.id)
+  const { zoom, panX, panY } = store.state
   const kind = canvasLabelEdit.value?.kind
+  // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
+  const abs = {
+    x: (Math.round(origin.x * zoom + panX) - panX) / zoom,
+    y: (Math.round(origin.y * zoom + panY) - panY) / zoom
+  }
   // A component's name starts after its diamond, which keeps its screen size at any zoom.
   if (kind === 'component-label')
     return { x: abs.x + (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / zoom, y: abs.y }

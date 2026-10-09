@@ -6,7 +6,9 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   LABEL_FONT_SIZE,
+  SECTION_TITLE_FONT_FAMILY,
   SECTION_TITLE_FONT_SIZE,
+  SECTION_TITLE_FONT_URL,
   SIZE_FONT_SIZE
 } from '#core/constants'
 import { withTextMeasurer } from '#core/layout/text-measurement'
@@ -89,6 +91,12 @@ export function getFontProvider(r: SkiaRenderer) {
   return r.isDestroyed() || !r.fontProvider ? null : r.fontProvider
 }
 
+/** Section titles' face, for the canvas and for the field that renames a title in the page. */
+function registerSectionTitleFont(r: SkiaRenderer, data: ArrayBuffer) {
+  r.fontProvider?.registerFont(data, SECTION_TITLE_FONT_FAMILY)
+  fontManager.registerFontInBrowser(SECTION_TITLE_FONT_FAMILY, 'SemiBold', data)
+}
+
 export async function loadFonts(
   r: SkiaRenderer,
   onFallbackFontsLoaded?: () => void
@@ -105,8 +113,12 @@ export async function loadFonts(
   fontManager.attachProvider(r.ck, r.fontProvider)
   syncFontGeneration(r)
 
-  const fontData = await fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular')
+  const [fontData, titleData] = await Promise.all([
+    fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular'),
+    fontManager.fetchBundledFont(SECTION_TITLE_FONT_URL).catch(() => null)
+  ])
   if (r.isDestroyed()) return
+  if (titleData) registerSectionTitleFont(r, titleData)
   if (fontData) {
     const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(fontData)
     if (typeface) {

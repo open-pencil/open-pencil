@@ -62,8 +62,21 @@ function labelWorldMatrix(transform: LabelTransform, zoom: number) {
   )
 }
 
+/**
+ * Where a label draws on screen. An upright label starts on a whole pixel, so its text is crisp
+ * and lines up with the field that renames it, which the page also places on whole pixels.
+ */
 export function labelScreenMatrix(transform: LabelTransform, viewport: ViewportTransform) {
-  return Matrix.multiply(viewportMatrix(viewport), labelWorldMatrix(transform, viewport.zoom))
+  const matrix = Matrix.multiply(
+    viewportMatrix(viewport),
+    labelWorldMatrix(transform, viewport.zoom)
+  )
+  const upright = Math.abs(matrix[1]) < 1e-9 && Math.abs(matrix[3]) < 1e-9
+  if (!upright) return matrix
+  const snapped = [...matrix] as typeof matrix
+  snapped[2] = Math.round(matrix[2])
+  snapped[5] = Math.round(matrix[5])
+  return snapped
 }
 
 export function labelLocalPoint(
