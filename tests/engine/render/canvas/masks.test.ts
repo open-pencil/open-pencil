@@ -144,7 +144,8 @@ describe('canvas masks', () => {
 
     renderNode(renderer, asCanvas(canvas), graph, frame.id, {})
 
-    expect(rendered).toEqual([frame.id, clipped.id, mask.id])
+    // The mask draws once for its luma and once more to scale that by its alpha, as Figma does.
+    expect(rendered).toEqual([frame.id, clipped.id, mask.id, mask.id])
     expect(renderer.ck.ColorFilter.MakeLuma).toHaveBeenCalled()
     expect(renderer.effectLayerPaint.setColorFilter).toHaveBeenCalledWith(expect.any(Object))
     expect(renderer.effectLayerPaint.setColorFilter).toHaveBeenLastCalledWith(null)
