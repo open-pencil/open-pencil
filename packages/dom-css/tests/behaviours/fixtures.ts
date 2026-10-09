@@ -3,7 +3,8 @@ import {
   SceneGraph,
   withBehaviour,
   withIcon,
-  type Behaviour
+  type Behaviour,
+  type SceneNode
 } from '@open-pencil/scene-graph'
 
 const solid = (r: number, g: number, b: number) => [
@@ -112,7 +113,7 @@ export function checkboxSet() {
 }
 
 /** A toggle whose label reads differently when pressed. */
-export function toggleSet() {
+export function toggleSet(graph?: SceneGraph) {
   return componentSet(
     'Toggle',
     { Pressed: ['No', 'Yes'] },
@@ -122,7 +123,9 @@ export function toggleSet() {
     },
     (graph, variant, { Pressed }) => {
       graph.createNode('TEXT', variant, { name: 'Label', text: Pressed === 'Yes' ? 'On' : 'Off' })
-    }
+    },
+    undefined,
+    graph
   )
 }
 
@@ -222,8 +225,185 @@ export function settingsSectionSet() {
   return { graph, set: section.set, switchSet: toggle.set }
 }
 
+/**
+ * Tabs as a standalone component, as design JSX's `Tabs.Root` builds them: a list of triggers
+ * and a panel per trigger, each labelled.
+ */
+export function tabsComponent() {
+  const graph = new SceneGraph()
+  const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
+  const tabs = graph.createNode('COMPONENT', graph.getPages()[0].id, {
+    name: 'Settings',
+    width: 200,
+    height: 120
+  })
+  const list = graph.createNode('FRAME', tabs.id, {
+    name: 'List',
+    componentPropertyReferences: slot('list-slot'),
+    width: 200,
+    height: 24
+  })
+  const panels = graph.createNode('FRAME', tabs.id, {
+    name: 'Panels',
+    componentPropertyReferences: slot('panels-slot'),
+    y: 30,
+    width: 200,
+    height: 80
+  })
+  for (const [index, label] of ['Account', 'Password'].entries()) {
+    const trigger = graph.createNode('FRAME', list.id, {
+      name: 'Trigger',
+      x: index * 90,
+      width: 80,
+      height: 24,
+      fills: index === 0 ? COLORS.on : COLORS.off
+    })
+    graph.createNode('TEXT', trigger.id, { name: 'Label', text: label })
+    const panel = graph.createNode('FRAME', panels.id, { name: 'Panel', width: 200, height: 80 })
+    graph.createNode('TEXT', panel.id, { name: 'Body', text: `${label} settings` })
+  }
+  graph.updateNode(tabs.id, {
+    pluginData: withBehaviour(tabs, {
+      ...emptyBehaviour('tabs'),
+      parts: { list: 'list-slot', panels: 'panels-slot' }
+    })
+  })
+  return { graph, set: graph.getNode(tabs.id) ?? tabs }
+}
+
+/**
+ * A group as design JSX builds one: a standalone component with the group's behaviour whose
+ * items slot holds instances of `item`, each labelled through the item's text property, with
+ * the item at `chosen` drawn on.
+ */
+function groupComponent(
+  graph: SceneGraph,
+  item: { set: SceneNode; on: string; off: string },
+  kind: 'radioGroup' | 'toggleGroup' | 'accordion',
+  labels: string[],
+  chosen: number | null
+) {
+  const variant = (value: string) =>
+    graph.getChildren(item.set.id).find((child) => child.name.includes(value))
+  const on = variant(item.on)
+  const off = variant(item.off)
+  if (!on || !off) throw new Error('Expected the item drawn on and off')
+  const group = graph.createNode('COMPONENT', graph.getPages()[0].id, {
+    name: 'Plan',
+    width: 200,
+    height: 120
+  })
+  const items = graph.createNode('FRAME', group.id, {
+    name: 'Items',
+    componentPropertyReferences: [{ propertyId: 'items-slot', field: 'SLOT_CONTENT' }],
+    width: 200,
+    height: 120
+  })
+  for (const [index, label] of labels.entries()) {
+    const instance = graph.createInstance(index === chosen ? on.id : off.id, items.id, {
+      name: 'Item',
+      y: index * 30
+    })
+    if (!instance) throw new Error('Expected the item placed')
+    graph.updateNode(instance.id, {
+      componentPropertyAssignments: { ...instance.componentPropertyAssignments, label }
+    })
+    const relabel = (id: string) => {
+      for (const child of graph.getChildren(id)) {
+        if (child.type === 'TEXT') graph.updateNode(child.id, { text: label })
+        relabel(child.id)
+      }
+    }
+    relabel(instance.id)
+  }
+  graph.updateNode(group.id, {
+    pluginData: withBehaviour(group, { ...emptyBehaviour(kind), parts: { items: 'items-slot' } })
+  })
+  return { graph, set: graph.getNode(group.id) ?? group }
+}
+
+/** Gives a set a text property and a label layer in every variant bound to it. */
+function labelled(graph: SceneGraph, set: SceneNode) {
+  graph.updateNode(set.id, {
+    componentPropertyDefinitions: [
+      ...set.componentPropertyDefinitions,
+      { id: 'label', name: 'Label', type: 'TEXT', defaultValue: 'Option' }
+    ]
+  })
+  for (const variant of graph.getChildren(set.id))
+    graph.createNode('TEXT', variant.id, {
+      name: 'Label',
+      text: 'Option',
+      x: 24,
+      componentPropertyReferences: [{ propertyId: 'label', field: 'TEXT' }]
+    })
+}
+
+/** A radio group of three labelled radios, the second chosen. */
+export function radioGroupComponent() {
+  const graph = new SceneGraph()
+  const radio = componentSet(
+    'Radio',
+    { Checked: ['Off', 'On'] },
+    {
+      ...emptyBehaviour('radio'),
+      booleans: { value: { propertyId: 'checked', on: 'On', off: 'Off' } }
+    },
+    (graph, variant, { Checked }) => {
+      graph.updateNode(variant, { width: 120, height: 20 })
+      graph.createNode('FRAME', variant, {
+        name: 'Dot',
+        width: 16,
+        height: 16,
+        fills: Checked === 'On' ? COLORS.on : COLORS.off
+      })
+    },
+    undefined,
+    graph
+  )
+  labelled(graph, radio.set)
+  return groupComponent(
+    graph,
+    { set: graph.getNode(radio.set.id) ?? radio.set, on: 'On', off: 'Off' },
+    'radioGroup',
+    ['Basic', 'Pro', 'Team'],
+    1
+  )
+}
+
+/**
+ * A toggle group of the standalone toggle, which a document can also use on its own, the
+ * first chosen.
+ */
+export function toggleGroupComponent() {
+  const graph = new SceneGraph()
+  const { set } = toggleSet(graph)
+  labelled(graph, set)
+  return groupComponent(
+    graph,
+    { set: graph.getNode(set.id) ?? set, on: 'Yes', off: 'No' },
+    'toggleGroup',
+    ['Left', 'Center'],
+    0
+  )
+}
+
+/** An accordion of two collapsible items, none open. */
+export function accordionComponent() {
+  const graph = new SceneGraph()
+  const { set } = collapsibleSet(graph)
+  labelled(graph, set)
+  return groupComponent(
+    graph,
+    { set: graph.getNode(set.id) ?? set, on: 'Yes', off: 'No' },
+    'accordion',
+    ['Billing', 'Usage'],
+    null
+  )
+}
+
 /** A collapsible whose content shows only when open. */
-export function collapsibleSet() {
+export function collapsibleSet(graph?: SceneGraph) {
   const slot = (propertyId: string) => [{ propertyId, field: 'SLOT_CONTENT' as const }]
   return componentSet(
     'Disclosure',
@@ -249,6 +429,8 @@ export function collapsibleSet() {
           width: 40,
           height: 10
         })
-    }
+    },
+    undefined,
+    graph
   )
 }

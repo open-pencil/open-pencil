@@ -1,7 +1,7 @@
 import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { readBehaviour, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import type { StoryProp } from './module'
@@ -21,7 +21,10 @@ export interface StoryGroup {
   variants: StoryVariant[]
   /** Layer the story file links to, when the group has a layer of its own. */
   linkNode?: string
-  /** The component set the group shows, which may generate a component of its own. */
+  /**
+   * The component set, or standalone component with a behaviour, the group shows, which may
+   * generate a component of its own.
+   */
   set?: SceneNode
 }
 
@@ -87,7 +90,9 @@ function componentGroup(page: SceneNode, component: SceneNode): StoryGroup {
     name: component.name,
     props: [],
     variants: [{ values: [], node: component }],
-    linkNode: component.name
+    linkNode: component.name,
+    // A standalone component with a behaviour, such as tabs, may generate a component too.
+    ...(readBehaviour(component) ? { set: component } : {})
   }
 }
 

@@ -154,12 +154,22 @@ function generatedModels(
   entries: readonly StoryEntry[],
   vectorElement: VectorElementRenderer | undefined
 ): Map<string, ComponentModel> {
-  const model = (set: SceneNode, file: string, references?: ComponentReferences) => {
-    const component = componentModel(graph, set, { vectorElement, references })
-    // The component is imported by the file's name, so the two always match.
-    if (component) component.name = file
-    return component
-  }
+  // Components are imported by their files' names, so the two always match. A group's item
+  // component gets a file of its own, named apart from every story file.
+  const taken = new Set(entries.map((entry) => entry.file.toLowerCase()))
+  const itemNames = new Map(
+    entries.map((entry) => [
+      entry.file,
+      claimName(`${entry.file}Item`, taken, { key: (name) => name.toLowerCase() })
+    ])
+  )
+  const model = (set: SceneNode, file: string, references?: ComponentReferences) =>
+    componentModel(graph, set, {
+      vectorElement,
+      references,
+      name: file,
+      itemName: itemNames.get(file)
+    })
   const alone = new Map<string, ComponentModel>()
   for (const { group, file } of entries) {
     const component = group.set && model(group.set, file)

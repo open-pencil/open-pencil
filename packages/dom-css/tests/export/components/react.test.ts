@@ -4,11 +4,15 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
 import {
+  accordionComponent,
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
+  radioGroupComponent,
   settingsSectionSet,
-  switchSet
+  switchSet,
+  tabsComponent,
+  toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
@@ -91,6 +95,51 @@ describe('generated React components', () => {
     // The switch is the generated one, drawn on as the design places it, and only once.
     expect(html.match(/role="switch"/g)?.length).toBe(1)
     expect(html).toContain('data-state="checked"')
+  })
+
+  test('tabs show the panel of the chosen tab, by the slug of its label', async () => {
+    const { component } = await generate(tabsComponent())
+    const first = render(component)
+    expect(first).toContain('role="tablist"')
+    expect(first).toContain('Account settings')
+    expect(first).not.toContain('Password settings')
+    const second = render(component, { defaultValue: 'password' })
+    expect(second).toContain('Password settings')
+    expect(second).not.toContain('Account settings')
+  })
+
+  test('a radio group writes an item component and chooses among its labelled items', async () => {
+    const { files, component } = await generate(radioGroupComponent())
+    expect(files.map((file) => file.path)).toContain('PlanItem.tsx')
+    const checked = (html: string) =>
+      [...html.matchAll(/<button[^>]*role="radio"[^>]*>/g)].map((tag) =>
+        tag[0].includes('aria-checked="true"')
+      )
+    // The design draws the second item chosen.
+    const drawn = render(component)
+    expect(checked(drawn)).toEqual([false, true, false])
+    expect(drawn).toContain('Team')
+    expect(checked(render(component, { defaultValue: 'team' }))).toEqual([false, false, true])
+  })
+
+  test("a toggle group's items are the group's item, not the standalone toggle", async () => {
+    const { files, component } = await generate(toggleGroupComponent())
+    const group = String(files.find((file) => file.path === 'Plan.tsx')?.content)
+    expect(group).toContain('PlanItem')
+    expect(group).not.toMatch(/import \{? ?Toggle\b/)
+    const html = render(component)
+    expect([...html.matchAll(/data-state="(on|off)"/g)].map((match) => match[1])).toEqual([
+      'on',
+      'off'
+    ])
+  })
+
+  test('an accordion opens the item it is given and starts with none', async () => {
+    const { component } = await generate(accordionComponent())
+    const states = (html: string) =>
+      [...html.matchAll(/<button[^>]*aria-expanded="(true|false)"/g)].map((match) => match[1])
+    expect(states(render(component))).toEqual(['false', 'false'])
+    expect(states(render(component, { defaultValue: 'usage' }))).toEqual(['false', 'true'])
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

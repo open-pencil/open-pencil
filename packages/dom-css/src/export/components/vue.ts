@@ -34,7 +34,25 @@ const REKA: Record<
       content: 'CollapsibleContent'
     },
     model: 'open'
+  },
+  tabs: {
+    parts: { root: 'TabsRoot', list: 'TabsList', trigger: 'TabsTrigger', content: 'TabsContent' },
+    model: 'modelValue'
+  },
+  radioGroup: { parts: { root: 'RadioGroupRoot' }, model: 'modelValue' },
+  toggleGroup: { parts: { root: 'ToggleGroupRoot' }, model: 'modelValue' },
+  accordion: { parts: { root: 'AccordionRoot' }, model: 'modelValue' },
+  radioGroupItem: { parts: { root: 'RadioGroupItem', indicator: 'RadioGroupIndicator' } },
+  toggleGroupItem: { parts: { root: 'ToggleGroupItem' } },
+  accordionItem: {
+    parts: { root: 'AccordionItem', trigger: 'AccordionTrigger', content: 'AccordionContent' }
   }
+}
+
+/** What a group's root fixes: one item chosen at a time, and an accordion that can all close. */
+const ROOT_ATTRIBUTES: Partial<Record<GeneratedKind, vue.VueAttribute[]>> = {
+  toggleGroup: [vue.attribute('type', 'single')],
+  accordion: [vue.attribute('type', 'single'), vue.bound('collapsible', es.parseExpression('true'))]
 }
 
 const identifier = (name: string) => es.identifier(name)
@@ -50,6 +68,7 @@ function bindingAttributes(
   if (binding.type === 'model')
     return [vue.model(identifier(binding.name), REKA[kind].model === 'open' ? 'open' : undefined)]
   if (binding.type === 'prop') return [vue.bound(binding.attribute, identifier(binding.prop.name))]
+  if (binding.type === 'value') return [vue.bound('value', identifier('value'))]
   // Reka sets `data-disabled` on its own roots; a native button needs it for the state styles.
   return [
     vue.bound('disabled', identifier('disabled')),
@@ -104,18 +123,24 @@ function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
   const reka = node.part ? REKA[uses.kind].parts[node.part] : undefined
   if (reka) uses.reka.add(reka)
   const native = node.part === 'root' && !reka
-  return vue.element(
+  const element = vue.element(
     reka ?? (native ? 'button' : node.tag),
     [
       ...(native ? [vue.attribute('type', 'button')] : []),
+      ...(node.part === 'root' ? (ROOT_ATTRIBUTES[uses.kind] ?? []) : []),
       ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
         vue.attribute(name, value)
       ),
       vue.attribute('class', compact([node.attrs.class, node.className]).join(' ')),
+      ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
       ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses.kind, native))
     ],
     node.children.map((child) => templateNode(child, uses))
   )
+  // Reka puts an accordion item's trigger in a header, which carries the heading level.
+  if (uses.kind !== 'accordionItem' || node.part !== 'trigger') return element
+  uses.reka.add('AccordionHeader')
+  return vue.element('AccordionHeader', [], [element])
 }
 
 function propsType(component: ComponentModel): es.SyntaxNode {
@@ -125,8 +150,18 @@ function propsType(component: ComponentModel): es.SyntaxNode {
     true
   ])
   if (component.disabled) members.unshift(['disabled', es.parseType('boolean'), true])
+  // A group's item always stands for a value, which has no default.
+  if (component.valueProp) members.unshift(['value', es.parseType('string'), false])
   for (const text of component.texts) members.push([text.name, es.parseType('string'), true])
   return es.objectType(members)
+}
+
+/** `defineProps`, with `withDefaults` when any prop has a default to give. */
+function propsDeclaration(component: ComponentModel): es.SyntaxNode[] {
+  const optional = component.disabled || component.props.length > 0 || component.texts.length > 0
+  return optional
+    ? es.fill(PROPS, { $Props: propsType(component), $defaults: propsDefaults(component) }).body
+    : es.fill(REQUIRED_PROPS, { $Props: propsType(component) }).body
 }
 
 function propsDefaults(component: ComponentModel): es.SyntaxNode {
@@ -138,7 +173,12 @@ function propsDefaults(component: ComponentModel): es.SyntaxNode {
 }
 
 const PROPS = es.parseModule('withDefaults(defineProps<$Props>(), $defaults)')
+const REQUIRED_PROPS = es.parseModule('defineProps<$Props>()')
 const MODEL = es.parseModule('const $model = defineModel<boolean>($name, { default: false })')
+const CHOICE_MODEL = es.parseModule(
+  'const $model = defineModel<$Type>($name, { default: $default })'
+)
+const OPEN_CHOICE_MODEL = es.parseModule('const $model = defineModel<$Type>($name)')
 
 function namedImport(names: readonly string[], source: string, local = (name: string) => name) {
   return {
@@ -170,13 +210,23 @@ function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
     )
   ]
   const props =
-    component.disabled || component.props.length > 0 || component.texts.length > 0
-      ? es.fill(PROPS, { $Props: propsType(component), $defaults: propsDefaults(component) }).body
+    component.valueProp ||
+    component.disabled ||
+    component.props.length > 0 ||
+    component.texts.length > 0
+      ? propsDeclaration(component)
       : []
-  const model = component.model
-    ? es.fill(MODEL, { $model: identifier(component.model), $name: es.string(component.model) })
-        .body
-    : []
+  const name = component.model
+  const choice = component.choice
+  let model: es.SyntaxNode[] = []
+  if (name && choice)
+    model = es.fill(choice.default === null ? OPEN_CHOICE_MODEL : CHOICE_MODEL, {
+      $model: identifier(name),
+      $name: es.string(name),
+      $Type: es.stringUnionType(choice.options),
+      $default: choice.default === null ? es.OMIT : es.string(choice.default)
+    }).body
+  else if (name) model = es.fill(MODEL, { $model: identifier(name), $name: es.string(name) }).body
   const refs = uses.models.flatMap(
     (item) => es.fill(MODEL_REF, { $name: identifier(item.name) }).body
   )
@@ -210,8 +260,11 @@ export const vueComponent: ComponentGenerator = async (component) => {
   const template = templateNode(component.tree, uses)
   const { css } = await stateStylesToCSS(component.styles)
   const path = `${component.name}.vue`
+  // A group's items are their own component, which the group's template uses.
+  const item = component.item ? await vueComponent(component.item) : null
   return {
     files: [
+      ...(item?.files ?? []),
       {
         path,
         content: vue.printComponent({ script: script(component, uses), template, style: css })

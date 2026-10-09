@@ -83,6 +83,92 @@ function switchGraph(graph?: SceneGraph): SceneGraph {
   )
 }
 
+/** A radio group of two radios, each labelled through the radio's text property, the first chosen. */
+function radioGroupGraph(): SceneGraph {
+  const graph = controlSet(
+    'Radio',
+    { name: 'Checked', values: ['Off', 'On'] },
+    {
+      ...emptyBehaviour('radio'),
+      booleans: { value: { propertyId: 'value', on: 'On', off: 'Off' } }
+    },
+    (graph, variantId, value) => {
+      graph.updateNode(variantId, {
+        width: 100,
+        height: 20,
+        fills: value === 'On' ? fill(0.3, 0.27, 0.9) : fill(0.8, 0.84, 0.88)
+      })
+      graph.createNode('TEXT', variantId, {
+        name: 'Label',
+        text: 'Option',
+        componentPropertyReferences: [{ propertyId: 'label', field: 'TEXT' }]
+      })
+    }
+  )
+  const radio = [...graph.getAllNodes()].find((node) => node.type === 'COMPONENT_SET')
+  if (!radio) throw new Error('Expected the radio set')
+  graph.updateNode(radio.id, {
+    componentPropertyDefinitions: [
+      ...radio.componentPropertyDefinitions,
+      { id: 'label', name: 'Label', type: 'TEXT', defaultValue: 'Option' }
+    ]
+  })
+  const variant = (value: string) =>
+    graph.getChildren(radio.id).find((child) => child.name === `Checked=${value}`)
+  const group = graph.createNode('COMPONENT', graph.getPages()[0].id, { name: 'Plan' })
+  const items = graph.createNode('FRAME', group.id, {
+    name: 'Items',
+    componentPropertyReferences: slot('items'),
+    width: 100,
+    height: 50
+  })
+  for (const [index, label] of ['Basic', 'Pro'].entries()) {
+    const main = variant(index === 0 ? 'On' : 'Off')
+    if (!main) throw new Error('Expected the radio drawn on and off')
+    const item = graph.createInstance(main.id, items.id, { name: 'Item', y: index * 25 })
+    if (!item) throw new Error('Expected the item placed')
+    graph.updateNode(item.id, {
+      componentPropertyAssignments: { ...item.componentPropertyAssignments, label }
+    })
+  }
+  graph.updateNode(group.id, {
+    pluginData: withBehaviour(group, { ...emptyBehaviour('radioGroup'), parts: { items: 'items' } })
+  })
+  return graph
+}
+
+/** Tabs whose list holds a trigger and whose panels a panel per tab. */
+function tabsGraph(): SceneGraph {
+  const graph = new SceneGraph()
+  const tabs = graph.createNode('COMPONENT', graph.getPages()[0].id, { name: 'Settings' })
+  const list = graph.createNode('FRAME', tabs.id, {
+    name: 'List',
+    componentPropertyReferences: slot('list'),
+    width: 160,
+    height: 20
+  })
+  const panels = graph.createNode('FRAME', tabs.id, {
+    name: 'Panels',
+    componentPropertyReferences: slot('panels'),
+    y: 24,
+    width: 160,
+    height: 40
+  })
+  for (const label of ['Account', 'Password']) {
+    const trigger = graph.createNode('FRAME', list.id, { name: 'Trigger', width: 70, height: 20 })
+    graph.createNode('TEXT', trigger.id, { name: 'Label', text: label })
+    const panel = graph.createNode('FRAME', panels.id, { name: 'Panel', width: 160, height: 40 })
+    graph.createNode('TEXT', panel.id, { name: 'Body', text: `${label} settings` })
+  }
+  graph.updateNode(tabs.id, {
+    pluginData: withBehaviour(tabs, {
+      ...emptyBehaviour('tabs'),
+      parts: { list: 'list', panels: 'panels' }
+    })
+  })
+  return graph
+}
+
 /** A collapsible section whose content holds a switch drawn on, with the switch's set beside it. */
 function sectionGraph(): SceneGraph {
   const graph = switchGraph()
@@ -317,6 +403,28 @@ for (const framework of ['vue', 'react'] as const) {
       await expect(page.locator('#enabled [class*="switch__thumb"]')).toHaveCSS('left', '2px')
       // The section only places the switch; its own state styles still paint it.
       await expect(nested).toHaveCSS('background-color', 'rgb(204, 214, 224)')
+    })
+
+    test('a radio group chooses the radio clicked, starting on the one drawn chosen', async ({
+      page
+    }, info) => {
+      server = await serveComponent(radioGroupGraph(), framework, info.outputPath('plan'), 'Plan')
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const enabled = page.locator('#enabled')
+      await expect(enabled.getByRole('radio', { name: 'Basic' })).toBeChecked()
+      await enabled.getByRole('radio', { name: 'Pro' }).click()
+      await expect(enabled.getByRole('radio', { name: 'Pro' })).toBeChecked()
+      await expect(enabled.getByRole('radio', { name: 'Basic' })).not.toBeChecked()
+    })
+
+    test('tabs show the panel of the tab clicked', async ({ page }, info) => {
+      server = await serveComponent(tabsGraph(), framework, info.outputPath('tabs'), 'Settings')
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const enabled = page.locator('#enabled')
+      await expect(enabled.getByText('Account settings')).toBeVisible()
+      await enabled.getByRole('tab', { name: 'Password' }).click()
+      await expect(enabled.getByText('Password settings')).toBeVisible()
+      await expect(enabled.getByText('Account settings')).toBeHidden()
     })
 
     test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {

@@ -4,11 +4,15 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
 import {
+  accordionComponent,
   buttonSet,
   collapsibleSet,
   labelledButtonSet,
+  radioGroupComponent,
   settingsSectionSet,
-  switchSet
+  switchSet,
+  tabsComponent,
+  toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
@@ -104,6 +108,64 @@ describe('generated Vue components', () => {
     // The switch is the generated one, drawn on as the design places it, and only once.
     expect(html.match(/role="switch"/g)?.length).toBe(1)
     expect(html).toContain('data-state="checked"')
+  })
+
+  test('tabs show the panel of the chosen tab, by the slug of its label', async () => {
+    const { component } = await generate(tabsComponent())
+    const first = await render(component)
+    expect(first).toContain('role="tablist"')
+    expect(first).toContain('Account settings')
+    expect(first).not.toContain('Password settings')
+    const second = await render(component, { value: 'password' })
+    expect(second).toContain('Password settings')
+    expect(second).not.toContain('Account settings')
+  })
+
+  test('a radio group writes an item component and chooses among its labelled items', async () => {
+    const { files, component } = await generate(radioGroupComponent())
+    expect(files.map((file) => file.path)).toContain('PlanItem.vue')
+    const checked = (html: string) =>
+      [...html.matchAll(/<button[^>]*role="radio"[^>]*>/g)].map((tag) =>
+        tag[0].includes('aria-checked="true"')
+      )
+    // The design draws the second item chosen.
+    const drawn = await render(component)
+    expect(checked(drawn)).toEqual([false, true, false])
+    expect(drawn).toContain('Team')
+    expect(checked(await render(component, { value: 'team' }))).toEqual([false, false, true])
+  })
+
+  test("a group's item component is named apart from another component's file", async () => {
+    const fixture = radioGroupComponent()
+    const page = fixture.graph.getPages()[0].id
+    fixture.graph.createNode('COMPONENT', page, { name: 'PlanItem' })
+    const files = await exportStorybook(fixture.graph, { framework: 'vue' })
+    const paths = files.map((file) => file.path)
+    expect(paths).toContain('PlanItem.stories.ts')
+    expect(paths).toContain('PlanItem2.vue')
+    expect(String(files.find((file) => file.path === 'Plan.vue')?.content)).toContain(
+      `import PlanItem2 from './PlanItem2.vue'`
+    )
+  })
+
+  test("a toggle group's items are the group's item, not the standalone toggle", async () => {
+    const { files, component } = await generate(toggleGroupComponent())
+    const group = String(files.find((file) => file.path === 'Plan.vue')?.content)
+    expect(group).toContain('PlanItem')
+    expect(group).not.toMatch(/import \{? ?Toggle\b/)
+    const html = await render(component)
+    expect([...html.matchAll(/data-state="(on|off)"/g)].map((match) => match[1])).toEqual([
+      'on',
+      'off'
+    ])
+  })
+
+  test('an accordion opens the item it is given and starts with none', async () => {
+    const { component } = await generate(accordionComponent())
+    const states = (html: string) =>
+      [...html.matchAll(/<button[^>]*aria-expanded="(true|false)"/g)].map((match) => match[1])
+    expect(states(await render(component))).toEqual(['false', 'false'])
+    expect(states(await render(component, { value: 'usage' }))).toEqual(['false', 'true'])
   })
 
   test('a button sets its other variant properties as data attributes', async () => {

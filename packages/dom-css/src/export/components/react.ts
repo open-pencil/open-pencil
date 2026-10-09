@@ -27,7 +27,26 @@ const RADIX: Record<GeneratedKind, { namespace: string; parts: Record<string, st
   collapsible: {
     namespace: 'Collapsible',
     parts: { root: 'Root', trigger: 'Trigger', content: 'Content' }
+  },
+  tabs: {
+    namespace: 'Tabs',
+    parts: { root: 'Root', list: 'List', trigger: 'Trigger', content: 'Content' }
+  },
+  radioGroup: { namespace: 'RadioGroup', parts: { root: 'Root' } },
+  toggleGroup: { namespace: 'ToggleGroup', parts: { root: 'Root' } },
+  accordion: { namespace: 'Accordion', parts: { root: 'Root' } },
+  radioGroupItem: { namespace: 'RadioGroup', parts: { root: 'Item', indicator: 'Indicator' } },
+  toggleGroupItem: { namespace: 'ToggleGroup', parts: { root: 'Item' } },
+  accordionItem: {
+    namespace: 'Accordion',
+    parts: { root: 'Item', trigger: 'Trigger', content: 'Content' }
   }
+}
+
+/** What a group's root fixes: one item chosen at a time, and an accordion that can all close. */
+const ROOT_ATTRIBUTES: Partial<Record<GeneratedKind, es.SyntaxNode[]>> = {
+  toggleGroup: [jsx.attribute('type', jsx.stringValue('single'))],
+  accordion: [jsx.attribute('type', jsx.stringValue('single')), jsx.attribute('collapsible', null)]
 }
 
 const PRIMITIVE = (namespace: string) => `${namespace}Primitive`
@@ -62,6 +81,7 @@ const DISABLED_FLAG = es.parseExpression('props.disabled || undefined')
 /** What a component's markup uses, which its module imports. */
 interface MarkupUses {
   kind: GeneratedKind
+  choice: ComponentModel['choice']
   /** Other generated components. */
   components: Set<string>
   icons: boolean
@@ -105,48 +125,74 @@ function element(node: ComponentNode, uses: MarkupUses, depth: number): es.Synta
       depth
     )
   }
-  const kind = uses.kind
-  const radix = RADIX[kind]
-  const part = node.part ? radix?.parts[node.part] : undefined
-  const root = node.part === 'root'
-  const native = root && !part
-  // The design's own classes, the state styles' module class, and on the root the caller's,
-  // which the spread would otherwise lose to the generated one.
+  return designElement(node, uses, depth)
+}
+
+/**
+ * The design's own classes, the state styles' module class, and on the root the caller's,
+ * which the spread would otherwise lose to the generated one.
+ */
+function classNameOf(node: ComponentElement, root: boolean): es.SyntaxNode {
   const classes = [
     ...(node.attrs.class ? [es.string(node.attrs.class)] : []),
     moduleClass(node.className),
     ...(root ? [es.parseExpression('props.className')] : [])
   ]
   const only = classes.length === 1 ? classes.at(0) : undefined
-  const className = only ?? es.fill(CLASS_NAMES, { $classes: es.array(classes) })
+  return only ?? es.fill(CLASS_NAMES, { $classes: es.array(classes) })
+}
+
+/** What a root fixes before the caller's props: a group's single choice, and its start. */
+function rootAttributes(uses: MarkupUses): es.SyntaxNode[] {
+  const start = uses.choice?.default
+  return [
+    ...(ROOT_ATTRIBUTES[uses.kind] ?? []),
+    // A choice starts on the design's option, which the caller's props can change.
+    ...(start ? [jsx.attribute('defaultValue', jsx.stringValue(start))] : [])
+  ]
+}
+
+function bindingAttributes(node: ComponentElement, native: boolean): es.SyntaxNode[] {
+  return node.bindings.flatMap((binding) => {
+    if (binding.type === 'prop')
+      return [jsx.attribute(binding.attribute, jsx.container(es.identifier(binding.prop.name)))]
+    // Radix sets `data-disabled` on its own roots; a native button needs it for the styles.
+    if (binding.type === 'disabled' && native)
+      return [jsx.attribute('data-disabled', jsx.container(DISABLED_FLAG))]
+    return []
+  })
+}
+
+function designElement(node: ComponentElement, uses: MarkupUses, depth: number): es.SyntaxNode {
+  const kind = uses.kind
+  const root = node.part === 'root'
+  const native = root && !(node.part && RADIX[kind]?.parts[node.part])
   const attributes = [
     ...(native ? [jsx.attribute('type', jsx.stringValue('button'))] : []),
+    ...(root ? rootAttributes(uses) : []),
     // The root passes the caller's props on, such as `checked` or `onClick`.
     ...(root ? [jsx.spread(es.identifier('props'))] : []),
+    ...(node.value === undefined ? [] : [jsx.attribute('value', jsx.stringValue(node.value))]),
     ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
       jsx.attribute(name, jsx.stringValue(value))
     ),
-    jsx.attribute('className', jsx.container(className)),
-    ...node.bindings.flatMap((binding) => {
-      if (binding.type === 'prop')
-        return [jsx.attribute(binding.attribute, jsx.container(es.identifier(binding.prop.name)))]
-      // Radix sets `data-disabled` on its own roots; a native button needs it for the styles.
-      if (binding.type === 'disabled' && native)
-        return [jsx.attribute('data-disabled', jsx.container(DISABLED_FLAG))]
-      return []
-    })
+    jsx.attribute('className', jsx.container(classNameOf(node, root))),
+    ...bindingAttributes(node, native)
   ]
   // Words alone stay on the element's line, where a line break would add a space.
-  const inline =
-    node.children.length === 1 &&
-    (node.children[0]?.type === 'text' || node.children[0]?.type === 'textProp')
-  return jsx.element(
+  const only = node.children.length === 1 ? node.children[0]?.type : undefined
+  const inline = only === 'text' || only === 'textProp'
+  // Radix puts an accordion item's trigger in a header, which carries the heading level.
+  const header = kind === 'accordionItem' && node.part === 'trigger'
+  const drawn = jsx.element(
     tagOf(node, kind),
     attributes,
-    node.children.map((child) => element(child, uses, depth + 1)),
-    depth,
+    node.children.map((child) => element(child, uses, depth + (header ? 2 : 1))),
+    depth + (header ? 1 : 0),
     inline
   )
+  if (!header) return drawn
+  return jsx.element(`${PRIMITIVE('Accordion')}.Header`, [], [drawn], depth)
 }
 
 const MODULE = es.parseModule(dedent`
@@ -173,7 +219,7 @@ function propsType(component: ComponentModel): es.SyntaxNode {
         $Root: {
           type: 'TSQualifiedName',
           left: es.identifier(PRIMITIVE(radix.namespace)),
-          right: es.identifier('Root')
+          right: es.identifier(radix.parts.root)
         }
       })
     : es.parseType("ComponentProps<'button'>")
@@ -234,7 +280,12 @@ function parameters(component: ComponentModel): es.SyntaxNode {
 export const reactComponent: ComponentGenerator = async (component) => {
   const radix = RADIX[component.kind]
   const stylesPath = `${component.name}.module.css`
-  const uses: MarkupUses = { kind: component.kind, components: new Set(), icons: false }
+  const uses: MarkupUses = {
+    kind: component.kind,
+    choice: component.choice,
+    components: new Set(),
+    icons: false
+  }
   const body = element(component.tree, uses, 1)
   const imports = [
     ...(uses.icons ? ICONIFY_IMPORT : []),
@@ -267,8 +318,11 @@ export const reactComponent: ComponentGenerator = async (component) => {
   }
   const { css } = await stateStylesToCSS(component.styles)
   const model = component.model
+  // A group's items are their own component, which the group's markup uses.
+  const item = component.item ? await reactComponent(component.item) : null
   return {
     files: [
+      ...(item?.files ?? []),
       { path: `${component.name}.tsx`, content: `${jsx.printModule(program)}\n` },
       { path: stylesPath, content: css }
     ],

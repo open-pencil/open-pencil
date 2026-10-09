@@ -49,7 +49,7 @@ export interface IconReference {
 const PLACEMENT =
   /^(position|inset|left|top|right|bottom|(min-|max-)?(width|height)|margin(-.+)?|flex(-.+)?|align-self|justify-self|order|grid-(area|column|row)(-.+)?|transform(-origin)?|rotate|translate|scale|z-index)$/
 
-function placementOnly(element: StateElement): void {
+export function placementOnly(element: StateElement): void {
   const placement = (style: DesignStyleDeclaration): DesignStyleDeclaration =>
     Object.fromEntries(Object.entries(style).filter(([property]) => PLACEMENT.test(property)))
   element.base = placement(element.base)
@@ -67,8 +67,11 @@ function ownerId(graph: SceneGraph, component: SceneNode): string {
   return parent?.type === 'COMPONENT_SET' ? parent.id : component.id
 }
 
-/** What `instance` sets on `component`: the values it is drawn with that differ from defaults. */
-function referenceValues(
+/**
+ * What `instance` sets on `component`: the values it is drawn with that differ from defaults,
+ * and whether it is drawn on: its model, or for a group's item the value that marks it chosen.
+ */
+export function referenceValues(
   graph: SceneGraph,
   instance: SceneNode,
   component: ComponentModel
@@ -78,7 +81,8 @@ function referenceValues(
   let model: string | null = null
   for (const [property, arg] of component.args.booleans) {
     if (values[property] !== arg.on) continue
-    if (arg.name === component.model) model = arg.name
+    const on = arg.name === component.model || (component.valueProp && arg.name !== 'disabled')
+    if (on) model = arg.name
     else props.push({ name: arg.name, value: true })
   }
   const states = component.args.states
@@ -136,12 +140,14 @@ export function referencedLayers(
   graph: SceneGraph,
   root: StateElement,
   variantIds: readonly string[],
-  references: ComponentReferences
+  references: ComponentReferences,
+  /** Layers already used otherwise, such as a group's items. */
+  taken: ReadonlyMap<StateElement, unknown> = new Map()
 ): Map<StateElement, UsedLayer> {
   const used = new Map<StateElement, UsedLayer>()
   const visit = (element: StateElement) => {
     for (const child of element.children) {
-      if (child.type !== 'element') continue
+      if (child.type !== 'element' || taken.has(child)) continue
       const layer = usedLayer(graph, variantIds, child, references)
       if (!layer) {
         visit(child)

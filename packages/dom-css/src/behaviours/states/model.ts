@@ -67,6 +67,15 @@ function pruneCombined(rules: StateRule[]): StateRule[] {
 }
 
 /**
+ * The variants a behaviour's owner draws: a set's components, or a standalone component, such
+ * as a radio group or tabs, which is its own only variant.
+ */
+export function ownerVariants(graph: SceneGraph, owner: SceneNode): SceneNode[] {
+  if (owner.type === 'COMPONENT') return [owner]
+  return graph.getChildren(owner.id).filter((child) => child.type === 'COMPONENT')
+}
+
+/**
  * A component set's variants as one markup tree with a rest style per layer and a rule per
  * variant holding only what that variant changes, under the conditions that show it. Layers
  * only some variants draw stay in the tree, hidden where absent.
@@ -79,9 +88,8 @@ export function stateStyles(
   options: Pick<SceneGraphToDesignOptions, 'vectorElement'> = {}
 ): StateStyles | null {
   const conditionsOf = variantConditions(graph, set)
-  const variants = graph
-    .getChildren(set.id)
-    .filter((child) => child.type === 'COMPONENT' && child.visible)
+  const variants = ownerVariants(graph, set)
+    .filter((variant) => variant.visible)
     .flatMap((variant) => {
       const conditions = conditionsOf(variant)
       const root = conditions && projectVariant(graph, variant, options)
