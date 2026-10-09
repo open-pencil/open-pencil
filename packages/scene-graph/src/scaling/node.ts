@@ -75,9 +75,12 @@ function scaledGridTracks(tracks: readonly GridTrack[], scale: number): GridTrac
   }))
 }
 
-function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorNetwork'] {
-  if (!node.vectorNetwork) return null
-  const network = cloneVectorNetwork(node.vectorNetwork)
+function scaledVectorNetwork(
+  vectorNetwork: SceneNode['vectorNetwork'],
+  scale: number
+): SceneNode['vectorNetwork'] {
+  if (!vectorNetwork) return null
+  const network = cloneVectorNetwork(vectorNetwork)
   for (const vertex of network.vertices) {
     vertex.x *= scale
     vertex.y *= scale
@@ -91,54 +94,80 @@ function scaledVectorNetwork(node: SceneNode, scale: number): SceneNode['vectorN
   return network
 }
 
+const times = (value: number, scale: number) => value * scale
+
+type FieldScalers = {
+  [K in keyof SceneNode]?: (value: SceneNode[K], scale: number) => SceneNode[K]
+}
+
+/** How each field that holds a length scales; fields absent here are dimensionless. */
+const FIELD_SCALERS: FieldScalers = {
+  width: times,
+  height: times,
+  minWidth: scaledOptional,
+  maxWidth: scaledOptional,
+  minHeight: scaledOptional,
+  maxHeight: scaledOptional,
+  cornerRadius: times,
+  topLeftRadius: times,
+  topRightRadius: times,
+  bottomRightRadius: times,
+  bottomLeftRadius: times,
+  fontSize: times,
+  letterSpacing: times,
+  lineHeight: scaledOptional,
+  textDecorationThickness: scaledOptional,
+  textUnderlineOffset: scaledOptional,
+  styleRuns: scaledStyleRuns,
+  itemSpacing: times,
+  counterAxisSpacing: times,
+  paddingTop: times,
+  paddingRight: times,
+  paddingBottom: times,
+  paddingLeft: times,
+  gridColumnGap: times,
+  gridRowGap: times,
+  gridTemplateColumns: scaledGridTracks,
+  gridTemplateRows: scaledGridTracks,
+  strokes: scaledStrokes,
+  strokeWeight: times,
+  dashPattern: (pattern, scale) => pattern.map((value) => value * scale),
+  borderTopWeight: times,
+  borderRightWeight: times,
+  borderBottomWeight: times,
+  borderLeftWeight: times,
+  effects: scaledEffects,
+  fills: scaledFills,
+  layoutGrids: scaledLayoutGrids,
+  vectorNetwork: scaledVectorNetwork,
+  fillGeometry: (paths, scale) => scaleGeometryPaths(paths, scale, scale),
+  strokeGeometry: (paths, scale) => scaleGeometryPaths(paths, scale, scale)
+}
+
+const SCALED_FIELDS = Object.keys(FIELD_SCALERS) as (keyof SceneNode)[]
+
+/** One field's value at `scale`; a dimensionless field comes back as given. */
+export function scaleFieldValue<K extends keyof SceneNode>(
+  field: K,
+  value: SceneNode[K],
+  scale: number
+): SceneNode[K] {
+  const scaler = FIELD_SCALERS[field] as
+    | ((value: SceneNode[K], scale: number) => SceneNode[K])
+    | undefined
+  return scaler && scale !== 1 ? scaler(value, scale) : value
+}
+
 export function scaleNodeChanges(
   node: SceneNode,
   scale: number,
   scalePosition: boolean
 ): Partial<SceneNode> {
-  return {
+  const changes: Partial<SceneNode> = {
     x: scalePosition ? node.x * scale : node.x,
-    y: scalePosition ? node.y * scale : node.y,
-    width: node.width * scale,
-    height: node.height * scale,
-    minWidth: scaledOptional(node.minWidth, scale),
-    maxWidth: scaledOptional(node.maxWidth, scale),
-    minHeight: scaledOptional(node.minHeight, scale),
-    maxHeight: scaledOptional(node.maxHeight, scale),
-    cornerRadius: node.cornerRadius * scale,
-    topLeftRadius: node.topLeftRadius * scale,
-    topRightRadius: node.topRightRadius * scale,
-    bottomRightRadius: node.bottomRightRadius * scale,
-    bottomLeftRadius: node.bottomLeftRadius * scale,
-    fontSize: node.fontSize * scale,
-    letterSpacing: node.letterSpacing * scale,
-    lineHeight: scaledOptional(node.lineHeight, scale),
-    textDecorationThickness: scaledOptional(node.textDecorationThickness, scale),
-    textUnderlineOffset: scaledOptional(node.textUnderlineOffset, scale),
-    styleRuns: scaledStyleRuns(node.styleRuns, scale),
-    itemSpacing: node.itemSpacing * scale,
-    counterAxisSpacing: node.counterAxisSpacing * scale,
-    paddingTop: node.paddingTop * scale,
-    paddingRight: node.paddingRight * scale,
-    paddingBottom: node.paddingBottom * scale,
-    paddingLeft: node.paddingLeft * scale,
-    gridColumnGap: node.gridColumnGap * scale,
-    gridRowGap: node.gridRowGap * scale,
-    gridTemplateColumns: scaledGridTracks(node.gridTemplateColumns, scale),
-    gridTemplateRows: scaledGridTracks(node.gridTemplateRows, scale),
-    strokes: scaledStrokes(node.strokes, scale),
-    strokeWeight: node.strokeWeight * scale,
-    dashPattern: node.dashPattern.map((value) => value * scale),
-    borderTopWeight: node.borderTopWeight * scale,
-    borderRightWeight: node.borderRightWeight * scale,
-    borderBottomWeight: node.borderBottomWeight * scale,
-    borderLeftWeight: node.borderLeftWeight * scale,
-    strokeMiterLimit: node.strokeMiterLimit,
-    effects: scaledEffects(node.effects, scale),
-    fills: scaledFills(node.fills, scale),
-    layoutGrids: scaledLayoutGrids(node.layoutGrids, scale),
-    vectorNetwork: scaledVectorNetwork(node, scale),
-    fillGeometry: scaleGeometryPaths(node.fillGeometry, scale, scale),
-    strokeGeometry: scaleGeometryPaths(node.strokeGeometry, scale, scale)
+    y: scalePosition ? node.y * scale : node.y
   }
+  for (const field of SCALED_FIELDS)
+    Object.assign(changes, { [field]: FIELD_SCALERS[field]?.(node[field] as never, scale) })
+  return changes
 }
