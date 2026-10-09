@@ -14,6 +14,8 @@ describe('CSS layout values', () => {
     expect(parseCSSFlexDirection('row-reverse')).toBeUndefined()
     // Design JSX and .pen spellings are not CSS.
     expect(parseCSSFlexDirection('col')).toBeUndefined()
+    expect(parseCSSJustifyContent('between')).toBeUndefined()
+    expect(parseCSSJustifyContent('space-between')).toBe('SPACE_BETWEEN')
   })
 
   test('alignment drops the overflow position and reads first baseline as baseline', () => {

@@ -30,9 +30,13 @@ export function parseCSSFlexDirection(value: string | undefined): AutoLayoutDire
   return keyword === 'row' || keyword === 'column' ? parseAutoLayoutDirection(keyword) : undefined
 }
 
-/** Primary axis alignment from `justify-content`; `normal` packs flex items at the start. */
+/**
+ * Primary axis alignment from `justify-content`; `normal` packs flex items at the start. Design
+ * JSX's `between` is not CSS, which browsers ignore, so it is not read here.
+ */
 export function parseCSSJustifyContent(value: string | undefined): LayoutAlign | undefined {
   const keyword = alignmentKeyword(value)
+  if (keyword === 'between') return undefined
   return keyword === 'normal' ? 'MIN' : parsePrimaryAxisAlign(keyword)
 }
 
