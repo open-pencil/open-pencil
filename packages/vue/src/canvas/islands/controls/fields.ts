@@ -6,7 +6,12 @@ import {
 } from 'reka-ui'
 import { h, type VNode } from 'vue'
 
-import { booleanOf, type ControlModel, type ControlRole } from '@open-pencil/dom-css/export'
+import {
+  booleanOf,
+  INPUT_RESET,
+  type ControlModel,
+  type ControlRole
+} from '@open-pencil/dom-css/export'
 import { numberSettings } from '@open-pencil/scene-graph'
 
 import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/render'
@@ -14,17 +19,6 @@ import type { ElementOverride, IslandRenderContext } from '#vue/canvas/islands/r
 import { disabled, interaction, stateOf } from './shared'
 
 type Base = (override?: ElementOverride) => VNode
-
-/** A text layer's look carried over to the input that replaces it. */
-const INPUT_RESET: Record<string, string> = {
-  border: 'none',
-  outline: 'none',
-  padding: '0',
-  margin: '0',
-  background: 'transparent',
-  resize: 'none',
-  'box-sizing': 'border-box'
-}
 
 /** A text field, textarea, or number field: its root shows focus and drives its look. */
 export function fieldRoot(island: IslandRenderContext, control: ControlModel, base: Base): VNode {

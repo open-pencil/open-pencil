@@ -13,6 +13,7 @@ import {
   layerPath,
   readBehaviour,
   slotPropertyId,
+  textBinding,
   type Behaviour,
   type SceneGraph,
   type SceneNode
@@ -20,6 +21,16 @@ import {
 
 import type { SceneGraphToDesignOptions } from '../projection'
 import { claimName, identifierName } from '../storybook/names'
+import {
+  blockRoot,
+  freePlacedParts,
+  inputLayers,
+  inputValue,
+  numberInput,
+  rangeModel,
+  textModel,
+  type InputLayers
+} from './fields'
 import {
   groupItems,
   GROUP_ITEMS,
@@ -47,7 +58,12 @@ export const GENERATED_KINDS = [
   'tabs',
   'radioGroup',
   'toggleGroup',
-  'accordion'
+  'accordion',
+  'slider',
+  'progress',
+  'numberField',
+  'textField',
+  'textarea'
 ] as const
 
 /** What a generated component is: a control on its own, or a group's item. */
@@ -104,11 +120,30 @@ export interface TextProp {
   default: string
 }
 
+/** A number the component binds two ways, within its range, starting where the design does. */
+export interface RangeModel {
+  min: number
+  max: number
+  step: number
+  default: number
+}
+
+/**
+ * Text a field binds two ways: the words it starts with, and the placeholder an empty field
+ * shows when the design draws one.
+ */
+export interface TextModel {
+  default: string
+  placeholder: string | null
+}
+
 export type ComponentNode =
   | ComponentElement
   | { type: 'text'; value: string }
   /** The value of a text prop, drawn where the design binds a text layer to it. */
   | { type: 'textProp'; name: string }
+  /** A field's input, drawn where the design binds its text layer to the field's text. */
+  | { type: 'input'; className: string }
   | ComponentReference
   | IconReference
 
@@ -127,6 +162,10 @@ export interface ComponentModel {
   model: string | null
   /** The options a string model takes and the one it starts on. */
   choice: ChoiceModel | null
+  /** The range a number model takes, as a slider, progress bar, or number field has. */
+  range: RangeModel | null
+  /** The text a text field or textarea binds. */
+  text: TextModel | null
   /** A group's item takes the `value` it stands for, which the group chooses among. */
   valueProp: boolean
   /** The component of a group's items, generated beside the group's own. */
@@ -148,6 +187,8 @@ interface TreeLabels {
   used: Map<StateElement, UsedLayer>
   /** Layers drawn once per value, such as tab triggers and panels. */
   repeated: Map<StateElement, RepeatedPart>
+  /** A field's text layer, drawn as its input, and the ones it replaces. */
+  input: InputLayers | null
 }
 
 function componentTree(
@@ -169,16 +210,19 @@ function componentTree(
     // A bound text layer draws its prop in place of the design's words and their runs.
     children: text
       ? [{ type: 'textProp', name: text }]
-      : node.children.map((child) =>
-          child.type === 'text' ? { type: 'text', value: child.text } : childNode(child, labels)
+      : node.children.flatMap((child) =>
+          child.type === 'text' ? [{ type: 'text', value: child.text }] : childNode(child, labels)
         )
   }
 }
 
-function childNode(element: StateElement, labels: TreeLabels): ComponentNode {
+function childNode(element: StateElement, labels: TreeLabels): ComponentNode[] {
+  const className = labels.classes.get(element) ?? ''
+  if (labels.input?.element === element) return [{ type: 'input', className }]
+  if (labels.input?.replaced.includes(element)) return []
   const used = labels.used.get(element)
-  if (!used) return componentTree(element, labels, [])
-  return { ...used, className: labels.classes.get(element) ?? '' }
+  if (!used) return [componentTree(element, labels, [])]
+  return [{ ...used, className }]
 }
 
 /**
@@ -189,9 +233,13 @@ function textProps(
   graph: SceneGraph,
   set: SceneNode,
   elements: readonly StateElement[],
-  taken: Set<string>
-): { texts: TextProp[]; bound: Map<StateElement, string> } {
-  const definitions = behaviourProperties(graph, set).filter((item) => item.type === 'TEXT')
+  taken: Set<string>,
+  /** A field's text property, which its input shows rather than a prop. */
+  input: string | undefined
+): { texts: TextProp[]; bound: Map<StateElement, string>; input: StateElement[] } {
+  const definitions = behaviourProperties(graph, set).filter(
+    (item) => item.type === 'TEXT' && item.id !== input
+  )
   const texts = definitions.map((definition) => ({
     name: claimName(camelCase(identifierName(definition.name, 'Text')), taken),
     id: definition.id,
@@ -201,6 +249,7 @@ function textProps(
   const byId = new Map(definitions.map((definition, i) => [definition.id, texts[i]]))
   const variants = ownerVariants(graph, set)
   const bound = new Map<StateElement, string>()
+  const inputs: StateElement[] = []
   for (const element of elements) {
     // A key ends with the words a layer reads, which a text prop draws in every variant.
     const path = element.key.split('\0')[0] ?? ''
@@ -208,6 +257,10 @@ function textProps(
       const reference = findLayerByPath(graph, variant.id, path)?.componentPropertyReferences.find(
         (item) => item.field === 'TEXT'
       )
+      if (reference && reference.propertyId === input) {
+        inputs.push(element)
+        break
+      }
       const prop = reference && byId.get(reference.propertyId)
       if (prop) {
         bound.set(element, prop.name)
@@ -215,7 +268,7 @@ function textProps(
       }
     }
   }
-  return { texts, bound }
+  return { texts, bound, input: inputs }
 }
 
 /** A generated component's files, and what its stories need to know about it. */
@@ -225,6 +278,8 @@ export interface GeneratedComponent {
   entry: { path: string; named: boolean }
   /** The prop a story sets the value with, if the component has one. */
   valueArg: string | null
+  /** Whether that prop takes a list of the value, as Radix's slider does. */
+  valueList?: boolean
 }
 
 export type ComponentGenerator = (component: ComponentModel) => Promise<GeneratedComponent>
@@ -240,6 +295,11 @@ const BUTTON_PARTS: Record<GeneratedKind, readonly string[]> = {
   radioGroup: [],
   toggleGroup: [],
   accordion: [],
+  slider: [],
+  progress: [],
+  numberField: ['increment', 'decrement'],
+  textField: [],
+  textarea: [],
   radioGroupItem: ['root'],
   toggleGroupItem: ['root'],
   accordionItem: ['trigger']
@@ -321,7 +381,7 @@ function variantProps(
   args: BehaviourArgs,
   taken: Set<string>
 ): VariantProp[] {
-  const bound = new Set([...args.booleans.keys(), args.states?.property])
+  const bound = new Set([...args.booleans.keys(), args.states?.property, args.filled?.property])
   return behaviourProperties(graph, set)
     .filter((definition) => definition.type === 'VARIANT' && !bound.has(definition.name))
     .map((definition) => ({
@@ -369,11 +429,12 @@ function itemsOf(
 }
 
 /**
- * The value the component binds two ways: `value` when it chooses among options, its boolean
- * such as `checked`, or none for a group's item, which its group chooses.
+ * The value the component binds two ways: `value` when it chooses among options or holds a
+ * number or text, its boolean such as `checked`, or none for a group's item, which its group
+ * chooses.
  */
-function modelName(args: BehaviourArgs, item: boolean, choice: ChoiceModel | null): string | null {
-  if (choice) return 'value'
+function modelName(args: BehaviourArgs, item: boolean, valued: boolean): string | null {
+  if (valued) return 'value'
   if (item) return null
   return [...args.booleans.values()].find((arg) => arg.name !== 'disabled')?.name ?? null
 }
@@ -398,6 +459,61 @@ function usedLayers(
   return used
 }
 
+/**
+ * Sizes the design gives include a layer's padding and border, which a component's own
+ * stylesheet has to say, since no page reset around it does. A root without a width hugs its
+ * content, as the design draws it.
+ */
+function borderBoxes(root: StateElement): void {
+  // A root the design sizes to its content hugs it, where a block would fill its container.
+  if (!Object.hasOwn(root.base, 'width')) root.base = { ...root.base, width: 'fit-content' }
+  for (const element of allElements(root)) {
+    const has = (property: string) => Object.hasOwn(element.base, property)
+    if ((has('width') || has('height')) && !has('box-sizing'))
+      element.base = { 'box-sizing': 'border-box', ...element.base }
+  }
+}
+
+/**
+ * Each layer's part, and tabs' triggers and panels, with the styles the generated parts need:
+ * native buttons cleared, the chosen tab's look, and moving parts free of their drawn place.
+ */
+function drawnParts(
+  graph: SceneGraph,
+  set: SceneNode,
+  behaviour: Behaviour,
+  kind: GeneratedKind,
+  root: StateElement
+) {
+  const parts = behaviourParts(graph, set, behaviour, root)
+  const tabs = behaviour.kind === 'tabs' ? tabParts(parts) : null
+  const repeated = tabs?.repeated ?? new Map<StateElement, RepeatedPart>()
+  activeTriggers(repeated)
+  resetButtons(kind, parts, repeated)
+  freePlacedParts(kind, parts)
+  blockRoot(kind, root)
+  borderBoxes(root)
+  return { parts, tabs, repeated }
+}
+
+/** The number or text the component holds, and the text property a field's input shows. */
+function valueModels(
+  graph: SceneGraph,
+  set: SceneNode,
+  kind: GeneratedKind,
+  behaviour: Behaviour,
+  args: BehaviourArgs
+): { range: RangeModel | null; text: TextModel | null; inputProperty: string | undefined } {
+  const valueText = inputValue(kind)
+  const inputProperty = valueText && textBinding(behaviour, valueText)
+  const definition = behaviourProperties(graph, set).find((item) => item.id === inputProperty)
+  return {
+    range: rangeModel(kind, behaviour),
+    text: textModel(kind, definition, args),
+    inputProperty
+  }
+}
+
 export function componentModel(
   graph: SceneGraph,
   set: SceneNode,
@@ -410,11 +526,7 @@ export function componentModel(
   if (!behaviour || !kind || !styles || !args) return null
   const name = options.name ?? identifierName(set.name, 'Component')
 
-  const parts = behaviourParts(graph, set, behaviour, styles.root)
-  const tabs = behaviour.kind === 'tabs' ? tabParts(parts) : null
-  const repeated = tabs?.repeated ?? new Map<StateElement, RepeatedPart>()
-  activeTriggers(repeated)
-  resetButtons(kind, parts, repeated)
+  const { parts, tabs, repeated } = drawnParts(graph, set, behaviour, kind, styles.root)
 
   // A group's items first, so its item component is used for them rather than a standalone one.
   const variantIds = [styles.restId, ...ownerVariants(graph, set).map((variant) => variant.id)]
@@ -434,23 +546,28 @@ export function componentModel(
   )
 
   const choice = tabs?.choice ?? items?.choice ?? null
-  const model = modelName(args, !!options.itemOf, choice)
+  const { range, text, inputProperty } = valueModels(graph, set, kind, behaviour, args)
+  const model = modelName(args, !!options.itemOf, !!(choice ?? range ?? text))
   const taken = new Set([...(model ? [model] : []), 'disabled', 'value'])
   const props = variantProps(graph, set, args, taken)
   const disabled = drawsDisabled(args)
   const used = usedLayers(graph, styles.root, variantIds, items?.used, options.references)
-  const texts = textProps(graph, set, allElements(styles.root), taken)
+  const texts = textProps(graph, set, allElements(styles.root), taken, inputProperty)
+  const input = inputLayers(texts.input)
+  numberInput(input, range)
   return {
     name,
     kind,
     styles,
     tree: componentTree(
       styles.root,
-      { parts, classes: layerClassNames(styles), texts: texts.bound, used, repeated },
+      { parts, classes: layerClassNames(styles), texts: texts.bound, used, repeated, input },
       rootBindings(model, !!options.itemOf, disabled, props)
     ),
     model,
     choice,
+    range,
+    text,
     valueProp: !!options.itemOf,
     item: items?.item ?? null,
     disabled,

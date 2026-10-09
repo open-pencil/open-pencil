@@ -1,5 +1,6 @@
 import { HEADING_RESET } from '#dom-css/behaviours/reset'
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
+import dedent from 'dedent'
 import { compact } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
 import { camelCase, upperFirst } from 'es-toolkit/string'
@@ -7,6 +8,7 @@ import { camelCase, upperFirst } from 'es-toolkit/string'
 import { es, vue } from '@open-pencil/emit'
 
 import { claimName } from '../storybook/names'
+import { progressWidth } from './fields'
 import type {
   ComponentBinding,
   ComponentGenerator,
@@ -47,8 +49,30 @@ const REKA: Record<
   toggleGroupItem: { parts: { root: 'ToggleGroupItem' } },
   accordionItem: {
     parts: { root: 'AccordionItem', trigger: 'AccordionTrigger', content: 'AccordionContent' }
-  }
+  },
+  slider: {
+    parts: { root: 'SliderRoot', track: 'SliderTrack', range: 'SliderRange', thumb: 'SliderThumb' },
+    model: 'modelValue'
+  },
+  progress: {
+    parts: { root: 'ProgressRoot', indicator: 'ProgressIndicator' },
+    model: 'modelValue'
+  },
+  numberField: {
+    parts: {
+      root: 'NumberFieldRoot',
+      increment: 'NumberFieldIncrement',
+      decrement: 'NumberFieldDecrement'
+    },
+    model: 'modelValue'
+  },
+  // Reka has no text field; the root is the design's own element around a native input.
+  textField: { parts: {} },
+  textarea: { parts: {} }
 }
+
+/** Kinds whose two-way value is their input's, which binds it rather than the root. */
+const INPUT_MODEL: ReadonlySet<GeneratedKind> = new Set(['textField', 'textarea'])
 
 /** What a group's root fixes: one item chosen at a time, and an accordion that can all close. */
 const ROOT_ATTRIBUTES: Partial<Record<GeneratedKind, vue.VueAttribute[]>> = {
@@ -67,23 +91,64 @@ const DISABLED_FLAG = es.parseExpression('disabled || undefined')
 
 function bindingAttributes(
   binding: ComponentBinding,
-  kind: GeneratedKind,
+  uses: TemplateUses,
   native: boolean
 ): vue.VueAttribute[] {
-  if (binding.type === 'model')
-    return [vue.model(identifier(binding.name), REKA[kind].model === 'open' ? 'open' : undefined)]
+  const { kind } = uses
+  if (binding.type === 'model') {
+    if (INPUT_MODEL.has(kind)) return []
+    // Reka's slider takes a list of values, which the model's single one stands in.
+    const bound = uses.sliderValues ?? binding.name
+    return [vue.model(identifier(bound), REKA[kind].model === 'open' ? 'open' : undefined)]
+  }
   if (binding.type === 'prop') return [vue.bound(binding.attribute, identifier(binding.prop.name))]
   if (binding.type === 'value') return [vue.bound('value', identifier('value'))]
-  // Reka sets `data-disabled` on its own roots; a native button needs it for the state styles.
+  // Reka sets `data-disabled` on its own roots; a native root needs it for the state styles.
   return [
-    vue.bound('disabled', identifier('disabled')),
+    ...(native && kind !== 'button' ? [] : [vue.bound('disabled', identifier('disabled'))]),
     ...(native ? [vue.bound('data-disabled', DISABLED_FLAG)] : [])
   ]
 }
 
+/** The number range a slider, progress bar, or number field's root is given. */
+function rangeAttributes(component: ComponentModel): vue.VueAttribute[] {
+  const { range } = component
+  if (!range) return []
+  const bound = (name: 'min' | 'max' | 'step') => vue.bound(name, es.number(range[name]))
+  // A progress bar only takes its maximum; its minimum is where the indicator is empty.
+  return component.kind === 'progress'
+    ? [bound('max')]
+    : [bound('min'), bound('max'), bound('step')]
+}
+
+function progressStyle(component: ComponentModel): vue.VueAttribute[] {
+  const { range, model } = component
+  const style = range && model ? progressWidth(range, identifier(model)) : null
+  return style ? [vue.bound('style', style)] : []
+}
+
+/** A field's input: Reka's for a number field, else a native input or textarea. */
+function inputNode(className: string, uses: TemplateUses): vue.VueNode {
+  const { component } = uses
+  if (component.kind === 'numberField') {
+    uses.reka.add('NumberFieldInput')
+    return vue.element('NumberFieldInput', [vue.attribute('class', className)])
+  }
+  const placeholder = component.text?.placeholder
+  return vue.element(component.kind === 'textarea' ? 'textarea' : 'input', [
+    vue.attribute('class', className),
+    ...(component.model ? [vue.model(identifier(component.model))] : []),
+    ...(placeholder ? [vue.attribute('placeholder', placeholder)] : []),
+    ...(component.disabled ? [vue.bound('disabled', identifier('disabled'))] : [])
+  ])
+}
+
 /** What a template uses, which its script imports and declares. */
 interface TemplateUses {
+  component: ComponentModel
   kind: GeneratedKind
+  /** The list a slider's root binds, standing in for its single value. */
+  sliderValues: string | null
   /** Reka components. */
   reka: Set<string>
   /** Other generated components. */
@@ -118,6 +183,7 @@ function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
   if (node.type === 'text') return vue.text(node.value)
   if (node.type === 'textProp') return vue.interpolation(identifier(node.name))
   if (node.type === 'reference') return reference(node, uses)
+  if (node.type === 'input') return inputNode(node.className, uses)
   if (node.type === 'icon') {
     uses.icons = true
     return vue.element(ICONIFY, [
@@ -127,18 +193,23 @@ function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
   }
   const reka = node.part ? REKA[uses.kind].parts[node.part] : undefined
   if (reka) uses.reka.add(reka)
-  const native = node.part === 'root' && !reka
+  const root = node.part === 'root'
+  const native = root && !reka
+  const button = native && uses.kind === 'button'
   const element = vue.element(
-    reka ?? (native ? 'button' : node.tag),
+    reka ?? (button ? 'button' : node.tag),
     [
-      ...(native ? [vue.attribute('type', 'button')] : []),
-      ...(node.part === 'root' ? (ROOT_ATTRIBUTES[uses.kind] ?? []) : []),
+      ...(button ? [vue.attribute('type', 'button')] : []),
+      ...(root ? [...(ROOT_ATTRIBUTES[uses.kind] ?? []), ...rangeAttributes(uses.component)] : []),
+      ...(uses.kind === 'progress' && node.part === 'indicator'
+        ? progressStyle(uses.component)
+        : []),
       ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
         vue.attribute(name, value)
       ),
       vue.attribute('class', compact([node.attrs.class, node.className]).join(' ')),
       ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
-      ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses.kind, native))
+      ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses, native))
     ],
     node.children.map((child) => templateNode(child, uses))
   )
@@ -184,6 +255,17 @@ const CHOICE_MODEL = es.parseModule(
   'const $model = defineModel<$Type>($name, { default: $default })'
 )
 const OPEN_CHOICE_MODEL = es.parseModule('const $model = defineModel<$Type>($name)')
+const VALUE_MODEL = es.parseModule(
+  'const $model = defineModel<$Type>($name, { default: $default })'
+)
+const SLIDER_VALUES = es.parseModule(dedent`
+  const $values = computed({
+    get: () => [$model.value],
+    set: (next: number[] | undefined) => {
+      $model.value = next?.[0] ?? $model.value
+    }
+  })
+`)
 
 function namedImport(names: readonly string[], source: string, local = (name: string) => name) {
   return {
@@ -201,9 +283,11 @@ function namedImport(names: readonly string[], source: string, local = (name: st
 const IMPORT_COMPONENT = es.parseModule(`import $Component from '$path'`)
 const MODEL_REF = es.parseModule('const $name = ref(true)')
 
-function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
-  const imports = [
-    ...(uses.models.length > 0 ? [namedImport(['ref'], 'vue')] : []),
+/** What the script imports: Vue's helpers, Iconify, Reka, and other generated components. */
+function scriptImports(uses: TemplateUses): es.SyntaxNode[] {
+  const helpers = compact([uses.sliderValues && 'computed', uses.models.length > 0 && 'ref'])
+  return [
+    ...(helpers.length > 0 ? [namedImport(helpers, 'vue')] : []),
     ...(uses.icons ? [namedImport(['Icon'], '@iconify/vue', () => ICONIFY)] : []),
     ...(uses.reka.size > 0 ? [namedImport([...uses.reka].sort(), 'reka-ui')] : []),
     ...[...uses.components].sort().flatMap(
@@ -214,6 +298,34 @@ function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
         }).body
     )
   ]
+}
+
+/** The model's declaration: a choice, a number or text, or a boolean, and a slider's list. */
+function modelDeclaration(component: ComponentModel, uses: TemplateUses): es.SyntaxNode[] {
+  const name = component.model
+  if (!name) return []
+  const { choice, range, text } = component
+  const base = { $model: identifier(name), $name: es.string(name) }
+  if (choice)
+    return es.fill(choice.default === null ? OPEN_CHOICE_MODEL : CHOICE_MODEL, {
+      ...base,
+      $Type: es.stringUnionType(choice.options),
+      $default: choice.default === null ? es.OMIT : es.string(choice.default)
+    }).body
+  if (!range && !text) return es.fill(MODEL, base).body
+  const model = es.fill(VALUE_MODEL, {
+    ...base,
+    $Type: es.parseType(range ? 'number' : 'string'),
+    $default: range ? es.number(range.default) : es.string(text?.default ?? '')
+  }).body
+  const values = uses.sliderValues
+    ? es.fill(SLIDER_VALUES, { $values: identifier(uses.sliderValues), $model: identifier(name) })
+        .body
+    : []
+  return [...model, ...values]
+}
+
+function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
   const props =
     component.valueProp ||
     component.disabled ||
@@ -221,24 +333,13 @@ function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
     component.texts.length > 0
       ? propsDeclaration(component)
       : []
-  const name = component.model
-  const choice = component.choice
-  let model: es.SyntaxNode[] = []
-  if (name && choice)
-    model = es.fill(choice.default === null ? OPEN_CHOICE_MODEL : CHOICE_MODEL, {
-      $model: identifier(name),
-      $name: es.string(name),
-      $Type: es.stringUnionType(choice.options),
-      $default: choice.default === null ? es.OMIT : es.string(choice.default)
-    }).body
-  else if (name) model = es.fill(MODEL, { $model: identifier(name), $name: es.string(name) }).body
   const refs = uses.models.flatMap(
     (item) => es.fill(MODEL_REF, { $name: identifier(item.name) }).body
   )
   return {
     type: 'Program',
     sourceType: 'module',
-    body: [...imports, ...props, ...model, ...refs]
+    body: [...scriptImports(uses), ...props, ...modelDeclaration(component, uses), ...refs]
   }
 }
 
@@ -248,19 +349,23 @@ function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
  * other variant properties.
  */
 export const vueComponent: ComponentGenerator = async (component) => {
+  const taken = new Set([
+    ...component.props.map((prop) => prop.name),
+    ...component.texts.map((text) => text.name),
+    ...(component.model ? [component.model] : []),
+    'disabled'
+  ])
   const uses: TemplateUses = {
+    component,
     kind: component.kind,
+    sliderValues:
+      component.kind === 'slider' && component.model ? claimName('values', taken) : null,
     reka: new Set(),
     components: new Set(),
     icons: false,
     models: [],
     // Refs share the script with the component's own props and model.
-    taken: new Set([
-      ...component.props.map((prop) => prop.name),
-      ...component.texts.map((text) => text.name),
-      ...(component.model ? [component.model] : []),
-      'disabled'
-    ])
+    taken
   }
   const template = templateNode(component.tree, uses)
   const { css } = await stateStylesToCSS(component.styles)

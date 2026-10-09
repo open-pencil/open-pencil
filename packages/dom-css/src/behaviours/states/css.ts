@@ -19,13 +19,17 @@ export interface StateStylesheet {
 /** A CSS string for an attribute selector's value. */
 const quoted = (value: string) => cssesc(value, { quotes: 'double', wrap: true })
 
+/** A field whose input or textarea shows text rather than its placeholder. */
+export const FILLED = ':has(:is(input, textarea):not(:placeholder-shown))'
+
 /** The selector part a condition adds to the control's root. */
 export function conditionSelector(condition: StateCondition): string {
   if (condition.type === 'state') return `[data-state=${quoted(condition.value)}]`
   if (condition.type === 'disabled') return '[data-disabled]'
+  if (condition.type === 'filled') return FILLED
   if (condition.type === 'prop')
     return `[${propAttribute(condition.name)}=${quoted(condition.value)}]`
-  if (condition.state === 'focus') return ':focus-visible'
+  if (condition.state === 'focus') return condition.within ? ':focus-within' : ':focus-visible'
   // A disabled control keeps its disabled look under the pointer.
   return `${condition.state === 'hover' ? ':hover' : ':active'}:not([data-disabled])`
 }
@@ -59,7 +63,10 @@ export async function stateStylesToCSS(styles: StateStyles): Promise<StateStyles
     for (const rule of element.rules) {
       const when = rule.conditions.map(conditionSelector).join('')
       const on = rule.on && classes.get(rule.on)
-      const tested = on ? ` .${on}${when}${rule.on === element ? '' : own}` : `${when}${own}`
+      const pseudo = rule.pseudo ? `::${rule.pseudo}` : ''
+      const tested = on
+        ? ` .${on}${when}${rule.on === element ? '' : own}${pseudo}`
+        : `${when}${own}${pseudo}`
       rules.push({
         order: rule.conditions.length,
         selector: `.${rootClass}${tested}`,

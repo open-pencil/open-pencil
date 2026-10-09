@@ -21,3 +21,17 @@ export const HEADING_RESET: Record<string, string> = {
   margin: '0',
   font: 'inherit'
 }
+
+/**
+ * Element styles an input or textarea adds, cleared so the field's text layer it replaces
+ * keeps its look. Preview and generated components both draw a field's text as one.
+ */
+export const INPUT_RESET: Record<string, string> = {
+  border: 'none',
+  outline: 'none',
+  padding: '0',
+  margin: '0',
+  background: 'transparent',
+  resize: 'none',
+  'box-sizing': 'border-box'
+}

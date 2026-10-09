@@ -235,6 +235,140 @@ function disclosureGraph(): SceneGraph {
 
 type Framework = 'vue' | 'react'
 
+/** A standalone component with a behaviour, drawn by `draw`. */
+function controlComponent(
+  name: string,
+  behaviour: Behaviour,
+  draw: (graph: SceneGraph, componentId: string) => void,
+  size: { width: number; height: number }
+): SceneGraph {
+  const graph = new SceneGraph()
+  const component = graph.createNode('COMPONENT', graph.getPages()[0].id, { name, ...size })
+  draw(graph, component.id)
+  graph.updateNode(component.id, { pluginData: withBehaviour(component, behaviour) })
+  return graph
+}
+
+/** A slider at 60 of 0 to 100 in steps of 5. */
+function sliderGraph(): SceneGraph {
+  return controlComponent(
+    'Volume',
+    {
+      ...emptyBehaviour('slider'),
+      parts: { track: 'track-slot', range: 'range-slot', thumb: 'thumb-slot' },
+      numbers: { value: { min: 0, max: 100, step: 5, default: 60 } }
+    },
+    (graph, id) => {
+      const track = graph.createNode('FRAME', id, {
+        name: 'Track',
+        componentPropertyReferences: slot('track-slot'),
+        y: 8,
+        width: 200,
+        height: 4,
+        fills: fill(0.8, 0.84, 0.88)
+      })
+      graph.createNode('FRAME', track.id, {
+        name: 'Range',
+        componentPropertyReferences: slot('range-slot'),
+        width: 120,
+        height: 4,
+        fills: fill(0.31, 0.27, 0.9)
+      })
+      graph.createNode('FRAME', id, {
+        name: 'Thumb',
+        componentPropertyReferences: slot('thumb-slot'),
+        x: 110,
+        width: 20,
+        height: 20,
+        fills: fill(1, 1, 1)
+      })
+    },
+    { width: 200, height: 20 }
+  )
+}
+
+/** A number field at 9 of 1 to 10, between its steppers. */
+function numberFieldGraph(): SceneGraph {
+  const graph = controlComponent(
+    'Quantity',
+    {
+      ...emptyBehaviour('numberField'),
+      texts: { text: { propertyId: 'count' } },
+      parts: { decrement: 'decrement-slot', increment: 'increment-slot' },
+      numbers: { value: { min: 1, max: 10, step: 1, default: 9 } }
+    },
+    (graph, id) => {
+      graph.updateNode(id, {
+        layoutMode: 'HORIZONTAL',
+        primaryAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG',
+        itemSpacing: 8
+      })
+      const stepper = (name: string, property: string) =>
+        graph.createNode('FRAME', id, {
+          name,
+          componentPropertyReferences: slot(property),
+          width: 24,
+          height: 24,
+          fills: fill(0.8, 0.84, 0.88)
+        })
+      stepper('Decrement', 'decrement-slot')
+      graph.createNode('TEXT', id, {
+        name: 'Count',
+        text: '9',
+        textAutoResize: 'WIDTH_AND_HEIGHT',
+        width: 16,
+        height: 20,
+        componentPropertyReferences: [{ propertyId: 'count', field: 'TEXT' }]
+      })
+      stepper('Increment', 'increment-slot')
+    },
+    { width: 100, height: 24 }
+  )
+  const component = graph.getChildren(graph.getPages()[0].id)[0]
+  if (component)
+    graph.updateNode(component.id, {
+      componentPropertyDefinitions: [
+        { id: 'count', name: 'Count', type: 'TEXT', defaultValue: '9' }
+      ]
+    })
+  return graph
+}
+
+/** A text field drawn white while empty and grey once filled, its placeholder `Email`. */
+function textFieldGraph(): SceneGraph {
+  const graph = controlSet(
+    'Email',
+    { name: 'Filled', values: ['No', 'Yes'] },
+    {
+      ...emptyBehaviour('textField'),
+      texts: { value: { propertyId: 'email' } },
+      booleans: { filled: { propertyId: 'value', on: 'Yes', off: 'No' } }
+    },
+    (graph, variantId, value) => {
+      graph.updateNode(variantId, {
+        width: 200,
+        height: 32,
+        fills: value === 'Yes' ? fill(0.95, 0.96, 0.97) : fill(1, 1, 1)
+      })
+      graph.createNode('TEXT', variantId, {
+        name: 'Value',
+        text: value === 'Yes' ? 'ada@example.com' : 'Email',
+        componentPropertyReferences: [{ propertyId: 'email', field: 'TEXT' }]
+      })
+    }
+  )
+  const set = graph.getChildren(graph.getPages()[0].id)[0]
+  if (set)
+    graph.updateNode(set.id, {
+      componentPropertyDefinitions: [
+        ...set.componentPropertyDefinitions,
+        { id: 'email', name: 'Email', type: 'TEXT', defaultValue: 'Email' }
+      ]
+    })
+  return graph
+}
+
 /**
  * Runs the stories' Default story in `#story` the way Storybook does: with its args, then its
  * play function given Storybook's own `within` and `userEvent`. The outcome is recorded on
@@ -425,6 +559,52 @@ for (const framework of ['vue', 'react'] as const) {
       await enabled.getByRole('tab', { name: 'Password' }).click()
       await expect(enabled.getByText('Password settings')).toBeVisible()
       await expect(enabled.getByText('Account settings')).toBeHidden()
+    })
+
+    test('a slider moves by its step from the keyboard, within its range', async ({
+      page
+    }, info) => {
+      server = await serveComponent(sliderGraph(), framework, info.outputPath('slider'))
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const thumb = page.locator('#enabled').getByRole('slider')
+      await expect(thumb).toHaveAttribute('aria-valuenow', '60')
+      // The root lays out at the size the design draws, though Reka and Radix render a span.
+      await expect(page.locator('#enabled > *').first()).toHaveCSS('width', '200px')
+      await thumb.focus()
+      await page.keyboard.press('ArrowRight')
+      await expect(thumb).toHaveAttribute('aria-valuenow', '65')
+      await page.keyboard.press('End')
+      await page.keyboard.press('ArrowRight')
+      await expect(thumb).toHaveAttribute('aria-valuenow', '100')
+    })
+
+    test('a number field steps with its buttons and settles within its range', async ({
+      page
+    }, info) => {
+      server = await serveComponent(numberFieldGraph(), framework, info.outputPath('quantity'))
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const enabled = page.locator('#enabled')
+      const field = enabled.getByRole('spinbutton')
+      await expect(field).toHaveValue('9')
+      await enabled.getByRole('button', { name: 'Increase' }).click()
+      await expect(field).toHaveValue('10')
+      // A value typed past the maximum settles on it once the field is left.
+      await field.fill('42')
+      await field.blur()
+      await expect(field).toHaveValue('10')
+    })
+
+    test('a text field takes its filled look while it has words', async ({ page }, info) => {
+      server = await serveComponent(textFieldGraph(), framework, info.outputPath('email'))
+      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      const field = page.locator('#enabled').getByRole('textbox')
+      const root = page.locator('#enabled > *').first()
+      await expect(field).toHaveAttribute('placeholder', 'Email')
+      await expect(root).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+      await field.fill('grace@example.com')
+      await expect(root).toHaveCSS('background-color', 'rgb(242, 245, 247)')
+      await field.fill('')
+      await expect(root).toHaveCSS('background-color', 'rgb(255, 255, 255)')
     })
 
     test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {

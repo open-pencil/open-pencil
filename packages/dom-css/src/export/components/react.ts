@@ -6,9 +6,11 @@ import { camelCase, upperFirst } from 'es-toolkit/string'
 
 import { es, jsx } from '@open-pencil/emit'
 
+import { progressWidth } from './fields'
 import type {
   ComponentElement,
   ComponentGenerator,
+  GeneratedComponent,
   ComponentModel,
   ComponentNode,
   GeneratedKind
@@ -41,7 +43,28 @@ const RADIX: Record<GeneratedKind, { namespace: string; parts: Record<string, st
   accordionItem: {
     namespace: 'Accordion',
     parts: { root: 'Item', trigger: 'Trigger', content: 'Content' }
-  }
+  },
+  slider: {
+    namespace: 'Slider',
+    parts: { root: 'Root', track: 'Track', range: 'Range', thumb: 'Thumb' }
+  },
+  progress: { namespace: 'Progress', parts: { root: 'Root', indicator: 'Indicator' } },
+  // Radix has no number or text field; these are native inputs in the design's own elements.
+  numberField: null,
+  textField: null,
+  textarea: null
+}
+
+/** Kinds whose native input takes the caller's props, rather than their root. */
+const INPUT_PROPS: Partial<Record<GeneratedKind, 'input' | 'textarea'>> = {
+  textField: 'input',
+  textarea: 'textarea'
+}
+
+/** A number field's stepper parts, which change its value by a step. */
+const STEPPERS: Record<string, { label: string; sign: '+' | '-' }> = {
+  increment: { label: 'Increase', sign: '+' },
+  decrement: { label: 'Decrease', sign: '-' }
 }
 
 /** What a group's root fixes: one item chosen at a time, and an accordion that can all close. */
@@ -76,19 +99,28 @@ function moduleClass(className: string): es.SyntaxNode {
 /** Several classes on one element, skipping a caller's that is absent. */
 const CLASS_NAMES = es.parseExpression("$classes.filter(Boolean).join(' ')")
 
-/** A Radix primitive's part, a native button for a root without one, or the design's tag. */
+/** Whether a layer renders as a native button: a button's root, or a number field's stepper. */
+const isNativeButton = (node: ComponentElement, kind: GeneratedKind) =>
+  (kind === 'button' && node.part === 'root') ||
+  (kind === 'numberField' && node.part !== null && Object.hasOwn(STEPPERS, node.part))
+
+/** A Radix primitive's part, a native button, or the design's tag. */
 function tagOf(node: ComponentElement, kind: GeneratedKind): string {
   const radix = RADIX[kind]
   const part = node.part ? radix?.parts[node.part] : undefined
   if (radix && part) return `${PRIMITIVE(radix.namespace)}.${part}`
-  return node.part === 'root' ? 'button' : node.tag
+  return isNativeButton(node, kind) ? 'button' : node.tag
 }
 
-/** `props.disabled || undefined`, so a native button sets `data-disabled` only while disabled. */
-const DISABLED_FLAG = es.parseExpression('props.disabled || undefined')
+/** `disabled || undefined`, so a native root sets `data-disabled` only while disabled. */
+const disabledFlag = (kind: GeneratedKind) =>
+  es.parseExpression(
+    kind === 'numberField' ? 'disabled || undefined' : 'props.disabled || undefined'
+  )
 
 /** What a component's markup uses, which its module imports. */
 interface MarkupUses {
+  component: ComponentModel
   kind: GeneratedKind
   choice: ComponentModel['choice']
   /** Other generated components. */
@@ -122,6 +154,7 @@ function element(node: ComponentNode, uses: MarkupUses, depth: number): es.Synta
   if (node.type === 'text') return jsx.text(node.value)
   if (node.type === 'textProp') return jsx.container(es.identifier(node.name))
   if (node.type === 'reference') return reference(node, uses, depth)
+  if (node.type === 'input') return inputElement(node.className, uses, depth)
   if (node.type === 'icon') {
     uses.icons = true
     return jsx.element(
@@ -151,25 +184,113 @@ function classNameOf(node: ComponentElement, root: boolean): es.SyntaxNode {
   return only ?? es.fill(CLASS_NAMES, { $classes: es.array(classes) })
 }
 
-/** What a root fixes before the caller's props: a group's single choice, and its start. */
+const numeric = (name: string, value: number) =>
+  jsx.attribute(name, jsx.container(es.number(value)))
+
+/**
+ * What a root fixes before the caller's props: a group's single choice and its start, and a
+ * slider's or progress bar's range and the value it starts at.
+ */
 function rootAttributes(uses: MarkupUses): es.SyntaxNode[] {
+  const { component } = uses
   const start = uses.choice?.default
+  const { range } = component
   return [
     ...(ROOT_ATTRIBUTES[uses.kind] ?? []),
     // A choice starts on the design's option, which the caller's props can change.
-    ...(start ? [jsx.attribute('defaultValue', jsx.stringValue(start))] : [])
+    ...(start ? [jsx.attribute('defaultValue', jsx.stringValue(start))] : []),
+    ...(range && uses.kind === 'slider'
+      ? [
+          jsx.attribute('defaultValue', jsx.container(es.array([es.number(range.default)]))),
+          numeric('min', range.min),
+          numeric('max', range.max),
+          numeric('step', range.step)
+        ]
+      : []),
+    ...(range && uses.kind === 'progress'
+      ? [jsx.attribute('value', jsx.container(es.identifier('value'))), numeric('max', range.max)]
+      : [])
   ]
 }
 
-function bindingAttributes(node: ComponentElement, native: boolean): es.SyntaxNode[] {
+function bindingAttributes(
+  node: ComponentElement,
+  kind: GeneratedKind,
+  native: boolean
+): es.SyntaxNode[] {
   return node.bindings.flatMap((binding) => {
     if (binding.type === 'prop')
       return [jsx.attribute(binding.attribute, jsx.container(es.identifier(binding.prop.name)))]
-    // Radix sets `data-disabled` on its own roots; a native button needs it for the styles.
+    // Radix sets `data-disabled` on its own roots; a native root needs it for the styles.
     if (binding.type === 'disabled' && native)
-      return [jsx.attribute('data-disabled', jsx.container(DISABLED_FLAG))]
+      return [jsx.attribute('data-disabled', jsx.container(disabledFlag(kind)))]
     return []
   })
+}
+
+/** What a part of a native or measured control needs: a stepper's step, an indicator's width. */
+function partAttributes(node: ComponentElement, uses: MarkupUses): es.SyntaxNode[] {
+  const { range } = uses.component
+  if (!range || !node.part) return []
+  if (uses.kind === 'progress' && node.part === 'indicator') {
+    const style = progressWidth(range, es.identifier('value'))
+    return style ? [jsx.attribute('style', jsx.container(style))] : []
+  }
+  const stepper = uses.kind === 'numberField' ? STEPPERS[node.part] : undefined
+  if (!stepper) return []
+  return [
+    jsx.attribute('aria-label', jsx.stringValue(stepper.label)),
+    jsx.attribute('disabled', jsx.container(es.identifier('disabled'))),
+    jsx.attribute(
+      'onClick',
+      jsx.container(es.parseExpression(`() => commit(value ${stepper.sign} ${String(range.step)})`))
+    )
+  ]
+}
+
+const NUMBER_INPUT = [
+  ['type', jsx.stringValue('number')],
+  ['value', jsx.container(es.parseExpression("Number.isNaN(value) ? '' : value"))],
+  [
+    'onChange',
+    jsx.container(es.parseExpression('(event) => setValue(event.target.valueAsNumber)'))
+  ],
+  ['onBlur', jsx.container(es.parseExpression('() => commit(value)'))]
+] as const
+
+/** A field's input: a number input that commits within its range, or the input or textarea. */
+function inputElement(className: string, uses: MarkupUses, depth: number): es.SyntaxNode {
+  const { component } = uses
+  const classAttribute = jsx.attribute('className', jsx.container(moduleClass(className)))
+  const { range } = component
+  if (range)
+    return jsx.element(
+      'input',
+      [
+        ...NUMBER_INPUT.map(([name, value]) => jsx.attribute(name, value)),
+        numeric('min', range.min),
+        numeric('max', range.max),
+        numeric('step', range.step),
+        jsx.attribute('disabled', jsx.container(es.identifier('disabled'))),
+        classAttribute
+      ],
+      [],
+      depth
+    )
+  const start = component.text?.default
+  const placeholder = component.text?.placeholder
+  return jsx.element(
+    INPUT_PROPS[uses.kind] ?? 'input',
+    [
+      ...(placeholder ? [jsx.attribute('placeholder', jsx.stringValue(placeholder))] : []),
+      ...(start ? [jsx.attribute('defaultValue', jsx.stringValue(start))] : []),
+      // The input takes the caller's props, such as `name` or `onChange`.
+      jsx.spread(es.identifier('props')),
+      classAttribute
+    ],
+    [],
+    depth
+  )
 }
 
 function designElement(node: ComponentElement, uses: MarkupUses, depth: number): es.SyntaxNode {
@@ -177,16 +298,18 @@ function designElement(node: ComponentElement, uses: MarkupUses, depth: number):
   const root = node.part === 'root'
   const native = root && !(node.part && RADIX[kind]?.parts[node.part])
   const attributes = [
-    ...(native ? [jsx.attribute('type', jsx.stringValue('button'))] : []),
+    ...(isNativeButton(node, kind) ? [jsx.attribute('type', jsx.stringValue('button'))] : []),
     ...(root ? rootAttributes(uses) : []),
-    // The root passes the caller's props on, such as `checked` or `onClick`.
-    ...(root ? [jsx.spread(es.identifier('props'))] : []),
+    // The root passes the caller's props on, such as `checked` or `onClick`, unless its input
+    // takes them.
+    ...(root && !INPUT_PROPS[kind] ? [jsx.spread(es.identifier('props'))] : []),
     ...(node.value === undefined ? [] : [jsx.attribute('value', jsx.stringValue(node.value))]),
     ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
       jsx.attribute(name, jsx.stringValue(value))
     ),
+    ...partAttributes(node, uses),
     jsx.attribute('className', jsx.container(classNameOf(node, root))),
-    ...bindingAttributes(node, native)
+    ...bindingAttributes(node, kind, native)
   ]
   // Words alone stay on the element's line, where a line break would add a space.
   const only = node.children.length === 1 ? node.children[0]?.type : undefined
@@ -240,8 +363,19 @@ const qualified = (namespace: string, name: string) => ({
   right: es.identifier(name)
 })
 
+/** Props a kind declares itself, where no Radix root has them. */
+const OWN_PROPS: Partial<Record<GeneratedKind, string>> = {
+  progress: "Omit<ComponentProps<typeof ProgressPrimitive.Root>, 'value'> & { value?: number }",
+  numberField:
+    "Omit<ComponentProps<'div'>, 'defaultValue' | 'onChange'> & { defaultValue?: number; onValueChange?: (value: number) => void; disabled?: boolean }",
+  textField: "ComponentProps<'input'>",
+  textarea: "ComponentProps<'textarea'>"
+}
+
 /** The root's own props, or a single choice group's. */
 function rootPropsType(kind: GeneratedKind): es.SyntaxNode {
+  const own = OWN_PROPS[kind]
+  if (own) return es.parseType(own)
   const radix = RADIX[kind]
   if (!radix) return es.parseType("ComponentProps<'button'>")
   const single = SINGLE_PROPS[kind]
@@ -278,12 +412,38 @@ function propsType(component: ComponentModel): es.SyntaxNode {
   }
 }
 
+/** A destructured prop, with the default it takes when the caller leaves it out. */
+interface Parameter {
+  name: string
+  default?: es.SyntaxNode
+}
+
+/** Props a kind reads itself: a progress bar's value, a number field's start and changes. */
+function kindParameters(component: ComponentModel): Parameter[] {
+  const { range } = component
+  if (component.kind === 'progress' && range)
+    return [{ name: 'value', default: es.number(range.default) }]
+  if (component.kind === 'numberField' && range)
+    return [
+      { name: 'defaultValue', default: es.number(range.default) },
+      { name: 'onValueChange' },
+      { name: 'disabled' }
+    ]
+  return []
+}
+
 /**
  * `{ size = 'Small', label = 'Save', ...props }`: variant and text props with their defaults,
  * kept off the root, and the rest passed on.
  */
 function parameters(component: ComponentModel): es.SyntaxNode {
-  const own = [...component.props, ...component.texts]
+  const own: Parameter[] = [
+    ...kindParameters(component),
+    ...[...component.props, ...component.texts].map((prop) => ({
+      name: prop.name,
+      default: es.string(prop.default)
+    }))
+  ]
   if (own.length === 0) return es.identifier('props')
   return {
     type: 'ObjectPattern',
@@ -292,11 +452,9 @@ function parameters(component: ComponentModel): es.SyntaxNode {
         type: 'Property',
         kind: 'init',
         key: es.identifier(prop.name),
-        value: {
-          type: 'AssignmentPattern',
-          left: es.identifier(prop.name),
-          right: es.string(prop.default)
-        },
+        value: prop.default
+          ? { type: 'AssignmentPattern', left: es.identifier(prop.name), right: prop.default }
+          : es.identifier(prop.name),
         computed: false,
         method: false,
         shorthand: true
@@ -304,6 +462,49 @@ function parameters(component: ComponentModel): es.SyntaxNode {
       { type: 'RestElement', argument: es.identifier('props') }
     ]
   }
+}
+
+/**
+ * A number field's value: typed freely, and settled within its range when it loses focus or a
+ * stepper moves it, which is when the caller hears of it.
+ */
+const NUMBER_STATE = (range: { min: number; max: number }) =>
+  es.fill(
+    es.parseModule(dedent`
+      const [value, setValue] = useState(defaultValue)
+      const commit = (next: number) => {
+        const settled = Number.isNaN(next) ? $min : Math.min($max, Math.max($min, next))
+        setValue(settled)
+        onValueChange?.(settled)
+      }
+    `),
+    { $min: es.number(range.min), $max: es.number(range.max) }
+  ).body
+
+const REACT_STATE_IMPORT = es.parseModule(
+  "import { useState, type ComponentProps } from 'react'"
+).body
+
+/** The component function's statements before it returns, such as a number field's state. */
+function prepend(declaration: es.SyntaxNode | undefined, statements: es.SyntaxNode[]): void {
+  const fn = es.child(declaration, 'declaration')
+  const body = es.child(fn, 'body')
+  if (!body || statements.length === 0) return
+  body.body = [...statements, ...es.children(body, 'body')]
+}
+
+/**
+ * The prop a story sets the value with: Radix's uncontrolled value, so a story's control and
+ * its play function can both change it, which a slider takes as a list; a progress bar's own
+ * value, which nothing else changes.
+ */
+function valueArg(
+  kind: GeneratedKind,
+  model: string | null
+): Pick<GeneratedComponent, 'valueArg' | 'valueList'> {
+  if (!model) return { valueArg: null }
+  if (kind === 'progress') return { valueArg: 'value' }
+  return { valueArg: defaultOf(model), ...(kind === 'slider' ? { valueList: true } : {}) }
 }
 
 /**
@@ -315,6 +516,7 @@ export const reactComponent: ComponentGenerator = async (component) => {
   const radix = RADIX[component.kind]
   const stylesPath = `${component.name}.module.css`
   const uses: MarkupUses = {
+    component,
     kind: component.kind,
     choice: component.choice,
     components: new Set(),
@@ -345,11 +547,15 @@ export const reactComponent: ComponentGenerator = async (component) => {
     $params: parameters(component),
     $body: body
   }).body
+  const state =
+    component.kind === 'numberField' && component.range ? NUMBER_STATE(component.range) : []
+  prepend(rest.at(-1), state)
+  // A single choice group's props come from Radix's own type, not `ComponentProps`.
+  const reactImport = state.length > 0 ? REACT_STATE_IMPORT : [typeImport]
   const program = {
     type: 'Program',
     sourceType: 'module',
-    // A single choice group's props come from Radix's own type, not `ComponentProps`.
-    body: [...(SINGLE_PROPS[component.kind] ? [] : [typeImport]), ...imports, stylesImport, ...rest]
+    body: [...(SINGLE_PROPS[component.kind] ? [] : reactImport), ...imports, stylesImport, ...rest]
   }
   const { css } = await stateStylesToCSS(component.styles)
   const model = component.model
@@ -362,7 +568,6 @@ export const reactComponent: ComponentGenerator = async (component) => {
       { path: stylesPath, content: css }
     ],
     entry: { path: `./${component.name}`, named: true },
-    // Radix's uncontrolled value, so a story's control and its play function can both change it.
-    valueArg: model ? defaultOf(model) : null
+    ...valueArg(component.kind, model)
   }
 }

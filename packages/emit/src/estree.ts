@@ -108,6 +108,15 @@ export const identifier = (name: string): SyntaxNode => ({ type: 'Identifier', n
 
 export const string = (value: string): SyntaxNode => ({ type: 'Literal', value })
 
+/** A finite number, with a negative one written as `-` before its magnitude, as source does. */
+export function number(value: number): SyntaxNode {
+  if (!Number.isFinite(value)) throw new Error(`Not a finite number: ${value}`)
+  const literal = { type: 'Literal', value: Math.abs(value) }
+  return value < 0
+    ? { type: 'UnaryExpression', operator: '-', prefix: true, argument: literal }
+    : literal
+}
+
 const propertyKey = (key: string) =>
   /^[A-Za-z_$][\w$]*$/.test(key) ? identifier(key) : string(key)
 

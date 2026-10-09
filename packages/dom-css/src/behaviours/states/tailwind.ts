@@ -22,11 +22,12 @@ function variant(condition: StateCondition, group: string | null): string {
   const on = (name: string) => (group ? `group-${name}/${group}:` : `${name}:`)
   if (condition.type === 'state') return on(`data-[state=${variantValue(condition.value)}]`)
   if (condition.type === 'disabled') return on('data-disabled')
+  if (condition.type === 'filled') return on('has-[:is(input,textarea):not(:placeholder-shown)]')
   if (condition.type === 'prop') {
     const attribute = propAttribute(condition.name).slice('data-'.length)
     return on(`data-[${attribute}=${variantValue(condition.value)}]`)
   }
-  if (condition.state === 'focus') return on('focus-visible')
+  if (condition.state === 'focus') return on(condition.within ? 'focus-within' : 'focus-visible')
   // A disabled control keeps its disabled look under the pointer.
   const enabled = group ? `group-not-data-disabled/${group}:` : 'not-data-disabled:'
   return `${enabled}${on(condition.state === 'hover' ? 'hover' : 'active')}`
@@ -75,7 +76,12 @@ function designNode(
     ...utilities(node.base, options),
     ...node.rules.flatMap((rule) => {
       const group = testedGroup(node, rule.on, groups, isRoot)
-      const prefix = rule.conditions.map((condition) => variant(condition, group)).join('')
+      const prefix = [
+        ...rule.conditions.map((condition) => variant(condition, group)),
+        ...(rule.pseudo
+          ? [rule.pseudo === 'placeholder' ? 'placeholder:' : `[&::${rule.pseudo}]:`]
+          : [])
+      ].join('')
       return utilities(rule.style, options).map((utility) => `${prefix}${utility}`)
     })
   ]
