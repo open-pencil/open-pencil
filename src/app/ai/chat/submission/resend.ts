@@ -19,6 +19,8 @@ export async function chatToResend(
   if (!ready) return null
   try {
     const current = await options.ensureChat()
+    // Another tab or a new message took the chat over while it was being made.
+    if (options.chat.value !== ready) return null
     if (current && current !== ready) options.chat.value = markRaw(current)
     return current
   } catch (error) {

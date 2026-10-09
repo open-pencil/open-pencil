@@ -245,6 +245,31 @@ test('retrying after the key changed asks through the rebuilt chat', async () =>
   expect(width(card.id)).toBe(200)
 })
 
+test('a retry backs off when another chat takes over while it is being made', async () => {
+  const { card, chat } = setup()
+  const other = fakeChat(card.id)
+  const current = shallowRef<ChatInstance | null>(chat)
+  // Like switching tabs while the session rebuilds the chat with a new key.
+  const actions = submission(
+    chat,
+    async () => {
+      current.value = other
+      return chat
+    },
+    current
+  )
+  chat.failNext = true
+  await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })
+  current.value = chat
+
+  await actions.regenerate()
+
+  expect(current.value).toBe(other)
+  expect(chat.messages.map((message) => message.role)).toEqual(['user'])
+  expect(other.messages).toEqual([])
+  expect(width(card.id)).toBe(100)
+})
+
 test('resending an edited request replaces it and undoes the old reply first', async () => {
   const { card, chat, actions } = setup()
   await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })

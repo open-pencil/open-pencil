@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit'
 import { computed, ref, watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
@@ -66,7 +67,9 @@ function designCredentialReference(): CredentialRef | null {
 
 export async function refreshAIProviderStatus(): Promise<void> {
   const reference = designCredentialReference()
-  apiKeyStatus.value = reference ? await refreshStatus(reference) : 'missing'
+  const status = reference ? await refreshStatus(reference) : 'missing'
+  // A connection chosen while the lookup ran owns the status now.
+  if (isEqual(designCredentialReference(), reference)) apiKeyStatus.value = status
 }
 
 // Startup checks metadata only. Secret migration/resolution belongs to explicit provider use.
