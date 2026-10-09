@@ -147,16 +147,26 @@ export function freePlacedParts(
 const PERCENT = es.parseExpression(`({ width: \`\${$share}%\` })`)
 
 /**
- * A progress bar's indicator style, reaching the value's share of its range: `value` itself
- * for a range of 0 to 100. Null for an empty range, which has no share.
+ * A progress bar's indicator style, reaching the value's share of its range, the value held
+ * within it: the value itself for a range of 0 to 100. Null for an empty range, which has no
+ * share.
  */
 export function progressWidth(range: RangeModel, value: es.SyntaxNode): es.SyntaxNode | null {
   const span = range.max - range.min
   if (span <= 0) return null
+  // A value outside the range fills the indicator no further than its ends.
+  const clamped = es.fill(es.parseExpression('Math.min($max, Math.max($min, $value))'), {
+    $value: value,
+    $min: es.number(range.min),
+    $max: es.number(range.max)
+  })
   const offset =
     range.min === 0
-      ? value
-      : es.fill(es.parseExpression('$value - $min'), { $value: value, $min: es.number(range.min) })
+      ? clamped
+      : es.fill(es.parseExpression('$value - $min'), {
+          $value: clamped,
+          $min: es.number(range.min)
+        })
   const share =
     span === 100
       ? offset

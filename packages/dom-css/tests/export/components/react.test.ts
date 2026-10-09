@@ -117,6 +117,8 @@ describe('generated React form controls', () => {
     const { component } = await generate(progressComponent())
     expect(render(component)).toContain('width:25%')
     expect(render(component, { value: 150 })).toContain('width:75%')
+    // A value past the end fills the indicator, and no further.
+    expect(render(component, { value: 500 })).toContain('width:100%')
   })
 
   test('a number field is a native number input between steppers named for what they do', async () => {

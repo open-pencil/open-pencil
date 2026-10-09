@@ -59,7 +59,8 @@ const PAINT_DEFAULTS: Readonly<Record<string, unknown>> = { blendMode: 'NORMAL' 
  * out, and numbers rounded, since a saved document keeps them at lower precision.
  */
 function canonical(value: unknown): unknown {
-  if (typeof value === 'number') return round(value)
+  // Stored as 32-bit floats too, so read at that precision before rounding, as coordinates are.
+  if (typeof value === 'number') return round(Math.fround(value))
   if (Array.isArray(value)) return value.map(canonical)
   if (typeof value !== 'object' || value === null) return value
   const entries = Object.entries(value)

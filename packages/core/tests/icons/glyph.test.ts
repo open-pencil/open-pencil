@@ -50,6 +50,8 @@ describe('icon glyphs', () => {
       const loaded = await parseFigFile((await exportFigFile(graph)).slice().buffer)
       const icon = [...loaded.getAllNodes()].find((node) => readIcon(node)?.name === readIcon(frame)?.name)
       if (!icon) throw new Error('Expected the icon to load')
+      // An icon without a glyph also reads as unedited, so the glyph itself has to survive.
+      expect(readIcon(icon)?.glyph).toBe(readIcon(frame)?.glyph ?? 'missing')
       expect(isIconModified(loaded, icon)).toBe(false)
     }
   })

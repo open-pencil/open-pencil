@@ -247,6 +247,8 @@ describe('generated Vue form controls', () => {
       /class="upload__indicator"[^>]*style="width:25%;"|style="width:25%;"[^>]*class="upload__indicator"/
     )
     expect(await render(component, { value: 150 })).toContain('width:75%;')
+    // A value past the end fills the indicator, and no further.
+    expect(await render(component, { value: 500 })).toContain('width:100%')
   })
 
   test('a number field shows its value in its input, and its root hugs it', async () => {
