@@ -37,6 +37,30 @@ describe('laying out authored content', () => {
     expect(graph.getNode(fixed.id)).toMatchObject({ width: 100, height: 100 })
   })
 
+  test('wrapping text that layout stretches takes the height of its lines', () => {
+    // No measurer, as headless tools run: layout alone would keep the height of one line.
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const column = graph.createNode('FRAME', page, {
+      layoutMode: 'VERTICAL',
+      width: 200,
+      primaryAxisSizing: 'HUG'
+    })
+    const text = graph.createNode('TEXT', column.id, {
+      text: 'A paragraph long enough to wrap across several lines of the column',
+      fontSize: 14,
+      width: 0,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH'
+    })
+    layoutAuthoredNodes(graph, [column.id])
+
+    const laidOut = graph.getNode(text.id)
+    expect(laidOut?.width).toBe(200)
+    expect(laidOut?.height).toBeGreaterThan(2 * 14 * 1.4)
+    expect(graph.getNode(column.id)?.height).toBe(laidOut?.height)
+  })
+
   test('auto layout places the roots it is given', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0].id

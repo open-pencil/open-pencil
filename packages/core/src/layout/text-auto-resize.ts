@@ -51,21 +51,33 @@ export function textAutoResizeChanges(
 }
 
 /**
- * Measures the text under `rootId` that resizes to its content. Auto layout measures the text
- * it holds when it lays out; text anywhere else keeps the size it was created with otherwise.
+ * Measures the text under `rootId` that resizes to its content; `wrappingOnly` measures only text
+ * that wraps, at the width it has now. Auto layout measures the text it holds when it lays out;
+ * text anywhere else keeps the size it was created with otherwise. Reports whether a size changed.
  */
-export function sizeAutoResizingText(graph: SceneGraph, rootId: string): void {
+export function sizeAutoResizingText(
+  graph: SceneGraph,
+  rootId: string,
+  wrappingOnly = false
+): boolean {
+  let changed = false
   const stack = [rootId]
   for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
     const node = graph.getNode(id)
     if (!node) continue
     stack.push(...node.childIds)
-    if (node.type !== 'TEXT') continue
+    if (node.type !== 'TEXT' || (wrappingOnly && node.textAutoResize !== 'HEIGHT')) continue
     // Wrapping text the source gave no width wraps at the width its content takes.
     const unsized = node.textAutoResize === 'HEIGHT' && node.width <= 0
     const changes = textAutoResizeChanges(node, {
       textAutoResize: unsized ? 'WIDTH_AND_HEIGHT' : node.textAutoResize
     })
-    if (changes.width !== undefined || changes.height !== undefined) graph.updateNode(id, changes)
+    const resized =
+      (changes.width !== undefined && changes.width !== node.width) ||
+      (changes.height !== undefined && changes.height !== node.height)
+    if (!resized) continue
+    graph.updateNode(id, changes)
+    changed = true
   }
+  return changed
 }

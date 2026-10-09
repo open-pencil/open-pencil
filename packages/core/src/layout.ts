@@ -96,16 +96,22 @@ export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
  * Documents that store their geometry, such as `.fig` files, keep theirs and do not come here.
  */
 export function layoutAuthoredNodes(graph: SceneGraph, rootIds: Iterable<string>): void {
+  const roots = [...rootIds]
   const pageIds = new Set<string>()
   let outsidePages = false
-  for (const id of rootIds) {
+  for (const id of roots) {
     sizeAutoResizingText(graph, id)
     const page = graph.closest(id, (node) => node.type === 'CANVAS')
     if (page) pageIds.add(page.id)
     else outsidePages = true
   }
-  if (outsidePages) computeAllLayouts(graph)
-  else for (const pageId of pageIds) computeAllLayouts(graph, pageId)
+  const layout = () => {
+    if (outsidePages) computeAllLayouts(graph)
+    else for (const pageId of pageIds) computeAllLayouts(graph, pageId)
+  }
+  layout()
+  // Layout gives wrapping text its width, which its height follows.
+  if (roots.map((id) => sizeAutoResizingText(graph, id, true)).some(Boolean)) layout()
 }
 
 function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {
