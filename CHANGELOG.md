@@ -134,6 +134,7 @@
 
 ### Fixed
 
+- Keep memory flat while the AI chat or an MCP client edits a document (#587). Each edit kept two copies of its whole page in the undo history, about 10 MB a call on a 400-layer page, until the 200-step history limit, so long sessions grew until the app ran out of memory; an edit now keeps only the layers it changed, and undoing it leaves the other layers as they are.
 - Show when the browser menubar has more menus than fit in the left panel. The clipped side fades out and a chevron scrolls to the hidden menus; before, Arrange and Text could be cut off with no sign the bar scrolls.
 - List storage documents as soon as storage settings are saved. The home tab kept asking to configure storage until it next refreshed, which happened on window focus or up to a minute later.
 - Keep a Figma file's exposed nested instances when it is saved from OpenPencil; their properties stopped showing on the outer component's instances in Figma.

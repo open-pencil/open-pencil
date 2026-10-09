@@ -82,18 +82,21 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
         if (!def.mutates) return def.execute(figma, args)
         // A step's calls may run concurrently; whole-page snapshots must not interleave.
         const release = await acquireMutation()
-        const before = store.snapshotPage(pageId)
-        if (toolChangesDocument(def)) recordRunBaseline(store, before)
+        // The run's first edit to a page keeps the whole page, which `changeBaseline` diffs.
+        if (toolChangesDocument(def) && !runBaseline(store, pageId)) {
+          recordRunBaseline(store, store.snapshotPage(pageId))
+        }
+        const finishChange = store.capturePageChange(pageId)
         try {
           return await runTool(def, figma, args, pageId)
         } finally {
-          const after = store.snapshotPage(pageId)
+          const change = finishChange()
           // Atomic tools record their own undo entry.
           if (!isAtomicTool(def)) {
             store.pushUndoEntry({
               label: `AI: ${def.name}`,
-              forward: () => store.restorePageFromSnapshot(after),
-              inverse: () => store.restorePageFromSnapshot(before)
+              forward: () => store.restorePageChange(change, 'after'),
+              inverse: () => store.restorePageChange(change, 'before')
             })
           }
           // Every entry the run pushes belongs to its turn, view changes included: one left on
@@ -103,7 +106,7 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
           // View tools (selection, viewport, pages) cannot change the document.
           if (toolChangesDocument(def)) {
             try {
-              recordToolChange(store, toolCallId, before, after)
+              recordToolChange(store, toolCallId, change)
             } catch (error) {
               // The change record is a review aid; the edit and its undo entry already stand.
               console.warn('Could not record AI tool change', error)
