@@ -11,7 +11,8 @@ import {
   designModelID,
   designProviderDefinition,
   designProviderID,
-  modelConnectionCredentialRef
+  modelConnectionCredentialRef,
+  modelCredentialRevision
 } from '@/app/ai/models'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
 import {
@@ -113,4 +114,9 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
     markTransportDirty()
   })
   watch(credentialRevision, markTransportDirty)
+  // A key saved in Settings; the chat reads it when it builds its transport.
+  watch(modelCredentialRevision, () => {
+    void refreshAIProviderStatus()
+    markTransportDirty()
+  })
 }

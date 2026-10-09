@@ -83,6 +83,8 @@ async function copyResponse(): Promise<void> {
 // The AI SDK updates parts in place and replaces only the message, so copy each part for
 // the cards' computed state to see the new values.
 const reverted = computed(() => revertOf(message) !== null)
+// A request that failed once its reply had started leaves the reply without content.
+const empty = computed(() => message.parts.every((part) => part.type === 'step-start'))
 const groups = computed(() => groupMessageParts(message.parts.map((part) => ({ ...part }))))
 
 function groupKey(group: MessagePartGroup): string {
@@ -151,6 +153,7 @@ function groupKey(group: MessagePartGroup): string {
           v-if="!streaming"
           :message-id="message.id"
           :can-regenerate="canRegenerate"
+          :empty="empty"
           :reverted="reverted"
           @regenerate="emit('regenerate')"
           @revert="emit('revert')"

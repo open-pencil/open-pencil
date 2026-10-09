@@ -147,11 +147,15 @@ const showContinue = computed(() => {
   return last.role === 'assistant' && didHitStepLimit()
 })
 
+// Asking again clears the failure, and its notice goes with it.
+let failureToast: number | null = null
 watch(
   () => chatFailure.value?.reason,
   (reason) => {
+    if (failureToast !== null) toast.remove(failureToast)
+    failureToast = null
     if (!reason) return
-    toast.error(
+    failureToast = toast.error(
       failureMessage.value ?? ai.value.chatRequestFailed,
       failureHasSettingsAction.value
         ? {
