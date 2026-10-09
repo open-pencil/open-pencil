@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts, SceneGraph, setTextMeasurer } from '@open-pencil/core'
+import { instanceLayerId, layerSegments, type SceneNode } from '@open-pencil/scene-graph'
 
 function importedText(graph: SceneGraph, text: string, width: number, height: number, id: string) {
   const page = graph.getPages()[0]
@@ -12,6 +13,24 @@ function importedText(graph: SceneGraph, text: string, width: number, height: nu
   })
   graph.updateNode(node.id, { source: { ...node.source, format: 'fig', id } })
   return node
+}
+
+/**
+ * A text layer copied from `source` inside an instance, named after it as instance copies are,
+ * so its lineage reaches the imported source text.
+ */
+function copyOf(
+  graph: SceneGraph,
+  source: SceneNode,
+  parentId: string,
+  props: Partial<SceneNode>
+): SceneNode {
+  return graph.createNodeWithId(
+    instanceLayerId(parentId, layerSegments(source)),
+    'TEXT',
+    parentId,
+    props
+  )
 }
 
 afterEach(() => setTextMeasurer(null))
@@ -43,12 +62,11 @@ describe('effective generated FIG text layout', () => {
       componentId: 'text-wrapper',
       derivedLayout: { width: 350, height: 40 }
     })
-    const generatedText = graph.createNode('TEXT', textWrapper.id, {
+    const generatedText = copyOf(graph, source, textWrapper.id, {
       width: 342,
       height: 20,
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      componentId: source.id,
       derivedLayout: { width: 342, height: 20 }
     })
     setTextMeasurer(() => ({ width: 336, height: 20 }))
@@ -80,12 +98,11 @@ describe('effective generated FIG text layout', () => {
       counterAxisSizing: 'FIXED',
       primaryAxisAlign: 'CENTER'
     })
-    const generatedText = graph.createNode('TEXT', parent.id, {
+    const generatedText = copyOf(graph, source, parent.id, {
       width: 100,
       height: 20,
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      componentId: source.id,
       derivedLayout: { width: 100, height: 20 }
     })
     setTextMeasurer(() => ({ width: 80, height: 20 }))
@@ -111,12 +128,11 @@ describe('effective generated FIG text layout', () => {
       componentId: 'parent',
       derivedLayout: { width: 120, height: 80 }
     })
-    graph.createNode('TEXT', parent.id, {
+    copyOf(graph, source, parent.id, {
       width: 100,
       height: 20,
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      componentId: source.id,
       derivedLayout: { width: 100, height: 20 }
     })
     const inheritedStretch = graph.createNode('RECTANGLE', parent.id, {
@@ -164,12 +180,11 @@ describe('effective generated FIG text layout', () => {
       componentId: 'input',
       derivedLayout: { width: 108, height: 40 }
     })
-    const generatedText = graph.createNode('TEXT', input.id, {
+    const generatedText = copyOf(graph, source, input.id, {
       width: 76,
       height: 20,
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      componentId: source.id,
       derivedLayout: { width: 76, height: 20 }
     })
     setTextMeasurer(() => ({ width: 74, height: 20 }))
@@ -200,13 +215,12 @@ describe('effective generated FIG text layout', () => {
       componentId: 'card-header',
       derivedLayout: { width: 381, height: 102 }
     })
-    const generatedText = graph.createNode('TEXT', cardHeader.id, {
+    const generatedText = copyOf(graph, source, cardHeader.id, {
       width: 333,
       height: 30,
       text: source.text,
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
-      componentId: source.id,
       derivedLayout: { width: 333, height: 30 }
     })
     setTextMeasurer(() => ({ width: 329, height: 37 }))
@@ -226,20 +240,18 @@ describe('effective generated FIG text layout', () => {
     const page = graph.getPages()[0]
     const source = importedText(graph, 'Label', 38, 14, '1:6')
     graph.updateNode(source.id, { textAutoResize: 'WIDTH_AND_HEIGHT' })
-    const fixedIntermediate = graph.createNode('TEXT', page.id, {
+    const fixedIntermediate = copyOf(graph, source, page.id, {
       width: 280,
       height: 14,
       text: 'Email',
       textAutoResize: 'HEIGHT',
-      componentId: source.id,
       derivedLayout: { width: 280, height: 14 }
     })
-    const generatedText = graph.createNode('TEXT', page.id, {
+    const generatedText = copyOf(graph, fixedIntermediate, page.id, {
       width: 302,
       height: 14,
       text: 'Name',
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      componentId: fixedIntermediate.id,
       derivedLayout: { width: 302, height: 14 }
     })
     setTextMeasurer(() => ({ width: 36, height: 17 }))
@@ -265,13 +277,12 @@ describe('effective generated FIG text layout', () => {
       componentId: 'parent',
       derivedLayout: { width: 381, height: 68 }
     })
-    const overrideText = graph.createNode('TEXT', parent.id, {
+    const overrideText = copyOf(graph, source, parent.id, {
       width: 333,
       height: 20,
       text: 'A different instance override',
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
-      componentId: source.id,
       derivedLayout: { width: 333, height: 20 }
     })
     setTextMeasurer(() => ({ width: 329, height: 20 }))
