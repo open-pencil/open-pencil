@@ -7,10 +7,12 @@ import { omit } from 'es-toolkit/object'
 
 import {
   behaviourOwner,
+  instanceMainComponent,
   instanceSlotFrames,
   layerPath,
   partBinding,
   readBehaviour,
+  readIcon,
   slotPropertyId,
   type SceneGraph,
   type SceneNode
@@ -22,6 +24,7 @@ import type { StateElement } from './types'
 export interface VariantLayer {
   type: 'element'
   key: string
+  kind: string | undefined
   name: string
   element: DesignElement
   children: Array<VariantLayer | DesignText>
@@ -35,6 +38,21 @@ function textContent(element: DesignElement): string | null {
   return texts.length > 0 ? texts.map((text) => text.text).join('') : null
 }
 
+/**
+ * What a layer draws other than its own box: an instance of a component (of any of its set's
+ * variants), or an icon. Undefined for any other layer.
+ */
+export function layerKind(graph: SceneGraph, node: SceneNode | undefined): string | undefined {
+  if (!node) return undefined
+  if (node.type === 'INSTANCE') {
+    const main = instanceMainComponent(graph, node)
+    const owner = main && behaviourOwner(graph, main)
+    return `instance ${owner?.id ?? ''}`
+  }
+  const icon = readIcon(node)
+  return icon ? `icon ${icon.name}` : undefined
+}
+
 function variantLayer(
   graph: SceneGraph,
   variant: SceneNode,
@@ -46,11 +64,14 @@ function variantLayer(
   const source = node.sourceSceneNodeId
   const path = source ? layerPath(graph, variant.id, source) : `${parentKey}/~${index}`
   const text = textContent(node)
-  // A label that reads differently in a variant is a different layer, shown by its state.
-  const key = text === null ? path : `${path}\0${text}`
+  const kind = layerKind(graph, node.sourceSceneNode)
+  // A label that reads differently in a variant is a different layer, shown by its state, and
+  // so is a layer drawn as another component or icon, or as one instead of its own box.
+  const key = [path, ...(kind ? [kind] : []), ...(text === null ? [] : [text])].join('\0')
   return {
     type: 'element',
     key,
+    kind,
     name: node.sourceSceneNode?.name ?? node.tagName,
     element: node,
     children: node.children.map((child, i) => variantLayer(graph, variant, child, key, i))
@@ -93,6 +114,7 @@ export function projectVariant(
   return {
     type: 'element',
     key: '',
+    kind: undefined,
     name: variant.name,
     element: root,
     children: root.children.map((child, i) => variantLayer(graph, variant, child, '', i))
@@ -114,6 +136,7 @@ export function stateElement(layer: VariantLayer): StateElement {
   return {
     type: 'element',
     key: layer.key,
+    kind: layer.kind,
     name: layer.name,
     tagName: layer.element.tagName,
     attrs: { ...layer.element.attrs },

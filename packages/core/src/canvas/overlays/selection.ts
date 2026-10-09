@@ -39,7 +39,7 @@ export function drawHoverHighlight(
   const node = hoveredNodeId ? graph.getNode(hoveredNodeId) : undefined
   if (!node) return
   r.auxStroke.setStrokeWidth((node.type === 'SECTION' ? SECTION_HOVER_STROKE_WIDTH : 1) / r.zoom)
-  r.auxStroke.setColor(r.outlineColor(node))
+  r.auxStroke.setColor(r.outlineColor(node, graph))
   r.auxStroke.setPathEffect(null)
   canvas.save()
   canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
@@ -106,7 +106,7 @@ function drawSingleSelection(
   // is suppressed (see drawTextEditOverlay) since it can't follow the path.
   if (editing && !isPathText) return
 
-  r.selectionPaint.setColor(r.outlineColor(node))
+  r.selectionPaint.setColor(r.outlineColor(node, graph))
   r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
   const rotation = node.rotation
@@ -144,7 +144,7 @@ export function drawSelection(
     const node = graph.getNode(id)
     if (!node) continue
 
-    r.selectionPaint.setColor(r.outlineColor(node))
+    r.selectionPaint.setColor(r.outlineColor(node, graph))
     r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
     const rotation = node.rotation

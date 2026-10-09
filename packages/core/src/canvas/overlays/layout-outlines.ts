@@ -33,7 +33,7 @@ export function strokeLayoutOutlines(
     0
   )
   r.auxStroke.setStrokeWidth(1 / r.zoom)
-  r.auxStroke.setColor(r.outlineColor(container))
+  r.auxStroke.setColor(r.outlineColor(container, graph))
   r.auxStroke.setPathEffect(dash)
   try {
     for (const node of nodes) {

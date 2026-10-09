@@ -61,13 +61,67 @@ export function createClipboardPlacementActions(ctx: EditorContext) {
     return { x: -panX / zoom, y: -panY / zoom, width: width / zoom, height: height / zoom }
   }
 
+  /** Centers each axis of the layers that does not fit inside their frame. */
+  function fitInside(nodeIds: string[], parentId: string) {
+    const parent = ctx.graph.getNode(parentId)
+    const items = nodeIds.map((id) => ctx.graph.getNode(id)).filter(isNotNil)
+    if (!parent || parent.type === 'CANVAS' || items.length === 0) return
+    const box = computeBounds(items)
+    const fitsX = box.x >= 0 && box.x + box.width <= parent.width
+    const fitsY = box.y >= 0 && box.y + box.height <= parent.height
+    translate(
+      nodeIds,
+      fitsX ? 0 : (parent.width - box.width) / 2 - box.x,
+      fitsY ? 0 : (parent.height - box.height) / 2 - box.y
+    )
+  }
+
+  /**
+   * Places layers pasted from another app, whose copied position means nothing here: at the
+   * cursor for Paste here, otherwise in the middle of the view and inside the frame they go into.
+   */
+  function placeForeignPaste(nodeIds: string[], parentId: string, cursor?: Vector) {
+    if (cursor) {
+      centerNodesAtCanvasPoint(nodeIds, parentId, cursor)
+      return
+    }
+    const view = viewportRect()
+    if (view)
+      centerNodesAtCanvasPoint(nodeIds, parentId, {
+        x: view.x + view.width / 2,
+        y: view.y + view.height / 2
+      })
+    fitInside(nodeIds, parentId)
+  }
+
+  /** Centers layers of `parentId` over another layer, wherever that layer sits. */
+  function centerOver(nodeIds: string[], parentId: string, overId: string) {
+    const over = ctx.graph.getNode(overId)
+    if (!over) return
+    const at = ctx.graph.getAbsolutePosition(over.id)
+    centerNodesAtCanvasPoint(nodeIds, parentId, {
+      x: at.x + over.width / 2,
+      y: at.y + over.height / 2
+    })
+  }
+
   /**
    * Places pasted layers as Figma does. Layers copied out of a frame keep their offset inside the
    * frame they are pasted into; top-level layers keep their place on the canvas. An axis that
    * does not fit inside the destination frame is centered in it, and layers that would land out
-   * of view are centered in the view.
+   * of view are centered in the view. A paste that could not go into the selected layer
+   * (`requestedId`), such as an instance into its own main component, lands over that layer.
    */
-  function placePasted(nodeIds: string[], sourceParentId: string | undefined, targetId: string) {
+  function placePasted(
+    nodeIds: string[],
+    sourceParentId: string | undefined,
+    targetId: string,
+    requestedId = targetId
+  ) {
+    if (requestedId !== targetId) {
+      centerOver(nodeIds, targetId, requestedId)
+      return
+    }
     const items = nodeIds.map((id) => ctx.graph.getNode(id)).filter(isNotNil)
     if (items.length === 0) return
     const target = ctx.graph.getNode(targetId)
@@ -83,16 +137,7 @@ export function createClipboardPlacementActions(ctx: EditorContext) {
       translate(nodeIds, from.x - to.x, from.y - to.y)
     }
 
-    if (target && target.type !== 'CANVAS') {
-      const box = computeBounds(items)
-      const fitsX = box.x >= 0 && box.x + box.width <= target.width
-      const fitsY = box.y >= 0 && box.y + box.height <= target.height
-      translate(
-        nodeIds,
-        fitsX ? 0 : (target.width - box.width) / 2 - box.x,
-        fitsY ? 0 : (target.height - box.height) / 2 - box.y
-      )
-    }
+    fitInside(nodeIds, targetId)
 
     const view = viewportRect()
     if (!view) return
@@ -115,5 +160,11 @@ export function createClipboardPlacementActions(ctx: EditorContext) {
     centerNodesAt(nodeIds, point.x - origin.x, point.y - origin.y)
   }
 
-  return { centerNodesAt, centerNodesAtCanvasPoint, duplicatePosition, placePasted }
+  return {
+    centerNodesAt,
+    centerNodesAtCanvasPoint,
+    duplicatePosition,
+    placeForeignPaste,
+    placePasted
+  }
 }

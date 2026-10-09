@@ -12,7 +12,7 @@ import { detectTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { ResourceCache } from '#core/cache/resource'
 import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
-import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
 import { weightToStyle } from '#core/text/fonts'
 import { missingGlyphOccurrences, type MissingGlyphOccurrence } from '#core/text/resolver'
@@ -28,6 +28,12 @@ export interface BorrowedLabelParagraph {
 export interface LabelFontOptions {
   families?: (weight: number) => string[]
   onMissingGlyphs?: (missing: readonly MissingGlyphOccurrence[]) => void
+}
+
+/** Semibold labels are section titles, drawn in their own face; the rest in Inter. */
+function labelFontFamilies(weight: number): string[] {
+  const families = resolveParagraphFontFamilies(DEFAULT_FONT_FAMILY, weightToStyle(weight))
+  return weight >= 600 ? [SECTION_TITLE_FONT_FAMILY, ...families] : families
 }
 
 interface LabelParagraphEntry extends BorrowedLabelParagraph {
@@ -71,9 +77,7 @@ function buildEntry(
     textAlign: ck.TextAlign.Left,
     textStyle: {
       color,
-      fontFamilies:
-        fonts.families?.(fontWeight) ??
-        resolveParagraphFontFamilies(DEFAULT_FONT_FAMILY, weightToStyle(fontWeight)),
+      fontFamilies: fonts.families?.(fontWeight) ?? labelFontFamilies(fontWeight),
       fontSize,
       fontStyle: { weight: { value: fontWeight } as FontWeight }
     }

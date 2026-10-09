@@ -650,7 +650,8 @@ export class FontManager {
     }
   }
 
-  private registerFontInBrowser(family: string, style: string, data: ArrayBuffer) {
+  /** Makes a face available to the page's own text, such as fields over canvas labels. */
+  registerFontInBrowser(family: string, style: string, data: ArrayBuffer) {
     if (!IS_BROWSER) return
     const weight = styleToWeight(style)
     const italic = style.toLowerCase().includes('italic') ? 'italic' : 'normal'

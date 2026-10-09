@@ -9,7 +9,7 @@ import {
 } from '@open-pencil/scene-graph'
 
 import type { ComponentModel } from './model'
-import { placementOnly, referenceValues, type UsedLayer } from './references'
+import { placementOnly, referenceValues, shownText, type UsedLayer } from './references'
 import { slugValues, textOf, type ChoiceModel } from './repeats'
 
 /** Groups whose items are their own primitive inside the group, as Reka and Radix have them. */
@@ -57,8 +57,8 @@ export function groupItems(
   const label = item.texts.at(0)
   const values = slugValues(
     elements.map((element, index) => {
-      const assigned = label && instances[index]?.node.componentPropertyAssignments[label.id]
-      return typeof assigned === 'string' ? assigned : textOf(element)
+      const node = instances[index]?.node
+      return (label && node && shownText(graph, node, label.id)) || textOf(element)
     })
   )
   const used = new Map<StateElement, UsedLayer>()

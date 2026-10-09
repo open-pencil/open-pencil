@@ -153,6 +153,8 @@ async function writeStories(
   const files = await exportStorybook(graph, {
     framework,
     pageId,
+    // Titled by the document, so stories of documents exported together stay apart.
+    document: basename(file, extname(file)),
     linkPath: linkPath(file),
     vectorElement,
     renderDesignImage: args['design-images']

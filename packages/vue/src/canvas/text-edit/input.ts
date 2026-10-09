@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import { getNodeEditCapability, type Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { CanvasLabelKind } from '#vue/canvas/labels/edit'
@@ -15,6 +15,7 @@ type TextEditInputOptions = {
   hitTestInScope: HitTest
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
+  hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
   getClickCount: () => number
   wasSelectedBeforeClickSequence: (id: string) => boolean
   onEditCanvasLabel?: (kind: CanvasLabelKind, node: SceneNode) => void
@@ -28,6 +29,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     hitTestInScope,
     hitTestSectionTitle,
     hitTestComponentLabel,
+    hitTestFrameTitle,
     getClickCount,
     wasSelectedBeforeClickSequence,
     onEditCanvasLabel,
@@ -70,6 +72,8 @@ export function createTextEditInput(options: TextEditInputOptions) {
   function startTextEditingAt(hit: SceneNode, cx: number, cy: number) {
     editor.select([hit.id])
     editor.startTextEditing(hit.id)
+    // Text the editor refuses, such as path text without its font, stays selected only.
+    if (editor.state.editingTextId !== hit.id) return
     const textEd = editor.textEditor
     if (textEd) {
       const abs = editor.graph.getAbsolutePosition(hit.id)
@@ -91,12 +95,24 @@ export function createTextEditInput(options: TextEditInputOptions) {
       : null
   }
 
-  function startSectionTitleRename(cx: number, cy: number): boolean {
-    const sectionTitle = hitTestSectionTitle(cx, cy)
-    if (sectionTitle?.type !== 'SECTION') return false
-    editor.select([sectionTitle.id])
-    onEditCanvasLabel?.('section-title', sectionTitle)
-    return true
+  /**
+   * Double-clicking the name above a section, frame or component renames it in place and keeps
+   * it selected, as in Figma. A locked layer or a library's read-only component keeps its name.
+   */
+  function startLabelRename(cx: number, cy: number): boolean {
+    const labels: [CanvasLabelKind, SceneNode | null][] = [
+      ['section-title', hitTestSectionTitle(cx, cy)],
+      ['component-label', hitTestComponentLabel(cx, cy)],
+      ['frame-title', hitTestFrameTitle(cx, cy)]
+    ]
+    for (const [kind, node] of labels) {
+      if (!node) continue
+      editor.select([node.id])
+      if (!node.locked && getNodeEditCapability(editor.graph, node.id).editable)
+        onEditCanvasLabel?.(kind, node)
+      return true
+    }
+    return false
   }
 
   function handleContainerDoubleClick(
@@ -126,14 +142,13 @@ export function createTextEditInput(options: TextEditInputOptions) {
     if (editor.state.editingTextId) return
 
     const { cx, cy } = getCoords(e)
-    if (startSectionTitleRename(cx, cy)) return
+    if (startLabelRename(cx, cy)) return
 
     const selectedId =
       editor.state.selectedIds.size === 1 ? [...editor.state.selectedIds][0] : undefined
     if (handleContainerDoubleClick(selectedId, cx, cy)) return
 
-    const hit =
-      hitTestSectionTitle(cx, cy) ?? hitTestComponentLabel(cx, cy) ?? hitTestInScope(cx, cy, true)
+    const hit = hitTestInScope(cx, cy, true)
     if (!hit) return
 
     if (hit.type === 'TEXT') {

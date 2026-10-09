@@ -226,6 +226,41 @@ export function settingsSectionSet() {
 }
 
 /**
+ * A toggle that draws a plain badge while off and, at the same place and name, the switch drawn
+ * on while pressed, with the switch's own set in the same document.
+ */
+export function badgeToggleSet() {
+  const graph = new SceneGraph()
+  const toggle = switchSet(graph)
+  const on = graph
+    .getChildren(toggle.set.id)
+    .find((variant) => variant.name === 'State=On, Interaction=Default')
+  if (!on) throw new Error('Expected the switch drawn on')
+  const alert = componentSet(
+    'Alert',
+    { Pressed: ['No', 'Yes'] },
+    {
+      ...emptyBehaviour('toggle'),
+      booleans: { value: { propertyId: 'pressed', on: 'Yes', off: 'No' } }
+    },
+    (graph, variant, { Pressed }) => {
+      graph.updateNode(variant, { width: 80, height: 30 })
+      if (Pressed === 'Yes') graph.createInstance(on.id, variant, { name: 'Badge' })
+      else
+        graph.createNode('FRAME', variant, {
+          name: 'Badge',
+          width: 20,
+          height: 20,
+          fills: COLORS.off
+        })
+    },
+    undefined,
+    graph
+  )
+  return { graph, set: alert.set }
+}
+
+/**
  * Tabs as a standalone component, as design JSX's `Tabs.Root` builds them: a list of triggers
  * and a panel per trigger, each labelled.
  */

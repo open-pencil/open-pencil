@@ -9,7 +9,17 @@ function layer(
   base: DesignStyleDeclaration,
   children: StateElement[] = []
 ): StateElement {
-  return { type: 'element', key: name, name, tagName: 'div', attrs: {}, base, rules: [], children }
+  return {
+    type: 'element',
+    key: name,
+    kind: undefined,
+    name,
+    tagName: 'div',
+    attrs: {},
+    base,
+    rules: [],
+    children
+  }
 }
 
 /** A trigger with an icon and a label in `order`. */
