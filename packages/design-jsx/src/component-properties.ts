@@ -8,6 +8,7 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 
+import { DESIGN_JSX_SUPPORTED_PROPERTIES } from './schema'
 import { parseScriptInput } from './validation'
 
 const definitionSchema = v.object({
@@ -94,7 +95,7 @@ export function componentPropertyScope(
 
 /**
  * Saving to `.fig` replaces authored property IDs with GUIDs, so an assignment
- * also matches one property by name, ignoring case, to keep working after a reload.
+ * also matches one property by its name, which survives a reload.
  */
 function assignedDefinition(
   definitions: readonly ComponentPropertyDefinition[],
@@ -102,14 +103,39 @@ function assignedDefinition(
 ): ComponentPropertyDefinition {
   const byId = definitions.find((item) => item.id === key)
   if (byId) return byId
-  const name = key.toLowerCase()
-  const byName = definitions.filter((item) => item.name.toLowerCase() === name)
+  const byName = definitions.filter((item) => item.name === key)
   if (byName.length === 1) return byName[0]
   if (byName.length > 1)
     throw new Error(
       `Component property name ${key} is ambiguous; use one of the IDs: ${byName.map((item) => item.id).join(', ')}`
     )
   throw new Error(`Unknown component property: ${key}`)
+}
+
+/**
+ * Text, boolean, and swap values an instance sets by naming the property, as in
+ * `Title="Hello"`, the way it picks a variant; design JSX props keep their meaning.
+ */
+export function namedPropertyAssignments(
+  graph: SceneGraph,
+  instance: SceneNode,
+  props: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  const names = new Set(
+    componentPropertyDefinitions(graph, instance)
+      .filter((definition) => definition.type !== 'VARIANT')
+      .map((definition) => definition.name)
+  )
+  const entries = Object.entries(props).filter(
+    ([key]) => names.has(key) && !DESIGN_JSX_SUPPORTED_PROPERTIES.has(key)
+  )
+  if (entries.length === 0) return undefined
+  return Object.fromEntries(
+    entries.map(([key, value]) => [
+      key,
+      typeof value === 'boolean' || typeof value === 'number' ? String(value) : value
+    ])
+  )
 }
 
 export function assignComponentProperties(
