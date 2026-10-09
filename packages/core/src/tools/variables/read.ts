@@ -6,7 +6,7 @@ export const listVariables = defineTool({
   name: 'list_variables',
   description: 'List all design variables (colors, numbers, strings, booleans).',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     type: v.optional(
       v.pipe(
         v.picklist(['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']),
@@ -24,7 +24,7 @@ export const getVariable = defineTool({
   name: 'get_variable',
   description: 'Get a variable by ID.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Variable ID'))
   }),
   execute: (figma, { id }) => {
@@ -38,7 +38,7 @@ export const findVariables = defineTool({
   name: 'find_variables',
   description: 'Find variables by name pattern.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     query: v.pipe(v.string(), v.description('Name substring (case-insensitive)')),
     type: v.optional(
       v.pipe(v.picklist(['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']), v.description('Filter by type'))

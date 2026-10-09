@@ -35,7 +35,7 @@ import {
   type IconReference,
   type UsedLayer
 } from './references'
-import { tabParts, type ChoiceModel, type RepeatedPart } from './repeats'
+import { activeTriggers, tabParts, type ChoiceModel, type RepeatedPart } from './repeats'
 
 /** Kinds generated as components so far; the rest keep static stories. */
 export const GENERATED_KINDS = [
@@ -413,6 +413,7 @@ export function componentModel(
   const parts = behaviourParts(graph, set, behaviour, styles.root)
   const tabs = behaviour.kind === 'tabs' ? tabParts(parts) : null
   const repeated = tabs?.repeated ?? new Map<StateElement, RepeatedPart>()
+  activeTriggers(repeated)
   resetButtons(kind, parts, repeated)
 
   // A group's items first, so its item component is used for them rather than a standalone one.

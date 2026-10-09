@@ -10,7 +10,7 @@ export const importSVG = defineTool({
   description:
     'Import raw SVG markup onto the canvas as editable vector nodes. Supports common SVG shapes, inherited presentation attributes, transforms, gradients, and internal <use> references.',
   execution: { kind: 'async', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     svg: v.pipe(
       v.string(),
       v.description('SVG markup string (e.g. \'<svg viewBox="0 0 24 24"><path d="M..."/></svg>\')')

@@ -32,7 +32,7 @@ export const analyzeClusters = defineTool({
     'Find repeated design patterns (potential components). Groups nodes by structural signature — type, size, and child structure.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     min_count: v.optional(
       toolNumber(v.pipe(v.number(), v.description('Min instances to form a cluster (default: 2)')))
     ),

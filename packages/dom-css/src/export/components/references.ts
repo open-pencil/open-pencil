@@ -49,9 +49,12 @@ export interface IconReference {
 const PLACEMENT =
   /^(position|inset|left|top|right|bottom|(min-|max-)?(width|height)|margin(-.+)?|flex(-.+)?|align-self|justify-self|order|grid-(area|column|row)(-.+)?|transform(-origin)?|rotate|translate|scale|z-index)$/
 
+/** Whether a declaration places a layer rather than drawing it. */
+export const isPlacement = (property: string) => PLACEMENT.test(property)
+
 export function placementOnly(element: StateElement): void {
   const placement = (style: DesignStyleDeclaration): DesignStyleDeclaration =>
-    Object.fromEntries(Object.entries(style).filter(([property]) => PLACEMENT.test(property)))
+    Object.fromEntries(Object.entries(style).filter(([property]) => isPlacement(property)))
   element.base = placement(element.base)
   element.rules = element.rules
     .map((rule) => ({ ...rule, style: placement(rule.style) }))

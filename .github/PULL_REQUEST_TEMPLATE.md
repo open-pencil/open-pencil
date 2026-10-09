@@ -1,6 +1,8 @@
-> Security vulnerability? Do not open a public PR. Report it privately through GitHub Security Advisories: https://github.com/open-pencil/open-pencil/security/advisories/new
+<!--
+Security vulnerability? Do not open a public PR. Report it privately through GitHub Security Advisories: https://github.com/open-pencil/open-pencil/security/advisories/new
 
 Before opening a PR, read `CONTRIBUTING.md` and `AGENTS.md`. PRs should explain the intent, meaningful changes, and validation. Placeholder, non-English, unrelated, or otherwise unreviewable PRs may be closed by maintainers.
+-->
 
 ### Summary
 

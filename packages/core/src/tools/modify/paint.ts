@@ -14,7 +14,7 @@ export const setFill = defineTool({
   description:
     'Set fill on a node. Solid: color="#ff0000". Linear gradient: gradient="top-bottom" or "left-right" with color (start) and color_end (end).',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     color: v.pipe(v.string(), v.description('Color (hex). For gradient: start color.')),
     color_end: v.optional(
@@ -67,7 +67,7 @@ export const setStroke = defineTool({
 
   description: 'Set the stroke (border) of a node.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     color: v.pipe(v.string(), v.description('Stroke color (hex)')),
     weight: v.optional(
@@ -103,7 +103,7 @@ export const setImageFill = defineTool({
 
   description: 'Set an image fill on a node from base64-encoded image data.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     image_data: v.pipe(
       v.string(),

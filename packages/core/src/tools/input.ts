@@ -1,14 +1,14 @@
 import * as v from 'valibot'
 
 export const nodeIdInput = v.pipe(v.string(), v.description('Node ID'))
-export const nodeInput = v.object({ id: nodeIdInput })
-export const nodeComparisonInput = v.object({
+export const nodeInput = v.strictObject({ id: nodeIdInput })
+export const nodeComparisonInput = v.strictObject({
   from: v.pipe(v.string(), v.description('Source node ID')),
   to: v.pipe(v.string(), v.description('Target node ID'))
 })
 
 export function nodeTraversalInput(depthDescription: string) {
-  return v.object({
+  return v.strictObject({
     id: nodeIdInput,
     depth: v.optional(toolNumber(v.pipe(v.number(), v.description(depthDescription))))
   })

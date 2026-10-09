@@ -17,7 +17,7 @@ export const createVariable = defineTool({
 
   description: 'Create a new variable in a collection.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     name: v.pipe(v.string(), v.description('Variable name')),
     type: v.pipe(
       v.picklist(['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']),
@@ -40,7 +40,7 @@ export const setVariable = defineTool({
 
   description: 'Set the value of a variable for a specific mode.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Variable ID')),
     mode: v.pipe(v.string(), v.description('Mode ID')),
     value: v.pipe(v.string(), v.description('Value (hex for COLOR, number for FLOAT, etc.)'))
@@ -59,7 +59,7 @@ export const deleteVariable = defineTool({
 
   description: 'Delete a variable.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Variable ID'))
   }),
   execute: (figma, { id }) => {

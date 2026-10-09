@@ -9,7 +9,7 @@ export const bindVariable = defineTool({
   description:
     'Bind a variable to a node property. For fills/strokes color bindings use indexed format like "fills/0/color".',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     node_id: nodeIdInput,
     field: v.pipe(
       v.string(),

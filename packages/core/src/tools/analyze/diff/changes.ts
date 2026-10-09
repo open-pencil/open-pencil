@@ -47,7 +47,7 @@ export const diffChanges = defineTool({
   execution: { kind: 'sync', mutation: 'none' },
   // Only an AI chat run records the state it started from.
   exposure: { mcp: false, webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     id: v.optional(v.pipe(v.string(), v.description('Node to compare (default: the current page)')))
   }),
   execute: (figma, args) => {

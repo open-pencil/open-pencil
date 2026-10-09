@@ -13,7 +13,7 @@ export const setEffects = defineTool({
   description:
     'Set effects on a node (drop shadow, inner shadow, blur). Pass an array or a single effect.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     type: v.pipe(
       v.picklist(['DROP_SHADOW', 'INNER_SHADOW', 'FOREGROUND_BLUR', 'BACKGROUND_BLUR']),

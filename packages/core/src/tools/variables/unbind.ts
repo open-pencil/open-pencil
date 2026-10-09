@@ -8,7 +8,7 @@ export const unbindVariable = defineTool({
 
   description: 'Remove a variable binding from a node property.',
   execution: { kind: 'sync', mutation: 'properties' },
-  input: v.object({
+  input: v.strictObject({
     node_id: nodeIdInput,
     field: v.pipe(
       v.string(),

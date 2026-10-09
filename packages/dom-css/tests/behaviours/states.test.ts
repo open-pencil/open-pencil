@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { cssRules } from '#dom-css-tests/helpers'
 import {
   stateStyles,
   stateStylesToCSS,
@@ -9,11 +10,17 @@ import {
 } from '#dom-css/behaviours/states/index'
 import { compileTailwindCSS } from '#dom-css/import/tailwind'
 import type { DesignElement, DesignNode } from '#dom-css/types'
-import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
 
 import { emptyBehaviour } from '@open-pencil/scene-graph'
 
-import { buttonSet, checkboxSet, componentSet, switchSet, toggleSet } from './fixtures'
+import {
+  buttonSet,
+  checkboxSet,
+  componentSet,
+  switchSet,
+  tabsComponent,
+  toggleSet
+} from './fixtures'
 
 function styles(fixture: ReturnType<typeof switchSet>): StateStyles {
   const result = stateStyles(fixture.graph, fixture.set)
@@ -29,24 +36,6 @@ function child(element: StateElement, key: string): StateElement {
   return found
 }
 
-/** Every style rule of a stylesheet, by selector, including ones inside media queries. */
-function cssRules(css: string): Map<string, Record<string, string>> {
-  const rules = new Map<string, Record<string, string>>()
-  const visit = (list: ArrayLike<unknown>) => {
-    for (const item of Array.from(list)) {
-      const rule = item as CSSStyleRuleLike & { cssRules?: ArrayLike<unknown> }
-      if (rule.cssRules) visit(rule.cssRules)
-      if (!rule.selectorText) continue
-      const style: Record<string, string> = {}
-      for (const property of Array.from({ length: rule.style.length }, (_, i) => rule.style[i]))
-        if (property) style[property] = rule.style.getPropertyValue(property)
-      rules.set(rule.selectorText, style)
-    }
-  }
-  visit(parse(css).cssRules)
-  return rules
-}
-
 /**
  * Tailwind's compiled rules as selector and declarations. Its escaped class selectors are
  * beyond the CSSOM parser, so innermost `selector { … }` blocks are read directly, which also
@@ -57,6 +46,25 @@ function compiledRules(css: string): [string, string][] {
     (match[1] ?? '').trim(),
     (match[2] ?? '').trim()
   ])
+}
+
+/**
+ * Tabs whose first trigger, and the label in it, change while that trigger is active, the
+ * state Reka and Radix set on the trigger rather than the root.
+ */
+function anchoredTabs() {
+  const root = styles(tabsComponent())
+  const trigger = { opacity: '0.5' }
+  const label = { color: '#fff' }
+  const triggerElement = child(child(root.root, 'List'), 'List/Trigger#0')
+  const labelElement = child(
+    triggerElement,
+    triggerElement.children.find((item) => item.type === 'element')?.key ?? ''
+  )
+  const active = [{ type: 'state' as const, value: 'active' }]
+  triggerElement.rules.push({ conditions: active, on: triggerElement, style: trigger })
+  labelElement.rules.push({ conditions: active, on: triggerElement, style: label })
+  return { root, trigger, label }
 }
 
 function elements(node: DesignNode, into: DesignElement[] = []): DesignElement[] {
@@ -168,9 +176,36 @@ describe('state stylesheet', () => {
     const rules = cssRules((await stateStylesToCSS(styles(buttonSet()))).css)
     expect(rules.get('.button[data-size="Large"]')).toEqual({ width: '160px' })
   })
+  test('tests the state of the layer a rule names, for that layer and the ones inside it', async () => {
+    const { root, trigger, label } = anchoredTabs()
+    const rules = cssRules((await stateStylesToCSS(root)).css)
+    expect(rules.get('.settings .settings__trigger[data-state="active"]')).toEqual(trigger)
+    expect(rules.get('.settings .settings__trigger[data-state="active"] .settings__label')).toEqual(
+      label
+    )
+  })
 })
 
 describe('state Tailwind', () => {
+  test('names a group for the layer a rule tests, which the layers inside it test', async () => {
+    const document = stateStylesToTailwind(anchoredTabs().root)
+    const [, , trigger, label] = elements(document.children[0] ?? { type: 'text', text: '' })
+    const triggerClasses = trigger?.attrs.class.split(' ') ?? []
+    const labelClasses = label?.attrs.class.split(' ') ?? []
+    expect(triggerClasses).toContain('group/settings-1')
+    expect(triggerClasses).toContain('data-[state=active]:opacity-50')
+    expect(labelClasses).toContain('group-data-[state=active]/settings-1:text-[#fff]')
+
+    const rules = compiledRules(await compileTailwindCSS([...triggerClasses, ...labelClasses]))
+    expect(
+      rules.some(
+        ([selector, body]) =>
+          body.startsWith('color:') &&
+          selector.endsWith(':is(:where(.group\\/settings-1)[data-state="active"] *)')
+      )
+    ).toBe(true)
+  })
+
   test('writes state variants that Tailwind compiles to the same selectors', async () => {
     const document = stateStylesToTailwind(styles(switchSet()))
     const [root, thumb] = elements(document.children[0] ?? { type: 'text', text: '' })

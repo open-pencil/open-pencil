@@ -10,7 +10,7 @@ export const analyzeTypography = defineTool({
   description:
     'Analyze typography usage across the current page. Shows font families, sizes, weights, and their frequencies.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     limit: analysisLimitInput,
     group_by: v.optional(
       v.pipe(v.picklist(['family', 'size', 'weight']), v.description('Group results by a property'))
