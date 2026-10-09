@@ -178,4 +178,17 @@ describe('paste placement', () => {
     expect(selected()).toMatchObject({ parentId: page, x: 240, y: -10 })
     expect(editor.graph.getChildren(card.id).map((child) => child.id)).toEqual([frame.id])
   })
+
+  test('a paste read back from the Figma clipboard lands inside the selected frame', async () => {
+    const page = setup()
+    const card = node('RECTANGLE', page, { x: 600, y: 600, width: 240, height: 160 })
+    const holder = node('FRAME', page, { x: 1000, y: 1000, width: 400, height: 240 })
+    editor.state.panX = -900
+    editor.state.panY = -900
+    editor.select([card.id])
+    const { html } = await editor.prepareCopy()
+    editor.select([holder.id])
+    await editor.pasteFromHTML(html)
+    expect(selected()).toMatchObject({ parentId: holder.id, x: 80, y: 40 })
+  })
 })

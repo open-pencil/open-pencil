@@ -201,10 +201,7 @@ export function createClipboardActions(ctx: EditorContext) {
             operation
           )
         } else {
-          const { width: viewW, height: viewH } = ctx.getViewportSize()
-          const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
-          const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
-          placementActions.centerNodesAt(created, cx, cy)
+          placementActions.placeForeignPaste(created, pasteTarget, cursorPos)
           computeAllLayouts(ctx.graph, ctx.state.currentPageId)
           ctx.setSelectedIds(new Set(created))
           pushCreatedNodesUndo(created, prevSelection, 'Paste', operation)
