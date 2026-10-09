@@ -166,8 +166,18 @@ export interface DragGuide {
   originalPosition?: number
 }
 
+/** Dragging a handle or stop of the gradient whose picker is open. */
+export interface DragGradient {
+  type: 'gradient'
+  /** Moves the dragged handle or stop to a screen point. */
+  update: (screenX: number, screenY: number, shiftKey: boolean) => void
+  commit: () => void
+  cancel: () => void
+}
+
 export type DragState =
   | DragDraw
+  | DragGradient
   | DragMove
   | DragPan
   | DragResize

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
 import type { Fill } from '@open-pencil/scene-graph'
@@ -23,14 +24,18 @@ function tabClass(active: boolean) {
 const {
   fill,
   okhcl = null,
-  swatchBackground
+  swatchBackground,
+  keepOpen
 } = defineProps<{
   fill: Fill
   okhcl?: OkHCLControls | null
   swatchBackground?: string
   /** Names the trigger for a paint that is not a fill, such as a stroke. */
   label?: string
+  /** Whether a press outside the picker should leave it open, such as on a gradient handle. */
+  keepOpen?: (event: PointerEvent) => boolean
 }>()
+const activeStop = defineModel<number>('activeStop')
 const emit = defineEmits<{
   update: [fill: Fill]
   openChange: [open: boolean]
@@ -42,6 +47,17 @@ const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
 })
 const cls = usePopoverUI({ content: 'w-60 p-2' })
 const { panels } = useI18n()
+
+/** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */
+function keepOpenOnPress(event: PointerDownOutsideEvent) {
+  if (keepOpen?.(event.detail.originalEvent)) event.preventDefault()
+}
+
+/** A press focuses the canvas before the press itself reaches the picker, so the press decides. */
+function keepOpenOnFocus(event: FocusOutsideEvent) {
+  if (keepOpen && event.detail.originalEvent.target instanceof HTMLCanvasElement)
+    event.preventDefault()
+}
 
 function cancelFromEscape(event: KeyboardEvent) {
   event.stopPropagation()
@@ -75,6 +91,8 @@ function cancelFromEscape(event: KeyboardEvent) {
           side="left"
           data-picker-content
           @escape-key-down="cancelFromEscape"
+          @pointer-down-outside="keepOpenOnPress"
+          @focus-outside="keepOpenOnFocus"
         >
           <div class="mb-2 flex items-center gap-0.5">
             <Tip :label="panels.solid">
@@ -118,6 +136,7 @@ function cancelFromEscape(event: KeyboardEvent) {
 
           <GradientEditor
             v-if="root.category === 'GRADIENT'"
+            v-model:active-stop="activeStop"
             :fill="root.fill"
             @update="emit('update', $event)"
           />

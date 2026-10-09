@@ -25,6 +25,7 @@ import {
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
+import { useGradientEditing } from '@/components/properties/paint/gradient-edit'
 import { createFillOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintField from '@/components/properties/paint/PaintField.vue'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -37,6 +38,18 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()
+const gradients = useGradientEditing()
+
+/** Opening a paint's picker shows its gradient handles on the canvas; closing commits the edit. */
+function onPickerOpenChange(
+  nodeIds: readonly string[],
+  index: number,
+  open: boolean,
+  binding: BindableValueActions<Color>
+) {
+  gradients.setOpen(gradients.target(nodeIds, 'fills', index), open)
+  if (!open) commitPaintMutation(binding)
+}
 const colorProvider = useColorBindingProvider()
 const { panels, common } = useI18n()
 const blendModeOptions = useBlendModeOptions()
@@ -136,12 +149,17 @@ function updateSolidColor(
                 <FillPicker
                   :fill="displayFill(fill, binding.resolvedValue)"
                   :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
+                  :keep-open="gradients.pressesHandle"
+                  :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'fills', index))"
+                  @update:active-stop="
+                    gradients.setStop(gradients.target(selectedNodeIds, 'fills', index), $event)
+                  "
                   @update="
                     updatePickerFill(binding.actions, flush, $event, (next) =>
                       actions.update(index, next)
                     )
                   "
-                  @open-change="!$event && commitPaintMutation(binding.actions)"
+                  @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
                   @cancel="cancelPaintMutation(binding.actions)"
                 />
               </template>

@@ -324,6 +324,11 @@ export function useCanvasInput(
 
     const { sx, sy, cx, cy } = getCoords(e)
 
+    if (d.type === 'gradient') {
+      d.update(sx, sy, e.shiftKey)
+      return
+    }
+
     if (d.type === 'guide') {
       const frameId = e.altKey && !d.guideId ? selectedTopLevelGuideFrameId(editor) : null
       guideInput.handleMove(
@@ -408,7 +413,7 @@ export function useCanvasInput(
         editor.commitRotation(d.nodeId, d.origRotation)
       }
       if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
-    } else if (d.type === 'draw') d.commit()
+    } else if (d.type === 'draw' || d.type === 'gradient') d.commit()
     else if (d.type === 'marquee') editor.setMarquee(null)
 
     drag.value = null
@@ -429,7 +434,7 @@ export function useCanvasInput(
       drag.value = null
       if (editor.state.rotationPreview?.nodeId === rotation.nodeId) editor.setRotationPreview(null)
     }
-    if (drag.value?.type === 'draw') {
+    if (drag.value?.type === 'draw' || drag.value?.type === 'gradient') {
       const drawing = drag.value
       drag.value = null
       drawing.cancel()

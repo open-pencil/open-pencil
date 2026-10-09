@@ -2,9 +2,10 @@ import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { resolveHit } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import type { Editor } from '@open-pencil/core/editor'
+import { editedGradient, type Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartResize } from '#vue/shared/input/resize'
 import {
   createSelectionMoveDrag,
@@ -29,6 +30,25 @@ function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragS
   setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id })
 }
 
+/** Starts dragging a gradient handle, or else the selection's rotation or resize handles. */
+function tryStartHandleDrag(
+  cx: number,
+  cy: number,
+  sx: number,
+  sy: number,
+  editor: Editor,
+  tryStartRotation: (cx: number, cy: number) => boolean,
+  setDrag: (d: DragState) => void
+): boolean {
+  if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
+  // An open gradient's handles replace the layer's selection handles, which then do not respond.
+  if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
+  if (tryStartRotation(cx, cy)) return true
+  const resizeDrag = tryStartResize(cx, cy, editor)
+  if (resizeDrag) setDrag(resizeDrag)
+  return resizeDrag !== null
+}
+
 export function handleSelectDown(
   e: MouseEvent,
   cx: number,
@@ -51,13 +71,7 @@ export function handleSelectDown(
 
   if (editor.state.editingTextId) editor.commitTextEdit()
 
-  if (tryStartRotation(cx, cy)) return
-
-  const resizeDrag = tryStartResize(cx, cy, editor)
-  if (resizeDrag) {
-    setDrag(resizeDrag)
-    return
-  }
+  if (tryStartHandleDrag(cx, cy, sx, sy, editor, tryStartRotation, setDrag)) return
 
   const hit = resolveHit(cx, cy, editor, fns, e.metaKey || e.ctrlKey)
   if (!hit) {

@@ -7,6 +7,7 @@ import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
+import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
@@ -14,6 +15,7 @@ import { drawCodeFocus } from '#core/canvas/overlays/selection'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { RULER_SIZE } from '#core/constants'
+import { editedGradient } from '#core/editor/gradient-edit'
 
 function measurementVisible(overlays: RenderOverlays): boolean {
   return (
@@ -112,7 +114,11 @@ export function drawOverlayPass(
   drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)
   r.profiler.beginPhase('render:selection')
-  r.drawSelection(canvas, graph, selectedIds, overlays)
+  // While a gradient is edited, Figma shows its handles instead of the layer's selection; a
+  // previewing canvas shows neither.
+  if (!overlays.playing && editedGradient(graph, overlays.gradientEdit))
+    drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
+  else r.drawSelection(canvas, graph, selectedIds, overlays)
   if (measuring) r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)
   r.profiler.endPhase('render:selection')
 

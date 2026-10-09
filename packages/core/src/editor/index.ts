@@ -7,6 +7,7 @@ export type { NodeEditCapability } from './capabilities'
 export { DEFAULT_SNAPPING_PREFERENCES } from './preferences'
 export type { SnappingPreferences } from './preferences'
 export { createDefaultEditorSharedState } from './state/shared'
+export { editedGradient, editedGradientLayout } from './gradient-edit'
 export {
   copyEditorViewState,
   createDefaultEditorViewState,
@@ -49,5 +50,6 @@ export type {
   EditorSharedState,
   EditorViewState,
   FigmaClipboardImageResolver,
+  GradientEdit,
   Tool
 } from './types'

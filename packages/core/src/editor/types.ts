@@ -38,11 +38,22 @@ export type Tool =
   | 'PEN'
   | 'HAND'
 
+/** The gradient whose handles the canvas shows while its paint picker is open. */
+export interface GradientEdit {
+  nodeId: string
+  paint: 'fills' | 'strokes'
+  index: number
+  /** The selected stop, shared by the canvas handles and the picker. */
+  stop: number
+}
+
 export interface EditorSharedState {
   activeTool: Tool
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean
+  /** The gradient being edited, whose handles the canvas draws and drags. */
+  gradientEdit?: GradientEdit | null
   presenceCursors: PresenceCursor[]
   documentName: string
   /** Design check markers and highlight, shared by every canvas pane. */

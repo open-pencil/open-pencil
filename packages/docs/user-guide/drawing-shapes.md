@@ -42,7 +42,7 @@ After drawing a shape, select it to edit its properties in the Design tab of the
 Every shape can have a fill. The fill section supports:
 
 - **Solid color** — pick via the HSV color picker or type a hex value
-- **Gradient** — Linear, Radial, Angular, or Diamond with editable gradient stops
+- **Gradient** — Linear, Radial, Angular, or Diamond with editable gradient stops. While the gradient's picker is open, the canvas shows its handles: drag an end or a radius dot to move it, hold <kbd>Shift</kbd> to turn it in 15° steps, and drag a stop's square to slide the stop along the line
 - **Image** — select an image file as the fill
 
 ### Stroke

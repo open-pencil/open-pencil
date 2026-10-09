@@ -1,0 +1,78 @@
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { gradientDriver } from '#tests/helpers/canvas/gradient-driver'
+import { propertyItems } from '#tests/helpers/properties'
+
+// Figma desktop 126: while a gradient's picker is open the canvas shows its handles. An end moves
+// exactly with the pointer, a stop square slides its stop along the line, and pressing either
+// keeps the picker open.
+
+const editor = useEditorSetupWithClear('/?test&no-rulers')
+
+const gradient = gradientDriver(() => editor.page)
+
+const bar = () => editor.page.getByTestId('fill-picker-gradient-bar').locator('[data-slot=stop]')
+
+async function closePicker() {
+  await editor.page.keyboard.press('Escape')
+  await expect.poll(() => gradient.editing()).toBe(false)
+}
+
+async function openPicker() {
+  const nodeId = await gradient.show('GRADIENT_LINEAR')
+  await editor.canvas.waitForRender()
+  await propertyItems(editor.page, 'fills')
+    .first()
+    .getByRole('button', { name: 'Fill', exact: true })
+    .click()
+  await expect(editor.page.getByTestId('fill-picker-gradient-bar')).toBeVisible()
+  await expect.poll(() => gradient.editing()).toBe(true)
+  return nodeId
+}
+
+test('dragging an end dot moves that end, and closing the picker leaves one undo step', async () => {
+  const nodeId = await openPicker()
+  const before = await gradient.fill(nodeId)
+  const end = gradient.point(200, 70)
+  const target = gradient.point(200, 10)
+  await editor.canvas.drag(end.x, end.y, target.x, target.y)
+  await editor.canvas.waitForRender()
+
+  const moved = await gradient.fill(nodeId)
+  // The end, (m02, m12), follows the pointer to (200, 10) within the half screen pixel it lands
+  // on; the start, end plus (m00, m10), stays at the left edge's middle.
+  expect(moved?.transform?.m02).toBeCloseTo(1, 2)
+  expect(moved?.transform?.m12).toBeCloseTo(10 / 140, 2)
+  expect(moved?.transform?.m00).toBeCloseTo(-1, 2)
+  expect(moved?.transform?.m10).toBeCloseTo(60 / 140, 2)
+  await expect(editor.page.getByTestId('fill-picker-gradient-bar')).toBeVisible()
+
+  // Shortcuts wait for open popovers to close; closing the picker also hides the handles.
+  await closePicker()
+  await editor.canvas.undo()
+  expect(await gradient.fill(nodeId)).toEqual(before)
+  editor.canvas.assertNoErrors()
+})
+
+test('dragging a stop square slides the stop and selects it in the picker', async () => {
+  const nodeId = await openPicker()
+  // The middle stop's square sits above the line, half a square and the gap from it.
+  const square = gradient.point(100, 70)
+  await editor.canvas.drag(square.x, square.y - 18, square.x + 100, square.y - 18)
+  await editor.canvas.waitForRender()
+
+  const [first, moved, last] = (await gradient.fill(nodeId))?.stops ?? []
+  expect([first, last]).toEqual([0, 1])
+  // 50 layer pixels right of the middle, within the half screen pixel the pointer lands on.
+  expect(moved).toBeCloseTo(0.75, 2)
+  expect(await gradient.editedStop()).toBe(1)
+  await expect(bar().nth(1)).toHaveAttribute('data-selected', '')
+  await closePicker()
+  editor.canvas.assertNoErrors()
+})
+
+test('selecting a stop in the picker selects its square on the canvas', async () => {
+  await openPicker()
+  await bar().nth(2).click()
+  await expect.poll(() => gradient.editedStop()).toBe(2)
+  await closePicker()
+})

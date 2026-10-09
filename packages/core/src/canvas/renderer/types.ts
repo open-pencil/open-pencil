@@ -4,6 +4,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
+import type { GradientEdit } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -40,6 +41,8 @@ export interface RenderOverlays {
   hoveredNodeId?: string | null
   /** Draw the pixel grid when zoomed in far enough. */
   showPixelGrid?: boolean
+  /** The gradient whose handles to draw in place of the selection. */
+  gradientEdit?: GradientEdit | null
   transforming?: boolean
   measurementMode?: MeasurementMode
   enteredContainerId?: string | null
