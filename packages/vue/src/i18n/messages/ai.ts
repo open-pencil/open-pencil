@@ -85,6 +85,7 @@ export const aiMessageDefaults = {
   restoreTurn: 'Restore changes',
   regenerate: 'Regenerate',
   revertAndRegenerate: 'Revert and regenerate',
+  retryRequest: 'Retry',
   editMessage: 'Edit message',
   cancelEdit: 'Cancel',
   resendMessage: 'Send again',

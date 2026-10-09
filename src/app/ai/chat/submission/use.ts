@@ -14,6 +14,7 @@ import {
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
+import { chatToResend } from '@/app/ai/chat/submission/resend'
 import { useRevertRecords } from '@/app/ai/chat/submission/reverts'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { recordTurn, restoreTurn, revertTurn } from '@/app/ai/chat/turns'
@@ -200,16 +201,16 @@ export function useChatSubmission(options: SubmissionOptions) {
     return currentChat.status === 'ready' || currentChat.status === 'error' ? currentChat : null
   }
 
-  /** Asks again for the last reply, undoing its edits first while nothing has been edited since. */
+  /** Asks again for the last reply, undoing its edits when it can, or for an unanswered request. */
   async function regenerate(): Promise<void> {
-    const currentChat = readyChat()
-    const reply = currentChat ? lastAssistantId(currentChat) : undefined
-    if (!currentChat || !reply) return
+    const currentChat = await chatToResend(options, readyChat())
+    const last = currentChat?.messages.at(-1)
+    if (!currentChat || !last) return
     options.clearFailure()
-    revertTurn(reply)
+    if (last.role === 'assistant') revertTurn(last.id)
     try {
       await withTurn(currentChat, () =>
-        currentChat.regenerate({ messageId: reply }).catch(() => undefined)
+        currentChat.regenerate({ messageId: last.id }).catch(() => undefined)
       )
     } finally {
       await options.flush?.().catch(() => undefined)
@@ -218,7 +219,7 @@ export function useChatSubmission(options: SubmissionOptions) {
 
   /** Replaces the last user message and asks again, undoing the old reply's edits when it can. */
   async function resend(messageId: string, text: string): Promise<void> {
-    const currentChat = readyChat()
+    const currentChat = await chatToResend(options, readyChat())
     const trimmed = text.trim()
     if (!currentChat || !trimmed) return
     const index = currentChat.messages.findIndex((message) => message.id === messageId)

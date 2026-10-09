@@ -38,6 +38,7 @@
   "restoreTurn": "変更を元に戻す",
   "regenerate": "再生成",
   "revertAndRegenerate": "元に戻して再生成",
+  "retryRequest": "再試行",
   "editMessage": "メッセージを編集",
   "cancelEdit": "キャンセル",
   "resendMessage": "再送信",

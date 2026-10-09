@@ -52,7 +52,8 @@ const toasts = ref<Toast[]>([])
 let nextId = 0
 let errorHandlersInitialized = false
 
-function push(message: string, variant: ToastVariant, action?: ToastAction) {
+/** Returns the toast's ID, which `remove` takes, also when it merged into a visible one. */
+function push(message: string, variant: ToastVariant, action?: ToastAction): number {
   // Dedupe: if the same message+variant is already visible, increment
   // its repeat count instead of stacking a duplicate. Prevents the
   // cascade-on-every-frame failure mode where a single unhealthy
@@ -64,10 +65,12 @@ function push(message: string, variant: ToastVariant, action?: ToastAction) {
   if (existing) {
     existing.count += 1
     existing.action = action
-    return
+    return existing.id
   }
-  toasts.value.push({ id: ++nextId, message, variant, count: 1, action })
+  const id = ++nextId
+  toasts.value.push({ id, message, variant, count: 1, action })
   trim()
+  return id
 }
 
 function trim() {
@@ -120,8 +123,8 @@ function warning(message: string) {
   push(message, 'warning')
 }
 
-function error(message: string, action?: ToastAction) {
-  push(message, 'error', action)
+function error(message: string, action?: ToastAction): number {
+  return push(message, 'error', action)
 }
 
 function remove(id: number) {
