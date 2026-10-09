@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import {
+  cloneInstanceOverrideState,
   createSceneMutationImpact,
   recordSceneMutations,
   type FigmaSourcePayload,
@@ -94,12 +95,7 @@ function captureNode(node: SceneNode): SceneNode {
     ...node,
     childIds: [...node.childIds],
     source: { ...source, fig: { ...source.fig, rawNodeFields: { ...source.fig.rawNodeFields } } },
-    instanceOverrides: {
-      self: new Map(instanceOverrides.self),
-      descendants: new Map(
-        [...instanceOverrides.descendants].map(([id, fields]) => [id, new Map(fields)])
-      )
-    }
+    instanceOverrides: cloneInstanceOverrideState(instanceOverrides)
   }
 }
 
