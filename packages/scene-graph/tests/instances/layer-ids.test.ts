@@ -4,6 +4,7 @@ import {
   getInstanceOverride,
   instanceLayerId,
   instanceLayerSource,
+  migrateInstanceLayers,
   overriddenFields,
   parseInstanceLayerId,
   recordInstanceOverride,
@@ -158,6 +159,14 @@ describe('cloning and detaching', () => {
     const adoptedDot = required(graph.getNode(instanceLayerId(adopted.id, [dot.id])))
     expect(adoptedDot.opacity).toBe(0.5)
     expect(getInstanceOverride(adopted.instanceOverrides, [dot.id], 'opacity')).toBe(true)
+  })
+
+  test('migrating a graph already in this shape keeps its nested copies indexed', () => {
+    const { graph, badge, nested, instance } = kit()
+    migrateInstanceLayers(graph)
+    expect(graph.getInstances(badge.id).map((node) => node.id)).toContain(
+      instanceLayerId(instance.id, [nested.id])
+    )
   })
 
   test('detaching a nested copy detaches the instances it sits in first', () => {

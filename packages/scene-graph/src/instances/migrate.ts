@@ -121,8 +121,13 @@ function migrateCopies(
     }
     const swapped = migration.legacy.get(target.id)?.get('componentId')
     const shown = typeof swapped === 'string' ? current(migration, swapped) : source.componentId
-    if (target.componentId) graph.instanceIndex.get(target.componentId)?.delete(target.id)
-    target.componentId = shown
+    // Renaming later indexes the copy under its new id; one already named keeps its entry.
+    if (target.componentId !== shown) {
+      if (target.componentId) graph.instanceIndex.get(target.componentId)?.delete(target.id)
+      if (shown)
+        graph.instanceIndex.set(shown, (graph.instanceIndex.get(shown) ?? new Set()).add(target.id))
+      target.componentId = shown
+    }
     // A copy of a nested instance records nothing itself; its owner holds what it overrode.
     const owner = graph.getNode(scope.owner)
     const address = parseInstanceLayerId(id)

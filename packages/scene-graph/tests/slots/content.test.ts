@@ -5,6 +5,7 @@ import {
   clearSlotContent,
   isInstanceLayerId,
   ownsSlotContent,
+  parseInstanceLayerId,
   resetSlotContent,
   SceneGraph,
   slotPropertyId,
@@ -153,5 +154,21 @@ describe('slot scope', () => {
     expect(graph.getChildren(slot.id).map((child) => child.name)).toEqual(['Default'])
     expect(instance.componentPropertyAssignments).toEqual({})
     expect(isInstanceLayerId(graph.getChildren(slot.id)[0].id)).toBe(true)
+  })
+
+  test('detaching keeps the copies of an instance placed in the slot', () => {
+    const { graph, page, instance, slot } = setup()
+    const badge = graph.createNode('COMPONENT', page.id, { name: 'Badge' })
+    const dot = graph.createNode('ELLIPSE', badge.id, { name: 'Dot' })
+    claimSlotContent(graph, slotOf(graph, slot.id))
+    const placed = graph.createInstance(badge.id, slot.id)
+    if (!placed) throw new Error('No instance')
+    const dotCopy = graph.getChildren(placed.id)[0]
+
+    graph.detachInstance(instance.id)
+
+    expect(graph.getNode(placed.id)?.type).toBe('INSTANCE')
+    expect(graph.getChildren(placed.id)).toEqual([dotCopy])
+    expect(parseInstanceLayerId(dotCopy.id)).toEqual({ owner: placed.id, path: [dot.id] })
   })
 })

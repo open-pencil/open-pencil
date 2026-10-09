@@ -809,8 +809,12 @@ export class SceneGraph {
       if (this.nodes.has(to) && !renames.has(to)) throw new Error(`Node id ${to} is in use`)
     const rename = (id: string) => renames.get(id) ?? id
     const depth = (node: SceneNode) => {
-      let count = 0
-      for (let id = node.parentId; id; id = this.nodes.get(id)?.parentId ?? null) count++
+      // `closest` visits the node itself first and stops on a parent cycle in bad data.
+      let count = -1
+      this.closest(node.id, () => {
+        count++
+        return false
+      })
       return count
     }
     const byDepth = renamed

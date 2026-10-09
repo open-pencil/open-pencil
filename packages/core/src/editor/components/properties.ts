@@ -131,12 +131,13 @@ export function createComponentPropertyActions(
         if (live) {
           const restoredTargets = findComponentPropertyTargets(ctx.graph, live, propertyId)
           ctx.graph.updateNode(instanceId, { componentPropertyAssignments: previousAssignments })
-          ctx.graph.updateNode(owner.id, {
-            instanceOverrides: cloneInstanceOverrideState(previousOverrides)
-          })
           restoredTargets.forEach((target, index) =>
             restoreTarget(target, previousValues[index] ?? '')
           )
+          // Restoring a swap target records a swap of its own; the overrides before the change win.
+          ctx.graph.updateNode(owner.id, {
+            instanceOverrides: cloneInstanceOverrideState(previousOverrides)
+          })
         }
         ctx.requestRender()
       }

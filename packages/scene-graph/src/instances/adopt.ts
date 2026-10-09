@@ -64,6 +64,8 @@ export function adoptCopies(graph: SceneGraph, root: SceneNode): ReadonlyMap<str
   const adopted: AdoptedInstance[] = []
   const visit = (node: SceneNode, scope: { owner: string; prefix: OverridePath } | null) => {
     const address = parseInstanceLayerId(node.id)
+    // An instance of the root's own, such as one placed in its slot, owns its copies already.
+    if (!address && node.type === 'INSTANCE') return
     let next = scope
     if (address && scope) {
       renames.set(node.id, instanceLayerId(scope.owner, address.path.slice(scope.prefix.length)))
