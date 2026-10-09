@@ -17,17 +17,13 @@ function syncWasmFromNodeModules(root: string, source: string, destination: stri
 function serveCanvasKitWasm(root: string): Connect.NextHandleFunction {
   return (req, res, next) => {
     const pathname = req.url?.split('?')[0] ?? ''
-    if (pathname !== '/canvaskit.wasm' && pathname !== '/canvaskit-webgpu/canvaskit.wasm') {
+    if (pathname !== '/canvaskit.wasm') {
       next()
       return
     }
 
     const publicPath = resolve(root, pathname.slice(1))
-    const fallbackPath =
-      pathname === '/canvaskit.wasm'
-        ? resolve(root, 'node_modules/canvaskit-wasm/bin/canvaskit.wasm')
-        : resolve(root, 'packages/core/vendor/canvaskit-webgpu/canvaskit.wasm')
-
+    const fallbackPath = resolve(root, 'node_modules/canvaskit-wasm/bin/canvaskit.wasm')
     const file = existsSync(publicPath) ? publicPath : fallbackPath
     if (!existsSync(file)) {
       next()
@@ -54,16 +50,6 @@ export function copyCanvasKitAssetsPlugin(): Plugin {
         root,
         'node_modules/canvaskit-wasm/bin/canvaskit.wasm',
         'public/canvaskit.wasm'
-      )
-      syncWasmFromNodeModules(
-        root,
-        'packages/core/vendor/canvaskit-webgpu/canvaskit.wasm',
-        'public/canvaskit-webgpu/canvaskit.wasm'
-      )
-      syncWasmFromNodeModules(
-        root,
-        'packages/core/vendor/canvaskit-webgpu/canvaskit.js',
-        'public/canvaskit-webgpu/canvaskit.js'
       )
     },
     configureServer(server) {
