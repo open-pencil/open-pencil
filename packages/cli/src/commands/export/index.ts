@@ -47,7 +47,7 @@ export interface ExportArgs {
   html: string
   css: string
   assets: string
-  fonts: string
+  fonts?: string
   framework: string
   'design-images': boolean
   watch?: boolean
@@ -203,7 +203,7 @@ async function executeFileExport(
 function exportOptions(format: string, args: ExportArgs): unknown {
   if (format === 'FIG') return { renderThumbnail: true }
   if (format === 'HTML')
-    return { html: args.html, style: args.css, assets: args.assets, fonts: args.fonts }
+    return { html: args.html, style: args.css, assets: args.assets, fonts: args.fonts ?? 'none' }
   if (formatSupportsScale(format))
     return {
       format,
@@ -328,8 +328,8 @@ export default defineCommand({
     },
     fonts: {
       type: 'string',
-      description: 'HTML font output: assets or none (default: none)',
-      default: 'none'
+      description:
+        'HTML and Storybook font files: assets or none (default: none for HTML, assets for Storybook)'
     },
     framework: {
       type: 'string',
@@ -391,8 +391,8 @@ export default defineCommand({
       process.exit(1)
     }
 
-    if (format === 'HTML' && !HTML_FONTS.has(args.fonts)) {
-      printError(`Invalid HTML font output "${args.fonts}". Use assets or none.`)
+    if (args.fonts && !HTML_FONTS.has(args.fonts)) {
+      printError(`Invalid font output "${args.fonts}". Use assets or none.`)
       process.exit(1)
     }
 

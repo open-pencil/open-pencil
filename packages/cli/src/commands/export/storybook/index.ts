@@ -25,6 +25,7 @@ import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
+import { storyFonts } from './fonts'
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
 import { readStoryRules, storyPlan } from './rules'
 
@@ -42,6 +43,8 @@ interface StorybookArgs {
   watch?: boolean
   /** A rules file for which stories each component gets and its title. */
   rules?: string
+  /** `none` ships no font files with the stories. */
+  fonts?: string
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -159,6 +162,7 @@ async function writeStories(
     framework,
     pageId,
     plan: rules ? storyPlan(rules) : undefined,
+    fonts: args.fonts === 'none' ? undefined : storyFonts,
     // Titled by the document, so stories of documents exported together stay apart.
     document: basename(file, extname(file)),
     linkPath: linkPath(file),

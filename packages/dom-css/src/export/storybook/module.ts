@@ -29,6 +29,8 @@ export interface StoryModuleData {
   title: string
   /** Tags on the whole file, which its stories inherit. */
   tags: string[]
+  /** Stylesheets the file imports, such as the fonts its text uses. */
+  styles: string[]
   /** Group name used in the missing-variant error. */
   name: string
   props: StoryProp[]
@@ -103,6 +105,7 @@ const GALLERY = es.parseModule(dedent`
 
 const IMAGE = es.parseModule(`const $name = new URL($path, import.meta.url).href`)
 const STORY = es.parseModule(`export const $name: Story = $story`)
+const STYLESHEET = es.parseModule(`import '$path'`)
 
 /** The Storybook renderer package each framework's stories import their types from. */
 export const STORYBOOK_PACKAGES: Record<StorybookFramework, string> = {
@@ -249,6 +252,10 @@ function argsType(data: StoryModuleData): es.SyntaxNode {
   return es.objectType(entries)
 }
 
+/** `import './fonts/kit/fonts.css'` for each stylesheet, which the bundler loads with the stories. */
+export const stylesheets = (paths: readonly string[]) =>
+  paths.flatMap((path) => es.fill(STYLESHEET, { $path: es.string(path) }).body)
+
 /** Print a CSF3 story module for one component or component set. */
 export function printStoryModule(data: StoryModuleData): string {
   const framework = FRAMEWORKS[data.framework]
@@ -298,7 +305,15 @@ export function printStoryModule(data: StoryModuleData): string {
   const module = es.printModule({
     type: 'Program',
     sourceType: 'module',
-    body: [storybookImport, ...framework.imports, ...images, ...body, ...stories, ...gallery]
+    body: [
+      storybookImport,
+      ...framework.imports,
+      ...stylesheets(data.styles),
+      ...images,
+      ...body,
+      ...stories,
+      ...gallery
+    ]
   })
   return `${HEADER}\n${module}\n`
 }

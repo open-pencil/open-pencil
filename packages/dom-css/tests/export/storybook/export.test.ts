@@ -147,6 +147,42 @@ describe('exportStorybook', () => {
     expect(Object.keys(badge).filter((key) => key !== 'default')).toEqual(['Default'])
   })
 
+  it("ships the fonts its text uses in the document's folder, loaded before text draws", async () => {
+    const { graph } = buttonGraph()
+    const requested: { family: string; weight: number }[] = []
+    const files = await exportStorybook(graph, {
+      framework: 'html',
+      document: 'Kit',
+      fonts: (fonts, folder) => {
+        requested.push(...fonts)
+        return Promise.resolve(
+          fonts.map((font) => ({
+            ...font,
+            style: font.style ?? 'normal',
+            format: 'woff2' as const,
+            path: `${folder}/${font.family.toLowerCase()}-${font.weight}.woff2`,
+            content: new Uint8Array([1])
+          }))
+        )
+      }
+    })
+    expect(requested.map((font) => font.family)).toEqual(['Inter'])
+    const css = String(files.find((file) => file.path === 'fonts/kit/fonts.css')?.content)
+    expect(files.map((file) => file.path)).toContain('fonts/kit/inter-400.woff2')
+    expect(css).toContain('url("inter-400.woff2")')
+    expect(css).toContain('font-display: block')
+    const story = String(files.find((file) => file.path === 'Button.stories.ts')?.content)
+    expect(story).toContain("import './fonts/kit/fonts.css'")
+
+    // With no font files found, nothing is written and stories import nothing.
+    const without = await exportStorybook(graph, {
+      framework: 'html',
+      fonts: () => Promise.resolve([])
+    })
+    expect(without.map((file) => file.path)).toEqual(['Button.stories.ts'])
+    expect(String(without[0]?.content)).not.toContain('fonts.css')
+  })
+
   it('gives a component with a behaviour its own props instead of variant selects', async () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Library')

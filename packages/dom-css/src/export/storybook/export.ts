@@ -1,8 +1,15 @@
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
+import { compact } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import type { ExportHTMLFile } from '../bundle'
+import {
+  designFontRequests,
+  fontFaceStylesheet,
+  type ExportHTMLFile,
+  type WebFontFaceRequest,
+  type WebFontFaceResolver
+} from '../bundle'
 import { componentModel, type ComponentGenerator, type ComponentModel } from '../components/model'
 import { reactComponent } from '../components/react'
 import type { ComponentReferences } from '../components/references'
@@ -47,6 +54,12 @@ export interface ExportStorybookOptions {
    * which stories it has and its title. Every file is written as `variants` by default.
    */
   plan?: (target: StoryTarget) => StoryPlan
+  /**
+   * Finds the font files the stories' text uses, which ship with them in `fonts/` and load
+   * before a story shows, so its text draws in the document's fonts. Without it, text uses
+   * whatever fonts Storybook's page has.
+   */
+  fonts?: WebFontFaceResolver
 }
 
 /** How a story file shows its component: every variant, Default alone, a gallery, or not. */
@@ -93,6 +106,8 @@ interface ModuleContext {
   images: string[]
   vectorElement?: VectorElementRenderer
   mode: Exclude<StoryMode, 'none'>
+  /** Stylesheets every story file imports, such as the fonts its text uses. */
+  styles: string[]
 }
 
 function designLink(
@@ -145,6 +160,7 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     framework: context.framework,
     title: group.title,
     tags: fileTags(group.page.name),
+    styles: context.styles,
     name: group.name,
     props: group.props,
     variants: group.variants.map((variant) => ({
@@ -268,6 +284,35 @@ function generatedModels(
 }
 
 /**
+ * The font files the entries' text uses, in a folder of the document's own so documents
+ * exported side by side keep theirs apart, and the stylesheet that loads them. Faces load
+ * before text draws, so a story never shows a fallback font first.
+ */
+async function storyFonts(
+  graph: SceneGraph,
+  entries: readonly StoryEntry[],
+  options: ExportStorybookOptions
+): Promise<{ stylesheet: string; files: ExportHTMLFile[] } | null> {
+  if (!options.fonts) return null
+  const requests = new Map<string, WebFontFaceRequest>()
+  for (const { group } of entries)
+    for (const variant of group.variants)
+      for (const request of designFontRequests(
+        sceneNodeToDesignDocument(graph, variant.node.id, { includeSourceIds: false })
+      ))
+        requests.set(`${request.family}|${request.weight}|${request.style ?? 'normal'}`, request)
+  if (requests.size === 0) return null
+  const page = options.pageId ? graph.getNode(options.pageId)?.name : undefined
+  const named = compact([options.document ?? 'document', page]).map((name) => storyId(name))
+  const folder = `fonts/${named.join('-')}`
+  const assets = await options.fonts([...requests.values()], folder)
+  if (assets.length === 0) return null
+  const css = await fontFaceStylesheet(assets, { from: folder, display: 'block' })
+  const stylesheet = `${folder}/fonts.css`
+  return { stylesheet, files: [...assets, { path: stylesheet, content: css }] }
+}
+
+/**
  * Generate one CSF3 `.stories.ts` file per component or component set, plus a
  * `<Name>.design/` folder of variant images when `renderDesignImage` is given.
  */
@@ -282,6 +327,10 @@ export async function exportStorybook(
     files.push({ path, content, page: page.name })
 
   const entries = storyEntries(graph, options)
+  const fonts = await storyFonts(graph, entries, options)
+  const firstPage = entries.at(0)?.page
+  if (fonts && firstPage) for (const file of fonts.files) add(firstPage, file.path, file.content)
+  const styles = fonts ? [`./${fonts.stylesheet}`] : []
   const generate = GENERATORS[framework]
   const models = generate ? generatedModels(graph, entries, options.vectorElement) : new Map()
 
@@ -298,6 +347,7 @@ export async function exportStorybook(
           storybook: STORYBOOK_PACKAGES[framework],
           title: group.title,
           tags: fileTags(group.page.name),
+          styles,
           component,
           generated,
           // A gallery lays out static variants; a generated component's stories are its states.
@@ -318,7 +368,16 @@ export async function exportStorybook(
       for (const [i, variant] of group.variants.slice(0, names.length).entries())
         add(page, images[i] ?? '', await render(variant.node.id))
     }
-    const context = { ...options, graph, framework, uniqueNames, storyNames: names, images, mode }
+    const context = {
+      ...options,
+      graph,
+      framework,
+      uniqueNames,
+      storyNames: names,
+      images,
+      mode,
+      styles
+    }
     add(page, `${file}.stories.ts`, storyModule(group, context))
   }
   return files

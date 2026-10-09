@@ -9,6 +9,7 @@ import type {
   GeneratedComponent,
   GeneratedKind
 } from '../components/model'
+import { stylesheets } from './module'
 import { claimName, identifierName, VARIANT_TAG } from './names'
 
 /** Tells readers the file is generated; nothing parses it. */
@@ -124,6 +125,8 @@ export interface ComponentStoriesData {
   title: string
   /** Tags on the whole file, which its stories inherit. */
   tags: string[]
+  /** Stylesheets the file imports, such as the fonts its text uses. */
+  styles: string[]
   /** Only the Default story, as a plan can ask for. */
   single?: boolean
   component: ComponentModel
@@ -305,7 +308,13 @@ export function printComponentStories(data: ComponentStoriesData): string {
   const module = es.printModule({
     type: 'Program',
     sourceType: 'module',
-    body: compact([...imports, ...componentImport, ...rest, ...exported])
+    body: compact([
+      ...imports,
+      ...stylesheets(data.styles),
+      ...componentImport,
+      ...rest,
+      ...exported
+    ])
   })
   return `${HEADER}\n${module}\n`
 }
