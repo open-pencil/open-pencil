@@ -11,9 +11,9 @@ export interface SystemClipboard {
 
 export type BrowserClipboardReadResult =
   | { available: false }
-  | { available: true; html: string | null }
+  | { available: true; html: string | null; text: string | null }
 
 export interface BrowserClipboardIO {
   write(payload: Promise<ClipboardPayload>): Promise<boolean>
-  readHTML(): Promise<BrowserClipboardReadResult>
+  read(): Promise<BrowserClipboardReadResult>
 }
