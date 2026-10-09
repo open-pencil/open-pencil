@@ -125,5 +125,17 @@ export const Empty: Story = { args: { initialChat: 'empty' } }
 export const Streaming: Story = { args: { initialChat: 'streaming' } }
 export const ToolError: Story = { args: { initialChat: 'error' } }
 export const RevertedReply: Story = { args: { initialChat: 'reverted' } }
+export const FailedRequest: Story = {
+  args: { initialChat: 'failed-request' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // Only the unanswered request offers to go again; the earlier reply does not regenerate.
+    await expect(canvas.queryByRole('button', { name: 'Regenerate' })).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
+    // The new reply is now the last message, so it offers to regenerate instead.
+    await expect(await canvas.findByRole('button', { name: 'Regenerate' })).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
+  }
+}
 export const Narrow: Story = { args: { narrow: true } }
 export const LongTitle: Story = { args: { initialChat: 'long-title', narrow: true } }

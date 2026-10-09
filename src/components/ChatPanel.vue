@@ -158,7 +158,7 @@ watch(
             label: ai.value.openProviderSettingsAction,
             run: () => openSettingsDialog('ai')
           }
-        : undefined
+        : { label: ai.value.retryRequest, run: () => submission.regenerate() }
     )
   }
 )
@@ -231,7 +231,7 @@ function handleStop() {
         :status="status"
         :show-continue="showContinue"
         :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null"
+        :interactive="chat !== null && !submission.busy.value"
         @regenerate="submission.regenerate()"
         @revert="(messageId) => submission.revert(messageId)"
         @restore="(messageId) => submission.restore(messageId)"

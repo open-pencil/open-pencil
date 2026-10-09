@@ -200,16 +200,16 @@ export function useChatSubmission(options: SubmissionOptions) {
     return currentChat.status === 'ready' || currentChat.status === 'error' ? currentChat : null
   }
 
-  /** Asks again for the last reply, undoing its edits first while nothing has been edited since. */
+  /** Asks again for the last reply, undoing its edits when it can, or for an unanswered request. */
   async function regenerate(): Promise<void> {
     const currentChat = readyChat()
-    const reply = currentChat ? lastAssistantId(currentChat) : undefined
-    if (!currentChat || !reply) return
+    const last = currentChat?.messages.at(-1)
+    if (!currentChat || !last) return
     options.clearFailure()
-    revertTurn(reply)
+    if (last.role === 'assistant') revertTurn(last.id)
     try {
       await withTurn(currentChat, () =>
-        currentChat.regenerate({ messageId: reply }).catch(() => undefined)
+        currentChat.regenerate({ messageId: last.id }).catch(() => undefined)
       )
     } finally {
       await options.flush?.().catch(() => undefined)

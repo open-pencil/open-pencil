@@ -38,6 +38,7 @@
   "restoreTurn": "恢复更改",
   "regenerate": "重新生成",
   "revertAndRegenerate": "撤销并重新生成",
+  "retryRequest": "重试",
   "editMessage": "编辑消息",
   "cancelEdit": "取消",
   "resendMessage": "重新发送",

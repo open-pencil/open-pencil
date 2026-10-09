@@ -58,6 +58,8 @@ function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
   let replies = 0
   const messages = ref<UIMessage[]>([])
   const chat = {
+    /** Fails the next request before any reply, as a provider or network error does. */
+    failNext: false,
     status: 'ready' as const,
     get messages(): UIMessage[] {
       return messages.value
@@ -66,6 +68,10 @@ function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
       messages.value = value
     },
     async reply() {
+      if (chat.failNext) {
+        chat.failNext = false
+        throw new Error('Request failed')
+      }
       startRun(store, 10)
       const width = widths[replies] ?? 500
       replies++
@@ -89,8 +95,12 @@ function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
       chat.messages = [...kept, request]
       await chat.reply()
     },
-    async regenerate() {
-      chat.messages = chat.messages.slice(0, -1)
+    // Like Chat's: a reply is replaced, and a request is kept and sent again.
+    async regenerate({ messageId }: { messageId?: string } = {}) {
+      const index = chat.messages.findIndex((candidate) => candidate.id === messageId)
+      const target = chat.messages[index]
+      if (!target) throw new Error(`message ${messageId} not found`)
+      chat.messages = chat.messages.slice(0, target.role === 'assistant' ? index : index + 1)
       await chat.reply()
     },
     stop: async () => undefined
@@ -184,6 +194,32 @@ test('regenerating undoes the last reply before asking again', async () => {
   store.undoAction()
   expect(width(card.id)).toBe(100)
   expect(chat.messages.map((message) => message.id)).toEqual(['request-0', 'reply-2'])
+})
+
+test('retrying a request that got no reply sends it again and keeps the earlier turn', async () => {
+  const { card, chat, actions } = setup()
+  await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })
+  chat.failNext = true
+  await actions.submit({
+    modelText: 'Wider still',
+    displayText: 'Wider still',
+    images: [],
+    nodes: []
+  })
+  expect(chat.messages.map((message) => message.role)).toEqual(['user', 'assistant', 'user'])
+
+  await actions.regenerate()
+
+  // The first reply's 200 stays, and the retried request's reply resizes on top of it.
+  expect(width(card.id)).toBe(300)
+  expect(chat.messages.map((message) => message.id)).toEqual([
+    'request-0',
+    'reply-1',
+    'request-1',
+    'reply-2'
+  ])
+  store.undoAction()
+  expect(width(card.id)).toBe(200)
 })
 
 test('resending an edited request replaces it and undoes the old reply first', async () => {
