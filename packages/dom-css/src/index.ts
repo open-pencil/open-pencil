@@ -1,7 +1,7 @@
 import type * as DesignTypes from './types'
 
 export { exportHTMLBundle } from './export/bundle'
-export { exportStorybook, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
+export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
 export { serializeHTML, serializeNode } from './export/html'
 export { createBrowserCSSRuntime, createCSSRuntime, createHeadlessCSSRuntime } from './runtime'
 export {
@@ -80,7 +80,10 @@ export type {
 export type {
   ExportStorybookOptions,
   StorybookFile,
-  StorybookFramework
+  StorybookFramework,
+  StoryMode,
+  StoryPlan,
+  StoryTarget
 } from './export/storybook/export'
 export type { SerializeHTMLOptions } from './export/html'
 export type { ToSceneGraphOptions } from './import/scene-graph'

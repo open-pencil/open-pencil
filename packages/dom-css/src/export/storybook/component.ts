@@ -124,6 +124,8 @@ export interface ComponentStoriesData {
   title: string
   /** Tags on the whole file, which its stories inherit. */
   tags: string[]
+  /** Only the Default story, as a plan can ask for. */
+  single?: boolean
   component: ComponentModel
   generated: Pick<GeneratedComponent, 'entry' | 'valueArg' | 'valueList'>
   /** Design links for the whole file, as `parameters.design` entries. */
@@ -293,7 +295,8 @@ export function printComponentStories(data: ComponentStoriesData): string {
     $Component: es.identifier(component.name),
     $path: es.string(entry.path)
   }).body
-  const exported = stories(component, model, list).flatMap(
+  const all = stories(component, model, list)
+  const exported = (data.single ? all.slice(0, 1) : all).flatMap(
     (item) => es.fill(STORY, { $name: es.identifier(item.name), $story: item.story }).body
   )
   // Only a control with a play function uses `expect`.

@@ -108,6 +108,45 @@ describe('exportStorybook', () => {
     expect(storyExport(story, 'Large').tags).toEqual(['variant'])
   })
 
+  it('writes each file as its plan says: renamed, Default alone, a gallery, or not at all', async () => {
+    const { graph, page } = buttonGraph()
+    graph.createNode('COMPONENT', page.id, { name: 'Badge', width: 10, height: 10 })
+    graph.createNode('COMPONENT', page.id, { name: 'Internal', width: 10, height: 10 })
+    const files = await exportStorybook(graph, {
+      framework: 'html',
+      renderDesignImage: () => Promise.resolve(new Uint8Array([1])),
+      plan: ({ name }) => {
+        if (name === 'Internal') return { stories: 'none' }
+        if (name === 'Badge') return { stories: 'single', title: 'Kit/Button' }
+        return { stories: 'gallery', title: 'Kit/Button' }
+      }
+    })
+    // Only the Default story each file keeps gets a design image.
+    expect(files.map((file) => file.path)).toEqual([
+      'Button.design/Default.png',
+      'Button.stories.ts',
+      'Badge.design/Default.png',
+      'Badge.stories.ts'
+    ])
+    const button = await importStory(String(files[1]?.content))
+    // A gallery keeps Default, with its controls, and lays every variant out in one story.
+    expect(
+      Object.keys(button)
+        .filter((key) => key !== 'default')
+        .sort()
+    ).toEqual(['Default', 'Gallery'])
+    const gallery = button.Gallery as { render: () => string }
+    expect(gallery.render()).toContain('&lt;b&gt;Small&lt;/b&gt;')
+    expect(gallery.render().match(/<figure/g)).toHaveLength(2)
+    expect(gallery.render()).toContain(
+      '<figcaption style="font: 12px system-ui, sans-serif; color: #6b7280">Large</figcaption>'
+    )
+    // Renamed titles stay apart, as titles that collide always do.
+    const badge = await importStory(String(files[3]?.content))
+    expect([button.default.title, badge.default.title]).toEqual(['Kit/Button', 'Kit/Button 2'])
+    expect(Object.keys(badge).filter((key) => key !== 'default')).toEqual(['Default'])
+  })
+
   it('gives a component with a behaviour its own props instead of variant selects', async () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Library')

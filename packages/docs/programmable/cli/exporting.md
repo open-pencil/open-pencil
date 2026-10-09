@@ -150,6 +150,7 @@ openpencil export design.fig -f storybook --framework vue -o src/stories
 openpencil export design.fig -f storybook --framework html --page "Components"
 openpencil export design.pen -f storybook -o src/stories --watch  # re-export on every save
 openpencil export 'src/**/*.pen' -f storybook --beside --watch    # stories next to each design
+openpencil export design.fig -f storybook --rules stories.json    # stories and titles by rule
 ```
 
 ### Fewer stories in the sidebar
@@ -165,6 +166,22 @@ const config: StorybookConfig = {
   }
 }
 ```
+
+### Stories and titles by rule
+
+What the tags can't do, such as leaving components out or laying an icon set out as a gallery, a rules file decides. The export reads `openpencil.stories.json` from the working directory when it is there, or the file `--rules` names, again on every export when watching:
+
+```json
+{
+  "rules": [
+    { "match": "**", "title": "Design system/{page}/{name}" },
+    { "match": "Icons/**", "stories": "gallery" },
+    { "match": "**/_*", "stories": "none" }
+  ]
+}
+```
+
+A rule applies to every story file whose `<page>/<name>` path matches its glob, by the names in the document: the page's, and the component set's or component's, or the prefix of slash-named components, such as `Icons/icon`. Every matching rule applies in order, so a later rule overrides an earlier one, each field on its own. `stories` is `variants`, a story per variant or state, as without rules; `single`, the `Default` story alone; `gallery`, `Default` and a `Gallery` story laying every variant out with its name, for static stories; or `none`, which leaves the file out. `title` is the file's title, with `{document}`, `{page}`, `{name}`, and `{path}`, the title it would have, filled in; titles that end up the same are kept apart as titles always are. Rules match the document's names, never a renamed title, so renaming a file never changes which rules apply to it.
 
 ### Designs next to their stories
 

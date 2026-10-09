@@ -26,6 +26,7 @@ import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
+import { readStoryRules, storyPlan } from './rules'
 
 interface StorybookArgs {
   file?: string
@@ -39,6 +40,8 @@ interface StorybookArgs {
   'design-images': boolean
   'font-policy': string
   watch?: boolean
+  /** A rules file for which stories each component gets and its title. */
+  rules?: string
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -150,9 +153,12 @@ async function writeStories(
     const pageIds = pageId ? [pageId] : graph.getPages().map((page) => page.id)
     await applyExportFontPolicy(graph, pageIds, 'PNG', args['font-policy'])
   }
+  // Read on every export, so a watch picks up edited rules with the next save.
+  const rules = await readStoryRules(args.rules)
   const files = await exportStorybook(graph, {
     framework,
     pageId,
+    plan: rules ? storyPlan(rules) : undefined,
     // Titled by the document, so stories of documents exported together stay apart.
     document: basename(file, extname(file)),
     linkPath: linkPath(file),

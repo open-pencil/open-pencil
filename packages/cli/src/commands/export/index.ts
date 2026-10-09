@@ -349,6 +349,11 @@ export default defineCommand({
       type: 'boolean',
       description: "Storybook: write each document's stories into the document's own folder"
     },
+    rules: {
+      type: 'string',
+      description:
+        'Storybook: rules file for which stories each component gets and its title (default: openpencil.stories.json when present)'
+    },
     'font-policy': {
       type: 'string',
       description: 'Raster/PDF font policy: warn, strict, or allow (default: warn)',

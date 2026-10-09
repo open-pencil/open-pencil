@@ -7,7 +7,7 @@ import { componentModel, type ComponentGenerator, type ComponentModel } from '..
 import { reactComponent } from '../components/react'
 import type { ComponentReferences } from '../components/references'
 import { vueComponent } from '../components/vue'
-import { serializeHTML } from '../html'
+import { serializeHTML, serializeNode } from '../html'
 import { sceneNodeToDesignDocument, type VectorElementRenderer } from '../projection'
 import { printComponentStories } from './component'
 import { collectGroups, type StoryGroup } from './groups'
@@ -42,6 +42,32 @@ export interface ExportStorybookOptions {
   renderDesignImage?: (nodeId: string) => Promise<Uint8Array>
   /** Draws vector layers as inline SVG, from the engine's SVG export. */
   vectorElement?: VectorElementRenderer
+  /**
+   * How each story file is written, which a caller decides, such as from rules a user wrote:
+   * which stories it has and its title. Every file is written as `variants` by default.
+   */
+  plan?: (target: StoryTarget) => StoryPlan
+}
+
+/** How a story file shows its component: every variant, Default alone, a gallery, or not. */
+export const STORY_MODES = ['variants', 'single', 'gallery', 'none'] as const
+export type StoryMode = (typeof STORY_MODES)[number]
+
+/** A story file the export would write, as a plan reads it. */
+export interface StoryTarget {
+  /** The document's name, when the export knows it. */
+  document: string | undefined
+  page: string
+  /** The component set's or component's name, or a slash-named group's prefix. */
+  name: string
+  /** The title the file has unless the plan gives another. */
+  title: string
+}
+
+/** What a plan says about a story file; anything it leaves out stays as it would be. */
+export interface StoryPlan {
+  stories?: StoryMode
+  title?: string
 }
 
 export interface StorybookFile extends ExportHTMLFile {
@@ -66,6 +92,7 @@ interface ModuleContext {
   /** Import path of each variant's design image, by variant index. */
   images: string[]
   vectorElement?: VectorElementRenderer
+  mode: Exclude<StoryMode, 'none'>
 }
 
 function designLink(
@@ -133,16 +160,25 @@ function storyModule(group: StoryGroup, context: ModuleContext): string {
     })),
     metaDesign: designLink(context, group.linkNode),
     images: context.images,
-    stories: group.variants.map((variant, i) => ({
-      exportName: context.storyNames[i] ?? '',
-      label: storyLabel(group, variant.values, i),
-      tags: i === 0 ? [] : [VARIANT_TAG],
-      values: variant.values,
-      design: [
-        ...designLink(context, variant.node.name, group.linkNode),
-        ...(context.images[i] ? [{ type: 'image' as const, variant: i }] : [])
-      ]
-    }))
+    gallery:
+      context.mode === 'gallery'
+        ? group.variants.map((variant) => ({
+            values: variant.values,
+            label: serializeNode({ type: 'text', text: variant.values.join(', ') || group.name })
+          }))
+        : null,
+    stories: (context.mode === 'variants' ? group.variants : group.variants.slice(0, 1)).map(
+      (variant, i) => ({
+        exportName: context.storyNames[i] ?? '',
+        label: storyLabel(group, variant.values, i),
+        tags: i === 0 ? [] : [VARIANT_TAG],
+        values: variant.values,
+        design: [
+          ...designLink(context, variant.node.name, group.linkNode),
+          ...(context.images[i] ? [{ type: 'image' as const, variant: i }] : [])
+        ]
+      })
+    )
   })
 }
 
@@ -151,6 +187,7 @@ interface StoryEntry {
   page: SceneNode
   group: StoryGroup
   file: string
+  mode: Exclude<StoryMode, 'none'>
 }
 
 /**
@@ -159,8 +196,7 @@ interface StoryEntry {
  */
 function storyEntries(
   graph: SceneGraph,
-  pageId: string | undefined,
-  document: string | undefined
+  { pageId, document, plan }: Pick<ExportStorybookOptions, 'pageId' | 'document' | 'plan'>
 ): StoryEntry[] {
   const takenFiles = new Set<string>()
   const takenIds = new Set<string>()
@@ -174,13 +210,19 @@ function storyEntries(
   }
   for (const page of pages) {
     for (const group of collectGroups(graph, page, section(page))) {
+      const planned = plan?.({ document, page: page.name, name: group.name, title: group.title })
+      const mode = planned?.stories ?? 'variants'
+      if (mode === 'none') continue
       // Storybook ids ignore case and punctuation, so `Library/Card` and `library/card` collide.
-      group.title = claimName(group.title, takenIds, { separator: ' ', key: storyId })
+      group.title = claimName(planned?.title ?? group.title, takenIds, {
+        separator: ' ',
+        key: storyId
+      })
       // File names are compared ignoring case for case-insensitive file systems.
       const file = claimName(identifierName(group.name, 'Component'), takenFiles, {
         key: (name) => name.toLowerCase()
       })
-      if (!pageId || page.id === pageId) entries.push({ page, group, file })
+      if (!pageId || page.id === pageId) entries.push({ page, group, file, mode })
     }
   }
   return entries
@@ -239,11 +281,11 @@ export async function exportStorybook(
   const add = (page: SceneNode, path: string, content: string | Uint8Array) =>
     files.push({ path, content, page: page.name })
 
-  const entries = storyEntries(graph, options.pageId, options.document)
+  const entries = storyEntries(graph, options)
   const generate = GENERATORS[framework]
   const models = generate ? generatedModels(graph, entries, options.vectorElement) : new Map()
 
-  for (const { page, group, file } of entries) {
+  for (const { page, group, file, mode } of entries) {
     const component = group.set && models.get(group.set.id)
     if (generate && component) {
       const generated = await generate(component)
@@ -258,6 +300,8 @@ export async function exportStorybook(
           tags: fileTags(group.page.name),
           component,
           generated,
+          // A gallery lays out static variants; a generated component's stories are its states.
+          single: mode === 'single',
           design: design.flatMap((entry) =>
             entry.type === 'link' ? [{ name: 'OpenPencil', type: 'link', url: entry.url }] : []
           )
@@ -266,14 +310,15 @@ export async function exportStorybook(
       continue
     }
 
-    const names = storyNames(group)
+    // Only the stories a file keeps get design images; a gallery or Default alone keeps one.
+    const names = storyNames(group).slice(0, mode === 'variants' ? undefined : 1)
     const render = options.renderDesignImage
     const images = render ? names.map((name) => `${file}.design/${name}.png`) : []
     if (render) {
-      for (const [i, variant] of group.variants.entries())
+      for (const [i, variant] of group.variants.slice(0, names.length).entries())
         add(page, images[i] ?? '', await render(variant.node.id))
     }
-    const context = { ...options, graph, framework, uniqueNames, storyNames: names, images }
+    const context = { ...options, graph, framework, uniqueNames, storyNames: names, images, mode }
     add(page, `${file}.stories.ts`, storyModule(group, context))
   }
   return files

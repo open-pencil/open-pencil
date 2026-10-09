@@ -36,6 +36,8 @@ export interface StoryModuleData {
   metaDesign: StoryDesign[]
   /** Import path of each design image, by variant index. */
   images: string[]
+  /** Every variant laid out in one story, each with its label as escaped HTML, if a gallery. */
+  gallery: { values: string[]; label: string }[] | null
   stories: {
     exportName: string
     label: string
@@ -77,6 +79,28 @@ const MODULE = es.parseModule(dedent`
   type Story = StoryObj<Args>
 `)
 
+const GALLERY = es.parseModule(dedent`
+  const labels: [string, string][] = $labels
+
+  function galleryHTML(): string {
+    const items = labels.map(
+      ([key, label]) =>
+        '<figure style="margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px">' +
+        (variants[key] ?? '') +
+        '<figcaption style="font: 12px system-ui, sans-serif; color: #6b7280">' +
+        label +
+        '</figcaption></figure>'
+    )
+    return (
+      '<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px">' +
+      items.join('') +
+      '</div>'
+    )
+  }
+
+  export const Gallery: Story = { name: 'Gallery', render: () => $render }
+`)
+
 const IMAGE = es.parseModule(`const $name = new URL($path, import.meta.url).href`)
 const STORY = es.parseModule(`export const $name: Story = $story`)
 
@@ -87,25 +111,27 @@ export const STORYBOOK_PACKAGES: Record<StorybookFramework, string> = {
   html: '@storybook/html-vite'
 }
 
+/** How each framework renders a string of HTML, `$html`, as a story. */
 const FRAMEWORKS: Record<StorybookFramework, { imports: es.SyntaxNode[]; render: es.SyntaxNode }> =
   {
     react: {
       imports: es.parseModule(`import { createElement } from 'react'`).body,
       render: es.parseExpression(
-        `createElement('div', { dangerouslySetInnerHTML: { __html: variantHTML(args) } })`
+        `createElement('div', { dangerouslySetInnerHTML: { __html: $html } })`
       )
     },
     vue: {
       imports: es.parseModule(`import { h } from 'vue'`).body,
-      render: es.parseExpression(
-        `{ setup: () => () => h('div', { innerHTML: variantHTML(args) }) }`
-      )
+      render: es.parseExpression(`{ setup: () => () => h('div', { innerHTML: $html }) }`)
     },
     html: {
       imports: [],
-      render: es.parseExpression('variantHTML(args)')
+      render: es.parseExpression('$html')
     }
   }
+
+const rendered = (framework: StorybookFramework, html: string) =>
+  es.fill(FRAMEWORKS[framework].render, { $html: es.parseExpression(html) })
 
 const imageName = (variant: number) => `design${variant}`
 
@@ -239,7 +265,7 @@ export function printStoryModule(data: StoryModuleData): string {
     $parameters: data.metaDesign.length > 0 ? parameters(data.metaDesign) : es.OMIT,
     $args: argsObject(data, data.variants[0]?.values ?? []),
     $argTypes: argTypes(data),
-    $render: framework.render
+    $render: rendered(data.framework, 'variantHTML(args)')
   }).body
   const images = data.images.flatMap(
     (path, i) =>
@@ -259,10 +285,20 @@ export function printStoryModule(data: StoryModuleData): string {
         ])
       }).body
   )
+  const gallery = data.gallery
+    ? es.fill(GALLERY, {
+        $labels: es.array(
+          data.gallery.map((item) =>
+            es.array([es.string(JSON.stringify(item.values)), es.string(item.label)])
+          )
+        ),
+        $render: rendered(data.framework, 'galleryHTML()')
+      }).body
+    : []
   const module = es.printModule({
     type: 'Program',
     sourceType: 'module',
-    body: [storybookImport, ...framework.imports, ...images, ...body, ...stories]
+    body: [storybookImport, ...framework.imports, ...images, ...body, ...stories, ...gallery]
   })
   return `${HEADER}\n${module}\n`
 }
