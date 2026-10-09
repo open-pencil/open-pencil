@@ -2,8 +2,8 @@ import { pick } from 'es-toolkit/object'
 
 import {
   styleDetachmentChanges,
-  findInstanceAncestor,
   cloneInstanceOverrideState,
+  overrideTarget,
   recordInstanceOverride,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -62,7 +62,8 @@ export function createNodeActions(ctx: EditorContext) {
       ...textAutoResizeChanges(node, changes),
       ...pathTextEditChanges(node, changes)
     })
-    const owner = findInstanceAncestor(ctx.graph, id)
+    // Overrides are recorded on the outermost instance the layer sits in.
+    const owner = overrideTarget(ctx.graph, node)?.owner
     const previousOverrides = owner
       ? cloneInstanceOverrideState(owner.instanceOverrides)
       : undefined

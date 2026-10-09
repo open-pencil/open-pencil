@@ -1,9 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, getInstanceOverride, setInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  getInstanceOverride,
+  setInstanceOverride,
+  type SceneNode,
+  parseInstanceLayerId
+} from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -121,7 +129,7 @@ describe('cloneNodeProps deep-copies overrides values', () => {
     const instance = expectDefined(graph.createInstance(component.id, page), 'instance')
     if (!instance) throw new Error('instance failed')
     const instanceChild = graph.getChildren(instance.id)[0]
-    setInstanceOverride(instance.instanceOverrides, instance.id, instanceChild.id, 'fills', [
+    setInstanceOverride(instance.instanceOverrides, layerPath(instanceChild.id), 'fills', [
       { type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, visible: true, opacity: 1 }
     ])
 
@@ -130,8 +138,7 @@ describe('cloneNodeProps deep-copies overrides values', () => {
     const clonedInstance = getNodeOrThrow(graph, clone.id)
     const cloneOverrideVal = getInstanceOverride(
       clonedInstance.instanceOverrides,
-      clonedInstance.id,
-      instanceChild.id,
+      layerPath(instanceChild.id),
       'fills'
     ) as Array<{
       color: { r: number }
@@ -140,8 +147,7 @@ describe('cloneNodeProps deep-copies overrides values', () => {
 
     const origOverrideVal = getInstanceOverride(
       instance.instanceOverrides,
-      instance.id,
-      instanceChild.id,
+      layerPath(instanceChild.id),
       'fills'
     ) as Array<{ color: { r: number } }>
 
@@ -216,7 +222,7 @@ describe('cloneNodeProps coverage guard', () => {
     const node = graph.createNode('RECTANGLE', page, {
       name: 'Rich node',
       boundVariables: { 'fills/0/color': 'v1' },
-      instanceOverrides: { self: new Map(), descendants: new Map() },
+      instanceOverrides: { self: new Map(), layers: new Map() },
       vectorNetwork: {
         vertices: [{ x: 0, y: 0 }],
         segments: [{ start: 0, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],

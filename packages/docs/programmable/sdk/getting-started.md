@@ -45,7 +45,7 @@ if (!page) throw new Error('Expected an initial page')
 const editor = createEditor({
   graph,
   state: reactive(createDefaultEditorState(page.id)),
-  getViewportSize: () => ({ width: 1200, height: 800 }),
+  getViewportSize: () => ({ width: 1200, height: 800 })
 })
 ```
 
@@ -120,16 +120,14 @@ const { selectedCount } = useSelectionState()
 useCanvas(canvasRef, editor, {
   onReady: () => {
     console.log('Canvas ready')
-  },
+  }
 })
 </script>
 
 <template>
   <div class="grid h-full grid-rows-[1fr_auto]">
     <canvas ref="canvasRef" class="size-full" />
-    <div class="border-t px-3 py-2 text-xs text-muted">
-      Selected: {{ selectedCount }}
-    </div>
+    <div class="border-t px-3 py-2 text-xs text-muted">Selected: {{ selectedCount }}</div>
   </div>
 </template>
 ```
@@ -138,7 +136,7 @@ useCanvas(canvasRef, editor, {
 
 These changes describe the current development version; use them when upgrading beyond v0.14.0.
 
-- **Scene Graph overrides:** replace `SceneNode.overrides` records with `instanceOverrides`, whose `self` and `descendants` maps distinguish instance-level and descendant overrides. Use the public override helpers from `@open-pencil/scene-graph` rather than treating this as a simple field rename.
+- **Scene Graph overrides:** replace `SceneNode.overrides` records with `instanceOverrides`, whose `self` map holds the instance's own overrides and `layers` map those of the layers inside it, keyed by their path of component layer IDs. The outermost instance records overrides for every layer inside it, nested instances included. Layers inside instances have Figma's IDs, `I<instance>;<layer>;…`, and copies no longer link to their component layers through `componentId`, which is now only the component an instance shows. Use `overrideTarget`, `setLayerOverride`, and `instanceLayerSource` from `@open-pencil/scene-graph` rather than treating this as a simple field rename.
 - **Derived geometry:** rename `figmaDerivedLayout` to `derivedLayout`, `figmaDerivedTextGlyphs` to `derivedTextGlyphs`, and the exported `FigmaDerivedTextGlyph` type to `DerivedTextGlyph`.
 - **Binding providers:** implement `getBindingId()` and handle `unresolved`. For `edit-variable`, replace `setValue()` with `prepareEdit()`, which captures the edit key, value, setter, and restoration callback. See [BindableValue](./api/components/bindable-value).
 - **Translations:** replace `useDialogMessages()` and `dialogMessages` with the relevant product-domain composables and catalogs, such as `useSettingsMessages()` or `useRenameMessages()`. Catalog keys have also moved; do not just rename the import. See [useI18n](./api/composables/use-i18n).

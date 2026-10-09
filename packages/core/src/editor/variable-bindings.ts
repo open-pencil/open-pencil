@@ -1,7 +1,6 @@
 import {
   cloneInstanceOverrideState,
-  findInstanceAncestor,
-  variableBindingOwner,
+  overrideTarget,
   isNumericVariableBindingField,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -25,12 +24,10 @@ export function createVariableBindingActions(ctx: EditorContext) {
       variableBindingScales: { ...node.variableBindingScales },
       ...(isNumericVariableBindingField(path) ? { [path]: node[path as keyof SceneNode] } : {})
     }
-    const owner = variableBindingOwner(ctx.graph, node)
-    const nearest = findInstanceAncestor(ctx.graph, nodeId)
+    // Binding overrides are recorded on the outermost instance the layer sits in.
+    const owner = overrideTarget(ctx.graph, node)?.owner
     const owners = new Map(
-      [owner, ...(nearest ? [nearest] : [])].map(
-        (item) => [item.id, cloneInstanceOverrideState(item.instanceOverrides)] as const
-      )
+      owner ? [[owner.id, cloneInstanceOverrideState(owner.instanceOverrides)] as const] : []
     )
     const apply = () => {
       if (variableId === undefined) ctx.graph.unbindVariable(nodeId, path)

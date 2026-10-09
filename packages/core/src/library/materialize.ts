@@ -1,4 +1,4 @@
-import { cloneNodeProps, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { copyLayerTrees, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
@@ -49,22 +49,6 @@ export function libraryDependencyRoots(
     pending.push(definitionRoot.id)
   }
   return [...roots.values()]
-}
-
-export function copyLibraryTree(
-  source: SceneGraph,
-  target: SceneGraph,
-  sourceId: string,
-  parentId: string,
-  mappedIds: Map<string, string>
-): void {
-  if (mappedIds.has(sourceId)) return
-  const node = source.getNode(sourceId)
-  if (!node) return
-  const created = target.createNode(node.type, parentId, cloneNodeProps(node, node.componentId))
-  mappedIds.set(sourceId, created.id)
-  for (const childId of node.childIds)
-    copyLibraryTree(source, target, childId, created.id, mappedIds)
 }
 
 function markDefinitions(
@@ -157,10 +141,12 @@ export function materializeLibraryAsset(
   if (!descriptor)
     throw new Error(`Library asset not found: ${libraryAssetIdentityKey(libraryId, assetKey)}`)
   const page = getInternalLibraryPage(consumer)
-  const mappedIds = new Map<string, string>()
-  for (const root of libraryDependencyRoots(revision, descriptor)) {
-    copyLibraryTree(revision.graph, consumer, root.id, page.id, mappedIds)
-  }
+  const mappedIds = copyLayerTrees(
+    revision.graph,
+    consumer,
+    libraryDependencyRoots(revision, descriptor).map((root) => root.id),
+    page.id
+  )
   markDefinitions(consumer, revision, mappedIds)
   copyImages(revision.graph, consumer, mappedIds)
 

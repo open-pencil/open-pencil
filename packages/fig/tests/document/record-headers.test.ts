@@ -38,9 +38,10 @@ function canonical(graph: SceneGraph): string {
     return value
   })
   const order = new Map<string, number>()
-  return json.replace(new RegExp(`"${TEST_SESSION}:\\d+"`, 'g'), (id) => {
+  // Copies inside instances are named after other layers' IDs, so IDs also appear inside IDs.
+  return json.replace(new RegExp(`(?<!\\d)${TEST_SESSION}:\\d+`, 'g'), (id) => {
     if (!order.has(id)) order.set(id, order.size)
-    return `"#${order.get(id)}"`
+    return `#${order.get(id)}`
   })
 }
 

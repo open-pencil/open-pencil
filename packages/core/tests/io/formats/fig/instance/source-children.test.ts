@@ -8,7 +8,6 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import {
   interpretComponent,
   interpretInstance,
-  linkInstanceSourceChildren,
   mapInstanceSourceChildren,
   materializeInstance
 } from '@open-pencil/fig/instance-overrides'
@@ -52,7 +51,6 @@ test('derives repeated nested child correspondence from materialized component o
   expect(mapping.get(first)).not.toBe(mapping.get(second))
   expect(mapping.get(first.children[0])).toBe(mapping.get(second.children[0]))
   const before = graph.getChildren(result.root.id).map((node) => node.id)
-  linkInstanceSourceChildren(occurrence, result, components)
   graph.syncInstances(outerGraph.root.id)
   expect(graph.getChildren(result.root.id).map((node) => node.id)).toEqual(before)
   expect(

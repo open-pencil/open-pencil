@@ -3,7 +3,7 @@ import {
   numericVariableBindingScales
 } from '#fig/node-change/variable/bindings'
 
-import { forEachInstanceOverride } from '@open-pencil/scene-graph'
+import { overriddenFields } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 /** Apply resolved scalar layout values after hierarchy and explicit modes exist. */
@@ -13,20 +13,8 @@ export function applyDocumentLayoutBindings(
   materialized: readonly SceneNode[],
   layoutScales: ReadonlyMap<string, number> = new Map()
 ): void {
-  // An instance and the descendants its overrides name materialize together, so the owners
-  // that matter for these nodes are among them.
-  const sizesOverridden = new Map<string, Set<string>>()
-  for (const owner of materialized) {
-    if (owner.type !== 'INSTANCE') continue
-    forEachInstanceOverride(owner.instanceOverrides, (id, field) => {
-      if (field !== 'width' && field !== 'height') return
-      const target = id || owner.id
-      const fields = sizesOverridden.get(target) ?? new Set<string>()
-      fields.add(field)
-      sizesOverridden.set(target, fields)
-    })
-  }
   for (const node of materialized) {
+    const overridden = overriddenFields(graph, node)
     const scales = numericVariableBindingScales(
       node.boundVariables,
       layoutScales.get(node.id) ?? 1,
@@ -35,7 +23,7 @@ export function applyDocumentLayoutBindings(
     graph.updateNode(node.id, { variableBindingScales: scales })
     for (const field in node.boundVariables) {
       if ((field === 'width' || field === 'height') && savedSizeNodes.has(node.id)) continue
-      if (sizesOverridden.get(node.id)?.has(field)) continue
+      if ((field === 'width' || field === 'height') && overridden.has(field)) continue
       const variableId = node.boundVariables[field]
       const variable = graph.variables.get(variableId)
       if (!variable) continue

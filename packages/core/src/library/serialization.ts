@@ -1,4 +1,4 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { migrateInstanceLayers, SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
@@ -55,10 +55,12 @@ export function deserializeLibraryRevision(
   graph.documentColorSpace = revision.graph.documentColorSpace
   graph.instanceIndex = new Map()
   for (const node of graph.getAllNodes()) {
-    if (!node.componentId) continue
+    if (node.type !== 'INSTANCE' || !node.componentId) continue
     const instances = graph.instanceIndex.get(node.componentId) ?? new Set<string>()
     instances.add(node.id)
     graph.instanceIndex.set(node.componentId, instances)
   }
+  // Revisions saved before copies were named by their paths hold them under ids of their own.
+  migrateInstanceLayers(graph)
   return { manifest: structuredClone(revision.manifest), graph }
 }

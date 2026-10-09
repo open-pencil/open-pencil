@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   claimSlotContent,
   clearSlotContent,
+  isInstanceLayerId,
   ownsSlotContent,
   resetSlotContent,
   SceneGraph,
@@ -126,13 +127,15 @@ describe('slot scope', () => {
   test('claiming keeps the content but stops it following the component', () => {
     const { graph, small, instance, slot } = setup()
     const [copied] = graph.getChildren(slot.id)
-    expect(copied.componentId).not.toBeNull()
+    expect(isInstanceLayerId(copied.id)).toBe(true)
 
     claimSlotContent(graph, slotOf(graph, slot.id))
 
     expect(ownsSlotContent(graph, slot)).toBe(true)
     expect(graph.getChildren(slot.id).map((child) => child.name)).toEqual(['Default'])
-    expect(copied.componentId).toBeNull()
+    // The content is the instance's own now but keeps its ids, as in Figma.
+    expect(graph.getChildren(slot.id)[0]).toBe(copied)
+    expect(isInstanceLayerId(copied.id)).toBe(true)
     const defaultText = graph.getChildren(graph.getChildren(small.id)[0].id)[0]
     graph.updateNode(defaultText.id, { name: 'Edited default' })
     graph.syncInstances(small.id)
@@ -149,6 +152,6 @@ describe('slot scope', () => {
     resetSlotContent(graph, slotOf(graph, slot.id))
     expect(graph.getChildren(slot.id).map((child) => child.name)).toEqual(['Default'])
     expect(instance.componentPropertyAssignments).toEqual({})
-    expect(graph.getChildren(slot.id)[0].componentId).not.toBeNull()
+    expect(isInstanceLayerId(graph.getChildren(slot.id)[0].id)).toBe(true)
   })
 })

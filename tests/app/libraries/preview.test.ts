@@ -178,14 +178,12 @@ describe('library update preview', () => {
     const currentNested = preview.graph
       .getChildren(preview.currentNodeId)
       .find((node) => node.type === 'INSTANCE')
-    const currentDefinitionNode = currentNested?.componentId
+    // A copy of a nested instance shows the component its definition shows.
+    const currentDependency = currentNested?.componentId
       ? preview.graph.getNode(currentNested.componentId)
       : null
-    const currentDependency = currentDefinitionNode?.componentId
-      ? preview.graph.getNode(currentDefinitionNode.componentId)
-      : null
 
-    expect(currentDefinitionNode?.name).toBe('Nested')
+    expect(currentNested?.name).toBe('Nested')
     expect(currentDependency?.name).toBe('Alternate')
     expect(currentDependency?.parentId).toBe(preview.graph.getPages()[0].id)
     expect(consumer.getNode(currentNested?.componentId ?? '')).toBeUndefined()

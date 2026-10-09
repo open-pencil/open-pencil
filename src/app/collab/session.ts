@@ -158,8 +158,9 @@ export function openRoomSession({
       suppressGraphSync = value
     },
     applyYjsToGraph: (events) => {
-      sync.applyYjsToGraph(events)
+      const legacy = sync.applyYjsToGraph(events)
       refreshDocument()
+      return legacy
     }
   })
   meta.observe(refreshDocument)

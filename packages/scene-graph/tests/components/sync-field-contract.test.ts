@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride, setLayerOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '../helpers/assert'
 
@@ -16,7 +16,7 @@ for (const protectedField of ['width', 'text'] as const) {
     const instance = expectDefined(graph.createInstance(component.id, graph.getPages()[0].id))
     const clone = graph.getChildren(instance.id)[0]
     graph.updateNode(clone.id, { text: 'Override', visible: true, width: 160 })
-    setInstanceOverride(instance.instanceOverrides, instance.id, clone.id, protectedField, true)
+    setLayerOverride(graph, clone, protectedField)
     graph.syncInstances(component.id)
     expect(clone.text).toBe(protectedField === 'text' ? 'Override' : source.text)
     expect(clone.width).toBe(protectedField === 'width' ? 160 : 80)
@@ -36,13 +36,7 @@ test('component synchronization updates and removes opacity bindings while prese
   graph.updateNode(instance.id, {
     boundVariables: { ...instance.boundVariables, width: 'width-var' }
   })
-  setInstanceOverride(
-    instance.instanceOverrides,
-    instance.id,
-    instance.id,
-    'boundVariables/width',
-    true
-  )
+  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables/width', true)
   graph.updateNode(component.id, { opacity: 1, boundVariables: {} })
   graph.syncInstances(component.id)
   expect(instance.boundVariables).toEqual({ width: 'width-var' })

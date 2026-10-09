@@ -7,6 +7,10 @@ import type {
   SceneNode,
   SourceMetadata
 } from '@open-pencil/scene-graph'
+import {
+  deserializeInstanceOverrideState,
+  serializeInstanceOverrideState
+} from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
@@ -48,6 +52,8 @@ export function encodeNodeForYjs(node: SceneNode): Record<string, unknown> {
     if (DERIVED_NODE_FIELDS.has(key as keyof SceneNode) || TREE_FIELDS.has(key)) continue
     encoded[key] = structuredClone(value)
   }
+  // Yjs keeps plain data, so the override maps travel as entry lists.
+  encoded.instanceOverrides = serializeInstanceOverrideState(node.instanceOverrides)
   return encoded
 }
 
@@ -76,6 +82,7 @@ export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {
   }
 
   props.source = normalizeSourceMetadata(props.source)
+  props.instanceOverrides = deserializeInstanceOverrideState(props.instanceOverrides)
   if ('fillGeometry' in props) props.fillGeometry = normalizeGeometryPaths(props.fillGeometry)
   if ('strokeGeometry' in props) props.strokeGeometry = normalizeGeometryPaths(props.strokeGeometry)
   props.textPicture = null

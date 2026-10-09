@@ -1,7 +1,7 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { copyLayerTrees, SceneGraph } from '@open-pencil/scene-graph'
 
 import { diffLibraryManifests } from './diff'
-import { copyLibraryTree, libraryDependencyRoots } from './materialize'
+import { libraryDependencyRoots } from './materialize'
 import { createLibraryRevision } from './revision'
 import type {
   ComponentLibraryRevision,
@@ -45,13 +45,7 @@ function copyAssets(
       libraryDependencyRoots(source, asset).map((root) => [root.id, root] as const)
     )
   )
-  for (const root of roots.values())
-    copyLibraryTree(source.graph, target, root.id, pageId, mappedIds)
-  for (const [sourceId, targetId] of mappedIds) {
-    const sourceNode = source.graph.getNode(sourceId)
-    const componentId = sourceNode?.componentId ? mappedIds.get(sourceNode.componentId) : null
-    if (componentId) target.updateNode(targetId, { componentId })
-  }
+  copyLayerTrees(source.graph, target, [...roots.keys()], pageId, undefined, mappedIds)
   for (const [hash, bytes] of source.graph.images) target.images.set(hash, new Uint8Array(bytes))
   return assets.flatMap((asset) => {
     const id = mappedIds.get(asset.sourceNodeId)

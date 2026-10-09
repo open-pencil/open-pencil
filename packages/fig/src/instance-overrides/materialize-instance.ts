@@ -1,7 +1,15 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { setInstanceOverride, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  copyLayerId,
+  instanceLayerSource,
+  instanceScope,
+  isInstanceLayerId,
+  setLayerOverride,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { nodeChangeToProps } from '../node-change'
@@ -126,19 +134,23 @@ export function materializeInstance(
   }
   validate(occurrence)
   const nodes = new Map<InstanceOccurrence, SceneNode>(existingNodes)
-  const applyBindingClaims = (
-    current: InstanceOccurrence,
-    node: SceneNode,
-    owner?: SceneNode
-  ): void => {
-    if (!owner) return
-    for (const claim of current.bindingClaims) {
-      if (claim.origin === 'assignment' && claim.field === 'visible') {
-        setInstanceOverride(owner.instanceOverrides, owner.id, node.id, 'visible', node.visible)
-      }
-    }
+  const applyBindingClaims = (current: InstanceOccurrence, node: SceneNode): void => {
+    for (const claim of current.bindingClaims)
+      if (claim.origin === 'assignment' && claim.field === 'visible')
+        setLayerOverride(graph, node, 'visible', node.visible)
   }
-  const create = (current: InstanceOccurrence, parent: string, owner?: SceneNode): SceneNode => {
+  /** A copy is named by the instance it sits in and the component layer it copies. */
+  const idOf = (current: InstanceOccurrence, container?: SceneNode): string => {
+    const source = sourceChildren.get(current)
+    return container && source
+      ? copyLayerId(instanceScope(container), { id: source })
+      : graph.nextNodeId()
+  }
+  const create = (
+    current: InstanceOccurrence,
+    parent: string,
+    container?: SceneNode
+  ): SceneNode => {
     const converted = prepared.get(current)
     if (!converted) throw new Error('Missing prepared occurrence')
     const { nodeType, ...props } = converted
@@ -163,41 +175,29 @@ export function materializeInstance(
     if (existing && existing.parentId !== parent) {
       throw new Error(`Preallocated occurrence has wrong parent ${current.sourceId}`)
     }
-    const node = existing ?? graph.createNode(nodeType, parent, propsWithIdentity)
+    const node =
+      existing ??
+      graph.createNodeWithId(idOf(current, container), nodeType, parent, propsWithIdentity)
     if (existing) graph.updateNode(existing.id, propsWithIdentity)
     const sharedSource = graph.getNode(sourceChildren.get(current) ?? '')
     if (sharedSource) shareUnchanged(node, sharedSource)
     nodes.set(current, node)
     if (existing && current !== occurrence && node.type === 'COMPONENT') return node
-    applyBindingClaims(current, node, owner)
-    const sourceChildId = sourceChildren.get(current)
-    if (owner && current.mainComponentId !== null && sourceChildId) {
-      setInstanceOverride(
-        owner.instanceOverrides,
-        owner.id,
-        node.id,
-        'sourceComponentId',
-        sourceChildId
-      )
-      const sourceChild = graph.getNode(sourceChildId)
-      if (sourceChild?.componentId !== node.componentId) {
-        setInstanceOverride(
-          owner.instanceOverrides,
-          owner.id,
-          node.id,
-          'componentId',
-          node.componentId
-        )
-      }
+    applyBindingClaims(current, node)
+    // A nested instance showing another component than the layer it copies is swapped.
+    if (node.type === 'INSTANCE' && isInstanceLayerId(node.id)) {
+      const source = instanceLayerSource(graph, node)
+      if (source && source.componentId !== node.componentId)
+        setLayerOverride(graph, node, 'componentId', node.componentId)
     }
     const children = current.children.map(
-      (child) => create(child, node.id, node.type === 'INSTANCE' ? node : owner).id
+      (child) => create(child, node.id, node.type === 'INSTANCE' ? node : container).id
     )
     node.childIds = children
     return node
   }
   const root = create(occurrence, parentId)
-  recordPropertyClaims(nodes)
+  recordPropertyClaims(graph, nodes)
   return { root, nodes }
 }
 
@@ -214,7 +214,7 @@ function claimApplies(field: OverrideField, value: unknown, target: SceneNode): 
  * part of the claim too; otherwise a later component sync restores the component's binding.
  */
 function recordPaintBindingClaims(
-  owner: SceneNode,
+  graph: SceneGraph,
   target: SceneNode,
   scene: keyof SceneNode,
   paints: unknown
@@ -225,21 +225,20 @@ function recordPaintBindingClaims(
     const alias = (paint as Paint).colorVar?.value?.alias
     if (!alias) continue
     const field = `boundVariables/${scene}/${index}/color`
-    setInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      target.id,
-      field,
-      target.boundVariables[`${scene}/${index}/color`] ?? null
-    )
+    setLayerOverride(graph, target, field, target.boundVariables[`${scene}/${index}/color`] ?? null)
     declared = true
   }
-  if (declared) setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
+  if (declared) setLayerOverride(graph, target, 'boundVariables')
 }
 
-function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>): void {
+function recordPropertyClaims(
+  graph: SceneGraph,
+  nodes: ReadonlyMap<InstanceOccurrence, SceneNode>
+): void {
   for (const [ownerOccurrence, owner] of nodes) {
-    if (owner.type !== 'INSTANCE') continue
+    // A copy of a nested instance carries the claims of the component that holds it, which its
+    // copies show already; only an instance of its own declares overrides.
+    if (owner.type !== 'INSTANCE' || isInstanceLayerId(owner.id)) continue
     for (const claim of ownerOccurrence.propertyClaims) {
       const targetOccurrence = resolveOccurrencePath(ownerOccurrence, claim.path)
       const target = nodes.get(targetOccurrence)
@@ -248,20 +247,12 @@ function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>)
         if (!(raw in claim.properties)) continue
         const field = OVERRIDE_FIELDS[raw]
         if (!claimApplies(field, claim.properties[raw], target)) continue
-        for (const scene of field.scene) {
-          const value = target[scene]
-          setInstanceOverride(
-            owner.instanceOverrides,
-            owner.id,
-            target.id,
-            scene,
-            structuredClone(value)
-          )
-        }
+        for (const scene of field.scene)
+          setLayerOverride(graph, target, scene, structuredClone(target[scene]))
         if (field.kind === 'paint')
-          recordPaintBindingClaims(owner, target, field.scene[0], claim.properties[raw])
+          recordPaintBindingClaims(graph, target, field.scene[0], claim.properties[raw])
       }
-      recordVariableBindingClaims(owner, target, claim.properties as NodeChange)
+      recordVariableBindingClaims(graph, target, claim.properties as NodeChange)
     }
   }
 }

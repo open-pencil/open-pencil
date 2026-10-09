@@ -7,7 +7,9 @@ import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 // Figma stores fill on the child and keeps that axis fixed in the frame's own sizing; a hugging
 // value there wins over the fill, so a filled row or button opened in Figma shrank to its content.
@@ -133,8 +135,7 @@ describe('own sizing of frames that fill their parent', () => {
     // The instance hugs as an override of its component, as editing it in the canvas records.
     setInstanceOverride(
       instance.instanceOverrides,
-      instance.id,
-      instance.id,
+      layerPath(instance.id),
       'primaryAxisSizing',
       'HUG'
     )

@@ -3,7 +3,8 @@ import { expect, test } from 'bun:test'
 import {
   SceneGraph,
   recordInstanceOverride,
-  deleteInstanceOverride
+  deleteInstanceOverride,
+  overrideTarget
 } from '@open-pencil/scene-graph'
 
 test('outer sync preserves a nested edit without blocking sibling or other-field inheritance', () => {
@@ -29,7 +30,11 @@ test('outer sync preserves a nested edit without blocking sibling or other-field
   expect(secondText.text).toBe('Component edit')
   expect(graph.getChildren(firstNested.id)).toHaveLength(1)
 
-  deleteInstanceOverride(firstNested.instanceOverrides, firstNested.id, firstText.id, 'text')
+  // The outermost instance records overrides of the layers inside its nested instances.
+  expect(firstNested.instanceOverrides.layers.size).toBe(0)
+  const target = overrideTarget(graph, firstText)
+  if (!target) throw new Error('Missing override target')
+  deleteInstanceOverride(first.instanceOverrides, target.path, 'text')
   graph.syncInstances(outer.id)
   expect(firstText.text).toBe('Component edit')
 })

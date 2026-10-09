@@ -36,16 +36,6 @@ test('geometry snapshots merge retained fields without authoring claims or mutat
   expect(owner.instanceOverrides.self.size).toBe(0)
 })
 
-test('geometry snapshots reject ambiguous occurrence addresses', () => {
-  const { graph, source, owner } = fixture()
-  graph.createNode('RECTANGLE', owner.id, { componentId: source.id })
-  expect(() =>
-    snapshotInstanceGeometry(graph, owner, stringToGuid, [], (node) => ({
-      size: { x: node.width, y: node.height }
-    }))
-  ).toThrow('Ambiguous instance geometry address')
-})
-
 // Figma saves layers that have no override key with the unset GUID, so many siblings share it.
 test('layers saved with the unset override key keep distinct geometry addresses', () => {
   const at = (localID: number) => ({ sessionID: 1, localID })

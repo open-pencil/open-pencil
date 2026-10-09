@@ -1,9 +1,10 @@
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
+import { overrideTarget } from '@open-pencil/scene-graph'
 import type { SceneNode, Vector } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { prepareSlotEdits } from '#core/editor/components/slots'
+import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
 
 type InstanceCreateSnapshot = Partial<SceneNode> & { id: string }
@@ -108,26 +109,21 @@ export function createComponentInstanceActions(ctx: EditorContext) {
 
   function detachInstance(selectedNode: SceneNode | undefined) {
     if (selectedNode?.type !== 'INSTANCE') return
-
-    const prevComponentId = selectedNode.componentId
-    const previousOverrides = cloneInstanceOverrideState(selectedNode.instanceOverrides)
-
-    ctx.graph.detachInstance(selectedNode.id)
-    ctx.setSelectedIds(new Set([selectedNode.id]))
-
-    ctx.undo.push({
-      label: 'Detach instance',
-      forward: () => {
-        ctx.graph.detachInstance(selectedNode.id)
-        ctx.requestRender()
-      },
-      inverse: () => {
-        ctx.graph.updateNode(selectedNode.id, {
-          type: 'INSTANCE',
-          componentId: prevComponentId,
-          instanceOverrides: cloneInstanceOverrideState(previousOverrides)
-        })
-      }
+    // Detaching gives the layers inside ids of their own, and detaching a nested instance
+    // detaches the instances around it too, so undo puts back the outermost one whole.
+    const rootId = overrideTarget(ctx.graph, selectedNode)?.owner.id ?? selectedNode.id
+    const previousSelection = new Set(ctx.state.selectedIds)
+    let frameId = selectedNode.id
+    ctx.undo.runBatch('Detach instance', () => {
+      recordSubtreeEdit(ctx, 'Detach instance', rootId, () => {
+        frameId = ctx.graph.detachInstance(selectedNode.id)?.id ?? frameId
+      })
+      ctx.setSelectedIds(new Set([frameId]))
+      ctx.undo.push({
+        label: 'Detach instance',
+        forward: () => ctx.setSelectedIds(new Set([frameId])),
+        inverse: () => ctx.setSelectedIds(previousSelection)
+      })
     })
   }
 

@@ -7,12 +7,14 @@ import type { StyleRun } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
 import { iconify } from '@open-pencil/core/icons'
-import { getInstanceOverride } from '@open-pencil/scene-graph'
+import { getInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
 import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
 
 import { fontManager } from '#core/text/fonts'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 function setup() {
   const graph = new SceneGraph()
@@ -240,8 +242,7 @@ describe('text edit undo', () => {
     expect(
       getInstanceOverride(
         getNodeOrThrow(graph, instance.id).instanceOverrides,
-        instance.id,
-        instanceText.id,
+        layerPath(instanceText.id),
         'text'
       )
     ).toBe('')
@@ -253,8 +254,7 @@ describe('text edit undo', () => {
     expect(
       getInstanceOverride(
         getNodeOrThrow(graph, instance.id).instanceOverrides,
-        instance.id,
-        instanceText.id,
+        layerPath(instanceText.id),
         'text'
       )
     ).toBeUndefined()
@@ -282,8 +282,7 @@ describe('text edit undo', () => {
     expect(
       getInstanceOverride(
         getNodeOrThrow(graph, instance.id).instanceOverrides,
-        instance.id,
-        instanceText.id,
+        layerPath(instanceText.id),
         'text'
       )
     ).toBeUndefined()

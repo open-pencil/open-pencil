@@ -3,8 +3,8 @@ import {
   cloneInstanceOverrideState,
   componentPropertyDefinitions,
   findComponentPropertyTargets,
-  resolveComponentPropertyValue,
-  setInstanceOverride
+  overrideTarget,
+  resolveComponentPropertyValue
 } from '@open-pencil/scene-graph'
 import type {
   ComponentPropertyDefinition,
@@ -82,7 +82,7 @@ export function createComponentPropertyActions(
     return definition.type === 'INSTANCE_SWAP' ? (swapTargetId(ctx, value) ?? value) : value
   }
 
-  function restoreTarget(instance: SceneNode, target: ComponentPropertyTarget, value: string) {
+  function restoreTarget(target: ComponentPropertyTarget, value: string) {
     if (target.field === 'TEXT' && target.node.type === 'TEXT') {
       ctx.graph.updateNode(target.node.id, { text: value })
     } else if (target.field === 'VISIBLE') {
@@ -91,14 +91,6 @@ export function createComponentPropertyActions(
       const componentId = swapTargetId(ctx, value)
       if (!componentId) return
       ctx.graph.swapInstanceComponent(target.node.id, componentId)
-      setInstanceOverride(
-        instance.instanceOverrides,
-        instance.id,
-        target.node.id,
-        'sourceComponentId',
-        target.source.id
-      )
-      ctx.graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
     }
   }
 
@@ -114,7 +106,9 @@ export function createComponentPropertyActions(
     }
 
     const previousAssignments = { ...instance.componentPropertyAssignments }
-    const previousOverrides = cloneInstanceOverrideState(instance.instanceOverrides)
+    // Overrides of the layers a property drives are recorded on the outermost instance.
+    const owner = overrideTarget(ctx.graph, instance)?.owner ?? instance
+    const previousOverrides = cloneInstanceOverrideState(owner.instanceOverrides)
 
     // A property can drive several layers; undo restores each one to what it showed.
     const assignedValue = instance.componentPropertyAssignments[propertyId]
@@ -136,12 +130,12 @@ export function createComponentPropertyActions(
         const live = ctx.graph.getNode(instanceId)
         if (live) {
           const restoredTargets = findComponentPropertyTargets(ctx.graph, live, propertyId)
-          ctx.graph.updateNode(instanceId, {
-            componentPropertyAssignments: previousAssignments,
+          ctx.graph.updateNode(instanceId, { componentPropertyAssignments: previousAssignments })
+          ctx.graph.updateNode(owner.id, {
             instanceOverrides: cloneInstanceOverrideState(previousOverrides)
           })
           restoredTargets.forEach((target, index) =>
-            restoreTarget(live, target, previousValues[index] ?? '')
+            restoreTarget(target, previousValues[index] ?? '')
           )
         }
         ctx.requestRender()
