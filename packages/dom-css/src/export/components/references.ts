@@ -3,6 +3,7 @@ import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
+  findComponentPropertyTargets,
   findLayerByPath,
   instanceMainComponent,
   isIconModified,
@@ -71,6 +72,22 @@ function ownerId(graph: SceneGraph, component: SceneNode): string {
 }
 
 /**
+ * The words an instance shows for a text property: what its bound text layer reads, which an
+ * assignment or a direct edit sets, else the assignment itself.
+ */
+export function shownText(
+  graph: SceneGraph,
+  instance: SceneNode,
+  propertyId: string
+): string | undefined {
+  const target = findComponentPropertyTargets(graph, instance, propertyId).find(
+    (item) => item.field === 'TEXT' && item.node.type === 'TEXT'
+  )
+  const assigned = instance.componentPropertyAssignments[propertyId]
+  return target?.node.text ?? (typeof assigned === 'string' ? assigned : undefined)
+}
+
+/**
  * What `instance` sets on `component`: the values it is drawn with that differ from defaults,
  * and whether it is drawn on: its model, or for a group's item the value that marks it chosen.
  */
@@ -97,8 +114,8 @@ export function referenceValues(
       props.push({ name: prop.name, value })
   }
   for (const text of component.texts) {
-    const value = instance.componentPropertyAssignments[text.id]
-    if (typeof value === 'string' && value !== text.default) props.push({ name: text.name, value })
+    const value = shownText(graph, instance, text.id)
+    if (value !== undefined && value !== text.default) props.push({ name: text.name, value })
   }
   return { props, model }
 }

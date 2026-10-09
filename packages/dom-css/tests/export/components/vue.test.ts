@@ -135,6 +135,24 @@ describe('generated Vue components', () => {
     expect(checked(await render(component, { value: 'team' }))).toEqual([false, false, true])
   })
 
+  test('an item edited directly shows its own words and is chosen by them', async () => {
+    const fixture = radioGroupComponent()
+    const { graph } = fixture
+    const [items] = graph.getChildren(fixture.set.id)
+    const last = graph.getChildren(items?.id ?? '').at(-1)
+    const label = graph.getChildren(last?.id ?? '').find((layer) => layer.type === 'TEXT')
+    if (!label) throw new Error('Expected the item to show its label')
+    graph.updateNode(label.id, { text: 'Enterprise' })
+
+    const { component } = await generate(fixture)
+    const html = await render(component, { value: 'enterprise' })
+    expect(html).toContain('Enterprise')
+    expect(html).not.toContain('Team')
+    expect(html).toMatch(
+      /<button[^>]*aria-checked="true"[^>]*value="enterprise"|value="enterprise"[^>]*aria-checked="true"/
+    )
+  })
+
   test("a group's item component is named apart from another component's file", async () => {
     const fixture = radioGroupComponent()
     const page = fixture.graph.getPages()[0].id
