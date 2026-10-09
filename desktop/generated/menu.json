@@ -149,15 +149,18 @@
     "items": [
       {
         "id": "view.zoom100",
-        "label": "Zoom to 100%"
+        "label": "Zoom to 100%",
+        "accelerator": "CmdOrCtrl+0"
       },
       {
         "id": "view.zoomFit",
-        "label": "Zoom to Fit"
+        "label": "Zoom to Fit",
+        "accelerator": "Shift+1"
       },
       {
         "id": "view.zoomSelection",
-        "label": "Zoom to Selection"
+        "label": "Zoom to Selection",
+        "accelerator": "Shift+2"
       },
       {
         "id": "zoom-in",
@@ -193,11 +196,19 @@
       {
         "id": "view-rulers",
         "label": "Rulers",
+        "accelerator": "Shift+R",
+        "checkbox": true
+      },
+      {
+        "id": "view-pixel-grid",
+        "label": "Pixel Grid",
+        "accelerator": "Shift+'",
         "checkbox": true
       },
       {
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
+        "accelerator": "Alt+CmdOrCtrl+\\",
         "checkbox": true
       },
       {
@@ -249,6 +260,7 @@
           {
             "id": "snap-pixel-grid",
             "label": "Snap to Pixel Grid",
+            "accelerator": "CmdOrCtrl+Shift+'",
             "checkbox": true
           },
           {
