@@ -4,7 +4,7 @@ import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { Component, Instance, Text } from '@open-pencil/design-jsx'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 const CARD = `
 <ComponentSet name="Card" properties={[
@@ -28,7 +28,7 @@ async function reopenedCard(): Promise<SceneGraph> {
   return parseFigFile((await exportFigFile(graph)).slice().buffer, { populate: 'first-page' })
 }
 
-function layers(graph: SceneGraph, instance: SceneNode) {
+function layers(graph: SceneGraph, instance: { id: string }) {
   return graph.getChildren(instance.id).map((child) => [child.text, child.visible])
 }
 
