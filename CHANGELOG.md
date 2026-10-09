@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- The app renders `render` JSX itself and no longer accepts the pre-rendered tree that earlier versions of `openpencil-mcp` send, so an older `openpencil-mcp` fails to render into this app version; update it with the app.
 - `SceneNode` from `@open-pencil/scene-graph` has `isExposedInstance`, whether an instance inside a component shows its properties on instances of that component, so code that builds `SceneNode` objects itself must include it. In the plugin API, `isExposedInstance` and `exposedInstances` follow that flag and Figma's rules instead of treating an instance whose swap is bound to a property as exposed: only an instance in a component's own layers whose component has properties can be exposed, and its copies in instances report it but cannot change it.
 - `usePosition` from `@open-pencil/vue` reports and edits `x`, `y`, and `rotation` as Figma's properties panel does: the turned layer's box on the canvas, measured from its frame or page, and its counterclockwise angle. `getDefaultCanvasBgColor` and `CANVAS_BG_COLOR_DARK` are removed from `@open-pencil/core/constants`; new pages use `PAGE_DEFAULT_BACKGROUNDS`, keyed by interface theme.
 - `SkiaRenderer.hitTestFrameTitle` no longer takes the selected IDs: it finds the name of any frame on the page or in a section under a point, selected or not.
@@ -139,6 +140,7 @@
 
 ### Fixed
 
+- Keep design variable bindings and honor `replace_id` and `insert_index` when `render` runs through the stdio MCP server (`openpencil-mcp`) against the desktop or web app, as it already did through the HTTP endpoint (#830).
 - Use an API key saved in Settings for the open AI chat right away, including when asking again after a failed request, instead of only after reloading; the failure's notice closes once the request is sent again.
 - Renaming a section title on the canvas keeps the title's size, weight, and place. Section titles draw in Inter SemiBold rather than an emboldened regular weight, and labels that are not rotated sit on whole pixels, so they stay crisp.
 - Reject an argument an AI, MCP, CLI, or WebMCP tool does not take, such as `properties: { y: 500 }` for `update_node` or `font: { family }` for `set_font`, and name it, instead of reporting success without changing anything (#977).

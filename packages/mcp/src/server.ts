@@ -14,7 +14,6 @@ import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RPCJSONObject } from '#mcp/json'
-import { preprocessRPC } from '#mcp/jsx-preprocess'
 import { createMCPSessionManager } from '#mcp/server/sessions'
 import { createToolDescriptors } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
@@ -181,12 +180,11 @@ function createHonoApp(options: {
   // is a semantic shift from 503 → 502; callers that distinguished 503 may
   // need to handle 502 equivalently.
   app.post('/rpc', async (c) => {
-    let body = await c.req.json().catch(() => null)
+    const body = await c.req.json().catch(() => null)
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return c.json({ error: 'Invalid request body' }, 400)
     }
     try {
-      body = preprocessRPC(body as RPCJSONObject)
       const result = await sendToBrowser(body as RPCJSONObject)
       return c.json(result)
     } catch (e) {
