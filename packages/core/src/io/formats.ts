@@ -364,13 +364,8 @@ export const htmlFormat: IOFormatAdapter<'html'> = {
   category: 'code',
   extensions: ['html'],
   mimeTypes: ['text/html'],
-  support: { ...EXPORT_EVERY_TARGET, readDocument: true },
+  support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async readDocument(input) {
-    const { readHTMLDocument } = await import('./formats/html/import')
-    const { graph } = await readHTMLDocument(new TextDecoder().decode(input.data))
-    return { graph, sourceFormat: 'html' }
-  },
   async exportContent(request, options?: HTMLExportOptions) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')

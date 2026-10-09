@@ -1,13 +1,14 @@
 import {
   createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
   htmlToDesignDocument,
   tailwindHTMLToDesignDocument,
   type DesignDocument
 } from '@open-pencil/dom-css'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { layoutAuthoredNodes } from '#core/layout'
+import type { IOFormatAdapter } from '#core/io/types'
+
+import { sceneGraphFromStyledHTML } from './layers'
 
 export interface ReadHTMLOptions {
   /** A stylesheet applied after the document's own `<style>` blocks. */
@@ -24,8 +25,8 @@ export interface ReadHTMLResult {
 }
 
 /**
- * HTML and CSS as a laid-out document, styled by the headless CSS runtime: the layers the
- * markup describes, with the sizes and positions its layout implies.
+ * HTML and CSS as a laid-out document, styled by the headless CSS runtime. The runtime needs
+ * Node, so browser builds style with the browser runtime and call `sceneGraphFromStyledHTML`.
  */
 export async function readHTMLDocument(
   html: string,
@@ -35,10 +36,20 @@ export async function readHTMLDocument(
   const styled = options.tailwind
     ? await tailwindHTMLToDesignDocument(html, options.tailwind, { css: options.cssText, runtime })
     : await htmlToDesignDocument(html, { cssText: options.cssText, runtime })
-  const graph = designDocumentToSceneGraph(styled, { pageName: options.pageName })
-  layoutAuthoredNodes(
-    graph,
-    graph.getPages().map((page) => page.id)
-  )
-  return { styled, graph }
+  return { styled, graph: sceneGraphFromStyledHTML(styled, { pageName: options.pageName }) }
+}
+
+/** Reads HTML files where the headless CSS runtime is available, as in the CLI. */
+export const headlessHTMLReader: IOFormatAdapter<'html'> = {
+  id: 'html',
+  label: 'HTML',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['html', 'htm'],
+  mimeTypes: ['text/html'],
+  support: { readDocument: true },
+  async readDocument(input) {
+    const { graph } = await readHTMLDocument(new TextDecoder().decode(input.data))
+    return { graph, sourceFormat: 'html' }
+  }
 }

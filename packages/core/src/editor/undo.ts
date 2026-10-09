@@ -6,6 +6,8 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { createResizeSnapshot, type ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+
 import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import {
@@ -19,7 +21,6 @@ import {
   snapshotPage as createPageSnapshot,
   type PageSnapshot
 } from './history/snapshot'
-import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import type { EditorContext } from './types'
 
 type ResizeOriginal = Rect &

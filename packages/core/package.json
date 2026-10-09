@@ -118,6 +118,11 @@
       "import": "./dist/io/formats/html/import.js",
       "default": "./dist/io/formats/html/import.js"
     },
+    "./io/formats/html/layers": {
+      "types": "./dist/io/formats/html/layers.d.ts",
+      "import": "./dist/io/formats/html/layers.js",
+      "default": "./dist/io/formats/html/layers.js"
+    },
     "./io/formats/raster": {
       "types": "./dist/io/formats/raster/index.d.ts",
       "import": "./dist/io/formats/raster/index.js",

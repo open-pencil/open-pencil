@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 
 import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -9,7 +10,10 @@ import { printError } from '#cli/format'
 
 export { initCanvasKit }
 
-const io = new IORegistry(BUILTIN_IO_FORMATS)
+/** The document formats the CLI reads and writes, with HTML read by the headless CSS runtime. */
+export const CLI_IO_FORMATS = [...BUILTIN_IO_FORMATS, headlessHTMLReader]
+
+const io = new IORegistry(CLI_IO_FORMATS)
 
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))

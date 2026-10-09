@@ -30,6 +30,12 @@
       "import": "./dist/export.js",
       "default": "./dist/export.js"
     },
+    "./scene-graph": {
+      "types": "./dist/scene-graph.d.ts",
+      "bun": "./src/import/scene-graph.ts",
+      "import": "./dist/scene-graph.js",
+      "default": "./dist/scene-graph.js"
+    },
     "./jsx-runtime": {
       "types": "./dist/jsx-runtime.d.ts",
       "bun": "./src/import/jsx/runtime.ts",
