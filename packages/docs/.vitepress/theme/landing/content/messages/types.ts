@@ -107,6 +107,8 @@ export interface LandingMessages {
     sdk: {
       copy: string
       copied: string
+      /** Heads the install command under the snippet. */
+      install: string
     }
   }
 }

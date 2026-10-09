@@ -244,7 +244,8 @@ export const en: LandingMessages = {
     },
     sdk: {
       copy: 'Copy',
-      copied: 'Copied'
+      copied: 'Copied',
+      install: 'Install'
     }
   }
 }

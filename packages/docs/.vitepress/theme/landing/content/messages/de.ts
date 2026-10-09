@@ -254,7 +254,8 @@ export const de: LandingMessages = {
     },
     sdk: {
       copy: 'Kopieren',
-      copied: 'Kopiert'
+      copied: 'Kopiert',
+      install: 'Installieren'
     }
   }
 }

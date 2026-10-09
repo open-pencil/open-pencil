@@ -255,7 +255,8 @@ export const fr: LandingMessages = {
     },
     sdk: {
       copy: 'Copier',
-      copied: 'Copié'
+      copied: 'Copié',
+      install: 'Installer'
     }
   }
 }

@@ -253,7 +253,8 @@ export const ru: LandingMessages = {
     },
     sdk: {
       copy: 'Копировать',
-      copied: 'Скопировано'
+      copied: 'Скопировано',
+      install: 'Установка'
     }
   }
 }
