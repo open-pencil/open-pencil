@@ -1,5 +1,6 @@
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { designJSXProp } from '../schema'
 import type { TreeNode } from '../tree'
 import {
   BEHAVIOUR_PROPS,
@@ -47,7 +48,7 @@ function named(tree: TreeNode, fallback: string): TreeNode {
     : tree
 }
 
-/** The props that give a frame a layout or size of its own. */
+/** The props that give a frame a layout or size of its own, under any of their names. */
 const LAYOUT_PROPS = ['flex', 'display', 'w', 'h']
 
 /**
@@ -56,7 +57,8 @@ const LAYOUT_PROPS = ['flex', 'display', 'w', 'h']
  */
 function laidOut(tree: TreeNode): TreeNode {
   const content = tree.children.some((child) => typeof child !== 'string')
-  if (!content || LAYOUT_PROPS.some((prop) => tree.props[prop] !== undefined)) return tree
+  if (!content || LAYOUT_PROPS.some((prop) => designJSXProp(tree.props, prop) !== undefined))
+    return tree
   return { ...tree, props: { ...tree.props, flex: 'col' } }
 }
 

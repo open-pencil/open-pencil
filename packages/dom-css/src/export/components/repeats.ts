@@ -1,8 +1,6 @@
 import { difference } from '#dom-css/behaviours/states/model'
 import type { StateElement, StateNode } from '#dom-css/behaviours/states/types'
 import type { DesignStyleDeclaration } from '#dom-css/types'
-import { zip } from 'es-toolkit/array'
-import { omit, omitBy, pickBy } from 'es-toolkit/object'
 import { isEmptyObject } from 'es-toolkit/predicate'
 import { kebabCase } from 'es-toolkit/string'
 
@@ -65,47 +63,65 @@ export function tabParts(parts: ReadonlyMap<StateElement, string>): {
 }
 
 /** How `drawn` looks different from `base`, leaving out where each is placed. */
-const lookChange = (base: DesignStyleDeclaration, drawn: DesignStyleDeclaration) =>
-  omitBy(difference(base, drawn), (_, property) => isPlacement(property))
+function lookChange(
+  base: DesignStyleDeclaration,
+  drawn: DesignStyleDeclaration
+): DesignStyleDeclaration {
+  const changed = Object.entries(difference(base, drawn))
+  return Object.fromEntries(changed.filter(([property]) => !isPlacement(property)))
+}
 
 /** `base` with `change` applied, where `unset` drops a declaration. */
 function applied(
   base: DesignStyleDeclaration,
   change: DesignStyleDeclaration
 ): DesignStyleDeclaration {
-  const unset = (value: string) => value === 'unset'
-  return {
-    ...omit(base, Object.keys(pickBy(change, unset))),
-    ...omitBy(change, unset)
-  }
+  return Object.fromEntries([
+    ...Object.entries(base).filter(([property]) => change[property] !== 'unset'),
+    ...Object.entries(change).filter(([, value]) => value !== 'unset')
+  ])
+}
+
+/** The layer of `into` where `from` has `child`: the same name, and the same one of that name. */
+function counterpart(
+  child: StateElement,
+  from: StateElement,
+  into: StateElement
+): StateElement | undefined {
+  const named = (element: StateElement) =>
+    elementsOf(element).filter((item) => item.name === child.name)
+  return named(into).at(named(from).indexOf(child))
 }
 
 /**
  * Tabs draw the first trigger chosen and the others not. Every trigger rests with the look of
  * the others and takes the first one's, layer by layer, while Reka or Radix marks it active;
- * each keeps its own place. Layers whose structure differs between the two looks keep their
- * own styles.
+ * each keeps its own place. A layer is matched across triggers by name, and one without a
+ * counterpart keeps its own styles.
  */
 export function activeTriggers(repeated: ReadonlyMap<StateElement, RepeatedPart>): void {
   const triggers = [...repeated].filter(([, item]) => item.part === 'trigger').map(([el]) => el)
-  const [first, second] = triggers
+  const first = triggers.at(0)
+  const second = triggers.at(1)
   if (!first || !second) return
   // The two looks as drawn, before the first trigger rests with the others' look.
   const [active, inactive] = structuredClone([first, second])
   for (const trigger of triggers) {
     const visit = (layer: StateElement, drawn: StateElement, other: StateElement) => {
       if (trigger === first) layer.base = applied(layer.base, lookChange(drawn.base, other.base))
-      const look = lookChange(other.base, drawn.base)
+      // From the layer's own rest, so a trigger drawn apart still takes the chosen look.
+      const look = lookChange(layer.base, drawn.base)
       if (!isEmptyObject(look))
         layer.rules.push({
           conditions: [{ type: 'state', value: 'active' }],
           on: trigger,
           style: look
         })
-      const children = [layer, drawn, other].map((element) => elementsOf(element))
-      if (new Set(children.map((list) => list.length)).size !== 1) return
-      for (const [child, drawnChild, otherChild] of zip(...children))
-        if (child && drawnChild && otherChild) visit(child, drawnChild, otherChild)
+      for (const child of elementsOf(layer)) {
+        const drawnChild = counterpart(child, layer, drawn)
+        const otherChild = counterpart(child, layer, other)
+        if (drawnChild && otherChild) visit(child, drawnChild, otherChild)
+      }
     }
     visit(trigger, active, inactive)
   }

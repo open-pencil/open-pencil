@@ -119,6 +119,20 @@ describe('Reka UI elements in design JSX', () => {
     expect(content?.width).toBe(text?.width)
     expect(content?.height).toBe(text?.height)
 
+    // One sized under any name keeps its own size and no layout.
+    const { graph: sizedGraph, root: sized } = await render(`
+      <Collapsible.Root name="Question" w={360} flex="col">
+        <Collapsible.Trigger flex="row"><Text>Can I cancel?</Text></Collapsible.Trigger>
+        <Collapsible.Content width={200} height={40}><Text>Yes.</Text></Collapsible.Content>
+      </Collapsible.Root>
+    `)
+    const [, sizedContent] = sizedGraph.getChildren(sized.id)
+    expect([sizedContent?.layoutMode, sizedContent?.width, sizedContent?.height]).toEqual([
+      'NONE',
+      200,
+      40
+    ])
+
     // A part drawn as a shape keeps the size it is given.
     const { graph: switchGraph, root: switchRoot } = await render(`
       <Switch.Root name="Switch" w={44} h={24}><Switch.Thumb w={20} h={20} /></Switch.Root>
