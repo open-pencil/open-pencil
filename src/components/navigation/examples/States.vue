@@ -88,6 +88,9 @@ const pageStates = [
             </span>
           </button>
         </div>
+        <button aria-label="New tab" :class="tabStyles().newTab()">
+          <icon-lucide-plus :class="tabStyles().newIcon()" />
+        </button>
       </div>
     </section>
   </div>
