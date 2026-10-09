@@ -491,7 +491,8 @@ export function useCanvasInput(
     'keydown',
     (event) => {
       if (event.code !== 'Escape' || event.isComposing || !isEnabled()) return
-      if (drag.value?.type !== 'draw' && drag.value?.type !== 'rotate') return
+      const type = drag.value?.type
+      if (type !== 'draw' && type !== 'gradient' && type !== 'rotate') return
       event.preventDefault()
       event.stopImmediatePropagation()
       cancelPointerInteraction()

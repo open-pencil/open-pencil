@@ -53,6 +53,25 @@ test('dragging an end dot moves that end, and closing the picker leaves one undo
   editor.canvas.assertNoErrors()
 })
 
+test('Escape during a drag puts the gradient back and leaves the picker open', async () => {
+  const nodeId = await openPicker()
+  const before = await gradient.fill(nodeId)
+  const end = gradient.point(200, 70)
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Expected the canvas')
+  await editor.page.mouse.move(box.x + end.x, box.y + end.y)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + end.x, box.y + end.y - 120, { steps: 5 })
+  expect(await gradient.fill(nodeId)).not.toEqual(before)
+
+  await editor.page.keyboard.press('Escape')
+  await editor.page.mouse.up()
+  await editor.canvas.waitForRender()
+  expect(await gradient.fill(nodeId)).toEqual(before)
+  await expect(editor.page.getByTestId('fill-picker-gradient-bar')).toBeVisible()
+  await closePicker()
+})
+
 test('dragging a stop square slides the stop and selects it in the picker', async () => {
   const nodeId = await openPicker()
   // The middle stop's square sits above the line, half a square and the gap from it.
