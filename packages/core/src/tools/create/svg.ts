@@ -8,7 +8,7 @@ export const importSVG = defineTool({
   name: 'import_svg',
 
   description:
-    'Import raw SVG markup onto the canvas as editable layers, as pasting it into Figma does: a frame with a group per <g> and a vector per shape, named by their ids, and a mask group around clipped content. Supports common SVG shapes, inherited presentation attributes, opacity, transforms, gradients, clip paths, and internal <use> references.',
+    'Import raw SVG markup onto the canvas as editable layers, as pasting it into Figma does: a frame (a group when the SVG has no width, height, or viewBox) with a group per <g> and a vector per shape, named by their ids, and a mask group around clipped content. Supports common SVG shapes, inherited presentation attributes, opacity, transforms, gradients, clip paths, and internal <use> references.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     svg: v.pipe(
@@ -18,7 +18,9 @@ export const importSVG = defineTool({
     name: v.optional(
       v.pipe(
         v.string(),
-        v.description('Name for the created frame (default: the root <svg> id, else "Frame")')
+        v.description(
+          'Name for the created frame or group (default: the root <svg> id, else "Frame" or "Group")'
+        )
       )
     ),
     color: v.optional(

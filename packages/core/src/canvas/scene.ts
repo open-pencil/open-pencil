@@ -147,7 +147,7 @@ function renderMaskNodeContent(
   applyNodeTransforms(canvas, node, overlays)
   renderNodeContent(r, canvas, graph, node, {})
   // A group or frame used as a mask masks with what its layers draw, as in Figma.
-  renderChildren(r, canvas, graph, node, {}, absX + node.x, absY + node.y, true)
+  renderChildren(r, canvas, graph, node, overlays, absX + node.x, absY + node.y, true)
   canvas.restore()
 }
 
