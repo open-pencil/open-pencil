@@ -73,6 +73,16 @@ describe('HTML flow as auto layout', () => {
     expect(byName('border').width).toBe(100)
   })
 
+  it('gives a border room by its style, also in the default current color', async () => {
+    const { byName } = await importHTML(
+      `<div id="styled" style="width:100px;border:2px solid">A</div>
+       <div id="unstyled" style="width:100px;border-width:2px">B</div>`
+    )
+    expect(byName('styled').width).toBe(104)
+    // A border without a style is none, so it takes no room.
+    expect(byName('unstyled').width).toBe(100)
+  })
+
   it('fills a 100% width and leaves out display: none', async () => {
     const { graph, byName, sizing } = await importHTML(
       `<div style="display:flex"><div id="wide" style="width:100%">A</div><div id="hidden" style="display:none">B</div></div>`

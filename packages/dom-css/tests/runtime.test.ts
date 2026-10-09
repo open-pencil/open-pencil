@@ -126,6 +126,30 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(text?.type === 'element' ? text.computedStyle?.margin : undefined).toBe('4px')
   })
 
+  it('lets the later declaration of a side win, whether it is logical or physical', async () => {
+    const runtime = createHeadlessCSSRuntime()
+    const parsed = runtime.parseHTML('<div class="a">A</div><div class="b">B</div>')
+    const document = await runtime.computeStyles(
+      parsed,
+      `.a { padding-left: 4px; padding-inline: 12px; }
+       .b { padding: 8px; padding-left: 2px; }`
+    )
+    const [a, b] = document.children
+    expect(a?.type === 'element' ? a.computedStyle?.['padding-left'] : undefined).toBe('12px')
+    expect(b?.type === 'element' ? b.computedStyle?.['padding-left'] : undefined).toBe('2px')
+  })
+
+  it('scores *.card like .card, so the later rule wins', async () => {
+    const runtime = createHeadlessCSSRuntime()
+    const parsed = runtime.parseHTML('<div class="card">A</div>')
+    const document = await runtime.computeStyles(
+      parsed,
+      '*.card { color: #0000ff; } .card { color: #ff0000; }'
+    )
+    const card = document.children[0]
+    expect(card?.type === 'element' ? card.computedStyle?.color : undefined).toBe('#ff0000')
+  })
+
   it('computes selector specificity, inheritance, and shorthands', async () => {
     const runtime = createHeadlessCSSRuntime()
     const parsed = runtime.parseHTML(`

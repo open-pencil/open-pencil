@@ -204,10 +204,9 @@ function applyPositioning(node: SceneNode, style: DesignStyleDeclaration): void 
  */
 function contentBoxExtras(style: DesignStyleDeclaration): { width: number; height: number } {
   if (pickStyle(style, 'box-sizing')?.trim() === 'border-box') return { width: 0, height: 0 }
-  // Counted where a border is drawn: it has a color and is not turned off.
+  // A border takes room once it has a style other than none, its CSS default, whatever its color.
   const borderStyle = borderStyleFromCSS(style)
-  const bordered =
-    firstStrokeColor(style) !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
+  const bordered = borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
   const side = (name: 'top' | 'right' | 'bottom' | 'left', axis: 'block' | 'inline') =>
     (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
     (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)

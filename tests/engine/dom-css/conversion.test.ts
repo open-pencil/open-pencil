@@ -298,8 +298,8 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(panel?.type).toBe('FRAME')
     if (panel?.type !== 'FRAME') return
-    expect([panel.minWidth, panel.maxWidth]).toEqual([240 + 4 + 2, 480 + 4 + 2])
-    expect([panel.minHeight, panel.maxHeight]).toEqual([120 + 1 + 3, 320 + 1 + 3])
+    // Without a border style, CSS's default none, the borders take no room.
+    expect(panel).toMatchObject({ minWidth: 240, maxWidth: 480, minHeight: 120, maxHeight: 320 })
     expect(panel.clipsContent).toBe(true)
     expect(panel.independentStrokeWeights).toBe(true)
     expect(panel.borderTopWeight).toBe(1)
@@ -321,7 +321,7 @@ describe('@open-pencil/dom-css conversion', () => {
     if (roundTripPanel?.type !== 'element') return
     expect(roundTripPanel.inlineStyle?.overflow).toBe('hidden')
     expect(roundTripPanel.inlineStyle).toMatchObject({
-      'min-width': '246px',
+      'min-width': '240px',
       'box-sizing': 'border-box'
     })
     expect(roundTripPanel.inlineStyle?.['border-top-width']).toBe('1px')
