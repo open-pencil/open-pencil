@@ -19,6 +19,10 @@ export function createOpenPencilAliases(rootDir: string) {
       replacement: resolve(rootDir, 'packages/dom-css/src/export/index.ts')
     },
     {
+      find: /^@open-pencil\/dom-css\/scene-graph$/,
+      replacement: resolve(rootDir, 'packages/dom-css/src/import/scene-graph.ts')
+    },
+    {
       find: /^@open-pencil\/dom-css\/jsx-runtime$/,
       replacement: resolve(rootDir, 'packages/dom-css/src/import/jsx/runtime.ts')
     },

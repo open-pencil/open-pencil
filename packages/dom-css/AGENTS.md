@@ -14,3 +14,5 @@ Rules:
 - Keep the `./export` entry browser-safe: load `node:*` modules and the headless CSS object model lazily inside the functions that need them, so the app never bundles them.
 - Build generated code as syntax trees with `@open-pencil/emit` (`es` for TypeScript modules, `jsx` for JSX, `vue` for single-file components), not string fragments.
 - Imported documents are untrusted: check Base64 with `js-base64`'s `isValid` before decoding.
+- Import maps CSS flow onto the auto layout semantics in `@open-pencil/scene-graph` from `src/import/flow.ts`: an element's display comes from CSS or its tag's default, block flow stacks and stretches block-level children, flex items stretch across by default, and padding and borders sit outside an explicit size unless `box-sizing: border-box`. It records fill and hug and never sizes text; Core measures and lays out what it builds (`packages/dom-css/tests/import/flow.test.ts`).
+- `./scene-graph` is the browser-safe entry for building layers from a styled DOM. The main entry carries the headless CSS runtime, whose CSSOM dependency has no browser build with the exports it uses, so browser bundles must not import it.

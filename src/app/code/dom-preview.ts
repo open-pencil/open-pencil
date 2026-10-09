@@ -1,4 +1,5 @@
-import { browserHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
+import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
+import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -25,7 +26,9 @@ export async function previewDOMCode(
   source: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const graph = await browserHTMLToSceneGraph(source, { pageName: 'Code preview' })
+    const graph = sceneGraphFromStyledHTML(await browserHTMLToDesignDocument(source), {
+      pageName: 'Code preview'
+    })
     const pageId = graph.getPages()[0]?.id ?? graph.rootId
     session.previewGraph = graph
     session.previewPageId = pageId

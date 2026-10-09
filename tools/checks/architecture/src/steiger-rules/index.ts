@@ -8,6 +8,7 @@ import {
   noDynamicTailwindStateClasses,
   noVueTemplateUIHooksOrSVG
 } from './dynamic-tailwind-classes.ts'
+import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
 import {
   collectFiles,
   collectFolders,
@@ -516,6 +517,7 @@ export const openPencilArchitecturePlugin = {
   ruleDefinitions: [
     preferDomainFoldersOverFilenamePrefixes,
     noCrossPackageReexportShims,
+    noGraphBuildersInFrontEnds,
     scriptsAreEntrypointShims,
     strictToolsLayout,
     strictTestFilePlacement,

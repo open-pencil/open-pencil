@@ -73,6 +73,15 @@
       "@open-pencil/dom-css": [
         "./packages/dom-css/src/index.ts"
       ],
+      "@open-pencil/dom-css/scene-graph": [
+        "./packages/dom-css/src/import/scene-graph.ts"
+      ],
+      "@open-pencil/dom-css/export": [
+        "./packages/dom-css/src/export/index.ts"
+      ],
+      "@open-pencil/dom-css/*": [
+        "./packages/dom-css/src/*"
+      ],
       "#scene-graph/*": [
         "./packages/scene-graph/src/*"
       ],
