@@ -4,7 +4,8 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import type { EditorContext } from '#core/editor/types'
-import { placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
+import { pushCreatedSubtreesUndo } from '#core/editor/undo'
+import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import type { IconData } from '#core/icons/types'
 
 /** The size a picked icon is placed at, as Iconify sets draw them. */
@@ -65,35 +66,40 @@ export function createIconActions(ctx: EditorContext) {
       color,
       overrides: { x: Math.round(x), y: Math.round(y) }
     })
-    const created = snapshotSubtree(ctx.graph, frame.id)
-    ctx.undo.push({
-      label: 'Insert icon',
-      forward: () => {
-        const root = created.get(frame.id)
-        if (root && !ctx.graph.getNode(frame.id)) restoreSubtree(ctx.graph, root, parentId, created)
-        ctx.setSelectedIds(new Set([frame.id]))
-        ctx.requestRender()
-      },
-      inverse: () => {
-        if (ctx.graph.getNode(frame.id)) ctx.graph.deleteNode(frame.id)
-        ctx.setSelectedIds(previousSelection)
-        ctx.requestRender()
-      }
-    })
+    pushCreatedSubtreesUndo(ctx, 'Insert icon', [frame.id], previousSelection)
     ctx.setSelectedIds(new Set([frame.id]))
     ctx.requestRender()
     return frame.id
   }
 
-  /** Draws the icon `name` in the icon `frameId`, keeping its size, position, and color. */
-  async function swapIconGlyph(frameId: string, name: string) {
+  /** Draws the icon `name` fresh in the icon `frameId`, as one step called `label`. */
+  async function drawIcon(label: string, frameId: string, name: string) {
     const graph = ctx.graph
     const frame = graph.getNode(frameId)
     if (!frame || !readIcon(frame)) return
     const icon = await fetchIcon(name, Math.min(frame.width, frame.height))
     // The document or the frame may have been replaced while the icon loaded.
     if (ctx.graph !== graph || graph.getNode(frameId) !== frame) return
-    changeIcon('Swap icon', frameId, () => swapIcon(graph, frameId, icon))
+    changeIcon(label, frameId, () => swapIcon(graph, frameId, icon))
+  }
+
+  /** Draws the icon `name` in the icon `frameId`, keeping its size, position, and color. */
+  async function swapIconGlyph(frameId: string, name: string) {
+    await drawIcon('Swap icon', frameId, name)
+  }
+
+  /** Draws the icon `frameId` was placed as afresh, undoing edits to its paths. */
+  async function resetIcon(frameId: string) {
+    const frame = ctx.graph.getNode(frameId)
+    const icon = frame && readIcon(frame)
+    if (icon) await drawIcon('Reset icon', frameId, icon.name)
+  }
+
+  /** Makes the icon `frameId` plain artwork that keeps its paths; see `detachIcon`. */
+  function detachIconFrame(frameId: string) {
+    const frame = ctx.graph.getNode(frameId)
+    if (!frame || !readIcon(frame)) return
+    changeIcon('Detach icon', frameId, () => detachIcon(ctx.graph, frameId))
   }
 
   /**
@@ -119,6 +125,8 @@ export function createIconActions(ctx: EditorContext) {
     iconProvider: ctx.icons,
     insertIcon,
     swapIconGlyph,
+    resetIcon,
+    detachIcon: detachIconFrame,
     setIconColor
   }
 }

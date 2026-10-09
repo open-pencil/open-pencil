@@ -1,4 +1,7 @@
 import {
+  iconGlyph,
+  iconLayerName,
+  isPlacedIconName,
   readIcon,
   readIconTint,
   withIcon,
@@ -10,6 +13,11 @@ import {
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  createResizeSnapshot,
+  scaledChildRect,
+  scaledGeometryChanges
+} from '@open-pencil/scene-graph/resize'
 
 import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
 
@@ -50,6 +58,9 @@ function addPath(graph: SceneGraph, frameId: string, path: IconPath, size: numbe
     width: size,
     height: size,
     vectorNetwork: path.vectorNetwork,
+    // Resizing the icon resizes its glyph, as the frame is the icon.
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'SCALE',
     fills: path.fill ? solid(paint(path.fill, 'fill')) : []
   })
   if (path.stroke) {
@@ -79,15 +90,36 @@ export function placeIcon(
 ): SceneNode {
   const name = `${icon.prefix}:${icon.name}`
   const frame = graph.createNode('FRAME', parentId, {
-    name: identity ? `Icon / ${name}` : icon.name,
+    name: identity ? iconLayerName(name) : icon.name,
     width: size,
     height: size,
     fills: [],
     ...overrides
   })
-  if (identity) graph.updateNode(frame.id, { pluginData: withIcon(frame, { name }) })
   for (const path of icon.paths) addPath(graph, frame.id, path, size, color)
+  if (identity) recordIcon(graph, frame.id, name)
   return graph.getNode(frame.id) ?? frame
+}
+
+/** Writes the icon `name` on its frame with a fingerprint of the paths it draws now. */
+function recordIcon(graph: SceneGraph, frameId: string, name: string): void {
+  const frame = graph.getNode(frameId)
+  if (!frame) return
+  const glyph = iconGlyph(graph, frame)
+  graph.updateNode(frameId, { pluginData: withIcon(frame, { name, glyph }) })
+}
+
+/**
+ * Makes an icon plain artwork: its frame forgets the icon and its paths their tint, so it is
+ * no longer swapped, recolored as one, or exported as `<Icon>`. The paths stay as drawn.
+ */
+export function detachIcon(graph: SceneGraph, frameId: string): void {
+  const frame = graph.getNode(frameId)
+  if (!frame || !readIcon(frame)) return
+  graph.updateNode(frameId, { pluginData: withIcon(frame, null) })
+  for (const path of graph.getChildren(frameId))
+    if (readIconTint(path).length > 0)
+      graph.updateNode(path.id, { pluginData: withIconTint(path, []) })
 }
 
 /** The color an icon's tinted paths have, or null when none takes the icon's color. */
@@ -113,8 +145,8 @@ export function recolorIcon(graph: SceneGraph, frameId: string, color: Color): v
 
 /**
  * Draws another icon in an icon's frame, keeping its position and color, so the swap reads as
- * a change of glyph. `icon` is drawn at the size it was built for, which should be the frame's.
- * Does nothing to a frame that is not an icon.
+ * a change of glyph. `icon` is built square, at the frame's shorter side, and stretched to the
+ * frame. Does nothing to a frame that is not an icon.
  */
 export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): void {
   const frame = graph.getNode(frameId)
@@ -124,9 +156,35 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
   const size = icon.width
   for (const child of graph.getChildren(frameId)) graph.deleteNode(child.id)
   const name = `${icon.prefix}:${icon.name}`
+  const previous = readIcon(frame)
   graph.updateNode(frameId, {
-    name: frame.name.startsWith('Icon / ') ? `Icon / ${name}` : frame.name,
-    pluginData: withIcon(frame, { name })
+    // A layer still named after its icon takes the new icon's name; a name someone gave stays.
+    name: previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name
   })
   for (const path of icon.paths) addPath(graph, frameId, path, size, color)
+  fitPaths(graph, frameId, size)
+  recordIcon(graph, frameId, name)
+}
+
+/**
+ * Stretches paths drawn in a `size` square to their frame, as a resize would, so an icon that
+ * was resized unevenly is swapped or reset at the shape it has rather than as a square.
+ */
+function fitPaths(graph: SceneGraph, frameId: string, size: number): void {
+  const frame = graph.getNode(frameId)
+  if (!frame || (frame.width === size && frame.height === size)) return
+  const square = { width: size, height: size }
+  for (const path of graph.getChildren(frameId)) {
+    const rect = scaledChildRect(path, square, frame)
+    graph.updateNode(path.id, {
+      ...rect,
+      ...scaledGeometryChanges(
+        createResizeSnapshot(path),
+        path.width,
+        path.height,
+        rect.width,
+        rect.height
+      )
+    })
+  }
 }

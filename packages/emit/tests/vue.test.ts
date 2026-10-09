@@ -21,6 +21,23 @@ describe('Vue templates', () => {
     }
   )
 
+  test('interpolate an expression, keeping text beside it as written', async () => {
+    const node = vue.element(
+      'p',
+      [],
+      [vue.text('Hi, {name} '), vue.interpolation(es.identifier('name'))]
+    )
+    expect(vue.printTemplate(node)).toBe('<p>Hi, &#123;name} {{ name }}</p>')
+    expect(await render(node, { name: '<b>Ada</b>' })).toBe(
+      '<p>Hi, {name} &lt;b&gt;Ada&lt;/b&gt;</p>'
+    )
+  })
+
+  test('refuse an interpolation the template would end early', () => {
+    const node = vue.element('p', [], [vue.interpolation(es.string('}}'))])
+    expect(() => vue.printTemplate(node)).toThrow('}}')
+  })
+
   test('keep attribute values with quotes and entities as written', async () => {
     const value = 'say "hi" &amp; leave'
     const html = await render(vue.element('div', [vue.attribute('title', value)]))

@@ -60,6 +60,11 @@ async function pick(page: Page, picker: string, query: string, icon: string) {
   await expect(dialog).toBeHidden()
 }
 
+/** The layer tree row named `name`. */
+function layerRow(page: Page, name: string) {
+  return page.locator('[data-node-id]').filter({ hasText: name }).first()
+}
+
 async function insertSquare(page: Page) {
   await page.getByRole('button', { name: 'Insert icon' }).click()
   await pick(page, 'Insert icon', 'shape', 'square')
@@ -71,7 +76,7 @@ test('the toolbar inserts a picked icon, selected, as one undo step', async () =
   await insertSquare(page)
 
   const icon = await getSelectedNode(page)
-  expect(icon).toMatchObject({ type: 'FRAME', name: 'Icon / test:square', width: 24 })
+  expect(icon).toMatchObject({ type: 'FRAME', name: 'square', width: 24 })
   expect(icon?.childIds).toHaveLength(1)
   // The search previews and the placed icon load the set once between them.
   expect(requests).toMatchObject({ search: 1, sets: 1 })
@@ -86,7 +91,7 @@ test('the Object menu opens the same picker', async () => {
   await menu.getByRole('menuitem', { name: 'Insert Icon…' }).click()
   await pick(page, 'Insert icon', 'shape', 'ring')
 
-  expect(await getSelectedNode(page)).toMatchObject({ name: 'Icon / test:ring' })
+  expect(await getSelectedNode(page)).toMatchObject({ name: 'ring' })
 })
 
 test('the Icon section swaps the glyph in place, undoably', async () => {
@@ -102,7 +107,7 @@ test('the Icon section swaps the glyph in place, undoably', async () => {
     id: before?.id,
     x: before?.x,
     y: before?.y,
-    name: 'Icon / test:ring'
+    name: 'ring'
   })
 
   await canvas.undo()
@@ -170,4 +175,37 @@ test('icons in the file and picked lately come first', async () => {
   ).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
+})
+
+test('an edited icon says so, asks before a swap discards the edit, and resets or detaches', async () => {
+  const { page } = ctx
+  await insertSquare(page)
+  // Rotate the icon's path, as someone editing its artwork would, then select the icon again.
+  const iconRow = layerRow(page, 'square')
+  await iconRow.locator('[data-slot="disclosure"]').click()
+  await layerRow(page, 'path').click()
+  const rotationField = propertyField(page, 'rotation')
+  await rotationField.click()
+  const rotation = rotationField.getByRole('spinbutton', { name: 'Rotation' })
+  await rotation.fill('15')
+  await rotation.press('Enter')
+  await iconRow.click()
+  const section = propertySection(page, 'Icon')
+  await expect(propertyField(page, 'icon-modified')).toBeVisible()
+
+  await section.getByRole('button', { name: 'Swap icon' }).click()
+  const swap = page.getByRole('dialog', { name: 'Swap icon' })
+  await swap.getByRole('textbox').fill('shape')
+  await swap.getByRole('option', { name: 'ring' }).click()
+  const confirm = page.getByRole('alertdialog')
+  await expect(confirm).toBeVisible()
+  await confirm.getByRole('button', { name: 'Cancel' }).click()
+  await expect(propertyField(page, 'icon-name')).toContainText('square')
+
+  await section.getByRole('button', { name: 'Reset to the original icon' }).click()
+  await expect(propertyField(page, 'icon-modified')).toBeHidden()
+  expect((await getSelectedNode(page))?.childIds).toHaveLength(1)
+
+  await section.getByRole('button', { name: 'Detach icon' }).click()
+  await expect(section).toBeHidden()
 })

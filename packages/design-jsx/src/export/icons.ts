@@ -1,10 +1,14 @@
-import { readIcon, readIconTint, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  isIconModified,
+  isPlacedIconName,
+  readIcon,
+  readIconTint,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
 import type { JSXProp } from './props'
-
-/** The frame name icons are placed with, which the export leaves to `<Icon>` to give again. */
-const placedName = (name: string) => `Icon / ${name}`
 
 /** The color an icon's tinted paths have, as `<Icon color>` takes it. */
 function tintColor(graph: SceneGraph, frame: SceneNode): string | null {
@@ -20,16 +24,18 @@ function tintColor(graph: SceneGraph, frame: SceneNode): string | null {
 
 /**
  * An icon frame as `<Icon>` props: its name and size, its color when it is not black, and its
- * layer name when someone renamed it. `null` for a layer that is not an icon.
+ * layer name when someone renamed it. `null` for a layer that is not an icon, or no longer draws
+ * one because its paths were edited.
  */
 export function iconProps(node: SceneNode, graph: SceneGraph): JSXProp[] | null {
   const icon = readIcon(node)
-  if (!icon) return null
+  // An icon whose paths were edited exports as the paths it draws, which <Icon> would lose.
+  if (!icon || isIconModified(graph, node)) return null
   const color = tintColor(graph, node)
   return [
     ['name', icon.name],
     ['size', Math.round(Math.min(node.width, node.height))],
     ...(color && color.toLowerCase() !== '#000000' ? [['color', color] as JSXProp] : []),
-    ...(node.name !== placedName(icon.name) ? [['label', node.name] as JSXProp] : [])
+    ...(isPlacedIconName(node.name, icon.name) ? [] : [['label', node.name] as JSXProp])
   ]
 }

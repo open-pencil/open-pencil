@@ -1,7 +1,7 @@
 import { diffLines, type ChangeObject } from 'diff'
 import { compact } from 'es-toolkit/array'
 
-import { graphFromPageSnapshot, type PageSnapshot } from '@open-pencil/core/editor'
+import { graphFromPageChange, isEmptyPageChange, type PageChange } from '@open-pencil/core/editor'
 import { diffPageLayersJSX } from '@open-pencil/core/tools'
 
 import { changePreviewSize } from '@/app/ai/chat/preferences'
@@ -47,19 +47,20 @@ export function clipChangedJSX(before: string, after: string): [string, string] 
 }
 
 /**
- * Records what a finished call changed on its page. The structural diff is immediate; images
- * render afterwards from frozen copies of both states, so later edits cannot leak into them.
+ * Records what a finished call changed on its page, called right after it while the page is as
+ * the call left it. The structural diff is immediate; images render afterwards from frozen
+ * copies of both states, so later edits cannot leak into them.
  */
 export function recordToolChange(
   store: EditorStore,
   toolCallId: string,
-  before: PageSnapshot,
-  after: PageSnapshot
+  pageChange: PageChange
 ): ToolChange | null {
-  const beforeGraph = graphFromPageSnapshot(store.graph, before)
-  const afterGraph = graphFromPageSnapshot(store.graph, after)
-  const pageId = after.values().next().value?.id
-  if (!beforeGraph || !afterGraph || !pageId) return null
+  if (isEmptyPageChange(pageChange)) return null
+  const beforeGraph = graphFromPageChange(store.graph, pageChange, 'before')
+  const afterGraph = graphFromPageChange(store.graph, pageChange, 'after')
+  const { pageId } = pageChange
+  if (!beforeGraph || !afterGraph) return null
   // The same JSX diff `diff_jsx` returns decides which layers changed.
   const layers = diffPageLayersJSX(beforeGraph, afterGraph, pageId)
   if (layers.length === 0) return null

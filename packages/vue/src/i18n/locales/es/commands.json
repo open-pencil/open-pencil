@@ -11,6 +11,7 @@
   "createComponentSet": "Crear conjunto de componentes",
   "createInstance": "Crear instancia",
   "detachInstance": "Separar instancia",
+  "detachIcon": "Desvincular icono",
   "goToMainComponent": "Ir al componente principal",
   "addAutoLayout": "Añadir auto-layout",
   "bringToFront": "Traer al frente",

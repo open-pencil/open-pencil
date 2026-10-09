@@ -97,12 +97,12 @@ describe('icon identity', () => {
   test('records the icon and which paints its color sets, and survives a .fig round trip', async () => {
     const graph = new SceneGraph()
     const { frame, vectors } = insertIcon(graph, BODY)
-    expect(readIcon(frame)).toEqual({ name: 'test:icon' })
+    expect(readIcon(frame)).toMatchObject({ name: 'test:icon' })
     expect(vectors.map(readIconTint)).toEqual([['fill'], []])
 
     const reopened = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
     const icon = [...reopened.nodes.values()].find((node) => readIcon(node))
-    expect(icon && readIcon(icon)).toEqual({ name: 'test:icon' })
+    expect(icon && readIcon(icon)).toMatchObject({ name: 'test:icon' })
   })
 
   test("recolors only the paths drawn in the icon's color", () => {
@@ -125,7 +125,7 @@ describe('icon identity', () => {
     swapIcon(graph, frame.id, other)
 
     const swapped = expectDefined(graph.getNode(frame.id), 'swapped icon')
-    expect(readIcon(swapped)).toEqual({ name: 'test:square' })
+    expect(readIcon(swapped)).toMatchObject({ name: 'test:square' })
     expect([swapped.width, swapped.height]).toEqual([32, 32])
     const paths = graph.getChildren(frame.id)
     expect(paths).toHaveLength(1)

@@ -36,5 +36,7 @@ export type StateNode = StateElement | DesignText
 export interface StateStyles {
   /** The set's name, for the root's class name. */
   name: string
+  /** The variant drawing the rest state, which the merged tree starts from. */
+  restId: string
   root: StateElement
 }

@@ -28,7 +28,13 @@ export interface VueText {
   value: string
 }
 
-export type VueNode = VueElement | VueText
+/** `{{ expression }}`, printed from a syntax tree so it holds only what the tree says. */
+export interface VueInterpolation {
+  type: 'interpolation'
+  expression: SyntaxNode
+}
+
+export type VueNode = VueElement | VueText | VueInterpolation
 
 export const attribute = (name: string, value: string): VueAttribute => ({
   type: 'static',
@@ -56,6 +62,11 @@ export const element = (
 
 export const text = (value: string): VueText => ({ type: 'text', value })
 
+export const interpolation = (expression: SyntaxNode): VueInterpolation => ({
+  type: 'interpolation',
+  expression
+})
+
 function printAttribute(item: VueAttribute): string {
   if (item.type === 'static') return `${item.name}="${escapeAttribute(item.value)}"`
   const value = escapeAttribute(printExpression(item.expression))
@@ -66,6 +77,13 @@ function printAttribute(item: VueAttribute): string {
 /** Markup with nothing added around it, as text content needs. */
 function printInline(node: VueNode): string {
   if (node.type === 'text') return templateText(node.value)
+  if (node.type === 'interpolation') {
+    const expression = printExpression(node.expression)
+    // The template ends an interpolation at the first `}}`, wherever it falls.
+    if (expression.includes('}}'))
+      throw new Error(`An interpolated expression cannot contain "}}": ${expression}`)
+    return `{{ ${expression} }}`
+  }
   const open = [node.tag, ...node.attributes.map(printAttribute)].join(' ')
   if (node.children.length === 0) return `<${open} />`
   return `<${open}>${node.children.map(printInline).join('')}</${node.tag}>`
@@ -73,9 +91,9 @@ function printInline(node: VueNode): string {
 
 function printNode(node: VueNode, depth: number): string {
   const indent = '  '.repeat(depth)
-  // Vue renders whitespace between text and elements as a space, so an element with text
-  // content keeps its children on its own line, exactly as given.
-  if (node.type === 'text' || node.children.some((child) => child.type === 'text'))
+  // Vue renders whitespace between text and elements as a space, so an element with text or
+  // an interpolation in it keeps its children on its own line, exactly as given.
+  if (node.type !== 'element' || node.children.some((child) => child.type !== 'element'))
     return `${indent}${printInline(node)}`
   const open = [node.tag, ...node.attributes.map(printAttribute)].join(' ')
   if (node.children.length === 0) return `${indent}<${open} />`

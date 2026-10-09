@@ -17,6 +17,8 @@ export function createUndoBridge(undoActions: UndoActions, selection: SelectionA
     redoAction: () => undoActions.redoAction(selection.validateEnteredContainer),
     snapshotPage: undoActions.snapshotPage,
     restorePageFromSnapshot: undoActions.restorePageFromSnapshot,
+    capturePageChange: undoActions.capturePageChange,
+    restorePageChange: undoActions.restorePageChange,
     pushUndoEntry: undoActions.pushUndoEntry
   }
 }

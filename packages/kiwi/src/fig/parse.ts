@@ -1,7 +1,7 @@
 import { inflateSync } from 'fflate'
 import { decompress as zstdDecompress } from 'fzstd'
 
-import { decodeBinarySchema, compileSchema, ByteBuffer } from '../schema-runtime'
+import { decodeBinarySchema, compileSchema, ByteBuffer, type HeaderFields } from '../schema-runtime'
 import type { FigmaMessage, NodeChange } from './codec'
 import { extractFigPageManifest, type FigPageManifestEntry } from './page-manifest'
 import { isZstdCompressed } from './protocol'
@@ -96,7 +96,8 @@ export interface FigKiwiDecodeResult {
 /** Decode one raw `fig-kiwi` canvas payload. Outer `.fig` archive handling lives in `@open-pencil/fig`. */
 export function decodeFigKiwiCanvas(
   data: Uint8Array,
-  onPages?: (pages: FigPageManifestEntry[]) => void
+  onPages?: (pages: FigPageManifestEntry[]) => void,
+  headers?: HeaderFields
 ): FigKiwiDecodeResult {
   const payload = parseFigKiwiContainer(data)
   if (!payload) throw new Error('Invalid fig-kiwi container')
@@ -111,7 +112,7 @@ export function decodeFigKiwiCanvas(
       console.warn('Failed to scan FIG page manifest; continuing with full decode:', error)
     }
   }
-  const compiled = compileSchema(schema) as CompiledKiwiSchema
+  const compiled = compileSchema(schema, headers) as CompiledKiwiSchema
   const message = compiled.decodeMessage(payload.dataRaw) as FigmaMessage
 
   const nodeChanges = message.nodeChanges

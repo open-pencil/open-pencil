@@ -62,25 +62,37 @@ export interface ComponentStoriesData {
 const FALSE = es.parseExpression('false')
 const TRUE = es.parseExpression('true')
 
+/** A model's value at rest: off, the option a choice starts on, or none for an open choice. */
+function restValue(component: ComponentModel): es.SyntaxNode | null {
+  if (!component.choice) return FALSE
+  return component.choice.default === null ? null : es.string(component.choice.default)
+}
+
 function restArgs(component: ComponentModel, model: string | null): [string, es.SyntaxNode][] {
+  const rest = restValue(component)
   return [
-    ...(model ? [[model, FALSE] as [string, es.SyntaxNode]] : []),
+    ...(model && rest ? [[model, rest] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', FALSE] as [string, es.SyntaxNode]] : []),
-    ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, es.string(prop.default)])
+    ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, es.string(prop.default)]),
+    ...component.texts.map((text): [string, es.SyntaxNode] => [text.name, es.string(text.default)])
   ]
 }
 
 function argTypes(component: ComponentModel, model: string | null): es.SyntaxNode {
   const boolean = es.object([['control', es.string('boolean')]])
+  const select = (options: readonly string[]) =>
+    es.object([
+      ['control', es.string('select')],
+      ['options', es.array(options.map(es.string))]
+    ])
+  const modelControl = component.choice ? select(component.choice.options) : boolean
   return es.object([
-    ...(model ? [[model, boolean] as [string, es.SyntaxNode]] : []),
+    ...(model ? [[model, modelControl] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', boolean] as [string, es.SyntaxNode]] : []),
-    ...component.props.map((prop): [string, es.SyntaxNode] => [
-      prop.name,
-      es.object([
-        ['control', es.string('select')],
-        ['options', es.array(prop.options.map(es.string))]
-      ])
+    ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, select(prop.options)]),
+    ...component.texts.map((text): [string, es.SyntaxNode] => [
+      text.name,
+      es.object([['control', es.string('text')]])
     ])
   ])
 }
@@ -106,7 +118,15 @@ function stories(
       interaction &&
         es.fill(PLAY, { $role: es.string(interaction.role), $state: es.string(interaction.state) })
     ),
-    ...(component.model && model ? [story(component.model, [[model, TRUE]])] : []),
+    ...(component.model && model && !component.choice
+      ? [story(component.model, [[model, TRUE]])]
+      : []),
+    // A choice gets a story per option it does not start on, such as each other tab.
+    ...(component.choice && model
+      ? component.choice.options
+          .filter((option) => option !== component.choice?.default)
+          .map((option) => story(option, [[model, es.string(option)]]))
+      : []),
     ...(component.disabled ? [story('Disabled', [['disabled', TRUE]])] : []),
     ...component.props.flatMap((prop) =>
       prop.options

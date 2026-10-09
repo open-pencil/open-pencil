@@ -19,7 +19,7 @@ import {
   type DesignIssue,
   type DesignIssueSeverity
 } from '@/app/editor/design-check/issues'
-import { nodeIcon } from '@/app/editor/icons'
+import { IconFrame, sceneNodeIcon } from '@/app/editor/icons'
 import { appPreferences } from '@/app/settings/preferences/store'
 
 import type { IssueGroupView, IssueRowView } from './types'
@@ -94,7 +94,7 @@ export function useDesignCheckPanel(options: {
     return {
       issue,
       layerName: node?.name ?? issue.nodeName,
-      layerIcon: nodeIcon(node ?? { type: 'FRAME', layoutMode: 'NONE' }),
+      layerIcon: node ? sceneNodeIcon(node) : IconFrame,
       detail: issueDetail(issue, messages.value),
       swatch: issueSwatch(issue),
       action: node ? issueAction(issue, messages.value) : null,

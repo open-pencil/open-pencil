@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { readIcon, type SceneNode } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -28,8 +28,18 @@ export interface LabelLayout {
   maxTextWidth: number
 }
 
-export function hasFrameTitle(node: SceneNode, parent?: SceneNode | null): boolean {
-  return node.type === 'FRAME' && (!parent || parent.type === 'CANVAS' || parent.type === 'SECTION')
+const FRAME_TITLE_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
+
+/**
+ * Whether a frame shows its name above it: a frame on the page or in a section, as Figma titles
+ * them. An icon is a glyph rather than an artboard, so it goes untitled like a vector.
+ */
+export function hasFrameTitle(node: SceneNode, parentType: string | undefined): boolean {
+  return (
+    node.type === 'FRAME' &&
+    (parentType === undefined || FRAME_TITLE_PARENT_TYPES.has(parentType)) &&
+    !readIcon(node)
+  )
 }
 
 function sectionLabelLayout(

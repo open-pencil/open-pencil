@@ -1,6 +1,7 @@
 import { ByteBuffer } from './bb'
 import { nativeTypes } from './parser'
 import type { Definition, Field, Schema } from './schema'
+import { createSchemaSkipper, type SchemaSkipper } from './skip'
 import { error, quote } from './util'
 
 type RuntimeEnum = { [name: string]: string | number }
@@ -31,6 +32,67 @@ export type RuntimeCodec = {
   [name: string]: RuntimeEntry
 }
 type Definitions = { [name: string]: Definition }
+
+/**
+ * Message types decoded as headers: only the named fields are read, and the rest stay in the
+ * message bytes until `decodeWhole` reads the message in full. A large message of many such
+ * messages then holds a little of each rather than every value of every one.
+ */
+export type HeaderFields = Readonly<Record<string, readonly string[]>>
+
+/**
+ * What a header needs to be read whole: the bytes it came from, where it starts in them, and
+ * the decoder that reads every field. They are hidden properties of the header, so each costs a
+ * slot on the object; neither spread nor `structuredClone` copies them.
+ */
+const HEADER_BYTES = Symbol('header bytes')
+const HEADER_START = Symbol('header start')
+const HEADER_WHOLE = Symbol('header whole decoder')
+
+/**
+ * How many whole decodes are running. A message type can nest itself, as instance overrides
+ * are records too, and a message read whole is read whole all the way down.
+ */
+let wholeDepth = 0
+
+/**
+ * A header read again in full from the bytes it came from, as a new message the caller owns,
+ * or undefined for a message that was decoded whole.
+ */
+export function decodeWhole(message: object): RuntimeMessage | undefined {
+  const bytes: unknown = Reflect.get(message, HEADER_BYTES)
+  const start: unknown = Reflect.get(message, HEADER_START)
+  const whole: unknown = Reflect.get(message, HEADER_WHOLE)
+  if (!(bytes instanceof Uint8Array) || typeof start !== 'number' || typeof whole !== 'function')
+    return undefined
+  const buffer = new ByteBuffer(bytes)
+  buffer.offset = start
+  return (whole as (bb: ByteBuffer) => RuntimeMessage)(buffer)
+}
+
+function hide(message: RuntimeMessage, key: symbol, value: unknown): void {
+  Reflect.defineProperty(message, key, { value, enumerable: false })
+}
+
+interface HeaderDecoding {
+  keep: ReadonlySet<string>
+  skipper: SchemaSkipper
+  /** Reads the message in full, for `decodeWhole`. */
+  whole: (bb: ByteBuffer) => RuntimeMessage
+}
+
+function wholeDecoder(
+  decode: (bb: ByteBuffer) => RuntimeMessage
+): (bb: ByteBuffer) => RuntimeMessage {
+  return (bb) => {
+    wholeDepth++
+    try {
+      return decode(bb)
+    } finally {
+      wholeDepth--
+    }
+  }
+}
 
 function asDecodeFunction(value: unknown): DecodeFunction {
   return value as DecodeFunction
@@ -220,7 +282,12 @@ function writeFrom(
   writeField(self, definitions, type, value, bb)
 }
 
-function interpretDecode(self: RuntimeCodec, definitions: Definitions, definition: Definition) {
+function interpretDecode(
+  self: RuntimeCodec,
+  definitions: Definitions,
+  definition: Definition,
+  header?: HeaderDecoding
+) {
   let fieldsById = new Map<number, Field>()
   for (let i = 0; i < definition.fields.length; i++)
     fieldsById.set(definition.fields[i].value, definition.fields[i])
@@ -229,12 +296,19 @@ function interpretDecode(self: RuntimeCodec, definitions: Definitions, definitio
     let result: RuntimeMessage = {}
 
     if (definition.kind === 'MESSAGE') {
+      const asHeader = header && wholeDepth === 0 ? header : undefined
+      if (asHeader) {
+        hide(result, HEADER_BYTES, buffer.bytes)
+        hide(result, HEADER_START, buffer.offset)
+        hide(result, HEADER_WHOLE, asHeader.whole)
+      }
       while (true) {
         const id = buffer.readVarUint()
         if (id === 0) return result
         const field = fieldsById.get(id)
         if (!field) throw new Error('Attempted to parse invalid message')
-        readInto(self, definitions, field, buffer, result)
+        if (asHeader && !asHeader.keep.has(field.name)) asHeader.skipper.skipField(field, buffer)
+        else readInto(self, definitions, field, buffer, result)
       }
     } else {
       for (let i = 0; i < definition.fields.length; i++) {
@@ -268,7 +342,7 @@ function interpretEncode(self: RuntimeCodec, definitions: Definitions, definitio
   }
 }
 
-export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
+export function compileSchemaRuntime(schema: Schema, headers?: HeaderFields): RuntimeCodec {
   let definitions: Definitions = Object.create(null) as Definitions
   for (let i = 0; i < schema.definitions.length; i++) {
     definitions[schema.definitions[i].name] = schema.definitions[i]
@@ -279,6 +353,7 @@ export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
   let result: RuntimeCodec = {
     ByteBuffer: ByteBuffer
   }
+  let skipper: SchemaSkipper | undefined
 
   for (let i = 0; i < schema.definitions.length; i++) {
     let definition = schema.definitions[i]
@@ -297,7 +372,18 @@ export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
 
       case 'STRUCT':
       case 'MESSAGE': {
-        result['decode' + definition.name] = interpretDecode(result, definitions, definition)
+        const keep = definition.kind === 'MESSAGE' ? headers?.[definition.name] : undefined
+        const header: HeaderDecoding | undefined = keep && {
+          keep: new Set(keep),
+          skipper: (skipper ??= createSchemaSkipper(schema)),
+          whole: wholeDecoder(interpretDecode(result, definitions, definition))
+        }
+        result['decode' + definition.name] = interpretDecode(
+          result,
+          definitions,
+          definition,
+          header
+        )
         result['encode' + definition.name] = interpretEncode(result, definitions, definition)
         break
       }

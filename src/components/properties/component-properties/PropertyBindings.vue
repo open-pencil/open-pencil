@@ -7,7 +7,7 @@ import {
   type ComponentBindingGroup
 } from '@open-pencil/vue'
 
-import { nodeIcon } from '@/app/editor/icons'
+import { sceneNodeIcon } from '@/app/editor/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
@@ -31,7 +31,7 @@ const panels = usePanelMessages()
             class="size-3.5 shrink-0 transition-transform data-[open]:rotate-90 motion-reduce:transition-none"
             :data-open="open || undefined"
           />
-          <component :is="nodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />
+          <component :is="sceneNodeIcon(group.node)" class="size-3.5 shrink-0" aria-hidden="true" />
           <span class="min-w-0 truncate">{{ group.name }}</span>
           <span class="ml-auto text-[10px] text-muted">{{
             group.bindings.length === totalVariants
