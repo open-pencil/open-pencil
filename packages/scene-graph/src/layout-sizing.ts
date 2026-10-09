@@ -110,7 +110,8 @@ export function layoutSizingError(
   return undefined
 }
 
-function textAutoResizeFor(hugsWidth: boolean, hugsHeight: boolean): TextAutoResize {
+/** The text auto-resize that hugs the content along the axes given. */
+export function textAutoResizeFor(hugsWidth: boolean, hugsHeight: boolean): TextAutoResize {
   if (hugsWidth && hugsHeight) return 'WIDTH_AND_HEIGHT'
   return hugsHeight ? 'HEIGHT' : 'NONE'
 }
@@ -165,4 +166,31 @@ export function layoutSizingUpdates(
   }
   if (node.type === 'TEXT') Object.assign(updates, textSizingUpdates(graph, node, axis, value))
   return updates
+}
+
+/**
+ * The fields that make a child fill `axis` of a parent laid out as `parentLayout`, for a node
+ * an importer builds before it joins the graph. Under a parent without auto layout, such as a
+ * staging parent the node leaves when placed, both are set, so it fills whichever axis its
+ * eventual parent stacks along.
+ */
+export function fillSizingFields(
+  parentLayout: SceneNode['layoutMode'],
+  axis: LayoutSizingAxis
+): Partial<Pick<SceneNode, 'layoutGrow' | 'layoutAlignSelf'>> {
+  if (parentLayout === 'NONE') return { layoutGrow: 1, layoutAlignSelf: 'STRETCH' }
+  return axis === primaryAxis(parentLayout) ? { layoutGrow: 1 } : { layoutAlignSelf: 'STRETCH' }
+}
+
+/** An auto-layout frame's own sizing when it hugs or fixes its width and height. */
+export function autoLayoutSizingFields(
+  direction: AutoLayoutMode,
+  width: 'FIXED' | 'HUG',
+  height: 'FIXED' | 'HUG'
+): Pick<SceneNode, 'primaryAxisSizing' | 'counterAxisSizing'> {
+  const horizontal = primaryAxis(direction) === 'HORIZONTAL'
+  return {
+    primaryAxisSizing: horizontal ? width : height,
+    counterAxisSizing: horizontal ? height : width
+  }
 }

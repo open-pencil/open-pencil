@@ -20,3 +20,25 @@ describe('property names', () => {
     expect(overrides).toMatchObject({ width: 100, height: 50, cornerRadius: 8 })
   })
 })
+
+describe('stack alignment', () => {
+  test('CSS justify and align keywords mean what the short names do', () => {
+    expect(
+      propsToOverrides({ flex: 'row', justifyContent: 'space-between' }, false, 'NONE')
+    ).toMatchObject({
+      primaryAxisAlign: 'SPACE_BETWEEN'
+    })
+    expect(propsToOverrides({ flex: 'row', justify: 'between' }, false, 'NONE')).toMatchObject({
+      primaryAxisAlign: 'SPACE_BETWEEN'
+    })
+    expect(propsToOverrides({ flex: 'row', alignItems: 'flex-end' }, false, 'NONE')).toMatchObject({
+      counterAxisAlign: 'MAX'
+    })
+  })
+
+  test('items can align children by their baseline', () => {
+    expect(propsToOverrides({ flex: 'row', items: 'baseline' }, false, 'NONE')).toMatchObject({
+      counterAxisAlign: 'BASELINE'
+    })
+  })
+})

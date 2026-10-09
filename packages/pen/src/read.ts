@@ -1,4 +1,4 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { fillSizingFields, SceneGraph } from '@open-pencil/scene-graph'
 import type {
   AxisSizingMode,
   LayoutMode,
@@ -281,15 +281,8 @@ function createSceneNode(
   }
 
   if (parentLayout !== 'NONE') {
-    const parentVertical = parentLayout === 'VERTICAL'
-    if (w.sizing === 'FILL') {
-      if (parentVertical) node.layoutAlignSelf = 'STRETCH'
-      else node.layoutGrow = 1
-    }
-    if (h.sizing === 'FILL') {
-      if (parentVertical) node.layoutGrow = 1
-      else node.layoutAlignSelf = 'STRETCH'
-    }
+    if (w.sizing === 'FILL') Object.assign(node, fillSizingFields(parentLayout, 'HORIZONTAL'))
+    if (h.sizing === 'FILL') Object.assign(node, fillSizingFields(parentLayout, 'VERTICAL'))
   }
 
   if (pen.reusable) {

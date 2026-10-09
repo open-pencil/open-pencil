@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { layoutSizing, layoutSizingUpdates, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  autoLayoutSizingFields,
+  fillSizingFields,
+  layoutSizing,
+  layoutSizingUpdates,
+  SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 function child(parent: Partial<SceneNode>, node: Partial<SceneNode> = {}) {
   const graph = new SceneGraph()
@@ -28,5 +35,37 @@ describe('layout sizing across a stretching parent', () => {
     expect(layoutSizingUpdates(graph, node, 'VERTICAL', 'FIXED')).toEqual({
       layoutAlignSelf: 'AUTO'
     })
+  })
+})
+
+describe('sizing fields for nodes built before they join the graph', () => {
+  test('fill fields read back as fill on each axis of every auto layout parent', () => {
+    for (const layoutMode of ['HORIZONTAL', 'VERTICAL', 'GRID'] as const) {
+      for (const axis of ['HORIZONTAL', 'VERTICAL'] as const) {
+        const { graph, node } = child({ layoutMode }, fillSizingFields(layoutMode, axis))
+        expect(layoutSizing(graph, node, axis)).toBe('FILL')
+        const other = axis === 'HORIZONTAL' ? 'VERTICAL' : 'HORIZONTAL'
+        expect(layoutSizing(graph, node, other)).not.toBe('FILL')
+      }
+    }
+  })
+
+  test('fill under a parent without auto layout fills either axis once placed', () => {
+    const fields = fillSizingFields('NONE', 'HORIZONTAL')
+    for (const layoutMode of ['HORIZONTAL', 'VERTICAL'] as const) {
+      const { graph, node } = child({ layoutMode }, fields)
+      expect(layoutSizing(graph, node, 'HORIZONTAL')).toBe('FILL')
+    }
+  })
+
+  test('own sizing fields read back per screen axis', () => {
+    for (const layoutMode of ['HORIZONTAL', 'VERTICAL'] as const) {
+      const { graph, node } = child(
+        {},
+        { layoutMode, ...autoLayoutSizingFields(layoutMode, 'HUG', 'FIXED') }
+      )
+      expect(layoutSizing(graph, node, 'HORIZONTAL')).toBe('HUG')
+      expect(layoutSizing(graph, node, 'VERTICAL')).toBe('FIXED')
+    }
   })
 })
