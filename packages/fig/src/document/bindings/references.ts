@@ -31,9 +31,6 @@ function visitChildren(
 
 type Report = (diagnostic: BindingReferenceDiagnostic) => void
 
-/** Lazily decoded fields that can hold binding references of their own. */
-const BINDING_FIELDS = new Set(['parameterConsumptionMap', 'derivedSymbolData'])
-
 /** Resolves a record's binding references in place, reporting the ones that name nothing. */
 function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolver>) {
   return (record: NodeChange, sourceId: string, report?: Report): void => {
@@ -80,41 +77,25 @@ function createRecordNormalizer(resolve: ReturnType<typeof createResourceResolve
   }
 }
 
-export interface DocumentBindingReferences {
-  changes: NodeChange[]
-  /**
-   * Resolves the references in a value a lazily decoded field of `record` just produced, as the
-   * document pass resolved the value it read then. That value is not kept, so every read
-   * resolves again; only the document pass reports what names nothing.
-   */
-  prepareLazyField: (record: NodeChange, field: string, value: unknown) => void
+/**
+ * Resolves the binding references of one whole record in place, as the document pass resolves
+ * every record: against the given records' variables, reporting what names nothing when asked.
+ */
+export function createBindingNormalizer(resources: readonly NodeChange[]) {
+  const normalizeRecord = createRecordNormalizer(createResourceResolver(resources))
+  return (record: NodeChange, report?: Report): void =>
+    normalizeRecord(record, record.guid ? guidToString(record.guid) : 'unknown', report)
 }
 
 /** Normalize supported binding references without mutating archive records or effective values. */
 export function resolveDocumentBindingReferences(
   changes: readonly NodeChange[],
-  report: Report,
-  ownership: 'copy' | 'transfer' = 'copy'
-): DocumentBindingReferences {
-  const normalizeRecord = createRecordNormalizer(createResourceResolver(changes))
-  return {
-    changes: changes.map((source) => {
-      const node = ownership === 'transfer' ? source : structuredClone(source)
-      normalizeRecord(node, source.guid ? guidToString(source.guid) : 'unknown', report)
-      return node
-    }),
-    prepareLazyField: (record, field, value) => {
-      // A modern parameter entry shadows the legacy entry for the same field, which the document
-      // pass leaves as saved, so the legacy map resolves beside the record's parameter map.
-      if (field === 'variableConsumptionMap')
-        normalizeRecord(
-          {
-            variableConsumptionMap: value,
-            parameterConsumptionMap: record.parameterConsumptionMap
-          } as NodeChange,
-          'lazy'
-        )
-      else if (BINDING_FIELDS.has(field)) normalizeRecord({ [field]: value } as NodeChange, 'lazy')
-    }
-  }
+  report: Report
+): NodeChange[] {
+  const normalize = createBindingNormalizer(changes)
+  return changes.map((source) => {
+    const node = structuredClone(source)
+    normalize(node, report)
+    return node
+  })
 }

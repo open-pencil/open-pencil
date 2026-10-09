@@ -1,7 +1,10 @@
 import { expect, test } from 'bun:test'
 
 import { guid } from '#fig-tests/helpers/guid'
-import { resolveDocumentBindingReferences } from '#fig/document/bindings/references'
+import {
+  createBindingNormalizer,
+  resolveDocumentBindingReferences
+} from '#fig/document/bindings/references'
 
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -98,7 +101,7 @@ for (const map of ['variableConsumptionMap', 'parameterConsumptionMap'] as const
       const before = structuredClone(changes)
       const diagnostics: unknown[] = []
       const normalized = resolveDocumentBindingReferences(changes, (d) => diagnostics.push(d))
-      const props = nodeChangeToProps(normalized.changes[3], [])
+      const props = nodeChangeToProps(normalized[3], [])
       expect(props.boundVariables).toEqual({ width: '1:1', 'fills/0/color': '1:2' })
       expect(props.variableModes).toEqual({ '1:3': '1:10' })
       expect(diagnostics).toEqual([])
@@ -108,40 +111,41 @@ for (const map of ['variableConsumptionMap', 'parameterConsumptionMap'] as const
   }
 }
 
-// A lazily decoded field resolves as the document pass resolved it: a legacy entry a parameter
-// entry shadows stays as saved, and the rest resolve against the document's variables.
-test('lazily decoded binding maps resolve as the document pass resolves them', () => {
+// A record decoded whole later resolves as the document pass resolved it: a legacy entry a
+// parameter entry shadows stays as saved, and the rest resolve against the document's variables.
+test('a record normalized on its own resolves as the document pass resolves it', () => {
   const variable = { guid: guid(9), type: 'VARIABLE', key: 'width', version: 'v1' } as NodeChange
-  const legacy = () => ({
-    entries: [
-      {
-        variableField: 'WIDTH',
-        variableData: {
-          dataType: 'ALIAS',
-          value: { alias: { assetRef: { key: 'width', version: 'v1' } } }
-        }
+  const record = () =>
+    ({
+      guid: guid(1),
+      type: 'RECTANGLE',
+      variableConsumptionMap: {
+        entries: [
+          {
+            variableField: 'WIDTH',
+            variableData: {
+              dataType: 'ALIAS',
+              value: { alias: { assetRef: { key: 'width', version: 'v1' } } }
+            }
+          },
+          {
+            variableField: 'HEIGHT',
+            variableData: {
+              dataType: 'ALIAS',
+              value: { alias: { assetRef: { key: 'width', version: 'v1' } } }
+            }
+          }
+        ]
       },
-      {
-        variableField: 'HEIGHT',
-        variableData: {
-          dataType: 'ALIAS',
-          value: { alias: { assetRef: { key: 'width', version: 'v1' } } }
-        }
-      }
-    ]
-  })
-  const record = {
-    guid: guid(1),
-    type: 'RECTANGLE',
-    variableConsumptionMap: legacy(),
-    parameterConsumptionMap: { entries: [{ variableField: 'WIDTH' }] }
-  } as NodeChange
-  const bindings = resolveDocumentBindingReferences([variable, record], () => undefined)
-  const decoded = legacy()
+      parameterConsumptionMap: { entries: [{ variableField: 'WIDTH' }] }
+    }) as NodeChange
+  const [, passed] = resolveDocumentBindingReferences([variable, record()], () => undefined)
+  const alone = record()
 
-  bindings.prepareLazyField(record, 'variableConsumptionMap', decoded)
+  createBindingNormalizer([variable, record()])(alone)
 
-  expect(bindings.changes[1].variableConsumptionMap).toEqual(decoded)
-  expect(decoded.entries[0].variableData.value.alias).not.toHaveProperty('guid')
-  expect(decoded.entries[1].variableData.value.alias).toHaveProperty('guid', guid(9))
+  expect(alone).toEqual(passed)
+  const entries = alone.variableConsumptionMap?.entries ?? []
+  expect(entries[0]?.variableData?.value?.alias).not.toHaveProperty('guid')
+  expect(entries[1]?.variableData?.value?.alias).toHaveProperty('guid', guid(9))
 })

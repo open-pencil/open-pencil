@@ -34,80 +34,62 @@ export type RuntimeCodec = {
 type Definitions = { [name: string]: Definition }
 
 /**
- * Fields a message type leaves encoded when decoded. Each becomes a getter that decodes the
- * field from the message bytes whenever it is read and keeps nothing, so a large message holds
- * its bytes rather than every value built from them. Assigning a field stores the value.
+ * Message types decoded as headers: only the named fields are read, and the rest stay in the
+ * message bytes until `decodeWhole` reads the message in full. A large message of many such
+ * messages then holds a little of each rather than every value of every one.
  */
-export interface LazyFields {
-  /** Field names by message type. */
-  fields: Readonly<Record<string, readonly string[]>>
-  /**
-   * Runs on every value a lazy field decodes, before it is returned, so values read later see
-   * what the caller applied to them. Set after decoding when it needs the decoded message.
-   */
-  prepare?: (owner: RuntimeMessage, field: string, value: RuntimeValue) => void
-}
+export type HeaderFields = Readonly<Record<string, readonly string[]>>
 
 /**
- * The bytes a message with lazy fields was decoded from, and where it starts in them. They are
- * hidden properties of the message rather than an entry in a side table, so each costs a slot
- * on the object; neither spread nor `structuredClone` copies them.
+ * What a header needs to be read whole: the bytes it came from, where it starts in them, and
+ * the decoder that reads every field. They are hidden properties of the header, so each costs a
+ * slot on the object; neither spread nor `structuredClone` copies them.
  */
-const LAZY_BYTES = Symbol('lazy message bytes')
-const LAZY_START = Symbol('lazy message start')
+const HEADER_BYTES = Symbol('header bytes')
+const HEADER_START = Symbol('header start')
+const HEADER_WHOLE = Symbol('header whole decoder')
+
+/**
+ * How many whole decodes are running. A message type can nest itself, as instance overrides
+ * are records too, and a message read whole is read whole all the way down.
+ */
+let wholeDepth = 0
+
+/**
+ * A header read again in full from the bytes it came from, as a new message the caller owns,
+ * or undefined for a message that was decoded whole.
+ */
+export function decodeWhole(message: object): RuntimeMessage | undefined {
+  const bytes: unknown = Reflect.get(message, HEADER_BYTES)
+  const start: unknown = Reflect.get(message, HEADER_START)
+  const whole: unknown = Reflect.get(message, HEADER_WHOLE)
+  if (!(bytes instanceof Uint8Array) || typeof start !== 'number' || typeof whole !== 'function')
+    return undefined
+  const buffer = new ByteBuffer(bytes)
+  buffer.offset = start
+  return (whole as (bb: ByteBuffer) => RuntimeMessage)(buffer)
+}
 
 function hide(message: RuntimeMessage, key: symbol, value: unknown): void {
   Reflect.defineProperty(message, key, { value, enumerable: false })
 }
 
-/** Moves `buffer` to `field` in the message that starts where it is, past the fields before it. */
-function seekField(
-  buffer: ByteBuffer,
-  fieldsById: ReadonlyMap<number, Field>,
-  field: Field,
+interface HeaderDecoding {
+  keep: ReadonlySet<string>
   skipper: SchemaSkipper
-): void {
-  for (let id = buffer.readVarUint(); id !== 0; id = buffer.readVarUint()) {
-    if (id === field.value) return
-    const other = fieldsById.get(id)
-    if (!other) throw new Error('Attempted to parse invalid message')
-    skipper.skipField(other, buffer)
-  }
-  throw new Error('Missing lazy field ' + quote(field.name))
+  /** Reads the message in full, for `decodeWhole`. */
+  whole: (bb: ByteBuffer) => RuntimeMessage
 }
 
-function lazyAccessor(
-  self: RuntimeCodec,
-  definitions: Definitions,
-  fieldsById: ReadonlyMap<number, Field>,
-  field: Field,
-  lazy: LazyFields,
-  skipper: SchemaSkipper
-): PropertyDescriptor {
-  return {
-    enumerable: true,
-    configurable: true,
-    get(this: RuntimeMessage): RuntimeValue {
-      const bytes: unknown = Reflect.get(this, LAZY_BYTES)
-      const start: unknown = Reflect.get(this, LAZY_START)
-      if (!(bytes instanceof Uint8Array) || typeof start !== 'number')
-        throw new Error('Missing lazy field ' + quote(field.name))
-      const buffer = new ByteBuffer(bytes)
-      buffer.offset = start
-      seekField(buffer, fieldsById, field, skipper)
-      const holder: RuntimeMessage = {}
-      readInto(self, definitions, field, buffer, holder)
-      const value = holder[field.name]
-      lazy.prepare?.(this, field.name, value)
-      return value
-    },
-    set(this: RuntimeMessage, value: RuntimeValue): void {
-      Object.defineProperty(this, field.name, {
-        value,
-        writable: true,
-        enumerable: true,
-        configurable: true
-      })
+function wholeDecoder(
+  decode: (bb: ByteBuffer) => RuntimeMessage
+): (bb: ByteBuffer) => RuntimeMessage {
+  return (bb) => {
+    wholeDepth++
+    try {
+      return decode(bb)
+    } finally {
+      wholeDepth--
     }
   }
 }
@@ -300,17 +282,11 @@ function writeFrom(
   writeField(self, definitions, type, value, bb)
 }
 
-interface LazyDecoding {
-  lazy: LazyFields
-  skipper: SchemaSkipper
-  accessors: Map<string, PropertyDescriptor>
-}
-
 function interpretDecode(
   self: RuntimeCodec,
   definitions: Definitions,
   definition: Definition,
-  lazyDecoding?: LazyDecoding
+  header?: HeaderDecoding
 ) {
   let fieldsById = new Map<number, Field>()
   for (let i = 0; i < definition.fields.length; i++)
@@ -320,25 +296,19 @@ function interpretDecode(
     let result: RuntimeMessage = {}
 
     if (definition.kind === 'MESSAGE') {
-      const start = buffer.offset
-      let hidden = false
+      const asHeader = header && wholeDepth === 0 ? header : undefined
+      if (asHeader) {
+        hide(result, HEADER_BYTES, buffer.bytes)
+        hide(result, HEADER_START, buffer.offset)
+        hide(result, HEADER_WHOLE, asHeader.whole)
+      }
       while (true) {
         const id = buffer.readVarUint()
         if (id === 0) return result
         const field = fieldsById.get(id)
         if (!field) throw new Error('Attempted to parse invalid message')
-        const accessor = lazyDecoding?.accessors.get(field.name)
-        if (lazyDecoding && accessor && !field.isDeprecated) {
-          if (!hidden) {
-            hide(result, LAZY_BYTES, buffer.bytes)
-            hide(result, LAZY_START, start)
-            hidden = true
-          }
-          lazyDecoding.skipper.skipField(field, buffer)
-          Object.defineProperty(result, field.name, accessor)
-          continue
-        }
-        readInto(self, definitions, field, buffer, result)
+        if (asHeader && !asHeader.keep.has(field.name)) asHeader.skipper.skipField(field, buffer)
+        else readInto(self, definitions, field, buffer, result)
       }
     } else {
       for (let i = 0; i < definition.fields.length; i++) {
@@ -372,7 +342,7 @@ function interpretEncode(self: RuntimeCodec, definitions: Definitions, definitio
   }
 }
 
-export function compileSchemaRuntime(schema: Schema, lazy?: LazyFields): RuntimeCodec {
+export function compileSchemaRuntime(schema: Schema, headers?: HeaderFields): RuntimeCodec {
   let definitions: Definitions = Object.create(null) as Definitions
   for (let i = 0; i < schema.definitions.length; i++) {
     definitions[schema.definitions[i].name] = schema.definitions[i]
@@ -402,29 +372,17 @@ export function compileSchemaRuntime(schema: Schema, lazy?: LazyFields): Runtime
 
       case 'STRUCT':
       case 'MESSAGE': {
-        const lazyNames = definition.kind === 'MESSAGE' ? lazy?.fields[definition.name] : undefined
-        let lazyDecoding: LazyDecoding | undefined
-        if (lazy && lazyNames?.length) {
-          const fieldSkipper = (skipper ??= createSchemaSkipper(schema))
-          const fieldsById = new Map(definition.fields.map((field) => [field.value, field]))
-          lazyDecoding = {
-            lazy,
-            skipper: fieldSkipper,
-            accessors: new Map(
-              definition.fields
-                .filter((field) => lazyNames.includes(field.name))
-                .map((field) => [
-                  field.name,
-                  lazyAccessor(result, definitions, fieldsById, field, lazy, fieldSkipper)
-                ])
-            )
-          }
+        const keep = definition.kind === 'MESSAGE' ? headers?.[definition.name] : undefined
+        const header: HeaderDecoding | undefined = keep && {
+          keep: new Set(keep),
+          skipper: (skipper ??= createSchemaSkipper(schema)),
+          whole: wholeDecoder(interpretDecode(result, definitions, definition))
         }
         result['decode' + definition.name] = interpretDecode(
           result,
           definitions,
           definition,
-          lazyDecoding
+          header
         )
         result['encode' + definition.name] = interpretEncode(result, definitions, definition)
         break

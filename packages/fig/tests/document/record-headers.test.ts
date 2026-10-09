@@ -3,8 +3,10 @@ import { expect, test } from 'bun:test'
 import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
 import { parseFigBuffer } from '#fig/archive'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
-import { LAZY_RECORD_FIELDS } from '#fig/document/read'
+import { RECORD_HEADER_FIELDS } from '#fig/document/read'
 
+import { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
+import { decodeWhole } from '@open-pencil/kiwi/schema-runtime'
 import { setIdSession, type SceneGraph } from '@open-pencil/scene-graph'
 
 const FIXTURE = 'gold-preview.fig'
@@ -30,19 +32,23 @@ function canonical(graph: SceneGraph): string {
   })
 }
 
-test('records read the same whether their bulky fields decode lazily or up front', () => {
+test('record headers keep only their header fields and decode whole into the eager records', () => {
   const bytes = readFixtureArrayBuffer(FIXTURE)
   const eager = parseFigBuffer(bytes.slice(0)).nodeChanges
-  const lazy = parseFigBuffer(bytes.slice(0), undefined, {
-    fields: { NodeChange: LAZY_RECORD_FIELDS }
+  const headers = parseFigBuffer(bytes.slice(0), undefined, {
+    NodeChange: RECORD_HEADER_FIELDS
   }).nodeChanges
+  const header = new Set<string>(RECORD_HEADER_FIELDS)
 
-  expect(structuredClone(lazy)).toEqual(eager)
+  expect(headers.flatMap(Object.keys).filter((field) => !header.has(field))).toEqual([])
+  const whole = headers.map((record) => decodeWhole(record) as (typeof eager)[number])
+  deduplicateNodeChangePluginData(whole)
+  expect(whole).toEqual(eager)
 })
 
-// The archive reader leaves those fields encoded and resolves their bindings as they decode; the
-// document it builds must match one built from records decoded whole.
-test('an archive reader with lazy records builds the document records decoded whole build', () => {
+// The archive reader keeps records as headers and decodes each whole when a read needs it; the
+// document it builds must match one built from records decoded whole up front.
+test('an archive reader with record headers builds the document records decoded whole build', () => {
   const bytes = readFixtureArrayBuffer(FIXTURE)
   const parsed = parseFigBuffer(bytes.slice(0))
   const options = { derivedBounds: true, onUnresolvedProperty: () => undefined }
