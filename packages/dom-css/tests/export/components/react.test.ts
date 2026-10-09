@@ -14,6 +14,7 @@ import {
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
+import { cssRules } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -139,6 +140,24 @@ describe('generated React components', () => {
     const second = render(component, { defaultValue: 'password' })
     expect(second).toContain('Password settings')
     expect(second).not.toContain('Account settings')
+  })
+
+  test('every tab trigger rests unchosen and takes the chosen look while active, in its place', async () => {
+    const { files } = await generate(tabsComponent())
+    const rules = cssRules(
+      String(files.find((file) => file.path === 'Settings.module.css')?.content)
+    )
+    const [first, second] = ['.settings .settings__trigger', '.settings .settings__trigger-2'].map(
+      (selector) => ({
+        rest: rules.get(selector),
+        active: rules.get(`${selector}[data-state="active"]`)
+      })
+    )
+    // The design draws the first tab chosen; at rest it looks like the others, where it is drawn.
+    expect(first?.rest?.['background-color']).toBe(second?.rest?.['background-color'])
+    expect([first?.rest?.left, second?.rest?.left]).toEqual(['0px', '90px'])
+    expect(first?.active).toEqual({ 'background-color': '#4F45E6' })
+    expect(second?.active).toEqual(first?.active)
   })
 
   test('a radio group writes an item component and chooses among its labelled items', async () => {

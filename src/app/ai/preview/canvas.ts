@@ -81,6 +81,17 @@ function countNodes(tree: JSXPreviewNode): number {
   )
 }
 
+export interface CanvasJSXPreviewOptions {
+  /** Told where each shown preview is being built, so the agent can point there. */
+  onFocus?: (focus: PreviewFocus) => void
+  /**
+   * Show previews only while this document is the active tab, and drop them when another tab
+   * becomes active, as the chat's own preview does. A room shows its peers' previews whenever
+   * the document's canvas is drawn, which is also true of several documents on one page.
+   */
+  activeTabOnly?: boolean
+}
+
 /**
  * Bind speculative pictures to this editor. Previews belong to `pageId()`, the run's page:
  * the renderer shows them only while that page is on screen, so page switches hide them.
@@ -88,14 +99,15 @@ function countNodes(tree: JSXPreviewNode): number {
 export function createCanvasJSXPreview(
   store: EditorStore,
   pageId: () => string,
-  /** Told where each shown preview is being built, so the agent can point there. */
-  onFocus?: (focus: PreviewFocus) => void
+  { onFocus, activeTabOnly = true }: CanvasJSXPreviewOptions = {}
 ) {
   let subscriptions: (() => void)[] = []
 
+  const isShown = () => !activeTabOnly || getActiveEditorStoreOrNull() === store
+
   function isCurrent(target: PreviewTarget): boolean {
     return (
-      getActiveEditorStoreOrNull() === store &&
+      isShown() &&
       store.graph === target.graph &&
       store.graph.getNode(target.pageId)?.type === 'CANVAS'
     )
@@ -107,7 +119,7 @@ export function createCanvasJSXPreview(
   }
 
   function capture(): PreviewTarget | null {
-    if (getActiveEditorStoreOrNull() !== store || !store.renderer) return null
+    if (!isShown() || !store.renderer) return null
     if (subscriptions.length === 0) {
       subscriptions = [
         store.onEditorEvent('graph:replaced', () => controller.clear()),
@@ -116,15 +128,19 @@ export function createCanvasJSXPreview(
         store.onEditorEvent('node:updated', () => controller.invalidate()),
         store.onEditorEvent('node:deleted', () => controller.invalidate()),
         store.onEditorEvent('node:reparented', () => controller.invalidate()),
-        store.onEditorEvent('node:reordered', () => controller.invalidate()),
-        watch(
-          useActiveEditorStoreRef(),
-          (active) => {
-            if (active !== store) controller.clear()
-          },
-          { flush: 'sync' }
-        )
+        store.onEditorEvent('node:reordered', () => controller.invalidate())
       ]
+      if (activeTabOnly) {
+        subscriptions.push(
+          watch(
+            useActiveEditorStoreRef(),
+            (active) => {
+              if (active !== store) controller.clear()
+            },
+            { flush: 'sync' }
+          )
+        )
+      }
     }
     return { graph: store.graph, pageId: pageId() }
   }

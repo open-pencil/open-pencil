@@ -20,7 +20,10 @@ export interface PersonPoint extends PresencePoint {
 /** Who to keep in view: a person in the room, or any agent, ours or theirs. */
 export type FollowTarget = { kind: 'person'; clientId: number } | { kind: 'agent'; agentId: string }
 
-/** An agent as its owner publishes it: metadata only, never prompts or tool arguments. */
+/**
+ * An agent as its owner publishes it: metadata only, never prompts or tool arguments. What its
+ * streamed `render` call builds travels apart from presence (`./preview-stream.ts`).
+ */
 export interface AgentPresence {
   id: string
   /** A callsign, unique among the agents in a room, such as "Fern". */

@@ -3,6 +3,7 @@ import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
 import { joinCollabRoom, type JoinCollabRoom } from '@/app/collab/transport'
+import type { CollabAction } from '@/app/collab/transport/types'
 
 export type CollabRoomOptions = {
   roomId: string
@@ -17,6 +18,10 @@ export type CollabRoomConnection = {
   sendYjsUpdate: (data: Uint8Array, peerId?: string) => void
   sendAwareness: (data: Uint8Array, peerId?: string) => void
   sendSyncStep1: (data: Uint8Array, peerId?: string) => void
+  /** What agents preview while they stream, apart from presence (`app/collab/agent-preview.ts`). */
+  agentPreview: CollabAction
+  /** Follow peers leaving the room; returns the unsubscribe. */
+  onPeerLeave: (handler: (peerId: string) => void) => () => void
 }
 
 function awarenessClientIds(data: Uint8Array): number[] {
@@ -47,6 +52,9 @@ export function connectCollabRoom({
   const [sendAwareness, getAwareness] = room.makeAction('awareness')
   const [sendSyncStep1, getSyncStep1] = room.makeAction('sync-step1')
   const [sendSyncReply, getSyncReply] = room.makeAction('sync-reply')
+  const agentPreview = room.makeAction('agent-preview')
+  // A transport keeps one leave handler, so the connection shares it with its users.
+  const leaveHandlers = new Set<(peerId: string) => void>()
 
   const awarenessClientsByPeer = new Map<string, Set<number>>()
 
@@ -96,7 +104,18 @@ export function connectCollabRoom({
     awarenessClientsByPeer.delete(peerId)
     awarenessProtocol.removeAwarenessStates(awareness, remoteClients, 'peer-left')
     updatePeersList()
+    for (const handler of leaveHandlers) handler(peerId)
   })
 
-  return { room, sendYjsUpdate, sendAwareness, sendSyncStep1 }
+  return {
+    room,
+    sendYjsUpdate,
+    sendAwareness,
+    sendSyncStep1,
+    agentPreview,
+    onPeerLeave(handler) {
+      leaveHandlers.add(handler)
+      return () => leaveHandlers.delete(handler)
+    }
+  }
 }

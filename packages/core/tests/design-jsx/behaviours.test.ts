@@ -105,6 +105,65 @@ describe('Reka UI elements in design JSX', () => {
     const behaviour = readBehaviour(root)
     expect(behaviour && missingBindings(graph, root, behaviour)).toEqual([])
   })
+
+  test('a part with content and no layout of its own hugs it in a column', async () => {
+    const { graph, root } = await render(`
+      <Collapsible.Root name="Question" w={360} flex="col">
+        <Collapsible.Trigger flex="row" gap={8}><Text>Can I cancel?</Text></Collapsible.Trigger>
+        <Collapsible.Content><Text>Yes, any time from your account.</Text></Collapsible.Content>
+      </Collapsible.Root>
+    `)
+    const [, content] = graph.getChildren(root.id)
+    const [text] = graph.getChildren(content?.id ?? '')
+    expect(content?.layoutMode).toBe('VERTICAL')
+    expect(content?.width).toBe(text?.width)
+    expect(content?.height).toBe(text?.height)
+
+    // One sized under any name keeps its own size and no layout.
+    const { graph: sizedGraph, root: sized } = await render(`
+      <Collapsible.Root name="Question" w={360} flex="col">
+        <Collapsible.Trigger flex="row"><Text>Can I cancel?</Text></Collapsible.Trigger>
+        <Collapsible.Content width={200} height={40}><Text>Yes.</Text></Collapsible.Content>
+      </Collapsible.Root>
+    `)
+    const [, sizedContent] = sizedGraph.getChildren(sized.id)
+    expect([sizedContent?.layoutMode, sizedContent?.width, sizedContent?.height]).toEqual([
+      'NONE',
+      200,
+      40
+    ])
+
+    // A part drawn as a shape keeps the size it is given.
+    const { graph: switchGraph, root: switchRoot } = await render(`
+      <Switch.Root name="Switch" w={44} h={24}><Switch.Thumb w={20} h={20} /></Switch.Root>
+    `)
+    const [thumb] = switchGraph.getChildren(switchRoot.id)
+    expect([thumb?.layoutMode, thumb?.width, thumb?.height]).toEqual(['NONE', 20, 20])
+  })
+
+  test('an item chooses its variant by the set’s variant property, which is no unknown prop', async () => {
+    const graph = new SceneGraph()
+    const [radio] = await renderJSX(
+      graph,
+      `<RadioGroup.Item name="Radio" modelValue="Checked">
+        <Component name="Checked=Off" w={20} h={20} />
+        <Component name="Checked=On" w={20} h={20} />
+      </RadioGroup.Item>`
+    )
+    const [group] = await renderJSX(
+      graph,
+      `<RadioGroup.Root name="Plan">
+        <RadioGroup.Item of="${radio.id}" />
+        <RadioGroup.Item of="${radio.id}" Checked="On" Tone="Loud" />
+      </RadioGroup.Root>`
+    )
+    const [items] = graph.getChildren(group.id)
+    const chosen = graph
+      .getChildren(items?.id ?? '')
+      .map((item) => graph.getNode(item.componentId ?? '')?.name)
+    expect(chosen).toEqual(['Checked=Off', 'Checked=On'])
+    expect(group.warnings).toEqual(['Unsupported prop "Tone" on <RadioGroup.Item> is ignored.'])
+  })
 })
 
 describe('Reka UI elements in JSX export', () => {

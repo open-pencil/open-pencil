@@ -1,5 +1,6 @@
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { designJSXProp } from '../schema'
 import type { TreeNode } from '../tree'
 import {
   BEHAVIOUR_PROPS,
@@ -47,6 +48,20 @@ function named(tree: TreeNode, fallback: string): TreeNode {
     : tree
 }
 
+/** The props that give a frame a layout or size of its own, under any of their names. */
+const LAYOUT_PROPS = ['flex', 'display', 'w', 'h']
+
+/**
+ * A part that holds content, such as a panel or a trigger, with no layout of its own stacks
+ * its children in a column that hugs them, rather than pinning them in a fixed box.
+ */
+function laidOut(tree: TreeNode): TreeNode {
+  const content = tree.children.some((child) => typeof child !== 'string')
+  if (!content || LAYOUT_PROPS.some((prop) => designJSXProp(tree.props, prop) !== undefined))
+    return tree
+  return { ...tree, props: { ...tree.props, flex: 'col' } }
+}
+
 /**
  * Render a Reka UI element: a root as a main component (or a component set, when it has
  * variants) that behaves as its control, a part as the slot that draws it, and an input as the
@@ -89,13 +104,13 @@ export async function renderRekaNode(
     }
     case 'part': {
       if (!scope) throw new Error(`<${tree.type}> must be inside its Root`)
-      const frame = hooks.create('FRAME', named(tree, partName), parentId)
+      const frame = hooks.create('FRAME', laidOut(named(tree, partName)), parentId)
       await renderChildren(hooks.render, tree.children, frame.id, scope)
       bindPart(graph, scope, frame, role.part)
       return frame
     }
     case 'repeat': {
-      const frame = hooks.create('FRAME', named(tree, partName), parentId)
+      const frame = hooks.create('FRAME', laidOut(named(tree, partName)), parentId)
       await renderChildren(hooks.render, tree.children, frame.id, scope)
       // Only the first tab's panel shows as designed; preview shows the others as chosen.
       const siblings = graph.getChildren(parentId)
@@ -120,7 +135,7 @@ export async function renderRekaNode(
       return text
     }
     case 'frame': {
-      const frame = hooks.create('FRAME', named(tree, partName), parentId)
+      const frame = hooks.create('FRAME', laidOut(named(tree, partName)), parentId)
       await renderChildren(hooks.render, tree.children, frame.id, scope)
       return frame
     }

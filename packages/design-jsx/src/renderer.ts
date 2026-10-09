@@ -378,25 +378,38 @@ function findVariantInSet(
   )
 }
 
-function resolveComponent(
-  graph: SceneGraph,
-  props: Record<string, unknown>
-): SceneNode | undefined {
+/** The component or component set an element names by id or name. */
+function namedComponent(graph: SceneGraph, props: Record<string, unknown>): SceneNode | undefined {
   const ref = props.component ?? props.componentId ?? props.of
   if (typeof ref !== 'string') return undefined
 
   const byId = graph.getNode(ref)
-  if (byId?.type === 'COMPONENT') return byId
-  if (byId?.type === 'COMPONENT_SET') return findVariantInSet(graph, byId, props)
+  if (byId?.type === 'COMPONENT' || byId?.type === 'COMPONENT_SET') return byId
 
   const byName = findComponentByName(graph, ref)
   if (byName) return byName
 
   for (const node of graph.getAllNodes()) {
-    if (node.type === 'COMPONENT_SET' && node.name === ref)
-      return findVariantInSet(graph, node, props)
+    if (node.type === 'COMPONENT_SET' && node.name === ref) return node
   }
   return undefined
+}
+
+function resolveComponent(
+  graph: SceneGraph,
+  props: Record<string, unknown>
+): SceneNode | undefined {
+  const named = namedComponent(graph, props)
+  return named?.type === 'COMPONENT_SET' ? findVariantInSet(graph, named, props) : named
+}
+
+/** The variant properties an element chooses its component's variant by, such as `State`. */
+export function variantPropNames(graph: SceneGraph, props: Record<string, unknown>): string[] {
+  const named = namedComponent(graph, props)
+  if (named?.type !== 'COMPONENT_SET') return []
+  return named.componentPropertyDefinitions
+    .filter((definition) => definition.type === 'VARIANT')
+    .map((definition) => definition.name)
 }
 
 async function renderInstanceNode(

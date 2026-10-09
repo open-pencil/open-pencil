@@ -16,7 +16,7 @@ import {
 import type { StateCondition, StateElement, StateRule, StateStyles } from './types'
 
 /** Declarations `drawn` sets differently from `base`, with `unset` for ones it drops. */
-function difference(
+export function difference(
   base: DesignStyleDeclaration,
   drawn: DesignStyleDeclaration
 ): DesignStyleDeclaration {
