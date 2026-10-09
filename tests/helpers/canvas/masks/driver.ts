@@ -11,11 +11,9 @@ export function maskSceneDriver(page: () => Page) {
         if (!store) throw new Error('OpenPencil store not initialized')
         const sceneURL = '/tests/helpers/canvas/masks/scene.ts'
         const scenes: typeof MaskScenes = await import(sceneURL)
-        await scenes.MASK_SCENES[name]({
-          graph: store.graph,
-          pageId: store.state.currentPageId,
-          storeImage: (bytes) => store.storeImage(bytes)
-        })
+        await scenes.MASK_SCENES[name](store.graph, store.state.currentPageId, (bytes) =>
+          store.storeImage(bytes)
+        )
         store.clearSelection()
         store.requestRender()
       }, name)

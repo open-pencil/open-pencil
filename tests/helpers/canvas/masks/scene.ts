@@ -1,14 +1,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-/** What a scene draws into: the page and the image store of the open document. */
-export interface MaskSceneTarget {
-  graph: SceneGraph
-  pageId: string
-  storeImage(bytes: Uint8Array): string
-}
-
 /** Pattern fills drawn from a hidden source node. */
-export function createPatternFillScene({ graph, pageId }: MaskSceneTarget): void {
+export function createPatternFillScene(graph: SceneGraph, pageId: string): void {
   const source = graph.createNode('ELLIPSE', pageId, {
     name: 'Pattern source dot',
     x: -1000,
@@ -56,11 +49,11 @@ export function createPatternFillScene({ graph, pageId }: MaskSceneTarget): void
 }
 
 /** An image tile fill beside a luminance mask stack and two consecutive masks. */
-export async function createLuminanceMaskScene({
-  graph,
-  pageId,
-  storeImage
-}: MaskSceneTarget): Promise<void> {
+export async function createLuminanceMaskScene(
+  graph: SceneGraph,
+  pageId: string,
+  storeImage: (bytes: Uint8Array) => string
+): Promise<void> {
   const imageCanvas = document.createElement('canvas')
   imageCanvas.width = 32
   imageCanvas.height = 32
@@ -221,7 +214,7 @@ export async function createLuminanceMaskScene({
 }
 
 /** Masks with opacity, a translucent outline fill, luminance at half opacity, and a layer blur. */
-export function createMaskEffectsScene({ graph, pageId }: MaskSceneTarget): void {
+export function createMaskEffectsScene(graph: SceneGraph, pageId: string): void {
   const solid = (r: number, g: number, b: number, opacity = 1) => ({
     type: 'SOLID' as const,
     color: { r, g, b, a: 1 },
