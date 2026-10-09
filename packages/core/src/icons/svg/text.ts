@@ -25,7 +25,11 @@ const GENERIC_FAMILIES = new Set([
   'ui-serif',
   'ui-monospace'
 ])
-const MOVES = ['x', 'y', 'dx', 'dy']
+/**
+ * Attributes that start a new layer. A `dx` alone shifts from where the text so far ends, which
+ * only layout knows, so such a `<tspan>` stays in its layer as a style run.
+ */
+const MOVES = ['x', 'y', 'dy']
 
 function fontFamily(value: string): string | null {
   for (const entry of value.split(',')) {

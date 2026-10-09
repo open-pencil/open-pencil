@@ -1,3 +1,5 @@
+import { groupBy } from 'es-toolkit/array'
+
 import {
   fitEnclosingGroups,
   WHITE,
@@ -121,8 +123,8 @@ function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string
       parentIds.add(parentId)
     }
   })
-  const textsAt = (index: number) =>
-    data.texts.filter((text) => text.pathIndex === index).map(textDrawable)
+  const textsByPath = groupBy(data.texts, (text) => text.pathIndex)
+  const textsAt = (index: number) => (textsByPath[index] ?? []).map(textDrawable)
   return [
     ...data.paths.flatMap((path, index) => [...textsAt(index), pathDrawable(path)]),
     ...textsAt(data.paths.length)

@@ -340,6 +340,14 @@ describe('SVG text imports as the text layers Figma makes', () => {
     ])
   })
 
+  test('keeps a tspan that only shifts by dx in its line, as a style run', () => {
+    const { texts } = textLayers(
+      '<svg viewBox="0 0 200 60"><text x="10" y="30" font-size="20">Hello<tspan dx="5" font-weight="700">World</tspan></text></svg>'
+    )
+    expect(texts.map((text) => text.text)).toEqual(['HelloWorld'])
+    expect(texts[0]?.styleRuns).toEqual([{ start: 5, length: 5, style: { fontWeight: 700 } }])
+  })
+
   test('keeps italic, underline, and the rotation of a transform', () => {
     const { graph, texts } = textLayers(
       '<svg viewBox="0 0 200 200"><text transform="translate(50 100) rotate(-30)" style="font-size: 20px; font-style: italic; text-decoration: underline">Turned</text></svg>'
