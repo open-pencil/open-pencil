@@ -144,6 +144,22 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       run: ({ actions }) => actions.togglePlay(),
       preview: true
     },
+    {
+      id: 'toggle-rulers',
+      keys: 'Shift+KeyR',
+      run: ({ store }) => {
+        store.state.showRulers = !store.state.showRulers
+        store.requestRepaint()
+      }
+    },
+    {
+      id: 'toggle-multiplayer-cursors',
+      keys: '$mod+Alt+Backslash',
+      run: ({ store }) => {
+        store.state.showRemoteCursors = !store.state.showRemoteCursors
+        store.requestRepaint()
+      }
+    },
     // Figma's keys, matched by key position since Shift turns ' into ".
     {
       id: 'toggle-pixel-grid',

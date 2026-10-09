@@ -112,9 +112,9 @@ export const EDITOR_COMMAND_METADATA = {
   'selection.outlineStroke': { contextTestId: 'context-outline-stroke' },
   'selection.moveToPage': {},
   'selection.setOpacity': { shortcut: '1-9, 0' },
-  'view.zoom100': { keybinding: '$mod+Digit0' },
-  'view.zoomFit': { keybinding: ['$mod+Digit1', 'Shift+Digit1'] },
-  'view.zoomSelection': { keybinding: ['$mod+Digit2', 'Shift+Digit2'] }
+  'view.zoom100': { shortcut: 'MOD+0', keybinding: '$mod+Digit0' },
+  'view.zoomFit': { shortcut: 'SHIFT+1', keybinding: ['$mod+Digit1', 'Shift+Digit1'] },
+  'view.zoomSelection': { shortcut: 'SHIFT+2', keybinding: ['$mod+Digit2', 'Shift+Digit2'] }
 } satisfies Record<EditorCommandId, EditorCommandMetadata>
 
 export function editorCommandMetadata(id: EditorCommandId): EditorCommandMetadata {

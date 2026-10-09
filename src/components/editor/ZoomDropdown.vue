@@ -9,12 +9,12 @@ import {
 } from 'reka-ui'
 import { nextTick, ref, watch } from 'vue'
 
-import { useEditorCommands, useI18n, formatShortcut } from '@open-pencil/vue'
+import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { setDesignIssuesOnCanvas } from '@/app/settings/preferences/apply'
+import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
-import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 
@@ -57,6 +57,11 @@ function toggleRulers() {
   store.requestRepaint()
 }
 
+function togglePixelGrid() {
+  store.state.showPixelGrid = store.state.showPixelGrid === false
+  store.requestRepaint()
+}
+
 function toggleRemoteCursors() {
   store.state.showRemoteCursors = !store.state.showRemoteCursors
   store.requestRepaint()
@@ -72,10 +77,14 @@ function zoomOut() {
   store.applyZoom(100, center.x, center.y)
 }
 
-const ZOOM_PRESETS: ReadonlyArray<{ label: string; level: number; shortcut?: string }> = [
-  { label: '50%', level: 0.5 },
-  { label: '100%', level: 1, shortcut: appMenuShortcut('view.zoom100') },
-  { label: '200%', level: 2 }
+const ZOOM_PRESETS = [
+  { level: 0.5, label: () => commands.value.zoomTo50 },
+  {
+    level: 1,
+    label: () => commands.value.zoomTo100,
+    shortcut: appMenuShortcutLabel('view.zoom100')
+  },
+  { level: 2, label: () => commands.value.zoomTo200 }
 ]
 
 function isActivePreset(level: number) {
@@ -148,17 +157,37 @@ watch(open, (v) => {
           @select="store.zoomToLevel(preset.level)"
         >
           <icon-lucide-check v-if="isActivePreset(preset.level)" class="absolute left-2 size-3.5" />
-          <span class="flex-1">{{ preset.label }}</span>
-          <AppShortcutText v-if="preset.shortcut">{{
-            formatShortcut(preset.shortcut)
-          }}</AppShortcutText>
+          <span class="flex-1">{{ preset.label() }}</span>
+          <AppShortcutText v-if="preset.shortcut">{{ preset.shortcut }}</AppShortcutText>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator :class="menuCls.separator" />
 
+        <DropdownMenuItem :class="itemCls" @select.prevent="togglePixelGrid">
+          <icon-lucide-check
+            v-if="store.state.showPixelGrid !== false"
+            class="absolute left-2 size-3.5"
+          />
+          <span class="flex-1">{{ menuText.pixelGrid }}</span>
+          <AppShortcutText>{{ appMenuShortcutLabel('view-pixel-grid') }}</AppShortcutText>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          :class="itemCls"
+          @select.prevent="
+            setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid)
+          "
+        >
+          <icon-lucide-check
+            v-if="store.state.snappingPreferences.pixelGrid"
+            class="absolute left-2 size-3.5"
+          />
+          <span class="flex-1">{{ menuText.snapToPixelGrid }}</span>
+          <AppShortcutText>{{ appMenuShortcutLabel('snap-pixel-grid') }}</AppShortcutText>
+        </DropdownMenuItem>
         <DropdownMenuItem :class="itemCls" @select.prevent="toggleRulers">
           <icon-lucide-check v-if="store.state.showRulers" class="absolute left-2 size-3.5" />
           <span class="flex-1">{{ panels.rulers }}</span>
+          <AppShortcutText>{{ appMenuShortcutLabel('view-rulers') }}</AppShortcutText>
         </DropdownMenuItem>
         <DropdownMenuItem :class="itemCls" @select.prevent="toggleRemoteCursors">
           <icon-lucide-check
@@ -166,6 +195,7 @@ watch(open, (v) => {
             class="absolute left-2 size-3.5"
           />
           <span class="flex-1">{{ panels.multiplayerCursors }}</span>
+          <AppShortcutText>{{ appMenuShortcutLabel('view-multiplayer-cursors') }}</AppShortcutText>
         </DropdownMenuItem>
         <DropdownMenuItem
           :class="itemCls"
