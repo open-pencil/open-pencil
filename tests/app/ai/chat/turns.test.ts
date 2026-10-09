@@ -108,10 +108,14 @@ function fakeChat(nodeId: string, finish?: (tools: Tools) => Promise<unknown>) {
   return chat
 }
 
-function submission(chat: ReturnType<typeof fakeChat>) {
+function submission(
+  chat: ReturnType<typeof fakeChat>,
+  ensureChat: () => Promise<ChatInstance | null> = async () => chat,
+  current = shallowRef<ChatInstance | null>(chat)
+) {
   return useChatSubmission({
-    chat: shallowRef<ChatInstance | null>(chat),
-    ensureChat: async () => chat,
+    chat: current,
+    ensureChat,
     clearFailure: () => undefined,
     getEditor: () => store,
     messages: shallowRef({
@@ -219,6 +223,25 @@ test('retrying a request that got no reply sends it again and keeps the earlier 
     'reply-2'
   ])
   store.undoAction()
+  expect(width(card.id)).toBe(200)
+})
+
+test('retrying after the key changed asks through the rebuilt chat', async () => {
+  const { card, chat } = setup()
+  // Like the session's: a changed key or model rebuilds the chat with the same messages.
+  const rebuilt = fakeChat(card.id)
+  let active = chat
+  const current = shallowRef<ChatInstance | null>(chat)
+  const actions = submission(chat, async () => active, current)
+  chat.failNext = true
+  await actions.submit({ modelText: 'Wider', displayText: 'Wider', images: [], nodes: [] })
+  rebuilt.messages = chat.messages
+  active = rebuilt
+
+  await actions.regenerate()
+
+  expect(current.value).toBe(rebuilt)
+  expect(rebuilt.messages.map((message) => message.role)).toEqual(['user', 'assistant'])
   expect(width(card.id)).toBe(200)
 })
 
