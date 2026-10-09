@@ -83,6 +83,19 @@ describe('HTML flow as auto layout', () => {
     expect(byName('unstyled').width).toBe(100)
   })
 
+  it('hugs text in a stretching row and in boxes sized to their content', async () => {
+    const { graph, byName, sizing } = await importHTML(
+      `<nav style="display:flex;width:400px"><div id="links" style="display:flex;gap:8px"><a>Docs</a></div></nav>
+       <div style="position:relative;width:200px"><div id="badge" style="position:absolute;padding:2px 8px">Popular</div></div>`
+    )
+    // A row stretches its items across, which is no reason for text to stop sizing itself.
+    expect(textIn(graph, byName('links')).textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    // An absolute box sizes to its content, so its text hugs rather than filling it.
+    const badge = byName('badge')
+    expect(sizing(badge)).toEqual(['HUG', 'HUG'])
+    expect(textIn(graph, badge).textAutoResize).toBe('WIDTH_AND_HEIGHT')
+  })
+
   it('fills a 100% width and leaves out display: none', async () => {
     const { graph, byName, sizing } = await importHTML(
       `<div style="display:flex"><div id="wide" style="width:100%">A</div><div id="hidden" style="display:none">B</div></div>`

@@ -131,23 +131,44 @@ function applyParentFill(
   const fill = (axis: 'HORIZONTAL' | 'VERTICAL') =>
     Object.assign(node, fillSizingFields(parentLayout, axis))
   const mainAxis = parentLayout === 'VERTICAL' ? 'VERTICAL' : 'HORIZONTAL'
-  if (parentFlow === 'block' && !isInlineLevel(display) && !fixedWidth) fill('HORIZONTAL')
+  // A box sized to its content, as an inline-block, a flex item, or an absolute box is, has no
+  // width of its own for block children to fill; they size it instead.
+  const block = parentFlow === 'block' && !isInlineLevel(display) && !fixedWidth
+  if (block && hasDefiniteWidth(graph, parent)) fill('HORIZONTAL')
   if (parentFlow === 'flex' && grows(style)) fill(mainAxis)
   if (isFullSize(style, 'width')) fill('HORIZONTAL')
   if (isFullSize(style, 'height')) fill('VERTICAL')
-  // An item with its own cross size keeps it in a stretching container, as in CSS.
-  const crossFixed = mainAxis === 'VERTICAL' ? fixedWidth : fixedHeight
-  const inheritsStretch = node.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH'
-  if (parentFlow === 'flex' && crossFixed && inheritsStretch) node.layoutAlignSelf = 'MIN'
+  if (parentFlow === 'flex') keepFixedCrossSize(node, parent, mainAxis, { fixedWidth, fixedHeight })
 }
 
-/** Text hugs the axes it does not fill or fix, and is measured when the document is laid out. */
+/** An item with its own cross size keeps it in a stretching flex container, as in CSS. */
+function keepFixedCrossSize(
+  node: SceneNode,
+  parent: SceneNode,
+  mainAxis: 'HORIZONTAL' | 'VERTICAL',
+  { fixedWidth, fixedHeight }: BoxSize
+): void {
+  const crossFixed = mainAxis === 'VERTICAL' ? fixedWidth : fixedHeight
+  const inheritsStretch = node.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH'
+  if (crossFixed && inheritsStretch) node.layoutAlignSelf = 'MIN'
+}
+
+function hasDefiniteWidth(graph: SceneGraph, node: SceneNode): boolean {
+  return layoutSizing(graph, node, 'HORIZONTAL') !== 'HUG'
+}
+
+/**
+ * Text wraps where its width is fixed or fills a parent with a width of its own, and hugs its
+ * content otherwise. It is measured when the document is laid out.
+ */
 function applyTextSizing(graph: SceneGraph, node: SceneNode, size: BoxSize): void {
-  const hugs = (axis: 'HORIZONTAL' | 'VERTICAL') => layoutSizing(graph, node, axis) !== 'FILL'
-  node.textAutoResize = textAutoResizeFor(
-    !size.fixedWidth && hugs('HORIZONTAL'),
-    !size.fixedHeight && hugs('VERTICAL')
-  )
+  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  const fillsWidth =
+    parent !== undefined &&
+    hasDefiniteWidth(graph, parent) &&
+    layoutSizing(graph, node, 'HORIZONTAL') === 'FILL'
+  const wraps = size.fixedWidth || fillsWidth
+  node.textAutoResize = wraps ? textAutoResizeFor(false, !size.fixedHeight) : 'WIDTH_AND_HEIGHT'
   // Wrapping text starts at its content's width.
   if (!size.fixedWidth) node.width = 0
   if (!size.fixedHeight) node.height = 0
