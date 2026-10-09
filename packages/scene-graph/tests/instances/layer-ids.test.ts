@@ -132,6 +132,34 @@ describe('swapping a nested instance', () => {
     const swapped = required(graph.getNode(instanceLayerId(instance.id, [nested.id, otherDot.id])))
     expect(instanceLayerSource(graph, swapped)?.id).toBe(otherDot.id)
   })
+
+  test('a swapped nested instance follows the component swapped in, whichever syncs last', () => {
+    for (const order of ['pill first', 'card first']) {
+      const { graph, page, card, nested, instance } = kit()
+      const pill = graph.createNode('COMPONENT', page, { name: 'Pill', cornerRadius: 9 })
+      graph.updateNode(nested.id, { cornerRadius: 3 })
+      const copyId = instanceLayerId(instance.id, [nested.id])
+      graph.swapInstanceComponent(copyId, pill.id)
+
+      const components = order === 'pill first' ? [pill, card] : [card, pill]
+      for (const component of components) graph.syncInstances(component.id)
+
+      expect(graph.getNode(copyId)?.cornerRadius).toBe(9)
+    }
+  })
+
+  test('a nested copy takes an edit to the layer it copies through every level', () => {
+    const { graph, page, badge, dot, card, nested } = kit()
+    const shelf = graph.createNode('COMPONENT', page, { name: 'Shelf' })
+    const cardInShelf = required(graph.createInstance(card.id, shelf.id))
+    const outer = required(graph.createInstance(shelf.id, page))
+    graph.updateNode(dot.id, { name: 'Edited dot' })
+
+    graph.syncInstances(badge.id)
+
+    const deep = instanceLayerId(outer.id, [cardInShelf.id, nested.id, dot.id])
+    expect(graph.getNode(deep)?.name).toBe('Edited dot')
+  })
 })
 
 describe('cloning and detaching', () => {

@@ -20,6 +20,7 @@ import {
   sourceInTargetCoordinates,
   syncBindingFields,
   syncInstanceChildren,
+  syncInstanceLayer,
   updateSyncedProps
 } from './instances/sync'
 import { detachOwnedSlotContent, isOwnedSlotContent, restoreOwnedSlotContent } from './slots/frames'
@@ -189,12 +190,12 @@ function syncInstancesOf(
   syncing.add(componentId)
   try {
     // A copy of a nested instance takes the component's changes through the layer it copies, so
-    // its outermost instance syncs once the component's own instances have.
-    const owners = new Set<SceneNode>()
+    // it syncs from that layer once the component's own instances have.
+    const copies: { node: SceneNode; depth: number }[] = []
     for (const instance of instances) {
       if (!syncsFromComponent(graph, instance)) {
-        const owner = overrideTarget(graph, instance)?.owner
-        if (owner) owners.add(owner)
+        const depth = parseInstanceLayerId(instance.id)?.path.length ?? 0
+        copies.push({ node: instance, depth })
         continue
       }
       const target = overrideTarget(graph, instance)
@@ -213,8 +214,8 @@ function syncInstancesOf(
       updateSyncedProps(graph, instance, updates)
       syncInstanceChildren(graph, instance, component)
     }
-    for (const owner of owners)
-      if (owner.componentId) syncInstancesOf(graph, owner.componentId, [owner])
+    for (const { node } of copies.toSorted((left, right) => left.depth - right.depth))
+      syncInstanceLayer(graph, node)
   } finally {
     syncing.delete(componentId)
   }

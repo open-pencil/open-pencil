@@ -12,7 +12,7 @@ import {
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import { scaleVariableBindingUnits } from '../variables/units'
-import { isSwappedAt } from './addressing'
+import { instanceLayerSource, isSwappedAt } from './addressing'
 import { INSTANCE_SYNC_FIELDS } from './fields'
 import {
   copyLayerId,
@@ -178,6 +178,10 @@ function cloneCopy(
   })
 }
 
+function isSwapped(context: CopyContext, copy: SceneNode): boolean {
+  return copy.type === 'INSTANCE' && isSwappedAt(context.owner, pathOf(copy.id))
+}
+
 /** Where the contents of an instance copy come from: its swapped component, or its source layer. */
 function contentsSource(
   graph: SceneGraph,
@@ -185,8 +189,7 @@ function contentsSource(
   copy: SceneNode,
   source: SceneNode
 ): { source: SceneNode; context: CopyContext } | undefined {
-  if (copy.type !== 'INSTANCE' || !isSwappedAt(context.owner, pathOf(copy.id)))
-    return { source, context }
+  if (!isSwapped(context, copy)) return { source, context }
   const component = copy.componentId ? graph.getNode(copy.componentId) : undefined
   return component
     ? { source: component, context: { ...context, scope: instanceScope(copy) } }
@@ -401,7 +404,9 @@ function syncCopies(
     }
     if (existing.parentId !== targetParent.id)
       graph.insertChildAt(id, targetParent.id, targetParent.childIds.length)
-    syncCopy(graph, context, source, existing, sourceParent, targetParent)
+    // A swapped instance syncs as an instance of the component swapped in, not from this layer.
+    if (!isSwapped(context, existing))
+      syncCopy(graph, context, source, existing, sourceParent, targetParent)
     // The component's frame is the authority on which slot this is; instance copies of its
     // bindings are not synced.
     if (ownsSlotContent(graph, existing, slotPropertyId(source))) continue
@@ -415,6 +420,35 @@ function syncCopies(
   for (const childId of targetParent.childIds)
     if (isInstanceLayerId(childId) && !expected.has(childId)) graph.deleteNode(childId)
   orderChildren(graph, targetParent, copyIds)
+}
+
+/**
+ * Brings one copy inside an instance, and the copies below it, up to date with the layer it
+ * copies, as syncing its whole outermost instance would. The layer it copies has a shorter path
+ * or sits in a component, so syncing shorter paths first brings sources up to date first.
+ */
+export function syncInstanceLayer(graph: SceneGraph, copy: SceneNode): void {
+  const address = parseInstanceLayerId(copy.id)
+  const owner = address && graph.getNode(address.owner)
+  const source = instanceLayerSource(graph, copy)
+  const parent = copy.parentId ? graph.getNode(copy.parentId) : undefined
+  const sourceParent = source?.parentId ? graph.getNode(source.parentId) : undefined
+  if (!address || !owner || !source || !parent || !sourceParent) return
+  // Below a swapped nested instance, copies are named from that instance, as building them did.
+  let scope: InstanceScope = { owner: owner.id, prefix: [] }
+  for (let length = address.path.length - 1; length >= 1; length--) {
+    const prefix = address.path.slice(0, length)
+    if (isSwappedAt(owner, prefix)) {
+      scope = { owner: owner.id, prefix }
+      break
+    }
+  }
+  const context = { scope, owner }
+  if (!isSwapped(context, copy)) syncCopy(graph, context, source, copy, sourceParent, parent)
+  if (ownsSlotContent(graph, copy, slotPropertyId(source))) return
+  const contents = contentsSource(graph, context, copy, source)
+  if (contents && contents.source === source && source.childIds.length > 0)
+    syncCopies(graph, context, source, copy)
 }
 
 /** Brings the copies an instance shows up to date with `component`. */
