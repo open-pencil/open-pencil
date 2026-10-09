@@ -1,3 +1,5 @@
+import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
+
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 
 import type { DesignDocument } from '../src/index'
@@ -144,3 +146,21 @@ export const tailwindInputClasses = [
   'text-sm',
   'text-slate-900'
 ] as const
+
+/** Every style rule of a stylesheet, by selector, including ones inside media queries. */
+export function cssRules(css: string): Map<string, Record<string, string>> {
+  const rules = new Map<string, Record<string, string>>()
+  const visit = (list: ArrayLike<unknown>) => {
+    for (const item of Array.from(list)) {
+      const rule = item as CSSStyleRuleLike & { cssRules?: ArrayLike<unknown> }
+      if (rule.cssRules) visit(rule.cssRules)
+      if (!rule.selectorText) continue
+      const style: Record<string, string> = {}
+      for (const property of Array.from({ length: rule.style.length }, (_, i) => rule.style[i]))
+        if (property) style[property] = rule.style.getPropertyValue(property)
+      rules.set(rule.selectorText, style)
+    }
+  }
+  visit(parse(css).cssRules)
+  return rules
+}

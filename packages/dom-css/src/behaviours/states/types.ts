@@ -14,6 +14,11 @@ export type StateCondition =
 /** What a variant changes on a layer, and the conditions that show that variant. */
 export interface StateRule {
   conditions: StateCondition[]
+  /**
+   * The layer the conditions test when it is not the control's root, such as a tab trigger
+   * that Reka and Radix mark active itself: the layer the rule styles, or one around it.
+   */
+  on?: StateElement
   style: DesignStyleDeclaration
 }
 

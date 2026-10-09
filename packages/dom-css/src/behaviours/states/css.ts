@@ -58,9 +58,11 @@ export async function stateStylesToCSS(styles: StateStyles): Promise<StateStyles
       rules.push({ order: 0, selector: `.${rootClass}${own}`, style: element.base })
     for (const rule of element.rules) {
       const when = rule.conditions.map(conditionSelector).join('')
+      const on = rule.on && classes.get(rule.on)
+      const tested = on ? ` .${on}${when}${rule.on === element ? '' : own}` : `${when}${own}`
       rules.push({
         order: rule.conditions.length,
-        selector: `.${rootClass}${when}${own}`,
+        selector: `.${rootClass}${tested}`,
         style: rule.style
       })
     }

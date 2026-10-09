@@ -3,7 +3,7 @@ import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-cs
 import { twirl } from 'twirlwind'
 
 import { cssName, propAttribute } from './names'
-import type { StateCondition, StateNode, StateStyles } from './types'
+import type { StateCondition, StateElement, StateNode, StateStyles } from './types'
 
 export interface StateTailwindOptions {
   /** Custom properties declared in `@theme`; a `var()` naming one becomes its utility. */
@@ -41,21 +41,41 @@ function utilities(style: DesignStyleDeclaration, options: StateTailwindOptions)
     : []
 }
 
+/** What each element's utilities are written against. */
+interface Groups {
+  /** The control's root group. */
+  root: string
+  /** A named group for each layer other than the root whose state a rule tests. */
+  anchors: Map<StateElement, string>
+}
+
+/** The group a rule's conditions test from `node`, or null when they test `node` itself. */
+function testedGroup(
+  node: StateElement,
+  on: StateElement | undefined,
+  groups: Groups,
+  isRoot: boolean
+): string | null {
+  if (on) return on === node ? null : (groups.anchors.get(on) ?? null)
+  return isRoot ? null : groups.root
+}
+
 function designNode(
   node: StateNode,
-  group: string,
+  groups: Groups,
   isRoot: boolean,
   options: StateTailwindOptions
 ): DesignNode {
   if (node.type === 'text') return node
+  const anchor = groups.anchors.get(node)
   const classes = [
     ...(node.attrs.class ? splitWhitespace(node.attrs.class) : []),
-    ...(isRoot ? [`group/${group}`] : []),
+    ...(isRoot ? [`group/${groups.root}`] : []),
+    ...(anchor ? [`group/${anchor}`] : []),
     ...utilities(node.base, options),
     ...node.rules.flatMap((rule) => {
-      const prefix = rule.conditions
-        .map((condition) => variant(condition, isRoot ? null : group))
-        .join('')
+      const group = testedGroup(node, rule.on, groups, isRoot)
+      const prefix = rule.conditions.map((condition) => variant(condition, group)).join('')
       return utilities(rule.style, options).map((utility) => `${prefix}${utility}`)
     })
   ]
@@ -63,8 +83,21 @@ function designNode(
     type: 'element',
     tagName: node.tagName,
     attrs: { ...node.attrs, class: classes.join(' ') },
-    children: node.children.map((child) => designNode(child, group, false, options))
+    children: node.children.map((child) => designNode(child, groups, false, options))
   }
+}
+
+/** The layers rules test other than the root, each named after the root's group. */
+function anchorGroups(root: StateElement, group: string): Map<StateElement, string> {
+  const anchors = new Map<StateElement, string>()
+  const visit = (node: StateNode) => {
+    if (node.type === 'text') return
+    for (const rule of node.rules)
+      if (rule.on && !anchors.has(rule.on)) anchors.set(rule.on, `${group}-${anchors.size + 1}`)
+    for (const child of node.children) visit(child)
+  }
+  visit(root)
+  return anchors
 }
 
 /**
@@ -76,6 +109,7 @@ export function stateStylesToTailwind(
   styles: StateStyles,
   options: StateTailwindOptions = {}
 ): DesignDocument {
-  const group = cssName(styles.name, 'component')
-  return { type: 'document', children: [designNode(styles.root, group, true, options)] }
+  const root = cssName(styles.name, 'component')
+  const groups = { root, anchors: anchorGroups(styles.root, root) }
+  return { type: 'document', children: [designNode(styles.root, groups, true, options)] }
 }

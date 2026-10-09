@@ -1,7 +1,13 @@
+import { difference } from '#dom-css/behaviours/states/model'
 import type { StateElement, StateNode } from '#dom-css/behaviours/states/types'
+import type { DesignStyleDeclaration } from '#dom-css/types'
+import { zip } from 'es-toolkit/array'
+import { omitBy } from 'es-toolkit/object'
+import { isEmptyObject } from 'es-toolkit/predicate'
 import { kebabCase } from 'es-toolkit/string'
 
 import { claimName } from '../storybook/names'
+import { isPlacement } from './references'
 
 /** A layer drawn once per value, such as a tab's trigger or its panel, and the value it is. */
 export interface RepeatedPart {
@@ -56,4 +62,51 @@ export function tabParts(parts: ReadonlyMap<StateElement, string>): {
   }
   const first = values.at(0)
   return { repeated, choice: first === undefined ? null : { options: values, default: first } }
+}
+
+/** How `drawn` looks different from `base`, leaving out where each is placed. */
+const lookChange = (base: DesignStyleDeclaration, drawn: DesignStyleDeclaration) =>
+  omitBy(difference(base, drawn), (_, property) => isPlacement(property))
+
+/** `base` with `change` applied, where `unset` drops a declaration. */
+function applied(
+  base: DesignStyleDeclaration,
+  change: DesignStyleDeclaration
+): DesignStyleDeclaration {
+  const style = { ...base }
+  for (const [property, value] of Object.entries(change))
+    if (value === 'unset') delete style[property]
+    else style[property] = value
+  return style
+}
+
+/**
+ * Tabs draw the first trigger chosen and the others not. Every trigger rests with the look of
+ * the others and takes the first one's, layer by layer, while Reka or Radix marks it active;
+ * each keeps its own place. Layers whose structure differs between the two looks keep their
+ * own styles.
+ */
+export function activeTriggers(repeated: ReadonlyMap<StateElement, RepeatedPart>): void {
+  const triggers = [...repeated].filter(([, item]) => item.part === 'trigger').map(([el]) => el)
+  const [first, second] = triggers
+  if (!first || !second) return
+  // The two looks as drawn, before the first trigger rests with the others' look.
+  const [active, inactive] = structuredClone([first, second])
+  for (const trigger of triggers) {
+    const visit = (layer: StateElement, drawn: StateElement, other: StateElement) => {
+      if (trigger === first) layer.base = applied(layer.base, lookChange(drawn.base, other.base))
+      const look = lookChange(other.base, drawn.base)
+      if (!isEmptyObject(look))
+        layer.rules.push({
+          conditions: [{ type: 'state', value: 'active' }],
+          on: trigger,
+          style: look
+        })
+      const children = [layer, drawn, other].map((element) => elementsOf(element))
+      if (new Set(children.map((list) => list.length)).size !== 1) return
+      for (const [child, drawnChild, otherChild] of zip(...children))
+        if (child && drawnChild && otherChild) visit(child, drawnChild, otherChild)
+    }
+    visit(trigger, active, inactive)
+  }
 }
