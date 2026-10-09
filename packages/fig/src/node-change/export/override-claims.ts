@@ -1,15 +1,10 @@
 import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import {
-  forEachInstanceOverride,
-  instanceLayerId,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { instanceExportAddress } from '../instance/geometry'
+import { forEachExportedOverride, instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
 import {
   buildStyleReferences,
@@ -179,11 +174,11 @@ export function serializeRuntimePropertyOverrides(
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
   const resolveGuid = instanceGuidResolver(context, localIdCounter)
-  forEachInstanceOverride(instance.instanceOverrides, (path, field, value) => {
-    const target =
-      path.length === 0 ? instance : context.graph.getNode(instanceLayerId(instance.id, path))
-    const address = target && instanceExportAddress(instance, target, resolveGuid)
-    if (!target || !address) return
+  forEachExportedOverride(context.graph, instance, (target, field, value) => {
+    // The record names the component an instance shows; only its layers' swaps are claims.
+    if (target === instance && field === 'componentId') return
+    const address = instanceExportAddress(instance, target, resolveGuid)
+    if (!address) return
     const claim = overrideClaim(
       { context, instance, target, value },
       field,

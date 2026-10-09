@@ -1,33 +1,91 @@
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 
 import type { GUID } from '@open-pencil/kiwi/fig/codec'
-import { parseInstanceLayerId, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  forEachInstanceOverride,
+  instanceLayerId,
+  instanceScope,
+  ownsSlotContent,
+  parseInstanceLayerId,
+  type InstanceOverrideField,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 type ResolveGuid = (id: string) => GUID | undefined
 
 /**
- * The `guidPath` addressing `target` from `owner`: the owner's component for the owner itself,
- * the component layers a copy's id names otherwise. Layers that are not the owner's copies,
- * such as slot content it holds, have none.
+ * The layer path of `target` inside `instance`, which a nested copy shares with the outermost
+ * instance that names its layers. Layers that are not the instance's copies have none.
+ */
+function pathInInstance(instance: SceneNode, target: SceneNode): readonly string[] | undefined {
+  const address = parseInstanceLayerId(target.id)
+  const scope = instanceScope(instance)
+  if (address?.owner !== scope.owner || address.path.length <= scope.prefix.length) return undefined
+  if (!scope.prefix.every((segment, index) => address.path[index] === segment)) return undefined
+  return address.path.slice(scope.prefix.length)
+}
+
+/**
+ * The `guidPath` addressing `target` from `instance`: the instance's component for the instance
+ * itself, the component layers a copy's id names below it otherwise. Layers that are not its
+ * copies, such as slot content it holds, have none.
  */
 export function instanceExportAddress(
-  owner: SceneNode,
+  instance: SceneNode,
   target: SceneNode,
   resolveGuid: ResolveGuid
 ): GUID[] | undefined {
-  if (target.id === owner.id) {
-    const guid = owner.componentId ? resolveGuid(owner.componentId) : undefined
+  if (target.id === instance.id) {
+    const guid = instance.componentId ? resolveGuid(instance.componentId) : undefined
     return guid ? [guid] : undefined
   }
-  const address = parseInstanceLayerId(target.id)
-  if (address?.owner !== owner.id) return undefined
+  const segments = pathInInstance(instance, target)
+  if (!segments) return undefined
   const path: GUID[] = []
-  for (const segment of address.path) {
+  for (const segment of segments) {
     const guid = resolveGuid(segment)
     if (!guid) return undefined
     path.push(guid)
   }
   return path
+}
+
+/**
+ * Whether `target` is content of a slot an instance at or inside `instance` owns. Such content is
+ * written as records of its own, so the instance claims nothing for it.
+ */
+function inOwnedSlot(graph: SceneGraph, instance: SceneNode, target: SceneNode): boolean {
+  for (let id = target.parentId; id && id !== instance.id;) {
+    const ancestor = graph.getNode(id)
+    if (!ancestor) return false
+    if (ownsSlotContent(graph, ancestor)) return true
+    id = ancestor.parentId
+  }
+  return false
+}
+
+/**
+ * Every override `instance` declares, with the layer it applies to. An instance whose layers
+ * are named after an outer one, such as one in slot content it owns, takes what that one
+ * recorded below it.
+ */
+export function forEachExportedOverride(
+  graph: SceneGraph,
+  instance: SceneNode,
+  callback: (target: SceneNode, field: InstanceOverrideField, value: unknown) => void
+): void {
+  const scope = instanceScope(instance)
+  const owner = graph.getNode(scope.owner)
+  if (!owner) return
+  forEachInstanceOverride(owner.instanceOverrides, (path, field, value) => {
+    if (!scope.prefix.every((segment, index) => path[index] === segment)) return
+    const target =
+      path.length === scope.prefix.length
+        ? instance
+        : graph.getNode(instanceLayerId(scope.owner, path))
+    if (target && !inOwnedSlot(graph, instance, target)) callback(target, field, value)
+  })
 }
 
 /** Derived geometry is a snapshot, not an authored size or position claim. */
@@ -50,9 +108,10 @@ export function snapshotInstanceGeometry(
     entries.set(id, { ...entries.get(id), ...entry })
   }
   const visit = (node: SceneNode): void => {
+    // Slot content the instance owns is written as its own records, not as derived data.
+    if (node.id !== owner.id && ownsSlotContent(graph, node)) return
     for (const child of graph.getChildren(node.id)) {
-      // Slot content the instance owns is written as its own records, not as derived data.
-      if (parseInstanceLayerId(child.id)?.owner !== owner.id) continue
+      if (!pathInInstance(owner, child)) continue
       const path = instanceExportAddress(owner, child, resolveGuid)
       if (!path)
         throw new Error(`Missing instance geometry address for ${child.id} under ${owner.id}`)
