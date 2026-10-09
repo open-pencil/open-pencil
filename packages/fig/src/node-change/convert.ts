@@ -40,6 +40,8 @@ export { importStyleRuns } from './style/runs'
 export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
 export { resolveGeometryPaths } from './vector/geometry'
 
+import { isUndefined } from 'es-toolkit/predicate'
+
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   SceneNode,
@@ -975,7 +977,7 @@ function extractFigmaLayoutMetadata(nc: NodeChange): FigmaLayoutMetadata {
     bordersTakeSpace: nc.bordersTakeSpace as boolean | undefined,
     stackReverseZIndex: nc.stackReverseZIndex as boolean | undefined
   }
-  return Object.values(layout).every((value) => value === undefined) ? NO_FIGMA_LAYOUT : layout
+  return Object.values(layout).every(isUndefined) ? NO_FIGMA_LAYOUT : layout
 }
 
 function extractOccurrenceMetadata(nc: NodeChange): SceneNode['source'] {
