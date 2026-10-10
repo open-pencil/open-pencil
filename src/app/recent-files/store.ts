@@ -1,7 +1,13 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { StorageProviderID } from '@/app/integrations/storage'
+import {
+  DEFAULT_STORAGE_PROFILE,
+  storageLocationOf,
+  storageProfileId,
+  type StorageDocumentBinding,
+  type StorageProviderID
+} from '@/app/integrations/storage'
 
 import { clearRecentFileThumbnails } from './thumbnails'
 
@@ -20,6 +26,8 @@ export interface RecentStorageDocument {
   id: string
   kind: 'storage'
   providerId: StorageProviderID
+  profileId?: string
+  containerId?: string
   documentId: string
   name: string
   updatedAt: string
@@ -37,8 +45,12 @@ function localDocumentId(path: string): string {
   return `local:${path}`
 }
 
-function storageDocumentId(providerId: StorageProviderID, documentId: string): string {
-  return `storage:${providerId}:${documentId}`
+function storageDocumentId(binding: StorageDocumentBinding): string {
+  const profileId = storageProfileId(binding)
+  // Documents of single-account providers keep the IDs they had before profiles existed.
+  return profileId === DEFAULT_STORAGE_PROFILE
+    ? `storage:${binding.providerId}:${binding.documentId}`
+    : `storage:${binding.providerId}:${profileId}:${binding.documentId}`
 }
 
 function normalizedRecentDocuments(): RecentDocument[] {
@@ -70,16 +82,12 @@ export function rememberRecentFile(path: string): void {
   })
 }
 
-export function rememberRecentStorageDocument(
-  providerId: StorageProviderID,
-  documentId: string,
-  name: string
-): void {
+export function rememberRecentStorageDocument(binding: StorageDocumentBinding, name: string): void {
   remember({
-    id: storageDocumentId(providerId, documentId),
+    id: storageDocumentId(binding),
     kind: 'storage',
-    providerId,
-    documentId,
+    ...storageLocationOf(binding),
+    documentId: binding.documentId,
     name,
     updatedAt: new Date().toISOString()
   })

@@ -8,6 +8,8 @@ import {
   activeStorageProviderID,
   readStoragePreferences,
   storagePreferencesComplete,
+  sameStorageLocation,
+  storageLocationOf,
   storageProviderRegistry,
   type StorageDocument
 } from '@/app/integrations/storage'
@@ -20,7 +22,7 @@ import {
 } from '@/app/recent-files'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
+import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
@@ -45,7 +47,10 @@ const workspace = useDocumentWorkspace<RecentDocument>({
       const document = recentFiles.value.find((candidate) => candidate.id === documentId)
       if (!document) return Promise.resolve(null)
       if (document.kind === 'local') return loadRecentFileThumbnail(document.path)
-      return createStorageWorkspaceSource(() => undefined).loadPreview(document.documentId)
+      return createStorageWorkspaceSource(
+        () => undefined,
+        () => storageLocationOf(document)
+      ).loadPreview(document.documentId)
     }
   },
   refreshOnFocus: false,
@@ -124,15 +129,13 @@ async function openRecent(document: RecentDocument): Promise<void> {
       await openFileFromPath(document.path)
       return
     }
-    const storageDocument = storageDocuments.value.find(
-      (candidate) => candidate.id === document.documentId
-    )
+    const location = storageLocationOf(document)
+    const listed = sameStorageLocation(location, activeStorageLocation())
+      ? storageDocuments.value.find((candidate) => candidate.id === document.documentId)
+      : undefined
     await openStorageDocumentInNewTab(
-      storageDocument ?? {
-        id: document.documentId,
-        name: document.name,
-        updatedAt: document.updatedAt
-      }
+      listed ?? { id: document.documentId, name: document.name, updatedAt: document.updatedAt },
+      location
     )
   } catch (error) {
     forgetRecentDocument(document.id)

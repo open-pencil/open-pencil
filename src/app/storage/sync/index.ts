@@ -6,6 +6,7 @@ export {
   kickSyncEngine,
   resumeStorageSync
 } from './engine'
+export { keepBothVersions, replaceStoredVersion, takeStoredVersion } from './conflicts'
 export { createMemoryOutbox, getOutbox, resetOutboxForTests } from './outbox'
 export {
   persistStorageCanvasLocally,

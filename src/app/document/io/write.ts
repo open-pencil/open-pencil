@@ -1,4 +1,5 @@
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
+import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
@@ -40,7 +41,7 @@ export function createDocumentWriter({
       const storage = getStorageBinding()
       if (storage) {
         await persistStorageCanvasLocally({
-          providerId: storage.providerId,
+          ...storageLocationOf(storage),
           canvasId: storage.documentId,
           name: state.documentName || 'Untitled',
           figBytes: data

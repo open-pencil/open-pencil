@@ -1,6 +1,7 @@
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
-import type { StorageProviderID } from '@/app/integrations/storage/types'
+import { storageLocationOf } from '@/app/integrations/storage/location'
+import type { StorageLocation } from '@/app/integrations/storage/types'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
@@ -12,8 +13,7 @@ export type StoragePersistenceDependencies = {
   enqueueCanvas(canvasId: string, revision: number): Promise<void>
 }
 
-export type PersistStorageCanvasOptions = {
-  providerId: StorageProviderID
+export type PersistStorageCanvasOptions = StorageLocation & {
   canvasId: string
   name: string
   figBytes: Uint8Array
@@ -37,6 +37,8 @@ export async function persistStorageCanvasLocally(
   const metadata = await runtime.store.writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
+    profileId: options.profileId,
+    containerId: options.containerId,
     name: options.name,
     figBytes: options.figBytes,
     thumbBytes: thumbnailBytes,
@@ -44,21 +46,22 @@ export async function persistStorageCanvasLocally(
   })
   await runtime.enqueueCanvas(options.canvasId, metadata.revision)
   emitStorageWorkspaceEvent({
-    providerId: options.providerId,
+    ...storageLocationOf(options),
     documentId: options.canvasId,
     kind: 'changed'
   })
   return { revision: metadata.revision }
 }
 
-export type SeedStorageCanvasOptions = {
-  providerId: StorageProviderID
+export type SeedStorageCanvasOptions = StorageLocation & {
   canvasId: string
   name: string
   updatedAt: string
   figBytes: Uint8Array
   thumbnailBytes?: Uint8Array | null
   markSynced?: boolean
+  /** The provider revision the bytes are, so later uploads build on it. */
+  remoteRevision?: string | null
 }
 
 export async function seedStorageCanvasFromRemote(
@@ -67,8 +70,11 @@ export async function seedStorageCanvasFromRemote(
   await getLocalCanvasStore().writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
+    profileId: options.profileId,
+    containerId: options.containerId,
     name: options.name,
     updatedAt: options.updatedAt,
+    remoteRevision: options.remoteRevision ?? null,
     figBytes: options.figBytes,
     thumbBytes: options.thumbnailBytes,
     syncStatus: options.markSynced === false ? 'pending' : 'synced'

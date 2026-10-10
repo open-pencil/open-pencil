@@ -19,7 +19,7 @@ export async function saveDocumentToStorage(store: StorageSaveTarget): Promise<b
   const saved = await store.saveFigFileToStorage(providerId)
   const binding = store.getStorageBinding()
   if (saved && binding) {
-    rememberRecentStorageDocument(providerId, binding.documentId, store.state.documentName)
+    rememberRecentStorageDocument(binding, store.state.documentName)
   }
   return saved
 }

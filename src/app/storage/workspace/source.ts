@@ -1,8 +1,10 @@
-import type { StorageDocument } from '@/app/integrations/storage'
+import type { StorageDocument, StorageLocation } from '@/app/integrations/storage'
 import {
   activeStorageProviderID,
-  createActiveStorageAdapter,
-  isStorageConfigured
+  createStorageAdapter,
+  isStorageConfigured,
+  sameStorageLocation,
+  storageLocationOf
 } from '@/app/integrations/storage'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
@@ -13,22 +15,36 @@ export type StorageWorkspaceSnapshot = {
   configured: boolean
 }
 
+/** The configured storage bucket, the location home lists when no other is chosen. */
+export function activeStorageLocation(): StorageLocation {
+  return { providerId: activeStorageProviderID.value }
+}
+
+/**
+ * Lists one storage location for home: the provider's documents merged with this device's
+ * copies, so unsent work shows while the provider is unreachable or not configured.
+ */
 export function createStorageWorkspaceSource(
-  onSnapshot: (snapshot: StorageWorkspaceSnapshot) => void
+  onSnapshot: (snapshot: StorageWorkspaceSnapshot) => void,
+  location: () => StorageLocation = activeStorageLocation
 ) {
+  const isCurrent = (requested: StorageLocation) => sameStorageLocation(requested, location())
+  const isHere = (metadata: StorageLocation, requested: StorageLocation) =>
+    sameStorageLocation(storageLocationOf(metadata), requested)
+
   return {
     subscribe(listener: () => void): () => void {
       return onStorageWorkspaceEvent((event) => {
-        if (event.providerId === activeStorageProviderID.value) listener()
+        if (isCurrent(event)) listener()
       })
     },
 
     async refresh(): Promise<StorageDocument[] | null> {
-      const providerID = activeStorageProviderID.value
-      const configured = await isStorageConfigured(providerID)
+      const requested = location()
+      const configured = await isStorageConfigured(requested.providerId)
       const localStore = getLocalCanvasStore()
-      const local = (await localStore.listMetas(true)).filter(
-        (metadata) => metadata.providerId === providerID
+      const local = (await localStore.listMetas(true)).filter((metadata) =>
+        isHere(metadata, requested)
       )
       if (!configured) {
         const documents = local
@@ -37,42 +53,44 @@ export function createStorageWorkspaceSource(
             id: metadata.id,
             name: metadata.name,
             updatedAt: metadata.updatedAt,
-            metadataAuthoritative: true
+            metadataAuthoritative: true,
+            revision: metadata.remoteRevision ?? null
           }))
-        if (activeStorageProviderID.value !== providerID) return null
+        if (!isCurrent(requested)) return null
         onSnapshot({ documents, configured })
         return documents
       }
 
-      const remote = await createActiveStorageAdapter(providerID).listDocuments()
+      const remote = await createStorageAdapter(requested).listDocuments()
       const reconciliation = reconcileStorageDocuments(local, remote)
       for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
       for (const document of reconciliation.remoteDocumentsToSeed) {
         await localStore.upsertIndexMeta({
           id: document.id,
-          providerId: providerID,
+          ...storageLocationOf(requested),
           name: document.name,
           updatedAt: document.updatedAt,
           syncStatus: 'synced',
           lastSyncedAt: document.updatedAt,
-          lastSyncError: null
+          lastSyncError: null,
+          remoteRevision: document.revision ?? null
         })
       }
-      if (activeStorageProviderID.value !== providerID) return null
+      if (!isCurrent(requested)) return null
       onSnapshot({ documents: reconciliation.documents, configured })
       return reconciliation.documents
     },
 
     async loadPreview(id: string): Promise<Uint8Array | null> {
-      const providerID = activeStorageProviderID.value
+      const requested = location()
       const localStore = getLocalCanvasStore()
       const local = await localStore.readThumb(id)
       if (local?.byteLength) return local
-      const adapter = createActiveStorageAdapter(providerID)
+      const adapter = createStorageAdapter(requested)
       if (!adapter.getThumbnail) return null
       const remote = await adapter.getThumbnail(id)
       if (!remote?.byteLength) return null
-      if (activeStorageProviderID.value === providerID) await localStore.writeThumb(id, remote)
+      if (isCurrent(requested)) await localStore.writeThumb(id, remote)
       return remote
     }
   }
