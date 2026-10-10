@@ -3,9 +3,10 @@ import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import dedent from 'dedent'
 import { compact } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
-import { camelCase, upperFirst } from 'es-toolkit/string'
+import { camelCase, kebabCase, upperFirst } from 'es-toolkit/string'
 
 import { es, vue } from '@open-pencil/emit'
+import type { ShaderComponent } from '@open-pencil/scene-graph'
 
 import { claimName } from '../storybook/names'
 import { progressWidth } from './fields'
@@ -18,6 +19,14 @@ import type {
   GeneratedKind
 } from './model'
 import type { ComponentReference } from './references'
+import {
+  drawnEffects,
+  SHADER_CANVAS,
+  shaderCSS,
+  shaderEffectName,
+  shaderImport,
+  type ShaderLayer
+} from './shaders'
 
 /** The Reka UI components a kind renders, by part, and the prop its model binds. */
 const REKA: Record<
@@ -157,6 +166,8 @@ interface TemplateUses {
   /** Other generated components. */
   components: Set<string>
   icons: boolean
+  /** Effects of the `shaders` library its layers fill with. */
+  shaders: Set<string>
   /** A ref per nested control drawn on, which its `v-model` binds. */
   models: { name: string }[]
   taken: Set<string>
@@ -204,17 +215,44 @@ function elementAttributes(
   ]
 }
 
+/** A shader playing behind its layer's content, with telemetry off, as every export has it. */
+function shaderCanvas(shader: ShaderLayer, uses: TemplateUses): vue.VueNode {
+  const effect = (component: ShaderComponent): vue.VueNode => {
+    uses.shaders.add(component.type)
+    return vue.element(
+      shaderEffectName(component.type),
+      Object.entries(component.props ?? {}).map(([key, value]) =>
+        typeof value === 'string'
+          ? vue.attribute(kebabCase(key), value)
+          : vue.bound(kebabCase(key), es.json(value))
+      ),
+      drawnEffects(component.children).map(effect)
+    )
+  }
+  return vue.element(
+    SHADER_CANVAS,
+    [vue.attribute('class', shader.className), vue.bound('disable-telemetry', es.json(true))],
+    drawnEffects(shader.preset.components).map(effect)
+  )
+}
+
 function designElement(node: ComponentElement, uses: TemplateUses): vue.VueNode {
   const reka = node.part ? REKA[uses.kind].parts[node.part] : undefined
   if (reka) uses.reka.add(reka)
   const native = node.part === 'root' && !reka
   const button = native && uses.kind === 'button'
-  const children = node.children.map((child) => templateNode(child, uses))
+  const content = node.children.map((child) => templateNode(child, uses))
+  const children = node.shader ? [shaderCanvas(node.shader, uses), ...content] : content
   const element = vue.element(
     reka ?? (button ? 'button' : node.tag),
     elementAttributes(node, uses, { native, button }),
     // A slot frame shows what the caller passes, or the design's content.
-    node.slot ? [vue.element('slot', [vue.attribute('name', node.slot)], children)] : children
+    node.slot
+      ? [
+          ...(node.shader ? [shaderCanvas(node.shader, uses)] : []),
+          vue.element('slot', [vue.attribute('name', node.slot)], content)
+        ]
+      : children
   )
   // Reka puts an accordion item's trigger in a header, which carries the heading level.
   if (uses.kind !== 'accordionItem' || node.part !== 'trigger') return element
@@ -319,6 +357,7 @@ function scriptImports(uses: TemplateUses): es.SyntaxNode[] {
     ...(helpers.length > 0 ? [namedImport(helpers, 'vue')] : []),
     ...(uses.icons ? [namedImport(['Icon'], '@iconify/vue', () => ICONIFY)] : []),
     ...(uses.reka.size > 0 ? [namedImport([...uses.reka].sort(), 'reka-ui')] : []),
+    ...(uses.shaders.size > 0 ? [shaderImport('shaders/vue', uses.shaders)] : []),
     ...[...uses.components].sort().flatMap(
       (name) =>
         es.fill(IMPORT_COMPONENT, {
@@ -388,6 +427,7 @@ export const vueComponent: ComponentGenerator = async (component) => {
     reka: new Set(),
     components: new Set(),
     icons: false,
+    shaders: new Set(),
     models: [],
     // Refs share the script with the component's own props and model.
     taken
@@ -402,7 +442,11 @@ export const vueComponent: ComponentGenerator = async (component) => {
       ...(item?.files ?? []),
       {
         path,
-        content: vue.printComponent({ script: script(component, uses), template, style: css })
+        content: vue.printComponent({
+          script: script(component, uses),
+          template,
+          style: compact([css, shaderCSS(component.tree)]).join('\n')
+        })
       }
     ],
     entry: { path: `./${path}`, named: false },

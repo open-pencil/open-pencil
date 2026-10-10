@@ -32,7 +32,7 @@ import { LabelParagraphCache } from './labels/paragraph-cache'
 import { labelHitOptions } from './labels/style'
 import * as RenderColors from './renderer/colors'
 import * as RendererFonts from './renderer/fonts'
-import { destroyRenderer } from './renderer/lifecycle'
+import { destroyRenderer, releaseLiveImages } from './renderer/lifecycle'
 import { installRendererDomainMethods } from './renderer/methods'
 import { initializeRendererPaints, initializeSelectionPaintColors } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
@@ -61,7 +61,9 @@ import type {
   ImageFilter,
   MaskFilter,
   RuntimeEffect,
-  Paragraph
+  Paragraph,
+  Image,
+  TextureSource
 } from 'canvaskit-wasm'
 
 export interface SubtreePictureCacheEntry {
@@ -82,6 +84,17 @@ import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { PresenceCursor, RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
+
+/**
+ * A picture uploaded as a texture that knows its size: an `ImageBitmap`, or a canvas, which
+ * WebGL uploads as it does an image though CanvasKit's types leave it out. A canvas is uploaded
+ * as it is when this is called, so a WebGPU canvas is passed in the task that drew it.
+ */
+export type LiveImageSource =
+  | Extract<TextureSource, { width: number; height: number }>
+  | HTMLCanvasElement
+
+const textureSource = (source: LiveImageSource) => source as TextureSource
 
 export class SkiaRenderer {
   ck: CanvasKit
@@ -117,6 +130,11 @@ export class SkiaRenderer {
   textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
   imageCache = createImageCache()
+  /**
+   * Images drawn in place of stored ones while they play, such as a shader's live frames, each
+   * with the surface whose GL context holds its texture.
+   */
+  readonly liveImages = new Map<string, { image: Image; surface: Surface }>()
   viewportImageRendering = false
   imageMemoryGraph: SceneGraph | null = null
   imageMemoryPage: string | null = null
@@ -544,6 +562,8 @@ export class SkiaRenderer {
 
   replaceSurface(surface: Surface): void {
     this.tiledScene.destroy()
+    // Live textures belong to the old surface's context, so they go before it does.
+    releaseLiveImages(this)
     this.surface.delete()
     this.surface = surface
     this.sceneBackingAllocationFailed = false
@@ -556,6 +576,48 @@ export class SkiaRenderer {
 
   invalidateAllPictures(): void {
     RendererState.invalidateAllPictures(this)
+  }
+
+  /**
+   * Draws `source` wherever the image `hash` is painted, until it is set to null, and redraws
+   * `nodeIds`, the layers that paint it. Frames of the same size reuse one texture. Returns
+   * whether a live image is shown, which a browser that cannot upload `source` leaves false.
+   */
+  setLiveImage(
+    hash: string,
+    source: LiveImageSource | null,
+    nodeIds: Iterable<string> = []
+  ): boolean {
+    const live = this.liveImages.get(hash)
+    // A texture made on a surface since replaced has no context left to update or free it in.
+    const current = live?.surface === this.surface ? live.image : null
+    if (
+      source &&
+      current &&
+      current.width() === source.width &&
+      current.height() === source.height
+    ) {
+      this.surface.updateTextureFromSource(current, textureSource(source))
+    } else {
+      current?.delete()
+      this.liveImages.delete(hash)
+      const image = source && this.surface.makeImageFromTextureSource(textureSource(source))
+      if (image) this.liveImages.set(hash, { image, surface: this.surface })
+    }
+    for (const id of nodeIds) this.invalidateNodePicture(id)
+    return this.liveImages.has(hash)
+  }
+
+  /**
+   * Forgets the decoded image `hash` after its bytes were replaced, such as a shader's frame
+   * rendered again, and redraws whatever showed it. Previews notice new bytes themselves.
+   */
+  forgetImage(hash: string): void {
+    const keys = Array.from(this.imageCache.entries(), ([key]) => key)
+    for (const key of keys) {
+      if (key === hash || key.startsWith(`${hash}:`)) this.imageCache.delete(key)
+    }
+    this.invalidateAllPictures()
   }
 
   /** Drops `nodeId`'s cached drawing; `changedKeys`, when known, lets text keep its glyph coverage. */
