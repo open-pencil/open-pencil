@@ -1,14 +1,5 @@
 <script setup lang="ts">
-import {
-  SelectContent,
-  SelectItem,
-  SelectItemIndicator,
-  SelectItemText,
-  SelectPortal,
-  SelectRoot,
-  SelectTrigger,
-  SelectViewport
-} from 'reka-ui'
+import { SelectRoot, SelectSeparator, SelectTrigger } from 'reka-ui'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import { useI18n, useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
@@ -17,6 +8,8 @@ import type { SizeLimitProp } from '@open-pencil/vue'
 import type { SizeAxisFieldProps } from '@/components/properties/layout/size/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
+import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import { useSelectUI } from '@/components/ui/select/select'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
@@ -26,7 +19,7 @@ const { axis, icon, label } = defineProps<SizeAxisFieldProps>()
 const ctx = useLayoutControlsContext()
 const { open: popupOpen, portalActive } = useRetainedPopup()
 const { panels } = useI18n()
-const selectUI = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
+const selectUI = useSelectUI()
 
 const sizing = () => (axis === 'width' ? ctx.widthSizing : ctx.heightSizing)
 const sizingOptions = () => (axis === 'width' ? ctx.widthSizingOptions : ctx.heightSizingOptions)
@@ -102,40 +95,23 @@ function handleSelect(value: SizeSelectValue) {
             <span v-if="sizingLabel()">{{ sizingLabel() }}</span>
             <icon-lucide-chevron-down class="size-3" />
           </SelectTrigger>
-          <SelectPortal v-if="portalActive">
-            <SelectContent
-              position="popper"
-              align="start"
-              :side-offset="4"
-              :class="selectUI.content"
+          <AppSelectContent v-if="portalActive" align="end">
+            <AppSelectItem
+              v-for="option in sizingOptions()"
+              :key="option.value"
+              :value="option.value"
             >
-              <SelectViewport class="p-0.5">
-                <SelectItem
-                  v-for="option in sizingOptions()"
-                  :key="option.value"
-                  :value="option.value"
-                  :class="selectUI.item"
-                >
-                  <SelectItemIndicator
-                    class="absolute left-1.5 inline-flex items-center justify-center"
-                  >
-                    <icon-lucide-check class="size-3 text-primary" />
-                  </SelectItemIndicator>
-                  <SelectItemText>{{ option.label }}</SelectItemText>
-                </SelectItem>
-                <SelectItem
-                  v-for="item in limitItems()"
-                  :key="item.prop"
-                  :value="`${ctx.node[item.prop] == null ? 'add' : 'remove'}-${item.prop}`"
-                  :class="selectUI.item"
-                >
-                  <SelectItemText>
-                    {{ ctx.node[item.prop] == null ? item.addLabel : item.removeLabel }}
-                  </SelectItemText>
-                </SelectItem>
-              </SelectViewport>
-            </SelectContent>
-          </SelectPortal>
+              {{ option.label }}
+            </AppSelectItem>
+            <SelectSeparator :class="selectUI.separator" />
+            <AppSelectItem
+              v-for="item in limitItems()"
+              :key="item.prop"
+              :value="`${ctx.node[item.prop] == null ? 'add' : 'remove'}-${item.prop}`"
+            >
+              {{ ctx.node[item.prop] == null ? item.addLabel : item.removeLabel }}
+            </AppSelectItem>
+          </AppSelectContent>
         </SelectRoot>
       </template>
     </VariableNumberField>

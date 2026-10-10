@@ -173,7 +173,7 @@ function groupKey(group: MessagePartGroup): string {
         <div v-else class="group/request relative">
           <div
             data-test-id="chat-text-bubble"
-            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
+            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             {{ userText }}
           </div>

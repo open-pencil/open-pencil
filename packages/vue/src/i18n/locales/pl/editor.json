@@ -1,6 +1,7 @@
 {
   "toolOptions": "Opcje narzędzia {tool}",
   "removeGradientStop": "Usuń punkt gradientu",
+  "cornerRadius": "Promień",
   "showUI": "Pokaż interfejs ({shortcut})",
   "previewing": "Podgląd",
   "resetPreview": "Resetuj",

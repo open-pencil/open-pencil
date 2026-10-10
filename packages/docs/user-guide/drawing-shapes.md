@@ -60,6 +60,8 @@ Add an outline to any shape. Stroke properties include:
 
 Available for rectangles, frames, components, and instances. Click the independent corners toggle to set each corner (top-left, top-right, bottom-left, bottom-right) separately.
 
+On the canvas, hover a selected rectangle to show a handle inside each corner and drag one to round the corners. Equal corners change together and differing ones one at a time; hold <kbd>⌥</kbd> to swap the two and <kbd>⇧</kbd> to round to tens. The handles hide while the rectangle is under 108 pixels across on screen; zoom in to reach them.
+
 ### Effects
 
 Add visual effects from the Effects section:

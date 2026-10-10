@@ -1,42 +1,26 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { MIXED, useI18n, useSelectionLayout, type TextResizeMode } from '@open-pencil/vue'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
-type TextResizeMode = 'AUTO_WIDTH' | 'AUTO_HEIGHT' | 'FIXED'
-
-const ctx = useLayoutControlsContext()
+const layout = useSelectionLayout()
 const { panels } = useI18n()
 
-function modeFor(node: SceneNode | null): TextResizeMode {
-  if (node?.textAutoResize === 'WIDTH_AND_HEIGHT') return 'AUTO_WIDTH'
-  if (node?.textAutoResize === 'HEIGHT' || node?.textAutoResize === 'TRUNCATE') return 'AUTO_HEIGHT'
-  return 'FIXED'
-}
-
-const mode = computed<TextResizeMode>(() => modeFor(ctx.node))
+// Texts resizing differently leave every option off.
+const mode = computed(() => {
+  const value = layout.textResize.value
+  return value === MIXED || value === undefined ? '' : value
+})
 
 const options = computed(() => [
   { value: 'AUTO_WIDTH' as const, label: panels.value.resizeAutoWidth },
   { value: 'AUTO_HEIGHT' as const, label: panels.value.resizeAutoHeight },
   { value: 'FIXED' as const, label: panels.value.resizeFixed }
 ])
-
-function setMode(value: TextResizeMode) {
-  const node = ctx.node
-  if (!node) return
-  const byMode: Record<TextResizeMode, SceneNode['textAutoResize']> = {
-    AUTO_WIDTH: 'WIDTH_AND_HEIGHT',
-    AUTO_HEIGHT: 'HEIGHT',
-    FIXED: 'NONE'
-  }
-  ctx.editor.updateNodeWithUndo(node.id, { textAutoResize: byMode[value] }, 'Set text resizing')
-}
 </script>
 
 <template>
@@ -45,7 +29,7 @@ function setMode(value: TextResizeMode) {
       :model-value="mode"
       :options="options"
       :label="panels.resizing"
-      @change="setMode($event as TextResizeMode)"
+      @change="layout.setTextResize($event as TextResizeMode)"
     >
       <template #option="{ option }">
         <Tip :label="option.label">

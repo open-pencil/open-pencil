@@ -42,7 +42,8 @@ function drawSizePill(
   text: string,
   x: number,
   y: number,
-  color: ReturnType<SkiaRenderer['selColor']>
+  color: ReturnType<SkiaRenderer['selColor']>,
+  textColor: ReturnType<SkiaRenderer['selColor']>
 ): void {
   const pillW = measureGlyphWidth(sizeFont, text) + SIZE_PILL_PADDING_X * 2
   const pillX = x - pillW / 2
@@ -55,7 +56,7 @@ function drawSizePill(
   )
   canvas.drawRRect(rrect, r.auxFill)
 
-  r.auxFill.setColor(r.ck.WHITE)
+  r.auxFill.setColor(textColor)
   canvas.drawText(
     text,
     pillX + SIZE_PILL_PADDING_X,
@@ -84,7 +85,8 @@ export function drawSingleSelectionSize(
   canvas.save()
   canvas.concat(labelScreenMatrix(transform, r))
 
-  drawSizePill(r, canvas, sizeFont, sizeText, 0, 0, pillColor)
+  const textColor = r.outlineForegroundColor(node, graph)
+  drawSizePill(r, canvas, sizeFont, sizeText, 0, 0, pillColor, textColor)
   canvas.restore()
 }
 function drawMultiSelectionSize(
@@ -105,8 +107,9 @@ function drawMultiSelectionSize(
   const smx = (sx1 + sx2) / 2
   const allComponents = nodes.length > 0 && nodes.every((n) => r.isInComponent(n, graph))
   const pillColor = allComponents ? r.compColor() : r.selColor()
+  const textColor = allComponents ? r.ck.WHITE : r.selForegroundColor()
 
-  drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor)
+  drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor, textColor)
 }
 
 export function drawSelectionLabels(

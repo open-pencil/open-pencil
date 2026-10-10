@@ -1,20 +1,12 @@
 <script setup lang="ts">
-import {
-  SelectRoot,
-  SelectTrigger,
-  SelectPortal,
-  SelectContent,
-  SelectViewport,
-  SelectItem,
-  SelectItemText,
-  SelectItemIndicator
-} from 'reka-ui'
+import { SelectRoot, SelectTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
 import { useI18n, useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
-import { useSelectUI } from '@/components/ui/select/select'
+import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
+import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 
 const { axis = 'primary' } = defineProps<{ axis?: 'primary' | 'counter' }>()
 const ctx = useLayoutControlsContext()
@@ -28,7 +20,6 @@ const label = computed(() =>
 )
 const auto = computed(() => axis === 'primary' && ctx.gapAuto && ctx.node.layoutWrap !== 'WRAP')
 const allowAuto = computed(() => axis === 'primary' && ctx.node.layoutWrap !== 'WRAP')
-const menu = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
 function setMode(value: string) {
   ctx.setGapAuto(value === 'AUTO')
 }
@@ -90,24 +81,10 @@ function setMode(value: string) {
         </template>
       </VariableNumberField>
     </div>
-    <SelectPortal v-if="allowAuto && portalActive">
-      <SelectContent position="popper" align="start" :side-offset="4" :class="menu.content">
-        <SelectViewport class="p-0.5">
-          <SelectItem
-            v-for="mode in ['FIXED', 'AUTO']"
-            :key="mode"
-            :value="mode"
-            :class="menu.item"
-          >
-            <SelectItemIndicator class="absolute left-1.5 inline-flex items-center justify-center"
-              ><icon-lucide-check class="size-3 text-primary"
-            /></SelectItemIndicator>
-            <SelectItemText>{{
-              mode === 'AUTO' ? panels.auto : Math.round(ctx.node.itemSpacing)
-            }}</SelectItemText>
-          </SelectItem>
-        </SelectViewport>
-      </SelectContent>
-    </SelectPortal>
+    <AppSelectContent v-if="allowAuto && portalActive" align="end">
+      <AppSelectItem v-for="mode in ['FIXED', 'AUTO']" :key="mode" :value="mode">
+        {{ mode === 'AUTO' ? panels.auto : Math.round(ctx.node.itemSpacing) }}
+      </AppSelectItem>
+    </AppSelectContent>
   </SelectRoot>
 </template>

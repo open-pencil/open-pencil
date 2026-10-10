@@ -1,26 +1,18 @@
 <script setup lang="ts">
-import {
-  SelectContent,
-  SelectItem,
-  SelectItemText,
-  SelectPortal,
-  SelectRoot,
-  SelectTrigger,
-  SelectViewport
-} from 'reka-ui'
+import { SelectRoot, SelectTrigger } from 'reka-ui'
 
 import { useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
 
 import type { SizeLimitFieldProps } from '@/components/properties/layout/size/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { useSelectUI } from '@/components/ui/select/select'
+import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
+import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 
 const { item } = defineProps<SizeLimitFieldProps>()
 
 const ctx = useLayoutControlsContext()
 const { open: popupOpen, portalActive } = useRetainedPopup()
-const selectUI = useSelectUI({ item: 'rounded py-1.5 px-2 text-xs' })
 
 function handleSelect(value: string) {
   if (value === 'CURRENT') ctx.setSizeLimitToCurrent(item.prop)
@@ -55,23 +47,10 @@ function handleSelect(value: string) {
           >
             <icon-lucide-chevron-down class="size-3" />
           </SelectTrigger>
-          <SelectPortal v-if="portalActive">
-            <SelectContent
-              position="popper"
-              align="start"
-              :side-offset="4"
-              :class="selectUI.content"
-            >
-              <SelectViewport class="p-0.5">
-                <SelectItem value="CURRENT" :class="selectUI.item">
-                  <SelectItemText>{{ item.setLabel }}</SelectItemText>
-                </SelectItem>
-                <SelectItem value="REMOVE" :class="selectUI.item">
-                  <SelectItemText>{{ item.removeLabel }}</SelectItemText>
-                </SelectItem>
-              </SelectViewport>
-            </SelectContent>
-          </SelectPortal>
+          <AppSelectContent v-if="portalActive" align="end">
+            <AppSelectItem value="CURRENT">{{ item.setLabel }}</AppSelectItem>
+            <AppSelectItem value="REMOVE">{{ item.removeLabel }}</AppSelectItem>
+          </AppSelectContent>
         </SelectRoot>
       </template>
     </VariableNumberField>

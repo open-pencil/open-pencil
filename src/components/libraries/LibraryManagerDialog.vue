@@ -90,7 +90,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
           <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
           {{ panels.libraryUpdates }}
           <template v-if="visibleUpdateGroups.length" #trailing>
-            <span class="rounded-full bg-accent px-1.5 text-[10px] text-white">{{
+            <span class="rounded-full bg-accent px-1.5 text-[10px] text-on-accent">{{
               visibleUpdateGroups.length
             }}</span>
           </template>

@@ -9,6 +9,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import { IDENTITY_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { parseScriptInput } from './validation'
@@ -24,15 +25,6 @@ export interface SolidPaintOptions {
 
 export interface GradientPaintOptions extends SolidPaintOptions {
   transform?: GradientTransform
-}
-
-const DEFAULT_GRADIENT_TRANSFORM: GradientTransform = {
-  m00: 1,
-  m01: 0,
-  m02: 0,
-  m10: 0,
-  m11: 1,
-  m12: 0
 }
 
 const colorSchema = v.union([
@@ -100,7 +92,7 @@ export function gradient(
     visible: options.visible ?? true,
     blendMode: options.blendMode,
     gradientStops: parseStops(type, stops).map(toStop),
-    gradientTransform: options.transform ?? DEFAULT_GRADIENT_TRANSFORM
+    gradientTransform: options.transform ?? { ...IDENTITY_GRADIENT_TRANSFORM }
   }
 }
 

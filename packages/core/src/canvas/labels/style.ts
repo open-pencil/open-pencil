@@ -1,12 +1,15 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import { compositeOver } from '@open-pencil/scene-graph/color'
+import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import type { RotationPreview } from '#core/geometry'
+import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
 import { canvasLabelForeground } from './color'
 import type { LabelHitOptions } from './hit-test'
 import type { LabelLayout, LabelTextMetrics } from './layout'
+import { frameLabelPlacement } from './transform'
 
 export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: SceneNode) {
   const background: Color =
@@ -22,17 +25,94 @@ export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: Sce
   }
 }
 
-/** How far a frame's name fades into the canvas while the frame is not selected or hovered. */
-const FRAME_TITLE_MUTED_ALPHA = 0.5
+/**
+ * How strongly a frame's name shows while the frame is not selected or hovered. Figma desktop 126
+ * fades it further on light backgrounds: dark text at 23% and light text at 50% come within ten
+ * levels of its labels on light and dark pages and on white and dark sections.
+ */
+const FRAME_TITLE_ALPHA = { dark: 0.23, light: 0.5 } as const
+
+/** A point inside a frame's drawn name, in world space. */
+function frameTitlePoint(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  node: SceneNode,
+  layout: LabelLayout,
+  preview?: RotationPreview | null
+): Vector {
+  const placement = frameLabelPlacement(node, graph, preview)
+  const angle = (placement.rotation * Math.PI) / 180
+  const inside = {
+    x: layout.text.x / r.zoom + 1 / r.zoom,
+    y: (layout.text.y + layout.fontSize / 2) / r.zoom
+  }
+  return {
+    x: placement.x + inside.x * Math.cos(angle) - inside.y * Math.sin(angle),
+    y: placement.y + inside.x * Math.sin(angle) + inside.y * Math.cos(angle)
+  }
+}
+
+function sectionContains(
+  geometry: ReturnType<typeof createSceneGeometry>,
+  section: SceneNode,
+  point: Vector
+): boolean {
+  const inverse = Matrix.invert(geometry.worldMatrix(section))
+  if (!inverse) return false
+  const local = Matrix.mapPoint(inverse, point)
+  return local.x >= 0 && local.y >= 0 && local.x <= section.width && local.y <= section.height
+}
 
 /**
- * A top-level frame's name: the selection color while the frame is selected or hovered, otherwise
- * the canvas's own text color, faded, so names read on light and dark canvases alike.
+ * What a frame's name is drawn over: the page, under every section around the frame that the name
+ * falls inside, each section's visible fills stacked in order. A frame at a section's top edge has
+ * its name above the section, over the page.
  */
-export function frameTitleColor(r: SkiaRenderer, highlighted: boolean) {
+function frameTitleBackground(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  node: SceneNode,
+  layout: LabelLayout,
+  preview?: RotationPreview | null
+): Color {
+  const point = frameTitlePoint(r, graph, node, layout, preview)
+  const geometry = createSceneGeometry(graph, preview)
+  const sections: SceneNode[] = []
+  for (
+    let ancestor = node.parentId ? graph.getNode(node.parentId) : undefined;
+    ancestor;
+    ancestor = ancestor.parentId ? graph.getNode(ancestor.parentId) : undefined
+  ) {
+    if (ancestor.type === 'SECTION' && sectionContains(geometry, ancestor, point))
+      sections.unshift(ancestor)
+  }
+  let background = r.pageColor
+  for (const section of sections) {
+    for (const [index, fill] of section.fills.entries()) {
+      if (fill.visible)
+        background = compositeOver(r.resolveFillColor(fill, index, section, graph), background)
+    }
+  }
+  return background
+}
+
+/**
+ * A frame's name: the selection color while the frame is selected or hovered, otherwise the text
+ * color of what it sits on, faded, so names read on light and dark pages and sections alike, as
+ * Figma draws them on a white section of a dark page.
+ */
+export function frameTitleColor(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  node: SceneNode,
+  layout: LabelLayout,
+  highlighted: boolean,
+  preview?: RotationPreview | null
+) {
   if (highlighted) return r.selColor()
-  const foreground = canvasLabelForeground(r.pageColor)
-  return r.ck.Color4f(foreground.r, foreground.g, foreground.b, FRAME_TITLE_MUTED_ALPHA)
+  const foreground = canvasLabelForeground(frameTitleBackground(r, graph, node, layout, preview))
+  const alpha = foreground.r < 0.5 ? FRAME_TITLE_ALPHA.dark : FRAME_TITLE_ALPHA.light
+  return r.ck.Color4f(foreground.r, foreground.g, foreground.b, alpha)
 }
 
 /** Hit-testing reuses the same shaped paragraphs, constraints and paint keys as drawing. */
@@ -44,7 +124,7 @@ export function measureLabel(
 ): LabelTextMetrics | null {
   const provider = r.fontProvider
   if (!provider) return null
-  let color = frameTitleColor(r, false)
+  let color = frameTitleColor(r, graph, node, layout, false)
   if (layout.kind === 'section') color = sectionLabelColors(r, graph, node).foreground
   else if (layout.kind === 'component') color = r.compColor()
   return r.labelParagraphCache.measure(
