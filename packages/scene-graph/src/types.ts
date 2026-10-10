@@ -33,6 +33,14 @@ export type SceneGraphEventHandlers = Partial<{
   ) => void
 }>
 
+/** Hears about nodes as an edit adds and changes them, synchronously and before each change. */
+export interface NodeChangeObserver {
+  /** A node is about to change and is still as it was. */
+  before: (node: SceneNode) => void
+  /** A node was just added. */
+  created: (node: SceneNode) => void
+}
+
 export type DocumentColorSpace = 'srgb' | 'display-p3'
 
 export interface FigmaSourcePayload {

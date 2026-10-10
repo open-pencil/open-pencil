@@ -31,8 +31,9 @@ export function createUndoBridge(
     },
     snapshotPage: undoActions.snapshotPage,
     restorePageFromSnapshot: undoActions.restorePageFromSnapshot,
-    capturePageChange: undoActions.capturePageChange,
-    restorePageChange: undoActions.restorePageChange,
-    pushUndoEntry: undoActions.pushUndoEntry
+    captureDocumentChange: undoActions.captureDocumentChange,
+    restoreDocumentChange: undoActions.restoreDocumentChange,
+    pushUndoEntry: undoActions.pushUndoEntry,
+    pushUndoStep: undoActions.pushUndoStep
   }
 }

@@ -144,6 +144,19 @@ function emitToolLog(
   })
 }
 
+/**
+ * A result as JSON, which the AI SDK requires of the next step's prompt. Scripts return anything,
+ * such as nodes inside an object, `NaN`, or a `Map`; JSON keeps what the model can read of them.
+ */
+function toJSONResult(result: unknown): unknown {
+  // JSON has no text for these, and `JSON.stringify` returns undefined for them.
+  if (result === undefined || typeof result === 'function' || typeof result === 'symbol') {
+    return null
+  }
+  // oxlint-disable-next-line unicorn/prefer-structured-clone -- a conversion, not a copy
+  return JSON.parse(JSON.stringify(result)) as unknown
+}
+
 /** Most tools report a failure by returning `{ error }` rather than throwing. */
 function returnedError(result: unknown): string | undefined {
   if (typeof result !== 'object' || result === null || !('error' in result)) return undefined
@@ -187,9 +200,11 @@ export function toolsToAI(
 
         options.onBeforeExecute?.(def)
         try {
-          let execResult = options.executeTool
-            ? await options.executeTool(def, figma, args, { toolCallId })
-            : await def.execute(figma, args)
+          let execResult = toJSONResult(
+            options.executeTool
+              ? await options.executeTool(def, figma, args, { toolCallId })
+              : await def.execute(figma, args)
+          )
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)

@@ -73,3 +73,26 @@ test('a pending batch that will settle counts as undoable', () => {
   expect(undo.canUndo).toBe(true)
   expect(undo.undo()).toBe('Change fill')
 })
+
+// An agent's edit lands while a picker is still coalescing: it is a step of its own, after the
+// picker's changes so far, rather than part of the picker's step.
+test('a step pushed during a settling batch stays its own step, in order', () => {
+  const undo = new UndoManager()
+  const noop = () => undefined
+  const entry = (label: string) => ({ label, forward: noop, inverse: noop })
+  undo.beginBatch('Change fill')
+  undo.push(entry('Picker'))
+  undo.onBeforeHistory(() => {
+    if (!undo.isBatching) return
+    undo.commitBatch()
+    undo.beginBatch('Change fill')
+  })
+
+  undo.pushStep(entry('Agent: set_fill'))
+  undo.push(entry('Picker again'))
+
+  expect(undo.undo()).toBe('Change fill')
+  expect(undo.undo()).toBe('Agent: set_fill')
+  expect(undo.undo()).toBe('Change fill')
+  expect(undo.canUndo).toBe(false)
+})

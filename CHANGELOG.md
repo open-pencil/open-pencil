@@ -204,6 +204,7 @@
 - Draw what a mask masks through the mask's opacity and layer blur, as Figma does, so a half-transparent or blurred mask fades or softens its layers instead of masking them fully. An outline mask ignores how opaque its fill is, and a luminance mask counts its opacity twice, as in Figma.
 - Import SVG files that start with an XML declaration or doctype, such as Illustrator and Inkscape exports, instead of reporting no supported elements.
 - Keep `fill-opacity` and `stroke-opacity` when importing SVG instead of drawing those paints opaque.
+- Keep an AI chat going when a script it runs through `eval` returns layers or pages inside an object or list, or values such as `NaN` or a `Map`; the reply used to stop with an invalid-prompt error. The model now gets such results as JSON.
 - Use an API key saved in Settings for the open AI chat right away, including when asking again after a failed request, instead of only after reloading; the failure's notice closes once the request is sent again.
 - Renaming a section title on the canvas keeps the title's size, weight, and place. Section titles draw in Inter SemiBold rather than an emboldened regular weight, and labels that are not rotated sit on whole pixels, so they stay crisp.
 - Save HTML imported with `openpencil import` with its layout applied: layers in a flex container sit where its padding and gap place them instead of all at the top left (#788).
@@ -263,7 +264,7 @@
 - Read and set `componentPropertyReferences` in the plugin API with property keys such as `Label#prop:1a2b`, as `componentPropertyDefinitions` lists them and Figma uses them, instead of internal property ids.
 - Open Figma files that use slots with each instance's own slot content instead of its component's default, keep slot properties, their settings, and instance content when saving back to `.fig`, and keep an instance's slot content, and that of instances nested in it with the same names, when you switch its variant or swap it.
 - Report a failed MCP `save_file` or `new_document` save as an error instead of success, and ask for a path rather than opening a Save dialog when the document has never been saved.
-- Undo layers that MCP clients and the CLI create, delete, or rearrange in the running app, including `render` and `eval` changes, with Edit → Undo. Previously only their property edits were undoable.
+- Undo layers that MCP clients and the CLI create, delete, or rearrange in the running app, including `render` and `eval` changes, with Edit → Undo. Previously only their property edits were undoable. Undoing these and AI chat edits also reverts what they change on other pages, the pages themselves, and variables and collections, which undo used to leave as they were; an edit that lands while a colour picker is open becomes its own undo step instead of joining the picker's.
 - Save a `.fig` file that was opened and not edited yet. In the app the save never finished, and MCP `save_file` timed out without writing the file.
 - Show the text, visibility, or swapped component an instance sets when the component gains that layer after the instance was placed, instead of the component's default ([#849](https://github.com/open-pencil/open-pencil/issues/849)).
 - Show `.fig` thumbnails in the desktop app's recent files, which the app was not permitted to read.

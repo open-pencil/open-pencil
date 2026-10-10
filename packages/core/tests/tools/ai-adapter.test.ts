@@ -71,6 +71,40 @@ describe('AI adapter model output', () => {
     expect(toolModelMessageSchema.safeParse(message).success).toBe(true)
   })
 
+  test('turns what a script returns into JSON the AI SDK accepts in the next prompt', async () => {
+    const def = defineTool({
+      name: 'script_tool',
+      description: 'Returns what scripts return',
+      execution: { kind: 'sync', mutation: 'none' },
+      input: v.strictObject({}),
+      execute: (figma) => ({
+        page: figma.createPage(),
+        width: Number.NaN,
+        list: [1, undefined],
+        byId: new Map([['a', 1]])
+      })
+    })
+    const figma = new FigmaAPI(new SceneGraph())
+    const adapted: unknown = toolsToAI([def], { getFigma: () => figma }, { tool }).script_tool
+    if (!hasExecute(adapted) || !hasModelOutput(adapted)) throw new Error('script_tool missing')
+    const output = await adapted.execute({}, { toolCallId: 'call' })
+
+    expect(output).toMatchObject({ width: null, list: [1, null], byId: {} })
+    expect(output).toHaveProperty('page.type', 'CANVAS')
+    const message = {
+      role: 'tool',
+      content: [
+        {
+          type: 'tool-result',
+          toolCallId: 'call',
+          toolName: 'script_tool',
+          output: adapted.toModelOutput({ output })
+        }
+      ]
+    }
+    expect(toolModelMessageSchema.safeParse(message).success).toBe(true)
+  })
+
   test('keeps non-image results as JSON', () => {
     const output = { mimeType: 'application/pdf', base64: 'AAAA' }
     expect(adapt(output).toModelOutput({ output })).toEqual({ type: 'json', value: output })

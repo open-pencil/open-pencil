@@ -39,6 +39,7 @@ export function removeVariable(graph: SceneGraph, id: string): void {
   for (const node of graph.nodes.values()) {
     const hadBinding = Object.values(node.boundVariables).includes(id)
     if (!hadBinding) continue
+    graph.willChangeNode(node)
     node.boundVariables = omitBy(node.boundVariables, (varId) => varId === id) as Record<
       string,
       string
@@ -399,6 +400,7 @@ export function bindVariable(
     throw new Error(`Unknown binding field "${field}"`)
   }
 
+  graph.willChangeNode(node)
   node.boundVariables = { ...node.boundVariables, [field]: variableId }
   assignVariableBindingUnits(graph, node, field)
   markBoundVariablesOverrideOnInstance(graph, nodeId, field)
@@ -412,6 +414,7 @@ export function unbindVariable(graph: SceneGraph, nodeId: string, field: string)
   const node = graph.nodes.get(nodeId)
   if (!node) return
   if (!(field in node.boundVariables)) return
+  graph.willChangeNode(node)
   node.boundVariables = omit(node.boundVariables, [field])
   node.variableBindingScales = omit(node.variableBindingScales, [field])
   markBoundVariablesOverrideOnInstance(graph, nodeId, field)

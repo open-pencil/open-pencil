@@ -1,6 +1,6 @@
 import { tool } from 'ai'
 
-import { graphFromPageSnapshot, isEmptyPageChange } from '@open-pencil/core/editor'
+import { graphFromPageSnapshot, isEmptyDocumentChange } from '@open-pencil/core/editor'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   registerComponentCatalog,
@@ -87,17 +87,17 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
           recordRunBaseline(store, store.snapshotPage(pageId))
         }
         const undoBefore = store.undo.peekUndo()
-        const finishChange = store.capturePageChange(pageId)
+        const finishChange = store.captureDocumentChange(pageId)
         try {
           return await runTool(def, figma, args, pageId)
         } finally {
           const change = finishChange()
           // Atomic tools record their own undo entry; an edit that changed nothing records none.
-          if (!isAtomicTool(def) && !isEmptyPageChange(change)) {
-            store.pushUndoEntry({
+          if (!isAtomicTool(def) && !isEmptyDocumentChange(change)) {
+            store.pushUndoStep({
               label: `AI: ${def.name}`,
-              forward: () => store.restorePageChange(change, 'after'),
-              inverse: () => store.restorePageChange(change, 'before')
+              forward: () => store.restoreDocumentChange(change, 'after'),
+              inverse: () => store.restoreDocumentChange(change, 'before')
             })
           }
           // Every entry the run pushes belongs to its turn; atomic and page edits both label

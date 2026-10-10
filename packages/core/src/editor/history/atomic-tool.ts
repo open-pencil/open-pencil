@@ -14,7 +14,7 @@ import { diffFields, type FieldChanges } from './diff'
 // Capture property changes across pages. Component synchronization remains editor-owned.
 const MAX_TRANSACTION_NODES = 10_000
 
-type MutationEditor = Pick<Editor, 'graph' | 'runLayoutForNode' | 'requestRender' | 'pushUndoEntry'>
+type MutationEditor = Pick<Editor, 'graph' | 'runLayoutForNode' | 'requestRender' | 'pushUndoStep'>
 
 function changes<T extends object>(
   before: Map<string, T>,
@@ -108,7 +108,7 @@ export function executeAtomicTool(
       nodeChanges.some((change) => Object.keys(change.after).some((key) => key !== 'source'))
     if (!contentChanged && nodeChanges.length) replay(nodeChanges, [], 'before')
     if (contentChanged) {
-      editor.pushUndoEntry({
+      editor.pushUndoStep({
         label: `${options.label ?? 'Agent'}: ${def.name}`,
         inverse: () => replay(nodeChanges, variableChanges, 'before'),
         forward: () => replay(nodeChanges, variableChanges, 'after')

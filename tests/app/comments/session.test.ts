@@ -5,7 +5,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { readComments, writeComments, type CommentThread } from '@open-pencil/scene-graph'
 
-import { executeWithPageUndo } from '@/app/automation/execution/editor'
+import { executeWithDocumentUndo } from '@/app/automation/execution/editor'
 import { useComments } from '@/app/comments/use'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session/create'
@@ -140,7 +140,7 @@ test('an agent’s comment is not an undo step either, as comments stay out of u
   const addComment = ALL_TOOLS.find((tool) => tool.name === 'add_comment')
   if (!addComment) throw new Error('add_comment missing')
 
-  await executeWithPageUndo(store, store.state.currentPageId, 'Agent: add_comment', () =>
+  await executeWithDocumentUndo(store, store.state.currentPageId, 'Agent: add_comment', () =>
     Promise.resolve(addComment.execute(figma, { text: 'Tighten the spacing', x: 4, y: 4 }))
   )
   await Promise.resolve()
