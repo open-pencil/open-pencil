@@ -1,6 +1,6 @@
 import type { StateElement } from '#dom-css/behaviours/states/types'
 
-import { es } from '@open-pencil/emit'
+import { es, jsx } from '@open-pencil/emit'
 import {
   findLayerByPath,
   shaderOfPaint,
@@ -84,6 +84,16 @@ export function shaderImport(source: 'shaders/vue' | 'shaders/react', effects: I
 
 /** The local name a generated component imports effect `type` as, apart from its own names. */
 export const shaderEffectName = (type: string) => `Shader${type}`
+
+/** An effect's props as JSX attributes: strings as they are, anything else as JSON. */
+export function shaderEffectAttributes(component: ShaderComponent): es.SyntaxNode[] {
+  return Object.entries(component.props ?? {}).map(([key, value]) =>
+    jsx.attribute(
+      key,
+      typeof value === 'string' ? jsx.stringValue(value) : jsx.container(es.json(value))
+    )
+  )
+}
 
 /** The local name of the library's `Shader` canvas. */
 export const SHADER_CANVAS = 'ShaderCanvas'

@@ -21,6 +21,7 @@ import {
   drawnEffects,
   SHADER_CANVAS,
   shaderCSS,
+  shaderEffectAttributes,
   shaderEffectName,
   shaderImport,
   type ShaderLayer
@@ -248,12 +249,7 @@ function shaderCanvas(shader: ShaderLayer, uses: MarkupUses, depth: number): es.
       const children = drawnEffects(component.children).map(effect(at + 1))
       return jsx.element(
         shaderEffectName(component.type),
-        Object.entries(component.props ?? {}).map(([key, value]) =>
-          jsx.attribute(
-            key,
-            typeof value === 'string' ? jsx.stringValue(value) : jsx.container(es.json(value))
-          )
-        ),
+        shaderEffectAttributes(component),
         children,
         at
       )
