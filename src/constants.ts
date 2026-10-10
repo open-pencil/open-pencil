@@ -78,6 +78,8 @@ export const ROOM_UNREACHABLE_MS = 20_000
 export const ROOM_STATUS_TICK_MS = 500
 
 export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
+/** The hosted OpenPencil Cloud server, offered first when connecting. */
+export const OFFICIAL_CLOUD_URL = 'https://cloud.openpencil.dev'
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'

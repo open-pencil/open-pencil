@@ -60,3 +60,29 @@ describe('discoverCloud', () => {
     await expect(request).rejects.toBeInstanceOf(CloudClientError)
   })
 })
+
+describe('discovery failures', () => {
+  async function reason(fetch: () => Promise<Response>, url = 'https://cloud.example.com') {
+    try {
+      await discoverCloud(url, { fetch })
+    } catch (error) {
+      return error instanceof CloudClientError ? error.reason : 'other'
+    }
+    return 'none'
+  }
+
+  test('say whether the address, the network, or the server is the problem', async () => {
+    expect(await reason(async () => Response.json(discovery), 'not a url')).toBe('invalid-address')
+    expect(await reason(() => Promise.reject(new TypeError('fetch failed')))).toBe('unreachable')
+    expect(await reason(async () => new Response(null, { status: 502 }))).toBe('unreachable')
+    expect(await reason(async () => new Response(null, { status: 404 }))).toBe('not-cloud')
+    expect(await reason(async () => new Response('<!doctype html>'))).toBe('not-cloud')
+    expect(await reason(async () => Response.json({ name: 'something else' }))).toBe('not-cloud')
+  })
+
+  test('tell a server on another protocol version from one that is not Cloud', async () => {
+    expect(await reason(async () => Response.json({ ...discovery, protocolVersion: '2' }))).toBe(
+      'outdated'
+    )
+  })
+})

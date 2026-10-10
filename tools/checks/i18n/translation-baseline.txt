@@ -407,3 +407,11 @@ ru:cloudPortal.providerApple
 ru:cloudPortal.deploymentOfficial
 ru:cloudPortal.emailTransportSMTP
 ru:cloudPortal.emailTransportCloudflare
+de:settings.cloud
+es:settings.cloud
+fr:settings.cloud
+it:settings.cloud
+ja:settings.cloud
+pl:settings.cloud
+ru:settings.cloud
+zh-cn:settings.cloud

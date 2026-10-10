@@ -7,6 +7,7 @@ import { computed, onMounted } from 'vue'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 
+import { startCloudSessions } from '@/app/cloud/sessions/startup'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
@@ -16,6 +17,7 @@ import { useRestartApprovals } from '@/app/shell/updater/approvals'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
+import CloudConnectHost from '@/components/cloud/connect/CloudConnectHost.vue'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
@@ -48,6 +50,7 @@ onMounted(() => {
   toast.setupGlobalErrorHandler()
   scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
+  void startCloudSessions()
 })
 </script>
 
@@ -59,6 +62,7 @@ onMounted(() => {
       </AppShell>
       <SettingsDialog />
       <AISetupDialog />
+      <CloudConnectHost />
       <RecoveryDialog />
       <UnsavedChangesDialog />
       <PublishLibraryDialog />

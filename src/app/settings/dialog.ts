@@ -10,6 +10,7 @@ export type SettingsSection =
   | 'tools'
   | 'media'
   | 'storage'
+  | 'cloud'
 
 export const settingsDialogOpen = ref(false)
 export const settingsDialogSection = ref<SettingsSection>('general')

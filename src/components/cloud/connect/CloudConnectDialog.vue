@@ -73,6 +73,18 @@ const errors: Record<CloudConnectError, { heading: string; description: string }
   outdated: {
     heading: 'This server needs an update',
     description: 'It runs an older version of OpenPencil Cloud than this app supports.'
+  },
+  denied: {
+    heading: 'Sign-in was denied',
+    description: 'The request was turned down in the browser. Start again to sign in.'
+  },
+  expired: {
+    heading: 'The code expired',
+    description: 'It wasn’t approved in time. Start again to get a new one.'
+  },
+  'sign-in-failed': {
+    heading: 'Couldn’t sign in',
+    description: 'The server didn’t finish signing you in. Try again in a moment.'
   }
 }
 const methodLabels: Record<CloudSignInMethod, string> = {
@@ -138,6 +150,13 @@ const description = computed(() => {
     </AppDialogBody>
 
     <AppDialogBody v-else-if="step === 'sign-in' && server">
+      <AppAlert
+        v-if="error"
+        tone="error"
+        :heading="errors[error].heading"
+        :description="errors[error].description"
+        :ui="{ root: 'mb-3' }"
+      />
       <div :class="ui.methods()">
         <AppActionRow
           v-for="method in server.methods"
