@@ -1,4 +1,4 @@
-import { defineConfig, type PlaywrightTestConfig } from '@playwright/test'
+import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test'
 
 const appPort = process.env.OPENPENCIL_TEST_PORT ?? '1420'
 const mcpPort = process.env.OPENPENCIL_TEST_MCP_PORT ?? '7600'
@@ -106,6 +106,9 @@ export default defineConfig({
       fullyParallel: true,
       use: {
         baseURL: `http://localhost:${storybookPort}`,
+        // Storybook's test-runner mark: stories then pause animations instead of waiting 100 ms
+        // for them after every render.
+        userAgent: `${devices['Desktop Chrome'].userAgent} StorybookTestRunner`,
         viewport: { width: 800, height: 600 },
         deviceScaleFactor: 1,
         contextOptions: { reducedMotion: 'reduce' }
