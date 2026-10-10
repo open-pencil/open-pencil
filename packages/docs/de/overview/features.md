@@ -94,7 +94,7 @@ Alle Befehle unterstützen `--json`. Installation: `npm install -g @open-pencil/
 
 ## Zusammenarbeit in Echtzeit
 
-Die Zusammenarbeit erfolgt direkt zwischen den Teilnehmern über WebRTC und benötigt keinen zentralen Server. Ein Link genügt. Verfügbar sind Zeiger der Teilnehmer, Anwesenheitsanzeigen und das Folgen der Ansicht eines anderen Teilnehmers.
+Die Zusammenarbeit erfolgt direkt zwischen den Teilnehmern über WebRTC und benötigt keinen zentralen Server. Ein Link genügt. Verfügbar sind Zeiger der Teilnehmer, Anwesenheitsanzeigen, das Folgen der Ansicht eines anderen Teilnehmers und Sprachanrufe mit anderen Teilnehmern im Raum.
 
 ## Desktop und Web
 

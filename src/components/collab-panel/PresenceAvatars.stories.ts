@@ -68,3 +68,14 @@ export const ManyPeople: Story = {
 export const Alone: Story = {
   args: { rows: room.slice(0, 1), connected: false, inRoom: false }
 }
+
+/** You and Ana are in the voice call: Ana is speaking and you are muted. */
+export const InVoiceCall: Story = {
+  args: {
+    rows: room.map((row, index) => {
+      if (index === 0) return { ...row, voice: { muted: true, speaking: false } }
+      if (index === 1) return { ...row, voice: { muted: false, speaking: true } }
+      return row
+    })
+  }
+}

@@ -40,6 +40,7 @@ const hidden = computed(() => people.length - shown.value.length)
           :name="person.name || common.you"
           :color="person.color"
           :agent-count="person.agents.length"
+          :voice="person.voice"
           :size="size"
         />
       </slot>

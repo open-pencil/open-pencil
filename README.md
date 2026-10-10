@@ -36,7 +36,7 @@ Requires macOS 13 or later with current Safari updates, Windows 10 or later, or 
 - **Image vectorization** — convert image layers into editable vector layers with Recraft or fal.ai
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
-- **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
+- **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode, voice calls
 - **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
 - **~15 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 
@@ -206,6 +206,7 @@ Share a link to co-edit in real time. No server, no account — peers connect di
 2. Share the generated link (`app.openpencil.dev/share/<room-id>`)
 3. Collaborators see your cursor, selection, and edits in real time
 4. Click a peer's avatar to follow their viewport
+5. Click the headphones beside the avatars to start or join the room's voice call
 
 ## Why
 

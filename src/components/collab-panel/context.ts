@@ -5,6 +5,7 @@ import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { useJoinRoom } from '@/app/collab/join'
+import { activeRoom } from '@/app/collab/rooms'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { useNotificationMessages } from '@/app/i18n/notifications'
@@ -40,16 +41,27 @@ function createCollabPanelContext() {
   const storeRef = useActiveEditorStoreRef()
   const presenceRows = computed(() => {
     const store = storeRef.value
+    const voice = activeRoom.value?.voice
+    const speaking = voice?.speaking.value ?? new Set<number>()
     return buildPresenceRows(
       {
         name: state.value.localName,
         color: state.value.localColor,
-        agents: store ? presenceOf(store).agents.value : []
+        agents: store ? presenceOf(store).agents.value : [],
+        voice: voice?.joined.value
+          ? {
+              muted: voice.muted.value,
+              speaking: !voice.muted.value && speaking.has(voice.localClientId)
+            }
+          : undefined
       },
       peers.value,
-      (pageId) => store?.graph.getNode(pageId)?.name
+      (pageId) => store?.graph.getNode(pageId)?.name,
+      speaking
     )
   })
+  /** Everyone in the room's voice call, ourselves first. */
+  const callRows = computed(() => presenceRows.value.filter((row) => row.voice))
   const shareURL = computed(() => (state.value.roomId ? getShareURL(state.value.roomId) : ''))
 
   function copyLink() {
@@ -112,6 +124,7 @@ function createCollabPanelContext() {
     state,
     following,
     presenceRows,
+    callRows,
     shareURL,
     copyLink,
     saveName,

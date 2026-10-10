@@ -61,7 +61,8 @@
     },
     "macOS": {
       "minimumSystemVersion": "13.0",
-      "signingIdentity": "Developer ID Application: Danila Poyarkov (N7D7M3Q3CD)"
+      "signingIdentity": "Developer ID Application: Danila Poyarkov (N7D7M3Q3CD)",
+      "entitlements": "Entitlements.plist"
     }
   },
   "plugins": {
