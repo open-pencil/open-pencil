@@ -378,7 +378,7 @@ function convertParagraphProps(
   'textParagraphs' | 'listSpacing' | 'paragraphSpacing' | 'paragraphIndent' | 'hangingList'
 > {
   return {
-    textParagraphs: importParagraphStyles(nc.textData?.lines),
+    textParagraphs: importParagraphStyles(nc.textData?.lines, nc.textData?.styleOverrideTable),
     listSpacing: nc.listSpacing ?? 0,
     paragraphSpacing: nc.paragraphSpacing ?? 0,
     paragraphIndent: nc.paragraphIndent ?? 0,

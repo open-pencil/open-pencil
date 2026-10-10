@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, TextParagraphSpacingField } from '@open-pencil/scene-graph'
 
 import {
   nodeId,
@@ -12,10 +12,12 @@ import {
   getFontName,
   getLetterSpacing,
   getLineHeight,
+  getParagraphSpacing,
   letterSpacingValue,
   lineHeightValue,
   paragraphStylesForCharacters,
   setFontName,
+  spacingProblem,
   type FigmaLetterSpacing,
   type FigmaLineHeight
 } from '#core/figma-api/text'
@@ -24,20 +26,19 @@ function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
   return target[internals.graph] as SceneGraph
 }
 
-/** Getter/setter pair for a spacing Figma keeps at zero or more. */
-function spacing(
-  internals: NodeProxyInternals,
-  name: 'listSpacing' | 'paragraphSpacing' | 'paragraphIndent'
-) {
+/**
+ * Getter/setter pair for a spacing Figma keeps at zero or more. It reads `mixed` while paragraphs
+ * differ, and setting it changes the text's own value, which paragraphs with theirs keep.
+ */
+function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField, mixed: symbol) {
   return {
-    get(this: ProxyThis): number {
-      return raw(this, internals)[name]
+    get(this: ProxyThis): number | symbol {
+      return getParagraphSpacing(raw(this, internals), name, mixed)
     },
     set(this: ProxyThis, value: number) {
-      if (!(value >= 0)) {
-        throw new Error(
-          `in set_${name}: Property "${name}" failed validation: Number must be greater than or equal to 0`
-        )
+      const invalid = spacingProblem(value)
+      if (invalid) {
+        throw new Error(`in set_${name}: Property "${name}" failed validation: ${invalid}`)
       }
       updateNode(this, internals, { [name]: value })
     }
@@ -58,7 +59,8 @@ function field<Field extends keyof SceneNode>(internals: NodeProxyInternals, nam
 
 export function installTextNodeProxyAccessors(
   prototype: object,
-  internals: NodeProxyInternals
+  internals: NodeProxyInternals,
+  mixed: symbol
 ): void {
   Object.defineProperties(prototype, {
     characters: {
@@ -115,9 +117,9 @@ export function installTextNodeProxyAccessors(
     textCase: field(internals, 'textCase'),
     textDecoration: field(internals, 'textDecoration'),
     maxLines: field(internals, 'maxLines'),
-    listSpacing: spacing(internals, 'listSpacing'),
-    paragraphSpacing: spacing(internals, 'paragraphSpacing'),
-    paragraphIndent: spacing(internals, 'paragraphIndent'),
+    listSpacing: spacing(internals, 'listSpacing', mixed),
+    paragraphSpacing: spacing(internals, 'paragraphSpacing', mixed),
+    paragraphIndent: spacing(internals, 'paragraphIndent', mixed),
     hangingList: field(internals, 'hangingList'),
     textTruncation: field(internals, 'textTruncation'),
     autoRename: field(internals, 'autoRename')

@@ -1,7 +1,9 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
 import {
+  hasParagraphSpacing,
   hasTextList,
+  paragraphSpacingAt,
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
@@ -58,7 +60,12 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 
 /** Whether the text lays out paragraph by paragraph rather than as one native paragraph. */
 function needsParagraphLayout(node: ParagraphNode): boolean {
-  return hasTextList(node) || node.paragraphSpacing !== 0 || node.paragraphIndent !== 0
+  return (
+    hasTextList(node) ||
+    node.paragraphSpacing !== 0 ||
+    node.paragraphIndent !== 0 ||
+    node.textParagraphs.some(hasParagraphSpacing)
+  )
 }
 
 function layoutForNode(layout: TextLayout, node: ParagraphNode): void {
@@ -174,8 +181,9 @@ function buildBlocks(
         ? sliceStyleRuns(node.styleRuns, start, start + 1)
         : sliceStyleRuns(node.styleRuns, start, end)
     }
+    const paragraphIndent = paragraphSpacingAt(node, index, 'paragraphIndent')
     const firstLineIndent =
-      paragraphStyle.listType === 'NONE' && node.paragraphIndent > 0 ? node.paragraphIndent : 0
+      paragraphStyle.listType === 'NONE' && paragraphIndent > 0 ? paragraphIndent : 0
     const blockOptions = (lines?: number): ParagraphBlockOptions => ({
       firstLineIndent,
       truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis },
@@ -209,7 +217,11 @@ function buildBlocks(
       empty,
       inset: item && list ? listInset(node, item, list, digits) : 0,
       rtl,
-      spaceBefore: betweenItems ? node.listSpacing : node.paragraphSpacing,
+      // The space after a paragraph is its own: the paragraph before sets the space before.
+      spaceBefore:
+        index === 0
+          ? 0
+          : paragraphSpacingAt(node, index - 1, betweenItems ? 'listSpacing' : 'paragraphSpacing'),
       marker,
       x: 0,
       y: 0,

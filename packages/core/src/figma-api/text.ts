@@ -1,3 +1,5 @@
+import { upperFirst } from 'es-toolkit/string'
+
 import {
   MAX_LIST_INDENTATION,
   paragraphIndexAt,
@@ -5,12 +7,19 @@ import {
   paragraphStylesAfterEdit,
   paragraphStylesInRange,
   recordInstanceOverride,
+  sharedParagraphSpacing,
   textParagraphRanges,
   trimParagraphStyles,
   withIndentation,
-  withListType
+  withListType,
+  withParagraphSpacing
 } from '@open-pencil/scene-graph'
-import type { SceneGraph, SceneNode, TextParagraphStyle } from '@open-pencil/scene-graph'
+import type {
+  SceneGraph,
+  SceneNode,
+  TextParagraphSpacingField,
+  TextParagraphStyle
+} from '@open-pencil/scene-graph'
 
 import { styleNameToWeight, weightToStyleName, type FigmaFontName } from './fonts'
 
@@ -201,6 +210,57 @@ export function setRangeIndentation(
   }
   assertTextRange('setRangeIndentation', node, start, end)
   updateParagraphs(graph, node, start, end, (style) => withIndentation(style, level))
+}
+
+/**
+ * The paragraphs a spacing range reaches. Unlike list options, Figma counts the paragraph at the
+ * range's end position too, so a range ending where a paragraph starts reaches it.
+ */
+function spacingParagraphs(node: SceneNode, start: number, end: number): [number, number] {
+  return [paragraphIndexAt(node.text, start), paragraphIndexAt(node.text, end)]
+}
+
+/** What Figma reports about a spacing it rejects, or `null`. */
+export function spacingProblem(value: number): string | null {
+  return value >= 0 ? null : 'Number must be greater than or equal to 0'
+}
+
+export function getRangeParagraphSpacing(
+  node: SceneNode,
+  field: TextParagraphSpacingField,
+  start: number,
+  end: number,
+  mixed: symbol
+): number | symbol {
+  assertTextRange(`getRange${upperFirst(field)}`, node, start, end)
+  return sharedParagraphSpacing(node, field, ...spacingParagraphs(node, start, end)) ?? mixed
+}
+
+export function setRangeParagraphSpacing(
+  graph: SceneGraph,
+  node: SceneNode,
+  field: TextParagraphSpacingField,
+  start: number,
+  end: number,
+  value: number
+): void {
+  const method = `setRange${upperFirst(field)}`
+  const invalid = spacingProblem(value)
+  if (invalid) throw new Error(`in ${method}: Property "value" failed validation: ${invalid}`)
+  assertTextRange(method, node, start, end)
+  // Ranges change the paragraphs of their characters; one more reaches the end position's.
+  updateParagraphs(graph, node, start, end + 1, (style) =>
+    withParagraphSpacing(style, field, value)
+  )
+}
+
+/** A text's spacing: one value when every paragraph has it, `mixed` otherwise. */
+export function getParagraphSpacing(
+  node: SceneNode,
+  field: TextParagraphSpacingField,
+  mixed: symbol
+): number | symbol {
+  return sharedParagraphSpacing(node, field) ?? mixed
 }
 
 /** Text replaced whole takes the first paragraph's list style throughout, as in Figma. */

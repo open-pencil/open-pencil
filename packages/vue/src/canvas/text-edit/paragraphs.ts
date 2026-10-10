@@ -3,16 +3,20 @@ import {
   paragraphIndexAt,
   paragraphStyleAt,
   paragraphStylesInRange,
+  paragraphStylesWithoutSpacing,
+  sharedParagraphSpacing,
   withIndentation,
   withListType,
+  withParagraphSpacing,
   type SceneNode,
   type TextListType,
+  type TextParagraphSpacingField,
   type TextParagraphStyle
 } from '@open-pencil/scene-graph'
 
 /**
- * The characters list changes apply to: the selection or the caret's paragraph while the text
- * is being edited, and the whole text otherwise, as in Figma.
+ * The characters paragraph changes apply to: the selection or the caret's paragraph while the
+ * text is being edited, and the whole text otherwise, as in Figma.
  */
 function listRange(store: Editor, node: SceneNode): [number, number] {
   const editor = store.state.editingTextId === node.id ? store.textEditor : null
@@ -20,9 +24,13 @@ function listRange(store: Editor, node: SceneNode): [number, number] {
   return editor.getSelectionRange() ?? [editor.state.cursor, editor.state.cursor]
 }
 
-function rangeStyles(node: SceneNode, [start, end]: [number, number]): TextParagraphStyle[] {
+function rangeParagraphs(node: SceneNode, [start, end]: [number, number]): [number, number] {
   const first = paragraphIndexAt(node.text, start)
-  const last = end > start ? paragraphIndexAt(node.text, end - 1) : first
+  return [first, end > start ? paragraphIndexAt(node.text, end - 1) : first]
+}
+
+function rangeStyles(node: SceneNode, range: [number, number]): TextParagraphStyle[] {
+  const [first, last] = rangeParagraphs(node, range)
   return Array.from({ length: last - first + 1 }, (_, index) =>
     paragraphStyleAt(node.textParagraphs, first + index)
   )
@@ -33,6 +41,39 @@ export function listTypeOf(store: Editor, node: SceneNode): TextListType | null 
   const types = new Set(rangeStyles(node, listRange(store, node)).map((style) => style.listType))
   const [type] = types
   return types.size === 1 ? type : null
+}
+
+/** The spacing of the paragraphs changes apply to, or `null` when they differ. */
+export function paragraphSpacingOf(
+  store: Editor,
+  node: SceneNode,
+  field: TextParagraphSpacingField
+): number | null {
+  return sharedParagraphSpacing(node, field, ...rangeParagraphs(node, listRange(store, node)))
+}
+
+/**
+ * The change that gives the paragraphs changes apply to spacing `value`: their own while the
+ * text is edited, and the text's for all of them otherwise.
+ */
+export function paragraphSpacingChanges(
+  store: Editor,
+  node: SceneNode,
+  field: TextParagraphSpacingField,
+  value: number
+): Partial<SceneNode> {
+  if (store.state.editingTextId !== node.id) {
+    return {
+      [field]: value,
+      textParagraphs: paragraphStylesWithoutSpacing(node.textParagraphs, field)
+    }
+  }
+  const [start, end] = listRange(store, node)
+  return {
+    textParagraphs: paragraphStylesInRange(node.textParagraphs, node.text, start, end, (style) =>
+      withParagraphSpacing(style, field, value)
+    )
+  }
 }
 
 export function createTextListActions(store: Editor) {

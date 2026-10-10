@@ -7,7 +7,7 @@ import { createTextClipboardActions } from './clipboard'
 import { createCaretBlink, createTextCompositionHandlers, createTextEditActions } from './editing'
 import { createTextFormattingActions } from './formatting'
 import { createTextKeyDownHandler } from './keyboard'
-import { createTextListActions } from './lists'
+import { createTextListActions } from './paragraphs'
 import { focusTextAreaOnCanvasPointerDown, useTextEditingSession } from './textarea'
 
 /**

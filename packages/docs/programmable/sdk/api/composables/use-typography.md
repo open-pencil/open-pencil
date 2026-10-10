@@ -78,12 +78,12 @@ typography.setFontFeature('LIGA', false)
 
 ### Make a list
 
-While the text is being edited, `setListType` changes the paragraphs under the caret or selection; otherwise it changes the whole text. List and paragraph spacing and the paragraph indent are plain numeric properties.
+While the text is being edited, `setListType` and `setParagraphSpacing` change the paragraphs under the caret or selection; otherwise they change the whole text. `paragraphSpacing(field)` reads `listSpacing`, `paragraphSpacing`, or `paragraphIndent` for those paragraphs, `MIXED` when they differ, and `previewParagraphSpacing` shows a value while a field is dragged without an undo step.
 
 ```ts
 typography.setListType('UNORDERED')
 typography.setHangingList(true)
-typography.commitProp('listSpacing', 8, typography.node.value?.listSpacing ?? 0)
+typography.setParagraphSpacing('listSpacing', 8)
 ```
 
 ## Related APIs

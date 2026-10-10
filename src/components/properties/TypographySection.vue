@@ -351,15 +351,17 @@ function picked<T>(value: MixedValue<T>): T | '' {
             <PanelGrid :columns="3">
               <Tip v-for="field in paragraphFields" :key="field.key" :label="field.label">
                 <NumberField
-                  :model-value="ctx.merged(field.key)"
+                  :model-value="ctx.paragraphSpacing(field.key)"
                   :aria-label="field.label"
                   :min="0"
                   :disabled="field.key === 'listSpacing' && ctx.listType.value === 'NONE'"
                   :data-property="field.property"
-                  @update:model-value="ctx.actions.updateProp(field.key, Math.max(0, $event))"
+                  @update:model-value="
+                    ctx.actions.previewParagraphSpacing(field.key, Math.max(0, $event))
+                  "
                   @commit="
-                    (value: number, previous: number) =>
-                      ctx.actions.commitProp(field.key, value, previous)
+                    (value: number) =>
+                      ctx.actions.setParagraphSpacing(field.key, Math.max(0, value))
                   "
                 >
                   <template #icon>

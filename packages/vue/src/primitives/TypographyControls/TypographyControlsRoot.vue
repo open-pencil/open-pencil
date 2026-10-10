@@ -28,6 +28,8 @@ const actions = {
   setFontFeature: ctx.setFontFeature,
   setListType: ctx.setListType,
   setHangingList: ctx.setHangingList,
+  previewParagraphSpacing: ctx.previewParagraphSpacing,
+  setParagraphSpacing: ctx.setParagraphSpacing,
   updateProp: ctx.updateProp,
   commitProp: ctx.commitProp,
   align: onAlignChange,
@@ -43,6 +45,7 @@ const actions = {
     :node="ctx.node"
     :nodes="ctx.nodes"
     :merged="ctx.merged"
+    :paragraph-spacing="ctx.paragraphSpacing"
     :font-feature="ctx.fontFeature"
     :weights="ctx.weights"
     :missing-fonts="ctx.missingFonts"

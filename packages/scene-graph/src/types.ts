@@ -239,10 +239,17 @@ export type LayoutDirection = 'AUTO' | 'LTR' | 'RTL'
 export type TextListType = 'NONE' | 'ORDERED' | 'UNORDERED'
 
 /** How one paragraph of a text node (a line ending at a newline) sits in a list. */
+/** Spacing a text sets for all its paragraphs and a paragraph can set for itself. */
+export type TextParagraphSpacingField = 'listSpacing' | 'paragraphSpacing' | 'paragraphIndent'
+
 export interface TextParagraphStyle {
   listType: TextListType
   /** Nesting level: 1–5 for list items; kept but not drawn for plain paragraphs. */
   indentation: number
+  /** This paragraph's own spacing, in place of the text's; absent ones follow the text. */
+  listSpacing?: number
+  paragraphSpacing?: number
+  paragraphIndent?: number
 }
 
 export interface FontVariation {
@@ -540,9 +547,9 @@ export interface SceneNode {
    * without lists keeps this empty.
    */
   textParagraphs: TextParagraphStyle[]
-  /** Space between two list items. */
+  /** Space after a list item followed by another; a paragraph's own value comes first. */
   listSpacing: number
-  /** Space between paragraphs other than two list items. */
+  /** Space after a paragraph other than between two list items. */
   paragraphSpacing: number
   /** Indent of the first line of each plain paragraph. */
   paragraphIndent: number

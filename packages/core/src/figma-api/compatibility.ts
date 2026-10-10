@@ -112,31 +112,32 @@ const _effectShapeMatch: EffectShapeMatch = true
 type TextListKeys =
   | 'setRangeListOptions'
   | 'setRangeIndentation'
-  | 'listSpacing'
-  | 'paragraphSpacing'
-  | 'paragraphIndent'
+  | 'setRangeListSpacing'
+  | 'setRangeParagraphSpacing'
+  | 'setRangeParagraphIndent'
   | 'hangingList'
 type TextListSurfaceMatch = Expect<
   Extends<Pick<FigmaNodeProxy, TextListKeys>, Pick<TextNode, TextListKeys>>
 >
 const _textListSurfaceMatch: TextListSurfaceMatch = true
 
-// Figma's getters return its own `figma.mixed` unique symbol; ours return a plain symbol.
-type TextListGetterKeys = 'getRangeListOptions' | 'getRangeIndentation'
-type TextListGetterMatch = Expect<
+// Figma's mixed values are its own `figma.mixed` unique symbol; ours are a plain symbol.
+type WithoutMixed<T> = T extends (...args: infer A) => infer R
+  ? (...args: A) => Exclude<R, symbol>
+  : Exclude<T, symbol>
+type TextMixedKeys =
+  | 'getRangeListOptions'
+  | 'getRangeIndentation'
+  | 'getRangeListSpacing'
+  | 'getRangeParagraphSpacing'
+  | 'getRangeParagraphIndent'
+  | 'listSpacing'
+  | 'paragraphSpacing'
+  | 'paragraphIndent'
+type TextMixedMatch = Expect<
   Extends<
-    {
-      [K in TextListGetterKeys]: (
-        start: number,
-        end: number
-      ) => Exclude<ReturnType<FigmaNodeProxy[K]>, symbol>
-    },
-    {
-      [K in TextListGetterKeys]: (
-        start: number,
-        end: number
-      ) => Exclude<ReturnType<TextNode[K]>, symbol>
-    }
+    { [K in TextMixedKeys]: WithoutMixed<FigmaNodeProxy[K]> },
+    { [K in TextMixedKeys]: WithoutMixed<TextNode[K]> }
   >
 >
-const _textListGetterMatch: TextListGetterMatch = true
+const _textMixedMatch: TextMixedMatch = true

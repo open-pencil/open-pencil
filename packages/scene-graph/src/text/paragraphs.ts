@@ -1,4 +1,9 @@
-import type { SceneNode, TextListType, TextParagraphStyle } from '../types'
+import type {
+  SceneNode,
+  TextListType,
+  TextParagraphSpacingField,
+  TextParagraphStyle
+} from '../types'
 
 /** The style of a paragraph with no entry: not in a list. */
 export const PLAIN_PARAGRAPH: Readonly<TextParagraphStyle> = Object.freeze({
@@ -44,6 +49,61 @@ export function paragraphStyleAt(
   return paragraphs[paragraph] ?? PLAIN_PARAGRAPH
 }
 
+export const TEXT_PARAGRAPH_SPACING_FIELDS: readonly TextParagraphSpacingField[] = [
+  'listSpacing',
+  'paragraphSpacing',
+  'paragraphIndent'
+]
+
+/** A paragraph's spacing: its own value, or the text's when it sets none. */
+export function paragraphSpacingAt(
+  node: Pick<SceneNode, 'textParagraphs' | TextParagraphSpacingField>,
+  paragraph: number,
+  field: TextParagraphSpacingField
+): number {
+  return paragraphStyleAt(node.textParagraphs, paragraph)[field] ?? node[field]
+}
+
+/** Whether a paragraph sets any spacing of its own. */
+export function hasParagraphSpacing(style: TextParagraphStyle): boolean {
+  return TEXT_PARAGRAPH_SPACING_FIELDS.some((field) => style[field] !== undefined)
+}
+
+/** A paragraph style with its own `field` set, or following the text again for `undefined`. */
+export function withParagraphSpacing(
+  style: TextParagraphStyle,
+  field: TextParagraphSpacingField,
+  value: number | undefined
+): TextParagraphStyle {
+  const { [field]: _previous, ...rest } = style
+  return value === undefined ? rest : { ...rest, [field]: value }
+}
+
+/** Every paragraph's `field`, or `null` when they differ. */
+export function sharedParagraphSpacing(
+  node: Pick<SceneNode, 'text' | 'textParagraphs' | TextParagraphSpacingField>,
+  field: TextParagraphSpacingField,
+  first = 0,
+  last = paragraphCount(node.text) - 1
+): number | null {
+  const value = paragraphSpacingAt(node, first, field)
+  for (let index = first + 1; index <= last; index++) {
+    if (paragraphSpacingAt(node, index, field) !== value) return null
+  }
+  return value
+}
+
+/** Paragraph styles with no paragraph setting its own `field`, as setting the text's does. */
+export function paragraphStylesWithoutSpacing(
+  paragraphs: readonly TextParagraphStyle[],
+  field: TextParagraphSpacingField
+): TextParagraphStyle[] {
+  return trimParagraphStyles(
+    paragraphs.map((style) => withParagraphSpacing(style, field, undefined)),
+    paragraphs.length
+  )
+}
+
 /** Whether any paragraph of the node is a list item. */
 export function hasTextList(node: Pick<SceneNode, 'textParagraphs'>): boolean {
   return node.textParagraphs.some((paragraph) => paragraph.listType !== 'NONE')
@@ -51,7 +111,7 @@ export function hasTextList(node: Pick<SceneNode, 'textParagraphs'>): boolean {
 
 /**
  * Paragraph styles for `count` paragraphs, without the plain paragraphs at the end, so text
- * without lists or indentation keeps none.
+ * without lists, indentation, or paragraph spacing of its own keeps none.
  */
 export function trimParagraphStyles(
   paragraphs: readonly TextParagraphStyle[],
@@ -60,13 +120,14 @@ export function trimParagraphStyles(
   const styles = paragraphs.slice(0, count).map((paragraph) => ({ ...paragraph }))
   while (styles.length > 0) {
     const last = styles[styles.length - 1]
-    if (last.listType !== 'NONE' || last.indentation !== 0) break
+    if (last.listType !== 'NONE' || last.indentation !== 0 || hasParagraphSpacing(last)) break
     styles.pop()
   }
   return styles
 }
 
-function paragraphCount(text: string): number {
+/** How many paragraphs `text` has: one more than its newlines. */
+export function paragraphCount(text: string): number {
   let count = 1
   for (let at = text.indexOf('\n'); at !== -1; at = text.indexOf('\n', at + 1)) count++
   return count
@@ -128,8 +189,8 @@ export function withListType(
   style: TextParagraphStyle,
   listType: TextListType
 ): TextParagraphStyle {
-  if (listType === 'NONE') return { listType, indentation: 0 }
-  return { listType, indentation: clampListIndentation(style.indentation) }
+  if (listType === 'NONE') return { ...style, listType, indentation: 0 }
+  return { ...style, listType, indentation: clampListIndentation(style.indentation) }
 }
 
 /** A paragraph style with its nesting set, kept in the range a list item allows. */

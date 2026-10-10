@@ -1,4 +1,5 @@
 import { scaleGeometryPaths } from '../copy'
+import { TEXT_PARAGRAPH_SPACING_FIELDS } from '../text/paragraphs'
 import {
   type Effect,
   type Fill,
@@ -6,7 +7,8 @@ import {
   type LayoutGrid,
   type SceneNode,
   type Stroke,
-  type StyleRun
+  type StyleRun,
+  type TextParagraphStyle
 } from '../types'
 import { cloneVectorNetwork } from '../vector-network'
 
@@ -57,6 +59,20 @@ function scaledStyleRuns(styleRuns: readonly StyleRun[], scale: number): StyleRu
       textUnderlineOffset: scaledOptional(run.style.textUnderlineOffset ?? null, scale)
     }
   }))
+}
+
+function scaledParagraphStyles(
+  paragraphs: readonly TextParagraphStyle[],
+  scale: number
+): TextParagraphStyle[] {
+  return paragraphs.map((style) => {
+    const scaled = { ...style }
+    for (const field of TEXT_PARAGRAPH_SPACING_FIELDS) {
+      const value = style[field]
+      if (value !== undefined) scaled[field] = value * scale
+    }
+    return scaled
+  })
 }
 
 function scaledLayoutGrids(grids: readonly LayoutGrid[], scale: number): LayoutGrid[] {
@@ -119,6 +135,7 @@ export function scaleNodeChanges(
     listSpacing: node.listSpacing * scale,
     paragraphSpacing: node.paragraphSpacing * scale,
     paragraphIndent: node.paragraphIndent * scale,
+    textParagraphs: scaledParagraphStyles(node.textParagraphs, scale),
     itemSpacing: node.itemSpacing * scale,
     counterAxisSpacing: node.counterAxisSpacing * scale,
     paddingTop: node.paddingTop * scale,

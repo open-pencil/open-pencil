@@ -2,7 +2,12 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core/editor'
 
-import { createTextListActions, listTypeOf } from '#vue/canvas/text-edit/lists'
+import {
+  createTextListActions,
+  listTypeOf,
+  paragraphSpacingChanges,
+  paragraphSpacingOf
+} from '#vue/canvas/text-edit/paragraphs'
 
 let editor: Editor
 
@@ -52,3 +57,18 @@ describe('text list actions', () => {
     expect(read().textParagraphs.map((style) => style.indentation)).toEqual([2, 2, 2])
   })
 })
+
+describe('paragraph spacing', () => {
+  test('sets the whole text outside editing, dropping paragraphs\' own values', () => {
+    const { node, read } = textWithList()
+    editor.graph.updateNode(node.id, {
+      textParagraphs: [{ listType: 'NONE', indentation: 0, paragraphSpacing: 25 }]
+    })
+    expect(paragraphSpacingOf(editor, read(), 'paragraphSpacing')).toBeNull()
+    expect(paragraphSpacingChanges(editor, read(), 'paragraphSpacing', 8)).toEqual({
+      paragraphSpacing: 8,
+      textParagraphs: []
+    })
+  })
+})
+

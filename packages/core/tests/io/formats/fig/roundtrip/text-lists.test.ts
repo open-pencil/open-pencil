@@ -8,8 +8,8 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import type { TextParagraphStyle } from '@open-pencil/scene-graph'
 
 const LIST: TextParagraphStyle[] = [
-  { listType: 'NONE', indentation: 0 },
-  { listType: 'ORDERED', indentation: 1 },
+  { listType: 'NONE', indentation: 0, paragraphSpacing: 24, paragraphIndent: 30 },
+  { listType: 'ORDERED', indentation: 1, listSpacing: 2 },
   { listType: 'ORDERED', indentation: 2 },
   { listType: 'UNORDERED', indentation: 1 }
 ]

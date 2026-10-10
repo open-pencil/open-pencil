@@ -127,6 +127,41 @@ describe('text lists', () => {
     expect(starts.at(-1)).toBe(24)
   })
 
+  test('spaces each paragraph by its own spacing, falling back to the text\'s', async () => {
+    const text = 'P1\nP2\nI1\nI2\nP3\nP4'
+    const gaps = (shaped: ShapedText) =>
+      shaped.baselines.slice(1).map((line, index) => {
+        return line.position.y - shaped.baselines[index].position.y
+      })
+    const flat = gaps(await shape({ text }))
+    const spaced = gaps(
+      await shape({
+        text,
+        paragraphSpacing: 10,
+        listSpacing: 4,
+        textParagraphs: [
+          plain,
+          { ...plain, paragraphSpacing: 25 },
+          ol(),
+          { ...ol(), paragraphSpacing: 40 },
+          { ...plain, listSpacing: 33 }
+        ]
+      })
+    )
+    // Live Figma (2026-10-10): the space after a paragraph is its own; list spacing applies
+    // only between two items, and a plain paragraph's list spacing does nothing.
+    expect(spaced.map((gap, index) => gap - flat[index])).toEqual([10, 25, 4, 40, 10])
+  })
+
+  test('indents the first line of each paragraph by its own indent', async () => {
+    const shaped = await shape({
+      text: 'A\nB\nC',
+      paragraphIndent: 8,
+      textParagraphs: [plain, { ...plain, paragraphIndent: 30 }]
+    })
+    expect(lineStarts(shaped)).toEqual([8, 30, 8])
+  })
+
   test('hangs markers outside the box for a hanging list', async () => {
     const shaped = await shape({ text: 'A\nB', textParagraphs: [ul(), ul()], hangingList: true })
     expect(lineStarts(shaped)).toEqual([0, 0])

@@ -3,9 +3,19 @@ import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/core/text'
-import type { SceneNode, TextDecoration, TextListType } from '@open-pencil/scene-graph'
+import type {
+  SceneNode,
+  TextDecoration,
+  TextListType,
+  TextParagraphSpacingField
+} from '@open-pencil/scene-graph'
 
-import { createTextListActions, listTypeOf } from '#vue/canvas/text-edit/lists'
+import {
+  createTextListActions,
+  listTypeOf,
+  paragraphSpacingChanges,
+  paragraphSpacingOf
+} from '#vue/canvas/text-edit/paragraphs'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
@@ -69,6 +79,13 @@ export function createTypographyState(editor: Editor) {
     return sharedValue(nodes.value.map((n) => n[key]))
   }
 
+  /** A spacing every paragraph changes apply to shares, or MIXED when they differ. */
+  function paragraphSpacing(field: TextParagraphSpacingField): MixedValue<number> {
+    const values = nodes.value.map((n) => paragraphSpacingOf(editor, n, field))
+    const shared = sharedValue(values)
+    return shared === null ? MIXED : shared
+  }
+
   /** Whether one OpenType feature is on for every text layer, MIXED when they differ. */
   function fontFeature(tag: string): MixedValue<boolean> {
     return sharedValue(
@@ -80,6 +97,7 @@ export function createTypographyState(editor: Editor) {
     node,
     nodes,
     merged,
+    paragraphSpacing,
     fontFeature,
     fontFamily,
     fontWeight,
@@ -179,6 +197,60 @@ export function createTypographyActions({
     })
   }
 
+  type SpacingPreview = Pick<SceneNode, TextParagraphSpacingField | 'textParagraphs'>
+  let spacingPreviewField: TextParagraphSpacingField | undefined
+  const beforeSpacing = new Map<string, SpacingPreview>()
+
+  function previewParagraphSpacing(field: TextParagraphSpacingField, value: number) {
+    if (spacingPreviewField !== field) {
+      restoreSpacingPreview()
+      spacingPreviewField = field
+    }
+    for (const target of nodes.value) {
+      if (!beforeSpacing.has(target.id)) {
+        const { listSpacing, paragraphSpacing, paragraphIndent, textParagraphs } = target
+        beforeSpacing.set(target.id, {
+          listSpacing,
+          paragraphSpacing,
+          paragraphIndent,
+          textParagraphs
+        })
+      }
+      editor.updateNode(target.id, paragraphSpacingChanges(editor, target, field, value))
+    }
+    editor.requestRender()
+  }
+
+  function restoreSpacingPreview() {
+    for (const [id, before] of beforeSpacing) editor.updateNode(id, before)
+    beforeSpacing.clear()
+    spacingPreviewField = undefined
+  }
+
+  /**
+   * Sets a spacing for the paragraphs being edited, or for whole text layers, in one undo step;
+   * while text is edited the change is a step of its own after what was typed.
+   */
+  function setParagraphSpacing(field: TextParagraphSpacingField, value: number) {
+    restoreSpacingPreview()
+    const targets = nodes.value
+    if (targets.length === 0) return
+    const label = `Change ${field}`
+    editor.runTextEditStep(() => {
+      editor.undo.runBatch(label, () => {
+        for (const target of targets) {
+          const current = editor.graph.getNode(target.id) ?? target
+          editor.updateNodeWithUndo(
+            target.id,
+            paragraphSpacingChanges(editor, current, field, value),
+            label
+          )
+        }
+      })
+    })
+    editor.requestRender()
+  }
+
   function setHangingList(hangingList: boolean) {
     update('Change hanging lists', { hangingList })
   }
@@ -259,6 +331,8 @@ export function createTypographyActions({
     setTruncation,
     setFontFeature,
     setListType,
+    previewParagraphSpacing,
+    setParagraphSpacing,
     setHangingList,
     toggleBold,
     toggleItalic,
