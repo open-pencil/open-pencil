@@ -46,6 +46,7 @@ describe('limitToSelection', () => {
   })
 
   test('reads the selection when a call names no nodes', () => {
+    expect(limitToSelection(store, 'export_text', {})).toEqual({ ids: [ids.card] })
     expect(limitToSelection(store, 'export_image', { scale: 2 })).toEqual({
       scale: 2,
       ids: [ids.card]
@@ -58,6 +59,17 @@ describe('limitToSelection', () => {
     expect(() =>
       limitToSelection(store, 'export_image', { ids: [ids.card], path: 'card.png' })
     ).toThrow(/Writing files/)
+  })
+
+  test('keeps text extraction inside the selected subtree', () => {
+    expect(limitToSelection(store, 'export_text', { ids: [ids.title] })).toEqual({
+      ids: [ids.title]
+    })
+    expect(() => limitToSelection(store, 'export_text', { ids: [ids.title, ids.other] })).toThrow(
+      /outside/
+    )
+    store.clearSelection()
+    expect(() => limitToSelection(store, 'export_text', {})).toThrow(/Nothing is selected/)
   })
 
   test('rejects other tools and calls without a selection', () => {

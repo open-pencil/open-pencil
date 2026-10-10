@@ -43,6 +43,8 @@
 
 ### Added
 
+- Read plain text from layers and their descendants with `export_text`, without rendering images or changing selection, including when MCP shares only the selection (#861).
+
 - Edit gradients on the canvas, as in Figma: while a fill or stroke gradient's picker is open, the layer shows the gradient's line or ellipse with its end dots and stop squares. Dragging a dot moves it, <kbd>Shift</kbd> turns it in 15° steps, and dragging a square slides its stop; the stop selected on the canvas is the one selected in the picker.
 - Paste SVG markup copied as text, such as from a code editor or Figma's Copy as SVG, as layers.
 - Show the pixel grid when zoomed in, as in Figma: from 800% on a standard display and 400% on a Retina one, toggled with **View → Pixel Grid** or <kbd>⇧</kbd><kbd>'</kbd>. <kbd>⇧</kbd><kbd>⌘</kbd><kbd>'</kbd> toggles **Snap to Pixel Grid**. The zoom menu in the properties panel lists both, with Figma's shortcuts, and labels its shortcuts for zoom to fit (<kbd>⇧</kbd><kbd>1</kbd>) and 100% (<kbd>⌘</kbd><kbd>0</kbd>); <kbd>⇧</kbd><kbd>R</kbd> toggles rulers and <kbd>⌥</kbd><kbd>⌘</kbd><kbd>\\</kbd> multiplayer cursors.

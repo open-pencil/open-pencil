@@ -43,6 +43,7 @@ import {
   setVisible
 } from './modify'
 import {
+  exportText,
   getComponents,
   getCurrentPage,
   getFontStatus,
@@ -111,6 +112,7 @@ import {
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
   // Read (advanced)
+  exportText,
   getPageTree,
   getCurrentPage,
   listPages,
