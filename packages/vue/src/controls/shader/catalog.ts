@@ -106,6 +106,13 @@ const registryEntry = v.object({
   propsMetadata: v.optional(v.record(v.string(), v.unknown()))
 })
 
+/** An effect's name in words, `FilmGrain` as Film grain, as the properties panel names effects. */
+export function shaderEffectLabel(name: string): string {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/ ([A-Z])(?=[a-z])/g, (_, letter: string) => ` ${letter.toLowerCase()}`)
+}
+
 let catalog: Promise<ShaderEffect[]> | null = null
 
 /**

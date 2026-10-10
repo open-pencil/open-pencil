@@ -1,4 +1,4 @@
-export { loadShaderCatalog } from './catalog'
+export { loadShaderCatalog, shaderEffectLabel } from './catalog'
 export type { ShaderEffect, ShaderPropControl } from './catalog'
 export {
   addShaderEffect,

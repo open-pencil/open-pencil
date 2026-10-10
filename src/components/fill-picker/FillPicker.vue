@@ -56,7 +56,9 @@ const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
   emit('cancel')
   emit('openChange', false)
 })
-const cls = usePopoverUI({ content: 'w-60 p-2' })
+const cls = usePopoverUI({
+  content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
+})
 const { panels } = useI18n()
 
 /** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */

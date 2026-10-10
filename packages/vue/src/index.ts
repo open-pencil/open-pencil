@@ -134,6 +134,7 @@ export {
   parseShaderPreset,
   removeShaderEffect,
   setShaderEffectProp,
+  shaderEffectLabel,
   shaderPresetJSON
 } from '#vue/controls/shader'
 export type { ShaderEffect, ShaderPropControl } from '#vue/controls/shader'
