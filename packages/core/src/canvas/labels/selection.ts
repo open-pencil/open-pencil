@@ -35,7 +35,7 @@ function accumulateSelectionBounds(
   }
 }
 
-function drawSizePill(
+export function drawSizePill(
   r: SkiaRenderer,
   canvas: Canvas,
   sizeFont: NonNullable<SkiaRenderer['sizeFont']>,
