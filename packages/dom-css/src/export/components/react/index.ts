@@ -22,7 +22,6 @@ import {
   NUMBER_STATE,
   partAttributes,
   prepend,
-  REACT_STATE_IMPORT,
   STEPPERS,
   type Parameter
 } from './fields'
@@ -411,7 +410,18 @@ function parameters(component: ComponentModel): es.SyntaxNode {
   }
 }
 
-const SLOT_TYPES = es.parseModule("import type { ComponentProps, ReactNode } from 'react'").body
+/**
+ * `import { useState, type ComponentProps, type ReactNode } from 'react'` with only what the
+ * component uses: a number field's state, its root's props, and its slots' content.
+ */
+function reactImport(uses: { state: boolean; props: boolean; slots: boolean }): es.SyntaxNode[] {
+  const types = [...(uses.props ? ['ComponentProps'] : []), ...(uses.slots ? ['ReactNode'] : [])]
+  if (!uses.state && types.length === 0) return []
+  const specifiers = uses.state
+    ? ['useState', ...types.map((name) => `type ${name}`)].join(', ')
+    : types.join(', ')
+  return es.parseModule(`import ${uses.state ? '' : 'type '}{ ${specifiers} } from 'react'`).body
+}
 
 /**
  * The prop a story sets the value with: Radix's uncontrolled value, so a story's control and
@@ -459,7 +469,7 @@ export const reactComponent: ComponentGenerator = async (component) => {
         }).body
     )
   ]
-  const [typeImport, stylesImport, ...rest] = es.fill(MODULE, {
+  const [, stylesImport, ...rest] = es.fill(MODULE, {
     $styles: es.string(`./${stylesPath}`),
     $Props: es.identifier(`${component.name}Props`),
     $Type: propsType(component),
@@ -470,14 +480,16 @@ export const reactComponent: ComponentGenerator = async (component) => {
   const state =
     component.kind === 'numberField' && component.range ? NUMBER_STATE(component.range) : []
   prepend(rest.at(-1), state)
-  // A single choice group's props come from Radix's own type, not `ComponentProps`.
-  let reactImport = [typeImport]
-  if (state.length > 0) reactImport = REACT_STATE_IMPORT
-  else if (component.slots.length > 0) reactImport = SLOT_TYPES
+  const react = reactImport({
+    state: state.length > 0,
+    // A single choice group's props come from Radix's own type, not `ComponentProps`.
+    props: !SINGLE_PROPS[component.kind],
+    slots: component.slots.length > 0
+  })
   const program = {
     type: 'Program',
     sourceType: 'module',
-    body: [...(SINGLE_PROPS[component.kind] ? [] : reactImport), ...imports, stylesImport, ...rest]
+    body: [...react, ...imports, stylesImport, ...rest]
   }
   const { css } = await stateStylesToCSS(component.styles)
   const model = component.model

@@ -115,6 +115,26 @@ describe('generated React plain components', () => {
 })
 
 describe('generated React form controls', () => {
+  test('import the types a number field with a slot uses, and type-check', async () => {
+    const fixture = numberFieldComponent()
+    const { graph, set } = fixture
+    graph.updateNode(set.id, {
+      componentPropertyDefinitions: [
+        ...set.componentPropertyDefinitions,
+        { id: 'hint', name: 'Hint', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    const hint = graph.createNode('FRAME', set.id, {
+      name: 'Hint',
+      width: 20,
+      height: 20,
+      componentPropertyReferences: [{ propertyId: 'hint', field: 'SLOT_CONTENT' }]
+    })
+    graph.createNode('TEXT', hint.id, { name: 'Note', text: '?' })
+    const { folder } = await generate(fixture)
+    expect(await typeErrors(folder, 'Quantity')).toEqual([])
+  })
+
   test('type-check against Radix and React', async () => {
     for (const fixture of [
       sliderComponent(),

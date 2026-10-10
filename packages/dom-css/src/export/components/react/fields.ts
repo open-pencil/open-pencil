@@ -120,10 +120,6 @@ export const NUMBER_STATE = (range: { min: number; max: number }) =>
     { $min: es.number(range.min), $max: es.number(range.max) }
   ).body
 
-export const REACT_STATE_IMPORT = es.parseModule(
-  "import { useState, type ComponentProps } from 'react'"
-).body
-
 /** The component function's statements before it returns, such as a number field's state. */
 export function prepend(declaration: es.SyntaxNode | undefined, statements: es.SyntaxNode[]): void {
   const fn = es.child(declaration, 'declaration')
