@@ -139,14 +139,16 @@ const commentAuthorColor = v.fallback(
   undefined
 )
 
-const commentReply = v.object({
-  id: v.string(),
+/** What a comment and each reply say, who wrote them and when, and whether they were deleted. */
+const commentEntry = {
   author: v.fallback(v.string(), ''),
   authorColor: commentAuthorColor,
   text: v.fallback(v.string(), ''),
   createdAt: v.fallback(v.string(), ''),
   deleted: v.optional(v.boolean())
-})
+}
+
+const commentReply = v.object({ id: v.string(), ...commentEntry })
 
 const commentThread = v.object({
   id: v.string(),
@@ -158,14 +160,10 @@ const commentThread = v.object({
   offsetY: v.optional(v.number()),
   x: v.fallback(v.number(), 0),
   y: v.fallback(v.number(), 0),
-  author: v.fallback(v.string(), ''),
-  authorColor: commentAuthorColor,
-  text: v.fallback(v.string(), ''),
-  createdAt: v.fallback(v.string(), ''),
+  ...commentEntry,
   updatedAt: v.fallback(v.string(), ''),
   resolved: v.fallback(v.boolean(), false),
   resolvedAt: v.optional(v.nullable(v.string())),
-  deleted: v.optional(v.boolean()),
   replies: v.fallback(v.array(commentReply), [])
 })
 

@@ -2,6 +2,7 @@ import { es, jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, ShaderComponent, ShaderPreset } from '@open-pencil/scene-graph'
 
 import type { DesignDocument, DesignElement, DesignNode } from '../types'
+import { shaderEffectAttributes } from './components/shaders'
 import { mergeClassNames, serializeTailwindClasses } from './html'
 import { sceneNodeToDesignDocument, type SceneGraphToDesignOptions } from './projection'
 
@@ -54,12 +55,7 @@ function shaderElement(preset: ShaderPreset, depth: number): SyntaxNode {
     (component: ShaderComponent): SyntaxNode =>
       jsx.element(
         component.type,
-        Object.entries(component.props ?? {}).map(([key, value]) =>
-          jsx.attribute(
-            key,
-            typeof value === 'string' ? jsx.stringValue(value) : jsx.container(es.json(value))
-          )
-        ),
+        shaderEffectAttributes(component),
         (component.children ?? []).map(effect(at + 1)),
         at
       )
