@@ -1,9 +1,9 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGradientFill } from '@open-pencil/scene-graph/gradient'
 
 import {
   createSceneGeometry,
   gradientHandleLayout,
-  isGradientFill,
   type GradientHandleLayout,
   type RotationPreview,
   type ViewportTransform

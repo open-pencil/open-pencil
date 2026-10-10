@@ -167,6 +167,12 @@
       "import": "./dist/resize.js",
       "default": "./dist/resize.js"
     },
+    "./gradient": {
+      "types": "./dist/gradient.d.ts",
+      "bun": "./src/gradient.ts",
+      "import": "./dist/gradient.js",
+      "default": "./dist/gradient.js"
+    },
     "./random": {
       "types": "./dist/random.d.ts",
       "bun": "./src/random.ts",

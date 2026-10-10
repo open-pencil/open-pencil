@@ -1,9 +1,8 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-
-import { invertGradientTransform } from '#core/geometry/gradient'
 
 import { figmaBlendModeToSkia } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'

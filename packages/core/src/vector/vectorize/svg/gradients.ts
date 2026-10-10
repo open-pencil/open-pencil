@@ -11,12 +11,12 @@
  */
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
-
 import {
   ellipticalGradientTransform,
   linearGradientTransformFromAxes
-} from '#core/geometry/gradient'
+} from '@open-pencil/scene-graph/gradient'
+import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 
 import { mapSVGPointToViewport, transformSVGPoint, type SVGViewportMapping } from './transform'

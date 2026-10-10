@@ -6,22 +6,15 @@ export {
   panelRotationChange
 } from './figma'
 export {
-  DEFAULT_GRADIENT_TRANSFORM,
-  ellipticalGradientTransform,
   GRADIENT_HANDLE,
   gradientHandleLayout,
   gradientHandles,
-  invertGradientTransform,
-  linearGradientTransform,
-  linearGradientTransformFromAxes,
   gradientStopPoint,
   gradientStopPosition,
   hitTestGradientHandles,
-  isGradientFill,
   moveGradientHandle
 } from './gradient'
 export type {
-  GradientFillType,
   GradientHandle,
   GradientHandleLayout,
   GradientHandles,

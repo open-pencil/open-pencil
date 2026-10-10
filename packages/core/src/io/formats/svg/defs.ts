@@ -7,9 +7,12 @@ import {
   getDefaultRenderColorSpace,
   type RenderColorSpace
 } from '@open-pencil/scene-graph/color'
+import {
+  gradientPoint,
+  invertGradientTransform,
+  isIdentityGradientTransform
+} from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { invertGradientTransform } from '#core/geometry/gradient'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
@@ -41,10 +44,6 @@ export function formatColor(
   return colorToHex(alphaColor)
 }
 
-function isIdentity(t: NonNullable<Fill['gradientTransform']>) {
-  return t.m00 === 1 && t.m01 === 0 && t.m02 === 0 && t.m10 === 0 && t.m11 === 1 && t.m12 === 0
-}
-
 function createGradientDef(
   fill: Fill,
   node: SceneNode,
@@ -66,7 +65,7 @@ function createGradientDef(
 
   // Gradient space in bounding-box units, mapped onto the layer as the canvas draws it.
   const toLayer = invertGradientTransform(t)
-  const transform = isIdentity(toLayer)
+  const transform = isIdentityGradientTransform(toLayer)
     ? undefined
     : `matrix(${[toLayer.m00, toLayer.m10, toLayer.m01, toLayer.m11, toLayer.m02, toLayer.m12].map((v) => round(v, 6)).join(' ')})`
 
@@ -110,8 +109,9 @@ function createGradientDef(
 
   // Nor an angular one: it exports as a radial gradient around its centre.
   if (fill.type === 'GRADIENT_ANGULAR') {
-    const cx = round((toLayer.m00 * 0.5 + toLayer.m01 * 0.5 + toLayer.m02) * node.width)
-    const cy = round((toLayer.m10 * 0.5 + toLayer.m11 * 0.5 + toLayer.m12) * node.height)
+    const center = gradientPoint(t, { x: 0.5, y: 0.5 })
+    const cx = round(center.x * node.width)
+    const cy = round(center.y * node.height)
     const r = Math.max(node.width, node.height)
     return {
       id,

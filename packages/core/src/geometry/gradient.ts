@@ -1,17 +1,18 @@
-import type { Fill, GradientStop, GradientTransform, Vector } from '@open-pencil/scene-graph'
+import type { GradientStop, GradientTransform, Vector } from '@open-pencil/scene-graph'
+import {
+  applyGradientTransform,
+  ellipticalGradientTransform,
+  invertGradientTransform,
+  linearGradientTransform,
+  type GradientFillType
+} from '@open-pencil/scene-graph/gradient'
 
 /**
- * Gradient geometry in Figma's convention. A paint's `gradientTransform` maps the layer's unit
- * square to gradient space, as Figma's plugin API and `.fig` files store it. In gradient space a
- * linear gradient runs from (0, 0.5) to (1, 0.5); radial, angular, and diamond gradients are
- * centred on (0.5, 0.5) with radius 0.5, and an angular one starts at +x and turns clockwise.
+ * On-canvas gradient handles, as Figma desktop 126 draws and drags them, built on the paint
+ * convention in `@open-pencil/scene-graph/gradient`.
  */
 
 export type GradientHandle = 'start' | 'end' | 'center' | 'radius-x' | 'radius-y'
-export type GradientFillType = Extract<
-  Fill['type'],
-  'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND'
->
 
 export interface GradientHandles {
   start: Vector
@@ -24,115 +25,9 @@ export interface GradientHandles {
 /** Figma's 15° steps while Shift is held. */
 const SNAP_ANGLE = Math.PI / 12
 
-const IDENTITY: GradientTransform = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-
-/** Figma's default when a fill becomes a gradient: top to bottom, centred for the other kinds. */
-export const DEFAULT_GRADIENT_TRANSFORM: GradientTransform = {
-  m00: 0,
-  m01: 1,
-  m02: 0,
-  m10: -1,
-  m11: 0,
-  m12: 1
-}
-
-export function isGradientFill(type: Fill['type']): type is GradientFillType {
-  return (
-    type === 'GRADIENT_LINEAR' ||
-    type === 'GRADIENT_RADIAL' ||
-    type === 'GRADIENT_ANGULAR' ||
-    type === 'GRADIENT_DIAMOND'
-  )
-}
-
-/**
- * The inverse affine map; a singular one falls back to the identity. Inverting a
- * `gradientTransform` gives the map from gradient space to the layer's unit square.
- */
-export function invertGradientTransform(t: GradientTransform): GradientTransform {
-  const det = t.m00 * t.m11 - t.m01 * t.m10
-  if (Math.abs(det) < 1e-12) return IDENTITY
-  const m00 = t.m11 / det
-  const m01 = -t.m01 / det
-  const m10 = -t.m10 / det
-  const m11 = t.m00 / det
-  return {
-    m00,
-    m01,
-    m02: -(m00 * t.m02 + m01 * t.m12),
-    m10,
-    m11,
-    m12: -(m10 * t.m02 + m11 * t.m12)
-  }
-}
-
-function apply(m: GradientTransform, x: number, y: number): Vector {
-  return { x: m.m00 * x + m.m01 * y + m.m02, y: m.m10 * x + m.m11 * y + m.m12 }
-}
-
-/**
- * The transform of a linear gradient from `start` to `end`, both in the layer's unit square, in a
- * `width` × `height` layer. Its second axis is square to the line on screen and `ratio` times as
- * long; Figma keeps that ratio when a handle is dragged (measured on desktop 126), and it starts
- * as the layer's height over its width.
- */
-export function linearGradientTransform(
-  start: Vector,
-  end: Vector,
-  width = 1,
-  height = 1,
-  ratio = height / width
-): GradientTransform {
-  const axis = { x: end.x - start.x, y: end.y - start.y }
-  return linearGradientTransformFromAxes(start, end, {
-    x: (-axis.y * height * ratio) / width,
-    y: (axis.x * width * ratio) / height
-  })
-}
-
-/**
- * The transform of a linear gradient from `start` to `end` whose bands run along `across`, all in
- * the layer's unit square, such as an SVG gradient mapped through its own transform.
- */
-export function linearGradientTransformFromAxes(
-  start: Vector,
-  end: Vector,
-  across: Vector
-): GradientTransform {
-  return invertGradientTransform({
-    m00: end.x - start.x,
-    m01: across.x,
-    m02: start.x - across.x / 2,
-    m10: end.y - start.y,
-    m11: across.y,
-    m12: start.y - across.y / 2
-  })
-}
-
-/**
- * The transform of a radial, angular, or diamond gradient from its centre and the ends of its two
- * radii, all in the layer's unit square.
- */
-export function ellipticalGradientTransform(
-  center: Vector,
-  radiusX: Vector,
-  radiusY: Vector
-): GradientTransform {
-  const xAxis = { x: 2 * (radiusX.x - center.x), y: 2 * (radiusX.y - center.y) }
-  const yAxis = { x: 2 * (radiusY.x - center.x), y: 2 * (radiusY.y - center.y) }
-  return invertGradientTransform({
-    m00: xAxis.x,
-    m01: yAxis.x,
-    m02: center.x - (xAxis.x + yAxis.x) / 2,
-    m10: xAxis.y,
-    m11: yAxis.y,
-    m12: center.y - (xAxis.y + yAxis.y) / 2
-  })
-}
-
 /** Where a point of gradient space falls in a `width` × `height` layer. */
 function point(toLayer: GradientTransform, width: number, height: number, x: number, y: number) {
-  const unit = apply(toLayer, x, y)
+  const unit = applyGradientTransform(toLayer, { x, y })
   return { x: unit.x * width, y: unit.y * height }
 }
 
@@ -190,7 +85,7 @@ export function gradientStopPosition(
 ): number {
   if (type === 'GRADIENT_ANGULAR') {
     if (width <= 0 || height <= 0) return 0
-    const g = apply(t, local.x / width, local.y / height)
+    const g = applyGradientTransform(t, { x: local.x / width, y: local.y / height })
     const turn = Math.atan2(g.y - 0.5, g.x - 0.5) / (2 * Math.PI)
     return turn < 0 ? turn + 1 : turn
   }
