@@ -164,6 +164,8 @@
 
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
 - The font picker opens at the current font instead of the top of the list.
+- A Hug frame grows with its text while the text is typed, as in Figma, instead of only when editing ends.
+- `figma.currentPage.backgrounds` in the plugin API and `eval` scripts takes Figma paints, as `fills` does.
 - Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.
 - A frame's name reads on the section it sits in: on a dark page, frames in a white section had white names on white. Names now fade more on light backgrounds than on dark ones, as Figma's do.
 - `lineHeight` and `letterSpacing` in the plugin API and `eval` scripts read and write Figma's `{ unit, value }`, including percent of the font size and `{ unit: 'AUTO' }`; assigning those objects used to leave the text undrawn.
