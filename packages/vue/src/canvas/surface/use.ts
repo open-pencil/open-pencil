@@ -1,3 +1,4 @@
+import { useElementSize } from '@vueuse/core'
 import type { CanvasKit } from 'canvaskit-wasm'
 import type { Ref } from 'vue'
 
@@ -52,14 +53,13 @@ export function useCanvas(
 
   // The scene surface plays shaders in preview; an overlay surface draws none.
   if (options?.layer !== 'overlays') {
+    // The view's size in CSS pixels, which the editor's pan and zoom map the page onto.
+    const viewport = useElementSize(canvasRef)
     useShaderPlayback({
       editor,
       getRenderer: surface.getRenderer,
-      // The view's size in CSS pixels, which the editor's pan and zoom map the page onto.
-      getViewport: () => ({
-        width: canvasRef.value?.clientWidth ?? 0,
-        height: canvasRef.value?.clientHeight ?? 0
-      }),
+      getView: () => options?.getRenderState?.() ?? editor.state,
+      getViewport: () => ({ width: viewport.width.value, height: viewport.height.value }),
       markDirty: surface.markDirty
     })
   }

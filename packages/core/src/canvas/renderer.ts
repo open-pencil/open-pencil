@@ -85,8 +85,16 @@ import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { PresenceCursor, RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
 
-/** A picture CanvasKit can upload as a texture and that knows its size, such as an `ImageBitmap`. */
-export type LiveImageSource = Extract<TextureSource, { width: number; height: number }>
+/**
+ * A picture uploaded as a texture that knows its size: an `ImageBitmap`, or a canvas, which
+ * WebGL uploads as it does an image though CanvasKit's types leave it out. A canvas is uploaded
+ * as it is when this is called, so a WebGPU canvas is passed in the task that drew it.
+ */
+export type LiveImageSource =
+  | Extract<TextureSource, { width: number; height: number }>
+  | HTMLCanvasElement
+
+const textureSource = (source: LiveImageSource) => source as TextureSource
 
 export class SkiaRenderer {
   ck: CanvasKit
@@ -584,11 +592,11 @@ export class SkiaRenderer {
       current.width() === source.width &&
       current.height() === source.height
     ) {
-      this.surface.updateTextureFromSource(current, source)
+      this.surface.updateTextureFromSource(current, textureSource(source))
     } else {
       current?.delete()
       this.liveImages.delete(hash)
-      const image = source && this.surface.makeImageFromTextureSource(source)
+      const image = source && this.surface.makeImageFromTextureSource(textureSource(source))
       if (image) this.liveImages.set(hash, { image, surface: this.surface })
     }
     for (const id of nodeIds) this.invalidateNodePicture(id)

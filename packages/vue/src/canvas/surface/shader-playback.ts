@@ -3,7 +3,7 @@ import type { createRendererFromJSON } from 'shaders/core'
 import { onScopeDispose, watch } from 'vue'
 
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { readShaderPaints, shaderOfPaint, type ShaderPreset } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -24,8 +24,6 @@ interface Player {
   renderer: ReturnType<typeof createRendererFromJSON> | null
   /** Whether it is on screen, the only time it draws. */
   visible: boolean
-  /** The frame last handed to the canvas, closed once the next one replaces it. */
-  shown: ImageBitmap | null
   disposed: boolean
 }
 
@@ -67,10 +65,12 @@ function shadersOnPage(editor: Editor, pageId: string) {
 export function useShaderPlayback(options: {
   editor: Editor
   getRenderer: () => SkiaRenderer | null
+  /** The view this canvas draws: its pan, zoom, page, and whether it previews. */
+  getView: () => Pick<EditorState, 'panX' | 'panY' | 'zoom' | 'currentPageId' | 'play'>
   getViewport: () => { width: number; height: number }
   markDirty: () => void
 }) {
-  const { editor, getRenderer, getViewport, markDirty } = options
+  const { editor, getRenderer, getView, getViewport, markDirty } = options
   const players = new Map<string, Player>()
   /** Renderers to let go of once the frame being drawn is done with them. */
   const retired: Player[] = []
@@ -80,7 +80,6 @@ export function useShaderPlayback(options: {
   function release() {
     for (const player of retired.splice(0)) {
       player.renderer?.dispose()
-      player.shown?.close()
     }
   }
 
@@ -96,7 +95,7 @@ export function useShaderPlayback(options: {
 
   /** How many pixels a shader painted over `bounds` covers on screen, at most. */
   function screenSize(bounds: Rect[]): { width: number; height: number } {
-    const scale = editor.state.zoom * (window.devicePixelRatio || 1)
+    const scale = getView().zoom * (window.devicePixelRatio || 1)
     const width = Math.max(...bounds.map((rect) => rect.width)) * scale
     const height = Math.max(...bounds.map((rect) => rect.height)) * scale
     const fit = Math.min(1, MAX_PLAY_EDGE / Math.max(width, height, 1))
@@ -107,7 +106,7 @@ export function useShaderPlayback(options: {
   }
 
   function onScreen(bounds: Rect[]): boolean {
-    const { panX, panY, zoom } = editor.state
+    const { panX, panY, zoom } = getView()
     const view = getViewport()
     return bounds.some(
       (rect) =>
@@ -134,7 +133,6 @@ export function useShaderPlayback(options: {
       canvas,
       renderer: null,
       visible: true,
-      shown: null,
       disposed: false
     }
     players.set(hash, player)
@@ -154,8 +152,9 @@ export function useShaderPlayback(options: {
   }
 
   function sync() {
-    const playing = editor.state.play !== null && canDrawShaders()
-    const wanted = playing ? shadersOnPage(editor, editor.state.currentPageId) : new Map()
+    const view = getView()
+    const playing = view.play !== null && canDrawShaders()
+    const wanted = playing ? shadersOnPage(editor, view.currentPageId) : new Map()
     for (const [hash, player] of players) {
       const shader = wanted.get(hash)
       if (!shader || JSON.stringify(shader.preset) !== player.preset) stop(hash)
@@ -193,40 +192,39 @@ export function useShaderPlayback(options: {
   )
 
   /**
-   * Draws every visible shader and copies its canvas right after drawing, since a WebGPU canvas
-   * keeps its frame only until the task that drew it ends; the copies finish together.
+   * Draws every visible shader and uploads its canvas as the image right after drawing, in the
+   * same task, since a WebGPU canvas keeps its frame only until the task that drew it ends.
    */
   async function step(delta: number) {
     const renderer = getRenderer()
     if (!renderer) return
-    const copies: Promise<{ hash: string; player: Player; frame: ImageBitmap }>[] = []
+    let drew = false
     for (const [hash, player] of players) {
       if (!player.visible || !player.renderer) continue
       await player.renderer.renderFrame({ deltaSeconds: delta, waitForGpu: false })
       if (player.disposed) continue
-      copies.push(createImageBitmap(player.canvas).then((frame) => ({ hash, player, frame })))
+      renderer.setLiveImage(hash, player.canvas, player.nodeIds)
+      drew = true
     }
-    const frames = await Promise.all(copies)
-    for (const { hash, player, frame } of frames) {
-      if (player.disposed) {
-        frame.close()
-        continue
-      }
-      renderer.setLiveImage(hash, frame, player.nodeIds)
-      player.shown?.close()
-      player.shown = frame
-    }
-    if (frames.length > 0) markDirty()
+    if (drew) markDirty()
   }
 
-  watch(
-    () => [editor.state.play !== null, editor.state.currentPageId, editor.state.sceneVersion],
-    sync,
-    { immediate: true }
-  )
-  watchThrottled(() => [editor.state.panX, editor.state.panY, editor.state.zoom], sync, {
-    throttle: VIEW_CHECK_MS
+  watch(() => [getView().play !== null, getView().currentPageId, editor.state.sceneVersion], sync, {
+    immediate: true
   })
+  // The view moving or the canvas resizing, as it does when preview hides the panels, changes
+  // what is on screen.
+  watchThrottled(
+    () => [
+      getView().panX,
+      getView().panY,
+      getView().zoom,
+      getViewport().width,
+      getViewport().height
+    ],
+    sync,
+    { throttle: VIEW_CHECK_MS }
+  )
 
   onScopeDispose(() => {
     pause()
