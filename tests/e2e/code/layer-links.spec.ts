@@ -127,6 +127,26 @@ test('design issues are underlined on the property that causes them', async () =
   await expect(warning).toHaveText('size={10}')
 })
 
+for (const [format, swatch, finePrint] of [
+  ['React', 'styles.card__swatch', 'className={styles["card__fine-print"]}'],
+  ['Vue', 'class="card__swatch"', 'class="card__fine-print"'],
+  ['HTML', '<div class="card__swatch">', 'class="card__fine-print"']
+] as const) {
+  test(`generated ${format} links its elements and issues to their layers`, async () => {
+    await buildScene(editor.page)
+    await openCode(editor.page)
+    await editor.page.getByTestId('code-panel-source').click()
+    await editor.page.getByRole('option', { name: format, exact: true }).click()
+
+    // Clicks the class, which is inside the element whatever the indentation.
+    await codeLine(editor.page, swatch).getByText('card__swatch').click()
+    await expect.poll(() => focusedLayer(editor.page)).toBe('Swatch')
+    // Generated markup names each layer by its class, which carries the offending style.
+    const warning = editor.page.locator('[data-slot="code-editor"] .cm-lintRange-warning')
+    await expect(warning).toHaveText(finePrint)
+  })
+}
+
 test('links follow the code after a live edit', async () => {
   await buildScene(editor.page)
   await openCode(editor.page)

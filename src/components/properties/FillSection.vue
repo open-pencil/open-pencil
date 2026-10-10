@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Fill } from '@open-pencil/scene-graph'
+import { shaderOfPaint, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
@@ -11,6 +11,7 @@ import {
 } from '@open-pencil/vue'
 import type { BindableValueActions } from '@open-pencil/vue'
 
+import { useEditorStore } from '@/app/editor/active-store'
 import FillPicker from '@/components/fill-picker/FillPicker.vue'
 import PaintField from '@/components/inputs/PaintField.vue'
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
@@ -37,6 +38,7 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const fillCtx = useFillControls()
+const store = useEditorStore()
 const okhcl = useOkHCL()
 const gradients = useGradientEditing()
 
@@ -60,6 +62,11 @@ const {
   options: styleOptions,
   update: updateStyle
 } = useSharedStylePicker('fill')
+
+/** The shader a fill of the layer the panel shows draws, if it draws one. */
+function fillShader(node: SceneNode | null, fill: Fill) {
+  return node ? shaderOfPaint(node, fill) : null
+}
 
 function displayFill(fill: Fill, resolvedColor: Color | undefined): Fill {
   return fill.type === 'SOLID' && resolvedColor ? { ...fill, color: resolvedColor } : fill
@@ -149,6 +156,7 @@ function updateSolidColor(
                 <FillPicker
                   :fill="displayFill(fill, binding.resolvedValue)"
                   :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
+                  :shader="fillShader(activeNode, fill)"
                   :keep-open="gradients.pressesHandle"
                   :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'fills', index))"
                   @update:active-stop="
@@ -159,6 +167,7 @@ function updateSolidColor(
                       actions.update(index, next)
                     )
                   "
+                  @update-shader="store.setShaderPaint(selectedNodeIds, 'fills', index, $event)"
                   @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
                   @cancel="cancelPaintMutation(binding.actions)"
                 />
@@ -181,7 +190,7 @@ function updateSolidColor(
                   "
                 />
                 <span v-else class="min-w-0 flex-1 truncate font-mono text-xs text-surface">
-                  {{ fillLabel(fill) }}
+                  {{ fillLabel(fill, undefined, fillShader(activeNode, fill)) }}
                 </span>
               </template>
 

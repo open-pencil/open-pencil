@@ -1,5 +1,6 @@
 import { splitWhitespace } from '#dom-css/export/html'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
+import { compact } from 'es-toolkit/array'
 import { twirl } from 'twirlwind'
 
 import { cssName, propAttribute } from './names'
@@ -61,16 +62,15 @@ function testedGroup(
   return isRoot ? null : groups.root
 }
 
-function designNode(
-  node: StateNode,
+/** The utilities a layer takes: its group names, its rest style, and each rule behind its variants. */
+function elementUtilities(
+  node: StateElement,
   groups: Groups,
   isRoot: boolean,
   options: StateTailwindOptions
-): DesignNode {
-  if (node.type === 'text') return node
+): string[] {
   const anchor = groups.anchors.get(node)
-  const classes = [
-    ...(node.attrs.class ? splitWhitespace(node.attrs.class) : []),
+  return [
     ...(isRoot ? [`group/${groups.root}`] : []),
     ...(anchor ? [`group/${anchor}`] : []),
     ...utilities(node.base, options),
@@ -85,11 +85,22 @@ function designNode(
       return utilities(rule.style, options).map((utility) => `${prefix}${utility}`)
     })
   ]
+}
+
+function designNode(node: StateNode, classes: Map<StateElement, string>): DesignNode {
+  if (node.type === 'text') return node
   return {
     type: 'element',
     tagName: node.tagName,
-    attrs: { ...node.attrs, class: classes.join(' ') },
-    children: node.children.map((child) => designNode(child, groups, false, options))
+    attrs: {
+      ...node.attrs,
+      class: compact([
+        ...(node.attrs.class ? splitWhitespace(node.attrs.class) : []),
+        classes.get(node)
+      ]).join(' ')
+    },
+    children: node.children.map((child) => designNode(child, classes)),
+    shader: node.shader
   }
 }
 
@@ -107,15 +118,31 @@ function anchorGroups(root: StateElement, group: string): Map<StateElement, stri
 }
 
 /**
- * The state styles as Tailwind utilities on each element: rest utilities, and each variant's
+ * Each element's Tailwind utilities for the state styles: rest utilities, and each variant's
  * changes behind the variants that show it. More stacked variants make a more specific
  * selector, so a combined variant wins over each of its parts.
  */
+export function stateTailwindClasses(
+  styles: StateStyles,
+  options: StateTailwindOptions = {}
+): Map<StateElement, string> {
+  const root = cssName(styles.name, 'component')
+  const groups = { root, anchors: anchorGroups(styles.root, root) }
+  const classes = new Map<StateElement, string>()
+  const visit = (node: StateNode, isRoot: boolean) => {
+    if (node.type === 'text') return
+    classes.set(node, elementUtilities(node, groups, isRoot, options).join(' '))
+    for (const child of node.children) visit(child, false)
+  }
+  visit(styles.root, true)
+  return classes
+}
+
+/** The state styles as Tailwind utilities on each element of the merged markup. */
 export function stateStylesToTailwind(
   styles: StateStyles,
   options: StateTailwindOptions = {}
 ): DesignDocument {
-  const root = cssName(styles.name, 'component')
-  const groups = { root, anchors: anchorGroups(styles.root, root) }
-  return { type: 'document', children: [designNode(styles.root, groups, true, options)] }
+  const classes = stateTailwindClasses(styles, options)
+  return { type: 'document', children: [designNode(styles.root, classes)] }
 }

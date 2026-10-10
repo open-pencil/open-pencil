@@ -16,6 +16,7 @@ import {
 import { componentModel, type ComponentGenerator, type ComponentModel } from '../components/model'
 import { reactComponent } from '../components/react'
 import type { ComponentReferences } from '../components/references'
+import type { ComponentStyling } from '../components/styling'
 import { vueComponent } from '../components/vue'
 import { serializeHTML, serializeNode } from '../html'
 import { sceneNodeToDesignDocument, type VectorElementRenderer } from '../projection'
@@ -39,6 +40,11 @@ const GENERATORS: Partial<Record<StorybookFramework, ComponentGenerator>> = {
 
 export interface ExportStorybookOptions {
   framework?: StorybookFramework
+  /**
+   * How Vue and React components are styled: a stylesheet beside each, by default, or Tailwind
+   * utilities in their markup, which needs Tailwind set up in the Storybook project.
+   */
+  styling?: ComponentStyling
   /** Limit the export to one page. Defaults to every page. */
   pageId?: string
   /**
@@ -377,7 +383,7 @@ export async function exportStorybook(
   for (const { page, group, file, mode } of entries) {
     const component = group.set && models.get(group.set.id)
     if (generate && component) {
-      const generated = await generate(component)
+      const generated = await generate(component, { styling: options.styling })
       for (const item of generated.files) add(page, item.path, item.content)
       const design = designLink({ linkPath: options.linkPath, uniqueNames }, group.linkNode)
       add(

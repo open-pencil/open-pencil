@@ -159,6 +159,7 @@ export function stateElement(layer: VariantLayer): StateElement {
     attrs: { ...layer.element.attrs },
     base: { ...layer.element.inlineStyle },
     rules: [],
+    shader: layer.element.shader,
     children: layer.children.map((child) => (child.type === 'text' ? child : stateElement(child)))
   }
 }

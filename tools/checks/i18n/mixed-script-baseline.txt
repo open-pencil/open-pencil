@@ -114,7 +114,6 @@ ja:automation.webmcpUnsupported
 ja:code.copyJSXReference
 ja:code.editorHTMLCSSLabel
 ja:code.noSelectionDesignJSX
-ja:code.noSelectionTailwindJSX
 ja:code.writeJSX
 ja:collaboration.invalidRoomLink
 ja:collaboration.joinRoomDescription
@@ -173,6 +172,9 @@ ja:panels.sizingFillFr
 ja:panels.sizingFixedPx
 ja:panels.xAxis
 ja:panels.yAxis
+ja:panels.shaderPreset
+ja:panels.invalidShaderPreset
+ja:panels.shaderNeedsWebGPU
 ja:recovery.dialogDescription
 ja:rendering.reloadRequired
 ja:rendering.settingsDescription
@@ -310,7 +312,6 @@ zh-cn:automation.webmcpUnsupported
 zh-cn:code.copyJSXReference
 zh-cn:code.editorHTMLCSSLabel
 zh-cn:code.noSelectionDesignJSX
-zh-cn:code.noSelectionTailwindJSX
 zh-cn:code.writeJSX
 zh-cn:collaboration.invalidRoomLink
 zh-cn:collaboration.joinRoomDescription
@@ -397,3 +398,6 @@ zh-cn:variables.expression
 zh-cn:variables.expressionHint
 zh-cn:variables.conditionHint
 zh-cn:variables.conditionCustom
+zh-cn:panels.shaderPreset
+zh-cn:panels.invalidShaderPreset
+zh-cn:panels.shaderNeedsWebGPU

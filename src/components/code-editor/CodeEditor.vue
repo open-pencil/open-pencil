@@ -79,7 +79,7 @@ const RUNTIME_TYPES = new Map(
 let externalUpdate = false
 
 function languageExtensions(language: CodeEditorLanguage): Extension {
-  if (language === 'html-css') return html()
+  if (language === 'html-css' || language === 'vue') return html()
   return [
     javascript({ jsx: true, typescript: true }),
     ...(language === 'design-jsx' ? designJSXExtensions() : [])

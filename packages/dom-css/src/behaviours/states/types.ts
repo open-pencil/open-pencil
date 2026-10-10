@@ -1,4 +1,4 @@
-import type { DesignStyleDeclaration, DesignText } from '#dom-css/types'
+import type { DesignElement, DesignStyleDeclaration, DesignText } from '#dom-css/types'
 
 /**
  * What must hold on a control's root for a variant to show. Reka and Radix set `data-state`
@@ -40,6 +40,8 @@ export interface StateElement {
   attrs: Record<string, string>
   base: DesignStyleDeclaration
   rules: StateRule[]
+  /** The shader the layer fills with at rest, as the projection keeps it. */
+  shader?: DesignElement['shader']
   children: StateNode[]
 }
 

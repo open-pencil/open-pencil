@@ -17,12 +17,14 @@ describe('renderer surface replacement', () => {
     const renderer: Pick<
       SkiaRenderer,
       | 'surface'
+      | 'liveImages'
       | 'tiledScene'
       | 'sceneBackingAllocationFailed'
       | 'invalidateScenePicture'
       | 'replaceSurface'
     > = {
       surface: previous,
+      liveImages: new Map(),
       tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
       sceneBackingAllocationFailed: true,
       invalidateScenePicture: mock(),

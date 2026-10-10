@@ -43,6 +43,8 @@ import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createPlayActions } from './play/actions'
 import { createSelectionActions } from './selection'
+import { createShaderActions } from './shaders/actions'
+import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
 import { createDefaultEditorState } from './state'
 import { createStructureActions } from './structure'
@@ -224,6 +226,7 @@ export function createEditor(options?: EditorOptions) {
     icons: options?.icons ?? iconify,
     getCk: () => _ck,
     getRenderer: () => _renderer,
+    getRenderers: () => _renderers,
     getTextEditor: () => _textEditor,
     requestRender,
     requestRefresh,
@@ -242,7 +245,8 @@ export function createEditor(options?: EditorOptions) {
   // Assemble domain modules
   const viewport = createViewportActions(ctx)
   const selection = createSelectionActions(ctx)
-  const pages = createPageActions(ctx)
+  const shaderFrames = createShaderFrames(ctx, options)
+  const pages = createPageActions(ctx, shaderFrames)
   const guides = createGuideActions(ctx)
   const designIssues = createDesignIssueActions(ctx)
   const shapes = createShapeActions(ctx)
@@ -257,6 +261,7 @@ export function createEditor(options?: EditorOptions) {
   const designTokens = createDesignTokenActions(ctx, variables, nodes)
   const vectorize = createVectorizeActions(ctx)
   const icons = createIconActions(ctx)
+  const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
@@ -391,6 +396,8 @@ export function createEditor(options?: EditorOptions) {
     // Bitmap-to-vector replacement
     ...vectorize,
     ...icons,
+    ...shaders,
+    ...shaderFrames,
 
     // Variables
     ...variables,
