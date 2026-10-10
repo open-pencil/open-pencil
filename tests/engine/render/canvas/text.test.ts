@@ -20,6 +20,7 @@ import {
   nodeFontReadiness,
   textVerticalOffset
 } from '#core/canvas/text'
+import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
@@ -67,6 +68,7 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     fontsLoaded: true,
     fontProvider: {},
     textFont: {},
+    derivedGlyphPathCache: createDerivedGlyphPathCache(),
     fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
     effectLayerPaint: {
       setBlendMode: mock(() => undefined),

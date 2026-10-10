@@ -20,6 +20,25 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { geometryBlobToPath } from '#core/vector'
 
 const MAX_GLYPH_SILHOUETTES = 512
+/** Saved glyphs a renderer keeps decoded: every text on a page of saved text redraws at once. */
+const MAX_DERIVED_GLYPH_PATHS = 16384
+
+/** Decoded saved glyph outlines, by the glyph's command bytes, which a node keeps until it changes. */
+export function createDerivedGlyphPathCache(): ResourceCache<Uint8Array, Path> {
+  return new ResourceCache({
+    maxEntries: MAX_DERIVED_GLYPH_PATHS,
+    dispose: (path) => path.delete()
+  })
+}
+
+/** A saved glyph's outline, decoded once and borrowed from the renderer's cache. */
+function derivedGlyphPath(r: SkiaRenderer, blob: Uint8Array): Path {
+  const cached = r.derivedGlyphPathCache.get(blob)
+  if (cached) return cached
+  const path = geometryBlobToPath(r.ck, blob, 'NONZERO')
+  r.derivedGlyphPathCache.set(blob, path)
+  return path
+}
 
 export function createGlyphSilhouetteCache(): ResourceCache<string, Path> {
   return new ResourceCache({ maxEntries: MAX_GLYPH_SILHOUETTES, dispose: (path) => path.delete() })
@@ -474,7 +493,7 @@ export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode
   for (const [index, glyph] of node.derivedTextGlyphs.entries()) {
     const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
     underlineBaselineY = Math.max(underlineBaselineY, glyphY)
-    const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
+    const path = derivedGlyphPath(r, glyph.commandsBlob)
     canvas.save()
     applyGlyphEmTransform(canvas, glyph, glyphY)
     const shouldUseHardCoverage = shouldUseHardDerivedGlyphCoverage(node)
@@ -500,7 +519,6 @@ export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode
     } else canvas.drawPath(path, r.fillPaint)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(true)
     canvas.restore()
-    path.delete()
   }
 
   // Underline math assumes a single horizontal baseline — skip for path text.

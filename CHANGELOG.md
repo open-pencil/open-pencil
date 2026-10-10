@@ -318,7 +318,7 @@
 
 ### Performance
 
-- Selecting text and moving the caret while editing repaint only the selection instead of redrawing the whole canvas and properties panel, so drag-selecting no longer stutters on pages with many text layers.
+- Selecting text and moving the caret while editing repaint only the selection instead of redrawing the whole canvas and properties panel, and text drawn from glyphs saved in a `.fig` file decodes each glyph once instead of on every redraw, so drag-selecting and dragging a property no longer stutter on pages with many text layers.
 - Open large `.fig` files with a fraction of the memory: records stay in the file's bytes except for the few fields indexing needs, and are decoded whole when read, kept only for the pages being read and the components they use. Opening the Nuxt UI design kit takes 0.7 GB instead of 2.2 GB, and its first twelve pages 1.2 GB instead of 2.6 GB.
 - Save an edited `.fig` file by rewriting only the layers that changed and copying the rest from the file it was opened from, as it is stored, without decoding it; in the browser that work runs off the main thread. Saving the 109 MB Preline UI kit after an edit takes about 3 seconds instead of over two minutes, and crash recovery no longer freezes Safari after the first edit to a large file. Editing a component also rewrites its instances on pages that were not opened yet.
 - Open `.fig` design kits with less memory: layers inside instances hold their component layers' paints, glyphs, and other unchanged values instead of a copy each, about a third fewer objects and an eighth less memory per loaded page.
