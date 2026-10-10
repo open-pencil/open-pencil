@@ -28,7 +28,9 @@ export function opacityFromBuffer(buffer: string): number {
 }
 
 export function createNodeActions(ctx: EditorContext) {
-  const layoutModeActions = createLayoutModeActions(ctx)
+  // Function declarations below are hoisted, so the preview can wrap updateNode here.
+  const previewActions = createNodePreviewActions(ctx, updateNode)
+  const layoutModeActions = createLayoutModeActions(ctx, previewActions.beginNodePreview)
   const nudgeActions = createNudgeActions(ctx)
   const variableBindingActions = createVariableBindingActions(ctx)
 
@@ -113,7 +115,7 @@ export function createNodeActions(ctx: EditorContext) {
 
   return {
     updateNode,
-    ...createNodePreviewActions(ctx, updateNode),
+    ...previewActions,
     updateNodeWithUndo,
     setOpacity,
     ...layoutModeActions,

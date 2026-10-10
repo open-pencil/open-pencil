@@ -6,7 +6,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createFlipRotateActions } from '#core/editor/alignment/flip-rotate'
 
-import { collectNodePositions, pushPositionUndo } from './history/position'
+import { collectNodePositions, commitPositionChange } from './history/position'
 import type { EditorContext } from './types'
 
 function computeAlignTarget(
@@ -208,8 +208,7 @@ export function createAlignmentActions(ctx: EditorContext) {
         })
       cursor += span.max - span.min + gap
     }
-    pushPositionUndo(ctx, 'Change spacing', originals, collectNodePositions(ctx, originals.keys()))
-    for (const node of nodes) ctx.runLayoutForNode(node.id)
+    commitPositionChange(ctx, 'Change spacing', originals)
     ctx.requestRender()
   }
 
@@ -243,10 +242,7 @@ export function createAlignmentActions(ctx: EditorContext) {
       alignMultipleNodes(ctx, nodes, axis, align)
     }
 
-    const finals = collectNodePositions(ctx, originals.keys())
-    pushPositionUndo(ctx, 'Align', originals, finals)
-
-    for (const id of nodeIds) ctx.runLayoutForNode(id)
+    commitPositionChange(ctx, 'Align', originals)
     ctx.requestRender()
   }
 
@@ -261,10 +257,7 @@ export function createAlignmentActions(ctx: EditorContext) {
       nodes.map((node) => node.id)
     )
     distributeMultipleNodes(ctx, nodes, axis)
-    const finals = collectNodePositions(ctx, originals.keys())
-    pushPositionUndo(ctx, 'Distribute', originals, finals)
-
-    for (const id of nodeIds) ctx.runLayoutForNode(id)
+    commitPositionChange(ctx, 'Distribute', originals)
     ctx.requestRender()
   }
 
