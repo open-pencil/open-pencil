@@ -1,3 +1,5 @@
+import type { Paragraph } from 'canvaskit-wasm'
+
 import {
   hasTextList,
   paragraphStyleAt,
@@ -11,11 +13,6 @@ import {
 } from '@open-pencil/scene-graph'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
-import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { transformTextCase } from '#core/text/case'
-import { weightToStyle } from '#core/text/fonts'
-import { glyphAdvanceSync } from '#core/text/opentype'
-
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
   buildSkParagraph,
@@ -26,6 +23,11 @@ import {
 import type { ParagraphNode } from '#core/canvas/text/paragraph-inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { utf8Length } from '#core/canvas/text/utf8'
+import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
+import { transformTextCase } from '#core/text/case'
+import { weightToStyle } from '#core/text/fonts'
+import { glyphAdvanceSync } from '#core/text/opentype'
+
 import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from './text-layout'
 
 /** A list item's indent per level, in ems of the list's first character. */
@@ -146,7 +148,22 @@ function buildBlocks(
     utf8Offset += utf8Length(shownText.slice(range.start, range.end)) + 1
   }
 
-  const blocks = sources.map(({ start, end }, index): TextLayoutBlock => {
+  const blocks: TextLayoutBlock[] = []
+  try {
+    for (const [index, { start, end }] of sources.entries()) {
+      blocks.push(buildBlock(index, start, end))
+    }
+  } catch (error) {
+    // Native paragraphs built before the failure are not garbage collected.
+    for (const block of blocks) {
+      block.paragraph.delete()
+      block.marker?.paragraph.delete()
+    }
+    throw error
+  }
+  return new TextLayout(r.ck, blocks, maxLines)
+
+  function buildBlock(index: number, start: number, end: number): TextLayoutBlock {
     const shownRange: TextParagraphRange = shown[index]
     const item = items.get(index)
     const paragraphStyle = paragraphStyleAt(node.textParagraphs, index)
@@ -170,8 +187,16 @@ function buildBlocks(
       paragraphStyleAt(node.textParagraphs, index - 1).listType !== 'NONE' &&
       paragraphStyle.listType !== 'NONE'
     const list = item ? listStyle(node, sources[item.groupStart].start) : null
+    const marker = item && list ? buildMarker(r, node, item, list, color, options) : null
+    let paragraph: Paragraph
+    try {
+      paragraph = buildSkParagraph(r, blockNode, color, options, blockOptions(maxLines))
+    } catch (error) {
+      marker?.paragraph.delete()
+      throw error
+    }
     return {
-      paragraph: buildSkParagraph(r, blockNode, color, options, blockOptions(maxLines)),
+      paragraph,
       rebuild:
         maxLines === undefined
           ? undefined
@@ -186,13 +211,12 @@ function buildBlocks(
       inset: item && list ? listInset(node, item, list, digits) : 0,
       rtl,
       spaceBefore: betweenItems ? node.listSpacing : node.paragraphSpacing,
-      marker: item && list ? buildMarker(r, node, item, list, color, options) : null,
+      marker,
       x: 0,
       y: 0,
       visible: true
     }
-  })
-  return new TextLayout(r.ck, blocks, maxLines)
+  }
 }
 
 /**

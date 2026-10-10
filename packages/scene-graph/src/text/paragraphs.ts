@@ -138,7 +138,10 @@ export function withIndentation(
   indentation: number
 ): TextParagraphStyle {
   if (style.listType === 'NONE') {
-    return { ...style, indentation: Math.max(0, Math.min(MAX_LIST_INDENTATION, indentation)) }
+    return {
+      ...style,
+      indentation: Math.max(0, Math.min(MAX_LIST_INDENTATION, Math.round(indentation)))
+    }
   }
   return { ...style, indentation: clampListIndentation(indentation) }
 }

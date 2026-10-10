@@ -1,7 +1,13 @@
 import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph'
+import {
+  hasTextList,
+  normalizeFontFamily,
+  paragraphIndexAt,
+  textParagraphRanges,
+  weightToStyle
+} from '@open-pencil/scene-graph'
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
 
 import { bytesToHex } from '../bytes'
@@ -109,7 +115,8 @@ function shapedGlyphRecords(
 
 interface SavedGlyph {
   glyph: DerivedTextGlyph
-  character: number
+  /** The character the glyph draws; a list marker draws none. */
+  character: number | undefined
 }
 
 /**
@@ -125,11 +132,27 @@ function savedGlyphLines(glyphs: SavedGlyph[]): SavedGlyph[][] {
 
 /**
  * The character each saved glyph draws. Glyphs from shapers that record no characters stand
- * one for one for the text; among glyphs that do, one without a character is a list marker.
+ * one for one for the text; in a list, or among glyphs that record them, a glyph without a
+ * character is a list marker.
  */
-function savedGlyphCharacters(glyphs: DerivedTextGlyph[]): Array<number | undefined> {
-  const indexed = glyphs.some((glyph) => glyph.firstCharacter !== undefined)
+function savedGlyphCharacters(
+  node: SceneNode,
+  glyphs: DerivedTextGlyph[]
+): Array<number | undefined> {
+  const indexed = hasTextList(node) || glyphs.some((glyph) => glyph.firstCharacter !== undefined)
   return glyphs.map((glyph, index) => glyph.firstCharacter ?? (indexed ? undefined : index))
+}
+
+/**
+ * Where a line starts: at its first character, or, for an empty list item that shows only its
+ * marker, at the paragraph after the last character of the lines before.
+ */
+function lineStart(node: SceneNode, line: SavedGlyph[], previousEnd: number | undefined): number {
+  const characters = line.flatMap(({ character }) => (character === undefined ? [] : [character]))
+  if (characters.length > 0) return Math.min(...characters)
+  if (previousEnd === undefined) return 0
+  const ranges = textParagraphRanges(node.text)
+  return ranges[paragraphIndexAt(node.text, previousEnd) + 1]?.start ?? node.text.length
 }
 
 function savedGlyphLayout(
@@ -138,22 +161,34 @@ function savedGlyphLayout(
 ): Pick<ShapedText, 'baselines' | 'logicalIndexToCharacterOffsetMap'> {
   const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
   const offsets = Array.from({ length: node.text.length }, () => 0)
-  const characters = savedGlyphCharacters(glyphs)
-  // Markers stand before their item's text; a line starts where its characters do.
+  const characters = savedGlyphCharacters(node, glyphs)
   const lines = savedGlyphLines(
-    glyphs.flatMap((glyph, index) => {
-      const character = characters[index]
-      return character === undefined ? [] : [{ glyph, character }]
-    })
+    glyphs.map((glyph, index) => ({ glyph, character: characters[index] }))
   )
+  const starts: number[] = []
+  let previousEnd: number | undefined
+  for (const line of lines) {
+    starts.push(lineStart(node, line, previousEnd))
+    for (const { character } of line) {
+      if (character !== undefined) previousEnd = Math.max(previousEnd ?? 0, character)
+    }
+    // An empty item ends at its own newline.
+    if (line.every(({ character }) => character === undefined)) previousEnd = starts.at(-1)
+  }
   const baselines = lines.map((line, lineIndex) => {
-    const startX = Math.min(...line.map(({ glyph }) => glyph.x))
-    for (const { glyph, character } of line) {
-      if (character < offsets.length) offsets[character] = glyph.x - startX
+    // Markers stand before their item's text; a line starts where its characters do.
+    const text = line.filter(({ character }) => character !== undefined)
+    const startX = text.length
+      ? Math.min(...text.map(({ glyph }) => glyph.x))
+      : Math.max(...line.map(({ glyph }) => glyph.x + (glyph.advance ?? 0)))
+    for (const { glyph, character } of text) {
+      if (character !== undefined && character < offsets.length) {
+        offsets[character] = glyph.x - startX
+      }
     }
     return {
-      firstCharacter: line[0].character,
-      endCharacter: lines[lineIndex + 1]?.[0].character ?? node.text.length,
+      firstCharacter: starts[lineIndex],
+      endCharacter: starts[lineIndex + 1] ?? node.text.length,
       position: { x: startX, y: line[0].glyph.y },
       width: node.width,
       lineY: lineIndex * lineHeight,
@@ -175,10 +210,11 @@ function savedAdvance(glyph: DerivedTextGlyph, next: DerivedTextGlyph | undefine
 }
 
 function savedGlyphRecords(
+  node: SceneNode,
   glyphs: DerivedTextGlyph[],
   context: DerivedTextBuildContext
 ): DerivedTextGlyphRecord[] {
-  const characters = savedGlyphCharacters(glyphs)
+  const characters = savedGlyphCharacters(node, glyphs)
   return glyphs.map((glyph, index) => {
     const next = glyphs[index + 1]
     const sameLine =
@@ -229,7 +265,7 @@ export function buildNodeDerivedTextData(
   if (saved.length > 0) {
     return buildDerivedTextData({
       node,
-      glyphs: savedGlyphRecords(saved, context),
+      glyphs: savedGlyphRecords(node, saved, context),
       fontMetaData: fonts,
       ...savedGlyphLayout(node, saved)
     })

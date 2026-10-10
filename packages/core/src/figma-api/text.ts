@@ -145,7 +145,8 @@ export function getRangeIndentation(
 function indentationProblem(level: number): string | null {
   if (!Number.isInteger(level)) return 'Expected integer, received float'
   if (level < 0) return 'Number must be greater than or equal to 0'
-  if (level > MAX_LIST_INDENTATION) return `Number must be less than or equal to ${MAX_LIST_INDENTATION}`
+  if (level > MAX_LIST_INDENTATION)
+    return `Number must be less than or equal to ${MAX_LIST_INDENTATION}`
   return null
 }
 

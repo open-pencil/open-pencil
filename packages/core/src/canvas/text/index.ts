@@ -236,8 +236,11 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const recCanvas = recorder.beginRecording(bounds)
 
   const layout = buildParagraph(r, node)
-  layout.draw(recCanvas, 0, 0)
-  layout.delete()
+  try {
+    layout.draw(recCanvas, 0, 0)
+  } finally {
+    layout.delete()
+  }
 
   const picture = recorder.finishRecordingAsPicture()
   recorder.delete()
