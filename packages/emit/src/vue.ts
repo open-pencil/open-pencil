@@ -129,8 +129,10 @@ const rawBlock = (tag: string, content: string) =>
 
 /** A single-file component: script setup, template, and scoped style. */
 export function printComponent({ script, template, style }: VueComponent): string {
+  const code = printModule(script)
+  // A component with nothing to import or declare has no script block.
   const blocks = [
-    rawBlock('script setup lang="ts"', printModule(script)),
+    ...(code.trim() ? [rawBlock('script setup lang="ts"', code)] : []),
     `<template>\n${printNode(template, 1)}\n</template>`,
     ...(style ? [rawBlock('style scoped', style)] : [])
   ]

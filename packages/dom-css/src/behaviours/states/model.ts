@@ -109,11 +109,11 @@ function pruneCombined(rules: StateRule[]): StateRule[] {
 }
 
 /**
- * The variants a behaviour's owner draws: a set's components, or a standalone component, such
- * as a radio group or tabs, which is its own only variant.
+ * The variants a layer draws: a set's components, or any other layer, such as a standalone
+ * component or a frame exported as a component, which is its own only variant.
  */
 export function ownerVariants(graph: SceneGraph, owner: SceneNode): SceneNode[] {
-  if (owner.type === 'COMPONENT') return [owner]
+  if (owner.type !== 'COMPONENT_SET') return [owner]
   return graph.getChildren(owner.id).filter((child) => child.type === 'COMPONENT')
 }
 

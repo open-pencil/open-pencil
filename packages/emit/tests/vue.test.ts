@@ -118,6 +118,14 @@ describe('Vue templates', () => {
     ])
     expect(descriptor.template?.content.trim()).toBe('<div />')
   })
+
+  test('leave out the script block when there is nothing to import or declare', () => {
+    const source = vue.printComponent({
+      script: es.parseModule(''),
+      template: vue.element('div')
+    })
+    expect(parse(source).descriptor.scriptSetup).toBeNull()
+  })
 })
 
 describe('conditional elements', () => {

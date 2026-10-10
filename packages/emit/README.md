@@ -33,6 +33,9 @@ es.printModule(module) // export const title = 'Checkout';
 ```ts
 import { es, vue } from '@open-pencil/emit'
 
-const template = vue.element('SwitchRoot', [vue.attribute('class', 'switch'), vue.model(es.identifier('checked'))])
+const template = vue.element('SwitchRoot', [
+  vue.attribute('class', 'switch'),
+  vue.model(es.identifier('checked'))
+])
 vue.printTemplate(template) // <SwitchRoot class="switch" v-model="checked" />
 ```

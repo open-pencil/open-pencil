@@ -13,6 +13,12 @@ export {
   type TailwindJSXWithLayers
 } from './tailwind-jsx'
 export { serializeHTML } from './html'
+export {
+  LAYER_COMPONENT_FRAMEWORKS,
+  layerComponents,
+  type LayerComponent,
+  type LayerComponentFramework
+} from './components/layers'
 export * from '../tokens'
 export * from '../behaviours'
 export type {

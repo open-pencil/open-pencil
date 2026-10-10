@@ -1,9 +1,22 @@
 {
   "name": "@open-pencil/emit",
   "version": "0.15.1",
-  "license": "MIT",
-  "type": "module",
   "description": "How OpenPencil exporters emit source: JavaScript, TypeScript, and JSX built as ESTree and printed with esrap.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/emit"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "imports": {
     "#emit/*": {
       "types": "./src/*",
@@ -19,14 +32,10 @@
       "default": "./dist/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "sideEffects": false,
-  "files": [
-    "dist",
-    "src",
-    "README.md"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
     "check": "bun run typecheck && bun run build && bun run smoke:dist",
@@ -45,14 +54,5 @@
     "tsdown": "^0.22.14",
     "typescript": "~5.8.3",
     "vue": "^3.5.43"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
-    "directory": "packages/emit"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
   }
 }
