@@ -121,4 +121,33 @@ describe('override claims Figma records', () => {
     expect(claims).toContainEqual(expect.objectContaining(FIGMA_RECT_CLAIM))
     expect(claims).toContainEqual(expect.objectContaining(FIGMA_TEXT_CLAIM))
   })
+
+  test("an instance's lock is claimed as Figma writes it, empty when unlocked", () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, {
+      width: 100,
+      height: 50,
+      targetAspectRatio: { x: 100, y: 50 }
+    })
+    const claimOf = (lock: SceneNode['targetAspectRatio']) => {
+      const instance = graph.createInstance(component.id, page.id)
+      if (!instance) throw new Error('Missing instance')
+      graph.updateNode(instance.id, { targetAspectRatio: lock })
+      recordInstanceOverride(graph, instance.id, ['targetAspectRatio'])
+      const [change] = sceneNodeToKiwi(
+        graph.getNode(instance.id) ?? instance,
+        { sessionID: 1, localID: 1 },
+        0,
+        { value: 2 },
+        graph,
+        []
+      )
+      return symbolDataOf(change)?.symbolOverrides?.find((claim) => 'targetAspectRatio' in claim)
+    }
+    expect(claimOf(null)).toMatchObject({ targetAspectRatio: {} })
+    expect(claimOf({ x: 200, y: 50 })).toMatchObject({
+      targetAspectRatio: { value: { x: 200, y: 50 } }
+    })
+  })
 })

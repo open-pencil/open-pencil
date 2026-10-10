@@ -96,7 +96,8 @@ export const OVERRIDE_FIELDS = {
   textCase: { scene: ['textCase'], kind: 'encoded' },
   textDecoration: { scene: ['textDecoration'], kind: 'encoded' },
   textAlignHorizontal: { scene: ['textAlignHorizontal'], kind: 'encoded' },
-  textAlignVertical: { scene: ['textAlignVertical'], kind: 'encoded' }
+  textAlignVertical: { scene: ['textAlignVertical'], kind: 'encoded' },
+  targetAspectRatio: { scene: ['targetAspectRatio'], kind: 'encoded' }
 } as const satisfies Record<string, OverrideField>
 
 export type RawOverrideField = keyof typeof OVERRIDE_FIELDS

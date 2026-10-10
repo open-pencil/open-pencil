@@ -61,5 +61,9 @@ export const OVERRIDE_ENCODERS = {
   textCase: (node) => ({ textCase: node.textCase }),
   textDecoration: (node) => ({ textDecoration: node.textDecoration }),
   textAlignHorizontal: (node) => ({ textAlignHorizontal: node.textAlignHorizontal }),
-  textAlignVertical: (node) => ({ textAlignVertical: node.textAlignVertical })
+  textAlignVertical: (node) => ({ textAlignVertical: node.textAlignVertical }),
+  // Figma writes an unlocked layer's claim as an empty value, not a missing one.
+  targetAspectRatio: (node) => ({
+    targetAspectRatio: node.targetAspectRatio ? { value: { ...node.targetAspectRatio } } : {}
+  })
 } as const satisfies Record<EncodedOverrideField, OverrideEncoder>

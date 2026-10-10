@@ -169,7 +169,7 @@
 
 ### Fixed
 
-- Instance overrides of corner radius and smoothing, stroke weight, alignment, caps, joins and dashes, effects, blend mode, lock, text styling (font, line height, letter spacing, case, decoration, and alignment), and auto layout alignment are kept when the component changes and saved to `.fig` files and the Figma clipboard, as Figma records them; they were lost on save. Component edits to these properties now reach instances that do not override them.
+- Instance overrides of corner radius and smoothing, stroke weight, alignment, caps, joins and dashes, effects, blend mode, lock, text styling (font, line height, letter spacing, case, decoration, and alignment), auto layout alignment, and the aspect ratio lock are kept when the component changes and saved to `.fig` files and the Figma clipboard, as Figma records them; they were lost on save. Component edits to these properties now reach instances that do not override them.
 - <kbd>⇧</kbd>-dragging a corner handle follows the side the pointer stretched most relative to the layer's size, as Figma does, instead of the side it moved more pixels along.
 - The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
 - Tooltips no longer appear when a popover such as the colour picker focuses its first control on open; they still show for keyboard focus. Moving the pointer along a row of buttons switches tooltips at once instead of blinking out, and tooltips centre on their control instead of sitting a few pixels off.

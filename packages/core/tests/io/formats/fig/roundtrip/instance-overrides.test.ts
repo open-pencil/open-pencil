@@ -177,4 +177,30 @@ describe('instance overrides Figma records', () => {
     expect(strokes[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
     expect(strokes[0]?.weight).toBe(7)
   })
+
+  test('an instance unlocked from a locked component stays unlocked', async () => {
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const component = api.createComponent()
+    component.resize(100, 50)
+    component.lockAspectRatio()
+    const unlocked = component.createInstance()
+    unlocked.name = 'Unlocked'
+    unlocked.unlockAspectRatio()
+    const inherits = component.createInstance()
+    inherits.name = 'Inherits'
+    const relocked = component.createInstance()
+    relocked.name = 'Relocked'
+    relocked.resize(200, 50)
+    relocked.lockAspectRatio()
+
+    const reloaded = new FigmaAPI(
+      await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    )
+    const lock = (name: string) =>
+      reloaded.currentPage.children.find((node) => node.name === name)?.targetAspectRatio
+    expect(lock('Unlocked')).toBeNull()
+    expect(lock('Inherits')).toEqual({ x: 100, y: 50 })
+    expect(lock('Relocked')).toEqual({ x: 200, y: 50 })
+  })
 })
