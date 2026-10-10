@@ -18,7 +18,7 @@ const io = new IORegistry(CLI_IO_FORMATS)
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
   const { graph } = await io.readDocument({ name: filePath, data: bytes })
-  computeAllLayouts(graph)
+  graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph
 }
 
@@ -36,13 +36,13 @@ export async function writeFigDocument(graph: SceneGraph, filePath: string): Pro
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {
   const changed = populateFigPage(graph, pageId)
-  if (changed) computeAllLayouts(graph, pageId)
+  if (changed) graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph, pageId))
   return changed
 }
 
 export function populateWholeDocument(graph: SceneGraph): boolean {
   const changed = populateAllFigPages(graph)
-  if (changed) computeAllLayouts(graph)
+  if (changed) graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return changed
 }
 

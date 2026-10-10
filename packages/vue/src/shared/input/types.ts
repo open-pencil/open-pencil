@@ -87,6 +87,8 @@ export interface DragResize {
   /** Whether the latest step set the lock aside, so the commit stores the new size. */
   freesLock?: boolean
   appliedRect?: Rect
+  /** The layer's edited fields before the drag marked its size, to put back if it changes nothing. */
+  origEditedFields?: string[]
 }
 
 export interface DragMarquee {
