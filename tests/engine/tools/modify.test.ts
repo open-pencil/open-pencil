@@ -239,6 +239,9 @@ describe('set_font_range', () => {
     expect(setFontRange.execute(figma, { id, start: 0, end: 9, size: 18 })).toMatchObject({
       error: expect.stringContaining('Range outside of available characters')
     })
+    expect(setFontRange.execute(figma, { id, start: 2, end: 2 })).toEqual({
+      error: 'set_font_range needs at least one of family, size, style, or color'
+    })
     expect(getNodeOrThrow(graph, id).styleRuns).toEqual([])
   })
 

@@ -75,6 +75,9 @@ export const setFontRange = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
     const { start, end } = args
+    if (!args.family && !args.size && !args.style && !args.color) {
+      return { error: 'set_font_range needs at least one of family, size, style, or color' }
+    }
     // The range methods reject an empty range or one past the text, before changing anything.
     try {
       if (args.size) node.setRangeFontSize(start, end, args.size)

@@ -352,11 +352,17 @@ function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[
 }
 
 /** Style runs with `patch` over `text[start, end)`, as Figma restyles a range. */
+/**
+ * A style for a range, or one per font size for a length given in percent of the font size,
+ * which characters of each size resolve to their own length.
+ */
+export type TextStylePatch = CharacterStyleOverride | ((fontSize: number) => CharacterStyleOverride)
+
 export function styleRunsWithPatch(
   node: SceneNode,
   start: number,
   end: number,
-  patch: CharacterStyleOverride
+  patch: TextStylePatch
 ): StyleRun[] {
   const length = node.text.length
   const chars: CharacterStyleOverride[] = Array.from({ length }, () => ({}))
@@ -365,7 +371,17 @@ export function styleRunsWithPatch(
       chars[index] = { ...chars[index], ...run.style }
     }
   }
-  for (let index = start; index < end; index++) chars[index] = { ...chars[index], ...patch }
+  const sized = typeof patch === 'function' ? patch : null
+  const patches = new Map<number, CharacterStyleOverride>()
+  for (let index = start; index < end; index++) {
+    let style = sized ? undefined : (patch as CharacterStyleOverride)
+    if (sized) {
+      const fontSize = chars[index].fontSize ?? node.fontSize
+      style = patches.get(fontSize) ?? sized(fontSize)
+      patches.set(fontSize, style)
+    }
+    chars[index] = { ...chars[index], ...style }
+  }
   // A newline takes the style of the character before it, as in Figma: a range that ends a
   // paragraph styles its newline too, and a newline cannot be styled on its own.
   for (let index = 1; index < length; index++) {
@@ -381,33 +397,6 @@ export function styleRunsWithPatch(
     node,
     runs.filter((run) => Object.keys(run.style).length > 0)
   )
-}
-
-/**
- * Style runs with a patch that depends on each character's font size, as a length given in
- * percent of the font size does: characters of each size take the length that size gives.
- */
-export function styleRunsWithSizedPatch(
-  node: SceneNode,
-  start: number,
-  end: number,
-  patchFor: (fontSize: number) => CharacterStyleOverride
-): StyleRun[] {
-  const sizes = characterStyles(node, start, end).map((style) => style.fontSize)
-  let styled = node
-  let first = 0
-  for (let offset = 1; offset <= sizes.length; offset++) {
-    if (offset < sizes.length && sizes[offset] === sizes[first]) continue
-    const styleRuns = styleRunsWithPatch(
-      styled,
-      start + first,
-      start + offset,
-      patchFor(sizes[first])
-    )
-    styled = { ...styled, styleRuns }
-    first = offset
-  }
-  return styled.styleRuns
 }
 
 /**
@@ -427,7 +416,7 @@ export function textStyleChanges(
   if (!sized) return { ...changes, styleRuns }
   return {
     ...changes,
-    styleRuns: styleRunsWithSizedPatch({ ...updated, styleRuns }, 0, node.text.length, sized)
+    styleRuns: styleRunsWithPatch({ ...updated, styleRuns }, 0, node.text.length, sized)
   }
 }
 

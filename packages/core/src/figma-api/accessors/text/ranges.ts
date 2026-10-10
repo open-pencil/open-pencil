@@ -33,10 +33,10 @@ import {
   getStyledTextSegments,
   rangeHasUnderline,
   styleRunsWithPatch,
-  styleRunsWithSizedPatch,
   type FigmaDecorationColor,
   type FigmaTextLength,
   type StyledTextSegment,
+  type TextStylePatch,
   type TextSegmentField
 } from '#core/figma-api/text/style'
 
@@ -148,21 +148,18 @@ function enumValue<T extends string>(method: string, value: unknown, allowed: Re
   return value as T
 }
 
-/** A style for the range, or one per font size for lengths given in percent. */
-type StylePatch = CharacterStyleOverride | ((fontSize: number) => CharacterStyleOverride)
-
 type RangeSetter = (
   method: string,
   node: SceneNode,
   start: number,
   end: number,
   value: unknown
-) => StylePatch
+) => TextStylePatch
 
 /** Decoration styles only apply to underlined text; Figma rejects a range with none. */
 function underlineStyle(
   name: string,
-  patch: (method: string, value: unknown) => StylePatch
+  patch: (method: string, value: unknown) => TextStylePatch
 ): RangeSetter {
   return (method, node, start, end, value) => {
     const style = patch(method, value)
@@ -320,11 +317,7 @@ export function installTextRangeMethods(
         const node = raw(this, internals)
         assertTextRange(method, node, start, end)
         const patch = setter(method, node, start, end, value)
-        const styleRuns =
-          typeof patch === 'function'
-            ? styleRunsWithSizedPatch(node, start, end, patch)
-            : styleRunsWithPatch(node, start, end, patch)
-        updateNode(this, internals, { styleRuns })
+        updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
       }
     }
   }
