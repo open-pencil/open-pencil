@@ -31,11 +31,7 @@ const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   appURL: v.optional(httpURLSchema),
-  collaborationURL: v.optional(websocketURLSchema),
-  collaborationPort: v.optional(
-    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535)),
-    1234
-  ),
+  relayURL: v.optional(websocketURLSchema),
   technicalLimits: v.optional(
     v.object({
       maximumUploadBytes: v.optional(

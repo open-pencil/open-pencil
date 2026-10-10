@@ -6,6 +6,7 @@ export {
   type CollaborationPrincipal,
   type CollaborationTicket
 } from './collaboration'
+export * from './relay'
 export { workspaceEntitlementsSchema, type WorkspaceEntitlements } from './entitlements'
 export {
   CLOUD_DISCOVERY_PATH,

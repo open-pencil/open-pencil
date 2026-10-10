@@ -32,14 +32,25 @@ async function derivedRoomKey(authSecret: string, documentId: string, roomEpoch:
   return base64url.encode(new Uint8Array(bits))
 }
 
-async function signedTicket(
-  authSecret: string,
-  documentId: string,
-  principal: CollaborationPrincipal,
-  permission: DocumentPermission,
-  roomEpoch: number,
-  collaborationURL?: string
-): Promise<CollaborationTicket> {
+export type CollaborationTicketClaims = {
+  authSecret: string
+  documentId: string
+  principal: CollaborationPrincipal
+  permission: DocumentPermission
+  roomEpoch: number
+  /** The relay that enforces writes; without one the ticket is for peer-to-peer rooms. */
+  relayURL?: string
+}
+
+/** Signs a ticket for a document's collaboration room once access has been decided. */
+export async function signCollaborationTicket({
+  authSecret,
+  documentId,
+  principal,
+  permission,
+  roomEpoch,
+  relayURL
+}: CollaborationTicketClaims): Promise<CollaborationTicket> {
   const issuedAt = Math.floor(Date.now() / 1000)
   const expiresAtSeconds = issuedAt + TICKET_LIFETIME_SECONDS
   const roomId = `cloud:${documentId}:${roomEpoch}`
@@ -50,7 +61,7 @@ async function signedTicket(
     principal,
     permission,
     roomEpoch,
-    serverEnforcedWrites: Boolean(collaborationURL)
+    serverEnforcedWrites: Boolean(relayURL)
   }
   const token = await new SignJWT(claims)
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
@@ -60,8 +71,8 @@ async function signedTicket(
     .sign(new TextEncoder().encode(authSecret))
   return {
     token,
-    provider: collaborationURL ? ('hocuspocus' as const) : ('trystero' as const),
-    ...(collaborationURL ? { serverURL: collaborationURL } : {}),
+    provider: relayURL ? ('relay' as const) : ('trystero' as const),
+    ...(relayURL ? { serverURL: relayURL } : {}),
     ...claims,
     roomKey,
     expiresAt: new Date(expiresAtSeconds * 1000).toISOString()
@@ -72,7 +83,7 @@ export type CollaborationTicketServiceOptions = {
   database: Kysely<CloudDatabase>
   sharing: DocumentSharingService
   authSecret: string
-  collaborationURL?: string
+  relayURL?: string
   policy?: CloudPolicy
   deploymentMode?: 'official' | 'self-hosted'
 }
@@ -81,7 +92,7 @@ export function createCollaborationTicketService({
   database,
   sharing,
   authSecret,
-  collaborationURL,
+  relayURL,
   policy,
   deploymentMode = 'self-hosted'
 }: CollaborationTicketServiceOptions) {
@@ -114,14 +125,14 @@ export function createCollaborationTicketService({
         .where('deletedAt', 'is', null)
         .executeTakeFirst()
       if (!document) throw new DocumentNotFoundError()
-      return signedTicket(
+      return signCollaborationTicket({
         authSecret,
         documentId,
-        { kind: 'user', userId: actor.userId, name: actor.name, email: actor.email },
-        access.permission,
-        document.collaborationEpoch,
-        collaborationURL
-      )
+        principal: { kind: 'user', userId: actor.userId, name: actor.name, email: actor.email },
+        permission: access.permission,
+        roomEpoch: document.collaborationEpoch,
+        relayURL
+      })
     },
 
     async issueShareTicket(
@@ -157,14 +168,14 @@ export function createCollaborationTicketService({
         .where('deletedAt', 'is', null)
         .executeTakeFirst()
       if (!document) throw new DocumentNotFoundError()
-      return signedTicket(
+      return signCollaborationTicket({
         authSecret,
-        resolved.documentId,
-        resolved.principal,
-        resolved.permission,
-        document.collaborationEpoch,
-        collaborationURL
-      )
+        documentId: resolved.documentId,
+        principal: resolved.principal,
+        permission: resolved.permission,
+        roomEpoch: document.collaborationEpoch,
+        relayURL
+      })
     }
   }
 }

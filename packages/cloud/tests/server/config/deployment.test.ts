@@ -166,6 +166,19 @@ describe('Cloud TOML deployment configuration', () => {
     })
   })
 
+  test('reads a relay URL override and requires a WebSocket scheme', () => {
+    const relay = (url: string) =>
+      parseCloudDeploymentTOML(
+        `${minimalSource}\n[collaboration]\nrelay_url = "${url}"\n`,
+        environment
+      )
+    expect(relay('wss://relay.example.com/api/collaboration/relay').relayURL).toBe(
+      'wss://relay.example.com/api/collaboration/relay'
+    )
+    expect(() => relay('https://relay.example.com')).toThrow()
+    expect(parseCloudDeploymentTOML(minimalSource, environment).relayURL).toBeUndefined()
+  })
+
   test('supports explicit secret-reference names', () => {
     const input = parseTOML(minimalSource)
     const parsed = v.parse(cloudDeploymentConfigSchema, input)

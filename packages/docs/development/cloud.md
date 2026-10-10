@@ -66,6 +66,41 @@ headers. Invitation continuations through OAuth are single-use compact JWE.
 Collaboration tickets are signed, epoch-scoped JWTs naming the principal and permission. Rotating a
 capability secret keeps the current epoch; revoking access advances it so old tickets stop working.
 
+## Live collaboration
+
+Collaboration in the editor runs Yjs sync and awareness over a `CollabRoomTransport`. Local
+documents use Trystero peer to peer; Cloud documents use the Cloud relay, a WebSocket endpoint at
+`/api/collaboration/relay` on the API origin. Both carry the same room messages, so the editor has
+one sync implementation.
+
+```mermaid
+sequenceDiagram
+  participant A as Editor
+  participant R as Relay (server peer)
+  participant B as Viewer
+  A->>R: auth (ticket)
+  R-->>A: welcome [server]
+  R->>A: sync-step1
+  A->>R: sync-reply (offline edits)
+  B->>R: auth (ticket)
+  R-->>B: welcome [server, A]
+  B->>R: sync-step1 to server
+  R-->>B: sync-reply (room document)
+  A->>R: yjs-update
+  R-->>B: yjs-update
+  B->>R: yjs-update (dropped)
+```
+
+The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved in
+PostgreSQL by document and collaboration epoch, so a newcomer gets the document even when nobody
+else is online. Tickets are short-lived signed JWTs; the client presents a fresh one before the
+current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
+
+The relay enforces what the ticket allows: a viewer's document updates and sync replies never leave
+it, and presence updates are rewritten so others see the ticket's name and a `cloud` field with the
+verified identity and permission. A peer cannot claim presence clients another peer owns. Voice is
+not carried over the relay yet; the transport reports no media.
+
 ## Enrollment and administration
 
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a

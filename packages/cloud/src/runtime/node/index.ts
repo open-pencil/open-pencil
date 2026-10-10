@@ -17,4 +17,5 @@ export {
   type SMTPTransactionalEmailTransportOptions
 } from './email'
 export { createS3ObjectStore } from '#cloud/runtime/s3/objects'
+export { attachCollaborationRelay, defaultRelayURL } from './relay'
 export { startNodeCloudServer, type NodeCloudServerOptions } from './server'

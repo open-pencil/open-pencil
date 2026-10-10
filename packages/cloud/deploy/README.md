@@ -77,6 +77,15 @@ Each command reads the same `OPENPENCIL_CLOUD_CONFIG` and secrets as the server:
 | `bun --filter @open-pencil/cloud entitlements`    | Inspect or set a workspace's entitlements       |
 | `bun --filter @open-pencil/cloud admin`           | Approve enrollment and grant deployment admin   |
 
+### Collaboration relay
+
+The server accepts collaboration WebSockets on `/api/collaboration/relay` on the same listener, so
+a reverse proxy must forward WebSocket upgrades for that path. Collaboration tickets name the relay
+at `deployment.public_url` with a `ws:` or `wss:` scheme; set `[collaboration] relay_url` when
+clients reach it elsewhere. `technical_limits.maximum_collaboration_message_bytes` and
+`maximum_connections_per_room` bound each room, and the `entitlements.collaboration` limits apply
+per workspace.
+
 ### Transactional email
 
 Set `email.transport = "smtp"` with an `[email.smtp]` table, or `"none"` to disable delivery; with

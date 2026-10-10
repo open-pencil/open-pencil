@@ -2,6 +2,8 @@ import * as decoding from 'lib0/decoding'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
+import { COLLAB_ACTIONS } from '@open-pencil/cloud/contract'
+
 import { joinCollabRoom, type JoinCollabRoom } from '@/app/collab/transport'
 import type { CollabAction } from '@/app/collab/transport/types'
 
@@ -52,11 +54,11 @@ export function connectCollabRoom({
   joinRoom = joinCollabRoom
 }: CollabRoomOptions): CollabRoomConnection {
   const room = joinRoom(roomId)
-  const [sendYjsUpdate, getUpdate] = room.makeAction('yjs-update')
-  const [sendAwareness, getAwareness] = room.makeAction('awareness')
-  const [sendSyncStep1, getSyncStep1] = room.makeAction('sync-step1')
-  const [sendSyncReply, getSyncReply] = room.makeAction('sync-reply')
-  const agentPreview = room.makeAction('agent-preview')
+  const [sendYjsUpdate, getUpdate] = room.makeAction(COLLAB_ACTIONS.yjsUpdate)
+  const [sendAwareness, getAwareness] = room.makeAction(COLLAB_ACTIONS.awareness)
+  const [sendSyncStep1, getSyncStep1] = room.makeAction(COLLAB_ACTIONS.syncStep1)
+  const [sendSyncReply, getSyncReply] = room.makeAction(COLLAB_ACTIONS.syncReply)
+  const agentPreview = room.makeAction(COLLAB_ACTIONS.agentPreview)
   // A transport keeps one leave handler, so the connection shares it with its users.
   const leaveHandlers = new Set<(peerId: string) => void>()
 

@@ -69,8 +69,21 @@ export {
   type UploadCleanupService
 } from './cleanup'
 export {
+  authorizeRelayTicket,
+  createCollaborationRelay,
+  createCollaborationStateStore,
+  stampAwareness,
+  type CollaborationRelay,
+  type CollaborationRelayOptions,
+  type CollaborationRoomIdentity,
+  type CollaborationStateStore,
+  type RelayAuthorization,
+  type RelayConnection,
+  type RelaySocket,
   createCollaborationRoutes,
   createCollaborationTicketService,
+  signCollaborationTicket,
+  type CollaborationTicketClaims,
   createPublicCollaborationRoutes,
   type CollaborationRouteEnvironment,
   type CollaborationTicketService

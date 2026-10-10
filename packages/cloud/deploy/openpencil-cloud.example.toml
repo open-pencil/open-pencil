@@ -68,6 +68,11 @@ force_path_style = true
 checksum_verification = "metadata"
 # Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
 
+# The collaboration relay is served on the API origin. Set this only when clients reach it
+# through a different URL, such as a separate proxy.
+# [collaboration]
+# relay_url = "wss://relay.example.com/api/collaboration/relay"
+
 [email]
 transport = "none"
 
