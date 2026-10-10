@@ -2,6 +2,8 @@
   "toolOptions": "Options de {tool}",
   "removeGradientStop": "Supprimer le point de dégradé",
   "cornerRadius": "Rayon",
+  "pointCount": "Nombre",
+  "starRatio": "Rapport",
   "showUI": "Afficher l’interface ({shortcut})",
   "previewing": "Aperçu",
   "resetPreview": "Réinitialiser",

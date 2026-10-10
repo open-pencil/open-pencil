@@ -10,32 +10,33 @@ import {
   SIZE_PILL_PADDING_X,
   SIZE_PILL_RADIUS
 } from '#core/constants'
-import type { CornerRadiusHover } from '#core/editor/types'
+import type { ShapeHandleHover } from '#core/editor/types'
 import {
-  CORNER_RADIUS_HANDLE,
-  cornerRadiusHandleLayout,
-  cornerRadii,
+  SHAPE_HANDLE,
+  shapeHandleLayout,
+  shapeHandleValue,
   createSceneGeometry,
   type RotationPreview
 } from '#core/geometry'
 
 /**
- * The selected rectangle's corner radius handles while the pointer is over it: white circles the
- * size of the resize handles with a border in the selection colour, dotted when a drag changes one
- * corner, and a "Radius" label by the pointer for the handle in use, as in Figma desktop.
+ * The selected rectangle's, polygon's, or star's handles while the pointer is over it: white
+ * circles the size of the resize handles with a border in the selection colour, dotted when a drag
+ * changes one corner, and a label such as "Radius 12" by the pointer for the handle in use, as in
+ * Figma desktop.
  */
-export function drawCornerRadiusHandles(
+export function drawShapeHandles(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
   selectedIds: ReadonlySet<string>,
-  hover: CornerRadiusHover | null | undefined,
+  hover: ShapeHandleHover | null | undefined,
   preview?: RotationPreview | null
 ): void {
   if (!hover || selectedIds.size !== 1 || !selectedIds.has(hover.nodeId)) return
   const node = graph.getNode(hover.nodeId)
   if (!node) return
-  const handles = cornerRadiusHandleLayout(node, createSceneGeometry(graph, preview), r)
+  const handles = shapeHandleLayout(node, createSceneGeometry(graph, preview), r)
   if (!handles) return
   const color = r.outlineColor(node, graph)
   const fill = r.auxFill
@@ -50,13 +51,13 @@ export function drawCornerRadiusHandles(
     canvas.drawCircle(point.x, point.y, HANDLE_HALF_SIZE, border)
     if (!hover.single) continue
     fill.setColor(color)
-    canvas.drawCircle(point.x, point.y, CORNER_RADIUS_HANDLE.dotRadius, fill)
+    canvas.drawCircle(point.x, point.y, SHAPE_HANDLE.dotRadius, fill)
   }
 
   const provider = r.fontProvider
-  if (!hover.corner || !provider) return
+  if (!hover.handle || !provider) return
   // A paragraph rather than the size label's single font, so every script has a fallback face.
-  const text = `${hover.label} ${Math.round(cornerRadii(node)[hover.corner])}`
+  const text = `${hover.label} ${shapeHandleValue(node, hover.handle)}`
   const white = r.ck.WHITE
   const measured = r.labelParagraphCache.measure(
     r.ck,
@@ -67,7 +68,7 @@ export function drawCornerRadiusHandles(
     white,
     r.fontGeneration
   )
-  const { labelOffset } = CORNER_RADIUS_HANDLE
+  const { labelOffset } = SHAPE_HANDLE
   const left = hover.pointer.x + labelOffset.x
   const top = hover.pointer.y + labelOffset.y - SIZE_PILL_HEIGHT / 2
   fill.setColor(color)

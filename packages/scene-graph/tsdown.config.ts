@@ -25,6 +25,7 @@ export default defineConfig({
     matrix: './src/matrix.ts',
     geometry: './src/geometry.ts',
     gradient: './src/gradient.ts',
+    polygon: './src/polygon.ts',
     guides: './src/guides.ts',
     layout: './src/layout/index.ts',
     resize: './src/resize.ts',

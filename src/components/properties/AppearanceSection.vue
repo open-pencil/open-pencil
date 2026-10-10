@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BlendMode } from '@open-pencil/scene-graph'
+import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { AppearanceControlsRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -37,6 +38,11 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
       active,
       hasCornerRadius,
       cornerRadiusDisabled,
+      splitsCorners,
+      hasPointCount,
+      hasStarRatio,
+      pointCount,
+      starRatioPercent,
       showIndependentCorners,
       cornerRadiusValue,
       cornerRadiusBindingPaths,
@@ -142,7 +148,7 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
             </template>
           </NumberField>
         </PanelFieldGroup>
-        <div class="flex h-6 items-center justify-end">
+        <div v-if="splitsCorners" class="flex h-6 items-center justify-end">
           <IconButton
             :label="panels.independentCornerRadii"
             size="xs"
@@ -207,6 +213,43 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
             <icon-lucide-square-round-corner class="size-3" />
           </IconButton>
         </template>
+      </PanelGrid>
+
+      <PanelGrid v-if="hasPointCount" :columns="2" class="mt-1.5">
+        <PanelFieldGroup :label="panels.pointCount">
+          <NumberField
+            :model-value="pointCount"
+            :min="POINT_COUNT_RANGE.min"
+            :max="POINT_COUNT_RANGE.max"
+            :aria-label="panels.pointCount"
+            data-property="pointCount"
+            @update:model-value="actions.updateProp('pointCount', Math.round($event))"
+            @commit="(v: number, p: number) => actions.commitProp('pointCount', Math.round(v), p)"
+          >
+            <template #icon>
+              <icon-lucide-asterisk class="size-3" />
+            </template>
+          </NumberField>
+        </PanelFieldGroup>
+        <PanelFieldGroup v-if="hasStarRatio" :label="panels.starRatio">
+          <NumberField
+            suffix="%"
+            :model-value="starRatioPercent"
+            :min="0"
+            :max="100"
+            :step="0.1"
+            :aria-label="panels.starRatio"
+            data-property="starInnerRadius"
+            @update:model-value="actions.updateProp('starInnerRadius', $event / 100)"
+            @commit="
+              (v: number, p: number) => actions.commitProp('starInnerRadius', v / 100, p / 100)
+            "
+          >
+            <template #icon>
+              <icon-lucide-star class="size-3" />
+            </template>
+          </NumberField>
+        </PanelFieldGroup>
       </PanelGrid>
 
       <PanelGrid v-if="hasCornerRadius && !cornerRadiusDisabled" :columns="2" class="mt-1.5">

@@ -17,6 +17,7 @@ import {
   geometryBlobToSVGPath,
   vectorNetworkToSVGPaths,
   makePolygonPoints,
+  roundedPolygonPath,
   hasRadius,
   roundedRectPath,
   arcPath
@@ -144,7 +145,9 @@ function nodeShapeElements(
 
     case 'STAR':
     case 'POLYGON':
-      return [svg('polygon', { points: makePolygonPoints(node), ...common })]
+      return node.cornerRadius > 0
+        ? [svg('path', { d: roundedPolygonPath(node), ...common })]
+        : [svg('polygon', { points: makePolygonPoints(node), ...common })]
 
     case 'VECTOR':
       return vectorShapeElements(node, common, strokeAttrs, ctx)

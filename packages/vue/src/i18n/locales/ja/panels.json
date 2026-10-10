@@ -33,6 +33,8 @@
   "opacity": "不透明度",
   "radius": "角丸",
   "cornerSmoothing": "コーナーの滑らかさ",
+  "pointCount": "数",
+  "starRatio": "比率",
   "spread": "スプレッド",
   "fill": "塗り",
   "stroke": "線",

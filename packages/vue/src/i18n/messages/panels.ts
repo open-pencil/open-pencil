@@ -128,6 +128,10 @@ export const panelMessageDefaults = {
   blendMode: 'Blend mode',
   radius: 'Radius',
   cornerSmoothing: 'Corner smoothing',
+  /** A polygon's sides or a star's points. */
+  pointCount: 'Count',
+  /** A star's inner radius as a share of its outer one. */
+  starRatio: 'Ratio',
   spread: 'Spread',
 
   page: 'Page',

@@ -18,12 +18,12 @@ import {
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
-import { resolveCornerRadiusHover } from '#vue/shared/input/corner-radius'
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
+import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import type { DragState } from '#vue/shared/input/types'
 import { handleNodeEditMove } from '#vue/shared/input/vector'
@@ -111,7 +111,7 @@ export function useCanvasInput(
     editor.setAutoLayoutHover(
       mode === 'off' ? resolveAutoLayoutHover(pointer.cx, pointer.cy, editor) : null
     )
-    editor.setCornerRadiusHover(resolveCornerRadiusHover(editor, pointer.sx, pointer.sy, altHeld))
+    editor.setShapeHandleHover(resolveShapeHandleHover(editor, pointer.sx, pointer.sy, altHeld))
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -297,7 +297,7 @@ export function useCanvasInput(
     if (!drag.value) {
       const { cx, cy, sx, sy } = coords
       updateNodeEditHover(editor, cx, cy)
-      editor.setCornerRadiusHover(resolveCornerRadiusHover(editor, sx, sy, e.altKey))
+      editor.setShapeHandleHover(resolveShapeHandleHover(editor, sx, sy, e.altKey))
     }
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
@@ -327,7 +327,7 @@ export function useCanvasInput(
 
     const { sx, sy, cx, cy } = getCoords(e)
 
-    if (d.type === 'gradient' || d.type === 'corner-radius') {
+    if (d.type === 'gradient' || d.type === 'shape-handle') {
       d.update(sx, sy, e.shiftKey)
       return
     }
@@ -416,7 +416,7 @@ export function useCanvasInput(
         editor.commitRotation(d.nodeId, d.origRotation)
       }
       if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
-    } else if (d.type === 'draw' || d.type === 'gradient' || d.type === 'corner-radius') d.commit()
+    } else if (d.type === 'draw' || d.type === 'gradient' || d.type === 'shape-handle') d.commit()
     else if (d.type === 'marquee') editor.setMarquee(null)
 
     drag.value = null
@@ -428,7 +428,7 @@ export function useCanvasInput(
     editor.setSnapGuides([])
     editor.setLayoutInsertIndicator(null)
     editor.setDropTarget(null)
-    editor.setCornerRadiusHover(null)
+    editor.setShapeHandleHover(null)
     guideInput.clearHoverAndPreview()
   }
 
@@ -441,7 +441,7 @@ export function useCanvasInput(
     if (
       drag.value?.type === 'draw' ||
       drag.value?.type === 'gradient' ||
-      drag.value?.type === 'corner-radius'
+      drag.value?.type === 'shape-handle'
     ) {
       const drawing = drag.value
       drag.value = null
@@ -532,7 +532,7 @@ export function useCanvasInput(
     if (!drag.value) {
       editor.setHoveredNode(null)
       editor.setHoveredGuide(null)
-      editor.setCornerRadiusHover(null)
+      editor.setShapeHandleHover(null)
     }
   })
   useEventListener(
@@ -556,7 +556,9 @@ export function useCanvasInput(
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
       editor.onEditorEvent(event, () => {
-        if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
+        const type = drag.value?.type
+        if (type === 'draw' || type === 'rotate' || type === 'shape-handle')
+          cancelPointerInteraction()
       })
   )
   onScopeDispose(() => {

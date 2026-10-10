@@ -2,6 +2,8 @@
   "toolOptions": "Opciones de {tool}",
   "removeGradientStop": "Eliminar parada de degradado",
   "cornerRadius": "Redondeado",
+  "pointCount": "Cantidad",
+  "starRatio": "Proporción",
   "showUI": "Mostrar interfaz ({shortcut})",
   "previewing": "Vista previa",
   "resetPreview": "Restablecer",

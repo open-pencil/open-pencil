@@ -386,6 +386,8 @@
   "opacity": "Krycie",
   "radius": "Promień",
   "cornerSmoothing": "Wygładzanie narożników",
+  "pointCount": "Liczba",
+  "starRatio": "Proporcja",
   "spread": "Rozproszenie",
   "foregroundBlur": "Rozmycie pierwszego planu",
   "strokeType": "Typ obrysu",

@@ -380,6 +380,8 @@
   "opacity": "Deckkraft",
   "radius": "Radius",
   "cornerSmoothing": "Eckenglättung",
+  "pointCount": "Anzahl",
+  "starRatio": "Verhältnis",
   "spread": "Ausbreitung",
   "foregroundBlur": "Vordergrund-Weichzeichnung",
   "strokeType": "Linientyp",

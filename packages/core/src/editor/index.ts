@@ -57,7 +57,7 @@ export type {
   EditorSharedState,
   EditorViewState,
   FigmaClipboardImageResolver,
-  CornerRadiusHover,
+  ShapeHandleHover,
   GradientEdit,
   Tool
 } from './types'

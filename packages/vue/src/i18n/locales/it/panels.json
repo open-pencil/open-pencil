@@ -380,6 +380,8 @@
   "opacity": "Opacità",
   "radius": "Raggio",
   "cornerSmoothing": "Smussatura degli angoli",
+  "pointCount": "Numero",
+  "starRatio": "Rapporto",
   "spread": "Diffusione",
   "foregroundBlur": "Sfocatura primo piano",
   "strokeType": "Tipo tratto",

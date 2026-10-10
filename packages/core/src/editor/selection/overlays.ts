@@ -4,7 +4,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuidePreview } from '#core/canvas/guides/types'
-import type { CornerRadiusHover, EditorContext } from '#core/editor/types'
+import type { ShapeHandleHover, EditorContext } from '#core/editor/types'
 
 export function createSelectionOverlayActions(ctx: EditorContext) {
   function setMarquee(rect: Rect | null) {
@@ -98,9 +98,9 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
-  function setCornerRadiusHover(hover: CornerRadiusHover | null) {
-    if (isEqual(ctx.state.cornerRadiusHover, hover)) return
-    ctx.state.cornerRadiusHover = hover
+  function setShapeHandleHover(hover: ShapeHandleHover | null) {
+    if (isEqual(ctx.state.shapeHandleHover, hover)) return
+    ctx.state.shapeHandleHover = hover
     ctx.requestRepaint()
   }
 
@@ -119,6 +119,6 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setDropTarget,
     setLayoutInsertIndicator,
     setAutoLayoutHover,
-    setCornerRadiusHover
+    setShapeHandleHover
   }
 }

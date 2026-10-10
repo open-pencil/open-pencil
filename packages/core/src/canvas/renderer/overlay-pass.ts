@@ -6,13 +6,13 @@ import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
-import { drawCornerRadiusHandles } from '#core/canvas/overlays/corner-radius'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import { drawPixelGrid } from '#core/canvas/overlays/pixel-grid'
 import { drawCodeFocus } from '#core/canvas/overlays/selection'
+import { drawShapeHandles } from '#core/canvas/overlays/shape-handles'
 import { drawSlotOutlines } from '#core/canvas/overlays/slots'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { RULER_SIZE } from '#core/constants'
@@ -122,12 +122,12 @@ export function drawOverlayPass(
   else {
     r.drawSelection(canvas, graph, selectedIds, overlays)
     if (!overlays.transforming)
-      drawCornerRadiusHandles(
+      drawShapeHandles(
         r,
         canvas,
         graph,
         selectedIds,
-        overlays.cornerRadiusHover,
+        overlays.shapeHandleHover,
         overlays.rotationPreview
       )
   }

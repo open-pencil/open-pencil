@@ -123,7 +123,8 @@ export {
   vectorNetworksEqual
 } from './vector-network'
 
-const MAX_ID_SESSION = 0xffffffff
+/** Figma reads both parts of a GUID as signed 32-bit integers and drops records beyond them. */
+const MAX_ID_SESSION = 0x7fffffff
 
 let idSession = 0
 let nextLocalID = 1
@@ -136,7 +137,7 @@ let nextLocalID = 1
  */
 export function setIdSession(sessionId: number): void {
   if (!Number.isInteger(sessionId) || sessionId < 0 || sessionId > MAX_ID_SESSION) {
-    throw new RangeError('sessionId must be an unsigned 32-bit integer')
+    throw new RangeError('sessionId must be a non-negative 31-bit integer')
   }
   idSession = sessionId
 }

@@ -1,3 +1,4 @@
+import { compact } from 'es-toolkit'
 import { computed } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 
@@ -12,8 +13,13 @@ const CORNER_RADIUS_TYPES = new Set([
   'ROUNDED_RECTANGLE',
   'FRAME',
   'COMPONENT',
-  'INSTANCE'
+  'INSTANCE',
+  'POLYGON',
+  'STAR'
 ])
+
+/** A polygon's or star's corners share one radius, so Figma offers no per-corner radii for them. */
+const SHARED_RADIUS_TYPES = new Set(['POLYGON', 'STAR'])
 
 const CORNER_PATHS: CornerRadiusKey[] = [
   'topLeftRadius',
@@ -78,6 +84,10 @@ export function createAppearanceState({
     return node.value ? supportsCornerRadius(node.value) : false
   })
   const cornerRadiusDisabled = computed(() => isMulti.value && cornerNodes.value.length === 0)
+  const splitsCorners = computed(() => {
+    const targets = isMulti.value ? cornerNodes.value : compact([node.value])
+    return targets.every((target) => !SHARED_RADIUS_TYPES.has(target.type))
+  })
 
   const independentCorners = computed(() => {
     if (isMulti.value)
@@ -89,7 +99,7 @@ export function createAppearanceState({
   })
 
   const showIndependentCorners = computed(() => {
-    if (isMulti.value) return false
+    if (isMulti.value || !splitsCorners.value) return false
     const selected = node.value
     return selected
       ? expandedCornerNodeId?.value === selected.id ||
@@ -105,17 +115,49 @@ export function createAppearanceState({
         0
       )
     const selected = node.value
-    return selected && cornersHaveEquivalentBindings(selected) && !hasUnequalCorners(selected)
+    return selected &&
+      splitsCorners.value &&
+      cornersHaveEquivalentBindings(selected) &&
+      !hasUnequalCorners(selected)
       ? selected.topLeftRadius
       : (selected?.cornerRadius ?? 0)
   })
 
   const cornerRadiusBindingPaths = computed<Array<CornerRadiusKey | 'cornerRadius'>>(() => {
     const selected = node.value
-    return selected && cornersHaveEquivalentBindings(selected) && !hasUnequalCorners(selected)
+    return selected &&
+      splitsCorners.value &&
+      cornersHaveEquivalentBindings(selected) &&
+      !hasUnequalCorners(selected)
       ? CORNER_PATHS
       : ['cornerRadius']
   })
+
+  // Figma shows a polygon's or star's point count, and a star's inner ratio, while every selected
+  // layer has one.
+  const selectedNodes = computed(() => (isMulti.value ? nodes.value : compact([node.value])))
+  const hasPointCount = computed(
+    () =>
+      selectedNodes.value.length > 0 &&
+      selectedNodes.value.every((target) => SHARED_RADIUS_TYPES.has(target.type))
+  )
+  const hasStarRatio = computed(
+    () =>
+      selectedNodes.value.length > 0 &&
+      selectedNodes.value.every((target) => target.type === 'STAR')
+  )
+  const pointCount = computed(() =>
+    sharedValue(
+      selectedNodes.value.map((target) => target.pointCount),
+      0
+    )
+  )
+  const starRatioPercent = computed(() =>
+    sharedValue(
+      selectedNodes.value.map((target) => Math.round(target.starInnerRadius * 1000) / 10),
+      0
+    )
+  )
 
   const cornerSmoothingPercent = computed(() => {
     const value = isMulti.value
@@ -146,6 +188,11 @@ export function createAppearanceState({
   return {
     hasCornerRadius,
     cornerRadiusDisabled,
+    splitsCorners,
+    hasPointCount,
+    hasStarRatio,
+    pointCount,
+    starRatioPercent,
     independentCorners,
     showIndependentCorners,
     cornerRadiusValue,

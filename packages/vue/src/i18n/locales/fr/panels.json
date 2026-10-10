@@ -380,6 +380,8 @@
   "opacity": "Opacité",
   "radius": "Rayon",
   "cornerSmoothing": "Lissage des coins",
+  "pointCount": "Nombre",
+  "starRatio": "Rapport",
   "spread": "Diffusion",
   "foregroundBlur": "Flou de premier plan",
   "strokeType": "Type de contour",
