@@ -13,7 +13,7 @@ import {
   ComboboxViewport,
   type AcceptableValue
 } from 'reka-ui'
-import { nextTick } from 'vue'
+import { nextTick, useTemplateRef, watch } from 'vue'
 
 import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import type { FontPickerUI } from '#vue/primitives/FontPicker/types'
@@ -53,13 +53,38 @@ const { searchTerm, open, filtered, loading, accessState, requestAccess, select 
   onSelect: (family) => emit('select', family)
 })
 const { portalActive } = useRetainedPopup(open)
+const root = useTemplateRef<{ highlightItem: (value: AcceptableValue) => void }>('root')
+
+// The families arrive after the list opens, too late for Reka's own scroll to the chosen font.
+watch(
+  () => open.value && !loading.value && filtered.value.length > 0,
+  async (ready) => {
+    if (!ready || searchTerm.value) return
+    await nextTick()
+    root.value?.highlightItem(modelValue.value)
+  }
+)
+
+/**
+ * The list holds font options and the value is a family name; Reka compares them to find the
+ * chosen font, so opening scrolls to it.
+ */
+function sameFamily(left: unknown, right: unknown): boolean {
+  return familyOf(left) === familyOf(right)
+}
+
+function familyOf(value: unknown): unknown {
+  return typeof value === 'object' && value !== null && 'family' in value ? value.family : value
+}
 </script>
 
 <template>
   <ComboboxRoot
+    ref="root"
     v-model:open="open"
     :model-value="modelValue"
     :ignore-filter="true"
+    :by="sameFamily"
     @update:model-value="
       (v: AcceptableValue) => {
         if (typeof v === 'string') select(v)

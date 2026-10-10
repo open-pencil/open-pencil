@@ -4,7 +4,7 @@ import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { AppearanceControlsRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
-import { useBlendModeOptions } from '@/components/properties/blend-mode/use'
+import { useBlendModeGroups } from '@/components/properties/blend-mode/use'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -18,12 +18,15 @@ import PropertyBoundField from './component-properties/PropertyBoundField.vue'
 const { panels } = useI18n()
 type BlendModeSelectValue = BlendMode | 'MIXED'
 
-const baseBlendModeOptions = useBlendModeOptions(true)
+const baseBlendModeGroups = useBlendModeGroups(true)
 
-function blendModeOptions(value: BlendMode | typeof MIXED) {
+function blendModeGroups(value: BlendMode | typeof MIXED) {
   return value === MIXED
-    ? [{ value: 'MIXED' as const, label: panels.value.mixed }, ...baseBlendModeOptions.value]
-    : baseBlendModeOptions.value
+    ? [
+        { options: [{ value: 'MIXED' as const, label: panels.value.mixed }] },
+        ...baseBlendModeGroups.value
+      ]
+    : baseBlendModeGroups.value
 }
 </script>
 
@@ -71,7 +74,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
             :model-value="blendModeValue === MIXED ? 'MIXED' : blendModeValue"
             class="w-full"
             :label="panels.blendMode"
-            :options="blendModeOptions(blendModeValue)"
+            :groups="blendModeGroups(blendModeValue)"
             @update:model-value="
               (value: BlendModeSelectValue) => value !== 'MIXED' && actions.setBlendMode(value)
             "

@@ -6,7 +6,7 @@ import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import {
   commitDiscretePropertyListChange,
-  useBlendModeOptions
+  useBlendModeGroups
 } from '@/components/properties/blend-mode/use'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
@@ -20,7 +20,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()
-const blendModeOptions = useBlendModeOptions()
+const blendModeGroups = useBlendModeGroups()
 const {
   visible: stylesVisible,
   hasStyle,
@@ -144,7 +144,7 @@ function effectPreview(effect: Effect): Fill {
           <PanelFieldGroup :label="panels.blendMode">
             <AppSelect
               :model-value="effect.blendMode ?? 'NORMAL'"
-              :options="blendModeOptions"
+              :groups="blendModeGroups"
               :label="panels.blendMode"
               data-property="effect-blend-mode"
               @update:model-value="

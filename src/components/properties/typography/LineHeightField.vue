@@ -1,20 +1,13 @@
 <script setup lang="ts">
-import {
-  SelectRoot,
-  SelectTrigger,
-  SelectPortal,
-  SelectContent,
-  SelectViewport,
-  SelectItem,
-  SelectItemText
-} from 'reka-ui'
+import { SelectRoot, SelectTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { MIXED, useEditor, useI18n, useRetainedPopup } from '@open-pencil/vue'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
-import { useSelectUI } from '@/components/ui/select/select'
+import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
+import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 
 /** Every selected text layer; the field reads Mixed when their line heights differ. */
 const { nodes } = defineProps<{ nodes: readonly SceneNode[] }>()
@@ -32,7 +25,6 @@ const value = computed(() => {
 })
 const nodeId = computed(() => nodes.at(0)?.id ?? '')
 const nodeIds = computed(() => nodes.map((node) => node.id))
-const menu = useSelectUI()
 function setMode(mode: string) {
   if (mode === 'AUTO') {
     editor.undo.runBatch('Use automatic line height', () => {
@@ -78,18 +70,10 @@ function setMode(mode: string) {
           @pointerdown.stop
           ><icon-lucide-chevron-down class="size-3"
         /></SelectTrigger>
-        <SelectPortal v-if="portalActive">
-          <SelectContent position="popper" :side-offset="4" :class="menu.content">
-            <SelectViewport>
-              <SelectItem value="AUTO" :class="menu.item"
-                ><SelectItemText>{{ panels.auto }}</SelectItemText></SelectItem
-              >
-              <SelectItem value="FIXED" :class="menu.item"
-                ><SelectItemText>{{ panels.sizingFixed }}</SelectItemText></SelectItem
-              >
-            </SelectViewport>
-          </SelectContent>
-        </SelectPortal>
+        <AppSelectContent v-if="portalActive" align="end">
+          <AppSelectItem value="AUTO">{{ panels.auto }}</AppSelectItem>
+          <AppSelectItem value="FIXED">{{ panels.sizingFixed }}</AppSelectItem>
+        </AppSelectContent>
       </SelectRoot>
     </template>
   </VariableNumberField>
