@@ -1,9 +1,14 @@
-import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
+import {
+  SCENE_OVERRIDE_FIELDS,
+  type OverrideField,
+  type RawOverrideField
+} from '#fig/instance-overrides/fields'
 
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
+import { normalizeFontFamily, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { weightToFigmaStyle } from '../font/style'
 import { forEachExportedOverride, instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
 import {
@@ -16,20 +21,37 @@ import {
   type SceneNodeToKiwiContext,
   type StyleReference
 } from './context'
+import { kiwiEffects } from './effects'
 import { fillsOwnSizingAxis } from './fill-sizing'
+import { normalizeStackCounterAlignItems, normalizeStackJustify } from './layout-values'
 import { exportedNode } from './resolved-bindings'
+import { serializeVariableModes } from './variable-modes'
 
-function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
+function exportedStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
   const mapped = context.nodeIdToGuid?.get(id)
   if (mapped) return { guid: mapped }
   return context.styleReferences.get(id) ?? { guid: stringToGuid(id) }
 }
 
-function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
+/** The uniform scale an instance draws its component at; claims are written without it. */
+function instanceScale(instance: SceneNode): number {
   const scale = instance.componentScale
   if (!Number.isFinite(scale) || scale <= 0) throw new Error('Invalid instance uniform scale')
+  return scale
+}
+
+function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
+  const scale = instanceScale(instance)
   return { x: target.width / scale, y: target.height / scale }
+}
+
+/** A length, or a list of them, in the instance's own space. */
+function unscaledLength(value: unknown, scale: number): unknown {
+  if (typeof value === 'number') return value / scale
+  if (Array.isArray(value))
+    return value.map((item: unknown) => (typeof item === 'number' ? item / scale : item))
+  return value
 }
 
 function exportedSwapOverride(
@@ -85,37 +107,83 @@ interface ClaimInput {
  * The claim an instance override serializes to, by the kind of its scene field. This is the
  * export side of the same registry materialization records claims from.
  */
-function registryClaim(
-  field: keyof SceneNode,
-  { context, instance, target, value }: ClaimInput
-): Omit<KiwiSymbolOverridePayload, 'guidPath'> | undefined {
-  const entry = SCENE_OVERRIDE_FIELDS.get(field)
-  if (!entry) return undefined
-  const { raw, field: definition } = entry
-  switch (definition.kind) {
-    case 'scalar':
-      return { [raw]: target[field] }
-    case 'visible':
-      return { visible: target.visible }
-    case 'text':
-      return { textData: { characters: typeof value === 'string' ? value : target.text } }
-    case 'text-style':
-      return target.textStyleId
-        ? { styleIdForText: exportedTextStyleReference(context, target.textStyleId) }
+type Claim = Omit<KiwiSymbolOverridePayload, 'guidPath'>
+
+interface FieldClaimInput extends ClaimInput {
+  readonly field: keyof SceneNode
+  readonly raw: RawOverrideField
+  readonly definition: OverrideField
+}
+
+/** How each kind of override field is written as a claim. */
+const CLAIM_WRITERS: Record<OverrideField['kind'], (input: FieldClaimInput) => Claim | undefined> =
+  {
+    scalar: ({ instance, target, field, raw, definition }) => ({
+      [raw]: definition.length
+        ? unscaledLength(target[field], instanceScale(instance))
+        : target[field]
+    }),
+    visible: ({ target }) => ({ visible: target.visible }),
+    text: ({ target, value }) => ({
+      textData: { characters: typeof value === 'string' ? value : target.text }
+    }),
+    'text-style': ({ context, target }) =>
+      target.textStyleId
+        ? { styleIdForText: exportedStyleReference(context, target.textStyleId) }
+        : undefined,
+    style: ({ context, target, field, raw }) => {
+      const id = target[field]
+      // A style the instance took off is the unset GUID, as Figma writes it.
+      return {
+        [raw]: typeof id === 'string' ? exportedStyleReference(context, id) : { guid: UNSET_GUID }
+      }
+    },
+    effects: ({ context, instance, target }) => ({
+      effects: kiwiEffects(context, target.effects, instanceScale(instance))
+    }),
+    'layout-align': ({ target, raw }) =>
+      raw === 'stackPrimaryAlignItems'
+        ? { stackPrimaryAlignItems: normalizeStackJustify(target.primaryAxisAlign) }
+        : { stackCounterAlignItems: normalizeStackCounterAlignItems(target.counterAxisAlign) },
+    positioning: ({ target }) => ({ stackPositioning: target.layoutPositioning }),
+    font: ({ target }) => ({
+      fontName: {
+        family: normalizeFontFamily(target.fontFamily),
+        style: weightToFigmaStyle(target.fontWeight, target.italic),
+        postscript: ''
+      }
+    }),
+    'text-length': ({ instance, target, field, raw }) => {
+      const length = target[field]
+      return typeof length === 'number'
+        ? { [raw]: { value: length / instanceScale(instance), units: 'PIXELS' } }
         : undefined
-    case 'paint':
-      return raw === 'fillPaints'
+    },
+    'text-decoration': ({ target }) => ({ textDecoration: target.textDecoration }),
+    'variable-modes': ({ context, target }) => ({
+      variableModeBySetMap: serializeVariableModes(
+        target,
+        context.varIdToGuid,
+        context.modeIdToGuid
+      ) ?? { entries: [] }
+    }),
+    paint: ({ context, target, raw }) =>
+      raw === 'fillPaints'
         ? { fillPaints: createFillPaints(context, target) }
-        : { strokePaints: createStrokePaints(context, target) }
-    case 'size':
-      return { size: unscaledRootSize(instance, target) }
-    case 'layout-distance':
-      return layoutDistanceClaim(raw, target[field], instance)
-    case 'layout-mode':
-      return layoutModeClaim(raw, target[field], context.graph, target)
-    default:
-      return undefined
+        : { strokePaints: createStrokePaints(context, target) },
+    size: ({ instance, target }) => ({ size: unscaledRootSize(instance, target) }),
+    'layout-distance': ({ instance, target, field, raw }) =>
+      layoutDistanceClaim(raw, target[field], instance),
+    'layout-mode': ({ context, target, field, raw }) =>
+      layoutModeClaim(raw, target[field], context.graph, target)
   }
+
+function registryClaim(field: keyof SceneNode, input: ClaimInput): Claim | undefined {
+  const entry = SCENE_OVERRIDE_FIELDS.get(field)
+  return (
+    entry &&
+    CLAIM_WRITERS[entry.field.kind]({ ...input, field, raw: entry.raw, definition: entry.field })
+  )
 }
 
 function paintBindingOverride(

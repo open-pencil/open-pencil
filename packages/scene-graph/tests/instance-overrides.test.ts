@@ -53,7 +53,7 @@ describe('instance override state', () => {
 
   test('deletes empty layer buckets', () => {
     const state = createInstanceOverrideState()
-    setInstanceOverride(state, ['1:2'], 'text')
+    setInstanceOverride(state, ['1:2'], 'text', 'Custom')
     expect(deleteInstanceOverride(state, ['1:2'], 'text')).toBe(true)
     expect(state.layers.size).toBe(0)
   })

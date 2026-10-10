@@ -81,7 +81,7 @@ describe('bindVariable on instance child sets override flag', () => {
 
     expect(
       getInstanceOverride(instance.instanceOverrides, layerPath(instanceChild.id), 'boundVariables')
-    ).toBe(true)
+    ).toEqual(graph.getNode(instanceChild.id)?.boundVariables)
   })
 
   test('binding on instance child survives syncInstances', () => {
@@ -143,7 +143,7 @@ describe('bindVariable on INSTANCE node itself sets override', () => {
 
     expect(
       getInstanceOverride(instance.instanceOverrides, layerPath(instance.id), 'boundVariables')
-    ).toBe(true)
+    ).toEqual(graph.getNode(instance.id)?.boundVariables)
   })
 
   test('binding on INSTANCE node survives syncInstances', () => {
@@ -230,7 +230,7 @@ describe('removeVariable emits events and sets overrides', () => {
 
     expect(
       getInstanceOverride(instance.instanceOverrides, layerPath(instanceChild.id), 'boundVariables')
-    ).toBe(true)
+    ).toEqual(graph.getNode(instanceChild.id)?.boundVariables)
   })
 
   test('removeVariable does not emit for unaffected nodes', () => {

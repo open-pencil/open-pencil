@@ -12,6 +12,7 @@ import { overrideTarget } from './instances/addressing'
 import { adoptCopies } from './instances/adopt'
 import { INSTANCE_SYNC_FIELDS, INSTANCE_SYNC_PROPS } from './instances/fields'
 import { overridePathKey, parseInstanceLayerId, parseOverridePathKey } from './instances/layer-ids'
+import { layerOverrideValue } from './instances/override-values'
 import {
   bindingProtection,
   cloneInstanceChildren,
@@ -300,6 +301,11 @@ export function recordInstanceOverride(
   )
   if (relevant.length === 0) return
   for (const field of relevant)
-    setInstanceOverride(target.owner.instanceOverrides, target.path, field)
+    setInstanceOverride(
+      target.owner.instanceOverrides,
+      target.path,
+      field,
+      layerOverrideValue(node, field)
+    )
   graph.updateNode(target.owner.id, { instanceOverrides: target.owner.instanceOverrides })
 }

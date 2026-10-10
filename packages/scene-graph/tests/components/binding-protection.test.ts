@@ -25,7 +25,7 @@ function instanceWithLocalBindings() {
 
 test('overriding the bindings as a whole keeps every binding of the instance', () => {
   const { graph, component, instance } = instanceWithLocalBindings()
-  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables')
+  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables', instance.boundVariables)
   graph.syncInstances(component.id)
   expect(instance.boundVariables).toEqual({
     paddingLeft: 'local-left',
@@ -36,8 +36,8 @@ test('overriding the bindings as a whole keeps every binding of the instance', (
 
 test('overriding one binding keeps it and takes the others from the component', () => {
   const { graph, component, instance } = instanceWithLocalBindings()
-  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables')
-  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables/paddingLeft')
+  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables', instance.boundVariables)
+  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables/paddingLeft', 'local-left')
   graph.syncInstances(component.id)
   expect(instance.boundVariables).toEqual({
     paddingLeft: 'local-left',

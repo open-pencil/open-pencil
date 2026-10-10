@@ -25,7 +25,7 @@ for (const text of ['User edit', '']) {
     if (!raw) throw new Error('Missing instance')
     expect(
       getInstanceOverride(raw.instanceOverrides, layerPath(edited.children[0].id), 'text')
-    ).toBe(true)
+    ).toBe(text)
     label.characters = 'Component edit'
     graph.syncInstances(component.id)
     expect(edited.children[0].characters).toBe(text)

@@ -174,7 +174,7 @@ export function setInstanceOverride(
   state: InstanceOverrideState,
   path: OverridePath,
   field: InstanceOverrideField,
-  value: unknown = true
+  value: unknown
 ): void {
   if (path.length === 0) {
     state.self.set(field, value)

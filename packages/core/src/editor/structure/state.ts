@@ -8,8 +8,9 @@ export function createStructureStateActions(ctx: EditorContext) {
     assertNodeEditable(ctx.graph, id)
     const node = ctx.graph.getNode(id)
     if (!node) return
-    recordInstanceOverride(ctx.graph, id, ['visible'])
     ctx.graph.updateNode(id, { visible: !node.visible })
+    // An override records the value the layer now shows.
+    recordInstanceOverride(ctx.graph, id, ['visible'])
     if (node.parentId) ctx.runLayoutForNode(node.parentId)
   }
 

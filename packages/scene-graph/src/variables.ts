@@ -5,6 +5,7 @@ import { BLACK } from './constants'
 import type { SceneGraph } from './index'
 import { setInstanceOverride } from './instance-overrides'
 import { overrideTarget } from './instances/addressing'
+import { layerOverrideValue } from './instances/override-values'
 import type { Color } from './primitives'
 import type {
   Variable,
@@ -426,7 +427,12 @@ function markBoundVariablesOverrideOnInstance(
   const target = node && overrideTarget(graph, node)
   if (!node || !target) return
   const { owner, path } = target
-  setInstanceOverride(owner.instanceOverrides, path, 'boundVariables')
+  setInstanceOverride(
+    owner.instanceOverrides,
+    path,
+    'boundVariables',
+    layerOverrideValue(node, 'boundVariables')
+  )
   if (field)
     setInstanceOverride(
       owner.instanceOverrides,

@@ -42,9 +42,11 @@ import {
   type KiwiSymbolOverridePayload,
   type SceneNodeToKiwiContext
 } from './context'
+import { kiwiEffects } from './effects'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
+import { serializeVariableModes } from './variable-modes'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -150,20 +152,6 @@ function componentPropertyVariableValue(
     }
   }
   return { value: { textValue: value }, dataType: 'STRING', resolvedDataType: 'STRING' }
-}
-
-function serializeVariableModes(
-  node: SceneNode,
-  variableIdToGuid?: Map<string, GUID>,
-  modeIdToGuid?: Map<string, GUID>
-): NonNullable<KiwiNodeChange['variableModeBySetMap']> | undefined {
-  const entries = Object.entries(node.variableModes).flatMap(([collectionId, modeId]) => {
-    const collectionGuid = variableIdToGuid?.get(collectionId) ?? parseGuidOrNull(collectionId)
-    const modeGuid = modeIdToGuid?.get(modeId) ?? parseGuidOrNull(modeId)
-    if (!collectionGuid || !modeGuid) return []
-    return [{ variableSetID: { guid: collectionGuid }, variableModeID: modeGuid }]
-  })
-  return entries.length > 0 ? { entries } : undefined
 }
 
 const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
@@ -831,18 +819,8 @@ function applyNodeVisualProps(
 
   context.serializeCornerRadii(node, nc)
 
-  if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
-      color: context.safeColor(effect.color),
-      offset: effect.offset,
-      radius: effect.radius,
-      spread: effect.spread,
-      visible: effect.visible,
-      blendMode: effect.blendMode ?? 'NORMAL',
-      showShadowBehindNode: effect.showShadowBehindNode
-    }))
-  }
+  if (node.effects.length > 0 && !hasRawUnsupportedEffects(node))
+    nc.effects = kiwiEffects(context, node.effects)
 
   if (node.type === 'TEXT') {
     context.serializeTextProps(

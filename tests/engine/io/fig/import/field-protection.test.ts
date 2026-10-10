@@ -101,12 +101,12 @@ describe('fig import override field protection', () => {
       fills: [blueFill],
       boundVariables: { 'fills/0/color': 'target-color', width: 'target-width' }
     })
-    setInstanceOverride(instance.instanceOverrides, layerPath(target.id), 'text', true)
+    setInstanceOverride(instance.instanceOverrides, layerPath(target.id), 'text', 'Override')
     setInstanceOverride(
       instance.instanceOverrides,
       layerPath(target.id),
       'boundVariables/width',
-      true
+      'target-width'
     )
     graph.syncInstances(component.id)
 
@@ -133,7 +133,7 @@ describe('fig import override field protection', () => {
       visible: true,
       strokes: [blueStroke]
     })
-    setInstanceOverride(instance.instanceOverrides, layerPath(target.id), 'strokes', true)
+    setInstanceOverride(instance.instanceOverrides, layerPath(target.id), 'strokes', [blueStroke])
     graph.syncInstances(component.id)
 
     const synced = graph.getNode(target.id)

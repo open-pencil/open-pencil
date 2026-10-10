@@ -247,8 +247,7 @@ function recordPropertyClaims(
         if (!(raw in claim.properties)) continue
         const field = OVERRIDE_FIELDS[raw]
         if (!claimApplies(field, claim.properties[raw], target)) continue
-        for (const scene of field.scene)
-          setLayerOverride(graph, target, scene, structuredClone(target[scene]))
+        for (const scene of field.scene) setLayerOverride(graph, target, scene)
         if (field.kind === 'paint')
           recordPaintBindingClaims(graph, target, field.scene[0], claim.properties[raw])
       }

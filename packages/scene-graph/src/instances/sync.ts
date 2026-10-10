@@ -21,6 +21,7 @@ import {
   parseInstanceLayerId,
   type InstanceScope
 } from './layer-ids'
+import { appliedOverrideValue } from './override-values'
 
 function setSceneProp<K extends keyof SceneNode>(
   target: Partial<SceneNode>,
@@ -132,6 +133,24 @@ export function updateSyncedProps(
   if (Object.keys(changed).length) graph.updateNode(target.id, changed)
 }
 
+/**
+ * Size follows from layout and constraints once a layer is placed, so a synced copy keeps the
+ * size it has; a new copy starts from the recorded one.
+ */
+const PLACED_FIELDS: ReadonlySet<string> = new Set(['width', 'height'])
+
+/**
+ * Whether sync writes the recorded value of an overridden field. A bound field shows what its
+ * variable resolves to.
+ */
+function showsOverrideValue(
+  copy: SceneNode,
+  field: keyof SceneNode,
+  overridden: ReadonlyMap<string, unknown>
+): boolean {
+  return overridden.has(field) && !PLACED_FIELDS.has(field) && !(field in copy.boundVariables)
+}
+
 /** The owner a scope records overrides on, and the path of a copy in it. */
 interface CopyContext {
   readonly scope: InstanceScope
@@ -169,6 +188,11 @@ function cloneCopy(
   const componentScale =
     (source.componentScale * targetParent.componentScale) / sourceParent.componentScale
   const props = cloneNodeProps(sourceInTargetCoordinates(source, componentScale), null, mode)
+  // A layer the instance overrode, such as one a swap carried its overrides to, shows them.
+  const overridden = instanceOverridesAt(context.owner.instanceOverrides, pathOf(id))
+  for (const key of INSTANCE_SYNC_FIELDS)
+    if (key !== 'boundVariables' && overridden.has(key) && !(key in source.boundVariables))
+      setSceneProp(props, key, appliedOverrideValue(key, overridden.get(key), componentScale))
   return graph.createNodeWithId(id, source.type, targetParent.id, {
     ...props,
     componentId: source.type === 'INSTANCE' ? shownComponentId(context, id, source) : null,
@@ -357,7 +381,11 @@ function syncCopy(
   for (const key of INSTANCE_SYNC_FIELDS) {
     if (key === 'boundVariables') continue
     if (driven.has(key)) continue
-    if (isProtectedSyncField(copy, key, protectedField)) continue
+    if (isProtectedSyncField(copy, key, protectedField)) {
+      if (showsOverrideValue(copy, key, overridden))
+        setSceneProp(updates, key, appliedOverrideValue(key, overridden.get(key), componentScale))
+      continue
+    }
     copyProp(updates, scaled, key)
   }
   Object.assign(updates, assignedFieldValues(graph, copy, source))
