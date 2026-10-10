@@ -24,7 +24,10 @@ type TextKeyboardOptions = {
 export function createTextKeyDownHandler(options: TextKeyboardOptions) {
   type MetaAction = (node: SceneNode) => void
   const metaKeyActions: Partial<Record<string, MetaAction>> = {
-    KeyA: () => options.store.textEditor?.selectAll(),
+    KeyA: () => {
+      options.store.textEditor?.selectAll()
+      options.store.textSelectionChanged()
+    },
     KeyC: () => options.handleCopy(),
     KeyX: (node) => options.handleCut(node),
     KeyV: (node) => void options.handlePaste(node),
@@ -78,7 +81,8 @@ export function createTextKeyDownHandler(options: TextKeyboardOptions) {
       return
     }
 
-    if (!textChanged) options.store.requestRender()
+    // Moving the caret changes no text: the overlay repaints and the panel follows it.
+    if (!textChanged) options.store.textSelectionChanged()
     options.resetBlink()
     e.preventDefault()
   }

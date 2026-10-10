@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   copyEditorViewState,
   createDefaultEditorState,
+  createEditor,
   createDefaultEditorViewState,
   pickEditorViewState
 } from '@open-pencil/core/editor'
@@ -33,5 +34,17 @@ describe('editor state ownership', () => {
     expect(source.snapGuides).toHaveLength(1)
     expect(source.pageColor.r).not.toBe(0.5)
     expect(source.navigation.phase).toBe('idle')
+  })
+
+  test('moves a text selection without counting as a document change', () => {
+    const editor = createEditor()
+    const { sceneVersion, canvasVersion, renderVersion } = editor.state
+    editor.textSelectionChanged()
+    expect(editor.state.textSelectionVersion).toBe(1)
+    expect(editor.state.renderVersion).toBe(renderVersion + 1)
+    // Saving, recovery, and the canvas's recorded pictures follow these; a caret moves none.
+    expect(editor.state.sceneVersion).toBe(sceneVersion)
+    expect(editor.state.canvasVersion).toBe(canvasVersion)
+    editor.dispose()
   })
 })

@@ -115,6 +115,15 @@ export function createEditor(options?: EditorOptions) {
     })
   }
 
+  /**
+   * The caret or selection of the edited text moved: the canvas repaints its overlay and the
+   * views that follow the selection update, without the document counting as changed.
+   */
+  function textSelectionChanged() {
+    state.textSelectionVersion++
+    requestRepaint()
+  }
+
   function requestRefresh() {
     state.sceneVersion++
   }
@@ -368,6 +377,7 @@ export function createEditor(options?: EditorOptions) {
     isInteractiveEditing: () => interactiveEdits.size > 0,
     requestRender,
     requestRefresh,
+    textSelectionChanged,
     requestRepaint,
     onEditorEvent,
     setCanvasKit,

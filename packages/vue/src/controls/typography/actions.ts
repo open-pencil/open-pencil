@@ -70,6 +70,7 @@ export function createTypographyState(editor: Editor) {
    * when they differ.
    */
   const listType = computed(() => {
+    void editor.state.textSelectionVersion
     const shared = sharedValue(nodes.value.map((n) => listTypeOf(editor, n)))
     return shared === MIXED ? null : shared
   })
@@ -81,6 +82,7 @@ export function createTypographyState(editor: Editor) {
 
   /** A spacing every paragraph changes apply to shares, or MIXED when they differ. */
   function paragraphSpacing(field: TextParagraphSpacingField): MixedValue<number> {
+    void editor.state.textSelectionVersion
     const values = nodes.value.map((n) => paragraphSpacingOf(editor, n, field))
     const shared = sharedValue(values)
     return shared === null ? MIXED : shared
