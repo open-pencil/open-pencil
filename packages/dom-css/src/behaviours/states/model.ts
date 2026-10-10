@@ -2,7 +2,7 @@ import type { SceneGraphToDesignOptions } from '#dom-css/export/projection'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { findLayerByPath, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { variantConditions } from './conditions'
 import {
@@ -109,11 +109,11 @@ function pruneCombined(rules: StateRule[]): StateRule[] {
 }
 
 /**
- * The variants a behaviour's owner draws: a set's components, or a standalone component, such
- * as a radio group or tabs, which is its own only variant.
+ * The variants a layer draws: a set's components, or any other layer, such as a standalone
+ * component or a frame exported as a component, which is its own only variant.
  */
 export function ownerVariants(graph: SceneGraph, owner: SceneNode): SceneNode[] {
-  if (owner.type === 'COMPONENT') return [owner]
+  if (owner.type !== 'COMPONENT_SET') return [owner]
   return graph.getChildren(owner.id).filter((child) => child.type === 'COMPONENT')
 }
 
@@ -162,4 +162,13 @@ export function stateStyles(
     element.rules = pruneCombined(element.rules)
   }
   return { name: set.name, restId: rest.id, root }
+}
+
+/** The layer of the rest variant an element of the merged markup draws, if it has one. */
+export function restLayerOf(
+  graph: SceneGraph,
+  styles: StateStyles,
+  element: StateElement
+): string | undefined {
+  return findLayerByPath(graph, styles.restId, element.key.split('\0')[0] ?? '')?.id
 }

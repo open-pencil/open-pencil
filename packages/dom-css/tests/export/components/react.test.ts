@@ -21,7 +21,9 @@ import {
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
-import { cssRules } from '#dom-css-tests/helpers'
+import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
+import { cssRules, fileText } from '#dom-css-tests/helpers'
+import type { ComponentStyling } from '#dom-css/export'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -33,6 +35,7 @@ const APP_PACKAGES = [
   'react-dom',
   'radix-ui',
   '@iconify/react',
+  'shaders',
   'storybook',
   '@types/react'
 ]
@@ -51,8 +54,8 @@ afterAll(() => rm(output, { recursive: true, force: true }))
 type Props = Record<string, unknown>
 
 /** Exports a fixture's set to React stories and loads the component and stories it writes. */
-async function generate(fixture: ReturnType<typeof switchSet>) {
-  const files = await exportStorybook(fixture.graph, { framework: 'react' })
+async function generate(fixture: ReturnType<typeof switchSet>, styling?: ComponentStyling) {
+  const files = await exportStorybook(fixture.graph, { framework: 'react', styling })
   const name = fixture.set.name
   // Bun caches a folder's listing once it imports from it, so each export gets its own.
   const folder = await mkdtemp(join(output, `${name}-`))
@@ -111,6 +114,73 @@ describe('generated React plain components', () => {
     const filled = render(component, { extra: createElement('b', null, 'Custom') })
     expect(filled).toContain('<b>Custom</b>')
     expect(filled).not.toContain('Note')
+  })
+})
+
+describe('generated React components styled with Tailwind', () => {
+  test('carry their states as variants in place of a CSS module, and type-check', async () => {
+    const { files, component, folder } = await generate(switchSet(), 'tailwind')
+    const source = fileText(files, 'Switch.tsx')
+
+    expect(files.map((file) => file.path).sort()).toEqual(['Switch.stories.ts', 'Switch.tsx'])
+    expect(await typeErrors(folder, 'Switch')).toEqual([])
+    expect(source).not.toContain('styles')
+    // The root names its group, which the thumb's checked look keys on.
+    expect(source).toMatch(/"group\/switch [^"]*data-\[state=checked\]:bg-\[#4F45E6\]/)
+    expect(source).toContain('group-data-[state=checked]/switch:left-5')
+    const on = render(component, { defaultChecked: true })
+    expect(on).toContain('data-state="checked"')
+    expect(on).toMatch(/class="group\/switch [^"]*"/)
+    // A class the caller passes joins the utilities rather than replacing them.
+    expect(render(component, { className: 'custom' })).toMatch(/class="group\/switch [^"]* custom"/)
+  })
+
+  test('play a shader behind the layer, placed by utilities', async () => {
+    const { files, folder } = await generate(shaderHeroSet(), 'tailwind')
+    const source = fileText(files, 'Hero.tsx')
+
+    expect(await typeErrors(folder, 'Hero')).toEqual([])
+    expect(source).toContain(
+      '<ShaderCanvas className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit]" disableTelemetry>'
+    )
+    // The layer holds the shader in its own stacking context.
+    expect(source).toMatch(/"group\/hero relative [^"]*\bisolate\b/)
+  })
+})
+
+describe('generated React shader fills', () => {
+  test('play the shader behind the layer, with telemetry off, and type-check', async () => {
+    const { files, folder } = await generate(shaderHeroSet())
+    const source = fileText(files, 'Hero.tsx')
+    const css = fileText(files, 'Hero.module.css')
+
+    expect(await typeErrors(folder, 'Hero')).toEqual([])
+    expect(source).toMatch(
+      /import \{\s*Shader as ShaderCanvas,\s*Aurora as ShaderAurora,\s*FilmGrain as ShaderFilmGrain\s*\} from "shaders\/react"/
+    )
+    expect(source).toContain('<ShaderCanvas className={styles["hero-shader"]} disableTelemetry>')
+    expect(source).toContain(
+      '<ShaderAurora colorA="#ff3300" curtainCount={2} center={{ x: 0.5, y: 0 }} />'
+    )
+    // The shader comes first, so the title draws over it.
+    expect(source.indexOf('<ShaderCanvas')).toBeLessThan(source.indexOf('Northern lights'))
+    const styles = [...cssRules(css).values()]
+    expect(styles).toContainEqual(expect.objectContaining({ isolation: 'isolate' }))
+    expect(styles).toContainEqual(
+      expect.objectContaining({ position: 'absolute', inset: '0', 'z-index': '-1' })
+    )
+  })
+})
+
+describe('generated React shader backdrops', () => {
+  test('a layer with nothing in it plays its shader, not an image of it', async () => {
+    const { files, folder } = await generate(shaderBackdropSet())
+    const source = fileText(files, 'Card.tsx')
+
+    expect(await typeErrors(folder, 'Card')).toEqual([])
+    expect(source).not.toContain('<img')
+    expect(source).not.toContain('data:image')
+    expect(source).toContain('<ShaderCanvas')
   })
 })
 

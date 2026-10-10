@@ -31,6 +31,8 @@ export * from './behaviours/kinds'
 export * from './icons/schema'
 export * from './icons/model'
 export * from './icons/glyph'
+export * from './shaders/schema'
+export * from './shaders/model'
 export * from './behaviours/layers'
 export * from './behaviours/model'
 export * from './behaviours/spec'
@@ -533,7 +535,8 @@ export class SceneGraph {
     'minWidth',
     'maxWidth',
     'minHeight',
-    'maxHeight'
+    'maxHeight',
+    'targetAspectRatio'
   ])
 
   runPreviewUpdates(fn: () => void, beforeUpdate?: NodePreviewObserver): void {

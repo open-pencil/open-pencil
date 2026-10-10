@@ -1,11 +1,15 @@
 import * as v from 'valibot'
 
-import type {
-  BlendMode,
-  Fill,
-  FillType,
-  GradientStop,
-  GradientTransform
+import {
+  createShaderPaint,
+  shaderPresetSchema,
+  type BlendMode,
+  type Fill,
+  type FillType,
+  type GradientStop,
+  type GradientTransform,
+  type ShaderComponent,
+  type ShaderPreset
 } from '@open-pencil/scene-graph'
 import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
@@ -93,6 +97,52 @@ export function gradient(
     blendMode: options.blendMode,
     gradientStops: parseStops(type, stops).map(toStop),
     gradientTransform: options.transform ?? { ...IDENTITY_GRADIENT_TRANSFORM }
+  }
+}
+
+/** A paint that draws a shader, carrying its preset until the layer it fills stores it. */
+export interface ShaderFill extends Fill {
+  shader: ShaderPreset
+}
+
+/** Whether a paint value came from {@link shader}. */
+export function isShaderFill(value: Fill): value is ShaderFill {
+  return 'shader' in value
+}
+
+const shaderInput = v.union(
+  [
+    shaderPresetSchema,
+    v.pipe(
+      v.array(v.unknown()),
+      v.transform((components) => ({ components })),
+      shaderPresetSchema
+    )
+  ],
+  (issue) =>
+    `Expected a preset { components: [...] } or an array of effects but received ${issue.received}`
+)
+
+/**
+ * A paint that draws a shader from the `shaders` library: a preset as shaders.com exports it, or
+ * just its effects, such as `shader([{ type: 'Aurora' }])`.
+ */
+export function shader(
+  preset: ShaderPreset | ShaderComponent[],
+  options: SolidPaintOptions = {}
+): ShaderFill {
+  const parsed = parseScriptInput(
+    "shader() expects a preset such as { components: [{ type: 'Aurora' }] } or an array of effects",
+    shaderInput,
+    preset
+  )
+  const { paint } = createShaderPaint(parsed)
+  return {
+    ...paint,
+    opacity: options.opacity ?? 1,
+    visible: options.visible ?? true,
+    blendMode: options.blendMode,
+    shader: parsed
   }
 }
 

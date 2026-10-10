@@ -81,6 +81,7 @@ export function buildComponent(jsxString: string, warnings: string[] = []): Reac
     const backgroundBlur = __helpers.backgroundBlur
     const foregroundBlur = __helpers.foregroundBlur
     const solid = __helpers.solid
+    const shader = __helpers.shader
     const gradient = __helpers.gradient
     const linearGradient = __helpers.linearGradient
     const radialGradient = __helpers.radialGradient

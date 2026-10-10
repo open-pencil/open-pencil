@@ -46,9 +46,11 @@ function designJSXProps(issue: DesignIssue): readonly string[] {
   }
 }
 
-/** Tailwind carries every visual value in `className`; names come from `data-name`. */
-function tailwindProps(issue: DesignIssue): readonly string[] {
-  return issue.ruleId === 'no-default-names' ? ['data-name'] : ['className']
+/** Generated markup's class holds its layer's name and styles, or its Tailwind utilities. */
+const CLASS_PROPS: Record<Exclude<CodeSource, 'design-jsx'>, readonly string[]> = {
+  'html-css': ['class'],
+  vue: ['class'],
+  react: ['className']
 }
 
 /**
@@ -60,7 +62,6 @@ export function codeLayerIssues(
   source: CodeSource,
   messages: DesignCheckMessages
 ): LayerIssue[] {
-  if (source === 'html-css') return []
   return issues
     .filter((issue) => issue.severity !== 'info')
     .map((issue) => {
@@ -70,7 +71,7 @@ export function codeLayerIssues(
         nodeId: issue.nodeId,
         severity: issue.severity,
         message: detail ? `${title} · ${detail}` : title,
-        props: source === 'tailwind-jsx' ? tailwindProps(issue) : designJSXProps(issue)
+        props: source === 'design-jsx' ? designJSXProps(issue) : CLASS_PROPS[source]
       }
     })
 }

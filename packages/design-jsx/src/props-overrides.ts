@@ -4,8 +4,10 @@ import {
   parseAutoLayoutDirection,
   parseCounterAxisAlign,
   parsePrimaryAxisAlign,
+  withShaderPaints,
   type Fill,
-  type SceneNode
+  type SceneNode,
+  type ShaderPaint
 } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 import { parseCSSGridTracks, parseCSSNumber } from '@open-pencil/scene-graph/css'
@@ -14,6 +16,7 @@ import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
 import { applyEffectOverrides } from './overrides/effects'
 import { applyStateOverrides } from './overrides/state'
 import { applyStrokeOverrides } from './overrides/strokes'
+import { isShaderFill } from './paints'
 import { DESIGN_JSX_STYLE_KEYS, designJSXProp } from './schema'
 
 const WEIGHT_MAP: Record<string, number> = {
@@ -128,6 +131,25 @@ function fillFromValue(value: string | Color | Fill): Fill {
   return isFill(value) ? structuredClone(value) : colorToFill(value)
 }
 
+/**
+ * Sets the layer's fills, moving each shader paint's preset into the layer's plugin data,
+ * where a shader paint keeps it.
+ */
+function setFills(values: (string | Color | Fill)[], o: Partial<SceneNode>): void {
+  const shaders: ShaderPaint[] = []
+  const fills = values.map((value) => {
+    const fill = fillFromValue(value)
+    if (!isShaderFill(fill)) return fill
+    const { shader, ...paint } = fill
+    if (paint.imageHash) shaders.push({ image: paint.imageHash, preset: shader })
+    return paint
+  })
+  if (fills.length === 0) return
+  o.fills = fills
+  if (shaders.length > 0)
+    o.pluginData = withShaderPaints({ pluginData: o.pluginData ?? [] }, fills, shaders)
+}
+
 function isColor(value: unknown): value is Color {
   return (
     value !== null &&
@@ -141,13 +163,12 @@ function isColor(value: unknown): value is Color {
 
 function applyFillOverride(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   if (Array.isArray(props.fills)) {
-    const fills = props.fills.filter(isFillValue).map(fillFromValue)
-    if (fills.length > 0) o.fills = fills
+    setFills(props.fills.filter(isFillValue), o)
     return
   }
 
   const bg = designJSXProp(props, 'bg')
-  if (isFillValue(bg)) o.fills = [fillFromValue(bg)]
+  if (isFillValue(bg)) setFills([bg], o)
 }
 
 function applyCornerOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
