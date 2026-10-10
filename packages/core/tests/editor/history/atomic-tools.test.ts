@@ -14,7 +14,7 @@ function setup() {
     graph,
     runLayoutForNode: () => undefined,
     requestRender: () => undefined,
-    pushUndoEntry: undo.push.bind(undo)
+    pushUndoStep: undo.pushStep.bind(undo)
   }
   const rectangle = figma.createRectangle()
   const tool = (name: string): ToolDef => {

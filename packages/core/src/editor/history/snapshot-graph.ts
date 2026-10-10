@@ -2,7 +2,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { extractPageContext } from '#core/io/subgraph'
 
-import { applyPageChange, type PageChange } from './page-change'
+import { applyDocumentChange, type DocumentChange } from './document-change'
 import type { PageSnapshot } from './snapshot'
 
 function pageContext(source: SceneGraph, pageId: string, nodeIds: string[]): SceneGraph {
@@ -31,19 +31,19 @@ export function graphFromPageSnapshot(
 }
 
 /**
- * A standalone copy of the document with the change's page on one side of the change. The
- * source must be as the change left it, as it is right after the edit. Other pages are left
+ * A standalone copy of the document with the page the change ran on, on one side of the change.
+ * The source must be as the change left it, as it is right after the edit. Other pages are left
  * empty.
  */
-export function graphFromPageChange(
+export function graphFromDocumentChange(
   source: SceneGraph,
-  change: PageChange,
+  change: DocumentChange,
   side: 'before' | 'after'
 ): SceneGraph | null {
   const page = source.getNode(change.pageId)
   if (!page) return null
   const graph = pageContext(source, page.id, page.childIds)
-  if (side === 'before') applyPageChange(graph, change, 'before')
+  if (side === 'before') applyDocumentChange(graph, change, 'before')
   graph.clearAbsPosCache()
   return graph
 }

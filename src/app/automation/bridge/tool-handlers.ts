@@ -20,7 +20,7 @@ import {
   AUTOMATION_UNDO_LABEL,
   automationUndoLabel,
   executeAtomicEditorTool,
-  executeWithPageUndo
+  executeWithDocumentUndo
 } from '@/app/automation/execution/editor'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 import { useLibraryService } from '@/app/libraries'
@@ -82,7 +82,7 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
         )
       // View tools (selection, viewport, pages) leave the document and its history alone.
       result = toolChangesDocument(def)
-        ? await executeWithPageUndo(store, pageId, automationUndoLabel(def.name), mutate)
+        ? await executeWithDocumentUndo(store, pageId, automationUndoLabel(def.name), mutate)
         : await mutate()
     } else {
       result = await def.execute(figma, toolArgs)

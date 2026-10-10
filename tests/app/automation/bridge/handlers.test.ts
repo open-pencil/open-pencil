@@ -218,6 +218,40 @@ describe('undo and redo', () => {
     expect(graph.getNode(frame.id)?.childIds).toEqual([placeholder.id])
   })
 
+  test('undo reverts a script’s edits to other pages, pages, and variables', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    const otherPage = graph.addPage('Other')
+    const card = graph.createNode('FRAME', otherPage.id, { name: 'Card', width: 200, height: 200 })
+    const pages = graph.getPages().map((page) => page.id)
+    await request('eval', {
+      document_id: tab.id,
+      code: `
+        const other = figma.root.children.find((page) => page.name === 'Other')
+        other.findOne((node) => node.name === 'Card').name = 'Renamed'
+        other.name = 'Renamed page'
+        figma.createPage().name = 'Added'
+        const colors = figma.createVariableCollection('Colors')
+        figma.createVariable('Brand', 'COLOR', colors.id)
+      `
+    })
+    expect(graph.getNode(card.id)?.name).toBe('Renamed')
+    expect(graph.variables.size).toBe(1)
+
+    const undone = await request('undo', { document_id: tab.id })
+    expect(undone.result).toMatchObject({ applied: true, label: 'Agent: eval' })
+    expect(graph.getNode(card.id)?.name).toBe('Card')
+    expect(graph.getNode(otherPage.id)?.name).toBe('Other')
+    expect(graph.getPages().map((page) => page.id)).toEqual(pages)
+    expect(graph.variables.size).toBe(0)
+    expect(graph.variableCollections.size).toBe(0)
+
+    await request('redo', { document_id: tab.id })
+    expect(graph.getNode(card.id)?.name).toBe('Renamed')
+    expect(graph.getPages().map((page) => page.name)).toEqual(['Page 1', 'Renamed page', 'Added'])
+    expect(graph.variables.size).toBe(1)
+  })
+
   test('a read-only eval leaves the history unchanged', async () => {
     const tab = createTab()
     await request('eval', { document_id: tab.id, code: 'return figma.currentPage.name' })

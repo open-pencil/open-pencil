@@ -1,7 +1,12 @@
 import type { SceneGraph } from '../index'
-import { readPluginData, withPluginData } from '../plugin-data/field'
+import {
+  isPluginDataEntry,
+  readPluginData,
+  withoutPluginData,
+  withPluginData
+} from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
-import type { CommentThread } from '../types'
+import type { CommentThread, PluginDataEntry } from '../types'
 
 const { comments } = OPEN_PENCIL_PLUGIN_DATA
 
@@ -29,4 +34,18 @@ export function writeComments(graph: SceneGraph, threads: readonly CommentThread
       threads.length > 0 ? [...threads] : undefined
     )
   })
+}
+
+/**
+ * `entries` holding the comments of `live` instead of their own. Undo and redo restore the
+ * document node with this, so they leave comments as they are now.
+ */
+export function withLiveComments(
+  entries: readonly PluginDataEntry[],
+  live: readonly PluginDataEntry[]
+): PluginDataEntry[] {
+  return [
+    ...withoutPluginData(entries, [comments]),
+    ...live.filter((entry) => isPluginDataEntry(entry, comments))
+  ]
 }

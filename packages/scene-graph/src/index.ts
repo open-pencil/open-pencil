@@ -110,6 +110,7 @@ import type {
   DocumentColorSpace,
   EnabledLibraryBinding,
   NodeType,
+  NodeChangeObserver,
   SceneGraphEventHandlers,
   SceneNode,
   SourceMetadata,
@@ -180,6 +181,7 @@ export class SceneGraph {
   private absPosCache = new Map<string, Vector>()
   private previewMutationDepth = 0
   private previewObservers: NodePreviewObserver[] = []
+  private readonly changeObservers = new Set<NodeChangeObserver>()
   private sourceMetadataPreservationDepth = 0
   private importedStateApplicationDepth = 0
   private layoutMutationDepth = 0
@@ -215,6 +217,23 @@ export class SceneGraph {
   }
   onNodeEvents(handlers: SceneGraphEventHandlers): () => void {
     return bindNodeEvents(this.emitter, handlers)
+  }
+
+  /**
+   * Tells `observer` about each node an edit adds and, before it changes, each node it is about
+   * to change, so a recorder can keep the node as it was. Unlike node events these are never
+   * buffered. Graph methods report the nodes they change; code that writes into a node directly
+   * reports it with `willChangeNode` first.
+   */
+  observeNodeChanges(observer: NodeChangeObserver): () => void {
+    this.changeObservers.add(observer)
+    return () => this.changeObservers.delete(observer)
+  }
+
+  /** Tells `observeNodeChanges` observers that `node` is about to change. */
+  willChangeNode(node: SceneNode | undefined): void {
+    if (!node) return
+    for (const observer of this.changeObservers) observer.before(node)
   }
 
   countDescendants(nodeId: string): number {
@@ -464,6 +483,7 @@ export class SceneGraph {
   private registerNode(node: SceneNode, parentId: string | null): SceneNode {
     node.parentId = parentId
     this.nodes.set(node.id, node)
+    for (const observer of this.changeObservers) observer.created(node)
     if (node.type === 'INSTANCE' && node.componentId) {
       let set = this.instanceIndex.get(node.componentId)
       if (!set) {
@@ -482,7 +502,9 @@ export class SceneGraph {
 
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
     const node = createDefaultNode(() => this.generateEntityId(), type, overrides)
-    this.nodes.get(parentId)?.childIds.push(node.id)
+    const parent = this.nodes.get(parentId)
+    this.willChangeNode(parent)
+    parent?.childIds.push(node.id)
     return this.registerNode(node, parentId)
   }
   createNodeWithId(
@@ -494,7 +516,10 @@ export class SceneGraph {
     const node = createDefaultNode(() => id, type, overrides)
     node.id = id
     const parent = parentId ? this.nodes.get(parentId) : undefined
-    if (parent && !parent.childIds.includes(id)) parent.childIds.push(id)
+    if (parent && !parent.childIds.includes(id)) {
+      this.willChangeNode(parent)
+      parent.childIds.push(id)
+    }
     return this.registerNode(node, parentId)
   }
 
@@ -636,6 +661,7 @@ export class SceneGraph {
     absent: readonly (keyof SceneNode)[] = []
   ): void {
     const { id } = node
+    this.willChangeNode(node)
     // Include removed keys in cache invalidation and update notifications.
     if (absent.length) {
       changes = { ...changes }
@@ -686,6 +712,9 @@ export class SceneGraph {
     if (node.parentId === newParentId) return
 
     const oldParentId = node.parentId
+    this.willChangeNode(node)
+    this.willChangeNode(oldParent)
+    this.willChangeNode(newParent)
     this.absPosCache.clear()
 
     const oldParentWorld = this.parentWorldMatrix(oldParent)
@@ -722,6 +751,9 @@ export class SceneGraph {
     const oldParent = previousParentId ? this.nodes.get(previousParentId) : undefined
     const newParent = this.nodes.get(parentId)
     if (!newParent || this.isDescendant(parentId, nodeId)) return
+    this.willChangeNode(node)
+    this.willChangeNode(oldParent)
+    this.willChangeNode(newParent)
 
     // Remove from old parent
     if (oldParent) {
@@ -751,6 +783,9 @@ export class SceneGraph {
     if (!node || !newParent || childId === parentId || this.isDescendant(parentId, childId)) return
     const previousParentId = node.parentId
     const oldParent = previousParentId ? this.getNode(previousParentId) : undefined
+    this.willChangeNode(node)
+    this.willChangeNode(oldParent)
+    this.willChangeNode(newParent)
     if (oldParent) {
       oldParent.childIds = oldParent.childIds.filter((id) => id !== childId)
     }
@@ -764,9 +799,11 @@ export class SceneGraph {
   deleteNode(id: string): void {
     const node = this.nodes.get(id)
     if (!node || id === this.rootId) return
+    this.willChangeNode(node)
 
     if (node.parentId) {
       const parent = this.nodes.get(node.parentId)
+      this.willChangeNode(parent)
       if (parent) {
         parent.childIds = parent.childIds.filter((cid) => cid !== id)
       }

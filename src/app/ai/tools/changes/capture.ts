@@ -1,7 +1,11 @@
 import { diffLines, type ChangeObject } from 'diff'
 import { compact } from 'es-toolkit/array'
 
-import { graphFromPageChange, isEmptyPageChange, type PageChange } from '@open-pencil/core/editor'
+import {
+  graphFromDocumentChange,
+  isEmptyDocumentChange,
+  type DocumentChange
+} from '@open-pencil/core/editor'
 import { diffPageLayersJSX } from '@open-pencil/core/tools'
 
 import { changePreviewSize } from '@/app/ai/chat/preferences'
@@ -54,12 +58,12 @@ export function clipChangedJSX(before: string, after: string): [string, string] 
 export function recordToolChange(
   store: EditorStore,
   toolCallId: string,
-  pageChange: PageChange
+  documentChange: DocumentChange
 ): ToolChange | null {
-  if (isEmptyPageChange(pageChange)) return null
-  const beforeGraph = graphFromPageChange(store.graph, pageChange, 'before')
-  const afterGraph = graphFromPageChange(store.graph, pageChange, 'after')
-  const { pageId } = pageChange
+  if (isEmptyDocumentChange(documentChange)) return null
+  const beforeGraph = graphFromDocumentChange(store.graph, documentChange, 'before')
+  const afterGraph = graphFromDocumentChange(store.graph, documentChange, 'after')
+  const { pageId } = documentChange
   if (!beforeGraph || !afterGraph) return null
   // The same JSX diff `diff_jsx` returns decides which layers changed.
   const layers = diffPageLayersJSX(beforeGraph, afterGraph, pageId)

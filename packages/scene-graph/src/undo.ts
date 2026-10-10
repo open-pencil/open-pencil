@@ -55,6 +55,16 @@ export class UndoManager {
   }
 
   /**
+   * Records an entry as a step of its own, outside the batches being built, such as an agent's
+   * edit made while a colour picker is open. Batches settle first, so the step follows the
+   * changes they hold so far.
+   */
+  pushStep(entry: UndoEntry): void {
+    this.settle()
+    this.pushUndoEntry(entry)
+  }
+
+  /**
    * Registers a hook that commits an edit still being coalesced, such as a run of picker changes.
    * Undo and redo run every hook first, so they act on the newest change.
    */
