@@ -21,7 +21,8 @@ import {
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
-import { cssRules } from '#dom-css-tests/helpers'
+import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
+import { cssRules, fileText } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -33,6 +34,7 @@ const APP_PACKAGES = [
   'react-dom',
   'radix-ui',
   '@iconify/react',
+  'shaders',
   'storybook',
   '@types/react'
 ]
@@ -111,6 +113,42 @@ describe('generated React plain components', () => {
     const filled = render(component, { extra: createElement('b', null, 'Custom') })
     expect(filled).toContain('<b>Custom</b>')
     expect(filled).not.toContain('Note')
+  })
+})
+
+describe('generated React shader fills', () => {
+  test('play the shader behind the layer, with telemetry off, and type-check', async () => {
+    const { files, folder } = await generate(shaderHeroSet())
+    const source = fileText(files, 'Hero.tsx')
+    const css = fileText(files, 'Hero.module.css')
+
+    expect(await typeErrors(folder, 'Hero')).toEqual([])
+    expect(source).toMatch(
+      /import \{\s*Shader as ShaderCanvas,\s*Aurora as ShaderAurora,\s*FilmGrain as ShaderFilmGrain\s*\} from "shaders\/react"/
+    )
+    expect(source).toContain('<ShaderCanvas className={styles["hero-shader"]} disableTelemetry>')
+    expect(source).toContain(
+      '<ShaderAurora colorA="#ff3300" curtainCount={2} center={{ x: 0.5, y: 0 }} />'
+    )
+    // The shader comes first, so the title draws over it.
+    expect(source.indexOf('<ShaderCanvas')).toBeLessThan(source.indexOf('Northern lights'))
+    const styles = [...cssRules(css).values()]
+    expect(styles).toContainEqual(expect.objectContaining({ isolation: 'isolate' }))
+    expect(styles).toContainEqual(
+      expect.objectContaining({ position: 'absolute', inset: '0', 'z-index': '-1' })
+    )
+  })
+})
+
+describe('generated React shader backdrops', () => {
+  test('a layer with nothing in it plays its shader, not an image of it', async () => {
+    const { files, folder } = await generate(shaderBackdropSet())
+    const source = fileText(files, 'Card.tsx')
+
+    expect(await typeErrors(folder, 'Card')).toEqual([])
+    expect(source).not.toContain('<img')
+    expect(source).not.toContain('data:image')
+    expect(source).toContain('<ShaderCanvas')
   })
 })
 

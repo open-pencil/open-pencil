@@ -84,6 +84,57 @@ export function constrainedChildRect(
   }
 }
 
+function layoutConstrainedAxis(
+  position: number,
+  size: number,
+  parentBefore: number,
+  parentAfter: number,
+  constraint: ConstraintType
+): { position: number; size: number } {
+  const delta = Math.round(parentAfter) - Math.round(parentBefore)
+  if (constraint === 'MAX') return { position: position + delta, size }
+  if (constraint === 'CENTER') {
+    return { position: position + Math.round(parentAfter / 2) - Math.round(parentBefore / 2), size }
+  }
+  if (constraint === 'STRETCH') return { position, size: Math.abs(size + delta) }
+  if (constraint === 'SCALE' && parentBefore > 0) {
+    const scale = parentAfter / parentBefore
+    return { position: Math.round(position * scale * 128) / 128, size: size * scale }
+  }
+  return { position, size }
+}
+
+/**
+ * Where a child goes when layout resizes its parent, as Figma places a layer that ignores auto
+ * layout when its Hug frame grows (measured on desktop 126): Right and Left & right move or grow
+ * it by the change in the parent's size rounded to whole pixels, Center by the change in its
+ * rounded half, and Scale by the exact ratio, its position to 1/128 of a pixel. Sizes are not
+ * rounded, so applying a run of changes one at a time lands where applying them at once does.
+ */
+export function layoutConstrainedChildRect(
+  child: Rect,
+  parentBefore: Pick<Rect, 'width' | 'height'>,
+  parentAfter: Pick<Rect, 'width' | 'height'>,
+  horizontal: ConstraintType,
+  vertical: ConstraintType
+): Rect {
+  const x = layoutConstrainedAxis(
+    child.x,
+    child.width,
+    parentBefore.width,
+    parentAfter.width,
+    horizontal
+  )
+  const y = layoutConstrainedAxis(
+    child.y,
+    child.height,
+    parentBefore.height,
+    parentAfter.height,
+    vertical
+  )
+  return { x: x.position, y: y.position, width: x.size, height: y.size }
+}
+
 export function scaledChildRect(
   child: Rect,
   parentBefore: Pick<Rect, 'width' | 'height'>,

@@ -99,12 +99,22 @@ function serializeAttrs(node: DesignElement, options: SerializeHTMLOptions): str
   return ` ${serialized.join(' ')}`
 }
 
+/** Static HTML cannot play a shader, so its layer shows the still frame behind its content. */
+const SHADER_FRAME_STYLE =
+  'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;border-radius:inherit;pointer-events:none'
+
+function shaderFrame(node: DesignElement): string {
+  const frame = node.shader?.frame
+  return frame ? `<img src="${escapeAttr(frame)}" alt="" style="${SHADER_FRAME_STYLE}">` : ''
+}
+
 function serializeElement(node: DesignElement, options: SerializeHTMLOptions): string {
   // SVG names such as `linearGradient` keep their case, as an SVG parser needs them.
   const tagName = node.tagName
   const attrs = serializeAttrs(node, options)
   if (VOID_ELEMENTS.has(tagName.toLowerCase())) return `<${tagName}${attrs}>`
-  return `<${tagName}${attrs}>${node.children.map((child) => serializeNode(child, options)).join('')}</${tagName}>`
+  const children = node.children.map((child) => serializeNode(child, options)).join('')
+  return `<${tagName}${attrs}>${shaderFrame(node)}${children}</${tagName}>`
 }
 
 export function serializeNode(node: DesignNode, options: SerializeHTMLOptions = {}): string {

@@ -6,6 +6,7 @@ import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
 import { iconSchema, iconTintSchema } from '../icons/schema'
 import type { Rect } from '../primitives'
+import { shaderPaintSchema } from '../shaders/schema'
 import {
   MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
@@ -138,14 +139,16 @@ const commentAuthorColor = v.fallback(
   undefined
 )
 
-const commentReply = v.object({
-  id: v.string(),
+/** What a comment and each reply say, who wrote them and when, and whether they were deleted. */
+const commentEntry = {
   author: v.fallback(v.string(), ''),
   authorColor: commentAuthorColor,
   text: v.fallback(v.string(), ''),
   createdAt: v.fallback(v.string(), ''),
   deleted: v.optional(v.boolean())
-})
+}
+
+const commentReply = v.object({ id: v.string(), ...commentEntry })
 
 const commentThread = v.object({
   id: v.string(),
@@ -157,14 +160,10 @@ const commentThread = v.object({
   offsetY: v.optional(v.number()),
   x: v.fallback(v.number(), 0),
   y: v.fallback(v.number(), 0),
-  author: v.fallback(v.string(), ''),
-  authorColor: commentAuthorColor,
-  text: v.fallback(v.string(), ''),
-  createdAt: v.fallback(v.string(), ''),
+  ...commentEntry,
   updatedAt: v.fallback(v.string(), ''),
   resolved: v.fallback(v.boolean(), false),
   resolvedAt: v.optional(v.nullable(v.string())),
-  deleted: v.optional(v.boolean()),
   replies: v.fallback(v.array(commentReply), [])
 })
 
@@ -226,7 +225,9 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** The icon a frame draws, such as `lucide:home`, on the frame its paths are in. */
   icon: jsonPluginDataField('icon', 'content', iconSchema),
   /** Which of an icon path's paints its icon's color sets, on each path the source drew in it. */
-  iconTint: jsonPluginDataField('iconTint', 'content', iconTintSchema)
+  iconTint: jsonPluginDataField('iconTint', 'content', iconTintSchema),
+  /** One entry per paint that draws a shader, matched to its image paint by the frame's hash. */
+  shader: jsonPluginDataField('shader', 'content', shaderPaintSchema)
 } satisfies Record<string, PluginDataKey>
 
 const NOT_CONTENT = Object.values(OPEN_PENCIL_PLUGIN_DATA).filter(

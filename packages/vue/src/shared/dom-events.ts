@@ -2,6 +2,10 @@ export function inputValue(e: Event): string {
   return e.target instanceof HTMLInputElement ? e.target.value : ''
 }
 
+export function inputChecked(e: Event): boolean {
+  return e.target instanceof HTMLInputElement ? e.target.checked : false
+}
+
 export function inputNumberValue(e: Event): number {
   return +inputValue(e)
 }

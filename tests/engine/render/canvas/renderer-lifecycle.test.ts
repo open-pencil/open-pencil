@@ -22,6 +22,7 @@ function createRenderer() {
     textPreparationCache: new TextPreparationCache(),
     transientPreviews: new Map(),
     imageCache: createImageCache(),
+    liveImages: new Map(),
     imagePreviews: new ImagePreviewCache(() => undefined),
     onImagePreviewReady: null,
     vectorPathCache: new Map(),

@@ -17,7 +17,8 @@ import {
   variantDefaultValue,
   type Behaviour,
   type SceneGraph,
-  type SceneNode
+  type SceneNode,
+  type ShaderPreset
 } from '@open-pencil/scene-graph'
 
 import type { SceneGraphToDesignOptions } from '../projection'
@@ -56,6 +57,7 @@ import {
   type UsedLayer
 } from './references'
 import { activeTriggers, tabParts, type ChoiceModel, type RepeatedPart } from './repeats'
+import { shaderLayer, shaderLayers, type ShaderLayer } from './shaders'
 
 /** Kinds generated as components so far; the rest keep static stories. */
 export const GENERATED_KINDS = [
@@ -123,6 +125,8 @@ export interface ComponentElement {
   slot?: string
   /** The value a repeated part stands for, such as a tab trigger's tab. */
   value?: string
+  /** The shader the layer fills with, which plays behind its content. */
+  shader?: ShaderLayer
   children: ComponentNode[]
 }
 
@@ -201,6 +205,8 @@ interface TreeLabels {
   shownBy: Map<StateElement, string>
   /** The slot prop each slot frame shows. */
   slotOf: Map<StateElement, string>
+  /** The shader each layer fills with. */
+  shaders: Map<StateElement, ShaderPreset>
 }
 
 function componentTree(
@@ -211,16 +217,18 @@ function componentTree(
   const repeated = labels.repeated.get(node)
   const part = repeated?.part ?? labels.parts.get(node) ?? null
   const text = labels.texts.get(node)
+  const className = labels.classes.get(node) ?? ''
   return {
     type: 'element',
     part,
     ...(repeated ? { value: repeated.value } : {}),
     tag: node.tagName,
-    className: labels.classes.get(node) ?? '',
+    className,
     attrs: node.attrs,
     bindings: part === 'root' ? bindings : [],
     shownBy: labels.shownBy.get(node),
     slot: labels.slotOf.get(node),
+    shader: shaderLayer(node, className, labels.shaders.get(node)),
     // A bound text layer draws its prop in place of the design's words and their runs.
     children: text
       ? [{ type: 'textProp', name: text }]
@@ -554,7 +562,8 @@ export function componentModel(
         repeated,
         input,
         shownBy,
-        slotOf
+        slotOf,
+        shaders: shaderLayers(graph, styles.restId, elements)
       },
       rootBindings(model, !!options.itemOf, disabled, props)
     ),

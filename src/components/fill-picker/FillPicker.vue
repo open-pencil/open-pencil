@@ -3,13 +3,20 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import type { Fill } from '@open-pencil/scene-graph'
-import { applySolidFillColor, FillRoot, useI18n, useRetainedPopup } from '@open-pencil/vue'
+import type { Fill, ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph'
+import {
+  applySolidFillColor,
+  DEFAULT_SHADER_PRESET,
+  FillRoot,
+  useI18n,
+  useRetainedPopup
+} from '@open-pencil/vue'
 import type { OkHCLControls } from '@open-pencil/vue'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
+import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -25,9 +32,12 @@ const {
   fill,
   okhcl = null,
   swatchBackground,
-  keepOpen
+  keepOpen,
+  shader = null
 } = defineProps<{
   fill: Fill
+  /** The shader the paint draws, when it is a shader's frame; the picker then edits the shader. */
+  shader?: ShaderPaint | null
   okhcl?: OkHCLControls | null
   swatchBackground?: string
   /** Names the trigger for a paint that is not a fill, such as a stroke. */
@@ -38,6 +48,7 @@ const {
 const activeStop = defineModel<number>('activeStop')
 const emit = defineEmits<{
   update: [fill: Fill]
+  updateShader: [preset: ShaderPreset]
   openChange: [open: boolean]
   cancel: []
 }>()
@@ -45,7 +56,9 @@ const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
   emit('cancel')
   emit('openChange', false)
 })
-const cls = usePopoverUI({ content: 'w-60 p-2' })
+const cls = usePopoverUI({
+  content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
+})
 const { panels } = useI18n()
 
 /** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */
@@ -119,13 +132,24 @@ function cancelFromEscape(event: KeyboardEvent) {
             </Tip>
             <Tip :label="panels.image">
               <button
-                :data-active="root.category === 'IMAGE' || undefined"
-                :class="tabClass(root.category === 'IMAGE')"
+                :data-active="(root.category === 'IMAGE' && !shader) || undefined"
+                :class="tabClass(root.category === 'IMAGE' && !shader)"
                 :aria-label="panels.image"
                 data-test-id="fill-picker-tab-image"
                 @click="root.actions.toImage"
               >
                 <icon-lucide-image class="size-3.5" />
+              </button>
+            </Tip>
+            <Tip :label="panels.shader">
+              <button
+                :data-active="shader !== null || undefined"
+                :class="tabClass(shader !== null)"
+                :aria-label="panels.shader"
+                data-test-id="fill-picker-tab-shader"
+                @click="shader || emit('updateShader', DEFAULT_SHADER_PRESET)"
+              >
+                <icon-lucide-sparkles class="size-3.5" />
               </button>
             </Tip>
           </div>
@@ -144,8 +168,14 @@ function cancelFromEscape(event: KeyboardEvent) {
             @update="emit('update', $event)"
           />
 
+          <ShaderFillPicker
+            v-if="shader"
+            :preset="shader.preset"
+            @update="emit('updateShader', $event)"
+          />
+
           <ImageFillPicker
-            v-if="root.category === 'IMAGE'"
+            v-else-if="root.category === 'IMAGE'"
             :fill="root.fill"
             @update="emit('update', $event)"
           />

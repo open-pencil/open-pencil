@@ -25,6 +25,7 @@ import type {
 import type { InterfaceTheme } from '#core/constants'
 import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
+import type { ShaderRasterizer } from '#core/editor/shaders/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
 import type { TextEditor } from '#core/text/editor'
@@ -204,6 +205,8 @@ export interface EditorOptions {
   getViewportSize?: () => { width: number; height: number }
   /** Where icons are searched and fetched; defaults to Iconify. */
   icons?: IconProvider
+  /** What draws shader frames, which needs a GPU; without one, saved frames stay. */
+  shaderRasterizer?: ShaderRasterizer | null
   skipInitialGraphSetup?: boolean
 }
 
@@ -223,6 +226,8 @@ export interface EditorContext {
   icons: IconProvider
   getCk: () => CanvasKit | null
   getRenderer: () => SkiaRenderer | null
+  /** Every canvas drawing the document, such as each pane's scene and overlays. */
+  getRenderers: () => Iterable<SkiaRenderer>
   getTextEditor: () => TextEditor | null
   requestRender: () => void
   /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */

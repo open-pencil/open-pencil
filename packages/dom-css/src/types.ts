@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, ShaderPreset } from '@open-pencil/scene-graph'
 
 import type { DesignTokens } from './tokens/references'
 
@@ -22,6 +22,11 @@ export interface DesignElement {
   computedStyle?: DesignStyleDeclaration
   sourceSceneNodeId?: string
   sourceSceneNode?: SceneNode
+  /**
+   * The shader the layer fills with, which plays behind its content: a framework draws it with
+   * the `shaders` library, static HTML shows `frame`, its still frame as a data URL.
+   */
+  shader?: { preset: ShaderPreset; frame?: string }
 }
 
 export interface DesignText {

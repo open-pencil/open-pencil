@@ -20,14 +20,15 @@ import {
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
-import { cssRules } from '#dom-css-tests/helpers'
+import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
+import { cssRules, fileText } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
 import { renderToString } from 'vue/server-renderer'
 
 /** The packages generated code imports, linked so it resolves them as an app would. */
-const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook']
+const APP_PACKAGES = ['vue', 'reka-ui', '@iconify/vue', 'storybook', 'shaders']
 
 const output = await mkdtemp(join(tmpdir(), 'open-pencil-vue-'))
 await mkdir(join(output, 'node_modules'))
@@ -244,6 +245,36 @@ describe('generated Vue plain components', () => {
     )
     expect(filled).toContain('<b>Custom</b>')
     expect(filled).not.toContain('Note')
+  })
+})
+
+describe('generated Vue shader fills', () => {
+  test('play the shader behind the layer, with telemetry off', async () => {
+    const { files, component } = await generate(shaderHeroSet())
+    const source = fileText(files, 'Hero.vue')
+
+    expect(source).toMatch(
+      /import \{\s*Shader as ShaderCanvas,\s*Aurora as ShaderAurora,\s*FilmGrain as ShaderFilmGrain\s*\} from ["']shaders\/vue["']/
+    )
+    expect(source).toContain('<ShaderCanvas class="hero-shader" :disable-telemetry="true">')
+    expect(source).toMatch(/<ShaderAurora[^>]*color-a="#ff3300"[^>]*:curtain-count="2"/)
+    expect(source).toContain(':center="({ x: 0.5, y: 0 })"')
+    const styles = [...cssRules(source.slice(source.indexOf('<style'))).values()]
+    expect(styles).toContainEqual(expect.objectContaining({ isolation: 'isolate' }))
+    // The shader comes first, so the title draws over it.
+    const html = await render(component)
+    expect(html.indexOf('hero-shader')).toBeLessThan(html.indexOf('Northern lights'))
+  })
+})
+
+describe('generated Vue shader backdrops', () => {
+  test('a layer with nothing in it plays its shader, not an image of it', async () => {
+    const { files } = await generate(shaderBackdropSet())
+    const source = fileText(files, 'Card.vue')
+
+    expect(source).not.toContain('<img')
+    expect(source).not.toContain('data:image')
+    expect(source).toContain('<ShaderCanvas')
   })
 })
 
