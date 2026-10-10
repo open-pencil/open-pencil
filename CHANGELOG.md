@@ -177,6 +177,7 @@
 - Draw what a mask masks through the mask's opacity and layer blur, as Figma does, so a half-transparent or blurred mask fades or softens its layers instead of masking them fully. An outline mask ignores how opaque its fill is, and a luminance mask counts its opacity twice, as in Figma.
 - Import SVG files that start with an XML declaration or doctype, such as Illustrator and Inkscape exports, instead of reporting no supported elements.
 - Keep `fill-opacity` and `stroke-opacity` when importing SVG instead of drawing those paints opaque.
+- Keep an AI chat going when a script it runs through `eval` returns layers or pages inside an object or list, or values such as `NaN` or a `Map`; the reply used to stop with an invalid-prompt error. The model now gets such results as JSON.
 - Use an API key saved in Settings for the open AI chat right away, including when asking again after a failed request, instead of only after reloading; the failure's notice closes once the request is sent again.
 - Renaming a section title on the canvas keeps the title's size, weight, and place. Section titles draw in Inter SemiBold rather than an emboldened regular weight, and labels that are not rotated sit on whole pixels, so they stay crisp.
 - Save HTML imported with `openpencil import` with its layout applied: layers in a flex container sit where its padding and gap place them instead of all at the top left (#788).
