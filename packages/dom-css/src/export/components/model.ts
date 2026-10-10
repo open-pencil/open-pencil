@@ -10,6 +10,7 @@ import { camelCase } from 'es-toolkit/string'
 import {
   behaviourContract,
   behaviourProperties,
+  findLayerByPath,
   layerPath,
   readBehaviour,
   slotPropertyId,
@@ -17,8 +18,7 @@ import {
   variantDefaultValue,
   type Behaviour,
   type SceneGraph,
-  type SceneNode,
-  type ShaderPreset
+  type SceneNode
 } from '@open-pencil/scene-graph'
 
 import type { SceneGraphToDesignOptions } from '../projection'
@@ -30,8 +30,7 @@ import {
   inputValue,
   numberInput,
   rangeModel,
-  textModel,
-  type InputLayers
+  textModel
 } from './fields'
 import {
   groupItems,
@@ -57,7 +56,9 @@ import {
   type UsedLayer
 } from './references'
 import { activeTriggers, tabParts, type ChoiceModel, type RepeatedPart } from './repeats'
-import { shaderLayer, shaderLayers, type ShaderLayer } from './shaders'
+import { shaderLayers, type ShaderLayer } from './shaders'
+import type { ComponentStyling } from './styling'
+import { componentTree } from './tree'
 
 /** Kinds generated as components so far; the rest keep static stories. */
 export const GENERATED_KINDS = [
@@ -123,6 +124,8 @@ export interface ComponentElement {
   shownBy?: string
   /** The slot prop whose content the layer shows in place of its own. */
   slot?: string
+  /** The layer of the rest variant it draws, which code links back to. */
+  layerId?: string
   /** The value a repeated part stands for, such as a tab trigger's tab. */
   value?: string
   /** The shader the layer fills with, which plays behind its content. */
@@ -153,7 +156,7 @@ export type ComponentNode =
   /** The value of a text prop, drawn where the design binds a text layer to it. */
   | { type: 'textProp'; name: string }
   /** A field's input, drawn where the design binds its text layer to the field's text. */
-  | { type: 'input'; className: string }
+  | { type: 'input'; className: string; layerId?: string }
   | ComponentReference
   | IconReference
 
@@ -190,66 +193,13 @@ export interface ComponentModel {
   args: BehaviourArgs
 }
 
-interface TreeLabels {
-  parts: Map<StateElement, string>
-  classes: Map<StateElement, string>
-  /** The text prop each bound text layer draws, by layer. */
-  texts: Map<StateElement, string>
-  /** Layers that use another component or an icon in place of drawing themselves. */
-  used: Map<StateElement, UsedLayer>
-  /** Layers drawn once per value, such as tab triggers and panels. */
-  repeated: Map<StateElement, RepeatedPart>
-  /** A field's text layer, drawn as its input, and the ones it replaces. */
-  input: InputLayers | null
-  /** The boolean prop that shows each bound layer. */
-  shownBy: Map<StateElement, string>
-  /** The slot prop each slot frame shows. */
-  slotOf: Map<StateElement, string>
-  /** The shader each layer fills with. */
-  shaders: Map<StateElement, ShaderPreset>
-}
-
-function componentTree(
-  node: StateElement,
-  labels: TreeLabels,
-  bindings: ComponentBinding[]
-): ComponentElement {
-  const repeated = labels.repeated.get(node)
-  const part = repeated?.part ?? labels.parts.get(node) ?? null
-  const text = labels.texts.get(node)
-  const className = labels.classes.get(node) ?? ''
-  return {
-    type: 'element',
-    part,
-    ...(repeated ? { value: repeated.value } : {}),
-    tag: node.tagName,
-    className,
-    attrs: node.attrs,
-    bindings: part === 'root' ? bindings : [],
-    shownBy: labels.shownBy.get(node),
-    slot: labels.slotOf.get(node),
-    shader: shaderLayer(node, className, labels.shaders.get(node)),
-    // A bound text layer draws its prop in place of the design's words and their runs.
-    children: text
-      ? [{ type: 'textProp', name: text }]
-      : node.children.flatMap((child) =>
-          child.type === 'text' ? [{ type: 'text', value: child.text }] : childNode(child, labels)
-        )
-  }
-}
-
-function childNode(element: StateElement, labels: TreeLabels): ComponentNode[] {
-  const className = labels.classes.get(element) ?? ''
-  if (labels.input?.element === element) return [{ type: 'input', className }]
-  if (labels.input?.replaced.includes(element)) return []
-  const used = labels.used.get(element)
-  if (!used) return [componentTree(element, labels, [])]
-  return [{ ...used, className }]
-}
-
 /** A generated component's files, and what its stories need to know about it. */
 export interface GeneratedComponent {
-  files: { path: string; content: string }[]
+  /**
+   * The component's files. A file of JSX lists the layer each of its JSX elements draws, in the
+   * order they open, `null` for an element no layer drew, such as a shader's canvas.
+   */
+  files: { path: string; content: string; layerIds?: (string | null)[] }[]
   /** How stories import it: its path next to them, and whether it's a named export. */
   entry: { path: string; named: boolean }
   /** The prop a story sets the value with, if the component has one. */
@@ -258,7 +208,16 @@ export interface GeneratedComponent {
   valueList?: boolean
 }
 
-export type ComponentGenerator = (component: ComponentModel) => Promise<GeneratedComponent>
+/** How a generator writes a component. */
+export interface ComponentGeneratorOptions {
+  /** A stylesheet beside the component, by default, or Tailwind utilities in its markup. */
+  styling?: ComponentStyling
+}
+
+export type ComponentGenerator = (
+  component: ComponentModel,
+  options?: ComponentGeneratorOptions
+) => Promise<GeneratedComponent>
 
 /** Parts each kind renders as a native button, which the reset clears for the design. */
 const BUTTON_PARTS: Record<GeneratedKind, readonly string[]> = {
@@ -563,7 +522,9 @@ export function componentModel(
         input,
         shownBy,
         slotOf,
-        shaders: shaderLayers(graph, styles.restId, elements)
+        shaders: shaderLayers(graph, styles.restId, elements),
+        layerOf: (element) =>
+          findLayerByPath(graph, styles.restId, element.key.split('\0')[0] ?? '')?.id
       },
       rootBindings(model, !!options.itemOf, disabled, props)
     ),

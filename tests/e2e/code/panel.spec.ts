@@ -150,7 +150,7 @@ test('HTML/CSS live preview commits as one undoable session', async () => {
   await editor.canvas.drawRect(80, 80, 120, 90)
   const originalId = await getFirstSelectedNodeId(editor.page)
   await openCodePanel()
-  await selectSource('HTML/CSS')
+  await selectSource('HTML')
   await codeEditor().fill('<div style="width: 180px; height: 90px">First</div>')
   await expect.poll(() => hasNode(editor.page, originalId)).toBe(false)
   await codeEditor().fill('<div style="width: 220px; height: 110px">Final</div>')
@@ -172,7 +172,7 @@ test('switching source formats commits the current live session', async () => {
   await openCodePanel()
   await codeEditor().fill('<Frame name="Committed on switch" />')
   await waitForNodeNamed(editor.page, 'Committed on switch')
-  await selectSource('HTML/CSS')
+  await selectSource('HTML')
   await expect(codeEditor()).toContainText('<style>')
   await expect.poll(() => getUndoLabel(editor.page)).toBe('Edit JSX')
   await editor.page.keyboard.press('Meta+z')
@@ -192,7 +192,7 @@ test('Reset before debounce cancels the pending preview', async () => {
 
 test('HTML/CSS uses the same editor and live reloads the canvas', async () => {
   await openCodePanel()
-  await selectSource('HTML/CSS')
+  await selectSource('HTML')
   await expect(codePanel().locator('[data-slot="code-editor"]')).toHaveCount(1)
   await expect(codeEditor()).toHaveAttribute('aria-label', 'HTML and CSS')
   await codeEditor().fill(
@@ -203,19 +203,10 @@ test('HTML/CSS uses the same editor and live reloads the canvas', async () => {
   expect(importedNodes.some((node) => node.type !== 'DOCUMENT' && node.type !== 'PAGE')).toBe(true)
 })
 
-test('Tailwind JSX is generated read-only in the same editor', async () => {
-  await editor.canvas.drawRect(100, 100, 200, 150)
-  await openCodePanel()
-  await selectSource('Tailwind JSX')
-  await expect(editor.page.getByTestId('code-panel-status')).toContainText('Generated, read only')
-  // It still takes a cursor, which marks the layer of the element around it.
-  await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
-})
-
 test('HTML/CSS shows the selection as markup with its stylesheet', async () => {
   await editor.canvas.drawRect(100, 100, 200, 150)
   await openCodePanel()
-  await selectSource('HTML/CSS')
+  await selectSource('HTML')
   // The layer's class names its rule, rather than the starter for writing new layers.
   await expect(codeEditor()).toContainText(
     /<style>\.(\S+) \{ width: 200px; height: 150px;.*<div class="\1">/
@@ -237,6 +228,39 @@ for (const [label, generated] of [
     await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
   })
 }
+
+async function selectStyling(label: string) {
+  await editor.page.getByTestId('code-panel-styling').getByRole('button', { name: label }).click()
+}
+
+test('Tailwind styles generated components and HTML with utilities, remembered', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await openCodePanel()
+  await expect(editor.page.getByTestId('code-panel-styling')).toHaveCount(0)
+  await selectSource('React')
+  await selectStyling('Tailwind')
+  await expect(codeEditor()).toContainText(
+    /\/\/ (\w+)\.tsx.*className=\{\[\s*"[^"]*w-50 h-\[150px\]/
+  )
+  await expect(codeEditor()).not.toContainText('.module.css')
+
+  await selectSource('HTML')
+  await expect(codeEditor()).toContainText(/^<div class="[^"]*w-50 h-\[150px\]/)
+  await expect(codeEditor()).not.toContainText('<style>')
+  // Written HTML is built with Tailwind's utilities, as the canvas shows them.
+  await codeEditor().fill('<div class="w-60 h-30 p-4 bg-red-500">Tailwind</div>')
+  await expect
+    .poll(() => getCodeNodeSummaries(editor.page))
+    .toContainEqual(expect.objectContaining({ width: 240, height: 120 }))
+
+  await editor.page.reload()
+  await editor.canvas.waitForInit()
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await openCodePanel()
+  await selectSource('Vue')
+  await expect(codeEditor()).toContainText(/<template>.*class="[^"]*w-50/)
+  await selectStyling('CSS')
+})
 
 test('copy button works and shows confirmation', async () => {
   await openCodePanel()

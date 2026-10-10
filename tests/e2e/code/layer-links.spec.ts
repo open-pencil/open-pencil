@@ -127,6 +127,20 @@ test('design issues are underlined on the property that causes them', async () =
   await expect(warning).toHaveText('size={10}')
 })
 
+test('a generated React component links its elements and issues to their layers', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  await editor.page.getByTestId('code-panel-source').click()
+  await editor.page.getByRole('option', { name: 'React' }).click()
+
+  // The component's markup is indented deeper than Design JSX, so the click lands on the name.
+  await codeLine(editor.page, 'styles.card__swatch').getByText('card__swatch').click()
+  await expect.poll(() => focusedLayer(editor.page)).toBe('Swatch')
+  // A component names each layer by its class, which carries the offending style.
+  const warning = editor.page.locator('[data-slot="code-editor"] .cm-lintRange-warning')
+  await expect(warning).toContainText('card__fine-print')
+})
+
 test('links follow the code after a live edit', async () => {
   await buildScene(editor.page)
   await openCode(editor.page)

@@ -2,6 +2,7 @@ import { es, jsx, type SyntaxNode } from '@open-pencil/emit'
 import type { SceneGraph, ShaderComponent, ShaderPreset } from '@open-pencil/scene-graph'
 
 import type { DesignDocument, DesignElement, DesignNode } from '../types'
+import { SHADER_UTILITIES } from './components/styling'
 import { mergeClassNames, serializeTailwindClasses } from './html'
 import { sceneNodeToDesignDocument, type SceneGraphToDesignOptions } from './projection'
 
@@ -41,9 +42,6 @@ function attributes(node: DesignElement, themeVariables: readonly string[]): Syn
   )
 }
 
-/** Where a layer's shader plays: filling the layer, beneath its content, inside its corners. */
-const SHADER_CLASSES = 'pointer-events-none absolute inset-0 -z-10 rounded-[inherit]'
-
 /**
  * A layer's shader as the `shaders` library's `<Shader>`, each effect a child with the preset's
  * props, with telemetry off as every OpenPencil export has it.
@@ -66,7 +64,7 @@ function shaderElement(preset: ShaderPreset, depth: number): SyntaxNode {
   return jsx.element(
     'Shader',
     [
-      jsx.attribute('className', jsx.stringValue(SHADER_CLASSES)),
+      jsx.attribute('className', jsx.stringValue(SHADER_UTILITIES)),
       jsx.attribute('disableTelemetry', null)
     ],
     preset.components.map(effect(depth + 1)),

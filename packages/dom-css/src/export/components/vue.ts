@@ -27,6 +27,7 @@ import {
   shaderImport,
   type ShaderLayer
 } from './shaders'
+import { componentClasses } from './styling'
 
 /** The Reka UI components a kind renders, by part, and the prop its model binds. */
 const REKA: Record<
@@ -144,11 +145,11 @@ function inputNode(className: string, uses: TemplateUses): vue.VueNode {
   const { component } = uses
   if (component.kind === 'numberField') {
     uses.reka.add('NumberFieldInput')
-    return vue.element('NumberFieldInput', [vue.attribute('class', className)])
+    return vue.element('NumberFieldInput', [vue.attribute('class', uses.classOf(className))])
   }
   const placeholder = component.text?.placeholder
   return vue.element(component.kind === 'textarea' ? 'textarea' : 'input', [
-    vue.attribute('class', className),
+    vue.attribute('class', uses.classOf(className)),
     ...(component.model ? [vue.model(identifier(component.model))] : []),
     ...(placeholder ? [vue.attribute('placeholder', placeholder)] : []),
     ...(component.disabled ? [vue.bound('disabled', identifier('disabled'))] : [])
@@ -166,6 +167,8 @@ interface TemplateUses {
   /** Other generated components. */
   components: Set<string>
   icons: boolean
+  /** The class a layer's readable class name stands for, as the component is styled. */
+  classOf: (className: string) => string
   /** Effects of the `shaders` library its layers fill with. */
   shaders: Set<string>
   /** A ref per nested control drawn on, which its `v-model` binds. */
@@ -183,7 +186,7 @@ function reference(node: ComponentReference, uses: TemplateUses): vue.VueNode {
     : null
   if (model) uses.models.push({ name: model })
   return vue.element(node.component, [
-    vue.attribute('class', node.className),
+    vue.attribute('class', uses.classOf(node.className)),
     ...node.props.map((prop) =>
       typeof prop.value === 'boolean'
         ? vue.bound(prop.name, es.parseExpression(String(prop.value)))
@@ -209,7 +212,7 @@ function elementAttributes(
     ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
       vue.attribute(name, value)
     ),
-    vue.attribute('class', compact([node.attrs.class, node.className]).join(' ')),
+    vue.attribute('class', compact([node.attrs.class, uses.classOf(node.className)]).join(' ')),
     ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
     ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses, native))
   ]
@@ -231,7 +234,10 @@ function shaderCanvas(shader: ShaderLayer, uses: TemplateUses): vue.VueNode {
   }
   return vue.element(
     SHADER_CANVAS,
-    [vue.attribute('class', shader.className), vue.bound('disable-telemetry', es.json(true))],
+    [
+      vue.attribute('class', uses.classOf(shader.className)),
+      vue.bound('disable-telemetry', es.json(true))
+    ],
     drawnEffects(shader.preset.components).map(effect)
   )
 }
@@ -269,7 +275,7 @@ function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
     uses.icons = true
     return vue.element(ICONIFY, [
       vue.attribute('icon', node.icon),
-      vue.attribute('class', node.className)
+      vue.attribute('class', uses.classOf(node.className))
     ])
   }
   return designElement(node, uses)
@@ -410,7 +416,8 @@ function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
  * scoped stylesheet, its parts as Reka components, and its props from the behaviour and its
  * other variant properties.
  */
-export const vueComponent: ComponentGenerator = async (component) => {
+export const vueComponent: ComponentGenerator = async (component, options = {}) => {
+  const styling = options.styling ?? 'css'
   const taken = new Set([
     ...component.props.map((prop) => prop.name),
     ...component.texts.map((text) => text.name),
@@ -421,6 +428,7 @@ export const vueComponent: ComponentGenerator = async (component) => {
   ])
   const uses: TemplateUses = {
     component,
+    classOf: componentClasses(component, styling),
     kind: component.kind,
     sliderValues:
       component.kind === 'slider' && component.model ? claimName('values', taken) : null,
@@ -433,10 +441,16 @@ export const vueComponent: ComponentGenerator = async (component) => {
     taken
   }
   const template = templateNode(component.tree, uses)
-  const { css } = await stateStylesToCSS(component.styles)
+  // Tailwind styles the markup itself; a stylesheet is written beside it otherwise.
+  const style =
+    styling === 'css'
+      ? compact([(await stateStylesToCSS(component.styles)).css, shaderCSS(component.tree)]).join(
+          '\n'
+        )
+      : undefined
   const path = `${component.name}.vue`
   // A group's items are their own component, which the group's template uses.
-  const item = component.item ? await vueComponent(component.item) : null
+  const item = component.item ? await vueComponent(component.item, options) : null
   return {
     files: [
       ...(item?.files ?? []),
@@ -445,7 +459,7 @@ export const vueComponent: ComponentGenerator = async (component) => {
         content: vue.printComponent({
           script: script(component, uses),
           template,
-          style: compact([css, shaderCSS(component.tree)]).join('\n')
+          style
         })
       }
     ],

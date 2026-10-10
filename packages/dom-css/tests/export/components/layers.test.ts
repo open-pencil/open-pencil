@@ -53,6 +53,30 @@ describe('layers as components', () => {
     expect(fileText(vue?.files ?? [], `${vue?.name}.vue`)).toContain('SwitchRoot')
   })
 
+  test('a React component lists the layer each JSX element draws, in the order they open', async () => {
+    const { graph, set } = switchSet()
+    const rest = graph.getNode(set.childIds[0])
+    if (!rest) throw new Error('The switch has no variants')
+
+    for (const styling of ['css', 'tailwind'] as const) {
+      const [react] = await layerComponents(graph, [set.id], 'react', { styling })
+      const tsx = react?.files.find((file) => file.path.endsWith('.tsx'))
+      expect(tsx?.layerIds).toEqual([rest.id, rest.childIds[0]])
+    }
+  })
+
+  test('styled with Tailwind, a component has no stylesheet', async () => {
+    const graph = new SceneGraph()
+    const frame = card(graph, 'Pricing card')
+
+    const [vue] = await layerComponents(graph, [frame.id], 'vue', { styling: 'tailwind' })
+    const [react] = await layerComponents(graph, [frame.id], 'react', { styling: 'tailwind' })
+
+    expect(fileText(vue?.files ?? [], 'PricingCard.vue')).not.toContain('<style')
+    expect(fileText(vue?.files ?? [], 'PricingCard.vue')).toContain('flex flex-col')
+    expect(react?.files.map((file) => file.path)).toEqual(['PricingCard.tsx'])
+  })
+
   test('layers with the same name get distinct component names', async () => {
     const graph = new SceneGraph()
     const first = card(graph, 'Card')
@@ -76,6 +100,17 @@ describe('layers as HTML and CSS', () => {
     )
     expect(css).toContain('.pricing-card {')
     expect(css).toContain('.pricing-card .pricing-card__title {')
+  })
+
+  test('styled with Tailwind, the markup carries utilities and there is no stylesheet', async () => {
+    const graph = new SceneGraph()
+    const frame = card(graph, 'Pricing card')
+
+    const { html, css } = await layerMarkup(graph, [frame.id], { styling: 'tailwind' })
+
+    expect(html).toMatch(/^<div class="[^"]*\bflex flex-col\b[^"]*\bgap-2\b[^"]*bg-white/)
+    expect(html).toContain('\n  <span class="')
+    expect(css).toBe('')
   })
 
   test('layers named alike keep their rules apart', async () => {

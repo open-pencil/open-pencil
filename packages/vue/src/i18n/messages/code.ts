@@ -5,10 +5,12 @@ import { i18n } from '#vue/i18n/create'
 export const codeMessageDefaults = {
   source: 'Code source',
   sourceDesignJSX: 'Design JSX',
-  sourceTailwindJSX: 'Tailwind JSX',
-  sourceHTMLCSS: 'HTML/CSS',
+  sourceHTML: 'HTML',
   sourceVue: 'Vue',
   sourceReact: 'React',
+  styling: 'Styling',
+  stylingCSS: 'CSS',
+  stylingTailwind: 'Tailwind',
   editorDesignLabel: 'Design JSX',
   editorHTMLCSSLabel: 'HTML and CSS',
   updating: 'Updating…',
@@ -22,7 +24,6 @@ export const codeMessageDefaults = {
   canvasChangedOrder: 'The canvas now orders these layers differently; the code stays as written.',
   noSelection: 'Select a layer to see its code',
   noSelectionDesignJSX: 'Or write Design JSX to add new layers to the page.',
-  noSelectionTailwindJSX: 'Tailwind JSX is generated for the selected layers.',
   noSelectionComponents: params('{framework} components are generated for the selected layers.'),
   writeJSX: 'Write JSX'
 } as const

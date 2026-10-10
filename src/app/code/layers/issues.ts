@@ -46,10 +46,8 @@ function designJSXProps(issue: DesignIssue): readonly string[] {
   }
 }
 
-/** Tailwind carries every visual value in `className`; names come from `data-name`. */
-function tailwindProps(issue: DesignIssue): readonly string[] {
-  return issue.ruleId === 'no-default-names' ? ['data-name'] : ['className']
-}
+/** A generated component's class holds its layer's name and styles, or its Tailwind utilities. */
+const COMPONENT_PROPS = ['className']
 
 /**
  * Errors and warnings as code issues, matching the canvas markers: suggestions stay in the
@@ -70,7 +68,7 @@ export function codeLayerIssues(
         nodeId: issue.nodeId,
         severity: issue.severity,
         message: detail ? `${title} · ${detail}` : title,
-        props: source === 'tailwind-jsx' ? tailwindProps(issue) : designJSXProps(issue)
+        props: source === 'design-jsx' ? designJSXProps(issue) : COMPONENT_PROPS
       }
     })
 }

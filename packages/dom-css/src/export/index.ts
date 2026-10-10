@@ -21,6 +21,7 @@ export {
   type LayerComponentFramework,
   type LayerMarkup
 } from './components/layers'
+export { COMPONENT_STYLINGS, type ComponentStyling } from './components/styling'
 export * from '../tokens'
 export * from '../behaviours'
 export type {
