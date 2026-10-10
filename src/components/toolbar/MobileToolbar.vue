@@ -11,15 +11,15 @@ import type { Tool } from '@open-pencil/vue'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { useMotionTransitions } from '@/app/shell/motion/transitions'
-import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
-import ToolButton from '@/components/Toolbar/ToolButton.vue'
-import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
+import ToolbarActionGroup from '@/components/toolbar/ToolbarActionGroup.vue'
+import ToolButton from '@/components/toolbar/ToolButton.vue'
+import ToolFlyout from '@/components/toolbar/ToolFlyout.vue'
 import type {
   ToolbarActionItem,
   ToolbarUI,
   ToolIconMap,
   ToolLabels
-} from '@/components/Toolbar/types'
+} from '@/components/toolbar/types'
 import toolbarTheme from '@/theme/toolbar'
 
 const {
@@ -42,7 +42,7 @@ const {
   flyoutSelections: ReadonlyMap<Tool, Tool>
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
-  toolShortcuts: Record<Tool, string>
+  toolShortcuts: Readonly<Record<Tool, string>>
   ui?: ToolbarUI
   mobileCategory: number
   slideDirection: number
@@ -118,7 +118,7 @@ function navigationClass(disabled: boolean) {
           >
             <template v-for="tool in tools" :key="tool.key">
               <ToolFlyout
-                v-if="tool.flyout && tool.flyout.length > 1"
+                v-if="tool.flyout"
                 mobile
                 :tool="tool"
                 :active-tool="activeTool"

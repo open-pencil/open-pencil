@@ -19,7 +19,7 @@ import { openFileDialog } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
 import { roomStatusText } from '@/components/collab-room/statusText'
 import { presenceRows } from '@/components/presence/rows'
-import type { ToolbarActionItem } from '@/components/Toolbar/types'
+import type { ToolbarActionItem } from '@/components/toolbar/types'
 import { getShareURL } from '@/constants'
 
 type MenuAction = ToolbarActionItem

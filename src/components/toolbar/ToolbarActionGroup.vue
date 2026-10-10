@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 
 import { vTestId } from '@open-pencil/vue'
 
-import type { ToolbarActionItem, ToolbarUI } from '@/components/Toolbar/types'
+import type { ToolbarActionItem, ToolbarUI } from '@/components/toolbar/types'
 import toolbarTheme from '@/theme/toolbar'
 
 const { actions, testPrefix, ui } = defineProps<{

@@ -21,6 +21,7 @@ import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.v
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
+import ToolbarSettingsPanel from '@/components/settings/toolbar/ToolbarSettingsPanel.vue'
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import {
@@ -44,6 +45,7 @@ const sections = computed(
   () =>
     [
       { value: 'general', label: settings.value.general },
+      { value: 'toolbar', label: settings.value.toolbar },
       { value: 'ai', label: settings.value.aiAndAgents },
       { value: 'usage', label: settings.value.usage },
       { value: 'diagnostics', label: settings.value.diagnostics },
@@ -103,6 +105,10 @@ function onOpenChange(open: boolean): void {
           <template #leading><icon-lucide-settings class="size-3.5" /></template>
           {{ settings.general }}
         </AppTabsTrigger>
+        <AppTabsTrigger value="toolbar" data-test-id="settings-section-toolbar">
+          <template #leading><icon-lucide-panel-bottom class="size-3.5" /></template>
+          {{ settings.toolbar }}
+        </AppTabsTrigger>
         <AppTabsTrigger value="ai" data-test-id="settings-section-ai">
           <template #leading><icon-lucide-sparkles class="size-3.5" /></template>
           {{ settings.aiAndAgents }}
@@ -135,6 +141,9 @@ function onOpenChange(open: boolean): void {
 
       <AppTabsContent value="general" as-child>
         <SettingsPage><GeneralSettingsPanel /></SettingsPage>
+      </AppTabsContent>
+      <AppTabsContent value="toolbar" as-child>
+        <SettingsPage><ToolbarSettingsPanel /></SettingsPage>
       </AppTabsContent>
       <AppTabsContent value="ai" as-child>
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">

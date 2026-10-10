@@ -1,0 +1,57 @@
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, userEvent, within } from 'storybook/test'
+import { ref } from 'vue'
+
+import {
+  DEFAULT_TOOLBAR_LAYOUT,
+  normalizeToolbarLayout,
+  type ToolbarLayout
+} from '@/app/editor/toolbar/layout'
+
+import ToolbarLayoutEditor from './ToolbarLayoutEditor.vue'
+
+type Args = { layout: ToolbarLayout }
+
+const meta = {
+  title: 'App/Settings/Toolbar Layout',
+  args: { layout: structuredClone(DEFAULT_TOOLBAR_LAYOUT) },
+  render: (args) => ({
+    components: { ToolbarLayoutEditor },
+    // Args arrive as reactive proxies, so the editor gets its own copy to change.
+    setup: () => ({ layout: ref(normalizeToolbarLayout(args.layout.groups, args.layout.hidden)) }),
+    template: '<div class="max-w-xl bg-panel p-4"><ToolbarLayoutEditor v-model="layout" /></div>'
+  })
+} satisfies Meta<Args>
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Default: Story = {}
+
+export const Customized: Story = {
+  args: {
+    layout: normalizeToolbarLayout(
+      [['SELECT', 'HAND'], ['FRAME'], ['SECTION'], ['TEXT', 'COMMENT'], ['insert-icon']],
+      ['PEN', 'STAR']
+    )
+  }
+}
+
+export const Regrouping: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('switch', { name: 'Show Pen' }))
+    await expect(canvas.getByRole('switch', { name: 'Show Pen' })).not.toBeChecked()
+
+    // Joining moves the row into the box above, so each check finds it again.
+    const group = () =>
+      canvas.getByRole('button', { name: 'Put Comment in a menu with the tool above' })
+    await expect(group()).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(group())
+    await expect(group()).toHaveAttribute('aria-pressed', 'true')
+    await expect(group()).toHaveFocus()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Move Comment up' }))
+    await expect(canvas.getByRole('button', { name: 'Move Comment up' })).toHaveFocus()
+    await expect(canvas.getByRole('switch', { name: 'Show Move' })).toBeDisabled()
+  }
+}

@@ -25,6 +25,16 @@ The shapes flyout (accessible from the toolbar) includes additional shapes:
 
 Polygon and Star have no keyboard shortcut — access them from the shapes flyout in the toolbar.
 
+## Customizing the Toolbar
+
+Right-click the toolbar and choose **Customize toolbar…**, or open **Settings → Toolbar**, to change it:
+
+- Turn a tool's switch off to hide it. Hidden tools keep their keyboard shortcuts. **Move** is always shown.
+- Use the arrows to move a tool. Inside a flyout a tool moves among its members, and past either end it becomes a button of its own.
+- Use the link button to put a tool in a flyout with the tool above it, or take it out again. **Insert icon** runs a command rather than picking a tool, so it can move and hide but not join a flyout.
+
+**Reset to default** restores the original layout. Tools added in later versions join their default flyout, so a customized toolbar still gets them.
+
 ## Constrained Drawing
 
 Hold <kbd>Shift</kbd> while dragging to constrain the shape:

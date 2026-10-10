@@ -7,6 +7,11 @@ import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import {
+  DEFAULT_TOOLBAR_LAYOUT,
+  normalizeToolbarLayout,
+  type ToolbarLayout
+} from '@/app/editor/toolbar/layout'
+import {
   accentPreferenceSchema,
   DEFAULT_ACCENT,
   type AccentPreference
@@ -73,6 +78,7 @@ export interface AppPreferences {
   }
   designCheck: DesignCheckPreferences
   comments: CommentPreferences
+  toolbar: ToolbarLayout
   onboarding: {
     aiSetup: AISetupState
   }
@@ -100,6 +106,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     onlyMine: false,
     sort: 'newest'
   },
+  toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
   onboarding: { aiSetup: 'pending' }
 }
 
@@ -162,6 +169,16 @@ const appPreferencesSchema = section({
     onlyMine: v.fallback(v.boolean(), defaults.comments.onlyMine),
     sort: v.fallback(v.picklist(COMMENT_SORTS), defaults.comments.sort)
   }),
+  toolbar: v.fallback(
+    v.pipe(
+      v.object({
+        groups: v.fallback(v.array(v.array(v.unknown())), () => defaults.toolbar.groups),
+        hidden: v.fallback(v.array(v.unknown()), () => [])
+      }),
+      v.transform(({ groups, hidden }) => normalizeToolbarLayout(groups, hidden))
+    ),
+    () => structuredClone(DEFAULT_TOOLBAR_LAYOUT)
+  ),
   onboarding: section({
     aiSetup: v.fallback(v.picklist(AI_SETUP_STATES), defaults.onboarding.aiSetup)
   })
@@ -234,4 +251,8 @@ export function updateCommentPreferences(changes: Partial<CommentPreferences>): 
     ...appPreferences.value,
     comments: { ...appPreferences.value.comments, ...changes }
   }
+}
+
+export function updateToolbarLayout(toolbar: ToolbarLayout): void {
+  appPreferences.value = { ...appPreferences.value, toolbar }
 }

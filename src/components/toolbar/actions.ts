@@ -14,7 +14,7 @@ import IconUngroup from '~icons/lucide/ungroup'
 import type { useEditorCommands } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import type { ToolbarActionItem } from '@/components/Toolbar/types'
+import type { ToolbarActionItem } from '@/components/toolbar/types'
 
 type ToolbarActionOptions = {
   store: EditorStore
