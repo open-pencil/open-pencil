@@ -8,6 +8,7 @@ import {
   useCanvasSurfaceLifecycle
 } from '#vue/canvas/surface/lifecycle'
 import { createCanvasHitTests, createRulerVisibility } from '#vue/canvas/surface/overlays'
+import { useShaderPlayback } from '#vue/canvas/surface/shader-playback'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 
 export type { UseCanvasOptions } from '#vue/canvas/surface/types'
@@ -48,6 +49,11 @@ export function useCanvas(
     },
     onReady: options?.onReady
   })
+
+  // The scene surface plays shaders in preview; an overlay surface draws none.
+  if (options?.layer !== 'overlays') {
+    useShaderPlayback({ editor, getRenderer: surface.getRenderer, markDirty: surface.markDirty })
+  }
 
   const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker } =
     createCanvasHitTests(editor, surface.getRenderer)

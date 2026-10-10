@@ -61,7 +61,9 @@ import type {
   ImageFilter,
   MaskFilter,
   RuntimeEffect,
-  Paragraph
+  Paragraph,
+  Image,
+  TextureSource
 } from 'canvaskit-wasm'
 
 export interface SubtreePictureCacheEntry {
@@ -82,6 +84,9 @@ import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { PresenceCursor, RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
+
+/** A picture CanvasKit can upload as a texture and that knows its size, such as an `ImageBitmap`. */
+export type LiveImageSource = Extract<TextureSource, { width: number; height: number }>
 
 export class SkiaRenderer {
   ck: CanvasKit
@@ -117,6 +122,8 @@ export class SkiaRenderer {
   textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
   imageCache = createImageCache()
+  /** Images drawn in place of stored ones while they play, such as a shader's live frames. */
+  readonly liveImages = new Map<string, Image>()
   viewportImageRendering = false
   imageMemoryGraph: SceneGraph | null = null
   imageMemoryPage: string | null = null
@@ -556,6 +563,26 @@ export class SkiaRenderer {
 
   invalidateAllPictures(): void {
     RendererState.invalidateAllPictures(this)
+  }
+
+  /**
+   * Draws `source` wherever the image `hash` is painted, until it is set to null, and redraws
+   * `nodeIds`, the layers that paint it. Frames of the same size reuse one texture.
+   */
+  setLiveImage(hash: string, source: LiveImageSource | null, nodeIds: Iterable<string> = []): void {
+    const current = this.liveImages.get(hash)
+    if (!source) {
+      current?.delete()
+      this.liveImages.delete(hash)
+    } else if (current && current.width() === source.width && current.height() === source.height) {
+      this.surface.updateTextureFromSource(current, source)
+    } else {
+      current?.delete()
+      const image = this.surface.makeImageFromTextureSource(source)
+      if (image) this.liveImages.set(hash, image)
+      else this.liveImages.delete(hash)
+    }
+    for (const id of nodeIds) this.invalidateNodePicture(id)
   }
 
   /**

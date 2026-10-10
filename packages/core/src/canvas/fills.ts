@@ -1,4 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
+import type { Canvas, Image, Paint } from 'canvaskit-wasm'
 
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
@@ -424,6 +424,44 @@ export function makeImageFillLocalMatrix(
   )
 }
 
+/**
+ * Sets `paint`'s shader to `img` laid out as `fill` places it on `node`; `preview`, when `img`
+ * is a downscaled preview, keeps a tiled image at its original size.
+ */
+function setImageShader(
+  r: SkiaRenderer,
+  fill: Fill,
+  node: SceneNode,
+  img: Image,
+  paint: Paint,
+  preview?: { originalWidth: number; originalHeight: number }
+): boolean {
+  const imgW = img.width()
+  const imgH = img.height()
+  const scaleMode = fill.imageScaleMode ?? 'FILL'
+  const localMatrix =
+    scaleMode === 'TILE' && !fill.imageTransform && preview
+      ? r.ck.Matrix.scaled(preview.originalWidth / imgW, preview.originalHeight / imgH)
+      : makeImageFillLocalMatrix(r, fill, node, imgW, imgH)
+  const tileMode = scaleMode === 'FIT' ? r.ck.TileMode.Decal : r.ck.TileMode.Clamp
+  const shader =
+    scaleMode === 'TILE'
+      ? img.makeShaderCubic(r.ck.TileMode.Repeat, r.ck.TileMode.Repeat, 1 / 3, 1 / 3, localMatrix)
+      : img.makeShaderOptions(
+          tileMode,
+          tileMode,
+          r.ck.FilterMode.Linear,
+          r.ck.MipmapMode.Linear,
+          localMatrix
+        )
+  try {
+    paint.setShader(shader)
+  } finally {
+    shader.delete()
+  }
+  return true
+}
+
 export function applyImageFill(
   r: SkiaRenderer,
   fill: Fill,
@@ -433,6 +471,8 @@ export function applyImageFill(
 ): boolean {
   const hash = fill.imageHash
   if (!hash) return false
+  const live = r.liveImages.get(hash)
+  if (live) return setImageShader(r, fill, node, live, paint)
   const preview = r.viewportImageRendering
     ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame.
       r.imagePreviews.get(graph, hash, previewEdge(node, r.zoom, r.dpr))
@@ -455,33 +495,7 @@ export function applyImageFill(
   }
 
   try {
-    const imgW = img.width()
-    const imgH = img.height()
-    const scaleMode = fill.imageScaleMode ?? 'FILL'
-    const localMatrix =
-      scaleMode === 'TILE' && !fill.imageTransform && preview
-        ? r.ck.Matrix.scaled(
-            preview.preview.originalWidth / imgW,
-            preview.preview.originalHeight / imgH
-          )
-        : makeImageFillLocalMatrix(r, fill, node, imgW, imgH)
-    const tileMode = scaleMode === 'FIT' ? r.ck.TileMode.Decal : r.ck.TileMode.Clamp
-    const shader =
-      scaleMode === 'TILE'
-        ? img.makeShaderCubic(r.ck.TileMode.Repeat, r.ck.TileMode.Repeat, 1 / 3, 1 / 3, localMatrix)
-        : img.makeShaderOptions(
-            tileMode,
-            tileMode,
-            r.ck.FilterMode.Linear,
-            r.ck.MipmapMode.Linear,
-            localMatrix
-          )
-    try {
-      paint.setShader(shader)
-    } finally {
-      shader.delete()
-    }
-    return true
+    return setImageShader(r, fill, node, img, paint, preview?.preview)
   } finally {
     if (temporary) img.delete()
   }
