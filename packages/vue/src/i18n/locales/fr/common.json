@@ -31,6 +31,8 @@
   "noResults": "Aucun résultat",
   "save": "Enregistrer",
   "done": "Terminé",
+  "taskDone": "Fait",
+  "taskNotDone": "À faire",
   "back": "Retour",
   "supported": "Pris en charge",
   "unsupported": "Non pris en charge",

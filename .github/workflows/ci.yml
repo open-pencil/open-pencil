@@ -185,11 +185,23 @@ jobs:
         run: bun run test:dupes
 
   storybook:
-    name: Component workshop
+    name: Component workshop — ${{ matrix.runner }}/2
     needs: changes
     if: needs.changes.outputs.scope == 'code'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Each runner checks every other slice of the stories; the first also runs the component
+        # specs, which are a small share of the time.
+        include:
+          - runner: 1
+            specs: ''
+          - runner: 2
+            specs: tests/e2e/storybook/stories.spec.ts
+    env:
+      STORY_RUNNER: ${{ matrix.runner }}/2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -200,8 +212,22 @@ jobs:
       - name: Build component dependencies
         run: bun run build:packages
 
-      - name: Build static Storybook
-        run: bun run build-storybook
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      # Builds the static Storybook, then renders the runner's stories, runs their play functions,
+      # and checks them with axe in both themes. Screenshot baselines are drawn on macOS, so here
+      # the specs check behaviour and leave the pictures to local runs.
+      - name: Check stories
+        run: bun run test:storybook --ignore-snapshots --workers=100% ${{ matrix.specs }}
+
+      - name: Upload story failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: storybook-test-results-${{ matrix.runner }}
+          path: test-results/
+          retention-days: 7
 
   native-test-contracts:
     name: Native app contracts

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, within } from 'storybook/test'
 
 import ChatMarkdown from './ChatMarkdown.vue'
 
@@ -111,6 +112,11 @@ export const TaskList: Story = {
 - [ ] Checked in preview
 
 See [the guide](https://openpencil.dev/guide).`
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByRole('img', { name: 'Done' })).toBeVisible()
+    await expect(await canvas.findByRole('img', { name: 'Not done' })).toBeVisible()
   }
 }
 

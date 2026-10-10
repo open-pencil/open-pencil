@@ -31,6 +31,8 @@
   "noResults": "Keine Ergebnisse",
   "save": "Speichern",
   "done": "Fertig",
+  "taskDone": "Erledigt",
+  "taskNotDone": "Nicht erledigt",
   "back": "Zurück",
   "supported": "Unterstützt",
   "unsupported": "Nicht unterstützt",

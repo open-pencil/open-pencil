@@ -48,6 +48,7 @@
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "preview-storybook": "vite preview --outDir storybook-static",
     "tauri": "tauri",
     "build:native-test": "bun run generate:icons --target desktop && bun run build:packages && bun tauri build --debug --no-bundle --features native-test --config desktop/tauri.native-test.conf.json",
     "benchmark:navigation": "bun tools/dev/navigation-benchmark/src/cli.ts run",

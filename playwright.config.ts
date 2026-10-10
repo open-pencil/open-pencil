@@ -1,4 +1,4 @@
-import { defineConfig, type PlaywrightTestConfig } from '@playwright/test'
+import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test'
 
 const appPort = process.env.OPENPENCIL_TEST_PORT ?? '1420'
 const mcpPort = process.env.OPENPENCIL_TEST_MCP_PORT ?? '7600'
@@ -64,14 +64,16 @@ const appDefaults = {
 export default defineConfig({
   testDir: './tests',
   timeout: 15_000,
-  workers: 1,
+  // The app projects share one dev server and stay serial; Storybook's static stories run side by side.
+  workers: '50%',
   projects: [
     {
       ...appDefaults,
       name: 'openpencil',
       testDir: './tests/e2e',
       testIgnore: ['**/native/**', '**/storybook/**'],
-      fullyParallel: false
+      fullyParallel: false,
+      workers: 1
     },
     {
       ...appDefaults,
@@ -85,6 +87,7 @@ export default defineConfig({
         '**/export/basic.spec.ts',
         '**/fonts/settings.spec.ts'
       ],
+      workers: 1,
       use: {
         ...appDefaults.use,
         browserName: 'webkit'
@@ -93,14 +96,19 @@ export default defineConfig({
     {
       ...appDefaults,
       name: 'figma',
-      testDir: './tests/figma'
+      testDir: './tests/figma',
+      workers: 1
     },
     {
       name: 'storybook-chromium',
       testDir: './tests/e2e/storybook',
       timeout: 30_000,
+      fullyParallel: true,
       use: {
         baseURL: `http://localhost:${storybookPort}`,
+        // Storybook's test-runner mark: stories then pause animations instead of waiting 100 ms
+        // for them after every render.
+        userAgent: `${devices['Desktop Chrome'].userAgent} StorybookTestRunner`,
         viewport: { width: 800, height: 600 },
         deviceScaleFactor: 1,
         contextOptions: { reducedMotion: 'reduce' }
@@ -127,11 +135,13 @@ export default defineConfig({
       ? []
       : [
           {
-            command: `bun run storybook -- --port ${storybookPort} --ci --no-open`,
+            // The built Storybook, not the dev server, which serves each story's thousand modules
+            // one by one on every page load.
+            command: `bun run build-storybook && bun run preview-storybook --port ${storybookPort} --strictPort`,
             cwd: import.meta.dirname,
             url: `http://localhost:${storybookPort}`,
             reuseExistingServer: false,
-            timeout: 120_000
+            timeout: 300_000
           }
         ])
   ]

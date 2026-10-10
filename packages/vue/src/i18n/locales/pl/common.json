@@ -31,6 +31,8 @@
   "noResults": "Brak wyników",
   "save": "Zapisz",
   "done": "Gotowe",
+  "taskDone": "Zrobione",
+  "taskNotDone": "Do zrobienia",
   "back": "Wstecz",
   "supported": "Obsługiwane",
   "unsupported": "Nieobsługiwane",
