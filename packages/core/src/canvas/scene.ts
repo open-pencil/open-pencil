@@ -19,6 +19,7 @@ import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
 import { renderBooleanOperation } from './boolean'
+import { blurSigma } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
@@ -138,13 +139,43 @@ function renderMaskNodeContent(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  overlays: RenderOverlays
+  overlays: RenderOverlays,
+  absX: number,
+  absY: number
 ): void {
   canvas.save()
   canvas.translate(node.x, node.y)
+  // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
+  const blur = node.effects.find(
+    (effect) =>
+      effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+  )
+  const layered = node.opacity < 1 || blur !== undefined
+  if (layered) {
+    const padding = (blur?.radius ?? 0) * 2
+    r.opacityPaint.setAlphaf(node.opacity)
+    r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
+    canvas.saveLayer(
+      r.opacityPaint,
+      r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
+    )
+    r.opacityPaint.setImageFilter(null)
+  }
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node, {})
+  renderNodeContent(r, canvas, graph, node.maskType === 'VECTOR' ? opaqueFills(node) : node, {})
+  // A group or frame used as a mask masks with what its layers draw, as in Figma.
+  renderChildren(r, canvas, graph, node, overlays, absX + node.x, absY + node.y, true)
+  if (layered) canvas.restore()
   canvas.restore()
+}
+
+/** An outline mask masks with its shape alone, so Figma ignores how opaque its fills are. */
+function opaqueFills(node: SceneNode): SceneNode {
+  return {
+    ...node,
+    fills: node.fills.map((fill) => ({ ...fill, opacity: 1, color: { ...fill.color, a: 1 } }))
+  }
 }
 
 function renderChildIds(
@@ -168,7 +199,7 @@ function renderChildIds(
     (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, hasTransformedAncestor),
     (childId) => {
       const child = graph.getNode(childId)
-      if (child) renderMaskNodeContent(r, canvas, graph, child, overlays)
+      if (child) renderMaskNodeContent(r, canvas, graph, child, overlays, absX, absY)
     },
     (childId) => {
       const child = graph.getNode(childId)
@@ -346,7 +377,7 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(r.getCachedBlur(layerBlur.radius / 2))
+    r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
     const blurPadding = layerBlur.radius * 2
     canvas.saveLayer(
       r.effectLayerPaint,

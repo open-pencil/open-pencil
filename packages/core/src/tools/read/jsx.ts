@@ -13,7 +13,7 @@ export const getJSX = defineTool({
   description:
     'Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     path: v.optional(
       v.pipe(

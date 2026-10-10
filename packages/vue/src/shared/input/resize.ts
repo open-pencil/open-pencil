@@ -1,20 +1,24 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
+import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph'
+import { cloneVectorNetwork, recapturedAspectRatio } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
   scaledGeometryChanges,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
+import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { applyResizeSnap } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
@@ -58,25 +62,37 @@ function reflowedPathTextChanges(
   }
 }
 
+/**
+ * The ratio a drag keeps, as Figma's handles keep it: a locked layer keeps its own unless Control
+ * frees it, and Shift keeps the ratio the drag started from.
+ */
+function keptAspectRatio(d: DragResize, shiftKey: boolean, ctrlKey: boolean): number | null {
+  if (d.lockedAspectRatio !== null && !ctrlKey) return d.lockedAspectRatio
+  const { width, height } = d.origRect
+  return shiftKey && width > 0 && height > 0 ? width / height : null
+}
+
 function resizeChanges(
   d: DragResize,
   cx: number,
   cy: number,
-  constrain: boolean,
+  shiftKey: boolean,
   editor: Editor,
-  disableSnapping: boolean
+  ctrlKey: boolean
 ) {
   const { origRect } = d
+  const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
+  // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
+  d.freesLock = d.lockedAspectRatio !== null && ctrlKey
   const calculatedRect = calculateResizeRect(
     d.handle,
     origRect,
     cx - d.startX,
     cy - d.startY,
-    constrain
+    aspect
   )
-  const newRect = constrain
-    ? calculatedRect
-    : applyResizeSnap(d, calculatedRect, editor, disableSnapping)
+  const newRect =
+    aspect !== null ? calculatedRect : applyResizeSnap(d, calculatedRect, editor, ctrlKey)
 
   const changes: Partial<SceneNode> = {
     ...newRect,
@@ -131,21 +147,29 @@ function applyConstrainedChildren(
   }
 }
 
+/** Control both frees a locked ratio and turns snapping off, as in Figma. */
 export function applyResize(
   dragState: DragResize,
   cx: number,
   cy: number,
-  constrain: boolean,
+  shiftKey: boolean,
   editor: Editor,
-  disableSnapping = false
+  ctrlKey = false
 ) {
   // Drag state lives in Vue-reactive input state; nested arrays read through
   // it are reactive proxies. Writing those into the graph poisons it for
   // structuredClone consumers (export subgraph clone, undo snapshots) with
   // DataCloneError. Unwrap once — also keeps the drag hot path off proxies.
   const d = toRaw(dragState)
-  const { changes, newRect } = resizeChanges(d, cx, cy, constrain, editor, disableSnapping)
+  const { changes, newRect } = resizeChanges(d, cx, cy, shiftKey, editor, ctrlKey)
   d.appliedRect = { ...newRect }
+  const node = editor.graph.getNode(d.nodeId)
+  if (node) {
+    d.origSizing ??= layerSizing(node)
+    d.appliedSizing = draggedSizing(editor.graph, node, d.origSizing, d.origRect, newRect)
+    Object.assign(changes, d.appliedSizing)
+  }
+  markResized(d, newRect, editor)
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
       {
@@ -226,17 +250,95 @@ function clearResizedRawGeometry(editor: Editor, nodeId: string): void {
   if (node.type !== 'TEXT') delete raw.vectorData
 }
 
+function sameRect(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+}
+
+/**
+ * Resizing keeps the raw payload a file gave the layer but not its size, so once the drag
+ * changes the rect, layout lays out a resized frame from a .fig again, during the drag too,
+ * instead of keeping the sizes it saved.
+ */
+function markResized(d: DragResize, rect: Rect, editor: Editor) {
+  const node = editor.graph.getNode(d.nodeId)
+  if (!node || d.origEditedFields || sameRect(rect, d.origRect)) return
+  d.origEditedFields = [...node.source.editedFields]
+  markSourceFieldsEdited(node, ['width', 'height'])
+}
+
+/** A drag that ends where it began, or is cancelled, leaves the layer's edits as they were. */
+function restoreEditedFields(d: DragResize, editor: Editor) {
+  const node = editor.graph.getNode(d.nodeId)
+  if (node && d.origEditedFields) node.source.editedFields = d.origEditedFields
+  d.origEditedFields = undefined
+}
+
+function restoreResizePreview(d: DragResize, editor: Editor) {
+  editor.graph.updateNodePreview(d.nodeId, d.origRect)
+  for (const [childId, orig] of d.origChildren ?? []) {
+    editor.graph.updateNodePreview(childId, {
+      x: orig.x,
+      y: orig.y,
+      width: orig.width,
+      height: orig.height,
+      vectorNetwork: orig.vectorNetwork,
+      fillGeometry: orig.fillGeometry,
+      strokeGeometry: orig.strokeGeometry,
+      derivedTextGlyphs: orig.derivedTextGlyphs,
+      strokes: orig.strokes,
+      textPathData: orig.textPathData,
+      textPathBox: orig.textPathBox
+    })
+  }
+}
+
+/** Puts a resize the pointer abandoned back where it started. */
+export function cancelResizePreview(dragState: DragResize, editor: Editor) {
+  const d = toRaw(dragState)
+  optionalEditorState(editor)?.snapGuides.splice(0)
+  restoreResizePreview(d, editor)
+  // The preview scaled the layer's own geometry too, which a commit would have replaced.
+  editor.graph.updateNodePreview(d.nodeId, {
+    vectorNetwork: d.origVectorNetwork,
+    fillGeometry: d.origFillGeometry,
+    strokeGeometry: d.origStrokeGeometry,
+    derivedTextGlyphs: d.origDerivedTextGlyphs,
+    strokes: d.origStrokes,
+    textPathData: d.origTextPathData,
+    textPathBox: d.origTextPathBox
+  })
+  if (d.origSizing) editor.graph.updateNodePreview(d.nodeId, d.origSizing)
+  editor.renderer?.invalidateVectorPath(d.nodeId)
+  restoreEditedFields(d, editor)
+  editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
+  editor.requestRender()
+}
+
 export function commitResizePreview(dragState: DragResize, editor: Editor) {
   // See applyResize — reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
-  if (editor.graph.getNode(d.nodeId)?.type !== 'SECTION') {
+  const node = editor.graph.getNode(d.nodeId)
+  // A section resized over layers takes in the ones it now covers, a lock that Control set aside
+  // takes the new size, and an axis that stopped hugging or filling stays fixed, in one undo step.
+  const adoptsLayers = node?.type === 'SECTION'
+  const recaptured = node && d.freesLock ? recapturedAspectRatio(node, node.width, node.height) : {}
+  const fixesSizing =
+    d.origSizing !== undefined &&
+    d.appliedSizing !== undefined &&
+    !isEqual(d.origSizing, d.appliedSizing)
+  if (!adoptsLayers && !recaptured.targetAspectRatio && !fixesSizing) {
     commitResizeGeometry(d, editor)
     return
   }
-  // A section resized over layers takes in the ones it now covers, in the same undo step.
   editor.undo.runBatch('Resize', () => {
+    // Recorded from the sizing the layer started with, so undo puts it back.
+    if (fixesSizing && d.origSizing && d.appliedSizing) {
+      editor.graph.updateNodePreview(d.nodeId, d.origSizing)
+      editor.updateNodeWithUndo(d.nodeId, d.appliedSizing, 'Resize')
+    }
     commitResizeGeometry(d, editor)
-    editor.adoptCoveredLayers(d.nodeId)
+    if (recaptured.targetAspectRatio) editor.updateNodeWithUndo(d.nodeId, recaptured, 'Resize')
+    if (adoptsLayers) editor.adoptCoveredLayers(d.nodeId)
   })
 }
 
@@ -244,6 +346,7 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
   optionalEditorState(editor)?.snapGuides.splice(0)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
+  if (!d.appliedRect || sameRect(d.appliedRect, d.origRect)) restoreEditedFields(d, editor)
   const finalChanges = snapshotResizeFinal(node)
 
   if (d.origChildren) {
@@ -253,22 +356,7 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
       if (!child) continue
       finalChildren.set(childId, snapshotResizeFinal(child))
     }
-    editor.graph.updateNodePreview(d.nodeId, d.origRect)
-    for (const [childId, orig] of d.origChildren) {
-      editor.graph.updateNodePreview(childId, {
-        x: orig.x,
-        y: orig.y,
-        width: orig.width,
-        height: orig.height,
-        vectorNetwork: orig.vectorNetwork,
-        fillGeometry: orig.fillGeometry,
-        strokeGeometry: orig.strokeGeometry,
-        derivedTextGlyphs: orig.derivedTextGlyphs,
-        strokes: orig.strokes,
-        textPathData: orig.textPathData,
-        textPathBox: orig.textPathBox
-      })
-    }
+    restoreResizePreview(d, editor)
     // Resize is geometric — the raw Figma import payload (vectorData,
     // textPathStart, effects, ...) must survive or path-text reflow works
     // exactly once and export fidelity degrades.

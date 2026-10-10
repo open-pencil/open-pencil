@@ -30,6 +30,12 @@
       "import": "./dist/export.js",
       "default": "./dist/export.js"
     },
+    "./scene-graph": {
+      "types": "./dist/scene-graph.d.ts",
+      "bun": "./src/import/scene-graph.ts",
+      "import": "./dist/scene-graph.js",
+      "default": "./dist/scene-graph.js"
+    },
     "./jsx-runtime": {
       "types": "./dist/jsx-runtime.d.ts",
       "bun": "./src/import/jsx/runtime.ts",
@@ -83,6 +89,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "reka-ui": "^2.10.5",
+    "shaders": "4.0.4",
     "storybook": "^10.6.1",
     "tsdown": "^0.22.14",
     "typescript": "~5.8.3",
@@ -99,6 +106,6 @@
     "parse5": "^8.0.1",
     "postcss-value-parser": "^4.2.0",
     "tailwindcss": "^4.3.3",
-    "twirlwind": "^0.4.0"
+    "twirlwind": "^0.4.1"
   }
 }

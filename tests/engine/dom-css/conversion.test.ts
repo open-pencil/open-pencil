@@ -165,7 +165,7 @@ describe('@open-pencil/dom-css conversion', () => {
     const card = page ? graph.getChildren(page.id)[0] : undefined
 
     expect(card?.type).toBe('FRAME')
-    expect(card?.width).toBe(320)
+    expect(card?.width).toBe(320 + 2 * 24 + 2 * 1)
     expect(card?.layoutMode).toBe('VERTICAL')
   })
 
@@ -180,6 +180,7 @@ describe('@open-pencil/dom-css conversion', () => {
     const card = page ? graph.getChildren(page.id)[0] : undefined
 
     expect(card?.type).toBe('FRAME')
+    // Tailwind's preflight makes every box border-box, so padding stays inside.
     expect(card?.width).toBe(320)
     expect(card?.height).toBe(176)
     expect(card?.itemSpacing).toBe(12)
@@ -192,8 +193,8 @@ describe('@open-pencil/dom-css conversion', () => {
 
     const card = page ? graph.getChildren(page.id)[0] : undefined
     expect(card?.type).toBe('FRAME')
-    expect(card?.width).toBe(320)
-    expect(card?.height).toBe(160)
+    expect(card?.width).toBe(320 + 2 * 24)
+    expect(card?.height).toBe(160 + 2 * 24)
     expect(card?.layoutMode).toBe('VERTICAL')
     expect(card?.itemSpacing).toBe(12)
     expect(card?.paddingTop).toBe(24)
@@ -216,8 +217,8 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(card?.type).toBe('FRAME')
     if (card?.type !== 'FRAME') return
-    expect(card.width).toBe(320)
-    expect(card.height).toBe(180)
+    expect(card.width).toBe(320 + 2 * 24 + 2 * 1)
+    expect(card.height).toBe(180 + 2 * 24 + 2 * 1)
     expect(card.layoutMode).toBe('VERTICAL')
     expect(card.itemSpacing).toBe(12)
     expect(card.paddingLeft).toBe(24)
@@ -297,10 +298,8 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(panel?.type).toBe('FRAME')
     if (panel?.type !== 'FRAME') return
-    expect(panel.minWidth).toBe(240)
-    expect(panel.maxWidth).toBe(480)
-    expect(panel.minHeight).toBe(120)
-    expect(panel.maxHeight).toBe(320)
+    // Without a border style, CSS's default none, the borders take no room.
+    expect(panel).toMatchObject({ minWidth: 240, maxWidth: 480, minHeight: 120, maxHeight: 320 })
     expect(panel.clipsContent).toBe(true)
     expect(panel.independentStrokeWeights).toBe(true)
     expect(panel.borderTopWeight).toBe(1)
@@ -321,7 +320,10 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(roundTripPanel?.type).toBe('element')
     if (roundTripPanel?.type !== 'element') return
     expect(roundTripPanel.inlineStyle?.overflow).toBe('hidden')
-    expect(roundTripPanel.inlineStyle?.['min-width']).toBe('240px')
+    expect(roundTripPanel.inlineStyle).toMatchObject({
+      'min-width': '240px',
+      'box-sizing': 'border-box'
+    })
     expect(roundTripPanel.inlineStyle?.['border-top-width']).toBe('1px')
     expect(roundTripPanel.inlineStyle?.['border-left-width']).toBe('4px')
     expect(roundTripPanel.inlineStyle?.['border-bottom-left-radius']).toBe('16px')
@@ -465,7 +467,7 @@ describe('@open-pencil/dom-css conversion', () => {
     })
     const page = graph.getPages()[0]
     const shell = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
-    expect(shell.width).toBe(480)
+    expect(shell.width).toBe(480 + 2 * 32)
     expect(shell.layoutMode).toBe('VERTICAL')
     expect(shell.itemSpacing).toBe(24)
     expect(shell.paddingLeft).toBe(32)
@@ -486,9 +488,9 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(badge.cornerRadius).toBe(9999)
     expect(graph.getChildren(badge.id)[0]?.type).toBe('TEXT')
 
-    expect(dialog.width).toBe(360)
-    expect(dialog.minWidth).toBe(320)
-    expect(dialog.maxWidth).toBe(420)
+    expect(dialog.width).toBe(360 + 2 * 24 + 2 * 1)
+    expect(dialog.minWidth).toBe(320 + 2 * 24 + 2 * 1)
+    expect(dialog.maxWidth).toBe(420 + 2 * 24 + 2 * 1)
     expect(dialog.itemSpacing).toBe(16)
     expect(dialog.effects[0]?.type).toBe('DROP_SHADOW')
     expect(dialog.effects[0]?.radius).toBe(40)
@@ -496,8 +498,8 @@ describe('@open-pencil/dom-css conversion', () => {
     const [, , inputNode, buttonNode] = graph.getChildren(dialog.id)
     const input = expectFrame(inputNode)
     const button = expectFrame(buttonNode)
-    expect(input.width).toBe(312)
-    expect(input.height).toBe(40)
+    expect(input.width).toBe(312 + 2 * 12 + 2 * 1)
+    expect(input.height).toBe(40 + 2 * 1)
     expect(input.cornerRadius).toBe(8)
     expect(button.layoutMode).toBe('HORIZONTAL')
     expect(button.primaryAxisAlign).toBe('CENTER')
@@ -584,7 +586,7 @@ describe('@open-pencil/dom-css conversion', () => {
     if (card?.type !== 'element') return
 
     expect(card.tagName).toBe('div')
-    expect(card.inlineStyle?.width).toBe('320px')
+    expect(card.inlineStyle).toMatchObject({ width: '368px', 'box-sizing': 'border-box' })
     expect(card.inlineStyle?.display).toBe('flex')
     expect(card.inlineStyle?.['flex-direction']).toBe('column')
     expect(card.attrs['data-open-pencil-node-id']).toBeTruthy()

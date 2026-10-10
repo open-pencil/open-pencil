@@ -29,7 +29,7 @@ export const calc = defineTool({
     'Examples: "844 - 56 - 96 - 82", \'["1440 * 8 / 12", "(952 - 16) / 2", "floor(390 * 0.6)"]\'',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     expr: v.pipe(v.string(), v.description('Single expression or JSON array of expressions'))
   }),
   execute: (_figma, { expr }) => {

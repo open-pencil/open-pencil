@@ -49,6 +49,8 @@ test('appearance fields share control height and show variable actions', async (
   const triggerBox = expectDefined(await applyVariable.boundingBox(), 'variable trigger bounds')
   const pickerBox = expectDefined(await picker.boundingBox(), 'variable picker bounds')
   expect(pickerBox.x + pickerBox.width).toBeLessThanOrEqual(triggerBox.x)
+  // Escape closes the picker once it holds focus, as it does for a person.
+  await expect(picker.getByRole('textbox', { name: 'Search…' })).toBeFocused()
   await editor.page.keyboard.press('Escape')
   await expect(picker).toBeHidden()
 
@@ -60,6 +62,7 @@ test('appearance fields share control height and show variable actions', async (
   try {
     await applyVariable.click()
     await expect(picker).toBeVisible()
+    await expect(picker.getByRole('textbox', { name: 'Search…' })).toBeFocused()
     const shifted = expectDefined(await picker.boundingBox(), 'shifted picker bounds')
     expect(shifted.y).toBeGreaterThanOrEqual(0)
     expect(shifted.y + shifted.height).toBeLessThanOrEqual(height)
@@ -155,6 +158,54 @@ test('independent corners toggle shows four corner inputs', async () => {
   await expect(propertyField(editor.page, 'bottomRightRadius')).toBeVisible()
   await expect(propertyField(editor.page, 'bottomLeftRadius')).toBeVisible()
   editor.canvas.assertNoErrors()
+})
+
+test('moving to a neighbouring control shows its tooltip without the delay', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
+
+  const fillItem = propertyItems(editor.page, 'fills').first()
+  const tooltips = editor.page.getByRole('tooltip')
+  await expect(fillItem).toBeVisible()
+  await editor.page.clock.install()
+  await editor.page.clock.pauseAt(Date.now() + 1_000)
+
+  await fillItem.getByRole('button', { name: 'Toggle visibility' }).hover()
+  await editor.page.clock.runFor(500)
+  await expect(tooltips).toHaveText('Toggle visibility')
+
+  await fillItem.getByRole('button', { name: 'Remove fill' }).hover()
+  await editor.page.clock.runFor(50)
+  await expect(tooltips).toHaveText('Remove fill')
+
+  await editor.page.mouse.move(500, 400)
+  await editor.page.clock.runFor(1_000)
+  await fillItem.getByRole('button', { name: 'Toggle visibility' }).hover()
+  await editor.page.clock.runFor(50)
+  await expect(tooltips).toHaveCount(0)
+  await editor.page.clock.resume()
+})
+
+test('a picker focusing its first control on open shows no tooltip until keyboard focus', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
+
+  const fillSwatch = propertyItems(editor.page, 'fills').first().getByTestId('fill-picker-swatch')
+  await expect(fillSwatch).toBeVisible()
+  await editor.page.clock.install()
+  await editor.page.clock.pauseAt(Date.now() + 1_000)
+
+  await fillSwatch.click()
+  await expect(editor.page.getByTestId('fill-picker-tab-solid')).toBeFocused()
+  await editor.page.clock.runFor(1_000)
+  await expect(editor.page.getByRole('tooltip')).toHaveCount(0)
+
+  await editor.page.keyboard.press('Tab')
+  await expect(editor.page.getByTestId('fill-picker-tab-gradient')).toBeFocused()
+  await editor.page.clock.runFor(1_000)
+  await expect(editor.page.getByRole('tooltip')).toHaveText('Linear')
+  await editor.page.keyboard.press('Escape')
+  await editor.page.clock.resume()
 })
 
 test('fill gradient switch changes fill type', async () => {

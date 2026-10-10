@@ -1,10 +1,11 @@
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { IORegistry } from '@open-pencil/core/io'
 
 import { bold, fmtList, kv } from '#cli/format'
+import { CLI_IO_FORMATS } from '#cli/headless'
 
-const io = new IORegistry(BUILTIN_IO_FORMATS)
+const io = new IORegistry(CLI_IO_FORMATS)
 
 function supportLabels(format: ReturnType<IORegistry['listFormats']>[number]): string[] {
   const labels: string[] = []

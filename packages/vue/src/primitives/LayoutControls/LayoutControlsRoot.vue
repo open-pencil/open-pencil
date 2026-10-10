@@ -19,6 +19,7 @@ const actions = {
   setAxisSizing: ctx.setAxisSizing,
   updateAxisSize: ctx.updateAxisSize,
   commitAxisSize: ctx.commitAxisSize,
+  toggleAspectRatioLock: ctx.toggleAspectRatioLock,
   setHorizontalPadding: ctx.setHorizontalPadding,
   commitHorizontalPadding: ctx.commitHorizontalPadding,
   setVerticalPadding: ctx.setVerticalPadding,
@@ -51,6 +52,8 @@ provideLayoutControls(
     :height-sizing="ctx.heightSizing.value"
     :width-sizing-options="ctx.widthSizingOptions.value"
     :height-sizing-options="ctx.heightSizingOptions.value"
+    :aspect-ratio-locked="ctx.aspectRatioLocked.value"
+    :aspect-ratio-lockable="ctx.aspectRatioLockable.value"
     :align-grid="ctx.alignGrid.value"
     :show-individual-padding="ctx.showIndividualPadding.value"
     :has-uniform-padding="ctx.hasUniformPadding.value"

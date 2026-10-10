@@ -45,6 +45,9 @@ export function handleToolMouseDown({
     return
   }
 
+  // Comments are placed by the app's comments layer above the canvas.
+  if (tool === 'COMMENT') return
+
   if (tool === 'SELECT') {
     handleSelectDown(
       event,

@@ -32,7 +32,8 @@ test('reads appearance from the theme and locale stores alongside app preference
   expect(settings.appearance).toEqual({
     theme: 'light',
     language: 'de',
-    animations: appPreferences.value.appearance.animations
+    animations: appPreferences.value.appearance.animations,
+    accent: appPreferences.value.appearance.accent
   })
   expect(settings.editing).toEqual(appPreferences.value.editing)
   expect(settings).not.toHaveProperty('version')
@@ -80,4 +81,19 @@ test.each([
   const before = readAutomationSettings()
   expect(() => updateAutomationSettings(patch)).toThrow(`Invalid settings at "${path}"`)
   expect(readAutomationSettings()).toEqual(before)
+})
+
+test('sets a preset or custom accent and rejects one that is not a color', () => {
+  expect(
+    updateAutomationSettings({ appearance: { accent: { kind: 'preset', preset: 'purple' } } })
+      .appearance.accent
+  ).toEqual({ kind: 'preset', preset: 'purple' })
+  expect(
+    updateAutomationSettings({ appearance: { accent: { kind: 'custom', color: '#ff6600' } } })
+      .appearance.accent
+  ).toEqual({ kind: 'custom', color: '#FF6600' })
+  expect(() =>
+    updateAutomationSettings({ appearance: { accent: { kind: 'custom', color: 'orange' } } })
+  ).toThrow('appearance.accent')
+  expect(appPreferences.value.appearance.accent).toEqual({ kind: 'custom', color: '#FF6600' })
 })

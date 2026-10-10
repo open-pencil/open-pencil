@@ -75,6 +75,7 @@ export type {
   FlatReorderAxis,
   FlatReorderInstruction,
   FlatReorderItem,
+  FlatReorderOperations,
   UseFlatReorderDragOptions
 } from '#vue/shared/drag/useFlatReorderDrag'
 export { useInlineRename } from '#vue/editor/inline-rename/use'
@@ -102,6 +103,13 @@ export type { TestId } from '#vue/testing/test-id'
 /** Property-panel composables. */
 export { usePosition } from '#vue/controls/position/use'
 export { useLayout } from '#vue/controls/layout/use'
+export { useSelectionColors } from '#vue/controls/selection-colors/use'
+export {
+  LAYOUT_CONTAINER_TYPES,
+  textResizeMode,
+  useSelectionLayout
+} from '#vue/controls/selection-layout/use'
+export type { TextResizeMode } from '#vue/controls/selection-layout/use'
 export type { LayoutAxis, SizeLimitProp } from '#vue/controls/layout/helpers'
 export { useAppearance } from '#vue/controls/appearance/use'
 export { useMask } from '#vue/controls/mask/use'
@@ -118,6 +126,21 @@ export type {
 export { useExport } from '#vue/document/export/use'
 export type { ExportFormatId, ExportFormatOption, ExportSetting } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
+export { canDrawShaders, createShaderRasterizer } from '#vue/canvas/surface/shader-rasterizer'
+export {
+  addShaderEffect,
+  DEFAULT_SHADER_EFFECT,
+  DEFAULT_SHADER_PRESET,
+  loadShaderCatalog,
+  moveShaderEffect,
+  parseShaderPreset,
+  removeShaderEffect,
+  setShaderEffectProp,
+  shaderEffectLabel,
+  shaderEffectPreview,
+  shaderPresetJSON
+} from '#vue/controls/shader'
+export type { ShaderEffect, ShaderPropControl } from '#vue/controls/shader'
 export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
 export { useNumberVariableBinding } from '#vue/controls/number-variable-binding/use'
 export type { NumberBindingPath } from '#vue/controls/number-variable-binding/use'
@@ -417,7 +440,13 @@ export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
 export type { ToolbarContext } from '#vue/primitives/Toolbar'
 
 /** DOM event helpers for cast-free template bindings. */
-export { blurTarget, inputNumberValue, inputValue, selectTarget } from '#vue/shared/dom-events'
+export {
+  blurTarget,
+  inputChecked,
+  inputNumberValue,
+  inputValue,
+  selectTarget
+} from '#vue/shared/dom-events'
 
 /** Internationalization. */
 export * from '#vue/i18n'

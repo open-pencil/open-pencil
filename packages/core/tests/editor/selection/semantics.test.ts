@@ -7,6 +7,31 @@ function renameOptions(replacement: string, match = '', startNumber = 1) {
 }
 
 describe('selection semantics', () => {
+  // Figma desktop 126: a layer and its own ancestor are never selected together.
+  test('a plain selection keeps the outermost of nested layers', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, { name: 'Frame' })
+    const child = editor.graph.createNode('RECTANGLE', frame.id, { name: 'Child' })
+    editor.select([child.id, frame.id])
+    expect(editor.state.selectedIds).toEqual(new Set([frame.id]))
+  })
+
+  test('adding a layer replaces its selected ancestors and descendants', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, { name: 'Frame' })
+    const child = editor.graph.createNode('RECTANGLE', frame.id, { name: 'Child' })
+    const other = editor.graph.createNode('RECTANGLE', pageId, { name: 'Other' })
+    editor.select([frame.id, other.id])
+    editor.select([child.id], true)
+    expect(editor.state.selectedIds).toEqual(new Set([other.id, child.id]))
+    editor.select([frame.id], true)
+    expect(editor.state.selectedIds).toEqual(new Set([other.id, frame.id]))
+    editor.select([frame.id], true)
+    expect(editor.state.selectedIds).toEqual(new Set([other.id]))
+  })
+
   test('selectInverse selects unselected top-level layers', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId

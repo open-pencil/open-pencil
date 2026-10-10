@@ -27,9 +27,18 @@ function handleAlign(
 
 <template>
   <PositionControlsRoot
-    v-slot="{ active, isMulti, xValue, yValue, wValue, hValue, rotationValue, actions }"
+    v-slot="{ active, xValue, yValue, rotationValue, inAutoLayout, ignoresAutoLayout, actions }"
   >
     <PanelSection v-if="active" :label="panels.position">
+      <template v-if="inAutoLayout" #actions>
+        <IconButton
+          :label="panels.ignoreAutoLayout"
+          :active="ignoresAutoLayout"
+          @click="actions.toggleIgnoreAutoLayout"
+        >
+          <icon-lucide-scan class="size-3.5" />
+        </IconButton>
+      </template>
       <div role="toolbar" :aria-label="panels.position" class="mb-1.5 flex justify-between">
         <div class="flex gap-0.5">
           <IconButton
@@ -100,33 +109,6 @@ function handleAlign(
             @update:model-value="actions.updateProp('y', $event)"
             @commit="(v: number, p: number) => actions.commitProp('y', v, p)"
             @cancel="actions.cancelProp('y')"
-          />
-        </Tip>
-      </PanelGrid>
-
-      <PanelGrid v-if="isMulti" :columns="2" class="mt-1.5">
-        <Tip :label="panels.width">
-          <NumberField
-            icon="W"
-            data-property="width"
-            :aria-label="panels.width"
-            :model-value="wValue"
-            :min="1"
-            @update:model-value="actions.updateProp('width', $event)"
-            @commit="(v: number, p: number) => actions.commitProp('width', v, p)"
-            @cancel="actions.cancelProp('width')"
-          />
-        </Tip>
-        <Tip :label="panels.height">
-          <NumberField
-            icon="H"
-            data-property="height"
-            :aria-label="panels.height"
-            :model-value="hValue"
-            :min="1"
-            @update:model-value="actions.updateProp('height', $event)"
-            @commit="(v: number, p: number) => actions.commitProp('height', v, p)"
-            @cancel="actions.cancelProp('height')"
           />
         </Tip>
       </PanelGrid>

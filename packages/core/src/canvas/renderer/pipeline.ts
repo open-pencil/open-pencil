@@ -72,6 +72,7 @@ export function renderFromEditorState(
   r.showRulers = showRulers
   r.pageColor = state.pageColor
   r.rulerTheme = state.rulerTheme ?? null
+  r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation
@@ -85,6 +86,8 @@ export function renderFromEditorState(
       playing: previewing,
       playIslands: previewing ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: previewing ? null : state.hoveredNodeId,
+      showPixelGrid: !previewing && state.showPixelGrid !== false,
+      gradientEdit: state.gradientEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
@@ -107,7 +110,8 @@ export function renderFromEditorState(
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,
       codeFocusNodeId: state.codeFocusNodeId,
-      autoLayoutHover: state.autoLayoutHover
+      autoLayoutHover: state.autoLayoutHover,
+      shapeHandleHover: state.shapeHandleHover
     },
     // Recorded pictures follow what the canvas draws, not every document change.
     state.canvasVersion,

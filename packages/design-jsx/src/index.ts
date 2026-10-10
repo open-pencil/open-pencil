@@ -68,10 +68,12 @@ export {
   gradient,
   linearGradient,
   radialGradient,
+  shader,
   solid,
   type GradientPaintOptions,
   type PaintColor,
   type PaintStop,
+  type ShaderFill,
   type SolidPaintOptions
 } from './paints'
 

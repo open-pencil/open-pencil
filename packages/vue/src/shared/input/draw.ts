@@ -30,11 +30,14 @@ function startDraw(
   editor.undo.beginBatch(label)
   const parentId = findDrawParent(cx, cy, type, editor)
   const toLocal = parentSpace(editor, parentId)
-  const start = toLocal(cx, cy)
+  // Figma rounds both corners of a drawn layer to whole pixels.
+  const snap = editor.state.snappingPreferences.pixelGrid ? Math.round : (value: number) => value
+  const local = toLocal(cx, cy)
+  const start = { x: snap(local.x), y: snap(local.y) }
   const nodeId = editor.createShape(type, start.x, start.y, 0, 0, parentId)
   if (type === 'TEXT') editor.graph.updateNode(nodeId, { text: '' })
   editor.select([nodeId])
-  setDrag(createDraw(editor, nodeId, start.x, start.y, toLocal, type === 'LINE'))
+  setDrag(createDraw(editor, nodeId, start.x, start.y, toLocal, type === 'LINE', snap))
 }
 
 export function startTextDraw(
@@ -70,8 +73,8 @@ function lineGeometry(d: DragDraw, dx: number, dy: number, shiftKey: boolean): P
 
 export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean) {
   const point = d.toLocal(cx, cy)
-  let w = point.x - d.startX
-  let h = point.y - d.startY
+  let w = d.snap(point.x) - d.startX
+  let h = d.snap(point.y) - d.startY
   if (d.line) {
     d.update(lineGeometry(d, w, h, shiftKey))
     return
@@ -115,7 +118,8 @@ function createDraw(
   startX: number,
   startY: number,
   toLocal: DragDraw['toLocal'],
-  line: boolean
+  line: boolean,
+  snap: DragDraw['snap']
 ): DragDraw {
   const graph = editor.graph
   const preview = editor.beginNodePreview('Draw dimensions')
@@ -171,6 +175,7 @@ function createDraw(
     startY,
     toLocal,
     line,
+    snap,
     nodeId,
     update: (changes) => {
       if (!finished) preview.update(nodeId, changes)

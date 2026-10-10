@@ -3,11 +3,7 @@ import * as v from 'valibot'
 import { behaviourSpecSchema } from '@open-pencil/scene-graph'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { defineTool } from '#core/tools/schema'
-
-const failure = (error: unknown) => ({
-  error: error instanceof Error ? error.message : String(error)
-})
+import { defineTool, toolFailure } from '#core/tools/schema'
 
 export const setBehaviour = defineTool({
   name: 'set_behaviour',
@@ -19,7 +15,7 @@ export const setBehaviour = defineTool({
     'Returns the behaviour and the required values and parts still missing; get_behaviour lists ' +
     'every kind with its values and parts.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(
       v.string(),
       v.description('Main component or component set ID; a variant uses its set')
@@ -36,7 +32,7 @@ export const setBehaviour = defineTool({
       openpencil.getBehaviour(id)?.remove()
       return { ok: true }
     } catch (error) {
-      return failure(error)
+      return toolFailure(error)
     }
   }
 })
@@ -47,14 +43,14 @@ export const createSlot = defineTool({
     'Make a frame inside a main component a slot, as Create slot does: instances can then hold ' +
     'their own content in it, and a behaviour can bind it as a part. Returns the slot name.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: v.pipe(v.string(), v.description('Frame ID inside a main component'))
   }),
   execute: (figma, { id }) => {
     try {
       return { slot: new OpenPencilAPI(figma).createSlot(id) }
     } catch (error) {
-      return failure(error)
+      return toolFailure(error)
     }
   }
 })
@@ -66,7 +62,7 @@ export const getBehaviour = defineTool({
     'names, with the required values and parts still missing. Without an ID, list every ' +
     'behaviour kind with the values and parts it binds.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     id: v.optional(v.pipe(v.string(), v.description('Component, set, or variant ID')))
   }),
   execute: (figma, { id }) => {
@@ -75,7 +71,7 @@ export const getBehaviour = defineTool({
     try {
       return openpencil.getBehaviour(id)?.toJSON() ?? { behaviour: null }
     } catch (error) {
-      return failure(error)
+      return toolFailure(error)
     }
   }
 })

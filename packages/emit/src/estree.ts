@@ -108,6 +108,15 @@ export const identifier = (name: string): SyntaxNode => ({ type: 'Identifier', n
 
 export const string = (value: string): SyntaxNode => ({ type: 'Literal', value })
 
+/** A finite number, with a negative one written as `-` before its magnitude, as source does. */
+export function number(value: number): SyntaxNode {
+  if (!Number.isFinite(value)) throw new Error(`Not a finite number: ${value}`)
+  const literal = { type: 'Literal', value: Math.abs(value) }
+  return value < 0
+    ? { type: 'UnaryExpression', operator: '-', prefix: true, argument: literal }
+    : literal
+}
+
 const propertyKey = (key: string) =>
   /^[A-Za-z_$][\w$]*$/.test(key) ? identifier(key) : string(key)
 
@@ -127,6 +136,20 @@ export function object(entries: (readonly [string, SyntaxNode])[]): SyntaxNode {
 }
 
 export const array = (elements: SyntaxNode[]): SyntaxNode => ({ type: 'ArrayExpression', elements })
+
+/**
+ * A value read from JSON written as source: strings, finite numbers, booleans, null, and lists
+ * and objects of them. Anything else, such as a function or an infinite number, is null.
+ */
+export function json(value: unknown): SyntaxNode {
+  if (typeof value === 'string') return string(value)
+  if (typeof value === 'number') return Number.isFinite(value) ? number(value) : json(null)
+  if (typeof value === 'boolean' || value === null) return { type: 'Literal', value }
+  if (Array.isArray(value)) return array(value.map(json))
+  if (typeof value === 'object')
+    return object(Object.entries(value).map(([key, item]) => [key, json(item)]))
+  return json(null)
+}
 
 /** A call of a function by name, such as a helper inside an exported prop value. */
 export const call = (callee: string, args: SyntaxNode[]): SyntaxNode => ({

@@ -27,6 +27,10 @@ export interface StoryProp {
 export interface StoryModuleData {
   framework: StorybookFramework
   title: string
+  /** Tags on the whole file, which its stories inherit. */
+  tags: string[]
+  /** Stylesheets the file imports, such as the fonts its text uses. */
+  styles: string[]
   /** Group name used in the missing-variant error. */
   name: string
   props: StoryProp[]
@@ -34,7 +38,15 @@ export interface StoryModuleData {
   metaDesign: StoryDesign[]
   /** Import path of each design image, by variant index. */
   images: string[]
-  stories: { exportName: string; label: string; values: string[]; design: StoryDesign[] }[]
+  /** Every variant laid out in one story, each with its label as escaped HTML, if a gallery. */
+  gallery: { values: string[]; label: string }[] | null
+  stories: {
+    exportName: string
+    label: string
+    values: string[]
+    design: StoryDesign[]
+    tags: string[]
+  }[]
 }
 
 export type StoryDesign =
@@ -58,6 +70,7 @@ const MODULE = es.parseModule(dedent`
 
   const meta = {
     title: $title,
+    tags: $tags,
     parameters: $parameters,
     args: $args,
     argTypes: $argTypes,
@@ -68,8 +81,31 @@ const MODULE = es.parseModule(dedent`
   type Story = StoryObj<Args>
 `)
 
+const GALLERY = es.parseModule(dedent`
+  const labels: [string, string][] = $labels
+
+  function galleryHTML(): string {
+    const items = labels.map(
+      ([key, label]) =>
+        '<figure style="margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px">' +
+        (variants[key] ?? '') +
+        '<figcaption style="font: 12px system-ui, sans-serif; color: #6b7280">' +
+        label +
+        '</figcaption></figure>'
+    )
+    return (
+      '<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px">' +
+      items.join('') +
+      '</div>'
+    )
+  }
+
+  export const Gallery: Story = { name: 'Gallery', render: () => $render }
+`)
+
 const IMAGE = es.parseModule(`const $name = new URL($path, import.meta.url).href`)
 const STORY = es.parseModule(`export const $name: Story = $story`)
+const STYLESHEET = es.parseModule(`import '$path'`)
 
 /** The Storybook renderer package each framework's stories import their types from. */
 export const STORYBOOK_PACKAGES: Record<StorybookFramework, string> = {
@@ -78,25 +114,27 @@ export const STORYBOOK_PACKAGES: Record<StorybookFramework, string> = {
   html: '@storybook/html-vite'
 }
 
+/** How each framework renders a string of HTML, `$html`, as a story. */
 const FRAMEWORKS: Record<StorybookFramework, { imports: es.SyntaxNode[]; render: es.SyntaxNode }> =
   {
     react: {
       imports: es.parseModule(`import { createElement } from 'react'`).body,
       render: es.parseExpression(
-        `createElement('div', { dangerouslySetInnerHTML: { __html: variantHTML(args) } })`
+        `createElement('div', { dangerouslySetInnerHTML: { __html: $html } })`
       )
     },
     vue: {
       imports: es.parseModule(`import { h } from 'vue'`).body,
-      render: es.parseExpression(
-        `{ setup: () => () => h('div', { innerHTML: variantHTML(args) }) }`
-      )
+      render: es.parseExpression(`{ setup: () => () => h('div', { innerHTML: $html }) }`)
     },
     html: {
       imports: [],
-      render: es.parseExpression('variantHTML(args)')
+      render: es.parseExpression('$html')
     }
   }
+
+const rendered = (framework: StorybookFramework, html: string) =>
+  es.fill(FRAMEWORKS[framework].render, { $html: es.parseExpression(html) })
 
 const imageName = (variant: number) => `design${variant}`
 
@@ -214,6 +252,10 @@ function argsType(data: StoryModuleData): es.SyntaxNode {
   return es.objectType(entries)
 }
 
+/** `import './fonts/kit/fonts.css'` for each stylesheet, which the bundler loads with the stories. */
+export const stylesheets = (paths: readonly string[]) =>
+  paths.flatMap((path) => es.fill(STYLESHEET, { $path: es.string(path) }).body)
+
 /** Print a CSF3 story module for one component or component set. */
 export function printStoryModule(data: StoryModuleData): string {
   const framework = FRAMEWORKS[data.framework]
@@ -226,10 +268,11 @@ export function printStoryModule(data: StoryModuleData): string {
     $key: es.array(data.props.map((prop) => propValue(data, prop))),
     $missing: es.string(`${data.name} has no variant `),
     $title: es.string(data.title),
+    $tags: es.array(data.tags.map(es.string)),
     $parameters: data.metaDesign.length > 0 ? parameters(data.metaDesign) : es.OMIT,
     $args: argsObject(data, data.variants[0]?.values ?? []),
     $argTypes: argTypes(data),
-    $render: framework.render
+    $render: rendered(data.framework, 'variantHTML(args)')
   }).body
   const images = data.images.flatMap(
     (path, i) =>
@@ -241,15 +284,36 @@ export function printStoryModule(data: StoryModuleData): string {
         $name: es.identifier(story.exportName),
         $story: es.object([
           ['name', es.string(story.label)],
+          ...(story.tags.length > 0
+            ? [['tags', es.array(story.tags.map(es.string))] as const]
+            : []),
           ...(story.design.length > 0 ? [['parameters', parameters(story.design)] as const] : []),
           ['args', argsObject(data, story.values)]
         ])
       }).body
   )
+  const gallery = data.gallery
+    ? es.fill(GALLERY, {
+        $labels: es.array(
+          data.gallery.map((item) =>
+            es.array([es.string(JSON.stringify(item.values)), es.string(item.label)])
+          )
+        ),
+        $render: rendered(data.framework, 'galleryHTML()')
+      }).body
+    : []
   const module = es.printModule({
     type: 'Program',
     sourceType: 'module',
-    body: [storybookImport, ...framework.imports, ...images, ...body, ...stories]
+    body: [
+      storybookImport,
+      ...framework.imports,
+      ...stylesheets(data.styles),
+      ...images,
+      ...body,
+      ...stories,
+      ...gallery
+    ]
   })
   return `${HEADER}\n${module}\n`
 }

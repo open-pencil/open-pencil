@@ -13,12 +13,14 @@ import {
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
+import PaintField from '@/components/inputs/PaintField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import fillPickerTheme from '@/theme/fill-picker'
 
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()
+const activeStop = defineModel<number>('activeStop')
 const { panels, editor } = useI18n()
 const fillPicker = tv(fillPickerTheme)
 
@@ -32,7 +34,12 @@ function listStopClass(active: boolean) {
 </script>
 
 <template>
-  <GradientEditorRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
+  <GradientEditorRoot
+    v-model:active-stop-index="activeStop"
+    :fill="fill"
+    @update="emit('update', $event)"
+    v-slot="root"
+  >
     <div>
       <div class="mb-2 w-28">
         <AppSelect
@@ -97,7 +104,8 @@ function listStopClass(active: boolean) {
           v-slot="s"
         >
           <NumberField
-            class="w-11"
+            class="w-14 flex-none"
+            :ui="{ leading: 'hidden', field: 'pl-1.5', display: 'pl-1.5' }"
             suffix="%"
             :model-value="s.positionPercent"
             :min="0"
@@ -105,27 +113,29 @@ function listStopClass(active: boolean) {
             @update:model-value="s.actions.updatePosition(Number($event))"
             @click.stop
           />
-          <button
-            class="size-4 shrink-0 cursor-pointer rounded border border-border p-0"
-            :style="{ background: s.css }"
-            @click.stop="s.actions.select"
-          />
-          <input
-            class="min-w-0 flex-1 rounded border border-border bg-input px-1 py-0.5 font-mono text-[11px] text-surface"
-            :value="s.hex"
-            maxlength="6"
-            @change="s.actions.updateColor(inputValue($event))"
+          <PaintField
+            :opacity="s.opacityPercent / 100"
+            :opacity-label="panels.opacity"
+            @update:opacity="s.actions.updateOpacity($event * 100)"
             @click.stop
-          />
-          <NumberField
-            class="w-9"
-            suffix="%"
-            :model-value="s.opacityPercent"
-            :min="0"
-            :max="100"
-            @update:model-value="s.actions.updateOpacity(Number($event))"
-            @click.stop
-          />
+          >
+            <template #preview>
+              <button
+                class="size-4 shrink-0 cursor-pointer rounded border border-border p-0"
+                :style="{ background: s.css }"
+                @click.stop="s.actions.select"
+              />
+            </template>
+            <template #value>
+              <input
+                class="min-w-0 flex-1 border-none bg-transparent font-mono text-[11px] text-surface outline-none"
+                :value="s.hex"
+                maxlength="6"
+                @change="s.actions.updateColor(inputValue($event))"
+                @click.stop
+              />
+            </template>
+          </PaintField>
           <IconButton
             v-if="root.stops.length > 2"
             :label="editor.removeGradientStop"

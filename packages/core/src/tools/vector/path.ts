@@ -37,7 +37,7 @@ export const pathSet = defineTool({
 
   description: 'Set vector path data on a node. Provide a VectorNetwork JSON.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     path: v.pipe(v.string(), v.description('VectorNetwork JSON'))
   }),
@@ -56,7 +56,7 @@ export const pathScale = defineTool({
 
   description: 'Scale vector path from center.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     factor: toolNumber(v.pipe(v.number(), v.description('Scale factor (e.g. 2 for double)')))
   }),
@@ -87,7 +87,7 @@ export const pathFlip = defineTool({
 
   description: 'Flip vector path horizontally or vertically.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     axis: v.pipe(v.picklist(['horizontal', 'vertical']), v.description('Flip axis'))
   }),
@@ -118,7 +118,7 @@ export const pathMove = defineTool({
 
   description: 'Move all path points by an offset.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     dx: toolNumber(v.pipe(v.number(), v.description('X offset'))),
     dy: toolNumber(v.pipe(v.number(), v.description('Y offset')))

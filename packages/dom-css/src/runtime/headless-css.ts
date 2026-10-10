@@ -119,46 +119,74 @@ function resolveSimpleCalc(value: string): string {
   return `${unit === 'rem' ? base * multiplier * 16 : base * multiplier}px`
 }
 
+const BORDER_STYLES = new Set([
+  'none',
+  'hidden',
+  'dotted',
+  'dashed',
+  'solid',
+  'double',
+  'groove',
+  'ridge',
+  'inset',
+  'outset'
+])
+
+/**
+ * Shorthands as the longhands they set, in declaration order, so a later declaration wins over
+ * an earlier one whether it is a shorthand, a logical side, or a single side, as in CSS.
+ */
 function expandStyleShorthands(style: DesignStyleDeclaration): DesignStyleDeclaration {
-  const result = { ...style }
-  expandBoxShorthand(result, 'margin')
-  expandBoxShorthand(result, 'padding')
-  expandBorderShorthand(result)
-  expandBackgroundShorthand(result)
+  const result: DesignStyleDeclaration = {}
+  for (const [property, value] of Object.entries(style)) {
+    result[property] = value
+    Object.assign(result, longhandsOf(property, value))
+  }
   return result
 }
 
-function expandBoxShorthand(style: DesignStyleDeclaration, property: 'margin' | 'padding') {
-  const value = style[property]
-  if (!value) return
-
-  const parts = splitCSSValue(value)
-  const [top, right = top, bottom = top, left = right] = parts
-  if (!top || !right || !bottom || !left) return
-
-  style[`${property}-top`] ??= top
-  style[`${property}-right`] ??= right
-  style[`${property}-bottom`] ??= bottom
-  style[`${property}-left`] ??= left
+function longhandsOf(property: string, value: string): DesignStyleDeclaration {
+  if (property === 'margin' || property === 'padding') return boxSides(property, value)
+  const logical = /^(margin|padding)-(inline|block)$/u.exec(property)
+  if (logical) return logicalSides(property, value, logical[2] === 'inline')
+  if (property === 'border') return borderLonghands(value)
+  if (property === 'background') {
+    const color = splitCSSValue(value).find(isColor)
+    return color ? { 'background-color': color } : {}
+  }
+  return {}
 }
 
-function expandBorderShorthand(style: DesignStyleDeclaration) {
-  const value = style.border
-  if (!value) return
+function boxSides(property: string, value: string): DesignStyleDeclaration {
+  const [top, right = top, bottom = top, left = right] = splitCSSValue(value)
+  if (!top || !right || !bottom || !left) return {}
+  return {
+    [`${property}-top`]: top,
+    [`${property}-right`]: right,
+    [`${property}-bottom`]: bottom,
+    [`${property}-left`]: left
+  }
+}
 
+/** `padding-inline` and `padding-block` as the sides they set in left-to-right, horizontal text. */
+function logicalSides(property: string, value: string, inline: boolean): DesignStyleDeclaration {
+  const box = property.slice(0, property.lastIndexOf('-'))
+  const [first, second = first] = splitCSSValue(value)
+  if (!first || !second) return {}
+  const [start, end] = inline ? ['left', 'right'] : ['top', 'bottom']
+  return { [`${box}-${start}`]: first, [`${box}-${end}`]: second }
+}
+
+function borderLonghands(value: string): DesignStyleDeclaration {
   const parts = splitCSSValue(value)
+  const longhands: DesignStyleDeclaration = {}
   const color = parts.find(isColor)
   const width = parts.find((part) => parseCSSNumber(part) !== null)
-  if (color) style['border-color'] ??= color
-  if (width) style['border-width'] ??= width
-}
-
-function expandBackgroundShorthand(style: DesignStyleDeclaration) {
-  const value = style.background
-  if (!value || style['background-color']) return
-
-  const color = splitCSSValue(value).find(isColor)
-  if (color) style['background-color'] = color
+  const style = parts.find((part) => BORDER_STYLES.has(part.toLowerCase()))
+  if (color) longhands['border-color'] = color
+  if (width) longhands['border-width'] = width
+  if (style) longhands['border-style'] = style.toLowerCase()
+  return longhands
 }
 
 /** Any CSS color, including `transparent`, which a shorthand may set on purpose. */
@@ -178,9 +206,8 @@ function elementId(element: DesignElement): string | undefined {
 function selectorSpecificity(selector: string): number {
   const idCount = selector.match(/#[\w-]+/g)?.length ?? 0
   const classCount = selector.match(/\.[\w-]+/g)?.length ?? 0
-  const tagCount = selector
-    .split(/[\s>]+/)
-    .filter((part) => part && !part.startsWith('.') && !part.startsWith('#')).length
+  // A tag counts once per compound; the universal selector, alone or as in `*.card`, counts zero.
+  const tagCount = selector.split(/[\s>]+/).filter((part) => /^[a-z]/iu.test(part)).length
   return idCount * 100 + classCount * 10 + tagCount
 }
 
@@ -195,7 +222,8 @@ function matchesSimpleSelector(element: DesignElement, selector: string): boolea
   if (!classes.every((name) => elementClasses.has(name.slice(1)))) return false
 
   const tag = selector.replace(/#[\w-]+/g, '').replace(/\.[\w-]+/g, '')
-  return tag.length === 0 || element.tagName.toLowerCase() === tag.toLowerCase()
+  // The universal selector, as Tailwind's preflight uses for `box-sizing`, matches any element.
+  return tag.length === 0 || tag === '*' || element.tagName.toLowerCase() === tag.toLowerCase()
 }
 
 function matchesSelector(

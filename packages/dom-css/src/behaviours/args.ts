@@ -1,7 +1,9 @@
 import {
   behaviourProperties,
   readBehaviour,
+  type Behaviour,
   type BehaviourKind,
+  type ComponentPropertyDefinition,
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -24,6 +26,11 @@ export interface BehaviourArgs {
    * disabled prop shows, if the set draws it.
    */
   states?: { property: string; rest: string; disabled?: string }
+  /**
+   * The variant property that draws a field with text, which the field shows while its input
+   * has text rather than taking as a prop.
+   */
+  filled?: { property: string; on: string; off: string }
 }
 
 /** Values a behaviour derives from others instead of taking as props. */
@@ -32,6 +39,19 @@ const DERIVED_VALUES = new Set(['filled'])
 function booleanArgName(kind: BehaviourKind, valueId: string): string {
   if (valueId !== 'value') return valueId
   return kind === 'toggle' ? 'pressed' : 'checked'
+}
+
+/** The variant property a field's `filled` value draws, with its on and off values. */
+function filledArg(
+  behaviour: Behaviour,
+  variant: (id: string) => ComponentPropertyDefinition | undefined
+): BehaviourArgs['filled'] {
+  const binding = Object.hasOwn(behaviour.booleans, 'filled')
+    ? behaviour.booleans.filled
+    : undefined
+  const definition = binding && variant(binding.propertyId)
+  if (!definition || binding.on === undefined || binding.off === undefined) return undefined
+  return { property: definition.name, on: binding.on, off: binding.off }
 }
 
 /**
@@ -62,5 +82,6 @@ export function behaviourArgs(graph: SceneGraph, set: SceneNode): BehaviourArgs 
         disabled: behaviour.states?.disabled
       }
     : undefined
-  return { booleans, states }
+  const filled = filledArg(behaviour, variant)
+  return { booleans, states, ...(filled ? { filled } : {}) }
 }

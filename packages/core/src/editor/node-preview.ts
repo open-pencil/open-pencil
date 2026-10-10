@@ -1,4 +1,4 @@
-import { isEqual, pick } from 'es-toolkit'
+import { isEqual, pick, uniq } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -29,19 +29,31 @@ export function createNodePreviewActions(
     const originals = new Map<string, Partial<SceneNode>>()
     const targets = new Set<string>()
     const layoutOnly = new Set<string>()
+    const editedBefore = new Map<string, string[]>()
     let closed = false
     let endInteraction: (() => void) | undefined
     const subscriptions: Array<() => void> = []
 
     function capture(node: SceneNode, changes: Partial<SceneNode>) {
       if (!originals.has(node.id) && graph.isApplyingLayout) layoutOnly.add(node.id)
-      if (!graph.isApplyingLayout) layoutOnly.delete(node.id)
+      if (!graph.isApplyingLayout) {
+        layoutOnly.delete(node.id)
+        markEdited(node, changes)
+      }
       const previous = originals.get(node.id) ?? {}
       const keys = (Object.keys(changes) as (keyof SceneNode)[]).filter(
         (key) => !Object.hasOwn(previous, key)
       )
       if (keys.length) Object.assign(previous, structuredClone(pick(node, keys)))
       originals.set(node.id, previous)
+    }
+
+    // Fields count as edited while previewed, as a committed edit marks them, so the preview's
+    // own layout stops keeping geometry a file saved; cancel takes the marks back.
+    function markEdited(node: SceneNode, changes: Partial<SceneNode>) {
+      if (graph.isPreservingSourceMetadata) return
+      if (!editedBefore.has(node.id)) editedBefore.set(node.id, node.source.editedFields)
+      node.source.editedFields = uniq([...node.source.editedFields, ...Object.keys(changes)])
     }
 
     function close() {
@@ -106,6 +118,10 @@ export function createNodePreviewActions(
         close()
         for (const [id, previous] of originals)
           graph.updateNodePreview(id, structuredClone(previous))
+        for (const [id, fields] of editedBefore) {
+          const node = graph.getNode(id)
+          if (node) node.source.editedFields = fields
+        }
         // Reconcile retained/tiled resources once; cancellation publishes no committed node edits.
         if (originals.size) ctx.requestRender()
       }

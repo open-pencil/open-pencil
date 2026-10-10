@@ -5,7 +5,9 @@ description: Read and update font, alignment, case, truncation, and OpenType fea
 
 # useTypography
 
-`useTypography()` is the text-property control composable for text editing panels.
+`useTypography()` is the text-property control composable for text editing panels. It works on the
+text layers in the selection: `nodes` holds them, `node` is the first, and every action changes all
+of them in one undo step, so a selection of text and other layers edits only the text.
 
 It exposes:
 
@@ -19,6 +21,7 @@ It exposes:
 - ending truncation and maximum lines
 - OpenType feature toggles
 - helpers for changing family, weight, alignment, and decorations
+- `merged(key)` and `fontFeature(tag)`, which return the shared value or `MIXED`
 
 ## Usage
 

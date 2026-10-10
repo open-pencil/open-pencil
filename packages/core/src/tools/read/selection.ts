@@ -13,7 +13,7 @@ export const getSelection = defineTool({
     'Get the selected nodes: the place to start when the user points at layers. Returns each selected node with its direct children by default; children past the depth are counted as childCount. Use get_node or describe for deeper branches.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     depth: v.optional(
       toolNumber(
         v.pipe(
@@ -38,7 +38,7 @@ export const selectNodes = defineTool({
 
   description: 'Select one or more nodes by ID.',
   execution: { kind: 'sync', mutation: 'view' },
-  input: v.object({
+  input: v.strictObject({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Node IDs to select'))
   }),
   execute: (figma, { ids }) => {

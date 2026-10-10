@@ -4,7 +4,15 @@ import type { createUndoActions } from '#core/editor/undo'
 type SelectionActions = ReturnType<typeof createSelectionActions>
 type UndoActions = ReturnType<typeof createUndoActions>
 
-export function createUndoBridge(undoActions: UndoActions, selection: SelectionActions) {
+/**
+ * `flushPending` commits edits still being coalesced, such as a run of arrow keys, so undo right
+ * after them undoes the run, not the edit before it.
+ */
+export function createUndoBridge(
+  undoActions: UndoActions,
+  selection: SelectionActions,
+  flushPending: () => void
+) {
   return {
     commitMove: undoActions.commitMove,
     commitMoveWithReparent: undoActions.commitMoveWithReparent,
@@ -13,8 +21,14 @@ export function createUndoBridge(undoActions: UndoActions, selection: SelectionA
     commitGroupResize: undoActions.commitGroupResize,
     commitRotation: undoActions.commitRotation,
     commitNodeUpdate: undoActions.commitNodeUpdate,
-    undoAction: () => undoActions.undoAction(selection.validateEnteredContainer),
-    redoAction: () => undoActions.redoAction(selection.validateEnteredContainer),
+    undoAction: () => {
+      flushPending()
+      undoActions.undoAction(selection.validateEnteredContainer)
+    },
+    redoAction: () => {
+      flushPending()
+      undoActions.redoAction(selection.validateEnteredContainer)
+    },
     snapshotPage: undoActions.snapshotPage,
     restorePageFromSnapshot: undoActions.restorePageFromSnapshot,
     capturePageChange: undoActions.capturePageChange,

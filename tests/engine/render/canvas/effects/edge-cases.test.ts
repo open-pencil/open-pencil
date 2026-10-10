@@ -286,7 +286,7 @@ describe('Edge cases and bug fixes', () => {
     expect(translateCalls[0]).toEqual([15, 25]) // offset + child position
 
     // The filter should NOT have the offset (neutralized to 0,0)
-    expect(r.getCachedDropShadow).toHaveBeenCalledWith(0, 0, 5, expect.anything())
+    expect(r.getCachedDropShadow).toHaveBeenCalledWith(0, 0, expect.closeTo(4.3), expect.anything())
   })
 
   test('INNER_SHADOW with large offset does not vanish (bounding box union)', () => {

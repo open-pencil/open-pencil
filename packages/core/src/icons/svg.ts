@@ -1,10 +1,5 @@
 import { iconToSVG } from '@iconify/utils'
-import {
-  DOMImplementation,
-  type Document as XMLDocument,
-  type Element,
-  type Node
-} from '@xmldom/xmldom'
+import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
 import svgpath from 'svgpath'
 
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -12,7 +7,25 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
 
-import type { IconData, IconifyIconEntry, IconPathInfo, SVGClipPathRegion } from './types'
+import {
+  combinedTransform,
+  DEFAULT_PRESENTATION,
+  isElement,
+  normalizeSVGPaint,
+  num,
+  opacityValue,
+  presentationFor
+} from './svg/presentation'
+import { elementLayer, type Scope, type Traversal } from './svg/scope'
+import { textInfo } from './svg/text'
+import type {
+  IconData,
+  IconifyIconEntry,
+  IconPathInfo,
+  SVGClipPathRegion,
+  SVGElementLayer,
+  SVGTextInfo
+} from './types'
 
 interface SVGElementInput {
   type: string
@@ -30,76 +43,8 @@ const JSX_ATTRIBUTE_NAMES: Readonly<Record<string, string>> = {
   xlinkHref: 'xlink:href'
 }
 
-interface PresentationAttributes {
-  fill: string
-  stroke: string
-  strokeWidth: string
-  strokeCap: string
-  strokeJoin: string
-  fillRule: string
-}
-
-const DEFAULT_PRESENTATION: PresentationAttributes = {
-  fill: 'currentColor',
-  stroke: 'none',
-  strokeWidth: '1',
-  strokeCap: 'butt',
-  strokeJoin: 'miter',
-  fillRule: 'nonzero'
-}
-
 const SHAPE_NAMES = new Set(['path', 'circle', 'ellipse', 'rect', 'line', 'polygon', 'polyline'])
 const NON_RENDERED_CONTAINERS = new Set(['defs', 'clipPath', 'mask', 'symbol'])
-
-function isElement(node: Node): node is Element {
-  return node.nodeType === node.ELEMENT_NODE
-}
-
-function inlineStyles(element: Element): ReadonlyMap<string, string> {
-  const styles = new Map<string, string>()
-  for (const declaration of (element.getAttribute('style') ?? '').split(';')) {
-    const separator = declaration.indexOf(':')
-    if (separator <= 0) continue
-    const name = declaration.slice(0, separator).trim()
-    const value = declaration.slice(separator + 1).trim()
-    if (name && value) styles.set(name, value)
-  }
-  return styles
-}
-
-function inheritedAttribute(
-  element: Element,
-  styles: ReadonlyMap<string, string>,
-  name: string,
-  inherited: string
-): string {
-  return (
-    styles.get(name) ??
-    (element.hasAttribute(name) ? (element.getAttribute(name) ?? inherited) : inherited)
-  )
-}
-
-function presentationFor(
-  element: Element,
-  inherited: PresentationAttributes
-): PresentationAttributes {
-  const styles = inlineStyles(element)
-  return {
-    fill: inheritedAttribute(element, styles, 'fill', inherited.fill),
-    stroke: inheritedAttribute(element, styles, 'stroke', inherited.stroke),
-    strokeWidth: inheritedAttribute(element, styles, 'stroke-width', inherited.strokeWidth),
-    strokeCap: inheritedAttribute(element, styles, 'stroke-linecap', inherited.strokeCap),
-    strokeJoin: inheritedAttribute(element, styles, 'stroke-linejoin', inherited.strokeJoin),
-    fillRule: inheritedAttribute(element, styles, 'fill-rule', inherited.fillRule)
-  }
-}
-
-function num(element: Element, attr: string, fallback = 0): number {
-  const value = element.getAttribute(attr)
-  if (value === null) return fallback
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : fallback
-}
 
 function circleToD(element: Element): string | null {
   const cx = num(element, 'cx')
@@ -170,27 +115,16 @@ function shapeToD(tagName: string, element: Element): string | null {
   }
 }
 
-function combinedTransform(parent: string | null, element: Element): string | null {
-  const current = element.getAttribute('transform')
-  if (parent && current) return `${parent} ${current}`
-  return current ?? parent
-}
-
-function normalizeSVGPaint(value: string | null): string | null {
-  return value?.trim().toLowerCase() === 'none' ? null : value
-}
-
 function appendShapePath(
   tagName: string,
   element: Element,
-  presentation: PresentationAttributes,
-  transform: string | null,
-  clipPaths: SVGClipPathRegion[],
+  scope: Scope,
+  layer: SVGElementLayer,
   result: IconPathInfo[]
 ): void {
-  if (!SHAPE_NAMES.has(tagName)) return
   const pathData = tagName === 'path' ? element.getAttribute('d') : shapeToD(tagName, element)
   if (!pathData) return
+  const { presentation } = scope
   const strokeWidth = Number.parseFloat(presentation.strokeWidth)
   result.push({
     d: pathData,
@@ -200,51 +134,44 @@ function appendShapePath(
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
     fillRule: presentation.fillRule === 'evenodd' ? 'EVENODD' : 'NONZERO',
-    transform,
-    clipPaths: clipPaths.length > 0 ? clipPaths : undefined
+    fillOpacity: opacityValue(presentation.fillOpacity),
+    strokeOpacity: opacityValue(presentation.strokeOpacity),
+    transform: scope.transform,
+    clipPaths: scope.clipPaths.length > 0 ? scope.clipPaths : undefined,
+    elements: [...scope.elements, layer]
   })
 }
 
 function collectUsePaths(
   element: Element,
-  presentation: PresentationAttributes,
-  transform: string | null,
-  result: IconPathInfo[],
-  elementsById: ReadonlyMap<string, Element>,
-  useStack: ReadonlySet<Element>,
-  clipPaths: SVGClipPathRegion[]
-): boolean {
-  const tagName = element.localName || element.tagName
-  if (tagName !== 'use') return false
+  scope: Scope,
+  traversal: Traversal,
+  result: IconPathInfo[]
+): void {
   const x = num(element, 'x')
   const y = num(element, 'y')
-  const useTransform =
-    x !== 0 || y !== 0 ? `${transform ?? ''} translate(${x} ${y})`.trim() : transform
+  const transform =
+    x !== 0 || y !== 0 ? `${scope.transform ?? ''} translate(${x} ${y})`.trim() : scope.transform
   const href = element.getAttribute('href') ?? element.getAttribute('xlink:href')
-  const target = href?.startsWith('#') ? elementsById.get(href.slice(1)) : null
-  if (target && !useStack.has(target)) {
+  const target = href?.startsWith('#') ? traversal.elementsById.get(href.slice(1)) : null
+  if (target && !scope.useStack.has(target)) {
     collectPaths(
       target,
-      presentation,
-      useTransform,
-      result,
-      elementsById,
-      new Set([...useStack, target]),
-      true,
-      clipPaths
+      { ...scope, transform, useStack: new Set([...scope.useStack, target]), referenced: true },
+      traversal,
+      result
     )
   }
-  return true
 }
 
 function collectClipPath(
   value: string | null,
   parentTransform: string | null,
-  elementsById: ReadonlyMap<string, Element>
+  traversal: Traversal
 ): SVGClipPathRegion | null {
   const match = value?.trim().match(/^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/)
-  const target = match ? elementsById.get(match[1]) : null
-  if (!target || (target.localName || target.tagName) !== 'clipPath') return null
+  const target = match ? traversal.elementsById.get(match[1]) : null
+  if (!match || !target || (target.localName || target.tagName) !== 'clipPath') return null
 
   const units =
     target.getAttribute('clipPathUnits') === 'objectBoundingBox'
@@ -253,14 +180,19 @@ function collectClipPath(
   const paths: IconPathInfo[] = []
   collectPaths(
     target,
-    { ...DEFAULT_PRESENTATION, fill: '#000000' },
-    units === 'objectBoundingBox' ? null : parentTransform,
-    paths,
-    elementsById,
-    new Set([target]),
-    true
+    {
+      presentation: { ...DEFAULT_PRESENTATION, fill: '#000000' },
+      transform: units === 'objectBoundingBox' ? null : parentTransform,
+      clipPaths: [],
+      elements: [],
+      useStack: new Set([target]),
+      referenced: true
+    },
+    traversal,
+    paths
   )
   return {
+    id: match[1],
     paths: paths.map(({ d, fillRule, transform }) => ({ d, fillRule, transform })),
     units
   }
@@ -268,38 +200,53 @@ function collectClipPath(
 
 function collectPaths(
   element: Element,
-  inherited: PresentationAttributes,
-  parentTransform: string | null,
-  result: IconPathInfo[],
-  elementsById: ReadonlyMap<string, Element>,
-  useStack: ReadonlySet<Element> = new Set(),
-  referenced = false,
-  inheritedClipPaths: SVGClipPathRegion[] = []
+  inherited: Scope,
+  traversal: Traversal,
+  result: IconPathInfo[]
 ): void {
   const tagName = element.localName || element.tagName
-  if (NON_RENDERED_CONTAINERS.has(tagName) && !referenced) return
+  if (NON_RENDERED_CONTAINERS.has(tagName) && !inherited.referenced) return
 
-  const presentation = presentationFor(element, inherited)
-  const transform = combinedTransform(parentTransform, element)
-  const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, elementsById)
-  const clipPaths = ownClipPath ? [...inheritedClipPaths, ownClipPath] : inheritedClipPaths
-  if (collectUsePaths(element, presentation, transform, result, elementsById, useStack, clipPaths))
-    return
-  appendShapePath(tagName, element, presentation, transform, clipPaths, result)
+  const transform = combinedTransform(inherited.transform, element)
+  const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, traversal)
+  const clipPaths = ownClipPath ? [...inherited.clipPaths, ownClipPath] : inherited.clipPaths
+  const clip = ownClipPath ? clipPaths.length - 1 : null
+  const scope: Scope = {
+    ...inherited,
+    presentation: presentationFor(element, inherited.presentation),
+    transform,
+    clipPaths
+  }
 
-  for (const child of Array.from(element.childNodes)) {
-    if (isElement(child)) {
-      collectPaths(
-        child,
-        presentation,
-        transform,
-        result,
-        elementsById,
-        useStack,
-        referenced,
-        clipPaths
-      )
+  if (tagName === 'text') {
+    const text = textInfo(element, scope, result.length)
+    if (text) {
+      const layer = elementLayer(traversal, element, 'shape', scope, clip)
+      traversal.texts.push({ ...text, elements: [...scope.elements, layer] })
     }
+    return
+  }
+  if (SHAPE_NAMES.has(tagName)) {
+    appendShapePath(
+      tagName,
+      element,
+      scope,
+      elementLayer(traversal, element, 'shape', scope, clip),
+      result
+    )
+    return
+  }
+  // A group is a layer; another container only becomes one to keep its clip or opacity.
+  const layer = elementLayer(traversal, element, 'group', scope, clip)
+  const isLayer =
+    tagName === 'g' || clip !== null || (layer.opacity !== 1 && element !== traversal.root)
+  const childScope = isLayer ? { ...scope, elements: [...scope.elements, layer] } : scope
+  if (tagName === 'use') {
+    collectUsePaths(element, childScope, traversal, result)
+    return
+  }
+  for (const child of Array.from(element.childNodes)) {
+    if (isElement(child)) collectPaths(child, childScope, traversal, result)
   }
 }
 
@@ -320,15 +267,34 @@ function appendSVGElement(svgDocument: XMLDocument, parent: Element, input: SVGE
   parent.appendChild(element)
 }
 
-function collectDocumentPaths(root: Element): IconPathInfo[] {
+/** The shapes and text an SVG draws, in drawing order. */
+export interface SVGContent {
+  paths: IconPathInfo[]
+  texts: SVGTextInfo[]
+}
+
+function collectDocument(root: Element): SVGContent {
   const elementsById = new Map<string, Element>()
   for (const element of Array.from(root.getElementsByTagName('*'))) {
     const id = element.getAttribute('id')
     if (id) elementsById.set(id, element)
   }
-  const result: IconPathInfo[] = []
-  collectPaths(root, DEFAULT_PRESENTATION, null, result, elementsById)
-  return result
+  const paths: IconPathInfo[] = []
+  const traversal: Traversal = { root, elementsById, nextKey: 0, texts: [] }
+  collectPaths(
+    root,
+    {
+      presentation: DEFAULT_PRESENTATION,
+      transform: null,
+      clipPaths: [],
+      elements: [],
+      useStack: new Set(),
+      referenced: false
+    },
+    traversal,
+    paths
+  )
+  return { paths, texts: traversal.texts }
 }
 
 export function extractPathsFromElements(
@@ -339,12 +305,16 @@ export function extractPathsFromElements(
   const root = svgDocument.documentElement
   if (!root) return []
   appendSVGElement(svgDocument, root, { type: 'svg', props: rootProps, children: elements })
-  return collectDocumentPaths(root)
+  return collectDocument(root).paths
+}
+
+export function extractSVGContent(svgBody: string): SVGContent {
+  const root = parseSVGFragment(svgBody)?.documentElement
+  return root ? collectDocument(root) : { paths: [], texts: [] }
 }
 
 export function extractPaths(svgBody: string): IconPathInfo[] {
-  const root = parseSVGFragment(svgBody)?.documentElement
-  return root ? collectDocumentPaths(root) : []
+  return extractSVGContent(svgBody).paths
 }
 
 export function buildIconData(

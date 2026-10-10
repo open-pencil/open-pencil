@@ -9,7 +9,7 @@ export const analyzeSpacing = defineTool({
   description:
     'Analyze spacing values (gap, padding) across the current page. Checks grid compliance.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     grid: v.optional(
       toolNumber(
         v.pipe(

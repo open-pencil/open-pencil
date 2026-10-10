@@ -1,5 +1,6 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
-import { browserHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
+import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
+import { browserHTMLToDesignDocument } from '@open-pencil/dom-css/browser'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { yieldToUI } from '@/app/document/io/browser'
@@ -61,12 +62,12 @@ export function createDOMOpenActions({
     await yieldToUI()
     const pageName = options.documentName ?? 'DOM Import'
     load.update({ phase: 'decoding', detail: pageName })
-    const graph = await browserHTMLToSceneGraph(html, {
+    const styled = await browserHTMLToDesignDocument(html, {
       cssText: options.cssText,
-      pageName,
       signal: load.signal
     })
     load.signal.throwIfAborted()
+    const graph = sceneGraphFromStyledHTML(styled, { pageName })
     await yieldToUI()
     await applyImportedDocument(editor, graph, load)
     state.documentName = pageName

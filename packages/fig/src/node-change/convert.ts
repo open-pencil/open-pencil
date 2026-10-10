@@ -1,3 +1,5 @@
+import { clamp } from 'es-toolkit'
+
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
@@ -7,6 +9,7 @@ import {
   styleToWeight
 } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -290,6 +293,22 @@ function convertCornerProps(
   }
 }
 
+/**
+ * A polygon's sides or a star's points and inner ratio, which Figma writes for both kinds. The
+ * wire format allows far more points than Figma keeps, and any inner scale, so both are held to
+ * Figma's ranges before the outline is built from them.
+ */
+function convertPolygonProps(
+  nc: NodeChange
+): Partial<Pick<SceneNode, 'pointCount' | 'starInnerRadius'>> {
+  const props: Partial<Pick<SceneNode, 'pointCount' | 'starInnerRadius'>> = {}
+  if (nc.count !== undefined)
+    props.pointCount = clamp(nc.count, POINT_COUNT_RANGE.min, POINT_COUNT_RANGE.max)
+  if (nc.starInnerScale !== undefined && Number.isFinite(nc.starInnerScale))
+    props.starInnerRadius = clamp(nc.starInnerScale, 0, 1)
+  return props
+}
+
 function importedTextLineHeight(nc: NodeChange): number | null {
   const derivedLineHeight = nc.derivedTextData?.baselines?.[0]?.lineHeight
   if (derivedLineHeight !== undefined && Number.isFinite(derivedLineHeight))
@@ -430,6 +449,12 @@ function minimumSizeDimension(size: NodeChange['minSize'], axis: 'x' | 'y'): num
 function maximumSizeDimension(size: NodeChange['maxSize'], axis: 'x' | 'y'): number | null {
   const value = size?.value?.[axis]
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
+}
+
+function targetAspectRatio(nc: NodeChange): SceneNode['targetAspectRatio'] {
+  const value = nc.targetAspectRatio?.value
+  if (!value || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return null
+  return { x: value.x, y: value.y }
 }
 
 function convertLayoutProps(
@@ -648,6 +673,7 @@ export function nodeChangeToProps(
     gridStyleId: styleRefId(nc.styleIdForGrid),
     sharedStyleType: sharedStyleType(nc.styleType),
     ...convertCornerProps(nc),
+    ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),
     horizontalConstraint: mapConstraint(nc.horizontalConstraint as string),
     verticalConstraint: mapConstraint(nc.verticalConstraint as string),
@@ -657,6 +683,7 @@ export function nodeChangeToProps(
     maxWidth: maximumSizeDimension(nc.maxSize, 'x'),
     minHeight: minimumSizeDimension(nc.minSize, 'y'),
     maxHeight: maximumSizeDimension(nc.maxSize, 'y'),
+    targetAspectRatio: targetAspectRatio(nc),
     isMask: nc.mask ?? false,
     maskType: (nc.maskType ?? 'ALPHA') as 'ALPHA' | 'VECTOR' | 'LUMINANCE',
     maskIsOutline: nc.maskIsOutline ?? false,
@@ -1099,7 +1126,6 @@ export const FIGMA_RAW_NODE_FIELD_KEYS = [
   'borderLeftWeight',
   'minSize',
   'maxSize',
-  'targetAspectRatio',
   'gridRows',
   'gridColumns',
   'gridRowAnchor',

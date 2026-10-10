@@ -830,6 +830,9 @@ function applyNodeVisualProps(
   if (node.fills.length > 0) nc.fillPaints = createFillPaints(context, node)
 
   context.serializeCornerRadii(node, nc)
+  // Figma draws a polygon or star from its count and inner scale; its clipboard has no geometry.
+  if (node.type === 'POLYGON' || node.type === 'STAR') nc.count = node.pointCount
+  if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
   if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
     nc.effects = node.effects.map((effect) => ({

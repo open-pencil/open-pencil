@@ -20,6 +20,7 @@ import {
 
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
+import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
@@ -187,7 +188,9 @@ const drawerTransition = useMotionTransition({
 
         <TabsContent value="design" class="mt-0 h-full data-[state=inactive]:hidden">
           <div data-test-id="mobile-drawer-design" class="flex h-full flex-col">
-            <DesignPanel />
+            <!-- The Comment tool turns the properties into the comments list, as on desktop. -->
+            <CommentsPanel v-if="store.state.activeTool === 'COMMENT'" />
+            <DesignPanel v-else />
           </div>
         </TabsContent>
 

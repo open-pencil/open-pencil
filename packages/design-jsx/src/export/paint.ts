@@ -1,4 +1,12 @@
-import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import {
+  shaderOfPaint,
+  type Effect,
+  type Fill,
+  type GradientTransform,
+  type SceneNode,
+  type Stroke
+} from '@open-pencil/scene-graph'
+import { isIdentityGradientTransform } from '@open-pencil/scene-graph/gradient'
 
 import { formatColor, formatShadow } from './helpers'
 import { helperCall, plainValue, type HelperCall, type JSXProp, type JSXValue } from './value'
@@ -10,13 +18,8 @@ const GRADIENT_HELPERS: Partial<Record<Fill['type'], string>> = {
   GRADIENT_DIAMOND: 'diamondGradient'
 }
 
-const IDENTITY_TRANSFORM: GradientTransform = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-
 function isIdentity(transform: GradientTransform | undefined): boolean {
-  if (!transform) return true
-  return (Object.keys(IDENTITY_TRANSFORM) as (keyof GradientTransform)[]).every(
-    (key) => transform[key] === IDENTITY_TRANSFORM[key]
-  )
+  return !transform || isIdentityGradientTransform(transform)
 }
 
 /** Paints and effects imported from Figma often spell out the default blend mode. */
@@ -31,8 +34,22 @@ function options(entries: Options): Options | undefined {
   return Object.values(entries).some((value) => value !== undefined) ? entries : undefined
 }
 
-function fillValue(fill: Fill): JSXValue {
+function fillValue(fill: Fill, node: SceneNode): JSXValue {
   const visible = fill.visible ? undefined : false
+  const shader = shaderOfPaint(node, fill)
+  if (shader) {
+    // A preset with nothing but effects is written as just its effects.
+    const { components, ...rest } = shader.preset
+    return helperCall(
+      'shader',
+      plainValue(Object.keys(rest).length === 0 ? components : shader.preset),
+      options({
+        opacity: fill.opacity === 1 ? undefined : fill.opacity,
+        visible,
+        blendMode: blendMode(fill.blendMode)
+      })
+    )
+  }
   if (fill.type === 'SOLID') {
     const color = formatColor(fill.color, fill.color.a)
     const opacity = fill.opacity === fill.color.a ? undefined : fill.opacity
@@ -79,7 +96,7 @@ export function collectFillProps(node: SceneNode, props: JSXProp[]): void {
   if (node.fills.length === 0) return
   const shorthand = solidShorthand(node.fills)
   if (shorthand) props.push([node.type === 'TEXT' ? 'color' : 'bg', shorthand])
-  else props.push(['fills', node.fills.map(fillValue)])
+  else props.push(['fills', node.fills.map((fill) => fillValue(fill, node))])
 }
 
 interface StrokeValue {

@@ -1,4 +1,10 @@
-import { generateId } from '@open-pencil/scene-graph'
+import {
+  generateId,
+  paddingFromShorthand,
+  parseAutoLayoutDirection,
+  parseCounterAxisAlign,
+  parsePrimaryAxisAlign
+} from '@open-pencil/scene-graph'
 import type {
   Color,
   Effect,
@@ -390,27 +396,10 @@ export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?:
   if (padding === undefined) return
   const resolve = (v: number | string): number =>
     typeof v === 'string' ? (isVarRef(v) && ctx ? ctx.resolveNumber(v) : Number(v) || 0) : v
-  if (Array.isArray(padding)) {
-    if (padding.length === 2) {
-      const vertical = resolve(padding[0])
-      const horizontal = resolve(padding[1])
-      node.paddingTop = vertical
-      node.paddingRight = horizontal
-      node.paddingBottom = vertical
-      node.paddingLeft = horizontal
-      return
-    }
-    node.paddingTop = resolve(padding[0] ?? 0)
-    node.paddingRight = resolve(padding[1] ?? 0)
-    node.paddingBottom = resolve(padding[2] ?? 0)
-    node.paddingLeft = resolve(padding[3] ?? 0)
-    return
-  }
-  const resolved = resolve(padding)
-  node.paddingTop = resolved
-  node.paddingRight = resolved
-  node.paddingBottom = resolved
-  node.paddingLeft = resolved
+  Object.assign(
+    node,
+    paddingFromShorthand(Array.isArray(padding) ? padding.map(resolve) : [resolve(padding)])
+  )
 }
 
 interface ParsedSize {
@@ -467,24 +456,17 @@ export function parseSize(
 }
 
 export function mapLayoutMode(pen: PenNode): LayoutMode {
-  if (pen.layout === 'row' || pen.layout === 'horizontal') return 'HORIZONTAL'
-  if (pen.layout === 'column' || pen.layout === 'vertical') return 'VERTICAL'
-  if (pen.type === 'frame' && pen.layout === undefined) return 'HORIZONTAL'
-  return 'NONE'
+  const direction = parseAutoLayoutDirection(pen.layout)
+  if (direction) return direction
+  return pen.type === 'frame' && pen.layout === undefined ? 'HORIZONTAL' : 'NONE'
 }
 
 export function mapJustifyContent(value: string | undefined): LayoutAlign {
-  if (value === 'center') return 'CENTER'
-  if (value === 'end') return 'MAX'
-  if (value === 'space-between') return 'SPACE_BETWEEN'
-  return 'MIN'
+  return parsePrimaryAxisAlign(value) ?? 'MIN'
 }
 
 export function mapAlignItems(value: string | undefined): LayoutCounterAlign {
-  if (value === 'center') return 'CENTER'
-  if (value === 'end') return 'MAX'
-  if (value === 'stretch') return 'STRETCH'
-  return 'MIN'
+  return parseCounterAxisAlign(value) ?? 'MIN'
 }
 
 export function mapTextAlign(value: string | undefined): SceneNode['textAlignHorizontal'] {

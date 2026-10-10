@@ -1,4 +1,3 @@
-import { renderTree } from '@open-pencil/core/design-jsx'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   ALL_TOOLS,
@@ -29,34 +28,6 @@ import { useLibraryService } from '@/app/libraries'
 type FigmaFactory = (store: AutomationTarget['store'], pageId?: string) => FigmaAPI
 
 export function createAutomationToolHandler(makeFigma: FigmaFactory) {
-  async function handleToolRender(
-    target: AutomationTarget,
-    toolArgs: Record<string, unknown>
-  ): Promise<{ id: string; name: string; type: string; children: string[] }> {
-    const store = target.store
-    const tree = toolArgs.tree as Parameters<typeof renderTree>[1]
-    const parentId = (toolArgs.parent_id as string | undefined) ?? target.pageId
-    // A parent on another page puts the new layers there, so that page's history records them.
-    const undoPageId = pageIdOf(store.graph, parentId) ?? target.pageId
-    const result = await executeWithPageUndo(store, undoPageId, automationUndoLabel('render'), () =>
-      store.runMutationWithLayout(
-        () =>
-          renderTree(store.graph, tree, {
-            parentId,
-            x: toolArgs.x as number | undefined,
-            y: toolArgs.y as number | undefined
-          }),
-        target.pageId,
-        async (node) => {
-          await ensureGraphFonts(store.graph, [node.id], store.renderer)
-        }
-      )
-    )
-    store.requestRender()
-    store.flashNodes([result.id])
-    return { id: result.id, name: result.name, type: result.type, children: result.childIds }
-  }
-
   return async function handleTool(target: AutomationTarget, args: unknown): Promise<unknown> {
     const toolName = (args as { name?: string }).name
     const requestedArgs = (args as { args?: Record<string, unknown> }).args ?? {}
@@ -86,10 +57,6 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     toolName: string,
     toolArgs: Record<string, unknown>
   ): Promise<{ result: unknown; edited: boolean }> {
-    if (toolName === 'render' && toolArgs.tree) {
-      return { result: await handleToolRender(target, toolArgs), edited: true }
-    }
-
     const def = ALL_TOOLS.find((t) => t.name === toolName && isToolExposed(t, 'mcp'))
     if (!def) throw new Error(`Unknown tool: ${toolName}`)
     const store = target.store
@@ -103,13 +70,13 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
         label: AUTOMATION_UNDO_LABEL
       })
     } else if (def.mutates) {
-      const pageId = figma.currentPageId
+      const pageId = writtenPageId(store.graph, toolArgs) ?? figma.currentPageId
       const mutate = () =>
         store.runMutationWithLayout(
           () => def.execute(figma, toolArgs),
-          figma.currentPageId,
+          pageId,
           async () => {
-            const pageNode = store.graph.getNode(figma.currentPageId)
+            const pageNode = store.graph.getNode(pageId)
             if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
           }
         )
@@ -127,6 +94,19 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     }
     return { result, edited: def.mutates }
   }
+}
+
+/**
+ * A parent or a replaced layer on another page puts the new layers there, so that page lays out,
+ * loads their fonts, and records the change in its history.
+ */
+function writtenPageId(
+  graph: AutomationTarget['store']['graph'],
+  args: Record<string, unknown>
+): string | null {
+  // As render places it: a replaced layer's parent wins over parent_id.
+  const nodeId = args.replace_id ?? args.parent_id
+  return typeof nodeId === 'string' ? pageIdOf(graph, nodeId) : null
 }
 
 function pageIdOf(graph: AutomationTarget['store']['graph'], nodeId: string): string | null {

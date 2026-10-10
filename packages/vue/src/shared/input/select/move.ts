@@ -1,8 +1,8 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor, MovePlace } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import type { DragOriginal as MoveOriginal } from '#vue/shared/input/drag-original'
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
+import { collectFlowDrags } from '#vue/shared/input/flow-reorder'
 import type { DragState } from '#vue/shared/input/types'
 
 function isLockedInTree(id: string, editor: Editor) {
@@ -65,23 +65,25 @@ function autoLayoutMoveTarget(id: string, editor: Editor): string {
 }
 
 function collectMoveOriginals(editor: Editor) {
-  const originals = new Map<string, MoveOriginal>()
+  const originals = new Map<string, MovePlace>()
   for (const selectedId of editor.state.selectedIds) {
     if (isLockedInTree(selectedId, editor)) continue
     const id = autoLayoutMoveTarget(selectedId, editor)
     const node = editor.graph.getNode(id)
     if (node) {
+      const parentId = node.parentId ?? editor.state.currentPageId
       originals.set(id, {
         x: node.x,
         y: node.y,
-        parentId: node.parentId ?? editor.state.currentPageId
+        parentId,
+        index: editor.graph.getNode(parentId)?.childIds.indexOf(id)
       })
     }
   }
   return originals
 }
 
-function detectDragAutoLayoutParent(originals: Map<string, MoveOriginal>, editor: Editor) {
+function detectDragAutoLayoutParent(originals: Map<string, MovePlace>, editor: Editor) {
   if (originals.size !== 1) return undefined
   const [id, original] = [...originals][0]
   const node = editor.graph.getNode(id)
@@ -117,6 +119,7 @@ export function createSelectionMoveDrag(
     startScreenY: sy,
     dragStarted: false,
     originals,
-    autoLayoutParentId: detectDragAutoLayoutParent(originals, editor)
+    autoLayoutParentId: detectDragAutoLayoutParent(originals, editor),
+    flows: collectFlowDrags(originals, editor)
   }
 }

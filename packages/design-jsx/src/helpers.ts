@@ -16,6 +16,7 @@ import {
   gradient,
   linearGradient,
   radialGradient,
+  shader,
   solid,
   type GradientPaintOptions,
   type SolidPaintOptions
@@ -96,6 +97,7 @@ export function designJSXHelpers(warnings: string[]) {
     backgroundBlur: checked(warnings, 'backgroundBlur', backgroundBlur, BLUR_OPTIONS, 0),
     foregroundBlur: checked(warnings, 'foregroundBlur', foregroundBlur, BLUR_OPTIONS, 0),
     solid: checked(warnings, 'solid', solid, SOLID_OPTIONS, 1),
+    shader: checked(warnings, 'shader', shader, SOLID_OPTIONS, 1),
     gradient: checked(warnings, 'gradient', gradient, GRADIENT_OPTIONS, 2),
     linearGradient: checked(warnings, 'linearGradient', linearGradient, GRADIENT_OPTIONS, 1),
     radialGradient: checked(warnings, 'radialGradient', radialGradient, GRADIENT_OPTIONS, 1),

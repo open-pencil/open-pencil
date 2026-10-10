@@ -42,7 +42,8 @@ function drawSizePill(
   text: string,
   x: number,
   y: number,
-  color: ReturnType<SkiaRenderer['selColor']>
+  color: ReturnType<SkiaRenderer['selColor']>,
+  textColor: ReturnType<SkiaRenderer['selColor']>
 ): void {
   const pillW = measureGlyphWidth(sizeFont, text) + SIZE_PILL_PADDING_X * 2
   const pillX = x - pillW / 2
@@ -55,7 +56,7 @@ function drawSizePill(
   )
   canvas.drawRRect(rrect, r.auxFill)
 
-  r.auxFill.setColor(r.ck.WHITE)
+  r.auxFill.setColor(textColor)
   canvas.drawText(
     text,
     pillX + SIZE_PILL_PADDING_X,
@@ -74,7 +75,7 @@ export function drawSingleSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['sizeFont']>
 ): void {
   const sizeText = `${Math.round(node.width)} × ${Math.round(node.height)}`
-  const pillColor = r.outlineColor(node)
+  const pillColor = r.outlineColor(node, graph)
   const transform = frameLabelPlacement(node, graph, overlays.rotationPreview, {
     x: 0.5,
     y: 1
@@ -84,12 +85,14 @@ export function drawSingleSelectionSize(
   canvas.save()
   canvas.concat(labelScreenMatrix(transform, r))
 
-  drawSizePill(r, canvas, sizeFont, sizeText, 0, 0, pillColor)
+  const textColor = r.outlineForegroundColor(node, graph)
+  drawSizePill(r, canvas, sizeFont, sizeText, 0, 0, pillColor, textColor)
   canvas.restore()
 }
 function drawMultiSelectionSize(
   r: SkiaRenderer,
   canvas: Canvas,
+  graph: SceneGraph,
   nodes: SceneNode[],
   minX: number,
   minY: number,
@@ -102,10 +105,11 @@ function drawMultiSelectionSize(
   const sx2 = maxX * r.zoom + r.panX
   const sy2 = maxY * r.zoom + r.panY
   const smx = (sx1 + sx2) / 2
-  const allComponents = nodes.length > 0 && nodes.every((n) => r.isComponentType(n.type))
+  const allComponents = nodes.length > 0 && nodes.every((n) => r.isInComponent(n, graph))
   const pillColor = allComponents ? r.compColor() : r.selColor()
+  const textColor = allComponents ? r.ck.WHITE : r.selForegroundColor()
 
-  drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor)
+  drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor, textColor)
 }
 
 export function drawSelectionLabels(
@@ -131,5 +135,5 @@ export function drawSelectionLabels(
     return
   }
 
-  drawMultiSelectionSize(r, canvas, nodes, minX, minY, maxX, maxY, sizeFont)
+  drawMultiSelectionSize(r, canvas, graph, nodes, minX, minY, maxX, maxY, sizeFont)
 }

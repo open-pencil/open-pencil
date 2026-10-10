@@ -8,7 +8,9 @@ import type { EditorContext } from '#core/editor/types'
 import { computeImageHash } from '#core/figma-api'
 import {
   createSVGNodesFromImport,
+  isSVGMarkup,
   prepareSVGImport,
+  svgImportFonts,
   type SVGImportData
 } from '#core/io/formats/svg'
 import { computeAllLayouts } from '#core/layout'
@@ -35,7 +37,8 @@ interface PreparedRasterAsset {
 interface PreparedSVGAsset {
   kind: 'svg'
   data: SVGImportData
-  name: string
+  /** A dropped file's name; pasted markup is named as Figma names it. */
+  name?: string
   width: number
   height: number
 }
@@ -87,7 +90,7 @@ export function createClipboardAssetActions(
         ? {
             kind: 'svg',
             data,
-            name: file.name.replace(/\.svg$/i, '') || 'SVG',
+            name: file.name.replace(/\.svg$/i, '') || undefined,
             width: data.width,
             height: data.height
           }
@@ -131,11 +134,8 @@ export function createClipboardAssetActions(
     }).id
   }
 
-  async function placeFiles(files: File[], cx: number, cy: number) {
-    const prepared = (await Promise.all(files.map(prepareAsset))).filter(
-      (asset): asset is PreparedAsset => asset !== null
-    )
-    if (prepared.length === 0) return
+  function placeAssets(prepared: PreparedAsset[], cx: number, cy: number, label: string): boolean {
+    if (prepared.length === 0) return false
 
     const previousSelection = new Set(ctx.state.selectedIds)
     const parentId = resolvePasteTarget(ctx)
@@ -165,11 +165,39 @@ export function createClipboardAssetActions(
       throw error
     }
 
-    if (created.length === 0) return
+    if (created.length === 0) return false
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     ctx.setSelectedIds(new Set(created))
-    pushCreatedNodesUndo(created, previousSelection, 'Place files')
+    pushCreatedNodesUndo(created, previousSelection, label)
     ctx.requestRender()
+    return true
+  }
+
+  /** Load the fonts of imported SVG text, so it is measured and placed with them. */
+  async function loadSVGFonts(assets: PreparedAsset[]) {
+    const fonts = assets.flatMap((asset) =>
+      asset.kind === 'svg' ? svgImportFonts(asset.data) : []
+    )
+    await Promise.all(
+      fonts.map((font) => ctx.loadFont(font.family, font.style, font.characters).catch(() => null))
+    )
+  }
+
+  async function placeFiles(files: File[], cx: number, cy: number) {
+    const prepared = (await Promise.all(files.map(prepareAsset))).filter(
+      (asset): asset is PreparedAsset => asset !== null
+    )
+    await loadSVGFonts(prepared)
+    placeAssets(prepared, cx, cy, 'Place files')
+  }
+
+  /** Paste SVG markup as layers, as Figma does; false when the text is not SVG. */
+  async function pasteSVG(markup: string, cx: number, cy: number): Promise<boolean> {
+    const data = isSVGMarkup(markup) ? prepareSVGImport(markup) : null
+    if (!data) return false
+    const asset: PreparedAsset = { kind: 'svg', data, width: data.width, height: data.height }
+    await loadSVGFonts([asset])
+    return placeAssets([asset], cx, cy, 'Paste SVG')
   }
 
   function placeImageFiles(files: File[], cx: number, cy: number) {
@@ -180,5 +208,5 @@ export function createClipboardAssetActions(
     )
   }
 
-  return { storeImage, placeFiles, placeImageFiles }
+  return { storeImage, placeFiles, placeImageFiles, pasteSVG }
 }

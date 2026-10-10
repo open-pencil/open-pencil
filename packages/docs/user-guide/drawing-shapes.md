@@ -25,6 +25,17 @@ The shapes flyout (accessible from the toolbar) includes additional shapes:
 
 Polygon and Star have no keyboard shortcut — access them from the shapes flyout in the toolbar.
 
+## Customizing the Toolbar
+
+Right-click the toolbar and choose **Customize toolbar…**, or open **Settings → Toolbar**, to change it:
+
+- Turn a tool's switch off to hide it. Hidden tools keep their keyboard shortcuts. **Move** is always shown.
+- Drag a tool to reorder it. Dropped inside a box it joins that flyout; dropped in the gap between boxes it becomes a button of its own; dropped onto another tool, the two share a flyout.
+- A tool's **⋯** menu moves it up or down, groups it with the tool above, or ungroups it from its flyout. Its grip also moves it with <kbd>↑</kbd> and <kbd>↓</kbd>.
+- **Insert icon** runs a command rather than picking a tool, so it can move and hide but not join a flyout.
+
+**Reset to default** restores the original layout. Tools added in later versions join their default flyout, so a customized toolbar still gets them.
+
 ## Constrained Drawing
 
 Hold <kbd>Shift</kbd> while dragging to constrain the shape:
@@ -42,7 +53,7 @@ After drawing a shape, select it to edit its properties in the Design tab of the
 Every shape can have a fill. The fill section supports:
 
 - **Solid color** — pick via the HSV color picker or type a hex value
-- **Gradient** — Linear, Radial, Angular, or Diamond with editable gradient stops
+- **Gradient** — Linear, Radial, Angular, or Diamond with editable gradient stops. While the gradient's picker is open, the canvas shows its handles: drag an end or a radius dot to move it, hold <kbd>Shift</kbd> to turn it in 15° steps, and drag a stop's square to slide the stop along the line
 - **Image** — select an image file as the fill
 
 ### Stroke
@@ -58,7 +69,9 @@ Add an outline to any shape. Stroke properties include:
 
 ### Corner Radius
 
-Available for rectangles, frames, components, and instances. Click the independent corners toggle to set each corner (top-left, top-right, bottom-left, bottom-right) separately.
+Available for rectangles, frames, components, instances, polygons, and stars. Click the independent corners toggle to set each corner (top-left, top-right, bottom-left, bottom-right) separately; a polygon's or star's corners share one radius, which rounds its inner corners too.
+
+On the canvas, hover a selected rectangle to show a handle inside each corner and drag one to round the corners. Equal corners change together and differing ones one at a time; hold <kbd>⌥</kbd> to swap the two and <kbd>⇧</kbd> to round to tens. A polygon or star has one radius handle, below its top point, which rounds all of its corners; drag the handle on its next point around the centre to change the point count, and a star's handle on its first inner point towards or away from the centre to change its ratio. The handles hide while the shape is under 108 pixels across on screen; zoom in to reach them.
 
 ### Effects
 

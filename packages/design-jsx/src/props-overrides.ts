@@ -1,4 +1,14 @@
-import type { Fill, LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import {
+  autoLayoutSizingFields,
+  fillSizingFields,
+  parseAutoLayoutDirection,
+  parseCounterAxisAlign,
+  parsePrimaryAxisAlign,
+  withShaderPaints,
+  type Fill,
+  type SceneNode,
+  type ShaderPaint
+} from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
 import { parseCSSGridTracks, parseCSSNumber } from '@open-pencil/scene-graph/css'
 import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
@@ -6,26 +16,13 @@ import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
 import { applyEffectOverrides } from './overrides/effects'
 import { applyStateOverrides } from './overrides/state'
 import { applyStrokeOverrides } from './overrides/strokes'
+import { isShaderFill } from './paints'
 import { DESIGN_JSX_STYLE_KEYS, designJSXProp } from './schema'
 
 const WEIGHT_MAP: Record<string, number> = {
   normal: 400,
   medium: 500,
   bold: 700
-}
-
-const ALIGN_MAP: Record<string, SceneNode['primaryAxisAlign']> = {
-  start: 'MIN',
-  end: 'MAX',
-  center: 'CENTER',
-  between: 'SPACE_BETWEEN'
-}
-
-const COUNTER_ALIGN_MAP: Record<string, 'MIN' | 'MAX' | 'CENTER' | 'STRETCH'> = {
-  start: 'MIN',
-  end: 'MAX',
-  center: 'CENTER',
-  stretch: 'STRETCH'
 }
 
 const TEXT_ALIGN_MAP: Record<string, SceneNode['textAlignHorizontal']> = {
@@ -95,12 +92,8 @@ export function applySizeOverrides(
   if (typeof w === 'number') o.width = w
   if (typeof h === 'number') o.height = h
 
-  const isParentRow = parentLayout === 'HORIZONTAL'
-  const isParentCol = parentLayout === 'VERTICAL'
-  const isParentGrid = parentLayout === 'GRID'
-
-  applyFillSizing(w, 'width', isParentGrid, isParentRow, isParentCol, o)
-  applyFillSizing(h, 'height', isParentGrid, isParentRow, isParentCol, o)
+  if (w === 'fill') Object.assign(o, fillSizingFields(parentLayout, 'HORIZONTAL'))
+  if (h === 'fill') Object.assign(o, fillSizingFields(parentLayout, 'VERTICAL'))
 
   if (props.x !== undefined) o.x = props.x as number
   if (props.y !== undefined) o.y = props.y as number
@@ -118,27 +111,6 @@ export function applySizeOverrides(
   }
 
   return { w, h }
-}
-
-function applyFillSizing(
-  dim: unknown,
-  axis: 'width' | 'height',
-  isGrid: boolean,
-  isRow: boolean,
-  isCol: boolean,
-  o: Partial<SceneNode>
-): void {
-  if (dim !== 'fill') return
-  // A grid places its children like a row, so width fills by grow and height by stretch.
-  const rowLike = isRow || isGrid
-  const isPrimary = axis === 'width' ? rowLike : isCol
-  const isCross = axis === 'width' ? isCol : rowLike
-  if (isCross) o.layoutAlignSelf = 'STRETCH'
-  else if (isPrimary) o.layoutGrow = 1
-  else {
-    o.layoutGrow = 1
-    o.layoutAlignSelf = 'STRETCH'
-  }
 }
 
 function isFill(value: unknown): value is Fill {
@@ -159,6 +131,25 @@ function fillFromValue(value: string | Color | Fill): Fill {
   return isFill(value) ? structuredClone(value) : colorToFill(value)
 }
 
+/**
+ * Sets the layer's fills, moving each shader paint's preset into the layer's plugin data,
+ * where a shader paint keeps it.
+ */
+function setFills(values: (string | Color | Fill)[], o: Partial<SceneNode>): void {
+  const shaders: ShaderPaint[] = []
+  const fills = values.map((value) => {
+    const fill = fillFromValue(value)
+    if (!isShaderFill(fill)) return fill
+    const { shader, ...paint } = fill
+    if (paint.imageHash) shaders.push({ image: paint.imageHash, preset: shader })
+    return paint
+  })
+  if (fills.length === 0) return
+  o.fills = fills
+  if (shaders.length > 0)
+    o.pluginData = withShaderPaints({ pluginData: o.pluginData ?? [] }, fills, shaders)
+}
+
 function isColor(value: unknown): value is Color {
   return (
     value !== null &&
@@ -172,13 +163,12 @@ function isColor(value: unknown): value is Color {
 
 function applyFillOverride(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   if (Array.isArray(props.fills)) {
-    const fills = props.fills.filter(isFillValue).map(fillFromValue)
-    if (fills.length > 0) o.fills = fills
+    setFills(props.fills.filter(isFillValue), o)
     return
   }
 
   const bg = designJSXProp(props, 'bg')
-  if (isFillValue(bg)) o.fills = [fillFromValue(bg)]
+  if (isFillValue(bg)) setFills([bg], o)
 }
 
 function applyCornerOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
@@ -320,20 +310,10 @@ function applyAutoLayoutSizing(
   w: unknown,
   h: unknown
 ): void {
-  const dir = (props.flex as string | undefined) ?? 'col'
-  const isVertical = dir === 'col' || dir === 'column'
-  o.layoutMode = (isVertical ? 'VERTICAL' : 'HORIZONTAL') as LayoutMode
-
-  o.primaryAxisSizing = 'HUG'
-  o.counterAxisSizing = 'HUG'
-
-  const primaryDim = isVertical ? h : w
-  const counterDim = isVertical ? w : h
-
-  if (typeof primaryDim === 'number') o.primaryAxisSizing = 'FIXED'
-  if (typeof counterDim === 'number') o.counterAxisSizing = 'FIXED'
-  if (primaryDim === 'hug') o.primaryAxisSizing = 'HUG'
-  if (counterDim === 'hug') o.counterAxisSizing = 'HUG'
+  const flex = typeof props.flex === 'string' ? props.flex : 'col'
+  o.layoutMode = parseAutoLayoutDirection(flex) ?? 'HORIZONTAL'
+  const own = (dim: unknown) => (typeof dim === 'number' ? 'FIXED' : 'HUG')
+  Object.assign(o, autoLayoutSizingFields(o.layoutMode, own(w), own(h)))
 }
 
 function applyLayoutAlignmentOverrides(
@@ -341,12 +321,12 @@ function applyLayoutAlignmentOverrides(
   o: Partial<SceneNode>
 ): void {
   const justify = designJSXProp(props, 'justify')
-  if (justify) {
-    o.primaryAxisAlign = ALIGN_MAP[justify as string] ?? 'MIN'
+  if (typeof justify === 'string' && justify) {
+    o.primaryAxisAlign = parsePrimaryAxisAlign(justify) ?? 'MIN'
   }
   const items = designJSXProp(props, 'items')
-  if (items) {
-    o.counterAxisAlign = COUNTER_ALIGN_MAP[items as string] ?? 'MIN'
+  if (typeof items === 'string' && items) {
+    o.counterAxisAlign = parseCounterAxisAlign(items) ?? 'MIN'
   }
 }
 

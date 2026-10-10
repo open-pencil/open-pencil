@@ -15,7 +15,7 @@ import {
   setNodeStrokeOkHCL
 } from '@open-pencil/scene-graph/color'
 import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaEffect } from '#core/figma-api/effects'
@@ -31,7 +31,11 @@ import {
   type FigmaVectorNetwork,
   type FigmaVectorPath
 } from './accessors/vector'
-import { installVisualNodeProxyAccessors } from './accessors/visual'
+import {
+  figmaPaintToFill,
+  installVisualNodeProxyAccessors,
+  type FigmaPaint
+} from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import type { FigmaFontName } from './fonts'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
@@ -39,6 +43,7 @@ import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slots'
+import type { FigmaLetterSpacing, FigmaLineHeight } from './text'
 import * as TextProxy from './text'
 import { containerTransform, setContainerTransform } from './transform'
 import * as Traversal from './traversal'
@@ -125,6 +130,11 @@ export class FigmaNodeProxy {
   declare maxWidth: number | null
   declare minHeight: number | null
   declare maxHeight: number | null
+  declare readonly targetAspectRatio: Vector | null
+  /** @deprecated Figma's alias for whether `targetAspectRatio` is set. */
+  declare constrainProportions: boolean
+  declare lockAspectRatio: () => void
+  declare unlockAspectRatio: () => void
   declare vectorPaths: readonly FigmaVectorPath[]
   declare vectorNetwork: FigmaVectorNetwork
   declare setVectorNetworkAsync: (vectorNetwork: FigmaVectorNetwork) => Promise<void>
@@ -151,8 +161,8 @@ export class FigmaNodeProxy {
   declare textAlignVertical: string
   declare textDirection: string
   declare textAutoResize: string
-  declare letterSpacing: number
-  declare lineHeight: number | null
+  declare letterSpacing: FigmaLetterSpacing
+  declare lineHeight: FigmaLineHeight
   declare textCase: string
   declare textDecoration: string
   declare maxLines: number | null
@@ -226,8 +236,8 @@ export class FigmaNodeProxy {
     return getPageBackgrounds(this._raw())
   }
 
-  set backgrounds(value: readonly Fill[]) {
-    setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value)
+  set backgrounds(value: readonly FigmaPaint[]) {
+    setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value.map(figmaPaintToFill))
   }
 
   /** The async form Figma requires in dynamic-page mode; same result as mainComponent. */

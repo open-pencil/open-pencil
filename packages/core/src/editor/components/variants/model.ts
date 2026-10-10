@@ -1,6 +1,12 @@
 import { uniq } from 'es-toolkit/array'
 
-import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  compareCanvasPosition,
+  defaultVariant,
+  type ComponentPropertyDefinition,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 export type VariantConflict = {
   values: Record<string, string>
@@ -31,10 +37,6 @@ export type VariantMutationResult =
 export type VariantOptionAvailability = {
   value: string
   available: boolean
-}
-
-function sortByCanvasPosition(a: SceneNode, b: SceneNode) {
-  return a.y - b.y || a.x - b.x || a.name.localeCompare(b.name)
 }
 
 export function getComponentSet(graph: SceneGraph, componentSetId: string): SceneNode | undefined {
@@ -105,7 +107,7 @@ export function findVariantByValues(
   values: Record<string, string>
 ): SceneNode | undefined {
   return getComponentSetVariants(graph, componentSetId)
-    .sort(sortByCanvasPosition)
+    .sort(compareCanvasPosition)
     .find((variant) =>
       Object.entries(values).every(
         ([propertyName, value]) => variant.componentPropertyValues[propertyName] === value
@@ -131,7 +133,8 @@ export function getDefaultVariantForComponentSet(
   graph: SceneGraph,
   componentSetId: string
 ): SceneNode | undefined {
-  return getComponentSetVariants(graph, componentSetId).sort(sortByCanvasPosition)[0]
+  const set = getComponentSet(graph, componentSetId)
+  return set && defaultVariant(graph, set)
 }
 
 export function getComponentSetVariantConflicts(

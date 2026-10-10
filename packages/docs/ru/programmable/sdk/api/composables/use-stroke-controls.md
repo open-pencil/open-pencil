@@ -31,13 +31,13 @@ const { alignOptions, sideOptions, currentAlign, currentSides, selectSide } = us
 ### Разместить обводку внутри границы объекта
 
 ```ts
-strokes.updateAlign('INSIDE', activeNode)
+strokes.updateAlign('INSIDE')
 ```
 
 ### Ограничить обводку одной стороной
 
 ```ts
-strokes.selectSide('TOP', activeNode)
+strokes.selectSide('TOP')
 ```
 
 ## Связанные API

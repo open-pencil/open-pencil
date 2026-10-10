@@ -134,11 +134,10 @@ export function drawRulers(
   if (vw === 0 || vh === 0) return
 
   if (r.rulerTheme) {
-    const { background, tick, text, label } = r.rulerTheme
+    const { background, tick, text } = r.rulerTheme
     r.rulerBgPaint.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
     r.rulerTickPaint.setColor(r.ck.Color4f(tick.r, tick.g, tick.b, tick.a))
     r.rulerTextPaint.setColor(r.ck.Color4f(text.r, text.g, text.b, text.a))
-    r.rulerLabelPaint.setColor(r.ck.Color4f(label.r, label.g, label.b, label.a))
   }
 
   canvas.drawRect(r.ck.LTRBRect(0, 0, vw, R), r.rulerBgPaint)
@@ -313,6 +312,7 @@ export function drawRulerBadge(
   const h = RULER_BADGE_HEIGHT
 
   r.rulerBadgePaint.setColor(r.selColor())
+  r.rulerLabelPaint.setColor(r.selForegroundColor())
 
   if (axis === 'horizontal') {
     const bx = x - (textW + pad * 2) / 2

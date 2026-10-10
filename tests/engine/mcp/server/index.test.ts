@@ -270,6 +270,21 @@ describe('MCP server', () => {
     expect(fill.isError).not.toBe(true)
   })
 
+  test('rejects arguments a tool does not take instead of dropping them', async () => {
+    const create = await client.callTool({
+      name: 'create_shape',
+      arguments: { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }
+    })
+    const { id } = parseResult(create) as { id: string }
+
+    const update = await client.callTool({
+      name: 'update_node',
+      arguments: { id, properties: { x: 0, y: 500 } }
+    })
+    expect(update.isError).toBe(true)
+    expect(graph.getNode(id)?.y).toBe(0)
+  })
+
   test('get_page_tree returns page structure', async () => {
     await client.callTool({
       name: 'create_shape',
@@ -388,6 +403,35 @@ describe('MCP server sharing only the selection', () => {
     await rpc({ command: 'tool', args: { name: 'get_node', args: { id: '0:1' } } })
     const call = browser.requests.find((request) => request.command === 'tool')
     expect(call?.args).toMatchObject({ name: 'get_node', scope: 'selection' })
+  })
+})
+
+describe('raw RPC', () => {
+  test('forwards render JSX to the app as written, with its placement', async () => {
+    const ctx = await createTestClient()
+    try {
+      const { browser, handle } = ctx
+      const args = {
+        jsx: "<Frame w={100} h={100} fill={designVar('Brand/primary')} />",
+        replace_id: '0:1',
+        insert_index: 0
+      }
+      await fetch(`http://127.0.0.1:${handle.httpPort}/rpc`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TEST_CLIENT_AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: 'tool', args: { name: 'render', args } })
+      })
+      // The app renders it, so variable references survive; a tree sent as JSON would lose them.
+      const call = expectDefined(browser, 'browser').requests.find(
+        (request) => request.command === 'tool'
+      )
+      expect(call?.args).toEqual({ name: 'render', args })
+    } finally {
+      await ctx.close()
+    }
   })
 })
 

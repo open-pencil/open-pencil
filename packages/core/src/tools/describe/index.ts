@@ -11,7 +11,7 @@ export const describe = defineTool({
     'Semantic description of one or more nodes. Pass `id` for a single node, or `ids` for multiple nodes in one call. Omit depth for auto — adapts to subtree size (small block → deeper, large page → shallower).',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.object({
+  input: v.strictObject({
     id: v.optional(v.pipe(v.string(), v.description('Node ID (single node)'))),
     ids: v.optional(
       v.pipe(

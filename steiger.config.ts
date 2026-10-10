@@ -41,6 +41,7 @@ export default defineConfig([
       'open-pencil/no-production-test-ids-in-shared-layers': 'error',
       'open-pencil/no-native-title-attributes-in-vue': 'error',
       'open-pencil/no-ui-imports-in-core': 'error',
+      'open-pencil/no-graph-builders-in-front-ends': 'error',
       'open-pencil/scripts-are-entrypoint-shims': 'error',
       'open-pencil/strict-tools-layout': 'error'
     }

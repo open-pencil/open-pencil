@@ -1,8 +1,11 @@
+import { layerKind } from '#dom-css/behaviours/states/layers'
 import type { StateElement } from '#dom-css/behaviours/states/types'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
+  behaviourOwner,
+  findComponentPropertyTargets,
   findLayerByPath,
   instanceMainComponent,
   isIconModified,
@@ -11,12 +14,13 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 
+import { drawsAsMain } from './drawn'
 import type { ComponentModel } from './model'
 
 /** A prop a reference sets on the component it uses: a variant or text value, or `disabled`. */
 export interface ReferenceProp {
   name: string
-  value: string | true
+  value: string | boolean
 }
 
 /**
@@ -25,6 +29,8 @@ export interface ReferenceProp {
  */
 export interface ComponentReference {
   type: 'reference'
+  /** The layer it draws, which code links back to. */
+  layerId?: string
   /** The component's identifier and file name. */
   component: string
   /** The class the parent's state styles place it by. */
@@ -37,6 +43,8 @@ export interface ComponentReference {
 /** An icon from a set, drawn by the framework's Iconify component. */
 export interface IconReference {
   type: 'icon'
+  /** The layer it draws, which code links back to. */
+  layerId?: string
   /** `prefix:name`. */
   icon: string
   className: string
@@ -47,11 +55,23 @@ export interface IconReference {
  * a layer keeps its own look and state styles; the parent only places it.
  */
 const PLACEMENT =
-  /^(position|inset|left|top|right|bottom|(min-|max-)?(width|height)|margin(-.+)?|flex(-.+)?|align-self|justify-self|order|grid-(area|column|row)(-.+)?|transform(-origin)?|rotate|translate|scale|z-index)$/
+  /^(position|inset|left|top|right|bottom|(min-|max-)?(width|height)|margin(-.+)?|flex(-(grow|shrink|basis))?|align-self|justify-self|order|grid-(area|column|row)(-.+)?|transform(-origin)?|rotate|translate|scale|z-index)$/
 
+/** Whether a declaration places a layer rather than drawing it. */
+export const isPlacement = (property: string) => PLACEMENT.test(property)
+
+/** Whether a declaration hides or shows a layer by state, which the parent decides too. */
+const isVisibility = (property: string, value: string) =>
+  property === 'display' && (value === 'none' || value === 'revert')
+
+/** Keeps only where the parent places a layer, and whether a state shows it. */
 export function placementOnly(element: StateElement): void {
   const placement = (style: DesignStyleDeclaration): DesignStyleDeclaration =>
-    Object.fromEntries(Object.entries(style).filter(([property]) => PLACEMENT.test(property)))
+    Object.fromEntries(
+      Object.entries(style).filter(
+        ([property, value]) => isPlacement(property) || isVisibility(property, value)
+      )
+    )
   element.base = placement(element.base)
   element.rules = element.rules
     .map((rule) => ({ ...rule, style: placement(rule.style) }))
@@ -65,6 +85,26 @@ export type ComponentReferences = ReadonlyMap<string, ComponentModel>
 function ownerId(graph: SceneGraph, component: SceneNode): string {
   const parent = component.parentId ? graph.getNode(component.parentId) : undefined
   return parent?.type === 'COMPONENT_SET' ? parent.id : component.id
+}
+
+/**
+ * The words an instance shows for a text property: an assignment that overrides the default,
+ * else what its bound text layer reads, which a direct edit changes, else the assignment.
+ */
+export function shownText(
+  graph: SceneGraph,
+  instance: SceneNode,
+  propertyId: string
+): string | undefined {
+  const assigned = instance.componentPropertyAssignments[propertyId]
+  const main = instanceMainComponent(graph, instance)
+  const owner = main && behaviourOwner(graph, main)
+  const definition = owner?.componentPropertyDefinitions.find((item) => item.id === propertyId)
+  if (typeof assigned === 'string' && assigned !== definition?.defaultValue) return assigned
+  const target = findComponentPropertyTargets(graph, instance, propertyId).find(
+    (item) => item.field === 'TEXT' && item.node.type === 'TEXT'
+  )
+  return target?.node.text ?? (typeof assigned === 'string' ? assigned : undefined)
 }
 
 /**
@@ -94,8 +134,15 @@ export function referenceValues(
       props.push({ name: prop.name, value })
   }
   for (const text of component.texts) {
-    const value = instance.componentPropertyAssignments[text.id]
-    if (typeof value === 'string' && value !== text.default) props.push({ name: text.name, value })
+    const value = shownText(graph, instance, text.id)
+    if (value !== undefined && value !== text.default) props.push({ name: text.name, value })
+  }
+  for (const prop of component.booleans) {
+    const assignments = instance.componentPropertyAssignments
+    const value = Object.hasOwn(assignments, prop.id)
+      ? assignments[prop.id] === 'true'
+      : prop.default
+    if (value !== prop.default) props.push({ name: prop.name, value })
   }
   return { props, model }
 }
@@ -105,7 +152,8 @@ export type UsedLayer = Omit<ComponentReference, 'className'> | Omit<IconReferen
 
 /**
  * What the layer at `element` uses in place of drawing itself, if anything, read from the first
- * variant that draws it: the rest state, or the one that shows it, such as open content.
+ * variant that draws it as that element: the rest state, or the one that shows it, such as open
+ * content.
  */
 function usedLayer(
   graph: SceneGraph,
@@ -114,12 +162,16 @@ function usedLayer(
   references: ComponentReferences
 ): UsedLayer | null {
   const path = element.key.split('\0')[0] ?? ''
+  // The variant's layer at that path drawn as this element is: a frame, or that instance or icon.
   const node = variantIds
     .map((id) => findLayerByPath(graph, id, path))
-    .find((found) => found !== undefined)
+    .find((found) => found !== undefined && layerKind(graph, found) === element.kind)
   if (!node) return null
   const main = node.type === 'INSTANCE' ? instanceMainComponent(graph, node) : undefined
-  const component = main ? references.get(ownerId(graph, main)) : undefined
+  // An instance changed beyond its properties draws its own layers, which the component's
+  // props could not reproduce.
+  const component =
+    main && drawsAsMain(graph, node, main) ? references.get(ownerId(graph, main)) : undefined
   if (component)
     return {
       type: 'reference',

@@ -14,6 +14,7 @@ export * from './transfer'
 export * from './instance-overrides'
 export * from './images'
 export * from './components/properties'
+export * from './components/variants'
 export * from './slots/frames'
 export { instanceMainComponent } from './instances/main-component'
 export { canCreateInstance } from './instances/cycles'
@@ -30,9 +31,15 @@ export * from './behaviours/kinds'
 export * from './icons/schema'
 export * from './icons/model'
 export * from './icons/glyph'
+export * from './shaders/schema'
+export * from './shaders/model'
 export * from './behaviours/layers'
 export * from './behaviours/model'
 export * from './behaviours/spec'
+export * from './comments/document'
+export * from './comments/list'
+export * from './comments/merge'
+export * from './comments/threads'
 export * from './copy'
 export {
   createDefaultNode,
@@ -61,12 +68,11 @@ export * from './snap'
 export * from './export-format'
 export * from './export-scale'
 export * from './coordinate'
-export * from './layout-sizing'
+export * from './layout'
 export * from './group-bounds'
 export * from './constants'
 export * from './geometry'
 export * from './guides'
-export * from './layout-guides'
 export * from './font-style'
 export * from './shared-styles'
 export { default as TransformMatrix } from './matrix'
@@ -124,7 +130,8 @@ export {
   vectorNetworksEqual
 } from './vector-network'
 
-const MAX_ID_SESSION = 0xffffffff
+/** Figma reads both parts of a GUID as signed 32-bit integers and drops records beyond them. */
+const MAX_ID_SESSION = 0x7fffffff
 
 let idSession = 0
 let nextLocalID = 1
@@ -137,7 +144,7 @@ let nextLocalID = 1
  */
 export function setIdSession(sessionId: number): void {
   if (!Number.isInteger(sessionId) || sessionId < 0 || sessionId > MAX_ID_SESSION) {
-    throw new RangeError('sessionId must be an unsigned 32-bit integer')
+    throw new RangeError('sessionId must be a non-negative 31-bit integer')
   }
   idSession = sessionId
 }
@@ -527,7 +534,8 @@ export class SceneGraph {
     'minWidth',
     'maxWidth',
     'minHeight',
-    'maxHeight'
+    'maxHeight',
+    'targetAspectRatio'
   ])
 
   runPreviewUpdates(fn: () => void, beforeUpdate?: NodePreviewObserver): void {

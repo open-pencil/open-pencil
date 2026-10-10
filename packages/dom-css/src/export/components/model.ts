@@ -1,18 +1,20 @@
 import { behaviourArgs, type BehaviourArgs } from '#dom-css/behaviours/args'
 import { BUTTON_RESET } from '#dom-css/behaviours/reset'
 import { allElements } from '#dom-css/behaviours/states/layers'
-import { ownerVariants, stateStyles } from '#dom-css/behaviours/states/model'
+import { ownerVariants, restLayerOf, stateStyles } from '#dom-css/behaviours/states/model'
 import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
 import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types'
+import { uniq } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 
 import {
   behaviourContract,
   behaviourProperties,
-  findLayerByPath,
   layerPath,
   readBehaviour,
   slotPropertyId,
+  textBinding,
+  variantDefaultValue,
   type Behaviour,
   type SceneGraph,
   type SceneNode
@@ -20,6 +22,15 @@ import {
 
 import type { SceneGraphToDesignOptions } from '../projection'
 import { claimName, identifierName } from '../storybook/names'
+import {
+  blockRoot,
+  freePlacedParts,
+  inputLayers,
+  inputValue,
+  numberInput,
+  rangeModel,
+  textModel
+} from './fields'
 import {
   groupItems,
   GROUP_ITEMS,
@@ -29,13 +40,24 @@ import {
   type ItemKind
 } from './groups'
 import {
+  booleanProps,
+  slotProps,
+  textProps,
+  type BooleanProp,
+  type SlotProp,
+  type TextProp
+} from './properties'
+import {
   referencedLayers,
   type ComponentReference,
   type ComponentReferences,
   type IconReference,
   type UsedLayer
 } from './references'
-import { tabParts, type ChoiceModel, type RepeatedPart } from './repeats'
+import { activeTriggers, tabParts, type ChoiceModel, type RepeatedPart } from './repeats'
+import { shaderLayers, type ShaderLayer } from './shaders'
+import type { ComponentStyling } from './styling'
+import { componentTree } from './tree'
 
 /** Kinds generated as components so far; the rest keep static stories. */
 export const GENERATED_KINDS = [
@@ -47,11 +69,20 @@ export const GENERATED_KINDS = [
   'tabs',
   'radioGroup',
   'toggleGroup',
-  'accordion'
+  'accordion',
+  'slider',
+  'progress',
+  'numberField',
+  'textField',
+  'textarea'
 ] as const
 
 /** What a generated component is: a control on its own, or a group's item. */
-export type GeneratedKind = (typeof GENERATED_KINDS)[number] | ItemKind
+/**
+ * What a generated component is: a control on its own, a group's item, or `plain`, a component
+ * without a behaviour, which takes its properties as props and has no control of its own.
+ */
+export type GeneratedKind = (typeof GENERATED_KINDS)[number] | ItemKind | 'plain'
 
 /** A variant property the component takes as a prop and sets on its root as `data-*`. */
 export interface VariantProp {
@@ -88,20 +119,34 @@ export interface ComponentElement {
   attrs: Record<string, string>
   /** On the root only. */
   bindings: ComponentBinding[]
+  /** The boolean prop that shows the layer, which hides it while off. */
+  shownBy?: string
+  /** The slot prop whose content the layer shows in place of its own. */
+  slot?: string
+  /** The layer of the rest variant it draws, which code links back to. */
+  layerId?: string
   /** The value a repeated part stands for, such as a tab trigger's tab. */
   value?: string
+  /** The shader the layer fills with, which plays behind its content. */
+  shader?: ShaderLayer
   children: ComponentNode[]
 }
 
-/** A text property the component takes as a string prop and draws in the layers bound to it. */
-export interface TextProp {
-  /** The prop's identifier. */
-  name: string
-  /** The text property's id, which instances assign values by. */
-  id: string
-  /** The text property's name. */
-  property: string
+/** A number the component binds two ways, within its range, starting where the design does. */
+export interface RangeModel {
+  min: number
+  max: number
+  step: number
+  default: number
+}
+
+/**
+ * Text a field binds two ways: the words it starts with, and the placeholder an empty field
+ * shows when the design draws one.
+ */
+export interface TextModel {
   default: string
+  placeholder: string | null
 }
 
 export type ComponentNode =
@@ -109,6 +154,8 @@ export type ComponentNode =
   | { type: 'text'; value: string }
   /** The value of a text prop, drawn where the design binds a text layer to it. */
   | { type: 'textProp'; name: string }
+  /** A field's input, drawn where the design binds its text layer to the field's text. */
+  | { type: 'input'; className: string; layerId?: string }
   | ComponentReference
   | IconReference
 
@@ -127,6 +174,10 @@ export interface ComponentModel {
   model: string | null
   /** The options a string model takes and the one it starts on. */
   choice: ChoiceModel | null
+  /** The range a number model takes, as a slider, progress bar, or number field has. */
+  range: RangeModel | null
+  /** The text a text field or textarea binds. */
+  text: TextModel | null
   /** A group's item takes the `value` it stands for, which the group chooses among. */
   valueProp: boolean
   /** The component of a group's items, generated beside the group's own. */
@@ -135,99 +186,37 @@ export interface ComponentModel {
   disabled: boolean
   props: VariantProp[]
   texts: TextProp[]
+  booleans: BooleanProp[]
+  slots: SlotProp[]
   /** The variant properties that draw its booleans and states, which references set. */
   args: BehaviourArgs
 }
 
-interface TreeLabels {
-  parts: Map<StateElement, string>
-  classes: Map<StateElement, string>
-  /** The text prop each bound text layer draws, by layer. */
-  texts: Map<StateElement, string>
-  /** Layers that use another component or an icon in place of drawing themselves. */
-  used: Map<StateElement, UsedLayer>
-  /** Layers drawn once per value, such as tab triggers and panels. */
-  repeated: Map<StateElement, RepeatedPart>
-}
-
-function componentTree(
-  node: StateElement,
-  labels: TreeLabels,
-  bindings: ComponentBinding[]
-): ComponentElement {
-  const repeated = labels.repeated.get(node)
-  const part = repeated?.part ?? labels.parts.get(node) ?? null
-  const text = labels.texts.get(node)
-  return {
-    type: 'element',
-    part,
-    ...(repeated ? { value: repeated.value } : {}),
-    tag: node.tagName,
-    className: labels.classes.get(node) ?? '',
-    attrs: node.attrs,
-    bindings: part === 'root' ? bindings : [],
-    // A bound text layer draws its prop in place of the design's words and their runs.
-    children: text
-      ? [{ type: 'textProp', name: text }]
-      : node.children.map((child) =>
-          child.type === 'text' ? { type: 'text', value: child.text } : childNode(child, labels)
-        )
-  }
-}
-
-function childNode(element: StateElement, labels: TreeLabels): ComponentNode {
-  const used = labels.used.get(element)
-  if (!used) return componentTree(element, labels, [])
-  return { ...used, className: labels.classes.get(element) ?? '' }
-}
-
-/**
- * The set's text properties as props, and the layers bound to each. A layer is bound when it
- * is in any variant, found by the path every variant shares.
- */
-function textProps(
-  graph: SceneGraph,
-  set: SceneNode,
-  elements: readonly StateElement[],
-  taken: Set<string>
-): { texts: TextProp[]; bound: Map<StateElement, string> } {
-  const definitions = behaviourProperties(graph, set).filter((item) => item.type === 'TEXT')
-  const texts = definitions.map((definition) => ({
-    name: claimName(camelCase(identifierName(definition.name, 'Text')), taken),
-    id: definition.id,
-    property: definition.name,
-    default: definition.defaultValue
-  }))
-  const byId = new Map(definitions.map((definition, i) => [definition.id, texts[i]]))
-  const variants = ownerVariants(graph, set)
-  const bound = new Map<StateElement, string>()
-  for (const element of elements) {
-    // A key ends with the words a layer reads, which a text prop draws in every variant.
-    const path = element.key.split('\0')[0] ?? ''
-    for (const variant of variants) {
-      const reference = findLayerByPath(graph, variant.id, path)?.componentPropertyReferences.find(
-        (item) => item.field === 'TEXT'
-      )
-      const prop = reference && byId.get(reference.propertyId)
-      if (prop) {
-        bound.set(element, prop.name)
-        break
-      }
-    }
-  }
-  return { texts, bound }
-}
-
 /** A generated component's files, and what its stories need to know about it. */
 export interface GeneratedComponent {
-  files: { path: string; content: string }[]
+  /**
+   * The component's files. A file of JSX lists the layer each of its JSX elements draws, in the
+   * order they open, `null` for an element no layer drew, such as a shader's canvas.
+   */
+  files: { path: string; content: string; layerIds?: (string | null)[] }[]
   /** How stories import it: its path next to them, and whether it's a named export. */
   entry: { path: string; named: boolean }
   /** The prop a story sets the value with, if the component has one. */
   valueArg: string | null
+  /** Whether that prop takes a list of the value, as Radix's slider does. */
+  valueList?: boolean
 }
 
-export type ComponentGenerator = (component: ComponentModel) => Promise<GeneratedComponent>
+/** How a generator writes a component. */
+export interface ComponentGeneratorOptions {
+  /** A stylesheet beside the component, by default, or Tailwind utilities in its markup. */
+  styling?: ComponentStyling
+}
+
+export type ComponentGenerator = (
+  component: ComponentModel,
+  options?: ComponentGeneratorOptions
+) => Promise<GeneratedComponent>
 
 /** Parts each kind renders as a native button, which the reset clears for the design. */
 const BUTTON_PARTS: Record<GeneratedKind, readonly string[]> = {
@@ -240,6 +229,12 @@ const BUTTON_PARTS: Record<GeneratedKind, readonly string[]> = {
   radioGroup: [],
   toggleGroup: [],
   accordion: [],
+  slider: [],
+  progress: [],
+  numberField: ['increment', 'decrement'],
+  textField: [],
+  textarea: [],
+  plain: [],
   radioGroupItem: ['root'],
   toggleGroupItem: ['root'],
   accordionItem: ['trigger']
@@ -321,14 +316,20 @@ function variantProps(
   args: BehaviourArgs,
   taken: Set<string>
 ): VariantProp[] {
-  const bound = new Set([...args.booleans.keys(), args.states?.property])
+  const bound = new Set([...args.booleans.keys(), args.states?.property, args.filled?.property])
   return behaviourProperties(graph, set)
     .filter((definition) => definition.type === 'VARIANT' && !bound.has(definition.name))
     .map((definition) => ({
       name: claimName(camelCase(identifierName(definition.name, 'Prop')), taken),
       property: definition.name,
-      options: definition.variantOptions ?? [],
-      default: definition.defaultValue
+      // A document may record no options, which the variants' own values then are.
+      options: uniq([
+        ...(definition.variantOptions ?? []),
+        ...ownerVariants(graph, set).map(
+          (variant) => variant.componentPropertyValues[definition.name] ?? ''
+        )
+      ]).filter((option) => option !== ''),
+      default: variantDefaultValue(graph, set, definition)
     }))
 }
 
@@ -369,11 +370,12 @@ function itemsOf(
 }
 
 /**
- * The value the component binds two ways: `value` when it chooses among options, its boolean
- * such as `checked`, or none for a group's item, which its group chooses.
+ * The value the component binds two ways: `value` when it chooses among options or holds a
+ * number or text, its boolean such as `checked`, or none for a group's item, which its group
+ * chooses.
  */
-function modelName(args: BehaviourArgs, item: boolean, choice: ChoiceModel | null): string | null {
-  if (choice) return 'value'
+function modelName(args: BehaviourArgs, item: boolean, valued: boolean): string | null {
+  if (valued) return 'value'
   if (item) return null
   return [...args.booleans.values()].find((arg) => arg.name !== 'disabled')?.name ?? null
 }
@@ -398,63 +400,143 @@ function usedLayers(
   return used
 }
 
+/**
+ * Sizes the design gives include a layer's padding and border, which a component's own
+ * stylesheet has to say, since no page reset around it does. A root without a width hugs its
+ * content, as the design draws it.
+ */
+function borderBoxes(root: StateElement): void {
+  // A root the design sizes to its content hugs it, where a block would fill its container.
+  if (!Object.hasOwn(root.base, 'width')) root.base = { ...root.base, width: 'fit-content' }
+  for (const element of allElements(root)) {
+    const has = (property: string) => Object.hasOwn(element.base, property)
+    if ((has('width') || has('height')) && !has('box-sizing'))
+      element.base = { 'box-sizing': 'border-box', ...element.base }
+  }
+}
+
+/**
+ * Each layer's part, and tabs' triggers and panels, with the styles the generated parts need:
+ * native buttons cleared, the chosen tab's look, and moving parts free of their drawn place.
+ */
+function drawnParts(
+  graph: SceneGraph,
+  set: SceneNode,
+  behaviour: Behaviour | null,
+  kind: GeneratedKind,
+  root: StateElement
+) {
+  // A component without a behaviour has no parts but its root.
+  const parts = behaviour
+    ? behaviourParts(graph, set, behaviour, root)
+    : new Map<StateElement, string>([[root, 'root']])
+  const tabs = behaviour?.kind === 'tabs' ? tabParts(parts) : null
+  const repeated = tabs?.repeated ?? new Map<StateElement, RepeatedPart>()
+  activeTriggers(repeated)
+  resetButtons(kind, parts, repeated)
+  freePlacedParts(kind, parts)
+  blockRoot(kind, root)
+  borderBoxes(root)
+  return { parts, tabs, repeated }
+}
+
+/** The number or text the component holds, and the text property a field's input shows. */
+function valueModels(
+  graph: SceneGraph,
+  set: SceneNode,
+  kind: GeneratedKind,
+  behaviour: Behaviour | null,
+  args: BehaviourArgs
+): { range: RangeModel | null; text: TextModel | null; inputProperty: string | undefined } {
+  if (!behaviour) return { range: null, text: null, inputProperty: undefined }
+  const valueText = inputValue(kind)
+  const inputProperty = valueText && textBinding(behaviour, valueText)
+  const definition = behaviourProperties(graph, set).find((item) => item.id === inputProperty)
+  return {
+    range: rangeModel(kind, behaviour),
+    text: textModel(kind, definition, args),
+    inputProperty
+  }
+}
+
 export function componentModel(
   graph: SceneGraph,
   set: SceneNode,
   options: ComponentModelOptions = {}
 ): ComponentModel | null {
   const behaviour = readBehaviour(set)
-  const kind = behaviour && generatedKind(behaviour.kind, options.itemOf)
+  // A component without a behaviour is plain: its properties are its props.
+  const kind = behaviour ? generatedKind(behaviour.kind, options.itemOf) : 'plain'
   const styles = kind ? stateStyles(graph, set, options) : null
-  const args = behaviourArgs(graph, set)
-  if (!behaviour || !kind || !styles || !args) return null
+  const args = behaviourArgs(graph, set) ?? { booleans: new Map() }
+  if (!kind || !styles) return null
   const name = options.name ?? identifierName(set.name, 'Component')
 
-  const parts = behaviourParts(graph, set, behaviour, styles.root)
-  const tabs = behaviour.kind === 'tabs' ? tabParts(parts) : null
-  const repeated = tabs?.repeated ?? new Map<StateElement, RepeatedPart>()
-  resetButtons(kind, parts, repeated)
+  const { parts, tabs, repeated } = drawnParts(graph, set, behaviour, kind, styles.root)
 
   // A group's items first, so its item component is used for them rather than a standalone one.
   const variantIds = [styles.restId, ...ownerVariants(graph, set).map((variant) => variant.id)]
-  const items = itemsOf(
-    graph,
-    behaviour,
-    variantIds,
-    parts,
-    options,
-    (itemOf) => (owner) =>
-      componentModel(graph, owner, {
-        ...options,
-        name: options.itemName ?? `${name}Item`,
-        itemName: undefined,
-        itemOf
-      })
-  )
+  const items =
+    behaviour &&
+    itemsOf(
+      graph,
+      behaviour,
+      variantIds,
+      parts,
+      options,
+      (itemOf) => (owner) =>
+        componentModel(graph, owner, {
+          ...options,
+          name: options.itemName ?? `${name}Item`,
+          itemName: undefined,
+          itemOf
+        })
+    )
 
   const choice = tabs?.choice ?? items?.choice ?? null
-  const model = modelName(args, !!options.itemOf, choice)
+  const { range, text, inputProperty } = valueModels(graph, set, kind, behaviour, args)
+  const model = modelName(args, !!options.itemOf, !!(choice ?? range ?? text))
   const taken = new Set([...(model ? [model] : []), 'disabled', 'value'])
   const props = variantProps(graph, set, args, taken)
   const disabled = drawsDisabled(args)
   const used = usedLayers(graph, styles.root, variantIds, items?.used, options.references)
-  const texts = textProps(graph, set, allElements(styles.root), taken)
+  const elements = allElements(styles.root)
+  const texts = textProps(graph, set, elements, taken, inputProperty)
+  const input = inputLayers(texts.input)
+  numberInput(input, range)
+  const { booleans, shownBy } = booleanProps(graph, set, elements, taken)
+  const { slots, slotOf } = slotProps(graph, set, elements, taken, parts)
   return {
     name,
     kind,
     styles,
     tree: componentTree(
       styles.root,
-      { parts, classes: layerClassNames(styles), texts: texts.bound, used, repeated },
+      {
+        parts,
+        classes: layerClassNames(styles),
+        texts: texts.bound,
+        used,
+        repeated,
+        input,
+        shownBy,
+        slotOf,
+        shaders: shaderLayers(graph, styles.restId, elements),
+        layerOf: (element) => restLayerOf(graph, styles, element)
+      },
       rootBindings(model, !!options.itemOf, disabled, props)
     ),
     model,
     choice,
+    range,
+    text,
     valueProp: !!options.itemOf,
     item: items?.item ?? null,
     disabled,
     props,
     texts: texts.texts,
+    booleans,
+    slots,
     args
   }
 }

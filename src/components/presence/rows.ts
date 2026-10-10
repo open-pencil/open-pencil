@@ -13,12 +13,20 @@ export interface PresenceAgentRow {
   renamable: boolean
 }
 
+/** How a person takes part in the room's voice call. */
+export interface PresenceVoice {
+  muted: boolean
+  speaking: boolean
+}
+
 export interface PresencePersonRow {
   /** Undefined for ourselves, who cannot be followed. */
   clientId?: number
   name: string
   color: Color
   agents: PresenceAgentRow[]
+  /** Present while the person is in the voice call. */
+  voice?: PresenceVoice
 }
 
 function agentRows(
@@ -35,19 +43,32 @@ function agentRows(
   }))
 }
 
-/** Ourselves first, then everyone else in the room, each with the agents they run. */
+/**
+ * Ourselves first, then everyone else in the room, each with the agents they run and how they
+ * are in the voice call. `speaking` holds the presence clients speaking now.
+ */
 export function presenceRows(
-  self: { name: string; color: Color; agents: readonly AgentPresence[] },
+  self: { name: string; color: Color; agents: readonly AgentPresence[]; voice?: PresenceVoice },
   peers: readonly RemotePeer[],
-  pageName: (pageId: string) => string | undefined
+  pageName: (pageId: string) => string | undefined,
+  speaking: ReadonlySet<number> = new Set()
 ): PresencePersonRow[] {
   return [
-    { name: self.name, color: self.color, agents: agentRows(self.agents, pageName, true) },
+    {
+      name: self.name,
+      color: self.color,
+      agents: agentRows(self.agents, pageName, true),
+      voice: self.voice
+    },
     ...peers.map((peer) => ({
       clientId: peer.clientId,
       name: peer.name,
       color: peer.color,
-      agents: agentRows(peer.agents, pageName, false)
+      agents: agentRows(peer.agents, pageName, false),
+      voice: peer.voice && {
+        muted: peer.voice.muted,
+        speaking: !peer.voice.muted && speaking.has(peer.clientId)
+      }
     }))
   ]
 }

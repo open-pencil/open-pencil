@@ -7,7 +7,7 @@ import {
   getInMemoryClipboardHTML,
   setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
+import { pasteClipboardHTML, pasteSVGText } from '@/app/editor/clipboard/paste'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
 import {
   readTauriClipboardText,
@@ -44,6 +44,7 @@ async function pasteSelection(store: EditorStore, cursorPos?: Vector): Promise<b
       await pasteClipboardHTML(store, text, cursorPos)
       return true
     }
+    if (text && (await pasteSVGText(store, text, cursorPos))) return true
     const matchingMemoryHTML = getInMemoryClipboardHTML(text ?? '')
     if (matchingMemoryHTML && isDesignClipboardHTML(matchingMemoryHTML)) {
       await pasteClipboardHTML(store, matchingMemoryHTML, cursorPos)

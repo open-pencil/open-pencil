@@ -183,7 +183,7 @@ describe('undo and redo', () => {
       name: 'render',
       args: {
         parent_id: frame.id,
-        tree: { type: 'frame', props: { name: 'Rendered', w: 40, h: 40 }, children: [] }
+        jsx: '<Frame name="Rendered" w={40} h={40} />'
       }
     })
     const id = String(rendered.result.id)
@@ -194,10 +194,97 @@ describe('undo and redo', () => {
     expect(graph.getNode(frame.id)?.childIds).toEqual([])
   })
 
+  test('undo reverts a render that replaces a layer on another page', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    const otherPage = graph.addPage('Other')
+    const frame = graph.createNode('FRAME', otherPage.id, { width: 200, height: 200 })
+    const placeholder = graph.createNode('RECTANGLE', frame.id, { width: 40, height: 40 })
+    // replace_id decides where the layer goes, so its page records the change.
+    const rendered = await request('tool', {
+      document_id: tab.id,
+      name: 'render',
+      args: {
+        jsx: '<Frame name="Rendered" w={40} h={40} />',
+        replace_id: placeholder.id,
+        parent_id: tab.store.state.currentPageId
+      }
+    })
+    const id = String(rendered.result.id)
+    expect(graph.getNode(id)?.parentId).toBe(frame.id)
+
+    await request('undo', { document_id: tab.id })
+    expect(graph.getNode(id)).toBeUndefined()
+    expect(graph.getNode(frame.id)?.childIds).toEqual([placeholder.id])
+  })
+
   test('a read-only eval leaves the history unchanged', async () => {
     const tab = createTab()
     await request('eval', { document_id: tab.id, code: 'return figma.currentPage.name' })
     expect(tab.store.undo.canUndo).toBe(false)
+  })
+})
+
+// The stdio MCP server sends render JSX as written; these are what #830 lost on that path.
+describe('render JSX', () => {
+  function render(tabId: string, args: Record<string, unknown>) {
+    return request('tool', { document_id: tabId, name: 'render', args })
+  }
+
+  test('binds a design variable', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    graph.addCollection({
+      id: 'brand',
+      name: 'Brand',
+      modes: [{ modeId: 'default', name: 'Default' }],
+      defaultModeId: 'default',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'var-primary',
+      name: 'Brand/primary',
+      type: 'COLOR',
+      collectionId: 'brand',
+      valuesByMode: { default: { r: 1, g: 0, b: 0, a: 1 } },
+      description: '',
+      hiddenFromPublishing: false
+    })
+    const rendered = await render(tab.id, {
+      jsx: "<Frame w={100} h={100} fill={designVar('Brand/primary')} />"
+    })
+    const node = graph.getNode(String(rendered.result.id))
+    expect(node?.boundVariables['fills/0/color']).toBe('var-primary')
+  })
+
+  test('replaces a placeholder in its place', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    const placeholder = tab.store.createShape('RECTANGLE', 60, 30, 40, 40)
+    const rendered = await render(tab.id, {
+      jsx: '<Frame name="Card" w={40} h={40} />',
+      replace_id: placeholder
+    })
+    const node = graph.getNode(String(rendered.result.id))
+    expect(graph.getNode(placeholder)).toBeUndefined()
+    expect([node?.x, node?.y]).toEqual([60, 30])
+  })
+
+  test('inserts at the requested index', async () => {
+    const tab = createTab()
+    const graph = tab.store.graph
+    const frame = graph.createNode('FRAME', tab.store.state.currentPageId, {
+      width: 200,
+      height: 200
+    })
+    graph.createNode('RECTANGLE', frame.id, { name: 'First' })
+    graph.createNode('RECTANGLE', frame.id, { name: 'Second' })
+    const rendered = await render(tab.id, {
+      jsx: '<Frame name="Inserted" w={20} h={20} />',
+      parent_id: frame.id,
+      insert_index: 1
+    })
+    expect(graph.getNode(frame.id)?.childIds[1]).toBe(String(rendered.result.id))
   })
 })
 

@@ -485,8 +485,9 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
     )
 
     expect(card?.type).toBe('FRAME')
-    expect(card?.width).toBe(320)
-    expect(card?.height).toBe(176)
+    // The box the browser draws: padding outside the content-box width and height.
+    expect(card?.width).toBe(320 + 2 * 24)
+    expect(card?.height).toBe(176 + 2 * 24)
     expect(card?.layoutMode).toBe('VERTICAL')
     expect(card?.itemSpacing).toBe(12)
     expect(card?.paddingLeft).toBe(24)
@@ -507,8 +508,8 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
     )
 
     expect(card?.type).toBe('FRAME')
-    expect(card?.width).toBe(300)
-    expect(card?.height).toBe(160)
+    expect(card?.width).toBe(300 + 2 * 22)
+    expect(card?.height).toBe(160 + 2 * 22)
     expect(card?.layoutMode).toBe('VERTICAL')
     expect(card?.itemSpacing).toBe(14)
     expect(card?.paddingLeft).toBe(22)

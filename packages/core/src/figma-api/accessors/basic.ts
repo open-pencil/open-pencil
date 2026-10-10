@@ -4,6 +4,7 @@ import {
   FITTED_CONTAINER_TYPES,
   TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
   findInstanceAncestor,
+  recapturedAspectRatio,
   recordInstanceOverride,
   rescaleNodeTree,
   slotPropertyId,
@@ -216,14 +217,18 @@ export function installBasicNodeProxyAccessors(
       const fixesText =
         node.type === 'TEXT' &&
         (node.textAutoResize === 'WIDTH_AND_HEIGHT' || node.textAutoResize === 'HEIGHT')
+      // A locked ratio does not hold here; it takes the new size, as in Figma.
+      const recaptured = recapturedAspectRatio(node, width, height)
       scene.updateNode(node.id, {
         width,
         height,
+        ...recaptured,
         ...(fixesText ? { textAutoResize: 'NONE' as const } : {})
       })
       recordInstanceOverride(scene, node.id, [
         'width',
         'height',
+        ...Object.keys(recaptured),
         ...(fixesText ? ['textAutoResize'] : [])
       ])
       setTransform(this, internals, () => before)

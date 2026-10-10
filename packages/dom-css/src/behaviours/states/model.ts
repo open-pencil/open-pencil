@@ -2,7 +2,7 @@ import type { SceneGraphToDesignOptions } from '#dom-css/export/projection'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { findLayerByPath, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { variantConditions } from './conditions'
 import {
@@ -16,7 +16,7 @@ import {
 import type { StateCondition, StateElement, StateRule, StateStyles } from './types'
 
 /** Declarations `drawn` sets differently from `base`, with `unset` for ones it drops. */
-function difference(
+export function difference(
   base: DesignStyleDeclaration,
   drawn: DesignStyleDeclaration
 ): DesignStyleDeclaration {
@@ -43,6 +43,48 @@ function variantStyle(
   return difference(element.base, { ...drawn, display })
 }
 
+/** The value a variant draws a property with on a layer: its own, or none where it lacks it. */
+function drawnValue(
+  element: StateElement,
+  layer: VariantLayer | undefined,
+  property: string,
+  hiddenAtRest: boolean
+): string {
+  if (!layer) return property === 'display' ? 'none' : (element.base[property] ?? 'unset')
+  const drawn = layer.element.inlineStyle ?? {}
+  if (Object.hasOwn(drawn, property)) return drawn[property] ?? 'unset'
+  if (property === 'display' && hiddenAtRest) return 'revert'
+  return 'unset'
+}
+
+/**
+ * Makes each variant draw a layer as its own design does where a rule for fewer conditions
+ * also matches it. A rule for small buttons also matches the small, pressed one, so whatever
+ * it sets that the pressed one draws otherwise, such as words only small rest buttons show,
+ * the pressed one sets back, as a rule with more conditions, which wins.
+ */
+function settleCombined(
+  element: StateElement,
+  variants: readonly { conditions: StateCondition[]; layers: Map<string, VariantLayer> }[],
+  hiddenAtRest: boolean
+): void {
+  for (const variant of variants) {
+    const own = element.rules.find((rule) => isEqual(rule.conditions, variant.conditions))
+    const fix: DesignStyleDeclaration = {}
+    for (const rule of element.rules) {
+      if (!isPartOf(rule.conditions, variant.conditions)) continue
+      for (const property of Object.keys(rule.style)) {
+        if (own && Object.hasOwn(own.style, property)) continue
+        const layer = variant.layers.get(element.key)
+        fix[property] = drawnValue(element, layer, property, hiddenAtRest)
+      }
+    }
+    if (isEmptyObject(fix)) continue
+    if (own) own.style = { ...own.style, ...fix }
+    else element.rules.push({ conditions: variant.conditions, style: fix })
+  }
+}
+
 const isPartOf = (part: StateCondition[], whole: StateCondition[]) =>
   part.length < whole.length &&
   part.every((condition) => whole.some((other) => isEqual(condition, other)))
@@ -67,11 +109,11 @@ function pruneCombined(rules: StateRule[]): StateRule[] {
 }
 
 /**
- * The variants a behaviour's owner draws: a set's components, or a standalone component, such
- * as a radio group or tabs, which is its own only variant.
+ * The variants a layer draws: a set's components, or any other layer, such as a standalone
+ * component or a frame exported as a component, which is its own only variant.
  */
 export function ownerVariants(graph: SceneGraph, owner: SceneNode): SceneNode[] {
-  if (owner.type === 'COMPONENT') return [owner]
+  if (owner.type !== 'COMPONENT_SET') return [owner]
   return graph.getChildren(owner.id).filter((child) => child.type === 'COMPONENT')
 }
 
@@ -104,13 +146,29 @@ export function stateStyles(
   for (const variant of others) mergeVariant(root, variant.root, hiddenAtRest)
 
   const elements = allElements(root)
-  for (const variant of others) {
-    const layers = layersByKey(variant.root)
+  const drawn = others.map((variant) => ({
+    conditions: variant.conditions,
+    layers: layersByKey(variant.root)
+  }))
+  for (const variant of drawn) {
     for (const element of elements) {
-      const style = variantStyle(element, layers.get(element.key), hiddenAtRest.has(element))
+      const layer = variant.layers.get(element.key)
+      const style = variantStyle(element, layer, hiddenAtRest.has(element))
       if (!isEmptyObject(style)) element.rules.push({ conditions: variant.conditions, style })
     }
   }
-  for (const element of elements) element.rules = pruneCombined(element.rules)
+  for (const element of elements) {
+    settleCombined(element, drawn, hiddenAtRest.has(element))
+    element.rules = pruneCombined(element.rules)
+  }
   return { name: set.name, restId: rest.id, root }
+}
+
+/** The layer of the rest variant an element of the merged markup draws, if it has one. */
+export function restLayerOf(
+  graph: SceneGraph,
+  styles: StateStyles,
+  element: StateElement
+): string | undefined {
+  return findLayerByPath(graph, styles.restId, element.key.split('\0')[0] ?? '')?.id
 }

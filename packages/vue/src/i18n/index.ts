@@ -6,6 +6,7 @@ export {
   useCodeMessages,
   useCollaborationMessages,
   useCommandMessages,
+  useCommentMessages,
   useCommonMessages,
   useCredentialMessages,
   useDesignCheckMessages,

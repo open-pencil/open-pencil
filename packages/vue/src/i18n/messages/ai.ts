@@ -85,6 +85,7 @@ export const aiMessageDefaults = {
   restoreTurn: 'Restore changes',
   regenerate: 'Regenerate',
   revertAndRegenerate: 'Revert and regenerate',
+  retryRequest: 'Retry',
   editMessage: 'Edit message',
   cancelEdit: 'Cancel',
   resendMessage: 'Send again',
@@ -235,6 +236,8 @@ export const aiMessageDefaults = {
   aiSetupAccessAPI: 'API accounts',
   aiSetupAccessServer: 'Local model or company server',
   aiSetupAccessMore: 'More providers',
+  providerGroupAgents: 'Your agents',
+  providerGroupProviders: 'Providers',
   aiSetupServerOther: 'Other server',
   aiSetupAccessServerDescription:
     'Any server that speaks the OpenAI API, such as Ollama or LM Studio.',

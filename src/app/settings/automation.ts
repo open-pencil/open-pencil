@@ -15,6 +15,7 @@ import {
   updateDesignCheckPreferences,
   type AppPreferences
 } from '@/app/settings/preferences/store'
+import { accentPreferenceSchema } from '@/app/shell/accent/palette'
 import { APP_THEMES, getAppTheme, setAppTheme, type AppTheme } from '@/app/shell/theme'
 
 /**
@@ -27,6 +28,7 @@ export interface AutomationSettings {
     theme: AppTheme
     language: Locale
     animations: AppPreferences['appearance']['animations']
+    accent: AppPreferences['appearance']['accent']
   }
   editing: AppPreferences['editing']
   rendering: AppPreferences['rendering']
@@ -42,7 +44,8 @@ export const automationSettingsPatchSchema = v.strictObject({
     v.strictObject({
       theme: v.optional(v.picklist(APP_THEMES)),
       language: v.optional(v.picklist(AVAILABLE_LOCALES)),
-      animations: v.optional(v.picklist(ANIMATION_PREFERENCES))
+      animations: v.optional(v.picklist(ANIMATION_PREFERENCES)),
+      accent: v.optional(accentPreferenceSchema)
     })
   ),
   editing: v.optional(
@@ -85,7 +88,8 @@ export function readAutomationSettings(): AutomationSettings {
     appearance: {
       theme: getAppTheme(),
       language: locale.get(),
-      animations: preferences.appearance.animations
+      animations: preferences.appearance.animations,
+      accent: { ...preferences.appearance.accent }
     },
     editing: { snapping: { ...preferences.editing.snapping } },
     rendering: { ...preferences.rendering },

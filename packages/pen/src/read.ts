@@ -1,4 +1,4 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { fillSizingFields, SceneGraph } from '@open-pencil/scene-graph'
 import type {
   AxisSizingMode,
   LayoutMode,
@@ -262,17 +262,8 @@ function createSceneNode(
   applyCornerRadius(node, pen.cornerRadius, ctx)
   applyPadding(node, pen.padding, ctx)
 
-  if (isTextLike) {
-    applyTextProps(node, pen, ctx)
-    if (parentLayout === 'NONE' && pen.width === undefined && !pen.textGrowth) {
-      node.textAutoResize = 'NONE'
-      node.width = estimateTextWidth(node)
-      node.height = node.fontSize * (node.lineHeight ? node.lineHeight / node.fontSize : 1.2)
-    } else if (pen.width === undefined) {
-      // Headless layout keeps stored sizes, so an omitted width starts from the content.
-      node.width = estimateTextWidth(node)
-    }
-  }
+  // Text without a width resizes to its content, which laying out the document measures.
+  if (isTextLike) applyTextProps(node, pen, ctx)
 
   if (pen.type === 'path' && pen.geometry) {
     const vectorNetwork = parseSVGPath(pen.geometry)
@@ -281,15 +272,8 @@ function createSceneNode(
   }
 
   if (parentLayout !== 'NONE') {
-    const parentVertical = parentLayout === 'VERTICAL'
-    if (w.sizing === 'FILL') {
-      if (parentVertical) node.layoutAlignSelf = 'STRETCH'
-      else node.layoutGrow = 1
-    }
-    if (h.sizing === 'FILL') {
-      if (parentVertical) node.layoutGrow = 1
-      else node.layoutAlignSelf = 'STRETCH'
-    }
+    if (w.sizing === 'FILL') Object.assign(node, fillSizingFields(parentLayout, 'HORIZONTAL'))
+    if (h.sizing === 'FILL') Object.assign(node, fillSizingFields(parentLayout, 'VERTICAL'))
   }
 
   if (pen.reusable) {
@@ -484,10 +468,6 @@ function fixInstanceWidths(graph: SceneGraph): void {
     node.strokes = copyStrokes(node.strokes)
     node.effects = copyEffects(node.effects)
   }
-}
-
-function estimateTextWidth(node: SceneNode): number {
-  return node.text.length * node.fontSize * 0.65
 }
 
 export function parsePenFile(json: string): SceneGraph {

@@ -15,7 +15,7 @@ import { useStageDocument } from './useStageDocument'
 import { useWheelEngagement } from './useWheelEngagement'
 
 // Only some stages show the toolbar or the preview pill, so the others never download them.
-const Toolbar = defineAsyncComponent(() => import('@/components/Toolbar/Toolbar.vue'))
+const Toolbar = defineAsyncComponent(() => import('@/components/toolbar/Toolbar.vue'))
 const StagePreviewControls = defineAsyncComponent(() => import('./StagePreviewControls.vue'))
 
 /** Stages mount a screen ahead of the viewport, so a block is live before it scrolls in. */

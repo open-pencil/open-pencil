@@ -23,12 +23,14 @@ import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group'
-import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
 import { iconify, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
+import { createSVGNodes } from '#core/io/formats/svg'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
+import { fontManager } from '#core/text/fonts'
 
 import { combineComponentsAsVariants, componentFromNode, exposeInstanceSwap } from './components'
 import type {
@@ -212,6 +214,14 @@ export class FigmaAPI implements NodeProxyHost {
 
   createVector(): FigmaVectorNode {
     return this._createNode('VECTOR') as FigmaVectorNode
+  }
+
+  /** The layers Figma makes from SVG markup, on the current page at its origin. */
+  // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Figma Plugin API name.
+  createNodeFromSvg(svg: string): FigmaFrameNode {
+    const node = createSVGNodes(this.graph, this._currentPageId, svg, { keepEmpty: true })
+    if (!node) throw new Error('in createNodeFromSvg: Failed to convert SVG file')
+    return this.wrapNode(node.id) as FigmaFrameNode
   }
 
   createComponent(): FigmaComponentNode {
@@ -538,8 +548,12 @@ export class FigmaAPI implements NodeProxyHost {
 
   // --- Stubs ---
 
-  async loadFontAsync(_fontName: FigmaFontName): Promise<void> {
-    // No-op: we don't gate text editing on font loading
+  /**
+   * Loads the font so text measures and draws with it from then on. Hosts with their own font
+   * sources replace this; a font that cannot load is skipped, where Figma would reject.
+   */
+  async loadFontAsync(fontName: FigmaFontName): Promise<void> {
+    await fontManager.loadFont(fontName.family, fontName.style).catch(() => null)
   }
 
   async listAvailableFontsAsync(): Promise<FigmaFont[]> {

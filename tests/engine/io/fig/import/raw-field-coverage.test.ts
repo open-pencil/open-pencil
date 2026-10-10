@@ -119,7 +119,6 @@ const RAW_FIELD_COVERAGE = {
     'styleType',
     'textExplicitLayoutVersion',
     'textUserLayoutVersion',
-    'targetAspectRatio',
     'transitionInfo',
     'userFacingVersion',
     'variableConsumptionMap',

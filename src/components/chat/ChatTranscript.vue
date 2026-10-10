@@ -29,7 +29,7 @@ const {
   status: ChatStatus
   showContinue?: boolean
   presentations?: Record<string, { text?: string; attachments?: AttachmentPresentation[] }>
-  /** Offers regenerating the last reply and editing the last request. */
+  /** Offers regenerating the last reply, retrying an unanswered request, and editing the last request. */
   interactive?: boolean
   /** False for a conversation from another document: its layer IDs are not this document's. */
   nodesLive?: boolean
@@ -60,7 +60,8 @@ const isThinking = computed(() => {
   return status === 'submitted'
 })
 const idle = computed(() => interactive && (status === 'ready' || status === 'error'))
-const lastReplyId = computed(() => messages.findLast((m) => m.role === 'assistant')?.id)
+// A request that failed before any reply is the last message; it is retried, not an older reply.
+const lastMessage = computed(() => messages.at(-1))
 const lastRequest = computed(() => messages.findLast((m) => m.role === 'user'))
 /** Messages with attachments carry context a plain text edit would drop. */
 const editableRequestId = computed(() => {
@@ -100,7 +101,8 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           :message="msg"
           :presentation="presentations?.[msg.id]"
           :streaming="running && msg.role === 'assistant' && index === messages.length - 1"
-          :can-regenerate="idle && msg.id === lastReplyId"
+          :can-regenerate="idle && msg.id === lastMessage?.id && msg.role === 'assistant'"
+          :can-retry="idle && msg.id === lastMessage?.id && msg.role === 'user'"
           :can-edit="idle && msg.id === editableRequestId"
           :reasoning-display="reasoningDisplay"
           @regenerate="emit('regenerate')"

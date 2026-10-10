@@ -87,6 +87,7 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
   if (node.counterAxisAlign === 'CENTER') props.push(['items', 'center'])
   else if (node.counterAxisAlign === 'MAX') props.push(['items', 'end'])
   else if (node.counterAxisAlign === 'STRETCH') props.push(['items', 'stretch'])
+  else if (node.counterAxisAlign === 'BASELINE') props.push(['items', 'baseline'])
 }
 
 function collectAutoLayoutPaddingProps(node: SceneNode, props: JSXProp[]): void {

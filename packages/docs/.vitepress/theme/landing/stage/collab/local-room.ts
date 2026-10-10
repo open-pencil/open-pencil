@@ -67,6 +67,8 @@ export function createLocalRoom(): JoinCollabRoom {
       },
       signalingConnected: () => true,
       discoveryMs: 0,
+      // Both screens are in one page, so there is no one to hear.
+      media: null,
       async leave() {
         peers.delete(self.id)
         for (const other of others()) for (const handler of other.onLeave) handler(self.id)

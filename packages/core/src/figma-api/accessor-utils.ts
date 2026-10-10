@@ -6,8 +6,8 @@ import {
 import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
-import { textAutoResizeChanges } from '#core/editor/text/auto-resize'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
 export interface NodeProxyInternals {
   id: symbol

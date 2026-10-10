@@ -18,7 +18,8 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
   },
   { key: 'PEN', label: 'Pen', shortcut: 'P' },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },
-  { key: 'HAND', label: 'Hand', shortcut: 'H' }
+  { key: 'HAND', label: 'Hand', shortcut: 'H' },
+  { key: 'COMMENT', label: 'Comment', shortcut: 'C' }
 ]
 
 export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
@@ -30,5 +31,6 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyL: 'LINE',
   KeyT: 'TEXT',
   KeyP: 'PEN',
-  KeyH: 'HAND'
+  KeyH: 'HAND',
+  KeyC: 'COMMENT'
 }

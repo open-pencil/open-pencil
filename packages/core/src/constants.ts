@@ -1,5 +1,8 @@
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import { WHITE } from '@open-pencil/scene-graph/constants'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import type { SelectionTheme } from '#core/canvas/renderer/types'
 
 export const IS_BROWSER = typeof window !== 'undefined'
 export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window
@@ -8,6 +11,11 @@ export const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
 export const TRANSPARENT: Color = { r: 0, g: 0, b: 0, a: 0 }
 export const DEFAULT_SHADOW_COLOR: Color = { r: 0, g: 0, b: 0, a: 0.25 }
 export const SELECTION_COLOR = { r: 0.23, g: 0.51, b: 0.96, a: 1 } satisfies Color
+/** Selection chrome when the app sets no accent: the default blue with white text. */
+export const DEFAULT_SELECTION_THEME: Readonly<SelectionTheme> = {
+  color: SELECTION_COLOR,
+  foreground: WHITE
+}
 export const COMPONENT_COLOR = { r: 0.592, g: 0.278, b: 1, a: 1 } satisfies Color
 /** Slot frames and their outlines, `#f24bbc` like the app's `--color-slot`. */
 export const SLOT_COLOR = { r: 0.949, g: 0.294, b: 0.737, a: 1 } satisfies Color
@@ -89,6 +97,13 @@ export const SECTION_TITLE_HEIGHT = 24
 export const SECTION_TITLE_PADDING_X = 6
 export const SECTION_TITLE_RADIUS = 5
 export const SECTION_TITLE_FONT_SIZE = 11
+/**
+ * The family section titles draw in: the bundled Inter SemiBold under a name of its own, on the
+ * canvas and in the page, so renaming a title shows the same glyphs and document fonts named
+ * Inter cannot replace them.
+ */
+export const SECTION_TITLE_FONT_FAMILY = 'OpenPencil Section Title'
+export const SECTION_TITLE_FONT_URL = '/Inter-SemiBold.ttf'
 export const SECTION_TITLE_GAP = 6
 export const SECTION_HOVER_STROKE_WIDTH = 2
 
@@ -105,7 +120,6 @@ export const COMPONENT_LABEL_ICON_GAP = 4
 export const RULER_TARGET_PIXEL_SPACING = 100
 export const RULER_MAJOR_TOLERANCE = 0.01
 
-export const FLASH_COLOR = SELECTION_COLOR
 export const FLASH_ATTACK_MS = 200
 export const FLASH_HOLD_MS = 400
 export const FLASH_RELEASE_MS = 300
@@ -140,7 +154,8 @@ export const AI_DONE_COLOR = { r: 0.16, g: 0.73, b: 0.36 }
 export const AI_PULSE_PERIOD_MS = 1500
 export const AI_DONE_DURATION_MS = 800
 
-export const TEXT_SELECTION_COLOR = { r: 0.26, g: 0.52, b: 0.96, a: 0.3 }
+/** Opacity of the selection color behind selected text while editing. */
+export const TEXT_SELECTION_ALPHA = 0.3
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
 
@@ -555,6 +570,5 @@ export const HANDLE_HIT_RADIUS = 6
 export const ROTATION_HANDLE_DISTANCE = 24
 export const DEFAULT_TEXT_WIDTH = 200
 export const DEFAULT_TEXT_HEIGHT = 24
-export const AUTO_LAYOUT_BREAK_THRESHOLD = 8
 /** Space Figma leaves between a duplicated top-level frame and the layers to its left. */
 export const DUPLICATE_FRAME_GAP = 40

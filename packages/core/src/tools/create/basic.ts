@@ -10,7 +10,7 @@ export const createShape = defineTool({
   description:
     'Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     type: v.pipe(
       v.picklist(['FRAME', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'LINE', 'STAR', 'POLYGON', 'SECTION']),
       v.description('Node type')
@@ -49,7 +49,7 @@ export const createPage = defineTool({
 
   description: 'Create a new page.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     name: v.pipe(v.string(), v.description('Page name'))
   }),
   execute: (figma, { name }) => {
@@ -64,7 +64,7 @@ export const createSlice = defineTool({
 
   description: 'Create a slice (export region) on the canvas.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     ...positionInputs,
     width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width'))),
     height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height'))),

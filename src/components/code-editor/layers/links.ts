@@ -73,8 +73,12 @@ const TAG_NAMES = new Set([
   'JSXIdentifier',
   'JSXBuiltin',
   'JSXMemberExpression',
-  'JSXNamespacedName'
+  'JSXNamespacedName',
+  'TagName'
 ])
+
+/** Elements of JSX, and of HTML, which generated HTML and Vue templates are written in. */
+export const ELEMENT_NODES = new Set(['JSXElement', 'Element'])
 
 interface ParsedElement {
   from: number
@@ -89,7 +93,12 @@ interface ParsedElement {
 }
 
 function openingTag(element: SyntaxNode): SyntaxNode | null {
-  return element.getChild('JSXOpenTag') ?? element.getChild('JSXSelfClosingTag')
+  return (
+    element.getChild('JSXOpenTag') ??
+    element.getChild('JSXSelfClosingTag') ??
+    element.getChild('OpenTag') ??
+    element.getChild('SelfClosingTag')
+  )
 }
 
 function tagName(tag: SyntaxNode): SyntaxNode | null {
@@ -99,7 +108,7 @@ function tagName(tag: SyntaxNode): SyntaxNode | null {
   return null
 }
 
-/** JSX elements in pre-order, the order in which exporters write layers. */
+/** Elements in pre-order, the order in which exporters write layers. */
 function parseElements(state: EditorState, from = 0, to = state.doc.length): ParsedElement[] {
   const tree = ensureSyntaxTree(state, state.doc.length, 250) ?? syntaxTree(state)
   const elements: ParsedElement[] = []
@@ -108,11 +117,11 @@ function parseElements(state: EditorState, from = 0, to = state.doc.length): Par
     to,
     enter(node) {
       if (node.from < from || node.to > to) return
-      if (node.name !== 'JSXElement') return
+      if (!ELEMENT_NODES.has(node.name)) return
       const tag = openingTag(node.node)
       const name = tag && tagName(tag)
       if (!tag || !name) return
-      const closeTag = node.node.getChild('JSXCloseTag')
+      const closeTag = node.node.getChild('JSXCloseTag') ?? node.node.getChild('CloseTag')
       const closeName = closeTag && tagName(closeTag)
       elements.push({
         from: node.from,

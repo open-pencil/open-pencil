@@ -15,7 +15,11 @@ import IconLucidePanelTop from '~icons/lucide/panel-top'
 
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
-  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
+  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y,
+  COMPONENT_LABEL_ICON_GAP,
+  COMPONENT_LABEL_ICON_SIZE,
+  SECTION_TITLE_GAP,
+  SECTION_TITLE_HEIGHT
 } from '@open-pencil/core/constants'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import {
@@ -36,6 +40,7 @@ import { createCanvasContextSelection } from '@/app/editor/canvas/context-select
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
@@ -176,12 +181,31 @@ const canvasLabelEditNode = computed(() => {
 const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
-  const abs = store.graph.getAbsolutePosition(node.id)
+  const origin = store.graph.getAbsolutePosition(node.id)
+  const { zoom, panX, panY } = store.state
+  const kind = canvasLabelEdit.value?.kind
+  // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
+  const abs = {
+    x: (Math.round(origin.x * zoom + panX) - panX) / zoom,
+    y: (Math.round(origin.y * zoom + panY) - panY) / zoom
+  }
+  // A component's name starts after its diamond, which keeps its screen size at any zoom.
+  if (kind === 'component-label')
+    return { x: abs.x + (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP) / zoom, y: abs.y }
+  // A section inside another draws its title inside its top-left corner instead of above it.
+  const nested = node.parentId && store.graph.closest(node.parentId, (n) => n.type === 'SECTION')
+  if (kind === 'section-title' && nested) {
+    const inset = SECTION_TITLE_GAP / zoom
+    return {
+      x: abs.x + inset,
+      y: abs.y + inset + (SECTION_TITLE_HEIGHT + SECTION_TITLE_GAP) / zoom
+    }
+  }
   return { x: abs.x, y: abs.y }
 })
 const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
 const canvasLabelEditPresentation = computed(() =>
-  canvasLabelPresentation(store, canvasLabelEditNode.value ?? null)
+  canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
 )
 
 const paddingEditorAnchor = computed(() => {
@@ -289,6 +313,7 @@ const cursor = computed(() =>
           :followed="followView.label.value"
           @stop="followView.stop"
         />
+        <CommentsLayer v-if="isActivePane" :canvas-el="canvasRef" :drawn="drawnView" />
         <PreparationOverlay
           v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"
           :preparation="store.state.preparation"

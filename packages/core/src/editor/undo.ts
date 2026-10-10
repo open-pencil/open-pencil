@@ -6,6 +6,8 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { createResizeSnapshot, type ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+
 import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import {
@@ -19,8 +21,10 @@ import {
   snapshotPage as createPageSnapshot,
   type PageSnapshot
 } from './history/snapshot'
-import { textAutoResizeChanges } from './text/auto-resize'
 import type { EditorContext } from './types'
+
+/** A layer's place for a move: position, parent, and slot among the parent's children. */
+export type MovePlace = { x: number; y: number; parentId: string; index?: number }
 
 type ResizeOriginal = Rect &
   Partial<
@@ -78,31 +82,38 @@ export function createUndoActions(ctx: EditorContext) {
     pushPositionUndo(ctx, 'Move', originals, collectNodePositions(ctx, originals.keys()))
   }
 
-  function commitMoveWithReparent(
-    originals: Map<string, { x: number; y: number; parentId: string }>
-  ) {
+  /**
+   * Records a move that may change parents. Undo and redo put each layer back in its parent at
+   * the slot it had, lowest slot first, so siblings keep their order.
+   */
+  function commitMoveWithReparent(originals: Map<string, MovePlace>) {
     for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
-    const finals = new Map<string, { x: number; y: number; parentId: string }>()
+    const finals = new Map<string, MovePlace>()
     for (const [id] of originals) {
       const n = ctx.graph.getNode(id)
-      if (n) finals.set(id, { x: n.x, y: n.y, parentId: n.parentId ?? ctx.state.currentPageId })
+      if (!n) continue
+      const parentId = n.parentId ?? ctx.state.currentPageId
+      finals.set(id, {
+        x: n.x,
+        y: n.y,
+        parentId,
+        index: ctx.graph.getNode(parentId)?.childIds.indexOf(id)
+      })
+    }
+    const place = (places: Map<string, MovePlace>) => {
+      const ordered = [...places].sort(([, a], [, b]) => (a.index ?? 0) - (b.index ?? 0))
+      for (const [id, pos] of ordered) {
+        ctx.graph.reparentNode(id, pos.parentId)
+        if (pos.index !== undefined && pos.index >= 0)
+          ctx.graph.reorderChild(id, pos.parentId, pos.index)
+        ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
+      }
+      for (const id of places.keys()) ctx.runLayoutForNode(id)
     }
     ctx.undo.push({
       label: 'Move',
-      forward: () => {
-        for (const [id, pos] of finals) {
-          ctx.graph.reparentNode(id, pos.parentId)
-          ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
-          ctx.runLayoutForNode(id)
-        }
-      },
-      inverse: () => {
-        for (const [id, pos] of originals) {
-          ctx.graph.reparentNode(id, pos.parentId)
-          ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
-          ctx.runLayoutForNode(id)
-        }
-      }
+      forward: () => place(finals),
+      inverse: () => place(originals)
     })
   }
 

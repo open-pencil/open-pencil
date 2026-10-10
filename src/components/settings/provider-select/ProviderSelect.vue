@@ -9,9 +9,12 @@ import {
   IS_TAURI,
   type AIProviderID
 } from '@open-pencil/core/constants'
+import { useAIMessages } from '@open-pencil/vue'
 
-import AppGroupedSelect from '@/components/ui/select/AppGroupedSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import type { AppSelectGroup } from '@/components/ui/select/select'
 
+const ai = useAIMessages()
 const mcpAvailable = ref(false)
 
 async function checkMCPHealth(retries = 3, delayMs = 1000) {
@@ -72,12 +75,12 @@ const displayName = computed(() => {
 })
 
 const groups = computed(() => {
-  const result: Array<{ label?: string; items: Array<{ value: string; label: string }> }> = []
+  const result: AppSelectGroup<string>[] = []
 
   if (acpAgents.value.length) {
     result.push({
-      label: 'Your agents',
-      items: acpAgents.value.map((agent) => ({
+      label: ai.value.providerGroupAgents,
+      options: acpAgents.value.map((agent) => ({
         value: `acp:${agent.id}`,
         label: agent.name
       }))
@@ -85,8 +88,8 @@ const groups = computed(() => {
   }
 
   result.push({
-    label: acpAgents.value.length ? 'Providers' : undefined,
-    items: [...AI_PROVIDERS]
+    label: acpAgents.value.length ? ai.value.providerGroupProviders : undefined,
+    options: [...AI_PROVIDERS]
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((provider) => ({
         value: provider.id,
@@ -99,5 +102,5 @@ const groups = computed(() => {
 </script>
 
 <template>
-  <AppGroupedSelect v-model="providerID" :groups="groups" :display-value="displayName" :ui="ui" />
+  <AppSelect v-model="providerID" :groups="groups" :placeholder="displayName" :ui="ui" />
 </template>

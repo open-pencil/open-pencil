@@ -11,7 +11,7 @@ export const evalCode = defineTool({
   execution: { kind: 'async', mutation: 'document' },
   capabilities: ['document:read', 'document:write', 'code:execute'],
   availability: 'eval',
-  input: v.object({
+  input: v.strictObject({
     code: v.pipe(v.string(), v.description('JavaScript code to execute'))
   }),
 

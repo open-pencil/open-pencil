@@ -39,10 +39,41 @@ describe('parseAppPreferences', () => {
     })
   })
 
+  test('keeps a preset or a custom accent and falls back to blue for anything else', () => {
+    const accent = (value: unknown) =>
+      parseAppPreferences({ appearance: { accent: value } }).appearance.accent
+    expect(accent({ kind: 'preset', preset: 'green' })).toEqual({ kind: 'preset', preset: 'green' })
+    expect(accent({ kind: 'custom', color: '#ff6600' })).toEqual({
+      kind: 'custom',
+      color: '#FF6600'
+    })
+    for (const invalid of [
+      { kind: 'preset', preset: 'teal' },
+      { kind: 'custom', color: 'orange' },
+      { kind: 'custom', color: '#f60' },
+      '#ff6600'
+    ]) {
+      expect(accent(invalid)).toEqual(DEFAULT_APP_PREFERENCES.appearance.accent)
+    }
+    const preferences = parseAppPreferences({ appearance: { animations: 'off', accent: 'teal' } })
+    expect(preferences.appearance.animations).toBe('off')
+  })
+
   test('remembers that guided AI setup was finished or skipped', () => {
     expect(parseAppPreferences({ onboarding: { aiSetup: 'done' } }).onboarding.aiSetup).toBe('done')
     expect(parseAppPreferences({ onboarding: { aiSetup: 'later' } }).onboarding.aiSetup).toBe(
       'pending'
     )
+  })
+
+  test('keeps comment view choices and drops an unknown sort order', () => {
+    const { comments } = parseAppPreferences({
+      comments: { showOnCanvas: false, showResolved: true, sort: 'loudest' }
+    })
+    expect(comments).toEqual({
+      ...DEFAULT_APP_PREFERENCES.comments,
+      showOnCanvas: false,
+      showResolved: true
+    })
   })
 })

@@ -1,6 +1,8 @@
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { parsePenFile } from '@open-pencil/pen'
 
+import { layoutAuthoredNodes } from '#core/layout'
+
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -223,6 +225,11 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   async readDocument(input) {
     const text = new TextDecoder().decode(input.data)
     const graph = parsePenFile(text)
+    // A .pen file stores its layout intent, not the sizes and positions it implies.
+    layoutAuthoredNodes(
+      graph,
+      graph.getPages().map((page) => page.id)
+    )
     return { graph, sourceFormat: 'pen' }
   }
 }

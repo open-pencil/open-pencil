@@ -270,6 +270,7 @@ export interface NodeChange {
   stackCounterSpacing?: number
   minSize?: { value?: Vector }
   maxSize?: { value?: Vector }
+  targetAspectRatio?: { value?: Vector }
   // Frame
   clipsContent?: boolean
   frameMaskDisabled?: boolean
@@ -370,6 +371,10 @@ export interface NodeChange {
   rectangleBottomRightCornerRadius?: number
   rectangleCornerRadiiIndependent?: boolean
   cornerSmoothing?: number
+  /** A polygon's sides or a star's points. */
+  count?: number
+  /** A star's inner radius as a share of its outer one. */
+  starInnerScale?: number
   // Constraints
   horizontalConstraint?: string
   verticalConstraint?: string

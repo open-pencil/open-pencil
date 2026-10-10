@@ -7,6 +7,7 @@ import type {
   VectorVertex
 } from '@open-pencil/scene-graph'
 import { polygonVertices } from '@open-pencil/scene-graph/geometry'
+import { polygonOutline } from '@open-pencil/scene-graph/polygon'
 
 import { nodeHasRadius } from '#core/canvas/shapes'
 
@@ -225,6 +226,18 @@ export function vectorNetworkToSVGPaths(
 
   const path = unfilledSegmentsToPath(network, decimals)
   return path ? [path] : []
+}
+
+/** The outline of a polygon or star whose corners are rounded, as path data. */
+export function roundedPolygonPath(node: SceneNode): string {
+  return polygonOutline(node)
+    .map((command) => {
+      if (command.type === 'Z') return 'Z'
+      if (command.type === 'C')
+        return `C${[command.x1, command.y1, command.x2, command.y2, command.x, command.y].map(round).join(' ')}`
+      return `${command.type}${round(command.x)} ${round(command.y)}`
+    })
+    .join('')
 }
 
 export function makePolygonPoints(node: SceneNode): string {

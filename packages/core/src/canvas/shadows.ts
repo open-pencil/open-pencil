@@ -7,6 +7,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { BLACK } from '#core/constants'
 
 import { figmaBlendModeToSkia } from './blend'
+import { blurSigma } from './effects'
 import type { SkiaRenderer } from './renderer'
 import {
   makeNodeShapePath,
@@ -245,7 +246,7 @@ function drawShapeDropShadow(
   }
 
   r.auxFill.setColor(r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
-  r.auxFill.setMaskFilter(r.getCachedMaskBlur(effect.radius / 2))
+  r.auxFill.setMaskFilter(r.getCachedMaskBlur(blurSigma(effect.radius)))
   r.auxFill.setImageFilter(null)
   r.auxFill.setBlendMode(figmaBlendModeToSkia(r.ck, effect.blendMode))
   canvas.save()
@@ -307,7 +308,7 @@ function renderDropShadow(
   }
 
   const shadowColor = r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
-  const dropFilter = r.getCachedDropShadow(0, 0, effect.radius / 2, shadowColor)
+  const dropFilter = r.getCachedDropShadow(0, 0, blurSigma(effect.radius), shadowColor)
 
   canvas.save()
   let savedLayer = false
@@ -368,7 +369,7 @@ function drawTextInnerShadow(
 
     r.effectLayerPaint.setBlendMode(ck.BlendMode.SrcOver)
     r.effectLayerPaint.setColorFilter(null)
-    r.effectLayerPaint.setImageFilter(r.getCachedDecalBlur(effect.radius / 2))
+    r.effectLayerPaint.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
     canvas.saveLayer(r.effectLayerPaint, bounds)
     restoreCount++
 
@@ -413,7 +414,7 @@ function drawShapeInnerShadow(
   const sp = effect.spread
   const shapeNode = shadowShapeChild ?? node
   r.auxFill.setColor(r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
-  r.auxFill.setImageFilter(r.getCachedDecalBlur(effect.radius / 2))
+  r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
   r.auxFill.setBlendMode(figmaBlendModeToSkia(r.ck, effect.blendMode))
 
   const shapeRect = shadowShapeChild ? r.ck.LTRBRect(0, 0, shapeNode.width, shapeNode.height) : rect
@@ -539,7 +540,7 @@ export function renderEffects(
     }
 
     if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
-      r.applyClippedBlur(canvas, node, rect, hasRadius, effect.radius / 2)
+      r.applyClippedBlur(canvas, node, rect, hasRadius, blurSigma(effect.radius))
     }
 
     if (pass === 'front' && effect.type === 'INNER_SHADOW') {

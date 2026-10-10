@@ -25,7 +25,9 @@ import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
+import { documentFolder, storyFonts } from './fonts'
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
+import { readStoryRules, storyPlan } from './rules'
 
 interface StorybookArgs {
   file?: string
@@ -36,9 +38,15 @@ interface StorybookArgs {
   page?: string
   node?: string
   framework: string
+  /** `tailwind` styles Vue and React components with utilities rather than a stylesheet. */
+  css: string
   'design-images': boolean
   'font-policy': string
   watch?: boolean
+  /** A rules file for which stories each component gets and its title. */
+  rules?: string
+  /** `none` ships no font files with the stories. */
+  fonts?: string
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -150,9 +158,19 @@ async function writeStories(
     const pageIds = pageId ? [pageId] : graph.getPages().map((page) => page.id)
     await applyExportFontPolicy(graph, pageIds, 'PNG', args['font-policy'])
   }
+  // Read on every export, so a watch picks up edited rules with the next save.
+  const rules = await readStoryRules(args.rules)
+  // Relative to the output, the document's path tells apart documents exported there together.
+  const source = toPosix(relative(outputDir, resolve(file)))
   const files = await exportStorybook(graph, {
     framework,
+    styling: args.css === 'tailwind' ? 'tailwind' : 'css',
     pageId,
+    plan: rules ? storyPlan(rules) : undefined,
+    fonts: args.fonts === 'none' ? undefined : storyFonts,
+    folder: documentFolder(source, args.page),
+    // Titled by the document, so stories of documents exported together stay apart.
+    document: basename(file, extname(file)),
     linkPath: linkPath(file),
     vectorElement,
     renderDesignImage: args['design-images']
@@ -171,7 +189,7 @@ async function writeStories(
     throw new Error(`No components found in ${args.page ? `page "${args.page}"` : 'the document'}.`)
 
   // Relative to the output, the document's path is the same on every machine and cwd.
-  const scope = { source: toPosix(relative(outputDir, resolve(file))), page: args.page }
+  const scope = { source, page: args.page }
   await mkdir(outputDir, { recursive: true })
   // Staged next to the output so a failed write leaves the previous export in place,
   // and in a dot folder, which Storybook's story globs skip.
@@ -271,6 +289,10 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
     printError(
       `Invalid Storybook framework "${framework}". Use ${STORYBOOK_FRAMEWORKS.join(', ')}.`
     )
+    process.exit(1)
+  }
+  if (args.css !== 'inline' && args.css !== 'tailwind') {
+    printError(`Invalid Storybook CSS output "${args.css}". Use inline or tailwind.`)
     process.exit(1)
   }
   let documents: string[]

@@ -181,7 +181,9 @@ function select(id: string, selection: boolean | LayerSelectionMode) {
   if (!mode.range) selectionAnchorId = id
   applyingSelection = true
   try {
-    editor.select([...next])
+    // Adding a layer goes through the editor, which drops its selected ancestors and descendants.
+    if (mode.additive && !mode.range) editor.select([id], true)
+    else editor.select([...next])
   } finally {
     applyingSelection = false
   }

@@ -43,7 +43,7 @@ export const diffCreate = defineTool({
   description:
     'Patch that turns one node tree into another, as JSX attribute changes per node plus moved, added, and removed children. Children are matched by name. Apply it to the first tree with diff_apply.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     ...nodeComparisonInput.entries,
     depth: v.optional(
       toolNumber(
@@ -74,7 +74,7 @@ export const diffShow = defineTool({
   description:
     'Preview setting JSX attributes on a node, without changing it. Returns the patch, which diff_apply applies.',
   execution: { kind: 'sync', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     id: nodeIdInput,
     attributes: v.pipe(
       v.string(),
@@ -116,7 +116,7 @@ export const diffApply = defineTool({
   description:
     "Apply a patch from diff_create, diff_show, or diff_changes. Each node must still have the patch's old values unless force is set, and nothing changes unless every hunk applies. Use dryRun to check first.",
   execution: { kind: 'async', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     patch: v.pipe(
       v.string(),
       v.description('Patch text from diff_create, diff_show, or diff_changes')

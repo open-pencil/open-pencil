@@ -42,7 +42,7 @@ export const createVector = defineTool({
 
   description: 'Create a vector node from SVG path data or a VectorNetwork.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     ...positionInputs,
     name: v.optional(v.pipe(v.string(), v.description('Node name'))),
     path: v.optional(

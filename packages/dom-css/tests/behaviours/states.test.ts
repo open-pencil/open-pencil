@@ -1,19 +1,32 @@
 import { describe, expect, test } from 'bun:test'
 
+import { cssRules } from '#dom-css-tests/helpers'
 import {
   stateStyles,
   stateStylesToCSS,
   stateStylesToTailwind,
+  type StateCondition,
   type StateElement,
+  type StateRule,
   type StateStyles
 } from '#dom-css/behaviours/states/index'
+import { allElements } from '#dom-css/behaviours/states/layers'
 import { compileTailwindCSS } from '#dom-css/import/tailwind'
 import type { DesignElement, DesignNode } from '#dom-css/types'
-import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
+import { sortBy } from 'es-toolkit/array'
+import { isEqual } from 'es-toolkit/predicate'
 
 import { emptyBehaviour } from '@open-pencil/scene-graph'
 
-import { buttonSet, checkboxSet, componentSet, switchSet, toggleSet } from './fixtures'
+import {
+  buttonSet,
+  checkboxSet,
+  componentSet,
+  switchSet,
+  tabsComponent,
+  textFieldSet,
+  toggleSet
+} from './fixtures'
 
 function styles(fixture: ReturnType<typeof switchSet>): StateStyles {
   const result = stateStyles(fixture.graph, fixture.set)
@@ -29,24 +42,6 @@ function child(element: StateElement, key: string): StateElement {
   return found
 }
 
-/** Every style rule of a stylesheet, by selector, including ones inside media queries. */
-function cssRules(css: string): Map<string, Record<string, string>> {
-  const rules = new Map<string, Record<string, string>>()
-  const visit = (list: ArrayLike<unknown>) => {
-    for (const item of Array.from(list)) {
-      const rule = item as CSSStyleRuleLike & { cssRules?: ArrayLike<unknown> }
-      if (rule.cssRules) visit(rule.cssRules)
-      if (!rule.selectorText) continue
-      const style: Record<string, string> = {}
-      for (const property of Array.from({ length: rule.style.length }, (_, i) => rule.style[i]))
-        if (property) style[property] = rule.style.getPropertyValue(property)
-      rules.set(rule.selectorText, style)
-    }
-  }
-  visit(parse(css).cssRules)
-  return rules
-}
-
 /**
  * Tailwind's compiled rules as selector and declarations. Its escaped class selectors are
  * beyond the CSSOM parser, so innermost `selector { … }` blocks are read directly, which also
@@ -57,6 +52,25 @@ function compiledRules(css: string): [string, string][] {
     (match[1] ?? '').trim(),
     (match[2] ?? '').trim()
   ])
+}
+
+/**
+ * Tabs whose first trigger, and the label in it, change while that trigger is active, the
+ * state Reka and Radix set on the trigger rather than the root.
+ */
+function anchoredTabs() {
+  const root = styles(tabsComponent())
+  const trigger = { opacity: '0.5' }
+  const label = { color: '#fff' }
+  const triggerElement = child(child(root.root, 'List'), 'List/Trigger#0')
+  const labelElement = child(
+    triggerElement,
+    triggerElement.children.find((item) => item.type === 'element')?.key ?? ''
+  )
+  const active = [{ type: 'state' as const, value: 'active' }]
+  triggerElement.rules.push({ conditions: active, on: triggerElement, style: trigger })
+  labelElement.rules.push({ conditions: active, on: triggerElement, style: label })
+  return { root, trigger, label }
 }
 
 function elements(node: DesignNode, into: DesignElement[] = []): DesignElement[] {
@@ -127,6 +141,63 @@ describe('state styles', () => {
   })
 })
 
+test('rests on the top-left variant when the document records no default values', () => {
+  const fixture = buttonSet()
+  const { graph, set } = fixture
+  graph.updateNode(set.id, {
+    componentPropertyDefinitions: set.componentPropertyDefinitions.map((definition) => ({
+      ...definition,
+      defaultValue: ''
+    }))
+  })
+  // The small default variant sits in the top-left corner; the others below it.
+  const rest = graph
+    .getChildren(set.id)
+    .find((variant) => variant.name === 'Size=Small, Interaction=Default')
+  for (const [index, variant] of graph.getChildren(set.id).entries())
+    graph.updateNode(variant.id, { x: 0, y: variant === rest ? 0 : 100 + index * 50 })
+  expect(stateStyles(graph, graph.getNode(set.id) ?? set)?.restId).toBe(rest?.id)
+})
+
+/**
+ * The words a variant shows: each text layer's display once every rule its conditions meet
+ * applies, fewer conditions first, as the stylesheet orders them and the cascade resolves them.
+ */
+function shownWords(root: StateElement, conditions: StateCondition[]): string[] {
+  const meets = (rule: StateRule) =>
+    rule.conditions.every((condition) => conditions.some((other) => isEqual(condition, other)))
+  return allElements(root).flatMap((element) => {
+    const display = sortBy(element.rules.filter(meets), [(rule) => rule.conditions.length]).reduce(
+      (value, rule) => rule.style.display ?? value,
+      element.base.display
+    )
+    const words = element.children.find((child) => child.type === 'text')
+    return words && display !== 'none' ? [words.text] : []
+  })
+}
+
+test('shows each combined variant its own words, not those a part of it shows', () => {
+  const { graph, set } = componentSet(
+    'Field',
+    { Size: ['Small', 'Large'], State: ['Rest', 'Done'] },
+    emptyBehaviour('button'),
+    (graph, variant, { Size, State }) => {
+      let text = 'Plain'
+      if (State === 'Done') text = 'Value'
+      else if (Size === 'Large') text = 'Placeholder'
+      graph.createNode('TEXT', variant, { name: 'Words', text })
+    }
+  )
+  const result = stateStyles(graph, set)
+  if (!result) throw new Error('No state styles')
+  const prop = (name: string, value: string): StateCondition => ({ type: 'prop', name, value })
+  expect(shownWords(result.root, [])).toEqual(['Plain'])
+  expect(shownWords(result.root, [prop('Size', 'Large')])).toEqual(['Placeholder'])
+  expect(shownWords(result.root, [prop('State', 'Done')])).toEqual(['Value'])
+  // Large and done meets the rule that shows the large field's placeholder, yet shows its value.
+  expect(shownWords(result.root, [prop('Size', 'Large'), prop('State', 'Done')])).toEqual(['Value'])
+})
+
 test('has no state styles when no variant shows the rest state', () => {
   // Only the checked variant is drawn; using it as the base would show it checked at rest.
   const { graph, set } = componentSet(
@@ -164,13 +235,66 @@ describe('state stylesheet', () => {
     )
   })
 
+  test("shows a field's filled look while its input or textarea has words", async () => {
+    const rules = cssRules((await stateStylesToCSS(styles(textFieldSet()))).css)
+    const filled = [...rules].filter(([selector]) =>
+      selector.startsWith('.email:has(:is(input, textarea):not(:placeholder-shown))')
+    )
+    expect(filled.length).toBeGreaterThan(0)
+  })
+
   test('writes a prop condition as the data attribute a component sets', async () => {
     const rules = cssRules((await stateStylesToCSS(styles(buttonSet()))).css)
     expect(rules.get('.button[data-size="Large"]')).toEqual({ width: '160px' })
   })
+  test('tests the state of the layer a rule names, for that layer and the ones inside it', async () => {
+    const { root, trigger, label } = anchoredTabs()
+    const rules = cssRules((await stateStylesToCSS(root)).css)
+    expect(rules.get('.settings .settings__trigger[data-state="active"]')).toEqual(trigger)
+    expect(rules.get('.settings .settings__trigger[data-state="active"] .settings__label')).toEqual(
+      label
+    )
+  })
 })
 
 describe('state Tailwind', () => {
+  test('writes the filled look as a variant Tailwind compiles to the same condition', async () => {
+    const document = stateStylesToTailwind(styles(textFieldSet()))
+    const classes = elements(document.children[0] ?? { type: 'text', text: '' }).flatMap(
+      (element) => element.attrs.class.split(' ')
+    )
+    const filled = classes.filter((item) =>
+      item.includes('has-[:is(input,textarea):not(:placeholder-shown)]')
+    )
+    expect(filled.length).toBeGreaterThan(0)
+    const rules = compiledRules(await compileTailwindCSS(filled))
+    // Tailwind writes the condition as the stylesheet does, inside an `:is()` of its own.
+    expect(
+      rules.some(([selector]) =>
+        selector.includes(':has(:is(:is(input, textarea):not(:placeholder-shown)))')
+      )
+    ).toBe(true)
+  })
+
+  test('names a group for the layer a rule tests, which the layers inside it test', async () => {
+    const document = stateStylesToTailwind(anchoredTabs().root)
+    const [, , trigger, label] = elements(document.children[0] ?? { type: 'text', text: '' })
+    const triggerClasses = trigger?.attrs.class.split(' ') ?? []
+    const labelClasses = label?.attrs.class.split(' ') ?? []
+    expect(triggerClasses).toContain('group/settings-1')
+    expect(triggerClasses).toContain('data-[state=active]:opacity-50')
+    expect(labelClasses).toContain('group-data-[state=active]/settings-1:text-[#fff]')
+
+    const rules = compiledRules(await compileTailwindCSS([...triggerClasses, ...labelClasses]))
+    expect(
+      rules.some(
+        ([selector, body]) =>
+          body.startsWith('color:') &&
+          selector.endsWith(':is(:where(.group\\/settings-1)[data-state="active"] *)')
+      )
+    ).toBe(true)
+  })
+
   test('writes state variants that Tailwind compiles to the same selectors', async () => {
     const document = stateStylesToTailwind(styles(switchSet()))
     const [root, thumb] = elements(document.children[0] ?? { type: 'text', text: '' })

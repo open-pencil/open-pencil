@@ -1,7 +1,9 @@
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, ShaderComponent, ShaderPreset } from '@open-pencil/scene-graph'
 
 import type { DesignDocument, DesignElement, DesignNode } from '../types'
+import { shaderEffectAttributes } from './components/shaders'
+import { SHADER_UTILITIES } from './components/styling'
 import { mergeClassNames, serializeTailwindClasses } from './html'
 import { sceneNodeToDesignDocument, type SceneGraphToDesignOptions } from './projection'
 
@@ -41,12 +43,48 @@ function attributes(node: DesignElement, themeVariables: readonly string[]): Syn
   )
 }
 
+/**
+ * A layer's shader as the `shaders` library's `<Shader>`, each effect a child with the preset's
+ * props, with telemetry off as every OpenPencil export has it.
+ */
+function shaderElement(preset: ShaderPreset, depth: number): SyntaxNode {
+  const effect =
+    (at: number) =>
+    (component: ShaderComponent): SyntaxNode =>
+      jsx.element(
+        component.type,
+        shaderEffectAttributes(component),
+        (component.children ?? []).map(effect(at + 1)),
+        at
+      )
+  return jsx.element(
+    'Shader',
+    [
+      jsx.attribute('className', jsx.stringValue(SHADER_UTILITIES)),
+      jsx.attribute('disableTelemetry', null)
+    ],
+    preset.components.map(effect(depth + 1)),
+    depth
+  )
+}
+
+/** How many elements a shader prints, which no layer produced. */
+function shaderElementCount(components: readonly ShaderComponent[] = []): number {
+  return components.reduce(
+    (count, component) => count + 1 + shaderElementCount(component.children),
+    0
+  )
+}
+
 function element(
   node: DesignElement,
   depth: number,
   themeVariables: readonly string[]
 ): SyntaxNode {
-  const children = node.children.map((child) => jsxNode(child, depth + 1, themeVariables))
+  const children = [
+    ...(node.shader ? [shaderElement(node.shader.preset, depth + 1)] : []),
+    ...node.children.map((child) => jsxNode(child, depth + 1, themeVariables))
+  ]
   // A lone text child stays on the element's line.
   const inline = children.length === 1 && node.children[0]?.type === 'text'
   return jsx.element(tagName(node), attributes(node, themeVariables), children, depth, inline)
@@ -83,6 +121,10 @@ export interface TailwindJSXWithLayers {
 function collectLayerIds(node: DesignNode, layerIds: Array<string | null>): void {
   if (node.type === 'text') return
   layerIds.push(node.sourceSceneNodeId ?? node.sourceSceneNode?.id ?? null)
+  if (node.shader) {
+    const count = 1 + shaderElementCount(node.shader.preset.components)
+    for (let index = 0; index < count; index++) layerIds.push(null)
+  }
   for (const child of node.children) collectLayerIds(child, layerIds)
 }
 

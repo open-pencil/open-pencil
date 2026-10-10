@@ -23,7 +23,7 @@ import router from './router'
  */
 export async function boot(): Promise<void> {
   // A session of its own, so layers this window creates never share IDs with a collaborator's.
-  setIdSession(randomInt() >>> 0)
+  setIdSession(randomInt() >>> 1)
   installBundledFonts()
   preloadFonts()
   const head = createHead()

@@ -69,9 +69,20 @@ export function useConversations(initialChat: string) {
     chat.status = 'ready'
   }
   function regenerate() {
-    const reply = selected.value?.messages.findLast((message) => message.role === 'assistant')
-    if (!reply) return
-    reply.parts = [{ type: 'text', text: `${PREVIEW_REPLY} (regenerated)` }]
+    const chat = selected.value
+    const last = chat?.messages.at(-1)
+    if (!chat || !last) return
+    chat.status = 'ready'
+    if (last.role === 'assistant') {
+      last.parts = [{ type: 'text', text: `${PREVIEW_REPLY} (regenerated)` }]
+      return
+    }
+    // A request that got no reply is sent again.
+    chat.messages.push({
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      parts: [{ type: 'text', text: PREVIEW_REPLY }]
+    })
   }
   function resend(messageId: string, text: string) {
     const chat = selected.value

@@ -1,12 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts } from '@open-pencil/core/layout'
+import { layoutAuthoredNodes } from '@open-pencil/core/layout'
 import { parsePenFile, parseSize, type PenDocument, type PenNode } from '@open-pencil/pen'
 
 function parseLayoutDocument(children: PenNode[]) {
   const document: PenDocument = { version: '2.17', children }
   const graph = parsePenFile(JSON.stringify(document))
-  computeAllLayouts(graph)
+  // As the .pen reader lays out what it reads.
+  layoutAuthoredNodes(
+    graph,
+    graph.getPages().map((page) => page.id)
+  )
   return graph
 }
 

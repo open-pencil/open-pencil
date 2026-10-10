@@ -52,7 +52,7 @@ export const designToTokens = defineTool({
   description:
     'Write the document variables as a stylesheet of CSS custom properties: defaults in :root, every other mode under its condition (a selector such as [data-theme="dark"] or an @media query), aliases as var() references. The tailwind format puts tokens with a Tailwind v4 namespace (--color-*, --spacing-*, --radius-*, --text-*, …) in @theme and adds a @custom-variant per mode. The dtcg format returns W3C design token files instead: one per collection mode, text and effect styles as typography and shadow tokens, and a resolver document; collection and type filters do not apply to it. Issues lists tokens or modes that could not be written.',
   execution: { kind: 'async', mutation: 'none' },
-  input: v.object({
+  input: v.strictObject({
     format: v.optional(
       v.pipe(
         v.picklist(['css', 'tailwind', 'dtcg']),
@@ -92,7 +92,7 @@ export const importDesignTokens = defineTool({
   description:
     'Import W3C design token (DTCG) files into the document as variables, and typography and shadow tokens as text and effect styles. Pass each file with its path: a file per mode grouped by folder (as Figma exports modes), a .resolver.json with the files it refers to, or a Tokens Studio file with $themes. Collections and modes with the same names as existing ones are updated, variables are matched by name, and nothing is deleted. Returns what was added, updated, and skipped and why.',
   execution: { kind: 'async', mutation: 'document' },
-  input: v.object({
+  input: v.strictObject({
     files: v.pipe(
       v.array(v.object({ path: v.string(), text: v.string() })),
       v.minLength(1),

@@ -5,6 +5,7 @@ import {
   copyStrokes,
   scaleGeometryPaths
 } from './copy'
+import { enforcedAspectRatio } from './layout/aspect-ratio'
 import type { Rect } from './primitives'
 import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
 import { cloneVectorNetwork } from './vector-network'
@@ -61,26 +62,106 @@ function constrainedAxis(
   return { position, size }
 }
 
+type AxisPlacement = { position: number; size: number }
+
+const FLEXIBLE_CONSTRAINTS: ReadonlySet<ConstraintType> = new Set(['STRETCH', 'SCALE'])
+
+/** The axis at `size`, keeping the edge or centre its constraint pins where it was placed. */
+function resizedInPlace(
+  placed: AxisPlacement,
+  size: number,
+  constraint: ConstraintType
+): AxisPlacement {
+  if (constraint === 'MAX') return { position: placed.position + placed.size - size, size }
+  if (constraint === 'CENTER') return { position: placed.position + (placed.size - size) / 2, size }
+  return { position: placed.position, size }
+}
+
+/**
+ * A locked aspect ratio holds when exactly one axis follows the parent, as in Figma: that axis
+ * sizes the other. With both axes following the parent, or neither, the ratio gives way.
+ */
+function keepLockedRatio(
+  x: AxisPlacement,
+  y: AxisPlacement,
+  horizontal: ConstraintType,
+  vertical: ConstraintType,
+  aspectRatio: number | null
+): { x: AxisPlacement; y: AxisPlacement } {
+  const flexibleX = FLEXIBLE_CONSTRAINTS.has(horizontal)
+  if (aspectRatio === null || flexibleX === FLEXIBLE_CONSTRAINTS.has(vertical)) return { x, y }
+  return flexibleX
+    ? { x, y: resizedInPlace(y, x.size / aspectRatio, vertical) }
+    : { x: resizedInPlace(x, y.size * aspectRatio, horizontal), y }
+}
+
+/** A child's box after its parent resizes, keeping a locked aspect ratio as Figma does. */
 export function constrainedChildRect(
   child: Rect,
   parentBefore: Pick<Rect, 'width' | 'height'>,
   parentAfter: Pick<Rect, 'width' | 'height'>,
   horizontal: ConstraintType,
-  vertical: ConstraintType
+  vertical: ConstraintType,
+  aspectRatio: number | null = null
 ): Rect {
-  const x = constrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal)
-  const y = constrainedAxis(
-    child.y,
-    child.height,
-    parentBefore.height,
-    parentAfter.height,
-    vertical
-  )
+  let x = constrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal)
+  let y = constrainedAxis(child.y, child.height, parentBefore.height, parentAfter.height, vertical)
+  ;({ x, y } = keepLockedRatio(x, y, horizontal, vertical, aspectRatio))
   return {
     x: Math.round(x.position),
     y: Math.round(y.position),
     width: Math.round(x.size),
     height: Math.round(y.size)
+  }
+}
+
+function layoutConstrainedAxis(
+  position: number,
+  size: number,
+  parentBefore: number,
+  parentAfter: number,
+  constraint: ConstraintType
+): { position: number; size: number } {
+  const delta = Math.round(parentAfter) - Math.round(parentBefore)
+  if (constraint === 'MAX') return { position: position + delta, size }
+  if (constraint === 'CENTER') {
+    return { position: position + Math.round(parentAfter / 2) - Math.round(parentBefore / 2), size }
+  }
+  if (constraint === 'STRETCH') return { position, size: Math.abs(size + delta) }
+  if (constraint === 'SCALE' && parentBefore > 0) {
+    const scale = parentAfter / parentBefore
+    return { position: Math.round(position * scale * 128) / 128, size: size * scale }
+  }
+  return { position, size }
+}
+
+/**
+ * Where a child goes when layout resizes its parent, as Figma places a layer that ignores auto
+ * layout when its Hug frame grows (measured on desktop 126): Right and Left & right move or grow
+ * it by the change in the parent's size rounded to whole pixels, Center by the change in its
+ * rounded half, and Scale by the exact ratio, its position to 1/128 of a pixel. Sizes are not
+ * rounded, so applying a run of changes one at a time lands where applying them at once does.
+ */
+export function layoutConstrainedChildRect(
+  child: Rect,
+  parentBefore: Pick<Rect, 'width' | 'height'>,
+  parentAfter: Pick<Rect, 'width' | 'height'>,
+  horizontal: ConstraintType,
+  vertical: ConstraintType,
+  aspectRatio: number | null = null
+): Rect {
+  const placed = keepLockedRatio(
+    layoutConstrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal),
+    layoutConstrainedAxis(child.y, child.height, parentBefore.height, parentAfter.height, vertical),
+    horizontal,
+    vertical,
+    aspectRatio
+  )
+  return {
+    x: placed.x.position,
+    y: placed.y.position,
+    width: placed.x.size,
+    height: placed.y.size
   }
 }
 
@@ -290,7 +371,8 @@ export function computeConstrainedResizeChanges(
             parentBefore,
             parentAfter,
             child.horizontalConstraint,
-            child.verticalConstraint
+            child.verticalConstraint,
+            enforcedAspectRatio(child)
           )
       const childChanges: Partial<SceneNode> = {
         ...rect,

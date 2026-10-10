@@ -7,5 +7,7 @@
             <key>NSAllowsLocalNetworking</key>
             <true/>
         </dict>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>OpenPencil uses the microphone for voice calls with people in a shared room.</string>
     </dict>
 </plist>
