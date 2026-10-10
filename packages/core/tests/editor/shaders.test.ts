@@ -1,7 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
-import { SceneGraph, shaderOfPaint, type ShaderPreset } from '@open-pencil/scene-graph'
+import {
+  createShaderPaint,
+  SceneGraph,
+  shaderOfPaint,
+  withShaderPaints,
+  type ShaderPreset
+} from '@open-pencil/scene-graph'
 
 const AURORA: ShaderPreset = { components: [{ type: 'Aurora' }] }
 const SWIRL: ShaderPreset = { components: [{ type: 'Swirl' }] }
@@ -122,5 +128,37 @@ describe('shader paints', () => {
     editor.setShaderPaint([id], 'strokes', 0, AURORA)
 
     expect(read().strokes[0]).toMatchObject({ type: 'IMAGE', weight: 3, align: 'CENTER' })
+  })
+})
+
+describe('shader frames on page preparation', () => {
+  test('a page is prepared only once its shaders have frames, without drawing in the background', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('RECTANGLE', page.id, { width: 40, height: 20 })
+    const { paint, shader } = createShaderPaint(AURORA)
+    graph.updateNode(node.id, {
+      fills: [paint],
+      pluginData: withShaderPaints(node, [paint], [shader])
+    })
+    const drawn: string[] = []
+    const editor = createEditor({
+      shaderRasterizer: {
+        render: (preset) => {
+          drawn.push(preset.components[0]?.type ?? '')
+          return Promise.resolve(new Uint8Array([1]))
+        }
+      }
+    })
+    editor.replaceGraph(graph)
+    await editor.settleShaderFrames()
+    expect(drawn).toEqual([])
+
+    const phases: string[] = []
+    await editor.preparePage(page.id, { onProgress: (progress) => phases.push(progress.phase) })
+
+    expect(drawn).toEqual(['Aurora'])
+    expect(phases).toContain('drawing-shaders')
+    expect(editor.graph.images.get(shader.image)).toEqual(new Uint8Array([1]))
   })
 })

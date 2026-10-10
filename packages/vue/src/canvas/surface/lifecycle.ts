@@ -113,7 +113,8 @@ export function createCanvasSurfaceManager({
     state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
     editor.setCanvasKit(ck, state.renderer)
     // The scene surface draws shader frames; an overlay surface has none to draw.
-    if (options?.layer !== 'overlays') editor.setShaderRasterizer(createShaderRasterizer())
+    if (options?.layer !== 'overlays' && !editor.hasShaderRasterizer())
+      editor.setShaderRasterizer(createShaderRasterizer())
     canvas.dataset.ready = '1'
 
     // When the surface is recreated after a resize fallback, destroyRenderer

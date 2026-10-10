@@ -22,7 +22,12 @@ import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 
 export interface PageSwitchProgress {
-  phase: 'populating-page' | 'resolving-fonts' | 'resolving-fallbacks' | 'layout'
+  phase:
+    | 'populating-page'
+    | 'resolving-fonts'
+    | 'resolving-fallbacks'
+    | 'layout'
+    | 'drawing-shaders'
   detail?: string
   completed?: number
   total?: number
@@ -45,7 +50,15 @@ function throwIfAborted(signal?: AbortSignal): void {
 }
 
 const MAX_CONCURRENT_FONT_LOADS = 4
-export function createPageActions(ctx: EditorContext) {
+/** What preparing a page needs drawn once it is laid out, such as its shaders' frames. */
+interface PageDrawing {
+  drawPageShaderFrames(
+    pageId: string,
+    options: { signal?: AbortSignal; onProgress?: (progress: PageSwitchProgress) => void }
+  ): Promise<void>
+}
+
+export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
   const pageViewportStore = createPageViewportStore(ctx)
   function syncPageColor() {
     ctx.state.pageColor = getPageColor(ctx.graph.getNode(ctx.state.currentPageId))
@@ -178,6 +191,8 @@ export function createPageActions(ctx: EditorContext) {
       options.onProgress?.({ phase: 'layout', detail: page.name })
       ctx.graph.applyDerivedLayoutDuring(() => computeAllLayouts(ctx.graph, pageId))
     }
+    // Frames are drawn at the size layout gives each layer.
+    await drawing?.drawPageShaderFrames(pageId, options)
     throwIfAborted(options.signal)
     return generation === pageSwitchGeneration ? { pageId, generation } : null
   }

@@ -9,7 +9,7 @@ import {
   type ShaderPaint
 } from '@open-pencil/scene-graph'
 
-import type { EditorContext } from '#core/editor/types'
+import type { EditorContext, EditorOptions } from '#core/editor/types'
 
 import type { ShaderFrameSize, ShaderRasterizer } from './types'
 
@@ -19,6 +19,13 @@ const FRAME_SCALE = 2
 const MAX_FRAME_EDGE = 2048
 /** How long a layer must keep its size before its frames are drawn again. */
 const SETTLE_MS = 150
+
+/** How far drawing a page's shader frames has got. */
+export interface ShaderFramesProgress {
+  phase: 'drawing-shaders'
+  completed: number
+  total: number
+}
 
 /** Fields whose change can leave a shader's frame out of date. */
 const FRAME_FIELDS = ['fills', 'strokes', 'pluginData', 'width', 'height'] as const
@@ -49,8 +56,11 @@ function shownShaders(node: SceneNode): ShaderPaint[] {
  * image the paint already shows, so undoing any edit keeps paint and shader together. Frames
  * are drawn one at a time, since each one takes the GPU.
  */
-export function createShaderFrames(ctx: EditorContext) {
-  let rasterizer: ShaderRasterizer | null = null
+export function createShaderFrames(
+  ctx: EditorContext,
+  options?: Pick<EditorOptions, 'shaderRasterizer'>
+) {
+  let rasterizer: ShaderRasterizer | null = options?.shaderRasterizer ?? null
   /** What this session drew under each image, which outranks a saved frame's size. */
   const drawn = new Map<string, string>()
   const pending = new Set<string>()
@@ -73,10 +83,16 @@ export function createShaderFrames(ctx: EditorContext) {
     }, SETTLE_MS)
   }
 
-  function scheduleAll() {
-    for (const node of ctx.graph.getAllNodes()) {
-      if (readShaderPaints(node).length > 0) schedule(node.id)
-    }
+  /** The shaders on `pageId` whose frames are missing or out of date. */
+  function staleOnPage(pageId: string): { id: string; shader: ShaderPaint }[] {
+    const graph = ctx.graph
+    return [...graph.getAllNodes()].flatMap((node) => {
+      if (readShaderPaints(node).length === 0 || !graph.isDescendant(node.id, pageId)) return []
+      const size = { width: node.width, height: node.height }
+      return shownShaders(node)
+        .filter((shader) => !isCurrent(shader, size))
+        .map((shader) => ({ id: node.id, shader }))
+    })
   }
 
   async function drawFrame(id: string, shader: ShaderPaint, active: ShaderRasterizer) {
@@ -122,17 +138,46 @@ export function createShaderFrames(ctx: EditorContext) {
     }
   }
 
-  /** Draws what is pending, after any drawing already under way. */
-  async function drain(): Promise<void> {
+  /** Runs `work` once no other drawing is under way, so frames draw one at a time. */
+  async function exclusive(work: () => Promise<void>): Promise<void> {
     if (drawing) {
       await drawing
-      return drain()
+      return exclusive(work)
     }
-    if (pending.size === 0) return
-    drawing = drawPending().finally(() => {
+    drawing = work().finally(() => {
       drawing = null
     })
     await drawing
+  }
+
+  /** Draws what is pending, after any drawing already under way. */
+  async function drain(): Promise<void> {
+    if (pending.size > 0) await exclusive(drawPending)
+  }
+
+  /**
+   * Draws the frames `pageId` needs before it is shown, as its fonts are loaded first, so the
+   * page never appears with a shader missing. Without a rasterizer the saved frames stay.
+   */
+  async function drawPageShaderFrames(
+    pageId: string,
+    options: { signal?: AbortSignal; onProgress?: (progress: ShaderFramesProgress) => void } = {}
+  ): Promise<void> {
+    const active = rasterizer
+    const stale = active ? staleOnPage(pageId) : []
+    if (!active || stale.length === 0) return
+    const progress = (completed: number) =>
+      options.onProgress?.({ phase: 'drawing-shaders', completed, total: stale.length })
+    progress(0)
+    await exclusive(async () => {
+      for (const [index, { id, shader }] of stale.entries()) {
+        options.signal?.throwIfAborted()
+        await drawFrame(id, shader, active).catch((error: unknown) => {
+          console.warn('Could not draw a shader frame', error)
+        })
+        progress(index + 1)
+      }
+    })
   }
 
   ctx.onEditorEvent('node:created', (node) => {
@@ -143,10 +188,10 @@ export function createShaderFrames(ctx: EditorContext) {
     const node = ctx.graph.getNode(id)
     if (node && readShaderPaints(node).length > 0) schedule(id)
   })
+  // A new document's frames are drawn page by page as each is prepared.
   ctx.onEditorEvent('graph:replaced', () => {
     drawn.clear()
     pending.clear()
-    scheduleAll()
   })
 
   /** Draws shader frames with `next`, or stops drawing them when null. */
@@ -154,8 +199,9 @@ export function createShaderFrames(ctx: EditorContext) {
     if (rasterizer === next) return
     rasterizer?.destroy?.()
     rasterizer = next
-    if (next) scheduleAll()
   }
+
+  const hasShaderRasterizer = () => rasterizer !== null
 
   /** Resolves once every frame waiting to be drawn has been drawn. */
   async function settleShaderFrames(): Promise<void> {
@@ -166,5 +212,5 @@ export function createShaderFrames(ctx: EditorContext) {
     await drain()
   }
 
-  return { setShaderRasterizer, settleShaderFrames }
+  return { setShaderRasterizer, hasShaderRasterizer, settleShaderFrames, drawPageShaderFrames }
 }

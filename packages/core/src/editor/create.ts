@@ -245,7 +245,8 @@ export function createEditor(options?: EditorOptions) {
   // Assemble domain modules
   const viewport = createViewportActions(ctx)
   const selection = createSelectionActions(ctx)
-  const pages = createPageActions(ctx)
+  const shaderFrames = createShaderFrames(ctx, options)
+  const pages = createPageActions(ctx, shaderFrames)
   const guides = createGuideActions(ctx)
   const designIssues = createDesignIssueActions(ctx)
   const shapes = createShapeActions(ctx)
@@ -261,7 +262,6 @@ export function createEditor(options?: EditorOptions) {
   const vectorize = createVectorizeActions(ctx)
   const icons = createIconActions(ctx)
   const shaders = createShaderActions(ctx, nodes)
-  const shaderFrames = createShaderFrames(ctx)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
