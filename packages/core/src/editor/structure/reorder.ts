@@ -84,12 +84,17 @@ export function createStructureReorderActions(ctx: EditorContext) {
     })
   }
 
+  /**
+   * Puts a frame's children in `childIds`. Only the children it moves need to be editable, so a
+   * read-only library layer that keeps its place does not block reordering its siblings.
+   */
   function applyChildOrder(parentId: string, childIds: readonly string[]) {
     assertNodeEditable(ctx.graph, parentId)
-    for (const childId of childIds) assertNodeEditable(ctx.graph, childId)
     const current = ctx.graph.getNode(parentId)?.childIds ?? []
+    const moved = childIds.filter((childId, index) => current[index] !== childId)
+    for (const childId of moved) assertNodeEditable(ctx.graph, childId)
     for (const [index, childId] of childIds.entries()) {
-      if (current[index] === childId) continue
+      if (ctx.graph.getNode(parentId)?.childIds[index] === childId) continue
       ctx.graph.insertChildAt(childId, parentId, index)
     }
     ctx.runLayoutForNode(parentId)

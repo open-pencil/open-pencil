@@ -1,7 +1,6 @@
 import type { Editor, MovePlace } from '@open-pencil/core/editor'
+import { createSceneGeometry } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
 
 /**
@@ -111,19 +110,19 @@ export function flowOrder(flow: FlowDrag, slot: number, editor: Editor): string[
   return [...rest.slice(0, at), ...flow.ids, ...rest.slice(at)]
 }
 
-/** Maps canvas points into a frame's own space, where its flow runs along x or y. */
-function frameSpace(parentId: string, editor: Editor): Mat3 {
-  const parent = editor.graph.getNode(parentId)
-  const world = parent ? getWorldMatrix(parent, editor.graph) : Matrix.identity()
-  return Matrix.invert(world) ?? Matrix.identity()
+/** The scene's geometry as drawn, with a rotation in progress. */
+function geometryOf(editor: Editor) {
+  return createSceneGeometry(editor.graph, editor.state.rotationPreview)
 }
 
 /** A drag of `dx`, `dy` on the canvas in a frame's own axes, as a turned frame sees it. */
 function dragInFrame(parentId: string, dx: number, dy: number, editor: Editor) {
-  const space = frameSpace(parentId, editor)
-  const origin = Matrix.mapPoint(space, { x: 0, y: 0 })
-  const moved = Matrix.mapPoint(space, { x: dx, y: dy })
-  return { x: moved.x - origin.x, y: moved.y - origin.y }
+  const parent = editor.graph.getNode(parentId)
+  if (!parent) return { x: dx, y: dy }
+  const geometry = geometryOf(editor)
+  const origin = geometry.toLocal(parent, { x: 0, y: 0 })
+  const moved = geometry.toLocal(parent, { x: dx, y: dy })
+  return origin && moved ? { x: moved.x - origin.x, y: moved.y - origin.y } : { x: dx, y: dy }
 }
 
 /**
@@ -132,30 +131,28 @@ function dragInFrame(parentId: string, dx: number, dy: number, editor: Editor) {
  * it covers along the frame's own axes.
  */
 export function flowBlockBounds(flow: FlowDrag, dx: number, dy: number, editor: Editor) {
-  const space = frameSpace(flow.parentId, editor)
+  const parent = editor.graph.getNode(flow.parentId)
+  const geometry = geometryOf(editor)
   let left = Infinity
   let top = Infinity
   let right = -Infinity
   let bottom = -Infinity
   for (const id of flow.ids) {
     const node = editor.graph.getNode(id)
-    if (!node) continue
-    const corners = Matrix.mapPoints(getWorldMatrix(node, editor.graph), [
-      0,
-      0,
-      node.width,
-      0,
-      node.width,
-      node.height,
-      0,
-      node.height
-    ]).map((value, i) => value + (i % 2 === 0 ? dx : dy))
-    const local = Matrix.mapPoints(space, corners)
-    for (let i = 0; i < local.length; i += 2) {
-      left = Math.min(left, local[i])
-      right = Math.max(right, local[i])
-      top = Math.min(top, local[i + 1])
-      bottom = Math.max(bottom, local[i + 1])
+    if (!node || !parent) continue
+    for (const corner of [
+      { x: 0, y: 0 },
+      { x: node.width, y: 0 },
+      { x: node.width, y: node.height },
+      { x: 0, y: node.height }
+    ]) {
+      const world = geometry.toWorld(node, corner)
+      const local = geometry.toLocal(parent, { x: world.x + dx, y: world.y + dy })
+      if (!local) continue
+      left = Math.min(left, local.x)
+      right = Math.max(right, local.x)
+      top = Math.min(top, local.y)
+      bottom = Math.max(bottom, local.y)
     }
   }
   return { left, top, right, bottom }
