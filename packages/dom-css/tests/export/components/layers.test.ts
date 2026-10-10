@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { switchSet } from '#dom-css-tests/behaviours/fixtures'
 import { fileText } from '#dom-css-tests/helpers'
 import { layerComponents, layerMarkup } from '#dom-css/export'
+import { compileTailwindCSS } from '#dom-css/import/tailwind'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -120,6 +121,19 @@ describe('layers as HTML and CSS', () => {
     expect(html).toMatch(/^<div class="[^"]*\bflex flex-col\b[^"]*\bgap-2\b[^"]*bg-white/)
     expect(html).toContain('\n  <span class="')
     expect(css).toBe('')
+  })
+
+  test("styled with Tailwind, corners are rounded from Tailwind's radius scale", async () => {
+    const graph = new SceneGraph()
+    const frame = card(graph, 'Card')
+    graph.updateNode(frame.id, { cornerRadius: 16 })
+
+    const { html } = await layerMarkup(graph, [frame.id], { styling: 'tailwind' })
+    const classes = /class="([^"]*)"/.exec(html)?.[1].split(' ') ?? []
+
+    // Radius has no spacing scale: `rounded-4` would generate nothing.
+    expect(classes).toContain('rounded-2xl')
+    expect(await compileTailwindCSS(classes)).toContain('border-radius: var(--radius-2xl)')
   })
 
   test('layers named alike keep their rules apart', async () => {
