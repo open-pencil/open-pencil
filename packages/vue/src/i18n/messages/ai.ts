@@ -236,6 +236,8 @@ export const aiMessageDefaults = {
   aiSetupAccessAPI: 'API accounts',
   aiSetupAccessServer: 'Local model or company server',
   aiSetupAccessMore: 'More providers',
+  providerGroupAgents: 'Your agents',
+  providerGroupProviders: 'Providers',
   aiSetupServerOther: 'Other server',
   aiSetupAccessServerDescription:
     'Any server that speaks the OpenAI API, such as Ollama or LM Studio.',

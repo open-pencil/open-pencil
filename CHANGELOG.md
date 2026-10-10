@@ -167,12 +167,14 @@
 
 ### Fixed
 
+- The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
 - Tooltips no longer appear when a popover such as the colour picker focuses its first control on open; they still show for keyboard focus. Moving the pointer along a row of buttons switches tooltips at once instead of blinking out, and tooltips centre on their control instead of sitting a few pixels off.
+- A layer that ignores auto layout follows its constraints when its auto layout frame resizes, as in Figma: a badge pinned to the right of a Hug button stays on its corner as the label grows or shrinks, a centred one stays centred, and one set to Left & right or Scale stretches with the frame, also inside a Fill frame and for the layers in a stretched overlay. Layers in a reopened `.fig` file keep the places the file saved until an edit resizes their frame.
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
 - The font picker opens at the current font instead of the top of the list.
 - Undo after adding, switching, or removing auto layout, or wrapping layers in it with <kbd>⇧</kbd><kbd>A</kbd>, puts back every layer the layout moved or resized, and the new frame takes the place of the topmost layer it wraps, as in Figma. Setting the layout a frame already has, or aligning layers that auto layout places, no longer records an undo step, and undoing a drag out of an auto layout frame puts the layer back in its slot.
 - A Fill child in a Hug frame keeps its size, as in Figma, instead of collapsing the frame: along the layout the frame hugs the child as it is, and across it the frame hugs the other children, keeping its size when every child fills. A Fill line stays a line, placed where its row aligns the other layers.
-- A frame in a reopened `.fig` file lays out again when you add auto layout, padding, or a gap to it, or add, move, or remove a layer in it or in an auto layout inside it, instead of keeping its layers where the file had them.
+- A frame in a reopened `.fig` file lays out again when you resize it, add auto layout, padding, or a gap to it, or add, move, or remove a layer in it or in an auto layout inside it, instead of keeping its layers where the file had them; a Fill layer fills a resized frame while you drag.
 - A Hug frame grows with its text while the text is typed, as in Figma, instead of only when editing ends.
 - `figma.currentPage.backgrounds` in the plugin API and `eval` scripts takes Figma paints, as `fills` does.
 - Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.
