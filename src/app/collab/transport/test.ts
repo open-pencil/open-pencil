@@ -145,6 +145,7 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
     },
     signalingConnected: () => socket.readyState === WebSocket.OPEN,
     discoveryMs: TEST_DISCOVERY_MS,
+    media: null,
     async leave() {
       if (left) return
       left = true

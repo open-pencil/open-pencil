@@ -94,7 +94,7 @@ Todos los comandos admiten `--json`. Instalación: `npm install -g @open-pencil/
 
 ## Colaboración en tiempo real
 
-La colaboración funciona directamente entre participantes mediante WebRTC y no necesita servidor central. Basta con compartir un enlace. Incluye cursores, presencia y seguimiento de la vista de otro participante.
+La colaboración funciona directamente entre participantes mediante WebRTC y no necesita servidor central. Basta con compartir un enlace. Incluye cursores, presencia, seguimiento de la vista de otro participante y llamadas de voz con quienes están en la sala.
 
 ## Escritorio y web
 

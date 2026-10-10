@@ -60,7 +60,30 @@ export const collaborationMessageDefaults = {
   joinRoomEllipsis: 'Join room…',
   joinRoomDescription: 'Paste a room link or ID to open a file someone shared with you.',
   nameSettingTitle: 'Your name',
-  nameSettingDescription: 'Others see this name next to your cursor in shared rooms.'
+  nameSettingDescription: 'Others see this name next to your cursor in shared rooms.',
+  voiceCall: 'Voice call',
+  startVoiceCall: 'Start voice call',
+  joinVoiceCall: 'Join voice call',
+  joiningVoiceCall: 'Joining…',
+  leaveVoiceCall: 'Leave call',
+  mute: 'Mute',
+  unmute: 'Unmute',
+  muted: 'Muted',
+  microphone: 'Microphone',
+  speakers: 'Speakers',
+  systemDefault: 'System default',
+  peopleInCall: params('{count} in the call'),
+  nobodyInCall: 'Nobody is in the call yet.',
+  voiceDeniedTitle: 'Microphone access is blocked',
+  voiceDeniedDescription:
+    'Allow OpenPencil to use the microphone in your browser or system settings, then try again.',
+  voiceNoMicrophoneTitle: 'No microphone found',
+  voiceNoMicrophoneDescription: 'Connect a microphone, then try again.',
+  voiceUnavailableTitle: 'Can’t open the microphone',
+  voiceUnavailableDescription:
+    'Another app may be using it. Choose another microphone or close that app, then try again.',
+  voiceUnsupportedTitle: 'Voice calls aren’t available here',
+  voiceUnsupportedDescription: 'This browser can’t use a microphone.'
 } as const
 
 export const collaborationMessages = i18n('collaboration', collaborationMessageDefaults)

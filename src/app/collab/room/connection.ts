@@ -22,19 +22,23 @@ export type CollabRoomConnection = {
   agentPreview: CollabAction
   /** Follow peers leaving the room; returns the unsubscribe. */
   onPeerLeave: (handler: (peerId: string) => void) => () => void
+  /** The peer whose awareness carries a presence client, so media reaches the right person. */
+  peerForClient: (clientId: number) => string | undefined
 }
 
-function awarenessClientIds(data: Uint8Array): number[] {
+type AwarenessEntry = { clientId: number; removed: boolean }
+
+function awarenessEntries(data: Uint8Array): AwarenessEntry[] {
   try {
     const decoder = decoding.createDecoder(data)
     const count = decoding.readVarUint(decoder)
-    const clients: number[] = []
+    const entries: AwarenessEntry[] = []
     for (let index = 0; index < count; index++) {
-      clients.push(decoding.readVarUint(decoder))
+      const clientId = decoding.readVarUint(decoder)
       decoding.readVarUint(decoder)
-      decoding.readVarString(decoder)
+      entries.push({ clientId, removed: decoding.readVarString(decoder) === 'null' })
     }
-    return clients
+    return entries
   } catch {
     return []
   }
@@ -63,7 +67,13 @@ export function connectCollabRoom({
   })
 
   getAwareness((data, peerId) => {
-    awarenessClientsByPeer.set(peerId, new Set(awarenessClientIds(data)))
+    // A peer also relays removals of clients it timed out, which are not its own.
+    const clients = awarenessClientsByPeer.get(peerId) ?? new Set<number>()
+    for (const { clientId, removed } of awarenessEntries(data)) {
+      if (removed) clients.delete(clientId)
+      else clients.add(clientId)
+    }
+    awarenessClientsByPeer.set(peerId, clients)
     awarenessProtocol.applyAwarenessUpdate(awareness, data, 'remote')
   })
 
@@ -116,6 +126,12 @@ export function connectCollabRoom({
     onPeerLeave(handler) {
       leaveHandlers.add(handler)
       return () => leaveHandlers.delete(handler)
+    },
+    peerForClient(clientId) {
+      for (const [peerId, clients] of awarenessClientsByPeer) {
+        if (clients.has(clientId)) return peerId
+      }
+      return undefined
     }
   }
 }

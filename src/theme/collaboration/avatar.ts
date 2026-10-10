@@ -8,8 +8,20 @@ export const avatar = tv({
     bordered: { true: 'border-2 border-panel', false: '' },
     following: { true: 'ring-2 ring-white/40', false: '' },
     /** A collaborator's avatar, which follows them when clicked. */
-    interactive: { true: 'cursor-pointer transition-all', false: '' }
+    interactive: { true: 'cursor-pointer transition-all', false: '' },
+    /** In the voice call, and lit while speaking. */
+    voice: {
+      none: '',
+      listening: 'ring-2 ring-success/45',
+      speaking: 'ring-2 ring-success'
+    }
   },
   compoundVariants: [{ following: true, bordered: true, class: 'border-white' }],
-  defaultVariants: { size: 'sm', bordered: false, following: false, interactive: false }
+  defaultVariants: {
+    size: 'sm',
+    bordered: false,
+    following: false,
+    interactive: false,
+    voice: 'none'
+  }
 })
