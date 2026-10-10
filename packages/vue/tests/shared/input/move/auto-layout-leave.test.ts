@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
+
 import { createMoveHarness } from './harness'
 
 // Margins from Figma desktop 126: a child dragged by its centre out of a flow of 60 × 40 layers
@@ -50,5 +53,43 @@ describe('dragging a layer out of an auto layout flow', () => {
       expect(flow(layoutMode).dragPast(along, 15)).toBe(true)
       expect(flow(layoutMode).dragPast(along, 15.5)).toBe(false)
     })
+  }
+})
+
+test('a turned row measures the drag along its own axes', () => {
+  for (const [axis, stays] of [
+    ['along', true],
+    ['across', false]
+  ] as const) {
+    const harness = createMoveHarness()
+    const { editor, page, node } = harness
+    editor.state.snappingPreferences = { geometry: false, objects: false, pixelGrid: false }
+    const frame = node('FRAME', page, {
+      x: 300,
+      y: 300,
+      rotation: 90,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 10,
+      paddingLeft: 10,
+      paddingRight: 10,
+      paddingTop: 10,
+      paddingBottom: 10
+    })
+    const [, b] = [0, 1, 2].map((i) =>
+      node('RECTANGLE', frame.id, { name: 'ABC'[i], width: 60, height: 40 })
+    )
+    editor.runLayoutForNode(frame.id)
+    const world = getWorldMatrix(frame, editor.graph)
+    const toCanvas = (x: number, y: number) => Matrix.mapPoint(world, { x, y })
+    const start = toCanvas(b.x + 30, b.y + 20)
+    // 10 past the frame's end along the row, or past its bottom across it, in the frame's own space.
+    const end =
+      axis === 'along'
+        ? toCanvas(frame.width + 10 + 30, b.y + 20)
+        : toCanvas(b.x + 30, frame.height + 10 + 20)
+    harness.drag([b.id], [start.x, start.y], [end.x, end.y])
+    expect(harness.parentOf(b.id) === frame.id).toBe(stays)
   }
 })

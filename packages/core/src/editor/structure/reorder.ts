@@ -96,6 +96,21 @@ export function createStructureReorderActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
+  /** Puts a frame's children in `order` as one undo step, laying the frame out once. */
+  function setChildOrder(parentId: string, order: readonly string[], label = 'Reorder') {
+    const before = ctx.graph.getNode(parentId)?.childIds
+    if (!before || order.every((id, index) => id === before[index])) return
+    if (!prepareSlotEdits(ctx, [parentId])) return
+    const previous = [...before]
+    const next = [...order]
+    applyChildOrder(parentId, next)
+    ctx.undo.push({
+      label,
+      forward: () => applyChildOrder(parentId, next),
+      inverse: () => applyChildOrder(parentId, previous)
+    })
+  }
+
   function moveSelectionInZOrder(
     label: string,
     reorder: (childIds: readonly string[], selectedIds: ReadonlySet<string>) => string[]
@@ -181,6 +196,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
 
   return {
     reorderInAutoLayout,
+    setChildOrder,
     reorderChildWithUndo,
     bringForward,
     sendBackward,

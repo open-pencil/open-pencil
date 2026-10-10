@@ -1,5 +1,4 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 import {
   autoLayoutInsertIndex,
@@ -29,7 +28,7 @@ const AUTO_LAYOUT_LEAVE_MARGIN_ACROSS = 5
 const AUTO_LAYOUT_LEAVE_MARGIN_ALONG = 15
 export const MOVE_DRAG_START_THRESHOLD_PX = POINTER_DRAG_START_THRESHOLD_PX
 
-/** Whether layers whose box is `bounds` are still close enough to stay in a frame's flow. */
+/** Whether layers whose box in the frame's own space is `bounds` stay close enough to its flow. */
 function staysInAutoLayout(
   parentId: string,
   bounds: { left: number; top: number; right: number; bottom: number },
@@ -37,10 +36,10 @@ function staysInAutoLayout(
 ) {
   const parent = editor.graph.getNode(parentId)
   if (!parent) return false
-  const frame = getAxisAlignedWorldBounds(parent, editor.graph)
-  // How far the layers' near edge is past the frame's edge on each axis; negative while they overlap.
-  const pastX = Math.max(frame.x - bounds.right, bounds.left - (frame.x + frame.width))
-  const pastY = Math.max(frame.y - bounds.bottom, bounds.top - (frame.y + frame.height))
+  // How far the layers' near edge is past the frame's edge on each of the frame's own axes, with
+  // `bounds` in the frame's space; negative while they overlap.
+  const pastX = Math.max(-bounds.right, bounds.left - parent.width)
+  const pastY = Math.max(-bounds.bottom, bounds.top - parent.height)
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const along = isRow ? pastX : pastY
   const across = isRow ? pastY : pastX
@@ -98,12 +97,7 @@ function dropAlongFlows(d: DragMove, flows: FlowDrag[], editor: Editor) {
     for (const [i, flow] of flows.entries()) {
       const slot = d.flowSlots?.[i] ?? flow.start
       if (slot === flow.start) continue
-      // Placing each child at its index in turn, first to last, leaves the frame in this order.
-      for (const [index, id] of flowOrder(flow, slot, editor).entries()) {
-        if (editor.graph.getNode(flow.parentId)?.childIds[index] !== id) {
-          editor.reorderInAutoLayout(id, flow.parentId, index)
-        }
-      }
+      editor.setChildOrder(flow.parentId, flowOrder(flow, slot, editor))
     }
   })
 }
