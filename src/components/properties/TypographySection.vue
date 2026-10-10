@@ -42,6 +42,11 @@ const textCaseOptions = computed(() => [
   { value: 'LOWER', label: panels.value.textCaseLower },
   { value: 'TITLE', label: panels.value.textCaseTitle }
 ])
+const listOptions = computed(() => [
+  { value: 'NONE', label: panels.value.listNone },
+  { value: 'UNORDERED', label: panels.value.listBulleted },
+  { value: 'ORDERED', label: panels.value.listNumbered }
+])
 const truncationOptions = computed(() => [
   { value: 'DISABLED', label: panels.value.truncationDisabled },
   { value: 'ENDING', label: panels.value.truncationEnding }
@@ -283,6 +288,78 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
             "
           />
         </PanelFieldGroup>
+      </div>
+
+      <div class="border-t border-border pt-3">
+        <PanelFieldGroup :label="panels.listStyle" class="mb-3">
+          <SegmentedControl
+            :model-value="ctx.listType.value ?? ''"
+            :options="listOptions"
+            :label="panels.listStyle"
+            data-property="list-style"
+            @change="ctx.actions.setListType($event as 'NONE' | 'ORDERED' | 'UNORDERED')"
+          >
+            <template #option="{ option }">
+              <icon-lucide-list v-if="option.value === 'UNORDERED'" class="size-3.5" />
+              <icon-lucide-list-ordered v-else-if="option.value === 'ORDERED'" class="size-3.5" />
+              <icon-lucide-minus v-else class="size-3.5" />
+            </template>
+          </SegmentedControl>
+        </PanelFieldGroup>
+
+        <PanelGrid :columns="2" class="mb-3">
+          <PanelFieldGroup :label="panels.listSpacing">
+            <NumberField
+              :model-value="ctx.node.value.listSpacing"
+              :aria-label="panels.listSpacing"
+              :min="0"
+              data-property="list-spacing"
+              @update:model-value="ctx.actions.updateProp('listSpacing', Math.max(0, $event))"
+              @commit="
+                (value: number, previous: number) =>
+                  ctx.actions.commitProp('listSpacing', value, previous)
+              "
+            />
+          </PanelFieldGroup>
+          <PanelFieldGroup :label="panels.paragraphSpacing">
+            <NumberField
+              :model-value="ctx.node.value.paragraphSpacing"
+              :aria-label="panels.paragraphSpacing"
+              :min="0"
+              data-property="paragraph-spacing"
+              @update:model-value="ctx.actions.updateProp('paragraphSpacing', Math.max(0, $event))"
+              @commit="
+                (value: number, previous: number) =>
+                  ctx.actions.commitProp('paragraphSpacing', value, previous)
+              "
+            />
+          </PanelFieldGroup>
+        </PanelGrid>
+
+        <PanelGrid :columns="2" class="mb-3 items-end">
+          <PanelFieldGroup :label="panels.paragraphIndent">
+            <NumberField
+              :model-value="ctx.node.value.paragraphIndent"
+              :aria-label="panels.paragraphIndent"
+              :min="0"
+              data-property="paragraph-indent"
+              @update:model-value="ctx.actions.updateProp('paragraphIndent', Math.max(0, $event))"
+              @commit="
+                (value: number, previous: number) =>
+                  ctx.actions.commitProp('paragraphIndent', value, previous)
+              "
+            />
+          </PanelFieldGroup>
+          <label class="flex h-7 items-center justify-between gap-1.5 text-[11px] text-muted">
+            <span>{{ panels.hangingLists }}</span>
+            <AppSwitch
+              :model-value="ctx.node.value.hangingList"
+              :label="panels.hangingLists"
+              data-property="hanging-lists"
+              @update:model-value="ctx.actions.setHangingList($event)"
+            />
+          </label>
+        </PanelGrid>
       </div>
 
       <div class="grid gap-2.5 border-t border-border pt-3">

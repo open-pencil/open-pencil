@@ -18,6 +18,7 @@ It exposes:
 - text case and direction
 - ending truncation and maximum lines
 - OpenType feature toggles
+- list style (`listType`, `null` when the paragraphs differ) and hanging lists
 - helpers for changing family, weight, alignment, and decorations
 
 ## Usage
@@ -70,6 +71,16 @@ typography.setTextCase('UPPER')
 typography.setVerticalAlign('CENTER')
 typography.setTruncation('ENDING')
 typography.setFontFeature('LIGA', false)
+```
+
+### Make a list
+
+While the text is being edited, `setListType` changes the paragraphs under the caret or selection; otherwise it changes the whole text. List and paragraph spacing and the paragraph indent are plain numeric properties.
+
+```ts
+typography.setListType('UNORDERED')
+typography.setHangingList(true)
+typography.commitProp('listSpacing', 8, typography.node.value?.listSpacing ?? 0)
 ```
 
 ## Related APIs

@@ -3,8 +3,9 @@ import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/core/text'
-import type { SceneNode, TextDecoration } from '@open-pencil/scene-graph'
+import type { SceneNode, TextDecoration, TextListType } from '@open-pencil/scene-graph'
 
+import { createTextListActions, listTypeOf } from '#vue/canvas/text-edit/lists'
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { useNodeFontStatus } from '#vue/shared/font-status/use'
@@ -29,6 +30,8 @@ export function createTypographyState(editor: Editor) {
   const currentWeightLabel = computed(
     () => FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
   )
+  /** The list style of the text, or of the paragraphs being edited; `null` when mixed. */
+  const listType = computed(() => (node.value ? listTypeOf(editor, node.value) : null))
   const activeFormatting = computed(() => {
     const n = node.value
     if (!n) return []
@@ -47,6 +50,7 @@ export function createTypographyState(editor: Editor) {
     fontSize,
     currentWeightLabel,
     activeFormatting,
+    listType,
     missingFonts,
     hasMissingFonts
   }
@@ -67,6 +71,7 @@ export function createTypographyActions({
   activeFormatting,
   options
 }: TypographyActionOptions) {
+  const lists = createTextListActions(editor)
   let propBeforePreview:
     | { key: keyof SceneNode; value: SceneNode[keyof SceneNode]; textStyleId: string | null }
     | undefined
@@ -127,6 +132,16 @@ export function createTypographyActions({
     const fontFeatures = node.value.fontFeatures.filter((feature) => feature.tag !== tag)
     fontFeatures.push({ tag, enabled })
     editor.updateNodeWithUndo(node.value.id, { fontFeatures }, `Change ${tag} feature`)
+  }
+
+  function setListType(listType: TextListType) {
+    if (!node.value) return
+    lists.setListType(node.value, listType)
+  }
+
+  function setHangingList(hangingList: boolean) {
+    if (!node.value) return
+    editor.updateNodeWithUndo(node.value.id, { hangingList }, 'Change hanging lists')
   }
 
   function toggleBold() {
@@ -201,6 +216,8 @@ export function createTypographyActions({
     setTextCase,
     setTruncation,
     setFontFeature,
+    setListType,
+    setHangingList,
     toggleBold,
     toggleItalic,
     toggleDecoration,
