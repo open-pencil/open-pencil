@@ -5,6 +5,8 @@
   "sourceDesignJSX": "Design JSX",
   "sourceTailwindJSX": "Tailwind JSX",
   "sourceHTMLCSS": "HTML/CSS",
+  "sourceVue": "Vue",
+  "sourceReact": "React",
   "editorDesignLabel": "Design JSX",
   "editorHTMLCSSLabel": "HTML и CSS",
   "updating": "Обновление…",
@@ -15,6 +17,7 @@
   "noSelection": "Выделите слой, чтобы увидеть его код",
   "noSelectionDesignJSX": "Или напишите Design JSX, чтобы добавить на страницу новые слои.",
   "noSelectionTailwindJSX": "Tailwind JSX создаётся для выделенных слоёв.",
+  "noSelectionComponents": "Компоненты {framework} создаются для выбранных слоёв.",
   "writeJSX": "Написать JSX",
   "canvasChangedExpression": "На холсте теперь {value}; выражение оставлено как написано.",
   "canvasChangedOrder": "На холсте эти слои теперь в другом порядке; код оставлен как написан."

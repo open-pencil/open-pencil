@@ -5,6 +5,8 @@
   "sourceDesignJSX": "Design JSX",
   "sourceTailwindJSX": "Tailwind JSX",
   "sourceHTMLCSS": "HTML/CSS",
+  "sourceVue": "Vue",
+  "sourceReact": "React",
   "editorDesignLabel": "Design JSX",
   "editorHTMLCSSLabel": "HTML et CSS",
   "updating": "Mise à jour…",
@@ -15,6 +17,7 @@
   "noSelection": "Sélectionnez un calque pour voir son code",
   "noSelectionDesignJSX": "Ou écrivez du Design JSX pour ajouter de nouveaux calques à la page.",
   "noSelectionTailwindJSX": "Le Tailwind JSX est généré pour les calques sélectionnés.",
+  "noSelectionComponents": "Les composants {framework} sont générés pour les calques sélectionnés.",
   "writeJSX": "Écrire du JSX",
   "canvasChangedExpression": "Le canevas indique maintenant {value} ; l’expression reste telle qu’écrite.",
   "canvasChangedOrder": "Le canevas ordonne maintenant ces calques autrement ; le code reste tel qu’écrit."

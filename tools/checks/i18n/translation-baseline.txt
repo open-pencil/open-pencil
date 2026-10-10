@@ -14,6 +14,8 @@ de:code.editorDesignLabel
 de:code.sourceDesignJSX
 de:code.sourceHTMLCSS
 de:code.sourceTailwindJSX
+de:code.sourceVue
+de:code.sourceReact
 de:common.ok
 de:diagnostics.categoryMCP
 de:diagnostics.categoryRenderer
@@ -77,6 +79,8 @@ es:code.editorDesignLabel
 es:code.sourceDesignJSX
 es:code.sourceHTMLCSS
 es:code.sourceTailwindJSX
+es:code.sourceVue
+es:code.sourceReact
 es:common.tokens
 es:diagnostics.categoryMCP
 es:diagnostics.durationMs
@@ -116,6 +120,8 @@ fr:code.editorDesignLabel
 fr:code.sourceDesignJSX
 fr:code.sourceHTMLCSS
 fr:code.sourceTailwindJSX
+fr:code.sourceVue
+fr:code.sourceReact
 fr:collaboration.microphone
 fr:common.ok
 fr:diagnostics.categoryDocument
@@ -186,6 +192,8 @@ it:code.editorDesignLabel
 it:code.sourceDesignJSX
 it:code.sourceHTMLCSS
 it:code.sourceTailwindJSX
+it:code.sourceVue
+it:code.sourceReact
 it:common.ok
 it:diagnostics.categoryMCP
 it:diagnostics.categoryRenderer
@@ -221,6 +229,8 @@ ja:code.editorDesignLabel
 ja:code.sourceDesignJSX
 ja:code.sourceHTMLCSS
 ja:code.sourceTailwindJSX
+ja:code.sourceVue
+ja:code.sourceReact
 ja:diagnostics.categoryAI
 ja:diagnostics.categoryMCP
 ja:diagnostics.durationMs
@@ -243,6 +253,8 @@ pl:code.editorDesignLabel
 pl:code.sourceDesignJSX
 pl:code.sourceHTMLCSS
 pl:code.sourceTailwindJSX
+pl:code.sourceVue
+pl:code.sourceReact
 pl:common.ok
 pl:diagnostics.categoryAI
 pl:diagnostics.categoryMCP
@@ -273,6 +285,8 @@ ru:code.editorDesignLabel
 ru:code.sourceDesignJSX
 ru:code.sourceHTMLCSS
 ru:code.sourceTailwindJSX
+ru:code.sourceVue
+ru:code.sourceReact
 ru:diagnostics.categoryMCP
 ru:panels.ai
 ru:panels.colorFormatHsb
@@ -290,6 +304,8 @@ zh-cn:code.editorDesignLabel
 zh-cn:code.sourceDesignJSX
 zh-cn:code.sourceHTMLCSS
 zh-cn:code.sourceTailwindJSX
+zh-cn:code.sourceVue
+zh-cn:code.sourceReact
 zh-cn:diagnostics.categoryAI
 zh-cn:diagnostics.categoryMCP
 zh-cn:panels.ai

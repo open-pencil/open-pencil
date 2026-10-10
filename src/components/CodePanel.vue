@@ -23,7 +23,7 @@ import {
   resetDOMCodePreview,
   type DOMCodeSession
 } from '@/app/code/dom-preview'
-import { generatedCodeFor, type GeneratedCode } from '@/app/code/generated'
+import { generatedCodeAsync, generatedCodeFor, type GeneratedCode } from '@/app/code/generated'
 import { useCodeLayers } from '@/app/code/layers/use'
 import {
   createDesignJSXEditSession,
@@ -124,12 +124,27 @@ const codeLayers = useCodeLayers(source)
 const sourceOptions = computed(() => [
   { value: 'design-jsx' as const, label: code.value.sourceDesignJSX },
   { value: 'tailwind-jsx' as const, label: code.value.sourceTailwindJSX },
-  { value: 'html-css' as const, label: code.value.sourceHTMLCSS }
+  { value: 'html-css' as const, label: code.value.sourceHTMLCSS },
+  { value: 'vue' as const, label: code.value.sourceVue },
+  { value: 'react' as const, label: code.value.sourceReact }
 ])
-const readOnly = computed(() => source.value === 'tailwind-jsx')
-const editorLabel = computed(() =>
-  source.value === 'html-css' ? code.value.editorHTMLCSSLabel : code.value.editorDesignLabel
+/** Tailwind JSX and components are generated; Design JSX and HTML/CSS are edited into layers. */
+const readOnly = computed(
+  () => source.value === 'tailwind-jsx' || source.value === 'vue' || source.value === 'react'
 )
+const editorLabel = computed(() => {
+  if (source.value === 'html-css') return code.value.editorHTMLCSSLabel
+  if (source.value === 'vue') return code.value.sourceVue
+  if (source.value === 'react') return code.value.sourceReact
+  return code.value.editorDesignLabel
+})
+/** What the empty state says each generated source shows for a selection. */
+const emptyDescription = computed(() => {
+  if (source.value === 'design-jsx') return code.value.noSelectionDesignJSX
+  if (source.value === 'vue' || source.value === 'react')
+    return code.value.noSelectionComponents({ framework: editorLabel.value })
+  return code.value.noSelectionTailwindJSX
+})
 const statusTone = computed(() => {
   if (status.value === 'error') return 'error'
   if (status.value === 'updated') return 'success'
@@ -264,8 +279,7 @@ async function resetDraft(): Promise<void> {
   error.value = ''
   status.value = 'idle'
   edited.value = false
-  if (source.value === 'html-css') draft.value = starterSourceFor('html-css')
-  else showCanvas(source.value)
+  showCanvas(source.value)
 }
 
 async function changeSource(next: CodeSource): Promise<void> {
@@ -275,22 +289,36 @@ async function changeSource(next: CodeSource): Promise<void> {
   edited.value = false
   error.value = ''
   status.value = 'idle'
-  if (next === 'html-css') {
-    codeLayers.showGenerated(null)
-    draft.value = starterSourceFor(next)
-  } else {
-    showCanvas(next)
-  }
+  showCanvas(next)
 }
 
 const selectionKey = computed(() => [...store.state.selectedIds].join(','))
 
+/** Generations of components and HTML in flight; only the latest shows. */
+let generation = 0
+
 /** Shows the code generated for the selection, replacing whatever the editor held. */
-function showCanvas(next: Exclude<CodeSource, 'html-css'>) {
-  const generated: GeneratedCode = generatedCodeFor(next, store.graph, [...store.state.selectedIds])
+function showCanvas(next: CodeSource) {
+  const selected = [...store.state.selectedIds]
   followedSelection = selectionKey.value
-  codeLayers.showGenerated(generated)
-  draft.value = generated.code
+  if (next === 'design-jsx' || next === 'tailwind-jsx') {
+    const generated: GeneratedCode = generatedCodeFor(next, store.graph, selected)
+    codeLayers.showGenerated(generated)
+    draft.value = generated.code
+    return
+  }
+  const current = ++generation
+  if (selected.length === 0) {
+    codeLayers.showGenerated(null)
+    if (next === 'html-css') draft.value = starterSourceFor(next)
+    return
+  }
+  void generatedCodeAsync(next, store.graph, selected).then((generated) => {
+    if (current !== generation || source.value !== next) return generated
+    codeLayers.showGenerated(generated)
+    draft.value = generated.code
+    return generated
+  })
 }
 
 /**
@@ -300,8 +328,10 @@ function showCanvas(next: Exclude<CodeSource, 'html-css'>) {
  */
 function followCanvas(live = false) {
   const current = source.value
-  if (!editorActive.value || current === 'html-css' || previewing > 0) return
+  if (!editorActive.value || previewing > 0) return
   if (selectionKey.value !== followedSelection) {
+    // HTML/CSS written for the last selection is kept as it was previewed.
+    if (current === 'html-css' && edited.value) void commitCurrentSession()
     if (designSession.value) designSession.value = null
     edited.value = false
   }
@@ -309,6 +339,8 @@ function followCanvas(live = false) {
     showCanvas(current)
     return
   }
+  // HTML/CSS someone wrote stays as written: unlike Design JSX, it has no links to patch.
+  if (current === 'html-css') return
   // A live preview leaves the scene version alone, so it is followed whatever the version.
   if (!live && store.state.sceneVersion === previewedVersion) return
   codeEditor.value?.patchFromLayers()
@@ -352,7 +384,10 @@ watch(
         :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
         @update:model-value="changeSource"
       />
-      <Tip v-if="source !== 'html-css'" :label="code.copyJSXReference">
+      <Tip
+        v-if="source === 'design-jsx' || source === 'tailwind-jsx'"
+        :label="code.copyJSXReference"
+      >
         <AppButton
           color="neutral"
           variant="ghost"
@@ -370,9 +405,7 @@ watch(
     <AppPlaceholder
       v-if="showEmptyState"
       :label="code.noSelection"
-      :description="
-        source === 'design-jsx' ? code.noSelectionDesignJSX : code.noSelectionTailwindJSX
-      "
+      :description="emptyDescription"
       :fill="false"
       :ui="{ root: 'pt-10' }"
       data-test-id="code-panel-empty"

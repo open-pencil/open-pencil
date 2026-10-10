@@ -1,4 +1,4 @@
-export type CodeSource = 'design-jsx' | 'tailwind-jsx' | 'html-css'
+export type CodeSource = 'design-jsx' | 'tailwind-jsx' | 'html-css' | 'vue' | 'react'
 
 export const DESIGN_JSX_STARTER_SOURCE = '<Frame name="New frame" w={320} h={240} fill="#ffffff" />'
 

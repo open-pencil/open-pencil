@@ -212,6 +212,32 @@ test('Tailwind JSX is generated read-only in the same editor', async () => {
   await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
 })
 
+test('HTML/CSS shows the selection as markup with its stylesheet', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await openCodePanel()
+  await selectSource('HTML/CSS')
+  // The layer's class names its rule, rather than the starter for writing new layers.
+  await expect(codeEditor()).toContainText(
+    /<style>\.(\S+) \{ width: 200px; height: 150px;.*<div class="\1">/
+  )
+  // It stays editable, to rewrite the selection as HTML.
+  await expect(codeEditor()).toHaveAttribute('aria-readonly', 'false')
+})
+
+for (const [label, generated] of [
+  ['Vue', /<!-- (\w+)\.vue -->.*<template>.*<\/template>/],
+  ['React', /\/\/ (\w+)\.tsx.*export function \1\(/]
+] as const) {
+  test(`${label} generates the selection as a component, read-only`, async () => {
+    await editor.canvas.drawRect(100, 100, 200, 150)
+    await openCodePanel()
+    await selectSource(label)
+    await expect(codeEditor()).toContainText(generated)
+    await expect(editor.page.getByTestId('code-panel-status')).toContainText('Generated, read only')
+    await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
+  })
+}
+
 test('copy button works and shows confirmation', async () => {
   await openCodePanel()
   await editor.page.getByTestId('code-panel-copy').click()

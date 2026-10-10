@@ -5,6 +5,8 @@
   "sourceDesignJSX": "Design JSX",
   "sourceTailwindJSX": "Tailwind JSX",
   "sourceHTMLCSS": "HTML/CSS",
+  "sourceVue": "Vue",
+  "sourceReact": "React",
   "editorDesignLabel": "Design JSX",
   "editorHTMLCSSLabel": "HTML y CSS",
   "updating": "Actualizando…",
@@ -15,6 +17,7 @@
   "noSelection": "Selecciona una capa para ver su código",
   "noSelectionDesignJSX": "O escribe Design JSX para añadir capas nuevas a la página.",
   "noSelectionTailwindJSX": "Tailwind JSX se genera para las capas seleccionadas.",
+  "noSelectionComponents": "Los componentes de {framework} se generan para las capas seleccionadas.",
   "writeJSX": "Escribir JSX",
   "canvasChangedExpression": "El lienzo tiene ahora {value}; la expresión se mantiene tal como está escrita.",
   "canvasChangedOrder": "El lienzo ordena ahora estas capas de otra forma; el código se mantiene tal como está escrito."

@@ -7,6 +7,8 @@ export const codeMessageDefaults = {
   sourceDesignJSX: 'Design JSX',
   sourceTailwindJSX: 'Tailwind JSX',
   sourceHTMLCSS: 'HTML/CSS',
+  sourceVue: 'Vue',
+  sourceReact: 'React',
   editorDesignLabel: 'Design JSX',
   editorHTMLCSSLabel: 'HTML and CSS',
   updating: 'Updating…',
@@ -21,6 +23,7 @@ export const codeMessageDefaults = {
   noSelection: 'Select a layer to see its code',
   noSelectionDesignJSX: 'Or write Design JSX to add new layers to the page.',
   noSelectionTailwindJSX: 'Tailwind JSX is generated for the selected layers.',
+  noSelectionComponents: params('{framework} components are generated for the selected layers.'),
   writeJSX: 'Write JSX'
 } as const
 

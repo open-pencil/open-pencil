@@ -5,6 +5,8 @@
   "sourceDesignJSX": "Design JSX",
   "sourceTailwindJSX": "Tailwind JSX",
   "sourceHTMLCSS": "HTML/CSS",
+  "sourceVue": "Vue",
+  "sourceReact": "React",
   "editorDesignLabel": "Design JSX",
   "editorHTMLCSSLabel": "HTML 和 CSS",
   "updating": "正在更新…",
@@ -15,6 +17,7 @@
   "noSelection": "选择图层以查看其代码",
   "noSelectionDesignJSX": "也可以编写 Design JSX，向页面添加新图层。",
   "noSelectionTailwindJSX": "Tailwind JSX 会为所选图层生成。",
+  "noSelectionComponents": "为所选图层生成 {framework} 组件。",
   "writeJSX": "编写 JSX",
   "canvasChangedExpression": "画布上现在是 {value}；表达式保持原样。",
   "canvasChangedOrder": "画布上这些图层的顺序已改变；代码保持原样。"
