@@ -38,6 +38,15 @@ export function createOpenPencilAliases(rootDir: string) {
       find: /^@open-pencil\/scene-graph$/,
       replacement: resolve(rootDir, 'packages/scene-graph/src/index.ts')
     },
+    // Subpaths whose names differ from their files under src/.
+    {
+      find: /^@open-pencil\/scene-graph\/text-direction$/,
+      replacement: resolve(rootDir, 'packages/scene-graph/src/text/direction.ts')
+    },
+    {
+      find: /^@open-pencil\/scene-graph\/text-picture$/,
+      replacement: resolve(rootDir, 'packages/scene-graph/src/text/picture.ts')
+    },
     { find: '@open-pencil/scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
     { find: '#emit', replacement: resolve(rootDir, 'packages/emit/src') },
     {

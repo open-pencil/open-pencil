@@ -5,6 +5,7 @@ import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph
 import { applyFontFeaturesToKiwi } from '../font/features'
 import { weightToFigmaStyle } from '../font/style'
 import { stringToFigmaAxisTag } from '../font/variations'
+import { exportTextLines } from './lines'
 
 export function fontVariationToKiwi(variation: SceneNode['fontVariations'][number]) {
   const axisTag = stringToFigmaAxisTag(variation.axis)
@@ -92,22 +93,20 @@ function collectTextStyleOverrides(node: SceneNode): {
 
 export function exportTextData(
   node: SceneNode,
-  textLines: (text: string) => NonNullable<NodeChange['textData']>['lines'],
   fillToKiwiPaint: (fill: SceneNode['fills'][number]) => Paint
 ): NodeChange['textData'] {
-  if (node.styleRuns.length === 0) {
-    return { characters: node.text, lines: textLines(node.text) }
-  }
-
   const { charIds, styleMap } = collectTextStyleOverrides(node)
-  const overrideTable = [...styleMap.values()].map(({ id, style }) =>
+  const characterOverrides = [...styleMap.values()].map(({ id, style }) =>
     textStyleOverrideToKiwi(id, style, node, fillToKiwiPaint)
   )
-
-  return {
+  // Paragraph spacing shares the override table, numbered after the character styles.
+  const paragraphs = exportTextLines(node, styleMap.size + 1)
+  const overrideTable = [...characterOverrides, ...paragraphs.overrides]
+  const data: NonNullable<NodeChange['textData']> = {
     characters: node.text,
-    lines: textLines(node.text),
-    characterStyleIDs: charIds,
-    styleOverrideTable: overrideTable
+    lines: paragraphs.lines
   }
+  if (node.styleRuns.length > 0) data.characterStyleIDs = charIds
+  if (overrideTable.length > 0) data.styleOverrideTable = overrideTable
+  return data
 }

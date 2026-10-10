@@ -141,6 +141,8 @@ export interface EditorViewState {
   zoom: number
   navigation: NavigationState
   renderVersion: number
+  /** Bumped when the caret or selection of the text being edited moves, which changes nothing else. */
+  textSelectionVersion: number
   enteredContainerId: string | null
   nodeEditState?: RenderOverlays['nodeEditState'] | null
   cursorCanvasX?: number | null

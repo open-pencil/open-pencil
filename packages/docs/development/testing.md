@@ -14,7 +14,7 @@ Place a test with the source that owns its contract. Choose the runtime separate
 | Figma compatibility acceptance          | `tests/figma/**/*.spec.ts`                                     |
 | Private tool contracts                  | `tools/<owner>/tests/`                                         |
 
-For example, `packages/core/src/canvas/text/prepared.ts` maps to `packages/core/tests/canvas/text/prepared.test.ts`; `src/app/demo/viewport.ts` maps to `tests/app/demo/viewport.test.ts`. A substantial module may have a matching test directory rather than one large test file. Application E2E, external-system acceptance and large contract suites are intentional exceptions to file-for-file mirroring.
+For example, `packages/core/src/canvas/text/shape.ts` maps to `packages/core/tests/canvas/text/shape.test.ts`; `src/app/demo/viewport.ts` maps to `tests/app/demo/viewport.test.ts`. A substantial module may have a matching test directory rather than one large test file. Application E2E, external-system acceptance and large contract suites are intentional exceptions to file-for-file mirroring.
 
 Core tests using SceneGraph still belong to Core. Central integration is for contracts without a single owning implementation, such as interoperability between published packages. Name that contract explicitly; do not use integration as a miscellaneous bucket.
 

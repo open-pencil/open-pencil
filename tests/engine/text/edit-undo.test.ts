@@ -163,6 +163,42 @@ describe('text edit undo', () => {
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
   })
 
+  test('undoes a change made while editing on its own, then the typing before it', () => {
+    const { graph, undo, textEditor, textNode, actions } = setup()
+    const listed = [{ listType: 'ORDERED' as const, indentation: 1 }]
+    const read = () => getNodeOrThrow(graph, textNode.id)
+    actions.startTextEditing(textNode.id)
+    textEditor.insert(' World', textNode)
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text
+    })
+
+    // A list shortcut while editing, recorded the way updateNodeWithUndo records it.
+    actions.runTextEditStep(() => {
+      graph.updateNode(textNode.id, { textParagraphs: listed })
+      undo.push({
+        label: 'Change list style',
+        forward: () => graph.updateNode(textNode.id, { textParagraphs: listed }),
+        inverse: () => graph.updateNode(textNode.id, { textParagraphs: [] })
+      })
+    })
+    expect(undo.undoLabel).toBe('Change list style')
+
+    actions.runTextEditStep(() => undo.undo())
+    expect(read().textParagraphs).toEqual([])
+    expect(read().text).toBe('Hello World')
+    expect(textEditor.isActive).toBe(true)
+
+    actions.runTextEditStep(() => undo.undo())
+    expect(read().text).toBe('Hello')
+    expect(textEditor.state?.text).toBe('Hello')
+
+    // Nothing changed since the last undo, so leaving the edit records nothing more.
+    actions.commitTextEdit()
+    expect(undo.canUndo).toBe(false)
+    expect(undo.canRedo).toBe(true)
+  })
+
   test('reflows live path-text edits and restores glyphs through undo and redo', async () => {
     const setupResult = await setupPathText()
     if (!setupResult) return

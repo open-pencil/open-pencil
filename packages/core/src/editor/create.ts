@@ -115,6 +115,15 @@ export function createEditor(options?: EditorOptions) {
     })
   }
 
+  /**
+   * The caret or selection of the edited text moved: the canvas repaints its overlay and the
+   * views that follow the selection update, without the document counting as changed.
+   */
+  function textSelectionChanged() {
+    state.textSelectionVersion++
+    requestRepaint()
+  }
+
   function requestRefresh() {
     state.sceneVersion++
   }
@@ -270,6 +279,16 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
 
+  // The edited text follows changes made outside the editor, such as a panel field being
+  // dragged, so its caret and selection move with the text instead of after the change.
+  const invalidateEditedText = (id: string) => {
+    if (id !== state.editingTextId) return
+    const node = _graph.getNode(id)
+    if (node) _textEditor?.invalidateParagraph(node)
+  }
+  onEditorEvent('node:updated', invalidateEditedText)
+  onEditorEvent('node:previewUpdated', invalidateEditedText)
+
   function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
     _ck = ck
     _renderer = renderer
@@ -358,6 +377,7 @@ export function createEditor(options?: EditorOptions) {
     isInteractiveEditing: () => interactiveEdits.size > 0,
     requestRender,
     requestRefresh,
+    textSelectionChanged,
     requestRepaint,
     onEditorEvent,
     setCanvasKit,
@@ -411,6 +431,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Undo — bridge functions that need cross-module refs
     ...undoBridge,
+    // While text is edited, what was typed undoes first and the editor keeps the result.
+    undoAction: () => text.runTextEditStep(undoBridge.undoAction),
+    redoAction: () => text.runTextEditStep(undoBridge.redoAction),
 
     setDocumentColorSpace: colorSpace.setDocumentColorSpace,
 

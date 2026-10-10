@@ -108,3 +108,36 @@ const _slotSurfaceMatch: SlotSurfaceMatch = true
 // `Effect` here is Figma's plugin-typings union; OpenPencil reads and writes a subset of it.
 type EffectShapeMatch = Expect<Extends<FigmaNodeProxy['effects'][number], Effect>>
 const _effectShapeMatch: EffectShapeMatch = true
+
+type TextListKeys =
+  | 'setRangeListOptions'
+  | 'setRangeIndentation'
+  | 'setRangeListSpacing'
+  | 'setRangeParagraphSpacing'
+  | 'setRangeParagraphIndent'
+  | 'hangingList'
+type TextListSurfaceMatch = Expect<
+  Extends<Pick<FigmaNodeProxy, TextListKeys>, Pick<TextNode, TextListKeys>>
+>
+const _textListSurfaceMatch: TextListSurfaceMatch = true
+
+// Figma's mixed values are its own `figma.mixed` unique symbol; ours are a plain symbol.
+type WithoutMixed<T> = T extends (...args: infer A) => infer R
+  ? (...args: A) => Exclude<R, symbol>
+  : Exclude<T, symbol>
+type TextMixedKeys =
+  | 'getRangeListOptions'
+  | 'getRangeIndentation'
+  | 'getRangeListSpacing'
+  | 'getRangeParagraphSpacing'
+  | 'getRangeParagraphIndent'
+  | 'listSpacing'
+  | 'paragraphSpacing'
+  | 'paragraphIndent'
+type TextMixedMatch = Expect<
+  Extends<
+    { [K in TextMixedKeys]: WithoutMixed<FigmaNodeProxy[K]> },
+    { [K in TextMixedKeys]: WithoutMixed<TextNode[K]> }
+  >
+>
+const _textMixedMatch: TextMixedMatch = true

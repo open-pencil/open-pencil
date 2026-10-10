@@ -27,6 +27,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     zoom: 1,
     navigation: { phase: 'idle', generation: 0, lastInputAt: 0 },
     renderVersion: 0,
+    textSelectionVersion: 0,
     enteredContainerId: null,
     nodeEditState: null,
     cursorCanvasX: null,

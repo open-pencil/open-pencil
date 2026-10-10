@@ -8,7 +8,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 export function createTextFormattingActions(store: Editor) {
   function applyFormatting(nodeId: string, changes: Partial<SceneNode>, label: string) {
-    store.updateNodeWithUndo(nodeId, changes, label)
+    store.runTextEditStep(() => store.updateNodeWithUndo(nodeId, changes, label))
     const updated = store.graph.getNode(nodeId)
     if (updated) store.textEditor?.rebuildParagraph(updated)
     store.requestRender()
