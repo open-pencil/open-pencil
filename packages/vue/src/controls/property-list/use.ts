@@ -2,6 +2,7 @@ import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { isNodeArrayMixed } from '#vue/controls/node-props/helpers'
 import { useNodeProps } from '#vue/controls/node-props/use'
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useEditor } from '#vue/editor/context'
@@ -23,15 +24,23 @@ function moveItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
 
 export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
   const editor = useEditor()
-  const { isArrayMixed, nodes: selectedNodes, activeNode } = useNodeProps()
+  const { nodes: selectedNodes, activeNode } = useNodeProps()
   const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
   const selectedNodeIds = computed(() => selectedNodes.value.map((node) => node.id))
   const isMulti = computed(() => selectedNodes.value.length > 1)
   const active = computed(() => selectedNodes.value.length > 0)
-  const isMixed = computed(() => isArrayMixed(propKey))
+  // Figma leaves layers without strokes out when it compares strokes, so a stroke on some of the
+  // selection shows as theirs; fills and effects still differ when a layer has none.
+  const shownNodes = computed(() => {
+    if (propKey !== 'strokes') return selectedNodes.value
+    const stroked = selectedNodes.value.filter((node) => node.strokes.length > 0)
+    return stroked.length > 0 ? stroked : selectedNodes.value
+  })
+  const isMixed = computed(() => isNodeArrayMixed(shownNodes.value, propKey))
   const items = computed<PropertyListItemFor<K>[]>(() => {
     if (isMixed.value) return []
-    return (activeNode.value?.[propKey] ?? []) as PropertyListItemFor<K>[]
+    const shown = shownNodes.value.at(0)
+    return (shown?.[propKey] ?? []) as PropertyListItemFor<K>[]
   })
 
   function targetNodes(): SceneNode[] {
@@ -39,8 +48,10 @@ export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
     return activeNode.value ? [activeNode.value] : []
   }
 
+  /** A layer without strokes takes the shown ones when they are edited, as in Figma. */
   function propArray(node: SceneNode): PropertyListItemFor<K>[] {
-    return node[propKey] as PropertyListItemFor<K>[]
+    const own = node[propKey] as PropertyListItemFor<K>[]
+    return own.length === 0 && !isMixed.value ? items.value : own
   }
 
   function updateArray(node: SceneNode, value: PropertyListItemFor<K>[], label: string) {

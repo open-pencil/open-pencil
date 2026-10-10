@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
+import { MIXED, TypographyControlsRoot, useI18n, type MixedValue } from '@open-pencil/vue'
 
 import { loadFont } from '@/app/editor/fonts'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
@@ -52,25 +52,31 @@ const commonFeatures = computed(() => [
   { tag: 'KERN', label: panels.value.kerning }
 ])
 
-function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag: string) {
-  return features.find((feature) => feature.tag === tag)?.enabled ?? true
+/** Empty when the text layers differ, so selects and segmented controls show no choice. */
+function picked<T>(value: MixedValue<T>): T | '' {
+  return value === MIXED ? '' : value
 }
 </script>
 
 <template>
   <TypographyControlsRoot v-slot="ctx" :font-loader="fontLoader">
-    <PanelSection v-if="ctx.node.value" :label="panels.typography">
-      <template #actions>
+    <PanelSection v-if="ctx.node.value" :label="panels.typography" data-test-id="typography">
+      <template v-if="ctx.nodes.value.length === 1" #actions>
         <PropertyBindButton field="TEXT" />
       </template>
-      <PropertyBoundField field="TEXT" :label="panels.content" />
+      <PropertyBoundField
+        v-if="ctx.nodes.value.length === 1"
+        field="TEXT"
+        :label="panels.content"
+      />
       <SharedStyleField kind="text" :label="panels.textStyle" />
 
       <div class="mb-1.5 flex min-w-0 items-center gap-1.5">
         <FontPicker
           class="min-w-0 flex-1"
-          :model-value="ctx.node.value.fontFamily"
+          :model-value="picked(ctx.merged('fontFamily'))"
           :label="panels.fontFamily"
+          :placeholder="panels.mixed"
           @select="ctx.actions.setFamily"
         />
         <FontSettingsPopover />
@@ -100,18 +106,20 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
-            :model-value="ctx.node.value.fontWeight"
+            :model-value="picked(ctx.merged('fontWeight'))"
             :options="ctx.weights"
+            :placeholder="panels.mixed"
             @update:model-value="ctx.actions.setWeight(+$event)"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.fontSize">
           <VariableNumberField
-            :model-value="ctx.node.value.fontSize"
+            :model-value="ctx.merged('fontSize')"
             :aria-label="panels.fontSize"
             :min="1"
             :max="1000"
             :node-id="ctx.node.value.id"
+            :node-ids="ctx.nodes.value.map((text) => text.id)"
             binding-path="fontSize"
             @update:model-value="ctx.actions.updateProp('fontSize', $event)"
             @commit="(v: number, p: number) => ctx.actions.commitProp('fontSize', v, p)"
@@ -122,7 +130,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
       <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.lineHeight">
           <LineHeightField
-            :node="ctx.node.value"
+            :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('lineHeight', $event)"
             @commit="(v, p) => ctx.actions.commitProp('lineHeight', v, p)"
           />
@@ -130,9 +138,10 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         <PanelFieldGroup :label="panels.letterSpacing">
           <VariableNumberField
             suffix="px"
-            :model-value="ctx.node.value.letterSpacing"
+            :model-value="ctx.merged('letterSpacing')"
             :aria-label="panels.letterSpacing"
             :node-id="ctx.node.value.id"
+            :node-ids="ctx.nodes.value.map((text) => text.id)"
             binding-path="letterSpacing"
             @update:model-value="ctx.actions.updateProp('letterSpacing', $event)"
             @commit="(v: number, p: number) => ctx.actions.commitProp('letterSpacing', v, p)"
@@ -148,7 +157,8 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         <PanelFieldGroup :label="panels.direction" class="mb-3">
           <AppSelect
             :label="panels.direction"
-            :model-value="ctx.node.value.textDirection"
+            :model-value="picked(ctx.merged('textDirection'))"
+            :placeholder="panels.mixed"
             :options="[
               { value: 'AUTO', label: panels.auto },
               { value: 'LTR', label: 'LTR' },
@@ -160,7 +170,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
 
         <PanelFieldGroup :label="panels.textAlignment" class="mb-3">
           <SegmentedControl
-            :model-value="ctx.node.value.textAlignHorizontal"
+            :model-value="picked(ctx.merged('textAlignHorizontal'))"
             :options="alignmentOptions"
             :label="panels.textAlignment"
             @change="ctx.actions.align($event as 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED')"
@@ -176,7 +186,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
 
         <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-3">
           <SegmentedControl
-            :model-value="ctx.node.value.textAlignVertical"
+            :model-value="picked(ctx.merged('textAlignVertical'))"
             :options="verticalAlignmentOptions"
             :label="panels.verticalTextAlignment"
             @change="ctx.actions.setVerticalAlign($event as 'TOP' | 'CENTER' | 'BOTTOM')"
@@ -246,7 +256,8 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
           <PanelFieldGroup :label="panels.textCase">
             <AppSelect
               :label="panels.textCase"
-              :model-value="ctx.node.value.textCase"
+              :model-value="picked(ctx.merged('textCase'))"
+              :placeholder="panels.mixed"
               :options="textCaseOptions"
               @update:model-value="
                 ctx.actions.setTextCase($event as 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE')
@@ -256,7 +267,8 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
           <PanelFieldGroup :label="panels.truncation">
             <AppSelect
               :label="panels.truncation"
-              :model-value="ctx.node.value.textTruncation"
+              :model-value="picked(ctx.merged('textTruncation'))"
+              :placeholder="panels.mixed"
               :options="truncationOptions"
               @update:model-value="ctx.actions.setTruncation($event as 'DISABLED' | 'ENDING')"
             />
@@ -264,12 +276,12 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelGrid>
 
         <PanelFieldGroup
-          v-if="ctx.node.value.textTruncation === 'ENDING'"
+          v-if="ctx.merged('textTruncation') === 'ENDING'"
           :label="panels.maxLines"
           class="mb-3"
         >
           <NumberField
-            :model-value="ctx.node.value.maxLines ?? 1"
+            :model-value="ctx.merged('maxLines') ?? 1"
             :aria-label="panels.maxLines"
             :min="1"
             :step="1"
@@ -293,7 +305,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         >
           <span>{{ feature.label }}</span>
           <AppSwitch
-            :model-value="featureEnabled(ctx.node.value.fontFeatures, feature.tag)"
+            :model-value="ctx.fontFeature(feature.tag) === true"
             :label="feature.label"
             :data-property="`font-feature-${feature.tag.toLowerCase()}`"
             @update:model-value="ctx.actions.setFontFeature(feature.tag, $event)"

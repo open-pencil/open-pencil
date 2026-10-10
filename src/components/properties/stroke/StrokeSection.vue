@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
@@ -7,8 +7,10 @@ import {
   applySolidStrokeColor,
   applyStrokePaint,
   BindableValueRoot,
+  MIXED,
   useColorBindingProvider,
   useI18n,
+  useNodeProps,
   useOkHCL,
   useStrokeControls
 } from '@open-pencil/vue'
@@ -46,6 +48,12 @@ import StrokeSettingsPopover from './StrokeSettingsPopover.vue'
 
 const strokeCtx = useStrokeControls()
 const { advancedActive } = strokeCtx
+const { nodes: selectedNodes } = useNodeProps()
+/** Empty when the layers align their strokes differently, so the field reads Mixed. */
+const alignValue = computed(() => {
+  const align = strokeCtx.currentAlign()
+  return align === MIXED ? '' : align
+})
 const colorProvider = useColorBindingProvider()
 const okhcl = useOkHCL()
 const gradients = useGradientEditing()
@@ -89,22 +97,12 @@ function updateStrokeColor(
   if (commit) commitPaintMutation(binding)
 }
 
-function onToggleSides(activeNode: SceneNode | null) {
-  if (!activeNode) return
+/** Opening the sides gives every layer its own weight per side; closing strokes all sides again. */
+function onToggleSides(nodes: readonly SceneNode[]) {
   const next = !expandedSides.value
   expandedSides.value = next
-  if (next && !activeNode.independentStrokeWeights) {
-    const weight = activeNode.strokes[0]?.weight ?? 1
-    strokeCtx.selectSide('CUSTOM', {
-      ...activeNode,
-      borderTopWeight: weight,
-      borderRightWeight: weight,
-      borderBottomWeight: weight,
-      borderLeftWeight: weight
-    })
-  } else if (!next && activeNode.independentStrokeWeights) {
-    strokeCtx.selectSide('ALL', activeNode)
-  }
+  if (next && nodes.some((node) => !node.independentStrokeWeights)) strokeCtx.selectSide('CUSTOM')
+  else if (!next && nodes.some((node) => node.independentStrokeWeights)) strokeCtx.selectSide('ALL')
 }
 </script>
 
@@ -228,10 +226,11 @@ function onToggleSides(activeNode: SceneNode | null) {
         <AppSelect
           :label="panels.strokeType"
           :ui="{ trigger: 'w-[88px] flex-none' }"
-          :model-value="strokeCtx.currentAlign(activeNode)"
+          :model-value="alignValue"
+          :placeholder="panels.mixed"
           :options="strokeCtx.alignOptions"
           data-property="stroke-align"
-          @update:model-value="strokeCtx.updateAlign($event as Stroke['align'], activeNode)"
+          @update:model-value="strokeCtx.updateAlign($event as Stroke['align'])"
         />
         <Tip :label="panels.strokeWeight">
           <NumberField
@@ -255,7 +254,7 @@ function onToggleSides(activeNode: SceneNode | null) {
           class="size-[26px] shrink-0"
           :active="expandedSides"
           data-property="stroke-sides"
-          @click="onToggleSides(activeNode)"
+          @click="onToggleSides(selectedNodes)"
         >
           <icon-lucide-layout-grid class="size-3.5" />
         </IconButton>
@@ -271,10 +270,10 @@ function onToggleSides(activeNode: SceneNode | null) {
           v-for="side in strokeCtx.borderSides"
           :key="side"
           :label="side[0].toUpperCase()"
-          :model-value="strokeCtx.borderWeight(activeNode, side)"
+          :model-value="strokeCtx.borderWeight(side)"
           :min="0"
           :data-property="`stroke-${side}-weight`"
-          @update:model-value="strokeCtx.updateBorderWeight(side, $event, activeNode)"
+          @update:model-value="strokeCtx.updateBorderWeight(side, $event)"
         />
       </div>
     </PanelSection>

@@ -39,6 +39,9 @@ const actions = {
 <template>
   <slot
     :node="ctx.node"
+    :nodes="ctx.nodes"
+    :merged="ctx.merged"
+    :font-feature="ctx.fontFeature"
     :weights="ctx.weights"
     :missing-fonts="ctx.missingFonts"
     :has-missing-fonts="ctx.hasMissingFonts"

@@ -102,6 +102,13 @@ export type { TestId } from '#vue/testing/test-id'
 /** Property-panel composables. */
 export { usePosition } from '#vue/controls/position/use'
 export { useLayout } from '#vue/controls/layout/use'
+export { useSelectionColors } from '#vue/controls/selection-colors/use'
+export {
+  LAYOUT_CONTAINER_TYPES,
+  textResizeMode,
+  useSelectionLayout
+} from '#vue/controls/selection-layout/use'
+export type { TextResizeMode } from '#vue/controls/selection-layout/use'
 export type { LayoutAxis, SizeLimitProp } from '#vue/controls/layout/helpers'
 export { useAppearance } from '#vue/controls/appearance/use'
 export { useMask } from '#vue/controls/mask/use'

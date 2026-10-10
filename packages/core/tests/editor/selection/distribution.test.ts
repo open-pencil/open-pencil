@@ -115,3 +115,45 @@ describe('distribute nodes', () => {
     expect(positions(editor, ids, 'x')).toEqual([0, 60, 130])
   })
 })
+
+// Figma desktop 126: Spacing reads the gaps of a row or column and typing a value spaces it from
+// its first layer; layers apart on both axes have no spacing.
+describe('selection spacing', () => {
+  function row() {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const a = editor.graph.createNode('RECTANGLE', pageId, { x: 0, y: 180, width: 100, height: 80 })
+    const b = editor.graph.createNode('RECTANGLE', pageId, { x: 140, y: 180, width: 120, height: 80 })
+    const c = editor.graph.createNode('ELLIPSE', pageId, { x: 320, y: 180, width: 80, height: 80 })
+    return { editor, ids: [c.id, a.id, b.id], a, b, c }
+  }
+
+  test('reads the gaps along a row in order', () => {
+    const { editor, ids } = row()
+    expect(editor.selectionSpacing(ids)).toEqual({ axis: 'horizontal', gaps: [40, 60] })
+  })
+
+  test('spaces the row from its first layer', () => {
+    const { editor, ids, a, b, c } = row()
+    editor.setSelectionSpacing(ids, 10)
+    expect(positions(editor, [a.id, b.id, c.id], 'x')).toEqual([0, 110, 240])
+    editor.undo.undo()
+    expect(positions(editor, [a.id, b.id, c.id], 'x')).toEqual([0, 140, 320])
+  })
+
+  test('reads a column when the layers overlap across it', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const rect = editor.graph.createNode('RECTANGLE', pageId, { x: 0, y: 180, width: 100, height: 80 })
+    const text = editor.graph.createNode('TEXT', pageId, { x: 0, y: 300, width: 39, height: 19 })
+    expect(editor.selectionSpacing([text.id, rect.id])).toEqual({ axis: 'vertical', gaps: [40] })
+  })
+
+  test('has no spacing for layers apart on both axes', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const rect = editor.graph.createNode('RECTANGLE', pageId, { x: 110, y: 180, width: 120, height: 80 })
+    const text = editor.graph.createNode('TEXT', pageId, { x: 0, y: 300, width: 39, height: 19 })
+    expect(editor.selectionSpacing([text.id, rect.id])).toBeNull()
+  })
+})
