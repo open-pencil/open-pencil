@@ -75,7 +75,8 @@ export function useHomeLocations() {
     select(next: HomeLocationView) {
       homeLocation.value = fromView(next)
     },
-    connect: () => openCloudConnect(),
+    // Signing back in goes straight to the server Home shows; without one, choose a server.
+    connect: () => openCloudConnect({ serverId: homeCloudServer.value?.id }),
     accountSettings: () => openSettingsDialog('cloud'),
     storageSettings: () => openSettingsDialog('storage'),
     async signOut() {

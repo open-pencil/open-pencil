@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue'
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
 import { useCloudDocumentStatus } from '@/app/cloud/documents/status'
+import { cloudRoomPermissions } from '@/app/cloud/rooms/live'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { formatCommentTime, useCommentClock } from '@/app/comments/time'
@@ -74,6 +75,7 @@ function retry() {
       :workspace="location.workspace ?? location.host"
       :host="location.host"
       :saved-ago="savedAgo"
+      :view-only="cloudRoomPermissions.get(store) === 'view'"
       @resolve="openConflict"
       @share="cloudShareOpen = true"
       @retry="retry"

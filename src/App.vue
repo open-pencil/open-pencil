@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 
+import { watchCloudRooms } from '@/app/cloud/rooms/live'
 import { startCloudSessions } from '@/app/cloud/sessions/startup'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
@@ -54,6 +55,7 @@ onMounted(() => {
   toast.setupGlobalErrorHandler()
   scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
+  watchCloudRooms()
   void startCloudSessions({
     leaveInvitationAddress: () => router.isReady().then(() => router.replace('/'))
   })

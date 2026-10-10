@@ -55,6 +55,28 @@ export function shareDocument(store: EditorStore, roomId = generateRoomId()): Ro
   return session
 }
 
+/**
+ * Puts a tab's stored document into its server's room. The tab stays that document; what the room
+ * already holds arrives through the connection, and an empty room is seeded by whoever asks.
+ */
+export function openDocumentRoom(
+  store: EditorStore,
+  roomId: string,
+  transport: JoinCollabRoom
+): RoomSession {
+  const existing = roomForStore(store)
+  if (existing) return existing
+  const session = openRoomSession({
+    roomId,
+    store,
+    origin: 'shared',
+    joinRoom: transport,
+    holdsDocument: true
+  })
+  addSession(session)
+  return session
+}
+
 export interface JoinRoomOptions {
   /** What the new tab is called until the room's document brings its own name. */
   tabName: string

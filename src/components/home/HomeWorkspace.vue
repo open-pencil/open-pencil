@@ -4,6 +4,8 @@ import { computed, ref, watch } from 'vue'
 
 import { useDocumentWorkspace, useI18n, useViewportKind } from '@open-pencil/vue'
 
+import { createCloudDocument } from '@/app/cloud/documents/create'
+import { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 import { useHomeLocations } from '@/app/home/locations'
 import {
   activeStorageProviderID,
@@ -44,6 +46,21 @@ const query = ref('')
 const openError = ref<string | null>(null)
 const storageConfigured = ref(storagePreferencesComplete(activeStorageProviderID.value))
 const places = useHomeLocations()
+
+/** A new design lands in the Cloud workspace Home shows, or opens as a local file. */
+function newDocument() {
+  const workspace = places.workspace.value
+  const serverId = places.serverId.value
+  if (!workspace || !serverId || workspace.role === 'viewer') {
+    emit('new-document')
+    return
+  }
+  void createCloudDocument({
+    providerId: CLOUD_STORAGE_PROVIDER_ID,
+    profileId: serverId,
+    containerId: workspace.id
+  })
+}
 
 const workspace = useDocumentWorkspace<RecentDocument>({
   source: {
@@ -199,7 +216,7 @@ function formattedDate(updatedAt: string): string {
         @connect="places.connect"
       />
     </template>
-    <HomeSearchActions v-model="query" @new-document="emit('new-document')" />
+    <HomeSearchActions v-model="query" @new-document="newDocument" />
 
     <p v-if="openError" class="mb-4 text-xs text-danger" role="alert">{{ openError }}</p>
     <CloudWorkspaceSection

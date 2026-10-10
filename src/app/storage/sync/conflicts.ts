@@ -24,7 +24,8 @@ async function conflictedCanvas(canvasId: string) {
   return { store, meta }
 }
 
-async function dropCanvasUploads(canvasId: string): Promise<void> {
+/** Drops a document's queued uploads, for edits that are kept elsewhere. */
+export async function dropCanvasUploads(canvasId: string): Promise<void> {
   const outbox = getOutbox()
   const jobs = await outbox.list()
   await Promise.all(
