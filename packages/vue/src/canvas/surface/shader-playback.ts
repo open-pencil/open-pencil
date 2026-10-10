@@ -11,6 +11,12 @@ import { canDrawShaders } from '#vue/canvas/surface/shader-rasterizer'
 
 /** The longest side a playing shader is drawn at, however large it is on screen. */
 const MAX_PLAY_EDGE = 1024
+/**
+ * How long a frame may spend drawing shaders and handing them to the canvas. A browser where
+ * that is slow, such as Safari, which copies each WebGPU canvas into WebGL synchronously, draws
+ * as many as fit and the rest on the next frames, in turn, rather than stalling every frame.
+ */
+const FRAME_BUDGET_MS = 8
 /** The least time between frames where each frame is copied. */
 const COPY_FRAME_MS = 1000 / 30
 /** How often what is on screen is checked while the view moves. */
@@ -29,6 +35,8 @@ interface Player {
   disposed: boolean
   /** The copy of its last frame shown, where frames are copied, closed when the next replaces it. */
   copied: ImageBitmap | null
+  /** When it last drew, so its clock advances by the time since then however often it draws. */
+  drawnAt: number
 }
 
 interface PageShader {
@@ -82,6 +90,8 @@ export function useShaderPlayback(options: {
   const retired: Player[] = []
   let last = 0
   let stepping = false
+  /** Where the next frame starts drawing, when the last one ran out of time. */
+  let turn = 0
   /** Whether this browser needs each frame copied before the canvas can show it. */
   let copyFrames = false
 
@@ -143,7 +153,8 @@ export function useShaderPlayback(options: {
       renderer: null,
       visible: true,
       disposed: false,
-      copied: null
+      copied: null,
+      drawnAt: 0
     }
     players.set(hash, player)
     // Read through a call: the player may be stopped while the library loads.
@@ -198,11 +209,10 @@ export function useShaderPlayback(options: {
 
   const { pause, resume } = useRafFn(
     ({ timestamp }) => {
-      const delta = last === 0 ? 0 : (timestamp - last) / 1000
       if (stepping || (copyFrames && last !== 0 && timestamp - last < COPY_FRAME_MS)) return
       last = timestamp
       stepping = true
-      void step(delta).finally(() => {
+      void step(timestamp).finally(() => {
         stepping = false
         release()
       })
@@ -216,21 +226,29 @@ export function useShaderPlayback(options: {
    * browser that cannot upload a WebGPU canvas gets a copy of each frame instead, which costs a
    * readback, so frames then come at most every `COPY_FRAME_MS`.
    */
-  async function step(delta: number) {
+  async function step(now: number) {
     const renderer = getRenderer()
     if (!renderer) return
     const copies: Promise<{ hash: string; player: Player; frame: ImageBitmap }>[] = []
     let drew = false
-    for (const [hash, player] of players) {
-      if (!player.visible || !player.renderer) continue
-      await player.renderer.renderFrame({ deltaSeconds: delta, waitForGpu: false })
+    const drawing = [...players].filter(([, player]) => player.visible && player.renderer)
+    const started = performance.now()
+    for (let index = 0; index < drawing.length; index++) {
+      const [hash, player] = drawing[(turn + index) % drawing.length]
+      const delta = player.drawnAt === 0 ? 0 : (now - player.drawnAt) / 1000
+      player.drawnAt = now
+      await player.renderer?.renderFrame({ deltaSeconds: delta, waitForGpu: false })
       if (player.disposed) continue
-      if (!copyFrames && uploads(renderer, hash, player)) {
-        drew = true
-        continue
+      if (!copyFrames && uploads(renderer, hash, player)) drew = true
+      else {
+        copyFrames = true
+        copies.push(createImageBitmap(player.canvas).then((frame) => ({ hash, player, frame })))
       }
-      copyFrames = true
-      copies.push(createImageBitmap(player.canvas).then((frame) => ({ hash, player, frame })))
+      // The next frame starts with the shaders this one had no time for.
+      if (performance.now() - started > FRAME_BUDGET_MS) {
+        turn = (turn + index + 1) % drawing.length
+        break
+      }
     }
     for (const { hash, player, frame } of await Promise.all(copies)) {
       if (player.disposed) {
