@@ -1,14 +1,18 @@
 import {
+  aspectRatioLockEditable,
   layoutSizing,
   layoutSizingError,
   layoutSizingUpdates,
+  lockedAspectRatioTarget,
   type LayoutMode,
   type LayoutSizing,
   type LayoutSizingAxis,
-  type SceneNode
+  type SceneNode,
+  type Vector
 } from '@open-pencil/scene-graph'
 
 import {
+  assertProxyEditable,
   graph,
   raw,
   updateNode,
@@ -74,7 +78,40 @@ export function installLayoutNodeProxyAccessors(
     minWidth: simpleAccessor(internals, 'minWidth'),
     maxWidth: simpleAccessor(internals, 'maxWidth'),
     minHeight: simpleAccessor(internals, 'minHeight'),
-    maxHeight: simpleAccessor(internals, 'maxHeight')
+    maxHeight: simpleAccessor(internals, 'maxHeight'),
+    targetAspectRatio: {
+      get(this: ProxyThis): Vector | null {
+        const target = raw(this, internals).targetAspectRatio
+        return target ? { ...target } : null
+      }
+    },
+    constrainProportions: {
+      get(this: ProxyThis): boolean {
+        return raw(this, internals).targetAspectRatio !== null
+      },
+      set(this: ProxyThis, value: boolean) {
+        setAspectRatioLock(this, internals, value)
+      }
+    }
+  })
+
+  Object.assign(prototype, {
+    lockAspectRatio(this: ProxyThis): void {
+      setAspectRatioLock(this, internals, true)
+    },
+    unlockAspectRatio(this: ProxyThis): void {
+      setAspectRatioLock(this, internals, false)
+    }
+  })
+}
+
+/** Figma ignores the call, without an error, on a layer inside an instance. */
+function setAspectRatioLock(target: ProxyThis, internals: NodeProxyInternals, locked: boolean) {
+  assertProxyEditable(target, internals)
+  const node = raw(target, internals)
+  if (!aspectRatioLockEditable(graph(target, internals), node)) return
+  updateNode(target, internals, {
+    targetAspectRatio: locked ? lockedAspectRatioTarget(node.width, node.height) : null
   })
 }
 

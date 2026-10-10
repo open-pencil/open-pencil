@@ -79,6 +79,7 @@
   "addPage": "添加页面",
   "toggleVisibility": "切换可见性",
   "independentCornerRadii": "独立圆角半径",
+  "lockAspectRatio": "锁定宽高比",
   "detachVariable": "解除变量绑定",
   "applyVariable": "应用变量",
   "noVariablesFound": "未找到变量",

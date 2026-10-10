@@ -11,6 +11,9 @@ import type {
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
+import type { FlowDrag } from '#vue/shared/input/flow-reorder'
+import type { LayerSizing } from '#vue/shared/input/resize/sizing'
+
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 
 export type CornerPosition = 'nw' | 'ne' | 'se' | 'sw'
@@ -48,6 +51,10 @@ export interface DragMove {
   duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
+  /** The auto layout flows the moved layers are dragged along, as blocks. */
+  flows?: FlowDrag[]
+  /** Each flow's slot for the block where the drag has reached. */
+  flowSlots?: number[]
   /** Space is held: layers keep their parents wherever they are dropped. */
   keepParents?: boolean
   /** Control is held: auto layout frames take the layers as absolute-positioned children. */
@@ -82,9 +89,17 @@ export interface DragResize {
   origTextPathData: TextPathData | null
   origTextPathBox: Rect | null
   origChildren: Map<string, ResizeSnapshot> | null
+  /** The ratio the layer is locked to, kept unless Control frees it. */
+  lockedAspectRatio: number | null
+  /** Whether the latest step set the lock aside, so the commit stores the new size. */
+  freesLock?: boolean
   appliedRect?: Rect
   /** The layer's edited fields before the drag marked its size, to put back if it changes nothing. */
   origEditedFields?: string[]
+  /** The layer's sizing before the drag, taken on its first step. */
+  origSizing?: LayerSizing
+  /** The sizing the latest step left, which the commit keeps. */
+  appliedSizing?: LayerSizing
 }
 
 export interface DragMarquee {

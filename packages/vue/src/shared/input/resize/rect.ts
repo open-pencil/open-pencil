@@ -2,32 +2,44 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { HandlePosition } from '#vue/shared/input/types'
 
+/** `value` at least `min` long, keeping the direction it was dragged in. */
+function atLeast(value: number, min: number): number {
+  return Math.sign(value || 1) * Math.max(Math.abs(value), min)
+}
+
+/**
+ * Fits a dragged box to `aspect` (width over height), as Figma does: an edge handle sizes the
+ * other axis around its centre, a corner handle follows the axis the pointer changed most and
+ * keeps the opposite corner in place. The side that drives stays long enough for the other to
+ * keep a whole pixel, so the box keeps its ratio at its smallest.
+ */
 export function constrainToAspectRatio(
   handle: HandlePosition,
   origRect: Rect,
   width: number,
   height: number,
-  dx: number,
-  dy: number
+  aspect: number
 ): Rect {
-  let x = handle.includes('w') ? origRect.x + origRect.width - Math.abs(width) : origRect.x
+  const minWidth = Math.max(1, aspect)
+  const minHeight = Math.max(1, 1 / aspect)
   const isTop = handle === 'nw' || handle === 'n' || handle === 'ne'
-  let y = isTop ? origRect.y + origRect.height - Math.abs(height) : origRect.y
-  const aspect = origRect.width / origRect.height
-
-  if (handle === 'n' || handle === 's') {
-    width = Math.abs(height) * aspect
-    x = origRect.x + (origRect.width - width) / 2
-  } else if (handle === 'e' || handle === 'w') {
-    height = Math.abs(width) / aspect
-    y = origRect.y + (origRect.height - height) / 2
-  } else if (Math.abs(dx) > Math.abs(dy)) {
-    height = (Math.abs(width) / aspect) * Math.sign(height || 1)
-    if (isTop) y = origRect.y + origRect.height - Math.abs(height)
+  const isEdge = handle === 'n' || handle === 's' || handle === 'e' || handle === 'w'
+  const widthDrives = isEdge
+    ? handle === 'e' || handle === 'w'
+    : Math.abs(width) > Math.abs(height) * aspect
+  if (widthDrives) {
+    width = atLeast(width, minWidth)
+    height = (Math.abs(width) / aspect) * (isEdge ? 1 : Math.sign(height || 1))
   } else {
-    width = Math.abs(height) * aspect * Math.sign(width || 1)
-    if (handle.includes('w')) x = origRect.x + origRect.width - Math.abs(width)
+    height = atLeast(height, minHeight)
+    width = Math.abs(height) * aspect * (isEdge ? 1 : Math.sign(width || 1))
   }
+
+  // Signed sizes: a handle dragged past the opposite edge lands the box on the far side.
+  let x = handle.includes('w') ? origRect.x + origRect.width - width : origRect.x
+  let y = isTop ? origRect.y + origRect.height - height : origRect.y
+  if (handle === 'n' || handle === 's') x = origRect.x + (origRect.width - width) / 2
+  if (handle === 'e' || handle === 'w') y = origRect.y + (origRect.height - height) / 2
 
   return { x, y, width, height }
 }
@@ -37,7 +49,7 @@ export function calculateResizeRect(
   origRect: Rect,
   dx: number,
   dy: number,
-  constrain: boolean
+  aspect: number | null
 ): Rect {
   let { x, y, width, height } = origRect
 
@@ -57,8 +69,8 @@ export function calculateResizeRect(
     height = origRect.height - dy
   }
 
-  if (constrain && origRect.width > 0 && origRect.height > 0) {
-    ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, dx, dy))
+  if (aspect !== null) {
+    ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, aspect))
   }
 
   if (width < 0) {

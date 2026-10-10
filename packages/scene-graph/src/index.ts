@@ -534,7 +534,8 @@ export class SceneGraph {
     'minWidth',
     'maxWidth',
     'minHeight',
-    'maxHeight'
+    'maxHeight',
+    'targetAspectRatio'
   ])
 
   runPreviewUpdates(fn: () => void, beforeUpdate?: NodePreviewObserver): void {

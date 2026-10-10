@@ -15,7 +15,7 @@ import {
   setNodeStrokeOkHCL
 } from '@open-pencil/scene-graph/color'
 import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaEffect } from '#core/figma-api/effects'
@@ -130,6 +130,11 @@ export class FigmaNodeProxy {
   declare maxWidth: number | null
   declare minHeight: number | null
   declare maxHeight: number | null
+  declare readonly targetAspectRatio: Vector | null
+  /** @deprecated Figma's alias for whether `targetAspectRatio` is set. */
+  declare constrainProportions: boolean
+  declare lockAspectRatio: () => void
+  declare unlockAspectRatio: () => void
   declare vectorPaths: readonly FigmaVectorPath[]
   declare vectorNetwork: FigmaVectorNetwork
   declare setVectorNetworkAsync: (vectorNetwork: FigmaVectorNetwork) => Promise<void>

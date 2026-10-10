@@ -129,6 +129,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origStrokes: [],
       origTextPathData: null,
       origTextPathBox: null,
+      lockedAspectRatio: null,
       origChildren: new Map([[text.id, origChild]])
     }
 
@@ -216,6 +217,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origStrokes: [],
       origTextPathData: null,
       origTextPathBox: null,
+      lockedAspectRatio: null,
       origChildren: new Map([[text.id, origChild]])
     }) as DragResize
 

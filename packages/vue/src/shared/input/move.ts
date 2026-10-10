@@ -3,6 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   autoLayoutInsertIndex,
   computeAutoLayoutIndicator,
+  computeIndicatorPosition,
   computeAutoLayoutIndicatorForFrame
 } from '#vue/shared/input/auto-layout'
 import {
@@ -11,33 +12,94 @@ import {
 } from '#vue/shared/input/drag-threshold'
 import { findMoveDropTarget, reparentDroppedNodes } from '#vue/shared/input/drop-target'
 export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
-import { AUTO_LAYOUT_BREAK_THRESHOLD } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 
+import { flowBlockBounds, flowOrder, flowSlot, type FlowDrag } from '#vue/shared/input/flow-reorder'
 import { applyMoveSnap } from '#vue/shared/input/move-snap'
 import type { DragMove } from '#vue/shared/input/types'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
-const AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE = 96
+/**
+ * How far past its auto layout frame's edge a dragged layer's near edge goes before the layer
+ * leaves the frame, in canvas units, as measured in Figma desktop 126: 5 across the flow, and
+ * 13 to 20 along it depending on the layer's size.
+ */
+const AUTO_LAYOUT_LEAVE_MARGIN_ACROSS = 5
+const AUTO_LAYOUT_LEAVE_MARGIN_ALONG = 15
 export const MOVE_DRAG_START_THRESHOLD_PX = POINTER_DRAG_START_THRESHOLD_PX
 
-function isInsideAutoLayoutDragBounds(parentId: string, cx: number, cy: number, editor: Editor) {
+/** Whether layers whose box in the frame's own space is `bounds` stay close enough to its flow. */
+function staysInAutoLayout(
+  parentId: string,
+  bounds: { left: number; top: number; right: number; bottom: number },
+  editor: Editor
+) {
   const parent = editor.graph.getNode(parentId)
   if (!parent) return false
-  const abs = editor.graph.getAbsolutePosition(parentId)
+  // How far the layers' near edge is past the frame's edge on each of the frame's own axes, with
+  // `bounds` in the frame's space; negative while they overlap.
+  const pastX = Math.max(-bounds.right, bounds.left - parent.width)
+  const pastY = Math.max(-bounds.bottom, bounds.top - parent.height)
   const isRow = parent.layoutMode === 'HORIZONTAL'
-  const mainStart = isRow ? abs.x : abs.y
-  const mainSize = isRow ? parent.width : parent.height
-  const crossStart = isRow ? abs.y : abs.x
-  const crossSize = isRow ? parent.height : parent.width
-  const main = isRow ? cx : cy
-  const cross = isRow ? cy : cx
-  return (
-    main >= mainStart - AUTO_LAYOUT_BREAK_THRESHOLD &&
-    main <= mainStart + mainSize + AUTO_LAYOUT_BREAK_THRESHOLD &&
-    cross >= crossStart - AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE &&
-    cross <= crossStart + crossSize + AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE
+  const along = isRow ? pastX : pastY
+  const across = isRow ? pastY : pastX
+  return along <= AUTO_LAYOUT_LEAVE_MARGIN_ALONG && across <= AUTO_LAYOUT_LEAVE_MARGIN_ACROSS
+}
+
+/**
+ * Keeps dragged layers in their flows while they stay close, as Figma does: each flow's block
+ * takes the slot the drag has reached, which the indicator shows for the first flow that moved.
+ * Returns false once a flow's layers leave it, and the move goes on as a free drag.
+ */
+function dragAlongFlows(d: DragMove, flows: FlowDrag[], dx: number, dy: number, editor: Editor) {
+  if (d.ignoreAutoLayout) return false
+  if (
+    !flows.every((flow) =>
+      staysInAutoLayout(flow.parentId, flowBlockBounds(flow, dx, dy, editor), editor)
+    )
   )
+    return false
+  d.flowSlots = flows.map((flow) => flowSlot(flow, dx, dy, editor))
+  const moved = flows.findIndex((flow, i) => d.flowSlots?.[i] !== flow.start)
+  const flow = moved === -1 ? undefined : flows[moved]
+  const parent = flow && editor.graph.getNode(flow.parentId)
+  if (!flow || !parent) {
+    editor.setLayoutInsertIndicator(null)
+    return true
+  }
+  const isRow = parent.layoutMode === 'HORIZONTAL'
+  const others = flow.others.flatMap((id) => editor.graph.getNode(id) ?? [])
+  const parentAbs = editor.graph.getAbsolutePosition(parent.id)
+  const position = computeIndicatorPosition(
+    others,
+    d.flowSlots[moved],
+    parent,
+    parentAbs,
+    isRow,
+    editor
+  )
+  editor.setLayoutInsertIndicator({
+    parentId: parent.id,
+    index: d.flowSlots[moved],
+    x: isRow ? position : parentAbs.x + parent.paddingLeft,
+    y: isRow ? parentAbs.y + parent.paddingTop : position,
+    length: isRow
+      ? parent.height - parent.paddingTop - parent.paddingBottom
+      : parent.width - parent.paddingLeft - parent.paddingRight,
+    direction: isRow ? 'VERTICAL' : 'HORIZONTAL'
+  })
+  return true
+}
+
+/** Puts each flow's block in the slot the drag reached, as one undo step. */
+function dropAlongFlows(d: DragMove, flows: FlowDrag[], editor: Editor) {
+  editor.undo.runBatch('Reorder', () => {
+    for (const [i, flow] of flows.entries()) {
+      const slot = d.flowSlots?.[i] ?? flow.start
+      if (slot === flow.start) continue
+      editor.setChildOrder(flow.parentId, flowOrder(flow, slot, editor))
+    }
+  })
 }
 
 export function detectAutoLayoutParent(editor: Editor): string | undefined {
@@ -88,6 +150,37 @@ function isPastDragStartThreshold(d: DragMove, sx: number, sy: number) {
   return isPastPointerDragThreshold(d.startScreenX, d.startScreenY, sx, sy)
 }
 
+/**
+ * Keeps a move in the auto layout the layers started in while they stay close to it; returns
+ * whether it did. Once they leave, the move goes on as a free drag.
+ */
+function keepsOwnAutoLayout(
+  d: DragMove,
+  dx: number,
+  dy: number,
+  cx: number,
+  cy: number,
+  editor: Editor
+): boolean {
+  if (d.flows) {
+    if (dragAlongFlows(d, d.flows, dx, dy, editor)) return true
+    d.flowSlots = undefined
+  } else if (d.autoLayoutParentId && !d.ignoreAutoLayout) {
+    // A wrapped flow, which still reorders by the cursor.
+    const [id] = d.originals.keys()
+    const block = { parentId: d.autoLayoutParentId, ids: id ? [id] : [], others: [], start: 0 }
+    if (staysInAutoLayout(d.autoLayoutParentId, flowBlockBounds(block, dx, dy, editor), editor)) {
+      computeAutoLayoutIndicator(d, cx, cy, editor)
+      return true
+    }
+  } else if (!d.autoLayoutParentId) {
+    return false
+  }
+  d.brokeFromAutoLayout = true
+  editor.setLayoutInsertIndicator(null)
+  return false
+}
+
 export function handleMoveMove(
   d: DragMove,
   cx: number,
@@ -108,14 +201,7 @@ export function handleMoveMove(
 
   let { dx, dy } = lockToAxis(cx - d.startX, cy - d.startY, modifiers.shiftKey === true)
 
-  if (d.autoLayoutParentId && !d.brokeFromAutoLayout) {
-    if (!d.ignoreAutoLayout && isInsideAutoLayoutDragBounds(d.autoLayoutParentId, cx, cy, editor)) {
-      computeAutoLayoutIndicator(d, cx, cy, editor)
-      return
-    }
-    d.brokeFromAutoLayout = true
-    editor.setLayoutInsertIndicator(null)
-  }
+  if (!d.brokeFromAutoLayout && keepsOwnAutoLayout(d, dx, dy, cx, cy, editor)) return
 
   const moving = new Set(d.originals.keys())
   const dropTarget = d.keepParents ? null : findMoveDropTarget(cx, cy, editor, moving)
@@ -248,6 +334,13 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
   const indicator = editor.state.layoutInsertIndicator
   editor.setLayoutInsertIndicator(null)
   editor.setSnapGuides([])
+
+  // Slots exist only once the drag started, so a reached slot is a reorder however short the drag.
+  if (d.flows && d.flowSlots && !d.brokeFromAutoLayout) {
+    dropAlongFlows(d, d.flows, editor)
+    editor.setDropTarget(null)
+    return
+  }
 
   if (indicator) {
     if (getMoveDistance(d) < AUTO_LAYOUT_REORDER_CLICK_SLOP) {

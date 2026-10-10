@@ -54,6 +54,16 @@ For one-step commit and Escape rollback across a sizing-mode change, variable de
 numeric value, compose the NumberField with `BindableValue` using a provider that implements
 interaction batches. Merely focusing the field does not switch its sizing mode.
 
+## Aspect ratio lock
+
+```ts
+const { aspectRatioLocked, aspectRatioLockable, toggleAspectRatioLock } = useLayout()
+```
+
+`toggleAspectRatioLock()` locks the selected layer to its current proportions or unlocks it.
+While it is locked, `updateAxisSize()` changes both sides. `aspectRatioLockable` is false for a
+layer inside an instance, which keeps its component's lock.
+
 ## Size limits
 
 ```ts

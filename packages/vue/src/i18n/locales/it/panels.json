@@ -79,6 +79,7 @@
   "addPage": "Aggiungi pagina",
   "toggleVisibility": "Attiva/disattiva visibilità",
   "independentCornerRadii": "Raggi angolo indipendenti",
+  "lockAspectRatio": "Blocca proporzioni",
   "detachVariable": "Scollega variabile",
   "applyVariable": "Applica variabile",
   "noVariablesFound": "Nessuna variabile trovata",

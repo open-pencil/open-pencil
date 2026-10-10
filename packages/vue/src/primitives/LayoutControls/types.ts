@@ -15,6 +15,7 @@ type LayoutActionKey =
   | 'setAxisSizing'
   | 'updateAxisSize'
   | 'commitAxisSize'
+  | 'toggleAspectRatioLock'
   | 'setHorizontalPadding'
   | 'commitHorizontalPadding'
   | 'setVerticalPadding'

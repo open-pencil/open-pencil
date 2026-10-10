@@ -451,6 +451,12 @@ function maximumSizeDimension(size: NodeChange['maxSize'], axis: 'x' | 'y'): num
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
 }
 
+function targetAspectRatio(nc: NodeChange): SceneNode['targetAspectRatio'] {
+  const value = nc.targetAspectRatio?.value
+  if (!value || !Number.isFinite(value.x) || !Number.isFinite(value.y)) return null
+  return { x: value.x, y: value.y }
+}
+
 function convertLayoutProps(
   nc: NodeChange
 ): Pick<
@@ -677,6 +683,7 @@ export function nodeChangeToProps(
     maxWidth: maximumSizeDimension(nc.maxSize, 'x'),
     minHeight: minimumSizeDimension(nc.minSize, 'y'),
     maxHeight: maximumSizeDimension(nc.maxSize, 'y'),
+    targetAspectRatio: targetAspectRatio(nc),
     isMask: nc.mask ?? false,
     maskType: (nc.maskType ?? 'ALPHA') as 'ALPHA' | 'VECTOR' | 'LUMINANCE',
     maskIsOutline: nc.maskIsOutline ?? false,
@@ -1119,7 +1126,6 @@ export const FIGMA_RAW_NODE_FIELD_KEYS = [
   'borderLeftWeight',
   'minSize',
   'maxSize',
-  'targetAspectRatio',
   'gridRows',
   'gridColumns',
   'gridRowAnchor',
