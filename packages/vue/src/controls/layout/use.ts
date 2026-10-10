@@ -30,7 +30,9 @@ export function useLayout() {
     widthSizing,
     heightSizing,
     widthSizingOptions,
-    heightSizingOptions
+    heightSizingOptions,
+    aspectRatioLocked,
+    aspectRatioLockable
   } = createLayoutSelectionState(editor, panels)
 
   const {
@@ -61,6 +63,8 @@ export function useLayout() {
     heightSizing,
     widthSizingOptions,
     heightSizingOptions,
+    aspectRatioLocked,
+    aspectRatioLockable,
     alignGrid,
     showIndividualPadding,
     hasUniformPadding,
@@ -80,6 +84,7 @@ export function useLayout() {
     setAxisSizing: layoutActions.setAxisSizing,
     updateAxisSize: layoutActions.updateAxisSize,
     commitAxisSize: layoutActions.commitAxisSize,
+    toggleAspectRatioLock: layoutActions.toggleAspectRatioLock,
     setHorizontalPadding,
     commitHorizontalPadding,
     setVerticalPadding,

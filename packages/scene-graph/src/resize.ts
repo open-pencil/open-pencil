@@ -5,6 +5,7 @@ import {
   copyStrokes,
   scaleGeometryPaths
 } from './copy'
+import { enforcedAspectRatio } from './layout/aspect-ratio'
 import type { Rect } from './primitives'
 import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
 import { cloneVectorNetwork } from './vector-network'
@@ -61,21 +62,51 @@ function constrainedAxis(
   return { position, size }
 }
 
+type AxisPlacement = { position: number; size: number }
+
+const FLEXIBLE_CONSTRAINTS: ReadonlySet<ConstraintType> = new Set(['STRETCH', 'SCALE'])
+
+/** The axis at `size`, keeping the edge or centre its constraint pins where it was placed. */
+function resizedInPlace(
+  placed: AxisPlacement,
+  size: number,
+  constraint: ConstraintType
+): AxisPlacement {
+  if (constraint === 'MAX') return { position: placed.position + placed.size - size, size }
+  if (constraint === 'CENTER') return { position: placed.position + (placed.size - size) / 2, size }
+  return { position: placed.position, size }
+}
+
+/**
+ * A locked aspect ratio holds when exactly one axis follows the parent, as in Figma: that axis
+ * sizes the other. With both axes following the parent, or neither, the ratio gives way.
+ */
+function keepLockedRatio(
+  x: AxisPlacement,
+  y: AxisPlacement,
+  horizontal: ConstraintType,
+  vertical: ConstraintType,
+  aspectRatio: number | null
+): { x: AxisPlacement; y: AxisPlacement } {
+  const flexibleX = FLEXIBLE_CONSTRAINTS.has(horizontal)
+  if (aspectRatio === null || flexibleX === FLEXIBLE_CONSTRAINTS.has(vertical)) return { x, y }
+  return flexibleX
+    ? { x, y: resizedInPlace(y, x.size / aspectRatio, vertical) }
+    : { x: resizedInPlace(x, y.size * aspectRatio, horizontal), y }
+}
+
+/** A child's box after its parent resizes, keeping a locked aspect ratio as Figma does. */
 export function constrainedChildRect(
   child: Rect,
   parentBefore: Pick<Rect, 'width' | 'height'>,
   parentAfter: Pick<Rect, 'width' | 'height'>,
   horizontal: ConstraintType,
-  vertical: ConstraintType
+  vertical: ConstraintType,
+  aspectRatio: number | null = null
 ): Rect {
-  const x = constrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal)
-  const y = constrainedAxis(
-    child.y,
-    child.height,
-    parentBefore.height,
-    parentAfter.height,
-    vertical
-  )
+  let x = constrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal)
+  let y = constrainedAxis(child.y, child.height, parentBefore.height, parentAfter.height, vertical)
+  ;({ x, y } = keepLockedRatio(x, y, horizontal, vertical, aspectRatio))
   return {
     x: Math.round(x.position),
     y: Math.round(y.position),
@@ -116,23 +147,22 @@ export function layoutConstrainedChildRect(
   parentBefore: Pick<Rect, 'width' | 'height'>,
   parentAfter: Pick<Rect, 'width' | 'height'>,
   horizontal: ConstraintType,
-  vertical: ConstraintType
+  vertical: ConstraintType,
+  aspectRatio: number | null = null
 ): Rect {
-  const x = layoutConstrainedAxis(
-    child.x,
-    child.width,
-    parentBefore.width,
-    parentAfter.width,
-    horizontal
+  const placed = keepLockedRatio(
+    layoutConstrainedAxis(child.x, child.width, parentBefore.width, parentAfter.width, horizontal),
+    layoutConstrainedAxis(child.y, child.height, parentBefore.height, parentAfter.height, vertical),
+    horizontal,
+    vertical,
+    aspectRatio
   )
-  const y = layoutConstrainedAxis(
-    child.y,
-    child.height,
-    parentBefore.height,
-    parentAfter.height,
-    vertical
-  )
-  return { x: x.position, y: y.position, width: x.size, height: y.size }
+  return {
+    x: placed.x.position,
+    y: placed.y.position,
+    width: placed.x.size,
+    height: placed.y.size
+  }
 }
 
 export function scaledChildRect(
@@ -341,7 +371,8 @@ export function computeConstrainedResizeChanges(
             parentBefore,
             parentAfter,
             child.horizontalConstraint,
-            child.verticalConstraint
+            child.verticalConstraint,
+            enforcedAspectRatio(child)
           )
       const childChanges: Partial<SceneNode> = {
         ...rect,

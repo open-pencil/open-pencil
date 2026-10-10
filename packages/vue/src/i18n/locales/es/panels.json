@@ -94,6 +94,7 @@
   "addPage": "Añadir página",
   "toggleVisibility": "Alternar visibilidad",
   "independentCornerRadii": "Redondeo de esquina independientes",
+  "lockAspectRatio": "Bloquear relación de aspecto",
   "detachVariable": "Desvincular variable",
   "applyVariable": "Aplicar variable",
   "noVariablesFound": "No se encontraron variables",

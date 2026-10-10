@@ -29,6 +29,7 @@ function setup(handle: DragResize['handle'] = 'se') {
     origStrokes: [],
     origTextPathData: null,
     origTextPathBox: null,
+    lockedAspectRatio: null,
     origChildren: null
   }
   return { editor, nodeId: node.id, drag }

@@ -45,6 +45,8 @@ export function copyProp(
   } else if (key === 'gridPosition') {
     // Shallow copy the grid position object — all fields are primitives
     setSceneProp(target, key, source.gridPosition ? { ...source.gridPosition } : null)
+  } else if (key === 'targetAspectRatio') {
+    setSceneProp(target, key, source.targetAspectRatio ? { ...source.targetAspectRatio } : null)
   } else {
     const value = source[key]
     setSceneProp(target, key, Array.isArray(value) ? structuredClone(value) : value)
