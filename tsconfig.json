@@ -46,6 +46,12 @@
       "@open-pencil/harness": [
         "./packages/harness/src/index.ts"
       ],
+      "@open-pencil/cloud/*": [
+        "./packages/cloud/src/*"
+      ],
+      "#cloud/*": [
+        "./packages/cloud/src/*"
+      ],
       "#dom-css/*": [
         "./packages/dom-css/src/*"
       ],

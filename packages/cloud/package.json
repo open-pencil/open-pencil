@@ -1,0 +1,105 @@
+{
+  "name": "@open-pencil/cloud",
+  "version": "0.15.1",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#cloud/*": {
+      "types": "./src/*",
+      "bun": "./src/*",
+      "default": "./dist/*"
+    },
+    "#cloud-tests/*": "./tests/*.ts"
+  },
+  "exports": {
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "openpencil-source": "./src/contract/index.ts",
+      "bun": "./src/contract/index.ts",
+      "import": "./dist/contract.js",
+      "default": "./dist/contract.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "openpencil-source": "./src/client/index.ts",
+      "bun": "./src/client/index.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./email": {
+      "types": "./dist/email.d.ts",
+      "bun": "./src/email/index.ts",
+      "import": "./dist/email.js",
+      "default": "./dist/email.js"
+    },
+    "./runtime/node": {
+      "types": "./dist/runtime-node.d.mts",
+      "bun": "./src/runtime/node/index.ts",
+      "import": "./dist/runtime-node.mjs",
+      "default": "./dist/runtime-node.mjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "bun": "./src/server/index.ts",
+      "import": "./dist/server.js",
+      "default": "./dist/server.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
+    "start": "node dist-standalone/server.mjs",
+    "dev": "bun --watch src/runtime/node/main.ts",
+    "check": "bun run typecheck && bun run test && bun run build",
+    "test": "bun run test:unit && bun run test:integration",
+    "test:unit": "bun test tests/client tests/contract tests/runtime tests/server",
+    "test:integration": "bun test --max-concurrency 8 tests/integration",
+    "test:e2e": "bun tests/e2e/run.ts",
+    "test:e2e:garage": "bun tests/e2e/garage.ts",
+    "migrate": "bun src/runtime/node/migrate.ts",
+    "cleanup": "bun src/runtime/node/cleanup.ts",
+    "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
+    "entitlements": "bun src/runtime/node/entitlements.ts",
+    "admin": "bun src/runtime/node/admin.ts",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1149.0",
+    "@aws-sdk/s3-request-presigner": "^3.1149.0",
+    "@better-auth/passkey": "1.7.2",
+    "@better-auth/utils": "0.4.2",
+    "@hono/node-server": "^1.19.17",
+    "@noble/hashes": "^2.3.0",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@openfeature/server-sdk": "^1.23.0",
+    "@vue-email/components": "^0.0.21",
+    "@vue-email/render": "^0.0.9",
+    "better-auth": "1.7.2",
+    "es-toolkit": "^1.52.0",
+    "hono": "^4.13.13",
+    "hono-rate-limiter": "^0.5.3",
+    "jose": "^6.2.8",
+    "kysely": "^0.29.5",
+    "nodemailer": "^9.0.5",
+    "smol-toml": "^1.8.0",
+    "valibot": "^1.5.0",
+    "vue": "^3.5.43"
+  },
+  "optionalDependencies": {
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.4.1",
+    "@types/bun": "^1.3.14",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.21.0",
+    "kysely-pglite-dialect": "1.3.1",
+    "tsdown": "^0.22.14",
+    "typescript": "~5.8.3"
+  }
+}

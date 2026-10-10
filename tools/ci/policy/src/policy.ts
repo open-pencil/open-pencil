@@ -25,7 +25,8 @@ export const CODE_JOBS = [
   'repository-quality',
   'storybook',
   'native-test-contracts',
-  'unit-tests'
+  'unit-tests',
+  'cloud-tests'
 ] as const
 export const DOCS_JOB = 'documentation'
 export const ALWAYS_JOBS = ['commit-messages'] as const

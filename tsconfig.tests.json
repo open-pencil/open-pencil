@@ -46,6 +46,9 @@
       "@open-pencil/harness": [
         "./packages/harness/src/index.ts"
       ],
+      "@open-pencil/cloud/*": [
+        "./packages/cloud/src/*"
+      ],
       "#dom-css/*": [
         "./packages/dom-css/src/*"
       ],
@@ -105,6 +108,12 @@
       ],
       "#cli-tests/*": [
         "./packages/cli/tests/*"
+      ],
+      "#cloud/*": [
+        "./packages/cloud/src/*"
+      ],
+      "#cloud-tests/*": [
+        "./packages/cloud/tests/*"
       ]
     },
     "types": [

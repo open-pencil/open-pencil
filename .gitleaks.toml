@@ -12,6 +12,7 @@ paths = [
   '''(^|/)node_modules/''',
   '''^desktop/target/''',
   '''^packages/[^/]+/dist/''',
+  '''^packages/cloud/dist-standalone/''',
   '''^test-results/''',
   '''^scratch/'''
 ]
@@ -33,6 +34,18 @@ description = "Documented dummy OpenRouter test key"
 regexTarget = "line"
 paths = ['''tests/e2e/chat/panel\.spec\.ts''']
 regexes = ['''sk-or-test-key-12345''']
+
+[[allowlists]]
+description = "Cloud test fixtures and the local Garage profile"
+regexTarget = "line"
+paths = [
+  '''packages/cloud/deploy/garage/garage\.toml''',
+  '''packages/cloud/tests/.*\.ts'''
+]
+regexes = [
+  '''rpc_secret\s*=\s*"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"''',
+  '''[a-z]+(-test)?-secret-at-least-32-characters'''
+]
 
 [[allowlists]]
 description = "Figma fixture identifiers are public test metadata"
