@@ -175,9 +175,7 @@ export const cloudDeploymentConfigSchema = v.object({
     server_side_encryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
     kms_key_id: v.optional(text)
   }),
-  collaboration: v.optional(
-    v.object({ public_url: v.pipe(v.string(), v.url()), port: v.optional(positiveInteger, 1234) })
-  ),
+  collaboration: v.optional(v.object({ relay_url: v.pipe(v.string(), v.url()) })),
   email: emailSchema,
   workers: v.optional(
     v.object({
@@ -384,8 +382,7 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
-    collaborationURL: config.collaboration?.public_url,
-    collaborationPort: config.collaboration?.port,
+    relayURL: config.collaboration?.relay_url,
     staticEntitlements: staticEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),

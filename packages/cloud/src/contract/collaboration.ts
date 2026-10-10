@@ -19,7 +19,7 @@ export type CollaborationPrincipal = v.InferOutput<typeof collaborationPrincipal
 
 export const collaborationTicketSchema = v.object({
   token: v.string(),
-  provider: v.optional(v.picklist(['trystero', 'hocuspocus'])),
+  provider: v.optional(v.picklist(['trystero', 'relay'])),
   serverURL: v.optional(v.pipe(v.string(), v.url())),
   documentId: v.pipe(v.string(), v.uuid()),
   roomId: v.string(),

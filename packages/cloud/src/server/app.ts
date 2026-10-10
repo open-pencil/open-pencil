@@ -62,6 +62,11 @@ export type CloudServices = {
   enrollment?: EnrollmentService
   entitlementSource?: EntitlementSource
   policy?: CloudPolicy
+  /**
+   * Where clients reach this runtime's collaboration relay. Without one, Cloud rooms fall back to
+   * peer-to-peer and writes are not enforced by the server.
+   */
+  relayURL?: string
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -206,7 +211,7 @@ export function createCloudApp(services: CloudServices) {
     database: services.database,
     sharing,
     authSecret: services.config.authSecret,
-    collaborationURL: services.config.collaborationURL,
+    relayURL: services.relayURL,
     policy,
     deploymentMode: services.config.deployment
   })

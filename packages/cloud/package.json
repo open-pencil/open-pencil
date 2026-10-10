@@ -85,10 +85,13 @@
     "hono-rate-limiter": "^0.5.3",
     "jose": "^6.2.8",
     "kysely": "^0.29.5",
+    "lib0": "^0.2.117",
     "nodemailer": "^9.0.5",
     "smol-toml": "^1.8.0",
     "valibot": "^1.5.0",
-    "vue": "^3.5.43"
+    "vue": "^3.5.43",
+    "ws": "^8.21.3",
+    "yjs": "^13.6.32"
   },
   "optionalDependencies": {
     "pg": "^8.23.0"
@@ -98,8 +101,10 @@
     "@types/bun": "^1.3.14",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.21.0",
+    "@types/ws": "^8.18.1",
     "kysely-pglite-dialect": "1.3.1",
     "tsdown": "^0.22.14",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "y-protocols": "^1.0.7"
   }
 }

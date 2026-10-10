@@ -15,6 +15,12 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Add schema changes as a new numbered migration in `src/server/db/migrations/` registered in `src/server/db/migrate.ts`; never edit a migration that has shipped. Better Auth's tables have their own versioned migration (`016_auth_schema.ts`).
 - Prefer typed Kysely queries; raw SQL goes through the reviewed helpers in `src/server/db/expressions.ts`.
 
+## Collaboration relay
+
+- The relay hub in `src/server/collaboration/relay/` is runtime-neutral: runtimes hand it sockets through `RelaySocket` and own listening (`src/runtime/node/relay.ts`). It joins every room as the `server` peer, so it must keep answering `sync-step1` and saving the room document.
+- Viewers may send only the channels in `VIEWER_ACTIONS`; every other channel from them is dropped, and presence is stamped from the ticket by `stampAwareness` (`tests/server/collaboration/relay/hub.test.ts`).
+- Decoders must consume exactly the frame's bytes and copy payloads out, since socket buffers are pooled (`src/contract/relay.ts`, `tests/contract/relay.test.ts`).
+
 ## Configuration
 
 - Deployment settings live in the schema-versioned TOML parsed by `src/server/config/deployment.ts`; environment variables only resolve `{ from_env }` secret references and never override the file (`tests/runtime/node/config.test.ts`).

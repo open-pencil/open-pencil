@@ -1,7 +1,8 @@
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { COLLAB_APP_ID, IS_BROWSER } from '@/constants'
 
-import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
+import { createActionRegistry } from './actions'
+import type { CollabRoomTransport } from './types'
 
 const MAX_TEST_MESSAGE_BYTES = 8 * 1024 * 1024
 /** The relay introduces peers as soon as they say hello. */
@@ -71,7 +72,6 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
   const peerId = crypto.randomUUID()
   const socket = new WebSocket(relayURL(roomId))
   const peers = new Set<string>()
-  const receivers = new Map<string, CollabActionReceiver>()
   const pending: TestTransportMessage[] = []
   let joinHandler: ((peerId: string) => void) | null = null
   let leaveHandler: ((peerId: string) => void) | null = null
@@ -81,6 +81,10 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
     if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
     else pending.push(message)
   }
+
+  const actions = createActionRegistry((namespace, data, targetId) => {
+    post({ type: 'action', senderId: peerId, targetId, namespace, data: Array.from(data) })
+  })
 
   function addPeer(id: string) {
     if (id === peerId || peers.has(id)) return
@@ -112,30 +116,12 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
       if (peers.delete(message.senderId)) leaveHandler?.(message.senderId)
     } else {
       addPeer(message.senderId)
-      receivers.get(message.namespace)?.(new Uint8Array(message.data), message.senderId)
+      actions.deliver(message.namespace, new Uint8Array(message.data), message.senderId)
     }
   })
 
   return {
-    makeAction(namespace): CollabAction {
-      return [
-        (data, targetId) => {
-          post({
-            type: 'action',
-            senderId: peerId,
-            targetId,
-            namespace,
-            data: Array.from(data)
-          })
-        },
-        (handler) => {
-          if (receivers.has(namespace)) {
-            throw new Error(`Collaboration action ${namespace} is already registered`)
-          }
-          receivers.set(namespace, handler)
-        }
-      ]
-    },
+    makeAction: actions.makeAction,
     onPeerJoin(handler) {
       joinHandler = handler
       for (const id of peers) queueMicrotask(() => handler(id))
@@ -150,7 +136,7 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
       if (left) return
       left = true
       peers.clear()
-      receivers.clear()
+      actions.clear()
       const leaveMessage = JSON.stringify({ type: 'leave', senderId: peerId })
       if (socket.readyState === WebSocket.CONNECTING) {
         await new Promise<void>((resolve) => {
