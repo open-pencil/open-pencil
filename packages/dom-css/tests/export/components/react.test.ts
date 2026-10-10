@@ -22,7 +22,7 @@ import {
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
-import { cssRules } from '#dom-css-tests/helpers'
+import { cssRules, fileText } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -119,8 +119,8 @@ describe('generated React plain components', () => {
 describe('generated React shader fills', () => {
   test('play the shader behind the layer, with telemetry off, and type-check', async () => {
     const { files, folder } = await generate(shaderHeroSet())
-    const source = files.find((file) => file.path === 'Hero.tsx')?.content ?? ''
-    const css = files.find((file) => file.path === 'Hero.module.css')?.content ?? ''
+    const source = fileText(files, 'Hero.tsx')
+    const css = fileText(files, 'Hero.module.css')
 
     expect(await typeErrors(folder, 'Hero')).toEqual([])
     expect(source).toMatch(

@@ -164,3 +164,14 @@ export function cssRules(css: string): Map<string, Record<string, string>> {
   visit(parse(css).cssRules)
   return rules
 }
+
+/** The text of an exported file, such as a generated component or its stylesheet. */
+export function fileText(
+  files: readonly { path: string; content: string | Uint8Array }[],
+  path: string
+) {
+  const content = files.find((file) => file.path === path)?.content
+  if (content === undefined)
+    throw new Error(`No ${path} among ${files.map((file) => file.path).join(', ')}`)
+  return typeof content === 'string' ? content : new TextDecoder().decode(content)
+}

@@ -21,7 +21,7 @@ import {
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
-import { cssRules } from '#dom-css-tests/helpers'
+import { cssRules, fileText } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
@@ -251,7 +251,7 @@ describe('generated Vue plain components', () => {
 describe('generated Vue shader fills', () => {
   test('play the shader behind the layer, with telemetry off', async () => {
     const { files, component } = await generate(shaderHeroSet())
-    const source = files.find((file) => file.path === 'Hero.vue')?.content ?? ''
+    const source = fileText(files, 'Hero.vue')
 
     expect(source).toMatch(
       /import \{\s*Shader as ShaderCanvas,\s*Aurora as ShaderAurora,\s*FilmGrain as ShaderFilmGrain\s*\} from ["']shaders\/vue["']/
