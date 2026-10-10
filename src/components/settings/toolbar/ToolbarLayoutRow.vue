@@ -63,7 +63,6 @@ function onGripKey(event: KeyboardEvent) {
     >
       <icon-lucide-grip-vertical class="size-3.5" />
     </IconButton>
-    <span :class="styles().link()" aria-hidden="true" />
     <component :is="icon" :class="styles({ hidden }).icon()" aria-hidden="true" />
     <span :class="styles({ hidden }).label()">{{ label }}</span>
     <AppShortcutText :ui="{ base: styles().shortcut() }">{{ shortcut }}</AppShortcutText>

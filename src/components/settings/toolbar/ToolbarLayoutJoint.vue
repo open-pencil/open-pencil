@@ -44,20 +44,17 @@ watchPostEffect(() => {
 <template>
   <div :class="styles({ kind }).root()">
     <span v-if="dropping" :class="styles().line()" />
-    <template v-if="toggleLabel">
-      <span :class="styles().grip()" aria-hidden="true" />
-      <span :class="styles().anchor()">
-        <IconButton
-          ref="toggle"
-          toggle
-          :class="styles({ linked }).toggle()"
-          :active="linked"
-          :label="toggleLabel"
-          @click="emit('toggle')"
-        >
-          <icon-lucide-link-2 class="size-3.5" />
-        </IconButton>
-      </span>
-    </template>
+    <span v-if="toggleLabel" :class="styles().grip()">
+      <IconButton
+        ref="toggle"
+        toggle
+        :class="styles({ linked }).toggle()"
+        :active="linked"
+        :label="toggleLabel"
+        @click="emit('toggle')"
+      >
+        <icon-lucide-link-2 class="size-3.5" />
+      </IconButton>
+    </span>
   </div>
 </template>
