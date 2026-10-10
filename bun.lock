@@ -53,7 +53,7 @@
         "@tauri-apps/plugin-process": "^2.3.1",
         "@tauri-apps/plugin-shell": "^2.4.0",
         "@tauri-apps/plugin-updater": "^2.13.1",
-        "@trystero-p2p/mqtt": "0.26.0",
+        "@trystero-p2p/mqtt": "^0.26.0",
         "@unhead/vue": "^2.1.17",
         "@valibot/to-json-schema": "^1.8.0",
         "@vueuse/core": "^14.4.0",
