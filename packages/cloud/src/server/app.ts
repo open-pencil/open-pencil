@@ -156,16 +156,16 @@ export function createCloudApp(services: CloudServices) {
     services.enrollment ??
     createEnrollmentService(services.database, {
       appURL: services.config.appURL ?? services.config.publicURL,
+      portalURL: services.config.publicURL,
       adminRecipients: services.config.enrollmentAdminNotificationEmails,
       email: services.transactionalEmail
     })
   const admin = createCloudAdminRoutes(
     {
-      email: createAdminEmailService(
-        services.database,
-        services.transactionalEmail,
-        services.config.appURL ?? services.config.publicURL
-      ),
+      email: createAdminEmailService(services.database, services.transactionalEmail, {
+        appURL: services.config.appURL ?? services.config.publicURL,
+        portalURL: services.config.publicURL
+      }),
       enrollment,
       users: createAdminUserService(services.database, services.auth, {
         requireMFA: services.config.deploymentAdminMFARequired

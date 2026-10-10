@@ -25,6 +25,7 @@ export {
   useStorageMessages,
   useToolMessages,
   useUpdateMessages,
+  useCloudPortalMessages,
   useVariableMessages,
   useVariableTypeMessages
 } from '#vue/i18n/useI18n'

@@ -333,8 +333,16 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
-// The editor's root and router, plus the desktop Software Update window's page entry.
-const VIEW_ENTRYPOINTS = new Set(['src/App.vue', 'src/main.ts', 'src/router.ts', 'src/updater.ts'])
+// The editor's root and router, the desktop Software Update window's page entry, and the Cloud
+// portal's entry and router.
+const VIEW_ENTRYPOINTS = new Set([
+  'src/App.vue',
+  'src/main.ts',
+  'src/router.ts',
+  'src/updater.ts',
+  'src/cloud.ts',
+  'src/cloud-router.ts'
+])
 
 const noViewsImportedOutsideEntry = createImportRule(
   'open-pencil/no-views-imported-outside-entry',

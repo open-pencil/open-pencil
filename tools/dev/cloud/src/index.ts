@@ -115,6 +115,13 @@ async function start(project: string): Promise<void> {
   )
   await execute(['bunx', 'portless', 'alias', aliasName(mailURL), String(mailpitUIPort), '--force'])
 
+  // The server serves the portal's pages from this build, rebuilt on every change.
+  const portal = Bun.spawn(['bun', 'run', 'build:cloud-portal', '--watch'], {
+    cwd: root,
+    stdout: 'inherit',
+    stderr: 'inherit'
+  })
+
   console.warn(`OpenPencil Cloud: ${cloudURL}`)
   console.warn(`Captured email:  ${mailURL}`)
   console.warn('Stop the services with `bun run cloud:dev:down`; their data is kept.')
@@ -136,6 +143,7 @@ async function start(project: string): Promise<void> {
         ...process.env,
         HOST: '127.0.0.1',
         OPENPENCIL_CLOUD_CONFIG: generatedConfig,
+        OPENPENCIL_CLOUD_PORTAL_DIR: join(root, 'dist-cloud-portal'),
         DATABASE_URL: `postgresql://openpencil:${POSTGRES_PASSWORD}@127.0.0.1:${postgresPort}/openpencil`,
         BETTER_AUTH_SECRET: await authSecret(),
         S3_ACCESS_KEY_ID,
@@ -143,6 +151,7 @@ async function start(project: string): Promise<void> {
       }
     }
   )
+  portal.kill()
   process.exitCode = exitCode
 }
 

@@ -23,6 +23,7 @@ import { getRequestListener } from '@hono/node-server'
 
 import { createMigratedNodeCloudDatabase } from './bootstrap'
 import { createNodeTransactionalEmailRuntime } from './email-runtime'
+import { createNodeCloudPortal } from './portal'
 import { attachCollaborationRelay, defaultRelayURL } from './relay'
 
 export type NodeCloudServerOptions = {
@@ -103,10 +104,16 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
         onError: (error) => console.error('[Cloud] Email worker failed:', error)
       })
     : undefined
+  const portalDirectory = environment.OPENPENCIL_CLOUD_PORTAL_DIR
+  const portal = portalDirectory ? createNodeCloudPortal(portalDirectory) : undefined
   const server = await listen(
     async (request) => {
       const path = new URL(request.url).pathname
-      return withIndexingPolicy(await app.fetch(request), path, config.indexingPolicy)
+      const page = await portal?.page(request)
+      if (page) return withIndexingPolicy(page, path, config.indexingPolicy)
+      const response = await app.fetch(request)
+      const file = response.status === 404 ? await portal?.file(request) : null
+      return withIndexingPolicy(file ?? response, path, config.indexingPolicy)
     },
     options.port ?? Number(environment.PORT ?? 8787),
     environment.HOST ?? '0.0.0.0'

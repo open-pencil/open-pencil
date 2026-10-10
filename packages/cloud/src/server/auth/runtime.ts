@@ -15,6 +15,7 @@ export function createCloudAuthenticationRuntime(
 ) {
   const enrollment = createEnrollmentService(database, {
     appURL: config.appURL ?? config.publicURL,
+    portalURL: config.publicURL,
     adminRecipients: config.enrollmentAdminNotificationEmails,
     email
   })

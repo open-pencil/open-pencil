@@ -29,11 +29,11 @@ describe('enrollment email rendering', () => {
         requesterEmail: 'person@example.com',
         requesterName: 'Person',
         reason: 'Design',
-        actionURL: 'https://cloud.example.com/admin/enrollment'
+        actionURL: 'https://cloud.example.com/admin/requests'
       }
     })
     expect(rendered.html).toContain('person@example.com')
-    expect(rendered.html).toContain('/admin/enrollment')
+    expect(rendered.html).toContain('/admin/requests')
     expect(rendered.html).not.toContain('token=')
   })
 })

@@ -21,6 +21,10 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Viewers may send only the channels in `VIEWER_ACTIONS`; every other channel from them is dropped, and presence is stamped from the ticket by `stampAwareness` (`tests/server/collaboration/relay/hub.test.ts`).
 - Decoders must consume exactly the frame's bytes and copy payloads out, since socket buffers are pooled (`src/contract/relay.ts`, `tests/contract/relay.test.ts`).
 
+## Portal
+
+- The portal's pages live in the app (`cloud.html`, `src/views/cloud/`, `src/components/cloud-portal/`); this package owns only their paths (`src/contract/portal.ts`) and serving them (`src/runtime/node/portal.ts`). Links the server sends to people point at portal paths on `publicURL`; only the editor itself is on `appURL` (`src/admin/enrollment/email.ts`).
+
 ## Configuration
 
 - Deployment settings live in the schema-versioned TOML parsed by `src/server/config/deployment.ts`; environment variables only resolve `{ from_env }` secret references and never override the file (`tests/runtime/node/config.test.ts`).

@@ -108,6 +108,22 @@ pending request that a deployment administrator approves or rejects; approval ca
 Deployment administrators are separate from workspace administrators, and startup never grants
 either role: the first operator is approved and promoted through the `admin` command.
 
+## Portal
+
+The server shows its own pages on its public address: sign-in and sign-up, email verification,
+password reset, two-step sign-in, desktop sign-in approval, account security, and the
+administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
+reuse the editor's components and theme without loading the editor; `bun run build:cloud-portal`
+writes them to `dist-cloud-portal/`. The editor, on the web and on the desktop, never embeds these
+pages; it opens them in a browser and gets the person back through `/auth/return` or the device
+code.
+
+`CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
+`cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
+framed. The Node runtime serves the build named by `OPENPENCIL_CLOUD_PORTAL_DIR`, answering portal
+pages before the API and portal assets only where the API returns 404. `bun run cloud:dev` keeps a
+watched portal build next to the server.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
