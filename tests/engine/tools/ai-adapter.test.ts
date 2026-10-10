@@ -4,7 +4,7 @@ import { tool } from 'ai'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@open-pencil/core'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined, expectFills } from '#tests/helpers/assert'
 
 type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
 type SDKTool = {
@@ -105,7 +105,7 @@ describe('AI adapter', () => {
     const setFill = adapterTool(tools, 'set_fill')
     await setFill.execute({ id: rect.id, color: '#00ff00' })
 
-    const fills = expectDefined(figma.getNodeById(rect.id), 'filled rectangle').fills
+    const fills = expectFills(expectDefined(figma.getNodeById(rect.id), 'filled rectangle').fills)
     expect(fills.length).toBe(1)
     expect(fills[0].color.g).toBeCloseTo(1)
   })

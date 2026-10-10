@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectFills } from '#core-tests/helpers/assert'
 
 // Recorded with the same script in Figma desktop 126: new layers from the plugin API and from the
 // drawing tools start alike.
@@ -28,9 +29,9 @@ describe('new layer defaults', () => {
     const figma = api()
     const frame = figma.createFrame()
     const component = figma.createComponent()
-    expect(solid(frame.fills)).toEqual([WHITE])
+    expect(solid(expectFills(frame.fills))).toEqual([WHITE])
     expect(frame.clipsContent).toBe(true)
-    expect(solid(component.fills)).toEqual([WHITE])
+    expect(solid(expectFills(component.fills))).toEqual([WHITE])
     expect(component.clipsContent).toBe(false)
   })
 
@@ -42,7 +43,7 @@ describe('new layer defaults', () => {
       figma.createPolygon(),
       figma.createStar()
     ]) {
-      expect(solid(shape.fills)).toEqual([GREY])
+      expect(solid(expectFills(shape.fills))).toEqual([GREY])
       expect(shape.strokes).toEqual([])
     }
   })
@@ -71,12 +72,12 @@ describe('new layer defaults', () => {
     const figma = api()
     const light = figma.createSection()
     expect([light.width, light.height, light.cornerRadius]).toEqual([496, 496, 2])
-    expect(solid(light.fills)).toEqual([WHITE])
+    expect(solid(expectFills(light.fills))).toEqual([WHITE])
     expect(solid(light.strokes)).toEqual([WHITE])
     expect([light.strokes[0]?.opacity, light.strokeAlign]).toEqual([0.1, 'INSIDE'])
     // Figma fills a section #444444 in its dark theme.
     figma.theme = 'dark'
-    expect(solid(figma.createSection().fills)).toEqual([[0.27, 0.27, 0.27]])
+    expect(solid(expectFills(figma.createSection().fills))).toEqual([[0.27, 0.27, 0.27]])
   })
 
   test('each layer gets its own copy of the default paints', () => {

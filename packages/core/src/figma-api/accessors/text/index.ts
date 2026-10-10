@@ -1,30 +1,26 @@
-import type { SceneGraph, SceneNode, TextParagraphSpacingField } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  SceneNode,
+  TextParagraphSpacingField
+} from '@open-pencil/scene-graph'
 
 import {
-  nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import type { FigmaFontName } from '#core/figma-api/fonts'
+import { styleNameToWeight, type FigmaFontName } from '#core/figma-api/fonts'
 import {
-  getFontName,
-  getLetterSpacing,
-  getLineHeight,
   getParagraphSpacing,
   letterSpacingValue,
   lineHeightValue,
   paragraphStylesForCharacters,
-  setFontName,
   spacingProblem,
   type FigmaLetterSpacing,
   type FigmaLineHeight
 } from '#core/figma-api/text'
-
-function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
-  return target[internals.graph] as SceneGraph
-}
+import { getTextStyle, textStyleChanges, type TextSegmentField } from '#core/figma-api/text/style'
 
 /**
  * Getter/setter pair for a spacing Figma keeps at zero or more. It reads `mixed` while paragraphs
@@ -43,6 +39,35 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
       updateNode(this, internals, { [name]: value })
     }
   }
+}
+
+/**
+ * Getter/setter pair for a style characters can override: it reads `mixed` while they differ,
+ * and setting it gives every character the value, as Figma's node setters do.
+ */
+function characterStyle<T>(
+  internals: NodeProxyInternals,
+  field: TextSegmentField,
+  mixed: symbol,
+  changes: (node: SceneNode, value: T) => Partial<SceneNode>,
+  sized?: (value: T) => ((fontSize: number) => CharacterStyleOverride) | undefined
+) {
+  return {
+    get(this: ProxyThis): unknown {
+      return getTextStyle(raw(this, internals), field, mixed)
+    },
+    set(this: ProxyThis, value: T) {
+      const node = raw(this, internals)
+      updateNode(this, internals, textStyleChanges(node, changes(node, value), sized?.(value)))
+    }
+  }
+}
+
+/** A length given in percent of the font size, which characters of each size resolve. */
+function percentOf(value: unknown): number | null {
+  if (!value || typeof value !== 'object') return null
+  const length = value as { unit?: unknown; value?: unknown }
+  return length.unit === 'PERCENT' && typeof length.value === 'number' ? length.value / 100 : null
 }
 
 /** Getter/setter pair for a text property stored verbatim on the node. */
@@ -72,15 +97,13 @@ export function installTextNodeProxyAccessors(
         updateNode(this, internals, { text: value, textParagraphs })
       }
     },
-    fontName: {
-      get(this: ProxyThis): FigmaFontName {
-        return getFontName(raw(this, internals))
-      },
-      set(this: ProxyThis, value: FigmaFontName) {
-        setFontName(graph(this, internals), nodeId(this, internals), value)
-      }
-    },
-    fontSize: field(internals, 'fontSize'),
+    fontName: characterStyle<FigmaFontName>(internals, 'fontName', mixed, (_node, value) => {
+      const { weight, italic } = styleNameToWeight(value.style)
+      return { fontFamily: value.family, fontWeight: weight, italic }
+    }),
+    fontSize: characterStyle<number>(internals, 'fontSize', mixed, (_node, fontSize) => ({
+      fontSize
+    })),
     textStyleId: {
       get(this: ProxyThis): string {
         return raw(this, internals).textStyleId ?? ''
@@ -89,33 +112,42 @@ export function installTextNodeProxyAccessors(
         updateNode(this, internals, { textStyleId: value || null })
       }
     },
-    fontWeight: field(internals, 'fontWeight'),
+    fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (_node, fontWeight) => ({
+      fontWeight
+    })),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
     textDirection: field(internals, 'textDirection'),
     textAutoResize: field(internals, 'textAutoResize'),
     // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
     // node instead of pixels would leave the text unmeasurable.
-    letterSpacing: {
-      get(this: ProxyThis): FigmaLetterSpacing {
-        return getLetterSpacing(raw(this, internals))
-      },
-      set(this: ProxyThis, value: FigmaLetterSpacing | number) {
-        updateNode(this, internals, {
-          letterSpacing: letterSpacingValue(raw(this, internals), value)
-        })
+    letterSpacing: characterStyle<FigmaLetterSpacing | number>(
+      internals,
+      'letterSpacing',
+      mixed,
+      (node, value) => ({ letterSpacing: letterSpacingValue(node, value) }),
+      (value) => {
+        const percent = percentOf(value)
+        return percent === null ? undefined : (fontSize) => ({ letterSpacing: percent * fontSize })
       }
-    },
-    lineHeight: {
-      get(this: ProxyThis): FigmaLineHeight {
-        return getLineHeight(raw(this, internals))
-      },
-      set(this: ProxyThis, value: FigmaLineHeight | number | null) {
-        updateNode(this, internals, { lineHeight: lineHeightValue(raw(this, internals), value) })
+    ),
+    lineHeight: characterStyle<FigmaLineHeight | number | null>(
+      internals,
+      'lineHeight',
+      mixed,
+      (node, value) => ({ lineHeight: lineHeightValue(node, value) }),
+      (value) => {
+        const percent = percentOf(value)
+        return percent === null ? undefined : (fontSize) => ({ lineHeight: percent * fontSize })
       }
-    },
+    ),
     textCase: field(internals, 'textCase'),
-    textDecoration: field(internals, 'textDecoration'),
+    textDecoration: characterStyle<SceneNode['textDecoration']>(
+      internals,
+      'textDecoration',
+      mixed,
+      (_node, textDecoration) => ({ textDecoration })
+    ),
     maxLines: field(internals, 'maxLines'),
     listSpacing: spacing(internals, 'listSpacing', mixed),
     paragraphSpacing: spacing(internals, 'paragraphSpacing', mixed),

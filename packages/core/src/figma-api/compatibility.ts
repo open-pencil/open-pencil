@@ -115,13 +115,24 @@ type TextListKeys =
   | 'setRangeListSpacing'
   | 'setRangeParagraphSpacing'
   | 'setRangeParagraphIndent'
+  | 'setRangeFontSize'
+  | 'setRangeFontName'
+  | 'setRangeLetterSpacing'
+  | 'setRangeLineHeight'
+  | 'setRangeTextDecoration'
+  | 'setRangeTextDecorationStyle'
+  | 'setRangeTextDecorationOffset'
+  | 'setRangeTextDecorationThickness'
+  | 'setRangeTextDecorationSkipInk'
   | 'hangingList'
 type TextListSurfaceMatch = Expect<
   Extends<Pick<FigmaNodeProxy, TextListKeys>, Pick<TextNode, TextListKeys>>
 >
 const _textListSurfaceMatch: TextListSurfaceMatch = true
 
-// Figma's mixed values are its own `figma.mixed` unique symbol; ours are a plain symbol.
+// Figma's mixed values are its own `figma.mixed` unique symbol; ours are a plain symbol. Fills
+// and decoration colours read and take the paints OpenPencil models, as `fills` does, and Figma
+// types OpenType features as every feature while it returns only those set, so they stay out.
 type WithoutMixed<T> = T extends (...args: infer A) => infer R
   ? (...args: A) => Exclude<R, symbol>
   : Exclude<T, symbol>
@@ -131,6 +142,23 @@ type TextMixedKeys =
   | 'getRangeListSpacing'
   | 'getRangeParagraphSpacing'
   | 'getRangeParagraphIndent'
+  | 'getRangeFontSize'
+  | 'getRangeFontName'
+  | 'getRangeFontWeight'
+  | 'getRangeLetterSpacing'
+  | 'getRangeLineHeight'
+  | 'getRangeTextDecoration'
+  | 'getRangeTextDecorationStyle'
+  | 'getRangeTextDecorationOffset'
+  | 'getRangeTextDecorationThickness'
+  | 'getRangeTextDecorationSkipInk'
+  | 'getRangeAllFontNames'
+  | 'fontSize'
+  | 'fontName'
+  | 'fontWeight'
+  | 'letterSpacing'
+  | 'lineHeight'
+  | 'textDecoration'
   | 'listSpacing'
   | 'paragraphSpacing'
   | 'paragraphIndent'

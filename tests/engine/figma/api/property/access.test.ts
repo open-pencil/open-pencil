@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectFills } from '#tests/helpers/assert'
+
 import { createAPI, solidFill } from '../helpers'
 
 describe('property access', () => {
@@ -41,7 +43,7 @@ describe('property access', () => {
     // Plugin scripts may leave out `opacity` and `visible`; Figma fills them in.
     Reflect.set(rect, 'fills', [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }])
     Reflect.set(rect, 'strokes', [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 }, opacity: 0.5 }])
-    expect(rect.fills[0]).toMatchObject({ opacity: 1, visible: true })
+    expect(expectFills(rect.fills)[0]).toMatchObject({ opacity: 1, visible: true })
     expect(rect.strokes[0]).toMatchObject({ opacity: 0.5, visible: true })
   })
 

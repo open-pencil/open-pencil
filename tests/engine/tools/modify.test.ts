@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts } from '@open-pencil/core'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { expectDefined, expectFills, getNodeOrThrow } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('set_fill', () => {
@@ -14,7 +14,7 @@ describe('set_fill', () => {
     const tool = getTool('set_fill')
     tool.execute(figma, { id: frame.id, color: '#ff0000' })
 
-    const fills = expectDefined(figma.getNodeById(frame.id), 'frame node').fills
+    const fills = expectFills(expectDefined(figma.getNodeById(frame.id), 'frame node').fills)
     expect(fills.length).toBe(1)
     expect(fills[0].color.r).toBeCloseTo(1)
     expect(fills[0].color.g).toBeCloseTo(0)
@@ -220,6 +220,31 @@ describe('set_constraints', () => {
 })
 
 describe('set_font_range', () => {
+  test('returns an empty or overlong range as an error and changes nothing', () => {
+    const { figma, graph } = setupToolTest()
+    const created = getTool('create_shape').execute(figma, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 20
+    }) as ToolResult
+    const id = expectDefined(created.id, 'created node id')
+    getTool('set_text').execute(figma, { id, text: 'Hello' })
+    const setFontRange = getTool('set_font_range')
+
+    expect(setFontRange.execute(figma, { id, start: 2, end: 2, size: 18 })).toEqual({
+      error: "in setRangeFontSize: Empty range selected. 'end' must be greater than 'start'"
+    })
+    expect(setFontRange.execute(figma, { id, start: 0, end: 9, size: 18 })).toMatchObject({
+      error: expect.stringContaining('Range outside of available characters')
+    })
+    expect(setFontRange.execute(figma, { id, start: 2, end: 2 })).toEqual({
+      error: 'set_font_range needs at least one of family, size, style, or color'
+    })
+    expect(getNodeOrThrow(graph, id).styleRuns).toEqual([])
+  })
+
   test('applies font style to text range and survives serialization', () => {
     const { figma, graph } = setupToolTest()
     const createText = getTool('create_shape')
