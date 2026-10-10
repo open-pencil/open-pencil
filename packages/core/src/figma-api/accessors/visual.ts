@@ -1,4 +1,11 @@
-import { newStrokeGeometry, type Fill, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import {
+  newStrokeGeometry,
+  type Color,
+  type Fill,
+  type GradientStop,
+  type SceneNode,
+  type Stroke
+} from '@open-pencil/scene-graph'
 import { normalizeColor } from '@open-pencil/scene-graph/color'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
@@ -29,8 +36,17 @@ function paintDefaults(paint: Partial<Pick<Fill, 'opacity' | 'visible'>>) {
   return { opacity: paint.opacity ?? 1, visible: paint.visible ?? true }
 }
 
+/** A colour as Figma's plugin API takes it, RGB with an optional alpha. */
+type FigmaColor = Omit<Color, 'a'> & Partial<Pick<Color, 'a'>>
+
 /** A paint as Figma's plugin API takes it: RGB colours, optional opacity and visibility. */
-export function figmaPaintToFill(fill: Fill): Fill {
+export type FigmaPaint = Omit<Fill, 'color' | 'opacity' | 'visible' | 'gradientStops'> &
+  Partial<Pick<Fill, 'opacity' | 'visible'>> & {
+    color?: FigmaColor
+    gradientStops?: Array<Omit<GradientStop, 'color'> & { color: FigmaColor }>
+  }
+
+export function figmaPaintToFill(fill: FigmaPaint): Fill {
   return {
     ...fill,
     ...paintDefaults(fill),

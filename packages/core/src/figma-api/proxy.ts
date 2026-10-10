@@ -31,7 +31,11 @@ import {
   type FigmaVectorNetwork,
   type FigmaVectorPath
 } from './accessors/vector'
-import { figmaPaintToFill, installVisualNodeProxyAccessors } from './accessors/visual'
+import {
+  figmaPaintToFill,
+  installVisualNodeProxyAccessors,
+  type FigmaPaint
+} from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import type { FigmaFontName } from './fonts'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
@@ -227,7 +231,7 @@ export class FigmaNodeProxy {
     return getPageBackgrounds(this._raw())
   }
 
-  set backgrounds(value: readonly Fill[]) {
+  set backgrounds(value: readonly FigmaPaint[]) {
     setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value.map(figmaPaintToFill))
   }
 
