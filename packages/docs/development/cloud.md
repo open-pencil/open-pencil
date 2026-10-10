@@ -188,3 +188,50 @@ Nodemailer; `email.transport = "none"` disables delivery.
 `bun run test:cloud` type-checks the package and runs unit and integration tests. The end-to-end
 runners start PostgreSQL and SeaweedFS (or Garage) in an isolated Compose project, exercise presigned
 and multipart uploads and the full revision flow, and remove the project afterwards.
+
+## Decisions
+
+Choices made while porting Cloud, with what was rejected and why. Add new entries at the end with
+their date; revise an entry only by adding one that supersedes it.
+
+**2026-10 · A relay instead of Hocuspocus.** The relay speaks the same room messages as Trystero, so
+local and Cloud documents share one sync implementation. A Hocuspocus server would have needed a
+second provider in the editor and its own authorization hooks for tickets and viewer filtering.
+
+**2026-10 · The portal is a second Vite entry served only by the server.** Sign-in, approval, and
+administration pages reuse the editor's components and theme without shipping in the editor
+bundle, and a self-hosted server serves pages that match its own version. Pages inside the editor
+would put the approval page under an origin the server does not control; a separate frontend
+package would have duplicated the UI kit.
+
+**2026-10 · Rooms are live whenever a Cloud document is open, and one editor saves.** Every open
+tab joins the room, and the signed-in editor with the lowest presence client uploads for everyone,
+so two people editing together never conflict with each other. Joining only on demand left
+concurrent saves to the conflict dialog; building files on the server from the room's Yjs state
+needs a headless `.fig` writer on the server, which is a later step.
+
+**2026-10 · A tab takes the room's copy when the room has one.** Reading a `.fig` gives layers new
+IDs, so two tabs that read the same file cannot merge their Yjs states. The first editor seeds an
+empty room only after the relay answers, and later tabs adopt the room root.
+
+**2026-10 · Redirect sign-in only on the server's own editor address.** There the session cookie is
+first-party and the server can send the person back to the same tab. The desktop app and editors on
+other origins approve a device code instead of relying on third-party cookies or custom URL
+schemes.
+
+**2026-10 · Link secrets stay on the device that created them.** The server stores only digests,
+like every capability secret, so a leaked database does not open documents. Other devices offer
+**Reset link**, which rotates the secret, instead of a server that can hand the link back.
+
+**2026-10 · Guests never save, and viewers are not locked yet.** A link opens a room with the link's
+permission but no account to save under, so a signed-in editor saves for guests. The relay already
+drops a viewer's document updates; locking the canvas for viewers needs a read-only mode in Core and
+is a follow-up.
+
+**2026-10 · Save to Cloud copies rather than moves.** The local file keeps its last saved contents
+and the tab moves to the Cloud document, matching **Save to storage**. Moving would delete a file
+the person may still open elsewhere.
+
+**2026-10 · Home is split into places.** Recent files, each server's workspaces, documents shared
+with the person, and the storage bucket are separate places in a sidebar, so Cloud does not crowd
+the local file list and one server's workspaces show at a time.
