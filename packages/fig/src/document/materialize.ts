@@ -1,5 +1,10 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  isInstanceLayerId,
+  SceneGraph,
+  takeOverrideValuesFromLayers,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import {
   reconcileLiveComponentEdits,
@@ -357,5 +362,9 @@ function materializeReader(
     applyDocumentPaintBindings(graph, materialized)
     applyDocumentTextBindings(graph, materialized)
   })
+  // Overrides were recorded while copies were built; the passes above settled their values.
+  for (const node of materialized)
+    if (node.type === 'INSTANCE' && !isInstanceLayerId(node.id))
+      takeOverrideValuesFromLayers(graph, node)
   return state
 }

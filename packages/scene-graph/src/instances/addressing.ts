@@ -8,6 +8,7 @@ import {
 } from '../instance-overrides'
 import type { SceneNode } from '../types'
 import { instanceLayerId, parseInstanceLayerId } from './layer-ids'
+import { layerOverrideValue } from './override-values'
 
 /** The instance that records a layer's overrides, and the layer's path in it. */
 export interface OverrideTarget {
@@ -30,15 +31,15 @@ export function overrideTarget(graph: SceneGraph, node: SceneNode): OverrideTarg
 }
 
 /**
- * Records a field of `node` as overridden, with `value`, on the instance that holds its
- * overrides. Returns that instance, which the caller updates; layers that are not copies or
- * instances have none.
+ * Records a field of `node` as overridden on the instance that holds its overrides, with `value`
+ * or else what the layer shows now. Returns that instance, which the caller updates; layers that
+ * are not copies or instances have none.
  */
 export function setLayerOverride(
   graph: SceneGraph,
   node: SceneNode,
   field: InstanceOverrideField,
-  value: unknown = true
+  value: unknown = layerOverrideValue(node, field)
 ): SceneNode | undefined {
   const target = overrideTarget(graph, node)
   if (!target) return undefined

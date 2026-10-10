@@ -2,7 +2,7 @@ import { compact } from 'es-toolkit/array'
 
 import {
   createComponentPropertyId,
-  overrideTarget,
+  setLayerOverride,
   setInstanceOverride,
   type Color,
   type ComponentPropertyDefinition,
@@ -500,8 +500,7 @@ function applyInstanceOverrides(
     const child = descendants.find((n) => n.name === childName)
     if (!child || !(prop in child)) continue
     graph.updateNode(child.id, { [prop]: value } as Partial<SceneNode>)
-    const target = overrideTarget(graph, child)
-    if (target) setInstanceOverride(target.owner.instanceOverrides, target.path, prop, value)
+    setLayerOverride(graph, child, prop)
     mutated = true
   }
   if (mutated) {

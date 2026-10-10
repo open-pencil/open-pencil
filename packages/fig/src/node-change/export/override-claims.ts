@@ -4,6 +4,7 @@ import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import { normalizeFontFamily, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { weightToFigmaStyle } from '../font/style'
 import { forEachExportedOverride, instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
 import {
@@ -16,12 +17,11 @@ import {
   type SceneNodeToKiwiContext,
   type StyleReference
 } from './context'
-import { weightToFigmaStyle } from '../font/style'
 import { kiwiEffects } from './effects'
 import { fillsOwnSizingAxis } from './fill-sizing'
 import { normalizeStackCounterAlignItems, normalizeStackJustify } from './layout-values'
-import { serializeVariableModes } from './variable-modes'
 import { exportedNode } from './resolved-bindings'
+import { serializeVariableModes } from './variable-modes'
 
 function exportedStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)
@@ -128,7 +128,9 @@ function registryClaim(
     case 'style': {
       const id = target[field]
       // A style the instance took off is the unset GUID, as Figma writes it.
-      return { [raw]: typeof id === 'string' ? exportedStyleReference(context, id) : { guid: UNSET_GUID } }
+      return {
+        [raw]: typeof id === 'string' ? exportedStyleReference(context, id) : { guid: UNSET_GUID }
+      }
     }
     case 'effects':
       return { effects: kiwiEffects(context, target.effects, instanceScale(instance)) }

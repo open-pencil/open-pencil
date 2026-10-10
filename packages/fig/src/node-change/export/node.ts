@@ -42,10 +42,10 @@ import {
   type KiwiSymbolOverridePayload,
   type SceneNodeToKiwiContext
 } from './context'
+import { kiwiEffects } from './effects'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
-import { kiwiEffects } from './effects'
 import { serializeVariableModes } from './variable-modes'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'

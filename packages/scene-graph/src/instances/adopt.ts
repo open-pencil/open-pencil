@@ -12,6 +12,7 @@ import type { SceneNode } from '../types'
 import { overrideTarget } from './addressing'
 import { INSTANCE_SYNC_FIELDS } from './fields'
 import { instanceLayerId, instanceScope, overridePathKey, parseInstanceLayerId } from './layer-ids'
+import { layerOverrideValue } from './override-values'
 import { walkInstanceSources } from './source-walk'
 import { sourceInTargetCoordinates } from './sync'
 
@@ -48,7 +49,8 @@ export function ownOverrides(
     const path = address.path.slice(prefix.length)
     const scaled = sourceInTargetCoordinates(source, target.componentScale)
     for (const field of INSTANCE_SYNC_FIELDS)
-      if (!isEqual(target[field], scaled[field])) setInstanceOverride(state, path, field)
+      if (!isEqual(target[field], scaled[field]))
+        setInstanceOverride(state, path, field, layerOverrideValue(target, field))
     return true
   })
   return state

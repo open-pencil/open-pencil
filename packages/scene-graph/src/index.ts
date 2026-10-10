@@ -18,6 +18,7 @@ export * from './slots/frames'
 export { instanceMainComponent } from './instances/main-component'
 export * from './instances/layer-ids'
 export { isLegacyInstanceLayer, migrateInstanceLayers } from './instances/migrate'
+export { takeOverrideValuesFromLayers } from './instances/override-values'
 export { copyLayerTrees } from './instances/copy-trees'
 export {
   instanceLayerLineage,

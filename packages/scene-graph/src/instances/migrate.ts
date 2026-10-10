@@ -13,6 +13,7 @@ import {
   parseInstanceLayerId,
   type InstanceScope
 } from './layer-ids'
+import { layerOverrideValue } from './override-values'
 
 type LegacyFields = Map<string, Map<string, unknown>>
 
@@ -133,7 +134,12 @@ function migrateCopies(
     const address = parseInstanceLayerId(id)
     if (owner && address) {
       for (const [field, value] of target.instanceOverrides.self)
-        setInstanceOverride(owner.instanceOverrides, address.path, field, value)
+        setInstanceOverride(
+          owner.instanceOverrides,
+          address.path,
+          field,
+          legacyValue(target, field, value)
+        )
       if (shown !== source.componentId)
         setInstanceOverride(owner.instanceOverrides, address.path, 'componentId', shown)
     }
@@ -186,6 +192,11 @@ export function isLegacyInstanceLayer(graph: SceneGraph, node: SceneNode): boole
  * path, and copies stop linking to their sources through `componentId`. Layers that match no
  * component layer stay as the instance's own.
  */
+/** Earlier overrides only flagged most fields; the copy holds what they overrode. */
+function legacyValue(copy: SceneNode, field: string, value: unknown): unknown {
+  return layerOverrideValue(copy, field) ?? value
+}
+
 export function migrateInstanceLayers(graph: SceneGraph): void {
   const legacy: LegacyFields = new Map()
   for (const node of graph.getAllNodes()) {
@@ -204,10 +215,16 @@ export function migrateInstanceLayers(graph: SceneGraph): void {
   for (const [copyId, fields] of legacy) {
     const address = parseInstanceLayerId(current(migration, copyId))
     const owner = address ? graph.getNode(address.owner) : undefined
-    if (!address || !owner) continue
+    const copy = graph.getNode(copyId)
+    if (!address || !owner || !copy) continue
     for (const [field, value] of fields)
       if (field !== 'sourceComponentId' && field !== 'componentId')
-        setInstanceOverride(owner.instanceOverrides, address.path, field, value)
+        setInstanceOverride(
+          owner.instanceOverrides,
+          address.path,
+          field,
+          legacyValue(copy, field, value)
+        )
   }
   graph.renameNodes(migration.renames)
 }

@@ -32,7 +32,7 @@ test('pasting a component and instance together remaps their component reference
   expect(copy.componentId).toBe(master.id)
   expect(copiedChild.id).toBe(instanceLayerId(copy.id, [masterChildId]))
   expect(copiedChild.name).toBe('Overridden')
-  expect(getInstanceOverride(copy.instanceOverrides, [masterChildId], 'name')).toBe(true)
+  expect(getInstanceOverride(copy.instanceOverrides, [masterChildId], 'name')).toBe('Overridden')
   editor.undo.undo()
   expect(editor.graph.getNode(copy.id)).toBeUndefined()
   editor.undo.redo()

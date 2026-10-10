@@ -36,7 +36,7 @@ test('component synchronization updates and removes opacity bindings while prese
   graph.updateNode(instance.id, {
     boundVariables: { ...instance.boundVariables, width: 'width-var' }
   })
-  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables/width', true)
+  setInstanceOverride(instance.instanceOverrides, [], 'boundVariables/width', 'width-var')
   graph.updateNode(component.id, { opacity: 1, boundVariables: {} })
   graph.syncInstances(component.id)
   expect(instance.boundVariables).toEqual({ width: 'width-var' })

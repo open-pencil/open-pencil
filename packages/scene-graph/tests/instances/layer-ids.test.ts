@@ -74,7 +74,7 @@ describe('ids of the layers inside instances', () => {
     graph.updateNode(copy.id, { opacity: 0.5 })
     recordInstanceOverride(graph, copy.id, ['opacity'])
     expect(getInstanceOverride(instance.instanceOverrides, [nested.id, dot.id], 'opacity')).toBe(
-      true
+      0.5
     )
     expect(overriddenFields(graph, copy)).toEqual(new Set(['opacity']))
     const nestedCopy = required(graph.getNode(instanceLayerId(instance.id, [nested.id])))
@@ -128,10 +128,12 @@ describe('swapping a nested instance', () => {
 
     const state = instance.instanceOverrides
     expect(getInstanceOverride(state, [nested.id], 'componentId')).toBe(other.id)
-    expect(getInstanceOverride(state, [nested.id, otherDot.id], 'visible')).toBe(true)
+    expect(getInstanceOverride(state, [nested.id, otherDot.id], 'visible')).toBe(false)
     expect(getInstanceOverride(state, [nested.id, dot.id], 'visible')).toBeUndefined()
     const swapped = required(graph.getNode(instanceLayerId(instance.id, [nested.id, otherDot.id])))
     expect(instanceLayerSource(graph, swapped)?.id).toBe(otherDot.id)
+    // The carried override's value reaches the new component's layer, as in Figma.
+    expect(swapped.visible).toBe(false)
   })
 
   test('a swapped nested instance follows the component swapped in, whichever syncs last', () => {
@@ -187,7 +189,7 @@ describe('cloning and detaching', () => {
     expect(adopted.componentId).toBe(badge.id)
     const adoptedDot = required(graph.getNode(instanceLayerId(adopted.id, [dot.id])))
     expect(adoptedDot.opacity).toBe(0.5)
-    expect(getInstanceOverride(adopted.instanceOverrides, [dot.id], 'opacity')).toBe(true)
+    expect(getInstanceOverride(adopted.instanceOverrides, [dot.id], 'opacity')).toBe(0.5)
   })
 
   test('only copies that still link to their source count as the earlier shape', () => {
