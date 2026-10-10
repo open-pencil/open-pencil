@@ -3,7 +3,6 @@ import { fromUint8Array } from 'js-base64'
 
 import {
   hasTextList,
-  paragraphIndexAt,
   textListItems,
   textParagraphRanges,
   type Color,
@@ -12,7 +11,8 @@ import {
   type SceneNode,
   type Stroke,
   type StyleRun,
-  type TextDecorationStyle
+  type TextDecorationStyle,
+  type TextParagraphRange
 } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -399,6 +399,18 @@ export function drawReflowedPathTextSilhouettes(
  *                            black fills vs white strokeGeometry
  *   4. scale(fontSize,-fs) — font units → px; Y flip (font space is up-positive)
  */
+/** The paragraph holding text index `index`, found by bisection: saved glyphs can be many. */
+function rangeIndexAt(ranges: readonly TextParagraphRange[], index: number): number {
+  let lo = 0
+  let hi = ranges.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (ranges[mid].start <= index) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
 /**
  * The character whose style each saved list marker takes: the first of its list, as Figma
  * draws markers. Figma saves a marker, with no character of its own, before its item's glyphs.
@@ -419,7 +431,7 @@ function markerStyleCharacters(node: SceneNode): Map<number, number> {
       markers.push(index)
       continue
     }
-    const start = listStarts.get(paragraphIndexAt(node.text, glyph.firstCharacter))
+    const start = listStarts.get(rangeIndexAt(ranges, glyph.firstCharacter))
     if (start !== undefined) for (const marker of markers) characters.set(marker, start)
     markers = []
   }

@@ -55,7 +55,7 @@ function appendOutlineCommand(
  */
 function shapedOutlines(r: SkiaRenderer, node: SceneNode): TextOutlineGlyph[] | null {
   if (!r.fontProvider || !getTextOutlineSupport(node).supported) return null
-  const shaped = shapeText(r.ck, r.fontProvider, node)
+  const shaped = shapeText(r.ck, r.fontProvider, node, { decorations: false })
   if (!shaped) return null
   const outlines: TextOutlineGlyph[] = []
   for (const glyph of shaped.glyphs) {

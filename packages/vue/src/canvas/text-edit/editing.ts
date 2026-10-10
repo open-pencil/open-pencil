@@ -140,12 +140,19 @@ export function createTextEditActions(store: Editor) {
     return store.graph.getNode(id) ?? null
   }
 
-  function syncText(nodeId: string, text: string, runs?: SceneNode['styleRuns']) {
+  function syncText(
+    nodeId: string,
+    text: string,
+    runs?: SceneNode['styleRuns'],
+    paragraphs?: SceneNode['textParagraphs']
+  ) {
     const changes: Partial<SceneNode> = { text }
     if (runs !== undefined) changes.styleRuns = runs
     const node = store.graph.getNode(nodeId)
-    // A new paragraph continues the list it is typed in; a joined one keeps the first's style.
-    if (node && node.textParagraphs.length > 0) {
+    if (paragraphs !== undefined) {
+      changes.textParagraphs = paragraphs
+    } else if (node && node.textParagraphs.length > 0) {
+      // A new paragraph continues the list it is typed in; a joined one keeps the first's style.
       changes.textParagraphs = paragraphStylesAfterTextChange(node.textParagraphs, node.text, text)
     }
     store.updateTextEditNode(nodeId, changes)
@@ -172,6 +179,7 @@ export function createTextEditActions(store: Editor) {
   type CompositionDraft = {
     baseText: string
     baseRuns: SceneNode['styleRuns']
+    baseParagraphs: SceneNode['textParagraphs']
     cursor: number
     end: number
     selectionAnchor: number | null
@@ -192,6 +200,7 @@ export function createTextEditActions(store: Editor) {
     compositionDraft = {
       baseText: state.text,
       baseRuns: node.styleRuns,
+      baseParagraphs: node.textParagraphs,
       cursor: state.cursor,
       end,
       selectionAnchor: state.selectionAnchor,
@@ -212,7 +221,12 @@ export function createTextEditActions(store: Editor) {
 
     let runs = adjustRunsForDelete(draft.baseRuns, draft.start, draft.end - draft.start)
     runs = adjustRunsForInsert(runs, draft.start, text.length)
-    syncText(node.id, state.text, runs)
+    // Each update replaces the same base, so paragraphs an earlier update joined come back.
+    const paragraphs =
+      draft.baseParagraphs.length > 0
+        ? paragraphStylesAfterTextChange(draft.baseParagraphs, draft.baseText, state.text)
+        : undefined
+    syncText(node.id, state.text, runs, paragraphs)
   }
 
   function restoreComposition(node: SceneNode) {
@@ -222,7 +236,12 @@ export function createTextEditActions(store: Editor) {
     state.text = compositionDraft.baseText
     state.cursor = compositionDraft.cursor
     state.selectionAnchor = compositionDraft.selectionAnchor
-    syncText(node.id, compositionDraft.baseText, compositionDraft.baseRuns)
+    syncText(
+      node.id,
+      compositionDraft.baseText,
+      compositionDraft.baseRuns,
+      compositionDraft.baseParagraphs
+    )
     compositionDraft = null
   }
 

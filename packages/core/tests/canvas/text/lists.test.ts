@@ -5,6 +5,7 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
 
+import { buildParagraph } from '#core/canvas/text/layout/build'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/fonts'
@@ -131,5 +132,33 @@ describe('text lists', () => {
     expect(lineStarts(shaped)).toEqual([0, 0])
     const [bullet] = markersOn(shaped, 0)
     expect(bullet.x + bullet.advance / 2).toBeCloseTo(-12, 2)
+  })
+
+  test('gives a truncated item back its lines when a wider layout has room', async () => {
+    const ck = await getCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      text: `Alpha beta\n${'word '.repeat(60).trim()}`,
+      textParagraphs: [ul(), ul()],
+      textTruncation: 'ENDING',
+      maxLines: 4
+    })
+    const layout = buildParagraph({ ck, fontProvider, fontsLoaded: true }, node)
+    try {
+      layout.layout(200)
+      const wide = layout.getLineMetrics().length
+      layout.layout(60)
+      layout.layout(200)
+      expect(wide).toBe(4)
+      expect(layout.getLineMetrics()).toHaveLength(wide)
+    } finally {
+      layout.delete()
+      fontManager.detachProvider(fontProvider)
+      fontProvider.delete()
+    }
   })
 })

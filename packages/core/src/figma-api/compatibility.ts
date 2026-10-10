@@ -120,3 +120,23 @@ type TextListSurfaceMatch = Expect<
   Extends<Pick<FigmaNodeProxy, TextListKeys>, Pick<TextNode, TextListKeys>>
 >
 const _textListSurfaceMatch: TextListSurfaceMatch = true
+
+// Figma's getters return its own `figma.mixed` unique symbol; ours return a plain symbol.
+type TextListGetterKeys = 'getRangeListOptions' | 'getRangeIndentation'
+type TextListGetterMatch = Expect<
+  Extends<
+    {
+      [K in TextListGetterKeys]: (
+        start: number,
+        end: number
+      ) => Exclude<ReturnType<FigmaNodeProxy[K]>, symbol>
+    },
+    {
+      [K in TextListGetterKeys]: (
+        start: number,
+        end: number
+      ) => Exclude<ReturnType<TextNode[K]>, symbol>
+    }
+  >
+>
+const _textListGetterMatch: TextListGetterMatch = true

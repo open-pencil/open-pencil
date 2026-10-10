@@ -99,6 +99,9 @@ export class TextLayout {
     private readonly maxLines?: number
   ) {}
 
+  /** The line cap a block's paragraph was rebuilt with, when it differs from `maxLines`. */
+  private readonly caps = new Map<TextLayoutBlock, number>()
+
   private visibleBlocks(): TextLayoutBlock[] {
     return this.blocks.filter((block) => block.visible)
   }
@@ -115,9 +118,14 @@ export class TextLayout {
         continue
       }
       block.paragraph.layout(Math.max(1, width - block.inset))
-      if (block.paragraph.getLineMetrics().length > remaining && block.rebuild) {
+      // A block capped for a narrower layout gets its lines back when there is room for them.
+      const cap = this.caps.get(block) ?? this.maxLines ?? Infinity
+      const overflows = block.paragraph.getLineMetrics().length > remaining
+      const clipped = cap < remaining && block.paragraph.didExceedMaxLines()
+      if ((overflows || clipped) && block.rebuild) {
         block.paragraph.delete()
         block.paragraph = block.rebuild(remaining)
+        this.caps.set(block, remaining)
         block.paragraph.layout(Math.max(1, width - block.inset))
       }
       if (block.paragraph.didExceedMaxLines()) this.truncated = true
@@ -305,8 +313,9 @@ export class TextLayout {
     if (block.empty || block.length === 0) {
       if (!first) return null
       const top = block.y + first.baseline - first.ascent
+      // The caret stands where typing starts: after a first-line indent.
       return {
-        x: block.x + first.left + (rtl ? first.width : 0),
+        x: block.x + first.left + (rtl ? first.width - block.leadWidth : block.leadWidth),
         top,
         bottom: top + first.height
       }

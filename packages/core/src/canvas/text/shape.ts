@@ -134,12 +134,14 @@ function completeCharacterOffsets(offsets: Array<number | undefined>): number[] 
  * the glyph ID CanvasKit chose, so ligatures and contextual forms keep their shapes. When a run's
  * font is missing, variable, or a fallback, or the glyphs could not draw the text's decorations,
  * no glyph gets an outline: the layout still stands, and readers draw the text themselves.
+ * Outlines that carry no decorations, as outlined text has none, set `decorations: false`.
  * Returns `null` for text saved glyphs cannot represent at all.
  */
 export function shapeText(
   ck: CanvasKit,
   fontProvider: TypefaceFontProvider,
-  node: SceneNode
+  node: SceneNode,
+  { decorations = true }: { decorations?: boolean } = {}
 ): ShapedText | null {
   const text = transformTextCase(node.text, node.textCase)
   if (!canShape(node, text)) return null
@@ -176,7 +178,8 @@ export function shapeText(
     // Outlines from some runs only would draw the text with characters missing, and saved
     // glyphs draw decorations on one baseline.
     const outlined =
-      glyphs.every((glyph) => glyph.commands) && !(lines.length > 1 && hasDecoration(node))
+      glyphs.every((glyph) => glyph.commands) &&
+      !(decorations && lines.length > 1 && hasDecoration(node))
     return {
       glyphs: outlined ? glyphs : glyphs.map((glyph) => ({ ...glyph, commands: null })),
       baselines: metrics.map((line) => ({

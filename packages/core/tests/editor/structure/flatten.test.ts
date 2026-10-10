@@ -27,7 +27,7 @@ async function createEditorWithRenderer() {
     editor.dispose()
     renderer.destroy()
   })
-  return { editor }
+  return { editor, renderer }
 }
 
 async function loadInterRegular() {
@@ -201,9 +201,13 @@ describe('flattenSelected', () => {
     expect(editor.graph.getNode(text.id)).toBeUndefined()
   })
 
-  test('flattens a list with its bullets, as the canvas draws it', async () => {
+  // Saved glyphs draw a decoration on one baseline; outlines carry none, so lines don't matter.
+  test.each(['NONE', 'UNDERLINE'] as const)(
+    'flattens a list with its bullets, as the canvas draws it (%s)',
+    async (textDecoration) => {
     await loadInterRegular()
-    const { editor } = await createEditorWithRenderer()
+    const { editor, renderer } = await createEditorWithRenderer()
+    await renderer.loadFonts()
     const pageId = editor.state.currentPageId
     const text = editor.graph.createNode('TEXT', pageId, {
       x: 100,
@@ -213,6 +217,7 @@ describe('flattenSelected', () => {
       fontSize: 16,
       width: 120,
       height: 40,
+      textDecoration,
       textParagraphs: [
         { listType: 'UNORDERED', indentation: 1 },
         { listType: 'UNORDERED', indentation: 1 }
@@ -225,9 +230,10 @@ describe('flattenSelected', () => {
     const [vectorId] = [...editor.state.selectedIds]
     const vector = editor.graph.getNode(vectorId)
     // The bullets sit in the first 24px of indent, left of the items' text.
-    expect(vector?.x).toBeGreaterThan(100)
+    expect(vector?.x).toBeGreaterThan(106)
     expect(vector?.x).toBeLessThan(112)
-  })
+    }
+  )
 
   test('wraps loaded text style runs as outlines', async () => {
     await loadInterRegular()

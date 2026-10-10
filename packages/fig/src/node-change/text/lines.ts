@@ -4,6 +4,7 @@ import {
   textListItems,
   textParagraphRanges,
   trimParagraphStyles,
+  withIndentation,
   type SceneNode,
   type TextListType,
   type TextParagraphStyle
@@ -26,10 +27,11 @@ export function importParagraphStyles(
   lines: readonly TextLineData[] | undefined
 ): TextParagraphStyle[] {
   if (!lines) return []
-  const styles = lines.map((line) => ({
-    listType: listTypeOf(line),
-    indentation: line.indentationLevel ?? 0
-  }))
+  const styles = lines.map((line) => {
+    const style = { listType: listTypeOf(line), indentation: line.indentationLevel ?? 0 }
+    // A list item nests 1–5 deep; plain paragraphs keep the level the file stores.
+    return style.listType === 'NONE' ? style : withIndentation(style, style.indentation)
+  })
   return trimParagraphStyles(styles, styles.length)
 }
 
