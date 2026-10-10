@@ -218,5 +218,7 @@
   "syncOffline": "Offline – Änderungen werden auf diesem Gerät gespeichert",
   "syncConflict": "Auch anderswo bearbeitet – wähle, welche Version du behalten möchtest",
   "syncError": "Änderungen konnten nicht hochgeladen werden",
-  "shareLinkFailed": "Dieser Link öffnet kein Dokument. Bitte um einen neuen."
+  "shareLinkFailed": "Dieser Link öffnet kein Dokument. Bitte um einen neuen.",
+  "shareOpenedInBrowser": "Im Browser geöffnet",
+  "openInDesktopApp": "In der Desktop-App öffnen"
 }

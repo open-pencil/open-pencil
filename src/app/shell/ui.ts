@@ -82,7 +82,8 @@ function trim() {
 /** Toast-driven work keeps its toast open until progress clears or the work ends. */
 export function toastDuration(entry: Toast): number {
   if (entry.progress) return 0
-  return entry.variant === 'error' ? ERROR_TOAST_DURATION : TOAST_DURATION
+  // A toast that offers an action stays long enough to reach it.
+  return entry.variant === 'error' || entry.action ? ERROR_TOAST_DURATION : TOAST_DURATION
 }
 
 function startProgress(
@@ -115,8 +116,8 @@ function startProgress(
   }
 }
 
-function info(message: string) {
-  push(message, 'default')
+function info(message: string, action?: ToastAction) {
+  push(message, 'default', action)
 }
 
 function warning(message: string) {
@@ -160,8 +161,9 @@ export const toast = {
 
 export async function openExternalLink(url: string) {
   if (isTauri()) {
-    const { openUrl } = await import('@tauri-apps/plugin-opener')
-    await openUrl(url)
+    // An app command, so native tests can read the address instead of opening a browser.
+    const { invoke } = await import('@tauri-apps/api/core')
+    await invoke('open_external_url', { url })
   } else {
     window.open(url, '_blank')
   }

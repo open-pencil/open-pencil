@@ -215,5 +215,7 @@
   "syncOffline": "离线——更改已保存在此设备上",
   "syncConflict": "其他地方也有编辑——请选择要保留的版本",
   "syncError": "无法上传更改",
-  "shareLinkFailed": "此链接无法打开文档。请索取新链接。"
+  "shareLinkFailed": "此链接无法打开文档。请索取新链接。",
+  "shareOpenedInBrowser": "已在浏览器中打开",
+  "openInDesktopApp": "在桌面应用中打开"
 }

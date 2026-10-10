@@ -260,7 +260,9 @@ export const cloudMessageDefaults = {
   syncOffline: 'Offline — changes are saved on this device',
   syncConflict: 'Edited elsewhere too — choose which version to keep',
   syncError: 'Could not upload changes',
-  shareLinkFailed: 'This link doesn’t open a document. Ask for a new one.'
+  shareLinkFailed: 'This link doesn’t open a document. Ask for a new one.',
+  shareOpenedInBrowser: 'Opened in the browser',
+  openInDesktopApp: 'Open in the desktop app'
 } as const
 
 export const cloudMessages = i18n('cloud', cloudMessageDefaults)
