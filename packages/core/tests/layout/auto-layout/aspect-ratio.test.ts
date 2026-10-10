@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { FigmaAPI } from '#core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
@@ -106,3 +107,46 @@ describe('locked aspect ratio in auto layout', () => {
     expect(size(graph, fixed.id)).toEqual([80, 50])
   })
 })
+
+// Live Figma, 2026-10-10: a locked 100×50 layer at 50,50 that ignores auto layout, in a Hug row
+// that grows from 200 to 300 wide.
+describe('a locked layer that ignores auto layout as its Hug frame grows', () => {
+  const CASES = {
+    'STRETCH/MIN': [50, 50, 200, 100],
+    'STRETCH/CENTER': [50, 25, 200, 100],
+    'SCALE/MAX': [75, 25, 150, 75],
+    'STRETCH/STRETCH': [50, 50, 200, 50]
+  } as const
+
+  for (const [name, expected] of Object.entries(CASES)) {
+    test(name, () => {
+      const figma = new FigmaAPI(new SceneGraph())
+      const frame = figma.createFrame()
+      frame.layoutMode = 'HORIZONTAL'
+      frame.resize(10, 200)
+      frame.counterAxisSizingMode = 'FIXED'
+      frame.primaryAxisSizingMode = 'AUTO'
+      for (const side of ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom'] as const)
+        frame[side] = 0
+      const spacer = figma.createRectangle()
+      spacer.resize(200, 10)
+      frame.appendChild(spacer)
+      // Figma has laid the frame out by now; ours lays out when its size is read.
+      expect(frame.width).toBe(200)
+      const layer = figma.createRectangle()
+      frame.appendChild(layer)
+      layer.layoutPositioning = 'ABSOLUTE'
+      layer.x = 50
+      layer.y = 50
+      layer.resize(100, 50)
+      const [horizontal, vertical] = name.split('/') as ['STRETCH' | 'SCALE', ConstraintName]
+      layer.constraints = { horizontal, vertical }
+      layer.lockAspectRatio()
+      spacer.resize(300, 10)
+      expect(frame.width).toBe(300)
+      expect([layer.x, layer.y, layer.width, layer.height]).toEqual([...expected])
+    })
+  }
+})
+
+type ConstraintName = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH'
