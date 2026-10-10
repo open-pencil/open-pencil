@@ -31,7 +31,7 @@ export interface VariantLayer {
 }
 
 /** Where the set places a variant, which is not the component's own style. */
-const PLACEMENT = ['position', 'left', 'top', 'right', 'bottom', 'inset']
+export const PLACEMENT = ['position', 'left', 'top', 'right', 'bottom', 'inset']
 
 function textContent(element: DesignElement): string | null {
   const texts = element.children.filter((child): child is DesignText => child.type === 'text')
@@ -92,6 +92,23 @@ function tabPanels(graph: SceneGraph, variant: SceneNode): Set<string> {
   return new Set(panels?.childIds)
 }
 
+/**
+ * The layers of a variant a boolean property shows or hides, which are projected however the
+ * variant draws them, since the generated component shows them from its prop.
+ */
+function visibilityBound(graph: SceneGraph, variant: SceneNode): Set<string> {
+  const bound = new Set<string>()
+  const visit = (node: SceneNode) => {
+    for (const child of graph.getChildren(node.id)) {
+      if (child.componentPropertyReferences.some((item) => item.field === 'VISIBLE'))
+        bound.add(child.id)
+      if (child.type !== 'INSTANCE') visit(child)
+    }
+  }
+  visit(variant)
+  return bound
+}
+
 /** A variant projected to DOM, without where the set places it. */
 export function projectVariant(
   graph: SceneGraph,
@@ -101,7 +118,7 @@ export function projectVariant(
   const document = sceneNodeToDesignDocument(graph, variant.id, {
     includeSourceIds: false,
     vectorElement,
-    shown: tabPanels(graph, variant)
+    shown: new Set([...tabPanels(graph, variant), ...visibilityBound(graph, variant)])
   })
   const root = document.children.at(0)
   if (root?.type !== 'element') return null

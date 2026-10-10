@@ -325,6 +325,18 @@ describe('exportStorybook', () => {
     // The dot is 20px with its border, as the design draws it.
     const dot = /<div style="([^"]*width: 20px[^"]*)">/.exec(html)?.[1] ?? ''
     expect(dot).toContain('box-sizing: border-box')
+
+    // A set's variant drops where the set places it.
+    const { graph: buttons, page: library } = buttonGraph()
+    for (const [index, variant] of buttons
+      .getChildren(buttons.getChildren(library.id)[0]?.id ?? '')
+      .entries())
+      buttons.updateNode(variant.id, { x: 20 + index * 100, y: 20 })
+    const [set] = await exportStorybook(buttons, { framework: 'html' })
+    const large = (await importStory(String(set?.content))).default.render({ Size: 'Large' })
+    const root = /^<div style="([^"]*)"/.exec(large)?.[1] ?? ''
+    expect(root).not.toMatch(/(^|; )(left|top):/)
+    expect(root).not.toContain('position: absolute')
   })
 
   it('groups slash-named components and keeps standalone ones apart', async () => {
@@ -358,10 +370,11 @@ describe('exportStorybook', () => {
     expect(story.default.render({ Variant: 'Chip 2' })).toContain('width: 60px')
   })
 
-  it('emits framework-specific render wrappers', async () => {
+  it('emits framework-specific render wrappers for components it does not generate', async () => {
     const { graph } = buttonGraph()
-    const react = String((await exportStorybook(graph, { framework: 'react' }))[0]?.content)
-    const vue = String((await exportStorybook(graph, { framework: 'vue' }))[0]?.content)
+    const plan = () => ({ generate: false })
+    const react = String((await exportStorybook(graph, { framework: 'react', plan }))[0]?.content)
+    const vue = String((await exportStorybook(graph, { framework: 'vue', plan }))[0]?.content)
 
     expect(react).toContain("from '@storybook/react-vite'")
     expect(react).toContain('dangerouslySetInnerHTML')

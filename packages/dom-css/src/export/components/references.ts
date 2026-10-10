@@ -14,12 +14,13 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 
+import { drawsAsMain } from './drawn'
 import type { ComponentModel } from './model'
 
 /** A prop a reference sets on the component it uses: a variant or text value, or `disabled`. */
 export interface ReferenceProp {
   name: string
-  value: string | true
+  value: string | boolean
 }
 
 /**
@@ -50,7 +51,7 @@ export interface IconReference {
  * a layer keeps its own look and state styles; the parent only places it.
  */
 const PLACEMENT =
-  /^(position|inset|left|top|right|bottom|(min-|max-)?(width|height)|margin(-.+)?|flex(-.+)?|align-self|justify-self|order|grid-(area|column|row)(-.+)?|transform(-origin)?|rotate|translate|scale|z-index)$/
+  /^(position|inset|left|top|right|bottom|(min-|max-)?(width|height)|margin(-.+)?|flex(-(grow|shrink|basis))?|align-self|justify-self|order|grid-(area|column|row)(-.+)?|transform(-origin)?|rotate|translate|scale|z-index)$/
 
 /** Whether a declaration places a layer rather than drawing it. */
 export const isPlacement = (property: string) => PLACEMENT.test(property)
@@ -132,6 +133,13 @@ export function referenceValues(
     const value = shownText(graph, instance, text.id)
     if (value !== undefined && value !== text.default) props.push({ name: text.name, value })
   }
+  for (const prop of component.booleans) {
+    const assignments = instance.componentPropertyAssignments
+    const value = Object.hasOwn(assignments, prop.id)
+      ? assignments[prop.id] === 'true'
+      : prop.default
+    if (value !== prop.default) props.push({ name: prop.name, value })
+  }
   return { props, model }
 }
 
@@ -156,7 +164,10 @@ function usedLayer(
     .find((found) => found !== undefined && layerKind(graph, found) === element.kind)
   if (!node) return null
   const main = node.type === 'INSTANCE' ? instanceMainComponent(graph, node) : undefined
-  const component = main ? references.get(ownerId(graph, main)) : undefined
+  // An instance changed beyond its properties draws its own layers, which the component's
+  // props could not reproduce.
+  const component =
+    main && drawsAsMain(graph, node, main) ? references.get(ownerId(graph, main)) : undefined
   if (component)
     return {
       type: 'reference',

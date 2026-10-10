@@ -1,6 +1,8 @@
+import { PLACEMENT } from '#dom-css/behaviours/states/layers'
 import { tokenStylesheet } from '#dom-css/tokens/stylesheet'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 import { compact } from 'es-toolkit/array'
+import { omit } from 'es-toolkit/object'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -87,6 +89,11 @@ export interface StoryTarget {
 export interface StoryPlan {
   stories?: StoryMode
   title?: string
+  /**
+   * Whether a Vue or React export generates a component for the file, as it does by default,
+   * or keeps static stories of its variants.
+   */
+  generate?: boolean
 }
 
 export interface StorybookFile extends ExportHTMLFile {
@@ -128,7 +135,8 @@ function designLink(
 
 /** Story export names, which also name the design images. */
 function storyNames(group: StoryGroup): string[] {
-  const taken = new Set<string>()
+  // Named apart from the module's own types, `Story` and `Args`.
+  const taken = new Set(['story', 'args'])
   const key = (name: string) => name.toLowerCase()
   return group.variants.map((variant, index) => {
     // The first variant, the one the design shows at rest, is the file's Default story.
@@ -143,14 +151,19 @@ function storyLabel(group: StoryGroup, values: string[], index: number): string 
 }
 
 /**
- * A variant drawn on its own, as a story shows it: its root hugs its content where the design
- * gives it no width, rather than filling the story's canvas, and sizes include padding and
+ * A variant drawn on its own, as a story shows it: its root, placed nowhere in particular, hugs
+ * its content where the design gives it no width, rather than filling the story's canvas, and sizes include padding and
  * borders, which no page reset around the story says.
  */
 function standalone(document: DesignDocument): DesignDocument {
   const visit = (node: DesignNode, root: boolean) => {
     if (node.type !== 'element') return
-    const style: DesignStyleDeclaration = { ...node.inlineStyle }
+    // A variant's root drops where the set places it, which is not where the story draws it,
+    // and stays the containing block of the layers placed inside it.
+    const placed = root && Object.hasOwn(node.inlineStyle ?? {}, 'position')
+    const style: DesignStyleDeclaration = root
+      ? { ...omit({ ...node.inlineStyle }, PLACEMENT), ...(placed ? { position: 'relative' } : {}) }
+      : { ...node.inlineStyle }
     const has = (property: string) => Object.hasOwn(style, property)
     if ((has('width') || has('height')) && !has('box-sizing')) style['box-sizing'] = 'border-box'
     if (root && !has('width')) style.width = 'fit-content'
@@ -210,6 +223,7 @@ interface StoryEntry {
   group: StoryGroup
   file: string
   mode: Exclude<StoryMode, 'none'>
+  generate: boolean
 }
 
 /**
@@ -244,7 +258,8 @@ function storyEntries(
       const file = claimName(identifierName(group.name, 'Component'), takenFiles, {
         key: (name) => name.toLowerCase()
       })
-      if (!pageId || page.id === pageId) entries.push({ page, group, file, mode })
+      const generate = planned?.generate ?? true
+      if (!pageId || page.id === pageId) entries.push({ page, group, file, mode, generate })
     }
   }
   return entries
@@ -277,8 +292,8 @@ function generatedModels(
       itemName: itemNames.get(file)
     })
   const alone = new Map<string, ComponentModel>()
-  for (const { group, file } of entries) {
-    const component = group.set && model(group.set, file)
+  for (const { group, file, generate } of entries) {
+    const component = generate && group.set && model(group.set, file)
     if (group.set && component) alone.set(group.set.id, component)
   }
   const models = new Map<string, ComponentModel>()

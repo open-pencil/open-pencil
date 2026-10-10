@@ -15,6 +15,8 @@ export type VueAttribute =
   | { type: 'bound'; name: string; expression: SyntaxNode }
   /** `v-model="expression"`, or `v-model:argument` */
   | { type: 'model'; argument?: string; expression: SyntaxNode }
+  /** `v-if="expression"`: the element renders only while the expression holds. */
+  | { type: 'if'; expression: SyntaxNode }
 
 export interface VueElement {
   type: 'element'
@@ -54,6 +56,8 @@ export const model = (expression: SyntaxNode, argument?: string): VueAttribute =
   expression
 })
 
+export const renderIf = (expression: SyntaxNode): VueAttribute => ({ type: 'if', expression })
+
 export const element = (
   tag: string,
   attributes: VueAttribute[] = [],
@@ -71,6 +75,7 @@ function printAttribute(item: VueAttribute): string {
   if (item.type === 'static') return `${item.name}="${escapeAttribute(item.value)}"`
   const value = escapeAttribute(printExpression(item.expression))
   if (item.type === 'bound') return `:${item.name}="${value}"`
+  if (item.type === 'if') return `v-if="${value}"`
   return `${item.argument ? `v-model:${item.argument}` : 'v-model'}="${value}"`
 }
 
