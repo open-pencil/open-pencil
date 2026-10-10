@@ -2,7 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core/editor'
+import {
+  createEditor,
+  graphFromDocumentChange,
+  isEmptyDocumentChange
+} from '@open-pencil/core/editor'
 import { readComments, writeComments, type CommentThread } from '@open-pencil/scene-graph'
 
 function setup() {
@@ -142,6 +146,29 @@ describe('document changes', () => {
     expect(editor.graph.getNode(badge.id)).toBeUndefined()
   })
 
+  test('the past side of a move to another page keeps the layer on its first page', () => {
+    const { editor, pageId, card } = setup()
+    const second = editor.graph.addPage('Second')
+    const finish = editor.captureDocumentChange(pageId)
+    editor.graph.reparentNode(card.id, second.id)
+    const change = finish()
+
+    const before = expectDefined(graphFromDocumentChange(editor.graph, change, 'before'), 'before')
+    const after = expectDefined(graphFromDocumentChange(editor.graph, change, 'after'), 'after')
+    expect(before.getNode(card.id)?.parentId).toBe(pageId)
+    expect(before.getNode(pageId)?.childIds).toContain(card.id)
+    expect(after.getNode(pageId)?.childIds).not.toContain(card.id)
+  })
+
+  test('a parent cycle in bad data does not hang recording', () => {
+    const { editor, pageId, card, title } = setup()
+    // Nothing in the graph's API makes a cycle; a damaged file can.
+    expectDefined(editor.graph.getNode(card.id), 'card').parentId = title.id
+    const finish = editor.captureDocumentChange(pageId)
+    editor.graph.updateNode(title.id, { text: 'Changed' })
+    expect(isEmptyDocumentChange(finish())).toBe(false)
+  })
+
   test('undo and redo restore layers on other pages', () => {
     const { editor } = setup()
     const second = editor.graph.addPage('Second')
@@ -215,7 +242,11 @@ describe('document changes', () => {
     writeComments(graph, [thread('first', pageId), thread('second', pageId)])
     const change = finish()
     // Someone comments after the step.
-    writeComments(graph, [thread('first', pageId), thread('second', pageId), thread('third', pageId)])
+    writeComments(graph, [
+      thread('first', pageId),
+      thread('second', pageId),
+      thread('third', pageId)
+    ])
 
     editor.restoreDocumentChange(change, 'before')
     expect(graph.getNode(graph.rootId)?.name).toBe('Document')

@@ -32,8 +32,9 @@ export function graphFromPageSnapshot(
 
 /**
  * A standalone copy of the document with the page the change ran on, on one side of the change.
- * The source must be as the change left it, as it is right after the edit. Other pages are left
- * empty.
+ * The source must be as the change left it, as it is right after the edit. The before side also
+ * copies the other pages the change touched, so layers it moved between pages can move back;
+ * pages it did not touch are left empty.
  */
 export function graphFromDocumentChange(
   source: SceneGraph,
@@ -42,7 +43,9 @@ export function graphFromDocumentChange(
 ): SceneGraph | null {
   const page = source.getNode(change.pageId)
   if (!page) return null
-  const graph = pageContext(source, page.id, page.childIds)
+  const pageIds = side === 'before' ? change.pageIds : [page.id]
+  const layerIds = pageIds.flatMap((id) => source.getNode(id)?.childIds ?? [])
+  const graph = pageContext(source, page.id, layerIds)
   if (side === 'before') applyDocumentChange(graph, change, 'before')
   graph.clearAbsPosCache()
   return graph

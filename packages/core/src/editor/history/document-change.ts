@@ -68,7 +68,8 @@ export interface DocumentChange {
   collections: RecordChange<VariableCollection>[]
 }
 
-type Lookup = (id: string) => SceneNode | undefined
+/** Layers by id: the live graph's, or those captured before the edit. */
+type Lookup = Pick<ReadonlyMap<string, SceneNode>, 'get' | 'size'>
 
 const NESTED_FIELDS: ReadonlySet<keyof SceneNode> = new Set(['childIds', 'parentId', 'source'])
 const SOURCE_PAYLOAD: ReadonlySet<keyof SourceMetadata> = new Set(['fig'])
@@ -157,16 +158,26 @@ function capturePage(graph: SceneGraph, pageId: string, captured: Map<string, Sc
   }
 }
 
-function pageOf(nodes: Lookup, id: string): string | null {
-  for (let node = nodes(id); node; node = node.parentId ? nodes(node.parentId) : undefined) {
-    if (node.type === 'CANVAS') return node.id
+/**
+ * A layer and its ancestors, nearest first. Like `SceneGraph.closest`, the walk visits at most as
+ * many layers as there are, so a parent cycle in bad data cannot hang it.
+ */
+function* lineage(nodes: Lookup, id: string): Generator<SceneNode> {
+  let node = nodes.get(id)
+  for (let steps = 0; node && steps < nodes.size; steps++) {
+    yield node
+    node = node.parentId ? nodes.get(node.parentId) : undefined
   }
+}
+
+function pageOf(nodes: Lookup, id: string): string | null {
+  for (const node of lineage(nodes, id)) if (node.type === 'CANVAS') return node.id
   return null
 }
 
 function depthIn(nodes: Lookup, id: string): number {
   let depth = 0
-  for (let node = nodes(id); node?.parentId; node = nodes(node.parentId)) depth++
+  for (const node of lineage(nodes, id)) if (node.parentId) depth++
   return depth
 }
 
@@ -244,7 +255,7 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
     created: (node) => created.add(node.id),
     before: (node) => {
       if (captured.has(node.id) || created.has(node.id)) return
-      const page = pageOf((id) => graph.getNode(id), node.id)
+      const page = pageOf(graph.nodes, node.id)
       if (page && !capturedPages.has(page)) {
         capturedPages.add(page)
         capturePage(graph, page, captured)
@@ -266,8 +277,6 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
       variables: diffRecords(variables, graph.variables),
       collections: diffRecords(collections, graph.variableCollections)
     }
-    const before: Lookup = (id) => captured.get(id)
-    const after: Lookup = (id) => graph.getNode(id)
     const pageIds = new Set<string>()
     const touched = new Set([
       ...impact.changedNodeIds,
@@ -283,15 +292,16 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
       const kept =
         previous && current && id === graph.rootId ? withCommentsOf(previous, current) : previous
       recordLayer(change, id, kept, current)
-      for (const page of [pageOf(before, id), pageOf(after, id)]) if (page) pageIds.add(page)
+      for (const page of [pageOf(captured, id), pageOf(graph.nodes, id)])
+        if (page) pageIds.add(page)
     }
     change.pageIds = [...pageIds]
     const byDepth = (nodes: Lookup) => (a: { id: string }, b: { id: string }) =>
       depthIn(nodes, a.id) - depthIn(nodes, b.id)
-    change.created.sort(byDepth(after))
-    change.children.after.sort(byDepth(after))
-    change.deleted.sort(byDepth(before))
-    change.children.before.sort(byDepth(before))
+    change.created.sort(byDepth(graph.nodes))
+    change.children.after.sort(byDepth(graph.nodes))
+    change.deleted.sort(byDepth(captured))
+    change.children.before.sort(byDepth(captured))
     return change
   }
 }
