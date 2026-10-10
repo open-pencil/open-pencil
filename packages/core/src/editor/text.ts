@@ -108,17 +108,19 @@ export function createTextActions(ctx: EditorContext) {
   /**
    * Typing resizes auto-sized text and lays out its auto-layout ancestors as it goes, so a Hug
    * frame grows with its label while it is edited, as in Figma. A size in `changes`, measured
-   * from the edit's own paragraph, wins over the measurement.
+   * from the edit's own paragraph, wins over the measurement. A keystroke that leaves the text's
+   * size as it was lays nothing out.
    */
   function updateTextEditNode(nodeId: string, changes: Partial<SceneNode>) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
+    const { width, height } = node
     ctx.graph.updateNode(nodeId, {
       ...textAutoResizeChanges(node, changes),
       ...changes,
       ...pathTextEditChanges(node, changes)
     })
-    ctx.runLayoutForNode(nodeId)
+    if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
   }
 
   function startTextEditing(nodeId: string) {
