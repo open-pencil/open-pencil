@@ -44,6 +44,7 @@
   "truncationDisabled": "Отключена",
   "truncationEnding": "Многоточие в конце",
   "maxLines": "Максимум строк",
+  "listsAndParagraphs": "Списки и абзацы",
   "listStyle": "Стиль списка",
   "listNone": "Без списка",
   "listBulleted": "Маркированный список",

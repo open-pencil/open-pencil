@@ -54,6 +54,7 @@
   "truncationDisabled": "無効",
   "truncationEnding": "末尾を省略",
   "maxLines": "最大行数",
+  "listsAndParagraphs": "リストと段落",
   "listStyle": "リストスタイル",
   "listNone": "リストなし",
   "listBulleted": "箇条書きリスト",

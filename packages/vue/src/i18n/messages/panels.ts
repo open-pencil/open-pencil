@@ -183,6 +183,7 @@ export const panelMessageDefaults = {
   truncationDisabled: 'Disabled',
   truncationEnding: 'Ending ellipsis',
   maxLines: 'Maximum lines',
+  listsAndParagraphs: 'Lists and paragraphs',
   listStyle: 'List style',
   listNone: 'No list',
   listBulleted: 'Bulleted list',

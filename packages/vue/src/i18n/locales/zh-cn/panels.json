@@ -44,6 +44,7 @@
   "truncationDisabled": "禁用",
   "truncationEnding": "末尾省略号",
   "maxLines": "最大行数",
+  "listsAndParagraphs": "列表和段落",
   "listStyle": "列表样式",
   "listNone": "无列表",
   "listBulleted": "项目符号列表",
