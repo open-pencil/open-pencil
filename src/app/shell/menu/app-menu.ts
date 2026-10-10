@@ -31,6 +31,7 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
+import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
   AppMenuEntry,
@@ -42,7 +43,6 @@ import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { saveDocumentToStorage } from '@/app/storage/workspace/save'
 import { closeTab, activeTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
@@ -106,6 +106,7 @@ export function useAppMenu() {
     save: 'save',
     'save-as': 'saveAs',
     'save-to-storage': 'saveToStorage',
+    'save-to-cloud': 'saveToCloud',
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',
@@ -170,9 +171,7 @@ export function useAppMenu() {
     },
     open: () => void openFileDialog(),
     'open-storage-workspace': () => openStorageWorkspace(router),
-    save: () => void store.saveFigFile(),
-    'save-as': () => void store.saveFigFileAs(),
-    'save-to-storage': () => void saveDocumentToStorage(store),
+    ...createSaveMenuActions(store),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
     close: () => {

@@ -1,11 +1,11 @@
 import { activeStorageProviderID, isStorageConfigured } from '@/app/integrations/storage'
-import type { StorageDocumentBinding, StorageProviderID } from '@/app/integrations/storage/types'
+import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { rememberRecentStorageDocument } from '@/app/recent-files'
 import { openSettingsDialog } from '@/app/settings/dialog'
 
 type StorageSaveTarget = {
   state: { documentName: string }
-  saveFigFileToStorage: (providerId: StorageProviderID) => Promise<boolean>
+  saveFigFileToStorage: (location: StorageLocation) => Promise<boolean>
   getStorageBinding: () => StorageDocumentBinding | null
 }
 
@@ -16,7 +16,7 @@ export async function saveDocumentToStorage(store: StorageSaveTarget): Promise<b
     openSettingsDialog('storage')
     return false
   }
-  const saved = await store.saveFigFileToStorage(providerId)
+  const saved = await store.saveFigFileToStorage({ providerId })
   const binding = store.getStorageBinding()
   if (saved && binding) {
     rememberRecentStorageDocument(binding, store.state.documentName)

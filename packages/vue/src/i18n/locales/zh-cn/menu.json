@@ -11,6 +11,7 @@
   "save": "保存",
   "saveAs": "另存为…",
   "saveToStorage": "保存到存储工作区…",
+  "saveToCloud": "保存到云端…",
   "exportSelection": "导出所选内容…",
   "autosave": "自动保存到本地文件",
   "copy": "复制",

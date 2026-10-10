@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { CloudSyncState } from '@/components/home/cloud/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -34,6 +34,15 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudStatus()
+const popoverOpen = ref(false)
+/** Every action leads somewhere else, so the popover closes first. */
+function act(action: 'share' | 'openWorkspace' | 'resolve' | 'retry') {
+  popoverOpen.value = false
+  if (action === 'share') emit('share')
+  else if (action === 'openWorkspace') emit('openWorkspace')
+  else if (action === 'resolve') emit('resolve')
+  else emit('retry')
+}
 const popover = usePopoverUI({ content: 'w-72 p-3' })
 const summary = computed(() => {
   if (viewOnly)
@@ -60,7 +69,7 @@ const summary = computed(() => {
 </script>
 
 <template>
-  <PopoverRoot>
+  <PopoverRoot v-model:open="popoverOpen">
     <Tip :label="summary.label" as-child>
       <PopoverTrigger
         :class="ui.trigger()"
@@ -113,7 +122,7 @@ const summary = computed(() => {
             size="sm"
             color="primary"
             variant="solid"
-            @click="emit('resolve')"
+            @click="act('resolve')"
           >
             Choose a version
           </AppButton>
@@ -121,15 +130,15 @@ const summary = computed(() => {
             v-else-if="state === 'error' && !viewOnly"
             size="sm"
             variant="outline"
-            @click="emit('retry')"
+            @click="act('retry')"
           >
             Try again
           </AppButton>
-          <AppButton size="sm" variant="outline" @click="emit('share')">
+          <AppButton size="sm" variant="outline" @click="act('share')">
             <template #leading><icon-lucide-user-plus class="size-3.5" /></template>
             Share
           </AppButton>
-          <AppButton size="sm" variant="ghost" @click="emit('openWorkspace')"
+          <AppButton size="sm" variant="ghost" @click="act('openWorkspace')"
             >Open workspace</AppButton
           >
         </div>

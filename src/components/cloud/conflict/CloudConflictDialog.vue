@@ -40,7 +40,9 @@ const options = computed(() => [
   {
     value: 'use-mine' as const,
     label: 'Replace it with your version',
-    description: `${cloud.by}’s latest changes are replaced for everyone.`
+    description: cloud.by
+      ? `${cloud.by}’s latest changes are replaced for everyone.`
+      : 'The newer version on the server is replaced for everyone.'
   }
 ])
 const confirmLabel = computed(
@@ -76,7 +78,9 @@ const confirmLabel = computed(
           </span>
           <figcaption :class="ui.caption()">
             <span :class="ui.versionLabel()">{{ version.label }}</span>
-            <span :class="ui.versionMeta()">{{ version.by }} · {{ version.savedAgo }}</span>
+            <span :class="ui.versionMeta()">
+              {{ version.by ? `${version.by} · ${version.savedAgo}` : version.savedAgo }}
+            </span>
           </figcaption>
         </figure>
       </div>

@@ -14,6 +14,7 @@ export const menuMessageDefaults = {
   save: 'Save',
   saveAs: 'Save as…',
   saveToStorage: 'Save to storage…',
+  saveToCloud: 'Save to Cloud…',
   exportSelection: 'Export selection…',
   exportSelectionAsPNG: 'Export selection as PNG',
   exportSelectionAsSVG: 'Export selection as SVG',

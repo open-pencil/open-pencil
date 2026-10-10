@@ -74,6 +74,7 @@ export const APP_MENU_SCHEMA = [
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
       { id: 'save-to-storage', label: 'Save to Storage…' },
+      { id: 'save-to-cloud', label: 'Save to Cloud…' },
       { type: 'separator' },
       {
         id: 'export-selection',

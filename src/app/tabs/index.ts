@@ -312,6 +312,48 @@ function failPreparation(
   })
 }
 
+async function showStorageDocument(
+  store: EditorStore,
+  binding: StorageDocumentBinding,
+  document: StorageDocument,
+  load: DocumentLoadSession
+): Promise<void> {
+  const bytes = await readStorageDocument(binding, document, load)
+  const fileBytes = new Uint8Array(bytes.byteLength)
+  fileBytes.set(bytes)
+  const file = new File([fileBytes.buffer], `${document.name}.fig`, {
+    type: 'application/octet-stream'
+  })
+  load.update({ phase: 'decoding', detail: document.name })
+  const imported = await readFigForTab(file, load.signal)
+  await showImportedGraph(
+    store,
+    imported,
+    () => store.setStorageDocumentSource(binding, document.name),
+    load
+  )
+}
+
+/** Shows what this device now holds for a tab's stored document, as after a conflict. */
+export async function reloadStorageDocumentInTab(store: EditorStore): Promise<void> {
+  const binding = store.getStorageBinding()
+  if (!binding) return
+  const name = store.state.documentName
+  const load = store.preparationController.begin({ kind: 'storage-open', subject: name })
+  try {
+    await showStorageDocument(
+      store,
+      binding,
+      { id: binding.documentId, name, updatedAt: new Date().toISOString() },
+      load
+    )
+    load.complete()
+  } catch (error) {
+    failPreparation(load, 'read-failed', error)
+    throw error
+  }
+}
+
 export async function openStorageDocumentInNewTab(
   document: StorageDocument,
   location: StorageLocation = { providerId: activeStorageProviderID.value }
@@ -335,21 +377,7 @@ export async function openStorageDocumentInNewTab(
   })
   let succeeded = false
   try {
-    const bytes = await readStorageDocument(binding, document, load)
-
-    const fileBytes = new Uint8Array(bytes.byteLength)
-    fileBytes.set(bytes)
-    const file = new File([fileBytes.buffer], `${document.name}.fig`, {
-      type: 'application/octet-stream'
-    })
-    load.update({ phase: 'decoding', detail: document.name })
-    const imported = await readFigForTab(file, load.signal)
-    await showImportedGraph(
-      store,
-      imported,
-      () => store.setStorageDocumentSource(binding, document.name),
-      load
-    )
+    await showStorageDocument(store, binding, document, load)
     rememberRecentStorageDocument(binding, document.name)
     succeeded = true
   } catch (error) {

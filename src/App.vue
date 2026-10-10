@@ -18,6 +18,7 @@ import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import CloudConnectHost from '@/components/cloud/connect/CloudConnectHost.vue'
+import CloudSaveHost from '@/components/cloud/save/CloudSaveHost.vue'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
@@ -63,6 +64,7 @@ onMounted(() => {
       <SettingsDialog />
       <AISetupDialog />
       <CloudConnectHost />
+      <CloudSaveHost />
       <RecoveryDialog />
       <UnsavedChangesDialog />
       <PublishLibraryDialog />

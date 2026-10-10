@@ -71,27 +71,29 @@ async function remove() {
 </script>
 
 <template>
-  <CloudSettingsPanel
-    :servers="entries"
-    @connect="(kind) => openCloudConnect({ kind })"
-    @sign-in="(id) => openCloudConnect({ serverId: id })"
-    @manage-account="manageAccount"
-    @show-on-home="showCloudServerOnHome"
-    @sign-out="signOut"
-    @remove="(id) => (removing = entries.find((entry) => entry.id === id) ?? null)"
-  />
-  <AppConfirmationDialog
-    :open="removing !== null"
-    tone="danger"
-    :heading="`Remove ${removing?.host ?? ''}?`"
-    :description="
-      removing?.unsaved
-        ? `You’re signed out and its workspaces leave Home on this device. ${removing.unsaved} documents have changes that haven’t reached the server yet; removing it discards them.`
-        : 'You’re signed out and its workspaces leave Home on this device. Documents stay on the server.'
-    "
-    cancel-label="Cancel"
-    :confirm-label="removing?.unsaved ? 'Remove and discard changes' : 'Remove'"
-    @update:open="(open) => !open && (removing = null)"
-    @confirm="remove"
-  />
+  <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+    <CloudSettingsPanel
+      :servers="entries"
+      @connect="(kind) => openCloudConnect({ kind })"
+      @sign-in="(id) => openCloudConnect({ serverId: id })"
+      @manage-account="manageAccount"
+      @show-on-home="showCloudServerOnHome"
+      @sign-out="signOut"
+      @remove="(id) => (removing = entries.find((entry) => entry.id === id) ?? null)"
+    />
+    <AppConfirmationDialog
+      :open="removing !== null"
+      tone="danger"
+      :heading="`Remove ${removing?.host ?? ''}?`"
+      :description="
+        removing?.unsaved
+          ? `You’re signed out and its workspaces leave Home on this device. ${removing.unsaved} documents have changes that haven’t reached the server yet; removing it discards them.`
+          : 'You’re signed out and its workspaces leave Home on this device. Documents stay on the server.'
+      "
+      cancel-label="Cancel"
+      :confirm-label="removing?.unsaved ? 'Remove and discard changes' : 'Remove'"
+      @update:open="(open) => !open && (removing = null)"
+      @confirm="remove"
+    />
+  </div>
 </template>

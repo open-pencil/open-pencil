@@ -38,6 +38,7 @@ import {
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
+import CloudDocumentStatusHost from '@/components/cloud/status/CloudDocumentStatusHost.vue'
 import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
@@ -90,6 +91,7 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
         @dblclick="startRename"
         >{{ store.state.documentName }}</span
       >
+      <CloudDocumentStatusHost />
       <IconButton
         :label="settings.title"
         data-test-id="app-settings-trigger"
