@@ -317,6 +317,7 @@
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "reka-ui": "^2.10.5",
+        "shaders": "4.0.4",
         "storybook": "^10.6.1",
         "tsdown": "^0.22.14",
         "typescript": "~5.8.3",

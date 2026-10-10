@@ -23,6 +23,8 @@ export interface MarkupUses {
   /** Other generated components. */
   components: Set<string>
   icons: boolean
+  /** Effects of the `shaders` library its layers fill with. */
+  shaders: Set<string>
 }
 
 export const numeric = (name: string, value: number) =>

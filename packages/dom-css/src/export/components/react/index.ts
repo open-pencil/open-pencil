@@ -1,10 +1,12 @@
 import { HEADING_RESET } from '#dom-css/behaviours/reset'
 import { stateStylesToCSS } from '#dom-css/behaviours/states/css'
 import dedent from 'dedent'
+import { compact } from 'es-toolkit/array'
 import { omit } from 'es-toolkit/object'
 import { camelCase, upperFirst } from 'es-toolkit/string'
 
 import { es, jsx } from '@open-pencil/emit'
+import type { ShaderComponent } from '@open-pencil/scene-graph'
 
 import type {
   ComponentElement,
@@ -15,6 +17,14 @@ import type {
   GeneratedKind
 } from '../model'
 import type { ComponentReference } from '../references'
+import {
+  drawnEffects,
+  SHADER_CANVAS,
+  shaderCSS,
+  shaderEffectName,
+  shaderImport,
+  type ShaderLayer
+} from '../shaders'
 import {
   INPUT_PROPS,
   inputElement,
@@ -219,6 +229,42 @@ function bindingAttributes(
   })
 }
 
+/** A shader playing behind its layer's content, with telemetry off, as every export has it. */
+function shaderCanvas(shader: ShaderLayer, uses: MarkupUses, depth: number): es.SyntaxNode {
+  const effect =
+    (at: number) =>
+    (component: ShaderComponent): es.SyntaxNode => {
+      uses.shaders.add(component.type)
+      const children = drawnEffects(component.children).map(effect(at + 1))
+      return jsx.element(
+        shaderEffectName(component.type),
+        Object.entries(component.props ?? {}).map(([key, value]) =>
+          jsx.attribute(
+            key,
+            typeof value === 'string' ? jsx.stringValue(value) : jsx.container(es.json(value))
+          )
+        ),
+        children,
+        at
+      )
+    }
+  return jsx.element(
+    SHADER_CANVAS,
+    [
+      jsx.attribute('className', jsx.container(moduleClass(shader.className))),
+      jsx.attribute('disableTelemetry', null)
+    ],
+    drawnEffects(shader.preset.components).map(effect(depth + 1)),
+    depth
+  )
+}
+
+/** Words alone stay on the element's line, where a line break would add a space. */
+function wordsOnly(node: ComponentElement): boolean {
+  const only = node.children.length === 1 ? node.children[0]?.type : undefined
+  return !node.slot && !node.shader && (only === 'text' || only === 'textProp')
+}
+
 function designElement(node: ComponentElement, uses: MarkupUses, depth: number): es.SyntaxNode {
   const kind = uses.kind
   const root = node.part === 'root'
@@ -237,17 +283,16 @@ function designElement(node: ComponentElement, uses: MarkupUses, depth: number):
     jsx.attribute('className', jsx.container(classNameOf(node, root))),
     ...bindingAttributes(node, kind, native)
   ]
-  // Words alone stay on the element's line, where a line break would add a space.
-  const only = node.children.length === 1 ? node.children[0]?.type : undefined
-  const inline = !node.slot && (only === 'text' || only === 'textProp')
+  const inline = wordsOnly(node)
   // Radix puts an accordion item's trigger in a header, which carries the heading level.
   const header = kind === 'accordionItem' && node.part === 'trigger'
   const childDepth = depth + (header ? 2 : 1)
-  const children = node.children.map((child) => element(child, uses, childDepth))
+  const content = node.children.map((child) => element(child, uses, childDepth))
+  const shader = node.shader ? [shaderCanvas(node.shader, uses, childDepth)] : []
   const drawn = jsx.element(
     tagOf(node, kind),
     attributes,
-    node.slot ? [slotContent(node.slot, children, childDepth)] : children,
+    [...shader, ...(node.slot ? [slotContent(node.slot, content, childDepth)] : content)],
     depth + (header ? 1 : 0),
     inline
   )
@@ -450,11 +495,13 @@ export const reactComponent: ComponentGenerator = async (component) => {
     kind: component.kind,
     choice: component.choice,
     components: new Set(),
-    icons: false
+    icons: false,
+    shaders: new Set()
   }
   const body = element(component.tree, uses, 1)
   const imports = [
     ...(uses.icons ? ICONIFY_IMPORT : []),
+    ...(uses.shaders.size > 0 ? [shaderImport('shaders/react', uses.shaders)] : []),
     ...(radix
       ? es.fill(RADIX_IMPORT, {
           $Namespace: es.identifier(radix.namespace),
@@ -499,7 +546,7 @@ export const reactComponent: ComponentGenerator = async (component) => {
     files: [
       ...(item?.files ?? []),
       { path: `${component.name}.tsx`, content: `${jsx.printModule(program)}\n` },
-      { path: stylesPath, content: css }
+      { path: stylesPath, content: compact([css, shaderCSS(component.tree)]).join('\n') }
     ],
     entry: { path: `./${component.name}`, named: true },
     ...valueArg(component.kind, model)

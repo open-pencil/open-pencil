@@ -21,6 +21,7 @@ import {
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
+import { shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
 import { cssRules } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createElement, type ComponentType } from 'react'
@@ -33,6 +34,7 @@ const APP_PACKAGES = [
   'react-dom',
   'radix-ui',
   '@iconify/react',
+  'shaders',
   'storybook',
   '@types/react'
 ]
@@ -111,6 +113,30 @@ describe('generated React plain components', () => {
     const filled = render(component, { extra: createElement('b', null, 'Custom') })
     expect(filled).toContain('<b>Custom</b>')
     expect(filled).not.toContain('Note')
+  })
+})
+
+describe('generated React shader fills', () => {
+  test('play the shader behind the layer, with telemetry off, and type-check', async () => {
+    const { files, folder } = await generate(shaderHeroSet())
+    const source = files.find((file) => file.path === 'Hero.tsx')?.content ?? ''
+    const css = files.find((file) => file.path === 'Hero.module.css')?.content ?? ''
+
+    expect(await typeErrors(folder, 'Hero')).toEqual([])
+    expect(source).toMatch(
+      /import \{\s*Shader as ShaderCanvas,\s*Aurora as ShaderAurora,\s*FilmGrain as ShaderFilmGrain\s*\} from "shaders\/react"/
+    )
+    expect(source).toContain('<ShaderCanvas className={styles["hero-shader"]} disableTelemetry>')
+    expect(source).toContain(
+      '<ShaderAurora colorA="#ff3300" curtainCount={2} center={{ x: 0.5, y: 0 }} />'
+    )
+    // The shader comes first, so the title draws over it.
+    expect(source.indexOf('<ShaderCanvas')).toBeLessThan(source.indexOf('Northern lights'))
+    const styles = [...cssRules(css).values()]
+    expect(styles).toContainEqual(expect.objectContaining({ isolation: 'isolate' }))
+    expect(styles).toContainEqual(
+      expect.objectContaining({ position: 'absolute', inset: '0', 'z-index': '-1' })
+    )
   })
 })
 
