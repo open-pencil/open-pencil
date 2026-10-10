@@ -3,11 +3,7 @@ import * as v from 'valibot'
 import { behaviourSpecSchema } from '@open-pencil/scene-graph'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { defineTool } from '#core/tools/schema'
-
-const failure = (error: unknown) => ({
-  error: error instanceof Error ? error.message : String(error)
-})
+import { defineTool, toolFailure } from '#core/tools/schema'
 
 export const setBehaviour = defineTool({
   name: 'set_behaviour',
@@ -36,7 +32,7 @@ export const setBehaviour = defineTool({
       openpencil.getBehaviour(id)?.remove()
       return { ok: true }
     } catch (error) {
-      return failure(error)
+      return toolFailure(error)
     }
   }
 })
@@ -54,7 +50,7 @@ export const createSlot = defineTool({
     try {
       return { slot: new OpenPencilAPI(figma).createSlot(id) }
     } catch (error) {
-      return failure(error)
+      return toolFailure(error)
     }
   }
 })
@@ -75,7 +71,7 @@ export const getBehaviour = defineTool({
     try {
       return openpencil.getBehaviour(id)?.toJSON() ?? { behaviour: null }
     } catch (error) {
-      return failure(error)
+      return toolFailure(error)
     }
   }
 })

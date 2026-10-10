@@ -10,7 +10,10 @@ import { cliSourcePath } from '#tests/helpers/paths'
 import { makeSceneGraph } from '#tests/helpers/scene'
 
 /** A Storybook export without font files, which come from the network these tests leave out. */
-const STORYBOOK = ['--format', 'storybook', '--fonts', 'none']
+const STORYBOOK_EXPORT = ['--format', 'storybook', '--fonts', 'none']
+
+/** Static stories, whose files and design images most of these tests manage. */
+const STORYBOOK = [...STORYBOOK_EXPORT, '--framework', 'html']
 
 setDefaultTimeout(30_000)
 
@@ -41,8 +44,6 @@ test('export CLI writes Storybook stories with design images', async () => {
     'export',
     figPath,
     ...STORYBOOK,
-    '--framework',
-    'vue',
     '--font-policy',
     'allow',
     '--output',
@@ -53,7 +54,7 @@ test('export CLI writes Storybook stories with design images', async () => {
   expect(exitCode).toBe(0)
   expect(stdout).toContain('Exported 1 story files')
   const story = await Bun.file(join(output, 'Badge.stories.ts')).text()
-  expect(story).toContain("from '@storybook/vue3-vite'")
+  expect(story).toContain("from '@storybook/html-vite'")
   // Titled by the document's file name; its one page with components adds no level.
   expect(story).toContain("title: 'library/Badge'")
   const manifest: unknown = JSON.parse(await Bun.file(join(output, MANIFEST)).text())
@@ -91,6 +92,31 @@ test('export CLI replaces stale generated stories and keeps hand-written ones', 
   expect(await Bun.file(join(output, 'New.stories.ts')).exists()).toBe(true)
   expect((await outputEntries(output)).some((entry) => entry.endsWith('.design'))).toBe(false)
   expect(await Bun.file(join(output, 'Mine.stories.ts')).text()).toBe('export default {}\n')
+})
+
+test('export CLI re-exports generated components into the folder it wrote them to', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
+  const output = join(dir, 'stories')
+  const args = [
+    ...STORYBOOK_EXPORT,
+    '--framework',
+    'react',
+    '--no-design-images',
+    '--output',
+    output
+  ]
+  for (const name of ['Old', 'New']) {
+    const { exitCode } = await runOpenPencilCLI([
+      'export',
+      await writeComponentFixture(dir, [name]),
+      ...args
+    ])
+    expect(exitCode).toBe(0)
+  }
+  // The component and its stylesheet are the export's own, replaced like its stories.
+  expect(await Bun.file(join(output, 'New.tsx')).exists()).toBe(true)
+  expect(await Bun.file(join(output, 'Old.tsx')).exists()).toBe(false)
+  expect(await Bun.file(join(output, 'Old.module.css')).exists()).toBe(false)
 })
 
 test('export CLI keeps stories of other documents and refuses to overwrite them', async () => {

@@ -1,19 +1,15 @@
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import type { PagePoint } from '@/app/editor/pages/point'
+
 export const AGENT_KINDS = ['chat', 'acp', 'harness', 'mcp'] as const
 export type AgentKind = (typeof AGENT_KINDS)[number]
 
 export const AGENT_STATUSES = ['thinking', 'editing', 'idle'] as const
 export type AgentStatus = (typeof AGENT_STATUSES)[number]
 
-export interface PresencePoint {
-  x: number
-  y: number
-  pageId: string
-}
-
 /** A person's pointer, with the zoom they view it at so followers can match it. */
-export interface PersonPoint extends PresencePoint {
+export interface PersonPoint extends PagePoint {
   zoom?: number
 }
 
@@ -34,7 +30,7 @@ export interface AgentPresence {
   /** The page the agent works on, known before its first edit. */
   pageId?: string
   /** Where the agent last worked, derived from the nodes it touched. */
-  cursor?: PresencePoint
+  cursor?: PagePoint
   selection?: string[]
   /** Outlines, in world coordinates on the cursor's page, of what is not a layer yet. */
   outline?: Rect[]

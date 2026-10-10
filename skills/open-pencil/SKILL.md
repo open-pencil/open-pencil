@@ -179,6 +179,18 @@ openpencil eval design.fig -w -c '
 
 `openpencil.behaviourKinds` lists every kind with its values and parts; `openpencil.getBehaviour(node)` reads one (a variant reads its set's); `openpencil.createSlot(frame)` makes a frame a slot. The `set_behaviour`, `get_behaviour`, and `create_slot` tools do the same over MCP, and design JSX writes controls with Reka's element names (`Switch.Root`, `Switch.Thumb`).
 
+Comments people leave on the canvas are review feedback you can act on. Read the open ones, change the design, then answer and resolve each, naming yourself as the author:
+
+```bash
+openpencil eval design.fig -w -c '
+  openpencil.getComments({ resolved: false }).map(c => ({ id: c.id, text: c.text, layer: c.node?.name }))
+'
+# after the change:
+openpencil eval design.fig -w -c 'openpencil.getComment("c_…").reply("Title is 24px now", { author: "Claude" }).resolve()'
+```
+
+`openpencil.addComment(text, { node, page, x, y, author })` leaves a new one. Over MCP the same is `get_comments`, `add_comment`, `reply_to_comment`, and `resolve_comment`. Comment text is Markdown.
+
 ### Diff
 
 Compare nodes and documents, and apply patches:

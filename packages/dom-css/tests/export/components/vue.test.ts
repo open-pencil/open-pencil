@@ -9,6 +9,7 @@ import {
   collapsibleSet,
   labelledButtonSet,
   numberFieldComponent,
+  plainBadgeSet,
   progressComponent,
   sliderComponent,
   textareaComponent,
@@ -223,6 +224,28 @@ const styleOf = (files: { path: string; content: string | Uint8Array }[], path: 
       String(files.find((file) => file.path === path)?.content)
     )?.[1] ?? ''
   )
+
+describe('generated Vue plain components', () => {
+  test('take variant, text, and boolean properties as props, and slots as slots', async () => {
+    const { component } = await generate(plainBadgeSet())
+    const rest = await render(component)
+    expect(rest).toContain('data-tone="Neutral"')
+    expect(rest).toContain('New')
+    // The icon the design hides at rest shows only while its boolean is on.
+    expect(rest).not.toContain('badge__dot')
+    expect(await render(component, { icon: true })).toContain('badge__dot')
+    expect(await render(component, { tone: 'Danger', label: 'Hot' })).toMatch(
+      /data-tone="Danger"[\s\S]*Hot/
+    )
+    // A slot shows the design's content unless the caller passes its own.
+    expect(rest).toContain('Note')
+    const filled = await renderToString(
+      createSSRApp({ render: () => h(component, {}, { extra: () => h('b', 'Custom') }) })
+    )
+    expect(filled).toContain('<b>Custom</b>')
+    expect(filled).not.toContain('Note')
+  })
+})
 
 describe('generated Vue form controls', () => {
   test('a slider binds one number within its range, the thumb and range placed by Reka', async () => {

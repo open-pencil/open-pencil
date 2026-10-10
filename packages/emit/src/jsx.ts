@@ -94,6 +94,16 @@ export function element(
   }
 }
 
+/** `<>…</>`: children without an element around them, laid out as an element's are. */
+export function fragment(children: SyntaxNode[], depth: number): SyntaxNode {
+  return {
+    type: 'JSXFragment',
+    openingFragment: { type: 'JSXOpeningFragment' },
+    closingFragment: { type: 'JSXClosingFragment' },
+    children: children.length === 0 ? [] : indented(children, depth)
+  }
+}
+
 export function printJSX(node: SyntaxNode): string {
   return print(node, tsx({ quotes: 'double' }), { indent: '  ' }).code
 }

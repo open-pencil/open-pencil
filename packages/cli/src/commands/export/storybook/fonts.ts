@@ -22,15 +22,18 @@ export const storyFonts: WebFontFaceResolver = async (fonts, assetBasePath) => {
 }
 
 /**
- * The folder a document's font files go in, named by its path relative to the output, such as
- * `fonts/kit-design` for `../kit/design.fig`, so documents exported into one folder, even ones
- * with the same name, never share one; a one-page export adds the page.
+ * The folder a document's shared files, its fonts and design tokens, go in, named by its own
+ * folder and file name, such as `openpencil/kit-design` for `../kit/design.fig`, so documents of
+ * the same name in different folders exported together keep theirs apart; a one-page export
+ * adds the page.
  */
-export function fontFolder(source: string, page: string | undefined): string {
-  const name = [source.replace(/\.[^./]*$/, ''), page ?? '']
+export function documentFolder(source: string, page: string | undefined): string {
+  const parts = source.split('/').filter((part) => part !== '..' && part !== '.')
+  const file = (parts.pop() ?? '').replace(/\.[^.]*$/, '')
+  const name = [parts.at(-1) ?? '', file, page ?? '']
     .join('-')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  return `fonts/${name || 'document'}`
+  return `openpencil/${name || 'document'}`
 }

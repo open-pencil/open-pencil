@@ -11,6 +11,7 @@ import { propertiesTabs } from '@/theme/panel/properties-tabs'
 
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
+import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
@@ -21,6 +22,8 @@ const checkMessages = useDesignCheckMessages()
 const store = useEditorStore()
 
 const tabStyles = propertiesTabs()
+/** The Comment tool turns the sidebar into the comments list, as in Figma; the tabs keep their state. */
+const commenting = computed(() => store.state.activeTool === 'COMMENT')
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
 const problemCount = computed(() => {
@@ -37,7 +40,8 @@ const problemCount = computed(() => {
     class="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-panel"
     style="contain: paint layout style"
   >
-    <TabsRoot v-model="activeTab" class="flex min-h-0 flex-1 flex-col">
+    <CommentsPanel v-if="commenting" />
+    <TabsRoot v-show="!commenting" v-model="activeTab" class="flex min-h-0 flex-1 flex-col">
       <TabsList :class="tabStyles.list()">
         <TabsTrigger
           value="design"

@@ -25,7 +25,7 @@ import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
-import { fontFolder, storyFonts } from './fonts'
+import { documentFolder, storyFonts } from './fonts'
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
 import { readStoryRules, storyPlan } from './rules'
 
@@ -165,7 +165,7 @@ async function writeStories(
     pageId,
     plan: rules ? storyPlan(rules) : undefined,
     fonts: args.fonts === 'none' ? undefined : storyFonts,
-    fontFolder: fontFolder(source, args.page),
+    folder: documentFolder(source, args.page),
     // Titled by the document, so stories of documents exported together stay apart.
     document: basename(file, extname(file)),
     linkPath: linkPath(file),

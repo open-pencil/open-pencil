@@ -1,7 +1,7 @@
 import { behaviourArgs } from '#dom-css/behaviours/args'
 import { uniq } from 'es-toolkit/array'
 
-import { readBehaviour, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { restingVariant, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import type { StoryProp } from './module'
@@ -22,8 +22,8 @@ export interface StoryGroup {
   /** Layer the story file links to, when the group has a layer of its own. */
   linkNode?: string
   /**
-   * The component set, or standalone component with a behaviour, the group shows, which may
-   * generate a component of its own.
+   * The component set or standalone component the group shows, which may generate a component
+   * of its own; slash-named components grouped together have none.
    */
   set?: SceneNode
 }
@@ -54,13 +54,18 @@ function componentSetGroup(
   set: SceneNode
 ): StoryGroup {
   const definitions = set.componentPropertyDefinitions.filter((def) => def.type === 'VARIANT')
-  const variants = graph
+  // The variant at its default values opens the file as its Default story.
+  const first = restingVariant(graph, set)
+  const components = graph
     .getChildren(set.id)
     .filter((child) => child.type === 'COMPONENT' && isExported(child))
-    .map((component) => ({
-      values: definitions.map((def) => component.componentPropertyValues[def.name] ?? ''),
-      node: component
-    }))
+  const variants = [
+    ...components.filter((component) => component === first),
+    ...components.filter((component) => component !== first)
+  ].map((component) => ({
+    values: definitions.map((def) => component.componentPropertyValues[def.name] ?? ''),
+    node: component
+  }))
   const args = behaviourArgs(graph, set)
   const props = definitions.map((def, index): StoryProp => {
     const options = uniq([
@@ -96,8 +101,8 @@ function componentGroup(page: SceneNode, section: string, component: SceneNode):
     props: [],
     variants: [{ values: [], node: component }],
     linkNode: component.name,
-    // A standalone component with a behaviour, such as tabs, may generate a component too.
-    ...(readBehaviour(component) ? { set: component } : {})
+    // A standalone component generates a component of its own too, as a set does.
+    set: component
   }
 }
 

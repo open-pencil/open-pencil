@@ -5,6 +5,7 @@ import { onScopeDispose } from 'vue'
 import { editorCommandMetadata } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
+import { useComments } from '@/app/comments/use'
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -198,6 +199,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       run: ({ actions }) => actions.toggleUI()
     },
     { id: 'toggle-ai', keys: '$mod+KeyJ', run: ({ actions }) => actions.toggleAI() },
+    {
+      id: 'toggle-comments',
+      keys: appMenuTinykeysShortcut('view-comments') ?? 'Shift+KeyC',
+      run: () => useComments().toggleOnCanvas()
+    },
     {
       id: 'open-settings',
       keys: appMenuTinykeysShortcut('settings') ?? '$mod+Comma',

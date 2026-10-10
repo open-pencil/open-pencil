@@ -10,6 +10,7 @@ import {
   lintFix
 } from './analyze'
 import { designToComponentMap, designToTokens, importDesignTokens } from './codegen'
+import { addComment, getComments, replyToComment, resolveComment } from './comments'
 import {
   createComponent,
   createInstance,
@@ -121,6 +122,10 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   insertLibraryComponent,
   switchPage,
   pageBounds,
+  getComments,
+  addComment,
+  replyToComment,
+  resolveComment,
   getFontStatus,
   listFonts,
   listAvailableFonts,

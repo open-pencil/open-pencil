@@ -9,6 +9,7 @@ import type { Rect } from '../primitives'
 import {
   MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
+  type CommentThread,
   type EnabledLibraryBinding,
   type ExportSetting,
   type LayoutDirection,
@@ -130,6 +131,55 @@ const sourceLibraryPublication: v.GenericSchema<unknown, SourceLibraryPublicatio
   catalogSource: v.optional(v.string())
 })
 
+// Lenient on purpose: other tools may write comments, so missing fields get defaults and one
+// malformed thread is skipped instead of hiding every comment.
+const commentAuthorColor = v.fallback(
+  v.optional(v.object({ r: v.number(), g: v.number(), b: v.number(), a: v.number() })),
+  undefined
+)
+
+const commentReply = v.object({
+  id: v.string(),
+  author: v.fallback(v.string(), ''),
+  authorColor: commentAuthorColor,
+  text: v.fallback(v.string(), ''),
+  createdAt: v.fallback(v.string(), ''),
+  deleted: v.optional(v.boolean())
+})
+
+const commentThread = v.object({
+  id: v.string(),
+  pageId: v.string(),
+  pageName: v.optional(v.string()),
+  nodeId: v.optional(v.nullable(v.string())),
+  nodeName: v.optional(v.nullable(v.string())),
+  offsetX: v.optional(v.number()),
+  offsetY: v.optional(v.number()),
+  x: v.fallback(v.number(), 0),
+  y: v.fallback(v.number(), 0),
+  author: v.fallback(v.string(), ''),
+  authorColor: commentAuthorColor,
+  text: v.fallback(v.string(), ''),
+  createdAt: v.fallback(v.string(), ''),
+  updatedAt: v.fallback(v.string(), ''),
+  resolved: v.fallback(v.boolean(), false),
+  resolvedAt: v.optional(v.nullable(v.string())),
+  deleted: v.optional(v.boolean()),
+  replies: v.fallback(v.array(commentReply), [])
+})
+
+const comments: v.GenericSchema<unknown, CommentThread[]> = v.pipe(
+  v.array(v.unknown()),
+  v.transform((items) =>
+    items.flatMap((item) => {
+      const parsed = v.safeParse(commentThread, item)
+      if (!parsed.success) return []
+      const thread = parsed.output
+      return [{ ...thread, updatedAt: thread.updatedAt || thread.createdAt }]
+    })
+  )
+)
+
 /**
  * Every plugin-data entry OpenPencil writes under {@link OPEN_PENCIL_PLUGIN_ID}: state Figma's
  * format has no field for. Add a key here, never as a string elsewhere, so reading and writing
@@ -157,6 +207,8 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     'bookkeeping',
     sourceLibraryPublication
   ),
+  /** Canvas comment threads, deleted ones included, on the DOCUMENT node. */
+  comments: jsonPluginDataField('comments', 'bookkeeping', comments),
   /** Unit and CSS expressions, on each VARIABLE. */
   token: jsonPluginDataField('token', 'format', token),
   /** Mode conditions by mode id, on each VARIABLE_SET. */

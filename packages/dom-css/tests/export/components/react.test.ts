@@ -7,6 +7,7 @@ import {
   accordionComponent,
   badgeToggleSet,
   numberFieldComponent,
+  plainBadgeSet,
   progressComponent,
   sliderComponent,
   textareaComponent,
@@ -92,7 +93,48 @@ async function typeErrors(folder: string, name: string): Promise<string[]> {
 const render = (component: ComponentType<Props>, props: Props = {}) =>
   renderToStaticMarkup(createElement(component, props))
 
+describe('generated React plain components', () => {
+  test('take variant, text, boolean, and slot properties as props, and type-check', async () => {
+    const { component, folder } = await generate(plainBadgeSet())
+    expect(await typeErrors(folder, 'Badge')).toEqual([])
+    const rest = render(component)
+    expect(rest).toContain('data-tone="Neutral"')
+    // The icon the design hides at rest is an element only while its boolean is on.
+    const elements = (html: string) => html.match(/<div/g)?.length
+    expect(elements(rest)).toBe(2)
+    expect(elements(render(component, { icon: true }))).toBe(3)
+    expect(render(component, { tone: 'Danger', label: 'Hot' })).toMatch(
+      /data-tone="Danger"[\s\S]*Hot/
+    )
+    // A slot shows the design's content unless the caller passes its own.
+    expect(rest).toContain('Note')
+    const filled = render(component, { extra: createElement('b', null, 'Custom') })
+    expect(filled).toContain('<b>Custom</b>')
+    expect(filled).not.toContain('Note')
+  })
+})
+
 describe('generated React form controls', () => {
+  test('import the types a number field with a slot uses, and type-check', async () => {
+    const fixture = numberFieldComponent()
+    const { graph, set } = fixture
+    graph.updateNode(set.id, {
+      componentPropertyDefinitions: [
+        ...set.componentPropertyDefinitions,
+        { id: 'hint', name: 'Hint', type: 'SLOT', defaultValue: '' }
+      ]
+    })
+    const hint = graph.createNode('FRAME', set.id, {
+      name: 'Hint',
+      width: 20,
+      height: 20,
+      componentPropertyReferences: [{ propertyId: 'hint', field: 'SLOT_CONTENT' }]
+    })
+    graph.createNode('TEXT', hint.id, { name: 'Note', text: '?' })
+    const { folder } = await generate(fixture)
+    expect(await typeErrors(folder, 'Quantity')).toEqual([])
+  })
+
   test('type-check against Radix and React', async () => {
     for (const fixture of [
       sliderComponent(),

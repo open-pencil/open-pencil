@@ -11,12 +11,13 @@ export const RULES_FILE = 'openpencil.stories.json'
 
 /**
  * A rule for the story files whose `<page>/<name>` path matches its glob: which stories they
- * have, and a title template with `{document}`, `{page}`, `{name}`, and `{path}`, the title
- * they would have.
+ * have, whether a Vue or React export generates their component, and a title template with
+ * `{document}`, `{page}`, `{name}`, and `{path}`, the title they would have.
  */
 const StoryRule = v.object({
   match: v.pipe(v.string(), v.minLength(1)),
   stories: v.optional(v.picklist(STORY_MODES)),
+  generate: v.optional(v.boolean()),
   title: v.optional(v.pipe(v.string(), v.minLength(1)))
 })
 
@@ -65,6 +66,7 @@ export function storyPlan(rules: StoryRules): (target: StoryTarget) => StoryPlan
     for (const rule of rules.rules) {
       if (!matchesGlob(path, rule.match)) continue
       if (rule.stories) plan.stories = rule.stories
+      if (rule.generate !== undefined) plan.generate = rule.generate
       if (rule.title) plan.title = fillTitle(rule.title, target)
     }
     return plan

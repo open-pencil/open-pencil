@@ -40,6 +40,7 @@ import { createCanvasContextSelection } from '@/app/editor/canvas/context-select
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
@@ -312,6 +313,7 @@ const cursor = computed(() =>
           :followed="followView.label.value"
           @stop="followView.stop"
         />
+        <CommentsLayer v-if="isActivePane" :canvas-el="canvasRef" :drawn="drawnView" />
         <PreparationOverlay
           v-if="store.state.preparation && store.state.preparation.kind !== 'font-retry'"
           :preparation="store.state.preparation"

@@ -420,6 +420,48 @@ export interface SourceLibraryPublication {
   catalogSource?: string
 }
 
+/** A reply in a canvas comment thread. */
+export interface CommentReply {
+  id: string
+  author: string
+  /** The author's collaboration color when they wrote it, for their avatar. */
+  authorColor?: Color
+  /** Markdown: bold, italic, strikethrough, links and lists. */
+  text: string
+  createdAt: string
+  deleted?: boolean
+}
+
+/** A canvas comment thread, kept in the document's root plugin data. */
+export interface CommentThread {
+  id: string
+  pageId: string
+  /** Page name when the pin was placed, for readers of the raw data. */
+  pageName?: string
+  /** Top-level layer under the pin; the pin follows it when it moves. */
+  nodeId?: string | null
+  nodeName?: string | null
+  /** Offset from the layer's top-left corner, in canvas units. */
+  offsetX?: number
+  offsetY?: number
+  /** Canvas position when the pin was last saved; used when the layer is gone. */
+  x: number
+  y: number
+  author: string
+  /** The author's collaboration color when they wrote it, for their avatar. */
+  authorColor?: Color
+  /** Markdown: bold, italic, strikethrough, links and lists. */
+  text: string
+  createdAt: string
+  /** Bumped on every change. */
+  updatedAt: string
+  resolved: boolean
+  resolvedAt?: string | null
+  /** Deleted threads stay as tombstones so a stale copy cannot bring them back. */
+  deleted?: boolean
+  replies: CommentReply[]
+}
+
 export interface SceneNode {
   id: string
   type: NodeType

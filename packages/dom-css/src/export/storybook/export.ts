@@ -1,5 +1,8 @@
+import { PLACEMENT } from '#dom-css/behaviours/states/layers'
+import { tokenStylesheet } from '#dom-css/tokens/stylesheet'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 import { compact } from 'es-toolkit/array'
+import { omit } from 'es-toolkit/object'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -61,10 +64,10 @@ export interface ExportStorybookOptions {
    */
   fonts?: WebFontFaceResolver
   /**
-   * The folder the font files go in, which must differ for each document exported into the
-   * same place; `fonts/<document>` by default.
+   * The folder a document's shared files go in, its fonts and design tokens, which must differ
+   * for each document exported into the same place; `openpencil/<document>` by default.
    */
-  fontFolder?: string
+  folder?: string
 }
 
 /** How a story file shows its component: every variant, Default alone, a gallery, or not. */
@@ -86,6 +89,11 @@ export interface StoryTarget {
 export interface StoryPlan {
   stories?: StoryMode
   title?: string
+  /**
+   * Whether a Vue or React export generates a component for the file, as it does by default,
+   * or keeps static stories of its variants.
+   */
+  generate?: boolean
 }
 
 export interface StorybookFile extends ExportHTMLFile {
@@ -127,7 +135,8 @@ function designLink(
 
 /** Story export names, which also name the design images. */
 function storyNames(group: StoryGroup): string[] {
-  const taken = new Set<string>()
+  // Named apart from the module's own types, `Story` and `Args`.
+  const taken = new Set(['story', 'args'])
   const key = (name: string) => name.toLowerCase()
   return group.variants.map((variant, index) => {
     // The first variant, the one the design shows at rest, is the file's Default story.
@@ -142,14 +151,19 @@ function storyLabel(group: StoryGroup, values: string[], index: number): string 
 }
 
 /**
- * A variant drawn on its own, as a story shows it: its root hugs its content where the design
- * gives it no width, rather than filling the story's canvas, and sizes include padding and
+ * A variant drawn on its own, as a story shows it: its root, placed nowhere in particular, hugs
+ * its content where the design gives it no width, rather than filling the story's canvas, and sizes include padding and
  * borders, which no page reset around the story says.
  */
 function standalone(document: DesignDocument): DesignDocument {
   const visit = (node: DesignNode, root: boolean) => {
     if (node.type !== 'element') return
-    const style: DesignStyleDeclaration = { ...node.inlineStyle }
+    // A variant's root drops where the set places it, which is not where the story draws it,
+    // and stays the containing block of the layers placed inside it.
+    const placed = root && Object.hasOwn(node.inlineStyle ?? {}, 'position')
+    const style: DesignStyleDeclaration = root
+      ? { ...omit({ ...node.inlineStyle }, PLACEMENT), ...(placed ? { position: 'relative' } : {}) }
+      : { ...node.inlineStyle }
     const has = (property: string) => Object.hasOwn(style, property)
     if ((has('width') || has('height')) && !has('box-sizing')) style['box-sizing'] = 'border-box'
     if (root && !has('width')) style.width = 'fit-content'
@@ -209,6 +223,7 @@ interface StoryEntry {
   group: StoryGroup
   file: string
   mode: Exclude<StoryMode, 'none'>
+  generate: boolean
 }
 
 /**
@@ -243,7 +258,8 @@ function storyEntries(
       const file = claimName(identifierName(group.name, 'Component'), takenFiles, {
         key: (name) => name.toLowerCase()
       })
-      if (!pageId || page.id === pageId) entries.push({ page, group, file, mode })
+      const generate = planned?.generate ?? true
+      if (!pageId || page.id === pageId) entries.push({ page, group, file, mode, generate })
     }
   }
   return entries
@@ -276,8 +292,8 @@ function generatedModels(
       itemName: itemNames.get(file)
     })
   const alone = new Map<string, ComponentModel>()
-  for (const { group, file } of entries) {
-    const component = group.set && model(group.set, file)
+  for (const { group, file, generate } of entries) {
+    const component = generate && group.set && model(group.set, file)
     if (group.set && component) alone.set(group.set.id, component)
   }
   const models = new Map<string, ComponentModel>()
@@ -288,17 +304,25 @@ function generatedModels(
   return models
 }
 
+/** The folder a document's shared files go in, unless the caller names one. */
+function documentFolder(graph: SceneGraph, options: ExportStorybookOptions): string {
+  if (options.folder) return options.folder
+  const page = options.pageId ? graph.getNode(options.pageId)?.name : undefined
+  const named = compact([options.document ?? 'document', page]).map((name) => storyId(name))
+  return `openpencil/${named.join('-')}`
+}
+
 /**
- * The font files the entries' text uses, in a folder of the document's own so documents
- * exported side by side keep theirs apart, and the stylesheet that loads them. Faces load
+ * The font files the entries' text uses, and the stylesheet that loads them. Faces load
  * before text draws, so a story never shows a fallback font first.
  */
 async function storyFonts(
   graph: SceneGraph,
   entries: readonly StoryEntry[],
-  options: ExportStorybookOptions
-): Promise<{ stylesheet: string; files: ExportHTMLFile[] } | null> {
-  if (!options.fonts) return null
+  options: ExportStorybookOptions,
+  folder: string
+): Promise<ExportHTMLFile[]> {
+  if (!options.fonts) return []
   const requests = new Map<string, WebFontFaceRequest>()
   for (const { group } of entries)
     for (const variant of group.variants)
@@ -306,15 +330,21 @@ async function storyFonts(
         sceneNodeToDesignDocument(graph, variant.node.id, { includeSourceIds: false })
       ))
         requests.set(`${request.family}|${request.weight}|${request.style ?? 'normal'}`, request)
-  if (requests.size === 0) return null
-  const page = options.pageId ? graph.getNode(options.pageId)?.name : undefined
-  const named = compact([options.document ?? 'document', page]).map((name) => storyId(name))
-  const folder = options.fontFolder ?? `fonts/${named.join('-')}`
-  const assets = await options.fonts([...requests.values()], folder)
-  if (assets.length === 0) return null
+  if (requests.size === 0) return []
+  const assets = await options.fonts([...requests.values()], `${folder}/fonts`)
+  if (assets.length === 0) return []
   const css = await fontFaceStylesheet(assets, { from: folder, display: 'block' })
-  const stylesheet = `${folder}/fonts.css`
-  return { stylesheet, files: [...assets, { path: stylesheet, content: css }] }
+  return [...assets, { path: `${folder}/fonts.css`, content: css }]
+}
+
+/**
+ * The document's design tokens as custom properties, which stories' styles refer to as
+ * `var(--…)` wherever the design binds a variable, so they resolve as the design draws them.
+ */
+async function storyTokens(graph: SceneGraph, folder: string): Promise<ExportHTMLFile[]> {
+  if (graph.variables.size === 0) return []
+  const { css } = await tokenStylesheet(graph, { format: 'css' })
+  return css ? [{ path: `${folder}/tokens.css`, content: css }] : []
 }
 
 /**
@@ -332,10 +362,15 @@ export async function exportStorybook(
     files.push({ path, content, page: page.name })
 
   const entries = storyEntries(graph, options)
-  const fonts = await storyFonts(graph, entries, options)
+  const folder = documentFolder(graph, options)
+  const shared = [
+    ...(await storyFonts(graph, entries, options, folder)),
+    ...(await storyTokens(graph, folder))
+  ]
   const firstPage = entries.at(0)?.page
-  if (fonts && firstPage) for (const file of fonts.files) add(firstPage, file.path, file.content)
-  const styles = fonts ? [`./${fonts.stylesheet}`] : []
+  if (firstPage) for (const file of shared) add(firstPage, file.path, file.content)
+  // Every story file loads the document's fonts and tokens.
+  const styles = shared.filter((file) => file.path.endsWith('.css')).map((file) => `./${file.path}`)
   const generate = GENERATORS[framework]
   const models = generate ? generatedModels(graph, entries, options.vectorElement) : new Map()
 

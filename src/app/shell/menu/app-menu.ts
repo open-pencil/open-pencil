@@ -23,7 +23,11 @@ import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
+import {
+  setCommentsOnCanvas,
+  setDesignIssuesOnCanvas,
+  setSnappingPreference
+} from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
@@ -120,6 +124,7 @@ export function useAppMenu() {
     'view-pixel-grid': 'pixelGrid',
     'view-multiplayer-cursors': 'multiplayerCursors',
     'view-design-issues': 'designIssues',
+    'view-comments': 'comments',
     'snap-geometry': 'snapToGeometry',
     'snap-objects': 'snapToObjects',
     'snap-pixel-grid': 'snapToPixelGrid',
@@ -203,6 +208,8 @@ export function useAppMenu() {
         return store.state.showRemoteCursors
       case 'view-design-issues':
         return appPreferences.value.designCheck.showOnCanvas
+      case 'view-comments':
+        return appPreferences.value.comments.showOnCanvas
       case 'snap-geometry':
         return store.state.snappingPreferences.geometry
       case 'snap-objects':
@@ -242,6 +249,8 @@ export function useAppMenu() {
         }
       case 'view-design-issues':
         return (value: boolean) => setDesignIssuesOnCanvas(value)
+      case 'view-comments':
+        return (value: boolean) => setCommentsOnCanvas(value)
       case 'snap-geometry':
         return (value: boolean) => setSnappingPreference('geometry', value)
       case 'snap-objects':
