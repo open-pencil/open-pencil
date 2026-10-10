@@ -170,7 +170,7 @@
 - The font picker opens at the current font instead of the top of the list.
 - Undo after adding, switching, or removing auto layout, or wrapping layers in it with <kbd>⇧</kbd><kbd>A</kbd>, puts back every layer the layout moved or resized, and the new frame takes the place of the topmost layer it wraps, as in Figma. Setting the layout a frame already has, or aligning layers that auto layout places, no longer records an undo step, and undoing a drag out of an auto layout frame puts the layer back in its slot.
 - A Fill child in a Hug frame keeps its size, as in Figma, instead of collapsing the frame: along the layout the frame hugs the child as it is, and across it the frame hugs the other children, keeping its size when every child fills. A Fill line stays a line, placed where its row aligns the other layers.
-- A frame in a reopened `.fig` file lays out again when you add auto layout, padding, or a gap to it, or add, move, or remove a layer in it or in an auto layout inside it, instead of keeping its layers where the file had them.
+- A frame in a reopened `.fig` file lays out again when you resize it, add auto layout, padding, or a gap to it, or add, move, or remove a layer in it or in an auto layout inside it, instead of keeping its layers where the file had them; a Fill layer fills a resized frame while you drag.
 - A Hug frame grows with its text while the text is typed, as in Figma, instead of only when editing ends.
 - `figma.currentPage.backgrounds` in the plugin API and `eval` scripts takes Figma paints, as `fills` does.
 - Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.

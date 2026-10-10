@@ -13,6 +13,7 @@ import {
   scaledGeometryChanges,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
+import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { applyResizeSnap } from '#vue/shared/input/resize/snap'
@@ -146,6 +147,12 @@ export function applyResize(
   const d = toRaw(dragState)
   const { changes, newRect } = resizeChanges(d, cx, cy, constrain, editor, disableSnapping)
   d.appliedRect = { ...newRect }
+  // Resizing keeps the raw payload a file gave the layer but not its size, so layout lays out a
+  // resized frame from a .fig again, during the drag too, instead of keeping the sizes it saved.
+  const resized = editor.graph.getNode(d.nodeId)
+  if (resized && !['width', 'height'].every((key) => resized.source.editedFields.includes(key))) {
+    markSourceFieldsEdited(resized, ['width', 'height'])
+  }
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
       {
