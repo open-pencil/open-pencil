@@ -76,6 +76,7 @@ Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain 
 | `appearance.theme` | `dark`, `light`, `auto` |
 | `appearance.language` | `en`, `de`, `es`, `fr`, `it`, `ja`, `pl`, `ru`, `zh-CN` |
 | `appearance.animations` | `system`, `off` |
+| `appearance.accent` | JSON object: `{"kind":"preset","preset":"green"}` with `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `graphite`, or `{"kind":"custom","color":"#FF6600"}` |
 | `editing.snapping.geometry` | `true`, `false` |
 | `editing.snapping.objects` | `true`, `false` |
 | `editing.snapping.pixelGrid` | `true`, `false` |

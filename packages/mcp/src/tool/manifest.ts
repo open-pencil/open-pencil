@@ -116,7 +116,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     {
       name: 'get_settings',
       description:
-        'Read editor settings: appearance (theme, language, animations), snapping, canvas rendering, recovery, AI chat, and design check preferences.',
+        'Read editor settings: appearance (theme, language, animations, accent color), snapping, canvas rendering, recovery, AI chat, and design check preferences.',
       effect: 'read',
       availability: 'default',
       capabilities: ['settings:read'],

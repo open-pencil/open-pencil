@@ -72,6 +72,7 @@ export function renderFromEditorState(
   r.showRulers = showRulers
   r.pageColor = state.pageColor
   r.rulerTheme = state.rulerTheme ?? null
+  r.setSelectionTheme(state.selectionTheme)
   r.pageId = state.currentPageId
   r.navigationPhase = state.navigation.phase
   r.navigationGeneration = state.navigation.generation

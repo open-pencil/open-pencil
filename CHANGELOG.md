@@ -40,6 +40,7 @@
 - The `updates` messages from `@open-pencil/vue` no longer include `availableTitle`, `installPrompt`, `installedTitle`, and `downloading`, which only the system update dialogs and download toast used; `installed` now takes only `{ version }`, and `install` reads "Install Update". The Software Update window uses the new `windowTitle`, `currentVersion`, `whatsNew`, `installAndRestart`, `restartNow`, and related messages.
 - `fetchIcon`, `fetchIcons`, `searchIcons`, `searchIconsBatch`, and `clearIconCache` are removed from `@open-pencil/core`. Icons come from an `IconProvider` instead: `iconify` is the default Iconify provider, `createIconifyProvider()` makes one with its own cache, and `placeIcon` places an icon that keeps its name. A custom provider also implements `previews()`, `collections()`, and `browse()`, which give pickers each icon's SVG markup, the sets, and a set's icons.
 - `defineTool` from `@open-pencil/core/tools` takes its `input` as a `v.strictObject` instead of a `v.object`, and `ToolDef.input` is a strict object schema, so a tool rejects arguments it does not declare.
+- `RulerTheme` from `@open-pencil/core/canvas` no longer has `label`: ruler badges and size pills draw their text in the `foreground` of the editor state's new `selectionTheme`, which also sets the canvas selection color and defaults to the previous blue with white text.
 
 ### Added
 
@@ -100,6 +101,7 @@
 - See how auto layout arranges layers, as in Figma: hovering a horizontal or vertical auto layout frame outlines its visible direct children with dotted lines, and selecting a single layer dots the border of its auto layout parent, in purple for components and instances. The outlines, and the padding and gap markers of a selected frame, hide while layers move, resize, or rotate.
 - Join a shared room right away under a generated name such as *Teal Fox*, and set the one name every room shows in Settings or the share panel.
 
+- Choose an accent color in **Settings → General → Appearance**: one of eight presets or any custom color. Buttons, toggles, selected layers, focus rings, the active tool, and the canvas selection, handles, size labels, and ruler badges follow it in both themes, and text on accent surfaces turns dark when the color is too light for white. The CLI and MCP `settings` commands read and set it as `appearance.accent`.
 ### Changed
 
 - Import SVG as editable layers, as pasting it into Figma does, from `import_svg`, dropped files, and pasted markup ([#734](https://github.com/open-pencil/open-pencil/issues/734)). Each `<g>` becomes a group, each shape its own vector, and each `<text>` a text layer with its fonts, `<tspan>` styles, alignment, and rotation, named after its `id`, element opacity is kept, and clipped content sits in a clip path group whose mask is drawn from the clip's shapes. The imported frame is white, clips its content, and is named after the root `<svg>` `id`; an SVG without a size imports as a group. Shapes are no longer merged into one multi-color vector.
