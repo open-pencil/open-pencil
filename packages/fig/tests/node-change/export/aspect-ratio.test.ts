@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { nodeChangeToProps, sceneNodeToKiwi } from '#fig/node-change/index'
+
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 
 function serialize(overrides: Partial<SceneNode>) {
   const graph = new SceneGraph()

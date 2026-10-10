@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '../helpers'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+function createAPI() {
+  return new FigmaAPI(new SceneGraph())
+}
 
 // Expected values were observed by running the same scripts in live Figma on 2026-10-10.
 
