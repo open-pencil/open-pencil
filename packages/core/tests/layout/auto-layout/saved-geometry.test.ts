@@ -38,6 +38,29 @@ function savedRow() {
   return { editor, row, first, second }
 }
 
+/** Three saved Hug rows, each inside the last, around one 10 px layer. */
+function savedNest() {
+  const editor = createEditor()
+  const { graph } = editor
+  const hug = {
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG',
+    itemSpacing: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingTop: 10,
+    paddingBottom: 10
+  } as const
+  const outer = graph.createNode('FRAME', editor.state.currentPageId, { ...hug, width: 70, height: 70 })
+  const middle = graph.createNode('FRAME', outer.id, { ...hug, x: 10, y: 10, width: 50, height: 50 })
+  const inner = graph.createNode('FRAME', middle.id, { ...hug, x: 10, y: 10, width: 30, height: 30 })
+  const leaf = graph.createNode('RECTANGLE', inner.id, { x: 10, y: 10, width: 10, height: 10 })
+  asSaved(graph, [outer, middle, inner, leaf])
+  editor.runLayoutForNode(outer.id)
+  return { editor, outer, middle, inner }
+}
+
 describe('a frame read from a .fig file reflows once its layout is edited', () => {
   test('adding auto layout hugs the layer and moves it into the flow', () => {
     for (const mode of ['HORIZONTAL', 'VERTICAL'] as const) {
@@ -79,28 +102,19 @@ describe('a frame read from a .fig file reflows once its layout is edited', () =
   })
 
   test('a layer added to a nested flow resizes every Hug frame around it', () => {
-    const editor = createEditor()
-    const { graph } = editor
-    const hug = {
-      layoutMode: 'HORIZONTAL',
-      primaryAxisSizing: 'HUG',
-      counterAxisSizing: 'HUG',
-      itemSpacing: 10,
-      paddingLeft: 10,
-      paddingRight: 10,
-      paddingTop: 10,
-      paddingBottom: 10
-    } as const
-    const outer = graph.createNode('FRAME', editor.state.currentPageId, { ...hug, width: 70, height: 70 })
-    const middle = graph.createNode('FRAME', outer.id, { ...hug, x: 10, y: 10, width: 50, height: 50 })
-    const inner = graph.createNode('FRAME', middle.id, { ...hug, x: 10, y: 10, width: 30, height: 30 })
-    const leaf = graph.createNode('RECTANGLE', inner.id, { x: 10, y: 10, width: 10, height: 10 })
-    asSaved(graph, [outer, middle, inner, leaf])
-    editor.runLayoutForNode(outer.id)
-    expect(outer.width).toBe(70)
-    graph.createNode('RECTANGLE', inner.id, { width: 10, height: 10 })
+    const { editor, outer, middle, inner } = savedNest()
+    editor.graph.createNode('RECTANGLE', inner.id, { width: 10, height: 10 })
     editor.runLayoutForNode(inner.id)
     expect([inner.width, middle.width, outer.width]).toEqual([50, 70, 90])
+    editor.dispose()
+  })
+
+  test('a gap changed in a nested flow resizes every Hug frame around it, until undone', () => {
+    const { editor, outer, middle, inner } = savedNest()
+    editor.updateNodeWithUndo(inner.id, { paddingLeft: 30 })
+    expect([inner.width, middle.width, outer.width]).toEqual([50, 70, 90])
+    editor.undoAction()
+    expect([inner.width, middle.width, outer.width]).toEqual([30, 50, 70])
     editor.dispose()
   })
 

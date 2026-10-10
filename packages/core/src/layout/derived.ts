@@ -15,6 +15,8 @@ function hasEditedLayout(node: SceneNode): boolean {
 const savedChildren = new WeakMap<SceneGraph, Map<string, string>>()
 /** Frames whose flow, or a flow inside it, lost or gained a layer since; kept until reload. */
 const restructured = new WeakMap<SceneGraph, Set<string>>()
+/** Frames that last laid out without their saved geometry, for the frames around them. */
+const reflowed = new WeakMap<SceneGraph, Set<string>>()
 
 function graphState<T>(states: WeakMap<SceneGraph, T>, graph: SceneGraph, create: () => T): T {
   let state = states.get(graph)
@@ -40,7 +42,7 @@ function childrenChanged(graph: SceneGraph, node: SceneNode): boolean {
 /**
  * Whether layout still keeps the geometry a file saved for `frame` and its flow: a frame read from
  * a .fig file does until it or a layer in its flow has its layout edited, such as by adding auto
- * layout or a gap, or a layer joins, leaves, or moves in its flow or a flow inside it. Other
+ * layout or a gap, or a layer joins, leaves, or moves in its flow, or a flow inside it changes. Other
  * frames keep geometry copied with them, as an instance's layers do.
  */
 export function keepsSavedLayout(graph: SceneGraph, frame: SceneNode): boolean {
@@ -56,7 +58,13 @@ export function keepsSavedLayout(graph: SceneGraph, frame: SceneNode): boolean {
     stale.add(frame.id)
     return false
   }
-  return !hasEditedLayout(frame) && !flow.some(hasEditedLayout)
+  // A flow inside edited by now resizes this one, but a cancelled preview gives it back.
+  const last = graphState(reflowed, graph, () => new Set<string>())
+  const keeps =
+    !hasEditedLayout(frame) && !flow.some((child) => hasEditedLayout(child) || last.has(child.id))
+  if (keeps) last.delete(frame.id)
+  else last.add(frame.id)
+  return keeps
 }
 
 export function usesDetachedDerivedLayout(graph: SceneGraph, child: SceneNode): boolean {
