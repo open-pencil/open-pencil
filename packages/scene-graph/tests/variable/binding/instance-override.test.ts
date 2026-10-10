@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, getInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph, getInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
 }
@@ -78,12 +80,7 @@ describe('bindVariable on instance child sets override flag', () => {
     graph.bindVariable(instanceChild.id, 'fills/0/color', 'v2')
 
     expect(
-      getInstanceOverride(
-        instance.instanceOverrides,
-        instance.id,
-        instanceChild.id,
-        'boundVariables'
-      )
+      getInstanceOverride(instance.instanceOverrides, layerPath(instanceChild.id), 'boundVariables')
     ).toBe(true)
   })
 
@@ -145,7 +142,7 @@ describe('bindVariable on INSTANCE node itself sets override', () => {
     graph.bindVariable(instance.id, 'opacity', 'v2')
 
     expect(
-      getInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'boundVariables')
+      getInstanceOverride(instance.instanceOverrides, layerPath(instance.id), 'boundVariables')
     ).toBe(true)
   })
 
@@ -232,12 +229,7 @@ describe('removeVariable emits events and sets overrides', () => {
     graph.removeVariable('v1')
 
     expect(
-      getInstanceOverride(
-        instance.instanceOverrides,
-        instance.id,
-        instanceChild.id,
-        'boundVariables'
-      )
+      getInstanceOverride(instance.instanceOverrides, layerPath(instanceChild.id), 'boundVariables')
     ).toBe(true)
   })
 

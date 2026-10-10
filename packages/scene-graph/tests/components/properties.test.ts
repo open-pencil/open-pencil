@@ -108,7 +108,7 @@ describe('component properties', () => {
       (() => {
         let found = false
         forEachInstanceOverride(
-          updatedInstance?.instanceOverrides ?? { self: new Map(), descendants: new Map() },
+          updatedInstance?.instanceOverrides ?? { self: new Map(), layers: new Map() },
           (_nodeId, field) => {
             if (field === 'componentId') found = true
           }

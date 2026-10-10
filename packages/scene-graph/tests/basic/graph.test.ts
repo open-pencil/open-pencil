@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { generateId, SceneGraph } from '@open-pencil/scene-graph'
+import {
+  generateId,
+  instanceLayerId,
+  recordInstanceOverride,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 import { pageId, rect } from './helpers'
@@ -355,7 +360,7 @@ describe('SceneGraph', () => {
     expect(node.name).toBe('Updated')
   })
 
-  test('create instance clones children with componentId mapping', () => {
+  test('create instance copies children under ids naming their component layers', () => {
     const graph = new SceneGraph()
     const comp = graph.createNode('COMPONENT', pageId(graph), {
       name: 'Btn',
@@ -369,7 +374,8 @@ describe('SceneGraph', () => {
     expect(instance.componentId).toBe(comp.id)
     const instChildren = graph.getChildren(instance.id)
     expect(instChildren).toHaveLength(1)
-    expect(instChildren[0].componentId).toBe(child.id)
+    expect(instChildren[0].id).toBe(instanceLayerId(instance.id, [child.id]))
+    expect(instChildren[0].componentId).toBeNull()
     expect(instChildren[0].name).toBe('BG')
   })
 
@@ -407,12 +413,7 @@ describe('SceneGraph', () => {
 
     // Override the text on the instance child
     graph.updateNode(instLabel.id, { text: 'Custom' })
-    graph.updateNode(instance.id, {
-      instanceOverrides: {
-        self: new Map(),
-        descendants: new Map([[instLabel.id, new Map([['text', 'Custom']])]])
-      }
-    })
+    recordInstanceOverride(graph, instLabel.id, ['text'])
 
     // Change component
     graph.updateNode(graph.getChildren(comp.id)[0].id, { text: 'New Default', fontSize: 20 })

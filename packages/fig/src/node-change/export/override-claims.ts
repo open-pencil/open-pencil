@@ -1,15 +1,10 @@
 import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
 
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import {
-  forEachInstanceOverride,
-  ownsSlotContent,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { instanceExportAddress } from '../instance/geometry'
+import { forEachExportedOverride, instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
 import {
   buildStyleReferences,
@@ -17,7 +12,6 @@ import {
   createStrokePaints,
   getOrCreateNodeGuid,
   instanceGuidResolver,
-  isDescendantOf,
   type KiwiSymbolOverridePayload,
   type SceneNodeToKiwiContext,
   type StyleReference
@@ -172,7 +166,7 @@ function overrideClaim(
   return claim && { guidPath: { guids: path }, ...claim }
 }
 
-/** Every override recorded on this instance and on instances inside it, as full-path claims. */
+/** Every override this instance records, as full-path claims. */
 export function serializeRuntimePropertyOverrides(
   context: SceneNodeToKiwiContext,
   instance: SceneNode,
@@ -180,39 +174,19 @@ export function serializeRuntimePropertyOverrides(
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
   const resolveGuid = instanceGuidResolver(context, localIdCounter)
-  // A layer with several overridden fields is addressed once; the resolver keeps the GUIDs it makes.
-  const targets = new Map<string, { target: SceneNode; path: GUID[] } | undefined>()
-  const findTarget = (targetId: string) => {
-    const target = context.graph.getNode(targetId)
-    if (!target || (target.id !== instance.id && !isDescendantOf(context, targetId, instance.id)))
-      return undefined
-    const path = instanceExportAddress(context.graph, instance, target, resolveGuid)
-    return path ? { target, path } : undefined
-  }
-  const resolveTarget = (owner: SceneNode, nodeId: string) => {
-    const targetId = nodeId || owner.id
-    if (!targets.has(targetId)) targets.set(targetId, findTarget(targetId))
-    const found = targets.get(targetId)
-    return found && { target: found.target, path: [...found.path] }
-  }
-  const visit = (node: SceneNode): void => {
-    if (node.type === 'INSTANCE')
-      forEachInstanceOverride(node.instanceOverrides, (nodeId, field, value) => {
-        const resolved = resolveTarget(node, nodeId)
-        if (!resolved) return
-        const claim = overrideClaim(
-          { context, instance, target: resolved.target, value },
-          field,
-          resolved.path,
-          localIdCounter
-        )
-        if (claim) result.push(claim)
-      })
-    // Slot content the instance owns carries its own values; it has no component address.
-    if (ownsSlotContent(context.graph, node)) return
-    for (const child of context.graph.getChildren(node.id)) visit(child)
-  }
-  visit(instance)
+  forEachExportedOverride(context.graph, instance, (target, field, value) => {
+    // The record names the component an instance shows; only its layers' swaps are claims.
+    if (target === instance && field === 'componentId') return
+    const address = instanceExportAddress(instance, target, resolveGuid)
+    if (!address) return
+    const claim = overrideClaim(
+      { context, instance, target, value },
+      field,
+      address,
+      localIdCounter
+    )
+    if (claim) result.push(claim)
+  })
   return result
 }
 

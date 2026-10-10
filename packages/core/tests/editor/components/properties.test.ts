@@ -72,6 +72,18 @@ describe('component property actions', () => {
     expect(restored?.childIds.map((id) => editor.graph.getNode(id)?.name)).toEqual(['A shape'])
   })
 
+  test('undoing an instance swap leaves no swap override behind', () => {
+    const { editor, instance, iconB } = setupComponentProperties()
+
+    editor.setInstanceComponentProperty(instance.id, '10:3', iconB.id)
+    editor.undo.undo()
+
+    const overrides = editor.graph.getNode(instance.id)?.instanceOverrides
+    expect([...(overrides?.layers.values() ?? [])].some((fields) => fields.has('componentId'))).toBe(
+      false
+    )
+  })
+
   test('preserves assignments when the main component synchronizes', () => {
     const { editor, component, instance, iconB } = setupComponentProperties()
     editor.setInstanceComponentProperty(instance.id, '10:1', 'Custom')

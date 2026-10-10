@@ -1,4 +1,5 @@
 import type { SceneGraph } from '../index'
+import { instanceLayerId, isInstanceLayerId, parseInstanceLayerId } from '../instances/layer-ids'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { prepareNodeTransfer } from './nodes'
 import { requireTransferReference } from './references'
@@ -42,7 +43,17 @@ export function prepareGraphTransfer(input: GraphTransferInput) {
     for (const child of node.childIds) visit(child)
   }
   for (const id of [...input.dependencyPageIds, ...input.rootIds]) visit(id)
-  const nodes = new Map(ordered.map((node) => [node.id, allocate()]))
+  const nodes = new Map(
+    ordered.flatMap((node) => (isInstanceLayerId(node.id) ? [] : [[node.id, allocate()] as const]))
+  )
+  // A copy inside an instance is named by its instance and component layers, so it takes their
+  // new ids rather than one of its own.
+  for (const node of ordered) {
+    const address = parseInstanceLayerId(node.id)
+    if (!address) continue
+    const rename = (id: string) => requireTransferReference(nodes, id, 'node')
+    nodes.set(node.id, instanceLayerId(rename(address.owner), address.path.map(rename)))
+  }
   const variables = new Map([...source.variables.keys()].map((id) => [id, allocate()]))
   const collections = new Map([...source.variableCollections.keys()].map((id) => [id, allocate()]))
   const modes = new Map<string, string>()

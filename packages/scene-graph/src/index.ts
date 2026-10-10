@@ -16,6 +16,19 @@ export * from './images'
 export * from './components/properties'
 export * from './slots/frames'
 export { instanceMainComponent } from './instances/main-component'
+export * from './instances/layer-ids'
+export { isLegacyInstanceLayer, migrateInstanceLayers } from './instances/migrate'
+export { copyLayerTrees } from './instances/copy-trees'
+export {
+  instanceLayerLineage,
+  instanceLayerSource,
+  isSwappedCopy,
+  overriddenFields,
+  overrideTarget,
+  setLayerOverride,
+  sourceLayerId,
+  type OverrideTarget
+} from './instances/addressing'
 export { canCreateInstance } from './instances/cycles'
 export {
   exposableInstances,
@@ -75,9 +88,9 @@ export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
 import { removeStaleBindings } from './bindings'
 export { CommittedGraphEventError } from './buffered-events'
 import { BufferedSceneEmitter } from './buffered-events'
-import { cloneNodeProps } from './copy'
 import { bindNodeEvents } from './events'
 import * as HitTest from './hit-test'
+import { cloneLayerTree } from './instances/clone-tree'
 export type { DropTargetOptions } from './hit-test'
 import * as Instances from './instances'
 import Matrix, { type Mat3 } from './matrix'
@@ -107,7 +120,6 @@ import type {
   NodeType,
   SceneGraphEventHandlers,
   SceneNode,
-  SourceMetadata,
   Variable,
   VariableCollection,
   VariableType,
@@ -777,6 +789,67 @@ export class SceneGraph {
     this.emitter.emit('node:deleted', id, node.parentId)
   }
 
+  /** A fresh node id from the graph's generator, for a node about to be created or renamed. */
+  nextNodeId(): string {
+    return this.generateEntityId()
+  }
+
+  /**
+   * Give nodes new ids, keeping them and their values. Listeners see the old ids deleted and the
+   * new ones created, children before parents and parents before children respectively, as a
+   * subtree's deletion and creation report them.
+   */
+  renameNodes(renames: ReadonlyMap<string, string>): void {
+    const renamed = [...renames].flatMap(([from, to]) => {
+      const node = this.nodes.get(from)
+      return node && from !== to ? [{ node, from, to }] : []
+    })
+    if (renamed.length === 0) return
+    for (const { to } of renamed)
+      if (this.nodes.has(to) && !renames.has(to)) throw new Error(`Node id ${to} is in use`)
+    const rename = (id: string) => renames.get(id) ?? id
+    const depth = (node: SceneNode) => {
+      // `closest` visits the node itself first and stops on a parent cycle in bad data.
+      let count = -1
+      this.closest(node.id, () => {
+        count++
+        return false
+      })
+      return count
+    }
+    const byDepth = renamed
+      .map((entry) => ({ ...entry, depth: depth(entry.node) }))
+      .toSorted((left, right) => left.depth - right.depth)
+    this.emitter.batch(() => {
+      for (const { node, from } of byDepth.toReversed()) {
+        if (node.type === 'INSTANCE' && node.componentId)
+          this.instanceIndex.get(node.componentId)?.delete(from)
+        this.emitter.emit('node:deleted', from, node.parentId)
+      }
+      for (const { from } of renamed) this.nodes.delete(from)
+      for (const { node, to } of renamed) {
+        node.id = to
+        this.nodes.set(to, node)
+      }
+      for (const { node } of renamed) {
+        node.parentId = node.parentId && rename(node.parentId)
+        node.childIds = node.childIds.map(rename)
+        const parent = node.parentId ? this.nodes.get(node.parentId) : undefined
+        if (parent && !renames.has(parent.id)) parent.childIds = parent.childIds.map(rename)
+        for (const child of this.getChildren(node.id)) child.parentId = node.id
+      }
+      this.clearAbsPosCache()
+      for (const { node } of byDepth) {
+        if (node.type === 'INSTANCE' && node.componentId) {
+          const instances = this.instanceIndex.get(node.componentId) ?? new Set<string>()
+          instances.add(node.id)
+          this.instanceIndex.set(node.componentId, instances)
+        }
+        this.emitter.emit('node:created', node)
+      }
+    })
+  }
+
   hitTest(px: number, py: number, scopeId?: string): SceneNode | null {
     return HitTest.hitTest(this, px, py, scopeId)
   }
@@ -821,21 +894,8 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
-    const src = this.nodes.get(sourceId)
-    if (!src) return null
-
-    const props = cloneNodeProps(src, null)
-    // Null out Figma source identifiers so the clone is treated as local.
-    // `as SourceMetadata` required: cloneNodeProps returns Partial<SceneNode>,
-    // so props.source is SourceMetadata | undefined, but we know it's always set.
-    props.source = { ...(props.source as SourceMetadata), id: null, orderKey: null }
-    const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
-
-    for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
-    }
-
-    return clone
+    const source = this.nodes.get(sourceId)
+    return source ? cloneLayerTree(this, source, parentId, overrides) : null
   }
 
   createInstance(
@@ -870,8 +930,8 @@ export class SceneGraph {
     Instances.syncInstance(this, instanceId)
   }
 
-  detachInstance(instanceId: string): void {
-    Instances.detachInstance(this, instanceId)
+  detachInstance(instanceId: string): SceneNode | undefined {
+    return Instances.detachInstance(this, instanceId)
   }
 
   getMainComponent(instanceId: string): SceneNode | undefined {

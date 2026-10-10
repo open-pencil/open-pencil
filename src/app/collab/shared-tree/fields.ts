@@ -11,7 +11,7 @@ import { randomIndex } from '@open-pencil/scene-graph/random'
  * (`src/app/collab/tree/layer-tree.ts`). The document-wide `meta` map holds the room's root and
  * name, the move clock, and the tree format.
  */
-export const TREE_FORMAT = 2
+export const TREE_FORMAT = 3
 export const PARENTS_FIELD = 'parents'
 export const ORDER_KEY_FIELD = 'orderKey'
 export const PAGE_FIELD = 'page'

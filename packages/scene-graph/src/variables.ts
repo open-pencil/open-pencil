@@ -4,7 +4,7 @@ import { omit, omitBy } from 'es-toolkit/object'
 import { BLACK } from './constants'
 import type { SceneGraph } from './index'
 import { setInstanceOverride } from './instance-overrides'
-import { findInstanceAncestor } from './instances'
+import { overrideTarget } from './instances/addressing'
 import type { Color } from './primitives'
 import type {
   Variable,
@@ -13,11 +13,7 @@ import type {
   VariableType,
   VariableValue
 } from './types'
-import {
-  isNumericVariableBindingField,
-  variableBindingOwner,
-  assignVariableBindingUnits
-} from './variables/bindings'
+import { isNumericVariableBindingField, assignVariableBindingUnits } from './variables/bindings'
 import { BOOLEAN_BINDING_FIELDS, STRING_BINDING_FIELDS } from './variables/fields'
 
 export function addVariable(graph: SceneGraph, variable: Variable): void {
@@ -427,18 +423,14 @@ function markBoundVariablesOverrideOnInstance(
   field?: string
 ): void {
   const node = graph.nodes.get(nodeId)
-  if (!node) return
-
-  const owner = variableBindingOwner(graph, node)
-  if (owner.type !== 'INSTANCE') return
-  const nearest = findInstanceAncestor(graph, nodeId)
-  if (nearest) setInstanceOverride(nearest.instanceOverrides, nearest.id, nodeId, 'boundVariables')
-  setInstanceOverride(owner.instanceOverrides, owner.id, nodeId, 'boundVariables')
+  const target = node && overrideTarget(graph, node)
+  if (!node || !target) return
+  const { owner, path } = target
+  setInstanceOverride(owner.instanceOverrides, path, 'boundVariables')
   if (field)
     setInstanceOverride(
       owner.instanceOverrides,
-      owner.id,
-      nodeId,
+      path,
       `boundVariables/${field}`,
       node.boundVariables[field] ?? null
     )

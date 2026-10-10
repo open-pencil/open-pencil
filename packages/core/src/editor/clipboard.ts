@@ -1,4 +1,10 @@
-import { CommittedGraphEventError } from '@open-pencil/scene-graph'
+import {
+  CommittedGraphEventError,
+  instanceLayerId,
+  isInstanceLayerId,
+  parseInstanceLayerId,
+  remapInstanceOverrideState
+} from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -25,6 +31,13 @@ import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import type { EditorContext } from './types'
+
+/** Where a pasted instance's copies go: the instance they came from, its new id, and its path. */
+interface PasteScope {
+  readonly source: string
+  readonly owner: string
+  readonly prefix: readonly string[]
+}
 
 type PasteOptions = {
   replaceSelection?: boolean
@@ -232,16 +245,42 @@ export function createClipboardActions(ctx: EditorContext) {
     for (const [hash, bytes] of images) ctx.graph.images.set(hash, bytes)
 
     const created: string[] = []
+    // Layers of their own get new ids up front, so instances pasted before the components
+    // they show still name the new component layers.
     const copiedIds = new Map<string, string>()
-    const createNodeTree = (source: SceneNode & { children?: SceneNode[] }, parentId: string) => {
+    const allocate = (source: SceneNode & { children?: SceneNode[] }) => {
+      if (!isInstanceLayerId(source.id)) copiedIds.set(source.id, ctx.graph.nextNodeId())
+      for (const child of source.children ?? []) allocate(child)
+    }
+    for (const source of [...dependencies, ...nodes]) allocate(source)
+    const remap = (id: string) => copiedIds.get(id) ?? id
+    const createNodeTree = (
+      source: SceneNode & { children?: SceneNode[] },
+      parentId: string,
+      scope: PasteScope | null = null
+    ) => {
       const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
-      const node = ctx.graph.createNode(source.type, parentId, {
+      const address = parseInstanceLayerId(source.id)
+      let id = copiedIds.get(source.id) ?? ctx.graph.nextNodeId()
+      let next = scope
+      if (address && scope && scope.source === address.owner) {
+        id = instanceLayerId(scope.owner, address.path.slice(scope.prefix.length).map(remap))
+      } else if (source.type === 'INSTANCE') {
+        // A copy pasted without its instance is a layer of its own, and owns what it shows.
+        next = { source: address?.owner ?? source.id, owner: id, prefix: address?.path ?? [] }
+      }
+      copiedIds.set(source.id, id)
+      ctx.graph.createNodeWithId(id, source.type, parentId, {
         ...structuredClone(rest),
+        componentId: source.componentId && remap(source.componentId),
+        instanceOverrides: remapInstanceOverrideState(source.instanceOverrides, {
+          node: remap,
+          variable: (variableId) => variableId
+        }),
         childIds: []
       })
-      copiedIds.set(source.id, node.id)
-      for (const child of children) createNodeTree(child, node.id)
-      return node.id
+      for (const child of children) createNodeTree(child, id, next)
+      return id
     }
 
     const requestedTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
@@ -255,21 +294,6 @@ export function createClipboardActions(ctx: EditorContext) {
     for (const dependency of dependencies)
       dependencyRootIds.push(createNodeTree(dependency, ctx.state.currentPageId))
     for (const node of nodes) created.push(createNodeTree(node, pasteTarget))
-    for (const id of copiedIds.values()) {
-      const node = ctx.graph.getNode(id)
-      if (!node) continue
-      const componentId = node.componentId ? copiedIds.get(node.componentId) : undefined
-      const instanceOverrides = {
-        self: node.instanceOverrides.self,
-        descendants: new Map(
-          [...node.instanceOverrides.descendants].map(([target, fields]) => [
-            copiedIds.get(target) ?? target,
-            fields
-          ])
-        )
-      }
-      ctx.graph.updateNode(id, { componentId: componentId ?? node.componentId, instanceOverrides })
-    }
     if (dependencyRootIds.length > 0) {
       const snapshots = collectSubtrees(ctx.graph, dependencyRootIds)
       ctx.undo.push({

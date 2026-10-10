@@ -24,6 +24,20 @@ export function ownsSlotContent(
   return !!owner && Object.hasOwn(owner.componentPropertyAssignments, propertyId)
 }
 
+/**
+ * Whether `node` is content of a slot its instance owns: such layers keep the ids they had as
+ * copies, as in Figma, but no longer follow the component.
+ */
+export function isOwnedSlotContent(graph: SceneGraph, node: SceneNode): boolean {
+  for (let id = node.parentId; id;) {
+    const ancestor = graph.nodes.get(id)
+    if (!ancestor || ancestor.type === 'INSTANCE') return false
+    if (ownsSlotContent(graph, ancestor)) return true
+    id = ancestor.parentId
+  }
+  return false
+}
+
 /** The name of a slot property as the instance's component (or the component's set) defines it. */
 function slotName(graph: SceneGraph, instance: SceneNode, propertyId: string) {
   const component = instanceMainComponent(graph, instance)

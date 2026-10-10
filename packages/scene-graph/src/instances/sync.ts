@@ -1,19 +1,26 @@
-// Child cloning and property synchronization shared by instance creation, swap, and sync.
+// Building and synchronizing the copies an instance shows, shared by creation, swap, and sync.
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { ComponentPropertyReferenceField, SceneGraph, SceneNode } from '../'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
 import type { NodeCloneMode } from '../copy'
 import {
+  createInstanceOverrideState,
   getInstanceOverride,
-  hasInstanceOverride as hasNodeInstanceOverride,
-  setInstanceOverride,
-  type InstanceOverrideState
+  instanceOverridesAt
 } from '../instance-overrides'
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import { scaleVariableBindingUnits } from '../variables/units'
+import { instanceLayerSource, isSwappedAt } from './addressing'
 import { INSTANCE_SYNC_FIELDS } from './fields'
+import {
+  copyLayerId,
+  instanceScope,
+  isInstanceLayerId,
+  parseInstanceLayerId,
+  type InstanceScope
+} from './layer-ids'
 
 function setSceneProp<K extends keyof SceneNode>(
   target: Partial<SceneNode>,
@@ -51,14 +58,17 @@ export function copyProp(
   }
 }
 
-export function bindingProtection(scopes: ReadonlySet<string>[]): (field: string) => boolean {
-  const fields = new Set<string>()
-  for (const scope of scopes) {
-    const perField = [...scope].some((field) => field.startsWith('boundVariables/'))
-    for (const field of scope) {
-      if (field !== 'boundVariables' || !perField) fields.add(field)
-    }
-  }
+/**
+ * Whether sync leaves a field alone. A binding override of one field protects that field's
+ * binding; overriding `boundVariables` as a whole protects them all unless per-field entries say
+ * which.
+ */
+export function bindingProtection(
+  overridden: ReadonlySet<string> | Iterable<string>
+): (field: string) => boolean {
+  const scope = [...overridden]
+  const perField = scope.some((field) => field.startsWith('boundVariables/'))
+  const fields = new Set(scope.filter((field) => field !== 'boundVariables' || !perField))
   return (field) => fields.has(field)
 }
 
@@ -122,58 +132,103 @@ export function updateSyncedProps(
   if (Object.keys(changed).length) graph.updateNode(target.id, changed)
 }
 
-function cloneChildInCoordinates(
+/** The owner a scope records overrides on, and the path of a copy in it. */
+interface CopyContext {
+  readonly scope: InstanceScope
+  readonly owner: SceneNode
+}
+
+function pathOf(copyId: string): readonly string[] {
+  const address = parseInstanceLayerId(copyId)
+  if (!address) throw new Error(`Not an instance layer: ${copyId}`)
+  return address.path
+}
+
+/** The component an instance copy shows: its own when swapped, its component layer's otherwise. */
+function shownComponentId(context: CopyContext, copyId: string, source: SceneNode): string | null {
+  const swapped = getInstanceOverride(
+    context.owner.instanceOverrides,
+    pathOf(copyId),
+    'componentId'
+  )
+  return typeof swapped === 'string' ? swapped : source.componentId
+}
+
+function cloneCopy(
   graph: SceneGraph,
-  src: SceneNode,
+  context: CopyContext,
+  source: SceneNode,
   sourceParent: SceneNode,
   targetParent: SceneNode,
-  mode: NodeCloneMode = 'deep'
+  mode: NodeCloneMode
 ): SceneNode {
+  const id = copyLayerId(context.scope, source)
+  // A copy is named by what it copies, so one built before is the copy itself.
+  const existing = graph.getNode(id)
+  if (existing) return existing
   const componentScale =
-    (src.componentScale * targetParent.componentScale) / sourceParent.componentScale
-  return graph.createNode(src.type, targetParent.id, {
-    ...cloneNodeProps(sourceInTargetCoordinates(src, componentScale), src.id, mode),
+    (source.componentScale * targetParent.componentScale) / sourceParent.componentScale
+  const props = cloneNodeProps(sourceInTargetCoordinates(source, componentScale), null, mode)
+  return graph.createNodeWithId(id, source.type, targetParent.id, {
+    ...props,
+    componentId: source.type === 'INSTANCE' ? shownComponentId(context, id, source) : null,
+    // A copy records no overrides; the outermost instance holds them for every layer inside it.
+    instanceOverrides: createInstanceOverrideState(),
     componentScale
   })
 }
 
-export function cloneChildrenWithMapping(
+function isSwapped(context: CopyContext, copy: SceneNode): boolean {
+  return copy.type === 'INSTANCE' && isSwappedAt(context.owner, pathOf(copy.id))
+}
+
+/** Where the contents of an instance copy come from: its swapped component, or its source layer. */
+function contentsSource(
   graph: SceneGraph,
-  sourceParentId: string,
-  destParentId: string,
-  mode: NodeCloneMode = 'deep'
+  context: CopyContext,
+  copy: SceneNode,
+  source: SceneNode
+): { source: SceneNode; context: CopyContext } | undefined {
+  if (!isSwapped(context, copy)) return { source, context }
+  const component = copy.componentId ? graph.getNode(copy.componentId) : undefined
+  return component
+    ? { source: component, context: { ...context, scope: instanceScope(copy) } }
+    : undefined
+}
+
+function cloneCopies(
+  graph: SceneGraph,
+  context: CopyContext,
+  sourceParent: SceneNode,
+  targetParent: SceneNode,
+  mode: NodeCloneMode
 ): void {
-  // Guard against cloning a subtree into itself or its own descendant. Without this,
-  // a self-referential or cyclic component (e.g. an INSTANCE whose componentId points
-  // to an ancestor) causes unbounded recursion and eventual stack overflow / OOM.
-  if (sourceParentId === destParentId || graph.isDescendant(destParentId, sourceParentId)) return
-
-  const sourceParent = graph.nodes.get(sourceParentId)
-  const targetParent = graph.nodes.get(destParentId)
-  if (!sourceParent || !targetParent) return
-
+  // A component that contains itself, directly or through a cycle of instances, would recurse
+  // without end; such a layer is left without copies.
+  if (sourceParent.id === targetParent.id || graph.isDescendant(targetParent.id, sourceParent.id))
+    return
   for (const childId of sourceParent.childIds) {
-    const src = graph.nodes.get(childId)
-    if (!src) continue
-
-    const clone = cloneChildInCoordinates(graph, src, sourceParent, targetParent, mode)
-
-    if (src.childIds.length > 0) {
-      cloneChildrenWithMapping(graph, childId, clone.id, mode)
-    }
+    const source = graph.getNode(childId)
+    if (!source) continue
+    const copy = cloneCopy(graph, context, source, sourceParent, targetParent, mode)
+    const contents = contentsSource(graph, context, copy, source)
+    if (contents && contents.source.childIds.length > 0)
+      cloneCopies(graph, contents.context, contents.source, copy, mode)
   }
 }
 
-export function enclosingInstanceOverrideFields(graph: SceneGraph, node: SceneNode): Set<string>[] {
-  const fields: Set<string>[] = []
-  let parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
-  while (parent) {
-    if (parent.type === 'INSTANCE') {
-      fields.push(new Set(parent.instanceOverrides.descendants.get(node.id)?.keys()))
-    }
-    parent = parent.parentId ? graph.nodes.get(parent.parentId) : undefined
-  }
-  return fields
+/** Builds the copies `instance` shows of `component`, under their ids. */
+export function cloneInstanceChildren(
+  graph: SceneGraph,
+  instance: SceneNode,
+  component: SceneNode,
+  mode: NodeCloneMode = 'deep'
+): void {
+  const scope = instanceScope(instance)
+  const owner = graph.getNode(scope.owner)
+  if (!owner) throw new Error(`Missing instance ${scope.owner}`)
+  cloneCopies(graph, { scope, owner }, component, instance, mode)
+  for (const copy of graph.getChildren(instance.id)) applyEnclosingAssignments(graph, copy)
 }
 
 /** SLOT_CONTENT is absent because it drives children, which `ownsSlotContent` keeps instead. */
@@ -183,20 +238,13 @@ const PROPERTY_REFERENCE_FIELDS: Partial<Record<ComponentPropertyReferenceField,
   INSTANCE_SWAP: 'componentId'
 }
 
-/** Instance links are expected to be shallow; the cap only stops a cycle from hanging sync. */
-const INSTANCE_CHAIN_LIMIT = 16
-
 /**
  * Whether this instance's component, or the set it is a variant of, is where `propertyId` is
  * defined. Only a set counts: a component nested in an ordinary component defines its own
  * properties, not the outer one's.
  */
 function definesProperty(graph: SceneGraph, instance: SceneNode, propertyId: string): boolean {
-  // An instance of an instance links through to the component, so follow the chain to it.
-  let component = instance.componentId ? graph.nodes.get(instance.componentId) : undefined
-  for (let hops = 0; component?.type === 'INSTANCE' && hops < INSTANCE_CHAIN_LIMIT; hops++) {
-    component = component.componentId ? graph.nodes.get(component.componentId) : undefined
-  }
+  const component = instance.componentId ? graph.nodes.get(instance.componentId) : undefined
   const parent = component?.parentId ? graph.nodes.get(component.parentId) : undefined
   const set = parent?.type === 'COMPONENT_SET' ? parent : undefined
   return [component, set]
@@ -231,294 +279,186 @@ function hasEnclosingAssignment(graph: SceneGraph, node: SceneNode, propertyId: 
 }
 
 /**
- * A component can gain a property-driven layer after an instance of it exists. Pass 4 leaves a
- * driven field alone, so the fresh clone has to take the enclosing instance's assignment here or
+ * A component can gain a property-driven layer after an instance of it exists. Sync leaves a
+ * driven field alone, so a fresh copy has to take the enclosing instance's assignment here or
  * it keeps the component's default while every other instance layer shows the assigned value.
  */
-function applyEnclosingAssignments(graph: SceneGraph, clone: SceneNode): void {
-  for (const reference of clone.componentPropertyReferences) {
+function applyEnclosingAssignments(graph: SceneGraph, node: SceneNode): void {
+  for (const reference of node.componentPropertyReferences) {
     const field = PROPERTY_REFERENCE_FIELDS[reference.field]
     if (!field) continue
-    const value = enclosingAssignment(graph, clone, reference.propertyId)
+    const value = enclosingAssignment(graph, node, reference.propertyId)
     if (value === undefined) continue
-    if (field === 'visible') graph.updateNode(clone.id, { visible: value === 'true' })
-    else if (field === 'text') graph.updateNode(clone.id, { text: value })
-    else if (field === 'componentId' && clone.type === 'INSTANCE' && graph.nodes.has(value)) {
-      graph.swapInstanceComponent(clone.id, value)
+    if (field === 'visible') graph.updateNode(node.id, { visible: value === 'true' })
+    else if (field === 'text') graph.updateNode(node.id, { text: value })
+    else if (field === 'componentId' && node.type === 'INSTANCE' && graph.nodes.has(value)) {
+      graph.swapInstanceComponent(node.id, value)
     }
   }
-  for (const child of graph.getChildren(clone.id)) applyEnclosingAssignments(graph, child)
+  for (const child of graph.getChildren(node.id)) applyEnclosingAssignments(graph, child)
 }
 
 /**
- * Fields a component property drives on this child. The component states the default, but
+ * Fields a component property drives on this copy. The component states the default, but
  * an enclosing instance's assignment decides the value, so synchronising must not copy the
  * default over it — a page loaded later would otherwise reset the instance to the default.
  */
-function propertyDrivenFields(
-  graph: SceneGraph,
-  instChild: SceneNode,
-  compChild: SceneNode
-): Set<string> {
+function propertyDrivenFields(graph: SceneGraph, copy: SceneNode, source: SceneNode): Set<string> {
   const driven = new Set<string>()
-  for (const reference of compChild.componentPropertyReferences) {
+  for (const reference of source.componentPropertyReferences) {
     const field = PROPERTY_REFERENCE_FIELDS[reference.field]
-    if (field && hasEnclosingAssignment(graph, instChild, reference.propertyId)) driven.add(field)
+    if (field && hasEnclosingAssignment(graph, copy, reference.propertyId)) driven.add(field)
   }
   return driven
 }
 
 /**
- * The text and visibility enclosing assignments give an existing child whose layer a property
+ * The text and visibility enclosing assignments give an existing copy whose layer a property
  * drives. A layer linked to a property after the instance was made would otherwise keep what it
  * showed before, since synchronising leaves driven fields alone.
  */
 function assignedFieldValues(
   graph: SceneGraph,
-  instChild: SceneNode,
-  compChild: SceneNode
+  copy: SceneNode,
+  source: SceneNode
 ): Partial<SceneNode> {
   const values: Partial<SceneNode> = {}
-  for (const reference of compChild.componentPropertyReferences) {
-    const value = enclosingAssignment(graph, instChild, reference.propertyId)
+  for (const reference of source.componentPropertyReferences) {
+    const value = enclosingAssignment(graph, copy, reference.propertyId)
     if (value === undefined) continue
-    if (reference.field === 'TEXT' && instChild.type === 'TEXT') values.text = value
+    if (reference.field === 'TEXT' && copy.type === 'TEXT') values.text = value
     else if (reference.field === 'VISIBLE') values.visible = value === 'true'
   }
   return values
 }
 
-function childBindingProtection(
+function syncCopy(
   graph: SceneGraph,
-  child: SceneNode,
-  overrides: InstanceOverrideState
-) {
-  const fields = enclosingInstanceOverrideFields(graph, child)
-  fields.push(new Set(overrides.descendants.get(child.id)?.keys()))
-  return bindingProtection(fields)
+  context: CopyContext,
+  source: SceneNode,
+  copy: SceneNode,
+  sourceParent: SceneNode,
+  targetParent: SceneNode
+): void {
+  const overridden = instanceOverridesAt(context.owner.instanceOverrides, pathOf(copy.id))
+  const protectedField = bindingProtection(overridden.keys())
+  const driven = propertyDrivenFields(graph, copy, source)
+  const componentScale =
+    (source.componentScale * targetParent.componentScale) / sourceParent.componentScale
+  const scaled = sourceInTargetCoordinates(source, componentScale)
+  // Which properties a layer serves is the component's to say; a slot or exposed layer
+  // created on the component becomes one in every instance.
+  const updates: Partial<SceneNode> = {
+    componentScale,
+    componentPropertyReferences: structuredClone(source.componentPropertyReferences)
+  }
+  if (copy.type === 'INSTANCE') updates.componentId = shownComponentId(context, copy.id, source)
+  syncBindingFields(copy, scaled, updates, protectedField)
+  for (const key of INSTANCE_SYNC_FIELDS) {
+    if (key === 'boundVariables') continue
+    if (driven.has(key)) continue
+    if (isProtectedSyncField(copy, key, protectedField)) continue
+    copyProp(updates, scaled, key)
+  }
+  Object.assign(updates, assignedFieldValues(graph, copy, source))
+  updateSyncedProps(graph, copy, updates)
 }
 
-function linkMatchedChild(
-  overrides: InstanceOverrideState,
-  instParentId: string,
-  instChild: SceneNode,
-  compChildId: string
-): void {
-  if (instChild.type === 'INSTANCE') {
-    setInstanceOverride(overrides, instParentId, instChild.id, 'sourceComponentId', compChildId)
-  } else {
-    instChild.componentId = compChildId
-  }
-}
-
-function matchFallbackChildren(
-  graph: SceneGraph,
-  compParent: SceneNode,
-  instParent: SceneNode,
-  instParentId: string,
-  overrides: InstanceOverrideState,
-  instChildMap: Map<string, SceneNode>,
-  usedInstChildIds: Set<string>
-): void {
-  const fallbackByType = new Map<SceneNode['type'], Map<string, SceneNode[]>>()
-  const remainingCandidateCount = new Map<SceneNode['type'], number>()
-  const unmatchedComponentCount = new Map<SceneNode['type'], number>()
-  for (const compChildId of compParent.childIds) {
-    if (instChildMap.has(compChildId)) continue
-    const child = graph.nodes.get(compChildId)
-    if (child) {
-      unmatchedComponentCount.set(child.type, (unmatchedComponentCount.get(child.type) ?? 0) + 1)
-    }
-  }
-  for (const childId of instParent.childIds) {
-    const child = graph.nodes.get(childId)
-    if (!child || usedInstChildIds.has(child.id)) continue
-    remainingCandidateCount.set(child.type, (remainingCandidateCount.get(child.type) ?? 0) + 1)
-    let byName = fallbackByType.get(child.type)
-    if (!byName) {
-      byName = new Map()
-      fallbackByType.set(child.type, byName)
-    }
-    const queue = byName.get(child.name)
-    if (queue) queue.push(child)
-    else byName.set(child.name, [child])
-  }
-
-  // Match by name and type with FIFO queues to preserve sibling order in linear time.
-  for (const compChildId of compParent.childIds) {
-    if (instChildMap.has(compChildId)) continue
-    const compChild = graph.nodes.get(compChildId)
-    if (!compChild) continue
-    const candidatesByName = fallbackByType.get(compChild.type)
-    const candidateCount = remainingCandidateCount.get(compChild.type) ?? 0
-    if (candidateCount > (unmatchedComponentCount.get(compChild.type) ?? 0)) continue
-    const match = candidatesByName?.get(compChild.name)?.shift()
-    if (!match) continue
-    remainingCandidateCount.set(compChild.type, candidateCount - 1)
-    instChildMap.set(compChildId, match)
-    usedInstChildIds.add(match.id)
-    linkMatchedChild(overrides, instParentId, match, compChildId)
-  }
-}
-
-function sortInstanceChildren(
-  graph: SceneGraph,
-  instParent: SceneNode,
-  instParentId: string,
-  compChildOrder: string[],
-  overrides: InstanceOverrideState
-): void {
-  const orderMap = new Map<string, number>()
-  for (let i = 0; i < compChildOrder.length; i++) orderMap.set(compChildOrder[i], i)
-
-  const ranks = new Map<string, number>()
-  for (let index = 0; index < instParent.childIds.length; index++) {
-    const childId = instParent.childIds[index]
-    const node = graph.nodes.get(childId)
-    const source = node
-      ? getInstanceOverride(overrides, instParentId, node.id, 'sourceComponentId')
-      : undefined
-    const mapped = typeof source === 'string' ? source : node?.componentId
-    const componentIndex = mapped ? orderMap.get(mapped) : undefined
-    ranks.set(childId, componentIndex ?? compChildOrder.length + index)
-  }
-  const sorted = instParent.childIds.toSorted(
-    (left, right) => (ranks.get(left) ?? 0) - (ranks.get(right) ?? 0)
+/** Puts the copies in their component layers' order; layers of the instance's own go last. */
+function orderChildren(graph: SceneGraph, parent: SceneNode, copyIds: readonly string[]): void {
+  const order = new Map(copyIds.map((id, index) => [id, index]))
+  const sorted = parent.childIds.toSorted(
+    (left, right) =>
+      (order.get(left) ?? copyIds.length + parent.childIds.indexOf(left)) -
+      (order.get(right) ?? copyIds.length + parent.childIds.indexOf(right))
   )
   // Move through the graph so the reorder is reported, as collaboration syncs it.
   sorted.forEach((childId, index) => {
-    if (instParent.childIds[index] !== childId) graph.insertChildAt(childId, instParentId, index)
+    if (parent.childIds[index] !== childId) graph.insertChildAt(childId, parent.id, index)
   })
 }
 
-/** True when syncing `compParentId` into `instParentId` would form a cycle. */
-function isCyclicSync(graph: SceneGraph, compParentId: string, instParentId: string): boolean {
-  return compParentId === instParentId || graph.isDescendant(instParentId, compParentId)
+function syncCopies(
+  graph: SceneGraph,
+  context: CopyContext,
+  sourceParent: SceneNode,
+  targetParent: SceneNode
+): void {
+  // Syncing a component into its own subtree would clone it into itself without end.
+  if (sourceParent.id === targetParent.id || graph.isDescendant(targetParent.id, sourceParent.id))
+    return
+  const copyIds: string[] = []
+  for (const sourceId of sourceParent.childIds) {
+    const source = graph.getNode(sourceId)
+    if (!source) continue
+    const id = copyLayerId(context.scope, source)
+    copyIds.push(id)
+    const existing = graph.getNode(id)
+    if (!existing) {
+      const copy = cloneCopy(graph, context, source, sourceParent, targetParent, 'deep')
+      const contents = contentsSource(graph, context, copy, source)
+      if (contents && contents.source.childIds.length > 0)
+        cloneCopies(graph, contents.context, contents.source, copy, 'deep')
+      applyEnclosingAssignments(graph, copy)
+      continue
+    }
+    if (existing.parentId !== targetParent.id)
+      graph.insertChildAt(id, targetParent.id, targetParent.childIds.length)
+    // A swapped instance syncs as an instance of the component swapped in, not from this layer.
+    if (!isSwapped(context, existing))
+      syncCopy(graph, context, source, existing, sourceParent, targetParent)
+    // The component's frame is the authority on which slot this is; instance copies of its
+    // bindings are not synced.
+    if (ownsSlotContent(graph, existing, slotPropertyId(source))) continue
+    const contents = contentsSource(graph, context, existing, source)
+    // A swapped instance follows its own component, which syncs it as one of its instances.
+    if (contents && contents.source === source && source.childIds.length > 0)
+      syncCopies(graph, context, source, existing)
+  }
+  // Copies of layers the component no longer has go away; the instance's own layers stay.
+  const expected = new Set(copyIds)
+  for (const childId of targetParent.childIds)
+    if (isInstanceLayerId(childId) && !expected.has(childId)) graph.deleteNode(childId)
+  orderChildren(graph, targetParent, copyIds)
 }
 
-/** Children already linked to a component child by sourceComponentId or componentId. */
-function matchLinkedChildren(
-  graph: SceneGraph,
-  instParent: SceneNode,
-  instParentId: string,
-  overrides: InstanceOverrideState,
-  compChildIdSet: ReadonlySet<string>,
-  instChildMap: Map<string, SceneNode>,
-  usedInstChildIds: Set<string>
-): void {
-  for (const childId of instParent.childIds) {
-    const child = graph.nodes.get(childId)
-    if (!child) continue
-    const sourceComponentId = getInstanceOverride(
-      overrides,
-      instParentId,
-      child.id,
-      'sourceComponentId'
-    )
-    const mappedComponentId =
-      typeof sourceComponentId === 'string' ? sourceComponentId : child.componentId
-    if (mappedComponentId && compChildIdSet.has(mappedComponentId)) {
-      instChildMap.set(mappedComponentId, child)
-      usedInstChildIds.add(child.id)
+/**
+ * Brings one copy inside an instance, and the copies below it, up to date with the layer it
+ * copies, as syncing its whole outermost instance would. The layer it copies has a shorter path
+ * or sits in a component, so syncing shorter paths first brings sources up to date first.
+ */
+export function syncInstanceLayer(graph: SceneGraph, copy: SceneNode): void {
+  const address = parseInstanceLayerId(copy.id)
+  const owner = address && graph.getNode(address.owner)
+  const source = instanceLayerSource(graph, copy)
+  const parent = copy.parentId ? graph.getNode(copy.parentId) : undefined
+  const sourceParent = source?.parentId ? graph.getNode(source.parentId) : undefined
+  if (!address || !owner || !source || !parent || !sourceParent) return
+  // Below a swapped nested instance, copies are named from that instance, as building them did.
+  let scope: InstanceScope = { owner: owner.id, prefix: [] }
+  for (let length = address.path.length - 1; length >= 1; length--) {
+    const prefix = address.path.slice(0, length)
+    if (isSwappedAt(owner, prefix)) {
+      scope = { owner: owner.id, prefix }
+      break
     }
   }
+  const context = { scope, owner }
+  if (!isSwapped(context, copy)) syncCopy(graph, context, source, copy, sourceParent, parent)
+  if (ownsSlotContent(graph, copy, slotPropertyId(source))) return
+  const contents = contentsSource(graph, context, copy, source)
+  if (contents && contents.source === source && source.childIds.length > 0)
+    syncCopies(graph, context, source, copy)
 }
 
-export function syncChildren(
+/** Brings the copies an instance shows up to date with `component`. */
+export function syncInstanceChildren(
   graph: SceneGraph,
-  compParentId: string,
-  instParentId: string,
-  overrides: InstanceOverrideState
+  instance: SceneNode,
+  component: SceneNode
 ): void {
-  // Guard against cyclic sync: if the instance parent is inside the component's own
-  // subtree, syncing would clone the component into itself — a self-referential cycle
-  // that causes unbounded recursion and OOM.
-  if (isCyclicSync(graph, compParentId, instParentId)) return
-
-  const compParent = graph.nodes.get(compParentId)
-  const instParent = graph.nodes.get(instParentId)
-  if (!compParent || !instParent) return
-
-  const instChildMap = new Map<string, SceneNode>()
-  const usedInstChildIds = new Set<string>()
-  const compChildIdSet = new Set(compParent.childIds)
-
-  // Pass 1: Direct matching via sourceComponentId or componentId
-  matchLinkedChildren(
-    graph,
-    instParent,
-    instParentId,
-    overrides,
-    compChildIdSet,
-    instChildMap,
-    usedInstChildIds
-  )
-
-  // Pass 2: Fallback matching for unmatched children (e.g. from Figma imports)
-  matchFallbackChildren(
-    graph,
-    compParent,
-    instParent,
-    instParentId,
-    overrides,
-    instChildMap,
-    usedInstChildIds
-  )
-
-  // Pass 3: Clone only genuinely missing component children
-  for (const compChildId of compParent.childIds) {
-    if (!instChildMap.has(compChildId)) {
-      const src = graph.nodes.get(compChildId)
-      if (!src) continue
-      const clone = cloneChildInCoordinates(graph, src, compParent, instParent)
-      if (src.childIds.length > 0) {
-        cloneChildrenWithMapping(graph, compChildId, clone.id)
-      }
-      applyEnclosingAssignments(graph, clone)
-      instChildMap.set(compChildId, clone)
-      usedInstChildIds.add(clone.id)
-    }
-  }
-
-  // Pass 4: Synchronize properties and recurse
-  for (const compChildId of compParent.childIds) {
-    const compChild = graph.nodes.get(compChildId)
-    const instChild = instChildMap.get(compChildId)
-    if (!compChild || !instChild) continue
-
-    const protectedField = childBindingProtection(graph, instChild, overrides)
-    const driven = propertyDrivenFields(graph, instChild, compChild)
-    const componentScale =
-      (compChild.componentScale * instParent.componentScale) / compParent.componentScale
-    const source = sourceInTargetCoordinates(compChild, componentScale)
-    // Which properties a layer serves is the component's to say; a slot or exposed layer
-    // created on the component becomes one in every instance.
-    const updates: Partial<SceneNode> = {
-      componentScale,
-      componentPropertyReferences: structuredClone(compChild.componentPropertyReferences)
-    }
-    syncBindingFields(instChild, source, updates, protectedField)
-    for (const key of INSTANCE_SYNC_FIELDS) {
-      if (key === 'boundVariables') continue
-      if (driven.has(key)) continue
-      if (isProtectedSyncField(instChild, key, protectedField)) continue
-
-      copyProp(updates, source, key)
-    }
-    Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
-    updateSyncedProps(graph, instChild, updates)
-
-    if (
-      compChild.childIds.length > 0 &&
-      !hasNodeInstanceOverride(overrides, instParentId, instChild.id, 'componentId') &&
-      // The component's frame is the authority on which slot this is; instance copies of
-      // its bindings are not synced.
-      !ownsSlotContent(graph, instChild, slotPropertyId(compChild))
-    ) {
-      syncChildren(graph, compChildId, instChild.id, overrides)
-    }
-  }
-
-  // Pass 5: Sort instance children to match component child order
-  sortInstanceChildren(graph, instParent, instParentId, compParent.childIds, overrides)
+  const scope = instanceScope(instance)
+  const owner = graph.getNode(scope.owner)
+  if (!owner) throw new Error(`Missing instance ${scope.owner}`)
+  syncCopies(graph, { scope, owner }, component, instance)
 }

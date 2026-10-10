@@ -1,5 +1,6 @@
 import * as Y from 'yjs'
 
+import { isLegacyInstanceLayer, migrateInstanceLayers } from '@open-pencil/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
@@ -44,7 +45,8 @@ type YjsObserverOptions = {
   yimages: YImages
   getSuppressYjsEvents: () => boolean
   setSuppressGraphSync: (value: boolean) => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
+  /** Returns whether the changes brought layers in the shape older rooms had. */
+  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => boolean
 }
 
 type YjsGraphSyncOptions = {
@@ -135,14 +137,18 @@ export function registerYjsObservers({
     // A migration this peer wrote was applied by the change that triggered it.
     if (getSuppressYjsEvents() || transaction.origin === TREE_MIGRATION_ORIGIN) return
     setSuppressGraphSync(true)
+    let legacy = false
     try {
-      applyYjsToGraph(events)
+      legacy = applyYjsToGraph(events)
       store.requestRender()
     } catch (error) {
       logCollabSyncError('Failed to apply remote graph changes', error)
     } finally {
       setSuppressGraphSync(false)
     }
+    // Converting them is an edit of this peer's, which reaches the room; every peer that converts
+    // the same layers names them alike.
+    if (legacy) migrateInstanceLayers(store.graph)
   }
 
   function onImages(event: Y.YMapEvent<Uint8Array>) {
@@ -284,11 +290,12 @@ export function createYjsGraphSync({
     }
   }
 
-  function applyYjsToGraph(events: Y.YEvent<Y.Map<unknown>>[]) {
+  /** Applies remote changes; returns whether they brought layers in the shape older rooms had. */
+  function applyYjsToGraph(events: Y.YEvent<Y.Map<unknown>>[]): boolean {
     const store = getStore()
     const ydoc = getYdoc()
     const ynodes = getYnodes()
-    if (!ydoc || !ynodes) return
+    if (!ydoc || !ynodes) return false
     const changed = new Set<string>()
     const deleted = new Set<string>()
     for (const event of events) {
@@ -315,6 +322,11 @@ export function createYjsGraphSync({
     applySharedTree(sharedTreeOf(ydoc), store.graph, ynodes, ydoc.getMap('meta'), changed, gone)
     for (const nodeId of gone) store.graph.deleteNode(nodeId)
     ensureCurrentPageExists(store)
+    // Layers a room saved before copies inside instances were named by their paths.
+    return [...changed].some((nodeId) => {
+      const node = store.graph.getNode(nodeId)
+      return node !== undefined && isLegacyInstanceLayer(store.graph, node)
+    })
   }
 
   /** Applies a layer's own fields; `applySharedTree` places it in the tree afterwards. */

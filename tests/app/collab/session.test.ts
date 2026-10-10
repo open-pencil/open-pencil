@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { instanceLayerId, SceneGraph } from '@open-pencil/scene-graph'
 
 import { openRoomSession, type RoomSession, type RoomSessionOptions } from '@/app/collab/session'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
@@ -160,6 +160,33 @@ describe('room sessions', () => {
       expect(guest.graph.getNode('after-leave')).toBeUndefined()
       expect(joined.peers.value).toEqual([])
       expect(presenceOf(guest).peers.value).toEqual([])
+    })
+  })
+
+  test('layers in the shape older rooms kept are converted once, and the room follows', async () => {
+    await withRooms(async (open, settle) => {
+      // A document whose copies have ids of their own, as rooms saved them before copies were
+      // named by their paths.
+      const graph = new SceneGraph()
+      const page = expectDefined(graph.getPages()[0], 'first page').id
+      const component = graph.createNode('COMPONENT', page, { name: 'Card' })
+      const label = graph.createNode('TEXT', component.id, { name: 'Label' })
+      const instance = graph.createNode('INSTANCE', page, { componentId: component.id })
+      const legacyId = graph.createNode('TEXT', instance.id, {
+        name: 'Label',
+        componentId: label.id
+      }).id
+      const host = createEditorStore(graph)
+      const shared = open({ roomId: ROOM_A, store: host, origin: 'shared' })
+      shared.shareDocument()
+      const guest = newStore()
+      open({ roomId: ROOM_A, store: guest, origin: 'joined' })
+      await settle()
+      const copyId = instanceLayerId(instance.id, [label.id])
+      for (const store of [guest, host]) {
+        expect(store.graph.getNode(copyId)?.name).toBe('Label')
+        expect(store.graph.getNode(legacyId)).toBeUndefined()
+      }
     })
   })
 })

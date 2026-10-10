@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { cloneSceneGraphForFigExport } from '@open-pencil/core/kiwi/fig/parse/transfer'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 function lazyExportGraph() {
   const graph = new SceneGraph()
@@ -28,7 +30,7 @@ function createEditedInstance(
   if (!instance) throw new Error(`Could not create instance: ${name}`)
   const textId = instance.childIds[0]
   graph.updateNode(textId, { text })
-  setInstanceOverride(instance.instanceOverrides, instance.id, textId, 'text', text)
+  setInstanceOverride(instance.instanceOverrides, layerPath(textId), 'text', text)
   graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
 
   return { instance, textId }

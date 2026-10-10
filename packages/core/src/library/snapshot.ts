@@ -1,4 +1,9 @@
-import { cloneNodeProps, contentPluginData, SceneGraph } from '@open-pencil/scene-graph'
+import {
+  cloneNodeProps,
+  contentPluginData,
+  copyLayerTrees,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { contentHash } from './hash'
@@ -40,37 +45,6 @@ function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
   return ids
 }
 
-function addSnapshotNode(
-  source: SceneGraph,
-  target: SceneGraph,
-  sourceId: string,
-  targetParentId: string,
-  mappedIds: Map<string, string>
-): void {
-  const node = source.getNode(sourceId)
-  if (!node) return
-  const created = target.createNode(node.type, targetParentId, {
-    ...cloneNodeProps(node, node.componentId),
-    // A behaviour or other plugin content belongs to the asset; where it came from does not.
-    pluginData: contentPluginData(node.pluginData)
-  })
-  mappedIds.set(sourceId, created.id)
-  for (const childId of node.childIds)
-    addSnapshotNode(source, target, childId, created.id, mappedIds)
-}
-
-function remapSnapshotReferences(graph: SceneGraph, mappedIds: Map<string, string>): void {
-  for (const [sourceId, targetId] of mappedIds) {
-    const sourceTarget = graph.getNode(targetId)
-    if (!sourceTarget) continue
-    const componentId = sourceTarget.componentId
-    if (componentId && mappedIds.has(componentId)) {
-      graph.updateNode(targetId, { componentId: mappedIds.get(componentId) ?? null })
-    }
-    if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
-  }
-}
-
 export function extractLibrarySnapshot(
   source: SceneGraph,
   assetNodeIds?: string[]
@@ -89,22 +63,22 @@ export function extractLibrarySnapshot(
   const page = snapshot.getPages()[0]
   page.name = 'Library definitions'
   page.internalOnly = true
-  const mappedIds = new Map<string, string>()
-  const sourceComponentIds = new Map<string, string | null>()
   const closureRoots = [...closure]
     .map((id) => source.getNode(id))
     .filter((node): node is SceneNode =>
       Boolean(node && (!node.parentId || !closure.has(node.parentId)))
     )
-  for (const root of closureRoots) addSnapshotNode(source, snapshot, root.id, page.id, mappedIds)
-  for (const sourceId of mappedIds.keys()) {
-    sourceComponentIds.set(sourceId, source.getNode(sourceId)?.componentId ?? null)
-  }
-  for (const [sourceId, targetId] of mappedIds) {
-    const componentId = sourceComponentIds.get(sourceId)
-    if (componentId) snapshot.updateNode(targetId, { componentId })
-  }
-  remapSnapshotReferences(snapshot, mappedIds)
+  const mappedIds = copyLayerTrees(
+    source,
+    snapshot,
+    closureRoots.map((root) => root.id),
+    page.id,
+    (node) => ({
+      ...cloneNodeProps(node, null),
+      // A behaviour or other plugin content belongs to the asset; where it came from does not.
+      pluginData: contentPluginData(node.pluginData)
+    })
+  )
 
   for (const imageHash of new Set(
     [...closure].flatMap((id) => {

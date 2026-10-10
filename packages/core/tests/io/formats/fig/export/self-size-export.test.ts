@@ -6,7 +6,14 @@ import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
-import { SceneGraph, setInstanceOverride, rescaleNodeTree } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  setInstanceOverride,
+  rescaleNodeTree,
+  parseInstanceLayerId
+} from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 test('serializes self size claims against the instance main component', async () => {
   await initCodec()
@@ -19,9 +26,9 @@ test('serializes self size claims against the instance main component', async ()
   if (!instance) throw new Error('Missing instance')
   rescaleNodeTree(graph, instance.id, 0.5)
   graph.updateNode(instance.id, { width: 16, height: 16, paddingLeft: 10 })
-  setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'width', 16)
-  setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'paddingLeft', 10)
-  setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'height', 16)
+  setInstanceOverride(instance.instanceOverrides, layerPath(instance.id), 'width', 16)
+  setInstanceOverride(instance.instanceOverrides, layerPath(instance.id), 'paddingLeft', 10)
+  setInstanceOverride(instance.instanceOverrides, layerPath(instance.id), 'height', 16)
   const bytes = await exportFigFile(graph)
   const { nodeChanges } = parseFigBuffer(bytes.buffer as ArrayBuffer)
   const exported = nodeChanges.find((node) => node.type === 'INSTANCE')

@@ -8,11 +8,7 @@ import { createOccurrenceInterpreter } from './interpret'
 import { materializeInstance } from './materialize-instance'
 import { occurrences } from './occurrence/path'
 import type { InstanceOccurrence, InterpretInstanceOptions } from './occurrence/types'
-import {
-  linkInstanceSourceChildren,
-  mapInstanceSourceChildren,
-  type MaterializedComponentOccurrence
-} from './source-children'
+import { mapInstanceSourceChildren, type MaterializedComponentOccurrence } from './source-children'
 
 export interface MaterializedComponentClosure extends ReadonlyMap<
   string,
@@ -60,7 +56,6 @@ export function materializeComponentClosure(
       blobs,
       sourceChildren: mapInstanceSourceChildren(occurrence, components)
     })
-    linkInstanceSourceChildren(occurrence, materialized, components)
     components.set(id, { occurrence, materialized })
     ids.set(id, materialized.root.id)
     pending.delete(id)

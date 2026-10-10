@@ -1,9 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getInstanceOverride, SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import {
+  getInstanceOverride,
+  SceneGraph,
+  setInstanceOverride,
+  parseInstanceLayerId
+} from '@open-pencil/scene-graph'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 class MemoryObjects implements LibraryObjectStore {
   readonly values = new Map<string, Uint8Array>()
@@ -83,7 +90,7 @@ describe('storage library catalog', () => {
     })
     const instance = graph.createInstance(nestedComponent.id, component.id)
     if (!instance) throw new Error('Expected instance')
-    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'pluginData', {
+    setInstanceOverride(instance.instanceOverrides, layerPath(instance.id), 'pluginData', {
       $openPencilType: 'openpencil/map',
       entries: []
     })
@@ -103,8 +110,7 @@ describe('storage library catalog', () => {
     expect(
       getInstanceOverride(
         restoredInstance.instanceOverrides,
-        restoredInstance.id,
-        restoredInstance.id,
+        layerPath(restoredInstance.id),
         'pluginData'
       )
     ).toEqual({ $openPencilType: 'openpencil/map', entries: [] })

@@ -1,7 +1,6 @@
-import { setInstanceOverride, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { MaterializedInstance } from './materialize-instance'
-import { occurrences } from './occurrence/path'
 import type { InstanceOccurrence } from './occurrence/types'
 
 export interface MaterializedComponentOccurrence {
@@ -61,64 +60,6 @@ function* pairSourceChildren(
     const counterpart = bySource.get(child.sourceId)
     if (!counterpart) throw new Error(`Missing source child ${child.sourceId}`)
     yield [child, counterpart]
-  }
-}
-
-/**
- * Each instance owner addresses descendants in its own component expansion. A nested
- * instance therefore has both its own correspondence and the outer owner's; a swap ends
- * the outer owner's descendant scope.
- */
-export function linkInstanceSourceChildren(
-  root: InstanceOccurrence,
-  materialized: MaterializedInstance,
-  components: ReadonlyMap<string, MaterializedComponentOccurrence>
-): void {
-  const links: Array<{ owner: SceneNode; target: SceneNode; source: SceneNode }> = []
-  const match = (
-    target: InstanceOccurrence,
-    source: InstanceOccurrence,
-    owner: SceneNode,
-    sourceNodes: ReadonlyMap<InstanceOccurrence, SceneNode>
-  ): void => {
-    for (const [child, counterpart] of pairSourceChildren(target, source)) {
-      const targetNode = materialized.nodes.get(child)
-      const sourceNode = sourceNodes.get(counterpart)
-      if (!targetNode || !sourceNode) {
-        throw new Error(`Missing materialized correspondence for ${child.sourceId}`)
-      }
-      links.push({ owner, target: targetNode, source: sourceNode })
-      // Slot content is the instance's own; its instances are owners in their own right.
-      if (child.slotContentId) continue
-      if (child.mainComponentId === counterpart.mainComponentId) {
-        match(child, counterpart, owner, sourceNodes)
-      }
-    }
-  }
-  for (const current of occurrences(root)) {
-    if (current.mainComponentId === null) continue
-    const component = components.get(current.mainComponentId)
-    const owner = materialized.nodes.get(current)
-    if (!component || !owner) throw new Error(`Missing component ${current.mainComponentId}`)
-    match(current, component.occurrence, owner, component.materialized.nodes)
-  }
-  for (const { owner, target, source } of links) {
-    setInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      target.id,
-      'sourceComponentId',
-      source.id
-    )
-    if (target.type === 'INSTANCE' && target.componentId !== source.componentId) {
-      setInstanceOverride(
-        owner.instanceOverrides,
-        owner.id,
-        target.id,
-        'componentId',
-        target.componentId
-      )
-    }
   }
 }
 

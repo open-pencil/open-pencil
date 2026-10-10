@@ -1,5 +1,6 @@
 import { cloneNodeProps } from '../copy'
 import { remapInstanceOverrideState } from '../instance-overrides'
+import { parseOverridePathKey } from '../instances/layer-ids'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { requireTransferReference as required } from './references'
 import type { VariableTransferReferences } from './variables'
@@ -25,15 +26,12 @@ export function semanticTransferReferences(node: SceneNode): string[] {
         ? [definition.defaultValue]
         : [])
     ]),
-    ...node.instanceOverrides.descendants.keys(),
+    ...[...node.instanceOverrides.layers.keys()].flatMap(parseOverridePathKey),
     ...[
       ...node.instanceOverrides.self,
-      ...[...node.instanceOverrides.descendants.values()].flatMap((fields) => [...fields])
+      ...[...node.instanceOverrides.layers.values()].flatMap((fields) => [...fields])
     ].flatMap(([field, value]) =>
-      typeof value === 'string' &&
-      (field === 'componentId' ||
-        field === 'sourceComponentId' ||
-        field.startsWith('boundVariables/'))
+      typeof value === 'string' && (field === 'componentId' || field.startsWith('boundVariables/'))
         ? [value]
         : []
     )

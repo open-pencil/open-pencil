@@ -2,8 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -99,11 +101,10 @@ describe('fig import override field protection', () => {
       fills: [blueFill],
       boundVariables: { 'fills/0/color': 'target-color', width: 'target-width' }
     })
-    setInstanceOverride(instance.instanceOverrides, instance.id, target.id, 'text', true)
+    setInstanceOverride(instance.instanceOverrides, layerPath(target.id), 'text', true)
     setInstanceOverride(
       instance.instanceOverrides,
-      instance.id,
-      target.id,
+      layerPath(target.id),
       'boundVariables/width',
       true
     )
@@ -132,7 +133,7 @@ describe('fig import override field protection', () => {
       visible: true,
       strokes: [blueStroke]
     })
-    setInstanceOverride(instance.instanceOverrides, instance.id, target.id, 'strokes', true)
+    setInstanceOverride(instance.instanceOverrides, layerPath(target.id), 'strokes', true)
     graph.syncInstances(component.id)
 
     const synced = graph.getNode(target.id)

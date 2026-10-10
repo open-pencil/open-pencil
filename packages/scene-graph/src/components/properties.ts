@@ -1,6 +1,6 @@
 import type { SceneGraph } from '../index'
 import { setInstanceOverride } from '../instance-overrides'
-import { findInstanceAncestor } from '../instances'
+import { overrideTarget } from '../instances/addressing'
 import { instanceMainComponent } from '../instances/main-component'
 import { walkInstanceSources } from '../instances/source-walk'
 import { randomHex } from '../random'
@@ -69,77 +69,64 @@ export function findComponentPropertyTargets(
   propertyId: string
 ): ComponentPropertyTarget[] {
   const targets: ComponentPropertyTarget[] = []
-  walkInstanceSources(
-    graph,
-    instance,
-    (source, target) => {
-      const reference = source.componentPropertyReferences.find(
-        (candidate) => candidate.propertyId === propertyId
-      )
-      if (reference) targets.push({ node: target, field: reference.field, source })
-      return true
-    },
-    true
-  )
+  walkInstanceSources(graph, instance, (source, target) => {
+    const reference = source.componentPropertyReferences.find(
+      (candidate) => candidate.propertyId === propertyId
+    )
+    if (reference) targets.push({ node: target, field: reference.field, source })
+    return true
+  })
   return targets
+}
+
+/** Records a property's value on a layer inside an instance as an override of its owner. */
+function overrideTargetField(
+  graph: SceneGraph,
+  node: SceneNode,
+  field: string,
+  value: unknown
+): void {
+  const target = overrideTarget(graph, node)
+  if (!target || target.path.length === 0) return
+  setInstanceOverride(target.owner.instanceOverrides, target.path, field, value)
+  graph.updateNode(target.owner.id, { instanceOverrides: target.owner.instanceOverrides })
 }
 
 function applyTextProperty(
   graph: SceneGraph,
-  owner: SceneNode,
   targets: ComponentPropertyTarget[],
   value: string
 ): void {
   for (const item of targets) {
     if (item.field !== 'TEXT' || item.node.type !== 'TEXT') continue
     graph.updateNode(item.node.id, { text: value })
-    if (findInstanceAncestor(graph, item.node.id)) {
-      setInstanceOverride(owner.instanceOverrides, owner.id, item.node.id, 'text', value)
-    }
+    overrideTargetField(graph, item.node, 'text', value)
   }
 }
 
 function applyBooleanProperty(
   graph: SceneGraph,
-  owner: SceneNode,
   targets: ComponentPropertyTarget[],
   value: string
 ): void {
   for (const item of targets) {
     if (item.field !== 'VISIBLE') continue
-    const instance = findInstanceAncestor(graph, item.node.id)
     graph.updateNode(item.node.id, { visible: value === 'true' })
-    if (instance) {
-      setInstanceOverride(
-        owner.instanceOverrides,
-        owner.id,
-        item.node.id,
-        'visible',
-        value === 'true'
-      )
-    }
+    overrideTargetField(graph, item.node, 'visible', value === 'true')
   }
 }
 
 function applyInstanceSwapProperty(
   graph: SceneGraph,
-  owner: SceneNode,
   targets: ComponentPropertyTarget[],
   target: SceneNode
 ): void {
   for (const item of targets) {
     if (item.field !== 'INSTANCE_SWAP' || item.node.type !== 'INSTANCE') continue
     graph.swapInstanceComponent(item.node.id, target.id)
-    setInstanceOverride(owner.instanceOverrides, owner.id, item.node.id, 'name', target.name)
-    setInstanceOverride(owner.instanceOverrides, owner.id, item.node.id, 'componentId', target.id)
-    setInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      item.node.id,
-      'sourceComponentId',
-      item.source.id
-    )
-    graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
+    // The swapped instance is named after the component it shows now.
+    graph.updateNode(item.node.id, { name: target.name })
+    overrideTargetField(graph, item.node, 'name', target.name)
   }
 }
 
@@ -157,11 +144,11 @@ export function applyComponentPropertyValue(
     definition.type === 'INSTANCE_SWAP' ? resolveComponentPropertyValue(graph, value) : null
   if (definition.type === 'INSTANCE_SWAP' && !target) return null
   if (definition.type === 'TEXT') {
-    applyTextProperty(graph, instance, targets, value)
+    applyTextProperty(graph, targets, value)
   } else if (definition.type === 'BOOLEAN') {
-    applyBooleanProperty(graph, instance, targets, value)
+    applyBooleanProperty(graph, targets, value)
   } else if (target) {
-    applyInstanceSwapProperty(graph, instance, targets, target)
+    applyInstanceSwapProperty(graph, targets, target)
   }
   graph.updateNode(instance.id, {
     componentPropertyAssignments: {

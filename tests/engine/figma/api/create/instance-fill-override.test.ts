@@ -1,32 +1,30 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getInstanceOverride } from '@open-pencil/scene-graph'
+import { overriddenFields } from '@open-pencil/scene-graph'
 
 import { createAPI, solidFill } from '../helpers'
+
+function overridden(api: ReturnType<typeof createAPI>, id: string): ReadonlySet<string> {
+  const node = api.graph.getNode(id)
+  if (!node) throw new Error(`Missing node ${id}`)
+  return overriddenFields(api.graph, node)
+}
 
 describe('setting fills on an instance descendant', () => {
   test('records an instance override so the change survives resync', () => {
     const api = createAPI()
     const icon = api.createComponent()
     icon.resize(16, 16)
+    icon.appendChild(api.createVector())
 
     const instance = icon.createInstance()
-    const vector = api.graph.createNode('VECTOR', instance.id, { width: 16, height: 16 })
-    api.graph.updateNode(vector.id, { componentId: icon.id })
+    const vector = instance.children[0]
+    if (!vector) throw new Error('vector not found')
+    vector.fills = [solidFill({ r: 0, g: 0, b: 1, a: 1 })]
 
-    const vectorProxy = api.getNodeById(vector.id)
-    if (!vectorProxy) throw new Error('vector proxy not found')
-    vectorProxy.fills = [solidFill({ r: 0, g: 0, b: 1, a: 1 })]
-
-    const raw = api.graph.getNode(instance.id)
-    expect(
-      getInstanceOverride(
-        raw?.instanceOverrides ?? { self: new Map(), descendants: new Map() },
-        instance.id,
-        vector.id,
-        'fills'
-      )
-    ).toBe(true)
+    expect(overridden(api, vector.id).has('fills')).toBe(true)
+    api.graph.syncInstances(icon.id)
+    expect(vector.fills).toHaveLength(1)
   })
 
   test('preserves text edits on an instance descendant during resync', () => {
@@ -41,23 +39,14 @@ describe('setting fills on an instance descendant', () => {
     if (!instanceText) throw new Error('instance text not found')
     instanceText.characters = 'Custom'
 
-    expect(
-      getInstanceOverride(
-        api.graph.getNode(instance.id)?.instanceOverrides ?? {
-          self: new Map(),
-          descendants: new Map()
-        },
-        instance.id,
-        instanceText.id,
-        'text'
-      )
-    ).toBe(true)
+    expect(overridden(api, instanceText.id).has('text')).toBe(true)
 
     text.characters = 'Updated default'
     api.graph.syncInstances(component.id)
 
     expect(instanceText.characters).toBe('Custom')
   })
+
   test('does not record an override for a node with no instance ancestor', () => {
     const api = createAPI()
     const frame = api.createFrame()

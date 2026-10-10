@@ -3,11 +3,8 @@ import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import {
-  createInstanceOverrideState,
   deserializeInstanceOverrideState,
   serializeInstanceOverrideState,
-  setInstanceOverride,
-  type InstanceOverrideState,
   type GeometryPath,
   type NodeType,
   type SceneGraph,
@@ -51,7 +48,6 @@ interface SerializedClipboardNode {
   type: NodeType
   x: number
   y: number
-  overrides?: Record<string, unknown>
   instanceOverrides?: unknown
   textPicture?: string | null
   fillGeometry?: SerializedGeometryPath[]
@@ -81,7 +77,6 @@ const SerializedClipboardNodeSchema: v.GenericSchema<unknown, SerializedClipboar
     // Older clipboard payloads may omit a position; paste offsets from the origin then.
     x: v.optional(finiteNumber, 0),
     y: v.optional(finiteNumber, 0),
-    overrides: v.optional(v.record(v.string(), v.unknown())),
     instanceOverrides: v.optional(v.unknown()),
     textPicture: v.optional(v.nullable(v.string())),
     fillGeometry: SerializedGeometry,
@@ -133,22 +128,6 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
   return null
 }
 
-function legacyInstanceOverrides(
-  nodeId: string,
-  overrides: Record<string, unknown> | undefined
-): InstanceOverrideState {
-  const state = createInstanceOverrideState()
-  for (const [key, value] of Object.entries(overrides ?? {})) {
-    const separator = key.lastIndexOf(':')
-    if (separator === -1) {
-      setInstanceOverride(state, nodeId, nodeId, key, value)
-    } else {
-      setInstanceOverride(state, nodeId, key.slice(0, separator), key.slice(separator + 1), value)
-    }
-  }
-  return state
-}
-
 function restoreGeometry(paths: SerializedGeometryPath[] | undefined): GeometryPath[] {
   return (paths ?? []).map((path) => ({
     ...path,
@@ -164,10 +143,8 @@ function clipboardBytes(value: string): Uint8Array {
 
 function restoreNodeData(nodes: SerializedClipboardNode[]): ClipboardNode[] {
   return nodes.map((node) => {
-    const { children, instanceOverrides, overrides, textPicture, ...rest } = node
-    const overrideState = instanceOverrides
-      ? deserializeInstanceOverrideState(instanceOverrides)
-      : legacyInstanceOverrides(rest.id, overrides)
+    const { children, instanceOverrides, textPicture, ...rest } = node
+    const overrideState = deserializeInstanceOverrideState(instanceOverrides)
     return {
       ...rest,
       fillGeometry: restoreGeometry(rest.fillGeometry),

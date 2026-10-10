@@ -4,11 +4,10 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { importClipboardNodes } from '@open-pencil/core'
 import type { NodeChange } from '@open-pencil/core'
-import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { instanceLayerId, SceneGraph } from '@open-pencil/scene-graph'
 
-describe('importClipboardNodes: instance child linkage', () => {
-  it('links serialized instance children so a later component sync does not duplicate them', () => {
+describe('importClipboardNodes: instance children', () => {
+  it('expands pasted instance children so a later component sync does not duplicate them', () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Test')
     const pageId = page.id
@@ -73,7 +72,7 @@ describe('importClipboardNodes: instance child linkage', () => {
     // The expanded child carries the override and its component child's id.
     const instChild = getNodeOrThrow(graph, instance.childIds[0])
     expect(instChild.name).toBe('Header v2')
-    expect(instChild.componentId).toBe(compChild.id)
+    expect(instChild.id).toBe(instanceLayerId(instance.id, [compChild.id]))
 
     // A later component edit must sync props, not duplicate children.
     graph.updateNode(compChild.id, { height: 50 })
@@ -81,75 +80,5 @@ describe('importClipboardNodes: instance child linkage', () => {
 
     expect(instance.childIds).toHaveLength(1)
     expect(instChild.height).toBe(50)
-  })
-
-  it('does not mis-link an extra same-type child inserted before a renamed serialized child (overrideKey)', () => {
-    const graph = new SceneGraph()
-    const page = graph.addPage('Test')
-
-    const comp = graph.createNode('COMPONENT', page.id, { name: 'Card' })
-    const compHeader = graph.createNode('FRAME', comp.id, {
-      name: 'Header',
-      overrideKey: '1:100',
-      width: 200,
-      height: 40
-    })
-
-    const inst = graph.createNode('INSTANCE', page.id, {
-      name: 'Card',
-      componentId: comp.id
-    })
-    const extra = graph.createNode('FRAME', inst.id, {
-      name: 'Badge',
-      width: 60,
-      height: 20,
-      componentId: null
-    })
-    const renamed = graph.createNode('FRAME', inst.id, {
-      name: 'Header v2',
-      overrideKey: '1:100',
-      width: 200,
-      height: 40,
-      componentId: null
-    })
-
-    expect(inst.childIds).toEqual([extra.id, renamed.id])
-
-    linkImportedInstanceChildren(graph, new Set([inst.id]))
-
-    expect(extra.componentId).toBeNull()
-    expect(renamed.componentId).toBe(compHeader.id)
-
-    graph.updateNode(compHeader.id, { height: 50 })
-    graph.syncInstances(comp.id)
-
-    expect(inst.childIds).toHaveLength(2)
-    expect(graph.getNode(extra.id)?.name).toBe('Badge')
-    expect(graph.getNode(extra.id)?.componentId).toBeNull()
-    expect(graph.getNode(renamed.id)?.height).toBe(50)
-    // Extra sorts to the end, mapped child first.
-    expect(inst.childIds[0]).toBe(renamed.id)
-    expect(inst.childIds[1]).toBe(extra.id)
-  })
-
-  it('leaves ambiguous positional children unmapped when cardinality differs', () => {
-    const graph = new SceneGraph()
-    const page = graph.addPage('Test')
-    const component = graph.createNode('COMPONENT', page.id, { name: 'Card' })
-    graph.createNode('FRAME', component.id, { name: 'Header' })
-    const instance = graph.createNode('INSTANCE', page.id, {
-      name: 'Card',
-      componentId: component.id
-    })
-    const extra = graph.createNode('FRAME', instance.id, { name: 'Badge' })
-    const serialized = graph.createNode('FRAME', instance.id, { name: 'Header v2' })
-
-    linkImportedInstanceChildren(graph, new Set([instance.id]))
-
-    expect(extra.componentId).toBeNull()
-    expect(serialized.componentId).toBeNull()
-    graph.syncInstances(component.id)
-    expect(instance.childIds).toHaveLength(3)
-    expect(instance.childIds).toEqual(expect.arrayContaining([extra.id, serialized.id]))
   })
 })

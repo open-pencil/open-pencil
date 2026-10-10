@@ -1,4 +1,9 @@
-import { cloneNodeProps, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  cloneNodeProps,
+  copyLayerTrees,
+  SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 
@@ -19,22 +24,12 @@ function copyPreviewDefinitions(
   components: SceneNode[],
   pageId: string
 ): Map<string, string> {
-  const mapped = new Map<string, string>()
-  const copy = (node: SceneNode, parentId: string): string => {
-    const existing = mapped.get(node.id)
-    if (existing) return existing
-    const created = target.createNode(node.type, parentId, cloneNodeProps(node, node.componentId))
-    mapped.set(node.id, created.id)
-    for (const child of source.getChildren(node.id)) copy(child, created.id)
-    return created.id
-  }
-  for (const component of components) copy(component, pageId)
-  for (const [sourceId, targetId] of mapped) {
-    const componentId = source.getNode(sourceId)?.componentId
-    const remapped = componentId ? mapped.get(componentId) : null
-    if (remapped) target.updateNode(targetId, { componentId: remapped })
-  }
-  return mapped
+  return copyLayerTrees(
+    source,
+    target,
+    components.map((component) => component.id),
+    pageId
+  )
 }
 
 function consumerDependencyRoots(graph: SceneGraph, component: SceneNode): SceneNode[] {

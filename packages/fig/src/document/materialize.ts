@@ -12,7 +12,6 @@ import type {
 } from '../instance-overrides/occurrence/types'
 import {
   reconcileOccurrenceStructure,
-  linkInstanceSourceChildren,
   mapInstanceSourceChildren,
   type MaterializedComponentOccurrence
 } from '../instance-overrides/source-children'
@@ -294,7 +293,6 @@ function materializeReader(
       existingNodes
     })
     rememberDerivedSizes(materialized.nodes)
-    linkInstanceSourceChildren(item.occurrence, materialized, components)
     components.set(item.sourceId, { occurrence: item.occurrence, materialized })
     componentIds.set(item.sourceId, materialized.root.id)
     sources.set(item.sourceId, materialized.root.id)
@@ -318,7 +316,6 @@ function materializeReader(
           sourceChildren: mapInstanceSourceChildren(child, components)
         })
         rememberDerivedSizes(materialized.nodes)
-        linkInstanceSourceChildren(child, materialized, components)
         if (previous) {
           reconcileLiveComponentEdits(graph, materialized)
           if (materialized.root.componentId) resync.add(materialized.root.id)

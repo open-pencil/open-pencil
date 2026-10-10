@@ -3,6 +3,7 @@ import { pick } from 'es-toolkit/object'
 import {
   applyComponentPropertyValue,
   cloneInstanceOverrideState,
+  overrideTarget,
   componentPropertyDefinitions,
   findComponentPropertyTargets
 } from '@open-pencil/scene-graph'
@@ -92,9 +93,11 @@ function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: strin
     ? componentPropertyDefinitions(ctx.graph, instance).find((item) => item.id === propertyId)
     : undefined
   if (!instance || !definition) return
+  // The property is assigned on this instance; overrides go to the outermost one it sits in.
+  const owner = overrideTarget(ctx.graph, instance)?.owner ?? instance
   const before = {
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
-    instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
+    instanceOverrides: cloneInstanceOverrideState(owner.instanceOverrides)
   }
   // Other layers the property drives in this instance change and resize with it, and undo with it.
   const others = findComponentPropertyTargets(ctx.graph, instance, propertyId).flatMap((target) =>
@@ -102,7 +105,12 @@ function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: strin
   )
   const { before: othersBefore, after: othersAfter } = layerTextChanges(others, text)
   const apply = (values: typeof before, layers: LayerChanges[]) => {
-    ctx.graph.updateNode(instance.id, structuredClone(values))
+    ctx.graph.updateNode(instance.id, {
+      componentPropertyAssignments: { ...values.componentPropertyAssignments }
+    })
+    ctx.graph.updateNode(owner.id, {
+      instanceOverrides: cloneInstanceOverrideState(values.instanceOverrides)
+    })
     for (const layer of layers) ctx.graph.updateNode(layer.id, structuredClone(layer.changes))
     ctx.runLayoutForNode(instance.id)
     ctx.requestRender()
@@ -110,7 +118,7 @@ function setInstanceValue(ctx: EditorContext, node: SceneNode, propertyId: strin
   applyComponentPropertyValue(ctx.graph, instance.id, definition, text)
   const after = {
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
-    instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides)
+    instanceOverrides: cloneInstanceOverrideState(owner.instanceOverrides)
   }
   apply(after, othersAfter)
   ctx.undo.push({

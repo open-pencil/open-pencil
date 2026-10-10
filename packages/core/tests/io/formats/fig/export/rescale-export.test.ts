@@ -9,7 +9,9 @@ import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
-import { setInstanceOverride } from '@open-pencil/scene-graph'
+import { setInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
 
@@ -28,7 +30,7 @@ for (const scale of [0.5, 2]) {
       api.bindVariable(nested.id, 'paddingRight', '293742:7')
       if (literalClaim) {
         createEditor({ graph }).updateNodeWithUndo(root.id, { paddingLeft: 12 })
-        setInstanceOverride(root.instanceOverrides, root.id, root.id, 'paddingLeft', 12)
+        setInstanceOverride(root.instanceOverrides, layerPath(root.id), 'paddingLeft', 12)
       }
       expectDefined(api.getNodeById(root.id)).rescale(scale)
       expect([

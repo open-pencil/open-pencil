@@ -6,7 +6,7 @@ import {
 import { linearVariableExpression } from '#fig/node-change/variable/expression'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { setInstanceOverride, type SceneNode } from '@open-pencil/scene-graph'
+import { setLayerOverride, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import type { InstanceOccurrence } from '../occurrence/types'
 import { uniformScaleOf } from '../types'
@@ -22,7 +22,7 @@ export function occurrenceAssignmentScales(occurrence: InstanceOccurrence): Reco
 }
 
 export function recordVariableBindingClaims(
-  owner: SceneNode,
+  graph: SceneGraph,
   target: SceneNode,
   patch: NodeChange
 ): void {
@@ -31,14 +31,8 @@ export function recordVariableBindingClaims(
       continue
     const field = entry.variableField && VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
     if (!field) continue
-    setInstanceOverride(
-      owner.instanceOverrides,
-      owner.id,
-      target.id,
-      `boundVariables/${field}`,
-      target.boundVariables[field] ?? null
-    )
-    setInstanceOverride(owner.instanceOverrides, owner.id, target.id, 'boundVariables')
+    setLayerOverride(graph, target, `boundVariables/${field}`, target.boundVariables[field] ?? null)
+    setLayerOverride(graph, target, 'boundVariables')
   }
 }
 

@@ -1,3 +1,4 @@
+import { instanceLayerLineage, isInstanceLayerId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode, Size } from '@open-pencil/scene-graph'
 
 import { getTextMeasurer } from './text-measurement'
@@ -6,7 +7,6 @@ type LayoutAxis = 'width' | 'height'
 
 const MIN_EFFECTIVE_TEXT_WIDTH_CHANGE = 1.5
 const MAX_STRETCHED_TEXT_WIDTH_CHANGE = 8
-const MAX_COMPONENT_LINEAGE_DEPTH = 20
 
 function axisSizing(node: SceneNode, axis: LayoutAxis): SceneNode['primaryAxisSizing'] {
   const isPrimary =
@@ -23,13 +23,8 @@ function canResizeIntrinsicAxis(node: SceneNode, axis: LayoutAxis): boolean {
 }
 
 function terminalTextSource(graph: SceneGraph, node: SceneNode): SceneNode | undefined {
-  let current = node
-  for (let depth = 0; current.componentId && depth < MAX_COMPONENT_LINEAGE_DEPTH; depth++) {
-    const source = graph.getNode(current.componentId)
-    if (!source) break
-    current = source
-  }
-  return current.type === 'TEXT' ? current : undefined
+  const source = instanceLayerLineage(graph, node).at(-1) ?? node
+  return source.type === 'TEXT' ? source : undefined
 }
 
 function parentHugsWidth(graph: SceneGraph, node: SceneNode): boolean {
@@ -38,21 +33,16 @@ function parentHugsWidth(graph: SceneGraph, node: SceneNode): boolean {
 }
 
 function hasFixedWidthTextAncestor(graph: SceneGraph, node: SceneNode): boolean {
-  let current = node
-  for (let depth = 0; current.componentId && depth < MAX_COMPONENT_LINEAGE_DEPTH; depth++) {
-    const source = graph.getNode(current.componentId)
-    if (!source) break
-    if (source.type === 'TEXT' && source.textAutoResize === 'HEIGHT') return true
-    current = source
-  }
-  return false
+  return instanceLayerLineage(graph, node).some(
+    (source) => source.type === 'TEXT' && source.textAutoResize === 'HEIGHT'
+  )
 }
 
 function canShapeGeneratedText(graph: SceneGraph, node: SceneNode): boolean {
   if (
     node.type !== 'TEXT' ||
     node.source.format === 'fig' ||
-    !node.componentId ||
+    !isInstanceLayerId(node.id) ||
     !node.derivedLayout ||
     node.derivedLayout.width !== node.width ||
     node.derivedLayout.height !== node.height

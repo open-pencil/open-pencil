@@ -71,7 +71,7 @@ for (const corruption of ['binding', 'override', 'topology'] as const) {
     const { target, plan } = setup()
     if (corruption === 'binding') plan.nodes[0].props.boundVariables = { paddingLeft: 'missing' }
     if (corruption === 'override')
-      plan.nodes[0].props.instanceOverrides?.descendants.set('missing', new Map())
+      plan.nodes[0].props.instanceOverrides?.layers.set('missing', new Map())
     if (corruption === 'topology') plan.rootIds.push(plan.nodes[1].id)
     const before = [...target.nodes.keys()]
     expect(() => applyGraphTransfer(target, plan)).toThrow()

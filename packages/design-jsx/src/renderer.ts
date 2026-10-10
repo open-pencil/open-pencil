@@ -2,6 +2,7 @@ import { compact } from 'es-toolkit/array'
 
 import {
   createComponentPropertyId,
+  overrideTarget,
   setInstanceOverride,
   type Color,
   type ComponentPropertyDefinition,
@@ -451,7 +452,7 @@ async function renderInstanceNode(
     graph.createInstance(component.id, parentId, overrides) ?? graph.createNode('FRAME', parentId)
   try {
     for (const [field, value] of Object.entries(overrides)) {
-      setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, field, value)
+      setInstanceOverride(instance.instanceOverrides, [], field, value)
     }
     graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
     applyBindings(graph, instance.id, bindings)
@@ -499,7 +500,8 @@ function applyInstanceOverrides(
     const child = descendants.find((n) => n.name === childName)
     if (!child || !(prop in child)) continue
     graph.updateNode(child.id, { [prop]: value } as Partial<SceneNode>)
-    setInstanceOverride(instance.instanceOverrides, instance.id, child.id, prop, value)
+    const target = overrideTarget(graph, child)
+    if (target) setInstanceOverride(target.owner.instanceOverrides, target.path, prop, value)
     mutated = true
   }
   if (mutated) {

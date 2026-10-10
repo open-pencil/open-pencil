@@ -8,7 +8,6 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
 import {
   interpretInstance,
-  linkInstanceSourceChildren,
   mapInstanceSourceChildren,
   materializeComponentClosure,
   materializeInstance,
@@ -74,7 +73,6 @@ test('Gold Preview input resolves badge visibility and distinct avatar swaps lik
     blobs,
     sourceChildren: mapInstanceSourceChildren(input, closure)
   })
-  linkInstanceSourceChildren(input, materialized, closure)
   const labels = content.map((node) => named(named(node, 'Placeholder'), 'Placeholder'))
   const first = materialized.nodes.get(labels[0])
   if (!first) throw new Error('Missing first badge label')

@@ -3,7 +3,9 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { createEditor } from '@open-pencil/core/editor'
-import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride, parseInstanceLayerId } from '@open-pencil/scene-graph'
+
+const layerPath = (id: string) => parseInstanceLayerId(id)?.path ?? []
 
 function boundText() {
   const graph = new SceneGraph()
@@ -64,7 +66,7 @@ test('text and visibility an instance overrides keep their own values', () => {
   const editor = createEditor({ graph })
 
   // Typing in the layer records its text as the instance's own, as the text editor does.
-  setInstanceOverride(placed.instanceOverrides, placed.id, layer.id, 'text', 'Keep')
+  setInstanceOverride(placed.instanceOverrides, layerPath(layer.id), 'text', 'Keep')
   graph.updateNode(layer.id, { text: 'Keep' })
   editor.toggleNodeVisibility(layer.id)
 

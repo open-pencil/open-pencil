@@ -1,9 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
-import { SceneGraph, recordInstanceOverride } from '@open-pencil/scene-graph'
+import {
+  instanceLayerId,
+  isInstanceLayerId,
+  migrateInstanceLayers,
+  recordInstanceOverride,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 
-describe('instance synchronization child deduplication', () => {
+describe('migrating instances whose copies have ids of their own', () => {
   test('syncInstances on instance with imported children without componentId does not duplicate children', () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Page')
@@ -35,6 +40,7 @@ describe('instance synchronization child deduplication', () => {
 
     // Mutate the component child and synchronize
     graph.updateNode(compChild.id, { height: 60 })
+    migrateInstanceLayers(graph)
     graph.syncInstances(component.id)
 
     // In unpatched code: instance.childIds.length becomes 2 because Header was re-cloned!
@@ -87,6 +93,7 @@ describe('instance synchronization child deduplication', () => {
 
     // Mutate statusRow inside the component
     graph.updateNode(statusRow.id, { height: 28, opacity: 0.8 })
+    migrateInstanceLayers(graph)
     graph.syncInstances(sidebar.id)
 
     expect(sidebarInst.childIds.length).toBe(1)
@@ -128,6 +135,7 @@ describe('instance synchronization child deduplication', () => {
     })
 
     // Record override on text
+    migrateInstanceLayers(graph)
     recordInstanceOverride(graph, labelInst.id, ['text'])
 
     // Mutate fontSize and text on component
@@ -157,6 +165,7 @@ describe('instance synchronization child deduplication', () => {
 
     // Now add a second child to the component
     graph.createNode('FRAME', comp.id, { name: 'Item 2', height: 32 })
+    migrateInstanceLayers(graph)
     graph.syncInstances(comp.id)
 
     expect(inst.childIds.length).toBe(2)
@@ -196,6 +205,7 @@ describe('instance synchronization regressions from review triage', () => {
       componentId: null
     })
 
+    migrateInstanceLayers(graph)
     graph.syncInstances(comp.id)
 
     expect(iA.width).toBe(100)
@@ -247,6 +257,7 @@ describe('instance synchronization regressions from review triage', () => {
       componentId: null
     })
 
+    migrateInstanceLayers(graph)
     recordInstanceOverride(graph, labelA.id, ['text'])
 
     const compLabels = comp.childIds
@@ -273,15 +284,16 @@ describe('instance synchronization regressions from review triage', () => {
     const extra = graph.createNode('FRAME', instance.id, { name: 'Row', width: 20 })
     const renamed = graph.createNode('FRAME', instance.id, { name: 'Row v2', width: 100 })
 
+    migrateInstanceLayers(graph)
     graph.syncInstances(component.id)
 
     expect(extra.width).toBe(20)
-    expect(extra.componentId).toBeNull()
+    expect(isInstanceLayerId(extra.id)).toBe(false)
     expect(renamed.name).toBe('Row v2')
-    expect(renamed.componentId).toBeNull()
-    const mapped = graph.getChildren(instance.id).filter((child) => child.componentId === row.id)
-    expect(mapped).toHaveLength(1)
-    expect(mapped[0]?.id).not.toBe(extra.id)
+    expect(isInstanceLayerId(renamed.id)).toBe(false)
+    const copy = graph.getNode(instanceLayerId(instance.id, [row.id]))
+    expect(copy).toBeDefined()
+    expect(copy).not.toBe(extra)
   })
 
   // V2+V3: extra unmatched instance child is not co-opted by positional or type-only fallback.
@@ -313,6 +325,7 @@ describe('instance synchronization regressions from review triage', () => {
 
     graph.createNode('FRAME', comp.id, { name: 'Item 2', width: 100, height: 32 })
 
+    migrateInstanceLayers(graph)
     graph.syncInstances(comp.id)
 
     expect(extra.name).toBe('Badge')
@@ -354,6 +367,7 @@ describe('instance synchronization regressions from review triage', () => {
       componentId: null
     })
 
+    migrateInstanceLayers(graph)
     graph.syncInstances(comp.id)
 
     expect(inst.childIds.length).toBe(3)
@@ -361,7 +375,7 @@ describe('instance synchronization regressions from review triage', () => {
     expect(inst.childIds[0]).toBe(instItem1.id)
     const instItem2 = graph.getNode(inst.childIds[1])
     expect(instItem2?.name).toBe('Item 2')
-    expect(instItem2?.componentId).toBe(compItem2.id)
+    expect(instItem2?.id).toBe(instanceLayerId(inst.id, [compItem2.id]))
     // ...unmapped extra LAST — not yanked to the front on every sync.
     expect(inst.childIds[2]).toBe(extra.id)
   })
@@ -379,6 +393,7 @@ describe('instance synchronization regressions from review triage', () => {
       height: 50
     })
 
+    migrateInstanceLayers(graph)
     graph.syncInstances(comp.id)
 
     expect(graph.countDescendants(comp.id)).toBeLessThan(50)
@@ -397,6 +412,7 @@ describe('instance synchronization regressions from review triage', () => {
       height: 100
     })
 
+    migrateInstanceLayers(graph)
     graph.syncInstances(outer.id)
     graph.syncInstances(inner.id)
 
@@ -477,7 +493,7 @@ describe('instance synchronization regressions from review triage', () => {
   })
 
   // V4: import-linkage does not stamp sub-instance descendants with proxy componentIds.
-  test('linkImportedInstanceChildren does not recurse across INSTANCE boundaries', () => {
+  test('migration does not pair layers across instance boundaries', () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Page')
 
@@ -524,13 +540,14 @@ describe('instance synchronization regressions from review triage', () => {
       componentId: null
     })
 
-    linkImportedInstanceChildren(graph)
+    migrateInstanceLayers(graph)
 
-    expect(instA_N_Child.componentId).toBe(compBChild.id)
-    expect(instA_N_Child.componentId).not.toBe(compA_N_Child.id)
+    expect(compA_N_Child.id).toBe(instanceLayerId(compA_N.id, [compBChild.id]))
+    expect(instA_N_Child.id).toBe(instanceLayerId(instA.id, [compA_N.id, compBChild.id]))
+    expect(instA_N.componentId).toBe(compB.id)
   })
 
-  test('syncInstances on sub-instance main component works after linkImportedInstanceChildren', () => {
+  test('syncInstances on sub-instance main component works after migration', () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Page')
 
@@ -571,7 +588,7 @@ describe('instance synchronization regressions from review triage', () => {
       componentId: null
     })
 
-    linkImportedInstanceChildren(graph)
+    migrateInstanceLayers(graph)
 
     graph.updateNode(compBChild.id, { height: 40 })
     graph.syncInstances(compB.id)
