@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 import type { Component } from 'vue'
 
-import type { ToolbarUI } from '@/components/Toolbar/types'
+import type { ToolbarUI } from '@/components/toolbar/types'
 import toolbarTheme from '@/theme/toolbar'
 
 interface ToolButtonProps {

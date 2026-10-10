@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, normalizeClass, useAttrs } from 'vue'
+import { computed, normalizeClass, useAttrs, useTemplateRef } from 'vue'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/button/icon-button'
@@ -12,6 +12,7 @@ const {
   label,
   side = 'top',
   size = 'xs',
+  toggle = false,
   type = 'button'
 } = defineProps<{
   active?: boolean
@@ -20,10 +21,14 @@ const {
   label: string
   side?: 'top' | 'bottom' | 'left' | 'right'
   size?: ControlSize
+  /** A toggle button: `aria-pressed` says whether it is on, off included. */
+  toggle?: boolean
   type?: 'button' | 'submit' | 'reset'
 }>()
 
 const attrs = useAttrs()
+const button = useTemplateRef<HTMLButtonElement>('button')
+defineExpose({ focus: (options?: FocusOptions) => button.value?.focus(options) })
 
 defineOptions({ inheritAttrs: false })
 
@@ -40,12 +45,13 @@ const cls = computed(() =>
 <template>
   <Tip as-child :label="label" :side="side" :disabled="disabled">
     <button
+      ref="button"
       v-bind="buttonAttrs"
       data-slot="icon-button"
       :type="type"
       :disabled="disabled"
       :aria-label="label"
-      :aria-pressed="active ? 'true' : undefined"
+      :aria-pressed="active ? 'true' : toggle ? 'false' : undefined"
       :data-state="active ? 'on' : 'off'"
       :class="cls"
     >
