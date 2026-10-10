@@ -1,5 +1,6 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
+import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
@@ -17,6 +18,7 @@ import {
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { applyResizeSnap } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
@@ -161,6 +163,12 @@ export function applyResize(
   const d = toRaw(dragState)
   const { changes, newRect } = resizeChanges(d, cx, cy, shiftKey, editor, ctrlKey)
   d.appliedRect = { ...newRect }
+  const node = editor.graph.getNode(d.nodeId)
+  if (node) {
+    d.origSizing ??= layerSizing(node)
+    d.appliedSizing = draggedSizing(editor.graph, node, d.origSizing, d.origRect, newRect)
+    Object.assign(changes, d.appliedSizing)
+  }
   markResized(d, newRect, editor)
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
@@ -299,6 +307,7 @@ export function cancelResizePreview(dragState: DragResize, editor: Editor) {
     textPathData: d.origTextPathData,
     textPathBox: d.origTextPathBox
   })
+  if (d.origSizing) editor.graph.updateNodePreview(d.nodeId, d.origSizing)
   editor.renderer?.invalidateVectorPath(d.nodeId)
   restoreEditedFields(d, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
@@ -309,15 +318,24 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
   // See applyResize — reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
-  // A section resized over layers takes in the ones it now covers, and a lock that Control set
-  // aside takes the new size, in the same undo step.
+  // A section resized over layers takes in the ones it now covers, a lock that Control set aside
+  // takes the new size, and an axis that stopped hugging or filling stays fixed, in one undo step.
   const adoptsLayers = node?.type === 'SECTION'
   const recaptured = node && d.freesLock ? recapturedAspectRatio(node, node.width, node.height) : {}
-  if (!adoptsLayers && !recaptured.targetAspectRatio) {
+  const fixesSizing =
+    d.origSizing !== undefined &&
+    d.appliedSizing !== undefined &&
+    !isEqual(d.origSizing, d.appliedSizing)
+  if (!adoptsLayers && !recaptured.targetAspectRatio && !fixesSizing) {
     commitResizeGeometry(d, editor)
     return
   }
   editor.undo.runBatch('Resize', () => {
+    // Recorded from the sizing the layer started with, so undo puts it back.
+    if (fixesSizing && d.origSizing && d.appliedSizing) {
+      editor.graph.updateNodePreview(d.nodeId, d.origSizing)
+      editor.updateNodeWithUndo(d.nodeId, d.appliedSizing, 'Resize')
+    }
     commitResizeGeometry(d, editor)
     if (recaptured.targetAspectRatio) editor.updateNodeWithUndo(d.nodeId, recaptured, 'Resize')
     if (adoptsLayers) editor.adoptCoveredLayers(d.nodeId)

@@ -11,6 +11,8 @@ import type {
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
+import type { LayerSizing } from '#vue/shared/input/resize/sizing'
+
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 
 export type CornerPosition = 'nw' | 'ne' | 'se' | 'sw'
@@ -89,6 +91,10 @@ export interface DragResize {
   appliedRect?: Rect
   /** The layer's edited fields before the drag marked its size, to put back if it changes nothing. */
   origEditedFields?: string[]
+  /** The layer's sizing before the drag, taken on its first step. */
+  origSizing?: LayerSizing
+  /** The sizing the latest step left, which the commit keeps. */
+  appliedSizing?: LayerSizing
 }
 
 export interface DragMarquee {
