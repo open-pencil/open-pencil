@@ -9,8 +9,8 @@ describe('Storybook document folders', () => {
     // A one-page export keeps its page's fonts apart from the others'.
     expect(documentFolder('design.fig', 'Icons')).toBe('openpencil/design-icons')
     // However far the document is from the output, the name is its folder and file.
-    expect(documentFolder('../../../../work/kits/material3.fig', undefined)).toBe(
-      'openpencil/kits-material3'
+    expect(documentFolder('../../../../work/kits/primitives.fig', undefined)).toBe(
+      'openpencil/kits-primitives'
     )
     expect(documentFolder('v1.2/design.fig', undefined)).toBe('openpencil/v1-2-design')
   })
