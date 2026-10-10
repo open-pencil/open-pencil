@@ -167,6 +167,7 @@
 
 ### Fixed
 
+- Tailwind exports keep corner radius: Tailwind JSX and HTML with Tailwind classes write radius from Tailwind's radius scale, such as `rounded-xl` for 12px, instead of classes like `rounded-3` that Tailwind v4 does not generate, and other values as `rounded-[20px]`.
 - The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
 - Tooltips no longer appear when a popover such as the colour picker focuses its first control on open; they still show for keyboard focus. Moving the pointer along a row of buttons switches tooltips at once instead of blinking out, and tooltips centre on their control instead of sitting a few pixels off.
 - A layer that ignores auto layout follows its constraints when its auto layout frame resizes, as in Figma: a badge pinned to the right of a Hug button stays on its corner as the label grows or shrinks, a centred one stays centred, and one set to Left & right or Scale stretches with the frame, also inside a Fill frame and for the layers in a stretched overlay. Layers in a reopened `.fig` file keep the places the file saved until an edit resizes their frame.

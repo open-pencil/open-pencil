@@ -214,7 +214,7 @@
     "svg-path-properties": "^2.0.2",
     "svg2pdf.js": "^2.8.1",
     "svgpath": "^2.6.0",
-    "twirlwind": "^0.4.0",
+    "twirlwind": "^0.4.1",
     "unifont": "0.7.4",
     "valibot": "^1.5.0",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3"
