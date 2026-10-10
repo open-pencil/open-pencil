@@ -49,6 +49,7 @@
 
 ### Added
 
+- Drag several layers along an auto layout row or column together, as in Figma: they move as one block in their order, wherever you grab them, and layers selected in different rows each move along their own row. A layer dragged along a flow takes the next slot once its leading edge reaches the next layer's centre, as Figma reorders, instead of once the cursor does.
 - Move a layer in an auto layout row or column with the arrow keys, as in Figma: Right and Left move it one slot along a row, Down and Up along a column, Shift too, and the arrows across the flow do nothing. With several layers selected, each moves one slot and one at the end stays; a run of keys is one undo step.
 - Talk with the people in a shared room in a voice call, as in Figma: the headphones beside the avatars start or join it, a ring marks who is in the call and lights up while they speak, and the call's popover chooses the microphone and, where the browser allows, the speakers. Audio goes peer to peer, and only to the people in the call.
 - Take a layer out of its auto layout with **Ignore auto layout** at the top of the Position section, as in Figma: the layer stays where it is, its siblings close the gap in the same undo step, and it keeps its sizing, so a Fill layer fills again when it returns.
