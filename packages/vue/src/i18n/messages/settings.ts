@@ -19,10 +19,9 @@ export const settingsMessageDefaults = {
   accentCustom: 'Custom color',
   toolbar: 'Toolbar',
   toolbarDescription:
-    'Choose the tools the toolbar shows, their order, and which share a menu. Hidden tools keep their shortcuts.',
+    'Drag tools to reorder them, and drop one onto another to put both in a menu. Hidden tools keep their shortcuts.',
   toolbarShow: params('Show {tool}'),
-  toolbarMoveUp: params('Move {tool} up'),
-  toolbarMoveDown: params('Move {tool} down'),
+  toolbarReorder: params('Reorder {tool}'),
   toolbarGroup: params('Put {tool} in a menu with the tool above'),
   toolbarReset: 'Reset to default',
   customizeToolbar: 'Customize toolbar…',

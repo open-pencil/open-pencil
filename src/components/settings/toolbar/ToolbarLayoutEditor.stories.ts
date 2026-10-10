@@ -50,8 +50,10 @@ export const Regrouping: Story = {
     await expect(group()).toHaveAttribute('aria-pressed', 'true')
     await expect(group()).toHaveFocus()
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Move Comment up' }))
-    await expect(canvas.getByRole('button', { name: 'Move Comment up' })).toHaveFocus()
+    const grip = () => canvas.getByRole('button', { name: 'Reorder Comment' })
+    grip().focus()
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(grip()).toHaveFocus()
     await expect(canvas.getByRole('switch', { name: 'Show Move' })).toBeDisabled()
   }
 }

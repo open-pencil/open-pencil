@@ -213,3 +213,64 @@ export function splitToolbarEntry(layout: ToolbarLayout, entry: ToolbarEntry): T
   groups.splice(groupIndex, 1, group.slice(0, index), group.slice(index))
   return { ...layout, groups }
 }
+
+function withoutEntry(layout: ToolbarLayout, entry: ToolbarEntry) {
+  return layout.groups
+    .map((group) => group.filter((member) => member !== entry))
+    .filter((group) => group.length > 0)
+}
+
+/**
+ * Drops an entry at `index` of the list without it. Between two members of a flyout it joins
+ * that flyout; anywhere else it becomes a button of its own, as does a command.
+ */
+export function placeToolbarEntry(
+  layout: ToolbarLayout,
+  entry: ToolbarEntry,
+  index: number
+): ToolbarLayout {
+  const groups = withoutEntry(layout, entry)
+  const flat = groups.flat()
+  const before = index > 0 ? flat[index - 1] : undefined
+  const after = index < flat.length ? flat[index] : undefined
+  const host = before && groupOf(groups, before)
+  if (host && after && host.includes(after) && !isToolbarAction(entry)) {
+    host.splice(host.indexOf(before) + 1, 0, entry)
+    return { ...layout, groups }
+  }
+  const at = before ? groups.findIndex((group) => group.includes(before)) + 1 : 0
+  groups.splice(at, 0, [entry])
+  return { ...layout, groups }
+}
+
+/** Drops an entry onto a tool: both share that tool's flyout, the entry right after it. */
+export function combineToolbarEntry(
+  layout: ToolbarLayout,
+  entry: ToolbarEntry,
+  target: ToolbarEntry
+): ToolbarLayout {
+  if (!toolbarDropOperations(layout, entry, target).combine) return layout
+  const groups = withoutEntry(layout, entry)
+  const host = groupOf(groups, target)
+  if (!host) return layout
+  host.splice(host.indexOf(target) + 1, 0, entry)
+  return { ...layout, groups }
+}
+
+/**
+ * Where an entry can be dropped on a row: onto another group's tool to share its flyout, and
+ * before or after any row, except that a command only lands between groups.
+ */
+export function toolbarDropOperations(
+  layout: ToolbarLayout,
+  entry: ToolbarEntry,
+  target: ToolbarEntry
+) {
+  const group = groupOf(layout.groups, target) ?? [target]
+  const action = isToolbarAction(entry)
+  return {
+    'reorder-before': !action || group[0] === target,
+    'reorder-after': !action || group.at(-1) === target,
+    combine: !action && !isToolbarAction(target) && !group.includes(entry)
+  }
+}

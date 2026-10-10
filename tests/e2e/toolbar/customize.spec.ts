@@ -30,8 +30,11 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   await expect(settings).toBeVisible()
 
   await settings.getByRole('switch', { name: 'Show Pen' }).click()
-  await settings.getByRole('button', { name: 'Put Comment in a menu with the tool above' }).click()
-  await settings.getByRole('button', { name: 'Move Text up' }).click()
+  // Dropping Comment onto Hand puts both in one menu; Text's grip moves it with the keyboard.
+  await settings
+    .getByRole('button', { name: 'Reorder Comment' })
+    .dragTo(settings.getByRole('button', { name: 'Reorder Hand' }).locator('xpath=..'))
+  await settings.getByRole('button', { name: 'Reorder Text' }).press('ArrowUp')
   await page.getByTestId('app-settings-done').click()
   await expect(page.getByTestId('app-settings-dialog')).toBeHidden()
 

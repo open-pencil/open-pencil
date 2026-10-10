@@ -1,12 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  combineToolbarEntry,
   DEFAULT_TOOLBAR_LAYOUT,
   joinToolbarEntry,
   moveToolbarEntry,
   normalizeToolbarLayout,
+  placeToolbarEntry,
   setToolbarEntryHidden,
   splitToolbarEntry,
+  toolbarDropOperations,
   toolbarItems,
   toolbarRows,
   type ToolbarEntry,
@@ -150,5 +153,56 @@ describe('editing', () => {
       canJoin: false,
       canMoveDown: false
     })
+  })
+})
+
+describe('dragging', () => {
+  const base = layout(DEFAULT_TOOLBAR_LAYOUT.groups)
+  /** Where an entry sits in the list the dragged Pen is lifted out of. */
+  const indexOf = (entry: ToolbarEntry) => {
+    const flat: ToolbarEntry[] = base.groups.flat().filter((other) => other !== 'PEN')
+    return flat.indexOf(entry)
+  }
+
+  test('a tool dropped between two flyout members joins the flyout', () => {
+    const dropped = placeToolbarEntry(base, 'PEN', indexOf('LINE'))
+    expect(dropped.groups[2]).toEqual(['RECTANGLE', 'PEN', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR'])
+  })
+
+  test('a tool dropped between groups becomes a button there', () => {
+    const dropped = placeToolbarEntry(base, 'PEN', indexOf('RECTANGLE'))
+    expect(dropped.groups.slice(1, 4)).toEqual([['FRAME', 'SECTION'], ['PEN'], SHAPES])
+  })
+
+  test('a flyout member dragged to the gap leaves its flyout', () => {
+    const flat = base.groups.flat().filter((entry) => entry !== 'SECTION')
+    const dropped = placeToolbarEntry(base, 'SECTION', flat.indexOf('PEN'))
+    expect(dropped.groups.slice(1, 5)).toEqual([['FRAME'], SHAPES, ['SECTION'], ['PEN']])
+  })
+
+  test('a command never lands inside a flyout', () => {
+    const flat = base.groups.flat().filter((entry) => entry !== 'insert-icon')
+    const dropped = placeToolbarEntry(base, 'insert-icon', flat.indexOf('LINE'))
+    expect(dropped.groups.slice(2, 4)).toEqual([SHAPES, ['insert-icon']])
+    expect(toolbarDropOperations(base, 'insert-icon', 'LINE')).toEqual({
+      'reorder-before': false,
+      'reorder-after': false,
+      combine: false
+    })
+    expect(toolbarDropOperations(base, 'insert-icon', 'RECTANGLE')['reorder-before']).toBe(true)
+  })
+
+  test('a tool dropped onto another shares its flyout, right after it', () => {
+    expect(combineToolbarEntry(base, 'COMMENT', 'TEXT').groups).toContainEqual(['TEXT', 'COMMENT'])
+    expect(combineToolbarEntry(base, 'PEN', 'LINE').groups[2]).toEqual([
+      'RECTANGLE',
+      'LINE',
+      'PEN',
+      'ELLIPSE',
+      'POLYGON',
+      'STAR'
+    ])
+    expect(combineToolbarEntry(base, 'LINE', 'STAR')).toBe(base)
+    expect(combineToolbarEntry(base, 'PEN', 'insert-icon')).toBe(base)
   })
 })
