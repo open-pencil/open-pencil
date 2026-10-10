@@ -218,5 +218,7 @@
   "syncOffline": "Sin conexión: los cambios se guardan en este dispositivo",
   "syncConflict": "También se ha editado en otro sitio: elige qué versión conservar",
   "syncError": "No se pudieron subir los cambios",
-  "shareLinkFailed": "Este enlace no abre ningún documento. Pide uno nuevo."
+  "shareLinkFailed": "Este enlace no abre ningún documento. Pide uno nuevo.",
+  "shareOpenedInBrowser": "Abierto en el navegador",
+  "openInDesktopApp": "Abrir en la aplicación de escritorio"
 }

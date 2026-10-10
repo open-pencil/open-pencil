@@ -215,5 +215,7 @@
   "syncOffline": "オフライン：変更はこのデバイスに保存されています",
   "syncConflict": "他の場所でも編集されました。残すバージョンを選んでください",
   "syncError": "変更をアップロードできませんでした",
-  "shareLinkFailed": "このリンクではドキュメントを開けません。新しいリンクを依頼してください。"
+  "shareLinkFailed": "このリンクではドキュメントを開けません。新しいリンクを依頼してください。",
+  "shareOpenedInBrowser": "ブラウザーで開きました",
+  "openInDesktopApp": "デスクトップアプリで開く"
 }

@@ -218,5 +218,7 @@
   "syncOffline": "Hors ligne — les modifications sont enregistrées sur cet appareil",
   "syncConflict": "Modifié ailleurs aussi — choisissez la version à conserver",
   "syncError": "Impossible d’envoyer les modifications",
-  "shareLinkFailed": "Ce lien n’ouvre aucun document. Demandez-en un nouveau."
+  "shareLinkFailed": "Ce lien n’ouvre aucun document. Demandez-en un nouveau.",
+  "shareOpenedInBrowser": "Ouvert dans le navigateur",
+  "openInDesktopApp": "Ouvrir dans l’application de bureau"
 }

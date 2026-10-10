@@ -235,3 +235,10 @@ the person may still open elsewhere.
 **2026-10 · Home is split into places.** Recent files, each server's workspaces, documents shared
 with the person, and the storage bucket are separate places in a sidebar, so Cloud does not crowd
 the local file list and one server's workspaces show at a time.
+
+**2026-10 · Cloud links hand off to the desktop app through `openpencil://cloud`.** Links stay web
+addresses on the server's editor, so they work for anyone; the web editor on a computer offers the
+desktop app, which gets the same path, server, and secret as `openpencil://cloud/<kind>/<id>`.
+The native side checks the ID, secret, and server before the editor sees a link. The secret is
+visible in the launch arguments to other processes on the same computer; pasting links into the
+app would avoid that at the cost of a manual step for everyone.

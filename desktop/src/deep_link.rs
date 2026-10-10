@@ -14,11 +14,30 @@ pub struct DeepLinkJoin {
     pub room: String,
 }
 
+/// An OpenPencil Cloud invitation or a document shared by link, from
+/// `openpencil://cloud/<invitations|share>/<id>?server=<url>#<secret>`: the same path, server, and
+/// secret as the web link on the server's editor address.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct CloudLink {
+    pub kind: CloudLinkKind,
+    pub id: String,
+    pub server: String,
+    pub secret: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CloudLinkKind {
+    Invitations,
+    Share,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum DeepLink {
     Open(DeepLinkOpen),
     Join(DeepLinkJoin),
     OAuth(OAuthCallback),
+    Cloud(CloudLink),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -30,6 +49,7 @@ pub enum DeepLinkError {
     BadExtension,
     BadRoom,
     BadOAuthProvider,
+    BadCloudLink,
 }
 
 /// Room IDs are 32 lowercase base36 characters (`ROOM_ID_LENGTH` and `ROOM_ID_CHARS` in
@@ -51,6 +71,9 @@ pub fn parse_deep_link(url: &Url) -> Result<DeepLink, DeepLinkError> {
         "oauth" => parse_oauth_url(url)
             .map(DeepLink::OAuth)
             .ok_or(DeepLinkError::BadOAuthProvider),
+        "cloud" => parse_cloud_url(url)
+            .map(DeepLink::Cloud)
+            .ok_or(DeepLinkError::BadCloudLink),
         action => Err(DeepLinkError::UnknownAction(action.to_string())),
     }
 }
@@ -63,6 +86,54 @@ fn parse_join_url(url: &Url) -> Result<DeepLinkJoin, DeepLinkError> {
         .filter(|room| is_room_id(room))
         .ok_or(DeepLinkError::BadRoom)?;
     Ok(DeepLinkJoin { room })
+}
+
+/// Invitation and share IDs are UUIDs, and their secrets 32 to 128 hex characters (the Cloud
+/// sharing contract); the server must be an `http` or `https` address without credentials.
+fn parse_cloud_url(url: &Url) -> Option<CloudLink> {
+    let mut segments = url.path_segments()?;
+    let kind = match segments.next()? {
+        "invitations" => CloudLinkKind::Invitations,
+        "share" => CloudLinkKind::Share,
+        _ => return None,
+    };
+    let id = segments.next().filter(|id| is_uuid(id))?.to_owned();
+    if segments.next().is_some() {
+        return None;
+    }
+    let secret = url
+        .fragment()
+        .filter(|secret| is_secret(secret))?
+        .to_owned();
+    let server = url
+        .query_pairs()
+        .find(|(key, _)| key == "server")
+        .and_then(|(_, value)| Url::parse(&value).ok())
+        .filter(|server| {
+            matches!(server.scheme(), "http" | "https")
+                && server.host_str().is_some()
+                && server.username().is_empty()
+                && server.password().is_none()
+        })?
+        .to_string();
+    Some(CloudLink {
+        kind,
+        id,
+        server,
+        secret,
+    })
+}
+
+fn is_uuid(value: &str) -> bool {
+    value.len() == 36
+        && value.bytes().enumerate().all(|(index, byte)| match index {
+            8 | 13 | 18 | 23 => byte == b'-',
+            _ => byte.is_ascii_hexdigit(),
+        })
+}
+
+fn is_secret(value: &str) -> bool {
+    (32..=128).contains(&value.len()) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
 /// An OAuth redirect relayed by the web app's callback page: `openpencil://oauth/<provider>?…`.
@@ -221,6 +292,57 @@ mod tests {
         assert_eq!(oauth("openpencil://oauth?code=abc"), None);
         assert_eq!(oauth("openpencil://oauth/open/router?code=abc"), None);
         assert_eq!(oauth("openpencil://open?file=a.pen"), None);
+    }
+
+    const CLOUD_ID: &str = "0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50";
+    const CLOUD_SECRET: &str = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90";
+
+    fn cloud(url: &str) -> Result<DeepLink, DeepLinkError> {
+        parse_deep_link(&Url::parse(url).unwrap())
+    }
+
+    #[test]
+    fn cloud_links_carry_kind_id_server_and_secret() {
+        assert_eq!(
+            cloud(&format!(
+                "openpencil://cloud/invitations/{CLOUD_ID}?server=https%3A%2F%2Fcloud.example.com#{CLOUD_SECRET}"
+            )),
+            Ok(DeepLink::Cloud(CloudLink {
+                kind: CloudLinkKind::Invitations,
+                id: CLOUD_ID.into(),
+                server: "https://cloud.example.com/".into(),
+                secret: CLOUD_SECRET.into(),
+            }))
+        );
+        assert!(matches!(
+            cloud(&format!(
+                "openpencil://cloud/share/{CLOUD_ID}?server=http%3A%2F%2F192.168.1.20%3A3000#{CLOUD_SECRET}"
+            )),
+            Ok(DeepLink::Cloud(CloudLink {
+                kind: CloudLinkKind::Share,
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn cloud_links_refuse_anything_else() {
+        let server = "server=https%3A%2F%2Fcloud.example.com";
+        for url in [
+            format!("openpencil://cloud/documents/{CLOUD_ID}?{server}#{CLOUD_SECRET}"),
+            format!("openpencil://cloud/share/not-a-uuid?{server}#{CLOUD_SECRET}"),
+            format!("openpencil://cloud/share/{CLOUD_ID}/extra?{server}#{CLOUD_SECRET}"),
+            format!("openpencil://cloud/share/{CLOUD_ID}?{server}"),
+            format!("openpencil://cloud/share/{CLOUD_ID}?{server}#short"),
+            format!("openpencil://cloud/share/{CLOUD_ID}?{server}#{}", "g".repeat(64)),
+            format!("openpencil://cloud/share/{CLOUD_ID}#{CLOUD_SECRET}"),
+            format!("openpencil://cloud/share/{CLOUD_ID}?server=file%3A%2F%2F%2Fetc#{CLOUD_SECRET}"),
+            format!(
+                "openpencil://cloud/share/{CLOUD_ID}?server=https%3A%2F%2Fa%3Ab%40cloud.example.com#{CLOUD_SECRET}"
+            ),
+        ] {
+            assert_eq!(cloud(&url), Err(DeepLinkError::BadCloudLink), "{url}");
+        }
     }
 
     fn parse(s: &str) -> Result<DeepLinkOpen, DeepLinkError> {

@@ -13,9 +13,11 @@ import {
   cloudInvitationOpen,
   cloudInvitationState,
   dismissCloudInvitation,
+  openCloudInvitationInDesktop,
   signInForCloudInvitation,
   switchCloudInvitationAccount
 } from '@/app/cloud/invitations/flow'
+import { canOfferDesktopApp } from '@/app/cloud/links'
 
 import CloudInvitationDialog from './CloudInvitationDialog.vue'
 
@@ -49,10 +51,12 @@ watch(cloudSignedIn, () => {
     :state="cloudInvitationState"
     :invitation="summary"
     :account="cloudInvitationAccount"
+    :offer-desktop="canOfferDesktopApp()"
     @update:open="(open) => !open && dismissCloudInvitation()"
     @accept="acceptCloudInvitation"
     @sign-in="signInForCloudInvitation"
     @switch-account="switchCloudInvitationAccount"
+    @open-in-desktop="openCloudInvitationInDesktop"
     @cancel="dismissCloudInvitation"
   />
 </template>

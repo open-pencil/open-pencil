@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { cloudRedirectPath, cloudShareURL } from '#cloud/client'
+import { cloudDesktopLinkURL, cloudRedirectPath, cloudShareURL } from '#cloud/client'
 import type { CloudDiscovery } from '#cloud/contract'
 
 const discovery: CloudDiscovery = {
@@ -43,4 +43,15 @@ test('authentication continuation stays on the issuing origin', () => {
   ]) {
     expect(cloudRedirectPath(input)).toBe('/app')
   }
+})
+
+test('desktop links keep the web link path, server, and secret under the app scheme', () => {
+  const url = new URL(
+    cloudDesktopLinkURL('invitations', 'invitation-id', 'https://company.example', 'secret')
+  )
+  expect(url.protocol).toBe('openpencil:')
+  expect(url.host).toBe('cloud')
+  expect(url.pathname).toBe('/invitations/invitation-id')
+  expect(url.searchParams.get('server')).toBe('https://company.example')
+  expect(url.hash).toBe('#secret')
 })

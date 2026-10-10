@@ -45,6 +45,18 @@ struct PendingOpen(Mutex<Vec<PendingOpenFile>>);
 /// Rooms from `openpencil://join` links, waiting for the frontend to open them.
 struct PendingRooms(Mutex<Vec<String>>);
 
+/// Cloud invitations and shared links from `openpencil://cloud` links, waiting for the frontend.
+struct PendingCloudLinks(Mutex<Vec<deep_link::CloudLink>>);
+
+#[tauri::command]
+fn take_pending_cloud_links(state: tauri::State<PendingCloudLinks>) -> Vec<deep_link::CloudLink> {
+    state
+        .0
+        .lock()
+        .map(|mut pending| pending.drain(..).collect())
+        .unwrap_or_default()
+}
+
 #[tauri::command]
 fn take_pending_rooms(state: tauri::State<PendingRooms>) -> Vec<String> {
     state
@@ -258,6 +270,7 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
 fn queue_deep_links<R: tauri::Runtime>(app: &tauri::AppHandle<R>, urls: Vec<url::Url>) {
     let mut files = Vec::new();
     let mut rooms = Vec::new();
+    let mut cloud_links = Vec::new();
     for url in urls.iter().filter(|url| url.scheme() == "openpencil") {
         match deep_link::parse_deep_link(url) {
             Ok(deep_link::DeepLink::Open(open)) => files.push(PendingOpenFile {
@@ -266,6 +279,7 @@ fn queue_deep_links<R: tauri::Runtime>(app: &tauri::AppHandle<R>, urls: Vec<url:
                 deep_link: true,
             }),
             Ok(deep_link::DeepLink::Join(join)) => rooms.push(join.room),
+            Ok(deep_link::DeepLink::Cloud(link)) => cloud_links.push(link),
             // The sign-in that opened the browser is waiting; it checks the state itself.
             Ok(deep_link::DeepLink::OAuth(callback)) => {
                 let _ = app.emit("oauth-callback", callback);
@@ -273,12 +287,35 @@ fn queue_deep_links<R: tauri::Runtime>(app: &tauri::AppHandle<R>, urls: Vec<url:
                     let _ = window.set_focus();
                 }
             }
-            Err(error) => eprintln!("[deep-link] refused {url}: {error:?}"),
+            // Cloud links carry a secret in the fragment, so a refused link is not echoed.
+            Err(error) => eprintln!(
+                "[deep-link] refused {}: {error:?}",
+                url.host_str().unwrap_or("")
+            ),
         }
     }
 
     queue_pending(app, files);
     queue_rooms(app, rooms);
+    queue_cloud_links(app, cloud_links);
+}
+
+fn queue_cloud_links<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    links: Vec<deep_link::CloudLink>,
+) {
+    if links.is_empty() {
+        return;
+    }
+
+    if let Ok(mut pending) = app.state::<PendingCloudLinks>().0.lock() {
+        pending.extend(links);
+    }
+
+    let _ = app.emit("open-cloud-links", ());
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_focus();
+    }
 }
 
 fn queue_rooms<R: tauri::Runtime>(app: &tauri::AppHandle<R>, rooms: Vec<String>) {
@@ -338,6 +375,7 @@ pub fn run() {
     builder
         .manage(PendingOpen(Mutex::new(Vec::new())))
         .manage(PendingRooms(Mutex::new(Vec::new())))
+        .manage(PendingCloudLinks(Mutex::new(Vec::new())))
         .invoke_handler(tauri::generate_handler![
             agents::agent_lookup,
             build_fig_file,
@@ -358,6 +396,7 @@ pub fn run() {
             set_native_menu_checked,
             take_pending_open,
             take_pending_rooms,
+            take_pending_cloud_links,
             webview_version
         ])
         .plugin(tauri_plugin_opener::init())

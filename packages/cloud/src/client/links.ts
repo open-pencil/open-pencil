@@ -19,6 +19,25 @@ export function cloudShareURL(
   return url.href
 }
 
+/** The two kinds of Cloud link that carry a secret: invitations and documents shared by link. */
+export type CloudLinkKind = 'invitations' | 'share'
+
+/**
+ * The desktop app's form of a Cloud link, `openpencil://cloud/<kind>/<id>?server=…#secret`, which
+ * `desktop/src/deep_link.rs` validates before the editor sees it.
+ */
+export function cloudDesktopLinkURL(
+  kind: CloudLinkKind,
+  id: string,
+  serverURL: string,
+  secret: string
+): string {
+  const url = new URL(`openpencil://cloud/${kind}/${encodeURIComponent(id)}`)
+  url.searchParams.set('server', serverURL)
+  url.hash = secret
+  return url.href
+}
+
 /** Accept only same-origin application paths for post-authentication navigation. */
 export function cloudRedirectPath(value: unknown, fallback = '/app'): string {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return fallback

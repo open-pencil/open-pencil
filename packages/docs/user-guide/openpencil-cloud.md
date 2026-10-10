@@ -76,6 +76,8 @@ The server keeps only a fingerprint of each link, so a link can be copied only o
 
 An invitation link opens OpenPencil with who invited you, to which document, and on which server. If you have never used that server, OpenPencil warns you to sign in only if you trust it. Sign in with the address the invitation was sent to; if you are signed in as someone else, choose **Use another account**. Once you accept, the document opens and stays under **Shared with you** on Home.
 
+Invitation and share links open in the browser. If you use the desktop app, choose **Open in the desktop app** in the invitation, or on the notice that appears after a shared document opens; your browser asks before it switches to the app.
+
 ## Edit Together
 
 Opening a Cloud document joins its live session: everyone who has it open sees each other's cursors and edits as they happen, and can start a voice call from the avatars. One person's app saves the document for everyone, so editing together never makes your changes conflict with someone else's.

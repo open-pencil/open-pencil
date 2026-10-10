@@ -2,7 +2,7 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { computed, ref, shallowRef } from 'vue'
 
-import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
+import { CloudAPIError, cloudDesktopLinkURL, createCloudAPIClient } from '@open-pencil/cloud/client'
 import type { InvitationPreview } from '@open-pencil/cloud/contract'
 
 import { openStorageDocumentInNewTab } from '@/app/tabs'
@@ -112,6 +112,15 @@ export function resumeCloudInvitation(): void {
   if (!pending.value) return
   cloudInvitationOpen.value = true
   void checkCloudInvitation()
+}
+
+/** Hands the invitation to the desktop app; the dialog stays in case the app isn't installed. */
+export function openCloudInvitationInDesktop(): void {
+  const invitation = pending.value
+  if (!invitation) return
+  globalThis.location.assign(
+    cloudDesktopLinkURL('invitations', invitation.id, invitation.server, invitation.token)
+  )
 }
 
 export function dismissCloudInvitation(): void {

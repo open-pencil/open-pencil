@@ -221,5 +221,7 @@
   "syncOffline": "Offline — zmiany są zapisane na tym urządzeniu",
   "syncConflict": "Edytowano też gdzie indziej — wybierz, którą wersję zachować",
   "syncError": "Nie udało się przesłać zmian",
-  "shareLinkFailed": "Ten link nie otwiera dokumentu. Poproś o nowy."
+  "shareLinkFailed": "Ten link nie otwiera dokumentu. Poproś o nowy.",
+  "shareOpenedInBrowser": "Otwarto w przeglądarce",
+  "openInDesktopApp": "Otwórz w aplikacji na komputer"
 }
