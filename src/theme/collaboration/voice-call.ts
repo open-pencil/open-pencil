@@ -13,8 +13,6 @@ export const voiceCall = tv({
     header: 'flex items-center justify-between gap-2',
     title: 'text-xs font-medium text-surface',
     status: 'text-[11px] text-muted',
-    field: 'flex flex-col gap-1',
-    label: 'text-[11px] text-muted',
     actions: 'flex items-center gap-1.5',
     action: 'flex-1'
   },
