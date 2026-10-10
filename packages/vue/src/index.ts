@@ -126,6 +126,21 @@ export type {
 export { useExport } from '#vue/document/export/use'
 export type { ExportFormatId, ExportFormatOption, ExportSetting } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
+export { canDrawShaders, createShaderRasterizer } from '#vue/canvas/surface/shader-rasterizer'
+export {
+  addShaderEffect,
+  DEFAULT_SHADER_EFFECT,
+  DEFAULT_SHADER_PRESET,
+  loadShaderCatalog,
+  moveShaderEffect,
+  parseShaderPreset,
+  removeShaderEffect,
+  setShaderEffectProp,
+  shaderEffectLabel,
+  shaderEffectPreview,
+  shaderPresetJSON
+} from '#vue/controls/shader'
+export type { ShaderEffect, ShaderPropControl } from '#vue/controls/shader'
 export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
 export { useNumberVariableBinding } from '#vue/controls/number-variable-binding/use'
 export type { NumberBindingPath } from '#vue/controls/number-variable-binding/use'
@@ -425,7 +440,13 @@ export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
 export type { ToolbarContext } from '#vue/primitives/Toolbar'
 
 /** DOM event helpers for cast-free template bindings. */
-export { blurTarget, inputNumberValue, inputValue, selectTarget } from '#vue/shared/dom-events'
+export {
+  blurTarget,
+  inputChecked,
+  inputNumberValue,
+  inputValue,
+  selectTarget
+} from '#vue/shared/dom-events'
 
 /** Internationalization. */
 export * from '#vue/i18n'

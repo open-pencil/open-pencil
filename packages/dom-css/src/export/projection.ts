@@ -3,6 +3,7 @@ import { fromUint8Array } from 'js-base64'
 import {
   layoutSizingInParent,
   readIcon,
+  shaderOfPaint,
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -239,9 +240,35 @@ function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
   style['column-gap'] = counter
 }
 
+/**
+ * The shader a layer's fill draws, which the projection keeps as the shader rather than the
+ * image of its still frame: the shader of its first fill, as the projection reads one fill.
+ */
+function layerShader(graph: SceneGraph, node: SceneNode): DesignElement['shader'] {
+  const fill = node.fills.at(0)
+  const shader = fill?.visible ? shaderOfPaint(node, fill) : null
+  if (!shader) return undefined
+  const bytes = graph.images.get(shader.image)
+  const frame = bytes ? `data:image/png;base64,${fromUint8Array(bytes)}` : undefined
+  return { preset: shader.preset, frame }
+}
+
+const POSITIONED = new Set(['relative', 'absolute', 'fixed', 'sticky'])
+
+/** Whether a `position` value makes an element the containing block of what it places. */
+export function isPositioned(position: unknown): boolean {
+  return typeof position === 'string' && POSITIONED.has(position)
+}
+
+/** A shader layer contains what plays behind its content, beneath everything it holds. */
+function addShaderLayerStyle(style: DesignStyleDeclaration): void {
+  if (!isPositioned(style.position)) style.position = 'relative'
+  style.isolation = 'isolate'
+}
+
 function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
   const fill = node.fills.at(0)
-  if (fill?.type !== 'IMAGE' || !fill.visible) return
+  if (fill?.type !== 'IMAGE' || !fill.visible || shaderOfPaint(node, fill)) return
   if (node.width > 0 && node.height > 0) style['aspect-ratio'] = `${node.width} / ${node.height}`
   if (fill.imageScaleMode === 'FIT') style['object-fit'] = 'contain'
   if (fill.imageScaleMode === 'FILL') style['object-fit'] = 'cover'
@@ -368,7 +395,7 @@ function attrsForNode(
   const sourceURL = imageSourceURL(node)
   if (sourceURL) attrs.src = sourceURL
   const fill = node.fills.at(0)
-  if (fill?.type !== 'IMAGE' || !fill.imageHash) return attrs
+  if (fill?.type !== 'IMAGE' || !fill.imageHash || shaderOfPaint(node, fill)) return attrs
   const bytes = graph.images.get(fill.imageHash)
   if (!bytes) return attrs
   return { ...attrs, src: `data:image/png;base64,${fromUint8Array(bytes)}` }
@@ -377,7 +404,8 @@ function attrsForNode(
 function tagNameForNode(node: SceneNode): string {
   if (node.type === 'SECTION') return 'section'
   const fill = node.fills.at(0)
-  if ((fill?.type === 'IMAGE' || imageSourceURL(node)) && node.childIds.length === 0) return 'img'
+  const image = fill?.type === 'IMAGE' && !shaderOfPaint(node, fill)
+  if ((image || imageSourceURL(node)) && node.childIds.length === 0) return 'img'
   return 'div'
 }
 
@@ -460,14 +488,18 @@ function sceneNodeToDesignNode(
     }
   }
 
+  const style = styleFromSceneNode(node, parent, css)
+  const shader = layerShader(graph, node)
+  if (shader) addShaderLayerStyle(style)
   return {
     type: 'element',
     tagName: tagNameForNode(node),
     attrs,
-    inlineStyle: styleFromSceneNode(node, parent, css),
+    inlineStyle: style,
     sourceSceneNodeId: node.id,
     sourceSceneNode: node,
-    children
+    children,
+    shader
   }
 }
 

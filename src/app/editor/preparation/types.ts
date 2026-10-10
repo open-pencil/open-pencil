@@ -20,6 +20,7 @@ export const EDITOR_PREPARATION_PHASES = [
   'resolving-fonts',
   'resolving-fallbacks',
   'layout',
+  'drawing-shaders',
   'preparing-render'
 ] as const
 
@@ -28,7 +29,7 @@ export type EditorPreparationPhase = (typeof EDITOR_PREPARATION_PHASES)[number]
 export interface EditorPreparationProgress {
   completed: number
   total: number
-  unit: 'bytes' | 'nodes' | 'fonts' | 'pages'
+  unit: 'bytes' | 'nodes' | 'fonts' | 'pages' | 'shaders'
 }
 
 export interface EditorPreparation {
@@ -91,4 +92,12 @@ export interface EditorPreparationHandle {
   complete(): void
   fail(failure: Omit<EditorPreparationFailure, 'id' | 'kind'>): void
   cancel(reason?: EditorPreparationCancelReason): void
+}
+
+/** The unit a page's preparation counts in, for the phases that count anything. */
+export function pageProgressUnit(phase: string): EditorPreparationProgress['unit'] | undefined {
+  if (phase === 'resolving-fonts') return 'fonts'
+  if (phase === 'drawing-shaders') return 'shaders'
+  if (phase === 'populating-page') return 'pages'
+  return undefined
 }

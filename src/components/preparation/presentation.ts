@@ -8,6 +8,7 @@ export const preparationPhaseLabels = {
   'resolving-fonts': 'Resolving fonts',
   'resolving-fallbacks': 'Finalizing typography',
   layout: 'Computing layout',
+  'drawing-shaders': 'Drawing shaders',
   'preparing-render': 'Preparing canvas'
 } satisfies Record<EditorPreparation['phase'], string>
 
