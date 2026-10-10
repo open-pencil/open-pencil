@@ -3,6 +3,7 @@ import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core/editor'
+import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import {
@@ -35,6 +36,18 @@ export interface DesignCheckPreferences {
   disabledRules: string[]
 }
 
+export interface CommentPreferences {
+  /** Pins on the canvas outside the Comment tool; View → Comments, Shift+C. */
+  showOnCanvas: boolean
+  /** The comments list and the canvas also show resolved threads. */
+  showResolved: boolean
+  /** The comments list shows only the current page's threads. */
+  onlyPage: boolean
+  /** The comments list shows only threads you started or replied to. */
+  onlyMine: boolean
+  sort: CommentSort
+}
+
 /** Whether guided AI setup was offered and finished or skipped. */
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
@@ -59,6 +72,7 @@ export interface AppPreferences {
     canvasMode: CanvasRenderingMode
   }
   designCheck: DesignCheckPreferences
+  comments: CommentPreferences
   onboarding: {
     aiSetup: AISetupState
   }
@@ -79,6 +93,13 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   },
   rendering: { canvasMode: 'retained' },
   designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
+  comments: {
+    showOnCanvas: true,
+    showResolved: false,
+    onlyPage: false,
+    onlyMine: false,
+    sort: 'newest'
+  },
   onboarding: { aiSetup: 'pending' }
 }
 
@@ -133,6 +154,13 @@ const appPreferencesSchema = section({
       ),
       () => []
     )
+  }),
+  comments: section({
+    showOnCanvas: v.fallback(v.boolean(), defaults.comments.showOnCanvas),
+    showResolved: v.fallback(v.boolean(), defaults.comments.showResolved),
+    onlyPage: v.fallback(v.boolean(), defaults.comments.onlyPage),
+    onlyMine: v.fallback(v.boolean(), defaults.comments.onlyMine),
+    sort: v.fallback(v.picklist(COMMENT_SORTS), defaults.comments.sort)
   }),
   onboarding: section({
     aiSetup: v.fallback(v.picklist(AI_SETUP_STATES), defaults.onboarding.aiSetup)
@@ -198,5 +226,12 @@ export function updateDesignCheckPreferences(changes: Partial<DesignCheckPrefere
   appPreferences.value = {
     ...appPreferences.value,
     designCheck: { ...appPreferences.value.designCheck, ...changes }
+  }
+}
+
+export function updateCommentPreferences(changes: Partial<CommentPreferences>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    comments: { ...appPreferences.value.comments, ...changes }
   }
 }

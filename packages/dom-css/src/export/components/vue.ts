@@ -11,6 +11,7 @@ import { claimName } from '../storybook/names'
 import { progressWidth } from './fields'
 import type {
   ComponentBinding,
+  ComponentElement,
   ComponentGenerator,
   ComponentModel,
   ComponentNode,
@@ -68,7 +69,9 @@ const REKA: Record<
   },
   // Reka has no text field; the root is the design's own element around a native input.
   textField: { parts: {} },
-  textarea: { parts: {} }
+  textarea: { parts: {} },
+  // A component without a behaviour is the design's own elements.
+  plain: { parts: {} }
 }
 
 /** Kinds whose two-way value is their input's, which binds it rather than the root. */
@@ -161,7 +164,6 @@ interface TemplateUses {
 
 /** The Iconify component, named apart from any component the design calls `Icon`. */
 const ICONIFY = 'IconifyIcon'
-const TRUE = es.parseExpression('true')
 
 function reference(node: ComponentReference, uses: TemplateUses): vue.VueNode {
   uses.components.add(node.component)
@@ -172,11 +174,52 @@ function reference(node: ComponentReference, uses: TemplateUses): vue.VueNode {
   return vue.element(node.component, [
     vue.attribute('class', node.className),
     ...node.props.map((prop) =>
-      prop.value === true ? vue.bound(prop.name, TRUE) : vue.attribute(prop.name, prop.value)
+      typeof prop.value === 'boolean'
+        ? vue.bound(prop.name, es.parseExpression(String(prop.value)))
+        : vue.attribute(prop.name, prop.value)
     ),
     // The control stays operable, starting from the value the design draws.
     ...(model && node.model ? [vue.model(identifier(model), node.model)] : [])
   ])
+}
+
+/** A design element's attributes: what shows it, its part's own, the design's, and bindings. */
+function elementAttributes(
+  node: ComponentElement,
+  uses: TemplateUses,
+  { native, button }: { native: boolean; button: boolean }
+): vue.VueAttribute[] {
+  const root = node.part === 'root'
+  return [
+    ...(node.shownBy ? [vue.renderIf(identifier(node.shownBy))] : []),
+    ...(button ? [vue.attribute('type', 'button')] : []),
+    ...(root ? [...(ROOT_ATTRIBUTES[uses.kind] ?? []), ...rangeAttributes(uses.component)] : []),
+    ...(uses.kind === 'progress' && node.part === 'indicator' ? progressStyle(uses.component) : []),
+    ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
+      vue.attribute(name, value)
+    ),
+    vue.attribute('class', compact([node.attrs.class, node.className]).join(' ')),
+    ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
+    ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses, native))
+  ]
+}
+
+function designElement(node: ComponentElement, uses: TemplateUses): vue.VueNode {
+  const reka = node.part ? REKA[uses.kind].parts[node.part] : undefined
+  if (reka) uses.reka.add(reka)
+  const native = node.part === 'root' && !reka
+  const button = native && uses.kind === 'button'
+  const children = node.children.map((child) => templateNode(child, uses))
+  const element = vue.element(
+    reka ?? (button ? 'button' : node.tag),
+    elementAttributes(node, uses, { native, button }),
+    // A slot frame shows what the caller passes, or the design's content.
+    node.slot ? [vue.element('slot', [vue.attribute('name', node.slot)], children)] : children
+  )
+  // Reka puts an accordion item's trigger in a header, which carries the heading level.
+  if (uses.kind !== 'accordionItem' || node.part !== 'trigger') return element
+  uses.reka.add('AccordionHeader')
+  return vue.element('AccordionHeader', [vue.attribute('style', HEADING_STYLE)], [element])
 }
 
 function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
@@ -191,32 +234,7 @@ function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
       vue.attribute('class', node.className)
     ])
   }
-  const reka = node.part ? REKA[uses.kind].parts[node.part] : undefined
-  if (reka) uses.reka.add(reka)
-  const root = node.part === 'root'
-  const native = root && !reka
-  const button = native && uses.kind === 'button'
-  const element = vue.element(
-    reka ?? (button ? 'button' : node.tag),
-    [
-      ...(button ? [vue.attribute('type', 'button')] : []),
-      ...(root ? [...(ROOT_ATTRIBUTES[uses.kind] ?? []), ...rangeAttributes(uses.component)] : []),
-      ...(uses.kind === 'progress' && node.part === 'indicator'
-        ? progressStyle(uses.component)
-        : []),
-      ...Object.entries(omit(node.attrs, ['class'])).map(([name, value]) =>
-        vue.attribute(name, value)
-      ),
-      vue.attribute('class', compact([node.attrs.class, node.className]).join(' ')),
-      ...(node.value === undefined ? [] : [vue.attribute('value', node.value)]),
-      ...node.bindings.flatMap((binding) => bindingAttributes(binding, uses, native))
-    ],
-    node.children.map((child) => templateNode(child, uses))
-  )
-  // Reka puts an accordion item's trigger in a header, which carries the heading level.
-  if (uses.kind !== 'accordionItem' || node.part !== 'trigger') return element
-  uses.reka.add('AccordionHeader')
-  return vue.element('AccordionHeader', [vue.attribute('style', HEADING_STYLE)], [element])
+  return designElement(node, uses)
 }
 
 function propsType(component: ComponentModel): es.SyntaxNode {
@@ -229,12 +247,20 @@ function propsType(component: ComponentModel): es.SyntaxNode {
   // A group's item always stands for a value, which has no default.
   if (component.valueProp) members.unshift(['value', es.parseType('string'), false])
   for (const text of component.texts) members.push([text.name, es.parseType('string'), true])
+  for (const prop of component.booleans) members.push([prop.name, es.parseType('boolean'), true])
   return es.objectType(members)
 }
 
 /** `defineProps`, with `withDefaults` when any prop has a default to give. */
+/** Whether any prop has a default to give: `disabled`, a variant, a text, or a boolean. */
+const hasDefaults = (component: ComponentModel) =>
+  component.disabled ||
+  component.props.length > 0 ||
+  component.texts.length > 0 ||
+  component.booleans.length > 0
+
 function propsDeclaration(component: ComponentModel): es.SyntaxNode[] {
-  const optional = component.disabled || component.props.length > 0 || component.texts.length > 0
+  const optional = hasDefaults(component)
   return optional
     ? es.fill(PROPS, { $Props: propsType(component), $defaults: propsDefaults(component) }).body
     : es.fill(REQUIRED_PROPS, { $Props: propsType(component) }).body
@@ -244,7 +270,10 @@ function propsDefaults(component: ComponentModel): es.SyntaxNode {
   return es.object([
     ...(component.disabled ? [['disabled', es.parseExpression('false')] as const] : []),
     ...component.props.map((prop) => [prop.name, es.string(prop.default)] as const),
-    ...component.texts.map((text) => [text.name, es.string(text.default)] as const)
+    ...component.texts.map((text) => [text.name, es.string(text.default)] as const),
+    ...component.booleans.map(
+      (prop) => [prop.name, es.parseExpression(String(prop.default))] as const
+    )
   ])
 }
 
@@ -326,13 +355,7 @@ function modelDeclaration(component: ComponentModel, uses: TemplateUses): es.Syn
 }
 
 function script(component: ComponentModel, uses: TemplateUses): es.SyntaxNode {
-  const props =
-    component.valueProp ||
-    component.disabled ||
-    component.props.length > 0 ||
-    component.texts.length > 0
-      ? propsDeclaration(component)
-      : []
+  const props = component.valueProp || hasDefaults(component) ? propsDeclaration(component) : []
   const refs = uses.models.flatMap(
     (item) => es.fill(MODEL_REF, { $name: identifier(item.name) }).body
   )
@@ -352,6 +375,8 @@ export const vueComponent: ComponentGenerator = async (component) => {
   const taken = new Set([
     ...component.props.map((prop) => prop.name),
     ...component.texts.map((text) => text.name),
+    ...component.booleans.map((prop) => prop.name),
+    ...component.slots.map((slot) => slot.name),
     ...(component.model ? [component.model] : []),
     'disabled'
   ])

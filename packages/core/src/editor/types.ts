@@ -42,6 +42,7 @@ export type Tool =
   | 'TEXT'
   | 'PEN'
   | 'HAND'
+  | 'COMMENT'
 
 /** The gradient whose handles the canvas shows while its paint picker is open. */
 export interface GradientEdit {

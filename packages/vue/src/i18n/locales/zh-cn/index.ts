@@ -5,6 +5,7 @@ import automation from './automation.json'
 import code from './code.json'
 import collaboration from './collaboration.json'
 import commands from './commands.json'
+import comments from './comments.json'
 import common from './common.json'
 import credentials from './credentials.json'
 import designCheck from './design-check.json'
@@ -32,6 +33,7 @@ export default {
   code,
   collaboration,
   commands,
+  comments,
   common,
   credentials,
   designCheck,

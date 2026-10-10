@@ -65,4 +65,15 @@ describe('parseAppPreferences', () => {
       'pending'
     )
   })
+
+  test('keeps comment view choices and drops an unknown sort order', () => {
+    const { comments } = parseAppPreferences({
+      comments: { showOnCanvas: false, showResolved: true, sort: 'loudest' }
+    })
+    expect(comments).toEqual({
+      ...DEFAULT_APP_PREFERENCES.comments,
+      showOnCanvas: false,
+      showResolved: true
+    })
+  })
 })

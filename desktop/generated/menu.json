@@ -217,6 +217,12 @@
         "checkbox": true
       },
       {
+        "id": "view-comments",
+        "label": "Comments",
+        "accelerator": "Shift+C",
+        "checkbox": true
+      },
+      {
         "type": "separator"
       },
       {

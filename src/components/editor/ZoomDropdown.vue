@@ -12,7 +12,11 @@ import { nextTick, ref, watch } from 'vue'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
+import {
+  setCommentsOnCanvas,
+  setDesignIssuesOnCanvas,
+  setSnappingPreference
+} from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
@@ -206,6 +210,17 @@ watch(open, (v) => {
             class="absolute left-2 size-3.5"
           />
           <span class="flex-1">{{ menuText.designIssues }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          :class="itemCls"
+          @select.prevent="setCommentsOnCanvas(!appPreferences.comments.showOnCanvas)"
+        >
+          <icon-lucide-check
+            v-if="appPreferences.comments.showOnCanvas"
+            class="absolute left-2 size-3.5"
+          />
+          <span class="flex-1">{{ menuText.comments }}</span>
+          <AppShortcutText>{{ appMenuShortcutLabel('view-comments') }}</AppShortcutText>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenuPortal>

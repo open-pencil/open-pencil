@@ -110,6 +110,21 @@ openpencil eval design.fig -w -c '
 
 Names the component does not have fail with an error that lists the ones it has.
 
+Comments people leave with the Comment tool are part of the document, so scripts and agents can read the feedback on a file, act on it, and answer:
+
+```sh
+openpencil eval design.fig -w -c '
+  for (const comment of openpencil.getComments({ resolved: false })) {
+    console.log(comment.author, comment.node?.name, comment.text)
+    comment.reply("Bumped the title to 24px", { author: "Claude" }).resolve()
+  }
+'
+```
+
+- `openpencil.getComments(filter)` lists threads oldest first: all of them, or `{ resolved: false }` for open ones, `{ page }` for one page's, `{ author }` for those a person started or replied to.
+- `openpencil.addComment(text, { node, page, x, y, author })` pins a comment on a layer, which it follows, or at a point of a page; the current page by default. `author` is `"Agent"` when left out.
+- A comment has `id`, `text` (Markdown), `author`, `createdAt`, `resolved`, `page`, `node` (the top-level layer it is pinned to), `position`, and `replies`, and `reply(text, { author })`, `resolve()`, `reopen()`, and `remove()`. `openpencil.getComment(id)` finds one.
+
 ## Supported API surface
 
 The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil's scene graph and file format.

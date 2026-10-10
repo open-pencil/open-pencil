@@ -4,6 +4,7 @@ import { requestAppExit } from '@/app/document/close/exit'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
 import {
+  syncNativeCommentsMenu,
   syncNativeDesignIssuesMenu,
   syncNativeSnappingMenu
 } from '@/app/settings/preferences/native-menu'
@@ -39,6 +40,12 @@ export function useShellMenu() {
   void syncNativeDesignIssuesMenu(appPreferences.value.designCheck.showOnCanvas).catch(
     (error: unknown) => {
       console.error('[Menu] Failed to synchronize the native design issues menu:', error)
+    }
+  )
+
+  void syncNativeCommentsMenu(appPreferences.value.comments.showOnCanvas).catch(
+    (error: unknown) => {
+      console.error('[Menu] Failed to synchronize the native comments menu:', error)
     }
   )
 

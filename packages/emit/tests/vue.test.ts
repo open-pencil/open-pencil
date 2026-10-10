@@ -119,3 +119,14 @@ describe('Vue templates', () => {
     expect(descriptor.template?.content.trim()).toBe('<div />')
   })
 })
+
+describe('conditional elements', () => {
+  test('render with v-if, the condition escaped as an attribute', () => {
+    const node = vue.element('span', [
+      vue.renderIf(es.parseExpression('showIcon && size !== "small"'))
+    ])
+    expect(vue.printTemplate(node)).toBe(
+      '<span v-if="showIcon &amp;&amp; size !== &quot;small&quot;" />'
+    )
+  })
+})

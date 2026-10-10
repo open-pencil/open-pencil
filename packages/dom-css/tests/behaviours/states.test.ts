@@ -5,11 +5,16 @@ import {
   stateStyles,
   stateStylesToCSS,
   stateStylesToTailwind,
+  type StateCondition,
   type StateElement,
+  type StateRule,
   type StateStyles
 } from '#dom-css/behaviours/states/index'
+import { allElements } from '#dom-css/behaviours/states/layers'
 import { compileTailwindCSS } from '#dom-css/import/tailwind'
 import type { DesignElement, DesignNode } from '#dom-css/types'
+import { sortBy } from 'es-toolkit/array'
+import { isEqual } from 'es-toolkit/predicate'
 
 import { emptyBehaviour } from '@open-pencil/scene-graph'
 
@@ -134,6 +139,63 @@ describe('state styles', () => {
       { conditions: [{ type: 'prop', name: 'Size', value: 'Large' }], style: { width: '160px' } }
     ])
   })
+})
+
+test('rests on the top-left variant when the document records no default values', () => {
+  const fixture = buttonSet()
+  const { graph, set } = fixture
+  graph.updateNode(set.id, {
+    componentPropertyDefinitions: set.componentPropertyDefinitions.map((definition) => ({
+      ...definition,
+      defaultValue: ''
+    }))
+  })
+  // The small default variant sits in the top-left corner; the others below it.
+  const rest = graph
+    .getChildren(set.id)
+    .find((variant) => variant.name === 'Size=Small, Interaction=Default')
+  for (const [index, variant] of graph.getChildren(set.id).entries())
+    graph.updateNode(variant.id, { x: 0, y: variant === rest ? 0 : 100 + index * 50 })
+  expect(stateStyles(graph, graph.getNode(set.id) ?? set)?.restId).toBe(rest?.id)
+})
+
+/**
+ * The words a variant shows: each text layer's display once every rule its conditions meet
+ * applies, fewer conditions first, as the stylesheet orders them and the cascade resolves them.
+ */
+function shownWords(root: StateElement, conditions: StateCondition[]): string[] {
+  const meets = (rule: StateRule) =>
+    rule.conditions.every((condition) => conditions.some((other) => isEqual(condition, other)))
+  return allElements(root).flatMap((element) => {
+    const display = sortBy(element.rules.filter(meets), [(rule) => rule.conditions.length]).reduce(
+      (value, rule) => rule.style.display ?? value,
+      element.base.display
+    )
+    const words = element.children.find((child) => child.type === 'text')
+    return words && display !== 'none' ? [words.text] : []
+  })
+}
+
+test('shows each combined variant its own words, not those a part of it shows', () => {
+  const { graph, set } = componentSet(
+    'Field',
+    { Size: ['Small', 'Large'], State: ['Rest', 'Done'] },
+    emptyBehaviour('button'),
+    (graph, variant, { Size, State }) => {
+      let text = 'Plain'
+      if (State === 'Done') text = 'Value'
+      else if (Size === 'Large') text = 'Placeholder'
+      graph.createNode('TEXT', variant, { name: 'Words', text })
+    }
+  )
+  const result = stateStyles(graph, set)
+  if (!result) throw new Error('No state styles')
+  const prop = (name: string, value: string): StateCondition => ({ type: 'prop', name, value })
+  expect(shownWords(result.root, [])).toEqual(['Plain'])
+  expect(shownWords(result.root, [prop('Size', 'Large')])).toEqual(['Placeholder'])
+  expect(shownWords(result.root, [prop('State', 'Done')])).toEqual(['Value'])
+  // Large and done meets the rule that shows the large field's placeholder, yet shows its value.
+  expect(shownWords(result.root, [prop('Size', 'Large'), prop('State', 'Done')])).toEqual(['Value'])
 })
 
 test('has no state styles when no variant shows the rest state', () => {

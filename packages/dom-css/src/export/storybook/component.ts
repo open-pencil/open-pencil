@@ -163,7 +163,11 @@ function restArgs(
     ...(model && rest ? [[model, rest] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', FALSE] as [string, es.SyntaxNode]] : []),
     ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, es.string(prop.default)]),
-    ...component.texts.map((text): [string, es.SyntaxNode] => [text.name, es.string(text.default)])
+    ...component.texts.map((text): [string, es.SyntaxNode] => [text.name, es.string(text.default)]),
+    ...component.booleans.map((prop): [string, es.SyntaxNode] => [
+      prop.name,
+      prop.default ? TRUE : FALSE
+    ])
   ]
 }
 
@@ -207,7 +211,8 @@ function argTypes(component: ComponentModel, model: string | null, list: boolean
     ...component.texts.map((text): [string, es.SyntaxNode] => [
       text.name,
       es.object([['control', es.string('text')]])
-    ])
+    ]),
+    ...component.booleans.map((prop): [string, es.SyntaxNode] => [prop.name, boolean])
   ])
 }
 
@@ -217,10 +222,13 @@ function stories(
   model: string | null,
   list: boolean
 ): { name: string; story: es.SyntaxNode }[] {
-  const taken = new Set<string>()
+  // Stories are named apart from the component the file imports and the module's own names.
+  const taken = new Set([component.name, 'meta', 'Story'])
+  let first = true
   const story = (label: string, args: [string, es.SyntaxNode][], play?: es.SyntaxNode) => {
     // Every story after the first, Default, is another state, tagged so Storybook can hide it.
-    const variant = taken.size > 0
+    const variant = !first
+    first = false
     return {
       name: claimName(identifierName(label, 'Story'), taken),
       story: es.object([
@@ -259,6 +267,12 @@ function stories(
       prop.options
         .filter((option) => option !== prop.default)
         .map((option) => story(option, [[prop.name, es.string(option)]]))
+    ),
+    // A boolean gets a story drawn the other way, such as an icon shown that is hidden at rest.
+    ...component.booleans.map((prop) =>
+      story(`${prop.property} ${prop.default ? 'off' : 'on'}`, [
+        [prop.name, prop.default ? FALSE : TRUE]
+      ])
     )
   ]
 }

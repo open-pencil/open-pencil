@@ -120,6 +120,11 @@ export function requireNodes(figma: FigmaAPI, ids: ReadonlyArray<string>): Figma
   return nodes
 }
 
+/** A tool's answer when the operation it wraps throws: the error's message for the caller. */
+export function toolFailure(error: unknown): { error: string } {
+  return { error: error instanceof Error ? error.message : String(error) }
+}
+
 export function nodeNotFound(id: string): { error: string } {
   return { error: `Node "${id}" not found` }
 }

@@ -29,7 +29,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>P</kbd> | Pen | ✅ |
 | <kbd>⇧</kbd><kbd>P</kbd> | Pencil | 🔲 |
 | <kbd>T</kbd> | Text | ✅ |
-| <kbd>C</kbd> | Comment | 🔲 |
+| <kbd>C</kbd> | Comment | ✅ |
 | <kbd>I</kbd> | Eyedropper | 🔲 |
 
 ## File
@@ -69,6 +69,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>⌘</kbd><kbd>'</kbd> | Pixel Grid | 🔲 |
 | <kbd>⌃</kbd><kbd>G</kbd> | Layout Guides | 🔲 |
 | <kbd>⇧</kbd><kbd>R</kbd> | Rulers | 🔲 |
+| <kbd>⇧</kbd><kbd>C</kbd> | Show/Hide Comments | ✅ |
 | <kbd>⌘</kbd><kbd>\\</kbd> | Show/Hide UI | ✅ |
 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>↩</kbd> | Preview controls | ✅ |
 | <kbd>⌘</kbd><kbd>=</kbd> | Zoom In | ✅ |
