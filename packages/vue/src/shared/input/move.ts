@@ -11,33 +11,38 @@ import {
 } from '#vue/shared/input/drag-threshold'
 import { findMoveDropTarget, reparentDroppedNodes } from '#vue/shared/input/drop-target'
 export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
-import { AUTO_LAYOUT_BREAK_THRESHOLD } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 
 import { applyMoveSnap } from '#vue/shared/input/move-snap'
 import type { DragMove } from '#vue/shared/input/types'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
-const AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE = 96
+/**
+ * How far past its auto layout frame's edge a dragged layer's near edge goes before the layer
+ * leaves the frame, in canvas units, as measured in Figma desktop 126: 5 across the flow, and
+ * 13 to 20 along it depending on the layer's size.
+ */
+const AUTO_LAYOUT_LEAVE_MARGIN_ACROSS = 5
+const AUTO_LAYOUT_LEAVE_MARGIN_ALONG = 15
 export const MOVE_DRAG_START_THRESHOLD_PX = POINTER_DRAG_START_THRESHOLD_PX
 
-function isInsideAutoLayoutDragBounds(parentId: string, cx: number, cy: number, editor: Editor) {
+/** Whether the layer being dragged by `dx`, `dy` is still close enough to stay in its flow. */
+function staysInAutoLayout(d: DragMove, parentId: string, dx: number, dy: number, editor: Editor) {
   const parent = editor.graph.getNode(parentId)
-  if (!parent) return false
-  const abs = editor.graph.getAbsolutePosition(parentId)
+  const [id] = d.originals.keys()
+  const node = id ? editor.graph.getNode(id) : undefined
+  if (!parent || !node) return false
+  const frame = editor.graph.getAbsolutePosition(parentId)
+  const start = editor.graph.getAbsolutePosition(node.id)
+  const left = start.x + dx
+  const top = start.y + dy
+  // How far the layer's near edge is past the frame's edge on each axis; negative while they overlap.
+  const pastX = Math.max(frame.x - (left + node.width), left - (frame.x + parent.width))
+  const pastY = Math.max(frame.y - (top + node.height), top - (frame.y + parent.height))
   const isRow = parent.layoutMode === 'HORIZONTAL'
-  const mainStart = isRow ? abs.x : abs.y
-  const mainSize = isRow ? parent.width : parent.height
-  const crossStart = isRow ? abs.y : abs.x
-  const crossSize = isRow ? parent.height : parent.width
-  const main = isRow ? cx : cy
-  const cross = isRow ? cy : cx
-  return (
-    main >= mainStart - AUTO_LAYOUT_BREAK_THRESHOLD &&
-    main <= mainStart + mainSize + AUTO_LAYOUT_BREAK_THRESHOLD &&
-    cross >= crossStart - AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE &&
-    cross <= crossStart + crossSize + AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE
-  )
+  const along = isRow ? pastX : pastY
+  const across = isRow ? pastY : pastX
+  return along <= AUTO_LAYOUT_LEAVE_MARGIN_ALONG && across <= AUTO_LAYOUT_LEAVE_MARGIN_ACROSS
 }
 
 export function detectAutoLayoutParent(editor: Editor): string | undefined {
@@ -109,7 +114,7 @@ export function handleMoveMove(
   let { dx, dy } = lockToAxis(cx - d.startX, cy - d.startY, modifiers.shiftKey === true)
 
   if (d.autoLayoutParentId && !d.brokeFromAutoLayout) {
-    if (!d.ignoreAutoLayout && isInsideAutoLayoutDragBounds(d.autoLayoutParentId, cx, cy, editor)) {
+    if (!d.ignoreAutoLayout && staysInAutoLayout(d, d.autoLayoutParentId, dx, dy, editor)) {
       computeAutoLayoutIndicator(d, cx, cy, editor)
       return
     }

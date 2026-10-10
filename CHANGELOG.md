@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `AUTO_LAYOUT_BREAK_THRESHOLD` is removed from `@open-pencil/core/constants`: a layer dragged out of auto layout now leaves by how far its own edge is past the frame, not by a cursor margin.
 - `useFlatReorderDrag` from `@open-pencil/vue` takes `operations`, which drops each target accepts, and `onCombine`, for dropping onto an item, and `FlatReorderInstruction` is now any list-item `Instruction`, so it can be `'combine'` when a list opts in; code that switches on its `operation` needs that case.
 - The editor `Tool` type from `@open-pencil/core` and `@open-pencil/vue` includes `'COMMENT'`, and `EDITOR_TOOLS` and `TOOL_SHORTCUTS` list the Comment tool on <kbd>C</kbd>, so a `Record<Tool, …>` needs a `COMMENT` entry and toolbars built on `ToolbarRoot` show it. The canvas places nothing while it is active; the app's comments layer does.
 - A paint's `gradientTransform` follows Figma's convention everywhere: it maps the layer's unit square onto gradient space, where a linear gradient runs from (0, 0.5) to (1, 0.5). Gradients made in OpenPencil before this release, which used the inverse, draw differently; code that builds gradients by hand should use `linearGradientTransform` and `ellipticalGradientTransform` from the new `@open-pencil/scene-graph/gradient`, which also has Figma's default transform and stops. `isGradientFill` and `GradientFillType` moved there from `@open-pencil/core/geometry`, and `linearGradientEndpoints` is removed from the canvas module.
@@ -117,6 +118,7 @@
 - Customize the toolbar in **Settings → Toolbar**, also opened from **Customize toolbar…** when you right-click it: hide tools, reorder them, and choose which share a flyout, on desktop and mobile alike. Hidden tools keep their shortcuts, **Move** always stays, and tools added in later versions join their default flyout in a customized toolbar.
 ### Changed
 
+- A layer dragged out of an auto layout frame leaves it as in Figma, once its edge is 5 px past the frame across the flow or about 15 px along it, instead of after the cursor travels 96 px beyond it.
 - Bound variables show as a neutral chip in the properties panel instead of purple text, so they no longer read as components.
 - Import SVG as editable layers, as pasting it into Figma does, from `import_svg`, dropped files, and pasted markup ([#734](https://github.com/open-pencil/open-pencil/issues/734)). Each `<g>` becomes a group, each shape its own vector, and each `<text>` a text layer with its fonts, `<tspan>` styles, alignment, and rotation, named after its `id`, element opacity is kept, and clipped content sits in a clip path group whose mask is drawn from the clip's shapes. The imported frame is white, clips its content, and is named after the root `<svg>` `id`; an SVG without a size imports as a group. Shapes are no longer merged into one multi-color vector.
 - With **Snap to Pixel Grid** on, moved layers and resized edges land on whole pixels at any zoom, and drawn layers start and end on whole pixels, as in Figma; zoomed in, moves and resizes could leave fractions before, and drawing was not snapped.
