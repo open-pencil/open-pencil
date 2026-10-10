@@ -159,10 +159,23 @@ export function useShaderPlayback(options: {
     players.set(hash, player)
     // Read through a call: the player may be stopped while the library loads.
     const stopped = () => player.disposed
-    const shaders = await import('shaders/core')
-    if (stopped()) return
-    const renderer = shaders.createRendererFromJSON(structuredClone(preset))
-    await renderer.initialize(canvas)
+    let renderer: Player['renderer'] = null
+    try {
+      const shaders = await import('shaders/core')
+      if (stopped()) return
+      renderer = shaders.createRendererFromJSON(structuredClone(preset))
+      await renderer.initialize(canvas)
+    } catch (error) {
+      // A shader that cannot play keeps its still frame until its preset changes. A newer
+      // player that replaced this one while it started is left alone.
+      console.warn('Could not play a shader', error)
+      renderer?.dispose()
+      if (players.get(hash) === player) {
+        stop(hash)
+        failed.set(hash, player.preset)
+      }
+      return
+    }
     if (stopped()) renderer.dispose()
     else player.renderer = renderer
   }
@@ -188,13 +201,7 @@ export function useShaderPlayback(options: {
       const size = screenSize(shader.bounds)
       const existing = players.get(hash)
       if (existing && visible && resized(existing.canvas, size)) stop(hash)
-      if (!players.has(hash) && visible && !failed.has(hash))
-        start(hash, shader.preset, size).catch((error: unknown) => {
-          // A shader that cannot play keeps its still frame until its preset changes.
-          console.warn('Could not play a shader', error)
-          stop(hash)
-          failed.set(hash, JSON.stringify(shader.preset))
-        })
+      if (!players.has(hash) && visible && !failed.has(hash)) void start(hash, shader.preset, size)
       const player = players.get(hash)
       if (!player) continue
       player.nodeIds = shader.nodeIds

@@ -39,8 +39,9 @@ export function createShaderRasterizer(): ShaderRasterizer | null {
           canvas.toBlob(resolve, 'image/png')
         })
         const blob = await encoded
-        if (isDestroyed()) return null
-        return blob ? new Uint8Array(await blob.arrayBuffer()) : null
+        if (isDestroyed() || !blob) return null
+        const bytes = new Uint8Array(await blob.arrayBuffer())
+        return isDestroyed() ? null : bytes
       } finally {
         renderer.dispose()
       }
