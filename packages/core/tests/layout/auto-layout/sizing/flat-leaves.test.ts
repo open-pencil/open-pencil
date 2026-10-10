@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { computeAllLayouts } from '#core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-// Nuxt UI's separators, as Figma saved them in nuxtui.fig: a Fill line in a 20 px row stays a
+// Nuxt UI's separators, as Figma saved them in the Nuxt UI kit: a Fill line in a 20 px row stays a
 // line, centred, and a vector with no width keeps none.
 function row(child: 'LINE' | 'VECTOR') {
   const graph = new SceneGraph()
