@@ -92,7 +92,7 @@ Wszystkie polecenia obsługują `--json`. Instalacja: `npm install -g @open-penc
 
 ## Współpraca w czasie rzeczywistym
 
-Połączenie równorzędne WebRTC nie wymaga centralnego serwera. Udostępnij odnośnik i edytuj dokument wspólnie z innymi osobami, korzystając z kursorów, informacji o obecności i trybu śledzenia.
+Połączenie równorzędne WebRTC nie wymaga centralnego serwera. Udostępnij odnośnik i edytuj dokument wspólnie z innymi osobami, korzystając z kursorów, informacji o obecności, trybu śledzenia i rozmów głosowych z osobami w pokoju.
 
 ## Wersja komputerowa i internetowa
 

@@ -19,6 +19,7 @@ import {
 } from '@/app/collab/shared-tree/fields'
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { RemotePeer } from '@/app/collab/types'
+import { attachRoomVoice, type RoomVoice } from '@/app/collab/voice/room'
 import {
   bindCollabGraphEvents,
   createYjsGraphSync,
@@ -40,6 +41,7 @@ export interface RoomSession {
   readonly status: ComputedRef<RoomStatus>
   /** Whether the room's document has reached this tab, from a peer or the saved copy. */
   readonly hasDocument: Readonly<Ref<boolean>>
+  readonly voice: RoomVoice
   updateCursor(x: number, y: number, pageId: string): void
   updateSelection(ids: string[]): void
   /** Writes the tab's whole document into the room and makes its root the room's. */
@@ -198,6 +200,7 @@ export function openRoomSession({
   })
   const stopAgentSync = publishLocalAgents(store, () => awareness, identity.color)
   const stopAgentPreviews = shareAgentPreviews(store, connection)
+  const voice = attachRoomVoice({ awareness, peers, connection })
   const unbindGraphEvents = bindCollabGraphEvents({
     store,
     getYdoc: () => (disposed ? null : ydoc),
@@ -213,6 +216,7 @@ export function openRoomSession({
     peers,
     status,
     hasDocument,
+    voice,
     updateCursor(x, y, pageId) {
       awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
     },
@@ -234,6 +238,7 @@ export function openRoomSession({
       stopZoomWatch()
       stopAgentSync()
       stopAgentPreviews()
+      voice.dispose()
       meta.unobserve(refreshDocument)
       unregisterYjsObservers()
       // Destroying the awareness can emit a last change; nothing here should react to it.

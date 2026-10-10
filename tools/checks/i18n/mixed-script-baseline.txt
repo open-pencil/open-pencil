@@ -120,6 +120,7 @@ ja:collaboration.invalidRoomLink
 ja:collaboration.joinRoomDescription
 ja:collaboration.pasteRoomLinkOrId
 ja:collaboration.unreachableDescription
+ja:collaboration.voiceDeniedDescription
 ja:commands.paletteDescription
 ja:credentials.apiKey
 ja:credentials.getAPIKey
@@ -318,6 +319,7 @@ zh-cn:collaboration.invalidRoomLink
 zh-cn:collaboration.joinRoomDescription
 zh-cn:collaboration.pasteRoomLinkOrId
 zh-cn:collaboration.unreachableDescription
+zh-cn:collaboration.voiceDeniedDescription
 zh-cn:commands.paletteDescription
 zh-cn:credentials.apiKey
 zh-cn:credentials.getAPIKey

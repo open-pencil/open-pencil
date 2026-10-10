@@ -116,6 +116,7 @@ fr:code.editorDesignLabel
 fr:code.sourceDesignJSX
 fr:code.sourceHTMLCSS
 fr:code.sourceTailwindJSX
+fr:collaboration.microphone
 fr:common.ok
 fr:diagnostics.categoryDocument
 fr:diagnostics.categoryMCP

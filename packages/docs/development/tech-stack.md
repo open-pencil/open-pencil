@@ -36,7 +36,7 @@
   "culori": "^4.0.2",
   "fzstd": "^0.1.1",
   "fflate": "^0.8.3",
-  "trystero": "^0.22.0",
+  "@trystero-p2p/mqtt": "^0.26.0",
   "yjs": "^13.6.32",
   "y-indexeddb": "^9.0.12"
 }
