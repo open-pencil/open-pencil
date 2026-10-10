@@ -3,7 +3,7 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_COLOR } from '#core/constants'
+import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_ALPHA } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
 
 import { withScreenStroke } from './outline'
@@ -30,14 +30,7 @@ export function drawTextEditOverlay(
 
   const selRects = editor.getSelectionRects()
   if (selRects.length > 0) {
-    r.auxFill.setColor(
-      r.ck.Color4f(
-        TEXT_SELECTION_COLOR.r,
-        TEXT_SELECTION_COLOR.g,
-        TEXT_SELECTION_COLOR.b,
-        TEXT_SELECTION_COLOR.a
-      )
-    )
+    r.auxFill.setColor(r.selColor(TEXT_SELECTION_ALPHA))
     for (const sel of selRects) {
       canvas.drawRect(r.ck.LTRBRect(sel.x, sel.y, sel.x + sel.width, sel.y + sel.height), r.auxFill)
     }

@@ -36,13 +36,13 @@ const { alignOptions, sideOptions, currentAlign, currentSides, selectSide } = us
 ### Set stroke alignment
 
 ```ts
-strokes.updateAlign('INSIDE', activeNode)
+strokes.updateAlign('INSIDE')
 ```
 
 ### Limit a stroke to one side
 
 ```ts
-strokes.selectSide('TOP', activeNode)
+strokes.selectSide('TOP')
 ```
 
 ### Edit stroke geometry
@@ -57,6 +57,10 @@ strokes.commitMiterLimit(8)
 
 `advancedActive` is true only when every selected node has at least one stroke. `cap`, `join`, and
 `miterLimit` return the shared value or `MIXED` for a mixed selection.
+
+Alignment, sides, and border weights act on every selected node in one undo step. `currentAlign()`
+and `borderWeight(side)` return the shared value or `MIXED`; a node without strokes counts with the
+alignment it keeps for new strokes.
 
 ## Related APIs
 

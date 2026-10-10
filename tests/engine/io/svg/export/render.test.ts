@@ -353,8 +353,35 @@ describe('renderNodesToSVG()', () => {
     })
     const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<linearGradient')
+    // Figma's identity transform runs from the left edge's middle to the right edge's.
+    expect(result).toContain('x1="0" y1="0.5" x2="1" y2="0.5"')
+    expect(result).not.toContain('gradientTransform')
     expect(result).toContain('<stop')
     expect(result).toContain('url(#grad')
+  })
+
+  test("linear gradient keeps Figma's transform", () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      width: 100,
+      height: 60,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+          ],
+          // Figma's default: top to bottom.
+          gradientTransform: { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
+        }
+      ]
+    })
+    const result = exportSVGOrThrow(graph, [node.id])
+    expect(result).toContain('gradientTransform="matrix(0 1 -1 0 1 0)"')
   })
 
   test('radial gradient', () => {

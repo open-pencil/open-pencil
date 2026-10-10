@@ -1,6 +1,7 @@
 {
   "toolOptions": "{tool}のオプション",
   "removeGradientStop": "グラデーション停止点を削除",
+  "cornerRadius": "角丸",
   "showUI": "UIを表示 ({shortcut})",
   "previewing": "プレビュー中",
   "resetPreview": "リセット",

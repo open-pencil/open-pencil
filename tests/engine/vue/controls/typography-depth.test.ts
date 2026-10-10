@@ -13,11 +13,12 @@ describe('typography depth actions', () => {
       maxLines: null,
       textStyleId: '1:20'
     })
-    const node = computed(() => editor.graph.getNode(text.id) ?? null)
+    const nodes = computed(() =>
+      [editor.graph.getNode(text.id)].filter((node) => node !== undefined)
+    )
     const actions = createTypographyActions({
       editor,
-      node,
-      currentWeightLabel: computed(() => 'Regular'),
+      nodes,
       activeFormatting: computed(() => []),
       options: {}
     })
@@ -38,8 +39,7 @@ describe('typography depth actions', () => {
     })
     const actions = createTypographyActions({
       editor,
-      node: computed(() => editor.graph.getNode(text.id) ?? null),
-      currentWeightLabel: computed(() => 'Regular'),
+      nodes: computed(() => [editor.graph.getNode(text.id)].filter((node) => node !== undefined)),
       activeFormatting: computed(() => []),
       options: {}
     })
@@ -57,5 +57,34 @@ describe('typography depth actions', () => {
       fontFeatures: [{ tag: 'kern', enabled: true }],
       textStyleId: '1:21'
     })
+  })
+
+  // Figma desktop 126 edits every selected text when several are selected.
+  test('changes every text layer in one undo step', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const first = editor.graph.createNode('TEXT', pageId, { textCase: 'ORIGINAL' })
+    const second = editor.graph.createNode('TEXT', pageId, { textCase: 'LOWER' })
+    const actions = createTypographyActions({
+      editor,
+      nodes: computed(() =>
+        [first.id, second.id]
+          .map((id) => editor.graph.getNode(id))
+          .filter((node) => node !== undefined)
+      ),
+      activeFormatting: computed(() => []),
+      options: {}
+    })
+
+    actions.setTextCase('UPPER')
+    expect([first.id, second.id].map((id) => editor.graph.getNode(id)?.textCase)).toEqual([
+      'UPPER',
+      'UPPER'
+    ])
+    editor.undo.undo()
+    expect([first.id, second.id].map((id) => editor.graph.getNode(id)?.textCase)).toEqual([
+      'ORIGINAL',
+      'LOWER'
+    ])
   })
 })

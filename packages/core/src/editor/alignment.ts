@@ -120,7 +120,99 @@ function distributeMultipleNodes(
   }
 }
 
+type Axis = 'horizontal' | 'vertical'
+
+/** The layers as one row or column, or null when they are not, as Figma's Spacing field reads them. */
+export interface SelectionSpacing {
+  axis: Axis
+  /** The gaps between neighbours, in order along the axis. */
+  gaps: number[]
+}
+
+function axisSpans(ctx: EditorContext, nodes: SceneNode[], axis: Axis) {
+  const start = axis === 'horizontal' ? 'boundX' : 'boundY'
+  const crossStart = axis === 'horizontal' ? 'boundY' : 'boundX'
+  const size = axis === 'horizontal' ? 'width' : 'height'
+  const crossSize = axis === 'horizontal' ? 'height' : 'width'
+  return nodes
+    .map((node) => {
+      const bounds = getAbsolutePositionFull(node, ctx.graph)
+      return {
+        node,
+        min: bounds[start],
+        max: bounds[start] + bounds[size],
+        crossMin: bounds[crossStart],
+        crossMax: bounds[crossStart] + bounds[crossSize]
+      }
+    })
+    .sort((a, b) => a.min - b.min || a.node.id.localeCompare(b.node.id))
+}
+
+/**
+ * Layers form a row when none overlap along it and each overlaps its neighbour across it; layers
+ * apart on both axes, like a grid or a diagonal, have no spacing in Figma.
+ */
+function rowAlong(ctx: EditorContext, nodes: SceneNode[], axis: Axis) {
+  const spans = axisSpans(ctx, nodes, axis)
+  for (let index = 1; index < spans.length; index++) {
+    const previous = spans[index - 1]
+    const current = spans[index]
+    if (current.min < previous.max) return null
+    if (current.crossMin > previous.crossMax || current.crossMax < previous.crossMin) return null
+  }
+  return spans
+}
+
 export function createAlignmentActions(ctx: EditorContext) {
+  function positionableNodes(nodeIds: readonly string[]) {
+    const nodes = nodeIds
+      .map((id) => ctx.graph.getNode(id))
+      .filter((node): node is SceneNode => node != null)
+    return nodes.length >= 2 && nodes.every((node) => canPositionNode(ctx, node)) ? nodes : null
+  }
+
+  function selectionSpacing(nodeIds: readonly string[]): SelectionSpacing | null {
+    const nodes = positionableNodes(nodeIds)
+    if (!nodes) return null
+    for (const axis of ['horizontal', 'vertical'] as const) {
+      const spans = rowAlong(ctx, nodes, axis)
+      if (spans)
+        return { axis, gaps: spans.slice(1).map((span, index) => span.min - spans[index].max) }
+    }
+    return null
+  }
+
+  /** Spaces the row or column evenly by `gap`, keeping its first layer in place, as Figma does. */
+  function setSelectionSpacing(nodeIds: readonly string[], gap: number) {
+    const spacing = selectionSpacing(nodeIds)
+    const nodes = positionableNodes(nodeIds)
+    if (!spacing || !nodes) return
+    const spans = rowAlong(ctx, nodes, spacing.axis)
+    if (!spans) return
+    const originals = collectNodePositions(
+      ctx,
+      nodes.map((node) => node.id)
+    )
+    let cursor = spans[0].max + gap
+    for (const span of spans.slice(1)) {
+      const distance = cursor - span.min
+      const delta = parentLocalDelta(
+        ctx,
+        span.node,
+        spacing.axis === 'horizontal' ? { x: distance, y: 0 } : { x: 0, y: distance }
+      )
+      if (delta)
+        ctx.graph.updateNode(span.node.id, {
+          x: span.node.x + delta.x,
+          y: span.node.y + delta.y
+        })
+      cursor += span.max - span.min + gap
+    }
+    pushPositionUndo(ctx, 'Change spacing', originals, collectNodePositions(ctx, originals.keys()))
+    for (const node of nodes) ctx.runLayoutForNode(node.id)
+    ctx.requestRender()
+  }
+
   function canDistributeNodes(nodeIds: string[]): boolean {
     const nodes = nodeIds
       .map((id) => ctx.graph.getNode(id))
@@ -178,5 +270,13 @@ export function createAlignmentActions(ctx: EditorContext) {
 
   const { flipNodes, rotateNodes } = createFlipRotateActions(ctx)
 
-  return { alignNodes, canDistributeNodes, distributeNodes, flipNodes, rotateNodes }
+  return {
+    alignNodes,
+    canDistributeNodes,
+    distributeNodes,
+    selectionSpacing,
+    setSelectionSpacing,
+    flipNodes,
+    rotateNodes
+  }
 }

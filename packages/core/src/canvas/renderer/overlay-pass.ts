@@ -6,6 +6,7 @@ import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { layoutIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentSetBorders } from '#core/canvas/overlays/component-sets'
+import { drawCornerRadiusHandles } from '#core/canvas/overlays/corner-radius'
 import { drawDropTarget, drawEditingText } from '#core/canvas/overlays/feedback'
 import { drawGradientHandles } from '#core/canvas/overlays/gradient-handles'
 import { drawLayoutOutlines } from '#core/canvas/overlays/layout-outlines'
@@ -118,7 +119,18 @@ export function drawOverlayPass(
   // previewing canvas shows neither.
   if (!overlays.playing && editedGradient(graph, overlays.gradientEdit))
     drawGradientHandles(r, canvas, graph, overlays.gradientEdit, overlays.rotationPreview)
-  else r.drawSelection(canvas, graph, selectedIds, overlays)
+  else {
+    r.drawSelection(canvas, graph, selectedIds, overlays)
+    if (!overlays.transforming)
+      drawCornerRadiusHandles(
+        r,
+        canvas,
+        graph,
+        selectedIds,
+        overlays.cornerRadiusHover,
+        overlays.rotationPreview
+      )
+  }
   if (measuring) r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)
   r.profiler.endPhase('render:selection')
 

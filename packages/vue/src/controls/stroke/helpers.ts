@@ -134,15 +134,26 @@ export function createStrokeGeometryActions(
   return { setCap, setJoin, updateMiterLimit, commitMiterLimit }
 }
 
-export function updateAlign(editor: Editor, align: Stroke['align'], activeNode: SceneNode | null) {
-  if (!activeNode) return
-  const strokes = activeNode.strokes.map((s) => ({ ...s, align }))
-  editor.updateNodeWithUndo(activeNode.id, { strokes }, 'Change stroke align')
+function alignOf(node: SceneNode): Stroke['align'] {
+  return node.strokes.at(0)?.align ?? node.strokeAlign
 }
 
-export function currentAlign(activeNode: SceneNode | null): Stroke['align'] {
-  if (!activeNode || activeNode.strokes.length === 0) return 'CENTER'
-  return activeNode.strokes[0].align
+/** Changes every node's stroke alignment, including the one a node without strokes keeps. */
+export function updateAlign(editor: Editor, nodes: readonly SceneNode[], align: Stroke['align']) {
+  editor.undo.runBatch('Change stroke align', () => {
+    for (const node of nodes) {
+      const strokes = node.strokes.map((stroke) => ({ ...stroke, align }))
+      editor.updateNodeWithUndo(node.id, { strokes, strokeAlign: align }, 'Change stroke align')
+    }
+  })
+}
+
+/** The alignment the nodes share, MIXED when they differ, as Figma's Position field shows. */
+export function currentAlign(nodes: readonly SceneNode[]): MixedValue<Stroke['align']> {
+  const first = nodes.at(0)
+  if (!first) return 'CENTER'
+  const align = alignOf(first)
+  return nodes.every((node) => alignOf(node) === align) ? align : MIXED
 }
 
 export function currentSides(activeNode: SceneNode | null): StrokeSides {
@@ -187,77 +198,80 @@ export function setGap(stroke: Stroke | undefined, value: number): Partial<Strok
   return { dashPattern: [dash, Math.max(1, value)] }
 }
 
-export function borderWeight(activeNode: SceneNode | null, side: (typeof BORDER_SIDES)[number]) {
-  if (!activeNode) return 0
-  const key = `border${side[0].toUpperCase()}${side.slice(1)}Weight` as keyof SceneNode
-  const value = activeNode[key]
-  return typeof value === 'number' ? value : 0
+const BORDER_KEYS = {
+  top: 'borderTopWeight',
+  right: 'borderRightWeight',
+  bottom: 'borderBottomWeight',
+  left: 'borderLeftWeight'
+} as const
+
+function borderKey(side: (typeof BORDER_SIDES)[number]) {
+  return BORDER_KEYS[side]
+}
+
+export function borderWeight(
+  nodes: readonly SceneNode[],
+  side: (typeof BORDER_SIDES)[number]
+): MixedValue<number> {
+  const first = nodes.at(0)
+  if (!first) return 0
+  const key = borderKey(side)
+  return nodes.every((node) => node[key] === first[key]) ? first[key] : MIXED
 }
 
 export function createStrokeSideActions(editor: Editor, sideMenuOpen: Ref<boolean>) {
-  function selectSide(side: StrokeSides, activeNode: SceneNode | null) {
-    if (!activeNode) return
-    const weight = activeNode.strokes.length > 0 ? activeNode.strokes[0].weight : 1
+  function sideChanges(side: StrokeSides, node: SceneNode): Partial<SceneNode> {
+    const weight = node.strokes.at(0)?.weight ?? 1
     if (side === 'ALL') {
-      editor.updateNodeWithUndo(
-        activeNode.id,
-        {
-          independentStrokeWeights: false,
-          borderTopWeight: 0,
-          borderRightWeight: 0,
-          borderBottomWeight: 0,
-          borderLeftWeight: 0
-        } as Partial<SceneNode>,
-        'Stroke all sides'
-      )
-    } else if (side === 'CUSTOM') {
-      const w = activeNode.independentStrokeWeights
-        ? {
-            top: activeNode.borderTopWeight,
-            right: activeNode.borderRightWeight,
-            bottom: activeNode.borderBottomWeight,
-            left: activeNode.borderLeftWeight
-          }
-        : { top: weight, right: weight, bottom: weight, left: weight }
-      editor.updateNodeWithUndo(
-        activeNode.id,
-        {
-          independentStrokeWeights: true,
-          borderTopWeight: w.top,
-          borderRightWeight: w.right,
-          borderBottomWeight: w.bottom,
-          borderLeftWeight: w.left
-        } as Partial<SceneNode>,
-        'Custom stroke sides'
-      )
-    } else {
-      editor.updateNodeWithUndo(
-        activeNode.id,
-        {
-          independentStrokeWeights: true,
-          borderTopWeight: side === 'TOP' ? weight : 0,
-          borderRightWeight: side === 'RIGHT' ? weight : 0,
-          borderBottomWeight: side === 'BOTTOM' ? weight : 0,
-          borderLeftWeight: side === 'LEFT' ? weight : 0
-        } as Partial<SceneNode>,
-        `Stroke ${side.toLowerCase()} only`
-      )
+      return {
+        independentStrokeWeights: false,
+        borderTopWeight: 0,
+        borderRightWeight: 0,
+        borderBottomWeight: 0,
+        borderLeftWeight: 0
+      }
     }
+    if (side === 'CUSTOM') {
+      const independent = node.independentStrokeWeights
+      return {
+        independentStrokeWeights: true,
+        borderTopWeight: independent ? node.borderTopWeight : weight,
+        borderRightWeight: independent ? node.borderRightWeight : weight,
+        borderBottomWeight: independent ? node.borderBottomWeight : weight,
+        borderLeftWeight: independent ? node.borderLeftWeight : weight
+      }
+    }
+    return {
+      independentStrokeWeights: true,
+      borderTopWeight: side === 'TOP' ? weight : 0,
+      borderRightWeight: side === 'RIGHT' ? weight : 0,
+      borderBottomWeight: side === 'BOTTOM' ? weight : 0,
+      borderLeftWeight: side === 'LEFT' ? weight : 0
+    }
+  }
+
+  function selectSide(side: StrokeSides, nodes: readonly SceneNode[]) {
+    const labels: Partial<Record<StrokeSides, string>> = {
+      ALL: 'Stroke all sides',
+      CUSTOM: 'Custom stroke sides'
+    }
+    const label = labels[side] ?? `Stroke ${side.toLowerCase()} only`
+    editor.undo.runBatch(label, () => {
+      for (const node of nodes) editor.updateNodeWithUndo(node.id, sideChanges(side, node), label)
+    })
     sideMenuOpen.value = false
   }
 
   function updateBorderWeight(
     side: (typeof BORDER_SIDES)[number],
     value: number,
-    activeNode: SceneNode | null
+    nodes: readonly SceneNode[]
   ) {
-    if (!activeNode) return
-    const key = `border${side[0].toUpperCase()}${side.slice(1)}Weight` as keyof SceneNode
-    editor.updateNodeWithUndo(
-      activeNode.id,
-      { [key]: value } as Partial<SceneNode>,
-      'Change stroke weight'
-    )
+    const key = borderKey(side)
+    editor.undo.runBatch('Change stroke weight', () => {
+      for (const node of nodes)
+        editor.updateNodeWithUndo(node.id, { [key]: value }, 'Change stroke weight')
+    })
   }
 
   return { selectSide, updateBorderWeight }

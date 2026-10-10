@@ -53,6 +53,8 @@ const SDK_COMPOSABLE_PAGES = [
   { text: 'useFillControls', slug: 'use-fill-controls' },
   { text: 'useStrokeControls', slug: 'use-stroke-controls' },
   { text: 'useEffectsControls', slug: 'use-effects-controls' },
+  { text: 'useSelectionLayout', slug: 'use-selection-layout', canonical: true },
+  { text: 'useSelectionColors', slug: 'use-selection-colors', canonical: true },
   { text: 'useMask', slug: 'use-mask', canonical: true },
   { text: 'useDocumentWorkspace', slug: 'use-document-workspace', canonical: true },
   { text: 'usePageList', slug: 'use-page-list' },

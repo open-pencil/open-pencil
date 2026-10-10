@@ -23,6 +23,7 @@ const actions = {
     :is-multi="ctx.isMulti.value"
     :active="ctx.active.value"
     :has-corner-radius="ctx.hasCornerRadius.value"
+    :corner-radius-disabled="ctx.cornerRadiusDisabled.value"
     :independent-corners="ctx.independentCorners.value"
     :show-independent-corners="ctx.showIndependentCorners.value"
     :corner-radius-value="ctx.cornerRadiusValue.value"

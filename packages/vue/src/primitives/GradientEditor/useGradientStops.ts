@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 
 import type { Fill, GradientStop, GradientTransform } from '@open-pencil/scene-graph'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
+import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useColorModel } from '#vue/controls/color-model/use'
@@ -18,13 +19,6 @@ const SUBTYPES: { value: GradientSubtype; label: string }[] = [
   { value: 'GRADIENT_ANGULAR', label: 'Angular' },
   { value: 'GRADIENT_DIAMOND', label: 'Diamond' }
 ]
-
-const DEFAULT_TRANSFORMS: Record<GradientSubtype, GradientTransform> = {
-  GRADIENT_LINEAR: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 0, m12: 0.5 },
-  GRADIENT_RADIAL: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 },
-  GRADIENT_ANGULAR: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 },
-  GRADIENT_DIAMOND: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 }
-}
 
 /**
  * Returns gradient-stop state and mutation helpers for a fill.
@@ -53,9 +47,13 @@ export function useGradientStops(fill: Ref<Fill>, onUpdate: (fill: Fill) => void
     onUpdate({ ...fill.value, gradientStops: newStops })
   }
 
+  /** Figma keeps the transform across kinds, so a radial gradient grows from the linear line. */
   function setSubtype(type: GradientSubtype) {
     if (type === fill.value.type) return
-    onUpdate({ ...fill.value, type, gradientTransform: DEFAULT_TRANSFORMS[type] })
+    const gradientTransform: GradientTransform = fill.value.gradientTransform ?? {
+      ...DEFAULT_GRADIENT_TRANSFORM
+    }
+    onUpdate({ ...fill.value, type, gradientTransform })
   }
 
   function selectStop(index: number) {

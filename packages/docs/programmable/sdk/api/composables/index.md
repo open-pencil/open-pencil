@@ -37,6 +37,8 @@ These are the main composables most `@open-pencil/vue` consumers will use.
 - [useFillControls](./use-fill-controls)
 - [useStrokeControls](./use-stroke-controls)
 - [useEffectsControls](./use-effects-controls)
+- [useSelectionLayout](./use-selection-layout)
+- [useSelectionColors](./use-selection-colors)
 
 ## Document workspaces
 

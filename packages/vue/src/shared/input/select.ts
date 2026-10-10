@@ -5,6 +5,7 @@ export { updateHoverCursor } from '#vue/shared/input/select/hover'
 import { editedGradient, type Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { tryStartCornerRadiusDrag } from '#vue/shared/input/corner-radius'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartResize } from '#vue/shared/input/resize'
 import {
@@ -30,12 +31,16 @@ function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragS
   setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id })
 }
 
-/** Starts dragging a gradient handle, or else the selection's rotation or resize handles. */
+/**
+ * Starts dragging a gradient handle, or else the selection's corner radius, rotation, or resize
+ * handles.
+ */
 function tryStartHandleDrag(
   cx: number,
   cy: number,
   sx: number,
   sy: number,
+  altKey: boolean,
   editor: Editor,
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
@@ -43,6 +48,7 @@ function tryStartHandleDrag(
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
   // An open gradient's handles replace the layer's selection handles, which then do not respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
+  if (tryStartCornerRadiusDrag(editor, sx, sy, altKey, setDrag)) return true
   if (tryStartRotation(cx, cy)) return true
   const resizeDrag = tryStartResize(cx, cy, editor)
   if (resizeDrag) setDrag(resizeDrag)
@@ -71,7 +77,7 @@ export function handleSelectDown(
 
   if (editor.state.editingTextId) editor.commitTextEdit()
 
-  if (tryStartHandleDrag(cx, cy, sx, sy, editor, tryStartRotation, setDrag)) return
+  if (tryStartHandleDrag(cx, cy, sx, sy, e.altKey, editor, tryStartRotation, setDrag)) return
 
   const hit = resolveHit(cx, cy, editor, fns, e.metaKey || e.ctrlKey)
   if (!hit) {

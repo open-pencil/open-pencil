@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
+import { DEFAULT_GRADIENT_TRANSFORM, defaultGradientStops } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { FillCategory } from './types'
@@ -58,17 +59,14 @@ export function useFill(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
 
   function toGradient() {
     if (category.value === 'GRADIENT') return
-    const gradientStops: GradientStop[] = fill.value.gradientStops?.length
+    const gradientStops = fill.value.gradientStops?.length
       ? structuredClone(fill.value.gradientStops)
-      : [
-          { color: { ...fill.value.color }, position: 0 },
-          { color: { r: 1, g: 1, b: 1, a: 1 }, position: 1 }
-        ]
+      : defaultGradientStops(fill.value.color)
     onUpdate({
       ...fill.value,
       type: 'GRADIENT_LINEAR',
       gradientStops,
-      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 0, m12: 0.5 }
+      gradientTransform: fill.value.gradientTransform ?? { ...DEFAULT_GRADIENT_TRANSFORM }
     })
   }
 

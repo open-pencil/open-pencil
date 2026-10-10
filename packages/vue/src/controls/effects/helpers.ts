@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import { copyEffects, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useI18n } from '#vue/i18n/useI18n.js'
@@ -44,43 +44,50 @@ export interface EffectEditSnapshot {
   effectStyleId: string | null
 }
 
+/** Effects scrubbed on every selected node, each committed from its own value before the scrub. */
 export function createEffectEditActions(
   editor: Editor,
-  effectsBeforeScrub: Ref<EffectEditSnapshot | null>
+  effectsBeforeScrub: Ref<Map<string, EffectEditSnapshot> | null>
 ) {
-  function scrubEffect(node: SceneNode | null, index: number, changes: Partial<Effect>) {
-    if (!node) return
-    if (!effectsBeforeScrub.value) {
-      effectsBeforeScrub.value = {
-        effects: node.effects.map((e) => ({
-          ...e,
-          color: { ...e.color },
-          offset: { ...e.offset }
-        })),
-        effectStyleId: node.effectStyleId
-      }
+  function apply(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+    for (const node of nodes) {
+      const effects = [...node.effects]
+      const current = effects.at(index)
+      if (!current) continue
+      effects[index] = { ...current, ...changes }
+      editor.updateNode(node.id, { effects })
     }
-    const effects = [...node.effects]
-    effects[index] = { ...effects[index], ...changes }
-    editor.updateNode(node.id, { effects })
     editor.requestRender()
   }
 
-  function commitEffect(node: SceneNode | null, index: number, changes: Partial<Effect>) {
-    if (!node) return
+  function scrubEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+    if (nodes.length === 0) return
+    effectsBeforeScrub.value ??= new Map(
+      nodes.map((node) => [
+        node.id,
+        { effects: copyEffects(node.effects), effectStyleId: node.effectStyleId }
+      ])
+    )
+    apply(nodes, index, changes)
+  }
+
+  function commitEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+    if (nodes.length === 0) return
     const previous = effectsBeforeScrub.value
     effectsBeforeScrub.value = null
-    const effects = [...node.effects]
-    effects[index] = { ...effects[index], ...changes }
-    editor.updateNode(node.id, { effects })
-    editor.requestRender()
-    if (previous) {
-      editor.commitNodeUpdate(
-        node.id,
-        { effects: previous.effects, effectStyleId: previous.effectStyleId },
-        'Change effect'
-      )
-    }
+    apply(nodes, index, changes)
+    if (!previous) return
+    editor.undo.runBatch('Change effect', () => {
+      for (const node of nodes) {
+        const before = previous.get(node.id)
+        if (!before) continue
+        editor.commitNodeUpdate(
+          node.id,
+          { effects: before.effects, effectStyleId: before.effectStyleId },
+          'Change effect'
+        )
+      }
+    })
   }
 
   return { scrubEffect, commitEffect }

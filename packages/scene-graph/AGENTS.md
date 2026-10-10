@@ -20,4 +20,5 @@ Framework-neutral document model. Owns node types, primitives, geometry, matrice
 - Vector network types live here; the reverse-engineered `vectorNetworkBlob` codecs live in `packages/core/src/vector/`.
 - `packages/scene-graph/src/checkpoint.ts` owns transaction checkpoint recovery, including hierarchy and indexes; Core's atomic tool execution relies on it.
 - Export named types and primitives (`Color`, `Vector`, `Rect`, `SceneNode`, `Effect`, `Fill`, `Stroke`) from the public entry; downstream packages reuse them instead of respelling shapes.
+- A paint's `gradientTransform` follows Figma's convention, mapping the layer's unit square onto gradient space; read, build, and invert it only through `@open-pencil/scene-graph/gradient`, which renderers, handles, exporters, importers, and tools all share (`packages/scene-graph/tests/gradient.test.ts`, `tests/engine/render/canvas/gradient.test.ts`).
 - `Stroke` extends `Fill`, so a stroke is a paint plus its geometry; add a paint field to `Fill` and both get it, and copy it in `copyFill`, which `copyStroke` reuses (`packages/scene-graph/src/copy.ts`).
