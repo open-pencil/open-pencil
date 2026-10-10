@@ -33,6 +33,8 @@ function savedRow() {
   const first = graph.createNode('FRAME', row.id, { x: 10, y: 10, width: 100, height: 40 })
   const second = graph.createNode('FRAME', row.id, { x: 120, y: 10, width: 100, height: 40 })
   asSaved(graph, [row, first, second])
+  // Opening a file lays its pages out.
+  editor.runLayoutForNode(row.id)
   return { editor, row, first, second }
 }
 
@@ -57,6 +59,49 @@ describe('a frame read from a .fig file reflows once its layout is edited', () =
       expect([frame.width, frame.height, child.x, child.y]).toEqual([480, 360, 220, 150])
       editor.dispose()
     }
+  })
+
+  test('a new layer in the flow moves the saved ones along', () => {
+    const { editor, row, first, second } = savedRow()
+    const added = editor.graph.createNode('RECTANGLE', row.id, { width: 50, height: 40 })
+    editor.graph.reorderChild(added.id, row.id, 0)
+    editor.runLayoutForNode(row.id)
+    expect([row.width, added.x, first.x, second.x]).toEqual([290, 10, 70, 180])
+    editor.dispose()
+  })
+
+  test('removing a layer closes the gap it leaves', () => {
+    const { editor, row, first, second } = savedRow()
+    editor.graph.deleteNode(first.id)
+    editor.runLayoutForNode(row.id)
+    expect([row.width, second.x]).toEqual([120, 10])
+    editor.dispose()
+  })
+
+  test('a layer added to a nested flow resizes every Hug frame around it', () => {
+    const editor = createEditor()
+    const { graph } = editor
+    const hug = {
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 10,
+      paddingLeft: 10,
+      paddingRight: 10,
+      paddingTop: 10,
+      paddingBottom: 10
+    } as const
+    const outer = graph.createNode('FRAME', editor.state.currentPageId, { ...hug, width: 70, height: 70 })
+    const middle = graph.createNode('FRAME', outer.id, { ...hug, x: 10, y: 10, width: 50, height: 50 })
+    const inner = graph.createNode('FRAME', middle.id, { ...hug, x: 10, y: 10, width: 30, height: 30 })
+    const leaf = graph.createNode('RECTANGLE', inner.id, { x: 10, y: 10, width: 10, height: 10 })
+    asSaved(graph, [outer, middle, inner, leaf])
+    editor.runLayoutForNode(outer.id)
+    expect(outer.width).toBe(70)
+    graph.createNode('RECTANGLE', inner.id, { width: 10, height: 10 })
+    editor.runLayoutForNode(inner.id)
+    expect([inner.width, middle.width, outer.width]).toEqual([50, 70, 90])
+    editor.dispose()
   })
 
   test('a new gap spaces the saved layers', () => {
