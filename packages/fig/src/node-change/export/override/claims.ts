@@ -1,7 +1,11 @@
 import { SCENE_OVERRIDE_FIELDS, type EncodedOverrideField } from '#fig/instance-overrides/fields'
 import { scaleRawVisualProps } from '#fig/instance-overrides/scale/layout'
 import { scaleTextLayout } from '#fig/instance-overrides/scale/text'
-import { OVERRIDE_ENCODERS } from '#fig/node-change/export/override-fields'
+import { instanceExportAddress } from '#fig/node-change/instance/geometry'
+import {
+  mergeVariableConsumptionMaps,
+  overrideVariableBindingEntry
+} from '#fig/node-change/variable/bindings'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
@@ -13,8 +17,6 @@ import {
 } from '@open-pencil/scene-graph'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { instanceExportAddress } from '../instance/geometry'
-import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
 import {
   buildStyleReferences,
   createFillPaints,
@@ -25,9 +27,10 @@ import {
   type KiwiSymbolOverridePayload,
   type SceneNodeToKiwiContext,
   type StyleReference
-} from './context'
-import { fillsOwnSizingAxis } from './fill-sizing'
-import { exportedNode } from './resolved-bindings'
+} from '../context'
+import { fillsOwnSizingAxis } from '../fill-sizing'
+import { exportedNode } from '../resolved-bindings'
+import { OVERRIDE_ENCODERS } from './fields'
 
 function exportedTextStyleReference(context: SceneNodeToKiwiContext, id: string): StyleReference {
   context.styleReferences ??= buildStyleReferences(context.graph)

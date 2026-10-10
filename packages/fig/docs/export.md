@@ -129,7 +129,8 @@ selected passing properties as complete editable-document compatibility.
 ## Implementation and tests
 
 - [Node-change serialization](../src/node-change/export/node.ts)
-- [Override claims](../src/node-change/export/override-claims.ts)
+- [Override claims](../src/node-change/export/override/claims.ts)
+- [Override field encoders](../src/node-change/export/override/fields.ts)
 - [Derived text](../src/node-change/derived-text/build.ts)
 - [Export context and identity allocation](../src/node-change/export/context.ts)
 - [Property/layout conversion](../src/node-change/serialize.ts)

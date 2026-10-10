@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { symbolDataOf } from '#fig/instance-overrides/types'
 import type { KiwiSymbolOverridePayload } from '#fig/node-change/export/context'
-import { mergeOverrides } from '#fig/node-change/export/override-claims'
+import { mergeOverrides } from '#fig/node-change/export/override/claims'
 import { sceneNodeToKiwi } from '#fig/node-change/index'
 
 import { recordInstanceOverride, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'

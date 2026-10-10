@@ -43,7 +43,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { exportEffects } from './layer-fields'
-import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
+import { mergeOverrides, serializeRuntimePropertyOverrides } from './override/claims'
 import { exportedNode } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
 

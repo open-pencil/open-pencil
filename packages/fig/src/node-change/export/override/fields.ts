@@ -8,7 +8,7 @@ import {
   exportFontName,
   normalizeStackCounterAlignItems,
   normalizeStackJustify
-} from './layer-fields'
+} from '../layer-fields'
 
 /** Figma's automatic line height. */
 const AUTO_LINE_HEIGHT = { value: 100, units: 'PERCENT' }

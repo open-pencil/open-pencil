@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { OVERRIDE_ENCODERS } from '#fig/node-change/export/override-fields'
+import { OVERRIDE_ENCODERS } from '#fig/node-change/export/override/fields'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
