@@ -36,3 +36,36 @@ export function shaderHeroSet() {
   graph.createNode('TEXT', variant.id, { name: 'Title', text: 'Northern lights' })
   return { graph, set: graph.getNode(set.id) ?? set }
 }
+
+/** A plain component whose shader fills a child layer with nothing in it, a backdrop. */
+export function shaderBackdropSet() {
+  const graph = new SceneGraph()
+  const set = graph.createNode('COMPONENT_SET', graph.getPages()[0].id, {
+    name: 'Card',
+    componentPropertyDefinitions: [
+      {
+        id: 'size',
+        name: 'Size',
+        type: 'VARIANT',
+        defaultValue: 'Large',
+        variantOptions: ['Large']
+      }
+    ]
+  })
+  const variant = graph.createNode('COMPONENT', set.id, {
+    name: 'Size=Large',
+    componentPropertyValues: { Size: 'Large' },
+    width: 240,
+    height: 120
+  })
+  const { paint, shader } = createShaderPaint(HERO_PRESET)
+  graph.images.set(shader.image, new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]))
+  const backdrop = graph.createNode('RECTANGLE', variant.id, {
+    name: 'Backdrop',
+    width: 240,
+    height: 120,
+    fills: [paint]
+  })
+  graph.updateNode(backdrop.id, { pluginData: withShaderPaints(backdrop, [paint], [shader]) })
+  return { graph, set: graph.getNode(set.id) ?? set }
+}

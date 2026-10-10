@@ -20,7 +20,7 @@ import {
   tabsComponent,
   toggleGroupComponent
 } from '#dom-css-tests/behaviours/fixtures'
-import { shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
+import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
 import { cssRules, fileText } from '#dom-css-tests/helpers'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
@@ -264,6 +264,17 @@ describe('generated Vue shader fills', () => {
     // The shader comes first, so the title draws over it.
     const html = await render(component)
     expect(html.indexOf('hero-shader')).toBeLessThan(html.indexOf('Northern lights'))
+  })
+})
+
+describe('generated Vue shader backdrops', () => {
+  test('a layer with nothing in it plays its shader, not an image of it', async () => {
+    const { files } = await generate(shaderBackdropSet())
+    const source = fileText(files, 'Card.vue')
+
+    expect(source).not.toContain('<img')
+    expect(source).not.toContain('data:image')
+    expect(source).toContain('<ShaderCanvas')
   })
 })
 

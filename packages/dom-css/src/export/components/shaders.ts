@@ -9,6 +9,7 @@ import {
   type ShaderPreset
 } from '@open-pencil/scene-graph'
 
+import { isPositioned } from '../projection'
 import type { ComponentElement, ComponentNode } from './model'
 
 /** A shader a layer fills with, drawn by the `shaders` library behind the layer's content. */
@@ -20,8 +21,6 @@ export interface ShaderLayer {
   positioned: boolean
 }
 
-const POSITIONED = new Set(['relative', 'absolute', 'fixed', 'sticky'])
-
 export function shaderLayer(
   node: StateElement,
   className: string,
@@ -32,7 +31,7 @@ export function shaderLayer(
   return {
     preset,
     className: `${className}-shader`,
-    positioned: typeof position === 'string' && POSITIONED.has(position)
+    positioned: isPositioned(position)
   }
 }
 
