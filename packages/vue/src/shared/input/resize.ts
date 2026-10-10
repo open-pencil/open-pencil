@@ -78,7 +78,8 @@ function resizeChanges(
 ) {
   const { origRect } = d
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
-  d.freesLock = d.lockedAspectRatio !== null && aspect !== d.lockedAspectRatio
+  // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
+  d.freesLock = d.lockedAspectRatio !== null && ctrlKey
   const calculatedRect = calculateResizeRect(
     d.handle,
     origRect,

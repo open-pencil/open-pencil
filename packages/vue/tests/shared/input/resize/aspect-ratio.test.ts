@@ -79,6 +79,16 @@ describe('resizing a locked layer on the canvas', () => {
     expect(restored.targetAspectRatio).toEqual({ x: 200, y: 100 })
   })
 
+  test('Control with Shift still stores the new size as the ratio', () => {
+    const { node } = drag('se', 100, 10, { ctrl: true, shift: true })
+    expect(box(node)).toEqual({ x: 200, y: 150, width: 300, height: 150 })
+    expect(node.targetAspectRatio).toEqual({ x: 300, y: 150 })
+  })
+
+  test('the ratio holds at the smallest size an edge can reach', () => {
+    expect(box(drag('e', -199.5, 0).node)).toEqual({ x: 200, y: 199.5, width: 2, height: 1 })
+  })
+
   test('Shift keeps the ratio of an unlocked layer for one drag', () => {
     const unlocked = { locked: false, shift: true }
     expect(box(drag('e', 100, 0, unlocked).node)).toEqual({
