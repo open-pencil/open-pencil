@@ -18,8 +18,9 @@ const router = createRouter({
     },
     { path: '/demo', component: WorkspaceView, meta: { demo: true } },
     { path: '/share/:roomId', component: WorkspaceView },
-    // Cloud invitation links; the app takes the invitation out of the address on start.
-    { path: '/cloud/invitations/:invitationId', component: WorkspaceView }
+    // Cloud invitations and links; the app takes their secret out of the address on start.
+    { path: '/cloud/invitations/:invitationId', component: WorkspaceView },
+    { path: '/cloud/share/:shareId', component: WorkspaceView }
   ]
 })
 

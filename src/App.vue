@@ -57,7 +57,7 @@ onMounted(() => {
   void kickSyncEngine()
   watchCloudRooms()
   void startCloudSessions({
-    leaveInvitationAddress: () => router.isReady().then(() => router.replace('/'))
+    leaveLinkAddress: () => router.isReady().then(() => router.replace('/'))
   })
 })
 </script>

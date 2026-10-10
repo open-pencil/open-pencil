@@ -39,15 +39,24 @@ export async function startTestRelay() {
   return {
     url,
     states,
-    /** Joins a document's room as a guest with the given permission. */
-    join(documentId: string, name: string, permission: DocumentPermission) {
+    /** Joins a document's room with the given permission, as a guest or a signed-in user. */
+    join(
+      documentId: string,
+      name: string,
+      permission: DocumentPermission,
+      kind: 'guest' | 'user' = 'guest'
+    ) {
+      const principal =
+        kind === 'user'
+          ? { kind, userId: crypto.randomUUID(), name, email: `${name.toLowerCase()}@example.com` }
+          : { kind, guestId: crypto.randomUUID(), name }
       return createCloudRelayJoin({
         url,
         ticket: async () =>
           signCollaborationTicket({
             authSecret: AUTH_SECRET,
             documentId,
-            principal: { kind: 'guest', guestId: crypto.randomUUID(), name },
+            principal,
             permission,
             roomEpoch: 0,
             relayURL: url

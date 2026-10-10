@@ -148,7 +148,7 @@ describe('Cloud document rooms', () => {
     const [grace, ada] = await openedTwice()
     const first = openCloudDocumentRoom(grace, {
       roomId,
-      transport: relay.join(documentId, 'Grace', 'edit'),
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
       permission: 'edit'
     })
     cleanups.push(() => {
@@ -158,7 +158,7 @@ describe('Cloud document rooms', () => {
     await until(() => first.session.roomHasDocument())
     const second = openCloudDocumentRoom(ada, {
       roomId,
-      transport: relay.join(documentId, 'Ada', 'edit'),
+      transport: relay.join(documentId, 'Ada', 'edit', 'user'),
       permission: 'edit'
     })
     cleanups.push(() => {
@@ -187,7 +187,7 @@ describe('Cloud document rooms, live order', () => {
     cleanups.push(() => grace.preparationController.dispose())
     const first = openCloudDocumentRoom(grace, {
       roomId,
-      transport: relay.join(documentId, 'Grace', 'edit'),
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
       permission: 'edit'
     })
     cleanups.push(() => {
@@ -204,7 +204,7 @@ describe('Cloud document rooms, live order', () => {
     cleanups.push(() => ada.preparationController.dispose())
     const second = openCloudDocumentRoom(ada, {
       roomId,
-      transport: relay.join(documentId, 'Ada', 'edit'),
+      transport: relay.join(documentId, 'Ada', 'edit', 'user'),
       permission: 'edit'
     })
     cleanups.push(() => {
@@ -238,7 +238,7 @@ describe('Cloud document rooms, drawing early', () => {
     cleanups.push(() => grace.preparationController.dispose())
     const first = openCloudDocumentRoom(grace, {
       roomId,
-      transport: relay.join(documentId, 'Grace', 'edit'),
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
       permission: 'edit'
     })
     cleanups.push(() => {
@@ -255,7 +255,7 @@ describe('Cloud document rooms, drawing early', () => {
     cleanups.push(() => watcher.preparationController.dispose())
     const second = openCloudDocumentRoom(watcher, {
       roomId,
-      transport: relay.join(documentId, 'Ada', 'edit'),
+      transport: relay.join(documentId, 'Ada', 'edit', 'user'),
       permission: 'edit'
     })
     cleanups.push(() => {

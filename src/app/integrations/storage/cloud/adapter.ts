@@ -1,5 +1,3 @@
-import { fromUint8Array } from 'js-base64'
-
 import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
@@ -13,12 +11,8 @@ import {
 import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
+import { cloudChecksum, downloadCloudRevision } from './download'
 import { uploadCloudObject } from './upload'
-
-async function sha256(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes))
-  return fromUint8Array(new Uint8Array(digest))
-}
 
 function revisionConflict(error: unknown): boolean {
   return error instanceof CloudAPIError && error.code === 'revision_conflict'
@@ -96,18 +90,11 @@ export function createCloudStorageAdapter(
 
     async getDocument(id, onProgress, signal) {
       const download = await (await client()).getDocument(id)
-      const response = await dependencies.objectFetch(download.download.url, {
-        method: download.download.method,
-        headers: download.download.headers,
-        signal
-      })
-      if (!response.ok)
-        throw new Error(`Cloud document download failed with HTTP ${response.status}`)
-      const bytes = new Uint8Array(await response.arrayBuffer())
-      if (bytes.byteLength !== download.byteSize || (await sha256(bytes)) !== download.checksum) {
-        throw new Error('The downloaded Cloud document does not match what the server stored')
-      }
-      onProgress?.({ transferredBytes: bytes.byteLength, totalBytes: download.byteSize })
+      const bytes = await downloadCloudRevision(
+        download,
+        (input, init) => dependencies.objectFetch(input, init),
+        { signal, onProgress }
+      )
       return { bytes, revision: download.revisionId }
     },
 
@@ -118,7 +105,7 @@ export function createCloudStorageAdapter(
       if (!baseRevision && !(await listed(id))) {
         await cloud.createDocument(workspaceId(), { id, name: metadata.name })
       }
-      const checksum = await sha256(bytes)
+      const checksum = await cloudChecksum(bytes)
       try {
         const upload = await uploadCloudObject({
           cloud,

@@ -30,20 +30,19 @@ function setPermission(store: EditorStore, permission: 'edit' | 'view' | null) {
 
 /**
  * The editor that saves the room's document: the one with the lowest presence client among
- * those who may edit. Everyone else sees edits through the room, so nobody's revision conflicts
- * with anyone else's.
+ * signed-in editors, as the relay stamps them. Guests from a link may edit but cannot save.
+ * Everyone else sees edits through the room, so nobody's revision conflicts with anyone else's.
  */
 export function electCloudSaver(
   presence: ReadonlyMap<number, Record<string, unknown>>,
-  self: { clientId: number; canEdit: boolean }
+  self: { clientId: number; canSave: boolean }
 ): number | null {
   const editors = [...presence]
     .filter(([clientId, state]) => {
-      if (clientId === self.clientId) return self.canEdit
+      if (clientId === self.clientId) return self.canSave
       const cloud = state.cloud
-      return (
-        typeof cloud === 'object' && cloud !== null && Reflect.get(cloud, 'permission') === 'edit'
-      )
+      if (typeof cloud !== 'object' || cloud === null) return false
+      return Reflect.get(cloud, 'permission') === 'edit' && Reflect.get(cloud, 'kind') === 'user'
     })
     .map(([clientId]) => clientId)
   return editors.length ? Math.min(...editors) : null
@@ -65,12 +64,12 @@ async function catchUpWithServer(store: EditorStore): Promise<void> {
  * uploads, since the room holds those edits; the saver overwrites a revision it conflicts with,
  * since the room's document already has every edit in it.
  */
-function followSaver(store: EditorStore, session: RoomSession, canEdit: boolean): () => void {
+function followSaver(store: EditorStore, session: RoomSession, canSave: boolean): () => void {
   let saving: boolean | null = null
   const documentId = () => store.getStorageBinding()?.documentId ?? null
 
   async function decide() {
-    const saver = electCloudSaver(session.presence(), { clientId: session.clientId, canEdit })
+    const saver = electCloudSaver(session.presence(), { clientId: session.clientId, canSave })
     const next = saver === session.clientId
     if (next === saving) return
     saving = next
@@ -120,18 +119,25 @@ function followSaver(store: EditorStore, session: RoomSession, canEdit: boolean)
  */
 export function openCloudDocumentRoom(
   store: EditorStore,
-  options: { roomId: string; transport: JoinCollabRoom; permission: 'edit' | 'view' }
+  options: {
+    roomId: string
+    transport: JoinCollabRoom
+    permission: 'edit' | 'view'
+    /** A guest from a link edits but has no account to save with. */
+    guest?: boolean
+  }
 ) {
   const canEdit = options.permission === 'edit'
+  const canSave = canEdit && !options.guest
   const session = openDocumentRoom(store, options.roomId, options.transport)
   setPermission(store, options.permission)
-  if (!canEdit) store.state.autosaveEnabled = false
+  if (!canSave) store.state.autosaveEnabled = false
   const stopSynced = session.onSynced((peerId) => {
     if (peerId !== RELAY_SERVER_PEER) return
     stopSynced()
     if (canEdit && !session.roomHasDocument()) session.shareDocument()
   })
-  const stopSaver = followSaver(store, session, canEdit)
+  const stopSaver = followSaver(store, session, canSave)
   return {
     session,
     stop() {
@@ -140,6 +146,35 @@ export function openCloudDocumentRoom(
       setPermission(store, null)
     }
   }
+}
+
+/**
+ * The relay connection for a room, presenting the ticket just issued first and a fresh one from
+ * `next` before each expires.
+ */
+export function cloudRelayTransport(
+  url: string,
+  first: CollaborationTicket,
+  next: () => Promise<CollaborationTicket>
+): JoinCollabRoom {
+  let unused: CollaborationTicket | null = first
+  return createCloudRelayJoin({
+    url,
+    async ticket() {
+      const ticket = unused ?? (await next())
+      unused = null
+      return { token: ticket.token, expiresAt: ticket.expiresAt }
+    }
+  })
+}
+
+/** Leaves the room's saving and status behind once its tab closes. */
+export function stopWithTab(store: EditorStore, room: { stop(): void }): void {
+  const stopLeaving = watch(allTabs, () => {
+    if (roomForStore(store)) return
+    room.stop()
+    stopLeaving()
+  })
 }
 
 /**
@@ -158,26 +193,14 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
     if (first.provider !== 'relay' || !first.serverURL || store.getStorageBinding() !== binding) {
       return
     }
-    // The first ticket is the one just issued; later ones refresh before each expires.
-    let unused: CollaborationTicket | null = first
-    const transport = createCloudRelayJoin({
-      url: first.serverURL,
-      async ticket() {
-        const next = unused ?? (await target.client.getCollaborationTicket(binding.documentId))
-        unused = null
-        return { token: next.token, expiresAt: next.expiresAt }
-      }
-    })
     const room = openCloudDocumentRoom(store, {
       roomId: first.roomId,
-      transport,
+      transport: cloudRelayTransport(first.serverURL, first, () =>
+        target.client.getCollaborationTicket(binding.documentId)
+      ),
       permission: first.permission
     })
-    const stopLeaving = watch(allTabs, () => {
-      if (roomForStore(store)) return
-      room.stop()
-      stopLeaving()
-    })
+    stopWithTab(store, room)
   } finally {
     starting.delete(store)
   }
