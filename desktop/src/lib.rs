@@ -6,6 +6,7 @@ mod fonts;
 mod http;
 mod menu;
 mod menu_events;
+mod opener;
 #[cfg(target_os = "macos")]
 mod window;
 
@@ -55,6 +56,15 @@ fn take_pending_cloud_links(state: tauri::State<PendingCloudLinks>) -> Vec<deep_
         .lock()
         .map(|mut pending| pending.drain(..).collect())
         .unwrap_or_default()
+}
+
+/// Native-test builds take a link through the same path a launch or an opened URL does.
+#[cfg(feature = "native-test")]
+#[tauri::command]
+fn native_test_open_deep_link(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    let url = url::Url::parse(&url).map_err(|error| error.to_string())?;
+    queue_deep_links(&app, vec![url]);
+    Ok(())
 }
 
 #[tauri::command]
@@ -356,7 +366,9 @@ pub fn run() {
 
     #[cfg(feature = "native-test")]
     {
-        builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+        builder = builder
+            .manage(opener::OpenedExternalUrls::default())
+            .plugin(tauri_plugin_wdio_webdriver::init());
     }
 
     #[cfg(all(
@@ -387,6 +399,11 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             mcp_lookup,
+            #[cfg(feature = "native-test")]
+            native_test_open_deep_link,
+            opener::open_external_url,
+            #[cfg(feature = "native-test")]
+            opener::take_native_test_opened_urls,
             path_matches_suffix,
             list_system_fonts,
             load_system_font,
