@@ -9,10 +9,11 @@ import {
   type SceneNode,
   type ShaderPaint
 } from '@open-pencil/scene-graph'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorContext, EditorOptions } from '#core/editor/types'
 
-import type { ShaderFrameSize, ShaderRasterizer } from './types'
+import type { ShaderRasterizer } from './types'
 
 /** Frames are drawn at twice the layer's size, for sharp high-density displays. */
 const FRAME_SCALE = 2
@@ -32,7 +33,7 @@ export interface ShaderFramesProgress {
 const FRAME_FIELDS = ['fills', 'strokes', 'pluginData', 'width', 'height'] as const
 
 /** The pixels a layer's frame is drawn at. */
-function framePixels(size: ShaderFrameSize): ShaderFrameSize {
+function framePixels(size: Size): Size {
   const scale = Math.min(FRAME_SCALE, MAX_FRAME_EDGE / Math.max(size.width, size.height, 1))
   return {
     width: Math.max(1, Math.round(size.width * scale)),
@@ -40,7 +41,7 @@ function framePixels(size: ShaderFrameSize): ShaderFrameSize {
   }
 }
 
-const frameKey = (shader: ShaderPaint, size: ShaderFrameSize) =>
+const frameKey = (shader: ShaderPaint, size: Size) =>
   JSON.stringify([shader.preset, Math.round(size.width), Math.round(size.height)])
 
 /** The shaders `node`'s paints show. */
@@ -68,7 +69,7 @@ export function createShaderFrames(
   let timer: ReturnType<typeof setTimeout> | null = null
   let drawing: Promise<void> | null = null
 
-  function isCurrent(shader: ShaderPaint, size: ShaderFrameSize): boolean {
+  function isCurrent(shader: ShaderPaint, size: Size): boolean {
     const key = drawn.get(shader.image)
     if (key !== undefined) return key === frameKey(shader, size)
     return isShaderFrameCurrent(shader, size) && ctx.graph.images.has(shader.image)

@@ -1,10 +1,5 @@
 import type { ShaderPreset } from '@open-pencil/scene-graph'
-
-/** A frame's size in pixels. */
-export interface ShaderFrameSize {
-  width: number
-  height: number
-}
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 /**
  * Draws a shader's still frame. Core has no GPU or DOM, so the canvas that has them supplies
@@ -12,6 +7,6 @@ export interface ShaderFrameSize {
  */
 export interface ShaderRasterizer {
   /** PNG bytes of `preset`'s first frame at `size` pixels, or null when it cannot draw here. */
-  render(preset: ShaderPreset, size: ShaderFrameSize): Promise<Uint8Array | null>
+  render(preset: ShaderPreset, size: Size): Promise<Uint8Array | null>
   destroy?(): void
 }
