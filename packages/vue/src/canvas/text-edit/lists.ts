@@ -49,12 +49,7 @@ export function createTextListActions(store: Editor) {
       end,
       change
     )
-    // While the text is edited, the change joins the edit's own undo step on commit.
-    if (store.state.editingTextId === node.id) {
-      store.updateTextEditNode(node.id, { textParagraphs })
-    } else {
-      store.updateNodeWithUndo(node.id, { textParagraphs }, label)
-    }
+    store.runTextEditStep(() => store.updateNodeWithUndo(node.id, { textParagraphs }, label))
     const updated = store.graph.getNode(node.id)
     if (updated) store.textEditor?.rebuildParagraph(updated)
     store.requestRender()

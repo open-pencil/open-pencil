@@ -138,6 +138,18 @@ export class TextEditor {
     s.paragraphFontGeneration = this.renderer.fontGeneration
   }
 
+  /** Takes the node's text back after it changed outside the editor, as an undo does. */
+  syncToNode(node: SceneNode): void {
+    const s = this._state
+    if (!s) return
+    if (s.text !== node.text) {
+      s.text = node.text
+      s.cursor = Math.min(s.cursor, node.text.length)
+      s.selectionAnchor = null
+    }
+    this.rebuildParagraph(node)
+  }
+
   hasSelection(): boolean {
     const s = this._state
     return s !== null && s.selectionAnchor !== null && s.selectionAnchor !== s.cursor

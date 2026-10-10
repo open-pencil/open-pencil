@@ -7,6 +7,7 @@ import {
 import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
+import type { TextEditorState } from '#core/text/editor'
 import { weightToStyle } from '#core/text/fonts'
 import { hasGlyphOutlines } from '#core/text/opentype'
 
@@ -139,21 +140,8 @@ export function createTextActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
-  function commitTextEdit() {
-    const te = ctx.getTextEditor()
-    if (!te?.isActive) {
-      ctx.state.editingTextId = null
-      activeSession = null
-      return
-    }
-    const textState = te.state
-    if (!textState) {
-      te.stop()
-      ctx.state.editingTextId = null
-      activeSession = null
-      ctx.requestRender()
-      return
-    }
+  /** Records what the edit changed since its session began, as one undo step. */
+  function recordTextEdit(textState: TextEditorState) {
     const result = { nodeId: textState.nodeId, text: textState.text }
     const before = activeSession?.before ?? {
       text: '',
@@ -172,14 +160,7 @@ export function createTextActions(ctx: EditorContext) {
     const containingInstances = containingInstanceIds(ctx, result.nodeId)
     const instanceOverridesBefore = snapshotInstanceOverrides(ctx, containingInstances)
 
-    te.stop()
-
-    if (!changed) {
-      ctx.state.editingTextId = null
-      activeSession = null
-      ctx.requestRender()
-      return
-    }
+    if (!changed) return
 
     updateTextEditNode(result.nodeId, {
       text: after.text,
@@ -195,8 +176,6 @@ export function createTextActions(ctx: EditorContext) {
       applyTextInstanceOverride(ctx, containingInstances, result.nodeId, after.text)
     }
     const instanceOverridesAfter = snapshotInstanceOverrides(ctx, containingInstances)
-    ctx.state.editingTextId = null
-    activeSession = null
 
     // Text a property drives becomes the property's value too, in the same undo step.
     ctx.undo.runBatch('Edit text', () => {
@@ -229,5 +208,41 @@ export function createTextActions(ctx: EditorContext) {
     })
   }
 
-  return { startTextEditing, updateTextEditNode, commitTextEdit }
+  function commitTextEdit() {
+    const te = ctx.getTextEditor()
+    if (!te?.isActive) {
+      ctx.state.editingTextId = null
+      activeSession = null
+      return
+    }
+    const textState = te.state
+    if (textState) recordTextEdit(textState)
+    te.stop()
+    ctx.state.editingTextId = null
+    activeSession = null
+    ctx.requestRender()
+  }
+
+  /**
+   * Runs a change to the text being edited as an undo step of its own: what was typed before it
+   * becomes a step first, and the edit then goes on from the text the change leaves, which an
+   * undo or redo can also be.
+   */
+  function runTextEditStep(change: () => void) {
+    const te = ctx.getTextEditor()
+    const textState = te?.isActive ? te.state : null
+    if (!te || !textState) {
+      change()
+      return
+    }
+    recordTextEdit(textState)
+    change()
+    const node = ctx.graph.getNode(textState.nodeId)
+    if (!node) return
+    activeSession = createTextEditSession(node)
+    te.syncToNode(node)
+    ctx.requestRender()
+  }
+
+  return { startTextEditing, updateTextEditNode, commitTextEdit, runTextEditStep }
 }

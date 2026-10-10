@@ -404,6 +404,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Undo — bridge functions that need cross-module refs
     ...undoBridge,
+    // While text is edited, what was typed undoes first and the editor keeps the result.
+    undoAction: () => text.runTextEditStep(undoBridge.undoAction),
+    redoAction: () => text.runTextEditStep(undoBridge.redoAction),
 
     setDocumentColorSpace: colorSpace.setDocumentColorSpace,
 

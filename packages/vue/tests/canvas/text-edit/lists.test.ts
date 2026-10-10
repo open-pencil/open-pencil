@@ -34,14 +34,6 @@ describe('text list actions', () => {
     expect(read().textParagraphs.map((style) => style.listType)).toEqual(['NONE', 'UNORDERED'])
   })
 
-  test('leave a change made while editing to the edit\'s own undo step', () => {
-    const { node, read, lists } = textWithList()
-    editor.state.editingTextId = node.id
-    lists.setListType(read(), 'ORDERED')
-    expect(listTypeOf(editor, read())).toBe('ORDERED')
-    expect(editor.undo.canUndo).toBe(false)
-  })
-
   test('toggle a list shortcut off when the text already is that list', () => {
     const { read, lists } = textWithList()
     lists.toggleListType(read(), 'UNORDERED')
