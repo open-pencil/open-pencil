@@ -25,6 +25,7 @@ import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
 import { installStrokeNodeProxyAccessors } from './accessors/strokes'
 import { installTextNodeProxyAccessors } from './accessors/text'
+import { installTextRangeMethods, type TextRangeMethods } from './accessors/text/ranges'
 import { installVariableModeNodeProxyAccessors } from './accessors/variables'
 import {
   installVectorNodeProxyAccessors,
@@ -89,7 +90,7 @@ export class FigmaNodeProxy {
   declare readonly absoluteBoundingBox: Rect
   declare readonly absoluteRenderBounds: Rect | null
 
-  declare fills: readonly Fill[]
+  declare fills: readonly Fill[] | symbol
   declare strokes: readonly Stroke[]
   declare effects: readonly FigmaEffect[]
   declare opacity: number
@@ -154,17 +155,17 @@ export class FigmaNodeProxy {
   declare strokeRightWeight: number
 
   declare characters: string
-  declare fontSize: number
-  declare fontName: FigmaFontName
-  declare fontWeight: number
+  declare fontSize: number | symbol
+  declare fontName: FigmaFontName | symbol
+  declare fontWeight: number | symbol
   declare textAlignHorizontal: string
   declare textAlignVertical: string
   declare textDirection: string
   declare textAutoResize: string
-  declare letterSpacing: FigmaLetterSpacing
-  declare lineHeight: FigmaLineHeight
+  declare letterSpacing: FigmaLetterSpacing | symbol
+  declare lineHeight: FigmaLineHeight | symbol
   declare textCase: string
-  declare textDecoration: string
+  declare textDecoration: SceneNode['textDecoration'] | symbol
   declare maxLines: number | null
   declare listSpacing: number | symbol
   declare paragraphSpacing: number | symbol
@@ -172,6 +173,44 @@ export class FigmaNodeProxy {
   declare hangingList: boolean
   declare textTruncation: string
   declare autoRename: boolean
+
+  // Per-character and per-paragraph methods: accessors/text/ranges.ts.
+  declare getStyledTextSegments: TextRangeMethods['getStyledTextSegments']
+  declare getRangeAllFontNames: TextRangeMethods['getRangeAllFontNames']
+  declare getRangeFontSize: TextRangeMethods['getRangeFontSize']
+  declare setRangeFontSize: TextRangeMethods['setRangeFontSize']
+  declare getRangeFontName: TextRangeMethods['getRangeFontName']
+  declare setRangeFontName: TextRangeMethods['setRangeFontName']
+  declare getRangeFontWeight: TextRangeMethods['getRangeFontWeight']
+  declare getRangeFills: TextRangeMethods['getRangeFills']
+  declare setRangeFills: TextRangeMethods['setRangeFills']
+  declare getRangeLetterSpacing: TextRangeMethods['getRangeLetterSpacing']
+  declare setRangeLetterSpacing: TextRangeMethods['setRangeLetterSpacing']
+  declare getRangeLineHeight: TextRangeMethods['getRangeLineHeight']
+  declare setRangeLineHeight: TextRangeMethods['setRangeLineHeight']
+  declare getRangeTextDecoration: TextRangeMethods['getRangeTextDecoration']
+  declare setRangeTextDecoration: TextRangeMethods['setRangeTextDecoration']
+  declare getRangeTextDecorationStyle: TextRangeMethods['getRangeTextDecorationStyle']
+  declare setRangeTextDecorationStyle: TextRangeMethods['setRangeTextDecorationStyle']
+  declare getRangeTextDecorationOffset: TextRangeMethods['getRangeTextDecorationOffset']
+  declare setRangeTextDecorationOffset: TextRangeMethods['setRangeTextDecorationOffset']
+  declare getRangeTextDecorationThickness: TextRangeMethods['getRangeTextDecorationThickness']
+  declare setRangeTextDecorationThickness: TextRangeMethods['setRangeTextDecorationThickness']
+  declare getRangeTextDecorationColor: TextRangeMethods['getRangeTextDecorationColor']
+  declare setRangeTextDecorationColor: TextRangeMethods['setRangeTextDecorationColor']
+  declare getRangeTextDecorationSkipInk: TextRangeMethods['getRangeTextDecorationSkipInk']
+  declare setRangeTextDecorationSkipInk: TextRangeMethods['setRangeTextDecorationSkipInk']
+  declare getRangeOpenTypeFeatures: TextRangeMethods['getRangeOpenTypeFeatures']
+  declare getRangeListOptions: TextRangeMethods['getRangeListOptions']
+  declare setRangeListOptions: TextRangeMethods['setRangeListOptions']
+  declare getRangeIndentation: TextRangeMethods['getRangeIndentation']
+  declare setRangeIndentation: TextRangeMethods['setRangeIndentation']
+  declare getRangeListSpacing: TextRangeMethods['getRangeListSpacing']
+  declare setRangeListSpacing: TextRangeMethods['setRangeListSpacing']
+  declare getRangeParagraphSpacing: TextRangeMethods['getRangeParagraphSpacing']
+  declare setRangeParagraphSpacing: TextRangeMethods['setRangeParagraphSpacing']
+  declare getRangeParagraphIndent: TextRangeMethods['getRangeParagraphIndent']
+  declare setRangeParagraphIndent: TextRangeMethods['setRangeParagraphIndent']
 
   constructor(id: string, graph: SceneGraph, api: NodeProxyHost) {
     this[INTERNAL_ID] = id
@@ -206,72 +245,6 @@ export class FigmaNodeProxy {
 
   deleteCharacters(start: number, end: number): void {
     TextProxy.deleteCharacters(this[INTERNAL_GRAPH], this._raw(), start, end)
-  }
-
-  getRangeListOptions(start: number, end: number): TextListOptions | symbol {
-    return TextProxy.getRangeListOptions(this._raw(), start, end, MIXED)
-  }
-
-  setRangeListOptions(start: number, end: number, value: TextListOptions): void {
-    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
-    TextProxy.setRangeListOptions(this[INTERNAL_GRAPH], this._raw(), start, end, value)
-  }
-
-  getRangeIndentation(start: number, end: number): number | symbol {
-    return TextProxy.getRangeIndentation(this._raw(), start, end, MIXED)
-  }
-
-  setRangeIndentation(start: number, end: number, value: number): void {
-    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
-    TextProxy.setRangeIndentation(this[INTERNAL_GRAPH], this._raw(), start, end, value)
-  }
-
-  getRangeListSpacing(start: number, end: number): number | symbol {
-    return TextProxy.getRangeParagraphSpacing(this._raw(), 'listSpacing', start, end, MIXED)
-  }
-
-  setRangeListSpacing(start: number, end: number, value: number): void {
-    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
-    TextProxy.setRangeParagraphSpacing(
-      this[INTERNAL_GRAPH],
-      this._raw(),
-      'listSpacing',
-      start,
-      end,
-      value
-    )
-  }
-
-  getRangeParagraphSpacing(start: number, end: number): number | symbol {
-    return TextProxy.getRangeParagraphSpacing(this._raw(), 'paragraphSpacing', start, end, MIXED)
-  }
-
-  setRangeParagraphSpacing(start: number, end: number, value: number): void {
-    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
-    TextProxy.setRangeParagraphSpacing(
-      this[INTERNAL_GRAPH],
-      this._raw(),
-      'paragraphSpacing',
-      start,
-      end,
-      value
-    )
-  }
-
-  getRangeParagraphIndent(start: number, end: number): number | symbol {
-    return TextProxy.getRangeParagraphSpacing(this._raw(), 'paragraphIndent', start, end, MIXED)
-  }
-
-  setRangeParagraphIndent(start: number, end: number, value: number): void {
-    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
-    TextProxy.setRangeParagraphSpacing(
-      this[INTERNAL_GRAPH],
-      this._raw(),
-      'paragraphIndent',
-      start,
-      end,
-      value
-    )
   }
 
   get isMask(): boolean {
@@ -548,6 +521,7 @@ const proxyInternals = {
 
 installStrokeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installTextNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals, MIXED)
+installTextRangeMethods(FigmaNodeProxy.prototype, proxyInternals, MIXED)
 installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installVariableModeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installComponentPropertyAccessors(FigmaNodeProxy.prototype, proxyInternals)

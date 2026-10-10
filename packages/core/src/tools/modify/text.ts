@@ -1,10 +1,8 @@
 import * as v from 'valibot'
 
-import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
-import { styleToWeight } from '#core/text/fonts'
-import { applyStyleToRange } from '#core/text/style-runs'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
 import { defineTool, nodeNotFound } from '#core/tools/schema'
 
@@ -43,10 +41,16 @@ export const setFont = defineTool({
     if (!node) return nodeNotFound(args.id)
     if (args.size !== undefined) node.fontSize = args.size
     if (args.family || args.style) {
-      const current = node.fontName
+      // Text set in several fonts takes the given family or style for all of it, keeping the
+      // rest from its first character.
+      const fontName =
+        typeof node.fontName === 'symbol' && node.characters.length > 0
+          ? node.getRangeFontName(0, 1)
+          : node.fontName
+      const current = typeof fontName === 'symbol' ? null : fontName
       node.fontName = {
-        family: args.family ?? current.family,
-        style: args.style ?? current.style
+        family: args.family ?? current?.family ?? '',
+        style: args.style ?? current?.style ?? 'Regular'
       }
     }
     return { id: args.id, fontName: node.fontName, fontSize: node.fontSize }
@@ -70,22 +74,22 @@ export const setFontRange = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
-    const override: CharacterStyleOverride = {}
-    if (args.family) override.fontFamily = args.family
-    if (args.size) override.fontSize = args.size
-    if (args.style) {
-      const s = args.style.toLowerCase()
-      if (s.includes('italic')) override.italic = true
-      override.fontWeight = styleToWeight(args.style)
+    const { start, end } = args
+    if (args.size) node.setRangeFontSize(start, end, args.size)
+    if (args.family || args.style) {
+      const current = node.getRangeFontName(start, start + 1)
+      const fontName = typeof current === 'symbol' ? null : current
+      node.setRangeFontName(start, end, {
+        family: args.family ?? fontName?.family ?? '',
+        style: args.style ?? fontName?.style ?? 'Regular'
+      })
     }
     if (args.color) {
-      override.fills = [{ type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }]
+      node.setRangeFills(start, end, [
+        { type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }
+      ])
     }
-    const raw = figma.graph.getNode(node.id)
-    if (!raw) return { error: `Node "${args.id}" not found` }
-    const runs = applyStyleToRange(raw.styleRuns, args.start, args.end, override, raw.text.length)
-    figma.graph.updateNode(node.id, { styleRuns: runs })
-    return { id: args.id, range: { start: args.start, end: args.end } }
+    return { id: args.id, range: { start, end } }
   }
 })
 

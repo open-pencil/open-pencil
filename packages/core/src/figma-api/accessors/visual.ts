@@ -16,6 +16,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
+import { getTextStyle, textStyleChanges } from '#core/figma-api/text/style'
 
 function styleReference(
   internals: NodeProxyInternals,
@@ -65,11 +66,21 @@ export function installVisualNodeProxyAccessors(
 ): void {
   Object.defineProperties(prototype, {
     fills: {
-      get(this: ProxyThis): readonly Fill[] {
-        return Object.freeze(copyFills(raw(this, internals).fills))
+      // Text reads mixed while its characters are filled differently, and setting it fills them all.
+      get(this: ProxyThis): readonly Fill[] | symbol {
+        const node = raw(this, internals)
+        if (node.type !== 'TEXT') return Object.freeze(copyFills(node.fills))
+        const fills = getTextStyle(node, 'fills', mixed)
+        return typeof fills === 'symbol' ? fills : Object.freeze(fills as Fill[])
       },
       set(this: ProxyThis, value: readonly Fill[]) {
-        updateNode(this, internals, { fills: value.map(figmaPaintToFill) })
+        const node = raw(this, internals)
+        const fills = value.map(figmaPaintToFill)
+        updateNode(
+          this,
+          internals,
+          node.type === 'TEXT' ? textStyleChanges(node, { fills }) : { fills }
+        )
       }
     },
     strokes: {

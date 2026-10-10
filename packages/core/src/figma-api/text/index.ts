@@ -21,21 +21,7 @@ import type {
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
 
-import { styleNameToWeight, weightToStyleName, type FigmaFontName } from './fonts'
-
-export function getFontName(node: SceneNode): FigmaFontName {
-  return { family: node.fontFamily, style: weightToStyleName(node.fontWeight, node.italic) }
-}
-
-export function setFontName(graph: SceneGraph, nodeId: string, fontName: FigmaFontName): void {
-  const { weight, italic } = styleNameToWeight(fontName.style)
-  graph.updateNode(nodeId, {
-    fontFamily: fontName.family,
-    fontWeight: weight,
-    italic
-  })
-  recordInstanceOverride(graph, nodeId, ['fontFamily', 'fontWeight'])
-}
+import { assertTextRange } from './style'
 
 /** Figma's plugin API line height: automatic, or a size in pixels or percent of the font size. */
 export type FigmaLineHeight = { unit: 'AUTO' } | { unit: 'PIXELS' | 'PERCENT'; value: number }
@@ -50,10 +36,6 @@ function pixels(value: { unit: 'PIXELS' | 'PERCENT'; value: number }, fontSize: 
   return value.unit === 'PERCENT' ? (value.value / 100) * fontSize : value.value
 }
 
-export function getLineHeight(node: SceneNode): FigmaLineHeight {
-  return node.lineHeight == null ? { unit: 'AUTO' } : { unit: 'PIXELS', value: node.lineHeight }
-}
-
 /**
  * Accepts Figma's object, or a bare number of pixels or `null` for automatic, as earlier
  * OpenPencil scripts wrote it.
@@ -64,10 +46,6 @@ export function lineHeightValue(
 ): number | null {
   if (value === null || typeof value === 'number') return value
   return value.unit === 'AUTO' ? null : pixels(value, node.fontSize)
-}
-
-export function getLetterSpacing(node: SceneNode): FigmaLetterSpacing {
-  return { unit: 'PIXELS', value: node.letterSpacing }
 }
 
 /** Accepts Figma's object, or a bare number of pixels as earlier OpenPencil scripts wrote it. */
@@ -107,24 +85,6 @@ export function deleteCharacters(
 
 type ListType = TextListOptions['type']
 const LIST_TYPES: ReadonlySet<string> = new Set<ListType>(['NONE', 'ORDERED', 'UNORDERED'])
-
-/** Figma's checks on a character range, with its messages. */
-function assertTextRange(method: string, node: SceneNode, start: number, end: number): void {
-  if (start < 0) {
-    throw new Error(
-      `in ${method}: Property "start" failed validation: Number must be greater than or equal to 0`
-    )
-  }
-  if (end <= start) {
-    throw new Error(`in ${method}: Empty range selected. 'end' must be greater than 'start'`)
-  }
-  if (start >= node.text.length || end > node.text.length) {
-    throw new Error(
-      `in ${method}: Range outside of available characters. 'start' must be less than ` +
-        `node.characters.length and 'end' must be less than or equal to node.characters.length`
-    )
-  }
-}
 
 /** The styles of the paragraphs a range touches: a newline belongs to the paragraph it ends. */
 function rangeParagraphStyles(node: SceneNode, start: number, end: number): TextParagraphStyle[] {

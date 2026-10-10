@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts, parseFigFile } from '@open-pencil/core'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined, expectFills } from '#tests/helpers/assert'
 
 interface PageTreeResult {
   page: string
@@ -143,9 +143,9 @@ describe('MCP tool execution', () => {
     findTool('set_fill').execute(api, { id: frame.id, color: '#ff0000' })
     const node = expectDefined(api.getNodeById(frame.id), 'filled rectangle')
     expect(node.fills).toHaveLength(1)
-    expect(node.fills[0].color.r).toBeCloseTo(1)
-    expect(node.fills[0].color.g).toBeCloseTo(0)
-    expect(node.fills[0].color.b).toBeCloseTo(0)
+    expect(expectFills(node.fills)[0].color.r).toBeCloseTo(1)
+    expect(expectFills(node.fills)[0].color.g).toBeCloseTo(0)
+    expect(expectFills(node.fills)[0].color.b).toBeCloseTo(0)
   })
 
   test('set_layout configures auto-layout', () => {

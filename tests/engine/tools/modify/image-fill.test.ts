@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph } from '@open-pencil/core'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined, expectFills } from '#tests/helpers/assert'
 
 const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
@@ -42,7 +42,7 @@ describe('set_image_fill tool', () => {
     expect(result.imageHash).toBeTruthy()
     expect(result.scaleMode).toBe('FILL')
 
-    const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
+    const fills = expectFills(expectDefined(figma.getNodeById(node.id), 'image-filled node').fills)
     expect(fills).toHaveLength(1)
     expect(fills[0].type).toBe('IMAGE')
     expect(fills[0].imageHash).toBe(result.imageHash)
@@ -96,7 +96,9 @@ describe('set_image_fill tool', () => {
       }) as { scaleMode: string }
       expect(result.scaleMode).toBe(mode)
 
-      const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
+      const fills = expectFills(
+        expectDefined(figma.getNodeById(node.id), 'image-filled node').fills
+      )
       expect(fills[0].imageScaleMode).toBe(mode)
     }
   })

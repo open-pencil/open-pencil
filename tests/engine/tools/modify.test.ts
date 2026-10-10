@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts } from '@open-pencil/core'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { expectDefined, expectFills, getNodeOrThrow } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('set_fill', () => {
@@ -14,7 +14,7 @@ describe('set_fill', () => {
     const tool = getTool('set_fill')
     tool.execute(figma, { id: frame.id, color: '#ff0000' })
 
-    const fills = expectDefined(figma.getNodeById(frame.id), 'frame node').fills
+    const fills = expectFills(expectDefined(figma.getNodeById(frame.id), 'frame node').fills)
     expect(fills.length).toBe(1)
     expect(fills[0].color.r).toBeCloseTo(1)
     expect(fills[0].color.g).toBeCloseTo(0)

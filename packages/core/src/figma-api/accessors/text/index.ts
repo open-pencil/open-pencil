@@ -1,30 +1,22 @@
-import type { SceneGraph, SceneNode, TextParagraphSpacingField } from '@open-pencil/scene-graph'
+import type { SceneNode, TextParagraphSpacingField } from '@open-pencil/scene-graph'
 
 import {
-  nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import type { FigmaFontName } from '#core/figma-api/fonts'
+import { styleNameToWeight, type FigmaFontName } from '#core/figma-api/fonts'
 import {
-  getFontName,
-  getLetterSpacing,
-  getLineHeight,
   getParagraphSpacing,
   letterSpacingValue,
   lineHeightValue,
   paragraphStylesForCharacters,
-  setFontName,
   spacingProblem,
   type FigmaLetterSpacing,
   type FigmaLineHeight
 } from '#core/figma-api/text'
-
-function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
-  return target[internals.graph] as SceneGraph
-}
+import { getTextStyle, textStyleChanges, type TextSegmentField } from '#core/figma-api/text/style'
 
 /**
  * Getter/setter pair for a spacing Figma keeps at zero or more. It reads `mixed` while paragraphs
@@ -41,6 +33,27 @@ function spacing(internals: NodeProxyInternals, name: TextParagraphSpacingField,
         throw new Error(`in set_${name}: Property "${name}" failed validation: ${invalid}`)
       }
       updateNode(this, internals, { [name]: value })
+    }
+  }
+}
+
+/**
+ * Getter/setter pair for a style characters can override: it reads `mixed` while they differ,
+ * and setting it gives every character the value, as Figma's node setters do.
+ */
+function characterStyle<T>(
+  internals: NodeProxyInternals,
+  field: TextSegmentField,
+  mixed: symbol,
+  changes: (node: SceneNode, value: T) => Partial<SceneNode>
+) {
+  return {
+    get(this: ProxyThis): unknown {
+      return getTextStyle(raw(this, internals), field, mixed)
+    },
+    set(this: ProxyThis, value: T) {
+      const node = raw(this, internals)
+      updateNode(this, internals, textStyleChanges(node, changes(node, value)))
     }
   }
 }
@@ -72,15 +85,13 @@ export function installTextNodeProxyAccessors(
         updateNode(this, internals, { text: value, textParagraphs })
       }
     },
-    fontName: {
-      get(this: ProxyThis): FigmaFontName {
-        return getFontName(raw(this, internals))
-      },
-      set(this: ProxyThis, value: FigmaFontName) {
-        setFontName(graph(this, internals), nodeId(this, internals), value)
-      }
-    },
-    fontSize: field(internals, 'fontSize'),
+    fontName: characterStyle<FigmaFontName>(internals, 'fontName', mixed, (_node, value) => {
+      const { weight, italic } = styleNameToWeight(value.style)
+      return { fontFamily: value.family, fontWeight: weight, italic }
+    }),
+    fontSize: characterStyle<number>(internals, 'fontSize', mixed, (_node, fontSize) => ({
+      fontSize
+    })),
     textStyleId: {
       get(this: ProxyThis): string {
         return raw(this, internals).textStyleId ?? ''
@@ -89,33 +100,34 @@ export function installTextNodeProxyAccessors(
         updateNode(this, internals, { textStyleId: value || null })
       }
     },
-    fontWeight: field(internals, 'fontWeight'),
+    fontWeight: characterStyle<number>(internals, 'fontWeight', mixed, (_node, fontWeight) => ({
+      fontWeight
+    })),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
     textDirection: field(internals, 'textDirection'),
     textAutoResize: field(internals, 'textAutoResize'),
     // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
     // node instead of pixels would leave the text unmeasurable.
-    letterSpacing: {
-      get(this: ProxyThis): FigmaLetterSpacing {
-        return getLetterSpacing(raw(this, internals))
-      },
-      set(this: ProxyThis, value: FigmaLetterSpacing | number) {
-        updateNode(this, internals, {
-          letterSpacing: letterSpacingValue(raw(this, internals), value)
-        })
-      }
-    },
-    lineHeight: {
-      get(this: ProxyThis): FigmaLineHeight {
-        return getLineHeight(raw(this, internals))
-      },
-      set(this: ProxyThis, value: FigmaLineHeight | number | null) {
-        updateNode(this, internals, { lineHeight: lineHeightValue(raw(this, internals), value) })
-      }
-    },
+    letterSpacing: characterStyle<FigmaLetterSpacing | number>(
+      internals,
+      'letterSpacing',
+      mixed,
+      (node, value) => ({ letterSpacing: letterSpacingValue(node, value) })
+    ),
+    lineHeight: characterStyle<FigmaLineHeight | number | null>(
+      internals,
+      'lineHeight',
+      mixed,
+      (node, value) => ({ lineHeight: lineHeightValue(node, value) })
+    ),
     textCase: field(internals, 'textCase'),
-    textDecoration: field(internals, 'textDecoration'),
+    textDecoration: characterStyle<SceneNode['textDecoration']>(
+      internals,
+      'textDecoration',
+      mixed,
+      (_node, textDecoration) => ({ textDecoration })
+    ),
     maxLines: field(internals, 'maxLines'),
     listSpacing: spacing(internals, 'listSpacing', mixed),
     paragraphSpacing: spacing(internals, 'paragraphSpacing', mixed),
