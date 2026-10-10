@@ -8,14 +8,15 @@ import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 import { openCloudConnect } from '../connect/flow'
 import { cloudServerHost } from '../servers/address'
-import { cloudServers } from '../servers/store'
-import { cloudConnection } from '../sessions/connection'
+import { cloudServers, findCloudServer } from '../servers/store'
+import { cloudAPIClient, cloudConnection } from '../sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 
 export type CloudSaveState =
   | { kind: 'ready' }
   | { kind: 'saving'; sentBytes: number; totalBytes: number }
-  | { kind: 'error'; reason: 'offline' | 'unavailable' }
+  | { kind: 'error'; reason: 'too-large'; limitBytes: number }
+  | { kind: 'error'; reason: 'offline' | 'quota' | 'unavailable' }
 
 export const cloudSaveOpen = ref(false)
 export const cloudSaveName = ref('')
@@ -97,6 +98,33 @@ function waitForFirstUpload(documentId: string, totalBytes: number): Promise<boo
 }
 
 /**
+ * Why the first upload failed, from the workspace's limits: the server refuses a file over its
+ * size limit or one that does not fit the remaining storage without saying which.
+ */
+async function uploadFailure(
+  serverId: string,
+  workspaceId: string,
+  size: number
+): Promise<CloudSaveState> {
+  const server = findCloudServer(serverId)
+  const discovery = server ? cloudConnection(server.id).discovery : null
+  if (!server || !discovery) return { kind: 'error', reason: 'unavailable' }
+  const entitlements = await cloudAPIClient(server, discovery)
+    .getWorkspaceEntitlements(workspaceId)
+    .catch(() => null)
+  if (!entitlements) return { kind: 'error', reason: 'unavailable' }
+  const { limits, usage } = entitlements
+  if (size > limits.maximumFileBytes) {
+    return { kind: 'error', reason: 'too-large', limitBytes: limits.maximumFileBytes }
+  }
+  const stored = usage.committedStorageBytes + usage.reservedStorageBytes
+  if (limits.maximumStorageBytes !== null && stored + size > limits.maximumStorageBytes) {
+    return { kind: 'error', reason: 'quota' }
+  }
+  return { kind: 'error', reason: 'unavailable' }
+}
+
+/**
  * Saves the document to the chosen workspace: it is kept on this device and the tab moves to
  * the Cloud copy at once, then the dialog follows the first upload. The file it came from is left
  * as it was.
@@ -125,9 +153,9 @@ export async function saveToCloud(): Promise<boolean> {
   if (!binding) return false
   rememberRecentStorageDocument(binding, name)
   const meta = await getLocalCanvasStore().getMeta(binding.documentId)
-  const uploaded = await waitForFirstUpload(binding.documentId, meta?.figSize ?? 0)
-  if (!uploaded) {
-    cloudSaveState.value = { kind: 'error', reason: 'unavailable' }
+  const size = meta?.figSize ?? 0
+  if (!(await waitForFirstUpload(binding.documentId, size))) {
+    cloudSaveState.value = await uploadFailure(serverId, workspaceId, size)
     return false
   }
   cloudSaveOpen.value = false

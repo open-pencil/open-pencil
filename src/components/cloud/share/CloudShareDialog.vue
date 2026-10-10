@@ -22,20 +22,24 @@ import type { SharePermission, ShareMember, ShareLinkState } from './types'
  */
 const {
   documentName,
-  workspace,
+  workspace = null,
   members,
   link,
   canManage = true,
   inviting = false,
-  copied = false
+  copied = false,
+  links = { allowed: true, edit: true }
 } = defineProps<{
   documentName: string
-  workspace: { name: string; memberCount: number; permission: SharePermission }
+  /** The workspace the document lives in, when this account belongs to it. */
+  workspace?: { name: string; memberCount?: number; permission: SharePermission } | null
   members: ShareMember[]
   link: ShareLinkState
   canManage?: boolean
   inviting?: boolean
   copied?: boolean
+  /** What the workspace's plan allows for links: any link at all, and links that can edit. */
+  links?: { allowed: boolean; edit: boolean }
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
@@ -78,7 +82,7 @@ function submitInvite() {
   <AppDialogRoot v-model:open="open" size="md">
     <AppDialogHeader
       :heading="`Share “${documentName}”`"
-      :description="`In ${workspace.name} on OpenPencil Cloud`"
+      :description="workspace ? `In ${workspace.name} on OpenPencil Cloud` : 'On OpenPencil Cloud'"
       close-label="Close"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col gap-5' }">
@@ -144,11 +148,13 @@ function submitInvite() {
               @update:model-value="emit('changeMember', member.id, $event)"
             />
           </li>
-          <li :class="ui.row()">
+          <li v-if="workspace" :class="ui.row()">
             <span :class="ui.groupAvatar()"><icon-lucide-layers class="size-3.5" /></span>
             <span :class="ui.rowBody()">
               <span :class="ui.rowName()">Everyone in {{ workspace.name }}</span>
-              <span :class="ui.rowDetail()">{{ workspace.memberCount }} members</span>
+              <span v-if="workspace.memberCount" :class="ui.rowDetail()">
+                {{ workspace.memberCount }} members
+              </span>
             </span>
             <Tip label="Set by the workspace; change it in the workspace's settings">
               <span :class="ui.rowRole()">{{ permissionLabel(workspace.permission) }}</span>
@@ -166,7 +172,7 @@ function submitInvite() {
           </span>
           <div :class="ui.accessBody()">
             <AppSelect
-              v-if="canManage"
+              v-if="canManage && (links.allowed || link.access === 'link')"
               :model-value="accessValue"
               label="General access"
               :options="[
@@ -192,7 +198,9 @@ function submitInvite() {
               {{
                 link.access === 'link'
                   ? 'Anyone who has the link can open this file without signing in.'
-                  : 'Only the people and workspace above can open this file.'
+                  : links.allowed
+                    ? 'Only the people and workspace above can open this file.'
+                    : 'Only the people and workspace above can open this file. Links are turned off for this workspace.'
               }}
             </p>
           </div>
@@ -200,7 +208,11 @@ function submitInvite() {
             v-if="link.access === 'link' && canManage"
             :model-value="link.permission"
             label="Link permission"
-            :options="permissionOptions"
+            :options="
+              links.edit
+                ? permissionOptions
+                : permissionOptions.filter((option) => option.value === 'view')
+            "
             :ui="{ trigger: 'w-28' }"
             @update:model-value="emit('changeLink', { ...link, permission: $event })"
           />

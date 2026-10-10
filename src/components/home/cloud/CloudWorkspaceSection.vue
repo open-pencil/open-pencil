@@ -6,10 +6,11 @@ import { useDocumentWorkspace, useI18n } from '@open-pencil/vue'
 
 import { createCloudDocument } from '@/app/cloud/documents/create'
 import { cloudSyncState } from '@/app/cloud/documents/status'
+import { findCloudServer } from '@/app/cloud/servers/store'
+import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 import { formatCommentTime, useCommentClock } from '@/app/comments/time'
 import {
-  createStorageAdapter,
   sameStorageLocation,
   storageLocationOf,
   type StorageDocument,
@@ -58,7 +59,7 @@ const files = useDocumentWorkspace<StorageDocument>({
   previewConcurrency: 6
 })
 const metas = shallowRef<ReadonlyMap<string, LocalCanvasMeta>>(new Map())
-const usage = shallowRef<{ usedBytes: number; totalBytes: null } | null>(null)
+const usage = shallowRef<{ usedBytes: number; totalBytes: number | null } | null>(null)
 
 async function readLocal() {
   const requested = location.value
@@ -68,9 +69,15 @@ async function readLocal() {
 }
 
 async function readUsage() {
+  const server = findCloudServer(serverId)
+  const discovery = cloudConnection(serverId).discovery
+  if (!server || !discovery) return
   try {
-    const value = await createStorageAdapter(location.value).getUsage()
-    usage.value = { usedBytes: value.bytesUsed, totalBytes: null }
+    const { limits, usage: used } = await cloudAPIClient(
+      server,
+      discovery
+    ).getWorkspaceEntitlements(workspace.id)
+    usage.value = { usedBytes: used.committedStorageBytes, totalBytes: limits.maximumStorageBytes }
   } catch {
     // Usage is a detail; the files still list without it.
     usage.value = null

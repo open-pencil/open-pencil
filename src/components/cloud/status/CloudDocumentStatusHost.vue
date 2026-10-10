@@ -8,6 +8,7 @@ import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
 import { useCloudDocumentStatus } from '@/app/cloud/documents/status'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
+import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { formatCommentTime, useCommentClock } from '@/app/comments/time'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createStorageAdapter } from '@/app/integrations/storage'
@@ -74,6 +75,7 @@ function retry() {
       :host="location.host"
       :saved-ago="savedAgo"
       @resolve="openConflict"
+      @share="cloudShareOpen = true"
       @retry="retry"
     />
     <CloudConflictDialog
