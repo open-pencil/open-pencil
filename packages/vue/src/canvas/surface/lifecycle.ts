@@ -20,6 +20,7 @@ import { createImagePreviewDecoder } from '#vue/canvas/surface/image-preview'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
+import { createShaderRasterizer } from '#vue/canvas/surface/shader-rasterizer'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 
 type SurfaceManagerState = {
@@ -111,6 +112,8 @@ export function createCanvasSurfaceManager({
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
     state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
     editor.setCanvasKit(ck, state.renderer)
+    // The scene surface draws shader frames; an overlay surface has none to draw.
+    if (options?.layer !== 'overlays') editor.setShaderRasterizer(createShaderRasterizer())
     canvas.dataset.ready = '1'
 
     // When the surface is recreated after a resize fallback, destroyRenderer

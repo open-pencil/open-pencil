@@ -43,6 +43,8 @@ import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createPlayActions } from './play/actions'
 import { createSelectionActions } from './selection'
+import { createShaderActions } from './shaders/actions'
+import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
 import { createDefaultEditorState } from './state'
 import { createStructureActions } from './structure'
@@ -257,6 +259,8 @@ export function createEditor(options?: EditorOptions) {
   const designTokens = createDesignTokenActions(ctx, variables, nodes)
   const vectorize = createVectorizeActions(ctx)
   const icons = createIconActions(ctx)
+  const shaders = createShaderActions(ctx, nodes)
+  const shaderFrames = createShaderFrames(ctx)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
@@ -391,6 +395,8 @@ export function createEditor(options?: EditorOptions) {
     // Bitmap-to-vector replacement
     ...vectorize,
     ...icons,
+    ...shaders,
+    ...shaderFrames,
 
     // Variables
     ...variables,

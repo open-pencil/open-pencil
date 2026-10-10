@@ -6,6 +6,7 @@ import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
 import { iconSchema, iconTintSchema } from '../icons/schema'
 import type { Rect } from '../primitives'
+import { shaderPaintSchema } from '../shaders/schema'
 import {
   MODE_ATTRIBUTE_PATTERN,
   TOKEN_UNITS,
@@ -226,7 +227,9 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** The icon a frame draws, such as `lucide:home`, on the frame its paths are in. */
   icon: jsonPluginDataField('icon', 'content', iconSchema),
   /** Which of an icon path's paints its icon's color sets, on each path the source drew in it. */
-  iconTint: jsonPluginDataField('iconTint', 'content', iconTintSchema)
+  iconTint: jsonPluginDataField('iconTint', 'content', iconTintSchema),
+  /** One entry per paint that draws a shader, matched to its image paint by the frame's hash. */
+  shader: jsonPluginDataField('shader', 'content', shaderPaintSchema)
 } satisfies Record<string, PluginDataKey>
 
 const NOT_CONTENT = Object.values(OPEN_PENCIL_PLUGIN_DATA).filter(

@@ -558,6 +558,18 @@ export class SkiaRenderer {
     RendererState.invalidateAllPictures(this)
   }
 
+  /**
+   * Forgets the decoded image `hash` after its bytes were replaced, such as a shader's frame
+   * rendered again, and redraws whatever showed it. Previews notice new bytes themselves.
+   */
+  forgetImage(hash: string): void {
+    const keys = Array.from(this.imageCache.entries(), ([key]) => key)
+    for (const key of keys) {
+      if (key === hash || key.startsWith(`${hash}:`)) this.imageCache.delete(key)
+    }
+    this.invalidateAllPictures()
+  }
+
   /** Drops `nodeId`'s cached drawing; `changedKeys`, when known, lets text keep its glyph coverage. */
   invalidateNodePicture(nodeId: string, changedKeys?: readonly (keyof SceneNode)[]): void {
     RendererState.invalidateNodePicture(this, nodeId, changedKeys)
