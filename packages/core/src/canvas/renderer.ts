@@ -122,8 +122,11 @@ export class SkiaRenderer {
   textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
   imageCache = createImageCache()
-  /** Images drawn in place of stored ones while they play, such as a shader's live frames. */
-  readonly liveImages = new Map<string, Image>()
+  /**
+   * Images drawn in place of stored ones while they play, such as a shader's live frames, each
+   * with the surface whose GL context holds its texture.
+   */
+  readonly liveImages = new Map<string, { image: Image; surface: Surface }>()
   viewportImageRendering = false
   imageMemoryGraph: SceneGraph | null = null
   imageMemoryPage: string | null = null
@@ -551,6 +554,8 @@ export class SkiaRenderer {
 
   replaceSurface(surface: Surface): void {
     this.tiledScene.destroy()
+    // Live textures belong to the old surface's context, so they go before it does.
+    this.releaseLiveImages()
     this.surface.delete()
     this.surface = surface
     this.sceneBackingAllocationFailed = false
@@ -570,19 +575,31 @@ export class SkiaRenderer {
    * `nodeIds`, the layers that paint it. Frames of the same size reuse one texture.
    */
   setLiveImage(hash: string, source: LiveImageSource | null, nodeIds: Iterable<string> = []): void {
-    const current = this.liveImages.get(hash)
-    if (!source) {
-      current?.delete()
-      this.liveImages.delete(hash)
-    } else if (current && current.width() === source.width && current.height() === source.height) {
+    const live = this.liveImages.get(hash)
+    // A texture made on a surface since replaced has no context left to update or free it in.
+    const current = live?.surface === this.surface ? live.image : null
+    if (
+      source &&
+      current &&
+      current.width() === source.width &&
+      current.height() === source.height
+    ) {
       this.surface.updateTextureFromSource(current, source)
     } else {
       current?.delete()
-      const image = this.surface.makeImageFromTextureSource(source)
-      if (image) this.liveImages.set(hash, image)
-      else this.liveImages.delete(hash)
+      this.liveImages.delete(hash)
+      const image = source && this.surface.makeImageFromTextureSource(source)
+      if (image) this.liveImages.set(hash, { image, surface: this.surface })
     }
     for (const id of nodeIds) this.invalidateNodePicture(id)
+  }
+
+  /** Frees every live image this surface holds and forgets those an earlier one held. */
+  releaseLiveImages(): void {
+    for (const { image, surface } of this.liveImages.values()) {
+      if (surface === this.surface) image.delete()
+    }
+    this.liveImages.clear()
   }
 
   /**

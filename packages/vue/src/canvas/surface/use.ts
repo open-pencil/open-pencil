@@ -52,7 +52,16 @@ export function useCanvas(
 
   // The scene surface plays shaders in preview; an overlay surface draws none.
   if (options?.layer !== 'overlays') {
-    useShaderPlayback({ editor, getRenderer: surface.getRenderer, markDirty: surface.markDirty })
+    useShaderPlayback({
+      editor,
+      getRenderer: surface.getRenderer,
+      // The view's size in CSS pixels, which the editor's pan and zoom map the page onto.
+      getViewport: () => ({
+        width: canvasRef.value?.clientWidth ?? 0,
+        height: canvasRef.value?.clientHeight ?? 0
+      }),
+      markDirty: surface.markDirty
+    })
   }
 
   const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestIssueMarker } =

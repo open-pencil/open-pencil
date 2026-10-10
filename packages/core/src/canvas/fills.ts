@@ -472,7 +472,7 @@ export function applyImageFill(
   const hash = fill.imageHash
   if (!hash) return false
   const live = r.liveImages.get(hash)
-  if (live) return setImageShader(r, fill, node, live, paint)
+  if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
   const preview = r.viewportImageRendering
     ? // eslint-disable-next-line open-pencil/no-zoom-in-scene-drawing -- picks the preview resolution, not a size; preview mode draws the scene uncached on every frame.
       r.imagePreviews.get(graph, hash, previewEdge(node, r.zoom, r.dpr))
