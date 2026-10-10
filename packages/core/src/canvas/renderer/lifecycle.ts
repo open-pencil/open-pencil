@@ -26,6 +26,14 @@ function disposePathCaches(r: SkiaRenderer): void {
   r.glyphSilhouetteCache.clear()
 }
 
+/** Frees every live image `r`'s surface holds and forgets those an earlier surface held. */
+export function releaseLiveImages(r: Pick<SkiaRenderer, 'liveImages' | 'surface'>): void {
+  for (const { image, surface } of r.liveImages.values()) {
+    if (surface === r.surface) image.delete()
+  }
+  r.liveImages.clear()
+}
+
 export function destroyRenderer(r: SkiaRenderer): void {
   if (r.destroyed) return
   r.destroyed = true
@@ -34,7 +42,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.onImagePreviewReady = null
   r.imagePreviews.destroy()
   r.imageCache.clear()
-  r.releaseLiveImages()
+  releaseLiveImages(r)
   disposePathCaches(r)
   r.fillPaint.delete()
   r.diamondGradientEffect?.delete()

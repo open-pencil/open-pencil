@@ -35,7 +35,9 @@ export function shaderEffectPreview(effect: ShaderEffect): Promise<string | null
       width: PREVIEW_SIZE.width * ratio,
       height: PREVIEW_SIZE.height * ratio
     })
-    return bytes ? URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'image/png' })) : null
+    return bytes
+      ? URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'image/png' }))
+      : null
   })
   // A preview that fails to draw leaves the rest of the queue to go on.
   queue = drawn.catch(() => null)

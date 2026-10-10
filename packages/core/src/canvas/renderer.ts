@@ -32,7 +32,7 @@ import { LabelParagraphCache } from './labels/paragraph-cache'
 import { labelHitOptions } from './labels/style'
 import * as RenderColors from './renderer/colors'
 import * as RendererFonts from './renderer/fonts'
-import { destroyRenderer } from './renderer/lifecycle'
+import { destroyRenderer, releaseLiveImages } from './renderer/lifecycle'
 import { installRendererDomainMethods } from './renderer/methods'
 import { initializeRendererPaints, initializeSelectionPaintColors } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
@@ -563,7 +563,7 @@ export class SkiaRenderer {
   replaceSurface(surface: Surface): void {
     this.tiledScene.destroy()
     // Live textures belong to the old surface's context, so they go before it does.
-    this.releaseLiveImages()
+    releaseLiveImages(this)
     this.surface.delete()
     this.surface = surface
     this.sceneBackingAllocationFailed = false
@@ -600,14 +600,6 @@ export class SkiaRenderer {
       if (image) this.liveImages.set(hash, { image, surface: this.surface })
     }
     for (const id of nodeIds) this.invalidateNodePicture(id)
-  }
-
-  /** Frees every live image this surface holds and forgets those an earlier one held. */
-  releaseLiveImages(): void {
-    for (const { image, surface } of this.liveImages.values()) {
-      if (surface === this.surface) image.delete()
-    }
-    this.liveImages.clear()
   }
 
   /**
