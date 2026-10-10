@@ -56,17 +56,11 @@ function writeLayoutGeometry(
   }
 }
 
-/** The size each Hug frame had after layout last ran on it. */
-const huggedSizes = new WeakMap<SceneGraph, Map<string, { width: number; height: number }>>()
-
-function huggedSizesOf(graph: SceneGraph) {
-  let sizes = huggedSizes.get(graph)
-  if (!sizes) {
-    sizes = new Map()
-    huggedSizes.set(graph, sizes)
-  }
-  return sizes
-}
+/**
+ * The size each Hug frame had after layout last ran on it. Keyed by the node, so a deleted
+ * frame's entry goes with it and a restored one starts afresh.
+ */
+const huggedSizes = new WeakMap<SceneNode, { width: number; height: number }>()
 
 const CONSTRAINT_PARENT_TYPES: ReadonlySet<SceneNode['type']> = new Set([
   'FRAME',
@@ -115,15 +109,15 @@ function constrainChildren(
  * hugs back, as when a parent stretches it; its children move only from the size it last hugged
  * to. An axis it does not hug keeps the size it has.
  */
-function hugStart(graph: SceneGraph, frame: SceneNode): { width: number; height: number } | null {
+function hugStart(frame: SceneNode): { width: number; height: number } | null {
   const row = frame.layoutMode === 'HORIZONTAL'
   const hugsWidth = (row ? frame.primaryAxisSizing : frame.counterAxisSizing) === 'HUG'
   const hugsHeight = (row ? frame.counterAxisSizing : frame.primaryAxisSizing) === 'HUG'
   if (!hugsWidth && !hugsHeight) {
-    huggedSizesOf(graph).delete(frame.id)
+    huggedSizes.delete(frame)
     return null
   }
-  const hugged = huggedSizesOf(graph).get(frame.id)
+  const hugged = huggedSizes.get(frame)
   return {
     width: hugsWidth && hugged ? hugged.width : frame.width,
     height: hugsHeight && hugged ? hugged.height : frame.height
@@ -144,7 +138,7 @@ function applyFrameSize(
     return
   }
 
-  const before = hugStart(graph, frame)
+  const before = hugStart(frame)
   if (!before) return
 
   const updates: LayoutGeometry = {}
@@ -162,7 +156,7 @@ function applyFrameSize(
   }
 
   writeLayoutGeometry(graph, frame.id, updates, computeLayout, before)
-  huggedSizesOf(graph).set(frame.id, { width: frame.width, height: frame.height })
+  huggedSizes.set(frame, { width: frame.width, height: frame.height })
 }
 
 function computedChildPosition(

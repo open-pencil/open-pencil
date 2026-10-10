@@ -83,6 +83,8 @@ export interface DragResize {
   origTextPathBox: Rect | null
   origChildren: Map<string, ResizeSnapshot> | null
   appliedRect?: Rect
+  /** The layer's edited fields before the drag marked its size, to put back if it changes nothing. */
+  origEditedFields?: string[]
 }
 
 export interface DragMarquee {

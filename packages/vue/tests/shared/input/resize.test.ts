@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
 
 function drag(node: SceneNode): DragResize {
@@ -62,6 +62,31 @@ describe('resizing a frame read from a .fig file', () => {
       expect([row.width, field.width]).toEqual([300, 280])
       editor.undoAction()
       expect([row.width, field.width]).toEqual([200, 180])
+    } finally {
+      editor.dispose()
+    }
+  })
+})
+
+describe('a resize that changes nothing', () => {
+  test('leaves a layer read from a .fig file unedited, whether released or cancelled', () => {
+    const editor = createEditor()
+    try {
+      const { graph } = editor
+      const frame = graph.createNode('FRAME', editor.state.currentPageId, { width: 200, height: 40 })
+      graph.applyImportedStateDuring(() =>
+        graph.updateNode(frame.id, { source: { ...frame.source, format: 'fig', id: frame.id } })
+      )
+      const press = drag(frame)
+      applyResize(press, 200, 20, false, editor, true)
+      commitResizePreview(press, editor)
+      expect(frame.source.editedFields).toEqual([])
+
+      const cancelled = drag(frame)
+      applyResize(cancelled, 260, 20, false, editor, true)
+      expect(frame.width).toBe(260)
+      cancelResizePreview(cancelled, editor)
+      expect([frame.width, frame.source.editedFields]).toEqual([200, []])
     } finally {
       editor.dispose()
     }
