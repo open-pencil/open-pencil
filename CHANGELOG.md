@@ -173,6 +173,7 @@
 
 ### Fixed
 
+- Tailwind exports keep corner radius: Tailwind JSX and HTML with Tailwind classes write radius from Tailwind's radius scale, such as `rounded-xl` for 12px, instead of classes like `rounded-3` that Tailwind v4 does not generate, and other values as `rounded-[20px]`.
 - ⌘Z right after arrow-key nudges undoes the nudges instead of the edit before them.
 - <kbd>⇧</kbd>-dragging a corner handle follows the side the pointer stretched most relative to the layer's size, as Figma does, instead of the side it moved more pixels along.
 - The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
