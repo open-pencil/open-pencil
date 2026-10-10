@@ -20,7 +20,7 @@ import type { MeasurementMode, PresenceCursor, RenderOverlays } from '#core/canv
 import type { InterfaceTheme } from '#core/constants'
 import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
-import type { RotationPreview } from '#core/geometry'
+import type { RadiusCorner, RotationPreview } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionEvent, FontResolutionSnapshot } from '#core/text/resolver'
@@ -45,6 +45,19 @@ export interface GradientEdit {
   index: number
   /** The selected stop, shared by the canvas handles and the picker. */
   stop: number
+}
+
+/** The selected rectangle's corner radius handles, shown while the pointer is over it. */
+export interface CornerRadiusHover {
+  nodeId: string
+  /** Whether a drag changes only the corner it holds; each handle then shows a dot. */
+  single: boolean
+  /** The handle under the pointer or being dragged, whose radius the label shows. */
+  corner: RadiusCorner | null
+  /** The word before the radius in the label, in the interface language. */
+  label: string
+  /** The pointer in screen coordinates, which the label follows. */
+  pointer: Vector
 }
 
 export interface EditorSharedState {
@@ -112,6 +125,7 @@ export interface EditorViewState {
     index?: number
     side?: 'top' | 'right' | 'bottom' | 'left'
   } | null
+  cornerRadiusHover: CornerRadiusHover | null
   panX: number
   pageColor: Color
   panY: number

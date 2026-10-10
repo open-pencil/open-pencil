@@ -131,6 +131,7 @@ export const panelMessageDefaults = {
   spread: 'Spread',
 
   page: 'Page',
+  selectionColors: 'Selection colors',
   frame: 'Frame',
   framePreset: 'Frame preset',
   framePresetCustom: 'Custom',
@@ -428,7 +429,7 @@ export const panelMessageDefaults = {
   effectStyle: 'Effect style',
   gridStyle: 'Grid style',
   missingStyle: params('Missing style ({id})'),
-  layersCount: params('{count} layers'),
+  selectedCount: params('{count} selected'),
   goToMainComponent: 'Go to main component',
 
   gap: 'Gap',
@@ -457,6 +458,7 @@ export const panelMessageDefaults = {
   flow: 'Flow',
   freeform: 'Freeform',
   dimensions: 'Dimensions',
+  spacing: 'Spacing',
   layoutHorizontal: 'Horizontal layout',
   layoutVertical: 'Vertical layout',
   layoutGrid: 'Grid layout',

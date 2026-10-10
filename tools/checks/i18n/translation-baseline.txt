@@ -18,6 +18,7 @@ de:common.ok
 de:diagnostics.categoryMCP
 de:diagnostics.categoryRenderer
 de:diagnostics.durationMs
+de:editor.cornerRadius
 de:menu.text
 de:panels.alpha
 de:panels.blendModeNormal

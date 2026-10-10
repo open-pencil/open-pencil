@@ -4,7 +4,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { GradientEdit } from '#core/editor/types'
+import type { CornerRadiusHover, GradientEdit } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -65,6 +65,8 @@ export interface RenderOverlays {
     index?: number
     side?: 'top' | 'right' | 'bottom' | 'left'
   } | null
+  /** The selected rectangle's corner radius handles and the label of the one in use. */
+  cornerRadiusHover?: CornerRadiusHover | null
   penState?: {
     vertices: Vector[]
     segments: Array<{

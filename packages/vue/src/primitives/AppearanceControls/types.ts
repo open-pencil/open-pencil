@@ -22,6 +22,8 @@ export interface AppearanceControlsRootSlotProps {
   isMulti: boolean
   active: boolean
   hasCornerRadius: boolean
+  /** A multi-selection with no layer that has corners shows the radius disabled, as Figma does. */
+  cornerRadiusDisabled: boolean
   independentCorners: MixedValue<boolean>
   showIndependentCorners: boolean
   cornerRadiusValue: MixedValue<number>

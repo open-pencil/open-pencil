@@ -109,7 +109,8 @@ export function renderFromEditorState(
       presenceCursors: state.presenceCursors,
       designIssues: state.designIssues,
       codeFocusNodeId: state.codeFocusNodeId,
-      autoLayoutHover: state.autoLayoutHover
+      autoLayoutHover: state.autoLayoutHover,
+      cornerRadiusHover: state.cornerRadiusHover
     },
     // Recorded pictures follow what the canvas draws, not every document change.
     state.canvasVersion,

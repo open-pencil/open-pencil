@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { VNode } from 'vue'
 
 import type { LayoutMode } from '@open-pencil/scene-graph'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { MIXED, useI18n, useSelectionLayout } from '@open-pencil/vue'
 
-import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
-const ctx = useLayoutControlsContext()
+defineSlots<{ default?(): VNode[] }>()
+
+const layout = useSelectionLayout()
 const { panels } = useI18n()
 
 const layoutModes = computed<Array<{ value: LayoutMode; label: string }>>(() => [
@@ -18,23 +20,11 @@ const layoutModes = computed<Array<{ value: LayoutMode; label: string }>>(() => 
   { value: 'GRID', label: panels.value.layoutGrid }
 ])
 
-function toggleWrap() {
-  const node = ctx.node
-  const enabling = node.layoutWrap !== 'WRAP'
-  ctx.editor.updateNodeWithUndo(
-    node.id,
-    {
-      layoutWrap: enabling ? 'WRAP' : 'NO_WRAP',
-      primaryAxisAlign:
-        enabling && node.primaryAxisAlign === 'SPACE_BETWEEN' ? 'MIN' : node.primaryAxisAlign
-    },
-    'Toggle layout wrap'
-  )
-}
-
-function setLayoutMode(mode: string) {
-  ctx.editor.setLayoutMode(ctx.node.id, mode as LayoutMode)
-}
+// Layers with different flows leave every option off.
+const mode = computed(() => {
+  const value = layout.layoutMode.value
+  return value === MIXED || value === undefined ? '' : value
+})
 </script>
 
 <template>
@@ -42,11 +32,11 @@ function setLayoutMode(mode: string) {
     <label class="mb-1 block text-[11px] text-muted">{{ panels.flow }}</label>
     <div class="flex items-center gap-1.5">
       <SegmentedControl
-        :model-value="ctx.node.layoutMode"
+        :model-value="mode"
         :options="layoutModes"
         :label="panels.flow"
         :ui="{ root: 'flex min-w-0 flex-1' }"
-        @change="setLayoutMode"
+        @change="layout.setLayoutMode($event as LayoutMode)"
       >
         <template #option="{ option }">
           <Tip :label="option.label">
@@ -59,16 +49,7 @@ function setLayoutMode(mode: string) {
           </Tip>
         </template>
       </SegmentedControl>
-
-      <IconButton
-        v-if="ctx.isFlex"
-        :label="panels.layoutWrap"
-        size="xs"
-        :active="ctx.node.layoutWrap === 'WRAP'"
-        @click="toggleWrap"
-      >
-        <icon-lucide-wrap-text class="size-3.5" />
-      </IconButton>
+      <slot />
     </div>
   </div>
 </template>
