@@ -248,6 +248,8 @@
   "aiSetupServerVision": "Ten model potrafi odczytywać obrazy",
   "aiSetupGapCoveredByOpenRouter": "OpenRouter obsłuży to, czego nie obejmują pozostałe wybory, z opłatą za każde zapytanie.",
   "aiSetupAccessMore": "Więcej dostawców",
+  "providerGroupAgents": "Twoi agenci",
+  "providerGroupProviders": "Dostawcy",
   "aiSetupServerOther": "Inny serwer",
   "aiSetupAgentChecking": "Sprawdzanie tego komputera…",
   "aiSetupAgentInstalled": "zainstalowany",
