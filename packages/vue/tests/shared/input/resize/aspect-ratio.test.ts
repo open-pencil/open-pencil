@@ -57,6 +57,18 @@ describe('resizing a locked layer on the canvas', () => {
     expect(box(drag('nw', -100, -10).node)).toEqual({ x: 100, y: 100, width: 300, height: 150 })
   })
 
+  test('a corner keeps the larger of the two boxes, also when shrinking', () => {
+    expect(box(drag('se', -50, 0).node)).toEqual({ x: 200, y: 150, width: 200, height: 100 })
+    expect(box(drag('se', -50, 10).node)).toEqual({ x: 200, y: 150, width: 220, height: 110 })
+    expect(box(drag('se', -100, -10).node)).toEqual({ x: 200, y: 150, width: 180, height: 90 })
+  })
+
+  test('a handle dragged past the opposite edge lands the box beyond it', () => {
+    expect(box(drag('w', 300, 0).node)).toEqual({ x: 400, y: 175, width: 100, height: 50 })
+    expect(box(drag('n', 0, 150).node)).toEqual({ x: 250, y: 250, width: 100, height: 50 })
+    expect(box(drag('nw', 300, 150).node)).toEqual({ x: 400, y: 250, width: 100, height: 50 })
+  })
+
   test('an edge sizes the other axis around its centre', () => {
     expect(box(drag('e', 100, 0).node)).toEqual({ x: 200, y: 125, width: 300, height: 150 })
     expect(box(drag('s', 0, 50).node)).toEqual({ x: 150, y: 150, width: 300, height: 150 })

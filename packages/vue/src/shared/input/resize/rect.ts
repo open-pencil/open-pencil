@@ -35,8 +35,9 @@ export function constrainToAspectRatio(
     width = Math.abs(height) * aspect * (isEdge ? 1 : Math.sign(width || 1))
   }
 
-  let x = handle.includes('w') ? origRect.x + origRect.width - Math.abs(width) : origRect.x
-  let y = isTop ? origRect.y + origRect.height - Math.abs(height) : origRect.y
+  // Signed sizes: a handle dragged past the opposite edge lands the box on the far side.
+  let x = handle.includes('w') ? origRect.x + origRect.width - width : origRect.x
+  let y = isTop ? origRect.y + origRect.height - height : origRect.y
   if (handle === 'n' || handle === 's') x = origRect.x + (origRect.width - width) / 2
   if (handle === 'e' || handle === 'w') y = origRect.y + (origRect.height - height) / 2
 
