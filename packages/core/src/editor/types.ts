@@ -54,6 +54,8 @@ export interface CornerRadiusHover {
   single: boolean
   /** The handle under the pointer or being dragged, whose radius the label shows. */
   corner: RadiusCorner | null
+  /** The word before the radius in the label, in the interface language. */
+  label: string
   /** The pointer in screen coordinates, which the label follows. */
   pointer: Vector
 }

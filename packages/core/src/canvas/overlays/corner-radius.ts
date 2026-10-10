@@ -2,14 +2,13 @@ import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { measureGlyphWidth } from '#core/canvas/labels/paragraph-cache'
-import { drawSizePill } from '#core/canvas/labels/selection'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   HANDLE_HALF_SIZE,
+  SIZE_FONT_SIZE,
   SIZE_PILL_HEIGHT,
   SIZE_PILL_PADDING_X,
-  SIZE_PILL_PADDING_Y
+  SIZE_PILL_RADIUS
 } from '#core/constants'
 import type { CornerRadiusHover } from '#core/editor/types'
 import {
@@ -54,18 +53,47 @@ export function drawCornerRadiusHandles(
     canvas.drawCircle(point.x, point.y, CORNER_RADIUS_HANDLE.dotRadius, fill)
   }
 
-  const font = r.sizeFont
-  if (!hover.corner || !font) return
-  const text = `Radius ${Math.round(cornerRadii(node)[hover.corner])}`
-  const width = measureGlyphWidth(font, text) + SIZE_PILL_PADDING_X * 2
-  const { labelOffset } = CORNER_RADIUS_HANDLE
-  drawSizePill(
-    r,
-    canvas,
-    font,
+  const provider = r.fontProvider
+  if (!hover.corner || !provider) return
+  // A paragraph rather than the size label's single font, so every script has a fallback face.
+  const text = `${hover.label} ${Math.round(cornerRadii(node)[hover.corner])}`
+  const white = r.ck.WHITE
+  const measured = r.labelParagraphCache.measure(
+    r.ck,
+    provider,
     text,
-    hover.pointer.x + labelOffset.x + width / 2,
-    hover.pointer.y + labelOffset.y - SIZE_PILL_HEIGHT / 2 - SIZE_PILL_PADDING_Y,
-    color
+    SIZE_FONT_SIZE,
+    Number.POSITIVE_INFINITY,
+    white,
+    r.fontGeneration
+  )
+  const { labelOffset } = CORNER_RADIUS_HANDLE
+  const left = hover.pointer.x + labelOffset.x
+  const top = hover.pointer.y + labelOffset.y - SIZE_PILL_HEIGHT / 2
+  fill.setColor(color)
+  canvas.drawRRect(
+    r.ck.RRectXY(
+      r.ck.LTRBRect(
+        left,
+        top,
+        left + measured.width + SIZE_PILL_PADDING_X * 2,
+        top + SIZE_PILL_HEIGHT
+      ),
+      SIZE_PILL_RADIUS,
+      SIZE_PILL_RADIUS
+    ),
+    fill
+  )
+  r.labelParagraphCache.draw(
+    r.ck,
+    canvas,
+    provider,
+    text,
+    SIZE_FONT_SIZE,
+    Number.POSITIVE_INFINITY,
+    white,
+    r.fontGeneration,
+    left + SIZE_PILL_PADDING_X,
+    top + (SIZE_PILL_HEIGHT - measured.height) / 2
   )
 }

@@ -8,6 +8,7 @@ import {
   hitTestCornerRadiusHandles
 } from '@open-pencil/core/geometry'
 
+import { editorMessages } from '#vue/i18n/messages/editor'
 import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
 import type { DragCornerRadius, DragState } from '#vue/shared/input/types'
 
@@ -48,7 +49,13 @@ export function resolveCornerRadiusHover(
       local && local.x >= 0 && local.y >= 0 && local.x <= node.width && local.y <= node.height
     if (!inside) return null
   }
-  return { nodeId: node.id, single: dragsSingleCorner(node, altKey), corner, pointer }
+  return {
+    nodeId: node.id,
+    single: dragsSingleCorner(node, altKey),
+    corner,
+    label: editorMessages.get().cornerRadius,
+    pointer
+  }
 }
 
 /**
@@ -63,22 +70,23 @@ export function tryStartCornerRadiusDrag(
   altKey: boolean,
   setDrag: (drag: DragState) => void
 ): boolean {
-  const hover = resolveCornerRadiusHover(editor, sx, sy, altKey)
-  if (!hover?.corner) return false
-  const { nodeId, corner, single } = hover
+  const found = resolveCornerRadiusHover(editor, sx, sy, altKey)
+  if (!found?.corner) return false
+  const hover: CornerRadiusHover = found
+  const corner = found.corner
   const preview = editor.beginNodePreview('Change corner radius')
   let moved = false
 
   function update(screenX: number, screenY: number, shiftKey: boolean) {
     moved ||= isPastPointerDragThreshold(sx, sy, screenX, screenY, RADIUS_DRAG_THRESHOLD_PX)
-    const node = editor.graph.getNode(nodeId)
+    const node = editor.graph.getNode(hover.nodeId)
     if (!moved || !node) return
     const pointer = { x: screenX, y: screenY }
     const local = createSceneGeometry(editor.graph).screenToLocal(node, pointer, editor.state)
     if (!local) return
     const radius = cornerRadiusAtPoint(node, corner, local, shiftKey)
-    preview.update(nodeId, cornerRadiusChanges(node, corner, radius, single))
-    editor.setCornerRadiusHover({ nodeId, corner, single, pointer })
+    preview.update(node.id, cornerRadiusChanges(node, corner, radius, hover.single))
+    editor.setCornerRadiusHover({ ...hover, pointer })
   }
 
   const drag: DragCornerRadius = {
