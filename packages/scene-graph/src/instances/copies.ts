@@ -6,6 +6,7 @@ import {
   type InstanceOverrideState
 } from '../instance-overrides'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
+import { DEFAULT_HISTORY_LIMIT } from '../undo'
 
 /**
  * One instance's sync: the copies it has matched to the component's layers, the parents it
@@ -100,28 +101,59 @@ export function hasUnplacedCopiesBelow(
   )
 }
 
+/** The copies one sync of a component's instances removed, by instance and layer. */
+export interface CopyRemovals {
+  keys: Array<[instanceId: string, layerId: string]>
+}
+
 /** A copy the sync removed, kept so the layer coming back, as on undo, brings it back as it was. */
 interface RemovedCopy {
   /** The copy and everything in it, parents first. */
   nodes: SceneNode[]
   overrides: Map<string, Map<string, unknown>>
+  removals: CopyRemovals
 }
 
-/** Removed copies by instance, then by the layer they copied. */
-const removedCopies = new WeakMap<SceneGraph, Map<string, Map<string, RemovedCopy>>>()
+interface RemovedCopyStore {
+  /** Removed copies by instance, then by the layer they copied. */
+  byInstance: Map<string, Map<string, RemovedCopy>>
+  /** Syncs that removed copies, oldest first. */
+  removals: CopyRemovals[]
+}
 
-function removedCopiesOf(graph: SceneGraph, instanceId: string): Map<string, RemovedCopy> {
-  let byInstance = removedCopies.get(graph)
-  if (!byInstance) {
-    byInstance = new Map()
-    removedCopies.set(graph, byInstance)
+const removedCopies = new WeakMap<SceneGraph, RemovedCopyStore>()
+
+function removedCopyStore(graph: SceneGraph): RemovedCopyStore {
+  let store = removedCopies.get(graph)
+  if (!store) {
+    store = { byInstance: new Map(), removals: [] }
+    removedCopies.set(graph, store)
   }
-  let copies = byInstance.get(instanceId)
-  if (!copies) {
-    copies = new Map()
-    byInstance.set(instanceId, copies)
+  return store
+}
+
+export function createCopyRemovals(): CopyRemovals {
+  return { keys: [] }
+}
+
+/**
+ * Keeps one sync's removed copies restorable. Only as many syncs as undo keeps edits are kept,
+ * so copies no undo can bring back are forgotten, oldest first.
+ */
+export function keepCopyRemovals(graph: SceneGraph, removals: CopyRemovals): void {
+  if (removals.keys.length === 0) return
+  const store = removedCopyStore(graph)
+  store.removals.push(removals)
+  while (store.removals.length > DEFAULT_HISTORY_LIMIT) {
+    const oldest = store.removals.shift()
+    for (const [instanceId, layerId] of oldest?.keys ?? []) {
+      const copies = store.byInstance.get(instanceId)
+      // A later sync may have removed the same layer's copy again; that one stays.
+      if (copies?.get(layerId)?.removals !== oldest) continue
+      copies.delete(layerId)
+      if (copies.size === 0) store.byInstance.delete(instanceId)
+    }
   }
-  return copies
 }
 
 /**
@@ -134,10 +166,12 @@ export function restoreRemovedCopy(
   layerId: string,
   instParentId: string
 ): SceneNode | undefined {
-  const removed = removedCopiesOf(graph, context.instanceId)
-  const entry = removed.get(layerId)
-  if (!entry) return undefined
+  const store = removedCopyStore(graph)
+  const removed = store.byInstance.get(context.instanceId)
+  const entry = removed?.get(layerId)
+  if (!removed || !entry) return undefined
   removed.delete(layerId)
+  if (removed.size === 0) store.byInstance.delete(context.instanceId)
   const root = entry.nodes.at(0)
   if (!root || entry.nodes.some((node) => graph.nodes.has(node.id))) return undefined
   for (const node of entry.nodes) {
@@ -152,7 +186,12 @@ export function restoreRemovedCopy(
  * Deletes the copies the sync left over: ones whose layer left the component, was deleted, or
  * now has another copy. Copies the instance owns, such as slot content, are never reached.
  */
-export function removeLeftoverCopies(graph: SceneGraph, context: InstanceSyncContext): void {
+export function removeLeftoverCopies(
+  graph: SceneGraph,
+  context: InstanceSyncContext,
+  removals: CopyRemovals
+): void {
+  const store = removedCopyStore(graph)
   for (const id of context.leftovers) {
     const node = graph.nodes.get(id)
     const layerId = node ? copiedLayerId(node, context) : undefined
@@ -172,7 +211,13 @@ export function removeLeftoverCopies(graph: SceneGraph, context: InstanceSyncCon
       if (fields) overrides.set(removed.id, new Map(fields))
       context.overrides.descendants.delete(removed.id)
     }
-    removedCopiesOf(graph, context.instanceId).set(layerId, { nodes, overrides })
+    let copies = store.byInstance.get(context.instanceId)
+    if (!copies) {
+      copies = new Map()
+      store.byInstance.set(context.instanceId, copies)
+    }
+    copies.set(layerId, { nodes, overrides, removals })
+    removals.keys.push([context.instanceId, layerId])
     graph.deleteNode(id)
   }
   context.leftovers.clear()

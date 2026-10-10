@@ -175,7 +175,7 @@
 
 ### Fixed
 
-- Instances follow their component's structure as in Figma: wrapping a layer of the component in auto layout or a frame, or moving it into another frame of the component, moves the layer's copy in every instance with its overrides instead of adding a fresh copy beside the old one, and a layer moved out of the component or deleted leaves its instances, coming back with its overrides on undo.
+- Instances follow their component's structure as in Figma: wrapping a layer of the component in auto layout or a frame, or moving it into another frame of the component, moves the layer's copy in every instance with its overrides instead of adding a fresh copy beside the old one, and moving a layer out of the component or deleting it removes its copy from every instance, while undo brings the copies back with their overrides.
 - Dragging a number field in the properties panel moves its value in whole steps instead of fractions on high-density screens.
 - While text is being edited, its caret and selection follow a property dragged in the panel instead of catching up when the mouse is released.
 - Outline text, flatten, and boolean operations on text place glyphs where the canvas draws them; lines sat lower by about a quarter of the font size.
