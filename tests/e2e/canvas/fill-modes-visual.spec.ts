@@ -206,3 +206,78 @@ test('gradients and image fill modes', async () => {
   await editor.canvas.waitForRender()
   await expectCanvas('gradients-and-image-fill-modes')
 })
+
+test('a shader paint draws its saved frame, and its live frame while one plays', async () => {
+  const square = async (color: string) =>
+    editor.page.evaluate(async (fill) => {
+      const canvas = new OffscreenCanvas(32, 32)
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Cannot create frame fixture canvas')
+      const gradient = context.createLinearGradient(0, 0, 32, 32)
+      gradient.addColorStop(0, fill)
+      gradient.addColorStop(1, '#111827')
+      context.fillStyle = gradient
+      context.fillRect(0, 0, 32, 32)
+      return [...new Uint8Array(await (await canvas.convertToBlob()).arrayBuffer())]
+    }, color)
+  const saved = await square('#f97316')
+  await editor.page.evaluate((frame) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+      name: 'Shader',
+      x: 120,
+      y: 120,
+      width: 160,
+      height: 160,
+      cornerRadius: 24,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
+    store.setShaderPaint([node.id], 'fills', 0, { components: [{ type: 'Aurora' }] })
+    const stored = store.graph.getNode(node.id)
+    const paint = stored?.fills[0]
+    if (!stored || !paint?.imageHash) throw new Error('No shader paint')
+    // A frame saved with the document, drawn at the layer's size, so none is drawn again.
+    store.graph.images.set(paint.imageHash, new Uint8Array(frame))
+    const entry = stored.pluginData.find((item) => item.key === 'shader')
+    if (!entry) throw new Error('No shader entry')
+    const value: unknown = JSON.parse(entry.value)
+    if (typeof value !== 'object' || value === null) throw new Error('Unreadable shader entry')
+    const current = { ...value, frame: { width: 160, height: 160 } }
+    store.graph.updateNode(node.id, {
+      pluginData: stored.pluginData.map((item) =>
+        item === entry ? { ...item, value: JSON.stringify(current) } : item
+      )
+    })
+    store.clearSelection()
+    store.requestRender()
+  }, saved)
+  await editor.canvas.waitForRender()
+  await expectCanvas('shader-saved-frame')
+
+  const live = await square('#22d3ee')
+  await editor.page.evaluate(async (frame) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const node = [...store.graph.getAllNodes()].find((item) => item.name === 'Shader')
+    const hash = node?.fills[0]?.imageHash
+    if (!node || !hash) throw new Error('No shader paint')
+    const bitmap = await createImageBitmap(new Blob([new Uint8Array(frame)]))
+    for (const renderer of store.canvasRenderers) renderer.setLiveImage(hash, bitmap, [node.id])
+    store.requestRender()
+  }, live)
+  await editor.canvas.waitForRender()
+  await expectCanvas('shader-live-frame')
+
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const node = [...store.graph.getAllNodes()].find((item) => item.name === 'Shader')
+    const hash = node?.fills[0]?.imageHash
+    if (!node || !hash) throw new Error('No shader paint')
+    for (const renderer of store.canvasRenderers) renderer.setLiveImage(hash, null, [node.id])
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('shader-saved-frame')
+})
