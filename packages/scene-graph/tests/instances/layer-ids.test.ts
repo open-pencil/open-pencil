@@ -4,6 +4,7 @@ import {
   getInstanceOverride,
   instanceLayerId,
   instanceLayerSource,
+  isLegacyInstanceLayer,
   migrateInstanceLayers,
   overriddenFields,
   parseInstanceLayerId,
@@ -187,6 +188,14 @@ describe('cloning and detaching', () => {
     const adoptedDot = required(graph.getNode(instanceLayerId(adopted.id, [dot.id])))
     expect(adoptedDot.opacity).toBe(0.5)
     expect(getInstanceOverride(adopted.instanceOverrides, [dot.id], 'opacity')).toBe(true)
+  })
+
+  test('only copies that still link to their source count as the earlier shape', () => {
+    const { graph, rect, instance } = kit()
+    const added = graph.createNode('RECTANGLE', instance.id, { name: 'Added' })
+    const linked = graph.createNode('RECTANGLE', instance.id, { componentId: rect.id })
+    expect(isLegacyInstanceLayer(graph, added)).toBe(false)
+    expect(isLegacyInstanceLayer(graph, linked)).toBe(true)
   })
 
   test('migrating a graph already in this shape keeps its nested copies indexed', () => {

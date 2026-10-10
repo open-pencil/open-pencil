@@ -166,13 +166,14 @@ function migrateOwners(migration: Migration, root: SceneNode): void {
 
 /**
  * Whether `node` is in the shape graphs had before copies inside instances were named by their
- * paths: a layer inside an instance under an id of its own that is not slot content the instance
- * owns, or an instance holding overrides keyed by copy ids.
+ * paths: an instance holding overrides keyed by copy ids, or a layer inside an instance under an
+ * id of its own that still links to the layer it copies through `componentId`, which only
+ * instances keep now. Layers added to an instance have no such link, so they do not count.
  */
 export function isLegacyInstanceLayer(graph: SceneGraph, node: SceneNode): boolean {
   const state = node.instanceOverrides
   if (state.legacyCopies || Reflect.has(state, 'descendants')) return true
-  if (isInstanceLayerId(node.id)) return false
+  if (node.type === 'INSTANCE' || !node.componentId || isInstanceLayerId(node.id)) return false
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   if (!parent || (parent.type !== 'INSTANCE' && !isInstanceLayerId(parent.id))) return false
   return !isOwnedSlotContent(graph, node)

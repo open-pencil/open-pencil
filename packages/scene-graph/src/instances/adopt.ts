@@ -9,6 +9,7 @@ import {
   type OverridePath
 } from '../instance-overrides'
 import type { SceneNode } from '../types'
+import { overrideTarget } from './addressing'
 import { INSTANCE_SYNC_FIELDS } from './fields'
 import { instanceLayerId, instanceScope, overridePathKey, parseInstanceLayerId } from './layer-ids'
 import { walkInstanceSources } from './source-walk'
@@ -83,7 +84,9 @@ export function adoptCopies(graph: SceneGraph, root: SceneNode): ReadonlyMap<str
   if (renames.size === 0) return renames
 
   const addresses = [...renames.keys()].flatMap((id) => parseInstanceLayerId(id) ?? [])
-  const owner = graph.getNode(addresses[0].owner)
+  // The instance that records overrides for the root's layers: the root itself, or the
+  // outermost instance a nested copy sits in.
+  const owner = overrideTarget(graph, root)?.owner
   const adoptedPaths = new Set(addresses.map((address) => overridePathKey(address.path)))
   graph.renameNodes(renames)
   if (!owner) return renames
