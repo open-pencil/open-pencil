@@ -29,6 +29,19 @@ function paintDefaults(paint: Partial<Pick<Fill, 'opacity' | 'visible'>>) {
   return { opacity: paint.opacity ?? 1, visible: paint.visible ?? true }
 }
 
+/** A paint as Figma's plugin API takes it: RGB colours, optional opacity and visibility. */
+export function figmaPaintToFill(fill: Fill): Fill {
+  return {
+    ...fill,
+    ...paintDefaults(fill),
+    color: normalizeColor(fill.color),
+    gradientStops: fill.gradientStops?.map((stop) => ({
+      ...stop,
+      color: normalizeColor(stop.color)
+    }))
+  }
+}
+
 export function installVisualNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals,
@@ -40,17 +53,7 @@ export function installVisualNodeProxyAccessors(
         return Object.freeze(copyFills(raw(this, internals).fills))
       },
       set(this: ProxyThis, value: readonly Fill[]) {
-        updateNode(this, internals, {
-          fills: value.map((fill) => ({
-            ...fill,
-            ...paintDefaults(fill),
-            color: normalizeColor(fill.color),
-            gradientStops: fill.gradientStops?.map((stop) => ({
-              ...stop,
-              color: normalizeColor(stop.color)
-            }))
-          }))
-        })
+        updateNode(this, internals, { fills: value.map(figmaPaintToFill) })
       }
     },
     strokes: {

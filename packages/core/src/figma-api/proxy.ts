@@ -31,7 +31,7 @@ import {
   type FigmaVectorNetwork,
   type FigmaVectorPath
 } from './accessors/vector'
-import { installVisualNodeProxyAccessors } from './accessors/visual'
+import { figmaPaintToFill, installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import type { FigmaFontName } from './fonts'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
@@ -228,7 +228,7 @@ export class FigmaNodeProxy {
   }
 
   set backgrounds(value: readonly Fill[]) {
-    setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value)
+    setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value.map(figmaPaintToFill))
   }
 
   /** The async form Figma requires in dynamic-page mode; same result as mainComponent. */
