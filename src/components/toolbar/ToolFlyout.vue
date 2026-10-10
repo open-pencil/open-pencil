@@ -24,8 +24,9 @@ import {
 } from '@open-pencil/vue'
 import type { Tool } from '@open-pencil/vue'
 
-import ToolButton from '@/components/Toolbar/ToolButton.vue'
-import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import { toolTip } from '@/app/editor/toolbar/shortcuts'
+import ToolButton from '@/components/toolbar/ToolButton.vue'
+import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/toolbar/types'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menu } from '@/components/ui/menu/menu'
 import toolbarTheme from '@/theme/toolbar'
@@ -45,7 +46,7 @@ const {
   selectedTool: Tool
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
-  toolShortcuts: Record<Tool, string>
+  toolShortcuts: Readonly<Record<Tool, string>>
   ui?: ToolbarUI
   mobile?: boolean
 }>()
@@ -72,7 +73,7 @@ function flyoutItemClass() {
 
 <template>
   <div :class="styles.flyoutGroup({ class: ui?.flyoutGroup })">
-    <slot :label="`${toolLabels[selectedTool]} (${tool.shortcut})`">
+    <slot :label="toolTip(toolLabels[selectedTool], toolShortcuts[selectedTool])">
       <ToolButton
         :data-test-id="toolbarToolTestId(selectedTool, mobile)"
         :icon="toolIcons[selectedTool]"

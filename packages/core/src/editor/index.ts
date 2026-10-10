@@ -9,6 +9,7 @@ export type { SnappingPreferences } from './preferences'
 export { createDefaultEditorSharedState } from './state/shared'
 export { editedGradient, editedGradientLayout } from './gradient-edit'
 export type { SelectionSpacing } from './alignment'
+export type { MovePlace } from './undo'
 export {
   replaceSelectionColor,
   selectionColors,

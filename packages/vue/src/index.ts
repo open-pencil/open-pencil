@@ -75,6 +75,7 @@ export type {
   FlatReorderAxis,
   FlatReorderInstruction,
   FlatReorderItem,
+  FlatReorderOperations,
   UseFlatReorderDragOptions
 } from '#vue/shared/drag/useFlatReorderDrag'
 export { useInlineRename } from '#vue/editor/inline-rename/use'

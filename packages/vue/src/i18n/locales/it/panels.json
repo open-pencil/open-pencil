@@ -118,6 +118,7 @@
   "alignCenterHorizontally": "Centra orizzontalmente",
   "alignCenterVertically": "Centra verticalmente",
   "flipHorizontal": "Rifletti orizzontalmente",
+  "ignoreAutoLayout": "Ignora layout automatico",
   "flipVertical": "Rifletti verticalmente",
   "rotate90": "Ruota di 90°",
   "mixedFillsHelp": "Fai clic su + per sostituire i riempimenti misti",

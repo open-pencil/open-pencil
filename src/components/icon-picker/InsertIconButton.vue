@@ -5,8 +5,8 @@ import { usePanelMessages } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
-import ToolButton from '@/components/Toolbar/ToolButton.vue'
-import type { ToolbarUI } from '@/components/Toolbar/types'
+import ToolButton from '@/components/toolbar/ToolButton.vue'
+import type { ToolbarUI } from '@/components/toolbar/types'
 
 import IconPicker from './IconPicker.vue'
 

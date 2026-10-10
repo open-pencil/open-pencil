@@ -121,7 +121,8 @@ function assignOwnLayerGuids(
  * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
  * ID that layers, collections, modes, variables and component properties are saved under.
  */
-function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
+/** The first local ID above every GUID the graph's layers, variables, and properties claim. */
+export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
   const ids = [...propertyIds]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
   for (const [collectionId, collection] of graph.variableCollections) {
@@ -137,7 +138,16 @@ function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]
   return last + 1
 }
 
-function collectComponentPropertyIds(graph: SceneGraph): string[] {
+/** The GUIDs layers keep from the file they were read from, which variables must not take. */
+export function layerSourceGuids(graph: SceneGraph): Set<string> {
+  const guids = new Set<string>()
+  for (const node of graph.nodes.values()) {
+    if (node.source.id) guids.add(node.source.id)
+  }
+  return guids
+}
+
+export function collectComponentPropertyIds(graph: SceneGraph): string[] {
   const ids = new Set<string>()
   for (const node of graph.getAllNodes()) {
     for (const definition of node.componentPropertyDefinitions) ids.add(definition.id)
@@ -379,10 +389,7 @@ export async function prepareFigExport(
   const modeIdToGuid = new Map<string, GUID>()
   const propertyIdToGuid = new Map<string, GUID>()
 
-  const nodeSourceGuidValues = new Set<string>()
-  for (const node of graph.nodes.values()) {
-    if (node.source.id) nodeSourceGuidValues.add(node.source.id)
-  }
+  const nodeSourceGuidValues = layerSourceGuids(graph)
   const propertyIds = collectComponentPropertyIds(graph)
   // Before any canvas, variable or layer takes a counter GUID, so none collides.
   localIdCounter.value = Math.max(

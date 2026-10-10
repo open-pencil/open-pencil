@@ -6,6 +6,7 @@ import {
 } from '@open-pencil/scene-graph'
 import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
+import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import { weightToStyle } from '#core/text/fonts'
 import { hasGlyphOutlines } from '#core/text/opentype'
 
@@ -104,10 +105,22 @@ function applyTextInstanceOverride(
 export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
 
+  /**
+   * Typing resizes auto-sized text and lays out its auto-layout ancestors as it goes, so a Hug
+   * frame grows with its label while it is edited, as in Figma. A size in `changes`, measured
+   * from the edit's own paragraph, wins over the measurement. A keystroke that leaves the text's
+   * size as it was lays nothing out.
+   */
   function updateTextEditNode(nodeId: string, changes: Partial<SceneNode>) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
-    ctx.graph.updateNode(nodeId, { ...changes, ...pathTextEditChanges(node, changes) })
+    const { width, height } = node
+    ctx.graph.updateNode(nodeId, {
+      ...textAutoResizeChanges(node, changes),
+      ...changes,
+      ...pathTextEditChanges(node, changes)
+    })
+    if (node.width !== width || node.height !== height) ctx.runLayoutForNode(nodeId)
   }
 
   function startTextEditing(nodeId: string) {
@@ -191,6 +204,7 @@ export function createTextActions(ctx: EditorContext) {
             ...afterPathText
           })
           restoreInstanceOverrides(ctx, instanceOverridesAfter)
+          ctx.runLayoutForNode(result.nodeId)
         },
         inverse: () => {
           ctx.graph.updateNode(result.nodeId, {
@@ -200,6 +214,7 @@ export function createTextActions(ctx: EditorContext) {
             ...beforePathText
           })
           restoreInstanceOverrides(ctx, instanceOverridesBefore)
+          ctx.runLayoutForNode(result.nodeId)
         }
       })
       if (before.text !== after.text) applyBoundTextEdit(ctx, result.nodeId, after.text)

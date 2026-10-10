@@ -112,6 +112,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="root.category === 'SOLID' || undefined"
                 :class="tabClass(root.category === 'SOLID')"
+                :aria-label="panels.solid"
                 data-test-id="fill-picker-tab-solid"
                 @click="root.actions.toSolid"
               >
@@ -122,6 +123,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="root.category === 'GRADIENT' || undefined"
                 :class="tabClass(root.category === 'GRADIENT')"
+                :aria-label="panels.linearGradient"
                 data-test-id="fill-picker-tab-gradient"
                 @click="root.actions.toGradient"
               >
@@ -132,6 +134,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="(root.category === 'IMAGE' && !shader) || undefined"
                 :class="tabClass(root.category === 'IMAGE' && !shader)"
+                :aria-label="panels.image"
                 data-test-id="fill-picker-tab-image"
                 @click="root.actions.toImage"
               >
@@ -142,6 +145,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="shader !== null || undefined"
                 :class="tabClass(shader !== null)"
+                :aria-label="panels.shader"
                 data-test-id="fill-picker-tab-shader"
                 @click="shader || emit('updateShader', DEFAULT_SHADER_PRESET)"
               >

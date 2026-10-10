@@ -26,8 +26,19 @@ function handleAlign(
 </script>
 
 <template>
-  <PositionControlsRoot v-slot="{ active, xValue, yValue, rotationValue, actions }">
+  <PositionControlsRoot
+    v-slot="{ active, xValue, yValue, rotationValue, inAutoLayout, ignoresAutoLayout, actions }"
+  >
     <PanelSection v-if="active" :label="panels.position">
+      <template v-if="inAutoLayout" #actions>
+        <IconButton
+          :label="panels.ignoreAutoLayout"
+          :active="ignoresAutoLayout"
+          @click="actions.toggleIgnoreAutoLayout"
+        >
+          <icon-lucide-scan class="size-3.5" />
+        </IconButton>
+      </template>
       <div role="toolbar" :aria-label="panels.position" class="mb-1.5 flex justify-between">
         <div class="flex gap-0.5">
           <IconButton

@@ -1,3 +1,5 @@
+import { params } from '@nanostores/i18n'
+
 import { i18n } from '#vue/i18n/create'
 
 export const settingsMessageDefaults = {
@@ -15,6 +17,18 @@ export const settingsMessageDefaults = {
   accentGreen: 'Green',
   accentGraphite: 'Graphite',
   accentCustom: 'Custom color',
+  toolbar: 'Toolbar',
+  toolbarDescription:
+    'Drag tools to reorder them, and drop one onto another to put both in a menu. Hidden tools keep their shortcuts.',
+  toolbarShow: params('Show {tool}'),
+  toolbarReorder: params('Reorder {tool}'),
+  toolbarOptions: params('{tool} options'),
+  toolbarMoveUp: 'Move up',
+  toolbarMoveDown: 'Move down',
+  toolbarGroupWith: params('Group with {tool}'),
+  toolbarUngroup: 'Ungroup',
+  toolbarReset: 'Reset to default',
+  customizeToolbar: 'Customize toolbar…',
   title: 'Settings',
   description: 'Manage integrations and app preferences.',
   general: 'General',
