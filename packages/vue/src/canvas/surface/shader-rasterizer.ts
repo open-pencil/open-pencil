@@ -2,8 +2,11 @@ import type { ShaderRasterizer } from '@open-pencil/core/editor'
 
 /** Whether this browser can draw shaders, which need WebGPU. */
 export function canDrawShaders(): boolean {
-  // oxlint-disable-next-line compat/compat -- WebGPU is optional: shader paints keep their saved frame without it.
-  return typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu !== undefined
+  if (typeof navigator === 'undefined') return false
+  // WebGPU is optional, though the DOM types declare it: shader paints keep their saved frame
+  // without it.
+  const gpu: unknown = Reflect.get(navigator, 'gpu')
+  return gpu !== undefined
 }
 
 /**
@@ -14,10 +17,12 @@ export function canDrawShaders(): boolean {
 export function createShaderRasterizer(): ShaderRasterizer | null {
   if (!canDrawShaders()) return null
   let destroyed = false
+  // Read through a call: `destroy` may run while a frame is drawn.
+  const isDestroyed = () => destroyed
   return {
     async render(preset, size) {
       const { createRendererFromJSON } = await import('shaders/core')
-      if (destroyed) return null
+      if (isDestroyed()) return null
       const canvas = document.createElement('canvas')
       // The renderer sizes its buffer at the device pixel ratio itself.
       const ratio = window.devicePixelRatio || 1
@@ -34,7 +39,7 @@ export function createShaderRasterizer(): ShaderRasterizer | null {
           canvas.toBlob(resolve, 'image/png')
         })
         const blob = await encoded
-        if (destroyed) return null
+        if (isDestroyed()) return null
         return blob ? new Uint8Array(await blob.arrayBuffer()) : null
       } finally {
         renderer.dispose()

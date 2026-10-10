@@ -138,11 +138,13 @@ export function useShaderPlayback(options: {
       disposed: false
     }
     players.set(hash, player)
+    // Read through a call: the player may be stopped while the library loads.
+    const stopped = () => player.disposed
     const shaders = await import('shaders/core')
-    if (player.disposed) return
+    if (stopped()) return
     const renderer = shaders.createRendererFromJSON(structuredClone(preset))
     await renderer.initialize(canvas)
-    if (player.disposed) renderer.dispose()
+    if (stopped()) renderer.dispose()
     else player.renderer = renderer
   }
 

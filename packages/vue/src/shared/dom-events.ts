@@ -3,7 +3,7 @@ export function inputValue(e: Event): string {
 }
 
 export function inputChecked(e: Event): boolean {
-  return e.target instanceof HTMLInputElement && e.target.checked
+  return e.target instanceof HTMLInputElement ? e.target.checked : false
 }
 
 export function inputNumberValue(e: Event): number {

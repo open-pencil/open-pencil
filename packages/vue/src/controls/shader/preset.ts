@@ -26,10 +26,10 @@ export function removeShaderEffect(preset: ShaderPreset, index: number): ShaderP
 
 /** `preset` with its effect at `from` moved to `to`. */
 export function moveShaderEffect(preset: ShaderPreset, from: number, to: number): ShaderPreset {
+  const last = preset.components.length - 1
+  if (from < 0 || from > last || to < 0 || to > last) return preset
   const components = [...preset.components]
-  const [moved] = components.splice(from, 1)
-  if (!moved || to < 0 || to > components.length) return preset
-  components.splice(to, 0, moved)
+  components.splice(to, 0, ...components.splice(from, 1))
   return { ...preset, components }
 }
 
