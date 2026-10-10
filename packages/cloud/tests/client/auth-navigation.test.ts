@@ -41,3 +41,14 @@ test('return navigation rejects foreign origins and userinfo and strips fragment
     cloudSignInURL({ ...discovery, appURL: undefined }, 'https://editor.example')
   ).toThrow()
 })
+
+test('a chosen provider rides along only when the server offers it', () => {
+  const social = {
+    ...discovery,
+    authentication: { ...discovery.authentication, socialProviders: ['google' as const] }
+  }
+  const google = new URL(cloudSignInURL(social, 'https://editor.example/', 'google'))
+  expect(google.searchParams.get('provider')).toBe('google')
+  const apple = new URL(cloudSignInURL(social, 'https://editor.example/', 'apple'))
+  expect(apple.searchParams.has('provider')).toBe(false)
+})

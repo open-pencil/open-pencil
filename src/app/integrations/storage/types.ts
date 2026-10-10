@@ -3,8 +3,18 @@ import type { CredentialResolver } from '@/app/settings/credentials/types'
 export type StorageProviderID = string
 export type StorageFieldID = string
 
-export type StorageDocumentBinding = {
+/**
+ * Where documents live: a provider, the account or server profile used with it, and, for
+ * providers that hold several collections such as Cloud workspaces, which one.
+ */
+export type StorageLocation = {
   providerId: StorageProviderID
+  /** Defaults to `default`, the one profile of single-account providers. */
+  profileId?: string
+  containerId?: string
+}
+
+export type StorageDocumentBinding = StorageLocation & {
   documentId: string
 }
 
@@ -22,6 +32,30 @@ export type StorageDocument = StorageDocumentMetadata & {
   id: string
   thumbnailURL?: string | null
   metadataAuthoritative?: boolean
+  /**
+   * The provider's opaque version of the stored bytes, for providers that track revisions. A
+   * local copy based on the same revision is current.
+   */
+  revision?: string | null
+}
+
+/** Stored bytes and the revision they are, when the provider tracks revisions. */
+export type StorageDocumentContent = {
+  bytes: Uint8Array
+  revision: string | null
+}
+
+export type StoragePutOptions = {
+  /**
+   * The revision the local bytes were edited from. A provider that tracks revisions refuses
+   * the write with `StorageRevisionConflictError` when the stored revision has moved on.
+   */
+  baseRevision?: string | null
+}
+
+export type StoragePutResult = {
+  /** The revision the write created, or null when the provider does not track revisions. */
+  revision: string | null
 }
 
 export type StorageUsage = {
@@ -70,13 +104,14 @@ export interface StorageAdapter {
     id: string,
     onProgress?: (progress: StorageTransferProgress) => void,
     signal?: AbortSignal
-  ): Promise<Uint8Array>
+  ): Promise<StorageDocumentContent>
   putDocument(
     id: string,
     bytes: Uint8Array,
     metadata: StorageDocumentMetadata,
-    onProgress?: (progress: StorageTransferProgress) => void
-  ): Promise<void>
+    onProgress?: (progress: StorageTransferProgress) => void,
+    options?: StoragePutOptions
+  ): Promise<StoragePutResult>
   deleteDocument(id: string): Promise<void>
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
   getUsage(): Promise<StorageUsage>
@@ -103,6 +138,8 @@ export type StorageCredentialField = {
 export type StorageProviderRuntime = {
   preferences: Readonly<Record<StorageFieldID, string>>
   resolveCredential(field: StorageFieldID): Promise<string | null>
+  profileId: string
+  containerId?: string
 }
 
 export type StorageProviderRegistration = {
@@ -118,4 +155,5 @@ export type StorageAdapterContext = {
   preferences: Readonly<Record<StorageFieldID, string>>
   credentials: CredentialResolver
   profileId?: string
+  containerId?: string
 }

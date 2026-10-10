@@ -13,6 +13,7 @@ import {
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
+import CloudSettingsSection from '@/components/settings/cloud/CloudSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -52,7 +53,8 @@ const sections = computed(
       { value: 'mcp', label: settings.value.mcp },
       { value: 'tools', label: settings.value.toolAccess },
       { value: 'media', label: settings.value.media },
-      { value: 'storage', label: settings.value.storage }
+      { value: 'storage', label: settings.value.storage },
+      { value: 'cloud', label: settings.value.cloud }
     ] satisfies { value: SettingsSection; label: string }[]
 )
 function onSectionChange(section: string | number): void {
@@ -134,8 +136,12 @@ function onOpenChange(open: boolean): void {
           {{ settings.media }}
         </AppTabsTrigger>
         <AppTabsTrigger value="storage" data-test-id="settings-section-storage">
-          <template #leading><icon-lucide-cloud class="size-3.5" /></template>
+          <template #leading><icon-lucide-database class="size-3.5" /></template>
           {{ settings.storage }}
+        </AppTabsTrigger>
+        <AppTabsTrigger value="cloud" data-test-id="settings-section-cloud">
+          <template #leading><icon-lucide-cloud class="size-3.5" /></template>
+          {{ settings.cloud }}
         </AppTabsTrigger>
       </AppTabsList>
 
@@ -169,6 +175,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="storage" as-child>
         <StorageSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="cloud" as-child>
+        <CloudSettingsSection />
       </AppTabsContent>
     </AppTabsRoot>
 

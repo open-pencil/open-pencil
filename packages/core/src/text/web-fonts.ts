@@ -28,6 +28,25 @@ export const DEFAULT_WEB_FONT_PROVIDER_SETTINGS: Record<WebFontProviderId, boole
 
 export type WebFontFetch = (url: string, init?: RequestInit) => Promise<Response>
 
+/**
+ * Hosts the font providers' metadata and stylesheet requests go to. Only these are proxied while
+ * a provider resolves; the app's other requests in that window keep their own fetch.
+ */
+const WEB_FONT_PROVIDER_HOSTS = new Set([
+  'api.fontshare.com',
+  'api.fontsource.org',
+  'cdn.jsdelivr.net',
+  'fonts.bunny.net',
+  'fonts.google.com',
+  'fonts.googleapis.com'
+])
+
+function isWebFontProviderURL(value: string): boolean {
+  if (!URL.canParse(value)) return false
+  const url = new URL(value)
+  return url.protocol === 'https:' && WEB_FONT_PROVIDER_HOSTS.has(url.hostname)
+}
+
 const DEFAULT_WEB_FONT_SUBSETS = [
   'latin',
   'latin-ext',
@@ -216,7 +235,7 @@ export class WebFontResolver {
     const originalFetch = globalThis.fetch
     const proxyFetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' || input instanceof URL ? input.toString() : input.url
-      if (url.startsWith('https://') || url.startsWith('http://')) {
+      if (isWebFontProviderURL(url)) {
         signal?.throwIfAborted()
         return (
           this.remoteFetch?.(url, { ...init, signal: signal ?? init?.signal }) ??

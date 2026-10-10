@@ -13,7 +13,8 @@ import { createDocumentSourceState } from '@/app/document/io/source-state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
-import type { StorageDocumentBinding, StorageProviderID } from '@/app/integrations/storage/types'
+import { storageLocationOf } from '@/app/integrations/storage/location'
+import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { createCanvasId } from '@/app/storage/id'
 
 type DocumentSourceState = EditorState & {
@@ -202,13 +203,13 @@ export function createDocumentSourceActions({
   }
 
   /** Upload the document to storage as a new stored document and keep editing it there. */
-  async function saveFigFileToStorage(providerId: StorageProviderID): Promise<boolean> {
+  async function saveFigFileToStorage(location: StorageLocation): Promise<boolean> {
     const saved = await saveToNewTarget(() => {
       stopWatchingFile()
       setFileHandle(null)
       setFilePath(null)
       setDownloadName(`${state.documentName}.fig`)
-      setStorageBinding({ providerId, documentId: createCanvasId() })
+      setStorageBinding({ ...storageLocationOf(location), documentId: createCanvasId() })
     })
     if (saved) {
       setSourceIdentity({ handle: null, path: null })

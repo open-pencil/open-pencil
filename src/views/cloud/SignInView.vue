@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import type { CloudSocialProvider } from '@open-pencil/cloud/client'
@@ -73,6 +73,14 @@ async function submit(input: { name: string; email: string; password: string }) 
     submitting.value = false
   }
 }
+
+// The editor's sign-in sends a provider along when the person already chose one there.
+onMounted(() => {
+  const provider = authentication.value.socialProviders.find(
+    (candidate) => candidate === route.query.provider
+  )
+  if (provider && !error.value && mode.value === 'sign-in') void withProvider(provider)
+})
 
 function switchMode() {
   error.value = null

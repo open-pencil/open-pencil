@@ -37,7 +37,12 @@ const styles = computed(() => documentEntry({ view }))
       </span>
       <icon-lucide-file-image v-else :class="styles.icon()" />
       <span data-slot="body" :class="styles.body()">
-        <span data-slot="name" :class="styles.name()">{{ name }}</span>
+        <span data-slot="title" :class="styles.title()">
+          <span data-slot="name" :class="styles.name()">{{ name }}</span>
+          <span v-if="$slots.status" data-slot="status" :class="styles.status()">
+            <slot name="status" />
+          </span>
+        </span>
         <span data-slot="metadata" :class="styles.metadata()">{{ metadata }}</span>
       </span>
       <span v-if="view === 'list'" :class="styles.trailingMetadata()">{{ metadata }}</span>

@@ -29,7 +29,10 @@ describe('recent documents', () => {
 
   test('tracks storage documents alongside local files', () => {
     rememberRecentFile('/tmp/local.fig')
-    rememberRecentStorageDocument('s3-compatible', 'remote-1', 'Remote design')
+    rememberRecentStorageDocument(
+      { providerId: 's3-compatible', documentId: 'remote-1' },
+      'Remote design'
+    )
 
     expect(recentFiles.value.map(({ id, kind, name }) => ({ id, kind, name }))).toEqual([
       {
@@ -40,6 +43,25 @@ describe('recent documents', () => {
       { id: 'local:/tmp/local.fig', kind: 'local', name: 'local.fig' }
     ])
     expect(recentLocalFileAt(0)).toBe('/tmp/local.fig')
+  })
+
+  test('keeps documents of different server profiles apart', () => {
+    const document = {
+      providerId: 'openpencil-cloud',
+      containerId: 'workspace-1',
+      documentId: 'doc-1'
+    }
+    rememberRecentStorageDocument({ ...document, profileId: 'server-a' }, 'On A')
+    rememberRecentStorageDocument({ ...document, profileId: 'server-b' }, 'On B')
+
+    expect(recentFiles.value.map(({ id, name }) => ({ id, name }))).toEqual([
+      { id: 'storage:openpencil-cloud:server-b:doc-1', name: 'On B' },
+      { id: 'storage:openpencil-cloud:server-a:doc-1', name: 'On A' }
+    ])
+    expect(recentFiles.value[0]).toMatchObject({
+      profileId: 'server-b',
+      containerId: 'workspace-1'
+    })
   })
 
   test('forgets missing local files and clears the list', () => {

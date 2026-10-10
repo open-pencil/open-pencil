@@ -46,6 +46,14 @@ export interface RoomSession {
   updateSelection(ids: string[]): void
   /** Writes the tab's whole document into the room and makes its root the room's. */
   shareDocument(): void
+  /** Whether the room holds a document yet, from any peer. */
+  roomHasDocument(): boolean
+  /** Follow peers answering this tab's state with theirs; returns the unsubscribe. */
+  onSynced(handler: (peerId: string) => void): () => void
+  /** The awareness states of everyone in the room, this tab included. */
+  presence(): ReadonlyMap<number, Record<string, unknown>>
+  /** This tab's awareness client. */
+  readonly clientId: number
   /** Leaves the room and releases its connection, presence, and saved-copy handle. */
   dispose(): void
 }
@@ -66,6 +74,11 @@ export interface RoomSessionOptions {
   unreachableMs?: number
   /** How often the tab rechecks its connection while it waits for the file. */
   tickMs?: number
+  /**
+   * The tab already shows the room's document, as a stored document opened before its room was:
+   * it counts as having the document until the room says it holds another.
+   */
+  holdsDocument?: boolean
 }
 
 function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
@@ -81,7 +94,8 @@ export function openRoomSession({
   joinRoom,
   openSavedCopy = openIndexedDBCopy,
   unreachableMs = ROOM_UNREACHABLE_MS,
-  tickMs = ROOM_STATUS_TICK_MS
+  tickMs = ROOM_STATUS_TICK_MS,
+  holdsDocument = false
 }: RoomSessionOptions): RoomSession {
   const identity = useCollabIdentity()
   const ydoc = new Y.Doc()
@@ -128,7 +142,7 @@ export function openRoomSession({
   function refreshDocument() {
     if (disposed) return
     const rootId = readRoot(meta)
-    hasDocument.value = rootId !== undefined && store.graph.rootId === rootId
+    hasDocument.value = rootId === undefined ? holdsDocument : store.graph.rootId === rootId
     // Newcomers wait for someone who has the file, so peers say whether they do.
     if (awareness.getLocalState()?.hasFile !== hasDocument.value) {
       awareness.setLocalStateField('hasFile', hasDocument.value)
@@ -228,6 +242,10 @@ export function openRoomSession({
       writeRoomName(meta, store.state.documentName)
       refreshDocument()
     },
+    roomHasDocument: () => readRoot(meta) !== undefined,
+    onSynced: (handler) => connection.onSynced(handler),
+    presence: () => awareness.getStates() as Map<number, Record<string, unknown>>,
+    clientId: awareness.clientID,
     dispose() {
       if (disposed) return
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.

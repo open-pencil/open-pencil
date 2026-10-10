@@ -356,12 +356,15 @@ describe('createCloudApp', () => {
       method: 'OPTIONS',
       headers: {
         Origin: 'https://app.example.com',
-        'Access-Control-Request-Method': 'GET'
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'authorization'
       }
     })
     expect(trusted.status).toBe(204)
     expect(trusted.headers.get('access-control-allow-origin')).toBe('https://app.example.com')
     expect(trusted.headers.get('access-control-allow-credentials')).toBe('true')
+    // Editors signed in with a device code send its token as a bearer header.
+    expect(trusted.headers.get('access-control-allow-headers')).toContain('Authorization')
 
     const untrusted = await createCloudApp(services()).request('/api/session', {
       method: 'OPTIONS',

@@ -71,7 +71,8 @@ export const settingsMessageDefaults = {
   discardChangesDescription: 'Your unsaved changes will be lost.',
   keepEditing: 'Keep editing',
   discard: 'Discard',
-  storage: 'Cloud storage',
+  storage: 'Storage',
+  cloud: 'OpenPencil Cloud',
   mobilePanelNavigation: 'Mobile panel navigation',
   notifications: 'Notifications'
 } as const

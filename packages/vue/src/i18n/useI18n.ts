@@ -29,6 +29,7 @@ import {
   storageMessages,
   toolMessages,
   updatesMessages,
+  cloudMessages,
   cloudPortalMessages,
   variablesMessages,
   variableTypeMessages
@@ -62,6 +63,7 @@ export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
 export const useStorageMessages = () => useI18nNamespace(storageMessages)
 export const useToolMessages = () => useI18nNamespace(toolMessages)
 export const useUpdateMessages = () => useI18nNamespace(updatesMessages)
+export const useCloudMessages = () => useI18nNamespace(cloudMessages)
 export const useCloudPortalMessages = () => useI18nNamespace(cloudPortalMessages)
 export const useVariableMessages = () => useI18nNamespace(variablesMessages)
 export const useVariableTypeMessages = () => useI18nNamespace(variableTypeMessages)

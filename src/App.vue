@@ -4,9 +4,12 @@ import { useEventListener } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
 import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 
+import { watchCloudRooms } from '@/app/cloud/rooms/live'
+import { startCloudSessions } from '@/app/cloud/sessions/startup'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
@@ -16,6 +19,9 @@ import { useRestartApprovals } from '@/app/shell/updater/approvals'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
+import CloudConnectHost from '@/components/cloud/connect/CloudConnectHost.vue'
+import CloudInvitationHost from '@/components/cloud/invitation/CloudInvitationHost.vue'
+import CloudSaveHost from '@/components/cloud/save/CloudSaveHost.vue'
 import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
@@ -27,6 +33,7 @@ import Toaster from '@/components/shell/Toaster.vue'
 import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
 const { updates, locale } = useI18n()
+const router = useRouter()
 
 useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
@@ -48,6 +55,10 @@ onMounted(() => {
   toast.setupGlobalErrorHandler()
   scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
+  watchCloudRooms()
+  void startCloudSessions({
+    leaveLinkAddress: () => router.isReady().then(() => router.replace('/'))
+  })
 })
 </script>
 
@@ -59,6 +70,9 @@ onMounted(() => {
       </AppShell>
       <SettingsDialog />
       <AISetupDialog />
+      <CloudConnectHost />
+      <CloudSaveHost />
+      <CloudInvitationHost />
       <RecoveryDialog />
       <UnsavedChangesDialog />
       <PublishLibraryDialog />

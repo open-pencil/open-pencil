@@ -11,6 +11,8 @@ describe('document sharing capabilities integration', () => {
         permission: 'view'
       })
       expect(capability.secret).toMatch(/^[0-9a-f]{48}$/)
+      // What goes out names the share; its stored hash stays on the server.
+      expect(Object.keys(capability.share)).not.toContain('secretHash')
       expect(capability.path).toBe(`/share/${capability.share.id}#${capability.secret}`)
       const stored = await context.runtime.database
         .selectFrom('documentShare')

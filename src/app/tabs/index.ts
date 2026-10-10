@@ -23,8 +23,11 @@ import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
 import {
   activeStorageProviderID,
-  createActiveStorageAdapter,
-  type StorageDocument
+  sameStorageDocument,
+  storageLocationOf,
+  type StorageDocument,
+  type StorageDocumentBinding,
+  type StorageLocation
 } from '@/app/integrations/storage'
 import {
   cacheRecentFileThumbnail,
@@ -33,10 +36,9 @@ import {
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
-import { getLocalCanvasStore } from '@/app/storage/local-store'
-import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
+import { readStorageDocument } from '@/app/tabs/open/storage'
 
 export type TabKind = 'home' | 'document'
 
@@ -290,10 +292,10 @@ function watchOpenedFigCover(path: string, store: EditorStore): void {
   )
 }
 
-function findStorageTab(providerId: string, documentId: string): Tab | undefined {
+function findStorageTab(target: StorageDocumentBinding): Tab | undefined {
   return tabsRef.value.find((tab) => {
     const binding = tab.store.getStorageBinding()
-    return binding?.providerId === providerId && binding.documentId === documentId
+    return binding !== null && sameStorageDocument(binding, target)
   })
 }
 
@@ -310,12 +312,60 @@ function failPreparation(
   })
 }
 
-export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
-  const providerId = activeStorageProviderID.value
-  const existing = findStorageTab(providerId, document.id)
+async function showStorageDocument(
+  store: EditorStore,
+  binding: StorageDocumentBinding,
+  document: StorageDocument,
+  load: DocumentLoadSession
+): Promise<void> {
+  const bytes = await readStorageDocument(binding, document, load)
+  const fileBytes = new Uint8Array(bytes.byteLength)
+  fileBytes.set(bytes)
+  const file = new File([fileBytes.buffer], `${document.name}.fig`, {
+    type: 'application/octet-stream'
+  })
+  load.update({ phase: 'decoding', detail: document.name })
+  const imported = await readFigForTab(file, load.signal)
+  await showImportedGraph(
+    store,
+    imported,
+    () => store.setStorageDocumentSource(binding, document.name),
+    load
+  )
+}
+
+/** Shows what this device now holds for a tab's stored document, as after a conflict. */
+export async function reloadStorageDocumentInTab(store: EditorStore): Promise<void> {
+  const binding = store.getStorageBinding()
+  if (!binding) return
+  const name = store.state.documentName
+  const load = store.preparationController.begin({ kind: 'storage-open', subject: name })
+  try {
+    await showStorageDocument(
+      store,
+      binding,
+      { id: binding.documentId, name, updatedAt: new Date().toISOString() },
+      load
+    )
+    load.complete()
+  } catch (error) {
+    failPreparation(load, 'read-failed', error)
+    throw error
+  }
+}
+
+export async function openStorageDocumentInNewTab(
+  document: StorageDocument,
+  location: StorageLocation = { providerId: activeStorageProviderID.value }
+): Promise<void> {
+  const binding: StorageDocumentBinding = {
+    ...storageLocationOf(location),
+    documentId: document.id
+  }
+  const existing = findStorageTab(binding)
   if (existing) {
     switchTab(existing.id)
-    rememberRecentStorageDocument(providerId, document.id, document.name)
+    rememberRecentStorageDocument(binding, document.name)
     return
   }
 
@@ -327,55 +377,8 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
   })
   let succeeded = false
   try {
-    load.update({ phase: 'reading', detail: document.name })
-    const local = getLocalCanvasStore()
-    const localMetadata = await local.getMeta(document.id)
-    load.signal.throwIfAborted()
-    const localBytes = localMetadata?.hasFig ? await local.readFig(document.id) : null
-    load.signal.throwIfAborted()
-    const localIsAuthoritative =
-      localMetadata?.syncStatus !== 'synced' ||
-      !document.metadataAuthoritative ||
-      localMetadata.updatedAt >= document.updatedAt
-    let bytes = localBytes && localIsAuthoritative ? localBytes : null
-
-    if (!bytes) {
-      bytes = await createActiveStorageAdapter(providerId).getDocument(
-        document.id,
-        (progress) =>
-          load.update({
-            phase: 'reading',
-            detail: document.name,
-            completed: progress.transferredBytes,
-            total: progress.totalBytes,
-            unit: 'bytes'
-          }),
-        load.signal
-      )
-      await seedStorageCanvasFromRemote({
-        providerId,
-        canvasId: document.id,
-        name: document.name,
-        updatedAt: document.updatedAt,
-        figBytes: bytes
-      })
-      load.signal.throwIfAborted()
-    }
-
-    const fileBytes = new Uint8Array(bytes.byteLength)
-    fileBytes.set(bytes)
-    const file = new File([fileBytes.buffer], `${document.name}.fig`, {
-      type: 'application/octet-stream'
-    })
-    load.update({ phase: 'decoding', detail: document.name })
-    const imported = await readFigForTab(file, load.signal)
-    await showImportedGraph(
-      store,
-      imported,
-      () => store.setStorageDocumentSource({ providerId, documentId: document.id }, document.name),
-      load
-    )
-    rememberRecentStorageDocument(providerId, document.id, document.name)
+    await showStorageDocument(store, binding, document, load)
+    rememberRecentStorageDocument(binding, document.name)
     succeeded = true
   } catch (error) {
     if (!load.signal.aborted) {

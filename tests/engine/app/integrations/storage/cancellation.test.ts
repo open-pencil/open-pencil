@@ -57,6 +57,7 @@ test('external storage cancellation remains an AbortError rather than a timeout'
 test('pre-aborted storage downloads do not resolve credentials or start network work', async () => {
   let credentialResolutions = 0
   const adapter = createS3StorageAdapter({
+    profileId: 'default',
     preferences: {
       endpoint: 'https://storage.example.com',
       bucket: 'designs',

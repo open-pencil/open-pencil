@@ -25,6 +25,7 @@ export {
   useStorageMessages,
   useToolMessages,
   useUpdateMessages,
+  useCloudMessages,
   useCloudPortalMessages,
   useVariableMessages,
   useVariableTypeMessages
