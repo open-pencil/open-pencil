@@ -318,7 +318,8 @@ export default defineCommand({
     },
     css: {
       type: 'string',
-      description: 'HTML CSS output: inline or tailwind (default: inline)',
+      description:
+        'CSS output: inline or tailwind; for Storybook, how Vue and React components are styled (default: inline)',
       default: 'inline'
     },
     assets: {

@@ -119,6 +119,38 @@ test('export CLI re-exports generated components into the folder it wrote them t
   expect(await Bun.file(join(output, 'Old.module.css')).exists()).toBe(false)
 })
 
+test('export CLI --css tailwind styles components with utilities instead of a stylesheet', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
+  const figPath = await writeComponentFixture(dir, ['Badge'])
+  const output = join(dir, 'stories')
+  const args = [...STORYBOOK_EXPORT, '--framework', 'react', '--no-design-images']
+
+  const invalid = await runOpenPencilCLI([
+    'export',
+    figPath,
+    ...args,
+    '--css',
+    'sass',
+    '--output',
+    output
+  ])
+  expect(invalid.exitCode).toBe(1)
+  expect(invalid.stderr).toContain('Use inline or tailwind')
+
+  const { exitCode } = await runOpenPencilCLI([
+    'export',
+    figPath,
+    ...args,
+    '--css',
+    'tailwind',
+    '--output',
+    output
+  ])
+  expect(exitCode).toBe(0)
+  expect(await outputEntries(output)).toEqual(['Badge.stories.ts', 'Badge.tsx'])
+  expect(await Bun.file(join(output, 'Badge.tsx')).text()).toContain('"group/badge w-8 h-4')
+})
+
 test('export CLI keeps stories of other documents and refuses to overwrite them', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
   const output = join(dir, 'stories')

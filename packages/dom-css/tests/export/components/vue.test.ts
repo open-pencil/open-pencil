@@ -22,6 +22,7 @@ import {
 } from '#dom-css-tests/behaviours/fixtures'
 import { shaderBackdropSet, shaderHeroSet } from '#dom-css-tests/export/components/shader-fixtures'
 import { cssRules, fileText } from '#dom-css-tests/helpers'
+import type { ComponentStyling } from '#dom-css/export'
 import { exportStorybook } from '#dom-css/index'
 import { createSSRApp, h, type Component } from 'vue'
 import { compileScript, parse } from 'vue/compiler-sfc'
@@ -41,8 +42,8 @@ for (const name of APP_PACKAGES)
 afterAll(() => rm(output, { recursive: true, force: true }))
 
 /** Exports a fixture's set to Vue stories and loads the component and stories it writes. */
-async function generate(fixture: ReturnType<typeof switchSet>) {
-  const files = await exportStorybook(fixture.graph, { framework: 'vue' })
+async function generate(fixture: ReturnType<typeof switchSet>, styling?: ComponentStyling) {
+  const files = await exportStorybook(fixture.graph, { framework: 'vue', styling })
   const source = (suffix: string) =>
     String(files.find((file) => file.path.endsWith(suffix))?.content)
   const name = fixture.set.name
@@ -225,6 +226,30 @@ const styleOf = (files: { path: string; content: string | Uint8Array }[], path: 
       String(files.find((file) => file.path === path)?.content)
     )?.[1] ?? ''
   )
+
+describe('generated Vue components styled with Tailwind', () => {
+  test('carry their states as variants in place of a style block', async () => {
+    const { files, component } = await generate(switchSet(), 'tailwind')
+    const sfc = fileText(files, 'Switch.vue')
+
+    expect(sfc).not.toContain('<style')
+    expect(sfc).toMatch(
+      /<SwitchRoot class="group\/switch [^"]*data-\[state=checked\]:bg-\[#4F45E6\]/
+    )
+    expect(sfc).toContain('group-data-[state=checked]/switch:left-5')
+    const on = await render(component, { checked: true })
+    expect(on).toContain('data-state="checked"')
+    expect(on).toMatch(/class="group\/switch [^"]*"/)
+  })
+
+  test('play a shader behind the layer, placed by utilities', async () => {
+    const { files } = await generate(shaderHeroSet(), 'tailwind')
+
+    expect(fileText(files, 'Hero.vue')).toMatch(
+      /<Shader[^>]* class="pointer-events-none absolute inset-0 -z-10 rounded-\[inherit\]"/
+    )
+  })
+})
 
 describe('generated Vue plain components', () => {
   test('take variant, text, and boolean properties as props, and slots as slots', async () => {

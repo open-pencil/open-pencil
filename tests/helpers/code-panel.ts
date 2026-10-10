@@ -4,6 +4,8 @@ export type CodeNodeSummary = {
   type: string
   name: string
   text: string
+  width: number
+  height: number
 }
 
 export function getFirstSelectedNodeId(page: Page): Promise<string | null> {
@@ -51,7 +53,9 @@ export function getCodeNodeSummaries(page: Page): Promise<CodeNodeSummary[]> {
     return [...store.graph.getAllNodes()].map((node) => ({
       type: node.type,
       name: node.name,
-      text: node.text
+      text: node.text,
+      width: node.width,
+      height: node.height
     }))
   })
 }
