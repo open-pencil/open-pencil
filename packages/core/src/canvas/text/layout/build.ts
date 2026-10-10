@@ -20,7 +20,7 @@ import {
   resolveParagraphLayoutWidth,
   type ParagraphBlockOptions
 } from '#core/canvas/text/paragraph'
-import type { ParagraphNode } from '#core/canvas/text/paragraph-inputs'
+import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'

@@ -14,7 +14,7 @@ const MAX_PREPARED_TEXT_UNITS = 262_144
 const MAX_MEASURED_WIDTHS = 16
 
 import type { TextLayout } from './layout/text-layout'
-import { PARAGRAPH_INPUT_KEYS, shapingInputs } from './paragraph-inputs'
+import { PARAGRAPH_INPUT_KEYS, shapingInputs } from './paragraph/inputs'
 
 type PreparationInput = SceneNode[(typeof PARAGRAPH_INPUT_KEYS)[number]]
 

@@ -13,14 +13,18 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
+import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import {
+  pushParagraphStyle,
+  type ParagraphPaintStyle,
+  type ParagraphBuildOptions
+} from '#core/canvas/text/paint'
+import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { transformTextCase } from '#core/text/case'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 
-import { resolveParagraphFontFamilies } from './font-families'
-import { pushParagraphStyle, type ParagraphPaintStyle, type ParagraphBuildOptions } from './paint'
-import type { ParagraphNode } from './paragraph-inputs'
-import type { TextRenderer } from './renderer'
+import type { ParagraphNode } from './inputs'
 
 export function resolveParagraphLayoutWidth(node: ParagraphNode, maxWidth?: number): number {
   if (maxWidth !== undefined) return maxWidth
