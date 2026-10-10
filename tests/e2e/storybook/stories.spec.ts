@@ -11,16 +11,34 @@ const STORY_TIMEOUT_MS = 20_000
 /** Each story is checked in both app themes, since their tokens meet contrast separately. */
 const THEMES = ['dark', 'light'] as const
 
-/** How many tests share the stories, so workers can check them side by side. */
-const SHARDS = 4
+/** How many tests each runner gives the stories, so its workers can check them side by side. */
+const SLICES_PER_RUNNER = 4
 
 /** Where the outcome the init script collects for the open story waits to be read. */
 const OUTCOME_KEY = '__openPencilStoryOutcome'
 
-// Storybook's index exists only once its server runs, after Playwright has collected tests,
-// so a fixed number of tests each take every SHARDS-th story and report each failure separately.
-for (let shard = 0; shard < SHARDS; shard++) {
-  test(`stories render, pass their play functions, and meet axe in both themes (${shard + 1}/${SHARDS})`, async ({
+/**
+ * Which of several machines this is, as `STORY_RUNNER=1/2`, when CI splits the stories between
+ * runners; one runner checks them all otherwise.
+ */
+const StoryRunner = v.pipe(
+  v.optional(v.string(), '1/1'),
+  v.regex(/^\d+\/\d+$/),
+  v.transform((value) => value.split('/').map(Number)),
+  v.check(
+    ([runner = 0, runners = 0]) => runner >= 1 && runner <= runners,
+    'STORY_RUNNER must be n/total'
+  )
+)
+const [runner = 1, runners = 1] = v.parse(StoryRunner, process.env.STORY_RUNNER)
+const slices = runners * SLICES_PER_RUNNER
+
+// Storybook's index exists only once its server runs, after Playwright has collected tests, so
+// each runner declares a fixed number of tests. Every slice takes every `slices`-th story of the
+// index, which spreads each component's stories, and their cost, evenly across slices.
+for (let local = 0; local < SLICES_PER_RUNNER; local++) {
+  const slice = (runner - 1) * SLICES_PER_RUNNER + local
+  test(`stories render, pass their play functions, and meet axe in both themes (${slice + 1}/${slices})`, async ({
     page,
     request
   }) => {
@@ -28,7 +46,7 @@ for (let shard = 0; shard < SHARDS; shard++) {
     const index = v.parse(v.pipe(v.string(), v.parseJson(), StoryIndex), text)
     const stories = Object.values(index.entries)
       .filter((entry) => entry.type === 'story')
-      .filter((_, position) => position % SHARDS === shard)
+      .filter((_, position) => position % slices === slice)
     test.setTimeout(stories.length * THEMES.length * STORY_TIMEOUT_MS)
     expect(stories.length).toBeGreaterThan(0)
     await page.addInitScript(watchStoryOutcome, { key: OUTCOME_KEY, timeout: STORY_TIMEOUT_MS })
