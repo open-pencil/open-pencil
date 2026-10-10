@@ -11,8 +11,8 @@ function hasEditedLayout(node: SceneNode): boolean {
   return node.source.editedFields.some((field) => LAYOUT_EDIT_FIELDS.has(field))
 }
 
-/** Each .fig frame's children when layout first saw them, which is when its page opened. */
-const savedChildren = new WeakMap<SceneGraph, Map<string, string>>()
+/** The layers in each .fig frame's flow when layout first saw them, as its page opened. */
+const savedFlows = new WeakMap<SceneGraph, Map<string, string>>()
 /** Frames whose flow, or a flow inside it, lost or gained a layer since; kept until reload. */
 const restructured = new WeakMap<SceneGraph, Set<string>>()
 /** Frames that last laid out without their saved geometry, for the frames around them. */
@@ -27,16 +27,21 @@ function graphState<T>(states: WeakMap<SceneGraph, T>, graph: SceneGraph, create
   return state
 }
 
+function flowOf(graph: SceneGraph, node: SceneNode): SceneNode[] {
+  return graph.getChildren(node.id).filter((child) => child.layoutPositioning !== 'ABSOLUTE')
+}
+
 /**
  * Loading a file adds, moves, and removes layers too, so structure edits are told from it by
- * comparing a frame's children with those layout first saw.
+ * comparing the layers in a frame's flow, in order, with those layout first saw. A layer that
+ * ignores auto layout, or stops ignoring it, leaves or joins the flow.
  */
-function childrenChanged(graph: SceneGraph, node: SceneNode): boolean {
-  const seen = graphState(savedChildren, graph, () => new Map<string, string>())
-  const children = node.childIds.join(',')
+function flowChanged(graph: SceneGraph, node: SceneNode, flow = flowOf(graph, node)): boolean {
+  const seen = graphState(savedFlows, graph, () => new Map<string, string>())
+  const ids = flow.map((child) => child.id).join(',')
   const saved = seen.get(node.id)
-  if (saved === undefined) seen.set(node.id, children)
-  return saved !== undefined && saved !== children
+  if (saved === undefined) seen.set(node.id, ids)
+  return saved !== undefined && saved !== ids
 }
 
 /**
@@ -49,11 +54,11 @@ export function keepsSavedLayout(graph: SceneGraph, frame: SceneNode): boolean {
   if (frame.source.format !== 'fig') return true
   const stale = graphState(restructured, graph, () => new Set<string>())
   if (stale.has(frame.id)) return false
-  const flow = graph.getChildren(frame.id).filter((child) => child.layoutPositioning !== 'ABSOLUTE')
+  const flow = flowOf(graph, frame)
   // Layout runs inner frames first, so a changed flow deep inside is already marked.
   if (
-    childrenChanged(graph, frame) ||
-    flow.some((child) => stale.has(child.id) || childrenChanged(graph, child))
+    flowChanged(graph, frame, flow) ||
+    flow.some((child) => stale.has(child.id) || flowChanged(graph, child))
   ) {
     stale.add(frame.id)
     return false

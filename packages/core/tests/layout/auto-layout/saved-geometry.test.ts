@@ -101,6 +101,22 @@ describe('a frame read from a .fig file reflows once its layout is edited', () =
     editor.dispose()
   })
 
+  test('a layer that ignores auto layout leaves the flow, and one added that way does not join it', () => {
+    const { editor, row, first, second } = savedRow()
+    const pinned = editor.graph.createNode('RECTANGLE', row.id, {
+      x: 300,
+      y: 0,
+      width: 20,
+      height: 20,
+      layoutPositioning: 'ABSOLUTE'
+    })
+    editor.runLayoutForNode(row.id)
+    expect([row.width, first.x, second.x, pinned.x]).toEqual([230, 10, 120, 300])
+    editor.setLayoutPositioning([first.id], 'ABSOLUTE')
+    expect([row.width, first.x, second.x]).toEqual([120, 10, 10])
+    editor.dispose()
+  })
+
   test('a layer added to a nested flow resizes every Hug frame around it', () => {
     const { editor, outer, middle, inner } = savedNest()
     editor.graph.createNode('RECTANGLE', inner.id, { width: 10, height: 10 })
