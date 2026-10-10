@@ -13,11 +13,17 @@ export const CAN_CHOOSE_SPEAKERS =
 /** The device the system picks, as Chromium names it; other browsers list no such device. */
 export const SYSTEM_DEVICE = 'default'
 
-function createVoiceCall() {
+export interface VoiceCallOptions {
+  /** Where microphones come from; tests pass their own. */
+  navigator?: Navigator
+}
+
+/** A voice call controller; the app uses the one `useVoiceCall()` holds for the window. */
+export function createVoiceCall({ navigator }: VoiceCallOptions = {}) {
   // Device IDs are per browser and origin, so the choice is a per-device convenience.
   const inputId = useLocalStorage('open-pencil:voice:input', SYSTEM_DEVICE)
   const outputId = useLocalStorage('open-pencil:voice:output', SYSTEM_DEVICE)
-  const devices = useDevicesList({ constraints: { audio: true, video: false } })
+  const devices = useDevicesList({ navigator, constraints: { audio: true, video: false } })
   // A saved microphone that is unplugged falls back to the system's.
   const inputDevice = computed(() =>
     devices.audioInputs.value.some((device) => device.deviceId === inputId.value)
@@ -41,7 +47,7 @@ function createVoiceCall() {
     video: false
   }))
   // Device changes restart the microphone here, where a failure can be reported.
-  const microphone = useUserMedia({ constraints, autoSwitch: false })
+  const microphone = useUserMedia({ navigator, constraints, autoSwitch: false })
 
   /** The room whose call this window is in; one at a time, since there is one microphone. */
   const room = shallowRef<RoomSession | null>(null)
@@ -152,7 +158,7 @@ let call: VoiceCall | undefined
 /** This window's voice call; it outlives the views that show it, as a call does. */
 export function useVoiceCall(): VoiceCall {
   if (call) return call
-  const created = effectScope(true).run(createVoiceCall)
+  const created = effectScope(true).run(() => createVoiceCall())
   if (!created) throw new Error('Voice call scope did not run')
   call = created
   return call
