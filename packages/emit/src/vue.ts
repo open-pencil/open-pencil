@@ -127,6 +127,30 @@ export interface VueComponent {
 const rawBlock = (tag: string, content: string) =>
   `<${tag}>\n${content.trim().replace(/<\/(?=script|style)/gi, '<\\/')}\n</${tag.split(' ')[0]}>`
 
+/** Whether a component's script has anything to write, so it gets a script block. */
+const hasScript = (script: SyntaxNode) => printModule(script).trim() !== ''
+
+function templateElements(node: VueNode): VueElement[] {
+  return node.type === 'element' ? [node, ...node.children.flatMap(templateElements)] : []
+}
+
+/**
+ * The elements `printComponent` writes, in the order they open: the template's own, between
+ * `null`s for the script, template, and style blocks that hold them.
+ */
+export function componentElements({
+  script,
+  template,
+  style
+}: VueComponent): (VueElement | null)[] {
+  return [
+    ...(hasScript(script) ? [null] : []),
+    null,
+    ...templateElements(template),
+    ...(style ? [null] : [])
+  ]
+}
+
 /** A single-file component: script setup, template, and scoped style. */
 export function printComponent({ script, template, style }: VueComponent): string {
   const code = printModule(script)

@@ -2,7 +2,7 @@ import type { SceneGraphToDesignOptions } from '#dom-css/export/projection'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { findLayerByPath, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { variantConditions } from './conditions'
 import {
@@ -162,4 +162,13 @@ export function stateStyles(
     element.rules = pruneCombined(element.rules)
   }
   return { name: set.name, restId: rest.id, root }
+}
+
+/** The layer of the rest variant an element of the merged markup draws, if it has one. */
+export function restLayerOf(
+  graph: SceneGraph,
+  styles: StateStyles,
+  element: StateElement
+): string | undefined {
+  return findLayerByPath(graph, styles.restId, element.key.split('\0')[0] ?? '')?.id
 }

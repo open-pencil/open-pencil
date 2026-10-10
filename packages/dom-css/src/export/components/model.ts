@@ -1,7 +1,7 @@
 import { behaviourArgs, type BehaviourArgs } from '#dom-css/behaviours/args'
 import { BUTTON_RESET } from '#dom-css/behaviours/reset'
 import { allElements } from '#dom-css/behaviours/states/layers'
-import { ownerVariants, stateStyles } from '#dom-css/behaviours/states/model'
+import { ownerVariants, restLayerOf, stateStyles } from '#dom-css/behaviours/states/model'
 import { layerClassNames, propAttribute } from '#dom-css/behaviours/states/names'
 import type { StateElement, StateStyles } from '#dom-css/behaviours/states/types'
 import { uniq } from 'es-toolkit/array'
@@ -10,7 +10,6 @@ import { camelCase } from 'es-toolkit/string'
 import {
   behaviourContract,
   behaviourProperties,
-  findLayerByPath,
   layerPath,
   readBehaviour,
   slotPropertyId,
@@ -523,8 +522,7 @@ export function componentModel(
         shownBy,
         slotOf,
         shaders: shaderLayers(graph, styles.restId, elements),
-        layerOf: (element) =>
-          findLayerByPath(graph, styles.restId, element.key.split('\0')[0] ?? '')?.id
+        layerOf: (element) => restLayerOf(graph, styles, element)
       },
       rootBindings(model, !!options.itemOf, disabled, props)
     ),

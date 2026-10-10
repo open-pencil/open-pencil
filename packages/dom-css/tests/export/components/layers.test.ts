@@ -53,15 +53,24 @@ describe('layers as components', () => {
     expect(fileText(vue?.files ?? [], `${vue?.name}.vue`)).toContain('SwitchRoot')
   })
 
-  test('a React component lists the layer each JSX element draws, in the order they open', async () => {
+  test('a component lists the layer each element draws, in the order they open', async () => {
     const { graph, set } = switchSet()
     const rest = graph.getNode(set.childIds[0])
     if (!rest) throw new Error('The switch has no variants')
+    const drawn = [rest.id, rest.childIds[0]]
 
     for (const styling of ['css', 'tailwind'] as const) {
       const [react] = await layerComponents(graph, [set.id], 'react', { styling })
-      const tsx = react?.files.find((file) => file.path.endsWith('.tsx'))
-      expect(tsx?.layerIds).toEqual([rest.id, rest.childIds[0]])
+      expect(react?.files.find((file) => file.path.endsWith('.tsx'))?.layerIds).toEqual(drawn)
+      // The script, template, and style blocks around a Vue template draw no layer.
+      const [vue] = await layerComponents(graph, [set.id], 'vue', { styling })
+      expect(vue?.files[0]?.layerIds).toEqual([
+        null,
+        null,
+        ...drawn,
+        ...(styling === 'css' ? [null] : [])
+      ])
+      expect((await layerMarkup(graph, [set.id], { styling })).layerIds).toEqual(drawn)
     }
   })
 

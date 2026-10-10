@@ -47,7 +47,7 @@ Turn markers and Layers panel marks on or off with **View → Design issues**, o
 
 ## In the Code Panel
 
-The Code tab underlines errors and warnings on the Design JSX or React of their layers, on the property that causes the issue when there is one, such as `size={10}` for small text, or the class that styles the layer. Hover the underline to read the issue. The underlines follow your edits while you change the code live.
+The Code tab underlines errors and warnings on the Design JSX, HTML, Vue, or React of their layers, on the property that causes the issue when there is one, such as `size={10}` for small text, or the class that styles the layer. Hover the underline to read the issue. The underlines follow your edits while you change the code live.
 
 ## Rules
 

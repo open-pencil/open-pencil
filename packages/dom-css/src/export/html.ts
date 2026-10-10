@@ -143,6 +143,19 @@ export function serializeNode(
   return node.type === 'text' ? serializeText(node) : serializeElement(node, options, depth)
 }
 
+/**
+ * The elements `serializeHTML` writes, in the order they open: the document's own, and `null`
+ * for a shader's still frame, which it adds in front of its layer's content.
+ */
+export function serializedElements(document: DesignDocument): (DesignElement | null)[] {
+  const visit = (node: DesignNode): (DesignElement | null)[] => {
+    if (node.type === 'text') return []
+    if (VOID_ELEMENTS.has(node.tagName.toLowerCase())) return [node]
+    return [node, ...(node.shader?.frame ? [null] : []), ...node.children.flatMap(visit)]
+  }
+  return document.children.flatMap(visit)
+}
+
 export function serializeHTML(
   document: DesignDocument,
   options: SerializeHTMLOptions = {}

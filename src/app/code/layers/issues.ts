@@ -46,8 +46,12 @@ function designJSXProps(issue: DesignIssue): readonly string[] {
   }
 }
 
-/** A generated component's class holds its layer's name and styles, or its Tailwind utilities. */
-const COMPONENT_PROPS = ['className']
+/** Generated markup's class holds its layer's name and styles, or its Tailwind utilities. */
+const CLASS_PROPS: Record<Exclude<CodeSource, 'design-jsx'>, readonly string[]> = {
+  'html-css': ['class'],
+  vue: ['class'],
+  react: ['className']
+}
 
 /**
  * Errors and warnings as code issues, matching the canvas markers: suggestions stay in the
@@ -58,7 +62,6 @@ export function codeLayerIssues(
   source: CodeSource,
   messages: DesignCheckMessages
 ): LayerIssue[] {
-  if (source === 'html-css') return []
   return issues
     .filter((issue) => issue.severity !== 'info')
     .map((issue) => {
@@ -68,7 +71,7 @@ export function codeLayerIssues(
         nodeId: issue.nodeId,
         severity: issue.severity,
         message: detail ? `${title} · ${detail}` : title,
-        props: source === 'design-jsx' ? designJSXProps(issue) : COMPONENT_PROPS
+        props: source === 'design-jsx' ? designJSXProps(issue) : CLASS_PROPS[source]
       }
     })
 }

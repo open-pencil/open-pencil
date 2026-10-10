@@ -99,7 +99,8 @@ function designNode(node: StateNode, classes: Map<StateElement, string>): Design
         classes.get(node)
       ]).join(' ')
     },
-    children: node.children.map((child) => designNode(child, classes))
+    children: node.children.map((child) => designNode(child, classes)),
+    shader: node.shader
   }
 }
 

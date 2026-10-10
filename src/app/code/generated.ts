@@ -49,8 +49,11 @@ export async function generatedCodeAsync(
   nodeIds: string[]
 ): Promise<GeneratedCode> {
   if (source === 'html-css') {
-    const { html, css } = await layerMarkup(graph, nodeIds, { vectorElement, styling })
-    return { code: css ? `<style>\n${css}\n</style>\n\n${html}` : html, layerIds: [] }
+    const { html, css, layerIds } = await layerMarkup(graph, nodeIds, { vectorElement, styling })
+    // The stylesheet's own element comes first and draws no layer.
+    return css
+      ? { code: `<style>\n${css}\n</style>\n\n${html}`, layerIds: [null, ...layerIds] }
+      : { code: html, layerIds }
   }
   const components = await layerComponents(graph, nodeIds, source, { vectorElement, styling })
   return componentFiles(components.flatMap((component) => component.files))

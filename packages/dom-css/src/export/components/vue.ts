@@ -140,8 +140,18 @@ function progressStyle(component: ComponentModel): vue.VueAttribute[] {
   return style ? [vue.bound('style', style)] : []
 }
 
+/** `element`, recorded as drawing `layerId`, so code can link back to that layer. */
+function drawing(
+  element: vue.VueElement,
+  layerId: string | undefined,
+  uses: TemplateUses
+): vue.VueElement {
+  if (layerId) uses.layers.set(element, layerId)
+  return element
+}
+
 /** A field's input: Reka's for a number field, else a native input or textarea. */
-function inputNode(className: string, uses: TemplateUses): vue.VueNode {
+function inputNode(className: string, uses: TemplateUses): vue.VueElement {
   const { component } = uses
   if (component.kind === 'numberField') {
     uses.reka.add('NumberFieldInput')
@@ -169,6 +179,8 @@ interface TemplateUses {
   icons: boolean
   /** The class a layer's readable class name stands for, as the component is styled. */
   classOf: (className: string) => string
+  /** The layer each element draws, which code links back to. */
+  layers: WeakMap<vue.VueElement, string>
   /** Effects of the `shaders` library its layers fill with. */
   shaders: Set<string>
   /** A ref per nested control drawn on, which its `v-model` binds. */
@@ -179,7 +191,7 @@ interface TemplateUses {
 /** The Iconify component, named apart from any component the design calls `Icon`. */
 const ICONIFY = 'IconifyIcon'
 
-function reference(node: ComponentReference, uses: TemplateUses): vue.VueNode {
+function reference(node: ComponentReference, uses: TemplateUses): vue.VueElement {
   uses.components.add(node.component)
   const model = node.model
     ? claimName(`${camelCase(node.component)}${upperFirst(node.model)}`, uses.taken)
@@ -242,23 +254,27 @@ function shaderCanvas(shader: ShaderLayer, uses: TemplateUses): vue.VueNode {
   )
 }
 
-function designElement(node: ComponentElement, uses: TemplateUses): vue.VueNode {
+function designElement(node: ComponentElement, uses: TemplateUses): vue.VueElement {
   const reka = node.part ? REKA[uses.kind].parts[node.part] : undefined
   if (reka) uses.reka.add(reka)
   const native = node.part === 'root' && !reka
   const button = native && uses.kind === 'button'
   const content = node.children.map((child) => templateNode(child, uses))
   const children = node.shader ? [shaderCanvas(node.shader, uses), ...content] : content
-  const element = vue.element(
-    reka ?? (button ? 'button' : node.tag),
-    elementAttributes(node, uses, { native, button }),
-    // A slot frame shows what the caller passes, or the design's content.
-    node.slot
-      ? [
-          ...(node.shader ? [shaderCanvas(node.shader, uses)] : []),
-          vue.element('slot', [vue.attribute('name', node.slot)], content)
-        ]
-      : children
+  const element = drawing(
+    vue.element(
+      reka ?? (button ? 'button' : node.tag),
+      elementAttributes(node, uses, { native, button }),
+      // A slot frame shows what the caller passes, or the design's content.
+      node.slot
+        ? [
+            ...(node.shader ? [shaderCanvas(node.shader, uses)] : []),
+            vue.element('slot', [vue.attribute('name', node.slot)], content)
+          ]
+        : children
+    ),
+    node.layerId,
+    uses
   )
   // Reka puts an accordion item's trigger in a header, which carries the heading level.
   if (uses.kind !== 'accordionItem' || node.part !== 'trigger') return element
@@ -269,14 +285,15 @@ function designElement(node: ComponentElement, uses: TemplateUses): vue.VueNode 
 function templateNode(node: ComponentNode, uses: TemplateUses): vue.VueNode {
   if (node.type === 'text') return vue.text(node.value)
   if (node.type === 'textProp') return vue.interpolation(identifier(node.name))
-  if (node.type === 'reference') return reference(node, uses)
-  if (node.type === 'input') return inputNode(node.className, uses)
+  if (node.type === 'reference') return drawing(reference(node, uses), node.layerId, uses)
+  if (node.type === 'input') return drawing(inputNode(node.className, uses), node.layerId, uses)
   if (node.type === 'icon') {
     uses.icons = true
-    return vue.element(ICONIFY, [
+    const icon = vue.element(ICONIFY, [
       vue.attribute('icon', node.icon),
       vue.attribute('class', uses.classOf(node.className))
     ])
+    return drawing(icon, node.layerId, uses)
   }
   return designElement(node, uses)
 }
@@ -429,6 +446,7 @@ export const vueComponent: ComponentGenerator = async (component, options = {}) 
   const uses: TemplateUses = {
     component,
     classOf: componentClasses(component, styling),
+    layers: new WeakMap(),
     kind: component.kind,
     sliderValues:
       component.kind === 'slider' && component.model ? claimName('values', taken) : null,
@@ -451,16 +469,16 @@ export const vueComponent: ComponentGenerator = async (component, options = {}) 
   const path = `${component.name}.vue`
   // A group's items are their own component, which the group's template uses.
   const item = component.item ? await vueComponent(component.item, options) : null
+  const sfc = { script: script(component, uses), template, style }
   return {
     files: [
       ...(item?.files ?? []),
       {
         path,
-        content: vue.printComponent({
-          script: script(component, uses),
-          template,
-          style
-        })
+        content: vue.printComponent(sfc),
+        layerIds: vue
+          .componentElements(sfc)
+          .map((element) => (element && uses.layers.get(element)) ?? null)
       }
     ],
     entry: { path: `./${path}`, named: false },
