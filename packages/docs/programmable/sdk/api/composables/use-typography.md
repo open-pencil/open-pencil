@@ -20,6 +20,7 @@ It exposes:
 - text case and direction
 - ending truncation and maximum lines
 - OpenType feature toggles
+- list style (`listType`, `null` when the paragraphs differ) and hanging lists
 - helpers for changing family, weight, alignment, and decorations
 - `merged(key)` and `fontFeature(tag)`, which return the shared value or `MIXED`
 
@@ -73,6 +74,16 @@ typography.setTextCase('UPPER')
 typography.setVerticalAlign('CENTER')
 typography.setTruncation('ENDING')
 typography.setFontFeature('LIGA', false)
+```
+
+### Make a list
+
+While the text is being edited, `setListType` and `setParagraphSpacing` change the paragraphs under the caret or selection; otherwise they change the whole text. `paragraphSpacing(field)` reads `listSpacing`, `paragraphSpacing`, or `paragraphIndent` for those paragraphs, `MIXED` when they differ, and `previewParagraphSpacing` shows a value while a field is dragged without an undo step.
+
+```ts
+typography.setListType('UNORDERED')
+typography.setHangingList(true)
+typography.setParagraphSpacing('listSpacing', 8)
 ```
 
 ## Related APIs

@@ -24,6 +24,7 @@ function disposePathCaches(r: SkiaRenderer): void {
     cache.clear()
   }
   r.glyphSilhouetteCache.clear()
+  r.derivedGlyphPathCache.clear()
 }
 
 /** Frees every live image `r`'s surface holds and forgets those an earlier surface held. */

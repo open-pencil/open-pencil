@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `SceneNode` from `@open-pencil/scene-graph` has `textParagraphs`, `listSpacing`, `paragraphSpacing`, `paragraphIndent`, and `hangingList`, so code that builds `SceneNode` objects itself must include them. `SkiaRenderer.buildParagraph` returns a `TextLayout`, which answers the `Paragraph` queries the renderer and text editor use for the whole text and draws with `draw(canvas, x, y)`, instead of a CanvasKit `Paragraph`.
 - `AUTO_LAYOUT_BREAK_THRESHOLD` is removed from `@open-pencil/core/constants`: a layer dragged out of auto layout now leaves by how far its own edge is past the frame, not by a cursor margin.
 - `SceneNode` from `@open-pencil/scene-graph` has `targetAspectRatio`, the size whose proportions a locked layer keeps, so code that builds `SceneNode` objects itself must include it.
 - `useFlatReorderDrag` from `@open-pencil/vue` takes `operations`, which drops each target accepts, and `onCombine`, for dropping onto an item, and `FlatReorderInstruction` is now any list-item `Instruction`, so it can be `'combine'` when a list opts in; code that switches on its `operation` needs that case.
@@ -50,6 +51,7 @@
 
 ### Added
 
+- Bulleted and numbered lists in text, as in Figma: `.fig` files and the Figma clipboard keep each paragraph's list type, nesting, list and paragraph spacing, and first-line indent, and the text's hanging markers, and the canvas lays lists out as Figma does, with markers centred or ending a third of an em before the item, numbers counting 1, a, i as they nest, and wrapped lines hanging at the indent. Set a list's style, list and paragraph spacing, paragraph indent, and hanging markers in the Typography section, for the paragraphs being edited or the whole text; while editing, <kbd>⇧</kbd><kbd>⌘</kbd><kbd>8</kbd> and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>7</kbd> make bulleted and numbered lists, <kbd>Tab</kbd> and <kbd>⇧</kbd><kbd>Tab</kbd> nest and unnest items, and text you type into a list continues it. Flattening or outlining text keeps its markers. Scripts read and set lists with `getRangeListOptions`, `setRangeListOptions`, `getRangeIndentation`, `setRangeIndentation`, `listSpacing`, `paragraphSpacing`, `paragraphIndent`, their `getRange` and `setRange` methods, and `hangingList`.
 - Drag several layers along an auto layout row or column together, as in Figma: they move as one block in their order, wherever you grab them, and layers selected in different rows each move along their own row. A layer dragged along a flow takes the next slot once its leading edge reaches the next layer's centre, as Figma reorders, instead of once the cursor does.
 - Move a layer in an auto layout row or column with the arrow keys, as in Figma: Right and Left move it one slot along a row, Down and Up along a column, Shift too, and the arrows across the flow do nothing. With several layers selected, each moves one slot and one at the end stays; a run of keys is one undo step.
 - Lock a layer's aspect ratio with the button beside its width and height, as in Figma: typing either side changes the other, handles keep the ratio (<kbd>Ctrl</kbd> frees it for one drag, which then keeps the new size), a Fill layer in auto layout takes its other side from the ratio, and a constraint keeps it when exactly one axis follows the frame. The lock reads from and writes to `.fig` files and the clipboard, and the plugin API has `lockAspectRatio()`, `unlockAspectRatio()`, `targetAspectRatio`, and `constrainProportions`.
@@ -174,6 +176,10 @@
 ### Fixed
 
 - Instances follow their component's structure as in Figma: wrapping a layer of the component in auto layout or a frame, or moving it into another frame of the component, moves the layer's copy in every instance with its overrides instead of adding a fresh copy beside the old one, and a layer moved out of the component or deleted leaves its instances, coming back with its overrides on undo.
+- Dragging a number field in the properties panel moves its value in whole steps instead of fractions on high-density screens.
+- While text is being edited, its caret and selection follow a property dragged in the panel instead of catching up when the mouse is released.
+- Outline text, flatten, and boolean operations on text place glyphs where the canvas draws them; lines sat lower by about a quarter of the font size.
+- Tailwind exports keep corner radius: Tailwind JSX and HTML with Tailwind classes write radius from Tailwind's radius scale, such as `rounded-xl` for 12px, instead of classes like `rounded-3` that Tailwind v4 does not generate, and other values as `rounded-[20px]`.
 - ⌘Z right after arrow-key nudges undoes the nudges instead of the edit before them.
 - <kbd>⇧</kbd>-dragging a corner handle follows the side the pointer stretched most relative to the layer's size, as Figma does, instead of the side it moved more pixels along.
 - The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
@@ -323,6 +329,7 @@
 
 ### Performance
 
+- Selecting text and moving the caret while editing repaint only the selection instead of redrawing the whole canvas and properties panel, and text drawn from glyphs saved in a `.fig` file decodes each glyph once instead of on every redraw, so drag-selecting and dragging a property no longer stutter on pages with many text layers.
 - Open large `.fig` files with a fraction of the memory: records stay in the file's bytes except for the few fields indexing needs, and are decoded whole when read, kept only for the pages being read and the components they use. Opening the Nuxt UI design kit takes 0.7 GB instead of 2.2 GB, and its first twelve pages 1.2 GB instead of 2.6 GB.
 - Save an edited `.fig` file by rewriting only the layers that changed and copying the rest from the file it was opened from, as it is stored, without decoding it; in the browser that work runs off the main thread. Saving the 109 MB Preline UI kit after an edit takes about 3 seconds instead of over two minutes, and crash recovery no longer freezes Safari after the first edit to a large file. Editing a component also rewrites its instances on pages that were not opened yet.
 - Open `.fig` design kits with less memory: layers inside instances hold their component layers' paints, glyphs, and other unchanged values instead of a copy each, about a third fewer objects and an eighth less memory per loaded page.

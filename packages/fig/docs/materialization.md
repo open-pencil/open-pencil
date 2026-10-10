@@ -191,7 +191,7 @@ No coordinate factor is inferred from current dimensions or numeric variable val
 - [Owner-scoped correspondence](../src/instance-overrides/source-children.ts)
 - [Live component edits](../src/instance-overrides/live-component-edits.ts)
 - [Component-property domain](../../scene-graph/src/components/properties.ts)
-- [Text cache invalidation](../../scene-graph/src/text-picture.ts)
+- [Text cache invalidation](../../scene-graph/src/text/picture.ts)
 - [Full-document editing test](../tests/document/gold-edit.test.ts)
 - [Occurrence conversion/isolation tests](../tests/document/occurrence-conversion.test.ts)
 - [Saved-glyph visual test](../../../tests/e2e/canvas/saved-glyph-visual.spec.ts)

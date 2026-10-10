@@ -1,14 +1,18 @@
 import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 import { fromUint8Array } from 'js-base64'
 
-import type {
-  Color,
-  Fill,
-  DerivedTextGlyph,
-  SceneNode,
-  Stroke,
-  StyleRun,
-  TextDecorationStyle
+import {
+  hasTextList,
+  textListItems,
+  textParagraphRanges,
+  type Color,
+  type Fill,
+  type DerivedTextGlyph,
+  type SceneNode,
+  type Stroke,
+  type StyleRun,
+  type TextDecorationStyle,
+  type TextParagraphRange
 } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -16,6 +20,25 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { geometryBlobToPath } from '#core/vector'
 
 const MAX_GLYPH_SILHOUETTES = 512
+/** Saved glyphs a renderer keeps decoded: every text on a page of saved text redraws at once. */
+const MAX_DERIVED_GLYPH_PATHS = 16384
+
+/** Decoded saved glyph outlines, by the glyph's command bytes, which a node keeps until it changes. */
+export function createDerivedGlyphPathCache(): ResourceCache<Uint8Array, Path> {
+  return new ResourceCache({
+    maxEntries: MAX_DERIVED_GLYPH_PATHS,
+    dispose: (path) => path.delete()
+  })
+}
+
+/** A saved glyph's outline, decoded once and borrowed from the renderer's cache. */
+function derivedGlyphPath(r: SkiaRenderer, blob: Uint8Array): Path {
+  const cached = r.derivedGlyphPathCache.get(blob)
+  if (cached) return cached
+  const path = geometryBlobToPath(r.ck, blob, 'NONZERO')
+  r.derivedGlyphPathCache.set(blob, path)
+  return path
+}
 
 export function createGlyphSilhouetteCache(): ResourceCache<string, Path> {
   return new ResourceCache({ maxEntries: MAX_GLYPH_SILHOUETTES, dispose: (path) => path.delete() })
@@ -395,11 +418,54 @@ export function drawReflowedPathTextSilhouettes(
  *                            black fills vs white strokeGeometry
  *   4. scale(fontSize,-fs) — font units → px; Y flip (font space is up-positive)
  */
+/** The paragraph holding text index `index`, found by bisection: saved glyphs can be many. */
+function rangeIndexAt(ranges: readonly TextParagraphRange[], index: number): number {
+  let lo = 0
+  let hi = ranges.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (ranges[mid].start <= index) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
+/**
+ * The character whose style each saved list marker takes: the first of its list, as Figma
+ * draws markers. Figma saves a marker, with no character of its own, before its item's glyphs.
+ */
+function markerStyleCharacters(node: SceneNode): Map<number, number> {
+  const characters = new Map<number, number>()
+  if (!hasTextList(node)) return characters
+  const ranges = textParagraphRanges(node.text)
+  const listStarts = new Map(
+    textListItems(node.text, node.textParagraphs).map((item) => [
+      item.paragraph,
+      ranges[item.groupStart].start
+    ])
+  )
+  let markers: number[] = []
+  for (const [index, glyph] of (node.derivedTextGlyphs ?? []).entries()) {
+    if (glyph.firstCharacter === undefined) {
+      markers.push(index)
+      continue
+    }
+    const start = listStarts.get(rangeIndexAt(ranges, glyph.firstCharacter))
+    if (start !== undefined) for (const marker of markers) characters.set(marker, start)
+    markers = []
+  }
+  return characters
+}
+
 function savedTextEligibility(node: SceneNode): boolean {
+  // Glyphs without a character are list markers in a list, and unknown text otherwise.
+  const charactersKnown = hasTextList(node)
+    ? !!node.derivedTextGlyphs?.some((glyph) => glyph.firstCharacter !== undefined)
+    : !!node.derivedTextGlyphs?.every((glyph) => glyph.firstCharacter !== undefined)
   return (
     node.styleRuns.length === 0 ||
     (node.fills.filter((paint) => paint.visible).length === 1 &&
-      !!node.derivedTextGlyphs?.every((glyph) => glyph.firstCharacter !== undefined) &&
+      charactersKnown &&
       node.styleRuns.every(
         (run) =>
           !run.style.fills ||
@@ -422,24 +488,21 @@ export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode
   // letter positions and breaks registration with strokeGeometry.
   const snapBaselines = !hasRotatedDerivedGlyphs(node)
   const savedTextEligible = savedTextEligibility(node)
+  const markerCharacters = markerStyleCharacters(node)
   let underlineBaselineY = 0
-  for (const glyph of node.derivedTextGlyphs) {
+  for (const [index, glyph] of node.derivedTextGlyphs.entries()) {
     const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
     underlineBaselineY = Math.max(underlineBaselineY, glyphY)
-    const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
+    const path = derivedGlyphPath(r, glyph.commandsBlob)
     canvas.save()
     applyGlyphEmTransform(canvas, glyph, glyphY)
     const shouldUseHardCoverage = shouldUseHardDerivedGlyphCoverage(node)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
+    const character = glyph.firstCharacter ?? markerCharacters.get(index)
     const run =
-      glyph.firstCharacter === undefined
+      character === undefined
         ? undefined
-        : node.styleRuns.find(
-            (run) =>
-              glyph.firstCharacter !== undefined &&
-              glyph.firstCharacter >= run.start &&
-              glyph.firstCharacter < run.start + run.length
-          )
+        : node.styleRuns.find((run) => character >= run.start && character < run.start + run.length)
     const fills = run?.style.fills
     if (fills && savedTextEligible) {
       const paint = r.fillPaint.copy()
@@ -456,7 +519,6 @@ export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode
     } else canvas.drawPath(path, r.fillPaint)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(true)
     canvas.restore()
-    path.delete()
   }
 
   // Underline math assumes a single horizontal baseline — skip for path text.

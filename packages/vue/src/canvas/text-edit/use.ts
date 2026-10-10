@@ -7,6 +7,7 @@ import { createTextClipboardActions } from './clipboard'
 import { createCaretBlink, createTextCompositionHandlers, createTextEditActions } from './editing'
 import { createTextFormattingActions } from './formatting'
 import { createTextKeyDownHandler } from './keyboard'
+import { createTextListActions } from './paragraphs'
 import { focusTextAreaOnCanvasPointerDown, useTextEditingSession } from './textarea'
 
 /**
@@ -32,6 +33,7 @@ export function useTextEdit(
     deleteText
   } = createTextEditActions(store)
   const { toggleBold, toggleItalic, toggleUnderline } = createTextFormattingActions(store)
+  const { toggleListType, changeIndentation } = createTextListActions(store)
 
   const { handleCopy, handleCut, handlePaste } = createTextClipboardActions({
     store,
@@ -69,7 +71,9 @@ export function useTextEdit(
     handlePaste,
     toggleBold,
     toggleItalic,
-    toggleUnderline
+    toggleUnderline,
+    toggleListType,
+    changeIndentation
   })
 
   useEventListener(textareaRef, 'input', onInput)

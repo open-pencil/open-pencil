@@ -65,7 +65,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
       textEd.setCursorAt(localX, localY, shiftKey)
       setDrag({ type: 'text-select', startX: cx, startY: cy })
     }
-    editor.requestRender()
+    editor.textSelectionChanged()
     return true
   }
 
@@ -78,7 +78,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     if (textEd) {
       const abs = editor.graph.getAbsolutePosition(hit.id)
       textEd.selectWordAt(cx - abs.x, cy - abs.y)
-      editor.requestRender()
+      editor.textSelectionChanged()
     }
   }
 

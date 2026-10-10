@@ -140,6 +140,47 @@ describe('derived text writer', () => {
     expect(data.glyphs?.map((glyph) => glyph.advance)).toEqual([0.5, 0, 0])
   })
 
+  test('keeps list markers without characters, also for empty items', () => {
+    const blob = new Uint8Array([0])
+    const item = { listType: 'UNORDERED' as const, indentation: 1 }
+    const marker = (y: number) => ({ commandsBlob: blob, x: 7.5, y, fontSize: 16, advance: 9 })
+    // "A", an empty item, then "B": the empty item shows only its marker.
+    const node = textNode({
+      text: 'A\n\nB',
+      textParagraphs: [item, item, item],
+      derivedTextGlyphs: [
+        marker(12),
+        { commandsBlob: blob, x: 24, y: 12, fontSize: 16, firstCharacter: 0 },
+        marker(28),
+        marker(44),
+        { commandsBlob: blob, x: 24, y: 44, fontSize: 16, firstCharacter: 3 }
+      ]
+    })
+    const data = expectDefined(buildNodeDerivedTextData(node, context(null)), 'derived text')
+
+    expect(data.glyphs?.map((glyph) => glyph.firstCharacter)).toEqual([
+      undefined,
+      0,
+      undefined,
+      undefined,
+      3
+    ])
+    expect(data.baselines?.map((line) => [line.firstCharacter, line.endCharacter])).toEqual([
+      [0, 2],
+      [2, 3],
+      [3, 4]
+    ])
+    expect(data.baselines?.[0].position.x).toBe(24)
+
+    const onlyMarkers = textNode({
+      text: '\n',
+      textParagraphs: [item, item],
+      derivedTextGlyphs: [marker(12), marker(28)]
+    })
+    const markers = expectDefined(buildNodeDerivedTextData(onlyMarkers, context(null)), 'markers')
+    expect(markers.glyphs?.map((glyph) => glyph.firstCharacter)).toEqual([undefined, undefined])
+  })
+
   test('names font styles as Figma does', () => {
     const data = buildNodeDerivedTextData(
       textNode({ fontFamily: 'Inter', fontWeight: 600 }),

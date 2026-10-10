@@ -10,7 +10,12 @@ export const TEXT_METRIC_FIELDS = [
   'letterSpacing',
   'styleRuns',
   'fontVariations',
-  'fontFeatures'
+  'fontFeatures',
+  'textParagraphs',
+  'listSpacing',
+  'paragraphSpacing',
+  'paragraphIndent',
+  'hangingList'
 ] as const satisfies readonly (keyof SceneNode)[]
 
 export const TEXT_SHAPING_FIELDS = [

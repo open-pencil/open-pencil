@@ -1,11 +1,12 @@
-import type { Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
+import type { TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import type { TextLayout } from '#core/canvas/text/layout'
+import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import { fontManager } from '#core/text/fonts'
 
-import type { ParagraphBuildOptions } from './paint'
-import type { PreparedText, TextPreparationCache } from './preparation-cache'
+import type { PreparedText, TextPreparationCache } from './cache'
 
 interface PreparationRenderer {
   textPreparationCache?: TextPreparationCache
@@ -16,7 +17,7 @@ export function withPreparedText<T>(
   r: PreparationRenderer,
   node: SceneNode,
   variant: string,
-  build: () => Paragraph,
+  build: () => TextLayout,
   consume: (prepared: PreparedText) => T,
   cacheAllowed = true
 ): T {
@@ -45,12 +46,12 @@ export function withTextParagraph<T>(
       node: SceneNode,
       color: Float32Array,
       options: ParagraphBuildOptions
-    ) => Paragraph
+    ) => TextLayout
   },
   node: SceneNode,
   color: Float32Array,
   options: ParagraphBuildOptions,
-  draw: (paragraph: Paragraph) => T
+  draw: (paragraph: TextLayout) => T
 ): T {
   return withPreparedText(
     r,

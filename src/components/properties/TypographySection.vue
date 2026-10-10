@@ -42,6 +42,23 @@ const textCaseOptions = computed(() => [
   { value: 'LOWER', label: panels.value.textCaseLower },
   { value: 'TITLE', label: panels.value.textCaseTitle }
 ])
+const listOptions = computed(() => [
+  { value: 'NONE', label: panels.value.listNone },
+  { value: 'UNORDERED', label: panels.value.listBulleted },
+  { value: 'ORDERED', label: panels.value.listNumbered }
+])
+const paragraphFields = computed(
+  () =>
+    [
+      { key: 'listSpacing', label: panels.value.listSpacing, property: 'list-spacing' },
+      {
+        key: 'paragraphSpacing',
+        label: panels.value.paragraphSpacing,
+        property: 'paragraph-spacing'
+      },
+      { key: 'paragraphIndent', label: panels.value.paragraphIndent, property: 'paragraph-indent' }
+    ] as const
+)
 const truncationOptions = computed(() => [
   { value: 'DISABLED', label: panels.value.truncationDisabled },
   { value: 'ENDING', label: panels.value.truncationEnding }
@@ -294,6 +311,74 @@ function picked<T>(value: MixedValue<T>): T | '' {
                 ctx.actions.commitProp('maxLines', value, previous)
             "
           />
+        </PanelFieldGroup>
+      </div>
+
+      <div class="border-t border-border pt-3">
+        <PanelFieldGroup
+          :label="panels.listsAndParagraphs"
+          class="mb-3"
+          data-property="lists-and-paragraphs"
+        >
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center gap-1.5">
+              <SegmentedControl
+                class="flex-1"
+                :model-value="ctx.listType.value ?? ''"
+                :options="listOptions"
+                :label="panels.listStyle"
+                data-property="list-style"
+                @change="ctx.actions.setListType($event as 'NONE' | 'ORDERED' | 'UNORDERED')"
+              >
+                <template #option="{ option }">
+                  <icon-lucide-list v-if="option.value === 'UNORDERED'" class="size-3.5" />
+                  <icon-lucide-list-ordered
+                    v-else-if="option.value === 'ORDERED'"
+                    class="size-3.5"
+                  />
+                  <icon-lucide-minus v-else class="size-3.5" />
+                </template>
+              </SegmentedControl>
+              <IconButton
+                :label="panels.hangingLists"
+                :active="ctx.merged('hangingList') === true"
+                data-property="hanging-lists"
+                @click="ctx.actions.setHangingList(ctx.merged('hangingList') !== true)"
+              >
+                <icon-lucide-list-indent-decrease class="size-3.5" />
+              </IconButton>
+            </div>
+            <PanelGrid :columns="3">
+              <Tip v-for="field in paragraphFields" :key="field.key" :label="field.label">
+                <NumberField
+                  :model-value="ctx.paragraphSpacing(field.key)"
+                  :aria-label="field.label"
+                  :min="0"
+                  :disabled="field.key === 'listSpacing' && ctx.listType.value === 'NONE'"
+                  :data-property="field.property"
+                  @update:model-value="
+                    ctx.actions.previewParagraphSpacing(field.key, Math.max(0, $event))
+                  "
+                  @commit="
+                    (value: number) =>
+                      ctx.actions.setParagraphSpacing(field.key, Math.max(0, value))
+                  "
+                >
+                  <template #icon>
+                    <icon-lucide-between-vertical-start
+                      v-if="field.key === 'listSpacing'"
+                      class="size-3"
+                    />
+                    <icon-lucide-pilcrow
+                      v-else-if="field.key === 'paragraphSpacing'"
+                      class="size-3"
+                    />
+                    <icon-lucide-arrow-right-to-line v-else class="size-3" />
+                  </template>
+                </NumberField>
+              </Tip>
+            </PanelGrid>
+          </div>
         </PanelFieldGroup>
       </div>
 
