@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { formatStorageBytes } from '@/app/storage/format-bytes'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -19,20 +20,23 @@ import type { CloudDocumentRow } from './types'
  * much of the workspace's storage they use, and what needs attention.
  */
 const {
-  title,
+  heading,
   subtitle,
   role = null,
   documents,
   usage = null,
-  state = 'ready'
+  state = 'ready',
+  canCreate = false
 } = defineProps<{
-  title: string
+  heading: string
   subtitle?: string
   /** The person's role in the workspace, when it is a workspace rather than a shared list. */
   role?: string | null
   documents: CloudDocumentRow[]
   usage?: { usedBytes: number; totalBytes: number | null } | null
   state?: 'loading' | 'ready' | 'offline' | 'error'
+  /** The person may create designs here. */
+  canCreate?: boolean
 }>()
 
 const view = defineModel<'grid' | 'list'>('view', { default: 'grid' })
@@ -44,21 +48,11 @@ const emit = defineEmits<{
 }>()
 
 const conflicts = computed(() => documents.filter((document) => document.sync === 'conflict'))
-const formatBytes = (bytes: number) => {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let value = bytes
-  let unit = 0
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024
-    unit += 1
-  }
-  return `${value >= 10 || unit === 0 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`
-}
 const usageLabel = computed(() => {
   if (!usage) return null
   return usage.totalBytes === null
-    ? `${formatBytes(usage.usedBytes)} used`
-    : `${formatBytes(usage.usedBytes)} of ${formatBytes(usage.totalBytes)}`
+    ? `${formatStorageBytes(usage.usedBytes)} used`
+    : `${formatStorageBytes(usage.usedBytes)} of ${formatStorageBytes(usage.totalBytes)}`
 })
 const metadata = (document: CloudDocumentRow) =>
   document.editedBy ? `${document.editedAt} · ${document.editedBy}` : document.editedAt
@@ -69,7 +63,7 @@ const metadata = (document: CloudDocumentRow) =>
     <header class="flex flex-wrap items-start gap-x-4 gap-y-2">
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-          <h1 class="truncate text-base font-semibold">{{ title }}</h1>
+          <h1 class="truncate text-base font-semibold">{{ heading }}</h1>
           <AppBadge v-if="role">{{ role }}</AppBadge>
         </div>
         <div
@@ -157,12 +151,16 @@ const metadata = (document: CloudDocumentRow) =>
       v-else-if="documents.length === 0"
       size="page"
       label-as="h2"
-      :label="`No files in ${title} yet`"
-      description="Create a design here, or save an open file to this workspace from the File menu."
+      :label="role ? `No files in ${heading} yet` : 'Nothing shared with you yet'"
+      :description="
+        role
+          ? 'Create a design here, or save an open file to this workspace from the File menu.'
+          : 'Files people invite you to show up here.'
+      "
       :ui="{ root: 'rounded-lg border border-dashed border-border py-10' }"
     >
       <template #icon><icon-lucide-layers class="size-5" /></template>
-      <template #action>
+      <template v-if="canCreate" #action>
         <AppButton color="primary" variant="solid" @click="emit('newDesign')">
           <template #leading><icon-lucide-plus class="size-3.5" /></template>
           New design

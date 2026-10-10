@@ -106,7 +106,8 @@ const meta = {
           </div>
           <CloudWorkspaceView
             v-model:view="view"
-            :title="args.title"
+            :heading="args.title"
+            :can-create="Boolean(args.role)"
             :subtitle="args.subtitle"
             :role="args.role"
             :documents="args.documents"

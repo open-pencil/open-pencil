@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 import { useDocumentWorkspace, useI18n, useViewportKind } from '@open-pencil/vue'
 
+import { useHomeLocations } from '@/app/home/locations'
 import {
   activeStorageProviderID,
   readStoragePreferences,
@@ -24,8 +25,13 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { openFileFromPath } from '@/app/shell/menu/use'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
+import CloudSharedSection from '@/components/home/cloud/CloudSharedSection.vue'
+import CloudWorkspaceSection from '@/components/home/cloud/CloudWorkspaceSection.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
+import HomeLayout from '@/components/home/HomeLayout.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
+import HomeLocationMenu from '@/components/home/sidebar/HomeLocationMenu.vue'
+import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
@@ -37,6 +43,7 @@ const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'gr
 const query = ref('')
 const openError = ref<string | null>(null)
 const storageConfigured = ref(storagePreferencesComplete(activeStorageProviderID.value))
+const places = useHomeLocations()
 
 const workspace = useDocumentWorkspace<RecentDocument>({
   source: {
@@ -94,6 +101,13 @@ const storageDescription = computed(() => {
     }
   }
   return bucket ? `${label} · ${bucket}` : label
+})
+/** The storage bucket as the sidebar lists it, or a prompt to set it up. */
+const sidebarStorage = computed(() => {
+  if (!storageConfigured.value)
+    return { label: storage.value.workspace, detail: settings.value.notConfigured }
+  const bucket = readStoragePreferences(activeStorageProviderID.value).bucket?.trim()
+  return { label: bucket || storage.value.workspace, detail: storageDescription.value }
 })
 const storagePreviewURL = storageWorkspace.previewURL
 const vStoragePreview = storageWorkspace.previewDirective
@@ -160,16 +174,44 @@ function formattedDate(updatedAt: string): string {
 </script>
 
 <template>
-  <main
-    class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-app text-surface"
-    data-test-id="recent-files-home"
-  >
-    <section
-      class="mx-auto flex w-full max-w-7xl flex-col pt-4 pr-[max(1rem,env(safe-area-inset-right))] pb-4 pl-[max(1rem,env(safe-area-inset-left))] sm:px-6 sm:py-5"
-    >
-      <HomeSearchActions v-model="query" @new-document="emit('new-document')" />
+  <HomeLayout data-test-id="recent-files-home">
+    <template #sidebar>
+      <HomeSidebar
+        :active="places.active.value"
+        :account="places.account.value"
+        :workspaces="places.workspaces.value"
+        :storage="sidebarStorage"
+        @select="places.select"
+        @connect="places.connect"
+        @account-settings="places.accountSettings"
+        @storage-settings="places.storageSettings"
+        @switch-server="places.connect"
+        @sign-out="places.signOut"
+      />
+    </template>
+    <template #locations>
+      <HomeLocationMenu
+        :active="places.active.value"
+        :account="places.account.value"
+        :workspaces="places.workspaces.value"
+        :storage="sidebarStorage"
+        @select="places.select"
+        @connect="places.connect"
+      />
+    </template>
+    <HomeSearchActions v-model="query" @new-document="emit('new-document')" />
 
-      <p v-if="openError" class="mb-4 text-xs text-danger" role="alert">{{ openError }}</p>
+    <p v-if="openError" class="mb-4 text-xs text-danger" role="alert">{{ openError }}</p>
+    <CloudWorkspaceSection
+      v-if="places.workspace.value && places.serverId.value"
+      :server-id="places.serverId.value"
+      :workspace="places.workspace.value"
+    />
+    <CloudSharedSection
+      v-else-if="places.location.value.kind === 'shared' && places.serverId.value"
+      :server-id="places.serverId.value"
+    />
+    <template v-else>
       <p
         v-if="noSearchMatches"
         class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
@@ -177,7 +219,7 @@ function formattedDate(updatedAt: string): string {
         {{ files.noMatchingFiles({ query: query.trim() }) }}
       </p>
 
-      <section v-if="!noSearchMatches">
+      <section v-if="!noSearchMatches && places.location.value.kind === 'recent'">
         <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
           <div class="col-span-2 min-w-0 sm:col-span-1">
             <h1 class="text-base font-semibold">{{ files.recentFiles }}</h1>
@@ -249,7 +291,7 @@ function formattedDate(updatedAt: string): string {
         </div>
       </section>
 
-      <section class="mt-7">
+      <section v-if="places.location.value.kind === 'storage'">
         <div class="mb-3 flex items-start gap-3">
           <div class="min-w-0">
             <h2 class="text-base font-semibold">{{ storage.workspace }}</h2>
@@ -348,6 +390,6 @@ function formattedDate(updatedAt: string): string {
           {{ storage.emptyStorageWorkspace }}
         </div>
       </section>
-    </section>
-  </main>
+    </template>
+  </HomeLayout>
 </template>

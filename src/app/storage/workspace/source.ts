@@ -46,22 +46,29 @@ export function createStorageWorkspaceSource(
       const local = (await localStore.listMetas(true)).filter((metadata) =>
         isHere(metadata, requested)
       )
+      const localDocuments = local
+        .filter((metadata) => !metadata.tombstoned)
+        .map((metadata) => ({
+          id: metadata.id,
+          name: metadata.name,
+          updatedAt: metadata.updatedAt,
+          metadataAuthoritative: true,
+          revision: metadata.remoteRevision ?? null
+        }))
       if (!configured) {
-        const documents = local
-          .filter((metadata) => !metadata.tombstoned)
-          .map((metadata) => ({
-            id: metadata.id,
-            name: metadata.name,
-            updatedAt: metadata.updatedAt,
-            metadataAuthoritative: true,
-            revision: metadata.remoteRevision ?? null
-          }))
         if (!isCurrent(requested)) return null
-        onSnapshot({ documents, configured })
-        return documents
+        onSnapshot({ documents: localDocuments, configured })
+        return localDocuments
       }
 
-      const remote = await createStorageAdapter(requested).listDocuments()
+      let remote: StorageDocument[]
+      try {
+        remote = await createStorageAdapter(requested).listDocuments()
+      } catch (error) {
+        // Out of reach or signed out: this device's copies still show, beside the error.
+        if (isCurrent(requested)) onSnapshot({ documents: localDocuments, configured })
+        throw error
+      }
       const reconciliation = reconcileStorageDocuments(local, remote)
       for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
       for (const document of reconciliation.remoteDocumentsToSeed) {

@@ -29,7 +29,7 @@ const {
 } = defineProps<{
   active: HomeLocation
   account?: HomeCloudAccount | null
-  workspaces?: { id: string; name: string; documentCount: number; attention?: boolean }[]
+  workspaces?: { id: string; name: string; documentCount?: number; attention?: boolean }[]
   sharedCount?: number
   storage?: { label: string; detail: string } | null
 }>()

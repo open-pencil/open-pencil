@@ -9,6 +9,7 @@ import {
   useStorageMessages
 } from '@open-pencil/vue'
 
+import { homeLocation } from '@/app/home/location'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { useStorageSettingsFeedback } from '@/app/integrations/storage/settings/feedback'
 import { useStorageSettings } from '@/app/integrations/storage/settings/use'
@@ -82,6 +83,7 @@ async function save() {
 }
 async function openWorkspace() {
   settingsDialogOpen.value = false
+  homeLocation.value = { kind: 'storage' }
   await router.push('/storage')
 }
 async function testConnection() {

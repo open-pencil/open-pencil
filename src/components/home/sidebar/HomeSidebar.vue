@@ -30,7 +30,7 @@ const {
 } = defineProps<{
   active: HomeLocation
   account?: HomeCloudAccount | null
-  workspaces?: { id: string; name: string; documentCount: number; attention?: boolean }[]
+  workspaces?: { id: string; name: string; documentCount?: number; attention?: boolean }[]
   sharedCount?: number
   /** The configured storage bucket, or null when no storage is set up. */
   storage?: { label: string; detail: string } | null
@@ -40,6 +40,7 @@ const emit = defineEmits<{
   select: [location: HomeLocation]
   connect: []
   accountSettings: []
+  storageSettings: []
   switchServer: []
   signOut: []
 }>()
@@ -159,7 +160,7 @@ const workspaceLocations = computed(() =>
     <div v-if="storage" :class="ui.group()">
       <div :class="ui.header()">
         <span :class="ui.title()">Storage</span>
-        <IconButton label="Storage settings" @click="emit('accountSettings')">
+        <IconButton label="Storage settings" @click="emit('storageSettings')">
           <icon-lucide-settings-2 class="size-3.5" />
         </IconButton>
       </div>
