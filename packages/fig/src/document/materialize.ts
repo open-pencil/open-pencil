@@ -362,9 +362,13 @@ function materializeReader(
     applyDocumentPaintBindings(graph, materialized)
     applyDocumentTextBindings(graph, materialized)
   })
-  // Overrides were recorded while copies were built; the passes above settled their values.
+  settleOverrideValues(graph, materialized)
+  return state
+}
+
+/** Overrides are recorded while copies are built; a page's later passes settle their values. */
+function settleOverrideValues(graph: SceneGraph, materialized: readonly SceneNode[]): void {
   for (const node of materialized)
     if (node.type === 'INSTANCE' && !isInstanceLayerId(node.id))
       takeOverrideValuesFromLayers(graph, node)
-  return state
 }

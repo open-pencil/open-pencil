@@ -1,4 +1,8 @@
-import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
+import {
+  SCENE_OVERRIDE_FIELDS,
+  type OverrideField,
+  type RawOverrideField
+} from '#fig/instance-overrides/fields'
 
 import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import { normalizeFontFamily, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -103,80 +107,83 @@ interface ClaimInput {
  * The claim an instance override serializes to, by the kind of its scene field. This is the
  * export side of the same registry materialization records claims from.
  */
-function registryClaim(
-  field: keyof SceneNode,
-  { context, instance, target, value }: ClaimInput
-): Omit<KiwiSymbolOverridePayload, 'guidPath'> | undefined {
-  const entry = SCENE_OVERRIDE_FIELDS.get(field)
-  if (!entry) return undefined
-  const { raw, field: definition } = entry
-  switch (definition.kind) {
-    case 'scalar':
-      return {
-        [raw]: definition.length
-          ? unscaledLength(target[field], instanceScale(instance))
-          : target[field]
-      }
-    case 'visible':
-      return { visible: target.visible }
-    case 'text':
-      return { textData: { characters: typeof value === 'string' ? value : target.text } }
-    case 'text-style':
-      return target.textStyleId
+type Claim = Omit<KiwiSymbolOverridePayload, 'guidPath'>
+
+interface FieldClaimInput extends ClaimInput {
+  readonly field: keyof SceneNode
+  readonly raw: RawOverrideField
+  readonly definition: OverrideField
+}
+
+/** How each kind of override field is written as a claim. */
+const CLAIM_WRITERS: Record<OverrideField['kind'], (input: FieldClaimInput) => Claim | undefined> =
+  {
+    scalar: ({ instance, target, field, raw, definition }) => ({
+      [raw]: definition.length
+        ? unscaledLength(target[field], instanceScale(instance))
+        : target[field]
+    }),
+    visible: ({ target }) => ({ visible: target.visible }),
+    text: ({ target, value }) => ({
+      textData: { characters: typeof value === 'string' ? value : target.text }
+    }),
+    'text-style': ({ context, target }) =>
+      target.textStyleId
         ? { styleIdForText: exportedStyleReference(context, target.textStyleId) }
-        : undefined
-    case 'style': {
+        : undefined,
+    style: ({ context, target, field, raw }) => {
       const id = target[field]
       // A style the instance took off is the unset GUID, as Figma writes it.
       return {
         [raw]: typeof id === 'string' ? exportedStyleReference(context, id) : { guid: UNSET_GUID }
       }
-    }
-    case 'effects':
-      return { effects: kiwiEffects(context, target.effects, instanceScale(instance)) }
-    case 'layout-align':
-      return raw === 'stackPrimaryAlignItems'
+    },
+    effects: ({ context, instance, target }) => ({
+      effects: kiwiEffects(context, target.effects, instanceScale(instance))
+    }),
+    'layout-align': ({ target, raw }) =>
+      raw === 'stackPrimaryAlignItems'
         ? { stackPrimaryAlignItems: normalizeStackJustify(target.primaryAxisAlign) }
-        : { stackCounterAlignItems: normalizeStackCounterAlignItems(target.counterAxisAlign) }
-    case 'positioning':
-      return { stackPositioning: target.layoutPositioning }
-    case 'font':
-      return {
-        fontName: {
-          family: normalizeFontFamily(target.fontFamily),
-          style: weightToFigmaStyle(target.fontWeight, target.italic),
-          postscript: ''
-        }
+        : { stackCounterAlignItems: normalizeStackCounterAlignItems(target.counterAxisAlign) },
+    positioning: ({ target }) => ({ stackPositioning: target.layoutPositioning }),
+    font: ({ target }) => ({
+      fontName: {
+        family: normalizeFontFamily(target.fontFamily),
+        style: weightToFigmaStyle(target.fontWeight, target.italic),
+        postscript: ''
       }
-    case 'text-length': {
-      const value = target[field]
-      return typeof value === 'number'
-        ? { [raw]: { value: value / instanceScale(instance), units: 'PIXELS' } }
+    }),
+    'text-length': ({ instance, target, field, raw }) => {
+      const length = target[field]
+      return typeof length === 'number'
+        ? { [raw]: { value: length / instanceScale(instance), units: 'PIXELS' } }
         : undefined
-    }
-    case 'text-decoration':
-      return { textDecoration: target.textDecoration }
-    case 'variable-modes':
-      return {
-        variableModeBySetMap: serializeVariableModes(
-          target,
-          context.varIdToGuid,
-          context.modeIdToGuid
-        ) ?? { entries: [] }
-      }
-    case 'paint':
-      return raw === 'fillPaints'
+    },
+    'text-decoration': ({ target }) => ({ textDecoration: target.textDecoration }),
+    'variable-modes': ({ context, target }) => ({
+      variableModeBySetMap: serializeVariableModes(
+        target,
+        context.varIdToGuid,
+        context.modeIdToGuid
+      ) ?? { entries: [] }
+    }),
+    paint: ({ context, target, raw }) =>
+      raw === 'fillPaints'
         ? { fillPaints: createFillPaints(context, target) }
-        : { strokePaints: createStrokePaints(context, target) }
-    case 'size':
-      return { size: unscaledRootSize(instance, target) }
-    case 'layout-distance':
-      return layoutDistanceClaim(raw, target[field], instance)
-    case 'layout-mode':
-      return layoutModeClaim(raw, target[field], context.graph, target)
-    default:
-      return undefined
+        : { strokePaints: createStrokePaints(context, target) },
+    size: ({ instance, target }) => ({ size: unscaledRootSize(instance, target) }),
+    'layout-distance': ({ instance, target, field, raw }) =>
+      layoutDistanceClaim(raw, target[field], instance),
+    'layout-mode': ({ context, target, field, raw }) =>
+      layoutModeClaim(raw, target[field], context.graph, target)
   }
+
+function registryClaim(field: keyof SceneNode, input: ClaimInput): Claim | undefined {
+  const entry = SCENE_OVERRIDE_FIELDS.get(field)
+  return (
+    entry &&
+    CLAIM_WRITERS[entry.field.kind]({ ...input, field, raw: entry.raw, definition: entry.field })
+  )
 }
 
 function paintBindingOverride(
