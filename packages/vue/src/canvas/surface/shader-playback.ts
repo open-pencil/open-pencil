@@ -11,6 +11,8 @@ import { canDrawShaders } from '#vue/canvas/surface/shader-rasterizer'
 
 /** The longest side a playing shader is drawn at, however large it is on screen. */
 const MAX_PLAY_EDGE = 1024
+/** The least time between frames where each frame is copied. */
+const COPY_FRAME_MS = 1000 / 30
 /** How often what is on screen is checked while the view moves. */
 const VIEW_CHECK_MS = 200
 /** How much a shader's size on screen may change before it is drawn at the new size. */
@@ -25,6 +27,8 @@ interface Player {
   /** Whether it is on screen, the only time it draws. */
   visible: boolean
   disposed: boolean
+  /** The copy of its last frame shown, where frames are copied, closed when the next replaces it. */
+  copied: ImageBitmap | null
 }
 
 interface PageShader {
@@ -78,10 +82,13 @@ export function useShaderPlayback(options: {
   const retired: Player[] = []
   let last = 0
   let stepping = false
+  /** Whether this browser needs each frame copied before the canvas can show it. */
+  let copyFrames = false
 
   function release() {
     for (const player of retired.splice(0)) {
       player.renderer?.dispose()
+      player.copied?.close()
     }
   }
 
@@ -135,7 +142,8 @@ export function useShaderPlayback(options: {
       canvas,
       renderer: null,
       visible: true,
-      disposed: false
+      disposed: false,
+      copied: null
     }
     players.set(hash, player)
     // Read through a call: the player may be stopped while the library loads.
@@ -191,7 +199,7 @@ export function useShaderPlayback(options: {
   const { pause, resume } = useRafFn(
     ({ timestamp }) => {
       const delta = last === 0 ? 0 : (timestamp - last) / 1000
-      if (stepping) return
+      if (stepping || (copyFrames && last !== 0 && timestamp - last < COPY_FRAME_MS)) return
       last = timestamp
       stepping = true
       void step(delta).finally(() => {
@@ -203,21 +211,47 @@ export function useShaderPlayback(options: {
   )
 
   /**
-   * Draws every visible shader and uploads its canvas as the image right after drawing, in the
-   * same task, since a WebGPU canvas keeps its frame only until the task that drew it ends.
+   * Draws every visible shader and shows its frame. The WebGPU canvas itself is uploaded right
+   * after drawing, in the same task, since it keeps its frame only until that task ends. A
+   * browser that cannot upload a WebGPU canvas gets a copy of each frame instead, which costs a
+   * readback, so frames then come at most every `COPY_FRAME_MS`.
    */
   async function step(delta: number) {
     const renderer = getRenderer()
     if (!renderer) return
+    const copies: Promise<{ hash: string; player: Player; frame: ImageBitmap }>[] = []
     let drew = false
     for (const [hash, player] of players) {
       if (!player.visible || !player.renderer) continue
       await player.renderer.renderFrame({ deltaSeconds: delta, waitForGpu: false })
       if (player.disposed) continue
-      renderer.setLiveImage(hash, player.canvas, player.nodeIds)
+      if (!copyFrames && uploads(renderer, hash, player)) {
+        drew = true
+        continue
+      }
+      copyFrames = true
+      copies.push(createImageBitmap(player.canvas).then((frame) => ({ hash, player, frame })))
+    }
+    for (const { hash, player, frame } of await Promise.all(copies)) {
+      if (player.disposed) {
+        frame.close()
+        continue
+      }
+      renderer.setLiveImage(hash, frame, player.nodeIds)
+      player.copied?.close()
+      player.copied = frame
       drew = true
     }
     if (drew) markDirty()
+  }
+
+  /** Whether the canvas shows `player`'s WebGPU canvas uploaded as it is. */
+  function uploads(renderer: SkiaRenderer, hash: string, player: Player): boolean {
+    try {
+      return renderer.setLiveImage(hash, player.canvas, player.nodeIds)
+    } catch {
+      return false
+    }
   }
 
   watch(() => [getView().play !== null, getView().currentPageId, editor.state.sceneVersion], sync, {

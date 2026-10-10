@@ -580,9 +580,14 @@ export class SkiaRenderer {
 
   /**
    * Draws `source` wherever the image `hash` is painted, until it is set to null, and redraws
-   * `nodeIds`, the layers that paint it. Frames of the same size reuse one texture.
+   * `nodeIds`, the layers that paint it. Frames of the same size reuse one texture. Returns
+   * whether a live image is shown, which a browser that cannot upload `source` leaves false.
    */
-  setLiveImage(hash: string, source: LiveImageSource | null, nodeIds: Iterable<string> = []): void {
+  setLiveImage(
+    hash: string,
+    source: LiveImageSource | null,
+    nodeIds: Iterable<string> = []
+  ): boolean {
     const live = this.liveImages.get(hash)
     // A texture made on a surface since replaced has no context left to update or free it in.
     const current = live?.surface === this.surface ? live.image : null
@@ -600,6 +605,7 @@ export class SkiaRenderer {
       if (image) this.liveImages.set(hash, { image, surface: this.surface })
     }
     for (const id of nodeIds) this.invalidateNodePicture(id)
+    return this.liveImages.has(hash)
   }
 
   /**
