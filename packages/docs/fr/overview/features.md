@@ -94,7 +94,7 @@ Toutes les commandes acceptent `--json`. Installation : `npm install -g @open-pe
 
 ## Collaboration en temps réel
 
-La collaboration fonctionne directement entre participants via WebRTC et ne nécessite aucun serveur central. Il suffit de partager un lien. Elle comprend les curseurs, la présence et le suivi de la vue d’un autre participant.
+La collaboration fonctionne directement entre participants via WebRTC et ne nécessite aucun serveur central. Il suffit de partager un lien. Elle comprend les curseurs, la présence, le suivi de la vue d’un autre participant et les appels vocaux avec les personnes présentes dans la salle.
 
 ## Bureau et Web
 

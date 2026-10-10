@@ -15,6 +15,13 @@ export interface RemotePeer {
   treeFormat?: number
   /** Whether the peer has the room's file, so a newcomer can get it from them. */
   hasFile?: boolean
+  /** Present while the peer is in the room's voice call. */
+  voice?: VoiceMembership
+}
+
+/** What a person in a room's voice call publishes about it. */
+export interface VoiceMembership {
+  muted: boolean
 }
 
 /** The active tab's room, as the collaboration UI shows it. */
