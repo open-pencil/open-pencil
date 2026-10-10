@@ -162,12 +162,12 @@ function effectPreview(effect: Effect): Fill {
                   :model-value="effect.offset.x"
                   data-property="effect-offset-x"
                   @update:model-value="
-                    effectsCtx.scrubEffect(activeNode, index, {
+                    effectsCtx.scrubEffect(index, {
                       offset: { ...effect.offset, x: $event }
                     })
                   "
                   @commit="
-                    effectsCtx.commitEffect(activeNode, index, {
+                    effectsCtx.commitEffect(index, {
                       offset: { ...effect.offset, x: $event }
                     })
                   "
@@ -179,12 +179,12 @@ function effectPreview(effect: Effect): Fill {
                   :model-value="effect.offset.y"
                   data-property="effect-offset-y"
                   @update:model-value="
-                    effectsCtx.scrubEffect(activeNode, index, {
+                    effectsCtx.scrubEffect(index, {
                       offset: { ...effect.offset, y: $event }
                     })
                   "
                   @commit="
-                    effectsCtx.commitEffect(activeNode, index, {
+                    effectsCtx.commitEffect(index, {
                       offset: { ...effect.offset, y: $event }
                     })
                   "
@@ -199,10 +199,8 @@ function effectPreview(effect: Effect): Fill {
                   :model-value="effect.radius"
                   :min="0"
                   data-property="effect-radius"
-                  @update:model-value="
-                    effectsCtx.scrubEffect(activeNode, index, { radius: $event })
-                  "
-                  @commit="effectsCtx.commitEffect(activeNode, index, { radius: $event })"
+                  @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
+                  @commit="effectsCtx.commitEffect(index, { radius: $event })"
                 />
               </Tip>
               <Tip :label="panels.spread">
@@ -210,10 +208,8 @@ function effectPreview(effect: Effect): Fill {
                   icon="S"
                   :model-value="effect.spread"
                   data-property="effect-spread"
-                  @update:model-value="
-                    effectsCtx.scrubEffect(activeNode, index, { spread: $event })
-                  "
-                  @commit="effectsCtx.commitEffect(activeNode, index, { spread: $event })"
+                  @update:model-value="effectsCtx.scrubEffect(index, { spread: $event })"
+                  @commit="effectsCtx.commitEffect(index, { spread: $event })"
                 />
               </Tip>
             </div>
@@ -234,12 +230,12 @@ function effectPreview(effect: Effect): Fill {
                   :max="100"
                   data-property="effect-opacity"
                   @update:model-value="
-                    effectsCtx.scrubEffect(activeNode, index, {
+                    effectsCtx.scrubEffect(index, {
                       color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
                     })
                   "
                   @commit="
-                    effectsCtx.commitEffect(activeNode, index, {
+                    effectsCtx.commitEffect(index, {
                       color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
                     })
                   "
@@ -255,8 +251,8 @@ function effectPreview(effect: Effect): Fill {
             :model-value="effect.radius"
             :min="0"
             data-property="effect-radius"
-            @update:model-value="effectsCtx.scrubEffect(activeNode, index, { radius: $event })"
-            @commit="effectsCtx.commitEffect(activeNode, index, { radius: $event })"
+            @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
+            @commit="effectsCtx.commitEffect(index, { radius: $event })"
           />
         </div>
       </div>

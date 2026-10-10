@@ -22,7 +22,7 @@ const toolbarTheme = {
   variants: {
     active: {
       true: {
-        button: 'bg-accent text-white'
+        button: 'bg-accent text-on-accent'
       },
       false: {}
     },

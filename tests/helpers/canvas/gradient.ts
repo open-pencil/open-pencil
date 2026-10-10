@@ -2,12 +2,16 @@ import type { Fill, GradientTransform, SceneGraph } from '@open-pencil/scene-gra
 
 type GradientType = 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND'
 
-/** Linear from the left edge's middle to the right's; the others centred, filling the layer. */
+/**
+ * Figma's identity transform for each kind: linear from the left edge's middle to the right's, the
+ * others centred and filling the layer.
+ */
+const IDENTITY: GradientTransform = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
 const TRANSFORMS: Record<GradientType, GradientTransform> = {
-  GRADIENT_LINEAR: { m00: -1, m01: 0, m02: 1, m10: 0, m11: -1, m12: 0.5 },
-  GRADIENT_RADIAL: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-  GRADIENT_ANGULAR: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-  GRADIENT_DIAMOND: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+  GRADIENT_LINEAR: IDENTITY,
+  GRADIENT_RADIAL: IDENTITY,
+  GRADIENT_ANGULAR: IDENTITY,
+  GRADIENT_DIAMOND: IDENTITY
 }
 
 /** A 200 × 140 rectangle at the origin with a red, yellow, and blue gradient fill. */

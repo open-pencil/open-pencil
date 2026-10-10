@@ -10,8 +10,8 @@ description: Zarządzanie wyrównaniem, bokami i grubością obwiedni w panelu w
 ```ts
 const { alignOptions, sideOptions, currentAlign, currentSides, selectSide } = useStrokeControls()
 
-strokes.updateAlign('INSIDE', activeNode)
-strokes.selectSide('TOP', activeNode)
+strokes.updateAlign('INSIDE')
+strokes.selectSide('TOP')
 ```
 
 ## Zobacz też

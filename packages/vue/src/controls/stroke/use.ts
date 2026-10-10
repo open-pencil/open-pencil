@@ -17,7 +17,8 @@ import {
   setDash,
   setGap,
   toggleDash,
-  updateAlign
+  updateAlign,
+  type StrokeSides
 } from '#vue/controls/stroke/helpers'
 import { useEditor } from '#vue/editor/context'
 import { useI18n } from '#vue/i18n'
@@ -68,15 +69,21 @@ export function useStrokeControls() {
       const first = nodes.value.at(0)
       return { ...DEFAULT_STROKE, ...(first ? newStrokeGeometry(first) : {}) }
     },
-    updateAlign: updateAlign.bind(null, store),
-    currentAlign,
+    /** Aligns the strokes of every selected node. */
+    updateAlign: (align: Stroke['align']) => updateAlign(store, nodes.value, align),
+    /** The alignment the selected nodes share, or MIXED. */
+    currentAlign: () => currentAlign(nodes.value),
     currentSides,
     dashState,
     toggleDash,
     setDash,
     setGap,
-    borderWeight,
-    selectSide,
-    updateBorderWeight
+    /** One side's weight across the selection, or MIXED. */
+    borderWeight: (side: (typeof BORDER_SIDES)[number]) => borderWeight(nodes.value, side),
+    /** Strokes the chosen sides of every selected node. */
+    selectSide: (side: StrokeSides) => selectSide(side, nodes.value),
+    /** Changes one side's weight on every selected node. */
+    updateBorderWeight: (side: (typeof BORDER_SIDES)[number], value: number) =>
+      updateBorderWeight(side, value, nodes.value)
   }
 }

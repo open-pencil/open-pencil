@@ -39,6 +39,7 @@ export function cloneCanvasPaneState(id: string, source: CanvasPaneState): Canva
     dropTargetId: null,
     layoutInsertIndicator: null,
     autoLayoutHover: null,
+    cornerRadiusHover: null,
     penState: null,
     penCursorX: null,
     penCursorY: null,

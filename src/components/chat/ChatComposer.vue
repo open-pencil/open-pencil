@@ -97,7 +97,7 @@ defineExpose({ restoreDraft })
               size="sm"
               type="submit"
               data-test-id="chat-send-button"
-              class="bg-accent text-white hover:bg-accent/90 hover:text-white"
+              class="bg-accent text-on-accent hover:bg-accent/90 hover:text-on-accent"
               :disabled="!input.trim()"
             >
               <icon-lucide-send class="size-3.5" />

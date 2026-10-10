@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { MIXED, useI18n, useSelectionLayout } from '@open-pencil/vue'
 
-const ctx = useLayoutControlsContext()
-
+const layout = useSelectionLayout()
 const { panels } = useI18n()
 </script>
 
@@ -12,14 +11,9 @@ const { panels } = useI18n()
       type="checkbox"
       data-test-id="clip-content-checkbox"
       class="accent-accent"
-      :checked="ctx.node.clipsContent"
-      @change="
-        ctx.editor.updateNodeWithUndo(
-          ctx.node.id,
-          { clipsContent: !ctx.node.clipsContent },
-          'Toggle clip content'
-        )
-      "
+      :checked="layout.clipsContent.value === true"
+      :indeterminate="layout.clipsContent.value === MIXED"
+      @change="layout.toggleClipsContent()"
     />
     {{ panels.clipContent }}
   </label>

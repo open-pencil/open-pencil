@@ -9,8 +9,8 @@ description: Ausrichtung, Seiten und Stärke von Konturen im Eigenschaften-Panel
 
 ```ts
 const { alignOptions, sideOptions, currentAlign, currentSides, selectSide } = useStrokeControls()
-strokes.updateAlign('INSIDE', activeNode)
-strokes.selectSide('TOP', activeNode)
+strokes.updateAlign('INSIDE')
+strokes.selectSide('TOP')
 ```
 
 ## Siehe auch

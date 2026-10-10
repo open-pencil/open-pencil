@@ -36,6 +36,7 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
       isMulti,
       active,
       hasCornerRadius,
+      cornerRadiusDisabled,
       showIndependentCorners,
       cornerRadiusValue,
       cornerRadiusBindingPaths,
@@ -131,6 +132,7 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
             data-property="cornerRadius"
             :aria-label="panels.radius"
             :model-value="cornerRadiusValue"
+            :disabled="cornerRadiusDisabled"
             :min="0"
             @update:model-value="actions.updateUniformRadius"
             @commit="actions.commitUniformRadius"
@@ -145,6 +147,7 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
             :label="panels.independentCornerRadii"
             size="xs"
             :active="showIndependentCorners"
+            :disabled="cornerRadiusDisabled"
             @click="actions.toggleIndependentCorners"
           >
             <icon-lucide-square-round-corner class="size-3" />
@@ -206,7 +209,7 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
         </template>
       </PanelGrid>
 
-      <PanelGrid v-if="hasCornerRadius" :columns="2" class="mt-1.5">
+      <PanelGrid v-if="hasCornerRadius && !cornerRadiusDisabled" :columns="2" class="mt-1.5">
         <PanelFieldGroup :label="panels.cornerSmoothing">
           <NumberField
             suffix="%"

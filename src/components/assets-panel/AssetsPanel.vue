@@ -341,7 +341,7 @@ async function insertSelectedAsset() {
         <icon-lucide-library class="size-3.5" />
         <span
           v-if="libraryUpdateCount > 0"
-          class="absolute top-0.5 right-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-[8px] leading-2.5 text-white"
+          class="absolute top-0.5 right-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-[8px] leading-2.5 text-on-accent"
         >
           {{ libraryUpdateCount }}
         </span>

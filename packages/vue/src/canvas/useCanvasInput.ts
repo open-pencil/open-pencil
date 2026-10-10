@@ -18,6 +18,7 @@ import {
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
+import { resolveCornerRadiusHover } from '#vue/shared/input/corner-radius'
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
@@ -61,7 +62,7 @@ export function useCanvasInput(
     previous: number
   } | null>(null)
   const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
-  const lastPointer = ref<{ cx: number; cy: number } | null>(null)
+  const lastPointer = ref<{ cx: number; cy: number; sx: number; sy: number } | null>(null)
   const pointerInside = ref(false)
   let altHeld = false
   let metaHeld = false
@@ -110,6 +111,7 @@ export function useCanvasInput(
     editor.setAutoLayoutHover(
       mode === 'off' ? resolveAutoLayoutHover(pointer.cx, pointer.cy, editor) : null
     )
+    editor.setCornerRadiusHover(resolveCornerRadiusHover(editor, pointer.sx, pointer.sy, altHeld))
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -280,7 +282,7 @@ export function useCanvasInput(
     if (!isEnabled()) return
     pointerInside.value = true
     const coords = getCoords(e)
-    lastPointer.value = { cx: coords.cx, cy: coords.cy }
+    lastPointer.value = { cx: coords.cx, cy: coords.cy, sx: coords.sx, sy: coords.sy }
     if (onCursorMove) {
       onCursorMove(coords.cx, coords.cy)
     }
@@ -293,8 +295,9 @@ export function useCanvasInput(
     }
 
     if (!drag.value) {
-      const { cx, cy } = coords
+      const { cx, cy, sx, sy } = coords
       updateNodeEditHover(editor, cx, cy)
+      editor.setCornerRadiusHover(resolveCornerRadiusHover(editor, sx, sy, e.altKey))
     }
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
@@ -324,7 +327,7 @@ export function useCanvasInput(
 
     const { sx, sy, cx, cy } = getCoords(e)
 
-    if (d.type === 'gradient') {
+    if (d.type === 'gradient' || d.type === 'corner-radius') {
       d.update(sx, sy, e.shiftKey)
       return
     }
@@ -413,7 +416,7 @@ export function useCanvasInput(
         editor.commitRotation(d.nodeId, d.origRotation)
       }
       if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
-    } else if (d.type === 'draw' || d.type === 'gradient') d.commit()
+    } else if (d.type === 'draw' || d.type === 'gradient' || d.type === 'corner-radius') d.commit()
     else if (d.type === 'marquee') editor.setMarquee(null)
 
     drag.value = null
@@ -425,6 +428,7 @@ export function useCanvasInput(
     editor.setSnapGuides([])
     editor.setLayoutInsertIndicator(null)
     editor.setDropTarget(null)
+    editor.setCornerRadiusHover(null)
     guideInput.clearHoverAndPreview()
   }
 
@@ -434,7 +438,11 @@ export function useCanvasInput(
       drag.value = null
       if (editor.state.rotationPreview?.nodeId === rotation.nodeId) editor.setRotationPreview(null)
     }
-    if (drag.value?.type === 'draw' || drag.value?.type === 'gradient') {
+    if (
+      drag.value?.type === 'draw' ||
+      drag.value?.type === 'gradient' ||
+      drag.value?.type === 'corner-radius'
+    ) {
       const drawing = drag.value
       drag.value = null
       drawing.cancel()
@@ -524,6 +532,7 @@ export function useCanvasInput(
     if (!drag.value) {
       editor.setHoveredNode(null)
       editor.setHoveredGuide(null)
+      editor.setCornerRadiusHover(null)
     }
   })
   useEventListener(

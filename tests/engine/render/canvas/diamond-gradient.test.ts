@@ -77,7 +77,7 @@ test('diamond gradients preserve transformed contours and intermediate stops', a
     color: black,
     opacity: 1,
     visible: true,
-    gradientTransform: { m00: 0, m01: -1, m02: 1.005, m10: 0.5, m11: 0, m12: 0.255 },
+    gradientTransform: { m00: 0, m01: 2, m02: -0.51, m10: -1, m11: 0, m12: 1.005 },
     gradientStops: [
       { position: 0, color: black },
       { position: 0.5, color: { r: 1, g: 0, b: 0, a: 1 } },

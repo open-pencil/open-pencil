@@ -19,7 +19,7 @@ const layerTreeTheme = {
   },
   variants: {
     selected: {
-      true: { row: 'bg-panel-selected text-white hover:bg-panel-selected' },
+      true: { row: 'bg-panel-selected text-on-accent hover:bg-panel-selected' },
       false: { row: 'bg-transparent text-surface hover:bg-hover' }
     },
     focused: {
@@ -76,7 +76,7 @@ const layerTreeTheme = {
     {
       selected: true,
       focused: true,
-      class: { icon: 'text-white opacity-100' }
+      class: { icon: 'text-on-accent opacity-100' }
     },
     {
       selected: true,
