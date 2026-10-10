@@ -8,6 +8,11 @@ import { ownsSlotContent, type SceneGraph, type SceneNode } from '@open-pencil/s
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 
 import {
+  collectComponentPropertyIds,
+  firstUnclaimedLocalId,
+  layerSourceGuids
+} from '#core/io/formats/fig/export-setup'
+import {
   appendVariableNodeChanges,
   assignSharedStyleGuids,
   assignVariableGuids
@@ -64,7 +69,10 @@ async function writeFigmaClipboardHTML(
 
   const docGuid = { sessionID: 0, localID: 0 }
   const canvasGuid = { sessionID: 0, localID: 1 }
-  const localIdCounter = { value: 100 }
+  // Above every GUID the graph claims, as the document exporter starts, so no record collides.
+  const localIdCounter = {
+    value: Math.max(100, firstUnclaimedLocalId(graph, collectComponentPropertyIds(graph)))
+  }
 
   const nodeChanges: KiwiNodeChange[] = [
     makeDocumentNodeChange(docGuid, graph.documentColorSpace),
@@ -85,7 +93,14 @@ async function writeFigmaClipboardHTML(
   const blobs: Uint8Array[] = []
   const variableIds = new Map<string, GUID>()
   const modeIds = new Map<string, GUID>()
-  assignVariableGuids(graph, localIdCounter, variableIds, modeIds, assignedGuidValues, new Set())
+  assignVariableGuids(
+    graph,
+    localIdCounter,
+    variableIds,
+    modeIds,
+    assignedGuidValues,
+    layerSourceGuids(graph)
+  )
   assignSharedStyleGuids(
     [...graph.nodes.values()].filter((node) => node.sharedStyleType !== null),
     localIdCounter,
