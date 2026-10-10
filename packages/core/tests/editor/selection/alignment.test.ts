@@ -4,6 +4,7 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { createRect, firstPageId } from '#core-tests/helpers/scene'
 
 import { SceneGraph } from '@open-pencil/core'
+import { createEditor } from '@open-pencil/core/editor'
 
 describe('single-node alignment to parent', () => {
   function setup() {
@@ -124,4 +125,22 @@ describe('multi-node alignment', () => {
     expect(getNodeOrThrow(graph, b.id).y).toBe(20)
     expect(getNodeOrThrow(graph, c.id).y).toBe(20)
   })
+})
+
+// Aligning layers an auto layout holds in place moves nothing, so it adds no undo step.
+test('aligning auto layout children records no undo step', () => {
+  const editor = createEditor()
+  const pageId = editor.state.currentPageId
+  const row = editor.graph.createNode('FRAME', pageId, {
+    width: 300,
+    height: 100,
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'FIXED',
+    counterAxisSizing: 'FIXED'
+  })
+  const a = editor.graph.createNode('RECTANGLE', row.id, { width: 40, height: 40 })
+  const b = editor.graph.createNode('RECTANGLE', row.id, { width: 40, height: 60 })
+  editor.runLayoutForNode(row.id)
+  editor.alignNodes([a.id, b.id], 'vertical', 'max')
+  expect(editor.undo.canUndo).toBe(false)
 })

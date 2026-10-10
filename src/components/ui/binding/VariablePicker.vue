@@ -113,7 +113,7 @@ defineOptions({ inheritAttrs: false })
           }"
           :ui="{ root: 'size-3.5 shrink-0 rounded-sm' }"
         />
-        <icon-lucide-diamond v-else class="size-3.5 text-component" />
+        <icon-lucide-diamond v-else class="size-3.5 text-muted" />
       </template>
       <template #footer>
         <AppButton

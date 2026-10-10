@@ -4,7 +4,7 @@ export const panelFieldBase =
 export const panelFieldState = {
   idle: '',
   mixed: 'text-muted placeholder:text-muted',
-  bound: 'text-component',
+  bound: 'text-surface',
   invalid: 'border-error focus:border-error focus-visible:border-error'
 } as const
 

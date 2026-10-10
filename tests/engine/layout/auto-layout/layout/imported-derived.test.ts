@@ -452,7 +452,7 @@ describe('imported auto-layout bounds', () => {
       paddingLeft: 24
     })
     graph.updateNode(frame.id, { source: { ...frame.source, format: 'fig' } })
-    graph.createNode('TEXT', frame.id, {
+    const text = graph.createNode('TEXT', frame.id, {
       width: 333,
       height: 30,
       text: 'Bar Chart',
@@ -460,6 +460,7 @@ describe('imported auto-layout bounds', () => {
       layoutAlignSelf: 'STRETCH',
       derivedLayout: { width: 333, height: 30 }
     })
+    graph.updateNode(text.id, { source: { ...text.source, format: 'fig' } })
 
     computeAllLayouts(graph)
 

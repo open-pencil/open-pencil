@@ -248,6 +248,8 @@
   "aiSetupServerVision": "此模型可以读取图片",
   "aiSetupGapCoveredByOpenRouter": "OpenRouter 会覆盖你其他选择无法完成的部分，按请求计费。",
   "aiSetupAccessMore": "更多服务商",
+  "providerGroupAgents": "你的智能体",
+  "providerGroupProviders": "服务商",
   "aiSetupServerOther": "其他服务器",
   "aiSetupAgentChecking": "正在检查这台电脑…",
   "aiSetupAgentInstalled": "已安装",

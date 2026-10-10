@@ -27,6 +27,24 @@ export function pushPositionUndo(
   })
 }
 
+/**
+ * Lays the moved layers out, then records one undo step from `originals` to where they ended up.
+ * Layers an auto layout holds in place snap back, so an edit that moves nothing records nothing.
+ */
+export function commitPositionChange(
+  ctx: EditorContext,
+  label: string,
+  originals: Map<string, Vector>
+): void {
+  for (const id of originals.keys()) ctx.runLayoutForNode(id)
+  const finals = collectNodePositions(ctx, originals.keys())
+  const moved = [...finals].some(([id, place]) => {
+    const before = originals.get(id)
+    return !before || before.x !== place.x || before.y !== place.y
+  })
+  if (moved) pushPositionUndo(ctx, label, originals, finals)
+}
+
 function applyPositions(ctx: EditorContext, positions: Map<string, Vector>): void {
   for (const [id, pos] of positions) {
     ctx.graph.updateNode(id, pos)

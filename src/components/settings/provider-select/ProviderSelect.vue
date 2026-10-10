@@ -9,10 +9,12 @@ import {
   IS_TAURI,
   type AIProviderID
 } from '@open-pencil/core/constants'
+import { useAIMessages } from '@open-pencil/vue'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
+const ai = useAIMessages()
 const mcpAvailable = ref(false)
 
 async function checkMCPHealth(retries = 3, delayMs = 1000) {
@@ -77,7 +79,7 @@ const groups = computed(() => {
 
   if (acpAgents.value.length) {
     result.push({
-      label: 'Your agents',
+      label: ai.value.providerGroupAgents,
       options: acpAgents.value.map((agent) => ({
         value: `acp:${agent.id}`,
         label: agent.name
@@ -86,7 +88,7 @@ const groups = computed(() => {
   }
 
   result.push({
-    label: acpAgents.value.length ? 'Providers' : undefined,
+    label: acpAgents.value.length ? ai.value.providerGroupProviders : undefined,
     options: [...AI_PROVIDERS]
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((provider) => ({

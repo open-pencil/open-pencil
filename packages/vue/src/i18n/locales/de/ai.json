@@ -248,6 +248,8 @@
   "aiSetupServerVision": "Dieses Modell kann Bilder lesen",
   "aiSetupGapCoveredByOpenRouter": "OpenRouter übernimmt, was deine übrige Auswahl nicht abdeckt, und rechnet pro Anfrage ab.",
   "aiSetupAccessMore": "Weitere Anbieter",
+  "providerGroupAgents": "Deine Agenten",
+  "providerGroupProviders": "Anbieter",
   "aiSetupServerOther": "Anderer Server",
   "aiSetupAgentChecking": "Dieser Computer wird geprüft…",
   "aiSetupAgentInstalled": "installiert",

@@ -248,6 +248,8 @@
   "aiSetupServerVision": "このモデルは画像を読み取れます",
   "aiSetupGapCoveredByOpenRouter": "ほかの選択で対応できない部分は OpenRouter が担当し、リクエストごとに課金されます。",
   "aiSetupAccessMore": "その他のプロバイダー",
+  "providerGroupAgents": "あなたのエージェント",
+  "providerGroupProviders": "プロバイダー",
   "aiSetupServerOther": "その他のサーバー",
   "aiSetupAgentChecking": "このコンピューターを確認しています…",
   "aiSetupAgentInstalled": "インストール済み",

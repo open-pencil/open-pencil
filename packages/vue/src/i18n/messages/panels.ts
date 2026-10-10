@@ -400,6 +400,7 @@ export const panelMessageDefaults = {
   alignCenterVertically: 'Align center vertically',
   alignBottom: 'Align bottom',
   flipHorizontal: 'Flip horizontal',
+  ignoreAutoLayout: 'Ignore auto layout',
   flipVertical: 'Flip vertical',
   rotate90: 'Rotate 90°',
   mixedFillsHelp: 'Click + to replace mixed fills',
