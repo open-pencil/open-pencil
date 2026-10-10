@@ -8,7 +8,16 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import type { FigmaFontName } from '#core/figma-api/fonts'
-import { getFontName, setFontName } from '#core/figma-api/text'
+import {
+  getFontName,
+  getLetterSpacing,
+  getLineHeight,
+  letterSpacingValue,
+  lineHeightValue,
+  setFontName,
+  type FigmaLetterSpacing,
+  type FigmaLineHeight
+} from '#core/figma-api/text'
 
 function graph(target: ProxyThis, internals: NodeProxyInternals): SceneGraph {
   return target[internals.graph] as SceneGraph
@@ -61,8 +70,26 @@ export function installTextNodeProxyAccessors(
     textAlignVertical: field(internals, 'textAlignVertical'),
     textDirection: field(internals, 'textDirection'),
     textAutoResize: field(internals, 'textAutoResize'),
-    letterSpacing: field(internals, 'letterSpacing'),
-    lineHeight: field(internals, 'lineHeight'),
+    // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
+    // node instead of pixels would leave the text unmeasurable.
+    letterSpacing: {
+      get(this: ProxyThis): FigmaLetterSpacing {
+        return getLetterSpacing(raw(this, internals))
+      },
+      set(this: ProxyThis, value: FigmaLetterSpacing | number) {
+        updateNode(this, internals, {
+          letterSpacing: letterSpacingValue(raw(this, internals), value)
+        })
+      }
+    },
+    lineHeight: {
+      get(this: ProxyThis): FigmaLineHeight {
+        return getLineHeight(raw(this, internals))
+      },
+      set(this: ProxyThis, value: FigmaLineHeight | number | null) {
+        updateNode(this, internals, { lineHeight: lineHeightValue(raw(this, internals), value) })
+      }
+    },
     textCase: field(internals, 'textCase'),
     textDecoration: field(internals, 'textDecoration'),
     maxLines: field(internals, 'maxLines'),
