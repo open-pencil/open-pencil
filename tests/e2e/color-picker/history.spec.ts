@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { fillDriver } from '#tests/helpers/canvas/fill-driver'
 
 // Figma desktop 126 undoes with a colour picker open; other shortcuts still wait for it to close.
 
@@ -20,13 +21,8 @@ test.afterAll(async () => {
   await page.close()
 })
 
-function selectedFillColor() {
-  return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    const id = store ? [...store.state.selectedIds][0] : undefined
-    return id ? (store?.graph.getNode(id)?.fills[0]?.color ?? null) : null
-  })
-}
+const fill = fillDriver(() => page)
+const selectedFillColor = () => fill.selectedColor()
 
 async function changeHue() {
   const slider = page
@@ -38,12 +34,16 @@ async function changeHue() {
   await canvas.waitForRender()
 }
 
-test('Cmd+Z undoes a colour change while the picker stays open', async () => {
+async function openPickerOnNewRect() {
   await canvas.clearCanvas()
   await canvas.drawRect(100, 100, 160, 120)
   await canvas.waitForRender()
   await page.getByTestId('fill-picker-swatch').first().click()
   await expect(page.getByTestId('fill-picker-tab-solid')).toBeVisible()
+}
+
+test('Cmd+Z undoes a colour change while the picker stays open', async () => {
+  await openPickerOnNewRect()
 
   const before = await selectedFillColor()
   await changeHue()
@@ -58,4 +58,13 @@ test('Cmd+Z undoes a colour change while the picker stays open', async () => {
   await expect.poll(selectedFillColor).not.toEqual(before)
   await expect(page.getByTestId('fill-picker-tab-solid')).toBeVisible()
   canvas.assertNoErrors()
+})
+
+test('Cmd+Z undoes the first change of a document with no history', async () => {
+  await openPickerOnNewRect()
+  await fill.clearHistory()
+  const before = await selectedFillColor()
+  await changeHue()
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(selectedFillColor).toEqual(before)
 })

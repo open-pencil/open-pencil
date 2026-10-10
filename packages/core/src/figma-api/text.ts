@@ -34,9 +34,15 @@ export function getLineHeight(node: SceneNode): FigmaLineHeight {
   return node.lineHeight == null ? { unit: 'AUTO' } : { unit: 'PIXELS', value: node.lineHeight }
 }
 
-/** Accepts Figma's object, or a bare number of pixels as earlier OpenPencil scripts wrote it. */
-export function lineHeightValue(node: SceneNode, value: FigmaLineHeight | number): number | null {
-  if (typeof value === 'number') return value
+/**
+ * Accepts Figma's object, or a bare number of pixels or `null` for automatic, as earlier
+ * OpenPencil scripts wrote it.
+ */
+export function lineHeightValue(
+  node: SceneNode,
+  value: FigmaLineHeight | number | null
+): number | null {
+  if (value === null || typeof value === 'number') return value
   return value.unit === 'AUTO' ? null : pixels(value, node.fontSize)
 }
 

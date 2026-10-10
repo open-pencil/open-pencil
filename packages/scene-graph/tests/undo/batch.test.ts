@@ -59,3 +59,17 @@ test('undo commits an edit still being coalesced and undoes it first', () => {
   stop()
   expect(undo.undo()).toBe('Earlier')
 })
+
+// The picker's first change in a document with no history yet must still be undoable.
+test('a pending batch that will settle counts as undoable', () => {
+  const undo = new UndoManager()
+  const noop = () => undefined
+  undo.beginBatch('Change fill')
+  undo.push({ label: 'Picker', forward: noop, inverse: noop })
+  expect(undo.canUndo).toBe(false)
+  undo.onBeforeHistory(() => {
+    if (undo.isBatching) undo.commitBatch()
+  })
+  expect(undo.canUndo).toBe(true)
+  expect(undo.undo()).toBe('Change fill')
+})

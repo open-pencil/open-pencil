@@ -135,8 +135,10 @@ export class UndoManager {
     return this.batches.length > 0
   }
 
+  /** Committed history, or changes in an open batch that a settling hook commits first. */
   get canUndo(): boolean {
-    return this.undoStack.length > 0
+    if (this.undoStack.length > 0) return true
+    return this.settlers.size > 0 && this.batches.some((batch) => batch.entries.length > 0)
   }
 
   get canRedo(): boolean {

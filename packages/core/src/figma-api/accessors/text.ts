@@ -86,7 +86,7 @@ export function installTextNodeProxyAccessors(
       get(this: ProxyThis): FigmaLineHeight {
         return getLineHeight(raw(this, internals))
       },
-      set(this: ProxyThis, value: FigmaLineHeight | number) {
+      set(this: ProxyThis, value: FigmaLineHeight | number | null) {
         updateNode(this, internals, { lineHeight: lineHeightValue(raw(this, internals), value) })
       }
     },

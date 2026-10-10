@@ -70,14 +70,11 @@ async function showSections(shade: number) {
   await canvas.waitForRender()
 }
 
-/** The darkest red channel in the white section's frame name, read from a screenshot. */
-async function whiteSectionLabelDarkest() {
+/** The darkest and brightest red channel in a region of the canvas, read from a screenshot. */
+async function regionRange(x: number, y: number, width = 70, height = 16) {
   const box = await canvas.canvas.boundingBox()
   if (!box) throw new Error('No canvas')
-  // The name sits just above the frame at (80, 100) of the section, panned to (40, 60).
-  const shot = await page.screenshot({
-    clip: { x: box.x + 118, y: box.y + 140, width: 70, height: 16 }
-  })
+  const shot = await page.screenshot({ clip: { x: box.x + x, y: box.y + y, width, height } })
   return page.evaluate(async (data) => {
     const image = new Image()
     image.src = `data:image/png;base64,${data}`
@@ -90,9 +87,18 @@ async function whiteSectionLabelDarkest() {
     context.drawImage(image, 0, 0)
     const pixels = context.getImageData(0, 0, image.width, image.height).data
     let darkest = 255
-    for (let i = 0; i < pixels.length; i += 4) darkest = Math.min(darkest, pixels[i])
-    return darkest
+    let brightest = 0
+    for (let i = 0; i < pixels.length; i += 4) {
+      darkest = Math.min(darkest, pixels[i])
+      brightest = Math.max(brightest, pixels[i])
+    }
+    return { darkest, brightest }
   }, fromUint8Array(shot))
+}
+
+/** The white section's frame name sits just above the frame at (80, 100), panned to (40, 60). */
+async function whiteSectionLabelDarkest() {
+  return (await regionRange(118, 140)).darkest
 }
 
 async function expectReadableNames(name: 'dark' | 'light', shade: number) {
@@ -112,4 +118,65 @@ test('frame names on a dark page read on white and dark sections', async () => {
 
 test('frame names on a light page read on white and dark sections', async () => {
   await expectReadableNames('light', 245)
+})
+
+// Names drawn above a section's top edge sit on the page, and a section's hidden fill does not
+// count, so these stay readable too.
+test('a name above a section sits on the page, and a hidden fill does not count', async () => {
+  await canvas.clearCanvas()
+  await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.setPageColor({ r: 30 / 255, g: 30 / 255, b: 30 / 255, a: 1 })
+    const pageId = store.state.currentPageId
+    const solid = (v: number, visible = true) => ({
+      type: 'SOLID' as const,
+      color: { r: v, g: v, b: v, a: 1 },
+      opacity: 1,
+      visible
+    })
+    const edge = store.graph.createNode('SECTION', pageId, {
+      name: 'Edge',
+      x: 0,
+      y: 0,
+      width: 360,
+      height: 260,
+      fills: [solid(1)]
+    })
+    store.graph.createNode('FRAME', edge.id, {
+      name: 'At the top edge',
+      x: 80,
+      y: 0,
+      width: 200,
+      height: 120,
+      fills: [solid(0.9)]
+    })
+    const hidden = store.graph.createNode('SECTION', pageId, {
+      name: 'Hidden first fill',
+      x: 420,
+      y: 0,
+      width: 360,
+      height: 260,
+      fills: [solid(0.1, false), solid(1)]
+    })
+    store.graph.createNode('FRAME', hidden.id, {
+      name: 'Frame inside',
+      x: 80,
+      y: 100,
+      width: 200,
+      height: 120,
+      fills: [solid(0.9)]
+    })
+    store.state.zoom = 1
+    store.state.panX = 40
+    store.state.panY = 60
+    store.clearSelection()
+    store.requestRender()
+  })
+  await page.mouse.move(2, 2)
+  await canvas.waitForRender()
+  // Over the dark page: light text, brighter than the page.
+  expect((await regionRange(118, 40)).brightest).toBeGreaterThan(90)
+  // On the hidden fill's section, whose visible fill is white: dark text.
+  expect((await regionRange(538, 140)).darkest).toBeLessThan(220)
 })

@@ -38,7 +38,7 @@ describe('text units in the plugin API', () => {
   })
 
   // Plugin typings allow only the object; untyped eval scripts may still pass a number.
-  test('a bare number still sets pixels, as earlier OpenPencil scripts wrote it', () => {
+  test('a bare number still sets pixels and null automatic, as earlier OpenPencil scripts wrote them', () => {
     const { graph, node } = text()
     Reflect.set(node, 'lineHeight', 18)
     Reflect.set(node, 'letterSpacing', 1)
