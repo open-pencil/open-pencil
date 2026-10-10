@@ -276,6 +276,17 @@ export function cancelResizePreview(dragState: DragResize, editor: Editor) {
   const d = toRaw(dragState)
   optionalEditorState(editor)?.snapGuides.splice(0)
   restoreResizePreview(d, editor)
+  // The preview scaled the layer's own geometry too, which a commit would have replaced.
+  editor.graph.updateNodePreview(d.nodeId, {
+    vectorNetwork: d.origVectorNetwork,
+    fillGeometry: d.origFillGeometry,
+    strokeGeometry: d.origStrokeGeometry,
+    derivedTextGlyphs: d.origDerivedTextGlyphs,
+    strokes: d.origStrokes,
+    textPathData: d.origTextPathData,
+    textPathBox: d.origTextPathBox
+  })
+  editor.renderer?.invalidateVectorPath(d.nodeId)
   restoreEditedFields(d, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
   editor.requestRender()

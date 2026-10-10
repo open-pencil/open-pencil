@@ -92,3 +92,31 @@ describe('a resize that changes nothing', () => {
     }
   })
 })
+
+test('a cancelled resize gives a vector back its own geometry', () => {
+  const editor = createEditor()
+  try {
+    const network = {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 50 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: []
+    }
+    const vector = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+      width: 100,
+      height: 50,
+      vectorNetwork: network
+    })
+    const resize = { ...drag(vector), origVectorNetwork: structuredClone(network) }
+    applyResize(resize, 200, 25, false, editor, true)
+    expect(vector.vectorNetwork?.vertices[1]?.x).toBe(200)
+    cancelResizePreview(resize, editor)
+    expect([vector.width, vector.vectorNetwork?.vertices[1]?.x]).toEqual([100, 100])
+  } finally {
+    editor.dispose()
+  }
+})
