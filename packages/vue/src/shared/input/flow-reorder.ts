@@ -119,7 +119,7 @@ function frameSpace(parentId: string, editor: Editor): Mat3 {
 }
 
 /** A drag of `dx`, `dy` on the canvas in a frame's own axes, as a turned frame sees it. */
-export function dragInFrame(parentId: string, dx: number, dy: number, editor: Editor) {
+function dragInFrame(parentId: string, dx: number, dy: number, editor: Editor) {
   const space = frameSpace(parentId, editor)
   const origin = Matrix.mapPoint(space, { x: 0, y: 0 })
   const moved = Matrix.mapPoint(space, { x: dx, y: dy })
