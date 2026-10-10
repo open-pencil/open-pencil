@@ -1,5 +1,7 @@
+import { clamp } from 'es-toolkit'
+
 import type { SceneNode, Vector } from '@open-pencil/scene-graph'
-import { polygonCorners } from '@open-pencil/scene-graph/polygon'
+import { POINT_COUNT_RANGE, polygonCorners } from '@open-pencil/scene-graph/polygon'
 
 import type { SceneGeometry } from './scene'
 import type { ViewportTransform } from './types'
@@ -21,9 +23,6 @@ export const SHAPE_HANDLE = {
   hitRadius: 7,
   /** Shift rounds radii to this step. */
   snapStep: 10,
-  /** Figma's range for a polygon's sides or a star's points. */
-  minPointCount: 3,
-  maxPointCount: 60,
   /** Where a handle's label sits relative to the pointer: its left edge and vertical centre. */
   labelOffset: { x: 10, y: -20 }
 } as const
@@ -212,14 +211,14 @@ function unitOffset(node: SceneNode, local: Vector): Vector {
 
 /**
  * The point count whose next outer point lies in the direction of a node-local point: a full turn
- * over the angle from the top point, clockwise, within Figma's 3 to 60.
+ * over the angle from the top point, clockwise, within Figma's range.
  */
 export function pointCountAtPoint(node: SceneNode, local: Vector): number {
   const { x, y } = unitOffset(node, local)
   let angle = Math.atan2(x, -y)
   if (angle <= 0) angle += 2 * Math.PI
   const count = Math.round((2 * Math.PI) / angle)
-  return Math.min(Math.max(count, SHAPE_HANDLE.minPointCount), SHAPE_HANDLE.maxPointCount)
+  return clamp(count, POINT_COUNT_RANGE.min, POINT_COUNT_RANGE.max)
 }
 
 /** The inner ratio of a star whose inner point lies as far from the centre as a node-local point. */

@@ -8,6 +8,9 @@ import type { SceneNode } from './types'
  * corner smoothing replaces the arc's ends with curves that ease into the edges, as on rectangles.
  */
 
+/** Figma keeps a polygon's sides or a star's points within this range, and its plugin API clamps to it. */
+export const POINT_COUNT_RANGE = { min: 3, max: 60 } as const
+
 export type PolygonOutlineCommand =
   | { type: 'M' | 'L'; x: number; y: number }
   | { type: 'C'; x1: number; y1: number; x2: number; y2: number; x: number; y: number }

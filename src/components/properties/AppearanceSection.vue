@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BlendMode } from '@open-pencil/scene-graph'
+import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { AppearanceControlsRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -215,8 +216,8 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
         <PanelFieldGroup :label="panels.pointCount">
           <NumberField
             :model-value="pointCount"
-            :min="3"
-            :max="60"
+            :min="POINT_COUNT_RANGE.min"
+            :max="POINT_COUNT_RANGE.max"
             :aria-label="panels.pointCount"
             data-property="pointCount"
             @update:model-value="actions.updateProp('pointCount', Math.round($event))"

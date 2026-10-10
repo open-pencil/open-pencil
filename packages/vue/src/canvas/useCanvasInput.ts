@@ -556,7 +556,9 @@ export function useCanvasInput(
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
       editor.onEditorEvent(event, () => {
-        if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
+        const type = drag.value?.type
+        if (type === 'draw' || type === 'rotate' || type === 'shape-handle')
+          cancelPointerInteraction()
       })
   )
   onScopeDispose(() => {

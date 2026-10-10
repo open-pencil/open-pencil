@@ -38,6 +38,22 @@ describe('polygon and star records', () => {
     expect(polygon).toMatchObject({ nodeType: 'POLYGON', pointCount: 3 })
   })
 
+  // Figma's plugin API clamps a point count to 3–60 and rejects an inner ratio outside 0–1; the
+  // wire format allows far more, which would otherwise size the outline.
+  test('hold an imported count and inner scale to Figma ranges', () => {
+    const read = (change: Partial<NodeChange>) =>
+      nodeChangeToProps({ type: 'STAR', size: { x: 100, y: 100 }, ...change } as NodeChange, [])
+    expect(read({ count: 4_000_000_000, starInnerScale: 1.5 })).toMatchObject({
+      pointCount: 60,
+      starInnerRadius: 1
+    })
+    expect(read({ count: 1, starInnerScale: -0.5 })).toMatchObject({
+      pointCount: 3,
+      starInnerRadius: 0
+    })
+    expect(read({ starInnerScale: Number.NaN }).starInnerRadius).toBeUndefined()
+  })
+
   // Figma desktop, 2026-10-10: a paste with a GUID part of 2³¹ or more is dropped whole. Layers
   // made in a session past that keep its IDs as their source through autosave.
   test('do not carry an ID Figma cannot read as their GUID', () => {

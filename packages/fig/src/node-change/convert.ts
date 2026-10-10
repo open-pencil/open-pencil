@@ -1,3 +1,5 @@
+import { clamp } from 'es-toolkit'
+
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
@@ -7,6 +9,7 @@ import {
   styleToWeight
 } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
+import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -290,13 +293,19 @@ function convertCornerProps(
   }
 }
 
-/** A polygon's sides or a star's points and inner ratio, which Figma writes for both kinds. */
+/**
+ * A polygon's sides or a star's points and inner ratio, which Figma writes for both kinds. The
+ * wire format allows far more points than Figma keeps, and any inner scale, so both are held to
+ * Figma's ranges before the outline is built from them.
+ */
 function convertPolygonProps(
   nc: NodeChange
 ): Partial<Pick<SceneNode, 'pointCount' | 'starInnerRadius'>> {
   const props: Partial<Pick<SceneNode, 'pointCount' | 'starInnerRadius'>> = {}
-  if (nc.count !== undefined) props.pointCount = nc.count
-  if (nc.starInnerScale !== undefined) props.starInnerRadius = nc.starInnerScale
+  if (nc.count !== undefined)
+    props.pointCount = clamp(nc.count, POINT_COUNT_RANGE.min, POINT_COUNT_RANGE.max)
+  if (nc.starInnerScale !== undefined && Number.isFinite(nc.starInnerScale))
+    props.starInnerRadius = clamp(nc.starInnerScale, 0, 1)
   return props
 }
 
