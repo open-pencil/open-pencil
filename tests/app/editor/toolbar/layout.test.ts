@@ -3,12 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import {
   combineToolbarEntry,
   DEFAULT_TOOLBAR_LAYOUT,
+  detachToolbarEntry,
   joinToolbarEntry,
   moveToolbarEntry,
   normalizeToolbarLayout,
   placeToolbarEntry,
   setToolbarEntryHidden,
-  splitToolbarEntry,
   toolbarDropOperations,
   toolbarItems,
   toolbarRows,
@@ -127,12 +127,20 @@ describe('editing', () => {
     expect(below.groups.slice(1, 3)).toEqual([['FRAME'], ['SECTION']])
   })
 
-  test('joining merges a group into the one above and splitting undoes it', () => {
+  test('joining merges a group into the one above', () => {
     const joined = joinToolbarEntry(base, 'TEXT')
     expect(joined.groups[3]).toEqual(['PEN', 'TEXT'])
-    expect(splitToolbarEntry(joined, 'TEXT').groups).toEqual(base.groups)
     expect(joinToolbarEntry(base, 'insert-icon')).toBe(base)
     expect(joinToolbarEntry(base, 'SELECT')).toBe(base)
+    expect(joinToolbarEntry(base, 'LINE')).toBe(base)
+  })
+
+  test('removing a tool from its flyout leaves only it a button, after the flyout', () => {
+    expect(detachToolbarEntry(base, 'ELLIPSE').groups.slice(2, 4)).toEqual([
+      ['RECTANGLE', 'LINE', 'POLYGON', 'STAR'],
+      ['ELLIPSE']
+    ])
+    expect(detachToolbarEntry(base, 'PEN')).toBe(base)
   })
 
   test('rows say how each entry relates to the one above', () => {

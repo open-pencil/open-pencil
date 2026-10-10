@@ -42,13 +42,15 @@ export const Regrouping: Story = {
     await userEvent.click(canvas.getByRole('switch', { name: 'Show Pen' }))
     await expect(canvas.getByRole('switch', { name: 'Show Pen' })).not.toBeChecked()
 
-    // Joining moves the row into the box above, so each check finds it again.
-    const group = () =>
-      canvas.getByRole('button', { name: 'Put Comment in a menu with the tool above' })
-    await expect(group()).toHaveAttribute('aria-pressed', 'false')
-    await userEvent.click(group())
-    await expect(group()).toHaveAttribute('aria-pressed', 'true')
-    await expect(group()).toHaveFocus()
+    // Grouping moves the row into the box above, so each check finds it again.
+    const options = () => canvas.getByRole('button', { name: 'Comment options' })
+    const menu = within(canvasElement.ownerDocument.body)
+    await userEvent.click(options())
+    await userEvent.click(await menu.findByRole('menuitem', { name: 'Group with Hand' }))
+    await expect(options()).toHaveFocus()
+    await userEvent.click(options())
+    await expect(await menu.findByRole('menuitem', { name: 'Remove from menu' })).toBeVisible()
+    await userEvent.keyboard('{Escape}')
 
     const grip = () => canvas.getByRole('button', { name: 'Reorder Comment' })
     grip().focus()

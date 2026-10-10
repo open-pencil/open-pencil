@@ -123,6 +123,10 @@ export interface ToolbarRow {
   hidden: boolean
   /** In the same flyout as the row above. */
   joined: boolean
+  /** In a flyout with other entries. */
+  inFlyout: boolean
+  /** The entry above, which this row's group can join when `canJoin`. */
+  above?: ToolbarEntry
   /** Can share a flyout with the row above: both are tools in different groups. */
   canJoin: boolean
   canMoveUp: boolean
@@ -139,13 +143,17 @@ function canJoinAbove(groups: ToolbarEntry[][], groupIndex: number) {
 
 export function toolbarRows(layout: ToolbarLayout): ToolbarRow[] {
   const { groups } = layout
+  const flat = groups.flat()
   return groups.flatMap((group, groupIndex) =>
     group.map((entry, index) => {
       const alone = group.length === 1
+      const position = flat.indexOf(entry)
       return {
         entry,
         hidden: layout.hidden.includes(entry),
         joined: index > 0,
+        inFlyout: !alone,
+        above: position > 0 ? flat[position - 1] : undefined,
         canJoin: index === 0 && canJoinAbove(groups, groupIndex),
         canMoveUp: !alone || groupIndex > 0,
         canMoveDown: !alone || groupIndex < groups.length - 1
@@ -208,11 +216,12 @@ export function joinToolbarEntry(layout: ToolbarLayout, entry: ToolbarEntry): To
   return { ...layout, groups }
 }
 
-/** Splits the entry's flyout above the entry. */
-export function splitToolbarEntry(layout: ToolbarLayout, entry: ToolbarEntry): ToolbarLayout {
+/** Takes an entry out of its flyout, leaving it a button right after the flyout. */
+export function detachToolbarEntry(layout: ToolbarLayout, entry: ToolbarEntry): ToolbarLayout {
   const { groups, groupIndex, group, index } = locate(layout, entry)
-  if (!group || index < 1) return layout
-  groups.splice(groupIndex, 1, group.slice(0, index), group.slice(index))
+  if (!group || group.length < 2) return layout
+  group.splice(index, 1)
+  groups.splice(groupIndex + 1, 0, [entry])
   return { ...layout, groups }
 }
 

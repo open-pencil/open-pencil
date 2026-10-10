@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 
-import { useFlatReorderDrag, useI18n } from '@open-pencil/vue'
+import { useFlatReorderDrag } from '@open-pencil/vue'
 
 import {
   combineToolbarEntry,
+  detachToolbarEntry,
   isToolbarAction,
   isToolbarEntry,
   joinToolbarEntry,
@@ -12,7 +13,6 @@ import {
   PINNED_TOOLBAR_ENTRY,
   placeToolbarEntry,
   setToolbarEntryHidden,
-  splitToolbarEntry,
   toolbarDropOperations,
   toolbarRows,
   type ToolbarEntry,
@@ -21,17 +21,18 @@ import {
 } from '@/app/editor/toolbar/layout'
 import { TOOL_SHORTCUT_LABELS } from '@/app/editor/toolbar/shortcuts'
 import ToolbarLayoutJoint from '@/components/settings/toolbar/ToolbarLayoutJoint.vue'
-import ToolbarLayoutRow from '@/components/settings/toolbar/ToolbarLayoutRow.vue'
+import ToolbarLayoutRow, {
+  type ToolbarRowControl
+} from '@/components/settings/toolbar/ToolbarLayoutRow.vue'
 import { toolbarEntryIcons, useToolbarEntryLabels } from '@/components/toolbar/labels'
 
 /**
  * Lists every toolbar entry with its visibility, order and flyout, one box per flyout. A dragged
  * row lands on a joint: inside a box it joins that flyout, between boxes it becomes a button.
- * Dropped onto another row, the two share a flyout. Grips and link toggles do the same from the
- * keyboard.
+ * Dropped onto another row, the two share a flyout. Each row's grip and options do the same from
+ * the keyboard.
  */
 const layout = defineModel<ToolbarLayout>({ required: true })
-const { settings } = useI18n()
 const labels = useToolbarEntryLabels()
 
 /** A row and its place in the whole list, which is also the joint above it. */
@@ -89,23 +90,20 @@ function setupRow(element: Element | ComponentPublicInstance | null, entry: Tool
   drag.setupItem(element instanceof HTMLElement ? element : null, () => ({ id: entry }))
 }
 
-/** Editing can move a row to another box, so its control takes focus again where it lands. */
-const focusRequest = ref<{ entry: ToolbarEntry; control: 'grip' | 'toggle' } | null>(null)
+/** Editing can move a row to another box, so the control used takes focus where it lands. */
+const focusRequest = ref<{ entry: ToolbarEntry; control: ToolbarRowControl } | null>(null)
 
-function wantsFocus(entry: ToolbarEntry, control: 'grip' | 'toggle') {
-  return focusRequest.value?.entry === entry && focusRequest.value.control === control
+function focusFor(entry: ToolbarEntry) {
+  return focusRequest.value?.entry === entry ? focusRequest.value.control : null
 }
 
-function move(entry: ToolbarEntry, step: -1 | 1) {
-  layout.value = moveToolbarEntry(layout.value, entry, step)
-  focusRequest.value = { entry, control: 'grip' }
-}
-
-function toggleLink({ entry, joined }: ToolbarRow) {
-  layout.value = joined
-    ? splitToolbarEntry(layout.value, entry)
-    : joinToolbarEntry(layout.value, entry)
-  focusRequest.value = { entry, control: 'toggle' }
+function edit(
+  entry: ToolbarEntry,
+  control: ToolbarRowControl,
+  change: (current: ToolbarLayout) => ToolbarLayout
+) {
+  layout.value = change(layout.value)
+  focusRequest.value = { entry, control }
 }
 
 function setShown(entry: ToolbarEntry, shown: boolean) {
@@ -118,28 +116,11 @@ function setShown(entry: ToolbarEntry, shown: boolean) {
     <template v-for="(box, boxIndex) in boxes" :key="box.head.row.entry">
       <ToolbarLayoutJoint
         :kind="boxIndex === 0 ? 'end' : 'between'"
-        :toggle-label="
-          box.head.row.canJoin
-            ? settings.toolbarGroup({ tool: labels[box.head.row.entry] })
-            : undefined
-        "
         :dropping="dropJoint === box.head.index"
-        :focus-toggle="wantsFocus(box.head.row.entry, 'toggle')"
-        @toggle="toggleLink(box.head.row)"
-        @focused="focusRequest = null"
       />
       <div class="flex flex-col rounded border border-border">
         <template v-for="{ row, index } in box.rows" :key="row.entry">
-          <ToolbarLayoutJoint
-            v-if="row.joined"
-            kind="inside"
-            linked
-            :toggle-label="settings.toolbarGroup({ tool: labels[row.entry] })"
-            :dropping="dropJoint === index"
-            :focus-toggle="wantsFocus(row.entry, 'toggle')"
-            @toggle="toggleLink(row)"
-            @focused="focusRequest = null"
-          />
+          <ToolbarLayoutJoint v-if="row.joined" kind="inside" :dropping="dropJoint === index" />
           <div
             :ref="(element) => setupRow(element, row.entry)"
             class="data-[dragging]:opacity-40"
@@ -154,9 +135,18 @@ function setShown(entry: ToolbarEntry, shown: boolean) {
               :pinned="row.entry === PINNED_TOOLBAR_ENTRY"
               :can-move-up="row.canMoveUp"
               :can-move-down="row.canMoveDown"
+              :group-with="row.canJoin && row.above ? labels[row.above] : undefined"
+              :in-flyout="row.inFlyout"
               :drop-target="isCombineTarget(row.entry)"
-              :focus-grip="wantsFocus(row.entry, 'grip')"
-              @move="move(row.entry, $event)"
+              :focus="focusFor(row.entry)"
+              @move="
+                (step, control) =>
+                  edit(row.entry, control, (current) => moveToolbarEntry(current, row.entry, step))
+              "
+              @group="edit(row.entry, 'options', (current) => joinToolbarEntry(current, row.entry))"
+              @ungroup="
+                edit(row.entry, 'options', (current) => detachToolbarEntry(current, row.entry))
+              "
               @update:shown="setShown(row.entry, $event)"
               @focused="focusRequest = null"
             />

@@ -31,7 +31,7 @@ Right-click the toolbar and choose **Customize toolbar…**, or open **Settings 
 
 - Turn a tool's switch off to hide it. Hidden tools keep their keyboard shortcuts. **Move** is always shown.
 - Drag a tool to reorder it. Dropped inside a box it joins that flyout; dropped in the gap between boxes it becomes a button of its own; dropped onto another tool, the two share a flyout.
-- Without a pointer, focus a tool's grip and press <kbd>↑</kbd> or <kbd>↓</kbd> to move it, and use the link button to put it in a flyout with the tool above or take it out.
+- A tool's **⋯** menu moves it up or down, groups it with the tool above, or removes it from its flyout. Its grip also moves it with <kbd>↑</kbd> and <kbd>↓</kbd>.
 - **Insert icon** runs a command rather than picking a tool, so it can move and hide but not join a flyout.
 
 **Reset to default** restores the original layout. Tools added in later versions join their default flyout, so a customized toolbar still gets them.
