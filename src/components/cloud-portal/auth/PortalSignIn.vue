@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { useCloudPortalMessages } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -29,10 +31,11 @@ const {
   providers: PortalSignInMethod[]
   emailPassword: { signUp: boolean; minimumPasswordLength: number } | null
   approvalRequired?: boolean
+  /** Why the last attempt failed, already worded for people. */
   error?: string | null
   submitting?: boolean
-  /** Where the person goes after signing in, such as the desktop app or the editor. */
-  returnsTo?: string | null
+  /** Where the person goes after signing in. */
+  returnsTo?: 'desktop' | 'editor' | null
 }>()
 
 const emit = defineEmits<{
@@ -43,36 +46,54 @@ const emit = defineEmits<{
 }>()
 
 const ui = portalForm()
+const messages = useCloudPortalMessages()
 const name = ref('')
 const email = ref('')
 const password = ref('')
 const signUp = computed(() => mode === 'sign-up')
-const labels: Record<PortalSignInMethod, string> = {
-  google: 'Continue with Google',
-  apple: 'Continue with Apple'
-}
+const labels = computed<Record<PortalSignInMethod, string>>(() => ({
+  google: messages.value.continueWithGoogle,
+  apple: messages.value.continueWithApple
+}))
 const description = computed(() => {
-  if (returnsTo) return `Then you go back to ${returnsTo}.`
-  return signUp.value ? 'Create an account on this server.' : 'Welcome back.'
+  if (returnsTo) {
+    return messages.value.returnsTo({
+      destination:
+        returnsTo === 'desktop' ? messages.value.returnsToDesktop : messages.value.returnsToEditor
+    })
+  }
+  return signUp.value ? messages.value.signUpDescription : messages.value.signInWelcome
 })
+const showForm = computed(() => !!emailPassword && (!signUp.value || emailPassword.signUp))
 </script>
 
 <template>
   <PortalPublicLayout
     :host="host"
-    :heading="signUp ? 'Create your account' : 'Sign in to OpenPencil Cloud'"
+    :heading="signUp ? messages.signUpTitle : messages.signInTitle"
     :description="description"
   >
     <AppAlert
       v-if="signUp && approvalRequired"
       tone="info"
-      heading="An administrator reviews new accounts"
-      description="You can sign in once your request is approved. We email you when it is."
+      :heading="messages.approvalTitle"
+      :description="messages.approvalDescription"
     />
-    <AppAlert v-if="error" tone="error" heading="Couldn’t sign in" :description="error" />
+    <AppAlert v-if="error" tone="error" :heading="messages.signInFailed" :description="error" />
+    <AppAlert
+      v-if="!providers.length && !showForm"
+      tone="warning"
+      :heading="messages.signInFailed"
+      :description="messages.noSignInMethods"
+    />
 
     <div v-if="providers.length" :class="ui.methods()">
-      <AppActionRow v-for="method in providers" :key="method" @click="emit('provider', method)">
+      <AppActionRow
+        v-for="method in providers"
+        :key="method"
+        :disabled="submitting"
+        @click="emit('provider', method)"
+      >
         <template #leading>
           <icon-ai-google v-if="method === 'google'" class="size-4 text-surface" />
           <icon-ai-apple v-else class="size-4 text-surface" />
@@ -82,33 +103,33 @@ const description = computed(() => {
       </AppActionRow>
     </div>
 
-    <div v-if="providers.length && emailPassword" :class="ui.divider()">
-      <span :class="ui.dividerLine()" />or<span :class="ui.dividerLine()" />
+    <div v-if="providers.length && showForm" :class="ui.divider()">
+      <span :class="ui.dividerLine()" />{{ messages.or }}<span :class="ui.dividerLine()" />
     </div>
 
     <form
-      v-if="emailPassword && (!signUp || emailPassword.signUp)"
+      v-if="showForm && emailPassword"
       :class="ui.form()"
       novalidate
       @submit.prevent="emit('submit', { name, email, password })"
     >
       <div v-if="signUp" :class="ui.field()">
-        <label for="portal-name" :class="ui.label()">Name</label>
+        <label for="portal-name" :class="ui.label()">{{ messages.name }}</label>
         <AppInput id="portal-name" v-model="name" autocomplete="name" />
       </div>
       <div :class="ui.field()">
-        <label for="portal-email" :class="ui.label()">Email</label>
+        <label for="portal-email" :class="ui.label()">{{ messages.email }}</label>
         <AppInput
           id="portal-email"
           v-model="email"
           inputmode="email"
           autocomplete="email"
-          placeholder="you@example.com"
+          :placeholder="messages.emailPlaceholder"
         />
       </div>
       <div :class="ui.field()">
         <div :class="ui.labelRow()">
-          <label for="portal-password" :class="ui.label()">Password</label>
+          <label for="portal-password" :class="ui.label()">{{ messages.password }}</label>
           <AppButton
             v-if="!signUp"
             size="xs"
@@ -116,7 +137,7 @@ const description = computed(() => {
             type="button"
             @click="emit('forgotPassword')"
           >
-            Forgot password?
+            {{ messages.forgotPassword }}
           </AppButton>
         </div>
         <AppInput
@@ -126,7 +147,7 @@ const description = computed(() => {
           :autocomplete="signUp ? 'new-password' : 'current-password'"
         />
         <p v-if="signUp" :class="ui.hint()">
-          At least {{ emailPassword.minimumPasswordLength }} characters.
+          {{ messages.passwordHint({ count: emailPassword.minimumPasswordLength }) }}
         </p>
       </div>
       <AppButton
@@ -137,14 +158,14 @@ const description = computed(() => {
         :loading="submitting"
         :ui="{ base: ui.submit() }"
       >
-        {{ signUp ? 'Create account' : 'Sign in' }}
+        {{ signUp ? messages.createAccount : messages.signIn }}
       </AppButton>
     </form>
 
     <template v-if="emailPassword?.signUp || signUp" #footer>
-      {{ signUp ? 'Already have an account?' : 'New here?' }}
+      {{ signUp ? messages.haveAccount : messages.newHere }}
       <AppButton size="xs" variant="link" @click="emit('switchMode')">
-        {{ signUp ? 'Sign in' : 'Create an account' }}
+        {{ signUp ? messages.signIn : messages.createAnAccount }}
       </AppButton>
     </template>
   </PortalPublicLayout>

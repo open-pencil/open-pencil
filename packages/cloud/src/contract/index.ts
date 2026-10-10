@@ -102,3 +102,4 @@ export {
   type WorkspaceRole,
   type WorkspaceSummary
 } from './workspaces'
+export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'

@@ -166,16 +166,6 @@ export async function openExternalLink(url: string) {
     window.open(url, '_blank')
   }
 }
-export function initials(name: string): string {
-  return (
-    name
-      .split(' ')
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || '?'
-  )
-}
 export function decodeTauriStderr(raw: Uint8Array | number[] | string): string {
   if (typeof raw === 'string') return raw
   return new TextDecoder().decode(raw instanceof Uint8Array ? raw : new Uint8Array(raw))

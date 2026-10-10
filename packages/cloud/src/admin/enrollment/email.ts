@@ -5,7 +5,10 @@ import type { Transaction } from 'kysely'
 import type { EnrollmentStatus } from './service'
 
 export type EnrollmentEmailOptions = {
+  /** The editor, where an approved account goes next. */
   appURL: string
+  /** The server's own pages, where people sign in and administrators review requests. */
+  portalURL: string
   adminRecipients: string[]
   email?: TransactionalEmailService
 }
@@ -21,7 +24,7 @@ export async function enqueueEnrollmentRequested(
       idempotencyKey: `enrollment-requested/${input.enrollmentId}/${input.revision}`,
       kind: 'enrollment-requested',
       recipientEmail: input.email,
-      payload: { name: input.name, actionURL: `${options.appURL}/auth/sign-in` }
+      payload: { name: input.name, actionURL: new URL('/auth/sign-in', options.portalURL).href }
     },
     transaction
   )
@@ -35,7 +38,7 @@ export async function enqueueEnrollmentRequested(
           requesterEmail: input.email,
           requesterName: input.name,
           reason: input.reason,
-          actionURL: `${options.appURL}/admin/enrollment`
+          actionURL: new URL('/admin/requests', options.portalURL).href
         }
       },
       transaction
@@ -62,7 +65,10 @@ export async function enqueueEnrollmentReview(
       recipientEmail: input.recipientEmail,
       payload: {
         name: input.name,
-        actionURL: input.status === 'approved' ? options.appURL : `${options.appURL}/auth/sign-in`
+        actionURL:
+          input.status === 'approved'
+            ? options.appURL
+            : new URL('/auth/sign-in', options.portalURL).href
       }
     },
     transaction

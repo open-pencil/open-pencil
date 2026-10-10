@@ -44,7 +44,7 @@ export const SignIn = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="['google', 'apple']" :email-password="{ signUp: true, minimumPasswordLength: 15 }" />`
 )
 export const SignInForTheDesktopApp = story(
-  `<PortalSignIn :host="host" mode="sign-in" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 15 }" returns-to="the OpenPencil app" />`
+  `<PortalSignIn :host="host" mode="sign-in" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 15 }" returns-to="desktop" />`
 )
 export const SignInWithAnError = story(
   `<PortalSignIn :host="host" mode="sign-in" :providers="[]" :email-password="{ signUp: false, minimumPasswordLength: 15 }" error="The email or password is wrong." />`
@@ -72,7 +72,7 @@ export const TwoStepRecoveryCode = story(
 export const ForgotPassword = story(`<PortalResetPassword :host="host" step="request" />`)
 export const ChooseNewPassword = story(`<PortalResetPassword :host="host" step="choose" />`)
 export const ApproveDesktopSignIn = story(
-  `<PortalDeviceApproval :host="host" code="WDJB-MJHT" device="OpenPencil for macOS" :account="{ name: 'Ana Duarte', email: 'ana@studio.example' }" />`
+  `<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`
 )
 export const DesktopSignInApproved = story(`
   <PortalNotice :host="host" tone="success" heading="You’re signed in" description="Go back to the OpenPencil app; it has already picked this up. You can close this tab.">

@@ -7,7 +7,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
-import { ref } from 'vue'
+
+import { useCloudPortalMessages } from '@open-pencil/vue'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -19,15 +20,16 @@ import type { PortalPerson } from '../types'
 
 /** Everyone with an account on the server, with what an administrator can change about them. */
 const { people } = defineProps<{ people: PortalPerson[] }>()
+const query = defineModel<string>('query', { default: '' })
 const emit = defineEmits<{
-  toggleAdmin: [id: string]
-  signOutEverywhere: [id: string]
-  toggleSuspended: [id: string]
+  toggleAdmin: [person: PortalPerson]
+  signOutEverywhere: [person: PortalPerson]
+  toggleSuspended: [person: PortalPerson]
 }>()
 
 const ui = portalList()
 const menuUI = menu()
-const query = ref('')
+const messages = useCloudPortalMessages()
 </script>
 
 <template>
@@ -37,8 +39,8 @@ const query = ref('')
         v-model="query"
         type="search"
         density="compact"
-        placeholder="Search people…"
-        aria-label="Search people"
+        :placeholder="messages.searchPeople"
+        :aria-label="messages.searchPeople"
         class="w-64"
       >
         <template #leading><icon-lucide-search class="size-3.5" /></template>
@@ -50,19 +52,20 @@ const query = ref('')
         <div :class="ui.body()">
           <p :class="ui.title()">
             {{ person.name }}
-            <span v-if="person.you" class="font-normal text-muted">(you)</span>
+            <span v-if="person.you" class="font-normal text-muted">{{ messages.you }}</span>
           </p>
           <p :class="ui.detail()">{{ person.email }}</p>
         </div>
-        <span v-if="person.admin" :class="ui.status()" data-tone="neutral">Administrator</span>
-        <span v-if="person.suspended" :class="ui.status()" data-tone="error">Suspended</span>
-        <span v-if="!person.twoStep && person.admin" :class="ui.status()" data-tone="warning"
-          >No two-step</span
-        >
-        <span :class="ui.meta()">Joined {{ person.joinedAgo }}</span>
+        <span v-if="person.admin" :class="ui.status()" data-tone="neutral">
+          {{ messages.administrator }}
+        </span>
+        <span v-if="person.suspended" :class="ui.status()" data-tone="error">
+          {{ messages.suspended }}
+        </span>
+        <span :class="ui.meta()">{{ messages.joined({ date: person.joinedOn }) }}</span>
         <DropdownMenuRoot :modal="false">
           <DropdownMenuTrigger as-child>
-            <IconButton :label="`Actions for ${person.name}`" :disabled="person.you">
+            <IconButton :label="messages.actionsFor({ name: person.name })" :disabled="person.you">
               <icon-lucide-ellipsis class="size-3.5" />
             </IconButton>
           </DropdownMenuTrigger>
@@ -75,22 +78,22 @@ const query = ref('')
             >
               <DropdownMenuItem
                 :class="menuUI.item({ justify: 'start' })"
-                @select="emit('toggleAdmin', person.id)"
+                @select="emit('toggleAdmin', person)"
               >
-                {{ person.admin ? 'Remove administrator' : 'Make administrator' }}
+                {{ person.admin ? messages.removeAdministrator : messages.makeAdministrator }}
               </DropdownMenuItem>
               <DropdownMenuItem
                 :class="menuUI.item({ justify: 'start' })"
-                @select="emit('signOutEverywhere', person.id)"
+                @select="emit('signOutEverywhere', person)"
               >
-                Sign out everywhere
+                {{ messages.signOutEverywhere }}
               </DropdownMenuItem>
               <DropdownMenuSeparator :class="menuUI.separator()" />
               <DropdownMenuItem
                 :class="menuUI.item({ justify: 'start' })"
-                @select="emit('toggleSuspended', person.id)"
+                @select="emit('toggleSuspended', person)"
               >
-                {{ person.suspended ? 'Restore account' : 'Suspend account' }}
+                {{ person.suspended ? messages.restoreAccount : messages.suspendAccount }}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenuPortal>

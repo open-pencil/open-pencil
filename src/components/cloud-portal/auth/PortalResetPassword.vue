@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { useCloudPortalMessages } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import { portalForm } from '@/theme/cloud-portal/form'
 
@@ -12,29 +15,29 @@ const {
   host,
   step,
   minimumPasswordLength = 15,
-  submitting = false
+  submitting = false,
+  error = null
 } = defineProps<{
   host: string
   step: 'request' | 'choose'
   minimumPasswordLength?: number
   submitting?: boolean
+  error?: string | null
 }>()
 const emit = defineEmits<{ request: [email: string]; choose: [password: string]; back: [] }>()
 
 const ui = portalForm()
+const messages = useCloudPortalMessages()
 const value = ref('')
 </script>
 
 <template>
   <PortalPublicLayout
     :host="host"
-    :heading="step === 'request' ? 'Reset your password' : 'Choose a new password'"
-    :description="
-      step === 'request'
-        ? 'We email you a link to choose a new one.'
-        : 'Signing in with it signs you out everywhere else.'
-    "
+    :heading="step === 'request' ? messages.resetTitle : messages.chooseTitle"
+    :description="step === 'request' ? messages.resetDescription : messages.chooseDescription"
   >
+    <AppAlert v-if="error" tone="error" :heading="error" />
     <form
       :class="ui.form()"
       novalidate
@@ -42,7 +45,7 @@ const value = ref('')
     >
       <div :class="ui.field()">
         <label for="portal-reset" :class="ui.label()">
-          {{ step === 'request' ? 'Email' : 'New password' }}
+          {{ step === 'request' ? messages.email : messages.newPassword }}
         </label>
         <AppInput
           id="portal-reset"
@@ -52,7 +55,7 @@ const value = ref('')
           :autocomplete="step === 'request' ? 'email' : 'new-password'"
         />
         <p v-if="step === 'choose'" :class="ui.hint()">
-          At least {{ minimumPasswordLength }} characters.
+          {{ messages.passwordHint({ count: minimumPasswordLength }) }}
         </p>
       </div>
       <AppButton
@@ -63,11 +66,13 @@ const value = ref('')
         :loading="submitting"
         :ui="{ base: ui.submit() }"
       >
-        {{ step === 'request' ? 'Send link' : 'Save password' }}
+        {{ step === 'request' ? messages.sendLink : messages.savePassword }}
       </AppButton>
     </form>
     <template #footer>
-      <AppButton size="xs" variant="link" @click="emit('back')">Back to sign in</AppButton>
+      <AppButton size="xs" variant="link" @click="emit('back')">{{
+        messages.backToSignIn
+      }}</AppButton>
     </template>
   </PortalPublicLayout>
 </template>

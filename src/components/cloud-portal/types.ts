@@ -11,12 +11,12 @@ export type AccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'revoked
 
 export type AccessRequest = {
   id: string
-  name: string
+  name: string | null
   email: string
-  reason: string
-  requestedAgo: string
+  reason: string | null
+  requestedOn: string
   status: AccessRequestStatus
-  reviewedBy?: string
+  reviewedBy?: string | null
 }
 
 export type PortalPerson = {
@@ -25,25 +25,41 @@ export type PortalPerson = {
   email: string
   admin: boolean
   suspended: boolean
-  twoStep: boolean
-  joinedAgo: string
+  joinedOn: string
   you?: boolean
 }
 
 export type PortalEmail = {
   id: string
-  subject: string
+  kind: string
   recipient: string
-  status: 'sent' | 'waiting' | 'failed'
+  status: 'sent' | 'waiting' | 'failed' | 'suppressed'
   attempts: number
   when: string
-  error?: string
+  error?: string | null
 }
 
 export type PortalActivityEntry = {
   id: string
   actor: { id: string; name: string }
+  /** The server's action code, such as `enrollment.approved`. */
   action: string
   target: string
   when: string
+}
+
+export type PortalLinkedMethod = {
+  id: string
+  provider: 'credential' | PortalSignInMethod
+  linkedOn: string
+  canUnlink: boolean
+}
+
+export type PortalServerStatus = {
+  deployment: 'official' | 'self-hosted'
+  enrollmentMode: 'open' | 'approval' | 'closed'
+  emailTransport: 'none' | 'smtp' | 'cloudflare'
+  pendingEnrollment: number
+  pendingEmail: number
+  failedEmail: number
 }

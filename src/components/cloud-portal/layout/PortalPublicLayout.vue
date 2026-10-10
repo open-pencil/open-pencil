@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useCloudPortalMessages } from '@open-pencil/vue'
+
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { portalLayout } from '@/theme/cloud-portal/layout'
 
@@ -10,13 +12,14 @@ const { host, heading, description } = defineProps<{
 }>()
 
 const ui = portalLayout()
+const messages = useCloudPortalMessages()
 </script>
 
 <template>
   <div :class="ui.page()">
     <header :class="ui.bar()">
       <BrandMark variant="micro" decorative />
-      <span :class="ui.barTitle()">OpenPencil Cloud</span>
+      <span :class="ui.barTitle()">{{ messages.productName }}</span>
       <span :class="ui.barHost()">{{ host }}</span>
     </header>
     <main :class="ui.center()">

@@ -17,6 +17,7 @@ import { hasMixedLatinAndCjk, placeholders } from './quality'
 
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
 const LOCALE_FILE_NAMES: Record<string, string> = {
+  cloudPortal: 'cloud-portal',
   designCheck: 'design-check',
   variableTypes: 'variable-types'
 }

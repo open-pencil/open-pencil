@@ -72,7 +72,7 @@ export function normalizeEnrollmentEmail(value: string): string {
 
 export function createEnrollmentService(
   database: Kysely<CloudDatabase>,
-  emailOptions: EnrollmentEmailOptions = { appURL: '', adminRecipients: [] }
+  emailOptions: EnrollmentEmailOptions = { appURL: '', portalURL: '', adminRecipients: [] }
 ) {
   const statusForEmail = async (email: string): Promise<EnrollmentStatus | null> => {
     const row = await database

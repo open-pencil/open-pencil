@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { useCloudPortalMessages } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -29,26 +31,27 @@ const emit = defineEmits<{
 }>()
 
 const ui = portalForm()
+const messages = useCloudPortalMessages()
 const code = ref('')
 </script>
 
 <template>
   <PortalPublicLayout
     :host="host"
-    heading="Confirm it’s you"
+    :heading="messages.twoStepTitle"
     :description="
-      method === 'authenticator'
-        ? 'Enter the 6-digit code from your authenticator app.'
-        : 'Enter one of the recovery codes you saved. Each works once.'
+      method === 'authenticator' ? messages.twoStepAuthenticator : messages.twoStepRecovery
     "
   >
-    <AppAlert v-if="error" tone="error" heading="That code didn’t work" :description="error" />
+    <AppAlert v-if="error" tone="error" :heading="error" />
     <form :class="ui.form()" novalidate @submit.prevent="emit('verify', code)">
       <AppInput
         v-model="code"
         :inputmode="method === 'authenticator' ? 'numeric' : 'text'"
         autocomplete="one-time-code"
-        :aria-label="method === 'authenticator' ? 'Authentication code' : 'Recovery code'"
+        :aria-label="
+          method === 'authenticator' ? messages.authenticationCode : messages.recoveryCode
+        "
         :placeholder="method === 'authenticator' ? '000000' : 'xxxx-xxxx'"
         :ui="{ input: ui.code() }"
       />
@@ -60,15 +63,15 @@ const code = ref('')
         :loading="verifying"
         :ui="{ base: ui.submit() }"
       >
-        Continue
+        {{ messages.continue }}
       </AppButton>
     </form>
     <div class="flex flex-wrap items-center justify-between gap-2">
       <AppButton size="xs" variant="link" @click="emit('switchMethod')">
-        {{ method === 'authenticator' ? 'Use a recovery code' : 'Use your authenticator app' }}
+        {{ method === 'authenticator' ? messages.useRecoveryCode : messages.useAuthenticator }}
       </AppButton>
       <AppButton v-if="passkeys" size="xs" variant="link" @click="emit('passkey')">
-        Use a passkey
+        {{ messages.usePasskey }}
       </AppButton>
     </div>
   </PortalPublicLayout>

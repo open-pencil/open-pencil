@@ -1,77 +1,96 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+import { useCloudPortalMessages } from '@open-pencil/vue'
+
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
+import type { PortalServerStatus } from '../types'
+
 /** How the server is set up and what is waiting on an administrator. */
-const { status } = defineProps<{
-  status: {
-    version: string
-    enrollment: string
-    email: string
-    waitingRequests: number
-    waitingEmails: number
-    failedEmails: number
-  }
-}>()
+const { status } = defineProps<{ status: PortalServerStatus }>()
 const emit = defineEmits<{ open: [section: 'requests' | 'email'] }>()
+const messages = useCloudPortalMessages()
+
+const deployment = computed(() =>
+  status.deployment === 'official'
+    ? messages.value.deploymentOfficial
+    : messages.value.deploymentSelfHosted
+)
+const enrollment = computed(
+  () =>
+    ({
+      open: messages.value.enrollmentOpen,
+      approval: messages.value.enrollmentApproval,
+      closed: messages.value.enrollmentClosed
+    })[status.enrollmentMode]
+)
+const transport = computed(
+  () =>
+    ({
+      none: messages.value.emailTransportNone,
+      smtp: messages.value.emailTransportSMTP,
+      cloudflare: messages.value.emailTransportCloudflare
+    })[status.emailTransport]
+)
+const email = computed(() => {
+  if (status.failedEmail)
+    return messages.value.emailStatus({ failed: status.failedEmail, waiting: status.pendingEmail })
+  if (status.pendingEmail) return messages.value.emailWaitingOnly(status.pendingEmail)
+  return messages.value.emailAllSent
+})
 </script>
 
 <template>
   <div class="flex max-w-2xl flex-col gap-6">
     <SettingsSection>
-      <template #title>Needs attention</template>
+      <template #title>{{ messages.needsAttention }}</template>
       <SettingsGroup>
         <SettingsRow
-          label="Access requests"
+          :label="messages.accessRequests"
           :description="
-            status.waitingRequests
-              ? `${status.waitingRequests} people are waiting for a decision`
-              : 'No one is waiting'
+            status.pendingEnrollment
+              ? messages.waitingRequests(status.pendingEnrollment)
+              : messages.noOneIsWaiting
           "
         >
           <AppButton
-            v-if="status.waitingRequests"
+            v-if="status.pendingEnrollment"
             size="sm"
             variant="outline"
             @click="emit('open', 'requests')"
           >
-            Review
+            {{ messages.review }}
           </AppButton>
         </SettingsRow>
-        <SettingsRow
-          label="Email"
-          :description="
-            status.failedEmails
-              ? `${status.failedEmails} failed to send · ${status.waitingEmails} waiting`
-              : `${status.waitingEmails} waiting to send`
-          "
-        >
+        <SettingsRow :label="messages.emailDelivery" :description="email">
           <AppButton
-            v-if="status.failedEmails"
+            v-if="status.failedEmail"
             size="sm"
             variant="outline"
             @click="emit('open', 'email')"
           >
-            Open
+            {{ messages.open }}
           </AppButton>
         </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
     <SettingsSection>
-      <template #title>Server</template>
-      <template #description>Set in the server’s configuration file.</template>
+      <template #title>{{ messages.serverSection }}</template>
+      <template #description>{{ messages.serverSectionDescription }}</template>
       <SettingsGroup>
-        <SettingsRow label="Version"
-          ><span class="text-xs text-muted">{{ status.version }}</span></SettingsRow
-        >
-        <SettingsRow label="New accounts"
-          ><span class="text-xs text-muted">{{ status.enrollment }}</span></SettingsRow
-        >
-        <SettingsRow label="Email delivery"
-          ><span class="text-xs text-muted">{{ status.email }}</span></SettingsRow
-        >
+        <SettingsRow :label="messages.deployment">
+          <span class="text-xs text-muted">{{ deployment }}</span>
+        </SettingsRow>
+        <SettingsRow :label="messages.newAccounts">
+          <span class="text-xs text-muted">{{ enrollment }}</span>
+        </SettingsRow>
+        <SettingsRow :label="messages.emailDelivery">
+          <span class="text-xs text-muted">{{ transport }}</span>
+        </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
   </div>

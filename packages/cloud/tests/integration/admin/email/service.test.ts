@@ -7,6 +7,8 @@ import {
   AdminDomainError
 } from '#cloud/server'
 
+const CLOUD_LINKS = { appURL: 'https://cloud.example.com', portalURL: 'https://cloud.example.com' }
+
 describe('admin email regeneration', () => {
   test('regenerates an enrollment message from authoritative enrollment state', async () => {
     const runtime = await createCloudTestDatabase()
@@ -40,11 +42,10 @@ describe('admin email regeneration', () => {
         .set({ status: 'failed', payloadEncrypted: null })
         .where('id', '=', original)
         .execute()
-      await createAdminEmailService(
-        runtime.database,
-        email,
-        'https://cloud.example.com'
-      ).regenerate('admin', original)
+      await createAdminEmailService(runtime.database, email, CLOUD_LINKS).regenerate(
+        'admin',
+        original
+      )
       const rows = await runtime.database
         .selectFrom('transactionalEmail')
         .select(['id', 'kind', 'status'])
@@ -82,10 +83,7 @@ describe('admin email regeneration', () => {
         }
       })
       await expect(
-        createAdminEmailService(runtime.database, email, 'https://cloud.example.com').regenerate(
-          'admin',
-          id
-        )
+        createAdminEmailService(runtime.database, email, CLOUD_LINKS).regenerate('admin', id)
       ).rejects.toBeInstanceOf(AdminDomainError)
     } finally {
       await runtime.close()

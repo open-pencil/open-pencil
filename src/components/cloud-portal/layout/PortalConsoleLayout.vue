@@ -1,6 +1,11 @@
 <script setup lang="ts">
+import { uniq } from 'es-toolkit'
+
+import { useCloudPortalMessages } from '@open-pencil/vue'
+
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import { portalLayout } from '@/theme/cloud-portal/layout'
 import { sideList } from '@/theme/list/side-list'
 
@@ -18,36 +23,40 @@ const { host, account, sections, active, heading, description } = defineProps<{
   heading: string
   description?: string
 }>()
-const emit = defineEmits<{ select: [id: string] }>()
+const emit = defineEmits<{ select: [id: string]; signOut: [] }>()
 
 const ui = portalLayout()
+const messages = useCloudPortalMessages()
 const side = sideList()
-const groups = () => [...new Set(sections.map((section) => section.group))]
+const groups = () => uniq(sections.map((section) => section.group))
 </script>
 
 <template>
   <div :class="ui.page()">
     <header :class="ui.bar()">
       <BrandMark variant="micro" decorative />
-      <span :class="ui.barTitle()">OpenPencil Cloud</span>
+      <span :class="ui.barTitle()">{{ messages.productName }}</span>
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
         <span :class="ui.barHost()">{{ account.email }}</span>
         <AccountAvatar :id="account.id" :name="account.name" />
+        <IconButton :label="messages.signOut" @click="emit('signOut')">
+          <icon-lucide-log-out class="size-3.5" />
+        </IconButton>
       </div>
     </header>
     <div :class="ui.console()">
-      <nav :class="side.root()" aria-label="Sections">
-        <div v-for="group in groups()" :key="group" :class="side.group()">
-          <div :class="side.header()">
+      <nav :class="side.root({ class: ui.nav() })" :aria-label="messages.productName">
+        <div v-for="group in groups()" :key="group" :class="side.group({ class: ui.navGroup() })">
+          <div :class="side.header({ class: ui.navHeader() })">
             <span :class="side.title()">{{ group }}</span>
           </div>
-          <div :class="side.items()">
+          <div :class="side.items({ class: ui.navItems() })">
             <button
               v-for="section in sections.filter((candidate) => candidate.group === group)"
               :key="section.id"
               type="button"
-              :class="side.item()"
+              :class="side.item({ class: ui.navItem() })"
               :data-active="section.id === active"
               :aria-current="section.id === active ? 'page' : undefined"
               @click="emit('select', section.id)"

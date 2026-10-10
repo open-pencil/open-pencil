@@ -25,7 +25,7 @@ const requests: AccessRequest[] = [
     name: 'Chloe Martin',
     email: 'chloe@agency.example',
     reason: 'Freelance illustrator on the spring campaign; Ben asked me to join.',
-    requestedAgo: '2 hours ago',
+    requestedOn: '2 hours ago',
     status: 'pending'
   },
   {
@@ -33,7 +33,7 @@ const requests: AccessRequest[] = [
     name: 'Diego Ruiz',
     email: 'diego@studio.example',
     reason: '',
-    requestedAgo: 'yesterday',
+    requestedOn: 'yesterday',
     status: 'pending'
   },
   {
@@ -41,7 +41,7 @@ const requests: AccessRequest[] = [
     name: 'Priya Nair',
     email: 'priya@client.example',
     reason: 'Reviewing the new brand system with the studio.',
-    requestedAgo: '3 days ago',
+    requestedOn: '3 days ago',
     status: 'pending'
   }
 ]
@@ -88,10 +88,10 @@ export const SignInAndSecurity = story(
   'Sign-in and security',
   'How you sign in to cloud.studio.example.',
   `<PortalAccountSecurity
-    :methods="[{ provider: 'google', linked: true, email: 'ana@studio.example' }, { provider: 'apple', linked: false }]"
-    :password="{ set: true, changedAgo: '3 months ago' }"
-    :authenticator="{ on: true, recoveryCodesLeft: 8 }"
-    :passkeys="[{ id: 'p1', name: 'MacBook Pro', addedAgo: 'in July', lastUsedAgo: 'today' }]"
+    :methods="[{ id: 'm1', provider: 'google', linkedOn: 'in March', canUnlink: true }, { id: 'm2', provider: 'credential', linkedOn: 'in March', canUnlink: true }]"
+    :linkable="['apple']"
+    :authenticator="{ available: true, on: true }"
+    :passkeys="[{ id: 'p1', name: 'MacBook Pro', addedOn: 'in July' }]"
   />`
 )
 export const AdministratorWithoutTwoStep = story(
@@ -99,10 +99,10 @@ export const AdministratorWithoutTwoStep = story(
   'Sign-in and security',
   'How you sign in to cloud.studio.example.',
   `<PortalAccountSecurity
-    admin-requires-two-factor
-    :methods="[{ provider: 'google', linked: true, email: 'ana@studio.example' }]"
-    :password="{ set: false }"
-    :authenticator="{ on: false }"
+    two-step-required
+    :methods="[{ id: 'm1', provider: 'google', linkedOn: 'in March', canUnlink: false }]"
+    :linkable="[]"
+    :authenticator="{ available: true, on: false }"
     :passkeys="[]"
   />`
 )
@@ -110,7 +110,7 @@ export const Overview = story(
   'status',
   'Overview',
   'cloud.studio.example',
-  `<PortalStatus :status="{ version: '0.15.1', enrollment: 'Reviewed by an administrator', email: 'SMTP · mail.studio.example', waitingRequests: 3, waitingEmails: 0, failedEmails: 1 }" />`
+  `<PortalStatus :status="{ deployment: 'self-hosted', enrollmentMode: 'approval', emailTransport: 'smtp', pendingEnrollment: 3, pendingEmail: 0, failedEmail: 1 }" />`
 )
 export const AccessRequests = story(
   'requests',
@@ -129,10 +129,10 @@ export const People = story(
   'People',
   '24 accounts on this server.',
   `<PortalPeople :people="[
-    { id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example', admin: true, suspended: false, twoStep: true, joinedAgo: 'in March', you: true },
-    { id: 'user-ben', name: 'Ben Ortiz', email: 'ben@studio.example', admin: true, suspended: false, twoStep: false, joinedAgo: 'in March' },
-    { id: 'user-mia', name: 'Mia Chen', email: 'mia@client.example', admin: false, suspended: false, twoStep: true, joinedAgo: 'in June' },
-    { id: 'user-tom', name: 'Tom Weber', email: 'tom@agency.example', admin: false, suspended: true, twoStep: false, joinedAgo: 'last week' }
+    { id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example', admin: true, suspended: false, joinedOn: 'in March', you: true },
+    { id: 'user-ben', name: 'Ben Ortiz', email: 'ben@studio.example', admin: true, suspended: false, joinedOn: 'in March' },
+    { id: 'user-mia', name: 'Mia Chen', email: 'mia@client.example', admin: false, suspended: false, joinedOn: 'in June' },
+    { id: 'user-tom', name: 'Tom Weber', email: 'tom@agency.example', admin: false, suspended: true, joinedOn: 'last week' }
   ]" />`
 )
 export const EmailDelivery = story(
@@ -140,9 +140,9 @@ export const EmailDelivery = story(
   'Email delivery',
   'Invitations, sign-in links, and access decisions the server sends.',
   `<PortalEmailDelivery :emails="[
-    { id: 'e1', subject: 'Ana invited you to edit Homepage redesign', recipient: 'chloe@agency.example', status: 'failed', attempts: 5, when: '10:42', error: 'Mailbox unavailable' },
-    { id: 'e2', subject: 'Verify your email', recipient: 'diego@studio.example', status: 'sent', attempts: 1, when: '09:15' },
-    { id: 'e3', subject: 'Your access was approved', recipient: 'mia@client.example', status: 'sent', attempts: 1, when: 'Yesterday' }
+    { id: 'e1', kind: 'document-invitation', recipient: 'chloe@agency.example', status: 'failed', attempts: 5, when: '10:42', error: 'Mailbox unavailable' },
+    { id: 'e2', kind: 'email-verification', recipient: 'diego@studio.example', status: 'sent', attempts: 1, when: '09:15' },
+    { id: 'e3', kind: 'enrollment-approved', recipient: 'mia@client.example', status: 'sent', attempts: 1, when: 'Yesterday' }
   ]" />`
 )
 export const Activity = story(
@@ -150,8 +150,8 @@ export const Activity = story(
   'Activity',
   'What administrators did on this server.',
   `<PortalActivity :entries="[
-    { id: 'a1', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'approved access for', target: 'mia@client.example', when: 'Yesterday' },
-    { id: 'a2', actor: { id: 'user-ben', name: 'Ben Ortiz' }, action: 'suspended', target: 'tom@agency.example', when: 'Mon' },
-    { id: 'a3', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'made an administrator:', target: 'Ben Ortiz', when: 'Sep 28' }
+    { id: 'a1', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'enrollment.approved', target: 'mia@client.example', when: 'Yesterday' },
+    { id: 'a2', actor: { id: 'user-ben', name: 'Ben Ortiz' }, action: 'user.banned', target: 'tom@agency.example', when: 'Mon' },
+    { id: 'a3', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'user.admin-granted', target: 'Ben Ortiz', when: 'Sep 28' }
   ]" />`
 )
