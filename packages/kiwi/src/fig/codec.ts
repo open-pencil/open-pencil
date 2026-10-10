@@ -370,6 +370,10 @@ export interface NodeChange {
   rectangleBottomRightCornerRadius?: number
   rectangleCornerRadiiIndependent?: boolean
   cornerSmoothing?: number
+  /** A polygon's sides or a star's points. */
+  count?: number
+  /** A star's inner radius as a share of its outer one. */
+  starInnerScale?: number
   // Constraints
   horizontalConstraint?: string
   verticalConstraint?: string

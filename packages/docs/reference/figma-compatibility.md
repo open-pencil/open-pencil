@@ -132,7 +132,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Dash patterns | ✅ | Dash-on/dash-off stroke pattern |
 | Stroke alignment | ✅ | Inside/Center/Outside with clip-based rendering matching Figma behavior |
 | Individual stroke weights per side | ✅ | Top/Right/Bottom/Left with side selector dropdown |
-| Corner radius | ✅ | Uniform and per-corner radius with independent toggle in properties panel; canvas handles on rectangles |
+| Corner radius | ✅ | Uniform and per-corner radius with independent toggle in properties panel; canvas handles on rectangles, polygons, and stars |
 | Corner smoothing (iOS-style) | 🔲 | Figma's continuous corner rounding |
 | Multiple fills/strokes per layer | 🔲 | Figma allows stacking fills and strokes |
 

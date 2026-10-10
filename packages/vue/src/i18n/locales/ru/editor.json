@@ -2,6 +2,8 @@
   "toolOptions": "Параметры инструмента «{tool}»",
   "removeGradientStop": "Удалить точку градиента",
   "cornerRadius": "Радиус",
+  "pointCount": "Количество",
+  "starRatio": "Соотношение",
   "showUI": "Показать интерфейс ({shortcut})",
   "previewing": "Просмотр",
   "resetPreview": "Сбросить",

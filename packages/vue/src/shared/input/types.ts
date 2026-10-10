@@ -175,17 +175,17 @@ export interface DragGradient {
   cancel: () => void
 }
 
-/** Dragging a corner radius handle of the selected rectangle. */
-export interface DragCornerRadius {
-  type: 'corner-radius'
-  /** Sets the radius under a screen point; Shift rounds it to tens. */
+/** Dragging a radius, point count, or ratio handle of the selected rectangle, polygon, or star. */
+export interface DragShapeHandle {
+  type: 'shape-handle'
+  /** Sets the value under a screen point; Shift rounds a radius to tens. */
   update: (screenX: number, screenY: number, shiftKey: boolean) => void
   commit: () => void
   cancel: () => void
 }
 
 export type DragState =
-  | DragCornerRadius
+  | DragShapeHandle
   | DragDraw
   | DragGradient
   | DragMove

@@ -386,6 +386,8 @@
   "opacity": "Непрозрачность",
   "radius": "Радиус",
   "cornerSmoothing": "Сглаживание углов",
+  "pointCount": "Количество",
+  "starRatio": "Соотношение",
   "spread": "Размах",
   "foregroundBlur": "Размытие переднего плана",
   "strokeType": "Тип обводки",

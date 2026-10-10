@@ -58,9 +58,9 @@ Add an outline to any shape. Stroke properties include:
 
 ### Corner Radius
 
-Available for rectangles, frames, components, and instances. Click the independent corners toggle to set each corner (top-left, top-right, bottom-left, bottom-right) separately.
+Available for rectangles, frames, components, instances, polygons, and stars. Click the independent corners toggle to set each corner (top-left, top-right, bottom-left, bottom-right) separately; a polygon's or star's corners share one radius, which rounds its inner corners too.
 
-On the canvas, hover a selected rectangle to show a handle inside each corner and drag one to round the corners. Equal corners change together and differing ones one at a time; hold <kbd>⌥</kbd> to swap the two and <kbd>⇧</kbd> to round to tens. The handles hide while the rectangle is under 108 pixels across on screen; zoom in to reach them.
+On the canvas, hover a selected rectangle to show a handle inside each corner and drag one to round the corners. Equal corners change together and differing ones one at a time; hold <kbd>⌥</kbd> to swap the two and <kbd>⇧</kbd> to round to tens. A polygon or star has one radius handle, below its top point, which rounds all of its corners; drag the handle on its next point around the centre to change the point count, and a star's handle on its first inner point towards or away from the centre to change its ratio. The handles hide while the shape is under 108 pixels across on screen; zoom in to reach them.
 
 ### Effects
 

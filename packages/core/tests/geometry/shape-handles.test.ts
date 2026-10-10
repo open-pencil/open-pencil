@@ -3,10 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import {
   cornerRadiusAtPoint,
   cornerRadiusChanges,
-  cornerRadiusHandleLayout,
+  shapeHandleLayout,
   createSceneGeometry,
   dragsSingleCorner,
-  hitTestCornerRadiusHandles
+  hitTestShapeHandles,
+  pointCountAtPoint,
+  starRatioAtPoint
 } from '#core/geometry'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
@@ -26,15 +28,17 @@ function rectangle(props: Partial<SceneNode> = {}, type: SceneNode['type'] = 'RE
 
 function layout(props: Partial<SceneNode> = {}, zoom = 1, type: SceneNode['type'] = 'RECTANGLE') {
   const { graph, node } = rectangle(props, type)
-  const handles = cornerRadiusHandleLayout(node, createSceneGeometry(graph), {
+  const handles = shapeHandleLayout(node, createSceneGeometry(graph), {
     panX: 0,
     panY: 0,
     zoom
   })
-  return handles?.map(({ corner, point }) => [corner, point.x, point.y])
+  // Positions come from the corner's bisector, so they carry floating-point noise.
+  const exact = (value: number) => Math.round(value * 1e6) / 1e6
+  return handles?.map(({ handle, point }) => [handle, exact(point.x), exact(point.y)])
 }
 
-describe('corner radius handles', () => {
+describe('shape handles', () => {
   test('sit 12.5 screen pixels inside corners whose radius is smaller', () => {
     expect(layout()).toEqual([
       ['topLeft', 12.5, 12.5],
@@ -71,10 +75,68 @@ describe('corner radius handles', () => {
     expect(layout({}, 1, 'ELLIPSE')).toBeUndefined()
   })
 
+  // Figma desktop, 2026-10-10: a 160 × 160 triangle's one handle sits below its top point, at the
+  // centre of the arc, or 12.5√2 px down while that is closer; dragging it to 48 px sets 24.
+  test('sit below the top point of a polygon or star', () => {
+    const triangle = { width: 160, height: 160, pointCount: 3 }
+    const [handle] = layout({ ...triangle, cornerRadius: 24 }, 1, 'POLYGON') ?? []
+    expect(handle?.[0]).toBe('point')
+    expect(handle).toEqual(['point', 80, 48])
+    expect(layout(triangle, 1, 'POLYGON')?.[0][2]).toBeCloseTo(12.5 * Math.SQRT2, 5)
+    expect(layout({ ...triangle, pointCount: 5 }, 1, 'STAR')).toHaveLength(3)
+  })
+
+  test('set a polygon radius from the distance below its top point, up to what fits', () => {
+    const { node } = rectangle({ width: 160, height: 160, pointCount: 3 }, 'POLYGON')
+    expect(cornerRadiusAtPoint(node, 'point', { x: 80, y: 48 }, false)).toBe(24)
+    expect(cornerRadiusAtPoint(node, 'point', { x: 80, y: 400 }, false)).toBeCloseTo(40, 6)
+    expect(cornerRadiusChanges(node, 'point', 24, false)).toEqual({ cornerRadius: 24 })
+    expect(dragsSingleCorner(node, true)).toBe(false)
+  })
+
+  // Figma desktop, 2026-10-10: a star's ratio handle sits on its first inner point and its count
+  // handle on its next outer point, a polygon's count handle on its second point; rounded corners
+  // move them to the middle of the rounding.
+  test('put the count and ratio on the points they change', () => {
+    const star = { width: 160, height: 160, pointCount: 5, starInnerRadius: 0.382 }
+    const at = (props: Partial<SceneNode>, type: SceneNode['type']) =>
+      Object.fromEntries(
+        (layout(props, 1, type) ?? []).map(([handle, x, y]) => [
+          handle,
+          [Math.round(Number(x) * 10) / 10, Math.round(Number(y) * 10) / 10]
+        ])
+      )
+    expect(at(star, 'STAR')).toMatchObject({ ratio: [98, 55.3], count: [156.1, 55.3] })
+    expect(at({ ...star, cornerRadius: 12 }, 'STAR')).toMatchObject({
+      ratio: [99.6, 53],
+      count: [130.6, 63.6]
+    })
+    expect(at({ width: 160, height: 160, pointCount: 3 }, 'POLYGON')).toMatchObject({
+      count: [149.3, 120]
+    })
+  })
+
+  // Figma desktop, 2026-10-10, dragging a 160 × 160 star's handles to points 80 px from its centre
+  // at angles clockwise from its top point, and along its inner points' rays.
+  test('set the point count from the angle and the ratio from the distance', () => {
+    const { node } = rectangle({ width: 160, height: 160, pointCount: 5 }, 'STAR')
+    const at = (degrees: number, distance: number) => ({
+      x: 80 + distance * Math.sin((degrees * Math.PI) / 180),
+      y: 80 - distance * Math.cos((degrees * Math.PI) / 180)
+    })
+    const counts = [140, 100, 60, 50, 40, 30, 20, 5].map((angle) =>
+      pointCountAtPoint(node, at(angle, 80))
+    )
+    expect(counts).toEqual([3, 4, 6, 7, 9, 12, 18, 60])
+    const ratios = [5, 40, 60, 100].map((distance) => starRatioAtPoint(node, at(36, distance)))
+    expect(ratios).toEqual([0.06, 0.5, 0.75, 1])
+    expect(starRatioAtPoint(node, at(20, 40))).toBe(0.5)
+  })
+
   test('take the pointer within their ring and a little beyond', () => {
-    const handles = [{ corner: 'topLeft' as const, point: { x: 12.5, y: 12.5 } }]
-    expect(hitTestCornerRadiusHandles(handles, { x: 18, y: 16 })).toBe('topLeft')
-    expect(hitTestCornerRadiusHandles(handles, { x: 22, y: 12.5 })).toBeNull()
+    const handles = [{ handle: 'topLeft' as const, point: { x: 12.5, y: 12.5 } }]
+    expect(hitTestShapeHandles(handles, { x: 18, y: 16 })).toBe('topLeft')
+    expect(hitTestShapeHandles(handles, { x: 22, y: 12.5 })).toBeNull()
   })
 
   test('set the radius whose arc centre is under the pointer', () => {

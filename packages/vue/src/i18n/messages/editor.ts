@@ -7,6 +7,10 @@ export const editorMessageDefaults = {
   removeGradientStop: 'Remove gradient stop',
   /** The word before a corner's radius in the label beside a dragged radius handle. */
   cornerRadius: 'Radius',
+  /** The word before a polygon's or star's point count beside its dragged handle. */
+  pointCount: 'Count',
+  /** The word before a star's inner ratio beside its dragged handle. */
+  starRatio: 'Ratio',
   showUI: params('Show UI ({shortcut})'),
   previewing: 'Previewing',
   startPreview: params('Preview ({shortcut})'),

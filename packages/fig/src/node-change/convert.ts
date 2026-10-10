@@ -290,6 +290,16 @@ function convertCornerProps(
   }
 }
 
+/** A polygon's sides or a star's points and inner ratio, which Figma writes for both kinds. */
+function convertPolygonProps(
+  nc: NodeChange
+): Partial<Pick<SceneNode, 'pointCount' | 'starInnerRadius'>> {
+  const props: Partial<Pick<SceneNode, 'pointCount' | 'starInnerRadius'>> = {}
+  if (nc.count !== undefined) props.pointCount = nc.count
+  if (nc.starInnerScale !== undefined) props.starInnerRadius = nc.starInnerScale
+  return props
+}
+
 function importedTextLineHeight(nc: NodeChange): number | null {
   const derivedLineHeight = nc.derivedTextData?.baselines?.[0]?.lineHeight
   if (derivedLineHeight !== undefined && Number.isFinite(derivedLineHeight))
@@ -648,6 +658,7 @@ export function nodeChangeToProps(
     gridStyleId: styleRefId(nc.styleIdForGrid),
     sharedStyleType: sharedStyleType(nc.styleType),
     ...convertCornerProps(nc),
+    ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),
     horizontalConstraint: mapConstraint(nc.horizontalConstraint as string),
     verticalConstraint: mapConstraint(nc.verticalConstraint as string),

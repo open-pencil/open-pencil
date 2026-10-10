@@ -2,6 +2,8 @@
   "toolOptions": "Optionen für {tool}",
   "removeGradientStop": "Farbverlaufspunkt entfernen",
   "cornerRadius": "Radius",
+  "pointCount": "Anzahl",
+  "starRatio": "Verhältnis",
   "showUI": "UI anzeigen ({shortcut})",
   "previewing": "Vorschau",
   "resetPreview": "Zurücksetzen",

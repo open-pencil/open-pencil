@@ -161,6 +161,12 @@
       "import": "./dist/geometry.js",
       "default": "./dist/geometry.js"
     },
+    "./polygon": {
+      "types": "./dist/polygon.d.ts",
+      "bun": "./src/polygon.ts",
+      "import": "./dist/polygon.js",
+      "default": "./dist/polygon.js"
+    },
     "./resize": {
       "types": "./dist/resize.d.ts",
       "bun": "./src/resize.ts",

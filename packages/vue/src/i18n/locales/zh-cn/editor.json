@@ -2,6 +2,8 @@
   "toolOptions": "{tool}选项",
   "removeGradientStop": "删除渐变色标",
   "cornerRadius": "圆角",
+  "pointCount": "数量",
+  "starRatio": "比例",
   "showUI": "显示界面（{shortcut}）",
   "previewing": "预览中",
   "resetPreview": "重置",
