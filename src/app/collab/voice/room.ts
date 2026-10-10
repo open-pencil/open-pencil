@@ -32,7 +32,8 @@ export interface RoomVoice {
   /** Presence clients speaking now, ours included. */
   readonly speaking: Readonly<Ref<ReadonlySet<number>>>
   readonly localClientId: number
-  join(muted: boolean): void
+  /** False once the room is gone, so a call that was waiting for a microphone does not start. */
+  join(muted: boolean): boolean
   setMuted(muted: boolean): void
   /** What this tab sends; null while no microphone is open. */
   setMicrophone(microphone: Microphone | null): void
@@ -60,6 +61,7 @@ export function attachRoomVoice({ awareness, peers, connection }: RoomVoiceOptio
   /** The peers our microphone is going to, and which track they get. */
   const sending = new Map<string, MediaStreamTrack>()
   const lastHeard = new Map<number, number>()
+  let disposed = false
 
   const members = computed(() => peers.value.filter((peer) => peer.voice))
 
@@ -198,11 +200,13 @@ export function attachRoomVoice({ awareness, peers, connection }: RoomVoiceOptio
     speaking,
     localClientId: awareness.clientID,
     join(startMuted) {
+      if (disposed) return false
       muted.value = startMuted
       joined.value = true
       publish()
       reconcile()
       if (media) levels.resume()
+      return true
     },
     setMuted(next) {
       muted.value = next
@@ -214,6 +218,7 @@ export function attachRoomVoice({ awareness, peers, connection }: RoomVoiceOptio
     },
     leave,
     dispose() {
+      disposed = true
       leave()
       levels.pause()
       stopMembers()

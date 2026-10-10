@@ -146,52 +146,51 @@ function onOpenChange(open: boolean) {
             data-test-id="voice-call-error"
           />
 
-          <template v-if="inCall">
-            <label :class="ui.field()">
-              <span :class="ui.label()">{{ messages.microphone }}</span>
-              <AppSelect
-                v-model="call.inputId.value"
-                :label="messages.microphone"
-                :options="microphones"
-                data-test-id="voice-call-microphone"
-              />
-            </label>
-            <label v-if="CAN_CHOOSE_SPEAKERS" :class="ui.field()">
-              <span :class="ui.label()">{{ messages.speakers }}</span>
-              <AppSelect
-                v-model="call.outputId.value"
-                :label="messages.speakers"
-                :options="speakers"
-                data-test-id="voice-call-speakers"
-              />
-            </label>
-            <div :class="ui.actions()">
-              <AppButton
-                variant="outline"
-                :class="ui.action()"
-                data-test-id="voice-call-toggle-mute"
-                @click="call.toggleMuted()"
-              >
-                <template #leading>
-                  <icon-lucide-mic v-if="call.muted.value" class="size-3" />
-                  <icon-lucide-mic-off v-else class="size-3" />
-                </template>
-                {{ call.muted.value ? messages.unmute : messages.mute }}
-              </AppButton>
-              <AppButton
-                color="error"
-                variant="soft"
-                :class="ui.action()"
-                data-test-id="voice-call-leave"
-                @click="call.leave()"
-              >
-                <template #leading>
-                  <icon-lucide-phone-off class="size-3" />
-                </template>
-                {{ messages.leaveVoiceCall }}
-              </AppButton>
-            </div>
-          </template>
+          <!-- Chosen before joining too, so a microphone that will not open can be swapped. -->
+          <label :class="ui.field()">
+            <span :class="ui.label()">{{ messages.microphone }}</span>
+            <AppSelect
+              v-model="call.inputId.value"
+              :label="messages.microphone"
+              :options="microphones"
+              data-test-id="voice-call-microphone"
+            />
+          </label>
+          <label v-if="CAN_CHOOSE_SPEAKERS" :class="ui.field()">
+            <span :class="ui.label()">{{ messages.speakers }}</span>
+            <AppSelect
+              v-model="call.outputId.value"
+              :label="messages.speakers"
+              :options="speakers"
+              data-test-id="voice-call-speakers"
+            />
+          </label>
+          <div v-if="inCall" :class="ui.actions()">
+            <AppButton
+              variant="outline"
+              :class="ui.action()"
+              data-test-id="voice-call-toggle-mute"
+              @click="call.toggleMuted()"
+            >
+              <template #leading>
+                <icon-lucide-mic v-if="call.muted.value" class="size-3" />
+                <icon-lucide-mic-off v-else class="size-3" />
+              </template>
+              {{ call.muted.value ? messages.unmute : messages.mute }}
+            </AppButton>
+            <AppButton
+              color="error"
+              variant="soft"
+              :class="ui.action()"
+              data-test-id="voice-call-leave"
+              @click="call.leave()"
+            >
+              <template #leading>
+                <icon-lucide-phone-off class="size-3" />
+              </template>
+              {{ messages.leaveVoiceCall }}
+            </AppButton>
+          </div>
 
           <AppButton
             v-else

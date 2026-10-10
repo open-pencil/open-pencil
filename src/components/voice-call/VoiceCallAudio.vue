@@ -16,5 +16,6 @@ const voices = computed(() => [...(call.room.value?.voice.audio.value ?? [])])
     :key="clientId"
     :track="track"
     :sink-id="call.sinkId.value"
+    @sink-failed="call.speakersFailed()"
   />
 </template>

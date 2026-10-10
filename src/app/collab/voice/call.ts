@@ -85,13 +85,13 @@ function createVoiceCall() {
     joining.value = true
     const failure = await openMicrophone()
     joining.value = false
-    if (failure) {
+    // The prompt can outlast the room: its tab may close or leave while it is open.
+    if (failure || !session.voice.join(false)) {
       error.value = failure
       microphone.stop()
       return
     }
     room.value = session
-    session.voice.join(false)
     sendMicrophone(microphone.stream.value)
   }
 
@@ -135,6 +135,10 @@ function createVoiceCall() {
     leave,
     setMuted,
     toggleMuted: () => setMuted(!muted.value),
+    /** The browser would not play through the chosen speakers, so the system's are in use. */
+    speakersFailed: () => {
+      outputId.value = SYSTEM_DEVICE
+    },
     dismissError: () => {
       error.value = null
     }

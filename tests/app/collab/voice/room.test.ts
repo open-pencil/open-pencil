@@ -130,4 +130,14 @@ describe('room voice calls', () => {
       expect(sends()).toEqual([])
     })
   })
+
+  test('a room gone while the microphone prompt was open refuses the call', async () => {
+    await withCall(async (host, guest, { settle }) => {
+      host.dispose()
+      expect(host.voice.join(false)).toBe(false)
+      expect(host.voice.joined.value).toBe(false)
+      await settle()
+      expect(guest.voice.members.value).toEqual([])
+    })
+  })
 })
