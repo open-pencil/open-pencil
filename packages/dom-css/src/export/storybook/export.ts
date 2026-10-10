@@ -1,3 +1,4 @@
+import { tokenStylesheet } from '#dom-css/tokens/stylesheet'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 import { compact } from 'es-toolkit/array'
 
@@ -61,10 +62,10 @@ export interface ExportStorybookOptions {
    */
   fonts?: WebFontFaceResolver
   /**
-   * The folder the font files go in, which must differ for each document exported into the
-   * same place; `fonts/<document>` by default.
+   * The folder a document's shared files go in, its fonts and design tokens, which must differ
+   * for each document exported into the same place; `openpencil/<document>` by default.
    */
-  fontFolder?: string
+  folder?: string
 }
 
 /** How a story file shows its component: every variant, Default alone, a gallery, or not. */
@@ -288,17 +289,25 @@ function generatedModels(
   return models
 }
 
+/** The folder a document's shared files go in, unless the caller names one. */
+function documentFolder(graph: SceneGraph, options: ExportStorybookOptions): string {
+  if (options.folder) return options.folder
+  const page = options.pageId ? graph.getNode(options.pageId)?.name : undefined
+  const named = compact([options.document ?? 'document', page]).map((name) => storyId(name))
+  return `openpencil/${named.join('-')}`
+}
+
 /**
- * The font files the entries' text uses, in a folder of the document's own so documents
- * exported side by side keep theirs apart, and the stylesheet that loads them. Faces load
+ * The font files the entries' text uses, and the stylesheet that loads them. Faces load
  * before text draws, so a story never shows a fallback font first.
  */
 async function storyFonts(
   graph: SceneGraph,
   entries: readonly StoryEntry[],
-  options: ExportStorybookOptions
-): Promise<{ stylesheet: string; files: ExportHTMLFile[] } | null> {
-  if (!options.fonts) return null
+  options: ExportStorybookOptions,
+  folder: string
+): Promise<ExportHTMLFile[]> {
+  if (!options.fonts) return []
   const requests = new Map<string, WebFontFaceRequest>()
   for (const { group } of entries)
     for (const variant of group.variants)
@@ -306,15 +315,21 @@ async function storyFonts(
         sceneNodeToDesignDocument(graph, variant.node.id, { includeSourceIds: false })
       ))
         requests.set(`${request.family}|${request.weight}|${request.style ?? 'normal'}`, request)
-  if (requests.size === 0) return null
-  const page = options.pageId ? graph.getNode(options.pageId)?.name : undefined
-  const named = compact([options.document ?? 'document', page]).map((name) => storyId(name))
-  const folder = options.fontFolder ?? `fonts/${named.join('-')}`
-  const assets = await options.fonts([...requests.values()], folder)
-  if (assets.length === 0) return null
+  if (requests.size === 0) return []
+  const assets = await options.fonts([...requests.values()], `${folder}/fonts`)
+  if (assets.length === 0) return []
   const css = await fontFaceStylesheet(assets, { from: folder, display: 'block' })
-  const stylesheet = `${folder}/fonts.css`
-  return { stylesheet, files: [...assets, { path: stylesheet, content: css }] }
+  return [...assets, { path: `${folder}/fonts.css`, content: css }]
+}
+
+/**
+ * The document's design tokens as custom properties, which stories' styles refer to as
+ * `var(--…)` wherever the design binds a variable, so they resolve as the design draws them.
+ */
+async function storyTokens(graph: SceneGraph, folder: string): Promise<ExportHTMLFile[]> {
+  if (graph.variables.size === 0) return []
+  const { css } = await tokenStylesheet(graph, { format: 'css' })
+  return css ? [{ path: `${folder}/tokens.css`, content: css }] : []
 }
 
 /**
@@ -332,10 +347,15 @@ export async function exportStorybook(
     files.push({ path, content, page: page.name })
 
   const entries = storyEntries(graph, options)
-  const fonts = await storyFonts(graph, entries, options)
+  const folder = documentFolder(graph, options)
+  const shared = [
+    ...(await storyFonts(graph, entries, options, folder)),
+    ...(await storyTokens(graph, folder))
+  ]
   const firstPage = entries.at(0)?.page
-  if (fonts && firstPage) for (const file of fonts.files) add(firstPage, file.path, file.content)
-  const styles = fonts ? [`./${fonts.stylesheet}`] : []
+  if (firstPage) for (const file of shared) add(firstPage, file.path, file.content)
+  // Every story file loads the document's fonts and tokens.
+  const styles = shared.filter((file) => file.path.endsWith('.css')).map((file) => `./${file.path}`)
   const generate = GENERATORS[framework]
   const models = generate ? generatedModels(graph, entries, options.vectorElement) : new Map()
 
