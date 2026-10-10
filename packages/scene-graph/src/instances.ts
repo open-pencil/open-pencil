@@ -6,6 +6,12 @@ import {
   hasInstanceOverride as hasNodeInstanceOverride,
   setInstanceOverride
 } from './instance-overrides'
+import {
+  createCopyRemovals,
+  createInstanceSyncContext,
+  keepCopyRemovals,
+  removeLeftoverCopies
+} from './instances/copies'
 import { INSTANCE_SYNC_FIELDS, INSTANCE_SYNC_PROPS } from './instances/fields'
 import {
   bindingProtection,
@@ -160,6 +166,7 @@ function syncInstancesOf(
   }
   if (syncing.has(componentId)) return
   syncing.add(componentId)
+  const removals = createCopyRemovals()
   try {
     for (const instance of instances) {
       const enclosing = enclosingInstanceOverrideFields(graph, instance)
@@ -174,8 +181,11 @@ function syncInstancesOf(
         copyProp(updates, source, key)
       }
       updateSyncedProps(graph, instance, updates)
-      syncChildren(graph, component.id, instance.id, instance.instanceOverrides)
+      const context = createInstanceSyncContext(instance.id, instance.instanceOverrides)
+      syncChildren(graph, component.id, instance.id, instance.instanceOverrides, context)
+      removeLeftoverCopies(graph, context, removals)
     }
+    keepCopyRemovals(graph, removals)
   } finally {
     syncing.delete(componentId)
   }

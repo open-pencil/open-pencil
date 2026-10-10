@@ -17,7 +17,8 @@ interface UndoBatch {
   coalesceKey?: string
 }
 
-const DEFAULT_HISTORY_LIMIT = 200
+/** How many edits undo keeps by default. */
+export const DEFAULT_HISTORY_LIMIT = 200
 
 export class UndoManager {
   private undoStack: UndoEntry[] = []

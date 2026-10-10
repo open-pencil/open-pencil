@@ -149,3 +149,33 @@ describe('a frame read from a .fig file reflows once its layout is edited', () =
     editor.dispose()
   })
 })
+
+test('a layer moved into a frame with saved geometry resizes it, even before it was laid out', () => {
+  const editor = createEditor()
+  const { graph } = editor
+  const hug = {
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG',
+    itemSpacing: 4,
+    paddingLeft: 8,
+    paddingRight: 8,
+    paddingTop: 2,
+    paddingBottom: 2
+  } as const
+  // A component's layers as a .fig file loads them: saved sizes, no source format, not laid out.
+  const tag = graph.createNode('COMPONENT', editor.state.currentPageId, { ...hug, width: 62, height: 41 })
+  const badge = graph.createNode('FRAME', tag.id, { ...hug, width: 24, height: 12 })
+  graph.createNode('ELLIPSE', badge.id, { width: 8, height: 8 })
+  const number = graph.createNode('RECTANGLE', tag.id, { width: 6, height: 17 })
+  for (const node of [tag, badge, number]) {
+    graph.applyImportedStateDuring(() =>
+      graph.updateNode(node.id, {
+        derivedLayout: { x: node.x, y: node.y, width: node.width, height: node.height }
+      })
+    )
+  }
+  editor.reorderChildWithUndo(number.id, badge.id, 1)
+  expect([badge.width, badge.height]).toEqual([34, 21])
+  editor.dispose()
+})
