@@ -33,7 +33,7 @@ test('the toolbar hides, reorders and regroups tools from Settings and keeps the
   // Dropping Comment onto Hand puts both in one menu; Text's grip moves it with the keyboard.
   await settings
     .getByRole('button', { name: 'Reorder Comment' })
-    .dragTo(settings.getByRole('button', { name: 'Reorder Hand' }).locator('xpath=..'))
+    .dragTo(settings.locator('[data-entry="HAND"]'))
   await settings.getByRole('button', { name: 'Reorder Text' }).press('ArrowUp')
   await page.getByTestId('app-settings-done').click()
   await expect(page.getByTestId('app-settings-dialog')).toBeHidden()

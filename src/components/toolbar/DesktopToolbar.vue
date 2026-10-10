@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ToolbarRoot } from 'reka-ui'
 
+import type { EditorToolDef } from '@open-pencil/core/editor'
 import {
   getToolbarToolSelection,
   isToolbarToolActive,
@@ -31,6 +32,11 @@ const emit = defineEmits<{
   setTool: [tool: Tool]
 }>()
 
+/** The tool a flyout's button shows: the active one if it is in the flyout, else the last used. */
+function selectedTool(tool: EditorToolDef) {
+  return getToolbarToolSelection(tool, activeTool, flyoutSelections)
+}
+
 defineSlots<{
   /** A button that runs a command, such as placing an icon, rather than picking a tool. */
   action(props: { action: ToolbarAction }): unknown
@@ -52,16 +58,13 @@ defineSlots<{
         <Tip
           v-else-if="item.tool.flyout"
           :label="
-            toolTip(
-              toolLabels[getToolbarToolSelection(item.tool, activeTool, flyoutSelections)],
-              toolShortcuts[getToolbarToolSelection(item.tool, activeTool, flyoutSelections)]
-            )
+            toolTip(toolLabels[selectedTool(item.tool)], toolShortcuts[selectedTool(item.tool)])
           "
         >
           <ToolFlyout
             :tool="item.tool"
             :active-tool="activeTool"
-            :selected-tool="getToolbarToolSelection(item.tool, activeTool, flyoutSelections)"
+            :selected-tool="selectedTool(item.tool)"
             :tool-icons="toolIcons"
             :tool-labels="toolLabels"
             :tool-shortcuts="toolShortcuts"

@@ -129,21 +129,24 @@ export interface ToolbarRow {
   canMoveDown: boolean
 }
 
+/** Whether a group can merge into the one above it: both exist and neither is a command. */
+function canJoinAbove(groups: ToolbarEntry[][], groupIndex: number) {
+  if (groupIndex < 1 || groupIndex >= groups.length) return false
+  const [first] = groups[groupIndex]
+  const [above] = groups[groupIndex - 1]
+  return !isToolbarAction(first) && !isToolbarAction(above)
+}
+
 export function toolbarRows(layout: ToolbarLayout): ToolbarRow[] {
   const { groups } = layout
   return groups.flatMap((group, groupIndex) =>
     group.map((entry, index) => {
-      const previous = groupIndex > 0 ? groups[groupIndex - 1] : []
       const alone = group.length === 1
       return {
         entry,
         hidden: layout.hidden.includes(entry),
         joined: index > 0,
-        canJoin:
-          index === 0 &&
-          groupIndex > 0 &&
-          !isToolbarAction(entry) &&
-          !previous.some((member) => isToolbarAction(member)),
+        canJoin: index === 0 && canJoinAbove(groups, groupIndex),
         canMoveUp: !alone || groupIndex > 0,
         canMoveDown: !alone || groupIndex < groups.length - 1
       }
@@ -192,16 +195,15 @@ export function moveToolbarEntry(
     groups.splice(step < 0 ? groupIndex : groupIndex + 1, 0, [entry])
     return { ...layout, groups }
   }
-  ;[group[index], group[target]] = [group[target], entry]
+  group.splice(index, 1)
+  group.splice(target, 0, entry)
   return { ...layout, groups }
 }
 
 /** Merges the entry's group into the group above it, making one flyout. */
 export function joinToolbarEntry(layout: ToolbarLayout, entry: ToolbarEntry): ToolbarLayout {
-  const row = toolbarRows(layout).find((candidate) => candidate.entry === entry)
-  if (!row?.canJoin) return layout
-  const { groups, groupIndex, group } = locate(layout, entry)
-  if (!group || groupIndex < 1) return layout
+  const { groups, groupIndex, group, index } = locate(layout, entry)
+  if (!group || index !== 0 || !canJoinAbove(groups, groupIndex)) return layout
   groups.splice(groupIndex - 1, 2, [...groups[groupIndex - 1], ...group])
   return { ...layout, groups }
 }

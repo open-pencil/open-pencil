@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, normalizeClass, useAttrs } from 'vue'
+import { computed, normalizeClass, useAttrs, useTemplateRef } from 'vue'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/button/icon-button'
@@ -27,6 +27,8 @@ const {
 }>()
 
 const attrs = useAttrs()
+const button = useTemplateRef<HTMLButtonElement>('button')
+defineExpose({ focus: (options?: FocusOptions) => button.value?.focus(options) })
 
 defineOptions({ inheritAttrs: false })
 
@@ -43,6 +45,7 @@ const cls = computed(() =>
 <template>
   <Tip as-child :label="label" :side="side" :disabled="disabled">
     <button
+      ref="button"
       v-bind="buttonAttrs"
       data-slot="icon-button"
       :type="type"
