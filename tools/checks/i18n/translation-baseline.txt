@@ -54,6 +54,8 @@ de:panels.behaviourMax
 de:panels.behaviourStateHover
 de:panels.behaviourText
 de:settings.mcp
+de:settings.accentOrange
+de:settings.accentPink
 de:storage.bucket
 de:storage.providerAmazonS3
 de:storage.providerBackblaze
@@ -163,6 +165,8 @@ fr:settings.animations
 fr:settings.diagnostics
 fr:settings.mcp
 fr:settings.notifications
+fr:settings.accentGraphite
+fr:settings.accentOrange
 fr:storage.bucket
 fr:storage.providerAmazonS3
 fr:storage.providerBackblaze

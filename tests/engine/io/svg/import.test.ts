@@ -104,6 +104,36 @@ describe('import_svg', () => {
     expect(exported.match(/fill="url\(#/g)).toHaveLength(2)
   })
 
+  // Gradients export in Figma's convention with an exact gradientTransform, so a turned gradient on
+  // a stretched layer comes back with the transform it left with.
+  test('a turned linear gradient survives an SVG round trip', async () => {
+    const page = expectDefined(graph.getPages()[0])
+    const c = Math.SQRT1_2
+    const rect = graph.createNode('RECTANGLE', page.id, {
+      width: 200,
+      height: 120,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+          ],
+          gradientTransform: { m00: c, m01: c, m02: 0.5 - c, m10: -c, m11: c, m12: 0.5 }
+        }
+      ]
+    })
+    const exported = expectDefined(renderNodesToSVG(graph, page.id, [rect.id]))
+    const result = (await importSVG.execute(figma, { svg: exported })) as { id: string }
+    const imported = expectDefined(graph.getChildren(result.id)[0]?.fills[0]?.gradientTransform)
+    const original = expectDefined(rect.fills[0]?.gradientTransform)
+    for (const key of ['m00', 'm01', 'm02', 'm10', 'm11', 'm12'] as const)
+      expect(imported[key]).toBeCloseTo(original[key], 4)
+  })
+
   test('respects viewBox dimensions', async () => {
     const result = (await importSVG.execute(figma, {
       svg: '<svg viewBox="0 0 200 100"><path d="M0 0 L200 100"/></svg>'

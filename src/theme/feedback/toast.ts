@@ -15,7 +15,7 @@ const toastTheme = {
   },
   variants: {
     tone: {
-      default: { root: 'bg-accent text-white', action: 'bg-black/20 hover:bg-black/30' },
+      default: { root: 'bg-accent text-on-accent', action: 'bg-black/20 hover:bg-black/30' },
       warning: {
         root: 'border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]',
         action: 'bg-current/10 hover:bg-current/15'

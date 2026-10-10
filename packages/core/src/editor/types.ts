@@ -16,7 +16,12 @@ import type { UndoManager } from '@open-pencil/scene-graph/undo'
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type { MeasurementMode, PresenceCursor, RenderOverlays } from '#core/canvas/renderer/types'
+import type {
+  MeasurementMode,
+  PresenceCursor,
+  RenderOverlays,
+  SelectionTheme
+} from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
@@ -74,6 +79,8 @@ export interface EditorSharedState {
   /** The layer of the code element around the cursor in a code editor, shown in every pane. */
   codeFocusNodeId: string | null
   rulerTheme?: RulerTheme
+  /** Selection chrome on the canvas, following the interface accent; the default blue when unset. */
+  selectionTheme?: SelectionTheme
   /** The interface theme new sections take their fill from; light when unset. */
   theme?: InterfaceTheme
   /** Bumped by every document change; views, saving, and recovery follow it. */

@@ -6,7 +6,7 @@ const button = tv({
   variants: {
     tone: {
       ghost: 'bg-transparent text-muted hover:bg-hover hover:text-surface',
-      accent: 'bg-accent text-white hover:bg-accent/90',
+      accent: 'bg-accent text-on-accent hover:bg-accent/90',
       panel: 'bg-panel/70 text-surface backdrop-blur-xl',
       panelAccent: 'border-accent/20 bg-panel/70 text-primary backdrop-blur-xl'
     },

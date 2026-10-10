@@ -2,7 +2,8 @@ import { isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
-import type { Matrix } from '@open-pencil/scene-graph/primitives'
+import { linearGradientTransform } from '@open-pencil/scene-graph/gradient'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
@@ -35,12 +36,26 @@ export const setFill = defineTool({
 
     if (gradient && color_end) {
       const cEnd = parseColor(color_end)
-      const transforms: Record<string, Matrix> = {
-        'top-bottom': { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 },
-        'bottom-top': { m00: 0, m01: -1, m02: 1, m10: 1, m11: 0, m12: 0 },
-        'left-right': { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        'right-left': { m00: -1, m01: 0, m02: 1, m10: 0, m11: -1, m12: 1 }
+      // Edge middles of the layer's unit square that each direction runs between.
+      const ends: Record<string, [Vector, Vector]> = {
+        'top-bottom': [
+          { x: 0.5, y: 0 },
+          { x: 0.5, y: 1 }
+        ],
+        'bottom-top': [
+          { x: 0.5, y: 1 },
+          { x: 0.5, y: 0 }
+        ],
+        'left-right': [
+          { x: 0, y: 0.5 },
+          { x: 1, y: 0.5 }
+        ],
+        'right-left': [
+          { x: 1, y: 0.5 },
+          { x: 0, y: 0.5 }
+        ]
       }
+      const [start, end] = ends[gradient] ?? ends['top-bottom']
       node.fills = [
         {
           type: 'GRADIENT_LINEAR',
@@ -51,7 +66,7 @@ export const setFill = defineTool({
             { position: 0, color: c },
             { position: 1, color: cEnd }
           ],
-          gradientTransform: transforms[gradient] ?? transforms['top-bottom']
+          gradientTransform: linearGradientTransform(start, end)
         }
       ]
       return { id, gradient, start: c, end: cEnd }

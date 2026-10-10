@@ -1,6 +1,7 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { figmaBlendModeToSkia } from './blend'
@@ -280,37 +281,25 @@ function applyPatternFill(
   return true
 }
 
+/** Gradient space to the layer's pixels: Figma's transform maps the other way, so it is inverted. */
 function makeGradientLocalMatrix(
   r: SkiaRenderer,
   width: number,
   height: number,
   transform: NonNullable<Fill['gradientTransform']>
 ) {
+  const t = invertGradientTransform(transform)
   return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width, height), [
-    transform.m00,
-    transform.m01,
-    transform.m02,
-    transform.m10,
-    transform.m11,
-    transform.m12,
+    t.m00,
+    t.m01,
+    t.m02,
+    t.m10,
+    t.m11,
+    t.m12,
     0,
     0,
     1
   ])
-}
-
-export function linearGradientEndpoints(
-  width: number,
-  height: number,
-  transform: NonNullable<Fill['gradientTransform']>
-) {
-  return {
-    start: {
-      x: (transform.m00 + transform.m02) * width,
-      y: (transform.m10 + transform.m12) * height
-    },
-    end: { x: transform.m02 * width, y: transform.m12 * height }
-  }
 }
 
 /** Resolves one gradient stop's color, so a stroke resolves its own bindings, not a fill's. */
@@ -352,25 +341,22 @@ export function applyGradientFill(
   }
 
   if (fill.type === 'GRADIENT_LINEAR') {
-    const { start, end } = linearGradientEndpoints(w, h, t)
-    const startX = start.x
-    const startY = start.y
-    const endX = end.x
-    const endY = end.y
+    // Drawn in gradient space, so its bands follow the transform's second axis as in Figma
+    // rather than running square to the line on a stretched layer.
     const shader = r.ck.Shader.MakeLinearGradient(
-      [startX, startY],
-      [endX, endY],
+      [0, 0.5],
+      [1, 0.5],
       colors,
       positions,
-      r.ck.TileMode.Clamp
+      r.ck.TileMode.Clamp,
+      makeGradientLocalMatrix(r, w, h, t)
     )
     setShader(shader)
   } else if (fill.type === 'GRADIENT_DIAMOND') {
     setShader(makeDiamondGradient(r, colors, positions, makeGradientLocalMatrix(r, w, h, t)))
   } else if (fill.type === 'GRADIENT_RADIAL') {
-    // Figma's gradientTransform maps gradient space (center 0.5,0.5, radius 0.5)
-    // to the node's normalized [0,1] coordinate space. The full local matrix
-    // converts to pixel coordinates: scale(w, h) * gradientTransform.
+    // Gradient space is centred on (0.5, 0.5) with radius 0.5; the local matrix takes it to the
+    // layer's pixels.
     const localMatrix = makeGradientLocalMatrix(r, w, h, t)
     const shader = r.ck.Shader.MakeRadialGradient(
       [0.5, 0.5],

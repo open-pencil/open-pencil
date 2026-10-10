@@ -8,11 +8,16 @@ import type { ShapeHandleHover, GradientEdit } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
+/** Selection chrome on the canvas and the text drawn on it, such as size pills and ruler badges. */
+export interface SelectionTheme {
+  color: Color
+  foreground: Color
+}
+
 export interface RulerTheme {
   background: Color
   tick: Color
   text: Color
-  label: Color
 }
 
 export type MeasurementMode = 'off' | 'shallow' | 'deep'

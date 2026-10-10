@@ -1,4 +1,5 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { isIdentityGradientTransform } from '@open-pencil/scene-graph/gradient'
 
 import { formatColor, formatShadow } from './helpers'
 import { helperCall, plainValue, type HelperCall, type JSXProp, type JSXValue } from './value'
@@ -10,13 +11,8 @@ const GRADIENT_HELPERS: Partial<Record<Fill['type'], string>> = {
   GRADIENT_DIAMOND: 'diamondGradient'
 }
 
-const IDENTITY_TRANSFORM: GradientTransform = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-
 function isIdentity(transform: GradientTransform | undefined): boolean {
-  if (!transform) return true
-  return (Object.keys(IDENTITY_TRANSFORM) as (keyof GradientTransform)[]).every(
-    (key) => transform[key] === IDENTITY_TRANSFORM[key]
-  )
+  return !transform || isIdentityGradientTransform(transform)
 }
 
 /** Paints and effects imported from Figma often spell out the default blend mode. */

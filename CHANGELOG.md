@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- A paint's `gradientTransform` follows Figma's convention everywhere: it maps the layer's unit square onto gradient space, where a linear gradient runs from (0, 0.5) to (1, 0.5). Gradients made in OpenPencil before this release, which used the inverse, draw differently; code that builds gradients by hand should use `linearGradientTransform` and `ellipticalGradientTransform` from the new `@open-pencil/scene-graph/gradient`, which also has Figma's default transform and stops. `isGradientFill` and `GradientFillType` moved there from `@open-pencil/core/geometry`, and `linearGradientEndpoints` is removed from the canvas module.
 - `useStrokeControls` from `@open-pencil/vue` acts on the whole selection: `updateAlign`, `selectSide`, and `updateBorderWeight` no longer take a node, and `currentAlign()` and `borderWeight(side)` read the selection and return `MIXED` when it differs. `useEffectsControls().scrubEffect` and `commitEffect` no longer take a node. `useTypography` edits every selected text layer and adds `nodes`, `merged`, and `fontFeature`. The `panels.layersCount` message is now `panels.selectedCount`.
 - The app renders `render` JSX itself and no longer accepts the pre-rendered tree that earlier versions of `openpencil-mcp` send, so an older `openpencil-mcp` fails to render into this app version; update it with the app.
 - `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGVectorizeResult` adds `texts`, the SVG's text placed in the target space, and `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
@@ -42,6 +43,7 @@
 - `fetchIcon`, `fetchIcons`, `searchIcons`, `searchIconsBatch`, and `clearIconCache` are removed from `@open-pencil/core`. Icons come from an `IconProvider` instead: `iconify` is the default Iconify provider, `createIconifyProvider()` makes one with its own cache, and `placeIcon` places an icon that keeps its name. A custom provider also implements `previews()`, `collections()`, and `browse()`, which give pickers each icon's SVG markup, the sets, and a set's icons.
 - The editor's view state has a required `shapeHandleHover`, the selected shape whose radius, point count, and ratio handles the canvas shows; code that creates editor state itself must set it, as `createDefaultEditorViewState` does.
 - `defineTool` from `@open-pencil/core/tools` takes its `input` as a `v.strictObject` instead of a `v.object`, and `ToolDef.input` is a strict object schema, so a tool rejects arguments it does not declare.
+- `RulerTheme` from `@open-pencil/core/canvas` no longer has `label`: ruler badges and size pills draw their text in the `foreground` of the editor state's new `selectionTheme`, which also sets the canvas selection color and defaults to the previous blue with white text.
 
 ### Added
 
@@ -105,6 +107,7 @@
 - See how auto layout arranges layers, as in Figma: hovering a horizontal or vertical auto layout frame outlines its visible direct children with dotted lines, and selecting a single layer dots the border of its auto layout parent, in purple for components and instances. The outlines, and the padding and gap markers of a selected frame, hide while layers move, resize, or rotate.
 - Join a shared room right away under a generated name such as *Teal Fox*, and set the one name every room shows in Settings or the share panel.
 
+- Choose an accent color in **Settings → General → Appearance**: one of eight presets or any custom color. Buttons, toggles, selected layers, focus rings, the active tool, and the canvas selection, handles, size labels, and ruler badges follow it in both themes, and text on accent surfaces turns dark when the color is too light for white. The CLI and MCP `settings` commands read and set it as `appearance.accent`.
 ### Changed
 
 - Import SVG as editable layers, as pasting it into Figma does, from `import_svg`, dropped files, and pasted markup ([#734](https://github.com/open-pencil/open-pencil/issues/734)). Each `<g>` becomes a group, each shape its own vector, and each `<text>` a text layer with its fonts, `<tspan>` styles, alignment, and rotation, named after its `id`, element opacity is kept, and clipped content sits in a clip path group whose mask is drawn from the clip's shapes. The imported frame is white, clips its content, and is named after the root `<svg>` `id`; an SVG without a size imports as a group. Shapes are no longer merged into one multi-color vector.
@@ -155,6 +158,10 @@
 ### Fixed
 
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
+- Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.
+- A frame's name reads on the section it sits in: on a dark page, frames in a white section had white names on white. Names now fade more on light backgrounds than on dark ones, as Figma's do.
+- `lineHeight` and `letterSpacing` in the plugin API and `eval` scripts read and write Figma's `{ unit, value }`, including percent of the font size and `{ unit: 'AUTO' }`; assigning those objects used to leave the text undrawn.
+- Gradients from Figma files and Figma pastes draw as they do in Figma: they ran backwards or sat in the wrong place unless they were symmetric, because the canvas applied Figma's gradient transform the wrong way round. SVG export and import keep a gradient exactly, and a new gradient starts as Figma's does, top to bottom from the fill colour to a darker shade, keeping its transform when switched between linear, radial, angular, and diamond.
 - Changing stroke position, per-side stroke weights, or an effect with several layers selected changes all of them, not only the first.
 - Draw layer blur, drop and inner shadows, and background blur with Figma's falloff. They spread about 15% too far, with a long faint edge Figma does not draw; SVG export keeps Figma's own `stdDeviation` of half the radius.
 - Load the fonts of SVG text before placing it from `import_svg`, so centred and right-aligned text sits where Figma puts it; `figma.loadFontAsync` in scripts now loads the font instead of doing nothing.

@@ -24,13 +24,11 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.selectionPaint = new ck.Paint()
   r.selectionPaint.setStyle(ck.PaintStyle.Stroke)
   r.selectionPaint.setStrokeWidth(1)
-  r.selectionPaint.setColor(r.selColor())
   r.selectionPaint.setAntiAlias(true)
 
   r.parentOutlinePaint = new ck.Paint()
   r.parentOutlinePaint.setStyle(ck.PaintStyle.Stroke)
   r.parentOutlinePaint.setStrokeWidth(1)
-  r.parentOutlinePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
   r.parentOutlinePaint.setAntiAlias(true)
   r.parentOutlinePaint.setPathEffect(
     ck.PathEffect.MakeDash([PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH], 0)
@@ -95,7 +93,6 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.penHandlePaint = new ck.Paint()
   r.penHandlePaint.setStyle(ck.PaintStyle.Stroke)
   r.penHandlePaint.setStrokeWidth(1)
-  r.penHandlePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
   r.penHandlePaint.setAntiAlias(true)
 
   r.penVertexFill = new ck.Paint()
@@ -106,6 +103,15 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.penVertexStroke = new ck.Paint()
   r.penVertexStroke.setStyle(ck.PaintStyle.Stroke)
   r.penVertexStroke.setStrokeWidth(1)
-  r.penVertexStroke.setColor(r.selColor())
   r.penVertexStroke.setAntiAlias(true)
+
+  initializeSelectionPaintColors(r)
+}
+
+/** Colors the long-lived paints drawn in the selection color; rerun when that color changes. */
+export function initializeSelectionPaintColors(r: SkiaRenderer): void {
+  r.selectionPaint.setColor(r.selColor())
+  r.parentOutlinePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
+  r.penHandlePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
+  r.penVertexStroke.setColor(r.selColor())
 }

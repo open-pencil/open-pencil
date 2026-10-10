@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit'
 import { toUint8Array } from 'js-base64'
 
 import { slotPropertyId } from '@open-pencil/scene-graph'
@@ -8,7 +9,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
-  SELECTION_COLOR,
+  DEFAULT_SELECTION_THEME,
   COMPONENT_COLOR,
   SLOT_COLOR,
   CANVAS_BG_COLOR,
@@ -33,14 +34,20 @@ import * as RenderColors from './renderer/colors'
 import * as RendererFonts from './renderer/fonts'
 import { destroyRenderer } from './renderer/lifecycle'
 import { installRendererDomainMethods } from './renderer/methods'
-import { initializeRendererPaints } from './renderer/paints'
+import { initializeRendererPaints, initializeSelectionPaintColors } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
 import type { SceneBacking, SceneBackingBuild } from './renderer/retained-backing/types'
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 import { createGlyphSilhouetteCache } from './text/derived'
 import { TextPreparationCache } from './text/preparation-cache'
-export type { MeasurementMode, PresenceCursor, RenderOverlays, RulerTheme } from './renderer/types'
+export type {
+  MeasurementMode,
+  PresenceCursor,
+  RenderOverlays,
+  RulerTheme,
+  SelectionTheme
+} from './renderer/types'
 import type {
   Path,
   CanvasKit,
@@ -74,7 +81,7 @@ import type { PlacedIssueMarker } from './issues/types'
 import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
-import type { PresenceCursor, RenderOverlays, RulerTheme } from './renderer/types'
+import type { PresenceCursor, RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
 
 export class SkiaRenderer {
   ck: CanvasKit
@@ -183,6 +190,8 @@ export class SkiaRenderer {
   showRulers = true
   pageColor = CANVAS_BG_COLOR
   rulerTheme: RulerTheme | null = null
+  /** Selection chrome, set from editor state each frame through {@link setSelectionTheme}. */
+  selectionTheme: SelectionTheme = DEFAULT_SELECTION_THEME
   pageId: string | null = null
   /** Issue markers placed in the last overlay pass; hit testing reads the same layout. */
   issueMarkers: PlacedIssueMarker[] = []
@@ -421,7 +430,20 @@ export class SkiaRenderer {
   }
 
   selColor(alpha = 1) {
-    return this.ck.Color4f(SELECTION_COLOR.r, SELECTION_COLOR.g, SELECTION_COLOR.b, alpha)
+    const { r, g, b } = this.selectionTheme.color
+    return this.ck.Color4f(r, g, b, alpha)
+  }
+
+  selForegroundColor() {
+    const { r, g, b } = this.selectionTheme.foreground
+    return this.ck.Color4f(r, g, b, 1)
+  }
+
+  /** Switches selection chrome to `theme`, repainting the paints that keep it between frames. */
+  setSelectionTheme(theme: SelectionTheme = DEFAULT_SELECTION_THEME): void {
+    if (isEqual(theme, this.selectionTheme)) return
+    this.selectionTheme = { color: { ...theme.color }, foreground: { ...theme.foreground } }
+    initializeSelectionPaintColors(this)
   }
 
   compColor(alpha = 1) {
@@ -439,6 +461,12 @@ export class SkiaRenderer {
   outlineColor(node: SceneNode, graph: SceneGraph) {
     if (slotPropertyId(node)) return this.slotColor()
     return this.isInComponent(node, graph) ? this.compColor() : this.selColor()
+  }
+
+  /** Text drawn on {@link outlineColor}: white on slot and component colors, else the selection foreground. */
+  outlineForegroundColor(node: SceneNode, graph: SceneGraph) {
+    if (slotPropertyId(node) || this.isInComponent(node, graph)) return this.ck.WHITE
+    return this.selForegroundColor()
   }
 
   /** A component, instance or set, or a layer inside one; content placed in a slot is not. */
