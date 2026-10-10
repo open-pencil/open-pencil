@@ -102,7 +102,8 @@ export function isProtectedSyncField(
 
 /**
  * Strokes taken from the component keep the stroke geometry the instance overrides, such as its
- * weight, as in Figma, where it is overridden apart from the paint.
+ * weight, as in Figma, where it is overridden apart from the paint. Each stroke keeps the value of
+ * the instance stroke in its place, or the layer's own value where the instance has none there.
  */
 export function keepOverriddenStrokeGeometry(
   updates: Partial<SceneNode>,
@@ -110,14 +111,17 @@ export function keepOverriddenStrokeGeometry(
   protectedField: (field: string) => boolean
 ): void {
   if (!updates.strokes) return
-  const kept = Object.entries(STROKE_GEOMETRY_FIELDS).filter(([, field]) =>
-    isProtectedSyncField(target, field, protectedField)
-  )
+  const kept = (
+    Object.keys(STROKE_GEOMETRY_FIELDS) as (keyof typeof STROKE_GEOMETRY_FIELDS)[]
+  ).filter((key) => isProtectedSyncField(target, STROKE_GEOMETRY_FIELDS[key], protectedField))
   if (kept.length === 0) return
-  const geometry = Object.fromEntries(
-    kept.map(([key, field]) => [key, structuredClone(target[field])])
-  )
-  updates.strokes = updates.strokes.map((stroke) => ({ ...stroke, ...geometry }))
+  updates.strokes = updates.strokes.map((stroke, index) => {
+    const own = target.strokes.at(index)
+    const geometry = Object.fromEntries(
+      kept.map((key) => [key, structuredClone(own?.[key] ?? target[STROKE_GEOMETRY_FIELDS[key]])])
+    )
+    return { ...stroke, ...geometry }
+  })
 }
 
 export function sourceInTargetCoordinates(source: SceneNode, targetScale: number): SceneNode {

@@ -96,17 +96,19 @@ describe('instance overrides Figma records', () => {
     const { graph, instance } = build()
     const box = child(instance, 'Box')
     Object.assign(box, RECT_OVERRIDES)
-    Object.assign(box, { effects: [
-      {
-        type: 'DROP_SHADOW',
-        color: { r: 0, g: 0, b: 0, a: 0.25 },
-        offset: { x: 0, y: 4 },
-        radius: 8,
-        spread: 0,
-        visible: true,
-        blendMode: 'NORMAL'
-      }
-    ] })
+    Object.assign(box, {
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 8,
+          spread: 0,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
+    })
     const corners = child(instance, 'Corners')
     Object.assign(corners, { topLeftRadius: 10, bottomRightRadius: 4, strokeTopWeight: 3 })
     const label = child(instance, 'Label')
@@ -117,7 +119,9 @@ describe('instance overrides Figma records', () => {
     const reopened = await reopen(graph)
     const box2 = child(reopened.instance, 'Box')
     expect(read(box2, RECT_OVERRIDES)).toEqual(RECT_OVERRIDES)
-    expect(Reflect.get(box2, 'effects')).toMatchObject([{ type: 'DROP_SHADOW', radius: 8, offset: { x: 0, y: 4 } }])
+    expect(Reflect.get(box2, 'effects')).toMatchObject([
+      { type: 'DROP_SHADOW', radius: 8, offset: { x: 0, y: 4 } }
+    ])
     expect(
       read(child(reopened.instance, 'Corners'), { topLeftRadius: 0, bottomRightRadius: 0 })
     ).toEqual({ topLeftRadius: 10, bottomRightRadius: 4 })
