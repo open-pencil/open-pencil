@@ -2,6 +2,8 @@
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -26,31 +28,36 @@ const choice = defineModel<ConflictChoice>('choice', { default: 'keep-both' })
 const emit = defineEmits<{ confirm: [choice: ConflictChoice]; later: [] }>()
 
 const ui = cloudConflict()
+const t = useCloudMessages()
+const common = useCommonMessages()
 const options = computed(() => [
   {
     value: 'keep-both' as const,
-    label: 'Keep both',
-    description: `The Cloud version stays as “${documentName}”. Yours is saved next to it as “${documentName} (your copy)”.`
+    label: t.value.conflictKeepBoth,
+    description: t.value.conflictKeepBothDescription({
+      name: documentName,
+      copyName: t.value.conflictYourCopyName({ name: documentName })
+    })
   },
   {
     value: 'use-cloud' as const,
-    label: 'Use the Cloud version',
-    description: 'Your unsent changes on this device are discarded.'
+    label: t.value.conflictUseCloud,
+    description: t.value.conflictUseCloudDescription
   },
   {
     value: 'use-mine' as const,
-    label: 'Replace it with your version',
+    label: t.value.conflictUseMine,
     description: cloud.by
-      ? `${cloud.by}’s latest changes are replaced for everyone.`
-      : 'The newer version on the server is replaced for everyone.'
+      ? t.value.conflictUseMineDescriptionBy({ name: cloud.by })
+      : t.value.conflictUseMineDescription
   }
 ])
 const confirmLabel = computed(
   () =>
     ({
-      'keep-both': 'Keep both',
-      'use-cloud': 'Use Cloud version',
-      'use-mine': 'Replace with mine'
+      'keep-both': t.value.conflictKeepBoth,
+      'use-cloud': t.value.conflictConfirmUseCloud,
+      'use-mine': t.value.conflictConfirmUseMine
     })[choice.value]
 )
 </script>
@@ -58,16 +65,16 @@ const confirmLabel = computed(
 <template>
   <AppDialogRoot v-model:open="open" size="md">
     <AppDialogHeader
-      :heading="`“${documentName}” was changed in two places`"
-      description="Someone saved a newer version while you had unsent changes. Nothing is lost until you choose."
-      close-label="Close"
+      :heading="t.changedInTwoPlaces({ name: documentName })"
+      :description="t.conflictDescription"
+      :close-label="common.close"
     />
     <AppDialogBody>
       <div :class="ui.versions()">
         <figure
           v-for="version in [
-            { ...mine, label: 'Your version' },
-            { ...cloud, label: 'Cloud version' }
+            { ...mine, label: t.conflictYourVersion },
+            { ...cloud, label: t.conflictCloudVersion }
           ]"
           :key="version.label"
           :class="ui.version()"
@@ -84,7 +91,7 @@ const confirmLabel = computed(
           </figcaption>
         </figure>
       </div>
-      <RadioGroupRoot v-model="choice" aria-label="Which version to keep" :class="ui.options()">
+      <RadioGroupRoot v-model="choice" :aria-label="t.conflictWhichVersion" :class="ui.options()">
         <RadioGroupItem
           v-for="option in options"
           :key="option.value"
@@ -101,7 +108,7 @@ const confirmLabel = computed(
       </RadioGroupRoot>
     </AppDialogBody>
     <AppDialogFooter>
-      <AppButton variant="ghost" @click="emit('later')">Decide later</AppButton>
+      <AppButton variant="ghost" @click="emit('later')">{{ t.conflictDecideLater }}</AppButton>
       <AppButton
         :color="choice === 'use-mine' ? 'error' : 'primary'"
         variant="solid"

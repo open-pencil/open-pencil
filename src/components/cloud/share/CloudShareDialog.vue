@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -52,23 +54,28 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudShare()
+const t = useCloudMessages()
+const common = useCommonMessages()
 const email = ref('')
 const invitePermission = ref<SharePermission>('edit')
-const permissionOptions = [
-  { value: 'edit' as const, label: 'Can edit' },
-  { value: 'view' as const, label: 'Can view' }
-]
-const memberOptions = [...permissionOptions, { value: 'remove' as const, label: 'Remove access' }]
+const permissionOptions = computed(() => [
+  { value: 'edit' as const, label: t.value.canEdit },
+  { value: 'view' as const, label: t.value.canView }
+])
+const memberOptions = computed(() => [
+  ...permissionOptions.value,
+  { value: 'remove' as const, label: t.value.shareRemoveAccess }
+])
+const accessOptions = computed(() => [
+  { value: 'restricted', label: t.value.shareRestricted },
+  { value: 'link', label: t.value.shareAnyoneWithLink }
+])
 const accessValue = computed(() => link.access)
 const linkPermission = computed<SharePermission>(() =>
   link.access === 'link' ? link.permission : 'view'
 )
-const PERMISSION_LABELS: Record<SharePermission | 'owner', string> = {
-  owner: 'Owner',
-  edit: 'Can edit',
-  view: 'Can view'
-}
-const permissionLabel = (permission: SharePermission | 'owner') => PERMISSION_LABELS[permission]
+const permissionLabel = (permission: SharePermission | 'owner') =>
+  ({ owner: t.value.shareOwner, edit: t.value.canEdit, view: t.value.canView })[permission]
 
 function submitInvite() {
   const value = email.value.trim()
@@ -81,9 +88,13 @@ function submitInvite() {
 <template>
   <AppDialogRoot v-model:open="open" size="md">
     <AppDialogHeader
-      :heading="`Share “${documentName}”`"
-      :description="workspace ? `In ${workspace.name} on OpenPencil Cloud` : 'On OpenPencil Cloud'"
-      close-label="Close"
+      :heading="t.shareHeading({ name: documentName })"
+      :description="
+        workspace
+          ? t.shareDescriptionInWorkspace({ workspace: workspace.name })
+          : t.shareDescription
+      "
+      :close-label="common.close"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col gap-5' }">
       <form v-if="canManage" :class="ui.invite()" @submit.prevent="submitInvite">
@@ -92,8 +103,8 @@ function submitInvite() {
           type="text"
           inputmode="email"
           autocomplete="email"
-          placeholder="Add people by email"
-          aria-label="Email address"
+          :placeholder="t.shareAddPeople"
+          :aria-label="t.shareEmailAddress"
           density="compact"
           class="min-w-0 flex-1"
         >
@@ -101,7 +112,7 @@ function submitInvite() {
         </AppInput>
         <AppSelect
           v-model="invitePermission"
-          label="Permission for new people"
+          :label="t.shareNewPeoplePermission"
           :options="permissionOptions"
           :ui="{ trigger: 'h-8 w-28' }"
         />
@@ -112,12 +123,12 @@ function submitInvite() {
           :loading="inviting"
           :ui="{ base: 'h-8 px-3' }"
         >
-          Invite
+          {{ t.shareInvite }}
         </AppButton>
       </form>
 
       <section aria-labelledby="share-people-heading">
-        <h3 id="share-people-heading" :class="ui.heading()">People with access</h3>
+        <h3 id="share-people-heading" :class="ui.heading()">{{ t.sharePeopleWithAccess }}</h3>
         <ul :class="ui.list()">
           <li v-for="member in members" :key="member.id" :class="ui.row()">
             <span v-if="member.pendingUntil" :class="ui.pendingAvatar()">
@@ -127,12 +138,14 @@ function submitInvite() {
             <span :class="ui.rowBody()">
               <span :class="ui.rowName()">
                 {{ member.pendingUntil ? member.email : member.name }}
-                <span v-if="member.you" class="text-muted">(you)</span>
-                <AppBadge v-if="member.pendingUntil">Invited</AppBadge>
+                <span v-if="member.you" class="text-muted">{{ t.shareYou }}</span>
+                <AppBadge v-if="member.pendingUntil">{{ t.shareInvited }}</AppBadge>
               </span>
               <span :class="ui.rowDetail()">
                 {{
-                  member.pendingUntil ? `Invitation expires ${member.pendingUntil}` : member.email
+                  member.pendingUntil
+                    ? t.shareInvitationExpires({ date: member.pendingUntil })
+                    : member.email
                 }}
               </span>
             </span>
@@ -142,7 +155,7 @@ function submitInvite() {
             <AppSelect
               v-else
               :model-value="member.permission"
-              :label="`Access for ${member.name}`"
+              :label="t.shareAccessFor({ name: member.name })"
               :options="memberOptions"
               :ui="{ trigger: 'w-28' }"
               @update:model-value="emit('changeMember', member.id, $event)"
@@ -151,12 +164,14 @@ function submitInvite() {
           <li v-if="workspace" :class="ui.row()">
             <span :class="ui.groupAvatar()"><icon-lucide-layers class="size-3.5" /></span>
             <span :class="ui.rowBody()">
-              <span :class="ui.rowName()">Everyone in {{ workspace.name }}</span>
+              <span :class="ui.rowName()">{{
+                t.shareEveryoneIn({ workspace: workspace.name })
+              }}</span>
               <span v-if="workspace.memberCount" :class="ui.rowDetail()">
-                {{ workspace.memberCount }} members
+                {{ t.shareMemberCount(workspace.memberCount) }}
               </span>
             </span>
-            <Tip label="Set by the workspace; change it in the workspace's settings">
+            <Tip :label="t.shareWorkspacePermissionTip">
               <span :class="ui.rowRole()">{{ permissionLabel(workspace.permission) }}</span>
             </Tip>
           </li>
@@ -164,7 +179,7 @@ function submitInvite() {
       </section>
 
       <section aria-labelledby="share-link-heading">
-        <h3 id="share-link-heading" :class="ui.heading()">General access</h3>
+        <h3 id="share-link-heading" :class="ui.heading()">{{ t.shareGeneralAccess }}</h3>
         <div :class="ui.access()">
           <span :class="ui.accessIcon()" :data-access="link.access">
             <icon-lucide-globe v-if="link.access === 'link'" class="size-4" />
@@ -174,11 +189,8 @@ function submitInvite() {
             <AppSelect
               v-if="canManage && (links.allowed || link.access === 'link')"
               :model-value="accessValue"
-              label="General access"
-              :options="[
-                { value: 'restricted', label: 'Only people with access' },
-                { value: 'link', label: 'Anyone with the link' }
-              ]"
+              :label="t.shareGeneralAccess"
+              :options="accessOptions"
               :ui="{
                 trigger: 'h-6 w-auto border-transparent bg-transparent px-1 -ml-1 font-medium'
               }"
@@ -192,22 +204,22 @@ function submitInvite() {
               "
             />
             <p v-else :class="ui.accessLabel()">
-              {{ link.access === 'link' ? 'Anyone with the link' : 'Only people with access' }}
+              {{ link.access === 'link' ? t.shareAnyoneWithLink : t.shareRestricted }}
             </p>
             <p :class="ui.accessDetail()">
               {{
                 link.access === 'link'
-                  ? 'Anyone who has the link can open this file without signing in.'
+                  ? t.shareLinkDetail
                   : links.allowed
-                    ? 'Only the people and workspace above can open this file.'
-                    : 'Only the people and workspace above can open this file. Links are turned off for this workspace.'
+                    ? t.shareRestrictedDetail
+                    : t.shareRestrictedNoLinksDetail
               }}
             </p>
           </div>
           <AppSelect
             v-if="link.access === 'link' && canManage"
             :model-value="link.permission"
-            label="Link permission"
+            :label="t.shareLinkPermission"
             :options="
               links.edit
                 ? permissionOptions
@@ -222,15 +234,13 @@ function submitInvite() {
 
     <AppDialogFooter :ui="{ footer: 'justify-between' }">
       <p v-if="!canManage" :class="ui.footnote()">
-        Only the owner and editors can change who has access.
+        {{ t.shareCannotManage }}
       </p>
       <template v-else-if="link.access === 'link' && !link.copyable">
-        <Tip
-          label="This link was made on another device. Resetting it makes a new link and the old one stops working."
-        >
+        <Tip :label="t.shareResetLinkTip">
           <AppButton variant="outline" @click="emit('resetLink')">
             <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
-            Reset link
+            {{ t.shareResetLink }}
           </AppButton>
         </Tip>
       </template>
@@ -239,10 +249,10 @@ function submitInvite() {
           <icon-lucide-check v-if="copied" class="size-3.5" />
           <icon-lucide-link v-else class="size-3.5" />
         </template>
-        {{ copied ? 'Link copied' : 'Copy link' }}
+        {{ copied ? t.shareLinkCopied : t.shareCopyLink }}
       </AppButton>
       <span v-else />
-      <AppButton color="primary" variant="solid" @click="open = false">Done</AppButton>
+      <AppButton color="primary" variant="solid" @click="open = false">{{ common.done }}</AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>

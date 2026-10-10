@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import {
@@ -20,12 +22,19 @@ import CloudSettingsPanel from './CloudSettingsPanel.vue'
 import type { CloudServerEntry } from './types'
 
 /** The Cloud section of Settings: the saved servers with their live sessions, and their actions. */
+const t = useCloudMessages()
+const common = useCommonMessages()
 const entries = computed<CloudServerEntry[]>(() =>
   cloudServers.value.map((server) => {
     const connection = cloudConnection(server.id)
     const account = connection.account ?? server.account
     let session: CloudServerEntry['session'] = account ? 'signed-in' : 'signed-out'
-    if (connection.state === 'expired' || connection.state === 'signed-out') {
+    if (
+      connection.state === 'pending' ||
+      connection.state === 'closed' ||
+      connection.state === 'expired' ||
+      connection.state === 'signed-out'
+    ) {
       session = connection.state
     }
     return {
@@ -53,7 +62,7 @@ async function signOut(id: string) {
   try {
     await signOutOfCloud(id, discovery)
   } catch {
-    toast.error('Couldn’t sign out. Check your connection and try again.')
+    toast.error(t.value.settingsSignOutFailed)
   }
 }
 
@@ -84,14 +93,14 @@ async function remove() {
     <AppConfirmationDialog
       :open="removing !== null"
       tone="danger"
-      :heading="`Remove ${removing?.host ?? ''}?`"
+      :heading="t.settingsRemoveHeading({ host: removing?.host ?? '' })"
       :description="
         removing?.unsaved
-          ? `You’re signed out and its workspaces leave Home on this device. ${removing.unsaved} documents have changes that haven’t reached the server yet; removing it discards them.`
-          : 'You’re signed out and its workspaces leave Home on this device. Documents stay on the server.'
+          ? t.settingsRemoveUnsavedDescription(removing.unsaved)
+          : t.settingsRemoveDescription
       "
-      cancel-label="Cancel"
-      :confirm-label="removing?.unsaved ? 'Remove and discard changes' : 'Remove'"
+      :cancel-label="common.cancel"
+      :confirm-label="removing?.unsaved ? t.settingsRemoveAndDiscard : t.settingsRemove"
       @update:open="(open) => !open && (removing = null)"
       @confirm="remove"
     />

@@ -2,6 +2,8 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
+import { useCloudMessages } from '@open-pencil/vue'
+
 import type { CloudSyncState } from '@/components/home/cloud/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
@@ -44,25 +46,20 @@ function act(action: 'share' | 'openWorkspace' | 'resolve' | 'retry') {
   else emit('retry')
 }
 const popover = usePopoverUI({ content: 'w-72 p-3' })
+const t = useCloudMessages()
 const summary = computed(() => {
-  if (viewOnly)
-    return { label: 'View only', detail: 'You can look around and follow others, not edit.' }
+  const m = t.value
+  if (viewOnly) return { label: m.viewOnly, detail: m.statusViewOnlyDetail }
   const summaries: Record<CloudSyncState, { label: string; detail: string }> = {
     synced: {
-      label: `Saved to ${workspace}`,
-      detail: savedAgo ? `Saved ${savedAgo}` : 'Up to date'
+      label: m.statusSavedTo({ workspace }),
+      detail: savedAgo ? m.statusSavedAgo({ time: savedAgo }) : m.statusUpToDate
     },
-    uploading: { label: 'Saving…', detail: `Uploading to ${workspace}` },
-    pending: { label: 'Saved on this device', detail: 'Uploads in a moment' },
-    offline: {
-      label: 'Saved on this device',
-      detail: 'You’re offline. Changes upload when you reconnect.'
-    },
-    conflict: {
-      label: 'Changed in two places',
-      detail: 'Someone saved a newer version while you edited. Choose which to keep.'
-    },
-    error: { label: 'Couldn’t save to Cloud', detail: 'Your changes are safe on this device.' }
+    uploading: { label: m.statusSaving, detail: m.statusUploadingTo({ workspace }) },
+    pending: { label: m.statusSavedOnDevice, detail: m.statusUploadsSoon },
+    offline: { label: m.statusSavedOnDevice, detail: m.statusOfflineDetail },
+    conflict: { label: m.statusConflict, detail: m.statusConflictDetail },
+    error: { label: m.saveFailedHeading, detail: m.statusErrorDetail }
   }
   return summaries[state]
 })
@@ -87,7 +84,7 @@ const summary = computed(() => {
         <icon-lucide-git-compare-arrows v-else-if="state === 'conflict'" class="size-3.5" />
         <icon-lucide-circle-alert v-else class="size-3.5" />
         <span v-if="viewOnly || state === 'conflict'" :class="ui.triggerLabel()">
-          {{ viewOnly ? 'View only' : 'Resolve' }}
+          {{ viewOnly ? t.viewOnly : t.statusResolve }}
         </span>
       </PopoverTrigger>
     </Tip>
@@ -108,11 +105,11 @@ const summary = computed(() => {
         </div>
         <dl :class="ui.facts()">
           <div :class="ui.fact()">
-            <dt>Workspace</dt>
+            <dt>{{ t.workspace }}</dt>
             <dd>{{ workspace }}</dd>
           </div>
           <div :class="ui.fact()">
-            <dt>Server</dt>
+            <dt>{{ t.server }}</dt>
             <dd>{{ host }}</dd>
           </div>
         </dl>
@@ -124,7 +121,7 @@ const summary = computed(() => {
             variant="solid"
             @click="act('resolve')"
           >
-            Choose a version
+            {{ t.statusChooseVersion }}
           </AppButton>
           <AppButton
             v-else-if="state === 'error' && !viewOnly"
@@ -132,15 +129,15 @@ const summary = computed(() => {
             variant="outline"
             @click="act('retry')"
           >
-            Try again
+            {{ t.tryAgain }}
           </AppButton>
           <AppButton size="sm" variant="outline" @click="act('share')">
             <template #leading><icon-lucide-user-plus class="size-3.5" /></template>
-            Share
+            {{ t.share }}
           </AppButton>
-          <AppButton size="sm" variant="ghost" @click="act('openWorkspace')"
-            >Open workspace</AppButton
-          >
+          <AppButton size="sm" variant="ghost" @click="act('openWorkspace')">{{
+            t.statusOpenWorkspace
+          }}</AppButton>
         </div>
       </PopoverContent>
     </PopoverPortal>

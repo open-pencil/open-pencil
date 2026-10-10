@@ -8,6 +8,8 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
+import { useCloudMessages } from '@open-pencil/vue'
+
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -35,26 +37,26 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudServers()
+/** Signed in, even to an account still waiting for approval or declined. */
+const hasSession = (server: CloudServerEntry) =>
+  server.session === 'signed-in' || server.session === 'pending' || server.session === 'closed'
 const menuUI = menu()
+const t = useCloudMessages()
 const title = (server: CloudServerEntry) =>
-  server.kind === 'official' ? 'OpenPencil Cloud' : server.host
+  server.kind === 'official' ? t.value.productName : server.host
 </script>
 
 <template>
   <SettingsPage>
     <SettingsSection>
-      <template #title>OpenPencil Cloud</template>
+      <template #title>{{ t.productName }}</template>
       <template #description>
-        {{
-          servers.length
-            ? 'Servers this app syncs documents with. Home shows one server’s workspaces at a time.'
-            : 'Keep files in sync across devices and edit them with others. Documents on this device stay where they are.'
-        }}
+        {{ servers.length ? t.settingsDescription : t.settingsEmptyDescription }}
       </template>
       <template v-if="servers.length" #actions>
         <AppButton size="sm" variant="outline" @click="emit('connect')">
           <template #leading><icon-lucide-plus class="size-3.5" /></template>
-          Connect a server
+          {{ t.settingsConnectServer }}
         </AppButton>
       </template>
 
@@ -63,18 +65,16 @@ const title = (server: CloudServerEntry) =>
           <template #leading>
             <span :class="ui.choiceIcon()"><icon-lucide-cloud class="size-4" /></span>
           </template>
-          OpenPencil Cloud
-          <template #description>Hosted by OpenPencil, nothing to set up.</template>
+          {{ t.productName }}
+          <template #description>{{ t.settingsOfficialDescription }}</template>
           <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
         </AppActionRow>
         <AppActionRow @click="emit('connect', 'self-hosted')">
           <template #leading>
             <span :class="ui.choiceIcon()"><icon-lucide-server class="size-4" /></span>
           </template>
-          Your team’s server
-          <template #description
-            >A self-hosted OpenPencil Cloud, at the address your team uses.</template
-          >
+          {{ t.selfHostedLabel }}
+          <template #description>{{ t.settingsSelfHostedDescription }}</template>
           <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
         </AppActionRow>
       </div>
@@ -89,11 +89,23 @@ const title = (server: CloudServerEntry) =>
             <div :class="ui.titleRow()">
               <span :class="ui.title()">{{ title(server) }}</span>
               <span v-if="server.kind === 'official'" :class="ui.host()">{{ server.host }}</span>
-              <span v-if="server.onHome" :class="ui.badge()">On Home</span>
+              <span v-if="server.onHome" :class="ui.badge()">{{ t.settingsOnHome }}</span>
             </div>
             <p v-if="server.session === 'expired'" :class="ui.expired()">
               <icon-lucide-circle-alert class="size-3 shrink-0" />
-              Sign-in expired{{ server.account ? ` for ${server.account.email}` : '' }}
+              {{
+                server.account
+                  ? t.settingsSignInExpiredFor({ email: server.account.email })
+                  : t.settingsSignInExpired
+              }}
+            </p>
+            <p v-else-if="server.session === 'pending'" :class="ui.expired()">
+              <icon-lucide-clock class="size-3 shrink-0" />
+              {{ t.settingsWaitingForApproval }}
+            </p>
+            <p v-else-if="server.session === 'closed'" :class="ui.expired()">
+              <icon-lucide-circle-x class="size-3 shrink-0" />
+              {{ t.settingsAccessClosed }}
             </p>
             <p v-else-if="server.account && server.session === 'signed-in'" :class="ui.account()">
               <AccountAvatar :id="server.account.id" :name="server.account.name" />
@@ -101,20 +113,20 @@ const title = (server: CloudServerEntry) =>
                 {{ server.account.name }} · {{ server.account.email }}
               </span>
             </p>
-            <p v-else :class="ui.account()">Signed out</p>
+            <p v-else :class="ui.account()">{{ t.settingsSignedOut }}</p>
           </div>
           <div :class="ui.trailing()">
             <AppButton
-              v-if="server.session !== 'signed-in'"
+              v-if="server.session === 'expired' || server.session === 'signed-out'"
               size="sm"
               variant="outline"
               @click="emit('signIn', server.id)"
             >
-              Sign in
+              {{ t.signIn }}
             </AppButton>
             <DropdownMenuRoot :modal="false">
               <DropdownMenuTrigger as-child>
-                <IconButton :label="`Options for ${server.host}`">
+                <IconButton :label="t.settingsOptionsFor({ host: server.host })">
                   <icon-lucide-ellipsis class="size-3.5" />
                 </IconButton>
               </DropdownMenuTrigger>
@@ -131,7 +143,7 @@ const title = (server: CloudServerEntry) =>
                     @select="emit('manageAccount', server.id)"
                   >
                     <icon-lucide-external-link :class="menuUI.icon()" />
-                    Account and security
+                    {{ t.settingsAccountAndSecurity }}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     v-if="!server.onHome"
@@ -139,15 +151,15 @@ const title = (server: CloudServerEntry) =>
                     @select="emit('showOnHome', server.id)"
                   >
                     <icon-lucide-house :class="menuUI.icon()" />
-                    Show on Home
+                    {{ t.settingsShowOnHome }}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    v-if="server.session === 'signed-in'"
+                    v-if="hasSession(server)"
                     :class="menuUI.item({ justify: 'start' })"
                     @select="emit('signOut', server.id)"
                   >
                     <icon-lucide-log-out :class="menuUI.icon()" />
-                    Sign out
+                    {{ t.signOut }}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator :class="menuUI.separator()" />
                   <DropdownMenuItem
@@ -155,7 +167,7 @@ const title = (server: CloudServerEntry) =>
                     @select="emit('remove', server.id)"
                   >
                     <icon-lucide-trash-2 :class="menuUI.icon()" />
-                    Remove from this app
+                    {{ t.settingsRemoveFromApp }}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPortal>

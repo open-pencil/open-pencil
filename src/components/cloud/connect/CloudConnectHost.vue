@@ -2,7 +2,7 @@
 import { useNow } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
 import {
   cancelCloudConnect,
@@ -29,6 +29,7 @@ import CloudConnectDialog from './CloudConnectDialog.vue'
 
 /** The one connect dialog, driven by the app's connect flow wherever it was opened from. */
 const { locale } = useI18n()
+const t = useCloudMessages()
 const now = useNow({ interval: 1000 })
 const official = new URL(OFFICIAL_CLOUD_URL).host
 
@@ -51,9 +52,9 @@ watch(cloudSignedIn, (signedIn) => {
   const connection = cloudConnection(server.id)
   const host = cloudServerHost(server.url)
   if (connection.state === 'pending') {
-    toast.info(`Your account on ${host} is waiting for an administrator to approve it.`)
+    toast.info(t.value.accountPending({ host }))
   } else if (connection.state === 'signed-in' && connection.account) {
-    toast.info(`Signed in to ${host} as ${connection.account.email}.`)
+    toast.info(t.value.signedInAs({ host, email: connection.account.email }))
   }
 })
 

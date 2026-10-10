@@ -3,7 +3,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { computed, onMounted, ref, shallowRef } from 'vue'
 
 import type { SharedDocument } from '@open-pencil/cloud/contract'
-import { useI18n } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
 import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
@@ -22,6 +22,7 @@ const { serverId, query = '' } = defineProps<{
 }>()
 
 const { locale } = useI18n()
+const t = useCloudMessages()
 const now = useCommentClock()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const documents = shallowRef<SharedDocument[]>([])
@@ -47,7 +48,9 @@ const rows = computed<CloudDocumentRow[]>(() =>
     id: document.id,
     name: document.name,
     editedAt: formatCommentTime(document.updatedAt, now.value.getTime(), locale.value),
-    editedBy: document.sharedBy ? `Shared by ${document.sharedBy.name}` : undefined,
+    editedBy: document.sharedBy
+      ? t.value.homeSharedBy({ name: document.sharedBy.name })
+      : undefined,
     sync: 'synced',
     permission: document.permission
   }))
@@ -82,8 +85,8 @@ function open(row: CloudDocumentRow) {
 <template>
   <CloudWorkspaceView
     v-model:view="view"
-    heading="Shared with you"
-    subtitle="Files people invited you to"
+    :heading="t.homeSharedWithYou"
+    :subtitle="t.homeSharedSubtitle"
     :documents="matching"
     :state="state"
     @open="open"

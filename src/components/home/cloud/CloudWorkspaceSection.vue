@@ -2,7 +2,7 @@
 import { useLocalStorage, useOnline } from '@vueuse/core'
 import { computed, shallowRef, watch } from 'vue'
 
-import { useDocumentWorkspace, useI18n } from '@open-pencil/vue'
+import { useCloudMessages, useDocumentWorkspace, useI18n } from '@open-pencil/vue'
 
 import { createCloudDocument } from '@/app/cloud/documents/create'
 import { cloudSyncState } from '@/app/cloud/documents/status'
@@ -37,6 +37,7 @@ const {
 }>()
 
 const { locale } = useI18n()
+const t = useCloudMessages()
 const now = useCommentClock()
 const online = useOnline()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
@@ -118,7 +119,11 @@ const state = computed(() => {
   if (files.error.value) return online.value ? 'error' : 'offline'
   return files.loading.value && !files.documents.value.length ? 'loading' : 'ready'
 })
-const roles = { viewer: 'Viewer', editor: 'Editor', admin: 'Admin' } as const
+const roles = computed(() => ({
+  viewer: t.value.roleViewer,
+  editor: t.value.roleEditor,
+  admin: t.value.roleAdmin
+}))
 
 const matching = computed(() =>
   query

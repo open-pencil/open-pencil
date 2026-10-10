@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -31,27 +33,29 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ accept: []; signIn: []; switchAccount: []; cancel: [] }>()
 
 const ui = cloudInvitation()
+const t = useCloudMessages()
+const common = useCommonMessages()
 const heading = computed(() => {
-  if (state === 'unavailable') return 'This invitation can’t be used'
-  if (!invitation) return 'Opening invitation'
-  return `${invitation.inviterName} invited you`
+  if (state === 'unavailable') return t.value.invitationUnavailableHeading
+  if (!invitation) return t.value.invitationOpening
+  return t.value.invitedYou({ name: invitation.inviterName })
 })
 const description = computed(() => {
   if (!invitation || state === 'unavailable') return undefined
   return invitation.permission === 'edit'
-    ? `To edit a document on ${invitation.host}.`
-    : `To view a document on ${invitation.host}.`
+    ? t.value.invitationEditDescription({ host: invitation.host })
+    : t.value.invitationViewDescription({ host: invitation.host })
 })
 </script>
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" close-label="Close" />
+    <AppDialogHeader :heading="heading" :description="description" :close-label="common.close" />
 
     <AppDialogBody v-if="state === 'loading'">
       <p :class="ui.loading()" role="status">
         <icon-lucide-loader-circle :class="ui.spinner()" aria-hidden="true" />
-        Checking the invitation…
+        {{ t.invitationChecking }}
       </p>
     </AppDialogBody>
 
@@ -59,8 +63,11 @@ const description = computed(() => {
       <div :class="ui.unavailable()">
         <span :class="ui.unavailableIcon()"><icon-lucide-mail-x class="size-4" /></span>
         <p :class="ui.unavailableDescription()">
-          It expired, was withdrawn, or was already accepted. Ask
-          {{ invitation?.inviterName ?? 'the person who sent it' }} for a new one.
+          {{
+            invitation
+              ? t.invitationUnavailableDescription({ name: invitation.inviterName })
+              : t.invitationUnavailableDescriptionNoName
+          }}
         </p>
       </div>
     </AppDialogBody>
@@ -71,48 +78,54 @@ const description = computed(() => {
           <span :class="ui.documentIcon()"><icon-lucide-file class="size-4" /></span>
           <span :class="ui.documentBody()">
             <span :class="ui.documentName()">{{ invitation.documentName }}</span>
-            <span :class="ui.documentMeta()">Sent to {{ invitation.recipientHint }}</span>
-            <span :class="ui.documentMeta()">Expires in {{ invitation.expiresIn }}</span>
+            <span :class="ui.documentMeta()">{{
+              t.invitationSentTo({ recipient: invitation.recipientHint })
+            }}</span>
+            <span :class="ui.documentMeta()">{{
+              t.invitationExpiresIn({ duration: invitation.expiresIn })
+            }}</span>
           </span>
           <span :class="ui.permission()">
-            {{ invitation.permission === 'edit' ? 'Can edit' : 'Can view' }}
+            {{ invitation.permission === 'edit' ? t.canEdit : t.canView }}
           </span>
         </div>
 
         <AppAlert
           v-if="state === 'sign-in' && invitation.unknownServer"
           tone="warning"
-          :heading="`You haven’t used ${invitation.host} before`"
-          description="Only sign in if you trust this server. It stores the document and sees your edits."
+          :heading="t.unknownServerHeading({ host: invitation.host })"
+          :description="t.unknownServerDescription"
         />
         <AppAlert
           v-else-if="state === 'sign-in'"
           tone="info"
-          :heading="`Sign in to ${invitation.host}`"
-          description="Use the account this invitation was sent to. The document opens right after."
+          :heading="t.invitationSignInHeading({ host: invitation.host })"
+          :description="t.invitationSignInDescription"
         />
         <AppAlert
           v-else-if="state === 'wrong-account' && account"
           tone="warning"
-          heading="This invitation is for another account"
-          :description="`You’re signed in as ${account.email}. Sign in with ${invitation.recipientHint} to open it.`"
+          :heading="t.wrongAccountHeading"
+          :description="
+            t.wrongAccountDescription({ email: account.email, recipient: invitation.recipientHint })
+          "
         />
       </div>
     </AppDialogBody>
 
     <AppDialogFooter>
       <template v-if="state === 'unavailable'">
-        <AppButton variant="outline" @click="emit('cancel')">Close</AppButton>
+        <AppButton variant="outline" @click="emit('cancel')">{{ common.close }}</AppButton>
       </template>
       <template v-else>
-        <AppButton variant="ghost" @click="emit('cancel')">Not now</AppButton>
+        <AppButton variant="ghost" @click="emit('cancel')">{{ t.notNow }}</AppButton>
         <AppButton
           v-if="state === 'sign-in'"
           color="primary"
           variant="solid"
           @click="emit('signIn')"
         >
-          Sign in to open
+          {{ t.signInToOpen }}
         </AppButton>
         <AppButton
           v-else-if="state === 'wrong-account'"
@@ -120,7 +133,7 @@ const description = computed(() => {
           variant="solid"
           @click="emit('switchAccount')"
         >
-          Use another account
+          {{ t.useAnotherAccount }}
         </AppButton>
         <AppButton
           v-else
@@ -130,7 +143,7 @@ const description = computed(() => {
           :loading="state === 'accepting'"
           @click="emit('accept')"
         >
-          Open document
+          {{ t.openDocument }}
         </AppButton>
       </template>
     </AppDialogFooter>

@@ -2,7 +2,7 @@
 import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
@@ -23,6 +23,7 @@ import CloudDocumentStatus from './CloudDocumentStatus.vue'
 /** The open document's Cloud status beside its name, and the choice when it conflicts. */
 const store = useEditorStore()
 const { locale } = useI18n()
+const t = useCloudMessages()
 const now = useCommentClock()
 const { state, location, meta } = useCloudDocumentStatus(() => store.getStorageBinding())
 
@@ -52,9 +53,13 @@ async function openConflict() {
 async function confirm(picked: CloudConflictChoice) {
   resolving.value = false
   try {
-    await resolveCloudConflict(store, picked, `${store.state.documentName} (your copy)`)
+    await resolveCloudConflict(
+      store,
+      picked,
+      t.value.conflictYourCopyName({ name: store.state.documentName })
+    )
   } catch {
-    toast.error('Couldn’t resolve the conflict. Your changes are still on this device.')
+    toast.error(t.value.conflictResolveFailed)
   }
 }
 
@@ -86,7 +91,7 @@ function retry() {
       :document-name="store.state.documentName"
       :mine="{
         previewURL: localPreviewURL,
-        by: 'You, on this device',
+        by: t.conflictYouOnThisDevice,
         savedAgo: ago(meta?.updatedAt)
       }"
       :cloud="{ previewURL: null, savedAgo: ago(cloudSavedAt) }"

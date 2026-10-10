@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { useCloudMessages } from '@open-pencil/vue'
+
 import Tip from '@/components/ui/overlay/Tip.vue'
 
 import type { CloudSyncState } from './types'
@@ -8,15 +10,16 @@ import type { CloudSyncState } from './types'
 /** A Cloud document's sync state as one small icon, explained on hover; nothing when synced. */
 const { state } = defineProps<{ state: CloudSyncState }>()
 
+const t = useCloudMessages()
 const label = computed(
   () =>
     ({
-      synced: 'Saved to Cloud',
-      uploading: 'Uploading changes…',
-      pending: 'Changes saved on this device, waiting to upload',
-      offline: 'Offline — changes are saved on this device',
-      conflict: 'Edited elsewhere too — choose which version to keep',
-      error: 'Could not upload changes'
+      synced: t.value.syncSynced,
+      uploading: t.value.syncUploading,
+      pending: t.value.syncPending,
+      offline: t.value.syncOffline,
+      conflict: t.value.syncConflict,
+      error: t.value.syncError
     })[state]
 )
 </script>

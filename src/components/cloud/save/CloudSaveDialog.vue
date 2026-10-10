@@ -2,6 +2,8 @@
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -30,46 +32,43 @@ const destination = defineModel<string>('destination', { default: '' })
 const emit = defineEmits<{ save: []; cancel: [] }>()
 
 const ui = cloudSave()
+const t = useCloudMessages()
+const common = useCommonMessages()
 const saving = computed(() => state.kind === 'saving')
 const progress = computed(() =>
   state.kind === 'saving' && state.totalBytes > 0
     ? Math.round((state.sentBytes / state.totalBytes) * 100)
     : 0
 )
-const roles = { viewer: 'View only', editor: 'Editor', admin: 'Admin' } as const
-const errors = {
-  quota: {
-    heading: 'This workspace is out of space',
-    description: 'Free some space or choose another workspace.'
-  },
-  offline: {
-    heading: 'You’re offline',
-    description: 'Connect to the internet to save to Cloud. Nothing has changed on this device.'
-  },
-  unavailable: {
-    heading: 'Couldn’t save to Cloud',
-    description: 'The server didn’t accept the file. Try again in a moment.'
-  }
-} as const
+const roles = computed(() => ({
+  viewer: t.value.viewOnly,
+  editor: t.value.roleEditor,
+  admin: t.value.roleAdmin
+}))
+const errors = computed(() => ({
+  quota: { heading: t.value.saveQuotaHeading, description: t.value.saveQuotaDescription },
+  offline: { heading: t.value.saveOfflineHeading, description: t.value.saveOfflineDescription },
+  unavailable: { heading: t.value.saveFailedHeading, description: t.value.saveFailedDescription }
+}))
 </script>
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
     <AppDialogHeader
-      heading="Save to Cloud"
-      description="Keep this design in sync across devices and share it with people."
-      close-label="Close"
+      :heading="t.saveHeading"
+      :description="t.saveDescription"
+      :close-label="common.close"
     />
 
     <AppDialogBody>
       <fieldset :class="ui.stack()" :disabled="saving">
         <div :class="ui.field()">
-          <label for="cloud-save-name" :class="ui.label()">Name</label>
+          <label for="cloud-save-name" :class="ui.label()">{{ t.saveName }}</label>
           <AppInput id="cloud-save-name" v-model="name" />
         </div>
 
         <div :class="ui.field()">
-          <span id="cloud-save-destination" :class="ui.label()">Workspace</span>
+          <span id="cloud-save-destination" :class="ui.label()">{{ t.workspace }}</span>
           <RadioGroupRoot
             v-model="destination"
             aria-labelledby="cloud-save-destination"
@@ -98,15 +97,19 @@ const errors = {
             <div :class="ui.progressBar()" :style="{ width: `${progress}%` }" />
           </div>
           <span :class="ui.progressText()">
-            Uploading… {{ formatStorageBytes(state.sentBytes) }} of
-            {{ formatStorageBytes(state.totalBytes) }}
+            {{
+              t.saveUploading({
+                sent: formatStorageBytes(state.sentBytes),
+                total: formatStorageBytes(state.totalBytes)
+              })
+            }}
           </span>
         </div>
         <AppAlert
           v-else-if="state.kind === 'error' && state.reason === 'too-large'"
           tone="error"
-          heading="This file is too large for this server"
-          :description="`It takes files up to ${formatStorageBytes(state.limitBytes)}. Remove unused images or pages, then try again.`"
+          :heading="t.saveTooLargeHeading"
+          :description="t.saveTooLargeDescription({ limit: formatStorageBytes(state.limitBytes) })"
         />
         <AppAlert
           v-else-if="state.kind === 'error'"
@@ -115,14 +118,13 @@ const errors = {
           :description="errors[state.reason].description"
         />
         <p v-else :class="ui.note()">
-          The Cloud copy opens in this tab and saves as you work. The file on this device stays as
-          it is.
+          {{ t.saveNote }}
         </p>
       </fieldset>
     </AppDialogBody>
 
     <AppDialogFooter>
-      <AppButton variant="ghost" @click="emit('cancel')">Cancel</AppButton>
+      <AppButton variant="ghost" @click="emit('cancel')">{{ common.cancel }}</AppButton>
       <AppButton
         color="primary"
         variant="solid"
@@ -130,7 +132,7 @@ const errors = {
         :disabled="!name.trim() || !destination"
         @click="emit('save')"
       >
-        Save to Cloud
+        {{ t.saveHeading }}
       </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>

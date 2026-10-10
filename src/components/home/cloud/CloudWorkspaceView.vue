@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -47,12 +49,15 @@ const emit = defineEmits<{
   reviewConflicts: []
 }>()
 
+const t = useCloudMessages()
+const common = useCommonMessages()
 const conflicts = computed(() => documents.filter((document) => document.sync === 'conflict'))
 const usageLabel = computed(() => {
   if (!usage) return null
+  const used = formatStorageBytes(usage.usedBytes)
   return usage.totalBytes === null
-    ? `${formatStorageBytes(usage.usedBytes)} used`
-    : `${formatStorageBytes(usage.usedBytes)} of ${formatStorageBytes(usage.totalBytes)}`
+    ? t.value.homeUsageUsed({ used })
+    : t.value.homeUsageOf({ used, total: formatStorageBytes(usage.totalBytes) })
 })
 const metadata = (document: CloudDocumentRow) =>
   document.editedBy ? `${document.editedAt} · ${document.editedBy}` : document.editedAt
@@ -75,7 +80,7 @@ const metadata = (document: CloudDocumentRow) =>
           <template v-if="usage && usage.totalBytes !== null && usageLabel">
             <AppProgress
               :amount="{ value: usage.usedBytes, max: usage.totalBytes }"
-              :aria-label="`Workspace storage, ${usageLabel}`"
+              :aria-label="t.homeWorkspaceStorage({ usage: usageLabel })"
               :ui="{ root: 'w-16' }"
             />
             <span>{{ usageLabel }}</span>
@@ -84,16 +89,16 @@ const metadata = (document: CloudDocumentRow) =>
         </div>
       </div>
       <div class="flex items-center gap-1">
-        <IconButton label="Refresh" class="size-7" @click="emit('refresh')">
+        <IconButton :label="common.refresh" class="size-7" @click="emit('refresh')">
           <icon-lucide-refresh-cw class="size-3.5" />
         </IconButton>
         <SegmentedControl
           v-model="view"
           required
-          label="View"
+          :label="t.homeView"
           :options="[
-            { value: 'grid', label: 'Grid' },
-            { value: 'list', label: 'List' }
+            { value: 'grid', label: t.homeGrid },
+            { value: 'list', label: t.homeList }
           ]"
         >
           <template #option="{ option }">
@@ -107,17 +112,17 @@ const metadata = (document: CloudDocumentRow) =>
     <AppAlert
       v-if="state === 'offline'"
       tone="info"
-      heading="You're offline"
-      description="These are the files saved on this device. Changes upload when you reconnect."
+      :heading="t.homeOfflineHeading"
+      :description="t.homeOfflineDescription"
     />
     <AppAlert
       v-else-if="state === 'error'"
       tone="error"
-      heading="Couldn't load this workspace"
-      description="The server didn't answer. Files saved on this device are still listed."
+      :heading="t.homeLoadFailedHeading"
+      :description="t.homeLoadFailedDescription"
     >
       <template #actions>
-        <AppButton size="sm" variant="outline" @click="emit('refresh')">Try again</AppButton>
+        <AppButton size="sm" variant="outline" @click="emit('refresh')">{{ t.tryAgain }}</AppButton>
       </template>
     </AppAlert>
     <AppAlert
@@ -125,20 +130,22 @@ const metadata = (document: CloudDocumentRow) =>
       tone="warning"
       :heading="
         conflicts.length === 1
-          ? `“${conflicts[0]?.name}” was changed in two places`
-          : `${conflicts.length} files were changed in two places`
+          ? t.changedInTwoPlaces({ name: conflicts[0]?.name ?? '' })
+          : t.homeConflicts(conflicts.length)
       "
-      description="Someone saved a newer version while you had unsent changes. Nothing is lost until you choose."
+      :description="t.conflictDescription"
     >
       <template #actions>
-        <AppButton size="sm" variant="outline" @click="emit('reviewConflicts')">Review</AppButton>
+        <AppButton size="sm" variant="outline" @click="emit('reviewConflicts')">{{
+          t.homeReview
+        }}</AppButton>
       </template>
     </AppAlert>
 
     <div
       v-if="state === 'loading'"
       class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
-      aria-label="Loading files"
+      :aria-label="t.homeLoadingFiles"
     >
       <div v-for="index in 4" :key="index" class="min-w-0 animate-pulse motion-reduce:animate-none">
         <div class="aspect-video rounded-lg border border-border bg-panel-field" />
@@ -151,19 +158,15 @@ const metadata = (document: CloudDocumentRow) =>
       v-else-if="documents.length === 0"
       size="page"
       label-as="h2"
-      :label="role ? `No files in ${heading} yet` : 'Nothing shared with you yet'"
-      :description="
-        role
-          ? 'Create a design here, or save an open file to this workspace from the File menu.'
-          : 'Files people invite you to show up here.'
-      "
+      :label="role ? t.homeEmptyWorkspace({ workspace: heading }) : t.homeNothingShared"
+      :description="role ? t.homeEmptyWorkspaceDescription : t.homeNothingSharedDescription"
       :ui="{ root: 'rounded-lg border border-dashed border-border py-10' }"
     >
       <template #icon><icon-lucide-layers class="size-5" /></template>
       <template v-if="canCreate" #action>
         <AppButton color="primary" variant="solid" @click="emit('newDesign')">
           <template #leading><icon-lucide-plus class="size-3.5" /></template>
-          New design
+          {{ t.homeNewDesign }}
         </AppButton>
       </template>
     </AppPlaceholder>
@@ -186,11 +189,11 @@ const metadata = (document: CloudDocumentRow) =>
         @open="emit('open', document)"
       >
         <template #status>
-          <Tip v-if="document.permission === 'view'" label="You can view this file">
-            <icon-lucide-eye class="size-3" role="img" aria-label="View only" />
+          <Tip v-if="document.permission === 'view'" :label="t.homeViewOnlyTip">
+            <icon-lucide-eye class="size-3" role="img" :aria-label="t.viewOnly" />
           </Tip>
-          <Tip v-if="document.shared" label="Shared with people outside the workspace">
-            <icon-lucide-users class="size-3" role="img" aria-label="Shared" />
+          <Tip v-if="document.shared" :label="t.homeSharedTip">
+            <icon-lucide-users class="size-3" role="img" :aria-label="t.homeShared" />
           </Tip>
           <CloudSyncIcon :state="document.sync" />
         </template>

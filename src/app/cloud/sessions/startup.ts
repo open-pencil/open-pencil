@@ -1,3 +1,5 @@
+import { cloudMessages } from '@open-pencil/vue'
+
 import { toast } from '@/app/shell/ui'
 
 import { cloudSignedIn } from '../connect/flow'
@@ -41,7 +43,7 @@ export async function startCloudSessions(options: {
   else resumeCloudInvitation()
   if (link?.kind === 'share') {
     await openCloudShareLink({ shareId: link.id, server: link.server, secret: link.secret }).catch(
-      () => toast.error('This link doesn’t open a document. Ask for a new one.')
+      () => toast.error(cloudMessages.get().shareLinkFailed)
     )
   }
 }

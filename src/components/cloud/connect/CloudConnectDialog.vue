@@ -2,6 +2,8 @@
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -56,77 +58,77 @@ const emit = defineEmits<{
 }>()
 
 const ui = cloudConnect()
-const errors: Record<CloudConnectError, { heading: string; description: string }> = {
-  'invalid-address': {
-    heading: 'Enter the server’s web address',
-    description: 'Use the address your team gave you, such as https://cloud.example.com.'
-  },
-  unreachable: {
-    heading: 'Couldn’t reach this server',
-    description: 'Check the address and your connection, then try again.'
-  },
-  'not-cloud': {
-    heading: 'This isn’t an OpenPencil Cloud server',
-    description:
-      'The address answered, but not as OpenPencil Cloud. Ask your team for the right one.'
-  },
-  outdated: {
-    heading: 'This server needs an update',
-    description: 'It runs an older version of OpenPencil Cloud than this app supports.'
-  },
-  denied: {
-    heading: 'Sign-in was denied',
-    description: 'The request was turned down in the browser. Start again to sign in.'
-  },
-  expired: {
-    heading: 'The code expired',
-    description: 'It wasn’t approved in time. Start again to get a new one.'
-  },
-  'sign-in-failed': {
-    heading: 'Couldn’t sign in',
-    description: 'The server didn’t finish signing you in. Try again in a moment.'
-  }
-}
-const methodLabels: Record<CloudSignInMethod, string> = {
-  google: 'Continue with Google',
-  apple: 'Continue with Apple',
-  email: 'Continue with email'
-}
-const heading = computed(() =>
-  step === 'device' ? 'Confirm in your browser' : 'Connect to OpenPencil Cloud'
+const t = useCloudMessages()
+const common = useCommonMessages()
+const errors = computed<Record<CloudConnectError, { heading: string; description: string }>>(
+  () => ({
+    'invalid-address': {
+      heading: t.value.errorInvalidAddressHeading,
+      description: t.value.errorInvalidAddressDescription
+    },
+    unreachable: {
+      heading: t.value.errorUnreachableHeading,
+      description: t.value.errorUnreachableDescription
+    },
+    'not-cloud': {
+      heading: t.value.errorNotCloudHeading,
+      description: t.value.errorNotCloudDescription
+    },
+    outdated: {
+      heading: t.value.errorOutdatedHeading,
+      description: t.value.errorOutdatedDescription
+    },
+    denied: { heading: t.value.errorDeniedHeading, description: t.value.errorDeniedDescription },
+    expired: { heading: t.value.errorExpiredHeading, description: t.value.errorExpiredDescription },
+    'sign-in-failed': {
+      heading: t.value.errorSignInFailedHeading,
+      description: t.value.errorSignInFailedDescription
+    }
+  })
 )
+const methodLabels = computed<Record<CloudSignInMethod, string>>(() => ({
+  google: t.value.continueWithGoogle,
+  apple: t.value.continueWithApple,
+  email: t.value.continueWithEmail
+}))
+const heading = computed(() => (step === 'device' ? t.value.deviceHeading : t.value.connectHeading))
 const description = computed(() => {
-  if (step === 'device') return `Approve this sign-in on ${server?.host ?? 'the server'}.`
-  if (step === 'sign-in') return `Sign in to ${server?.host ?? 'the server'} to sync your files.`
-  return 'Keep files in sync across devices and invite people to edit with you.'
+  const host = server?.host
+  if (step === 'device')
+    return host ? t.value.deviceDescription({ host }) : t.value.deviceDescriptionNoHost
+  if (step === 'sign-in')
+    return host ? t.value.signInDescription({ host }) : t.value.signInDescriptionNoHost
+  return t.value.connectDescription
 })
 </script>
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" close-label="Close" />
+    <AppDialogHeader :heading="heading" :description="description" :close-label="common.close" />
 
     <AppDialogBody v-if="step === 'server' || step === 'checking'">
-      <RadioGroupRoot v-model="kind" aria-label="Server" :class="ui.choices()">
+      <RadioGroupRoot v-model="kind" :aria-label="t.server" :class="ui.choices()">
         <RadioGroupItem value="official" :class="ui.choice()">
           <span :class="ui.choiceIcon()"><icon-lucide-cloud class="size-4" /></span>
           <span :class="ui.choiceBody()">
-            <span :class="ui.choiceLabel()">OpenPencil Cloud</span>
-            <span :class="ui.choiceDescription()">Hosted by OpenPencil · {{ official }}</span>
+            <span :class="ui.choiceLabel()">{{ t.productName }}</span>
+            <span :class="ui.choiceDescription()">{{
+              t.officialDescription({ host: official })
+            }}</span>
           </span>
           <span :class="ui.choiceMark()" aria-hidden="true" />
         </RadioGroupItem>
         <RadioGroupItem value="self-hosted" :class="ui.choice()">
           <span :class="ui.choiceIcon()"><icon-lucide-server class="size-4" /></span>
           <span :class="ui.choiceBody()">
-            <span :class="ui.choiceLabel()">Your team’s server</span>
-            <span :class="ui.choiceDescription()">A self-hosted OpenPencil Cloud</span>
+            <span :class="ui.choiceLabel()">{{ t.selfHostedLabel }}</span>
+            <span :class="ui.choiceDescription()">{{ t.selfHostedDescription }}</span>
           </span>
           <span :class="ui.choiceMark()" aria-hidden="true" />
         </RadioGroupItem>
       </RadioGroupRoot>
       <div v-if="kind === 'self-hosted'" :class="ui.address()">
-        <label for="cloud-server-address" :class="ui.addressLabel()">Server address</label>
+        <label for="cloud-server-address" :class="ui.addressLabel()">{{ t.serverAddress }}</label>
         <AppInput
           id="cloud-server-address"
           v-model="address"
@@ -176,48 +178,44 @@ const description = computed(() => {
         </AppActionRow>
       </div>
       <p :class="ui.note()">
-        {{
-          desktop
-            ? 'Your browser opens to finish signing in, then you come back here.'
-            : 'You come back to this tab after signing in.'
-        }}
+        {{ desktop ? t.signInNoteDesktop : t.signInNoteBrowser }}
       </p>
     </AppDialogBody>
 
     <AppDialogBody v-else-if="step === 'device' && device">
       <div :class="ui.device()">
-        <p :class="ui.deviceLabel()">Your code</p>
+        <p :class="ui.deviceLabel()">{{ t.yourCode }}</p>
         <AppCopyField
           :value="device.code"
-          copy-label="Copy code"
-          copied-label="Copied"
+          :copy-label="t.copyCode"
+          :copied-label="common.copied"
           look="command"
           :ui="{ root: 'w-full py-3 pl-4', value: 'flex-1 text-center text-lg tracking-[0.3em]' }"
         />
         <p :class="ui.deviceStatus()" role="status">
           <icon-lucide-loader-circle :class="ui.spinner()" aria-hidden="true" />
-          Waiting for you to approve… The code expires in {{ device.expiresIn }}.
+          {{ t.deviceWaiting({ duration: device.expiresIn }) }}
         </p>
       </div>
     </AppDialogBody>
 
     <AppDialogFooter>
       <template v-if="step === 'device'">
-        <AppButton variant="ghost" @click="emit('cancel')">Cancel</AppButton>
+        <AppButton variant="ghost" @click="emit('cancel')">{{ common.cancel }}</AppButton>
         <AppButton variant="outline" @click="emit('reopenBrowser')">
           <template #leading><icon-lucide-external-link class="size-3.5" /></template>
-          Open browser again
+          {{ t.openBrowserAgain }}
         </AppButton>
       </template>
       <template v-else-if="step === 'sign-in'">
         <AppButton variant="ghost" class="mr-auto" @click="emit('changeServer')">
           <template #leading><icon-lucide-arrow-left class="size-3.5" /></template>
-          Use another server
+          {{ t.useAnotherServer }}
         </AppButton>
-        <AppButton variant="ghost" @click="emit('cancel')">Cancel</AppButton>
+        <AppButton variant="ghost" @click="emit('cancel')">{{ common.cancel }}</AppButton>
       </template>
       <template v-else>
-        <AppButton variant="ghost" @click="emit('cancel')">Cancel</AppButton>
+        <AppButton variant="ghost" @click="emit('cancel')">{{ common.cancel }}</AppButton>
         <AppButton
           color="primary"
           variant="solid"
@@ -225,7 +223,7 @@ const description = computed(() => {
           :disabled="kind === 'self-hosted' && !address.trim()"
           @click="emit('continue')"
         >
-          Continue
+          {{ t.continue }}
         </AppButton>
       </template>
     </AppDialogFooter>

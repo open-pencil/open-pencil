@@ -3,7 +3,7 @@ import { useClipboard } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import type { DocumentPermission } from '@open-pencil/cloud/contract'
-import { useI18n } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
@@ -27,6 +27,7 @@ import CloudShareDialog from './CloudShareDialog.vue'
 /** Share for a Cloud document: who can open it and its link, managed on the server. */
 const store = useEditorStore()
 const { collaboration, locale } = useI18n()
+const t = useCloudMessages()
 const sharing = shallowRef<CloudSharing | null>(null)
 const inviting = ref(false)
 const { copy, copied } = useClipboard({ legacy: true })
@@ -58,7 +59,7 @@ async function refresh() {
   try {
     sharing.value = await readCloudSharing(current)
   } catch {
-    toast.error('Couldn’t load who has access. Check your connection and try again.')
+    toast.error(t.value.shareLoadFailed)
   }
 }
 
@@ -67,7 +68,7 @@ async function change(run: () => Promise<void>) {
   try {
     await run()
   } catch {
-    toast.error('That change didn’t go through. Try again in a moment.')
+    toast.error(t.value.shareChangeFailed)
   }
   await refresh()
 }

@@ -10,6 +10,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useCloudMessages } from '@open-pencil/vue'
+
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menu } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -47,6 +49,7 @@ const emit = defineEmits<{
 
 const ui = sideList()
 const menuUI = menu()
+const t = useCloudMessages()
 const isActive = (location: HomeLocation) =>
   active.kind === location.kind && active.id === location.id
 const workspaceLocations = computed(() =>
@@ -58,7 +61,7 @@ const workspaceLocations = computed(() =>
 </script>
 
 <template>
-  <nav :class="ui.root()" aria-label="Locations">
+  <nav :class="ui.root()" :aria-label="t.homeLocations">
     <div :class="[ui.items(), 'pt-1']">
       <button
         type="button"
@@ -67,16 +70,16 @@ const workspaceLocations = computed(() =>
         @click="emit('select', { kind: 'recent', id: 'recent' })"
       >
         <icon-lucide-clock :class="ui.icon()" />
-        <span :class="ui.label()">Recent</span>
+        <span :class="ui.label()">{{ t.homeRecent }}</span>
       </button>
     </div>
 
     <div :class="ui.group()">
       <div :class="ui.header()">
-        <span :class="ui.title()">OpenPencil Cloud</span>
+        <span :class="ui.title()">{{ t.productName }}</span>
         <DropdownMenuRoot v-if="account" :modal="false">
           <DropdownMenuTrigger as-child>
-            <IconButton :label="`Account: ${account.email}`">
+            <IconButton :label="t.homeAccount({ email: account.email })">
               <icon-lucide-ellipsis class="size-3.5" />
             </IconButton>
           </DropdownMenuTrigger>
@@ -95,14 +98,14 @@ const workspaceLocations = computed(() =>
                 @select="emit('accountSettings')"
               >
                 <icon-lucide-settings-2 :class="menuUI.icon()" />
-                Account settings
+                {{ t.homeAccountSettings }}
               </DropdownMenuItem>
               <DropdownMenuItem
                 :class="menuUI.item({ justify: 'start' })"
                 @select="emit('switchServer')"
               >
                 <icon-lucide-server :class="menuUI.icon()" />
-                Connect another server…
+                {{ t.homeConnectAnotherServer }}
               </DropdownMenuItem>
               <DropdownMenuSeparator :class="menuUI.separator()" />
               <DropdownMenuItem
@@ -110,7 +113,7 @@ const workspaceLocations = computed(() =>
                 @select="emit('signOut')"
               >
                 <icon-lucide-log-out :class="menuUI.icon()" />
-                Sign out
+                {{ t.signOut }}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenuPortal>
@@ -129,11 +132,11 @@ const workspaceLocations = computed(() =>
             <icon-lucide-layers :class="ui.icon()" />
             <span :class="ui.label()">{{ workspace.name }}</span>
             <span :class="ui.trailing()">
-              <Tip v-if="workspace.attention" label="A file here needs a choice">
+              <Tip v-if="workspace.attention" :label="t.homeAttentionTip">
                 <icon-lucide-git-compare-arrows
                   :class="ui.attention()"
                   role="img"
-                  aria-label="Needs attention"
+                  :aria-label="t.homeNeedsAttention"
                 />
               </Tip>
               <template v-else>{{ workspace.documentCount }}</template>
@@ -146,21 +149,21 @@ const workspaceLocations = computed(() =>
             @click="emit('select', { kind: 'shared', id: 'shared' })"
           >
             <icon-lucide-users :class="ui.icon()" />
-            <span :class="ui.label()">Shared with you</span>
+            <span :class="ui.label()">{{ t.homeSharedWithYou }}</span>
             <span v-if="sharedCount" :class="ui.trailing()">{{ sharedCount }}</span>
           </button>
         </template>
         <button v-else type="button" :class="ui.item()" @click="emit('connect')">
           <icon-lucide-log-in :class="ui.icon()" />
-          <span :class="ui.label()">Sign in…</span>
+          <span :class="ui.label()">{{ t.homeSignIn }}</span>
         </button>
       </div>
     </div>
 
     <div v-if="storage" :class="ui.group()">
       <div :class="ui.header()">
-        <span :class="ui.title()">Storage</span>
-        <IconButton label="Storage settings" @click="emit('storageSettings')">
+        <span :class="ui.title()">{{ t.homeStorage }}</span>
+        <IconButton :label="t.homeStorageSettings" @click="emit('storageSettings')">
           <icon-lucide-settings-2 class="size-3.5" />
         </IconButton>
       </div>

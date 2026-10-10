@@ -11,6 +11,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
+import { useCloudMessages } from '@open-pencil/vue'
+
 import { menu } from '@/components/ui/menu/menu'
 import { homeLocationMenu } from '@/theme/home/location-menu'
 
@@ -38,11 +40,12 @@ const emit = defineEmits<{ select: [location: HomeLocation]; connect: [] }>()
 
 const ui = homeLocationMenu()
 const menuUI = menu()
+const t = useCloudMessages()
 const current = computed(() => {
-  if (active.kind === 'recent') return 'Recent'
-  if (active.kind === 'shared') return 'Shared with you'
-  if (active.kind === 'storage') return storage?.label ?? 'Storage'
-  return workspaces.find((workspace) => workspace.id === active.id)?.name ?? 'Workspace'
+  if (active.kind === 'recent') return t.value.homeRecent
+  if (active.kind === 'shared') return t.value.homeSharedWithYou
+  if (active.kind === 'storage') return storage?.label ?? t.value.homeStorage
+  return workspaces.find((workspace) => workspace.id === active.id)?.name ?? t.value.workspace
 })
 const isActive = (location: HomeLocation) =>
   active.kind === location.kind && active.id === location.id
@@ -70,7 +73,7 @@ const isActive = (location: HomeLocation) =>
           @select="emit('select', { kind: 'recent', id: 'recent' })"
         >
           <icon-lucide-clock :class="menuUI.icon()" />
-          <span :class="ui.itemLabel()">Recent</span>
+          <span :class="ui.itemLabel()">{{ t.homeRecent }}</span>
           <icon-lucide-check
             v-if="isActive({ kind: 'recent', id: 'recent' })"
             :class="ui.check()"
@@ -80,7 +83,7 @@ const isActive = (location: HomeLocation) =>
         <DropdownMenuSeparator :class="menuUI.separator()" />
         <DropdownMenuGroup>
           <DropdownMenuLabel :class="menuUI.label()">
-            {{ account ? `OpenPencil Cloud · ${account.host}` : 'OpenPencil Cloud' }}
+            {{ account ? t.homeCloudOnHost({ host: account.host }) : t.productName }}
           </DropdownMenuLabel>
           <template v-if="account">
             <DropdownMenuItem
@@ -99,7 +102,7 @@ const isActive = (location: HomeLocation) =>
                 v-else-if="workspace.attention"
                 :class="ui.attention()"
                 role="img"
-                aria-label="Needs attention"
+                :aria-label="t.homeNeedsAttention"
               />
               <span v-else :class="ui.count()">{{ workspace.documentCount }}</span>
             </DropdownMenuItem>
@@ -108,7 +111,7 @@ const isActive = (location: HomeLocation) =>
               @select="emit('select', { kind: 'shared', id: 'shared' })"
             >
               <icon-lucide-users :class="menuUI.icon()" />
-              <span :class="ui.itemLabel()">Shared with you</span>
+              <span :class="ui.itemLabel()">{{ t.homeSharedWithYou }}</span>
               <icon-lucide-check
                 v-if="isActive({ kind: 'shared', id: 'shared' })"
                 :class="ui.check()"
@@ -122,7 +125,7 @@ const isActive = (location: HomeLocation) =>
             @select="emit('connect')"
           >
             <icon-lucide-log-in :class="menuUI.icon()" />
-            Sign in…
+            {{ t.homeSignIn }}
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
