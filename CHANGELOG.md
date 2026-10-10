@@ -173,6 +173,7 @@
 
 ### Fixed
 
+- Instances follow their component's structure as in Figma: wrapping a layer of the component in auto layout or a frame, or moving it into another frame of the component, moves the layer's copy in every instance with its overrides instead of adding a fresh copy beside the old one, and a layer moved out of the component or deleted leaves its instances, coming back with its overrides on undo.
 - ⌘Z right after arrow-key nudges undoes the nudges instead of the edit before them.
 - <kbd>⇧</kbd>-dragging a corner handle follows the side the pointer stretched most relative to the layer's size, as Figma does, instead of the side it moved more pixels along.
 - The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
