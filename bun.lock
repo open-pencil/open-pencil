@@ -278,10 +278,26 @@
       "name": "@open-pencil/docs",
       "version": "0.1.0",
       "dependencies": {
+        "@ai-sdk/vue": "^4.0.127",
         "@iconify/vue": "^5.0.1",
+        "@open-pencil/core": "workspace:*",
+        "@open-pencil/design-jsx": "workspace:*",
+        "@open-pencil/dom-css": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
+        "@vueuse/core": "^14.4.0",
+        "ai": "^7.0.127",
+        "canvaskit-wasm": "^0.41.1",
+        "dedent": "^1.7.2",
+        "tinykeys": "^3.1.0",
+        "valibot": "^1.5.0",
       },
       "devDependencies": {
+        "@iconify-json/simple-icons": "^1.2.98",
         "@open-pencil/brand-tools": "workspace:*",
+        "@open-pencil/cli": "workspace:*",
+        "@open-pencil/demo-tools": "workspace:*",
+        "@open-pencil/landing-posters-tools": "workspace:*",
+        "@open-pencil/vite-config": "workspace:*",
         "@shikijs/vitepress-twoslash": "^4.4.3",
         "@tailwindcss/vite": "^4.3.3",
         "vitepress": "^2.0.0-alpha.19",
@@ -609,6 +625,19 @@
         "typescript": "~5.8.3",
       },
     },
+    "tools/generate/landing-posters": {
+      "name": "@open-pencil/landing-posters-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "@playwright/test": "^1.63.0",
+        "sharp": "0.34.5",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "@types/node": "^25.9.9",
+        "typescript": "~5.8.3",
+      },
+    },
     "tools/generate/tauri-menu": {
       "name": "@open-pencil/tauri-menu-tools",
       "dependencies": {
@@ -649,6 +678,16 @@
       },
       "devDependencies": {
         "nanotar": "^0.3.0",
+      },
+    },
+    "vite": {
+      "name": "@open-pencil/vite-config",
+      "dependencies": {
+        "@open-pencil/core": "workspace:*",
+        "unplugin-icons": "^23.0.1",
+        "unplugin-vue-components": "^31.1.0",
+        "vite": "8.1.4",
+        "vite-plugin-pwa": "^1.3.0",
       },
     },
   },
@@ -1140,7 +1179,7 @@
 
     "@iconify-json/lucide": ["@iconify-json/lucide@1.2.139", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-QRJrLcEC+O4cHCxd8Nzos2s6oI8+qUywJ/ww7EEEKTKNkWE5HOa89QlNk4gD3Ao0AbUh2ml1pkqcXKTg8XZgIw=="],
 
-    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.93", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw=="],
+    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.99", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-kouZhqvUoNdxEe+lZksbJJZMCZv4b4Ob62O1GW3fcpz/I0mVPzM+9/Qf/DUuv5ns8l6c46D8M/ubhJjjbLp9HQ=="],
 
     "@iconify/react": ["@iconify/react@6.0.2", "", { "dependencies": { "@iconify/types": "^2.0.0" }, "peerDependencies": { "react": ">=16" } }, "sha512-SMmC2sactfpJD427WJEDN6PMyznTFMhByK9yLW0gOTtnjzzbsi/Ke/XqsumsavFPwNiXs8jSiYeZTmLCLwO+Fg=="],
 
@@ -1400,6 +1439,8 @@
 
     "@open-pencil/kiwi": ["@open-pencil/kiwi@workspace:packages/kiwi"],
 
+    "@open-pencil/landing-posters-tools": ["@open-pencil/landing-posters-tools@workspace:tools/generate/landing-posters"],
+
     "@open-pencil/lint-tools": ["@open-pencil/lint-tools@workspace:tools/checks/lint"],
 
     "@open-pencil/mcp": ["@open-pencil/mcp@workspace:packages/mcp"],
@@ -1431,6 +1472,8 @@
     "@open-pencil/unit-tests-tools": ["@open-pencil/unit-tests-tools@workspace:tools/dev/unit-tests"],
 
     "@open-pencil/visual-oracles-tools": ["@open-pencil/visual-oracles-tools@workspace:tools/generate/visual-oracles"],
+
+    "@open-pencil/vite-config": ["@open-pencil/vite-config@workspace:vite"],
 
     "@open-pencil/vue": ["@open-pencil/vue@workspace:packages/vue"],
 
@@ -5075,6 +5118,8 @@
     "vee-validate/@vue/devtools-api": ["@vue/devtools-api@7.7.10", "", { "dependencies": { "@vue/devtools-kit": "^7.7.10" } }, "sha512-KxtEpUOOpFz/qOGRrAwA36QF7DqIA+FXgCYit9mk9wjbaZt0sXOFz81ElOZtKA4HbWHUdwNjZHBFsFFyp5BZiA=="],
 
     "vite/rolldown": ["rolldown@1.1.5", "", { "dependencies": { "@oxc-project/types": "=0.139.0", "@rolldown/pluginutils": "^1.0.0" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.1.5", "@rolldown/binding-darwin-arm64": "1.1.5", "@rolldown/binding-darwin-x64": "1.1.5", "@rolldown/binding-freebsd-x64": "1.1.5", "@rolldown/binding-linux-arm-gnueabihf": "1.1.5", "@rolldown/binding-linux-arm64-gnu": "1.1.5", "@rolldown/binding-linux-arm64-musl": "1.1.5", "@rolldown/binding-linux-ppc64-gnu": "1.1.5", "@rolldown/binding-linux-s390x-gnu": "1.1.5", "@rolldown/binding-linux-x64-gnu": "1.1.5", "@rolldown/binding-linux-x64-musl": "1.1.5", "@rolldown/binding-openharmony-arm64": "1.1.5", "@rolldown/binding-wasm32-wasi": "1.1.5", "@rolldown/binding-win32-arm64-msvc": "1.1.5", "@rolldown/binding-win32-x64-msvc": "1.1.5" }, "bin": { "rolldown": "./bin/cli.mjs" } }, "sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA=="],
+
+    "vitepress/@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.93", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw=="],
 
     "vitepress/@vue/shared": ["@vue/shared@3.5.41", "", {}, "sha512-IOnwSCma8j+9xJT6b8H0dEYidC80NsYmNMlZxRsukYcSoGaDBohog5hDxzeUXdFeGWFA++vWvxqOmrr96VlqMA=="],
 

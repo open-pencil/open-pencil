@@ -31,12 +31,12 @@ async function createEditorWithRenderer() {
 }
 
 async function loadInterRegular() {
-  const data = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+  const data = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
   fontManager.markLoaded('Inter', 'Regular', data)
 }
 
 async function loadInterBold() {
-  const data = await Bun.file('public/Inter-Bold.ttf').arrayBuffer()
+  const data = await Bun.file('packages/core/assets/Inter-Bold.ttf').arrayBuffer()
   fontManager.markLoaded('Inter', 'Bold', data)
 }
 

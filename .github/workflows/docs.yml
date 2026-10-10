@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Build and capture the landing posters without deploying; the stills are kept as an artifact.
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -20,9 +25,22 @@ jobs:
       - name: Build SDK packages for documentation
         run: bun run build:packages
 
+      # The production build captures stills of the landing's stages in headless Chromium.
+      - name: Install Chromium for landing posters
+        run: bunx playwright install --with-deps chromium
+
       - run: bun run --filter @open-pencil/docs build:production
 
+      - name: Keep the landing posters for review
+        if: ${{ inputs.dry-run }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: landing-posters
+          path: packages/docs/.vitepress/dist/landing-posters
+
+      # A tag push has no inputs, so it always deploys.
       - uses: cloudflare/wrangler-action@v4
+        if: ${{ !inputs.dry-run }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

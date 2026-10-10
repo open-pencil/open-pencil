@@ -16,11 +16,19 @@ function storageFetchSignal(external?: AbortSignal | null): StorageFetchSignal {
   }
 }
 
+type FetchImplementation = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+
+/**
+ * The AWS SDK types a custom fetch as the global `fetch`, which some runtimes extend with
+ * static members (Bun adds `preconnect`). Copying the global's own members onto a replacement
+ * keeps it assignable wherever the code is compiled; in a browser there are none to copy.
+ */
+export function asFetch(implementation: FetchImplementation): typeof fetch {
+  return Object.assign(implementation, fetch)
+}
+
 /** Prefer Tauri HTTP bridge on desktop to avoid bucket CORS requirements. */
-export async function storageFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): Promise<Response> {
+async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const { signal, timedOut } = storageFetchSignal(
     init?.signal ?? (input instanceof Request ? input.signal : null)
   )
@@ -43,3 +51,5 @@ export async function storageFetch(
     throw error
   }
 }
+
+export const storageFetch = asFetch(fetchWithTimeout)

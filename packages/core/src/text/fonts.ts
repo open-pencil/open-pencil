@@ -43,6 +43,15 @@ const BUNDLED_FONTS: Record<string, string> = {
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf'
 }
 
+/**
+ * Maps a bundled font's file name (`Inter-Regular.ttf`) to the URL a browser fetches it from.
+ * Mirrors CanvasKit's `locateFile`; the default expects the host to serve
+ * `@open-pencil/core/assets` at the site root.
+ */
+export type BundledFontLocator = (file: string) => string
+
+const defaultBundledFontLocator: BundledFontLocator = (file) => `/${file}`
+
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
@@ -52,6 +61,8 @@ export class FontManager {
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private blockedNodeIds = new Set<string>()
   private fontProvider: TypefaceFontProvider | null = null
+  private bundledFontLocator: BundledFontLocator = defaultBundledFontLocator
+  private readonly bundledFontRequests = new Map<string, Promise<ArrayBuffer | null>>()
   private fontProviders = new Set<TypefaceFontProvider>()
   private providerCanvasKits = new WeakMap<TypefaceFontProvider, CanvasKit>()
   private registrationGeneration = 0
@@ -140,6 +151,11 @@ export class FontManager {
 
   setHostFontLoader(loader: HostFontLoader | null): void {
     this.hostFontLoader = loader
+  }
+
+  /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
+  setBundledFontLocator(locate: BundledFontLocator | null): void {
+    this.bundledFontLocator = locate ?? defaultBundledFontLocator
   }
 
   setOnlineFontProviders(settings: Partial<Record<WebFontProviderId, boolean>>): void {
@@ -231,9 +247,21 @@ export class FontManager {
     this.webFonts.preloadFamilies()
   }
 
-  async fetchBundledFont(url: string): Promise<ArrayBuffer | null> {
+  /**
+   * Reads a bundled font. Concurrent loads of one face share a request, so they get the same
+   * buffer; it is forgotten once settled, so a failed request can be retried.
+   */
+  fetchBundledFont(url: string): Promise<ArrayBuffer | null> {
+    const pending = this.bundledFontRequests.get(url)
+    if (pending) return pending
+    const request = this.readBundledFont(url).finally(() => this.bundledFontRequests.delete(url))
+    this.bundledFontRequests.set(url, request)
+    return request
+  }
+
+  private async readBundledFont(url: string): Promise<ArrayBuffer | null> {
     if (IS_BROWSER) {
-      const response = await fetch(url)
+      const response = await fetch(this.bundledFontLocator(url.replace(/^\//, '')))
       return response.arrayBuffer()
     }
     const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')

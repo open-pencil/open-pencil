@@ -1,24 +1,35 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { ensureBrandAssets } from '@open-pencil/brand-tools'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { createFileSystemTypesCache } from '@shikijs/vitepress-twoslash/cache-fs'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
+import { ensureBrandAssets } from '@open-pencil/brand-tools'
+import { ensureDemoDocument } from '@open-pencil/demo-tools'
+import { landingPosterFingerprint } from '@open-pencil/landing-posters-tools/fingerprint'
+import { appSourceConfig } from '@open-pencil/vite-config/app-source'
+
+import { landingPreloads } from './landing-head.ts'
 import { docsLocales } from './locales.ts'
 import { rootThemeConfig } from './root-theme.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
-await ensureBrandAssets(['docs'])
+await Promise.all([ensureBrandAssets(['docs']), ensureDemoDocument()])
 
 const configDir = dirname(fileURLToPath(import.meta.url))
 const docsRoot = dirname(configDir)
 const packagesRoot = dirname(docsRoot)
 const repoRoot = dirname(packagesRoot)
+// The landing page mounts the app's own components, compiled from source.
+const appSource = appSourceConfig()
 const fastBuild = process.env.OPENPENCIL_DOCS_FAST_BUILD === '1'
+// Production builds show stills of the landing's stages until they are live. The build names
+// the stills by this fingerprint, and `tools/generate/landing-posters` captures them afterwards.
+const posterFingerprint =
+  process.env.OPENPENCIL_LANDING_POSTERS === '1' ? await landingPosterFingerprint(repoRoot) : null
 
 const llmsPlugin = llmstxt({
   domain: BASE,
@@ -51,7 +62,13 @@ export default defineConfig({
 
   head: siteHead,
 
-  transformPageData: applyPageSeo,
+  transformPageData(pageData) {
+    applyPageSeo(pageData)
+    if (posterFingerprint && pageData.frontmatter.landing === true) {
+      pageData.frontmatter.posters = posterFingerprint
+    }
+  },
+  transformHead: landingPreloads,
 
   markdown: {
     codeTransformers: [
@@ -74,13 +91,14 @@ export default defineConfig({
 
   vite: {
     resolve: {
-      alias: {
-        '#docs': configDir,
-        '#docs-api': resolve(docsRoot, 'programmable/sdk/api'),
-        '#vue': resolve(packagesRoot, 'vue/src')
-      }
+      alias: [
+        { find: '#docs-api', replacement: resolve(docsRoot, 'programmable/sdk/api') },
+        { find: '#docs', replacement: configDir },
+        ...appSource.alias
+      ]
     },
-    plugins: [tailwindcss(), llmsPlugin]
+    define: appSource.define,
+    plugins: [...appSource.plugins, tailwindcss(), llmsPlugin]
   },
 
   locales: docsLocales,

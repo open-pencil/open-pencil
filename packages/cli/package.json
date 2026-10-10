@@ -11,6 +11,7 @@
     "openpencil": "./bin/openpencil.js"
   },
   "exports": {
+    "./package.json": "./package.json",
     "./library": {
       "types": "./dist/library/index.d.mts",
       "bun": "./src/library/index.ts",

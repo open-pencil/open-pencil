@@ -1,43 +1,15 @@
 ---
-layout: home
+layout: page
+landing: true
+sidebar: false
+aside: false
 title: OpenPencil — графический редактор с открытым исходным кодом
 description: Открытая альтернатива Figma с поддержкой .fig, встроенным ИИ и программным доступом ко всем операциям.
-
-hero:
-  name: OpenPencil
-  text: Графический редактор с открытым исходным кодом
-  tagline: Открывает файлы Figma. Включает ИИ. Предоставляет полный программный доступ. Подходит для создания собственных редакторов.
-  actions:
-    - theme: brand
-      text: Открыть в браузере
-      link: https://app.openpencil.dev/demo
-    - theme: alt
-      text: Скачать
-      link: https://github.com/open-pencil/open-pencil/releases/latest
-    - theme: alt
-      text: GitHub
-      link: https://github.com/open-pencil/open-pencil
-
-features:
-  - icon: 📂
-    title: Совместимость с Figma
-    details: Открывает .fig без предварительного преобразования. Поддерживает копирование между Figma и OpenPencil. Бинарный кодек Kiwi сохраняет данные при импорте и экспорте.
-  - icon: ⚡
-    title: Автоматизация
-    details: CLI без графического интерфейса просматривает, экспортирует и анализирует .fig. Команда eval предоставляет Figma Plugin API. Доступны экспорт Tailwind CSS и вывод JSON для CI и сценариев.
-  - icon: 🧩
-    title: Не только приложение
-    details: Vue SDK позволяет создавать собственные интерфейсы редактирования, встраивать OpenPencil в другие продукты и собирать специализированные редакторы на общем движке.
-  - icon: 🤖
-    title: Встроенный ИИ
-    details: Чат с ИИ использует 90 инструментов для создания объектов, настройки стилей и компоновки и анализа токенов. Сервер MCP подключается к Claude Code, Cursor и Windsurf.
-  - icon: 📖
-    title: Открытый исходный код
-    details: Лицензия MIT. Можно изучать и изменять редактор, движок, кодек файлов и CLI.
-  - icon: 🖥️
-    title: Бесплатно и локально
-    details: Учётная запись, отдельный сервер и постоянное соединение с интернетом не нужны. Настольное приложение занимает около 7 МБ; также доступна веб-версия.
-  - icon: 👥
-    title: Совместная работа
-    details: Одноранговое соединение WebRTC без центрального сервера. Отправьте ссылку и редактируйте документ вместе с указателями участников и режимом слежения.
 ---
+
+<script setup>
+import LandingPage from '#docs/theme/landing/LandingPage.vue'
+import { ru } from '#docs/theme/landing/content/messages/ru'
+</script>
+
+<LandingPage :messages="ru" />

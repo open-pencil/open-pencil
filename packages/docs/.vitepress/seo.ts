@@ -1,10 +1,48 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import * as v from 'valibot'
+import type { HeadConfig } from 'vitepress'
 
 export const BASE = 'https://openpencil.dev'
 
 const docsRoot = fileURLToPath(new URL('..', import.meta.url))
+
+const RootManifestSchema = v.pipe(v.string(), v.parseJson(), v.object({ version: v.string() }))
+const { version } = v.parse(
+  RootManifestSchema,
+  readFileSync(resolve(docsRoot, '../../package.json'), 'utf8')
+)
+
+/**
+ * Search engines read the product from the English home page. It is written into the page's
+ * head at build time, so it never takes part in hydration.
+ */
+const SOFTWARE_APPLICATION = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'OpenPencil',
+  applicationCategory: 'DesignApplication',
+  operatingSystem: 'Windows, macOS, Linux, Web',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  url: 'https://app.openpencil.dev',
+  description:
+    'Open-source design editor that opens Figma .fig files, runs locally, and is programmable by you or your AI agent.',
+  softwareVersion: version,
+  license: 'https://opensource.org/licenses/MIT',
+  screenshot: `${BASE}/screenshot.png`,
+  downloadUrl: 'https://github.com/open-pencil/open-pencil/releases/latest',
+  featureList: [
+    'Opens and saves Figma .fig files',
+    'AI agents that design on the canvas with your own provider keys',
+    'MCP server for AI coding agents',
+    'Real-time collaboration with people and agents',
+    'Headless CLI for inspection, linting, and export',
+    'Desktop app for macOS, Windows, and Linux',
+    'Vue SDK for embedding the editor'
+  ]
+}
 
 export const LOCALE_PREFIXES = ['de', 'fr', 'es', 'it', 'pl', 'ru'] as const
 
@@ -24,7 +62,10 @@ export const siteHead: [string, Record<string, string>][] = [
   ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/favicon.svg' }],
   ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
   ['link', { rel: 'alternate', type: 'text/plain', title: 'llms.txt', href: '/llms.txt' }],
-  ['link', { rel: 'alternate', type: 'text/plain', title: 'llms-full.txt', href: '/llms-full.txt' }],
+  [
+    'link',
+    { rel: 'alternate', type: 'text/plain', title: 'llms-full.txt', href: '/llms-full.txt' }
+  ],
   ['meta', { property: 'og:type', content: 'website' }],
   ['meta', { property: 'og:site_name', content: 'OpenPencil' }],
   ['meta', { property: 'og:image', content: `${BASE}/screenshot.png` }],
@@ -46,7 +87,7 @@ type PageDataLike = {
   title?: string
   description?: string
   frontmatter: {
-    head?: [string, Record<string, string>][]
+    head?: HeadConfig[]
   }
 }
 
@@ -112,6 +153,9 @@ export function applyPageSeo(pageData: PageDataLike): void {
   head.push(['link', { rel: 'canonical', href: pageUrl }])
   head.push(['meta', { property: 'og:url', content: pageUrl }])
   head.push(['meta', { property: 'og:locale', content: locale.ogLocale }])
+  if (pageData.relativePath === 'index.md') {
+    head.push(['script', { type: 'application/ld+json' }, JSON.stringify(SOFTWARE_APPLICATION)])
+  }
 
   for (const localeOption of availableLocalesForPage(pageData.relativePath)) {
     if (localeOption.prefix !== locale.prefix) {
@@ -123,8 +167,8 @@ export function applyPageSeo(pageData: PageDataLike): void {
       {
         rel: 'alternate',
         hreflang: localeOption.hreflang,
-        href: localizedUrl(slug, localeOption.prefix),
-      },
+        href: localizedUrl(slug, localeOption.prefix)
+      }
     ])
   }
   head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: enSlug }])

@@ -76,6 +76,7 @@ export function createEditorStoreModules(
     openDOMFile: documentIO.openDOMFile,
     importDOMText: documentIO.importDOMText,
     setViewportSize: documentIO.setViewportSize,
+    getViewportSize: documentIO.getViewportSize,
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */

@@ -1,0 +1,24 @@
+{
+  "name": "@open-pencil/landing-posters-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#landing-posters/*": "./src/*.ts"
+  },
+  "exports": {
+    "./fingerprint": "./src/fingerprint.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@playwright/test": "^1.63.0",
+    "sharp": "0.34.5"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.9.9",
+    "typescript": "~5.8.3"
+  }
+}

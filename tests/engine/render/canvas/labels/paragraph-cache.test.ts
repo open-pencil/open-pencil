@@ -14,7 +14,7 @@ beforeAll(async () => {
 
 describe('label paragraph cache', () => {
   test('shapes labels with Inter and invalidates native paragraphs by font generation', () => {
-    const bytes = readFileSync(repoPath('public/Inter-Regular.ttf'))
+    const bytes = readFileSync(repoPath('packages/core/assets/Inter-Regular.ttf'))
     const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
     const provider = ck.TypefaceFontProvider.Make()
     provider.registerFont(data, 'Inter')

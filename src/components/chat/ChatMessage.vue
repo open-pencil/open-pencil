@@ -8,10 +8,11 @@ import { useI18n, vTestId } from '@open-pencil/vue'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import { reasoningDisplay } from '@/app/ai/chat/preferences'
+import { reasoningDisplay as preferredReasoningDisplay } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
 import { revertOf } from '@/app/ai/chat/turns'
+import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
@@ -27,7 +28,8 @@ const {
   presentation,
   canRegenerate = false,
   canRetry = false,
-  canEdit = false
+  canEdit = false,
+  reasoningDisplay
 } = defineProps<{
   message: UIMessage
   streaming?: boolean
@@ -38,6 +40,8 @@ const {
   canRetry?: boolean
   /** The last user message without attachments, when the chat is idle. */
   canEdit?: boolean
+  /** Overrides the reasoning display preference, for a surface that always shows it. */
+  reasoningDisplay?: ReasoningDisplay
 }>()
 const emit = defineEmits<{ regenerate: []; revert: []; restore: []; edit: [text: string] }>()
 const editing = ref(false)
@@ -119,7 +123,7 @@ function groupKey(group: MessagePartGroup): string {
             <ReasoningBlock
               v-else-if="isReasoningUIPart(group.part) && group.part.text"
               :text="group.part.text"
-              :display="reasoningDisplay"
+              :display="reasoningDisplay ?? preferredReasoningDisplay"
               :streaming="group.part.state === 'streaming'"
               :thinking-label="ai.thinking"
               :reasoning-label="ai.reasoning"

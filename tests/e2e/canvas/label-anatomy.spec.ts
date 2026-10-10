@@ -16,7 +16,7 @@ test('reused Unicode section labels match fresh paragraphs across zoom reversals
     {
       family: 'Noto Naskh Arabic',
       subset: 'arabic',
-      data: readFileSync('public/NotoNaskhArabic-Regular.ttf')
+      data: readFileSync('packages/core/assets/NotoNaskhArabic-Regular.ttf')
     },
     {
       family: 'Noto Sans SC',

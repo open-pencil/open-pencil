@@ -1,0 +1,15 @@
+{
+  "name": "@open-pencil/vite-config",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./app-source": "./app-source.ts"
+  },
+  "dependencies": {
+    "@open-pencil/core": "workspace:*",
+    "unplugin-icons": "^23.0.1",
+    "unplugin-vue-components": "^31.1.0",
+    "vite": "8.1.4",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}

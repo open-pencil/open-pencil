@@ -18,19 +18,43 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 
 ## Recently delivered
 
-v0.14.0 established several foundations that earlier versions of this roadmap treated as future work:
+v0.15.0 and v0.15.1 shipped work that earlier versions of this roadmap listed as in development:
 
-- A searchable Assets panel, component details, instance insertion, frame presets, richer component properties, layout grids, constraints, and deeper typography controls.
-- A local-first Storage Workspace for S3-compatible providers with background synchronization and remote document previews.
-- Editable PowerPoint export; editable HTML, CSS, Tailwind, JSX, SVG, and image-vectorization workflows.
-- Private local MCP transport discovery, an installable OpenPencil agent skill, and stronger CLI/MCP support for large and multi-document sessions.
-- Published `@open-pencil/scene-graph`, `@open-pencil/pen`, `@open-pencil/kiwi`, `@open-pencil/fig`, `@open-pencil/dom-css`, and `@open-pencil/vue` packages with documented public boundaries.
+- Editable ruler guides, snapping to geometry and guides, and Option/Alt distance measurements.
+- Multidimensional component variants and published component libraries with revision review and linked-instance updates.
+- Local recovery of unsaved documents, saved AI conversations, and CLI font diagnostics.
+- Opt-in browser WebMCP access, separate controls for the local MCP server and remote connections, and per-tool permissions.
+- `openpencil://` and web links that open a document and select a layer.
 
 ### Current development version
 
-Since v0.14.0, the development branch adds editable ruler guides and snapping preferences, Option/Alt distance measurements, multidimensional variant authoring, component-library publication and revision review, local document recovery, saved AI conversations, CLI font diagnostics, and opt-in browser WebMCP access. These workflows are implemented on the development branch but are not part of v0.14.0.
+Since v0.15.1, the development branch adds:
 
-See [canvas navigation](../user-guide/canvas-navigation), [components and libraries](../user-guide/components), [document recovery](../user-guide/layers-and-pages#documents-and-recovery), [AI chat](../programmable/ai-chat), and [font diagnostics](../programmable/cli/inspecting#font-diagnostics).
+- Behaviours and preview mode: components that run as Reka UI controls, with a Controls page in the demo and Storybook controls for them.
+- Variables modelled as design tokens, edited as tokens, written as a CSS token stylesheet, and used by name in exported code.
+- Live design checks: a Lint panel with canvas markers and one-click fixes.
+- AI agents shown on the canvas and to collaborators, with follow mode for people and agents, per-page presence, and MCP agents in rooms.
+- AI chat turns that can be reverted, regenerated, and edited, with tool calls summarised by what they changed and a thinking level per message.
+- The Code tab linked to canvas layers both ways, and visual diff and patch tools, including `openpencil diff`.
+- Collaboration rooms that sync layer trees as a CRDT and open in their own tab.
+- Slots, progressive canvas previews while an AI provider streams JSX, Storybook export, HTML and Tailwind JSX export, and a faster occurrence-scoped `.fig` reader with wider override and variable export.
+- Comments pinned to layers and voice calls in shared rooms, with collaborators watching the AI chat's streamed JSX as it builds.
+- Vue and React components of the selection in the Code tab, with variants as props and Reka UI or Radix behaviour.
+- SVG and HTML imported as editable layers, with HTML and CSS laid out as a browser lays them out.
+- Shader fills from the open-source `shaders` library, on-canvas gradient and corner-radius handles, multi-selection editing, and accent colours with a customizable toolbar.
+
+These changes are not part of v0.15.1; `CHANGELOG.md` lists them under Unreleased.
+
+See [AI chat](../programmable/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
+
+### In development
+
+Work with open pull requests. It may change before it merges:
+
+- Import and export of W3C design tokens.
+- Storybook stories generated as Reka UI components for Vue and Radix UI components for React.
+- Component authoring: variant editing and canvas selection inside components.
+- The OpenPencil Cloud foundation.
 
 ## Near-term work
 

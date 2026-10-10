@@ -5,7 +5,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 | Role        | Contract                                                                                                               | Domains                                                                                               |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `checks/`   | Read the tree and exit non-zero; never write inside the repository except an own baseline behind an explicit `--write` | `architecture`, `lint`, `i18n`, `secret-scan`, `type-shapes`, `docs`, `test-homes`, `package-quality` |
-| `generate/` | Write generated files or artifacts, idempotently                                                                       | `brand`, `demo`, `tauri-menu`, `authoring-reference`, `visual-oracles`                                |
+| `generate/` | Write generated files or artifacts, idempotently                                                                       | `brand`, `demo`, `tauri-menu`, `authoring-reference`, `visual-oracles`, `landing-posters`             |
 | `release/`  | Build, verify, and publish packages and native artifacts                                                               | `package-artifacts`, `release-packages`                                                               |
 | `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot                  | `policy`, `images`, `pr-review-guidance`                                                              |
 | `dev/`      | Test running and benchmarks for humans                                                                                 | `unit-tests`, `navigation-benchmark`, `dev-server`                                                    |
@@ -36,6 +36,10 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 ## Demo document
 
 The `/demo` document is built from `tools/generate/demo/src/document/` into the ignored `public/demo.fig`, and the app opens it like any `.fig` file; it is never generated in the browser. `ensureDemoDocument` runs from `vite.config.ts`, rebuilds only when its inputs' fingerprint changes, and runs the build in Bun; `bun run generate:demo` forces it. A section that needs something new from the engine adds that package's `src` to the fingerprint in `tools/generate/demo/src/ensure.ts`.
+
+## Landing posters
+
+`tools/generate/landing-posters/` captures WebP stills of every docs landing stage, per locale, theme, and layout, from a production docs build served locally in headless Chromium with software WebGL. `build:production` in `packages/docs` runs it after `vitepress build`; it reuses `.cache/landing-posters/<fingerprint>` when the inputs in `src/fingerprint.ts` are unchanged and copies the stills into `dist`, and `generate:landing-posters` forces a capture. The docs deploy workflow installs Chromium for it; dispatching it with `dry-run` builds and captures without deploying and keeps the stills as an artifact. A stage that starts depending on a new source tree adds it to `LANDING_POSTER_INPUTS`.
 
 ## Brand assets
 
