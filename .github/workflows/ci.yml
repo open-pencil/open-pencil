@@ -188,7 +188,7 @@ jobs:
     name: Component workshop
     needs: changes
     if: needs.changes.outputs.scope == 'code'
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -200,8 +200,21 @@ jobs:
       - name: Build component dependencies
         run: bun run build:packages
 
-      - name: Build static Storybook
-        run: bun run build-storybook
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      # Builds the static Storybook, then renders every story, runs its play function, and checks
+      # it with axe in both themes, alongside the component specs.
+      - name: Check stories
+        run: bun run test:storybook
+
+      - name: Upload story failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: storybook-test-results
+          path: test-results/
+          retention-days: 7
 
   native-test-contracts:
     name: Native app contracts
