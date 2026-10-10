@@ -28,7 +28,7 @@ type LayoutGeometry = Partial<Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>>
  * Writes only the geometry layout changed. Laying out a large page leaves most layers where they
  * were, and each write would notify every graph listener for nothing. A frame it resizes from
  * `before`, by default the size it has, places the layers its constraints govern; `constrained`
- * marks a write those constraints made.
+ * marks a write those constraints made, which places its own children in turn.
  */
 function writeLayoutGeometry(
   graph: SceneGraph,
@@ -48,51 +48,12 @@ function writeLayoutGeometry(
   }
   if (Object.keys(changes).length > 0) graph.updateNode(id, changes)
   if (!CONSTRAINT_PARENT_TYPES.has(node.type)) return
-  // A constraint resizing a frame is an edit's consequence even the first time.
-  if (!laidOutBefore(graph, id) && !constrained) return
+  // Laying out what a file holds, as a page opens or its fonts arrive, resizes a frame only where
+  // our layout differs from the one the file saved; its children keep the places it saved.
+  if (graph.isApplyingDerivedLayout && !constrained) return
   if (from.width !== node.width || from.height !== node.height) {
     constrainChildren(graph, node, from, computeLayout)
   }
-}
-
-type LayoutRuns = { depth: number; seen: Set<string>; current: Set<string> }
-
-/** Frames each finished layout run placed or sized, and those the run in progress has. */
-const layoutRuns = new WeakMap<SceneGraph, LayoutRuns>()
-
-function runsOf(graph: SceneGraph): LayoutRuns {
-  let runs = layoutRuns.get(graph)
-  if (!runs) {
-    runs = { depth: 0, seen: new Set(), current: new Set() }
-    layoutRuns.set(graph, runs)
-  }
-  return runs
-}
-
-/** Lays out within one run; frames it reaches count as laid out once the outermost run ends. */
-export function inLayoutRun(graph: SceneGraph, run: () => void): void {
-  const runs = runsOf(graph)
-  runs.depth++
-  try {
-    run()
-  } finally {
-    runs.depth--
-    if (runs.depth === 0) {
-      for (const id of runs.current) runs.seen.add(id)
-      runs.current.clear()
-    }
-  }
-}
-
-/**
- * Whether an earlier layout run reached a frame. Opening a file lays every frame out for the
- * first time, in one run that may size a frame more than once; a size that differs from the one
- * the file saved is ours, not an edit, so the children keep the places the file gave them.
- */
-function laidOutBefore(graph: SceneGraph, id: string): boolean {
-  const runs = runsOf(graph)
-  runs.current.add(id)
-  return runs.seen.has(id)
 }
 
 /** The size each Hug frame had after layout last ran on it. */
@@ -160,7 +121,6 @@ function hugStart(graph: SceneGraph, frame: SceneNode): { width: number; height:
   const hugsHeight = (row ? frame.counterAxisSizing : frame.primaryAxisSizing) === 'HUG'
   if (!hugsWidth && !hugsHeight) {
     huggedSizesOf(graph).delete(frame.id)
-    laidOutBefore(graph, frame.id)
     return null
   }
   const hugged = huggedSizesOf(graph).get(frame.id)

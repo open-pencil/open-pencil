@@ -13,7 +13,7 @@ import {
 
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
 
-import { applyYogaLayout, inLayoutRun } from './layout/apply'
+import { applyYogaLayout } from './layout/apply'
 import {
   asFlatLeaf,
   asLaidOutIn,
@@ -56,7 +56,7 @@ import {
 } from './layout/yoga-helpers'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
-  graph.withLayoutMutations(() => inLayoutRun(graph, () => computeLayoutInternal(graph, frameId)))
+  graph.withLayoutMutations(() => computeLayoutInternal(graph, frameId))
 }
 
 function computeLayoutInternal(graph: SceneGraph, frameId: string): void {
@@ -83,16 +83,14 @@ function resolveComputedLayoutDirection(
 }
 
 export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
-  graph.withLayoutMutations(() =>
-    inLayoutRun(graph, () => {
-      const rootId = scopeId ?? graph.rootId
-      const visited = new Set<string>()
-      computeLayoutsBottomUp(graph, rootId, visited)
-      if (applyEffectiveGeneratedTextLayout(graph, rootId)) {
-        computeLayoutsBottomUp(graph, rootId, new Set())
-      }
-    })
-  )
+  graph.withLayoutMutations(() => {
+    const rootId = scopeId ?? graph.rootId
+    const visited = new Set<string>()
+    computeLayoutsBottomUp(graph, rootId, visited)
+    if (applyEffectiveGeneratedTextLayout(graph, rootId)) {
+      computeLayoutsBottomUp(graph, rootId, new Set())
+    }
+  })
 }
 
 /**
