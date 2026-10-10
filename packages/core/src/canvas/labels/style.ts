@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { compositeOver } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -22,17 +23,38 @@ export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: Sce
   }
 }
 
-/** How far a frame's name fades into the canvas while the frame is not selected or hovered. */
-const FRAME_TITLE_MUTED_ALPHA = 0.5
+/**
+ * How strongly a frame's name shows while the frame is not selected or hovered. Figma desktop 126
+ * fades it further on light backgrounds: dark text at 23% and light text at 50% come within ten
+ * levels of its labels on light and dark pages and on white and dark sections.
+ */
+const FRAME_TITLE_ALPHA = { dark: 0.23, light: 0.5 } as const
+
+/** What a frame's name is drawn over: its section's fill, or the page outside a section. */
+function frameTitleBackground(r: SkiaRenderer, graph: SceneGraph, node: SceneNode): Color {
+  const section = node.parentId
+    ? graph.closest(node.parentId, (ancestor) => ancestor.type === 'SECTION')
+    : undefined
+  const fill = section?.fills.at(0)
+  if (!section || !fill?.visible) return r.pageColor
+  return compositeOver(r.resolveFillColor(fill, 0, section, graph), r.pageColor)
+}
 
 /**
- * A top-level frame's name: the selection color while the frame is selected or hovered, otherwise
- * the canvas's own text color, faded, so names read on light and dark canvases alike.
+ * A frame's name: the selection color while the frame is selected or hovered, otherwise the text
+ * color of what it sits on, faded, so names read on light and dark pages and sections alike, as
+ * Figma draws them on a white section of a dark page.
  */
-export function frameTitleColor(r: SkiaRenderer, highlighted: boolean) {
+export function frameTitleColor(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  node: SceneNode,
+  highlighted: boolean
+) {
   if (highlighted) return r.selColor()
-  const foreground = canvasLabelForeground(r.pageColor)
-  return r.ck.Color4f(foreground.r, foreground.g, foreground.b, FRAME_TITLE_MUTED_ALPHA)
+  const foreground = canvasLabelForeground(frameTitleBackground(r, graph, node))
+  const alpha = foreground.r < 0.5 ? FRAME_TITLE_ALPHA.dark : FRAME_TITLE_ALPHA.light
+  return r.ck.Color4f(foreground.r, foreground.g, foreground.b, alpha)
 }
 
 /** Hit-testing reuses the same shaped paragraphs, constraints and paint keys as drawing. */
@@ -44,7 +66,7 @@ export function measureLabel(
 ): LabelTextMetrics | null {
   const provider = r.fontProvider
   if (!provider) return null
-  let color = frameTitleColor(r, false)
+  let color = frameTitleColor(r, graph, node, false)
   if (layout.kind === 'section') color = sectionLabelColors(r, graph, node).foreground
   else if (layout.kind === 'component') color = r.compColor()
   return r.labelParagraphCache.measure(

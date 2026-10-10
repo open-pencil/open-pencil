@@ -149,6 +149,9 @@
 
 ### Fixed
 
+- Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.
+- A frame's name reads on the section it sits in: on a dark page, frames in a white section had white names on white. Names now fade more on light backgrounds than on dark ones, as Figma's do.
+- `lineHeight` and `letterSpacing` in the plugin API and `eval` scripts read and write Figma's `{ unit, value }`, including percent of the font size and `{ unit: 'AUTO' }`; assigning those objects used to leave the text undrawn.
 - Draw layer blur, drop and inner shadows, and background blur with Figma's falloff. They spread about 15% too far, with a long faint edge Figma does not draw; SVG export keeps Figma's own `stdDeviation` of half the radius.
 - Load the fonts of SVG text before placing it from `import_svg`, so centred and right-aligned text sits where Figma puts it; `figma.loadFontAsync` in scripts now loads the font instead of doing nothing.
 - Gradient stops in the fill picker show their full position and opacity, such as 100%, instead of cutting them off; each stop's colour, hex, and opacity share one field as in the properties panel.
