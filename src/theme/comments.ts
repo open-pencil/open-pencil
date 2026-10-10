@@ -13,7 +13,7 @@ export const comments = tv({
     pins: 'absolute top-0 left-0',
     // A 32px speech bubble whose square corner points at the commented spot, as Figma draws it;
     // hovering opens it in place into a preview of the comment.
-    pin: 'group/pin pointer-events-auto absolute flex -translate-y-full cursor-pointer touch-none items-start rounded-2xl rounded-bl-none bg-panel p-1 text-left shadow-md ring-1 ring-black/10 outline-none select-none hover:shadow-lg focus-visible:ring-2 focus-visible:ring-accent data-[active]:ring-2 data-[active]:ring-accent data-[draft]:pointer-events-none data-[draft]:size-8 data-[draft]:bg-accent data-[dragging]:cursor-grabbing data-[dragging]:shadow-lg data-[resolved]:grayscale',
+    pin: 'group/pin pointer-events-auto absolute flex w-max -translate-y-full cursor-pointer touch-none items-start rounded-2xl rounded-bl-none bg-panel p-1 text-left shadow-md ring-1 ring-black/10 outline-none select-none hover:shadow-lg focus-visible:ring-2 focus-visible:ring-accent data-[active]:ring-2 data-[active]:ring-accent data-[draft]:pointer-events-none data-[draft]:size-8 data-[draft]:bg-accent data-[dragging]:cursor-grabbing data-[dragging]:shadow-lg data-[resolved]:grayscale',
     // Grows from nothing to its content's size, so the bubble opens smoothly in both directions.
     pinPreview:
       'grid grid-cols-[0fr] grid-rows-[0fr] opacity-0 transition-[grid-template-columns,grid-template-rows,opacity] duration-150 ease-out group-hover/pin:grid-cols-[1fr] group-hover/pin:grid-rows-[1fr] group-hover/pin:opacity-100 group-focus-visible/pin:grid-cols-[1fr] group-focus-visible/pin:grid-rows-[1fr] group-focus-visible/pin:opacity-100 motion-reduce:transition-none',
