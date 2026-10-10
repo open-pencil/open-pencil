@@ -11,9 +11,9 @@ export const de: LandingMessages = {
   loading: 'Editor wird geladen',
   features: {
     figma: {
-      title: 'Öffne deine Figma-Dateien',
+      title: 'Öffne, was du schon hast',
       detail:
-        'OpenPencil liest .fig-Dateien direkt: Seiten, Komponenten, Instanzen, Variablen und Auto-Layout kommen als bearbeitbare Ebenen an. Kopieren und Einfügen funktioniert in beide Richtungen, und du kannst wieder als .fig speichern.',
+        'OpenPencil liest .fig-Dateien direkt: Seiten, Komponenten, Instanzen, Variablen und Auto-Layout kommen als bearbeitbare Ebenen an, und du kannst wieder als .fig speichern. Füge SVG ein oder öffne HTML und CSS, und auch daraus werden Ebenen, angeordnet wie im Browser.',
       hint: 'Das ist eine echte .fig-Datei. Klappe die Ebenen auf und klick dich durch.'
     },
     design: {
@@ -49,14 +49,14 @@ export const de: LandingMessages = {
     collab: {
       title: 'Gemeinsam arbeiten, mit Menschen und Agenten',
       detail:
-        'Teile einen Link, und alle bearbeiten dasselbe Dokument, Peer-to-Peer, mit Live-Cursorn, Auswahlen und Folgemodus. KI-Agenten kommen genauso dazu: Du siehst auf jedem Bildschirm im Raum, wo sie arbeiten.',
+        'Teile einen Link, und alle bearbeiten dasselbe Dokument, Peer-to-Peer, mit Live-Cursorn, Folgemodus, an Ebenen gehefteten Kommentaren und Sprachanrufen. KI-Agenten kommen genauso dazu: Alle im Raum sehen zu, wie sie bauen, während sie streamen.',
       hint: 'Beide Bildschirme gehören dir. Zieh auf einem eine Ebene und sieh zu, wie sie sich auf dem anderen bewegt; dann frag den Agenten.'
     },
     code: {
       title: 'Vom Design zum Code',
       detail:
-        'Jede Auswahl steht als Tailwind JSX, HTML oder Design-JSX bereit, Variablen als Tokens, und Komponenten lassen sich als Storybook-Stories exportieren. Code und Arbeitsfläche bleiben verknüpft: Wähle eine Zeile aus, und ihre Ebene wird ausgewählt; bearbeite das JSX, und die Arbeitsfläche folgt.',
-      hint: 'Wähle eine andere Ebene aus und sieh zu, wie der Code folgt.'
+        'Jede Auswahl ist eine Vue- oder React-Komponente mit Varianten als Props und Reka UI oder Radix hinter den interaktiven, oder HTML, Tailwind und Design-JSX mit Variablen als Tokens. Komponenten werden als Storybook-Stories exportiert, und Design-JSX bleibt mit der Leinwand verbunden: Bearbeite es, und die Leinwand folgt.',
+      hint: 'Wechsle zu React, HTML oder Design-JSX oder wähle eine andere Ebene.'
     },
     script: {
       title: 'Alles per Skript',
@@ -115,7 +115,11 @@ export const de: LandingMessages = {
         { title: 'KI-Agenten als Mitwirkende, mit Folgemodus' },
         { title: 'KI-Schritte zurücknehmen, neu erzeugen und bearbeiten' },
         { title: 'Code mit Ebenen verknüpft' },
-        { title: 'Visueller Diff und Patch' }
+        { title: 'Visueller Diff und Patch' },
+        { title: 'Kommentare und Sprachanrufe in geteilten Räumen' },
+        { title: 'Vue- und React-Komponenten im Code-Tab' },
+        { title: 'SVG- und HTML-Import als bearbeitbare Ebenen' },
+        { title: 'Shader-Füllungen' }
       ]
     },
     now: {

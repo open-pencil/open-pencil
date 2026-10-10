@@ -11,9 +11,9 @@ export const en: LandingMessages = {
   loading: 'Loading editor',
   features: {
     figma: {
-      title: 'Open your Figma files',
+      title: 'Open what you already have',
       detail:
-        'OpenPencil reads .fig files directly: pages, components, instances, variables, and auto layout arrive as editable layers. Copy and paste works in both directions, and you can save back to .fig.',
+        'OpenPencil reads .fig files directly: pages, components, instances, variables, and auto layout arrive as editable layers, and you can save back to .fig. Paste SVG or open HTML and CSS, and they become layers too, laid out as a browser lays them out.',
       hint: 'This is a real .fig file. Expand the layers and click around.'
     },
     design: {
@@ -49,14 +49,14 @@ export const en: LandingMessages = {
     collab: {
       title: 'Work together, with people and agents',
       detail:
-        'Share a link and everyone edits the same document, peer to peer, with live cursors, selections, and follow mode. AI agents join the same way: you see where they work, on every screen in the room.',
+        'Share a link and everyone edits the same document, peer to peer, with live cursors, follow mode, comments pinned to layers, and voice calls. AI agents join the same way: everyone in the room watches them build as they stream.',
       hint: 'Both screens are yours to use. Drag a layer on one and watch it move on the other, then ask the agent.'
     },
     code: {
       title: 'From design to code',
       detail:
-        'Every selection is available as Tailwind JSX, HTML, or design JSX, with variables written as tokens, and components export as Storybook stories. Code and canvas stay linked: select a line and its layer is selected, edit the JSX and the canvas follows.',
-      hint: 'Select another layer and watch the code follow.'
+        'Every selection is a Vue or React component, with variants as props and Reka UI or Radix behind the interactive ones, or HTML, Tailwind, and design JSX with variables written as tokens. Components export as Storybook stories, and design JSX stays linked to the canvas: edit it and the canvas follows.',
+      hint: 'Switch to React, HTML, or design JSX, or select another layer.'
     },
     script: {
       title: 'Script everything',
@@ -114,7 +114,11 @@ export const en: LandingMessages = {
         { title: 'AI agents as collaborators, with follow mode' },
         { title: 'Revert, regenerate, and edit AI turns' },
         { title: 'Code linked to canvas layers' },
-        { title: 'Visual diff and patch' }
+        { title: 'Visual diff and patch' },
+        { title: 'Comments and voice calls in shared rooms' },
+        { title: 'Vue and React components in the Code tab' },
+        { title: 'SVG and HTML import as editable layers' },
+        { title: 'Shader fills' }
       ]
     },
     now: {

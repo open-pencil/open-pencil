@@ -45,13 +45,17 @@ import statusTheme from '@/theme/feedback/status'
 
 const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))
 
-const { active = true } = defineProps<{ active?: boolean }>()
+const { active = true, initialSource = 'design-jsx' } = defineProps<{
+  active?: boolean
+  /** The code shown first; a host that showcases components can open on Vue or React. */
+  initialSource?: CodeSource
+}>()
 const store = useEditorStore()
 const editorActive = computed(() => active)
 const { code, common } = useI18n()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 const { copy: copyReference, copied: copiedReference } = useClipboard({ copiedDuring: 2000 })
-const source = ref<CodeSource>('design-jsx')
+const source = ref<CodeSource>(initialSource)
 const draft = ref('')
 /** The person has written in the code since it was generated for the current selection. */
 const edited = ref(false)

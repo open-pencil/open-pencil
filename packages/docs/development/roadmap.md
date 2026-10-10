@@ -38,6 +38,10 @@ Since v0.15.1, the development branch adds:
 - The Code tab linked to canvas layers both ways, and visual diff and patch tools, including `openpencil diff`.
 - Collaboration rooms that sync layer trees as a CRDT and open in their own tab.
 - Slots, progressive canvas previews while an AI provider streams JSX, Storybook export, HTML and Tailwind JSX export, and a faster occurrence-scoped `.fig` reader with wider override and variable export.
+- Comments pinned to layers and voice calls in shared rooms, with collaborators watching the AI chat's streamed JSX as it builds.
+- Vue and React components of the selection in the Code tab, with variants as props and Reka UI or Radix behaviour.
+- SVG and HTML imported as editable layers, with HTML and CSS laid out as a browser lays them out.
+- Shader fills from the open-source `shaders` library, on-canvas gradient and corner-radius handles, multi-selection editing, and accent colours with a customizable toolbar.
 
 These changes are not part of v0.15.1; `CHANGELOG.md` lists them under Unreleased.
 

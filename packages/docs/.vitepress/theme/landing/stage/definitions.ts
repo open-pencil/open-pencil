@@ -35,7 +35,8 @@ export const STAGES: Record<SingleStageKind, StageDefinition> = {
   // The Lint tab is always open: a stage's panel is always the one on screen.
   linting: { scene: SCENES.linting, panel: DesignCheckPanel, panelProps: { active: true } },
   ai: { scene: SCENES.pricing, panel: AiChatPanel },
-  code: { scene: SCENES.pricingSelected, panel: CodePanel },
+  // Opens on the selection as a Vue component; the panel switches to React, HTML, or design JSX.
+  code: { scene: SCENES.pricingSelected, panel: CodePanel, panelProps: { initialSource: 'vue' } },
   script: { scene: SCENES.pricing, panel: TerminalPanel },
   sdk: { scene: SCENES.pricing, panel: SdkSnippetPanel, toolbar: true }
 }

@@ -11,9 +11,9 @@ export const es: LandingMessages = {
   loading: 'Cargando el editor',
   features: {
     figma: {
-      title: 'Abre tus archivos de Figma',
+      title: 'Abre lo que ya tienes',
       detail:
-        'OpenPencil lee archivos .fig directamente: páginas, componentes, instancias, variables y auto-layout llegan como capas editables. Copiar y pegar funciona en ambos sentidos, y puedes volver a guardar en .fig.',
+        'OpenPencil lee archivos .fig directamente: páginas, componentes, instancias, variables y auto layout llegan como capas editables, y puedes volver a guardar en .fig. Pega SVG o abre HTML y CSS, y también se convierten en capas, dispuestas como las dispone un navegador.',
       hint: 'Este es un archivo .fig real. Despliega las capas y explóralo.'
     },
     design: {
@@ -49,14 +49,14 @@ export const es: LandingMessages = {
     collab: {
       title: 'Trabajad juntos, personas y agentes',
       detail:
-        'Comparte un enlace y todos editan el mismo documento, de igual a igual, con cursores en vivo, selecciones y modo seguir. Los agentes de IA se unen igual: ves dónde trabajan en cada pantalla de la sala.',
+        'Comparte un enlace y todos editan el mismo documento, de igual a igual, con cursores en vivo, modo seguir, comentarios fijados a las capas y llamadas de voz. Los agentes de IA se unen igual: todos en la sala los ven construir mientras transmiten.',
       hint: 'Las dos pantallas son tuyas. Arrastra una capa en una y mira cómo se mueve en la otra; después pregunta al agente.'
     },
     code: {
       title: 'Del diseño al código',
       detail:
-        'Cada selección está disponible como Tailwind JSX, HTML o JSX de diseño, con las variables escritas como tokens, y los componentes se exportan como historias de Storybook. Código y lienzo siguen enlazados: selecciona una línea y se selecciona su capa; edita el JSX y el lienzo lo sigue.',
-      hint: 'Selecciona otra capa y observa cómo la sigue el código.'
+        'Cada selección es un componente de Vue o React, con las variantes como props y Reka UI o Radix detrás de los interactivos, o HTML, Tailwind y design JSX con las variables escritas como tokens. Los componentes se exportan como historias de Storybook, y el design JSX sigue vinculado al lienzo: edítalo y el lienzo lo sigue.',
+      hint: 'Cambia a React, HTML o design JSX, o selecciona otra capa.'
     },
     script: {
       title: 'Automatízalo todo',
@@ -115,7 +115,11 @@ export const es: LandingMessages = {
         { title: 'Agentes de IA como colaboradores, con modo seguir' },
         { title: 'Revertir, regenerar y editar turnos de IA' },
         { title: 'Código vinculado a las capas' },
-        { title: 'Diff visual y parches' }
+        { title: 'Diff visual y parches' },
+        { title: 'Comentarios y llamadas de voz en salas compartidas' },
+        { title: 'Componentes de Vue y React en la pestaña Código' },
+        { title: 'Importación de SVG y HTML como capas editables' },
+        { title: 'Rellenos con shaders' }
       ]
     },
     now: {

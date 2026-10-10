@@ -11,9 +11,9 @@ export const pl: LandingMessages = {
   loading: 'Ładowanie edytora',
   features: {
     figma: {
-      title: 'Otwórz swoje pliki Figmy',
+      title: 'Otwórz to, co już masz',
       detail:
-        'OpenPencil czyta pliki .fig bezpośrednio: strony, komponenty, instancje, zmienne i auto-layout trafiają do edytora jako edytowalne warstwy. Kopiowanie i wklejanie działa w obie strony, a dokument można ponownie zapisać jako .fig.',
+        'OpenPencil czyta pliki .fig bezpośrednio: strony, komponenty, instancje, zmienne i auto layout trafiają jako edytowalne warstwy, a zapisać możesz znowu do .fig. Wklej SVG albo otwórz HTML i CSS, a one też stają się warstwami, ułożonymi tak, jak układa je przeglądarka.',
       hint: 'To prawdziwy plik .fig. Rozwiń warstwy i sprawdź, co jest w środku.'
     },
     design: {
@@ -49,14 +49,14 @@ export const pl: LandingMessages = {
     collab: {
       title: 'Współpraca ludzi i agentów',
       detail:
-        'Udostępnij link, a wszyscy edytują ten sam dokument, peer-to-peer, z kursorami na żywo, zaznaczeniami i trybem śledzenia. Agenci AI dołączają tak samo: widzisz, gdzie pracują, na każdym ekranie w pokoju.',
+        'Udostępnij link, a wszyscy edytują ten sam dokument, peer-to-peer, z kursorami na żywo, trybem śledzenia, komentarzami przypiętymi do warstw i rozmowami głosowymi. Agenci AI dołączają tak samo: wszyscy w pokoju widzą, jak budują, gdy strumieniują.',
       hint: 'Oba ekrany są Twoje. Przeciągnij warstwę na jednym i zobacz, jak przesuwa się na drugim, a potem poproś agenta.'
     },
     code: {
       title: 'Od projektu do kodu',
       detail:
-        'Każde zaznaczenie jest dostępne jako Tailwind JSX, HTML lub JSX projektu, ze zmiennymi zapisanymi jako tokeny, a komponenty można wyeksportować jako historie Storybooka. Kod i obszar roboczy pozostają połączone: zaznacz linię, a zaznaczy się jej warstwa; zmień JSX, a obszar roboczy podąży za zmianą.',
-      hint: 'Zaznacz inną warstwę i zobacz, jak kod za nią podąża.'
+        'Każde zaznaczenie to komponent Vue lub React, z wariantami jako propsami i Reka UI lub Radix za tymi interaktywnymi, albo HTML, Tailwind i design JSX ze zmiennymi zapisanymi jako tokeny. Komponenty eksportują się jako historie Storybooka, a design JSX pozostaje powiązany z płótnem: edytuj go, a płótno podąży.',
+      hint: 'Przełącz na React, HTML lub design JSX albo zaznacz inną warstwę.'
     },
     script: {
       title: 'Wszystko da się oskryptować',
@@ -115,7 +115,11 @@ export const pl: LandingMessages = {
         { title: 'Agenci AI jako współpracownicy, z trybem śledzenia' },
         { title: 'Cofanie, ponowne generowanie i edycja tur AI' },
         { title: 'Kod powiązany z warstwami' },
-        { title: 'Wizualny diff i łatki' }
+        { title: 'Wizualny diff i łatki' },
+        { title: 'Komentarze i rozmowy głosowe we wspólnych pokojach' },
+        { title: 'Komponenty Vue i React w karcie Kod' },
+        { title: 'Import SVG i HTML jako edytowalnych warstw' },
+        { title: 'Wypełnienia shaderami' }
       ]
     },
     now: {

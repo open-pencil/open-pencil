@@ -11,9 +11,9 @@ export const fr: LandingMessages = {
   loading: 'Chargement de l’éditeur',
   features: {
     figma: {
-      title: 'Ouvrez vos fichiers Figma',
+      title: 'Ouvrez ce que vous avez déjà',
       detail:
-        'OpenPencil lit directement les fichiers .fig : pages, composants, instances, variables et auto-layout arrivent sous forme de calques modifiables. Le copier-coller fonctionne dans les deux sens, et vous pouvez réenregistrer en .fig.',
+        'OpenPencil lit directement les fichiers .fig : pages, composants, instances, variables et auto layout arrivent en calques modifiables, et vous pouvez réenregistrer en .fig. Collez du SVG ou ouvrez du HTML et du CSS, et ils deviennent aussi des calques, disposés comme un navigateur les dispose.',
       hint: 'C’est un vrai fichier .fig. Dépliez les calques et explorez.'
     },
     design: {
@@ -49,14 +49,14 @@ export const fr: LandingMessages = {
     collab: {
       title: 'Travailler ensemble, humains et agents',
       detail:
-        'Partagez un lien et chacun modifie le même document, en pair à pair, avec curseurs en direct, sélections et mode suivi. Les agents AI rejoignent de la même façon : vous voyez où ils travaillent, sur chaque écran du salon.',
+        "Partagez un lien et tout le monde modifie le même document, de pair à pair, avec curseurs en direct, mode suivi, commentaires épinglés aux calques et appels vocaux. Les agents d'IA rejoignent la salle de la même façon : tout le monde les regarde construire pendant qu'ils diffusent.",
       hint: 'Les deux écrans sont à vous. Faites glisser un calque sur l’un et regardez-le bouger sur l’autre, puis sollicitez l’agent.'
     },
     code: {
       title: 'Du design au code',
       detail:
-        'Chaque sélection est disponible en Tailwind JSX, en HTML ou en JSX de design, avec les variables écrites comme tokens, et les composants s’exportent en stories Storybook. Code et canevas restent liés : sélectionnez une ligne et son calque est sélectionné, modifiez le JSX et le canevas suit.',
-      hint: 'Sélectionnez un autre calque et regardez le code suivre.'
+        "Chaque sélection est un composant Vue ou React, avec les variantes en props et Reka UI ou Radix derrière les composants interactifs, ou du HTML, du Tailwind et du design JSX avec les variables écrites en tokens. Les composants s'exportent en stories Storybook, et le design JSX reste lié au canevas : modifiez-le et le canevas suit.",
+      hint: 'Passez à React, HTML ou design JSX, ou sélectionnez un autre calque.'
     },
     script: {
       title: 'Tout piloter par script',
@@ -115,7 +115,11 @@ export const fr: LandingMessages = {
         { title: 'Agents AI comme collaborateurs, avec mode suivi' },
         { title: 'Annuler, régénérer et modifier les échanges avec l’AI' },
         { title: 'Code relié aux calques' },
-        { title: 'Diff visuel et correctifs' }
+        { title: 'Diff visuel et correctifs' },
+        { title: 'Commentaires et appels vocaux dans les salles partagées' },
+        { title: "Composants Vue et React dans l'onglet Code" },
+        { title: 'Import SVG et HTML en calques modifiables' },
+        { title: 'Remplissages par shaders' }
       ]
     },
     now: {

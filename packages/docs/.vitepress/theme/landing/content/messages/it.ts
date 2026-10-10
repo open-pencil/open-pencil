@@ -11,9 +11,9 @@ export const it: LandingMessages = {
   loading: 'Caricamento dell’editor',
   features: {
     figma: {
-      title: 'Apri i tuoi file Figma',
+      title: 'Apri quello che hai già',
       detail:
-        'OpenPencil legge direttamente i file .fig: pagine, componenti, istanze, variabili e auto-layout arrivano come livelli modificabili. Il copia e incolla funziona in entrambe le direzioni, e puoi salvare di nuovo in .fig.',
+        'OpenPencil legge direttamente i file .fig: pagine, componenti, istanze, variabili e auto layout arrivano come livelli modificabili, e puoi salvare di nuovo in .fig. Incolla SVG o apri HTML e CSS, e diventano livelli anche loro, disposti come li dispone un browser.',
       hint: 'Questo è un vero file .fig. Espandi i livelli ed esploralo.'
     },
     design: {
@@ -49,14 +49,14 @@ export const it: LandingMessages = {
     collab: {
       title: 'Lavorare insieme, persone e agenti',
       detail:
-        'Condividi un link e tutti modificano lo stesso documento, peer to peer, con cursori in tempo reale, selezioni e modalità segui. Gli agenti AI si uniscono allo stesso modo: vedi dove lavorano, su ogni schermo della stanza.',
+        'Condividi un link e tutti modificano lo stesso documento, peer to peer, con cursori dal vivo, modalità segui, commenti fissati ai livelli e chiamate vocali. Gli agenti di IA entrano allo stesso modo: tutti nella stanza li guardano costruire mentre trasmettono.',
       hint: 'Entrambi gli schermi sono tuoi. Trascina un livello su uno e guardalo muoversi sull’altro, poi chiedi all’agente.'
     },
     code: {
       title: 'Dal design al codice',
       detail:
-        'Ogni selezione è disponibile come Tailwind JSX, HTML o JSX di design, con le variabili scritte come token, e i componenti si esportano come storie di Storybook. Codice e tela restano collegati: seleziona una riga e viene selezionato il suo livello, modifica il JSX e la tela lo segue.',
-      hint: 'Seleziona un altro livello e guarda il codice seguirlo.'
+        'Ogni selezione è un componente Vue o React, con le varianti come props e Reka UI o Radix dietro quelli interattivi, oppure HTML, Tailwind e design JSX con le variabili scritte come token. I componenti si esportano come storie di Storybook, e il design JSX resta collegato alla tela: modificalo e la tela lo segue.',
+      hint: 'Passa a React, HTML o design JSX, oppure seleziona un altro livello.'
     },
     script: {
       title: 'Automatizza tutto',
@@ -115,7 +115,11 @@ export const it: LandingMessages = {
         { title: 'Agenti AI come collaboratori, con modalità segui' },
         { title: 'Annulla, rigenera e modifica i turni dell’AI' },
         { title: 'Codice collegato ai livelli' },
-        { title: 'Diff visivo e patch' }
+        { title: 'Diff visivo e patch' },
+        { title: 'Commenti e chiamate vocali nelle stanze condivise' },
+        { title: 'Componenti Vue e React nella scheda Codice' },
+        { title: 'Importazione di SVG e HTML come livelli modificabili' },
+        { title: 'Riempimenti con shader' }
       ]
     },
     now: {
