@@ -16,7 +16,7 @@ import PaintField from '@/components/inputs/PaintField.vue'
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
 import {
   commitDiscretePropertyListChange,
-  useBlendModeOptions
+  useBlendModeGroups
 } from '@/components/properties/blend-mode/use'
 import { fillLabel } from '@/components/properties/fill-label'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
@@ -52,7 +52,7 @@ function onPickerOpenChange(
 }
 const colorProvider = useColorBindingProvider()
 const { panels, common } = useI18n()
-const blendModeOptions = useBlendModeOptions()
+const blendModeGroups = useBlendModeGroups()
 const {
   visible: stylesVisible,
   hasStyle,
@@ -205,7 +205,7 @@ function updateSolidColor(
             <PanelFieldGroup :label="panels.blendMode">
               <AppSelect
                 :model-value="fill.blendMode ?? 'NORMAL'"
-                :options="blendModeOptions"
+                :groups="blendModeGroups"
                 :label="panels.blendMode"
                 data-property="fill-blend-mode"
                 @update:model-value="

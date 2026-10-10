@@ -10,7 +10,7 @@ import {
   FRAME_RESIZE_PRESETS
 } from '@/app/editor/frame-presets'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import AppGroupedSelect from '@/components/ui/select/AppGroupedSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const store = useEditorStore()
 const { selectedNode } = useSelectionState()
@@ -31,25 +31,19 @@ const selectedPresetId = computed({
 const groups = computed(() =>
   FRAME_RESIZE_PRESET_CATEGORIES.map((category) => ({
     label: panels.value[category.labelKey],
-    items: category.presets.map((preset) => ({ value: preset.id, label: preset.name }))
+    options: category.presets.map((preset) => ({ value: preset.id, label: preset.name }))
   }))
 )
-const displayValue = computed(() => selectedPreset.value?.name ?? panels.value.framePresetCustom)
-const selectUI = {
-  content: 'max-h-80',
-  viewport: 'max-h-80'
-}
 </script>
 
 <template>
   <PanelSection :label="panels.frame">
-    <AppGroupedSelect
+    <AppSelect
       v-model="selectedPresetId"
       data-property="frame-preset"
-      :aria-label="panels.framePreset"
+      :label="panels.framePreset"
       :groups="groups"
-      :display-value="displayValue"
-      :ui="selectUI"
+      :placeholder="panels.framePresetCustom"
     />
   </PanelSection>
 </template>
