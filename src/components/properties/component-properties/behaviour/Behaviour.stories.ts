@@ -47,8 +47,12 @@ export const MapState: Story = {
 export const CreateMissing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('status')).toHaveTextContent('Still needed: Text.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Add text layer' }))
+    // The demo shows several behaviours; the textarea's section is the one missing its text.
+    const add = canvas.getByRole('button', { name: 'Add text layer' })
+    const section = add.closest('section')
+    if (!section) throw new Error('Add text layer is outside a Behaviour section')
+    await expect(within(section).getByRole('status')).toHaveTextContent('Still needed: Text.')
+    await userEvent.click(add)
     await waitFor(() => expect(canvas.getByText('create text Text for value')).toBeVisible())
   }
 }

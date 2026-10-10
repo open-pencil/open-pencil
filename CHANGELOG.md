@@ -162,6 +162,7 @@
 
 ### Fixed
 
+- Screen readers say whether each item in an AI reply's task list is done, instead of announcing an unlabelled checkbox.
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
 - The font picker opens at the current font instead of the top of the list.
 - Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.

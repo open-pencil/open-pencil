@@ -31,6 +31,8 @@
   "noResults": "无结果",
   "save": "保存",
   "done": "完成",
+  "taskDone": "已完成",
+  "taskNotDone": "未完成",
   "back": "返回",
   "supported": "支持",
   "unsupported": "不支持",

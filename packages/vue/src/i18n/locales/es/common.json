@@ -31,6 +31,8 @@
   "noResults": "Sin resultados",
   "save": "Guardar",
   "done": "Hecho",
+  "taskDone": "Hecho",
+  "taskNotDone": "Sin hacer",
   "back": "Atrás",
   "supported": "Compatible",
   "unsupported": "No compatible",

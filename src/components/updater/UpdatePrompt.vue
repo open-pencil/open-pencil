@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mapValues } from 'es-toolkit'
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -73,6 +73,7 @@ function openNotesLink(event: MouseEvent) {
   event.stopPropagation()
   void openExternalLink(anchor.href)
 }
+const notesHeadingId = useId()
 </script>
 
 <template>
@@ -93,12 +94,20 @@ function openNotesLink(event: MouseEvent) {
         </template>
 
         <div :class="ui.notesHeader">
-          <h2 :class="ui.notesLabel">{{ t.whatsNew }}</h2>
+          <h2 :id="notesHeadingId" :class="ui.notesLabel">{{ t.whatsNew }}</h2>
           <ExternalLink :href="releaseNotesURL(release.version)" class="text-[11px]">
             {{ t.fullReleaseNotes }}
           </ExternalLink>
         </div>
-        <div data-slot="update-notes" :class="ui.notes" @click.capture="openNotesLink">
+        <!-- Long notes scroll, so the region takes focus for keyboard scrolling. -->
+        <div
+          data-slot="update-notes"
+          role="region"
+          :aria-labelledby="notesHeadingId"
+          tabindex="0"
+          :class="ui.notes"
+          @click.capture="openNotesLink"
+        >
           <MarkdownContent v-if="release.notes" :content="release.notes" density="comfortable" />
           <p v-else :class="ui.empty">{{ t.noNotes }}</p>
         </div>

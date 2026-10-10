@@ -41,7 +41,7 @@ export const ChoosingAPreset: Story = {
     const [, second] = within(presets).getAllByRole('radio')
     await userEvent.click(second)
     await expect(second).toHaveAttribute('data-state', 'checked')
-    await expect(canvas.getByTestId('settings-accent-custom')).toHaveAttribute(
+    await expect(canvas.getByRole('button', { name: 'Custom color' })).toHaveAttribute(
       'aria-pressed',
       'false'
     )

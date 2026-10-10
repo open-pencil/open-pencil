@@ -31,6 +31,8 @@
   "noResults": "結果がありません",
   "save": "保存",
   "done": "完了",
+  "taskDone": "完了",
+  "taskNotDone": "未完了",
   "back": "戻る",
   "supported": "対応",
   "unsupported": "非対応",
