@@ -7,6 +7,8 @@ import IconSearch from '~icons/lucide/search'
 import IconUsers from '~icons/lucide/users'
 
 import HomeLayout from '@/components/home/HomeLayout.vue'
+import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
+import HomeLocationMenu from '@/components/home/sidebar/HomeLocationMenu.vue'
 import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -25,6 +27,7 @@ type Args = {
   state: 'loading' | 'ready' | 'offline' | 'error'
   usage: { usedBytes: number; totalBytes: number | null } | null
   onOpen: (document: CloudDocumentRow) => void
+  realActions?: boolean
 }
 
 const account: HomeCloudAccount = {
@@ -59,6 +62,8 @@ const meta = {
   render: (args) => ({
     components: {
       HomeLayout,
+      HomeSearchActions,
+      HomeLocationMenu,
       HomeSidebar,
       CloudWorkspaceView,
       AppButton,
@@ -70,7 +75,7 @@ const meta = {
     },
     setup: () => ({ args, workspaces, query: ref(''), view: ref<'grid' | 'list'>('grid') }),
     template: `
-      <div class="flex h-[760px] flex-col">
+      <div :class="['flex h-dvh max-h-[760px] flex-col', args.realActions && '-m-8 max-h-none']">
         <HomeLayout>
           <template #sidebar>
             <HomeSidebar
@@ -81,7 +86,17 @@ const meta = {
               :storage="{ label: 'Studio bucket', detail: 'R2' }"
             />
           </template>
-          <div class="mb-6 flex items-center gap-3">
+          <template #locations>
+            <HomeLocationMenu
+              :active="args.active"
+              :account="args.account"
+              :workspaces="args.account ? workspaces : []"
+              :shared-count="3"
+              :storage="{ label: 'Studio bucket', detail: 'R2' }"
+            />
+          </template>
+          <HomeSearchActions v-if="args.realActions" v-model="query" />
+          <div v-else class="mb-6 flex items-center gap-3">
             <AppInput v-model="query" type="search" density="compact" class="flex-1" placeholder="Search files…" aria-label="Search files">
               <template #leading><IconSearch class="size-4" /></template>
             </AppInput>
@@ -165,4 +180,13 @@ export const SignedOut: Story = {
       .slice(0, 4)
       .map((document) => ({ ...document, shared: false, editedBy: undefined }))
   }
+}
+
+export const Phone: Story = {
+  args: { realActions: true },
+  parameters: { viewport: { defaultViewport: 'mobile1' } }
+}
+
+export const PhoneSharedWithYou: Story = {
+  args: { ...SharedWithYou.args, realActions: true }
 }

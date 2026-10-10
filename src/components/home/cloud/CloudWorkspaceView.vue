@@ -72,7 +72,10 @@ const metadata = (document: CloudDocumentRow) =>
           <h1 class="truncate text-base font-semibold">{{ title }}</h1>
           <AppBadge v-if="role">{{ role }}</AppBadge>
         </div>
-        <div v-if="subtitle || usageLabel" class="mt-1 flex items-center gap-2 text-xs text-muted">
+        <div
+          v-if="subtitle || usageLabel"
+          class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs whitespace-nowrap text-muted"
+        >
           <span v-if="subtitle">{{ subtitle }}</span>
           <span v-if="subtitle && usageLabel" aria-hidden="true">·</span>
           <template v-if="usage && usage.totalBytes !== null && usageLabel">

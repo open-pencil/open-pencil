@@ -38,29 +38,24 @@ const popover = usePopoverUI({ content: 'w-72 p-3' })
 const summary = computed(() => {
   if (viewOnly)
     return { label: 'View only', detail: 'You can look around and follow others, not edit.' }
-  switch (state) {
-    case 'synced':
-      return {
-        label: `Saved to ${workspace}`,
-        detail: savedAgo ? `Saved ${savedAgo}` : 'Up to date'
-      }
-    case 'uploading':
-      return { label: 'Saving…', detail: `Uploading to ${workspace}` }
-    case 'pending':
-      return { label: 'Saved on this device', detail: 'Uploads in a moment' }
-    case 'offline':
-      return {
-        label: 'Saved on this device',
-        detail: 'You’re offline. Changes upload when you reconnect.'
-      }
-    case 'conflict':
-      return {
-        label: 'Changed in two places',
-        detail: 'Someone saved a newer version while you edited. Choose which to keep.'
-      }
-    case 'error':
-      return { label: 'Couldn’t save to Cloud', detail: 'Your changes are safe on this device.' }
+  const summaries: Record<CloudSyncState, { label: string; detail: string }> = {
+    synced: {
+      label: `Saved to ${workspace}`,
+      detail: savedAgo ? `Saved ${savedAgo}` : 'Up to date'
+    },
+    uploading: { label: 'Saving…', detail: `Uploading to ${workspace}` },
+    pending: { label: 'Saved on this device', detail: 'Uploads in a moment' },
+    offline: {
+      label: 'Saved on this device',
+      detail: 'You’re offline. Changes upload when you reconnect.'
+    },
+    conflict: {
+      label: 'Changed in two places',
+      detail: 'Someone saved a newer version while you edited. Choose which to keep.'
+    },
+    error: { label: 'Couldn’t save to Cloud', detail: 'Your changes are safe on this device.' }
   }
+  return summaries[state]
 })
 </script>
 
