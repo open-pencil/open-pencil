@@ -39,6 +39,7 @@ import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slots'
+import type { FigmaLetterSpacing, FigmaLineHeight } from './text'
 import * as TextProxy from './text'
 import { containerTransform, setContainerTransform } from './transform'
 import * as Traversal from './traversal'
@@ -151,8 +152,8 @@ export class FigmaNodeProxy {
   declare textAlignVertical: string
   declare textDirection: string
   declare textAutoResize: string
-  declare letterSpacing: number
-  declare lineHeight: number | null
+  declare letterSpacing: FigmaLetterSpacing
+  declare lineHeight: FigmaLineHeight
   declare textCase: string
   declare textDecoration: string
   declare maxLines: number | null

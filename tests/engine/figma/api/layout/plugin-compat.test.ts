@@ -41,8 +41,8 @@ describe('Figma Plugin API layout compatibility', () => {
     const text: FigmaNodeProxy = api.createText()
     text.characters = 'Hi'
     text.fontSize = 10
-    text.letterSpacing = 2
-    text.lineHeight = 14
+    text.letterSpacing = { unit: 'PIXELS', value: 2 }
+    text.lineHeight = { unit: 'PIXELS', value: 14 }
     frame.appendChild(text)
     text.x = 11
     text.y = 13
@@ -70,8 +70,8 @@ describe('Figma Plugin API layout compatibility', () => {
     expect(text.x).toBe(22)
     expect(text.y).toBe(26)
     expect(text.fontSize).toBe(20)
-    expect(text.letterSpacing).toBe(4)
-    expect(text.lineHeight).toBe(28)
+    expect(text.letterSpacing).toEqual({ unit: 'PIXELS', value: 4 })
+    expect(text.lineHeight).toEqual({ unit: 'PIXELS', value: 28 })
     expect(graph.getNode(text.id)?.width).toBe(textWidth * 2)
   })
 
