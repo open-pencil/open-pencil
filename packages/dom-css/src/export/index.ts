@@ -16,8 +16,10 @@ export { serializeHTML } from './html'
 export {
   LAYER_COMPONENT_FRAMEWORKS,
   layerComponents,
+  layerMarkup,
   type LayerComponent,
-  type LayerComponentFramework
+  type LayerComponentFramework,
+  type LayerMarkup
 } from './components/layers'
 export * from '../tokens'
 export * from '../behaviours'

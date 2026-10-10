@@ -331,7 +331,8 @@ function extensionForMime(mime: string): string {
   return 'png'
 }
 
-function extractImageAssets(
+/** Inline images moved into files under `assetBasePath`, the HTML pointing at them. */
+export function extractImageAssets(
   html: string,
   assetBasePath: string
 ): { html: string; files: ExportHTMLFile[] } {
