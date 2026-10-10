@@ -12,7 +12,11 @@ import { computed, nextTick, onDeactivated, ref, watch } from 'vue'
 
 import { useRetainedPopup } from '@open-pencil/vue'
 
-import { useTooltipUI } from '@/components/ui/overlay/tooltip'
+import {
+  TOOLTIP_SKIP_DELAY_MS,
+  useTooltipUI,
+  useTooltipWarmth
+} from '@/components/ui/overlay/tooltip'
 import { motionStyles } from '@/theme/motion/styles'
 
 const TOOLTIP_OPEN_DELAY_MS = 400
@@ -23,6 +27,7 @@ const TOOLTIP_CLAIM_EVENT = 'open-pencil:tooltip-claim'
 type TooltipSide = 'top' | 'bottom' | 'left' | 'right'
 
 const cls = useTooltipUI({ content: motionStyles.popup })
+const lastClosedAt = useTooltipWarmth()
 
 const {
   asChild = false,
@@ -54,11 +59,13 @@ const contentStyle = computed(() => ({
   top: `${position.value.y}px`
 }))
 
+function openNow() {
+  open.value = true
+  void nextTick(refreshPosition)
+}
+
 const { start: startOpenTimer, stop: stopOpenTimer } = useTimeoutFn(
-  () => {
-    open.value = true
-    void nextTick(refreshPosition)
-  },
+  openNow,
   TOOLTIP_OPEN_DELAY_MS,
   { immediate: false }
 )
@@ -82,7 +89,8 @@ function refreshPosition() {
   if (!anchor || !content) return
 
   const anchorRect = anchor.getBoundingClientRect()
-  const contentRect = content.getBoundingClientRect()
+  // Layout size: the bounding rect is scaled while the tooltip grows in.
+  const contentRect = { width: content.offsetWidth, height: content.offsetHeight }
   const centerX = anchorRect.left + anchorRect.width / 2
   const centerY = anchorRect.top + anchorRect.height / 2
 
@@ -121,12 +129,19 @@ function show() {
     })
   )
   stopOpenTimer()
-  startOpenTimer()
+  if (performance.now() - lastClosedAt.value < TOOLTIP_SKIP_DELAY_MS) openNow()
+  else startOpenTimer()
 }
 
 function hide() {
   stopOpenTimer()
   open.value = false
+}
+
+/** Closes as the pointer or focus moves on, so a neighbouring tooltip can open without the delay. */
+function leave() {
+  if (open.value) lastClosedAt.value = performance.now()
+  hide()
 }
 
 function isNestedTooltipEvent(event: PointerEvent | FocusEvent) {
@@ -150,7 +165,7 @@ function onPointerOver(event: PointerEvent) {
 
 function onPointerOut(event: PointerEvent) {
   if (containsRelatedTarget(event)) return
-  hide()
+  leave()
 }
 
 function onFocusIn(event: FocusEvent) {
@@ -159,12 +174,14 @@ function onFocusIn(event: FocusEvent) {
     return
   }
   if (containsRelatedTarget(event)) return
+  // Popovers focus their first control on open; only keyboard focus asks for a tooltip.
+  if (!(event.target instanceof Element) || !event.target.matches(':focus-visible')) return
   show()
 }
 
 function onFocusOut(event: FocusEvent) {
   if (containsRelatedTarget(event)) return
-  hide()
+  leave()
 }
 
 function onPointerDown() {
@@ -173,7 +190,7 @@ function onPointerDown() {
 
 function onTooltipClaim(event: Event) {
   if (!(event instanceof CustomEvent) || event.detail === triggerRef.value) return
-  hide()
+  leave()
 }
 
 useEventListener(activeWindow, 'resize', refreshPosition)
@@ -186,6 +203,10 @@ onDeactivated(hide)
 watch(canOpen, (value) => {
   if (!value) hide()
 })
+watch(
+  () => label,
+  () => void nextTick(refreshPosition)
+)
 </script>
 
 <template>

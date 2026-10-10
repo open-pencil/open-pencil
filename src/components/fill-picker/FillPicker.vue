@@ -99,6 +99,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="root.category === 'SOLID' || undefined"
                 :class="tabClass(root.category === 'SOLID')"
+                :aria-label="panels.solid"
                 data-test-id="fill-picker-tab-solid"
                 @click="root.actions.toSolid"
               >
@@ -109,6 +110,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="root.category === 'GRADIENT' || undefined"
                 :class="tabClass(root.category === 'GRADIENT')"
+                :aria-label="panels.linearGradient"
                 data-test-id="fill-picker-tab-gradient"
                 @click="root.actions.toGradient"
               >
@@ -119,6 +121,7 @@ function cancelFromEscape(event: KeyboardEvent) {
               <button
                 :data-active="root.category === 'IMAGE' || undefined"
                 :class="tabClass(root.category === 'IMAGE')"
+                :aria-label="panels.image"
                 data-test-id="fill-picker-tab-image"
                 @click="root.actions.toImage"
               >

@@ -114,6 +114,7 @@
 - Choose an accent color in **Settings → General → Appearance**: one of eight presets or any custom color. Buttons, toggles, selected layers, focus rings, the active tool, and the canvas selection, handles, size labels, and ruler badges follow it in both themes, and text on accent surfaces turns dark when the color is too light for white. The CLI and MCP `settings` commands read and set it as `appearance.accent`.
 ### Changed
 
+- Bound variables show as a neutral chip in the properties panel instead of purple text, so they no longer read as components.
 - Import SVG as editable layers, as pasting it into Figma does, from `import_svg`, dropped files, and pasted markup ([#734](https://github.com/open-pencil/open-pencil/issues/734)). Each `<g>` becomes a group, each shape its own vector, and each `<text>` a text layer with its fonts, `<tspan>` styles, alignment, and rotation, named after its `id`, element opacity is kept, and clipped content sits in a clip path group whose mask is drawn from the clip's shapes. The imported frame is white, clips its content, and is named after the root `<svg>` `id`; an SVG without a size imports as a group. Shapes are no longer merged into one multi-color vector.
 - With **Snap to Pixel Grid** on, moved layers and resized edges land on whole pixels at any zoom, and drawn layers start and end on whole pixels, as in Figma; zoomed in, moves and resizes could leave fractions before, and drawing was not snapped.
 - Layers inside components and instances are outlined in purple when hovered or selected, with a purple size label, as in Figma; they were blue.
@@ -162,6 +163,7 @@
 
 ### Fixed
 
+- Tooltips no longer appear when a popover such as the colour picker focuses its first control on open; they still show for keyboard focus. Moving the pointer along a row of buttons switches tooltips at once instead of blinking out, and tooltips centre on their control instead of sitting a few pixels off.
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
 - The font picker opens at the current font instead of the top of the list.
 - Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.
