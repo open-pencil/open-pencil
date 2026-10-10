@@ -147,7 +147,7 @@ export function createCloudApp(services: CloudServices) {
   const cloudCORS = cors({
     origin: (origin) => (allowedOrigins.has(origin) ? origin : null),
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type'],
+    allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     maxAge: 600
   })
