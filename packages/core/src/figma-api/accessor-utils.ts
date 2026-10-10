@@ -1,6 +1,7 @@
 import {
   fitEnclosingGroups,
   FITTED_CONTAINER_TYPES,
+  instanceOverrideFields,
   recordInstanceOverride
 } from '@open-pencil/scene-graph'
 import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -79,9 +80,11 @@ export function updateNode(
   ) as Partial<SceneNode>
   if (Object.keys(applied).length === 0) return
   // Auto-sizing text measures its new content, as the editor's updates do.
-  Object.assign(applied, textAutoResizeChanges(g.getNode(id), applied))
+  const node = g.getNode(id)
+  Object.assign(applied, textAutoResizeChanges(node, applied))
+  const overridden = node ? instanceOverrideFields(node, applied) : Object.keys(applied)
   g.updateNode(id, applied)
-  recordInstanceOverride(g, id, Object.keys(applied))
+  recordInstanceOverride(g, id, overridden)
   if (Object.keys(applied).some((key) => GEOMETRY_FIELDS.has(key))) {
     fitGroupsAround(g, g.getNode(id)?.parentId, hostFitOptions(target, internals))
   }

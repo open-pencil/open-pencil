@@ -42,6 +42,7 @@ import {
   type KiwiSymbolOverridePayload,
   type SceneNodeToKiwiContext
 } from './context'
+import { exportEffects } from './layer-fields'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
 import { exportedNode } from './resolved-bindings'
 import { slotContentAssignment, slotDefinitionFields } from './slots'
@@ -835,16 +836,7 @@ function applyNodeVisualProps(
   if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
   if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
-      color: context.safeColor(effect.color),
-      offset: effect.offset,
-      radius: effect.radius,
-      spread: effect.spread,
-      visible: effect.visible,
-      blendMode: effect.blendMode ?? 'NORMAL',
-      showShadowBehindNode: effect.showShadowBehindNode
-    }))
+    nc.effects = exportEffects(node)
   }
 
   if (node.type === 'TEXT') {

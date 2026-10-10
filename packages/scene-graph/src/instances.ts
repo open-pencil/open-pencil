@@ -1,3 +1,5 @@
+import { isEqual, omit, uniq } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from './'
 import type { NodeCloneMode } from './copy'
 import {
@@ -6,19 +8,25 @@ import {
   hasInstanceOverride as hasNodeInstanceOverride,
   setInstanceOverride
 } from './instance-overrides'
-import { INSTANCE_SYNC_FIELDS, INSTANCE_SYNC_PROPS } from './instances/fields'
+import {
+  INSTANCE_SYNC_FIELDS,
+  INSTANCE_SYNC_PROPS,
+  STROKE_GEOMETRY_FIELDS
+} from './instances/fields'
 import {
   bindingProtection,
   cloneChildrenWithMapping,
   copyProp,
   enclosingInstanceOverrideFields,
   isProtectedSyncField,
+  keepOverriddenStrokeGeometry,
   sourceInTargetCoordinates,
   syncBindingFields,
   syncChildren,
   updateSyncedProps
 } from './instances/sync'
 import { detachOwnedSlotContent, restoreOwnedSlotContent } from './slots/frames'
+import type { Stroke } from './types'
 
 export type { NodeCloneMode } from './copy'
 export {
@@ -173,6 +181,7 @@ function syncInstancesOf(
         if (isProtectedSyncField(instance, key, protectedField)) continue
         copyProp(updates, source, key)
       }
+      keepOverriddenStrokeGeometry(updates, instance, protectedField)
       updateSyncedProps(graph, instance, updates)
       syncChildren(graph, component.id, instance.id, instance.instanceOverrides)
     }
@@ -226,6 +235,35 @@ export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: st
   const instance = findInstanceAncestor(graph, nodeId)
   if (!instance) return false
   return hasNodeInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
+}
+
+const STROKE_GEOMETRY_KEYS = Object.keys(STROKE_GEOMETRY_FIELDS) as (keyof Stroke &
+  keyof typeof STROKE_GEOMETRY_FIELDS)[]
+
+/**
+ * The fields a change overrides on a layer inside an instance. A change to the strokes that
+ * leaves every paint as it was overrides the stroke geometry it changed, such as
+ * `strokeWeight`, rather than `strokes`.
+ */
+export function instanceOverrideFields(node: SceneNode, changes: Partial<SceneNode>): string[] {
+  const fields = Object.keys(changes)
+  const strokes = changes.strokes
+  if (
+    !strokes ||
+    strokes.length !== node.strokes.length ||
+    strokes.some(
+      (stroke, index) =>
+        !isEqual(
+          omit(stroke, STROKE_GEOMETRY_KEYS),
+          omit(node.strokes[index], STROKE_GEOMETRY_KEYS)
+        )
+    )
+  )
+    return fields
+  const geometry = STROKE_GEOMETRY_KEYS.filter((key) =>
+    strokes.some((stroke, index) => !isEqual(stroke[key], node.strokes[index][key]))
+  ).map((key) => STROKE_GEOMETRY_FIELDS[key])
+  return uniq([...fields.filter((field) => field !== 'strokes'), ...geometry])
 }
 
 export function recordInstanceOverride(

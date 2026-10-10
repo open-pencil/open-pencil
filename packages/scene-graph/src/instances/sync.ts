@@ -13,7 +13,7 @@ import {
 import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import { scaleVariableBindingUnits } from '../variables/units'
-import { INSTANCE_SYNC_FIELDS } from './fields'
+import { INSTANCE_SYNC_FIELDS, STROKE_GEOMETRY_FIELDS } from './fields'
 
 function setSceneProp<K extends keyof SceneNode>(
   target: Partial<SceneNode>,
@@ -96,6 +96,26 @@ export function isProtectedSyncField(
     (key in node.boundVariables &&
       (protectedField('boundVariables') || protectedField(`boundVariables/${key}`)))
   )
+}
+
+/**
+ * Strokes taken from the component keep the stroke geometry the instance overrides, such as its
+ * weight, as in Figma, where it is overridden apart from the paint.
+ */
+export function keepOverriddenStrokeGeometry(
+  updates: Partial<SceneNode>,
+  target: SceneNode,
+  protectedField: (field: string) => boolean
+): void {
+  if (!updates.strokes) return
+  const kept = Object.entries(STROKE_GEOMETRY_FIELDS).filter(([, field]) =>
+    isProtectedSyncField(target, field, protectedField)
+  )
+  if (kept.length === 0) return
+  const geometry = Object.fromEntries(
+    kept.map(([key, field]) => [key, structuredClone(target[field])])
+  )
+  updates.strokes = updates.strokes.map((stroke) => ({ ...stroke, ...geometry }))
 }
 
 export function sourceInTargetCoordinates(source: SceneNode, targetScale: number): SceneNode {
@@ -505,6 +525,7 @@ export function syncChildren(
 
       copyProp(updates, source, key)
     }
+    keepOverriddenStrokeGeometry(updates, instChild, protectedField)
     Object.assign(updates, assignedFieldValues(graph, instChild, compChild))
     updateSyncedProps(graph, instChild, updates)
 

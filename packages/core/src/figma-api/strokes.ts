@@ -11,7 +11,7 @@ export function setStrokeWeight(graph: SceneGraph, node: SceneNode, weight: numb
     strokeWeight: weight,
     strokes: node.strokes.map((stroke) => ({ ...copyStroke(stroke), weight }))
   })
-  recordInstanceOverride(graph, node.id, ['strokes', 'strokeWeight'])
+  recordInstanceOverride(graph, node.id, ['strokeWeight'])
 }
 
 /** Sets the alignment of all of a node's strokes and the one it keeps with none. */
@@ -20,7 +20,7 @@ export function setStrokeAlign(graph: SceneGraph, node: SceneNode, align: Stroke
     strokeAlign: align,
     strokes: node.strokes.map((stroke) => ({ ...copyStroke(stroke), align }))
   })
-  recordInstanceOverride(graph, node.id, ['strokes', 'strokeAlign'])
+  recordInstanceOverride(graph, node.id, ['strokeAlign'])
 }
 
 export function setIndependentStrokeWeight(

@@ -1,5 +1,9 @@
-import { SCENE_OVERRIDE_FIELDS } from '#fig/instance-overrides/fields'
+import { SCENE_OVERRIDE_FIELDS, type EncodedOverrideField } from '#fig/instance-overrides/fields'
+import { scaleRawVisualProps } from '#fig/instance-overrides/scale/layout'
+import { scaleTextLayout } from '#fig/instance-overrides/scale/text'
+import { OVERRIDE_ENCODERS } from '#fig/node-change/export/override-fields'
 
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   forEachInstanceOverride,
@@ -79,6 +83,22 @@ function layoutDistanceClaim(
   return { [raw]: value / scale }
 }
 
+/** Claims are written in the owner's pre-scale space, as the import scaler reads them. */
+function encodedClaim(
+  raw: EncodedOverrideField,
+  instance: SceneNode,
+  target: SceneNode
+): Partial<NodeChange> {
+  const claim = OVERRIDE_ENCODERS[raw](target)
+  const scale = instance.componentScale
+  if (!Number.isFinite(scale) || scale <= 0) throw new Error('Invalid instance uniform scale')
+  if (scale === 1) return claim
+  const scaled = structuredClone(claim) as NodeChange
+  scaleTextLayout(scaled, 1 / scale)
+  scaleRawVisualProps(scaled, 1 / scale)
+  return scaled
+}
+
 interface ClaimInput {
   context: SceneNodeToKiwiContext
   instance: SceneNode
@@ -119,6 +139,8 @@ function registryClaim(
       return layoutDistanceClaim(raw, target[field], instance)
     case 'layout-mode':
       return layoutModeClaim(raw, target[field], context.graph, target)
+    case 'encoded':
+      return encodedClaim(raw as EncodedOverrideField, instance, target)
     default:
       return undefined
   }

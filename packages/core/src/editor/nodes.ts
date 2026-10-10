@@ -4,6 +4,7 @@ import {
   styleDetachmentChanges,
   findInstanceAncestor,
   cloneInstanceOverrideState,
+  instanceOverrideFields,
   recordInstanceOverride,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -50,8 +51,9 @@ export function createNodeActions(ctx: EditorContext) {
       ...textAutoResizeChanges(node, changes),
       ...pathTextEditChanges(node, changes)
     })
+    const overridden = instanceOverrideFields(node, nextChanges)
     ctx.graph.updateNode(id, nextChanges)
-    recordInstanceOverride(ctx.graph, id, Object.keys(nextChanges))
+    recordInstanceOverride(ctx.graph, id, overridden)
     runChangedLayout(id, nextChanges)
   }
 
@@ -72,14 +74,15 @@ export function createNodeActions(ctx: EditorContext) {
       node,
       Object.keys(nextChanges) as (keyof SceneNode)[]
     ) as Partial<SceneNode>
+    const overridden = instanceOverrideFields(node, nextChanges)
     ctx.graph.updateNode(id, nextChanges)
-    recordInstanceOverride(ctx.graph, id, Object.keys(nextChanges))
+    recordInstanceOverride(ctx.graph, id, overridden)
     runChangedLayout(id, nextChanges)
     ctx.undo.push({
       label,
       forward: () => {
         ctx.graph.updateNode(id, nextChanges)
-        recordInstanceOverride(ctx.graph, id, Object.keys(nextChanges))
+        recordInstanceOverride(ctx.graph, id, overridden)
         runChangedLayout(id, nextChanges)
       },
       inverse: () => {

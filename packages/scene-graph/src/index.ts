@@ -52,6 +52,7 @@ export {
   INSTANCE_SYNC_FIELDS,
   INSTANCE_SYNC_PROPS,
   INSTANCE_SYNC_TEXT_PROPS,
+  instanceOverrideFields,
   recordInstanceOverride
 } from './instances'
 export {

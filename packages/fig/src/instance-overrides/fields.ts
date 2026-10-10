@@ -16,8 +16,11 @@ export interface OverrideField {
     | 'size'
     | 'layout-distance'
     | 'layout-mode'
+    | 'encoded'
   /** A placed-space distance that an instance's uniform scale multiplies. */
   readonly length?: true
+  /** Further raw fields Figma writes for the same claim; any of them claims the scene fields. */
+  readonly also?: readonly string[]
 }
 
 /** Raw override fields an instance owner may claim, keyed by their Kiwi name. */
@@ -41,7 +44,59 @@ export const OVERRIDE_FIELDS = {
   stackChildPrimaryGrow: { scene: ['layoutGrow'], kind: 'layout-mode' },
   stackPrimarySizing: { scene: ['primaryAxisSizing'], kind: 'layout-mode' },
   stackCounterSizing: { scene: ['counterAxisSizing'], kind: 'layout-mode' },
-  stackChildAlignSelf: { scene: ['layoutAlignSelf'], kind: 'layout-mode' }
+  stackChildAlignSelf: { scene: ['layoutAlignSelf'], kind: 'layout-mode' },
+  // Recorded from claims Figma wrote for overrides made in its plugin API, 2026-10-10.
+  stackPrimaryAlignItems: { scene: ['primaryAxisAlign'], kind: 'encoded' },
+  stackCounterAlignItems: { scene: ['counterAxisAlign'], kind: 'encoded' },
+  blendMode: { scene: ['blendMode'], kind: 'encoded' },
+  locked: { scene: ['locked'], kind: 'encoded' },
+  effects: { scene: ['effects'], kind: 'encoded' },
+  cornerRadius: {
+    scene: [
+      'cornerRadius',
+      'topLeftRadius',
+      'topRightRadius',
+      'bottomLeftRadius',
+      'bottomRightRadius',
+      'independentCorners'
+    ],
+    kind: 'encoded',
+    also: [
+      'rectangleTopLeftCornerRadius',
+      'rectangleTopRightCornerRadius',
+      'rectangleBottomLeftCornerRadius',
+      'rectangleBottomRightCornerRadius',
+      'rectangleCornerRadiiIndependent'
+    ]
+  },
+  cornerSmoothing: { scene: ['cornerSmoothing'], kind: 'encoded' },
+  strokeWeight: { scene: ['strokeWeight'], kind: 'encoded' },
+  strokeAlign: { scene: ['strokeAlign'], kind: 'encoded' },
+  strokeCap: { scene: ['strokeCap'], kind: 'encoded' },
+  strokeJoin: { scene: ['strokeJoin'], kind: 'encoded' },
+  dashPattern: { scene: ['dashPattern'], kind: 'encoded' },
+  borderStrokeWeightsIndependent: {
+    scene: [
+      'independentStrokeWeights',
+      'borderTopWeight',
+      'borderRightWeight',
+      'borderBottomWeight',
+      'borderLeftWeight'
+    ],
+    kind: 'encoded',
+    also: ['borderTopWeight', 'borderRightWeight', 'borderBottomWeight', 'borderLeftWeight']
+  },
+  fontName: {
+    scene: ['fontFamily', 'fontWeight', 'italic'],
+    kind: 'encoded',
+    also: ['fontVersion']
+  },
+  lineHeight: { scene: ['lineHeight'], kind: 'encoded' },
+  letterSpacing: { scene: ['letterSpacing'], kind: 'encoded', also: ['textTracking'] },
+  textCase: { scene: ['textCase'], kind: 'encoded' },
+  textDecoration: { scene: ['textDecoration'], kind: 'encoded' },
+  textAlignHorizontal: { scene: ['textAlignHorizontal'], kind: 'encoded' },
+  textAlignVertical: { scene: ['textAlignVertical'], kind: 'encoded' }
 } as const satisfies Record<string, OverrideField>
 
 export type RawOverrideField = keyof typeof OVERRIDE_FIELDS
@@ -63,6 +118,9 @@ export const SCENE_OVERRIDE_FIELDS: ReadonlyMap<
 function rawFieldsOfKind<K extends OverrideField['kind']>(kind: K): RawFieldOfKind<K>[] {
   return entries.flatMap(([raw, field]) => (field.kind === kind ? [raw as RawFieldOfKind<K>] : []))
 }
+
+/** Raw fields whose claims export encodes from the layer, as its own NodeChange writes them. */
+export type EncodedOverrideField = RawFieldOfKind<'encoded'>
 
 /** Scalars share one name on both sides and serialize verbatim. */
 export const SCALAR_OVERRIDE_FIELDS: readonly RawFieldOfKind<'scalar'>[] = rawFieldsOfKind('scalar')

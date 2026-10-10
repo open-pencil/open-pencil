@@ -245,8 +245,9 @@ function recordPropertyClaims(nodes: ReadonlyMap<InstanceOccurrence, SceneNode>)
       const target = nodes.get(targetOccurrence)
       if (!target) throw new Error('Unmaterialized property claim target')
       for (const raw of Object.keys(OVERRIDE_FIELDS) as RawOverrideField[]) {
-        if (!(raw in claim.properties)) continue
-        const field = OVERRIDE_FIELDS[raw]
+        const field: OverrideField = OVERRIDE_FIELDS[raw]
+        const claimedRaw = [raw, ...(field.also ?? [])]
+        if (!claimedRaw.some((key) => key in claim.properties)) continue
         if (!claimApplies(field, claim.properties[raw], target)) continue
         for (const scene of field.scene) {
           const value = target[scene]

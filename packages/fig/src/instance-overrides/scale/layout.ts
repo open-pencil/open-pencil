@@ -14,7 +14,11 @@ const VISUAL_LENGTHS = [
   'rectangleTopLeftCornerRadius',
   'rectangleTopRightCornerRadius',
   'rectangleBottomLeftCornerRadius',
-  'rectangleBottomRightCornerRadius'
+  'rectangleBottomRightCornerRadius',
+  'borderTopWeight',
+  'borderRightWeight',
+  'borderBottomWeight',
+  'borderLeftWeight'
 ] as const
 const TEXT_LENGTHS = [
   'fontSize',
@@ -38,7 +42,7 @@ const SCALED_FIELDS = [
   'transform'
 ] as const
 
-function scaleRawVisualProps(props: NodeChange, factor: number): void {
+export function scaleRawVisualProps(props: NodeChange, factor: number): void {
   for (const field of VISUAL_LENGTHS) {
     const value = props[field]
     if (typeof value === 'number') props[field] = value * factor
