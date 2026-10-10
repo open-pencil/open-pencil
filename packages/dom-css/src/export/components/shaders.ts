@@ -99,7 +99,7 @@ export function shaderEffectAttributes(component: ShaderComponent): es.SyntaxNod
 export const SHADER_CANVAS = 'ShaderCanvas'
 
 /** The elements of a component's tree that fill with a shader. */
-function shaderElements(node: ComponentNode): ComponentElement[] {
+export function shaderElements(node: ComponentNode): ComponentElement[] {
   if (node.type !== 'element') return []
   return [...(node.shader ? [node] : []), ...node.children.flatMap(shaderElements)]
 }
