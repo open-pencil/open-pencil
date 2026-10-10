@@ -3,9 +3,13 @@ import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import {
+  aspectRatioLockEditable,
+  enforcedAspectRatio,
   layoutSizing,
   layoutSizingOptions,
   layoutSizingUpdates,
+  lockedAspectRatioTarget,
+  sizeKeepingAspectRatio,
   type GridTrack,
   type LayoutAlign,
   type LayoutCounterAlign,
@@ -246,13 +250,35 @@ export function createLayoutActions({
     )
   }
 
+  function fixedAxisPatch(n: SceneNode, axis: LayoutAxis): Partial<SceneNode> {
+    return axisSizingForNode(editor.graph, n, axis) === 'FIXED'
+      ? {}
+      : axisSizingPatchForNode(editor.graph, n, axis, 'FIXED')
+  }
+
+  // A locked layer keeps its ratio as either side is typed, as in Figma.
   function updateAxisSize(axis: LayoutAxis, value: number) {
     const n = node.value
     if (!n) return
-    const sizing = axisSizingForNode(editor.graph, n, axis)
-    const sizingPatch =
-      sizing !== 'FIXED' ? axisSizingPatchForNode(editor.graph, n, axis, 'FIXED') : {}
-    preview.update([n.id], { ...sizingPatch, [axis]: value }, `Change ${axis}`)
+    const ratio = enforcedAspectRatio(n)
+    if (ratio === null) {
+      preview.update([n.id], { ...fixedAxisPatch(n, axis), [axis]: value }, `Change ${axis}`)
+      return
+    }
+    const size = sizeKeepingAspectRatio(ratio, axis, value)
+    const patch = { ...fixedAxisPatch(n, 'width'), ...fixedAxisPatch(n, 'height'), ...size }
+    preview.update([n.id], patch, `Change ${axis}`)
+  }
+
+  function toggleAspectRatioLock() {
+    const n = node.value
+    if (!n || !aspectRatioLockEditable(editor.graph, n)) return
+    const locked = n.targetAspectRatio !== null
+    editor.updateNodeWithUndo(
+      n.id,
+      { targetAspectRatio: locked ? null : lockedAspectRatioTarget(n.width, n.height) },
+      'Toggle aspect ratio lock'
+    )
   }
 
   function commitAxisSize(_axis: LayoutAxis, _value: number, _previous: number) {
@@ -299,6 +325,7 @@ export function createLayoutActions({
     setAxisSizing,
     updateAxisSize,
     commitAxisSize,
+    toggleAspectRatioLock,
     setAlignment,
     setGapAuto,
     setLayoutDirection
@@ -354,9 +381,16 @@ export function createLayoutSizingState(
 
   const widthSizingOptions = computed(sizingOptions)
   const heightSizingOptions = computed(sizingOptions)
+  const aspectRatioLocked = computed(() => node.value?.targetAspectRatio != null)
+  const aspectRatioLockable = computed(() => {
+    const n = node.value
+    return !!n && aspectRatioLockEditable(editor.graph, n)
+  })
 
   return {
     isInAutoLayout,
+    aspectRatioLocked,
+    aspectRatioLockable,
     isGrid,
     isFlex,
     widthSizing,

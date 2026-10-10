@@ -21,6 +21,7 @@ function drag(node: SceneNode): DragResize {
     origStrokes: [],
     origTextPathData: null,
     origTextPathBox: null,
+    lockedAspectRatio: null,
     origChildren: null
   }
 }

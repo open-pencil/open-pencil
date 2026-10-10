@@ -379,6 +379,7 @@ export const panelMessageDefaults = {
   addPage: 'Add page',
   toggleVisibility: 'Toggle visibility',
   independentCornerRadii: 'Independent corner radii',
+  lockAspectRatio: 'Lock aspect ratio',
   detachVariable: 'Detach variable',
   applyVariable: 'Apply variable',
   noVariablesFound: 'No variables found',

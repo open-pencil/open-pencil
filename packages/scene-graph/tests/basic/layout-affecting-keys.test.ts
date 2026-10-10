@@ -47,7 +47,8 @@ describe('LAYOUT_AFFECTING_KEYS membership', () => {
       'minWidth',
       'maxWidth',
       'minHeight',
-      'maxHeight'
+      'maxHeight',
+      'targetAspectRatio'
     ]) {
       expect(keys.has(k)).toBe(true)
     }
@@ -69,8 +70,8 @@ describe('LAYOUT_AFFECTING_KEYS membership', () => {
     // layoutPositioning,layoutGrow,layoutAlignSelf,strokesIncludedInLayout = 4
     // horizontalConstraint,verticalConstraint = 2
     // gridTemplateColumns,gridTemplateRows,gridColumnGap,gridRowGap,gridPosition = 5
-    // minWidth,maxWidth,minHeight,maxHeight = 4
-    // Total: 36
-    expect(SceneGraph.LAYOUT_AFFECTING_KEYS.size).toBe(36)
+    // minWidth,maxWidth,minHeight,maxHeight,targetAspectRatio = 5
+    // Total: 37
+    expect(SceneGraph.LAYOUT_AFFECTING_KEYS.size).toBe(37)
   })
 })

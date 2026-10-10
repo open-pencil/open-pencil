@@ -207,6 +207,7 @@ function preserveTrailingPadding(
 }
 
 function serializeSizeConstraints(node: SceneNode, nc: KiwiNodeChange): void {
+  if (node.targetAspectRatio) nc.targetAspectRatio = { value: { ...node.targetAspectRatio } }
   if (node.minWidth != null || node.minHeight != null) {
     nc.minSize = { value: { x: node.minWidth ?? 0, y: node.minHeight ?? 0 } }
   }
