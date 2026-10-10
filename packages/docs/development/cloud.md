@@ -124,6 +124,24 @@ framed. The Node runtime serves the build named by `OPENPENCIL_CLOUD_PORTAL_DIR`
 pages before the API and portal assets only where the API returns 404. `bun run cloud:dev` keeps a
 watched portal build next to the server.
 
+## Editor client
+
+The editor treats each Cloud server as a profile of the `openpencil-cloud` storage provider, with a
+workspace as the container, so the sync engine, recent files, and tabs handle Cloud documents the
+way they handle a bucket. A server's id is hex from its address, which also names its credentials.
+A browser on the server's own editor address signs in on the server's pages and keeps its session
+cookie; the desktop app and other editor addresses approve a device code and keep the token in the
+credential store. Each connection tells a signed-in account from one waiting for approval, one
+whose sign-in expired, and one never signed in.
+
+Saves name the revision they were edited from, so a write over someone else's newer revision
+becomes a conflict to resolve. Opening a Cloud document also joins its room on the relay. An empty
+room takes the first editor's document once the relay has answered; a tab that opened the stored
+file takes the room's copy when the room already has one, because each read of a `.fig` gives the
+layers new IDs. One signed-in editor, the one with the lowest presence client, saves for the room;
+the others drop their queued uploads and count their edits as saved. Guests who open a link join
+the room with the link's permission and never save.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
