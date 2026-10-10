@@ -10,6 +10,7 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  sharedDocumentSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
@@ -33,6 +34,7 @@ import {
   type DocumentInvitation,
   type DocumentShare,
   type DocumentSummary,
+  type SharedDocument,
   type InvitationPreview,
   type LookupCloudUserInput,
   type PutDocumentGrantInput,
@@ -47,6 +49,7 @@ import { hc } from 'hono/client'
 import * as v from 'valibot'
 
 const documentsResponseSchema = v.object({ documents: v.array(documentSummarySchema) })
+const sharedDocumentsResponseSchema = v.object({ documents: v.array(sharedDocumentSchema) })
 const documentResponseSchema = v.object({ document: documentSummarySchema })
 const downloadResponseSchema = v.object({ document: documentDownloadSchema })
 const usageResponseSchema = v.object({ usage: workspaceUsageSchema })
@@ -233,6 +236,15 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.usage
+    },
+    /** Documents shared with the person directly, outside their workspaces. */
+    async listSharedDocuments(): Promise<SharedDocument[]> {
+      const response = await parseResponse(
+        client['shared-documents'].$get(),
+        sharedDocumentsResponseSchema,
+        options.onDiagnostic
+      )
+      return response.documents
     },
     async listDocuments(workspaceId: string): Promise<DocumentSummary[]> {
       const response = await parseResponse(

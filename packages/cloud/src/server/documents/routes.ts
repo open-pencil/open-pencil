@@ -67,6 +67,9 @@ export function createDocumentRoutes(
     )
   }
   return router
+    .get('/shared-documents', async (context) =>
+      context.json({ documents: await service.listShared(context.get('actor').userId) })
+    )
     .get('/workspaces/:workspaceId/documents', async (context) => {
       const documents = await service.list(
         context.get('actor').userId,

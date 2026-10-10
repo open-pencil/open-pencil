@@ -56,6 +56,8 @@ accepts the resulting bearer token.
 
 Access to a document comes from ownership, workspace membership, a direct grant, or a capability
 link, and the strongest source wins. Revoking one source leaves access inherited from another.
+Documents granted to someone outside their own workspaces are listed for them separately, so a
+client can show what was shared with them.
 
 Database rows use UUIDs. Capability secrets and invitation tokens are random hex; only their SHA-256
 digests are stored, and they travel in URL fragments so they never reach access logs or `Referer`

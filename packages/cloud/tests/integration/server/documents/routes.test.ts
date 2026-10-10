@@ -31,8 +31,8 @@ const actor: CloudActor = {
 }
 const checksum = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
 
-async function testApp() {
-  let currentActor = actor
+async function testApp(initialActor: CloudActor = actor) {
+  let currentActor = initialActor
   const runtime = await createCloudTestDatabase()
   const objects = createMemoryObjectStore()
   const app = createCloudApp({
@@ -312,6 +312,101 @@ describe('Cloud document routes', () => {
           .where('id', '=', upload.id)
           .executeTakeFirstOrThrow()
       ).toEqual({ status: 'pending' })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+})
+
+describe('documents shared with a person', () => {
+  const bob: CloudActor = { userId: 'bob', email: 'bob@example.com', name: 'Bob' }
+  const SharedDocuments = v.object({
+    documents: v.array(
+      v.object({
+        id: v.string(),
+        name: v.string(),
+        workspaceName: v.string(),
+        permission: v.string(),
+        sharedBy: v.nullable(v.object({ name: v.string() }))
+      })
+    )
+  })
+
+  test('lists direct grants outside the person’s workspaces until they are revoked', async () => {
+    const aliceAccount = crypto.randomUUID()
+    const context = await testApp({ ...actor, userId: aliceAccount })
+    try {
+      const now = new Date()
+      await context.runtime.database
+        .insertInto('user')
+        .values({
+          id: aliceAccount,
+          name: 'Alice',
+          email: 'alice@example.com',
+          emailVerified: true,
+          image: null,
+          banExpires: null,
+          createdAt: now,
+          updatedAt: now
+        })
+        .execute()
+      const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Brief' })
+      })
+      const created = await responseJSON(
+        create,
+        v.object({ document: v.object({ id: v.string() }) })
+      )
+      const documentId = created.document.id
+      const grant = await context.app.request(`/api/documents/${documentId}/grants/bob`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permission: 'view' })
+      })
+      expect(grant.status).toBe(200)
+
+      context.setActor(bob)
+      const shared = await responseJSON(
+        await context.app.request('/api/shared-documents'),
+        SharedDocuments
+      )
+      expect(shared.documents).toEqual([
+        {
+          id: documentId,
+          name: 'Brief',
+          workspaceName: 'Documents',
+          permission: 'view',
+          sharedBy: { name: 'Alice' }
+        }
+      ])
+
+      await context.runtime.database
+        .insertInto('workspaceMember')
+        .values({ workspaceId: context.workspaceId, userId: 'bob', role: 'viewer' })
+        .execute()
+      const asMember = await responseJSON(
+        await context.app.request('/api/shared-documents'),
+        SharedDocuments
+      )
+      expect(asMember.documents).toEqual([])
+
+      await context.runtime.database
+        .deleteFrom('workspaceMember')
+        .where('userId', '=', 'bob')
+        .execute()
+      context.setActor({ ...actor, userId: aliceAccount })
+      const revoke = await context.app.request(`/api/documents/${documentId}/grants/bob`, {
+        method: 'DELETE'
+      })
+      expect(revoke.status).toBeLessThan(300)
+      context.setActor(bob)
+      const afterRevoke = await responseJSON(
+        await context.app.request('/api/shared-documents'),
+        SharedDocuments
+      )
+      expect(afterRevoke.documents).toEqual([])
     } finally {
       await context.runtime.close()
     }

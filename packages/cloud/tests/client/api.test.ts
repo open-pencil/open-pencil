@@ -44,6 +44,29 @@ describe('createCloudAPIClient', () => {
     expect(requests[0]?.credentials).toBe('include')
   })
 
+  test('lists documents shared with the person and rejects malformed entries', async () => {
+    const shared = {
+      ...document,
+      workspaceName: 'Client work',
+      permission: 'view' as const,
+      sharedBy: { name: 'Alice' },
+      sharedAt: '2026-01-02T00:00:00.000Z'
+    }
+    let body: unknown = { documents: [shared] }
+    const requests: string[] = []
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async (input, init) => {
+        requests.push(new Request(input, init).url)
+        return Response.json(body)
+      }
+    })
+
+    expect(await client.listSharedDocuments()).toEqual([shared])
+    expect(requests).toEqual(['https://cloud.example.com/api/shared-documents'])
+    body = { documents: [{ ...shared, permission: 'owner' }] }
+    await expect(client.listSharedDocuments()).rejects.toThrow()
+  })
+
   test('creates upload sessions and commits revisions', async () => {
     const requests: Request[] = []
     const client = createCloudAPIClient('https://cloud.example.com/api/', {

@@ -28,6 +28,16 @@ export const documentSummarySchema = v.object({
 })
 export type DocumentSummary = v.InferOutput<typeof documentSummarySchema>
 
+/** A document someone granted the person directly, in a workspace they are not a member of. */
+export const sharedDocumentSchema = v.object({
+  ...documentSummarySchema.entries,
+  workspaceName: v.string(),
+  permission: documentPermissionSchema,
+  sharedBy: v.nullable(v.object({ name: v.string() })),
+  sharedAt: v.string()
+})
+export type SharedDocument = v.InferOutput<typeof sharedDocumentSchema>
+
 export const documentDownloadSchema = v.object({
   document: documentSummarySchema,
   revisionId: v.pipe(v.string(), v.uuid()),

@@ -3,7 +3,8 @@ import type {
   CreateDocumentInput,
   CreateUploadInput,
   DocumentDownload,
-  DocumentSummary
+  DocumentSummary,
+  SharedDocument
 } from '#cloud/contract'
 import { createUploadCleanupService } from '#cloud/server/cleanup'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -12,6 +13,7 @@ import {
   findDocument,
   insertDocument,
   listDocuments,
+  listSharedDocuments,
   workspaceRole
 } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
@@ -96,6 +98,10 @@ export function createDocumentService(
 
     list(userId: string, workspaceId: string): Promise<DocumentSummary[] | undefined> {
       return listDocuments(database, userId, workspaceId)
+    },
+
+    listShared(userId: string): Promise<SharedDocument[]> {
+      return listSharedDocuments(database, userId)
     },
 
     async usage(userId: string, workspaceId: string) {

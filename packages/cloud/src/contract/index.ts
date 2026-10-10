@@ -32,6 +32,8 @@ export {
   documentDownloadSchema,
   documentPermissionSchema,
   documentSummarySchema,
+  sharedDocumentSchema,
+  type SharedDocument,
   workspaceUsageSchema,
   parseCommitUpload,
   parseCreateDocument,
