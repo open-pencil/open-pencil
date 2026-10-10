@@ -1,4 +1,5 @@
 export { loadShaderCatalog, shaderEffectLabel } from './catalog'
+export { shaderEffectPreview } from './preview'
 export type { ShaderEffect, ShaderPropControl } from './catalog'
 export {
   addShaderEffect,

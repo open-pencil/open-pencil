@@ -17,6 +17,8 @@ export interface ShaderEffect {
   name: string
   category: string
   description: string
+  /** Whether it changes what is drawn beneath it, such as a blur, rather than drawing its own. */
+  filter: boolean
   props: ShaderPropControl[]
 }
 
@@ -103,6 +105,7 @@ const registryEntry = v.object({
   name: v.string(),
   category: v.string(),
   description: v.optional(v.string()),
+  requiresChild: v.optional(v.boolean()),
   propsMetadata: v.optional(v.record(v.string(), v.unknown()))
 })
 
@@ -124,12 +127,18 @@ export function loadShaderCatalog(): Promise<ShaderEffect[]> {
     getAllShaders().flatMap((entry) => {
       const parsed = v.safeParse(registryEntry, entry)
       if (!parsed.success) return []
-      const { name, category, description = '', propsMetadata = {} } = parsed.output
+      const {
+        name,
+        category,
+        description = '',
+        requiresChild = false,
+        propsMetadata = {}
+      } = parsed.output
       const props = Object.entries(propsMetadata).flatMap(([key, metadata]) => {
         const item = control(key, metadata)
         return item ? [item] : []
       })
-      return [{ name, category, description, props }]
+      return [{ name, category, description, filter: requiresChild, props }]
     })
   )
   return catalog

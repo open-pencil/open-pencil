@@ -18,6 +18,7 @@ import {
 } from '@open-pencil/vue'
 
 import ShaderEffectControls from '@/components/fill-picker/shader/ShaderEffectControls.vue'
+import ShaderEffectThumb from '@/components/fill-picker/shader/ShaderEffectThumb.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -39,6 +40,8 @@ const catalog = shallowRef<ShaderEffect[]>([])
 onMounted(async () => {
   catalog.value = await loadShaderCatalog()
 })
+const effectsByName = computed(() => new Map(catalog.value.map((effect) => [effect.name, effect])))
+
 const effectOptions = computed(() =>
   catalog.value.map((effect) => ({
     value: effect.name,
@@ -202,8 +205,15 @@ function applyJSON() {
                   :label="panels.shader"
                   :search-placeholder="panels.searchShaderEffects"
                   :empty-label="panels.noShaderEffects"
+                  :result-limit="catalog.length"
+                  :ui="{ content: 'w-64' }"
                   @update:model-value="setType(row.index, $event)"
-                />
+                >
+                  <template #option="{ option }">
+                    <ShaderEffectThumb :effect="effectsByName.get(option.value)" />
+                    <span class="min-w-0 flex-1 truncate text-surface">{{ option.label }}</span>
+                  </template>
+                </AppCombobox>
               </div>
             </div>
             <template #rail="{ removeClass }">
