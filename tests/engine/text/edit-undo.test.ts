@@ -45,6 +45,7 @@ function setup() {
     },
     getTextEditor: () => textEditor,
     getRenderer: () => null,
+    getRenderers: () => [],
     runLayoutForNode: () => undefined,
     runMutationWithLayout: async (operation) => operation(),
     getCk: () => null,

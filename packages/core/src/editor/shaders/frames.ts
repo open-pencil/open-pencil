@@ -91,7 +91,7 @@ export function createShaderFrames(ctx: EditorContext) {
     if (!bytes || !now || !current || !isEqual(current.preset, shader.preset)) return
     graph.images.set(shader.image, bytes)
     drawn.set(shader.image, frameKey(shader, size))
-    ctx.getRenderer()?.forgetImage(shader.image)
+    for (const renderer of ctx.getRenderers()) renderer.forgetImage(shader.image)
     // Not an edit of its own: the frame follows the preset and size an edit set.
     graph.updateNode(id, {
       pluginData: withShaderPaints(

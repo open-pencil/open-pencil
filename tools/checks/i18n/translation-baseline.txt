@@ -53,6 +53,7 @@ de:panels.behaviourMin
 de:panels.behaviourMax
 de:panels.behaviourStateHover
 de:panels.behaviourText
+de:panels.shader
 de:settings.mcp
 de:settings.accentOrange
 de:settings.accentPink
@@ -94,6 +95,7 @@ es:panels.radialGradient
 es:panels.textCaseOriginal
 es:panels.variables
 es:panels.slots
+es:panels.shader
 es:rendering.experimental
 es:settings.general
 es:settings.mcp
@@ -161,6 +163,7 @@ fr:panels.slotDescription
 fr:panels.behaviourMin
 fr:panels.behaviourMax
 fr:panels.behaviourStateFocus
+fr:panels.shader
 fr:settings.animations
 fr:settings.diagnostics
 fr:settings.mcp
@@ -204,6 +207,7 @@ it:panels.behaviourMin
 it:panels.behaviourMax
 it:panels.behaviourStateHover
 it:panels.behaviourStateFocus
+it:panels.shader
 it:rendering.settingsTitle
 it:settings.mcp
 it:settings.media
@@ -255,6 +259,7 @@ pl:panels.framePresetCategoryFigmaCommunity
 pl:panels.framePresetCategoryTablet
 pl:panels.kerning
 pl:panels.behaviourMin
+pl:panels.shader
 pl:settings.mcp
 pl:settings.media
 pl:storage.providerAmazonS3

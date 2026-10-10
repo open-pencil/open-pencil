@@ -35,11 +35,7 @@ interface NodeActions {
  * in plugin data, so each command records both together, as one undo step.
  */
 export function createShaderActions(ctx: EditorContext, nodes: NodeActions) {
-  /**
-   * Makes paint `index` of `list` draw `preset`: a shader paint keeps its image and takes the new
-   * preset, any other paint becomes a new shader paint. Its frame is drawn once the edit settles.
-   */
-  function setShaderPaint(
+  function setNodeShader(
     nodeId: string,
     list: ShaderPaintList,
     index: number,
@@ -61,14 +57,29 @@ export function createShaderActions(ctx: EditorContext, nodes: NodeActions) {
             at === index ? { ...pick(item, STROKE_FIELDS), ...shown } : item
           )
         : node.strokes
-    nodes.updateNodeWithUndo(
-      nodeId,
-      {
-        [list]: list === 'fills' ? fills : strokes,
-        pluginData: withShaderPaints(node, [...fills, ...strokes], [shader])
-      },
-      'Set shader'
-    )
+    nodes.updateNodeWithUndo(nodeId, {
+      [list]: list === 'fills' ? fills : strokes,
+      pluginData: withShaderPaints(node, [...fills, ...strokes], [shader])
+    })
+  }
+
+  /**
+   * Makes paint `index` of `list` on each of `nodeIds` draw `preset`, as one undo step: a shader
+   * paint keeps its image and takes the new preset, any other paint becomes a new shader paint.
+   * Frames are drawn once the edit settles.
+   */
+  function setShaderPaint(
+    nodeIds: readonly string[],
+    list: ShaderPaintList,
+    index: number,
+    preset: ShaderPreset
+  ): void {
+    ctx.undo.beginBatch('Set shader')
+    try {
+      for (const id of nodeIds) setNodeShader(id, list, index, preset)
+    } finally {
+      ctx.undo.commitBatch()
+    }
   }
 
   return { setShaderPaint }

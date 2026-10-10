@@ -34,7 +34,7 @@ describe('shader paints', () => {
     const { editor, id, read } = setup()
     const before = read().fills
 
-    editor.setShaderPaint(id, 'fills', 0, AURORA)
+    editor.setShaderPaint([id], 'fills', 0, AURORA)
     const [paint] = read().fills
     expect(paint.type).toBe('IMAGE')
     expect(shaderOfPaint(read(), paint)?.preset).toEqual(AURORA)
@@ -46,10 +46,10 @@ describe('shader paints', () => {
 
   test('changing the preset keeps the paint’s image', () => {
     const { editor, id, read } = setup()
-    editor.setShaderPaint(id, 'fills', 0, AURORA)
+    editor.setShaderPaint([id], 'fills', 0, AURORA)
     const image = read().fills[0].imageHash
 
-    editor.setShaderPaint(id, 'fills', 0, SWIRL)
+    editor.setShaderPaint([id], 'fills', 0, SWIRL)
 
     expect(read().fills[0].imageHash).toBe(image)
     expect(shaderOfPaint(read(), read().fills[0])?.preset).toEqual(SWIRL)
@@ -57,7 +57,7 @@ describe('shader paints', () => {
 
   test('draws the frame at twice the layer’s size under the paint’s image', async () => {
     const { editor, id, drawn, read } = setup()
-    editor.setShaderPaint(id, 'fills', 0, AURORA)
+    editor.setShaderPaint([id], 'fills', 0, AURORA)
     await editor.settleShaderFrames()
 
     const [paint] = read().fills
@@ -71,12 +71,12 @@ describe('shader paints', () => {
 
   test('draws again after a resize and after undoing a preset change', async () => {
     const { editor, id, drawn } = setup()
-    editor.setShaderPaint(id, 'fills', 0, AURORA)
+    editor.setShaderPaint([id], 'fills', 0, AURORA)
     await editor.settleShaderFrames()
 
     editor.updateNodeWithUndo(id, { width: 60 })
     await editor.settleShaderFrames()
-    editor.setShaderPaint(id, 'fills', 0, SWIRL)
+    editor.setShaderPaint([id], 'fills', 0, SWIRL)
     await editor.settleShaderFrames()
     editor.undoAction()
     await editor.settleShaderFrames()
@@ -87,6 +87,21 @@ describe('shader paints', () => {
       [SWIRL, 120],
       [AURORA, 120]
     ])
+  })
+
+  test('sets a shader on several layers as one undo step, each with its own image', () => {
+    const { editor, id, read } = setup()
+    const other = editor.graph.createNode('RECTANGLE', editor.graph.getPages()[0].id, {
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    editor.setShaderPaint([id, other.id], 'fills', 0, AURORA)
+    const images = [read().fills[0].imageHash, editor.graph.getNode(other.id)?.fills[0].imageHash]
+    expect(new Set(images).size).toBe(2)
+
+    editor.undoAction()
+    expect(read().fills[0].type).toBe('SOLID')
+    expect(editor.graph.getNode(other.id)?.fills[0].type).toBe('SOLID')
   })
 
   test('a stroke keeps its weight when it becomes a shader', () => {
@@ -104,7 +119,7 @@ describe('shader paints', () => {
       ]
     })
 
-    editor.setShaderPaint(id, 'strokes', 0, AURORA)
+    editor.setShaderPaint([id], 'strokes', 0, AURORA)
 
     expect(read().strokes[0]).toMatchObject({ type: 'IMAGE', weight: 3, align: 'CENTER' })
   })

@@ -223,6 +223,8 @@ export interface EditorContext {
   icons: IconProvider
   getCk: () => CanvasKit | null
   getRenderer: () => SkiaRenderer | null
+  /** Every canvas drawing the document, such as each pane's scene and overlays. */
+  getRenderers: () => Iterable<SkiaRenderer>
   getTextEditor: () => TextEditor | null
   requestRender: () => void
   /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */

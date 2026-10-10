@@ -125,6 +125,18 @@ export type {
 export { useExport } from '#vue/document/export/use'
 export type { ExportFormatId, ExportFormatOption, ExportSetting } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
+export { canDrawShaders } from '#vue/canvas/surface/shader-rasterizer'
+export {
+  addShaderEffect,
+  DEFAULT_SHADER_PRESET,
+  loadShaderCatalog,
+  moveShaderEffect,
+  parseShaderPreset,
+  removeShaderEffect,
+  setShaderEffectProp,
+  shaderPresetJSON
+} from '#vue/controls/shader'
+export type { ShaderEffect, ShaderPropControl } from '#vue/controls/shader'
 export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
 export { useNumberVariableBinding } from '#vue/controls/number-variable-binding/use'
 export type { NumberBindingPath } from '#vue/controls/number-variable-binding/use'

@@ -172,6 +172,10 @@ ja:panels.sizingFillFr
 ja:panels.sizingFixedPx
 ja:panels.xAxis
 ja:panels.yAxis
+ja:panels.shaderPreset
+ja:panels.invalidShaderPreset
+ja:panels.shaderNeedsWebGPU
+ja:panels.shaderPropInPreset
 ja:recovery.dialogDescription
 ja:rendering.reloadRequired
 ja:rendering.settingsDescription
@@ -395,3 +399,7 @@ zh-cn:variables.expression
 zh-cn:variables.expressionHint
 zh-cn:variables.conditionHint
 zh-cn:variables.conditionCustom
+zh-cn:panels.shaderPreset
+zh-cn:panels.invalidShaderPreset
+zh-cn:panels.shaderNeedsWebGPU
+zh-cn:panels.shaderPropInPreset

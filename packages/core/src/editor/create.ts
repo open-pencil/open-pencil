@@ -226,6 +226,7 @@ export function createEditor(options?: EditorOptions) {
     icons: options?.icons ?? iconify,
     getCk: () => _ck,
     getRenderer: () => _renderer,
+    getRenderers: () => _renderers,
     getTextEditor: () => _textEditor,
     requestRender,
     requestRefresh,
