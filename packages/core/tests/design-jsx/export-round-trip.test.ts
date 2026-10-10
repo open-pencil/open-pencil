@@ -6,7 +6,7 @@ import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, shaderOfPaint } from '@open-pencil/scene-graph'
 
 describe('attribute string round-trip', () => {
   it.each([
@@ -72,4 +72,45 @@ describe('design JSX export round trip', () => {
       expect(sceneNodeToJSX(renderedRoot, graph)).toBe(jsx)
     }
   )
+})
+
+describe('shader paints', () => {
+  test('a shader fill keeps its preset in the layer and exports as shader()', async () => {
+    const graph = new SceneGraph()
+    const [source] = await renderJSX(
+      graph,
+      "<Frame w={80} h={40} fills={[shader([{ type: 'Aurora', props: { speed: 2 } }], { opacity: 0.5 })]} />"
+    )
+    const node = getNodeOrThrow(graph, source.id)
+    const [paint] = node.fills
+    expect(paint).toMatchObject({ type: 'IMAGE', opacity: 0.5 })
+    expect(paint).not.toHaveProperty('shader')
+    expect(shaderOfPaint(node, paint)?.preset).toEqual({
+      components: [{ type: 'Aurora', props: { speed: 2 } }]
+    })
+
+    const jsx = sceneNodeToJSX(source.id, graph)
+    expect(jsx).toContain('shader([{ type: "Aurora", props: { speed: 2 } }], { opacity: 0.5 })')
+
+    const [result] = await renderJSX(graph, jsx)
+    const copy = getNodeOrThrow(graph, result.id)
+    expect(shaderOfPaint(copy, copy.fills[0])?.preset).toEqual(shaderOfPaint(node, paint)?.preset)
+  })
+
+  test('a shader takes a preset as shaders.com exports it', async () => {
+    const graph = new SceneGraph()
+    const [source] = await renderJSX(
+      graph,
+      "<Frame w={10} h={10} bg={shader({ components: [{ type: 'Swirl' }], structureVersion: 2 })} />"
+    )
+    const node = getNodeOrThrow(graph, source.id)
+    expect(shaderOfPaint(node, node.fills[0])?.preset.structureVersion).toBe(2)
+  })
+
+  test('a shader without effects says what it expects', async () => {
+    const graph = new SceneGraph()
+    expect(renderJSX(graph, '<Frame bg={shader([])} />')).rejects.toThrow(
+      /shader\(\) expects a preset/
+    )
+  })
 })
