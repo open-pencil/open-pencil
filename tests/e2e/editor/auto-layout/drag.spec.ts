@@ -66,13 +66,14 @@ test('dragging selected nested instance content reorders its auto-layout item', 
       height: 24
     })
 
+    store.runLayoutForNode(frame.id)
     store.select([secondText.id])
     store.requestRender()
     return { frame: frame.id, first: first.id, second: second.id, secondText: secondText.id }
   })
   await canvas.waitForRender()
 
-  await canvas.drag(370, 228, 230, 228, 12)
+  await canvas.drag(310, 140, 170, 140, 12)
   await canvas.waitForRender()
 
   const childIds = await page.evaluate((frameId) => {
@@ -135,6 +136,7 @@ test('auto-layout drag does not show an insert indicator before order changes', 
       height: 24
     })
 
+    store.runLayoutForNode(frame.id)
     store.select([secondText.id])
     store.requestRender()
     return { frame: frame.id, first: first.id, second: second.id }
@@ -143,9 +145,9 @@ test('auto-layout drag does not show an insert indicator before order changes', 
 
   const box = await canvas.canvas.boundingBox()
   if (!box) throw new Error('Canvas has no bounding box')
-  await page.mouse.move(box.x + 370, box.y + 228)
+  await page.mouse.move(box.x + 310, box.y + 140)
   await page.mouse.down()
-  await page.mouse.move(box.x + 365, box.y + 228, { steps: 3 })
+  await page.mouse.move(box.x + 305, box.y + 140, { steps: 3 })
   await canvas.waitForRender()
 
   const indicator = await page.evaluate(() => {

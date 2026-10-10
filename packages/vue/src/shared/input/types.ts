@@ -11,6 +11,7 @@ import type {
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
+import type { FlowDrag } from '#vue/shared/input/flow-reorder'
 import type { LayerSizing } from '#vue/shared/input/resize/sizing'
 
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -50,6 +51,10 @@ export interface DragMove {
   duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
+  /** The auto layout flows the moved layers are dragged along, as blocks. */
+  flows?: FlowDrag[]
+  /** Each flow's slot for the block where the drag has reached. */
+  flowSlots?: number[]
   /** Space is held: layers keep their parents wherever they are dropped. */
   keepParents?: boolean
   /** Control is held: auto layout frames take the layers as absolute-positioned children. */
