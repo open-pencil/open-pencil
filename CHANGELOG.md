@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- A paint's `gradientTransform` follows Figma's convention everywhere: it maps the layer's unit square onto gradient space, where a linear gradient runs from (0, 0.5) to (1, 0.5). Gradients made in OpenPencil before this release, which used the inverse, draw differently; code that builds gradients by hand should use `linearGradientTransform` and `ellipticalGradientTransform` from `@open-pencil/core/geometry`. `linearGradientEndpoints` is removed from the canvas module.
 - The app renders `render` JSX itself and no longer accepts the pre-rendered tree that earlier versions of `openpencil-mcp` send, so an older `openpencil-mcp` fails to render into this app version; update it with the app.
 - `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGVectorizeResult` adds `texts`, the SVG's text placed in the target space, and `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
 - `VectorizedPath` from `@open-pencil/core/vector` replaces `clipNetworks` with `clips`, each the clip path's `id` and one network per clip shape, and adds `elements`, the groups and shape a path was drawn from. `SVGImportData` from `@open-pencil/core/io` adds the root `name` and whether the SVG is `sized`.
@@ -149,6 +150,7 @@
 
 ### Fixed
 
+- Gradients from Figma files and Figma pastes draw as they do in Figma: they ran backwards or sat in the wrong place unless they were symmetric, because the canvas applied Figma's gradient transform the wrong way round. SVG export and import keep a gradient exactly, and a new gradient starts as Figma's does, top to bottom from the fill colour to a darker shade, keeping its transform when switched between linear, radial, angular, and diamond.
 - Draw layer blur, drop and inner shadows, and background blur with Figma's falloff. They spread about 15% too far, with a long faint edge Figma does not draw; SVG export keeps Figma's own `stdDeviation` of half the radius.
 - Load the fonts of SVG text before placing it from `import_svg`, so centred and right-aligned text sits where Figma puts it; `figma.loadFontAsync` in scripts now loads the font instead of doing nothing.
 - Gradient stops in the fill picker show their full position and opacity, such as 100%, instead of cutting them off; each stop's colour, hex, and opacity share one field as in the properties panel.

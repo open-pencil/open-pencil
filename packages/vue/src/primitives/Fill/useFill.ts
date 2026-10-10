@@ -1,11 +1,15 @@
 import { computed } from 'vue'
 import type { Ref } from 'vue'
 
+import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/core/geometry'
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { FillCategory } from './types'
+
+/** How dark a new gradient's second stop is next to the fill colour, as in Figma. */
+const GRADIENT_SHADE = 0.6
 
 const FILL_CATEGORY: Partial<Record<Fill['type'], FillCategory>> = {
   SOLID: 'SOLID',
@@ -58,17 +62,27 @@ export function useFill(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
 
   function toGradient() {
     if (category.value === 'GRADIENT') return
+    const { color } = fill.value
+    // Figma desktop 126 starts a gradient from the colour to a 60% shade of it, top to bottom.
     const gradientStops: GradientStop[] = fill.value.gradientStops?.length
       ? structuredClone(fill.value.gradientStops)
       : [
-          { color: { ...fill.value.color }, position: 0 },
-          { color: { r: 1, g: 1, b: 1, a: 1 }, position: 1 }
+          { color: { ...color }, position: 0 },
+          {
+            color: {
+              r: color.r * GRADIENT_SHADE,
+              g: color.g * GRADIENT_SHADE,
+              b: color.b * GRADIENT_SHADE,
+              a: color.a
+            },
+            position: 1
+          }
         ]
     onUpdate({
       ...fill.value,
       type: 'GRADIENT_LINEAR',
       gradientStops,
-      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 0, m12: 0.5 }
+      gradientTransform: fill.value.gradientTransform ?? { ...DEFAULT_GRADIENT_TRANSFORM }
     })
   }
 

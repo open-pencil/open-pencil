@@ -58,6 +58,19 @@ export function mapSVGPathToViewport(d: string, mapping: SVGViewportMapping): st
     .toString()
 }
 
+/** A point through an SVG transform attribute, such as a gradient's own transform. */
+export function transformSVGPoint(x: number, y: number, transform: string | null): Vector {
+  if (!transform) return { x, y }
+  let point: Vector = { x, y }
+  svgpath(`M${x} ${y}`)
+    .transform(transform)
+    .abs()
+    .iterate((segment) => {
+      if (segment[0] === 'M') point = { x: segment[1], y: segment[2] }
+    })
+  return point
+}
+
 export function mapSVGPointToViewport(
   x: number,
   y: number,

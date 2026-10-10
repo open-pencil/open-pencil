@@ -9,6 +9,8 @@ import {
 } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { invertGradientTransform } from '#core/geometry/gradient'
+
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 
@@ -39,6 +41,10 @@ export function formatColor(
   return colorToHex(alphaColor)
 }
 
+function isIdentity(t: NonNullable<Fill['gradientTransform']>) {
+  return t.m00 === 1 && t.m01 === 0 && t.m02 === 0 && t.m10 === 0 && t.m11 === 1 && t.m12 === 0
+}
+
 function createGradientDef(
   fill: Fill,
   node: SceneNode,
@@ -58,45 +64,54 @@ function createGradientDef(
 
   const id = nextDefId(ctx, 'grad')
 
+  // Gradient space in bounding-box units, mapped onto the layer as the canvas draws it.
+  const toLayer = invertGradientTransform(t)
+  const transform = isIdentity(toLayer)
+    ? undefined
+    : `matrix(${[toLayer.m00, toLayer.m10, toLayer.m01, toLayer.m11, toLayer.m02, toLayer.m12].map((v) => round(v, 6)).join(' ')})`
+
   if (fill.type === 'GRADIENT_LINEAR') {
-    const startX = round(t.m02 * 100)
-    const startY = round(t.m12 * 100)
-    const endX = round((t.m00 + t.m02) * 100)
-    const endY = round((t.m10 + t.m12) * 100)
     return {
       id,
       node: svg(
         'linearGradient',
         {
           id,
-          x1: `${startX}%`,
-          y1: `${startY}%`,
-          x2: `${endX}%`,
-          y2: `${endY}%`,
-          gradientUnits: 'objectBoundingBox'
+          x1: 0,
+          y1: 0.5,
+          x2: 1,
+          y2: 0.5,
+          gradientUnits: 'objectBoundingBox',
+          gradientTransform: transform
         },
         ...stopNodes
       )
     }
   }
 
+  // SVG has no diamond gradient, so a diamond exports as the radial one it is closest to.
   if (fill.type === 'GRADIENT_RADIAL' || fill.type === 'GRADIENT_DIAMOND') {
-    const cx = round(t.m02 * 100)
-    const cy = round(t.m12 * 100)
-    const r = round(Math.hypot(t.m00, t.m10) * 100)
     return {
       id,
       node: svg(
         'radialGradient',
-        { id, cx: `${cx}%`, cy: `${cy}%`, r: `${r}%`, gradientUnits: 'objectBoundingBox' },
+        {
+          id,
+          cx: 0.5,
+          cy: 0.5,
+          r: 0.5,
+          gradientUnits: 'objectBoundingBox',
+          gradientTransform: transform
+        },
         ...stopNodes
       )
     }
   }
 
+  // Nor an angular one: it exports as a radial gradient around its centre.
   if (fill.type === 'GRADIENT_ANGULAR') {
-    const cx = round(t.m02 * node.width)
-    const cy = round(t.m12 * node.height)
+    const cx = round((toLayer.m00 * 0.5 + toLayer.m01 * 0.5 + toLayer.m02) * node.width)
+    const cy = round((toLayer.m10 * 0.5 + toLayer.m11 * 0.5 + toLayer.m12) * node.height)
     const r = Math.max(node.width, node.height)
     return {
       id,

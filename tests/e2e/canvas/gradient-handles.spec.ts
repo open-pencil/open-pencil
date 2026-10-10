@@ -37,13 +37,13 @@ test('dragging an end dot moves that end, and closing the picker leaves one undo
   await editor.canvas.drag(end.x, end.y, target.x, target.y)
   await editor.canvas.waitForRender()
 
-  const moved = await gradient.fill(nodeId)
-  // The end, (m02, m12), follows the pointer to (200, 10) within the half screen pixel it lands
-  // on; the start, end plus (m00, m10), stays at the left edge's middle.
-  expect(moved?.transform?.m02).toBeCloseTo(1, 2)
-  expect(moved?.transform?.m12).toBeCloseTo(10 / 140, 2)
-  expect(moved?.transform?.m00).toBeCloseTo(-1, 2)
-  expect(moved?.transform?.m10).toBeCloseTo(60 / 140, 2)
+  // The end follows the pointer to (200, 10), within the half screen pixel it lands on; the start
+  // stays at the left edge's middle.
+  const ends = await gradient.ends(nodeId)
+  expect(ends?.start.x).toBeCloseTo(0, 0)
+  expect(ends?.start.y).toBeCloseTo(70, 0)
+  expect(ends?.end.x).toBeCloseTo(200, 0)
+  expect(ends?.end.y).toBeCloseTo(10, 0)
   await expect(editor.page.getByTestId('fill-picker-gradient-bar')).toBeVisible()
 
   // Shortcuts wait for open popovers to close; closing the picker also hides the handles.
