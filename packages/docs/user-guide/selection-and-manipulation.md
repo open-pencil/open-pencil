@@ -77,6 +77,15 @@ Change the stacking order of nodes within their parent:
 
 Move selected nodes to a different page via the [context menu](./context-menu). The nodes are reparented under the target page's canvas.
 
+## Editing several layers
+
+With several layers selected, the properties panel shows what they have in common and reads **Mixed** where they differ; an edit changes all of them in one undo step.
+
+- **Layout** shows their sizes, text resizing when text is selected, flow when every layer is a frame, and clip content for the frames among them. When the layers form one row or column, **Spacing** shows the gap between them; typing a value spaces them evenly from the first layer.
+- **Typography** appears whenever text is selected and changes only the text.
+- **Stroke** shows the stroke of the layers that have one; editing it strokes every selected layer.
+- **Selection colors** lists every fill and stroke colour in the selection, including inside frames and groups, most used first. Changing one recolours it everywhere it is used.
+
 ## Sections
 
 A section takes in the sibling nodes it fully covers when you draw it, move it, or resize it over them.

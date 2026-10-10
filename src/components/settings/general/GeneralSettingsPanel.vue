@@ -9,6 +9,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
+import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
 import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -87,6 +88,10 @@ const snapToPixelGrid = computed({
             :ui="selectUI"
           />
         </label>
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5">
+          <span class="text-xs text-surface">{{ settings.accentColor }}</span>
+          <AccentColorPicker />
+        </div>
         <label class="flex items-center justify-between gap-4 px-3 py-2.5">
           <span class="text-xs text-surface">{{ settings.animations }}</span>
           <AppSelect

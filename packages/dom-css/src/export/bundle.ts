@@ -248,21 +248,35 @@ function serializeFontWeight(weight: string | number | [number, number]): string
   return Array.isArray(weight) ? weight.join(' ') : String(weight)
 }
 
-function fontSourceValue(asset: WebFontFaceAsset): string {
-  const url = new URL(asset.path, 'file:///')
+function fontSourceValue(asset: WebFontFaceAsset, from: string): string {
+  // Relative to the stylesheet's folder, which the asset's path may start with.
+  const path =
+    from && asset.path.startsWith(`${from}/`) ? asset.path.slice(from.length + 1) : asset.path
+  const url = new URL(path, 'file:///')
   const escapedPath = url.pathname.slice(1)
   return ['url(', JSON.stringify(escapedPath), ') format(', JSON.stringify(asset.format), ')'].join(
     ''
   )
 }
 
-function fontFaceCSS(FontFaceRule: typeof CSSFontFaceRule, asset: WebFontFaceAsset): string {
+interface FontFaceCSSOptions {
+  /** The folder the stylesheet is in, which font paths are written relative to. */
+  from: string
+  /** `font-display` for every face, rather than each face's own. */
+  display?: string
+}
+
+function fontFaceCSS(
+  FontFaceRule: typeof CSSFontFaceRule,
+  asset: WebFontFaceAsset,
+  options: FontFaceCSSOptions
+): string {
   const rule = new FontFaceRule()
   rule.style.setProperty('font-family', JSON.stringify(asset.family))
-  rule.style.setProperty('src', fontSourceValue(asset))
+  rule.style.setProperty('src', fontSourceValue(asset, options.from))
   rule.style.setProperty('font-weight', serializeFontWeight(asset.weight))
   rule.style.setProperty('font-style', asset.style)
-  rule.style.setProperty('font-display', asset.display ?? 'swap')
+  rule.style.setProperty('font-display', options.display ?? asset.display ?? 'swap')
   if (asset.stretch) rule.style.setProperty('font-stretch', asset.stretch)
   if (asset.unicodeRange && asset.unicodeRange.length > 0) {
     rule.style.setProperty('unicode-range', asset.unicodeRange.join(','))
@@ -270,22 +284,32 @@ function fontFaceCSS(FontFaceRule: typeof CSSFontFaceRule, asset: WebFontFaceAss
   return rule.cssText
 }
 
+/** Every font face a document's text uses, once each. */
+export function designFontRequests(document: DesignDocument): WebFontFaceRequest[] {
+  const requests = new Map<string, WebFontFaceRequest>()
+  for (const child of document.children) collectFontRequests(child, requests)
+  return [...requests.values()]
+}
+
+/** `@font-face` rules for font files, as a stylesheet in the folder `options.from`. */
+export async function fontFaceStylesheet(
+  assets: readonly WebFontFaceAsset[],
+  options: FontFaceCSSOptions
+): Promise<string> {
+  if (assets.length === 0) return ''
+  // Loaded only when fonts ship as files; the CSS object model is not bundled for browsers.
+  const cssom = await import('@acemir/cssom')
+  return assets.map((asset) => fontFaceCSS(cssom.CSSFontFaceRule, asset, options)).join('')
+}
+
 async function fontFaceAssets(
   document: DesignDocument,
   options: Required<ExportHTMLBundleOptions>
 ): Promise<{ css: string; files: ExportHTMLFile[] }> {
   if (options.fonts === 'none' || options.assets !== 'external') return { css: '', files: [] }
-  const requests = new Map<string, WebFontFaceRequest>()
-  for (const child of document.children) collectFontRequests(child, requests)
-  // Loaded only when fonts ship as files; the CSS object model is not bundled for browsers.
-  const [assets, cssom] = await Promise.all([
-    options.fonts([...requests.values()], `${options.assetBasePath}/fonts`),
-    import('@acemir/cssom')
-  ])
-  return {
-    css: assets.map((asset) => fontFaceCSS(cssom.CSSFontFaceRule, asset)).join(''),
-    files: assets
-  }
+  const assets = await options.fonts(designFontRequests(document), `${options.assetBasePath}/fonts`)
+  // The page's stylesheet sits at the top, so font paths stay as they are.
+  return { css: await fontFaceStylesheet(assets, { from: '' }), files: assets }
 }
 
 function dataImageParts(value: string): { mime: string; base64: string } | undefined {

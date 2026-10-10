@@ -201,7 +201,7 @@ export function drawFrameTitles(
       node.name,
       layout.fontSize,
       layout.maxTextWidth,
-      frameTitleColor(r, highlighted),
+      frameTitleColor(r, graph, node, layout, highlighted, overlays?.rotationPreview),
       r.fontGeneration,
       layout.text.x,
       layout.text.y,

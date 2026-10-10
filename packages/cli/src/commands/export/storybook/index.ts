@@ -25,7 +25,9 @@ import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
+import { fontFolder, storyFonts } from './fonts'
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
+import { readStoryRules, storyPlan } from './rules'
 
 interface StorybookArgs {
   file?: string
@@ -39,6 +41,10 @@ interface StorybookArgs {
   'design-images': boolean
   'font-policy': string
   watch?: boolean
+  /** A rules file for which stories each component gets and its title. */
+  rules?: string
+  /** `none` ships no font files with the stories. */
+  fonts?: string
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -150,9 +156,16 @@ async function writeStories(
     const pageIds = pageId ? [pageId] : graph.getPages().map((page) => page.id)
     await applyExportFontPolicy(graph, pageIds, 'PNG', args['font-policy'])
   }
+  // Read on every export, so a watch picks up edited rules with the next save.
+  const rules = await readStoryRules(args.rules)
+  // Relative to the output, the document's path tells apart documents exported there together.
+  const source = toPosix(relative(outputDir, resolve(file)))
   const files = await exportStorybook(graph, {
     framework,
     pageId,
+    plan: rules ? storyPlan(rules) : undefined,
+    fonts: args.fonts === 'none' ? undefined : storyFonts,
+    fontFolder: fontFolder(source, args.page),
     // Titled by the document, so stories of documents exported together stay apart.
     document: basename(file, extname(file)),
     linkPath: linkPath(file),
@@ -173,7 +186,7 @@ async function writeStories(
     throw new Error(`No components found in ${args.page ? `page "${args.page}"` : 'the document'}.`)
 
   // Relative to the output, the document's path is the same on every machine and cwd.
-  const scope = { source: toPosix(relative(outputDir, resolve(file))), page: args.page }
+  const scope = { source, page: args.page }
   await mkdir(outputDir, { recursive: true })
   // Staged next to the output so a failed write leaves the previous export in place,
   // and in a dot folder, which Storybook's story globs skip.

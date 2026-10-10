@@ -6,17 +6,31 @@ export {
   panelRotationChange
 } from './figma'
 export {
+  SHAPE_HANDLE,
+  cornerRadiusAtPoint,
+  cornerRadiusChanges,
+  shapeHandleLayout,
+  cornerRadii,
+  cornerRadiusOf,
+  dragsSingleCorner,
+  hasShapeHandles,
+  isRadiusHandle,
+  pointCountAtPoint,
+  shapeHandleValue,
+  starRatioAtPoint,
+  hitTestShapeHandles
+} from './shape-handles'
+export type { RadiusCorner, ShapeHandle, ShapeHandleKind } from './shape-handles'
+export {
   GRADIENT_HANDLE,
   gradientHandleLayout,
   gradientHandles,
   gradientStopPoint,
   gradientStopPosition,
   hitTestGradientHandles,
-  isGradientFill,
   moveGradientHandle
 } from './gradient'
 export type {
-  GradientFillType,
   GradientHandle,
   GradientHandleLayout,
   GradientHandles,

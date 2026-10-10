@@ -1,7 +1,7 @@
 import type { Canvas, Path, PathBuilder } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { polygonVertices } from '@open-pencil/scene-graph/geometry'
+import { polygonOutline } from '@open-pencil/scene-graph/polygon'
 
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
@@ -404,13 +404,16 @@ export function makeNodeShapePath(
   return path.detachAndDelete()
 }
 
+/** The polygon or star with its corner radius and smoothing, as Figma draws it. */
 export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
   const path = new r.ck.PathBuilder()
-  polygonVertices(node).forEach((point, index) => {
-    if (index === 0) path.moveTo(point.x, point.y)
-    else path.lineTo(point.x, point.y)
-  })
-  path.close()
+  for (const command of polygonOutline(node)) {
+    if (command.type === 'M') path.moveTo(command.x, command.y)
+    else if (command.type === 'L') path.lineTo(command.x, command.y)
+    else if (command.type === 'C')
+      path.cubicTo(command.x1, command.y1, command.x2, command.y2, command.x, command.y)
+    else path.close()
+  }
   return path.detachAndDelete()
 }
 

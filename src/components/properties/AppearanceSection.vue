@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { BlendMode } from '@open-pencil/scene-graph'
+import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { AppearanceControlsRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
-import { useBlendModeOptions } from '@/components/properties/blend-mode/use'
+import { useBlendModeGroups } from '@/components/properties/blend-mode/use'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -17,12 +18,15 @@ import PropertyBoundField from './component-properties/PropertyBoundField.vue'
 const { panels } = useI18n()
 type BlendModeSelectValue = BlendMode | 'MIXED'
 
-const baseBlendModeOptions = useBlendModeOptions(true)
+const baseBlendModeGroups = useBlendModeGroups(true)
 
-function blendModeOptions(value: BlendMode | typeof MIXED) {
+function blendModeGroups(value: BlendMode | typeof MIXED) {
   return value === MIXED
-    ? [{ value: 'MIXED' as const, label: panels.value.mixed }, ...baseBlendModeOptions.value]
-    : baseBlendModeOptions.value
+    ? [
+        { options: [{ value: 'MIXED' as const, label: panels.value.mixed }] },
+        ...baseBlendModeGroups.value
+      ]
+    : baseBlendModeGroups.value
 }
 </script>
 
@@ -33,6 +37,12 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
       isMulti,
       active,
       hasCornerRadius,
+      cornerRadiusDisabled,
+      splitsCorners,
+      hasPointCount,
+      hasStarRatio,
+      pointCount,
+      starRatioPercent,
       showIndependentCorners,
       cornerRadiusValue,
       cornerRadiusBindingPaths,
@@ -64,7 +74,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
             :model-value="blendModeValue === MIXED ? 'MIXED' : blendModeValue"
             class="w-full"
             :label="panels.blendMode"
-            :options="blendModeOptions(blendModeValue)"
+            :groups="blendModeGroups(blendModeValue)"
             @update:model-value="
               (value: BlendModeSelectValue) => value !== 'MIXED' && actions.setBlendMode(value)
             "
@@ -128,6 +138,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
             data-property="cornerRadius"
             :aria-label="panels.radius"
             :model-value="cornerRadiusValue"
+            :disabled="cornerRadiusDisabled"
             :min="0"
             @update:model-value="actions.updateUniformRadius"
             @commit="actions.commitUniformRadius"
@@ -137,11 +148,12 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
             </template>
           </NumberField>
         </PanelFieldGroup>
-        <div class="flex h-6 items-center justify-end">
+        <div v-if="splitsCorners" class="flex h-6 items-center justify-end">
           <IconButton
             :label="panels.independentCornerRadii"
             size="xs"
             :active="showIndependentCorners"
+            :disabled="cornerRadiusDisabled"
             @click="actions.toggleIndependentCorners"
           >
             <icon-lucide-square-round-corner class="size-3" />
@@ -203,7 +215,44 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
         </template>
       </PanelGrid>
 
-      <PanelGrid v-if="hasCornerRadius" :columns="2" class="mt-1.5">
+      <PanelGrid v-if="hasPointCount" :columns="2" class="mt-1.5">
+        <PanelFieldGroup :label="panels.pointCount">
+          <NumberField
+            :model-value="pointCount"
+            :min="POINT_COUNT_RANGE.min"
+            :max="POINT_COUNT_RANGE.max"
+            :aria-label="panels.pointCount"
+            data-property="pointCount"
+            @update:model-value="actions.updateProp('pointCount', Math.round($event))"
+            @commit="(v: number, p: number) => actions.commitProp('pointCount', Math.round(v), p)"
+          >
+            <template #icon>
+              <icon-lucide-asterisk class="size-3" />
+            </template>
+          </NumberField>
+        </PanelFieldGroup>
+        <PanelFieldGroup v-if="hasStarRatio" :label="panels.starRatio">
+          <NumberField
+            suffix="%"
+            :model-value="starRatioPercent"
+            :min="0"
+            :max="100"
+            :step="0.1"
+            :aria-label="panels.starRatio"
+            data-property="starInnerRadius"
+            @update:model-value="actions.updateProp('starInnerRadius', $event / 100)"
+            @commit="
+              (v: number, p: number) => actions.commitProp('starInnerRadius', v / 100, p / 100)
+            "
+          >
+            <template #icon>
+              <icon-lucide-star class="size-3" />
+            </template>
+          </NumberField>
+        </PanelFieldGroup>
+      </PanelGrid>
+
+      <PanelGrid v-if="hasCornerRadius && !cornerRadiusDisabled" :columns="2" class="mt-1.5">
         <PanelFieldGroup :label="panels.cornerSmoothing">
           <NumberField
             suffix="%"

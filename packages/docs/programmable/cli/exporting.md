@@ -150,7 +150,38 @@ openpencil export design.fig -f storybook --framework vue -o src/stories
 openpencil export design.fig -f storybook --framework html --page "Components"
 openpencil export design.pen -f storybook -o src/stories --watch  # re-export on every save
 openpencil export 'src/**/*.pen' -f storybook --beside --watch    # stories next to each design
+openpencil export design.fig -f storybook --rules stories.json    # stories and titles by rule
 ```
+
+### Fewer stories in the sidebar
+
+Each story file opens with a `Default` story, the variant the design shows at rest, with every control. Every other variant or state story is tagged `variant`, and each file is tagged `openpencil` and `page:<page>`, such as `page:icons`. Storybook's sidebar filter selects by these tags, and `.storybook/main.ts` can set what it shows by default, such as one story per component and no icons page:
+
+```ts
+const config: StorybookConfig = {
+  // …
+  tags: {
+    variant: { defaultFilterSelection: 'exclude' },
+    'page:icons': { excludeFromSidebar: true }
+  }
+}
+```
+
+### Stories and titles by rule
+
+What the tags can't do, such as leaving components out or laying an icon set out as a gallery, a rules file decides. The export reads `openpencil.stories.json` from the working directory when it is there, or the file `--rules` names, again on every export when watching:
+
+```json
+{
+  "rules": [
+    { "match": "**", "title": "Design system/{page}/{name}" },
+    { "match": "Icons/**", "stories": "gallery" },
+    { "match": "**/_*", "stories": "none" }
+  ]
+}
+```
+
+A rule applies to every story file whose `<page>/<name>` path matches its glob, by the names in the document: the page's, and the component set's or component's, or the prefix of slash-named components, such as `Icons/icon`. Every matching rule applies in order, so a later rule overrides an earlier one, each field on its own. `stories` is `variants`, a story per variant or state, as without rules; `single`, the `Default` story alone; `gallery`, `Default` and a `Gallery` story laying every variant out with its name, for static stories; or `none`, which leaves the file out. `title` is the file's title, with `{document}`, `{page}`, `{name}`, and `{path}`, the title it would have, filled in; titles that end up the same are kept apart as titles always are. Rules match the document's names, never a renamed title, so renaming a file never changes which rules apply to it.
 
 ### Designs next to their stories
 
@@ -160,7 +191,7 @@ Pass several documents, or a quoted glob such as `'src/**/*.pen'` that OpenPenci
 
 Stories are titled by the document's file name, and then the page when more than one page has components: `pricing.fig` gives `pricing/Plan picker`, so documents exported together keep their stories apart. Each variant of a component set becomes a story, and its variant properties become `select` controls, so switching a control shows the matching variant. A set with a behaviour gets the control's own props instead: a Switch or Checkbox has a `checked` boolean, a Toggle `pressed`, a Collapsible `open`, and `disabled` when the set draws a disabled state; hover, pressed, and focus stay stories of their own. Standalone components named with slashes, such as `Button/Primary` and `Button/Secondary`, are grouped into one `Button` file with a `Variant` control. A combination the design has no variant for throws a named error in Storybook rather than showing a different variant.
 
-Stories render the component as HTML with inline styles, like `-f html`, so they need no OpenPencil runtime; `--framework` (`react`, `vue`, or `html`) only changes the wrapper and the `Meta`/`StoryObj` import from `@storybook/react-vite`, `@storybook/vue3-vite`, or `@storybook/html-vite`. Text uses the document's font families, which Storybook has to load itself. Static stories don't export text, boolean, or instance-swap properties yet.
+Stories render the component as HTML with inline styles, like `-f html`, so they need no OpenPencil runtime; `--framework` (`react`, `vue`, or `html`) only changes the wrapper and the `Meta`/`StoryObj` import from `@storybook/react-vite`, `@storybook/vue3-vite`, or `@storybook/html-vite`. Text uses the document's font families: the export fetches their files from the web font providers the editor uses into `fonts/<document>/` with a `fonts.css` every story file imports, so stories draw in those fonts, never in a fallback first. A family no provider has, such as Menlo, falls back to the browser's fonts, which the export warns about; `--fonts none` ships no font files. Static stories don't export text, boolean, or instance-swap properties yet.
 
 With `--framework vue` or `--framework react`, a component set or component whose behaviour is a Button, Switch, Checkbox, Toggle, Collapsible, Tabs, Radio group, Toggle group, Accordion, Slider, Progress, Number field, Text field, or Textarea becomes a real component instead: `<Name>.vue` built on Reka UI, or `<Name>.tsx` with a `<Name>.module.css` built on Radix UI's `radix-ui` package. Its variants are compiled into a stylesheet keyed on the states Reka and Radix set (`data-state`, `data-disabled`, hover, and focus), and every other variant property is a prop the component sets as a `data-*` attribute. In Vue its value is a `v-model` such as `checked` or `open`; in React the component takes the Radix root's props, such as `checked`, `defaultChecked`, and `onCheckedChange`. Its text properties are string props, defaulting to the design's words, which the layers bound to them draw, with a text control in its stories.
 

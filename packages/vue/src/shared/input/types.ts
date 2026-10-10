@@ -175,7 +175,17 @@ export interface DragGradient {
   cancel: () => void
 }
 
+/** Dragging a radius, point count, or ratio handle of the selected rectangle, polygon, or star. */
+export interface DragShapeHandle {
+  type: 'shape-handle'
+  /** Sets the value under a screen point; Shift rounds a radius to tens. */
+  update: (screenX: number, screenY: number, shiftKey: boolean) => void
+  commit: () => void
+  cancel: () => void
+}
+
 export type DragState =
+  | DragShapeHandle
   | DragDraw
   | DragGradient
   | DragMove

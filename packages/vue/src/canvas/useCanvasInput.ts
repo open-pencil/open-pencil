@@ -23,6 +23,7 @@ import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
+import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import type { DragState } from '#vue/shared/input/types'
 import { handleNodeEditMove } from '#vue/shared/input/vector'
@@ -61,7 +62,7 @@ export function useCanvasInput(
     previous: number
   } | null>(null)
   const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
-  const lastPointer = ref<{ cx: number; cy: number } | null>(null)
+  const lastPointer = ref<{ cx: number; cy: number; sx: number; sy: number } | null>(null)
   const pointerInside = ref(false)
   let altHeld = false
   let metaHeld = false
@@ -110,6 +111,7 @@ export function useCanvasInput(
     editor.setAutoLayoutHover(
       mode === 'off' ? resolveAutoLayoutHover(pointer.cx, pointer.cy, editor) : null
     )
+    editor.setShapeHandleHover(resolveShapeHandleHover(editor, pointer.sx, pointer.sy, altHeld))
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -280,7 +282,7 @@ export function useCanvasInput(
     if (!isEnabled()) return
     pointerInside.value = true
     const coords = getCoords(e)
-    lastPointer.value = { cx: coords.cx, cy: coords.cy }
+    lastPointer.value = { cx: coords.cx, cy: coords.cy, sx: coords.sx, sy: coords.sy }
     if (onCursorMove) {
       onCursorMove(coords.cx, coords.cy)
     }
@@ -293,8 +295,9 @@ export function useCanvasInput(
     }
 
     if (!drag.value) {
-      const { cx, cy } = coords
+      const { cx, cy, sx, sy } = coords
       updateNodeEditHover(editor, cx, cy)
+      editor.setShapeHandleHover(resolveShapeHandleHover(editor, sx, sy, e.altKey))
     }
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
@@ -324,7 +327,7 @@ export function useCanvasInput(
 
     const { sx, sy, cx, cy } = getCoords(e)
 
-    if (d.type === 'gradient') {
+    if (d.type === 'gradient' || d.type === 'shape-handle') {
       d.update(sx, sy, e.shiftKey)
       return
     }
@@ -413,7 +416,7 @@ export function useCanvasInput(
         editor.commitRotation(d.nodeId, d.origRotation)
       }
       if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
-    } else if (d.type === 'draw' || d.type === 'gradient') d.commit()
+    } else if (d.type === 'draw' || d.type === 'gradient' || d.type === 'shape-handle') d.commit()
     else if (d.type === 'marquee') editor.setMarquee(null)
 
     drag.value = null
@@ -425,6 +428,7 @@ export function useCanvasInput(
     editor.setSnapGuides([])
     editor.setLayoutInsertIndicator(null)
     editor.setDropTarget(null)
+    editor.setShapeHandleHover(null)
     guideInput.clearHoverAndPreview()
   }
 
@@ -434,7 +438,11 @@ export function useCanvasInput(
       drag.value = null
       if (editor.state.rotationPreview?.nodeId === rotation.nodeId) editor.setRotationPreview(null)
     }
-    if (drag.value?.type === 'draw' || drag.value?.type === 'gradient') {
+    if (
+      drag.value?.type === 'draw' ||
+      drag.value?.type === 'gradient' ||
+      drag.value?.type === 'shape-handle'
+    ) {
       const drawing = drag.value
       drag.value = null
       drawing.cancel()
@@ -524,6 +532,7 @@ export function useCanvasInput(
     if (!drag.value) {
       editor.setHoveredNode(null)
       editor.setHoveredGuide(null)
+      editor.setShapeHandleHover(null)
     }
   })
   useEventListener(
@@ -547,7 +556,9 @@ export function useCanvasInput(
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
       editor.onEditorEvent(event, () => {
-        if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
+        const type = drag.value?.type
+        if (type === 'draw' || type === 'rotate' || type === 'shape-handle')
+          cancelPointerInteraction()
       })
   )
   onScopeDispose(() => {

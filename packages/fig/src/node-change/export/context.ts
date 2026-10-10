@@ -111,8 +111,14 @@ export interface SceneNodeToKiwiContext {
   ) => KiwiNodeChange[]
 }
 
+/** Figma reads both parts of a GUID as signed 32-bit integers and drops a paste beyond them. */
+const MAX_FIGMA_GUID_PART = 0x7fffffff
+
+/** The GUID an ID spells, or null when it spells none Figma can read. */
 export function parseGuidOrNull(value: string) {
-  return /^\d+:\d+$/.test(value) ? stringToGuid(value) : null
+  if (!/^\d+:\d+$/.test(value)) return null
+  const guid = stringToGuid(value)
+  return guid.sessionID <= MAX_FIGMA_GUID_PART && guid.localID <= MAX_FIGMA_GUID_PART ? guid : null
 }
 
 export function resolveInstanceComponentId(

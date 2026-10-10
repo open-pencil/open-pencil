@@ -359,10 +359,14 @@ describe('svgToVectorPaths', () => {
     )
     const transform = expectDefined(fill.gradientTransform, 'gradient transform')
     expect(fill.type).toBe('GRADIENT_RADIAL')
+    // A circle filling the box, turned a quarter: Figma's default transform, which maps the layer
+    // onto gradient space.
     expect(transform.m00).toBeCloseTo(0, 3)
-    expect(transform.m10).toBeCloseTo(0.5, 3)
-    expect(transform.m01).toBeCloseTo(-0.5, 3)
+    expect(transform.m01).toBeCloseTo(1, 3)
+    expect(transform.m02).toBeCloseTo(0, 3)
+    expect(transform.m10).toBeCloseTo(-1, 3)
     expect(transform.m11).toBeCloseTo(0, 3)
+    expect(transform.m12).toBeCloseTo(1, 3)
   })
 
   test('still resolves a solid color fill alongside gradients', () => {

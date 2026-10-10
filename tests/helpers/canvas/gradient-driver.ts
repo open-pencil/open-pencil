@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test'
 
+import type * as Geometry from '@open-pencil/core/geometry'
+
 import type * as GradientScene from '#tests/helpers/canvas/gradient'
 
 type GradientType = Parameters<typeof GradientScene.createGradientScene>[2]
@@ -38,6 +40,24 @@ export function gradientDriver(page: () => Page) {
               stops: fill.gradientStops?.map((stop) => stop.position)
             }
           : null
+      }, nodeId)
+    },
+
+    /** A linear gradient's start and end in the layer's own pixels. */
+    ends(nodeId: string) {
+      return page().evaluate(async (id) => {
+        const node = window.openPencil?.getStore?.().graph.getNode(id)
+        const transform = node?.fills[0]?.gradientTransform
+        if (!node || !transform) return null
+        const geometryURL = '/packages/core/src/geometry/gradient.ts'
+        const geometry: typeof Geometry = await import(geometryURL)
+        const { start, end } = geometry.gradientHandles(
+          'GRADIENT_LINEAR',
+          transform,
+          node.width,
+          node.height
+        )
+        return { start, end }
       }, nodeId)
     },
 

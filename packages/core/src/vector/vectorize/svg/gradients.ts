@@ -6,16 +6,20 @@
  * flat colors. Without this, those paths fall back to the default solid color
  * (black). Gradient geometry is given in userSpaceOnUse viewBox coordinates; we
  * map the endpoints through the same transform pipeline as the path data, then
- * normalize into each node's bounding box (objectBoundingBox) space, matching the
- * gradientTransform convention used by the SVG exporter (see io/formats/svg/defs).
+ * normalize into each node's bounding box and build the transform in Figma's convention
+ * (see geometry/gradient).
  */
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
-import type { Color, Matrix, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import {
+  ellipticalGradientTransform,
+  linearGradientTransformFromAxes
+} from '@open-pencil/scene-graph/gradient'
+import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGDocument } from '#core/io/formats/svg/document'
 
-import { mapSVGPointToViewport, type SVGViewportMapping } from './transform'
+import { mapSVGPointToViewport, transformSVGPoint, type SVGViewportMapping } from './transform'
 
 interface RawStop {
   offset: number
@@ -142,10 +146,17 @@ export function resolveGradientFill(
   if (nodeBounds.width <= 0 || nodeBounds.height <= 0) return null
 
   const toLocal = (px: number, py: number): Vector => {
-    const mapped =
-      grad.units === 'objectBoundingBox'
-        ? { x: nodeBounds.x + px * nodeBounds.width, y: nodeBounds.y + py * nodeBounds.height }
-        : mapSVGPointToViewport(px, py, elementTransform, grad.transform, viewport)
+    let mapped: Vector
+    if (grad.units === 'objectBoundingBox') {
+      // The gradient's own transform works in bounding-box units here.
+      const box = transformSVGPoint(px, py, grad.transform)
+      mapped = {
+        x: nodeBounds.x + box.x * nodeBounds.width,
+        y: nodeBounds.y + box.y * nodeBounds.height
+      }
+    } else {
+      mapped = mapSVGPointToViewport(px, py, elementTransform, grad.transform, viewport)
+    }
     return {
       x: (mapped.x - nodeBounds.x) / nodeBounds.width,
       y: (mapped.y - nodeBounds.y) / nodeBounds.height
@@ -159,14 +170,7 @@ export function resolveGradientFill(
     const center = toLocal(grad.cx, grad.cy)
     const edgeX = toLocal(grad.cx + grad.r, grad.cy)
     const edgeY = toLocal(grad.cx, grad.cy + grad.r)
-    const transform: Matrix = {
-      m00: edgeX.x - center.x,
-      m01: edgeY.x - center.x,
-      m02: center.x,
-      m10: edgeX.y - center.y,
-      m11: edgeY.y - center.y,
-      m12: center.y
-    }
+    const transform = ellipticalGradientTransform(center, edgeX, edgeY)
     return {
       type: 'GRADIENT_RADIAL',
       color: baseColor,
@@ -179,16 +183,13 @@ export function resolveGradientFill(
 
   const start = toLocal(grad.x1, grad.y1)
   const end = toLocal(grad.x2, grad.y2)
-  const ax = end.x - start.x
-  const ay = end.y - start.y
-  const transform: Matrix = {
-    m00: ax,
-    m01: -ay,
-    m02: start.x,
-    m10: ay,
-    m11: ax,
-    m12: start.y
-  }
+  // SVG bands run square to the line in the gradient's own units; mapping a square step through
+  // the same transforms keeps them where SVG draws them.
+  const acrossEnd = toLocal(grad.x1 - (grad.y2 - grad.y1), grad.y1 + (grad.x2 - grad.x1))
+  const transform = linearGradientTransformFromAxes(start, end, {
+    x: acrossEnd.x - start.x,
+    y: acrossEnd.y - start.y
+  })
   return {
     type: 'GRADIENT_LINEAR',
     color: baseColor,

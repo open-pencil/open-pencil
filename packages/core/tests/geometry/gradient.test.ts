@@ -9,8 +9,9 @@ import {
 } from '#core/geometry'
 import type { Vector } from '@open-pencil/scene-graph'
 
-// A 200 × 140 layer with a linear gradient from its left edge's middle to its right edge's middle.
-const LEFT_TO_RIGHT = { m00: -1, m01: 0, m02: 1, m10: 0, m11: -1, m12: 0.5 }
+// A 200 × 140 layer with a linear gradient from its left edge's middle to its right edge's middle:
+// Figma's identity transform.
+const LEFT_TO_RIGHT = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
 const STOPS = [
   { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
   { position: 0.5, color: { r: 1, g: 1, b: 0, a: 1 } },
@@ -38,6 +39,19 @@ describe('gradient handles', () => {
     const handles = gradientHandles('GRADIENT_LINEAR', moved, 200, 140)
     close(handles.start, { x: 0, y: 70 })
     close(handles.end, { x: 200, y: 10 })
+  })
+
+  // Figma desktop 126, a 400 × 120 layer: dragging the end of a left-to-right gradient to
+  // (300, 120) gave this transform, keeping the second axis square to the line on screen.
+  test('a dragged end keeps the second axis as Figma does', () => {
+    const moved = moveGradientHandle('GRADIENT_LINEAR', LEFT_TO_RIGHT, 400, 120, 'end', {
+      x: 300,
+      y: 120
+    })
+    const figma = [1.2820513, 0.0769231, -0.0384615, -0.8547009, 1.2820513, -0.1410256]
+    expect([moved.m00, moved.m01, moved.m02, moved.m10, moved.m11, moved.m12].map((v) => +v.toFixed(5))).toEqual(
+      figma.map((v) => +v.toFixed(5))
+    )
   })
 
   // Figma desktop 126: the pointer at −10.2° from the start lands on −15°, at the pointer's distance.
@@ -88,11 +102,11 @@ describe('gradient handles', () => {
     const above = gradientHandleLayout('GRADIENT_LINEAR', LEFT_TO_RIGHT, STOPS, 200, 140, screen)
     expect(above.stops[1]?.center.y).toBeLessThan(70)
     // Its first stop at the right edge and its last at the left.
-    const reversed = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0.5 }
+    const reversed = { m00: -1, m01: 0, m02: 1, m10: 0, m11: -1, m12: 1 }
     const below = gradientHandleLayout('GRADIENT_LINEAR', reversed, STOPS, 200, 140, screen)
     expect(below.stops[1]?.center.y).toBeGreaterThan(70)
     // Its first stop at the top edge and its last at the bottom.
-    const downward = { m00: 0, m01: 1, m02: 0.5, m10: -1, m11: 0, m12: 1 }
+    const downward = { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
     const right = gradientHandleLayout('GRADIENT_LINEAR', downward, STOPS, 200, 140, screen)
     expect(right.stops[1]?.center.x).toBeGreaterThan(100)
   })
