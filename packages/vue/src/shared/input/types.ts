@@ -1,4 +1,4 @@
-import type { Tool } from '@open-pencil/core/editor'
+import type { MovePlace, Tool } from '@open-pencil/core/editor'
 import type {
   DerivedTextGlyph,
   GeometryPath,
@@ -10,8 +10,6 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
-
-import type { DragOriginal } from '#vue/shared/input/drag-original'
 
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 
@@ -45,7 +43,7 @@ export interface DragMove {
   startScreenX: number
   startScreenY: number
   dragStarted: boolean
-  originals: Map<string, DragOriginal>
+  originals: Map<string, MovePlace>
   duplicated?: boolean
   duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string

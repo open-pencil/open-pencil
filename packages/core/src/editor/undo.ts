@@ -24,7 +24,7 @@ import {
 import type { EditorContext } from './types'
 
 /** A layer's place for a move: position, parent, and slot among the parent's children. */
-type MovePlace = { x: number; y: number; parentId: string; index?: number }
+export type MovePlace = { x: number; y: number; parentId: string; index?: number }
 
 type ResizeOriginal = Rect &
   Partial<
