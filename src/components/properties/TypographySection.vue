@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
 import { loadFont } from '@/app/editor/fonts'
@@ -13,7 +12,6 @@ import SharedStyleField from '@/components/properties/shared-style/SharedStyleFi
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
@@ -61,19 +59,6 @@ const paragraphFields = computed(
       { key: 'paragraphIndent', label: panels.value.paragraphIndent, property: 'paragraph-indent' }
     ] as const
 )
-/** Opened or closed by hand per layer; otherwise open where the text uses any of it. */
-const paragraphsOpenById = reactive<Record<string, boolean>>({})
-
-function paragraphsOpen(node: SceneNode): boolean {
-  return (
-    paragraphsOpenById[node.id] ??
-    (node.textParagraphs.length > 0 ||
-      node.listSpacing > 0 ||
-      node.paragraphSpacing > 0 ||
-      node.paragraphIndent > 0 ||
-      node.hangingList)
-  )
-}
 const truncationOptions = computed(() => [
   { value: 'DISABLED', label: panels.value.truncationDisabled },
   { value: 'ENDING', label: panels.value.truncationEnding }
@@ -317,15 +302,13 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
       </div>
 
-      <div class="border-t border-border py-2">
-        <AppCollapsible
-          :open="paragraphsOpen(ctx.node.value)"
+      <div class="border-t border-border pt-3">
+        <PanelFieldGroup
           :label="panels.listsAndParagraphs"
-          :ui="{ trigger: 'text-[11px] text-muted hover:text-surface', icon: 'size-3' }"
+          class="mb-3"
           data-property="lists-and-paragraphs"
-          @update:open="paragraphsOpenById[ctx.node.value.id] = $event"
         >
-          <div class="flex flex-col gap-1.5 pt-2">
+          <div class="flex flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
               <SegmentedControl
                 class="flex-1"
@@ -382,7 +365,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
               </Tip>
             </PanelGrid>
           </div>
-        </AppCollapsible>
+        </PanelFieldGroup>
       </div>
 
       <div class="grid gap-2.5 border-t border-border pt-3">
