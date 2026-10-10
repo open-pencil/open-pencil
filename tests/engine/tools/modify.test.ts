@@ -220,6 +220,28 @@ describe('set_constraints', () => {
 })
 
 describe('set_font_range', () => {
+  test('returns an empty or overlong range as an error and changes nothing', () => {
+    const { figma, graph } = setupToolTest()
+    const created = getTool('create_shape').execute(figma, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 20
+    }) as ToolResult
+    const id = expectDefined(created.id, 'created node id')
+    getTool('set_text').execute(figma, { id, text: 'Hello' })
+    const setFontRange = getTool('set_font_range')
+
+    expect(setFontRange.execute(figma, { id, start: 2, end: 2, size: 18 })).toEqual({
+      error: "in setRangeFontSize: Empty range selected. 'end' must be greater than 'start'"
+    })
+    expect(setFontRange.execute(figma, { id, start: 0, end: 9, size: 18 })).toMatchObject({
+      error: expect.stringContaining('Range outside of available characters')
+    })
+    expect(getNodeOrThrow(graph, id).styleRuns).toEqual([])
+  })
+
   test('applies font style to text range and survives serialization', () => {
     const { figma, graph } = setupToolTest()
     const createText = getTool('create_shape')

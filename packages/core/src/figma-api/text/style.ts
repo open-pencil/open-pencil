@@ -384,16 +384,51 @@ export function styleRunsWithPatch(
 }
 
 /**
+ * Style runs with a patch that depends on each character's font size, as a length given in
+ * percent of the font size does: characters of each size take the length that size gives.
+ */
+export function styleRunsWithSizedPatch(
+  node: SceneNode,
+  start: number,
+  end: number,
+  patchFor: (fontSize: number) => CharacterStyleOverride
+): StyleRun[] {
+  const sizes = characterStyles(node, start, end).map((style) => style.fontSize)
+  let styled = node
+  let first = 0
+  for (let offset = 1; offset <= sizes.length; offset++) {
+    if (offset < sizes.length && sizes[offset] === sizes[first]) continue
+    const styleRuns = styleRunsWithPatch(
+      styled,
+      start + first,
+      start + offset,
+      patchFor(sizes[first])
+    )
+    styled = { ...styled, styleRuns }
+    first = offset
+  }
+  return styled.styleRuns
+}
+
+/**
  * The change that sets a style for the whole text, as Figma's node setters do: the text takes
  * the value and no range keeps one of its own.
  */
 export function textStyleChanges(
   node: SceneNode,
-  changes: Partial<Pick<SceneNode, TextStyleKey>>
+  changes: Partial<Pick<SceneNode, TextStyleKey>>,
+  sized?: (fontSize: number) => CharacterStyleOverride
 ): Partial<SceneNode> {
   const keys = Object.keys(changes) as TextStyleKey[]
   const runs = node.styleRuns.map((run) => ({ ...run, style: omit(run.style, keys) }))
-  return { ...changes, styleRuns: withoutRedundantOverrides({ ...node, ...changes }, runs) }
+  const updated = { ...node, ...changes }
+  const styleRuns = withoutRedundantOverrides(updated, runs)
+  // A percent gives characters of another size their own length.
+  if (!sized) return { ...changes, styleRuns }
+  return {
+    ...changes,
+    styleRuns: styleRunsWithSizedPatch({ ...updated, styleRuns }, 0, node.text.length, sized)
+  }
 }
 
 /** Whether any character of the range is underlined, which Figma's decoration setters need. */

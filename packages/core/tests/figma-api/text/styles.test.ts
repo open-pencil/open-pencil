@@ -166,6 +166,32 @@ describe('character style ranges', () => {
     expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'AUTO' })
   })
 
+  test('resolve a percent against the size of each character it styles', () => {
+    const { text } = styledText('Small Large')
+    text.fontSize = 10
+    text.setRangeFontSize(6, 11, 20)
+    const spacing = () =>
+      text
+        .getStyledTextSegments(['letterSpacing'])
+        .map((segment) => [segment.start, segment.end, segment.letterSpacing])
+
+    text.letterSpacing = { value: 10, unit: 'PERCENT' }
+    expect(spacing()).toEqual([
+      [0, 6, { unit: 'PIXELS', value: 1 }],
+      [6, 11, { unit: 'PIXELS', value: 2 }]
+    ])
+    text.setRangeLetterSpacing(4, 8, { value: 50, unit: 'PERCENT' })
+    expect(spacing()).toEqual([
+      [0, 4, { unit: 'PIXELS', value: 1 }],
+      [4, 6, { unit: 'PIXELS', value: 5 }],
+      [6, 8, { unit: 'PIXELS', value: 10 }],
+      [8, 11, { unit: 'PIXELS', value: 2 }]
+    ])
+    text.lineHeight = { value: 150, unit: 'PERCENT' }
+    expect(text.getRangeLineHeight(0, 1)).toEqual({ unit: 'PIXELS', value: 15 })
+    expect(text.getRangeLineHeight(6, 7)).toEqual({ unit: 'PIXELS', value: 30 })
+  })
+
   test('style decorations of underlined ranges only, keeping them when the underline returns', () => {
     const { text } = styledText('Abc def')
     text.setRangeTextDecoration(0, 3, 'UNDERLINE')
@@ -242,6 +268,12 @@ describe('character style ranges', () => {
         'setRangeTextDecoration',
         "Invalid enum value. Expected 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH', received 'OVERLINE'"
       )
+    )
+    expect(() => text.setRangeFontName(0, 1, null as never)).toThrow(
+      message('setRangeFontName', 'Expected object, received null')
+    )
+    expect(() => text.setRangeFontName(0, 1, { family: 1, style: 'Regular' } as never)).toThrow(
+      message('setRangeFontName', 'Expected string, received number at .family')
     )
     text.setRangeTextDecoration(0, 3, 'UNDERLINE')
     expect(() => text.setRangeTextDecorationSkipInk(0, 1, 'yes' as never)).toThrow(

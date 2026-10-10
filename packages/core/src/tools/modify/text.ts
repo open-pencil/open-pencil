@@ -4,7 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { toolNumber, nodeIdInput } from '#core/tools/input'
-import { defineTool, nodeNotFound } from '#core/tools/schema'
+import { defineTool, nodeNotFound, toolFailure } from '#core/tools/schema'
 
 export const setText = defineTool({
   name: 'set_text',
@@ -75,19 +75,24 @@ export const setFontRange = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
     const { start, end } = args
-    if (args.size) node.setRangeFontSize(start, end, args.size)
-    if (args.family || args.style) {
-      const current = node.getRangeFontName(start, start + 1)
-      const fontName = typeof current === 'symbol' ? null : current
-      node.setRangeFontName(start, end, {
-        family: args.family ?? fontName?.family ?? '',
-        style: args.style ?? fontName?.style ?? 'Regular'
-      })
-    }
-    if (args.color) {
-      node.setRangeFills(start, end, [
-        { type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }
-      ])
+    // The range methods reject an empty range or one past the text, before changing anything.
+    try {
+      if (args.size) node.setRangeFontSize(start, end, args.size)
+      if (args.family || args.style) {
+        const current = node.getRangeFontName(start, start + 1)
+        const fontName = typeof current === 'symbol' ? null : current
+        node.setRangeFontName(start, end, {
+          family: args.family ?? fontName?.family ?? '',
+          style: args.style ?? fontName?.style ?? 'Regular'
+        })
+      }
+      if (args.color) {
+        node.setRangeFills(start, end, [
+          { type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }
+        ])
+      }
+    } catch (error) {
+      return toolFailure(error)
     }
     return { id: args.id, range: { start, end } }
   }

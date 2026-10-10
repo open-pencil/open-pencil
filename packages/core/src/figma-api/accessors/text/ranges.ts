@@ -33,6 +33,7 @@ import {
   getStyledTextSegments,
   rangeHasUnderline,
   styleRunsWithPatch,
+  styleRunsWithSizedPatch,
   type FigmaDecorationColor,
   type FigmaTextLength,
   type StyledTextSegment,
@@ -62,13 +63,15 @@ function numberProblem(value: unknown, at = ''): string | null {
   return null
 }
 
-/** A length's value in pixels; a percent is of the font size, which the node keeps. */
-function lengthPixels(value: { unit: 'PIXELS' | 'PERCENT'; value: number }, fontSize: number) {
-  return value.unit === 'PERCENT' ? (value.value / 100) * fontSize : value.value
+/** A length in pixels for a font size: a percent is of the size of the characters it styles. */
+type SizedLength<T> = (fontSize: number) => T
+
+function lengthFor(value: { unit: 'PIXELS' | 'PERCENT'; value: number }): SizedLength<number> {
+  return (fontSize) => (value.unit === 'PERCENT' ? (value.value / 100) * fontSize : value.value)
 }
 
 /** A letter spacing Figma takes: pixels or percent, never automatic. */
-function letterSpacingPixels(method: string, value: unknown, fontSize: number): number {
+function letterSpacingLength(method: string, value: unknown): SizedLength<number> {
   const length = value as Partial<FigmaTextLength & { value: number }> | null
   if (!length || typeof length !== 'object') {
     throw invalid(method, `Expected object, received ${received(value)}`)
@@ -81,16 +84,16 @@ function letterSpacingPixels(method: string, value: unknown, fontSize: number): 
   }
   const problem = numberProblem(length.value, ' at .value')
   if (problem) throw invalid(method, problem)
-  return lengthPixels(length as { unit: 'PIXELS' | 'PERCENT'; value: number }, fontSize)
+  return lengthFor(length as { unit: 'PIXELS' | 'PERCENT'; value: number })
 }
 
 /** A length that may also be automatic, as line heights and decoration sizes are. */
-function lengthPixelsOrAuto(method: string, value: unknown, fontSize: number): number | null {
+function lengthOrAuto(method: string, value: unknown): SizedLength<number | null> {
   const length = value as Partial<FigmaTextLength & { value: number }> | null
   if (!length || typeof length !== 'object') {
     throw invalid(method, `Expected object, received ${received(value)}`)
   }
-  if (length.unit === 'AUTO') return null
+  if (length.unit === 'AUTO') return () => null
   if (!LENGTH_UNITS.has(String(length.unit))) {
     throw invalid(
       method,
@@ -99,7 +102,24 @@ function lengthPixelsOrAuto(method: string, value: unknown, fontSize: number): n
   }
   const problem = numberProblem(length.value, ' at .value')
   if (problem) throw invalid(method, problem)
-  return lengthPixels(length as { unit: 'PIXELS' | 'PERCENT'; value: number }, fontSize)
+  return lengthFor(length as { unit: 'PIXELS' | 'PERCENT'; value: number })
+}
+
+function stringProblem(value: unknown, at: string): string | null {
+  return typeof value === 'string' ? null : `Expected string, received ${received(value)} at ${at}`
+}
+
+/** A font name Figma takes: a family and style; a style left out reads as regular. */
+function fontNameStyle(method: string, value: unknown): CharacterStyleOverride {
+  if (!value || typeof value !== 'object') {
+    throw invalid(method, `Expected object, received ${received(value)}`)
+  }
+  const fontName = value as Partial<Record<keyof FigmaFontName, unknown>>
+  const style = fontName.style ?? 'Regular'
+  const problem = stringProblem(fontName.family, '.family') ?? stringProblem(style, '.style')
+  if (problem) throw invalid(method, problem)
+  const { weight, italic } = styleNameToWeight(style as string)
+  return { fontFamily: fontName.family as string, fontWeight: weight, italic }
 }
 
 function fillsFromPaints(method: string, value: unknown): CharacterStyleOverride['fills'] {
@@ -128,11 +148,8 @@ function enumValue<T extends string>(method: string, value: unknown, allowed: Re
   return value as T
 }
 
-/** The node's style at a range's first character, which sizes its percentages. */
-function fontSizeAt(node: SceneNode, start: number): number {
-  const run = node.styleRuns.find((item) => start >= item.start && start < item.start + item.length)
-  return run?.style.fontSize ?? node.fontSize
-}
+/** A style for the range, or one per font size for lengths given in percent. */
+type StylePatch = CharacterStyleOverride | ((fontSize: number) => CharacterStyleOverride)
 
 type RangeSetter = (
   method: string,
@@ -140,15 +157,15 @@ type RangeSetter = (
   start: number,
   end: number,
   value: unknown
-) => CharacterStyleOverride
+) => StylePatch
 
 /** Decoration styles only apply to underlined text; Figma rejects a range with none. */
 function underlineStyle(
   name: string,
-  patch: (method: string, node: SceneNode, start: number, value: unknown) => CharacterStyleOverride
+  patch: (method: string, value: unknown) => StylePatch
 ): RangeSetter {
   return (method, node, start, end, value) => {
-    const style = patch(method, node, start, value)
+    const style = patch(method, value)
     if (!rangeHasUnderline(node, start, end)) {
       throw new Error(
         `in ${method}: Cannot set text decoration ${name} on a non-underlined text range`
@@ -166,33 +183,33 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     if ((value as number) < 1) throw invalid(method, 'Number must be greater than or equal to 1')
     return { fontSize: value as number }
   },
-  setRangeFontName: (_method, _node, _start, _end, value) => {
-    const fontName = value as FigmaFontName
-    const { weight, italic } = styleNameToWeight(fontName.style)
-    return { fontFamily: fontName.family, fontWeight: weight, italic }
-  },
+  setRangeFontName: (method, _node, _start, _end, value) => fontNameStyle(method, value),
   setRangeFills: (method, _node, _start, _end, value) => ({
     fills: fillsFromPaints(method, value)
   }),
-  setRangeLetterSpacing: (method, node, start, _end, value) => ({
-    letterSpacing: letterSpacingPixels(method, value, fontSizeAt(node, start))
-  }),
-  setRangeLineHeight: (method, node, start, _end, value) => ({
-    lineHeight: lengthPixelsOrAuto(method, value, fontSizeAt(node, start))
-  }),
+  setRangeLetterSpacing: (method, _node, _start, _end, value) => {
+    const length = letterSpacingLength(method, value)
+    return (fontSize) => ({ letterSpacing: length(fontSize) })
+  },
+  setRangeLineHeight: (method, _node, _start, _end, value) => {
+    const length = lengthOrAuto(method, value)
+    return (fontSize) => ({ lineHeight: length(fontSize) })
+  },
   setRangeTextDecoration: (method, _node, _start, _end, value) => ({
     textDecoration: enumValue(method, value, DECORATIONS)
   }),
-  setRangeTextDecorationStyle: underlineStyle('style', (method, _node, _start, value) => ({
+  setRangeTextDecorationStyle: underlineStyle('style', (method, value) => ({
     textDecorationStyle: enumValue(method, value, DECORATION_STYLES)
   })),
-  setRangeTextDecorationOffset: underlineStyle('offset', (method, node, start, value) => ({
-    textUnderlineOffset: lengthPixelsOrAuto(method, value, fontSizeAt(node, start))
-  })),
-  setRangeTextDecorationThickness: underlineStyle('thickness', (method, node, start, value) => ({
-    textDecorationThickness: lengthPixelsOrAuto(method, value, fontSizeAt(node, start))
-  })),
-  setRangeTextDecorationColor: underlineStyle('color', (method, _node, _start, value) => {
+  setRangeTextDecorationOffset: underlineStyle('offset', (method, value) => {
+    const length = lengthOrAuto(method, value)
+    return (fontSize) => ({ textUnderlineOffset: length(fontSize) })
+  }),
+  setRangeTextDecorationThickness: underlineStyle('thickness', (method, value) => {
+    const length = lengthOrAuto(method, value)
+    return (fontSize) => ({ textDecorationThickness: length(fontSize) })
+  }),
+  setRangeTextDecorationColor: underlineStyle('color', (method, value) => {
     const color = (value as { value?: unknown } | null)?.value
     if (color === 'AUTO') return { textDecorationFills: [] }
     if (!color || typeof color !== 'object') {
@@ -206,7 +223,7 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     }
     return { textDecorationFills: fillsFromPaints(method, [color]) }
   }),
-  setRangeTextDecorationSkipInk: underlineStyle('skip ink', (method, _node, _start, value) => {
+  setRangeTextDecorationSkipInk: underlineStyle('skip ink', (method, value) => {
     if (typeof value !== 'boolean')
       throw invalid(method, `Expected boolean, received ${received(value)}`)
     return { textDecorationSkipInk: value }
@@ -303,7 +320,11 @@ export function installTextRangeMethods(
         const node = raw(this, internals)
         assertTextRange(method, node, start, end)
         const patch = setter(method, node, start, end, value)
-        updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
+        const styleRuns =
+          typeof patch === 'function'
+            ? styleRunsWithSizedPatch(node, start, end, patch)
+            : styleRunsWithPatch(node, start, end, patch)
+        updateNode(this, internals, { styleRuns })
       }
     }
   }
