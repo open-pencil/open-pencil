@@ -1,5 +1,6 @@
 import type { Editor, MovePlace } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
 
 /**
@@ -108,7 +109,10 @@ export function flowOrder(flow: FlowDrag, slot: number, editor: Editor): string[
   return [...rest.slice(0, at), ...flow.ids, ...rest.slice(at)]
 }
 
-/** The selected layers' box along both axes, in canvas units, moved by `dx`, `dy`. */
+/**
+ * The selected layers' box on the canvas, in canvas units, moved by `dx`, `dy`: the axis-aligned
+ * bounds of their transformed corners, so a rotated or flipped layer counts with what it covers.
+ */
 export function flowBlockBounds(flow: FlowDrag, dx: number, dy: number, editor: Editor) {
   let left = Infinity
   let top = Infinity
@@ -117,11 +121,11 @@ export function flowBlockBounds(flow: FlowDrag, dx: number, dy: number, editor: 
   for (const id of flow.ids) {
     const node = editor.graph.getNode(id)
     if (!node) continue
-    const abs = editor.graph.getAbsolutePosition(id)
-    left = Math.min(left, abs.x + dx)
-    top = Math.min(top, abs.y + dy)
-    right = Math.max(right, abs.x + dx + node.width)
-    bottom = Math.max(bottom, abs.y + dy + node.height)
+    const bounds = getAxisAlignedWorldBounds(node, editor.graph)
+    left = Math.min(left, bounds.x + dx)
+    top = Math.min(top, bounds.y + dy)
+    right = Math.max(right, bounds.x + bounds.width + dx)
+    bottom = Math.max(bottom, bounds.y + bounds.height + dy)
   }
   return { left, top, right, bottom }
 }

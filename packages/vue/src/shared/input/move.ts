@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 import {
   autoLayoutInsertIndex,
@@ -36,10 +37,10 @@ function staysInAutoLayout(
 ) {
   const parent = editor.graph.getNode(parentId)
   if (!parent) return false
-  const frame = editor.graph.getAbsolutePosition(parentId)
+  const frame = getAxisAlignedWorldBounds(parent, editor.graph)
   // How far the layers' near edge is past the frame's edge on each axis; negative while they overlap.
-  const pastX = Math.max(frame.x - bounds.right, bounds.left - (frame.x + parent.width))
-  const pastY = Math.max(frame.y - bounds.bottom, bounds.top - (frame.y + parent.height))
+  const pastX = Math.max(frame.x - bounds.right, bounds.left - (frame.x + frame.width))
+  const pastY = Math.max(frame.y - bounds.bottom, bounds.top - (frame.y + frame.height))
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const along = isRow ? pastX : pastY
   const across = isRow ? pastY : pastX
@@ -340,8 +341,9 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
   editor.setLayoutInsertIndicator(null)
   editor.setSnapGuides([])
 
+  // Slots exist only once the drag started, so a reached slot is a reorder however short the drag.
   if (d.flows && d.flowSlots && !d.brokeFromAutoLayout) {
-    if (getMoveDistance(d) >= AUTO_LAYOUT_REORDER_CLICK_SLOP) dropAlongFlows(d, d.flows, editor)
+    dropAlongFlows(d, d.flows, editor)
     editor.setDropTarget(null)
     return
   }
