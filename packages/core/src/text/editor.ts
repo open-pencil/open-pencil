@@ -5,7 +5,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import type { SkiaRenderer } from '#core/canvas'
-import type { TextLayout } from '#core/canvas/text/layout/text-layout'
+import type { TextLayout } from '#core/canvas/text/layout'
 
 export interface TextCaret {
   x: number

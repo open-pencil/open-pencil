@@ -13,6 +13,7 @@ import {
 } from '@open-pencil/scene-graph'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
+import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
   buildSkParagraph,
@@ -27,8 +28,6 @@ import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { transformTextCase } from '#core/text/case'
 import { weightToStyle } from '#core/text/fonts'
 import { glyphAdvanceSync } from '#core/text/opentype'
-
-import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from './text-layout'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5

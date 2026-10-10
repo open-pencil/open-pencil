@@ -8,7 +8,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
 import { createGlyphSilhouetteCache } from '#core/canvas/text/derived'
-import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
+import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 
 import { asDouble, asRenderer } from './helpers'
 

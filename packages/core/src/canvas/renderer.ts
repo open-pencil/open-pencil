@@ -39,7 +39,7 @@ import type { SceneBacking, SceneBackingBuild } from './renderer/retained-backin
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 import { createGlyphSilhouetteCache } from './text/derived'
-import { TextPreparationCache } from './text/preparation-cache'
+import { TextPreparationCache } from './text/preparation/cache'
 export type { MeasurementMode, PresenceCursor, RenderOverlays, RulerTheme } from './renderer/types'
 import type {
   Path,

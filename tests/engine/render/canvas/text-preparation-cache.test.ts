@@ -6,9 +6,9 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import { buildParagraph, nodeFontReadiness } from '#core/canvas/text'
-import { TextLayout } from '#core/canvas/text/layout/text-layout'
+import { TextLayout } from '#core/canvas/text/layout'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
-import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
+import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { fontManager } from '#core/text/fonts'
 
 import { expectDefined } from '#tests/helpers/assert'

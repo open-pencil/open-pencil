@@ -5,7 +5,7 @@ import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from 'canva
 import { TextEditor, type SceneNode } from '@open-pencil/core'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
-import { TextLayout } from '#core/canvas/text/layout/text-layout'
+import { TextLayout } from '#core/canvas/text/layout'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { asDouble } from '#tests/helpers/doubles'

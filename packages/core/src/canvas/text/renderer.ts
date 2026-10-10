@@ -4,7 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { FontResolutionSettled } from '#core/text/resolver'
 
-import type { TextPreparationCache } from './preparation-cache'
+import type { TextPreparationCache } from './preparation/cache'
 
 export interface FontReadinessRenderer {
   textPreparationCache?: TextPreparationCache

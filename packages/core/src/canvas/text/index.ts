@@ -14,11 +14,11 @@ import {
 
 import { buildParagraph } from './layout/build'
 import { resolveParagraphLayoutWidth } from './paragraph'
-import { withPreparedText } from './prepared'
+import { withPreparedText } from './preparation'
 import type { FontReadinessRenderer, TextRenderer } from './renderer'
 
 export { buildParagraph } from './layout/build'
-export type { TextLayout } from './layout/text-layout'
+export type { TextLayout } from './layout'
 export type { ParagraphBuildOptions } from './paint'
 export {
   textDecorationStyleValue,
@@ -26,7 +26,7 @@ export {
   textFontVariations,
   textHeightBehaviorValue
 } from './paragraph'
-export { withTextParagraph } from './prepared'
+export { withTextParagraph } from './preparation'
 
 function demandFace(
   r: FontReadinessRenderer,

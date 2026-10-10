@@ -2,7 +2,7 @@ import { expect, mock, test } from 'bun:test'
 
 import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { invalidateAllPictures, invalidateNodePicture } from '#core/canvas/renderer/state'
-import { TextPreparationCache } from '#core/canvas/text/preparation-cache'
+import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 
 import { asRenderer } from './helpers'
 

@@ -13,8 +13,8 @@ const MAX_PREPARED_TEXT_UNITS = 262_144
 // Layout measures a text at a few widths; more than this means the widths are not repeating.
 const MAX_MEASURED_WIDTHS = 16
 
-import type { TextLayout } from './layout/text-layout'
-import { PARAGRAPH_INPUT_KEYS, shapingInputs } from './paragraph/inputs'
+import type { TextLayout } from '#core/canvas/text/layout'
+import { PARAGRAPH_INPUT_KEYS, shapingInputs } from '#core/canvas/text/paragraph/inputs'
 
 type PreparationInput = SceneNode[(typeof PARAGRAPH_INPUT_KEYS)[number]]
 

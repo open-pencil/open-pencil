@@ -9,7 +9,7 @@ import {
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
-import type { TextLayoutMarker } from '#core/canvas/text/layout/text-layout'
+import type { TextLayoutMarker } from '#core/canvas/text/layout'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { getCanvasKit } from '#core/canvaskit'
 import { transformTextCase } from '#core/text/case'
