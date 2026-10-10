@@ -204,9 +204,10 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       # Builds the static Storybook, then renders every story, runs its play function, and checks
-      # it with axe in both themes, alongside the component specs.
+      # it with axe in both themes, alongside the component specs. Screenshot baselines are drawn on
+      # macOS, so here the specs check behaviour and leave the pictures to local runs.
       - name: Check stories
-        run: bun run test:storybook
+        run: bun run test:storybook --ignore-snapshots --workers=100%
 
       - name: Upload story failures
         if: failure()
