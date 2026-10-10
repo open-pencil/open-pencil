@@ -65,6 +65,18 @@ test('records the layers a call changed with their JSX before and after', async 
   expect(change?.images).toBeUndefined()
 })
 
+test('records a call that changed only another page on that page', async () => {
+  const second = store.graph.addPage('Settings')
+  const card = store.graph.createNode('FRAME', second.id, { name: 'Profile', width: 100 })
+
+  await execute('set_fill', { id: card.id, color: '#ff0000' }, 'other-page-call')
+
+  const change = readToolChange('other-page-call')
+  expect(change?.pageId).toBe(second.id)
+  expect(change?.nodeIds).toEqual([card.id])
+  expect(change?.jsx.after).toContain('#FF0000')
+})
+
 test('records nothing for calls that leave the page as it was', async () => {
   const card = store.graph.createNode('FRAME', store.state.currentPageId, { name: 'Card' })
   await execute('get_node', { id: card.id }, 'read-call')

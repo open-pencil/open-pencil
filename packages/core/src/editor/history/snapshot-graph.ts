@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { extractPageContext } from '#core/io/subgraph'
@@ -31,21 +33,20 @@ export function graphFromPageSnapshot(
 }
 
 /**
- * A standalone copy of the document with the page the change ran on, on one side of the change.
- * The source must be as the change left it, as it is right after the edit. The before side also
- * copies the other pages the change touched, so layers it moved between pages can move back;
- * pages it did not touch are left empty.
+ * A standalone copy of the document with the pages a change touched, and the page it ran on, on
+ * one side of the change. The source must be as the change left it, as it is right after the
+ * edit. Other pages are left empty.
  */
 export function graphFromDocumentChange(
   source: SceneGraph,
   change: DocumentChange,
   side: 'before' | 'after'
 ): SceneGraph | null {
-  const page = source.getNode(change.pageId)
-  if (!page) return null
-  const pageIds = side === 'before' ? change.pageIds : [page.id]
-  const layerIds = pageIds.flatMap((id) => source.getNode(id)?.childIds ?? [])
-  const graph = pageContext(source, page.id, layerIds)
+  // A page's own id brings its whole subtree; a layer moved between pages can then move back.
+  const pageIds = uniq([change.pageId, ...change.pageIds]).filter((id) => source.getNode(id))
+  const [first] = pageIds
+  if (!first) return null
+  const graph = pageContext(source, first, pageIds)
   if (side === 'before') applyDocumentChange(graph, change, 'before')
   graph.clearAbsPosCache()
   return graph
