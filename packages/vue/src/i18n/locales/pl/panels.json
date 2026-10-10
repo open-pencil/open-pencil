@@ -79,6 +79,7 @@
   "addPage": "Dodaj stronę",
   "toggleVisibility": "Przełącz widoczność",
   "independentCornerRadii": "Niezależne promienie rogów",
+  "lockAspectRatio": "Zablokuj proporcje",
   "detachVariable": "Odłącz zmienną",
   "applyVariable": "Zastosuj zmienną",
   "noVariablesFound": "Nie znaleziono zmiennych",

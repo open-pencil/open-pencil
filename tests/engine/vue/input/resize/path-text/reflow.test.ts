@@ -173,6 +173,7 @@ describe('group resize reflows path text instead of squashing it', () => {
       origStrokes: [],
       origTextPathData: null,
       origTextPathBox: null,
+      lockedAspectRatio: null,
       origChildren: new Map([[text.id, origChild]])
     }
 
@@ -277,6 +278,7 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
       origStrokes: copyStrokes(text.strokes),
       origTextPathData: structuredClone(expectDefined(text.textPathData)),
       origTextPathBox: { ...box },
+      lockedAspectRatio: null,
       origChildren: null
     }
 
@@ -404,6 +406,7 @@ describe('resize + export integration: real commit path clears stale raw payload
       origStrokes: copyStrokes(text.strokes),
       origTextPathData: structuredClone(expectDefined(text.textPathData)),
       origTextPathBox: { ...box },
+      lockedAspectRatio: null,
       origChildren: null
     }
 

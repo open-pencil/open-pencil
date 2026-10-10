@@ -2,18 +2,21 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { HandlePosition } from '#vue/shared/input/types'
 
+/**
+ * Fits a dragged box to `aspect` (width over height), as Figma does: an edge handle sizes the
+ * other axis around its centre, a corner handle follows the axis the pointer changed most and
+ * keeps the opposite corner in place.
+ */
 export function constrainToAspectRatio(
   handle: HandlePosition,
   origRect: Rect,
   width: number,
   height: number,
-  dx: number,
-  dy: number
+  aspect: number
 ): Rect {
   let x = handle.includes('w') ? origRect.x + origRect.width - Math.abs(width) : origRect.x
   const isTop = handle === 'nw' || handle === 'n' || handle === 'ne'
   let y = isTop ? origRect.y + origRect.height - Math.abs(height) : origRect.y
-  const aspect = origRect.width / origRect.height
 
   if (handle === 'n' || handle === 's') {
     width = Math.abs(height) * aspect
@@ -21,7 +24,7 @@ export function constrainToAspectRatio(
   } else if (handle === 'e' || handle === 'w') {
     height = Math.abs(width) / aspect
     y = origRect.y + (origRect.height - height) / 2
-  } else if (Math.abs(dx) > Math.abs(dy)) {
+  } else if (Math.abs(width) > Math.abs(height) * aspect) {
     height = (Math.abs(width) / aspect) * Math.sign(height || 1)
     if (isTop) y = origRect.y + origRect.height - Math.abs(height)
   } else {
@@ -37,7 +40,7 @@ export function calculateResizeRect(
   origRect: Rect,
   dx: number,
   dy: number,
-  constrain: boolean
+  aspect: number | null
 ): Rect {
   let { x, y, width, height } = origRect
 
@@ -57,8 +60,8 @@ export function calculateResizeRect(
     height = origRect.height - dy
   }
 
-  if (constrain && origRect.width > 0 && origRect.height > 0) {
-    ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, dx, dy))
+  if (aspect !== null) {
+    ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, aspect))
   }
 
   if (width < 0) {

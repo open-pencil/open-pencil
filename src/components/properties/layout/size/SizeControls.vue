@@ -6,6 +6,7 @@ import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 import SizeAxisField from '@/components/properties/layout/size/SizeAxisField.vue'
 import SizeLimitField from '@/components/properties/layout/size/SizeLimitField.vue'
 import type { SizeLimitItem } from '@/components/properties/layout/size/types'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 
 const ctx = useLayoutControlsContext()
@@ -51,6 +52,18 @@ const visibleSizeLimits = computed(() =>
   <PanelGrid :columns="1">
     <SizeAxisField axis="width" icon="W" :label="panels.width" />
     <SizeAxisField axis="height" icon="H" :label="panels.height" />
+    <template v-if="ctx.aspectRatioLockable" #actions>
+      <IconButton
+        :label="panels.lockAspectRatio"
+        size="xs"
+        toggle
+        :active="ctx.aspectRatioLocked"
+        data-test-id="aspect-ratio-lock"
+        @click="ctx.toggleAspectRatioLock"
+      >
+        <icon-lucide-proportions class="size-3" />
+      </IconButton>
+    </template>
   </PanelGrid>
 
   <PanelGrid v-if="visibleSizeLimits.length" :columns="2" class="mt-1.5">

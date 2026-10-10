@@ -4,6 +4,7 @@
 
 ### Breaking changes
 
+- `SceneNode` from `@open-pencil/scene-graph` has `targetAspectRatio`, the size whose proportions a locked layer keeps, so code that builds `SceneNode` objects itself must include it.
 - `useFlatReorderDrag` from `@open-pencil/vue` takes `operations`, which drops each target accepts, and `onCombine`, for dropping onto an item, and `FlatReorderInstruction` is now any list-item `Instruction`, so it can be `'combine'` when a list opts in; code that switches on its `operation` needs that case.
 - The editor `Tool` type from `@open-pencil/core` and `@open-pencil/vue` includes `'COMMENT'`, and `EDITOR_TOOLS` and `TOOL_SHORTCUTS` list the Comment tool on <kbd>C</kbd>, so a `Record<Tool, …>` needs a `COMMENT` entry and toolbars built on `ToolbarRoot` show it. The canvas places nothing while it is active; the app's comments layer does.
 - A paint's `gradientTransform` follows Figma's convention everywhere: it maps the layer's unit square onto gradient space, where a linear gradient runs from (0, 0.5) to (1, 0.5). Gradients made in OpenPencil before this release, which used the inverse, draw differently; code that builds gradients by hand should use `linearGradientTransform` and `ellipticalGradientTransform` from the new `@open-pencil/scene-graph/gradient`, which also has Figma's default transform and stops. `isGradientFill` and `GradientFillType` moved there from `@open-pencil/core/geometry`, and `linearGradientEndpoints` is removed from the canvas module.
@@ -48,6 +49,7 @@
 
 ### Added
 
+- Lock a layer's aspect ratio with the button beside its width and height, as in Figma: typing either side changes the other, handles keep the ratio (<kbd>Ctrl</kbd> frees it for one drag, which then keeps the new size), a Fill layer in auto layout takes its other side from the ratio, and a constraint keeps it when exactly one axis follows the frame. The lock reads from and writes to `.fig` files and the clipboard, and the plugin API has `lockAspectRatio()`, `unlockAspectRatio()`, `targetAspectRatio`, and `constrainProportions`.
 - Talk with the people in a shared room in a voice call, as in Figma: the headphones beside the avatars start or join it, a ring marks who is in the call and lights up while they speak, and the call's popover chooses the microphone and, where the browser allows, the speakers. Audio goes peer to peer, and only to the people in the call.
 - Take a layer out of its auto layout with **Ignore auto layout** at the top of the Position section, as in Figma: the layer stays where it is, its siblings close the gap in the same undo step, and it keeps its sizing, so a Fill layer fills again when it returns.
 - Round a rectangle's corners on the canvas, as in Figma: while the pointer is over a selected rectangle at least 108 screen pixels across, a handle sits inside each corner. Dragging one sets every corner while they are equal and only that corner while they differ, <kbd>⌥</kbd> swaps the two, and <kbd>⇧</kbd> rounds to tens; a label beside the pointer shows the radius.
@@ -165,6 +167,7 @@
 
 ### Fixed
 
+- <kbd>⇧</kbd>-dragging a corner handle follows the side the pointer stretched most relative to the layer's size, as Figma does, instead of the side it moved more pixels along.
 - Tooltips no longer appear when a popover such as the colour picker focuses its first control on open; they still show for keyboard focus. Moving the pointer along a row of buttons switches tooltips at once instead of blinking out, and tooltips centre on their control instead of sitting a few pixels off.
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
 - The font picker opens at the current font instead of the top of the list.

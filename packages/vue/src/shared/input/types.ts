@@ -82,6 +82,10 @@ export interface DragResize {
   origTextPathData: TextPathData | null
   origTextPathBox: Rect | null
   origChildren: Map<string, ResizeSnapshot> | null
+  /** The ratio the layer is locked to, kept unless Control frees it. */
+  lockedAspectRatio: number | null
+  /** Whether the latest step set the lock aside, so the commit stores the new size. */
+  freesLock?: boolean
   appliedRect?: Rect
 }
 
