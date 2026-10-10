@@ -45,16 +45,26 @@ function flowChanged(graph: SceneGraph, node: SceneNode, flow = flowOf(graph, no
 }
 
 /**
- * Whether layout still keeps the geometry a file saved for `frame` and its flow: a frame read from
- * a .fig file does until it or a layer in its flow has its layout edited, such as by adding auto
- * layout or a gap, or a layer joins, leaves, or moves in its flow, or a flow inside it changes. Other
- * frames keep geometry copied with them, as an instance's layers do.
+ * Records that a layer joined, left, or moved in `parentId`'s children, as an editor sees an edit
+ * happen, so the frame stops keeping saved geometry even if layout never ran on it before.
+ */
+export function markFlowChanged(graph: SceneGraph, parentId: string): void {
+  graphState(restructured, graph, () => new Set<string>()).add(parentId)
+}
+
+/**
+ * Whether layout still keeps the geometry saved for `frame` and its flow. Any frame stops once a
+ * layer joins, leaves, or moves in its flow or a flow inside it; a frame read from a .fig file
+ * also stops once it or a layer in its flow has its layout edited, such as by adding auto layout
+ * or a gap. Other frames otherwise keep geometry copied with them, as an instance's layers do.
  */
 export function keepsSavedLayout(graph: SceneGraph, frame: SceneNode): boolean {
-  if (frame.source.format !== 'fig') return true
+  const fromFig = frame.source.format === 'fig'
+  const flow = flowOf(graph, frame)
+  // Nothing saved to keep: the usual case outside documents read from files.
+  if (!fromFig && !frame.derivedLayout && !flow.some((child) => child.derivedLayout)) return true
   const stale = graphState(restructured, graph, () => new Set<string>())
   if (stale.has(frame.id)) return false
-  const flow = flowOf(graph, frame)
   // Layout runs inner frames first, so a changed flow deep inside is already marked.
   if (
     flowChanged(graph, frame, flow) ||
@@ -63,6 +73,8 @@ export function keepsSavedLayout(graph: SceneGraph, frame: SceneNode): boolean {
     stale.add(frame.id)
     return false
   }
+  // Geometry copied with other layers, as an instance's are, stays until their structure changes.
+  if (!fromFig) return true
   // A flow inside edited by now resizes this one, but a cancelled preview gives it back.
   const last = graphState(reflowed, graph, () => new Set<string>())
   const keeps =
