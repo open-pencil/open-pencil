@@ -262,7 +262,7 @@ export function createEditor(options?: EditorOptions) {
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
-  const undoBridge = createUndoBridge(undoActions, selection)
+  const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
 
   function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
