@@ -5,6 +5,7 @@ import type { ShaderPreset } from '@open-pencil/scene-graph'
 import {
   addShaderEffect,
   canDrawShaders,
+  DEFAULT_SHADER_EFFECT,
   loadShaderCatalog,
   moveShaderEffect,
   parseShaderPreset,
@@ -66,7 +67,7 @@ const rows = computed(() =>
 const expanded = ref<number | null>(null)
 
 function add() {
-  emit('update', addShaderEffect(preset, 'Aurora'))
+  emit('update', addShaderEffect(preset, DEFAULT_SHADER_EFFECT))
   expanded.value = preset.components.length
 }
 

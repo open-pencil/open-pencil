@@ -72,6 +72,8 @@ export function useShaderPlayback(options: {
 }) {
   const { editor, getRenderer, getView, getViewport, markDirty } = options
   const players = new Map<string, Player>()
+  /** Shaders that failed to start, by the preset that failed, which are not tried again. */
+  const failed = new Map<string, string>()
   /** Renderers to let go of once the frame being drawn is done with them. */
   const retired: Player[] = []
   let last = 0
@@ -160,11 +162,18 @@ export function useShaderPlayback(options: {
       if (!shader || JSON.stringify(shader.preset) !== player.preset) stop(hash)
     }
     for (const [hash, shader] of wanted) {
+      if (failed.get(hash) !== JSON.stringify(shader.preset)) failed.delete(hash)
       const visible = onScreen(shader.bounds)
       const size = screenSize(shader.bounds)
       const existing = players.get(hash)
       if (existing && visible && resized(existing.canvas, size)) stop(hash)
-      if (!players.has(hash) && visible) void start(hash, shader.preset, size)
+      if (!players.has(hash) && visible && !failed.has(hash))
+        start(hash, shader.preset, size).catch((error: unknown) => {
+          // A shader that cannot play keeps its still frame until its preset changes.
+          console.warn('Could not play a shader', error)
+          stop(hash)
+          failed.set(hash, JSON.stringify(shader.preset))
+        })
       const player = players.get(hash)
       if (!player) continue
       player.nodeIds = shader.nodeIds

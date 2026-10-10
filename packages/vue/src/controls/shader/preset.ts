@@ -7,8 +7,11 @@ import { shaderPresetSchema, type ShaderPreset } from '@open-pencil/scene-graph'
  * each over the ones before it; every edit returns a new preset.
  */
 
+/** The effect a new shader paint, or a new effect in one, starts with. */
+export const DEFAULT_SHADER_EFFECT = 'Aurora'
+
 /** The preset a new shader paint starts with. */
-export const DEFAULT_SHADER_PRESET: ShaderPreset = { components: [{ type: 'Aurora' }] }
+export const DEFAULT_SHADER_PRESET: ShaderPreset = { components: [{ type: DEFAULT_SHADER_EFFECT }] }
 
 /** `preset` with the effect `type` added on top, drawn with its default props. */
 export function addShaderEffect(preset: ShaderPreset, type: string): ShaderPreset {

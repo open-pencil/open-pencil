@@ -7,6 +7,7 @@ import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil
 import {
   createShaderPaint,
   shaderOfPaint,
+  shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
 } from '@open-pencil/scene-graph'
@@ -23,8 +24,9 @@ test('a shader fill keeps its frame and preset through a .fig archive', async ()
   await initCodec()
   const graph = new SceneGraph()
   const { paint, shader } = createShaderPaint(PRESET)
-  const frame = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
-  graph.images.set(shader.image, frame)
+  const frame = { width: 120, height: 80, preset: shaderPresetKey(PRESET) }
+  const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
+  graph.images.set(shader.image, png)
   const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
     name: 'Shader',
     width: 120,
@@ -32,7 +34,7 @@ test('a shader fill keeps its frame and preset through a .fig archive', async ()
     fills: [paint]
   })
   graph.updateNode(node.id, {
-    pluginData: withShaderPaints(node, [paint], [{ ...shader, frame: { width: 120, height: 80 } }])
+    pluginData: withShaderPaints(node, [paint], [{ ...shader, frame }])
   })
 
   const bytes = await exportFigFile(graph)
@@ -44,6 +46,6 @@ test('a shader fill keeps its frame and preset through a .fig archive', async ()
   const [fill] = copy.fills
 
   expect(fill).toMatchObject({ type: 'IMAGE', imageHash: shader.image })
-  expect(read.images.get(shader.image)).toEqual(frame)
-  expect(shaderOfPaint(copy, fill)).toEqual({ ...shader, frame: { width: 120, height: 80 } })
+  expect(read.images.get(shader.image)).toEqual(png)
+  expect(shaderOfPaint(copy, fill)).toEqual({ ...shader, frame })
 })

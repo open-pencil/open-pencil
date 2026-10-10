@@ -109,7 +109,7 @@ describe('shader paints', () => {
 
   test('a shader without effects says what it expects', async () => {
     const graph = new SceneGraph()
-    expect(renderJSX(graph, '<Frame bg={shader([])} />')).rejects.toThrow(
+    await expect(renderJSX(graph, '<Frame bg={shader([])} />')).rejects.toThrow(
       /shader\(\) expects a preset/
     )
   })

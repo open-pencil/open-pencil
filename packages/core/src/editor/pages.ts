@@ -191,6 +191,8 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
       options.onProgress?.({ phase: 'layout', detail: page.name })
       ctx.graph.applyDerivedLayoutDuring(() => computeAllLayouts(ctx.graph, pageId))
     }
+    throwIfAborted(options.signal)
+    if (generation !== pageSwitchGeneration) return null
     // Frames are drawn at the size layout gives each layer.
     await drawing?.drawPageShaderFrames(pageId, options)
     throwIfAborted(options.signal)

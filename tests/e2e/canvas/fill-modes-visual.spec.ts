@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
+import { shaderPresetKey } from '@open-pencil/scene-graph'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
 
@@ -221,37 +223,42 @@ test('a shader paint draws its saved frame, and its live frame while one plays',
       return [...new Uint8Array(await (await canvas.convertToBlob()).arrayBuffer())]
     }, color)
   const saved = await square('#f97316')
-  await editor.page.evaluate((frame) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
-      name: 'Shader',
-      x: 120,
-      y: 120,
-      width: 160,
-      height: 160,
-      cornerRadius: 24,
-      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
-    })
-    store.setShaderPaint([node.id], 'fills', 0, { components: [{ type: 'Aurora' }] })
-    const stored = store.graph.getNode(node.id)
-    const paint = stored?.fills[0]
-    if (!stored || !paint?.imageHash) throw new Error('No shader paint')
-    // A frame saved with the document, drawn at the layer's size, so none is drawn again.
-    store.graph.images.set(paint.imageHash, new Uint8Array(frame))
-    const entry = stored.pluginData.find((item) => item.key === 'shader')
-    if (!entry) throw new Error('No shader entry')
-    const value: unknown = JSON.parse(entry.value)
-    if (typeof value !== 'object' || value === null) throw new Error('Unreadable shader entry')
-    const current = { ...value, frame: { width: 160, height: 160 } }
-    store.graph.updateNode(node.id, {
-      pluginData: stored.pluginData.map((item) =>
-        item === entry ? { ...item, value: JSON.stringify(current) } : item
-      )
-    })
-    store.clearSelection()
-    store.requestRender()
-  }, saved)
+  const preset = { components: [{ type: 'Aurora' }] }
+  const presetKey = shaderPresetKey(preset)
+  await editor.page.evaluate(
+    ({ frame, preset, presetKey }) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+        name: 'Shader',
+        x: 120,
+        y: 120,
+        width: 160,
+        height: 160,
+        cornerRadius: 24,
+        fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+      })
+      store.setShaderPaint([node.id], 'fills', 0, preset)
+      const stored = store.graph.getNode(node.id)
+      const paint = stored?.fills[0]
+      if (!stored || !paint?.imageHash) throw new Error('No shader paint')
+      // A frame saved with the document, drawn at the layer's size, so none is drawn again.
+      store.graph.images.set(paint.imageHash, new Uint8Array(frame))
+      const entry = stored.pluginData.find((item) => item.key === 'shader')
+      if (!entry) throw new Error('No shader entry')
+      const value: unknown = JSON.parse(entry.value)
+      if (typeof value !== 'object' || value === null) throw new Error('Unreadable shader entry')
+      const current = { ...value, frame: { width: 160, height: 160, preset: presetKey } }
+      store.graph.updateNode(node.id, {
+        pluginData: stored.pluginData.map((item) =>
+          item === entry ? { ...item, value: JSON.stringify(current) } : item
+        )
+      })
+      store.clearSelection()
+      store.requestRender()
+    },
+    { frame: saved, preset, presetKey }
+  )
   await editor.canvas.waitForRender()
   await expectCanvas('shader-saved-frame')
 

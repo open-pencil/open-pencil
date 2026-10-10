@@ -1,4 +1,5 @@
 import { TRANSPARENT } from '../constants'
+import { computeImageHash } from '../images'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import { randomHex } from '../random'
@@ -74,7 +75,15 @@ export function createShaderPaint(preset: ShaderPreset): {
   }
 }
 
-/** Whether a shader's frame was rendered for its preset at the size `node` has now. */
+/** A short key that tells one preset from another, which a rendered frame records. */
+export function shaderPresetKey(preset: ShaderPreset): string {
+  return computeImageHash(new TextEncoder().encode(JSON.stringify(preset)))
+}
+
+/**
+ * Whether a shader's frame was rendered for its preset at the size `node` has now, so undoing a
+ * preset change after reopening the document does not keep a frame of the newer preset.
+ */
 export function isShaderFrameCurrent(
   shader: ShaderPaint,
   size: { width: number; height: number }
@@ -82,6 +91,7 @@ export function isShaderFrameCurrent(
   const { frame } = shader
   return (
     frame !== undefined &&
+    frame.preset === shaderPresetKey(shader.preset) &&
     Math.round(frame.width) === Math.round(size.width) &&
     Math.round(frame.height) === Math.round(size.height)
   )

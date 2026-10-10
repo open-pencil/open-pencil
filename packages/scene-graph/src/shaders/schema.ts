@@ -29,8 +29,8 @@ export type ShaderPreset = v.InferOutput<typeof shaderPresetSchema>
 /**
  * A paint that draws a shader. The paint itself is an image fill of the shader's still frame, so
  * every format and renderer that reads images shows it; this entry says which image it is, the
- * preset that draws it, and the layer size the frame was rendered at, which is missing until it
- * is rendered for the current preset.
+ * preset that draws it, and the layer size and preset the frame was rendered for, which is
+ * missing until it is first rendered.
  */
 export const shaderPaintSchema = v.object({
   image: v.pipe(v.string(), v.nonEmpty()),
@@ -38,7 +38,9 @@ export const shaderPaintSchema = v.object({
   frame: v.optional(
     v.object({
       width: v.pipe(v.number(), v.finite(), v.minValue(0)),
-      height: v.pipe(v.number(), v.finite(), v.minValue(0))
+      height: v.pipe(v.number(), v.finite(), v.minValue(0)),
+      /** The preset's key (`shaderPresetKey`) when the frame was rendered. */
+      preset: v.pipe(v.string(), v.nonEmpty())
     })
   )
 })

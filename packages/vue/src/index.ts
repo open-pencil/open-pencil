@@ -128,6 +128,7 @@ export { useFillControls } from '#vue/controls/fill/use'
 export { canDrawShaders, createShaderRasterizer } from '#vue/canvas/surface/shader-rasterizer'
 export {
   addShaderEffect,
+  DEFAULT_SHADER_EFFECT,
   DEFAULT_SHADER_PRESET,
   loadShaderCatalog,
   moveShaderEffect,
@@ -438,7 +439,13 @@ export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
 export type { ToolbarContext } from '#vue/primitives/Toolbar'
 
 /** DOM event helpers for cast-free template bindings. */
-export { blurTarget, inputNumberValue, inputValue, selectTarget } from '#vue/shared/dom-events'
+export {
+  blurTarget,
+  inputChecked,
+  inputNumberValue,
+  inputValue,
+  selectTarget
+} from '#vue/shared/dom-events'
 
 /** Internationalization. */
 export * from '#vue/i18n'

@@ -8,6 +8,7 @@ import {
   readShaderPaints,
   SceneGraph,
   shaderOfPaint,
+  shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
 } from '@open-pencil/scene-graph'
@@ -85,11 +86,24 @@ describe('shader paints', () => {
     expect(readShaderPaints({ pluginData: [entry] })).toHaveLength(1)
   })
 
+  test('a frame drawn for another preset is not current', () => {
+    const { shader } = createShaderPaint(SWIRL)
+    const drawnForAurora = {
+      ...shader,
+      frame: { width: 100, height: 50, preset: shaderPresetKey(AURORA) }
+    }
+
+    expect(isShaderFrameCurrent(drawnForAurora, { width: 100, height: 50 })).toBe(false)
+  })
+
   test('a frame is current for the size it was rendered at', () => {
     const { shader } = createShaderPaint(AURORA)
 
     expect(isShaderFrameCurrent(shader, { width: 100, height: 50 })).toBe(false)
-    const rendered = { ...shader, frame: { width: 100, height: 50 } }
+    const rendered = {
+      ...shader,
+      frame: { width: 100, height: 50, preset: shaderPresetKey(AURORA) }
+    }
     expect(isShaderFrameCurrent(rendered, { width: 100.2, height: 50 })).toBe(true)
     expect(isShaderFrameCurrent(rendered, { width: 120, height: 50 })).toBe(false)
   })

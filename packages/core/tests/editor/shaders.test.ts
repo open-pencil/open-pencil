@@ -5,6 +5,7 @@ import {
   createShaderPaint,
   SceneGraph,
   shaderOfPaint,
+  shaderPresetKey,
   withShaderPaints,
   type ShaderPreset
 } from '@open-pencil/scene-graph'
@@ -69,7 +70,11 @@ describe('shader paints', () => {
     const [paint] = read().fills
     expect(drawn).toEqual([{ preset: AURORA, width: 80, height: 40 }])
     expect(editor.graph.images.get(paint.imageHash ?? '')).toEqual(new Uint8Array([1]))
-    expect(shaderOfPaint(read(), paint)?.frame).toEqual({ width: 40, height: 20 })
+    expect(shaderOfPaint(read(), paint)?.frame).toEqual({
+      width: 40,
+      height: 20,
+      preset: shaderPresetKey(AURORA)
+    })
 
     await editor.settleShaderFrames()
     expect(drawn).toHaveLength(1)

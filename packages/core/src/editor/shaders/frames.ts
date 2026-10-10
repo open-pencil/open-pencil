@@ -4,6 +4,7 @@ import {
   isShaderFrameCurrent,
   readShaderPaints,
   shaderOfPaint,
+  shaderPresetKey,
   withShaderPaints,
   type SceneNode,
   type ShaderPaint
@@ -113,7 +114,7 @@ export function createShaderFrames(
       pluginData: withShaderPaints(
         now,
         [...now.fills, ...now.strokes],
-        [{ ...current, frame: size }]
+        [{ ...current, frame: { ...size, preset: shaderPresetKey(current.preset) } }]
       )
     })
     ctx.requestRender()
@@ -170,11 +171,13 @@ export function createShaderFrames(
       options.onProgress?.({ phase: 'drawing-shaders', completed, total: stale.length })
     progress(0)
     await exclusive(async () => {
+      // A switch cancelled while other frames were drawing stops before drawing its own.
       for (const [index, { id, shader }] of stale.entries()) {
         options.signal?.throwIfAborted()
         await drawFrame(id, shader, active).catch((error: unknown) => {
           console.warn('Could not draw a shader frame', error)
         })
+        options.signal?.throwIfAborted()
         progress(index + 1)
       }
     })

@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import type { ShaderComponent } from '@open-pencil/scene-graph'
 import { colorToHexRaw, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
-import { useI18n, type ShaderEffect, type ShaderPropControl } from '@open-pencil/vue'
+import { inputChecked, useI18n, type ShaderEffect, type ShaderPropControl } from '@open-pencil/vue'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -116,7 +116,7 @@ function selectValue(prop: ShaderPropControl): string | number {
           class="accent-accent"
           :checked="value(block) === true"
           :data-property="`shader-${block.key}`"
-          @change="emit('set', block.key, value(block) !== true)"
+          @change="emit('set', block.key, inputChecked($event))"
         />
         {{ block.label }}
       </label>
