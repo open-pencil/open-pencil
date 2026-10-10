@@ -164,6 +164,7 @@
 
 - Polygons and stars draw and export to SVG with their corner radius and smoothing as Figma rounds them, inner star corners included, and copy to and from Figma with their point count and a star's inner ratio; they were drawn with sharp corners, also from `.fig` files, and pasted into Figma as empty shapes.
 - The font picker opens at the current font instead of the top of the list.
+- Undo after adding, switching, or removing auto layout, or wrapping layers in it with <kbd>⇧</kbd><kbd>A</kbd>, puts back every layer the layout moved or resized, and the new frame takes the place of the topmost layer it wraps, as in Figma. Setting the layout a frame already has, or aligning layers that auto layout places, no longer records an undo step, and undoing a drag out of an auto layout frame puts the layer back in its slot.
 - A Hug frame grows with its text while the text is typed, as in Figma, instead of only when editing ends.
 - `figma.currentPage.backgrounds` in the plugin API and `eval` scripts takes Figma paints, as `fills` does.
 - Cmd+Z and Shift+Cmd+Z undo and redo while a fill, stroke, or colour picker is open, as in Figma, and undo reverts the picker's latest change rather than the edit before it.

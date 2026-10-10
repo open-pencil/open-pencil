@@ -71,10 +71,12 @@ function collectMoveOriginals(editor: Editor) {
     const id = autoLayoutMoveTarget(selectedId, editor)
     const node = editor.graph.getNode(id)
     if (node) {
+      const parentId = node.parentId ?? editor.state.currentPageId
       originals.set(id, {
         x: node.x,
         y: node.y,
-        parentId: node.parentId ?? editor.state.currentPageId
+        parentId,
+        index: editor.graph.getNode(parentId)?.childIds.indexOf(id)
       })
     }
   }

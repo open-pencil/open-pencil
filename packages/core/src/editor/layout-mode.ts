@@ -1,67 +1,26 @@
-import { pick } from 'es-toolkit/object'
-
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 
-import { computeLayout } from '#core/layout'
-
+import type { NodePreview } from './node-preview'
 import type { EditorContext } from './types'
 
-export function createLayoutModeActions(ctx: EditorContext) {
+export function createLayoutModeActions(
+  ctx: EditorContext,
+  beginNodePreview: (label: string) => NodePreview
+) {
+  /**
+   * Adding, switching, or removing auto layout moves and resizes children, nested layouts, and
+   * Hug ancestors. A node preview records every layer it changes, so one undo puts them all back
+   * where they were; setting the mode a frame already has records nothing.
+   */
   function setLayoutMode(id: string, mode: LayoutMode) {
     const node = ctx.graph.getNode(id)
-    if (!node) return
-
-    const previous = captureLayoutState(node)
-    const updates = layoutModeUpdates(ctx, node, id, mode)
-
-    ctx.graph.updateNode(id, updates)
-    if (mode !== 'NONE') computeLayout(ctx.graph, id)
-    ctx.runLayoutForNode(id)
-
-    const updated = ctx.graph.getNode(id)
-    if (!updated) return
-    const finalState = pickState(updated, Object.keys(previous) as (keyof SceneNode)[])
-
-    ctx.undo.push({
-      label: mode === 'NONE' ? 'Remove auto layout' : 'Add auto layout',
-      forward: () => {
-        ctx.graph.updateNode(id, finalState)
-        if (mode !== 'NONE') computeLayout(ctx.graph, id)
-        ctx.runLayoutForNode(id)
-      },
-      inverse: () => {
-        ctx.graph.updateNode(id, previous)
-        ctx.runLayoutForNode(id)
-      }
-    })
+    if (!node || node.layoutMode === mode) return
+    const preview = beginNodePreview(mode === 'NONE' ? 'Remove auto layout' : 'Add auto layout')
+    preview.update(id, layoutModeUpdates(ctx, node, id, mode))
+    preview.commit()
   }
 
   return { setLayoutMode }
-}
-
-function captureLayoutState(node: SceneNode): Partial<SceneNode> {
-  return {
-    layoutMode: node.layoutMode,
-    itemSpacing: node.itemSpacing,
-    paddingTop: node.paddingTop,
-    paddingRight: node.paddingRight,
-    paddingBottom: node.paddingBottom,
-    paddingLeft: node.paddingLeft,
-    primaryAxisSizing: node.primaryAxisSizing,
-    counterAxisSizing: node.counterAxisSizing,
-    primaryAxisAlign: node.primaryAxisAlign,
-    counterAxisAlign: node.counterAxisAlign,
-    gridTemplateColumns: node.gridTemplateColumns,
-    gridTemplateRows: node.gridTemplateRows,
-    gridColumnGap: node.gridColumnGap,
-    gridRowGap: node.gridRowGap,
-    width: node.width,
-    height: node.height
-  }
-}
-
-function pickState(node: SceneNode, keys: (keyof SceneNode)[]): Partial<SceneNode> {
-  return pick(node, keys) as Partial<SceneNode>
 }
 
 function layoutModeUpdates(

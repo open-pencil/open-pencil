@@ -11,6 +11,8 @@ import type {
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
+import type { DragOriginal } from '#vue/shared/input/drag-original'
+
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 
 export type CornerPosition = 'nw' | 'ne' | 'se' | 'sw'
@@ -43,7 +45,7 @@ export interface DragMove {
   startScreenX: number
   startScreenY: number
   dragStarted: boolean
-  originals: Map<string, { x: number; y: number; parentId: string }>
+  originals: Map<string, DragOriginal>
   duplicated?: boolean
   duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string
