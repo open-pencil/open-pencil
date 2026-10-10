@@ -43,7 +43,7 @@
   "toolbarMoveUp": "Monter",
   "toolbarMoveDown": "Descendre",
   "toolbarGroupWith": "Grouper avec {tool}",
-  "toolbarUngroup": "Retirer du menu",
+  "toolbarUngroup": "Dégrouper",
   "toolbarReset": "Rétablir les valeurs par défaut",
   "customizeToolbar": "Personnaliser la barre d’outils…",
   "discardChanges": "Abandonner les modifications ?",

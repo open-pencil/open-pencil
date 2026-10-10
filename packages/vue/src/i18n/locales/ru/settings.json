@@ -43,7 +43,7 @@
   "toolbarMoveUp": "Переместить вверх",
   "toolbarMoveDown": "Переместить вниз",
   "toolbarGroupWith": "Объединить с: {tool}",
-  "toolbarUngroup": "Убрать из меню",
+  "toolbarUngroup": "Разгруппировать",
   "toolbarReset": "Сбросить по умолчанию",
   "customizeToolbar": "Настроить панель инструментов…",
   "discardChanges": "Отменить изменения?",

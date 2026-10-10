@@ -26,7 +26,7 @@ export const settingsMessageDefaults = {
   toolbarMoveUp: 'Move up',
   toolbarMoveDown: 'Move down',
   toolbarGroupWith: params('Group with {tool}'),
-  toolbarUngroup: 'Remove from menu',
+  toolbarUngroup: 'Ungroup',
   toolbarReset: 'Reset to default',
   customizeToolbar: 'Customize toolbar…',
   title: 'Settings',

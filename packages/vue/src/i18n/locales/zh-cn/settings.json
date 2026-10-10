@@ -43,7 +43,7 @@
   "toolbarMoveUp": "上移",
   "toolbarMoveDown": "下移",
   "toolbarGroupWith": "与{tool}组合",
-  "toolbarUngroup": "从菜单移除",
+  "toolbarUngroup": "取消组合",
   "toolbarReset": "恢复默认",
   "customizeToolbar": "自定义工具栏…",
   "discardChanges": "放弃更改？",

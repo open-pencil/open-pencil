@@ -49,7 +49,7 @@ export const Regrouping: Story = {
     await userEvent.click(await menu.findByRole('menuitem', { name: 'Group with Hand' }))
     await expect(options()).toHaveFocus()
     await userEvent.click(options())
-    await expect(await menu.findByRole('menuitem', { name: 'Remove from menu' })).toBeVisible()
+    await expect(await menu.findByRole('menuitem', { name: 'Ungroup' })).toBeVisible()
     await userEvent.keyboard('{Escape}')
 
     const grip = () => canvas.getByRole('button', { name: 'Reorder Comment' })

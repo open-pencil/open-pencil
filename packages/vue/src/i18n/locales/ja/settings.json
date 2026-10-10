@@ -43,7 +43,7 @@
   "toolbarMoveUp": "上へ移動",
   "toolbarMoveDown": "下へ移動",
   "toolbarGroupWith": "{tool}とまとめる",
-  "toolbarUngroup": "メニューから外す",
+  "toolbarUngroup": "グループ解除",
   "toolbarReset": "デフォルトに戻す",
   "customizeToolbar": "ツールバーをカスタマイズ…",
   "discardChanges": "変更を破棄しますか？",
