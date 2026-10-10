@@ -1,6 +1,7 @@
 import {
   behaviourProperties,
   readBehaviour,
+  variantDefaultValue,
   type BehaviourKind,
   type ComponentPropertyDefinition,
   type SceneGraph,
@@ -57,10 +58,17 @@ function interactionCondition(set: SceneNode, states: NonNullable<BehaviourArgs[
   }
 }
 
-/** Any other variant property is a prop the generated component sets as `data-*`. */
-function propCondition(definition: ComponentPropertyDefinition): ValueCondition {
-  return (value) =>
-    value === definition.defaultValue ? null : { type: 'prop', name: definition.name, value }
+/**
+ * Any other variant property is a prop the generated component sets as `data-*`, at rest at
+ * its default value, the default variant's when the document leaves it empty.
+ */
+function propCondition(
+  graph: SceneGraph,
+  set: SceneNode,
+  definition: ComponentPropertyDefinition
+): ValueCondition {
+  const rest = variantDefaultValue(graph, set, definition)
+  return (value) => (value === rest ? null : { type: 'prop', name: definition.name, value })
 }
 
 /**
@@ -80,7 +88,7 @@ export function variantConditions(
     const filled = args?.filled
     if (filled?.property === definition.name)
       return (value) => (value === filled.on ? { type: 'filled' } : null)
-    return propCondition(definition)
+    return propCondition(graph, set, definition)
   }
   const byProperty = new Map(
     behaviourProperties(graph, set)
