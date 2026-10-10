@@ -65,11 +65,27 @@ describe('deriveAccentPalette', () => {
     }
   })
 
-  test('holds the accent in a lightness band so near-black and near-white picks stay visible', () => {
+  test('pulls near-black and near-white picks into a visible lightness', () => {
     for (const color of ['#000000', '#FFFFFF']) {
       const lightness = rgbaToOkHCL(parseColor(palette(color, 'dark').tokens['--color-accent'])).l
-      expect(lightness).toBeGreaterThanOrEqual(ACCENT_LIGHTNESS_RANGE.min - 0.005)
-      expect(lightness).toBeLessThanOrEqual(ACCENT_LIGHTNESS_RANGE.max + 0.005)
+      expect(lightness).toBeGreaterThan(ACCENT_LIGHTNESS_RANGE.min - 0.05)
+      expect(lightness).toBeLessThan(ACCENT_LIGHTNESS_RANGE.max + 0.05)
+    }
+  })
+
+  test('moves a custom accent until its text reaches AA contrast on accent and primary surfaces', () => {
+    for (const color of ['#808080', '#00A0A0', '#FF4FA0']) {
+      for (const theme of THEMES) {
+        const { tokens } = palette(color, theme)
+        const onAccent = parseColor(tokens['--color-on-accent'])
+        const onPrimary = parseColor(tokens['--color-on-primary'])
+        for (const surface of ['--color-accent', '--color-panel-selected'] as const) {
+          expect(contrastRatio(onAccent, parseColor(tokens[surface]))).toBeGreaterThanOrEqual(4.5)
+        }
+        expect(
+          contrastRatio(onPrimary, parseColor(tokens['--color-primary']))
+        ).toBeGreaterThanOrEqual(4.5)
+      }
     }
   })
 

@@ -90,6 +90,14 @@ const REFERENCE_TOKENS: Readonly<Record<AccentTheme, Readonly<Record<DerivedToke
 /** Lightness band a base is held in, so a near-black or near-white pick still shows its controls. */
 export const ACCENT_LIGHTNESS_RANGE = { min: 0.4, max: 0.75 } as const
 
+/** WCAG AA contrast for normal text, which every accent's text keeps against its surface. */
+export const ACCENT_TEXT_CONTRAST = 4.5
+
+/** Lightness steps tried, nearest first, when a color's text would fall short of that contrast. */
+const LIGHTNESS_SHIFTS = Array.from({ length: 61 }, (_, index) =>
+  index % 2 === 0 ? index / 2 / 200 : -(index + 1) / 2 / 200
+)
+
 /** The interface's dark text, `--color-inverted` in the dark theme and `--color-surface` in light. */
 const INK = parseColor('#1F2328')
 
@@ -110,41 +118,70 @@ function clampLightness(lightness: number): number {
 }
 
 /**
- * Moves a reference token the way `base` differs from the default blue, in OkLCH. A tint keeps
- * its own lightness, since it is a shade of the panel behind it rather than of the accent.
+ * Moves a reference token the way `base` differs from the default blue, in OkLCH, plus `shift`
+ * in lightness. A tint keeps its own lightness, since it is a shade of the panel behind it rather
+ * than of the accent.
  */
-function relateTo(base: Color): (reference: Color, tint?: boolean) => Color {
+function relateTo(base: Color, shift: number): (reference: Color, tint?: boolean) => Color {
   const from = rgbaToOkHCL(REFERENCE_BASE)
   const to = rgbaToOkHCL(base)
-  const lightness = clampLightness(to.l) - from.l
+  const lightness = clampLightness(to.l) - from.l + shift
   const chroma = to.c / from.c
   const hue = to.h - from.h
   return (reference, tint = false) => {
     const color = rgbaToOkHCL(reference)
-    return okhclToRGBA({
+    const related = okhclToRGBA({
       l: tint ? color.l : color.l + lightness,
       c: color.c * chroma,
       h: color.h + hue,
       a: 1
     })
+    // Rounded to the hex the stylesheet receives, so contrast is checked on what is drawn.
+    return parseColor(colorToHex(related))
   }
+}
+
+function worstContrast(text: Color, surfaces: Color[]): number {
+  return Math.min(...surfaces.map((surface) => contrastRatio(text, surface)))
 }
 
 /** White or ink, whichever reads worst-case better on every surface the text sits on. */
 function accentForeground(surfaces: Color[]): Color {
-  const candidates = [WHITE, INK]
-  const worstContrast = (text: Color) =>
-    Math.min(...surfaces.map((surface) => contrastRatio(text, surface)))
-  return maxBy(candidates, worstContrast) ?? WHITE
+  return maxBy([WHITE, INK], (text) => worstContrast(text, surfaces))
 }
 
-/** The accent family for `theme`, derived from one base color. */
-export function deriveAccentPalette(base: Color, theme: AccentTheme): AccentPalette {
-  const relate = relateTo(base)
+function surfaces(base: Color, theme: AccentTheme, shift: number) {
+  const relate = relateTo(base, shift)
   const reference = REFERENCE_TOKENS[theme]
-  const accent = relate(parseColor(reference['--color-accent']))
-  const selected = relate(parseColor(reference['--color-panel-selected']))
-  const primary = relate(parseColor(reference['--color-primary']))
+  return {
+    relate,
+    reference,
+    accent: relate(parseColor(reference['--color-accent'])),
+    selected: relate(parseColor(reference['--color-panel-selected'])),
+    primary: relate(parseColor(reference['--color-primary']))
+  }
+}
+
+/** How readable a family's text is: the lower of its accent and primary text contrasts. */
+function textContrast({ accent, selected, primary }: ReturnType<typeof surfaces>): number {
+  const accentSurfaces = [accent, selected]
+  return Math.min(
+    worstContrast(accentForeground(accentSurfaces), accentSurfaces),
+    worstContrast(accentForeground([primary]), [primary])
+  )
+}
+
+/**
+ * The accent family for `theme`, derived from one base color. When its text would fall short of
+ * {@link ACCENT_TEXT_CONTRAST}, the family moves by the smallest lightness shift that reaches it.
+ */
+export function deriveAccentPalette(base: Color, theme: AccentTheme): AccentPalette {
+  const families = LIGHTNESS_SHIFTS.map((shift) => surfaces(base, theme, shift))
+  const family =
+    families.find((candidate) => textContrast(candidate) >= ACCENT_TEXT_CONTRAST) ??
+    maxBy(families, textContrast) ??
+    surfaces(base, theme, 0)
+  const { relate, reference, accent, selected, primary } = family
   const foreground = accentForeground([accent, selected])
   return {
     tokens: {
