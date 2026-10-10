@@ -88,6 +88,7 @@
   "addPage": "Добавить страницу",
   "toggleVisibility": "Переключить видимость",
   "independentCornerRadii": "Независимые радиусы углов",
+  "lockAspectRatio": "Зафиксировать пропорции",
   "detachVariable": "Отвязать переменную",
   "applyVariable": "Применить переменную",
   "noVariablesFound": "Переменные не найдены",

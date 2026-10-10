@@ -84,16 +84,36 @@ export function createStructureReorderActions(ctx: EditorContext) {
     })
   }
 
+  /**
+   * Puts a frame's children in `childIds`. Only the children it moves need to be editable, so a
+   * read-only library layer that keeps its place does not block reordering its siblings.
+   */
   function applyChildOrder(parentId: string, childIds: readonly string[]) {
     assertNodeEditable(ctx.graph, parentId)
-    for (const childId of childIds) assertNodeEditable(ctx.graph, childId)
     const current = ctx.graph.getNode(parentId)?.childIds ?? []
+    const moved = childIds.filter((childId, index) => current[index] !== childId)
+    for (const childId of moved) assertNodeEditable(ctx.graph, childId)
     for (const [index, childId] of childIds.entries()) {
-      if (current[index] === childId) continue
+      if (ctx.graph.getNode(parentId)?.childIds[index] === childId) continue
       ctx.graph.insertChildAt(childId, parentId, index)
     }
     ctx.runLayoutForNode(parentId)
     ctx.requestRender()
+  }
+
+  /** Puts a frame's children in `order` as one undo step, laying the frame out once. */
+  function setChildOrder(parentId: string, order: readonly string[], label = 'Reorder') {
+    const before = ctx.graph.getNode(parentId)?.childIds
+    if (!before || order.every((id, index) => id === before[index])) return
+    if (!prepareSlotEdits(ctx, [parentId])) return
+    const previous = [...before]
+    const next = [...order]
+    applyChildOrder(parentId, next)
+    ctx.undo.push({
+      label,
+      forward: () => applyChildOrder(parentId, next),
+      inverse: () => applyChildOrder(parentId, previous)
+    })
   }
 
   function moveSelectionInZOrder(
@@ -181,6 +201,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
 
   return {
     reorderInAutoLayout,
+    setChildOrder,
     reorderChildWithUndo,
     bringForward,
     sendBackward,

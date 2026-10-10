@@ -88,6 +88,7 @@
   "addPage": "Ajouter une page",
   "toggleVisibility": "Basculer la visibilité",
   "independentCornerRadii": "Rayons de coin indépendants",
+  "lockAspectRatio": "Verrouiller les proportions",
   "detachVariable": "Détacher la variable",
   "applyVariable": "Appliquer la variable",
   "noVariablesFound": "Aucune variable trouvée",

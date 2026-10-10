@@ -1,4 +1,5 @@
 import type { Editor } from '@open-pencil/core/editor'
+import { enforcedAspectRatio } from '@open-pencil/scene-graph'
 import { collectResizeDescendants, createResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
@@ -33,6 +34,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         origTextPathData: snap.textPathData,
         origTextPathBox: snap.textPathBox,
         origChildren: collectResizeDescendants(editor.graph, id),
+        lockedAspectRatio: enforcedAspectRatio(node),
         appliedRect: { x: node.x, y: node.y, width: node.width, height: node.height }
       }
     }

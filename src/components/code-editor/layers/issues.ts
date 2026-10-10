@@ -6,7 +6,13 @@ import { designJSXPropertyNames } from '@open-pencil/design-jsx'
 
 import type { LayerIssue } from '@/app/code/layers/issues'
 
-import { layerLinkConfig, linkedElements, setLayerLinks, type LinkedElement } from './links'
+import {
+  ELEMENT_NODES,
+  layerLinkConfig,
+  linkedElements,
+  setLayerLinks,
+  type LinkedElement
+} from './links'
 import { staleAttributes } from './stale'
 
 export const setLayerIssues = StateEffect.define<readonly LayerIssue[]>()
@@ -39,8 +45,8 @@ function attributeRange(
     to: element.openTo,
     enter(node) {
       // Ancestors contain the element; only nested elements' attributes belong to others.
-      if (node.name === 'JSXElement' && node.from > element.from) return false
-      if (node.name !== 'JSXAttribute') return undefined
+      if (ELEMENT_NODES.has(node.name) && node.from > element.from) return false
+      if (node.name !== 'JSXAttribute' && node.name !== 'Attribute') return undefined
       const name = node.node.firstChild
       const rank = name ? names.indexOf(state.doc.sliceString(name.from, name.to)) : -1
       if (rank !== -1) matches.push({ from: node.from, to: node.to, rank })

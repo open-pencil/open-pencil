@@ -44,6 +44,7 @@ import {
 import { estimateTextSize, getTextMeasurer } from './layout/text-measurement'
 import {
   applyMinMaxConstraints,
+  applyLockedAspectRatio,
   configureAbsoluteChild,
   configureNonTextLeaf,
   createYogaNode,
@@ -273,6 +274,7 @@ function configureChildAsGrid(
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
   if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
+  applyLockedAspectRatio(yogaChild, child, parent)
   applyMinMaxConstraints(yogaChild, child)
 
   const grandchildren = graph.getChildren(child.id)
@@ -368,6 +370,7 @@ function configureChildAsAutoLayout(
 
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
   if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
+  applyLockedAspectRatio(yogaChild, child, parent)
 
   if (usesDetachedDerivedLayout(graph, child)) {
     // The imported size is what the child's own hug produced, whether or not it also fills.
@@ -520,6 +523,7 @@ function configureChildAsLeaf(
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
   if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
+  applyLockedAspectRatio(yogaChild, child, parent)
   applyMinMaxConstraints(yogaChild, child)
 }
 

@@ -7,7 +7,13 @@ import Yoga, {
   type Node as YogaNode
 } from 'yoga-layout'
 
-import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  enforcedAspectRatio,
+  layoutSizingInParent,
+  type GridTrack,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 const yogaConfig = Yoga.Config.create()
 yogaConfig.setPointScaleFactor(0)
@@ -48,6 +54,33 @@ export function configureNonTextLeaf(
       if (!stretchCross) yogaChild.setWidth(w)
     }
   }
+}
+
+/**
+ * A locked aspect ratio sizes the axis Fill does not drive, as Figma lays it out: Fill along the
+ * parent's primary axis drives when set, else Fill across it, and the other axis follows even past
+ * the parent's edge. An axis that hugs keeps its own size.
+ */
+export function applyLockedAspectRatio(
+  yogaNode: YogaNode,
+  node: SceneNode,
+  parent: SceneNode
+): void {
+  const ratio = enforcedAspectRatio(node)
+  if (ratio === null) return
+  const width = layoutSizingInParent(parent, node, 'HORIZONTAL')
+  const height = layoutSizingInParent(parent, node, 'VERTICAL')
+  const primaryIsWidth = parent.layoutMode !== 'VERTICAL'
+  const primary = primaryIsWidth ? width : height
+  const cross = primaryIsWidth ? height : width
+  let drivesWidth: boolean
+  if (primary === 'FILL') drivesWidth = primaryIsWidth
+  else if (cross === 'FILL') drivesWidth = !primaryIsWidth
+  else return
+  if ((drivesWidth ? height : width) === 'HUG') return
+  yogaNode.setAspectRatio(ratio)
+  if (drivesWidth) yogaNode.setHeight('auto')
+  else yogaNode.setWidth('auto')
 }
 
 export function applyMinMaxConstraints(yogaNode: YogaNode, node: SceneNode): void {

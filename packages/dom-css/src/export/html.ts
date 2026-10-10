@@ -6,6 +6,12 @@ export interface SerializeHTMLOptions {
   style?: 'inline' | 'tailwind'
   /** Custom properties declared in `@theme`; a `var()` naming one becomes its utility. */
   themeVariables?: readonly string[]
+  /**
+   * Put each child of an element that holds only elements on its own indented line, for code
+   * people read. Text keeps its whitespace; whitespace between elements in a projected layer
+   * changes nothing, since its children are placed by flex, grid, or absolute position.
+   */
+  indent?: boolean
 }
 
 const VOID_ELEMENTS = new Set([
@@ -108,17 +114,46 @@ function shaderFrame(node: DesignElement): string {
   return frame ? `<img src="${escapeAttr(frame)}" alt="" style="${SHADER_FRAME_STYLE}">` : ''
 }
 
-function serializeElement(node: DesignElement, options: SerializeHTMLOptions): string {
+function serializeElement(
+  node: DesignElement,
+  options: SerializeHTMLOptions,
+  depth: number
+): string {
   // SVG names such as `linearGradient` keep their case, as an SVG parser needs them.
   const tagName = node.tagName
   const attrs = serializeAttrs(node, options)
   if (VOID_ELEMENTS.has(tagName.toLowerCase())) return `<${tagName}${attrs}>`
-  const children = node.children.map((child) => serializeNode(child, options)).join('')
-  return `<${tagName}${attrs}>${shaderFrame(node)}${children}</${tagName}>`
+  const children = [
+    shaderFrame(node),
+    ...node.children.map((child) => serializeNode(child, options, depth + 1))
+  ].filter((child) => child !== '')
+  const block =
+    options.indent && children.length > 0 && node.children.every((child) => child.type !== 'text')
+  if (!block) return `<${tagName}${attrs}>${children.join('')}</${tagName}>`
+  const inner = '  '.repeat(depth + 1)
+  const outer = '  '.repeat(depth)
+  return `<${tagName}${attrs}>\n${children.map((child) => inner + child).join('\n')}\n${outer}</${tagName}>`
 }
 
-export function serializeNode(node: DesignNode, options: SerializeHTMLOptions = {}): string {
-  return node.type === 'text' ? serializeText(node) : serializeElement(node, options)
+export function serializeNode(
+  node: DesignNode,
+  options: SerializeHTMLOptions = {},
+  depth = 0
+): string {
+  return node.type === 'text' ? serializeText(node) : serializeElement(node, options, depth)
+}
+
+/**
+ * The elements `serializeHTML` writes, in the order they open: the document's own, and `null`
+ * for a shader's still frame, which it adds in front of its layer's content.
+ */
+export function serializedElements(document: DesignDocument): (DesignElement | null)[] {
+  const visit = (node: DesignNode): (DesignElement | null)[] => {
+    if (node.type === 'text') return []
+    if (VOID_ELEMENTS.has(node.tagName.toLowerCase())) return [node]
+    return [node, ...(node.shader?.frame ? [null] : []), ...node.children.flatMap(visit)]
+  }
+  return document.children.flatMap(visit)
 }
 
 export function serializeHTML(
@@ -129,5 +164,7 @@ export function serializeHTML(
     ...options,
     themeVariables: options.themeVariables ?? document.tokens?.themeVariables()
   }
-  return document.children.map((node) => serializeNode(node, resolved)).join('')
+  return document.children
+    .map((node) => serializeNode(node, resolved))
+    .join(options.indent ? '\n' : '')
 }

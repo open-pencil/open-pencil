@@ -29,6 +29,8 @@ export interface ReferenceProp {
  */
 export interface ComponentReference {
   type: 'reference'
+  /** The layer it draws, which code links back to. */
+  layerId?: string
   /** The component's identifier and file name. */
   component: string
   /** The class the parent's state styles place it by. */
@@ -41,6 +43,8 @@ export interface ComponentReference {
 /** An icon from a set, drawn by the framework's Iconify component. */
 export interface IconReference {
   type: 'icon'
+  /** The layer it draws, which code links back to. */
+  layerId?: string
   /** `prefix:name`. */
   icon: string
   className: string

@@ -2,6 +2,7 @@ import type { Editor, MovePlace } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
+import { collectFlowDrags } from '#vue/shared/input/flow-reorder'
 import type { DragState } from '#vue/shared/input/types'
 
 function isLockedInTree(id: string, editor: Editor) {
@@ -118,6 +119,7 @@ export function createSelectionMoveDrag(
     startScreenY: sy,
     dragStarted: false,
     originals,
-    autoLayoutParentId: detectDragAutoLayoutParent(originals, editor)
+    autoLayoutParentId: detectDragAutoLayoutParent(originals, editor),
+    flows: collectFlowDrags(originals, editor)
   }
 }

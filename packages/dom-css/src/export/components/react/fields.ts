@@ -4,7 +4,7 @@ import { es, jsx } from '@open-pencil/emit'
 
 import { progressWidth } from '../fields'
 import type { ComponentElement, ComponentModel, GeneratedKind } from '../model'
-import { moduleClass, numeric, type MarkupUses } from './shared'
+import { classValue, numeric, type MarkupUses } from './shared'
 
 /** Kinds whose native input takes the caller's props, rather than their root. */
 export const INPUT_PROPS: Partial<Record<GeneratedKind, 'input' | 'textarea'>> = {
@@ -51,7 +51,7 @@ export const NUMBER_INPUT = [
 /** A field's input: a number input that commits within its range, or the input or textarea. */
 export function inputElement(className: string, uses: MarkupUses, depth: number): es.SyntaxNode {
   const { component } = uses
-  const classAttribute = jsx.attribute('className', jsx.container(moduleClass(className)))
+  const classAttribute = jsx.attribute('className', classValue(uses.classOf(className)))
   const { range } = component
   if (range)
     return jsx.element(

@@ -160,6 +160,7 @@ export function createDefaultNode(
     maxWidth: null,
     minHeight: null,
     maxHeight: null,
+    targetAspectRatio: null,
     isMask: false,
     maskType: 'ALPHA',
     maskIsOutline: false,

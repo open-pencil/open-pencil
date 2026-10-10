@@ -88,6 +88,7 @@
   "addPage": "Seite hinzufügen",
   "toggleVisibility": "Sichtbarkeit umschalten",
   "independentCornerRadii": "Unabhängige Eckenradien",
+  "lockAspectRatio": "Seitenverhältnis sperren",
   "detachVariable": "Variable lösen",
   "applyVariable": "Variable anwenden",
   "noVariablesFound": "Keine Variablen gefunden",

@@ -280,6 +280,7 @@ export interface NodeChange {
   stackCounterSpacing?: number
   minSize?: { value?: Vector }
   maxSize?: { value?: Vector }
+  targetAspectRatio?: { value?: Vector }
   // Frame
   clipsContent?: boolean
   frameMaskDisabled?: boolean

@@ -78,6 +78,7 @@ function dragFor(node: SceneNode, origChildren: DragResize['origChildren'] = nul
     origStrokes: [],
     origTextPathData: null,
     origTextPathBox: null,
+    lockedAspectRatio: null,
     origChildren
   }
 }

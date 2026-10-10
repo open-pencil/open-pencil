@@ -132,7 +132,6 @@ export const ROTATION_SNAP_DEGREES = 15
 export const CORNER_ROTATE_ZONE = 16
 export const DEFAULT_TEXT_WIDTH = 200
 export const DEFAULT_TEXT_HEIGHT = 24
-export const AUTO_LAYOUT_BREAK_THRESHOLD = 8
 export const HANDLE_HIT_RADIUS = 6
 
 export const ACP_PERMISSION_TIMEOUT_MS = 60_000

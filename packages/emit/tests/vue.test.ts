@@ -118,6 +118,29 @@ describe('Vue templates', () => {
     ])
     expect(descriptor.template?.content.trim()).toBe('<div />')
   })
+
+  test('leave out the script block when there is nothing to import or declare', () => {
+    const source = vue.printComponent({
+      script: es.parseModule(''),
+      template: vue.element('div')
+    })
+    expect(parse(source).descriptor.scriptSetup).toBeNull()
+  })
+
+  test('list the elements a component opens, in order, the blocks as null', () => {
+    const thumb = vue.element('SwitchThumb')
+    const root = vue.element('SwitchRoot', [], [thumb])
+    const sfc = { script: es.parseModule('const on = true'), template: root, style: '.a {}' }
+    const source = vue.printComponent(sfc)
+
+    const elements = vue.componentElements(sfc)
+    expect(elements).toEqual([null, null, root, thumb, null])
+    // One for each tag the source opens: script, template, the template's own, and style.
+    expect(source.match(/<[A-Za-z]/g)).toHaveLength(elements.length)
+    expect(vue.componentElements({ ...sfc, script: es.parseModule(''), style: undefined })).toEqual(
+      [null, root, thumb]
+    )
+  })
 })
 
 describe('conditional elements', () => {

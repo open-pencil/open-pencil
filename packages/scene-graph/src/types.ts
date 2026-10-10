@@ -613,6 +613,11 @@ export interface SceneNode {
   maxWidth: number | null
   minHeight: number | null
   maxHeight: number | null
+  /**
+   * The size whose proportions the layer keeps, as Figma stores it: the width and height it had
+   * when the ratio was locked, not a reduced ratio. Null leaves the proportions free.
+   */
+  targetAspectRatio: Vector | null
 
   isMask: boolean
   maskType: MaskType
