@@ -168,6 +168,8 @@
 
 ### Fixed
 
+- Dragging a number field in the properties panel moves its value in whole steps instead of fractions on high-density screens.
+- While text is being edited, its caret and selection follow a property dragged in the panel instead of catching up when the mouse is released.
 - Outline text, flatten, and boolean operations on text place glyphs where the canvas draws them; lines sat lower by about a quarter of the font size.
 - The AI provider list labels its "Your agents" and "Providers" groups in the app language instead of always in English.
 - Tooltips no longer appear when a popover such as the colour picker focuses its first control on open; they still show for keyboard focus. Moving the pointer along a row of buttons switches tooltips at once instead of blinking out, and tooltips centre on their control instead of sitting a few pixels off.

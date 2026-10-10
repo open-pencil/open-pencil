@@ -28,6 +28,8 @@ export class TextEditor {
   private renderer: SkiaRenderer | null = null
   private _state: TextEditorState | null = null
   private paragraphNode: SceneNode | null = null
+  /** The edited node as it changed outside the editor, laid out again on the next read. */
+  private staleNode: SceneNode | null = null
   caretVisible = true
 
   constructor(ck: CanvasKit) {
@@ -35,7 +37,7 @@ export class TextEditor {
   }
 
   private paragraphVerticalOffset(): number {
-    const s = this._state
+    const s = this.current()
     const node = this.paragraphNode
     if (!s?.paragraph || !node) return 0
     const available = Math.max(0, node.height - s.paragraph.getHeight())
@@ -49,7 +51,7 @@ export class TextEditor {
   }
 
   private prepareMove(extend: boolean): TextEditorState | null {
-    const s = this._state
+    const s = this.current()
     if (!s) return null
     if (extend && s.selectionAnchor === null) s.selectionAnchor = s.cursor
     if (!extend) s.selectionAnchor = null
@@ -57,7 +59,7 @@ export class TextEditor {
   }
 
   private replaceRange(start: number, end: number, text: string): TextEditorState | null {
-    const s = this._state
+    const s = this.current()
     if (!s) return null
     s.text = s.text.slice(0, start) + text + s.text.slice(end)
     s.cursor = start + text.length
@@ -66,14 +68,14 @@ export class TextEditor {
   }
 
   private currentLineMetrics() {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return null
     const lineNum = s.paragraph.getLineNumberAt(s.cursor)
     return lineNum < 0 ? null : s.paragraph.getLineMetricsAt(lineNum)
   }
 
   private collapseSelectionTo(edge: 0 | 1): boolean {
-    const s = this._state
+    const s = this.current()
     if (!s || !this.hasSelection()) return false
     const range = this.getSelectionRange()
     if (range) s.cursor = range[edge]
@@ -82,7 +84,13 @@ export class TextEditor {
   }
 
   get state(): TextEditorState | null {
+    return this.current()
+  }
+
+  /** The editing state with its layout brought up to date with the node and its fonts. */
+  private current(): TextEditorState | null {
     const state = this._state
+    if (state && this.staleNode) this.rebuildParagraph(this.staleNode)
     if (
       state &&
       this.renderer &&
@@ -125,11 +133,21 @@ export class TextEditor {
     this._state.paragraph?.delete()
     this._state = null
     this.paragraphNode = null
+    this.staleNode = null
     return result
+  }
+
+  /**
+   * Marks the layout out of date after the edited node changed outside the editor, as a panel
+   * field does while it is dragged; the caret and selection follow on the next read.
+   */
+  invalidateParagraph(node: SceneNode): void {
+    if (this._state?.nodeId === node.id) this.staleNode = node
   }
 
   rebuildParagraph(node: SceneNode): void {
     const s = this._state
+    this.staleNode = null
     if (!s || !this.renderer) return
     s.paragraph?.delete()
     this.paragraphNode = node
@@ -140,7 +158,7 @@ export class TextEditor {
 
   /** Takes the node's text back after it changed outside the editor, as an undo does. */
   syncToNode(node: SceneNode): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     if (s.text !== node.text) {
       s.text = node.text
@@ -151,7 +169,7 @@ export class TextEditor {
   }
 
   hasSelection(): boolean {
-    const s = this._state
+    const s = this.current()
     return s !== null && s.selectionAnchor !== null && s.selectionAnchor !== s.cursor
   }
 
@@ -161,7 +179,7 @@ export class TextEditor {
   }
 
   getSelectionRange(): [number, number] | null {
-    const s = this._state
+    const s = this.current()
     if (!s || s.selectionAnchor === null || s.selectionAnchor === s.cursor) return null
     const lo = Math.min(s.cursor, s.selectionAnchor)
     const hi = Math.max(s.cursor, s.selectionAnchor)
@@ -175,14 +193,14 @@ export class TextEditor {
   }
 
   selectAll(): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     s.selectionAnchor = 0
     s.cursor = s.text.length
   }
 
   selectWord(pos: number): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     const text = s.text
     let start = pos
@@ -194,7 +212,7 @@ export class TextEditor {
   }
 
   setCursorAt(x: number, y: number, extend = false): void {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return
     const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
     if (extend) {
@@ -206,7 +224,7 @@ export class TextEditor {
   }
 
   selectLine(pos: number): void {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return
     const lineNum = s.paragraph.getLineNumberAt(pos)
     if (lineNum < 0) return
@@ -217,21 +235,21 @@ export class TextEditor {
   }
 
   selectWordAt(x: number, y: number): void {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return
     const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
     this.selectWord(pos)
   }
 
   selectLineAt(x: number, y: number): void {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return
     const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
     this.selectLine(pos)
   }
 
   insert(text: string, node: SceneNode): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     const range = this.getSelectionRange() ?? [s.cursor, s.cursor]
     this.replaceRange(range[0], range[1], text)
@@ -239,7 +257,7 @@ export class TextEditor {
   }
 
   backspace(node: SceneNode): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     const range = this.getSelectionRange() ?? (s.cursor > 0 ? [s.cursor - 1, s.cursor] : null)
     if (range) this.replaceRange(range[0], range[1], '')
@@ -247,7 +265,7 @@ export class TextEditor {
   }
 
   delete(node: SceneNode): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     const range =
       this.getSelectionRange() ?? (s.cursor < s.text.length ? [s.cursor, s.cursor + 1] : null)
@@ -256,7 +274,7 @@ export class TextEditor {
   }
 
   private moveHorizontal(extend: boolean, visualDirection: 'left' | 'right'): void {
-    const s = this._state
+    const s = this.current()
     if (!s) return
     if (!extend && this.collapseSelectionTo(visualDirection === 'left' ? 0 : 1)) return
     this.prepareMove(extend)
@@ -275,7 +293,7 @@ export class TextEditor {
   }
 
   private moveVertical(extend: boolean, edge: 'up' | 'down'): void {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return
     this.prepareMove(extend)
     const caret = this.getCaretRect()
@@ -294,7 +312,7 @@ export class TextEditor {
   }
 
   private moveToLineEdge(extend: boolean, edge: 'start' | 'end'): void {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return
     this.prepareMove(extend)
     const metrics = this.currentLineMetrics()
@@ -379,7 +397,7 @@ export class TextEditor {
   }
 
   getCaretRect(): TextCaret | null {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return null
 
     const text = s.text
@@ -394,7 +412,7 @@ export class TextEditor {
   }
 
   getSelectionRects(): Rect[] {
-    const s = this._state
+    const s = this.current()
     if (!s?.paragraph) return []
     const range = this.getSelectionRange()
     if (!range) return []

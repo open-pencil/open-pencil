@@ -213,7 +213,8 @@ function startScrub(event: PointerEvent) {
 
   const startX = event.clientX
   let lastX = startX
-  let accumulated = numericValue.value
+  const startValue = numericValue.value
+  let accumulated = startValue
   let hasMoved = false
   const target = event.currentTarget instanceof Element ? event.currentTarget : undefined
   scrubTarget = target
@@ -233,7 +234,9 @@ function startScrub(event: PointerEvent) {
     }
     if (!hasMoved) return
     accumulated += dx * stepValue.value * sensitivity
-    updateValue(accumulated)
+    // Pointer movement is fractional on high-density screens; the value moves in whole steps.
+    const steps = Math.round((accumulated - startValue) / stepValue.value)
+    updateValue(startValue + steps * stepValue.value)
   })
 
   const finish = (cancelled: boolean) => {

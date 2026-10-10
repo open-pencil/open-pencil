@@ -237,6 +237,36 @@ describe('TextEditor', () => {
     expect(editor.getCaretRect()).toEqual({ x: 60, y0: 40, y1: 57 })
   })
 
+  test('lays the text out again when its node changes outside the editor', () => {
+    const built: number[] = []
+    const editor = new TextEditor(mockCk)
+    editor.setRenderer(
+      asDouble<Parameters<TextEditor['setRenderer']>[0]>({
+        buildParagraph: (node: SceneNode) => {
+          built.push(node.paragraphSpacing)
+          return layoutOf(
+            {
+              delete: () => undefined,
+              getHeight: () => 20,
+              getLineMetrics: () => [],
+              getRectsForRange: () => []
+            },
+            node.text.length
+          )
+        },
+        fontGeneration: 1
+      })
+    )
+    const node = createDefaultNode(() => 'spaced-text', 'TEXT', { text: 'A\nB' })
+    editor.start(node)
+    editor.invalidateParagraph({ ...node, paragraphSpacing: 12 })
+    expect(built).toEqual([0])
+    // A panel field previews a value: the selection drawn next follows it.
+    editor.getSelectionRects()
+    editor.getSelectionRects()
+    expect(built).toEqual([0, 12])
+  })
+
   test('offsets the empty-text caret for vertical alignment', () => {
     const { editor } = createParagraphEditor('BOTTOM')
     editorState(editor).text = ''
