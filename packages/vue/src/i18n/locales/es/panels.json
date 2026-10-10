@@ -124,6 +124,7 @@
   "alignCenterHorizontally": "Centrar horizontalmente",
   "alignCenterVertically": "Centrar verticalmente",
   "flipHorizontal": "Voltear horizontalmente",
+  "ignoreAutoLayout": "Ignorar diseño automático",
   "flipVertical": "Voltear verticalmente",
   "rotate90": "Girar 90°",
   "mixedFillsHelp": "Haz clic en + para reemplazar rellenos mixtos",

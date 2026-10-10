@@ -75,6 +75,26 @@ export function usePosition() {
     _cancelProp(nodes.value, key)
   }
 
+  /** Whether every selected layer sits in an auto layout, where it can ignore that layout. */
+  const inAutoLayout = computed(
+    () =>
+      nodes.value.length > 0 &&
+      nodes.value.every((target) => {
+        const parent = target.parentId ? editor.graph.getNode(target.parentId) : undefined
+        return !!parent && parent.layoutMode !== 'NONE'
+      })
+  )
+  /** On only when every selected layer ignores its auto layout. */
+  const ignoresAutoLayout = computed(
+    () =>
+      inAutoLayout.value && nodes.value.every((target) => target.layoutPositioning === 'ABSOLUTE')
+  )
+
+  /** Figma's Ignore auto layout toggle: a mixed selection is taken out of its layouts. */
+  function toggleIgnoreAutoLayout() {
+    editor.setLayoutPositioning(ids.value, ignoresAutoLayout.value ? 'AUTO' : 'ABSOLUTE')
+  }
+
   function align(axis: 'horizontal' | 'vertical', pos: 'min' | 'center' | 'max') {
     editor.alignNodes(ids.value, axis, pos)
   }
@@ -101,6 +121,9 @@ export function usePosition() {
     width,
     height,
     rotation,
+    inAutoLayout,
+    ignoresAutoLayout,
+    toggleIgnoreAutoLayout,
     updateProp,
     commitProp,
     cancelProp,

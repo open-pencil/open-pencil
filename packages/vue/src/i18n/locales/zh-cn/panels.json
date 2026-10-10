@@ -91,6 +91,7 @@
   "alignCenterVertically": "垂直居中",
   "alignBottom": "底部对齐",
   "flipHorizontal": "水平翻转",
+  "ignoreAutoLayout": "忽略自动布局",
   "flipVertical": "垂直翻转",
   "rotate90": "旋转 90°",
   "mixedFillsHelp": "点击 + 替换混合填充",

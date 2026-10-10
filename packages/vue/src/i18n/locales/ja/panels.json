@@ -124,6 +124,7 @@
   "alignCenterHorizontally": "水平方向の中央揃え",
   "alignCenterVertically": "垂直方向の中央揃え",
   "flipHorizontal": "水平方向に反転",
+  "ignoreAutoLayout": "オートレイアウトを無視",
   "flipVertical": "垂直方向に反転",
   "rotate90": "90°回転",
   "mixedFillsHelp": "+ をクリックして混合塗りを置換",

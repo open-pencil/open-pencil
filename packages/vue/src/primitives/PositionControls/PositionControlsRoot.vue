@@ -18,7 +18,10 @@ const {
   panelProp,
   x,
   y,
-  rotation
+  rotation,
+  inAutoLayout,
+  ignoresAutoLayout,
+  toggleIgnoreAutoLayout
 } = usePosition()
 
 const multiX = panelProp('x')
@@ -35,7 +38,8 @@ const actions = {
   cancelProp,
   align,
   flip,
-  rotate
+  rotate,
+  toggleIgnoreAutoLayout
 }
 </script>
 
@@ -49,6 +53,8 @@ const actions = {
     :w-value="wValue"
     :h-value="hValue"
     :rotation-value="rotationValue"
+    :in-auto-layout="inAutoLayout"
+    :ignores-auto-layout="ignoresAutoLayout"
     :mixed="MIXED"
     :actions="actions"
   />

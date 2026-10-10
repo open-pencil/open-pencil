@@ -20,7 +20,36 @@ export function createLayoutModeActions(
     preview.commit()
   }
 
-  return { setLayoutMode }
+  /**
+   * Takes layers out of their parent's auto layout or puts them back, as Figma's Ignore auto
+   * layout toggle does. A layer taken out stays where it is and keeps its sizing, which applies
+   * again when it returns; its siblings close the gap in the same undo step.
+   */
+  function setLayoutPositioning(ids: string[], positioning: SceneNode['layoutPositioning']) {
+    // Read every place first: taking one layer out moves the siblings after it.
+    const targets = ids.flatMap((id) => {
+      const node = ctx.graph.getNode(id)
+      const parent = node?.parentId ? ctx.graph.getNode(node.parentId) : undefined
+      if (!node || !parent || parent.layoutMode === 'NONE') return []
+      if (node.layoutPositioning === positioning) return []
+      return [{ id, x: node.x, y: node.y }]
+    })
+    if (targets.length === 0) return
+    const preview = beginNodePreview(
+      positioning === 'ABSOLUTE' ? 'Ignore auto layout' : 'Use auto layout'
+    )
+    for (const { id, x, y } of targets) {
+      preview.update(
+        id,
+        positioning === 'ABSOLUTE'
+          ? { layoutPositioning: positioning, x, y }
+          : { layoutPositioning: positioning }
+      )
+    }
+    preview.commit()
+  }
+
+  return { setLayoutMode, setLayoutPositioning }
 }
 
 function layoutModeUpdates(
