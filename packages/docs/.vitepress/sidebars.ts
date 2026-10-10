@@ -126,6 +126,7 @@ export const developmentSidebar = (
         ? [
             { text: 'Roadmap', link: '/development/roadmap' },
             { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
+            { text: 'Cloud Architecture', link: '/development/cloud' },
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },

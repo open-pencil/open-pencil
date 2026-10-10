@@ -34,7 +34,8 @@ const BROWSER_TSCONFIGS = [
   'packages/vue/tsconfig.json',
   'packages/dom-css/tsconfig.json',
   'packages/fig/tsconfig.json',
-  'packages/pen/tsconfig.json'
+  'packages/pen/tsconfig.json',
+  'packages/cloud/tsconfig.json'
 ]
 
 async function readJSON<T>(schema: v.GenericSchema<unknown, T>, path: string): Promise<T> {

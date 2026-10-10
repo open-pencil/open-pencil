@@ -8,7 +8,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 | `generate/` | Write generated files or artifacts, idempotently                                                                       | `brand`, `demo`, `tauri-menu`, `authoring-reference`, `visual-oracles`                                |
 | `release/`  | Build, verify, and publish packages and native artifacts                                                               | `package-artifacts`, `release-packages`                                                               |
 | `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot                  | `policy`, `images`, `pr-review-guidance`                                                              |
-| `dev/`      | Test running and benchmarks for humans                                                                                 | `unit-tests`, `navigation-benchmark`, `dev-server`                                                    |
+| `dev/`      | Test running, benchmarks, and local services for humans                                                                | `unit-tests`, `navigation-benchmark`, `dev-server`, `cloud`                                           |
 
 - Nothing under `generate/` or `release/` runs from `bun run check` except through a check entrypoint; `generate/authoring-reference` keeps its `check.ts` beside `generate.ts` until it splits.
 - Resolve the workspace with `resolveWorkspaceRoot` from `@open-pencil/package-artifacts-tools`, not parent-directory traversal. Keep sibling imports relative.

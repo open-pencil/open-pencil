@@ -49,7 +49,9 @@ export const PACKAGE_ALIASES: Record<string, string> = {
   '#dom-css-tests/': 'packages/dom-css/tests/',
   '#vue/': 'packages/vue/src/',
   '#cli/': 'packages/cli/src/',
-  '#mcp/': 'packages/mcp/src/'
+  '#mcp/': 'packages/mcp/src/',
+  '#cloud/': 'packages/cloud/src/',
+  '#cloud-tests/': 'packages/cloud/tests/'
 }
 
 export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
@@ -62,7 +64,9 @@ export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
   '#dom-css-tests/': 'packages/dom-css/tests/',
   '#vue/': 'packages/vue/',
   '#cli/': 'packages/cli/',
-  '#mcp/': 'packages/mcp/src/'
+  '#mcp/': 'packages/mcp/src/',
+  '#cloud/': 'packages/cloud/',
+  '#cloud-tests/': 'packages/cloud/tests/'
 }
 
 function normalizePath(filePath: string) {

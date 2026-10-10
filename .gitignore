@@ -91,3 +91,7 @@ scratch/
 
 # OpenCode
 .opencode/
+
+# OpenPencil Cloud local and build outputs
+packages/cloud/deploy/generated/
+packages/cloud/dist-standalone/

@@ -264,9 +264,28 @@ jobs:
       - name: Run ${{ matrix.group }} unit tests
         run: bun tools/dev/unit-tests/src/run.ts "${{ matrix.group }}"
 
+  cloud-tests:
+    name: Cloud package
+    needs: changes
+    if: needs.changes.outputs.scope == 'code'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Generate package declarations
+        run: bun run build:packages
+
+      - name: Typecheck and run Cloud unit and integration tests
+        run: bun run test:cloud
+
   result:
     name: CI result
-    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests]
+    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests, cloud-tests]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3
