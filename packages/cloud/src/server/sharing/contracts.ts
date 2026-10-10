@@ -22,8 +22,13 @@ export function shareContract(row: {
   revokedAt: Date | string | null
   lastUsedAt: Date | string | null
 }): DocumentShare {
+  // Rows carry the secret's hash; responses name each field so it never goes out.
   return {
-    ...row,
+    id: row.id,
+    documentId: row.documentId,
+    permission: row.permission,
+    roomEpoch: row.roomEpoch,
+    createdBy: row.createdBy,
     createdAt: dateString(row.createdAt) ?? '',
     updatedAt: dateString(row.updatedAt) ?? '',
     expiresAt: dateString(row.expiresAt),
@@ -42,7 +47,11 @@ export function grantContract(row: {
   updatedAt: Date | string
 }): DocumentGrant {
   return {
-    ...row,
+    id: row.id,
+    documentId: row.documentId,
+    userId: row.userId,
+    permission: row.permission,
+    createdBy: row.createdBy,
     createdAt: dateString(row.createdAt) ?? '',
     updatedAt: dateString(row.updatedAt) ?? ''
   }
