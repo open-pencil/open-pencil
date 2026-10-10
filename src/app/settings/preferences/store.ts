@@ -172,7 +172,9 @@ const appPreferencesSchema = section({
   toolbar: v.fallback(
     v.pipe(
       v.object({
-        groups: v.fallback(v.array(v.array(v.unknown())), () => defaults.toolbar.groups),
+        groups: v.fallback(v.array(v.array(v.unknown())), () =>
+          structuredClone(DEFAULT_TOOLBAR_LAYOUT.groups)
+        ),
         hidden: v.fallback(v.array(v.unknown()), () => [])
       }),
       v.transform(({ groups, hidden }) => normalizeToolbarLayout(groups, hidden))
