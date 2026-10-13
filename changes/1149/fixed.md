@@ -1,0 +1,1 @@
+- Continuing a vector's path with the pen grows that same layer, which keeps its name, position, parent and style. Undo returns it to its earlier path, where before the original was deleted and a new layer was made.

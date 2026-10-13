@@ -25,6 +25,7 @@ import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 export { regenerateFillGeometry } from './fill-geometry'
+export { vectorChangesFromPagePath, type VectorPathChanges } from './placement'
 
 export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path[] {
   const { vertices, segments, regions } = network

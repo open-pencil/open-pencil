@@ -8,7 +8,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
-import { computeAccurateBounds } from '#core/vector'
+import { computeAccurateBounds, vectorChangesFromPagePath } from '#core/vector'
 
 export interface PenDragOptions {
   keepOpposite?: boolean
@@ -24,6 +24,8 @@ type CreateShape = (
   h: number,
   parentId?: string
 ) => string
+
+export type UpdateNodeWithUndo = (id: string, changes: Partial<SceneNode>, label?: string) => void
 
 const PEN_DEFAULT_STROKE: SceneNode['strokes'][number] = {
   type: 'SOLID',
@@ -60,7 +62,11 @@ function applyAnchorTangent(
   }
 }
 
-export function createPenActions(ctx: EditorContext, createShape: CreateShape) {
+export function createPenActions(
+  ctx: EditorContext,
+  createShape: CreateShape,
+  updateNodeWithUndo: UpdateNodeWithUndo
+) {
   function penAddVertex(x: number, y: number) {
     if (!ctx.state.penState) {
       ctx.state.penState = {
@@ -183,6 +189,12 @@ export function createPenActions(ctx: EditorContext, createShape: CreateShape) {
       regions
     }
 
+    const resumed = ps.resumingNodeId ? ctx.graph.getNode(ps.resumingNodeId) : undefined
+    if (resumed?.type === 'VECTOR' && commitIntoLayer(resumed, network)) {
+      finishPath()
+      return
+    }
+
     const bounds = computeAccurateBounds(network)
 
     const normalizedVertices = network.vertices.map((v) => ({
@@ -210,7 +222,32 @@ export function createPenActions(ctx: EditorContext, createShape: CreateShape) {
       strokes
     })
     ctx.setSelectedIds(new Set([nodeId]))
+    finishPath()
+  }
 
+  /**
+   * Gives the layer a continued path came from its new points, as Figma does, rather than making
+   * another layer: the layer keeps its name, place and style, and one undo puts its path back.
+   */
+  function commitIntoLayer(node: SceneNode, network: VectorNetwork): boolean {
+    // The pen only adds points and segments to a continued path, so equal counts mean nothing
+    // was drawn: the layer stays as it was, with no undo step.
+    const before = node.vectorNetwork
+    const unchanged =
+      before &&
+      before.vertices.length === network.vertices.length &&
+      before.segments.length === network.segments.length &&
+      before.regions.length === network.regions.length
+    if (!unchanged) {
+      const changes = vectorChangesFromPagePath(ctx.graph, node, network)
+      if (!changes) return false
+      updateNodeWithUndo(node.id, changes, 'Edit vector')
+    }
+    ctx.setSelectedIds(new Set([node.id]))
+    return true
+  }
+
+  function finishPath() {
     ctx.state.penState = null
     ctx.state.penCursorX = null
     ctx.state.penCursorY = null

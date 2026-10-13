@@ -13,7 +13,8 @@ import {
 // instance (editor.replaceGraph), so a captured reference goes stale.
 //
 // Pen state is page-absolute; resumed geometry maps through the node's world
-// matrix so nested, rotated, and flipped vectors resume in place.
+// matrix so nested, rotated, and flipped vectors resume in place. The layer
+// stays in the document while its path grows, and committing updates it.
 export function createPenActions(editor: Editor, state: PenState) {
   function setTool(tool: Tool) {
     if (state.penState && tool !== 'PEN' && tool !== 'HAND') {
@@ -32,7 +33,6 @@ export function createPenActions(editor: Editor, state: PenState) {
     )
     state.penState = createResumedPenState(node, absNetwork.vertices, absNetwork.segments)
 
-    editor.graph.deleteNode(nodeId)
     editor.clearSelection()
     editor.setTool('PEN')
     editor.requestRender()
@@ -56,7 +56,6 @@ export function createPenActions(editor: Editor, state: PenState) {
     )
 
     state.penState = createResumedPenState(node, orderedVertices, orderedSegments)
-    editor.graph.deleteNode(nodeId)
     editor.clearSelection()
     editor.setTool('PEN')
     editor.requestRender()

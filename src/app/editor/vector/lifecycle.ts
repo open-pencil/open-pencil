@@ -1,14 +1,12 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { computeAccurateBounds, regenerateFillGeometry } from '@open-pencil/core/vector'
+import { vectorChangesFromPagePath } from '@open-pencil/core/vector'
 import {
   cloneVectorNetwork,
   slotScope,
   transformVectorNetwork,
-  vectorNetworksEqual,
-  type VectorNetwork
+  vectorNetworksEqual
 } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import Matrix from '@open-pencil/scene-graph/matrix'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 
 import { getLiveNetwork } from './network'
 import type { VectorEditState } from './types'
@@ -44,49 +42,9 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
     // comparison detects a no-op session — skip it to keep undo clean.
     if (vectorNetworksEqual(getLiveNetwork(es), es.origAbsNetwork)) return
 
-    const world = getWorldMatrix(node, editor.graph)
-    const inverse = Matrix.invert(world)
-    if (!inverse) return
-
-    // Map the edited page-absolute network back into the node's local frame
-    const localNetwork = transformVectorNetwork(inverse, getLiveNetwork(es))
-    const bounds = computeAccurateBounds(localNetwork)
-    const relativeNetwork: VectorNetwork = {
-      vertices: localNetwork.vertices.map((v) => ({
-        ...v,
-        x: v.x - bounds.x,
-        y: v.y - bounds.y
-      })),
-      segments: localNetwork.segments,
-      regions: localNetwork.regions
-    }
-
-    // The node rotates/flips about its center, so with rotation preserved the
-    // new x/y follow from where the new geometry's center lands in the parent
-    // frame (via the OLD local matrix — the geometry itself has not moved).
-    const localMatrix = getNodeLocalMatrix(node)
-    const center = Matrix.mapPoint(localMatrix, {
-      x: bounds.x + bounds.width / 2,
-      y: bounds.y + bounds.height / 2
-    })
-
-    editor.updateNodeWithUndo(
-      node.id,
-      {
-        x: center.x - bounds.width / 2,
-        y: center.y - bounds.height / 2,
-        width: bounds.width,
-        height: bounds.height,
-        vectorNetwork: relativeNetwork,
-        // Fills render from fillGeometry blobs when present — rebuild them from
-        // the edited network so fills follow the edit.
-        fillGeometry: regenerateFillGeometry(relativeNetwork, node.fillGeometry),
-        // Drop stale imported stroke outline blobs; post-edit strokes come from
-        // the live vector network path.
-        strokeGeometry: []
-      },
-      'Edit vector'
-    )
+    const changes = vectorChangesFromPagePath(editor.graph, node, getLiveNetwork(es))
+    if (!changes) return
+    editor.updateNodeWithUndo(node.id, changes, 'Edit vector')
     const committed = editor.graph.getNode(es.nodeId)
     if (committed?.type === 'VECTOR' && committed.vectorNetwork) {
       const committedWorld = getWorldMatrix(committed, editor.graph)
