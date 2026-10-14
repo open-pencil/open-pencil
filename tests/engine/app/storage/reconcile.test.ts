@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { StorageDocument } from '@/app/integrations/storage'
 import type { LocalCanvasMeta } from '@/app/storage/local-store'
+import { normalizeLocalCanvasMeta } from '@/app/storage/local-store/meta'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 
 function localMeta(
@@ -9,7 +10,7 @@ function localMeta(
   syncStatus: LocalCanvasMeta['syncStatus'],
   tombstoned = false
 ): LocalCanvasMeta {
-  return {
+  return normalizeLocalCanvasMeta({
     id,
     providerId: 's3-compatible',
     name: `Local ${id}`,
@@ -22,7 +23,7 @@ function localMeta(
     hasFig: true,
     hasThumb: false,
     figSize: 1
-  }
+  })
 }
 
 function remoteDocument(id: string): StorageDocument {
@@ -30,6 +31,8 @@ function remoteDocument(id: string): StorageDocument {
     id,
     name: `Remote ${id}`,
     updatedAt: '2026-01-01T00:00:00.000Z',
+    sourceFormat: 'fig',
+    trashedAt: null,
     metadataAuthoritative: true
   }
 }

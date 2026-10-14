@@ -12,6 +12,8 @@ export const documentEntry = tv({
     icon: 'size-4 shrink-0 text-primary',
     body: 'min-w-0 flex-1',
     name: 'block truncate text-xs font-medium',
+    nameInput:
+      'block w-full min-w-0 rounded border border-accent bg-panel-field px-1 text-xs font-medium outline-none',
     metadata: 'mt-0.5 block truncate text-[10px] text-muted',
     trailingMetadata: 'hidden shrink-0 text-[10px] text-muted sm:inline',
     actions: 'flex shrink-0 items-center gap-1'

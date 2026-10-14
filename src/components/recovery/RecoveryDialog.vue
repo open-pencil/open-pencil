@@ -7,6 +7,10 @@ import { useI18n } from '@open-pencil/vue'
 
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
+import {
+  markRecoveryPromptChecked,
+  recoveryPromptOpen as open
+} from '@/app/document/recovery/prompt'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
@@ -18,7 +22,6 @@ const notifications = useNotificationMessages()
 const route = useRoute()
 const snapshots = ref<RecoverySnapshotMeta[]>([])
 const busyId = ref<string | null>(null)
-const open = ref(false)
 
 function updatedLabel(snapshot: RecoverySnapshotMeta): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -56,12 +59,14 @@ async function discard(snapshot: RecoverySnapshotMeta): Promise<void> {
 }
 
 onMounted(async () => {
-  if (route.path !== '/' || !recoveryEnabled.value) return
   try {
+    if (route.path !== '/' || !recoveryEnabled.value) return
     snapshots.value = await listRecoverySnapshots()
     open.value = snapshots.value.length > 0
   } catch (error) {
     console.warn('[Recovery] Failed to list snapshots:', error)
+  } finally {
+    markRecoveryPromptChecked()
   }
 })
 </script>

@@ -9,7 +9,7 @@ import {
 
 describe('app menu shortcut conversion', () => {
   test('looks up canonical shortcut tokens from the menu schema', () => {
-    expect(appMenuShortcut('save-as')).toBe('MOD+SHIFT+S')
+    expect(appMenuShortcut('export-selection')).toBe('MOD+SHIFT+E')
     expect(appMenuShortcut('selection.createComponent')).toBe('MOD+ALT+K')
   })
 
@@ -26,7 +26,7 @@ describe('app menu shortcut conversion', () => {
   })
 
   test('derives native accelerators from menu ids', () => {
-    expect(appMenuAccelerator('save-as')).toBe('CmdOrCtrl+Shift+S')
+    expect(appMenuAccelerator('export-selection')).toBe('CmdOrCtrl+Shift+E')
     expect(appMenuAccelerator('selection.delete')).toBe('Backspace')
   })
 })

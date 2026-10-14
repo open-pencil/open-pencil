@@ -1,6 +1,6 @@
 import { test, expect } from '#tests/helpers/chat/fixture'
 
-test('recovering an unsaved document restores its selected conversation automatically', async ({
+test('reopening a design from the library restores its selected conversation', async ({
   configuredChat: chat,
   page
 }) => {
@@ -8,7 +8,8 @@ test('recovering an unsaved document restores its selected conversation automati
     const editor = window.openPencil?.getStore?.()
     if (!editor) throw new Error('Missing editor')
     editor.createShape('RECTANGLE', 100, 100, 200, 100)
-    await editor.persistRecoveryNow()
+    editor.renameDocument('Chat design')
+    await editor.persistNow()
   })
   await chat.submit('Conversation belonging to recovered document')
   await expect(chat.assistantMessage()).toBeVisible()
@@ -19,8 +20,11 @@ test('recovering an unsaved document restores its selected conversation automati
     .getByRole('button', { name: 'Conversation belonging to recovered document', exact: true })
     .click()
   await page.reload()
-  await expect(page.getByRole('alertdialog', { name: 'Recover unsaved work' })).toBeVisible()
-  await page.getByRole('button', { name: 'Restore', exact: true }).click()
+  await page.getByTestId('tabbar-home').click()
+  await page
+    .getByTestId('recent-files-home')
+    .getByRole('button', { name: /Chat design/ })
+    .click()
   await chat.chatTab.click()
   await expect(chat.userMessage()).toContainText('Conversation belonging to recovered document')
   await expect(chat.assistantMessage()).toBeVisible()

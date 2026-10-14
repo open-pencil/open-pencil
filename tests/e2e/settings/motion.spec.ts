@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openSettings } from '#tests/helpers/menu'
 
 for (const appearance of [undefined, null, { animations: 'invalid' }]) {
   test.describe(`legacy animation preferences ${JSON.stringify(appearance)}`, () => {
@@ -42,7 +43,7 @@ test('animation preference follows live system changes and persists the Off over
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'off')
   await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByRole('combobox', { name: 'Animations', exact: true }).click()
   await page.getByRole('option', { name: 'Off', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'off')
@@ -50,7 +51,7 @@ test('animation preference follows live system changes and persists the Off over
   await page.reload()
   await new CanvasHelper(page).waitForInit()
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'off')
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByRole('combobox', { name: 'Animations', exact: true }).click()
   await page.getByRole('option', { name: 'Follow system', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'full')

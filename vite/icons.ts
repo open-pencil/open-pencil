@@ -13,3 +13,11 @@ export function aiIconCollection() {
   // Titles would add tooltips and duplicate the accessible name of the label beside the logo.
   return FileSystemIconLoader(icons, (svg) => svg.replace(/<title>.*?<\/title>/, ''))
 }
+
+/**
+ * OpenPencil's own single-color marks from `assets/brand/icons`, used as
+ * `<icon-brand-mark-modular />`. They draw with `currentColor`, so they follow the text color.
+ */
+export function brandIconCollection() {
+  return FileSystemIconLoader(fileURLToPath(new URL('../assets/brand/icons', import.meta.url)))
+}

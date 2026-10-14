@@ -8,7 +8,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import {
   aiSetupDialogOpen,
-  offerAISetupOnFirstRun
+  offerAIWelcomeOnLaunch
 } from '@/app/ai/models/settings/onboarding/dialog'
 import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
@@ -22,9 +22,11 @@ import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
+import { recoveryPromptSettled } from '@/app/document/recovery/prompt'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { commandPaletteOpen } from '@/app/shell/command-palette'
 import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { useEditorMenu } from '@/app/shell/menu/use'
@@ -88,24 +90,26 @@ function openFirstTab(): Tab {
   }
 }
 
-const welcomeShown =
+const offerWelcome =
   createdInitialTab && route.path === '/' && !appRuntimeConfig.test && !route.meta.demo
-    ? offerAISetupOnFirstRun()
-    : false
 const sharingStarted = startSharing()
-// One question per surface: a first run is asked about usage stats once the welcome closes.
-if (welcomeShown) {
-  whenever(
-    () => !aiSetupDialogOpen.value,
-    async () => {
-      await sharingStarted
-      offerUsageStatsPrompt('welcome')
-    },
-    { once: true }
-  )
-} else {
-  void sharingStarted.then(() => offerUsageStatsPrompt('prompt'))
-}
+// One dialog at a time: unsaved work comes first, then the welcome, then, on a first run, the
+// usage stats question once the welcome closes.
+void recoveryPromptSettled().then(() => {
+  if (offerWelcome && offerAIWelcomeOnLaunch()) {
+    whenever(
+      () => !aiSetupDialogOpen.value,
+      async () => {
+        await sharingStarted
+        offerUsageStatsPrompt('welcome')
+      },
+      { once: true }
+    )
+  } else {
+    void sharingStarted.then(() => offerUsageStatsPrompt('prompt'))
+  }
+  return undefined
+})
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
@@ -247,7 +251,7 @@ onUnmounted(() => {
     <ColorSpaceBanner />
     <FontStatusBanner />
     <RenameSelectionDialog />
-    <CommandPalette />
+    <CommandPalette v-model:open="commandPaletteOpen" />
     <TabBar />
     <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
     <EditorWorkspace

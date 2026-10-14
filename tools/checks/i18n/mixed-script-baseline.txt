@@ -29,8 +29,6 @@ ja:ai.aiSetupOpenRouterVerifying
 ja:ai.aiSetupOpenRouterWaiting
 ja:ai.aiSetupSavedTitle
 ja:ai.aiSetupStart
-ja:ai.aiSetupWelcomeAIDescription
-ja:ai.aiSetupWelcomeAITitle
 ja:ai.aiSetupWelcomeDescription
 ja:ai.aiSetupWelcomeTitle
 ja:ai.aiSetupPiDescription
@@ -153,6 +151,8 @@ ja:editor.showUI
 ja:files.browserFileAPINotSupported
 ja:files.clipboardImageFetchFailed
 ja:files.clipboardImagesFetchFailed
+ja:files.deckCannotOpen
+ja:files.downloadDeck
 ja:files.importFailed
 ja:files.importHTMLCSS
 ja:files.importHTMLCSSDescription
@@ -198,6 +198,15 @@ ja:settings.baseURLHint
 ja:settings.invalidURL
 ja:settings.modelIDHint
 ja:settings.temporaryDisableSnappingHint
+ja:settings.serviceSetupDescription
+ja:settings.setupGroupMCP
+ja:settings.setupPiAgent
+ja:settings.setupCloudStorage
+ja:settings.setupPexels
+ja:settings.setupUnsplash
+ja:settings.setupLocalMCP
+ja:settings.setupMCPConnections
+ja:settings.setupWebMCP
 ja:storage.accessKeyID
 ja:storage.copyCors
 ja:storage.providerS3
@@ -238,8 +247,6 @@ zh-cn:ai.aiSetupOpenRouterVerifying
 zh-cn:ai.aiSetupOpenRouterWaiting
 zh-cn:ai.aiSetupSavedTitle
 zh-cn:ai.aiSetupStart
-zh-cn:ai.aiSetupWelcomeAIDescription
-zh-cn:ai.aiSetupWelcomeAITitle
 zh-cn:ai.aiSetupWelcomeDescription
 zh-cn:ai.aiSetupWelcomeTitle
 zh-cn:ai.aiSetupPiDescription
@@ -363,6 +370,8 @@ zh-cn:diagnostics.sharingQuestionDescription
 zh-cn:files.browserFileAPINotSupported
 zh-cn:files.clipboardImageFetchFailed
 zh-cn:files.clipboardImagesFetchFailed
+zh-cn:files.deckCannotOpen
+zh-cn:files.downloadDeck
 zh-cn:files.importFailed
 zh-cn:files.importHTMLCSS
 zh-cn:files.importHTMLCSSDescription
@@ -403,6 +412,15 @@ zh-cn:settings.aiAndAgents
 zh-cn:settings.baseURLHint
 zh-cn:settings.invalidURL
 zh-cn:settings.temporaryDisableSnappingHint
+zh-cn:settings.serviceSetupDescription
+zh-cn:settings.setupGroupMCP
+zh-cn:settings.setupPiAgent
+zh-cn:settings.setupCloudStorage
+zh-cn:settings.setupPexels
+zh-cn:settings.setupUnsplash
+zh-cn:settings.setupLocalMCP
+zh-cn:settings.setupMCPConnections
+zh-cn:settings.setupWebMCP
 zh-cn:storage.accessKeyID
 zh-cn:storage.copyCors
 zh-cn:storage.providerS3

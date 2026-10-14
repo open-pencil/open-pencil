@@ -1,13 +1,14 @@
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 
 /** Keep at most this much cached fig data on device (metas/thumbs are tiny and stay). */
 export const FIG_CACHE_BUDGET_BYTES = 500 * 1024 * 1024
 
 /**
- * Evict least-recently-opened fig blobs until the cache fits the budget.
- * Only fully synced, non-tombstoned, not-currently-open canvases qualify —
- * evicting never loses data, it just forces a re-download on next open.
- * Returns the number of evicted figs.
+ * Evict least-recently-opened fig blobs until the cache fits the budget. Only a blob the
+ * destination provably holds qualifies: its confirmed body identity equals the local one.
+ * `syncStatus === 'synced'` alone is not proof, since a metadata-only write sets it. Evicting
+ * never loses data; it forces a download on the next open. Returns the number of evicted figs.
  */
 export async function evictLocalFigCache(
   excludeIds: ReadonlySet<string> = new Set(),
@@ -27,8 +28,11 @@ export async function evictLocalFigCache(
       size = fig?.byteLength ?? 0
       await local.updateMeta(m.id, { figSize: size })
     }
+    // Tombstoned bytes await a remote delete; they do not compete for the live budget.
+    if (m.tombstoned) continue
     totalBytes += size
-    if (m.tombstoned || m.syncStatus !== 'synced' || excludeIds.has(m.id)) continue
+    if (m.syncStatus !== 'synced' || excludeIds.has(m.id)) continue
+    if (!bodyIsConfirmed(m) || !m.versionedConfirmed) continue
     candidates.push({
       id: m.id,
       size,

@@ -13,6 +13,7 @@ import { createDocumentSourceState } from '@/app/document/io/source-state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
+import { activeStorageProviderID } from '@/app/integrations/storage'
 import type { StorageDocumentBinding, StorageProviderID } from '@/app/integrations/storage/types'
 import { createCanvasId } from '@/app/storage/id'
 import { trackDocumentFormat } from '@/app/telemetry'
@@ -77,7 +78,7 @@ export function createDocumentSourceActions({
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding()
   })
 
-  const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
+  const { saveFigFile, saveLocalCopy, writeFile } = createSaveActions({
     state,
     version: changes.capture,
     buildFigFile,
@@ -92,9 +93,6 @@ export function createDocumentSourceActions({
     setSourceIdentity,
     setSavedVersion,
     setLastWriteTime,
-    startWatchingFile: () => {
-      void startWatchingFile()
-    },
     onWriteSuccess: (version) => recovery.markProtectedVersion(version),
     onDownloadSuccess: (version) => recovery.markProtectedVersion(version)
   })
@@ -116,25 +114,67 @@ export function createDocumentSourceActions({
     setSavedVersion(changes.capture())
   }
 
+  /**
+   * Every design lives in the library, as in Figma: it saves itself on this device and syncs
+   * to storage once storage is set up. Nothing is written until the design changes.
+   */
+  function bindToLibrary() {
+    stopWatchingFile()
+    setFileHandle(null)
+    setFilePath(null)
+    setStorageBinding({ providerId: activeStorageProviderID.value, documentId: createCanvasId() })
+    state.autosaveEnabled = true
+  }
+
+  bindToLibrary()
+
+  /**
+   * An opened file is imported: the design becomes a new library copy and the file on disk is
+   * left as it was. The file's identity is kept so opening it again finds its tab.
+   */
   function setDocumentSource(
     fileName: string,
     sourceFormat: string,
     handle?: FileSystemFileHandle,
     path?: string
   ) {
-    stopWatchingFile()
-    setStorageBinding(null)
-    const isFig = sourceFormat === 'fig'
-    setFileHandle(isFig ? (handle ?? null) : null)
-    setFilePath(isFig ? (path ?? null) : null)
+    bindToLibrary()
+    recovery.renewRecoveryId()
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
     markDocumentSaved()
     void recovery.markProtectedVersion(changes.capture())
     trackDocumentFormat('document_opened', sourceFormat)
-    if (isFig && (handle || path)) {
-      void startWatchingFile()
+    void addImportToLibrary()
+  }
+
+  /** Writes the import into the library as it was opened; an unedited .fig keeps its bytes. */
+  async function addImportToLibrary() {
+    const version = changes.capture()
+    try {
+      await writeFile(await buildFigFile(), version)
+    } catch (error) {
+      console.warn('[Library] Could not add the opened file to the library', error)
     }
+  }
+
+  /** Renaming is an edit: the library entry takes the new name with the next save. */
+  function renameDocument(name: string) {
+    state.documentName = name
+    changes.markChanged()
+  }
+
+  /**
+   * Move an open library design to another library entry, keeping its unsaved edits: the next
+   * save writes them there. Used when a conflict keeps this device's version as a copy.
+   */
+  function rebindLibraryDocument(documentId: string, documentName: string) {
+    const binding = getStorageBinding()
+    if (!binding) return
+    setStorageBinding({ providerId: binding.providerId, documentId })
+    setDownloadName(`${documentName}.fig`)
+    state.documentName = documentName
+    changes.markChanged()
   }
 
   function setStorageDocumentSource(binding: StorageDocumentBinding, documentName: string) {
@@ -144,6 +184,7 @@ export function createDocumentSourceActions({
     setDownloadName(`${documentName}.fig`)
     setSourceIdentity({ handle: null, path: null })
     setStorageBinding(binding)
+    recovery.renewRecoveryId()
     state.documentName = documentName
     state.autosaveEnabled = true
     markDocumentSaved()
@@ -239,7 +280,9 @@ export function createDocumentSourceActions({
     startWatchingCurrentFile,
     disposeDocumentIO,
     saveFigFile: () => saveAndTrack(saveFigFile),
-    saveFigFileAs: () => saveAndTrack(saveFigFileAs),
+    saveLocalCopy,
+    renameDocument,
+    rebindLibraryDocument,
     hasUnsavedChanges: changes.hasUnsavedChanges,
     markDocumentSaved,
     getStorageBinding,
@@ -249,6 +292,16 @@ export function createDocumentSourceActions({
       return recovery.adoptRecoverySnapshot(id)
     },
     persistRecoveryNow: () => recovery.persistNow(),
+    /** Write pending edits now: to the library, or to a recovery snapshot for other designs. */
+    persistNow: async () => {
+      const binding = getStorageBinding()
+      if (!binding) return recovery.persistNow()
+      if (changes.hasUnsavedChanges()) await saveAndTrack(saveFigFile)
+      else await recovery.persistNow()
+      // Leaving the page: commit to storage now instead of after the commit spacing.
+      const { flushStorageSync } = await import('@/app/storage/sync/runtime')
+      await flushStorageSync(binding.documentId)
+    },
     discardRecovery: () => recovery.discardRecovery()
   }
 }

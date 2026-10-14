@@ -6,6 +6,7 @@ import { findFigThumbnailPageId, populateFigPage } from '@open-pencil/core/io/fo
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { filesMessages } from '@open-pencil/vue'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
@@ -21,11 +22,7 @@ import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/edito
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
-import {
-  activeStorageProviderID,
-  createActiveStorageAdapter,
-  type StorageDocument
-} from '@/app/integrations/storage'
+import { activeStorageProviderID, type StorageDocument } from '@/app/integrations/storage'
 import {
   cacheRecentFileThumbnail,
   loadCachedRecentFileThumbnail,
@@ -33,8 +30,7 @@ import {
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
-import { getLocalCanvasStore } from '@/app/storage/local-store'
-import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
+import { isSlideDeck, readLibraryDesign } from '@/app/storage/workspace/open'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 
@@ -61,6 +57,9 @@ const tabsRef = shallowRef<Tab[]>([])
 const activeTabId = shallowRef('')
 
 export const activeTab = computed(() => tabsRef.value.find((t) => t.id === activeTabId.value))
+
+/** Whether the start page is showing. It is no tab of the tab bar, which lists designs only. */
+export const homeActive = computed(() => activeTab.value?.kind === 'home')
 
 export const allTabs = computed(() =>
   tabsRef.value.map((t) => ({
@@ -126,13 +125,11 @@ export function createDocumentInCurrentTab(): Tab {
   return getTabById(current.id) ?? current
 }
 
-export function showNewTab(): void {
+/** Shows the start page, the one home there is: the tab bar's home button. */
+export function showHome(): void {
   const homeTab = tabsRef.value.find((tab) => tab.kind === 'home')
-  if (homeTab) {
-    switchTab(homeTab.id)
-    return
-  }
-  createHomeTab()
+  if (homeTab) switchTab(homeTab.id)
+  else createHomeTab()
 }
 
 function activateTab(tab: Tab) {
@@ -163,7 +160,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
-  if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
+  if (closingTab.kind === 'home') return
   const choice = unsaved
     ? await confirmDocumentClose(closingTab.store, async () => unsaved)
     : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
@@ -179,14 +176,12 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   closingTab.store.dispose()
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
-  if (tabsRef.value.length === 0) {
-    createHomeTab()
-    return
-  }
-
-  if (wasActive) {
-    const newIdx = Math.min(idx, tabsRef.value.length - 1)
-    activateTab(tabsRef.value[newIdx])
+  // The next design takes over, and the start page once none is left.
+  const designs = tabsRef.value.filter((tab) => tab.kind === 'document')
+  if (designs.length === 0) showHome()
+  else if (wasActive) {
+    const before = tabsRef.value.slice(0, idx).filter((tab) => tab.kind === 'document').length
+    activateTab(designs[Math.min(before, designs.length - 1)])
   }
 }
 
@@ -311,6 +306,12 @@ function failPreparation(
 }
 
 export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
+  // Slide decks are listed and synced, but nothing in this build opens one: refuse before
+  // downloading anything.
+  if (await isSlideDeck(document)) {
+    toast.info(filesMessages.get().deckCannotOpen)
+    return
+  }
   const providerId = activeStorageProviderID.value
   const existing = findStorageTab(providerId, document.id)
   if (existing) {
@@ -328,39 +329,17 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
   let succeeded = false
   try {
     load.update({ phase: 'reading', detail: document.name })
-    const local = getLocalCanvasStore()
-    const localMetadata = await local.getMeta(document.id)
-    load.signal.throwIfAborted()
-    const localBytes = localMetadata?.hasFig ? await local.readFig(document.id) : null
-    load.signal.throwIfAborted()
-    const localIsAuthoritative =
-      localMetadata?.syncStatus !== 'synced' ||
-      !document.metadataAuthoritative ||
-      localMetadata.updatedAt >= document.updatedAt
-    let bytes = localBytes && localIsAuthoritative ? localBytes : null
-
-    if (!bytes) {
-      bytes = await createActiveStorageAdapter(providerId).getDocument(
-        document.id,
-        (progress) =>
-          load.update({
-            phase: 'reading',
-            detail: document.name,
-            completed: progress.transferredBytes,
-            total: progress.totalBytes,
-            unit: 'bytes'
-          }),
-        load.signal
-      )
-      await seedStorageCanvasFromRemote({
-        providerId,
-        canvasId: document.id,
-        name: document.name,
-        updatedAt: document.updatedAt,
-        figBytes: bytes
-      })
-      load.signal.throwIfAborted()
-    }
+    const bytes = await readLibraryDesign(document, providerId, {
+      signal: load.signal,
+      onTransfer: (progress) =>
+        load.update({
+          phase: 'reading',
+          detail: document.name,
+          completed: progress.transferredBytes,
+          total: progress.totalBytes,
+          unit: 'bytes'
+        })
+    })
 
     const fileBytes = new Uint8Array(bytes.byteLength)
     fileBytes.set(bytes)
@@ -562,8 +541,9 @@ export function prepareForClose(): Promise<boolean> {
   )
 }
 
+/** Leaving the page writes each design's last edits to the library. */
 export async function prepareForReload(): Promise<void> {
-  await Promise.all(tabsRef.value.map((tab) => tab.store.persistRecoveryNow()))
+  await Promise.all(tabsRef.value.map((tab) => tab.store.persistNow()))
 }
 
 export function tabCount(): number {

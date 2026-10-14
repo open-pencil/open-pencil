@@ -1,25 +1,34 @@
-import * as v from 'valibot'
-
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
 import { isTauri } from '@/app/tauri/env'
 
 import {
+  fallbackDocumentMetadata,
+  parseStorageDocumentMetadata,
+  serializeStorageDocumentMetadata
+} from '../metadata'
+import {
   NAMESPACE_MARKER_BODY,
   STORAGE_DOCUMENTS_PREFIX,
   STORAGE_NAMESPACE,
   STORAGE_NAMESPACE_MARKER,
+  bodyKey,
   documentFigKey,
+  documentHeadKey,
   documentIdFromFigKey,
+  documentIdFromHeadKey,
   documentMetaKey,
   documentThumbnailKey
 } from '../namespace'
 import type {
   StorageAdapter,
-  StorageDocument,
-  StorageDocumentMetadata,
-  StorageProviderRuntime
+  StorageDocumentVersion,
+  StorageProviderRuntime,
+  StorageTransferProgress,
+  VersionCommitOptions
 } from '../types'
+import { s3CollectGarbage } from '../versioned/gc'
+import { s3CommitVersion, s3GetVersionedBody, s3ResolveVersion } from '../versioned/s3'
 import {
   S3HttpError,
   deleteObject,
@@ -29,9 +38,12 @@ import {
   headObject,
   headObjectSize,
   listObjects,
-  putObject
+  putObject,
+  type DownloadProgress,
+  type UploadProgress
 } from './client'
 import { CloudCORSError, formatBrowserCORSHelpMessage, isLikelyCORSOrNetworkError } from './cors'
+import { listS3Documents, readLegacyDocument, readVersionedDocument } from './listing'
 import type { S3CompatibleConfig, S3ConnectionResult } from './types'
 
 const ENDPOINT_FIELD = 'endpoint'
@@ -63,38 +75,6 @@ async function resolveConfig(runtime: StorageProviderRuntime): Promise<S3Compati
   }
 }
 
-/** Each field falls back on its own; only a document with both fields is authoritative. */
-const DocumentMetadataJSON = v.pipe(
-  v.string(),
-  v.parseJson(),
-  v.object({
-    name: v.fallback(
-      v.nullable(
-        v.pipe(
-          v.string(),
-          v.check((name) => name.trim() !== '')
-        )
-      ),
-      null
-    ),
-    updatedAt: v.fallback(v.nullable(v.pipe(v.string(), v.nonEmpty())), null)
-  })
-)
-
-function parseMetadata(
-  bytes: Uint8Array | null,
-  fallback: StorageDocumentMetadata
-): { metadata: StorageDocumentMetadata; authoritative: boolean } {
-  if (!bytes) return { metadata: fallback, authoritative: false }
-  const parsed = v.safeParse(DocumentMetadataJSON, new TextDecoder().decode(bytes))
-  if (!parsed.success) return { metadata: fallback, authoritative: false }
-  const { name, updatedAt } = parsed.output
-  return {
-    metadata: { name: name ?? fallback.name, updatedAt: updatedAt ?? fallback.updatedAt },
-    authoritative: name !== null && updatedAt !== null
-  }
-}
-
 function connectionErrorMessage(error: unknown, isCORS: boolean): string {
   if (isCORS) return formatBrowserCORSHelpMessage()
   return error instanceof Error ? error.message : String(error)
@@ -112,14 +92,98 @@ async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {
   }
 }
 
+function downloadProgress(
+  onProgress: ((progress: StorageTransferProgress) => void) | undefined
+): ((progress: DownloadProgress) => void) | undefined {
+  return onProgress
+    ? (progress) =>
+        onProgress({ transferredBytes: progress.receivedBytes, totalBytes: progress.totalBytes })
+    : undefined
+}
+
+function uploadProgress(
+  onProgress: ((progress: StorageTransferProgress) => void) | undefined
+): ((progress: UploadProgress) => void) | undefined {
+  return onProgress
+    ? (progress) =>
+        onProgress({ transferredBytes: progress.sentBytes, totalBytes: progress.totalBytes })
+    : undefined
+}
+
+/** The embedded preview of a `.fig`, read through byte ranges; null when the object is absent. */
+async function figThumbnail(config: S3CompatibleConfig, key: string): Promise<Uint8Array | null> {
+  const size = await headObjectSize(config, key)
+  if (size == null) return null
+  return extractFigThumbnailFromReader({
+    size,
+    async read(start: number, endExclusive: number) {
+      return (await getObjectRange(config, key, start, endExclusive)) ?? new Uint8Array()
+    }
+  })
+}
+
 export interface S3StorageAdapter extends StorageAdapter {
   testConnection(): Promise<S3ConnectionResult>
 }
 
-export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3StorageAdapter {
+export type S3ConfigResolver = () => Promise<S3CompatibleConfig>
+
+export type S3AdapterOptions = {
+  /**
+   * Send `If-Match` on head updates, turning a lost race into a typed conflict instead of a fork.
+   * Only for providers verified to enforce it; Backblaze B2 does not, so the generic S3 provider
+   * leaves it off and relies on detection.
+   */
+  conditionalHeadUpdates?: boolean
+}
+
+export function createS3StorageAdapterWithConfig(
+  resolve: S3ConfigResolver,
+  options: S3AdapterOptions = {}
+): S3StorageAdapter {
+  const commitOptions = (extra: VersionCommitOptions = {}) => ({
+    ...extra,
+    conditional: options.conditionalHeadUpdates === true
+  })
+
+  async function getDocumentVersion(
+    id: string,
+    onProgress?: (progress: StorageTransferProgress) => void,
+    signal?: AbortSignal
+  ): Promise<StorageDocumentVersion> {
+    signal?.throwIfAborted()
+    const config = await resolve()
+    signal?.throwIfAborted()
+    const progress = downloadProgress(onProgress)
+    // Versioned first; a document that only ever wrote the legacy layout reads as before.
+    const version = await s3GetVersionedBody(
+      config,
+      id,
+      fallbackDocumentMetadata(id),
+      progress,
+      signal
+    )
+    if (version) {
+      return {
+        bytes: version.bytes,
+        metadata: {
+          ...version.manifest.metadata,
+          bodyId: version.manifest.bodyId,
+          stateId: version.head.stateId
+        },
+        versioned: true,
+        history: version.head.history
+      }
+    }
+    const bytes = await getObject(config, documentFigKey(id), progress, signal)
+    if (!bytes) throw new Error(`Document not found: ${id}`)
+    const legacy = await readLegacyDocument(config, id)
+    return { bytes, metadata: legacy, versioned: false, history: [] }
+  }
+
   return {
     async testConnection() {
-      const config = await resolveConfig(runtime)
+      const config = await resolve()
       try {
         await ensureNamespace(config)
         await listObjects(config, STORAGE_DOCUMENTS_PREFIX)
@@ -145,105 +209,69 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async listDocuments() {
-      const config = await resolveConfig(runtime)
-      const objects = await listObjects(config, STORAGE_DOCUMENTS_PREFIX)
-      const entries = objects
-        .map((object) => {
-          const id = documentIdFromFigKey(object.key)
-          return id ? { id, lastModified: object.lastModified } : null
-        })
-        .filter((entry): entry is { id: string; lastModified: string | null } => entry !== null)
-
-      const documents: StorageDocument[] = []
-      // Bound sidecar reads so large buckets do not open hundreds of requests at once.
-      for (let offset = 0; offset < entries.length; offset += 12) {
-        const batch = entries.slice(offset, offset + 12)
-        documents.push(
-          ...(await Promise.all(
-            batch.map(async ({ id, lastModified }) => {
-              const fallback = {
-                name: id,
-                updatedAt: lastModified ?? new Date(0).toISOString()
-              }
-              const metadataBytes = await getObject(config, documentMetaKey(id)).catch(
-                (error: unknown) => {
-                  console.warn('[Storage] Document metadata fetch failed:', id, error)
-                  return null
-                }
-              )
-              const { metadata, authoritative } = parseMetadata(metadataBytes, fallback)
-              return {
-                id,
-                ...metadata,
-                metadataAuthoritative: authoritative
-              } satisfies StorageDocument
-            })
-          ))
-        )
-      }
-      return documents.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+      return listS3Documents(await resolve())
     },
+
+    getDocumentVersion,
 
     async getDocument(id, onProgress, signal) {
-      signal?.throwIfAborted()
-      const config = await resolveConfig(runtime)
-      signal?.throwIfAborted()
-      const bytes = await getObject(
-        config,
-        documentFigKey(id),
-        onProgress
-          ? (progress) =>
-              onProgress({
-                transferredBytes: progress.receivedBytes,
-                totalBytes: progress.totalBytes
-              })
-          : undefined,
-        signal
-      )
-      if (!bytes) throw new Error(`Document not found: ${id}`)
-      return bytes
+      return (await getDocumentVersion(id, onProgress, signal)).bytes
     },
 
-    async putDocument(id, bytes, metadata, onProgress) {
-      const config = await resolveConfig(runtime)
-      await putObject(
-        config,
-        documentFigKey(id),
+    async putDocumentVersion(id, bytes, readWritten, onProgress, extra) {
+      return s3CommitVersion(
+        await resolve(),
+        id,
         bytes,
-        'application/octet-stream',
-        onProgress
-          ? (progress) =>
-              onProgress({
-                transferredBytes: progress.sentBytes,
-                totalBytes: progress.totalBytes
-              })
-          : undefined
+        readWritten,
+        uploadProgress(onProgress),
+        commitOptions(extra)
       )
+    },
+
+    async putMetadataVersion(id, written, extra) {
+      return s3CommitVersion(
+        await resolve(),
+        id,
+        null,
+        async () => written,
+        undefined,
+        commitOptions(extra)
+      )
+    },
+
+    async putDocumentMetadata(id, metadata) {
       await putObject(
-        config,
+        await resolve(),
         documentMetaKey(id),
-        JSON.stringify({
-          name: metadata.name,
-          updatedAt: metadata.updatedAt || new Date().toISOString()
-        }),
+        serializeStorageDocumentMetadata(metadata),
         'application/json'
       )
     },
 
+    async collectGarbage(nowMs) {
+      return s3CollectGarbage(await resolve(), nowMs)
+    },
+
     async getDocumentMetadata(id) {
-      const config = await resolveConfig(runtime)
+      const config = await resolve()
+      // The head's manifest describes a versioned document; the sidecar a legacy one.
+      const versioned = await readVersionedDocument(config, id)
+      if (versioned?.metadataAuthoritative) return versioned
       const bytes = await getObject(config, documentMetaKey(id))
       if (!bytes) return null
-      const parsed = parseMetadata(bytes, {
-        name: id,
-        updatedAt: new Date(0).toISOString()
-      })
-      return parsed.authoritative ? parsed.metadata : null
+      const parsed = parseStorageDocumentMetadata(bytes, fallbackDocumentMetadata(id))
+      return parsed.authoritative
+        ? { id, ...parsed.metadata, metadataAuthoritative: true, versioned: false }
+        : null
     },
 
     async deleteDocument(id) {
-      const config = await resolveConfig(runtime)
+      const config = await resolve()
+      // Manifests and bodies stay for the garbage collection sweep, which knows which bodies
+      // another document still references.
       const results = await Promise.allSettled([
+        deleteObject(config, documentHeadKey(id)),
         deleteObject(config, documentFigKey(id)),
         deleteObject(config, documentMetaKey(id)),
         deleteObject(config, documentThumbnailKey(id))
@@ -255,43 +283,54 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async getUsage() {
-      const config = await resolveConfig(runtime)
+      const config = await resolve()
       const objects = await listObjects(config, `${STORAGE_NAMESPACE}/`)
+      // A head and a legacy body of one document count it once.
+      const documentIds = new Set<string>()
+      for (const object of objects) {
+        const id = documentIdFromHeadKey(object.key) ?? documentIdFromFigKey(object.key)
+        if (id) documentIds.add(id)
+      }
       return {
         bytesUsed: objects.reduce((total, object) => total + (object.size ?? 0), 0),
         objectCount: objects.length,
-        documentCount: objects.filter((object) => documentIdFromFigKey(object.key)).length
+        documentCount: documentIds.size
       }
     },
 
     async putThumbnail(id, bytes) {
-      const config = await resolveConfig(runtime)
-      await putObject(config, documentThumbnailKey(id), bytes, 'image/jpeg')
+      await putObject(await resolve(), documentThumbnailKey(id), bytes, 'image/jpeg')
     },
 
+    /**
+     * The preview, without downloading a document: the embedded thumbnail of the committed
+     * `.fig` body, then of a legacy `.fig`, then a stored preview image, which is all a slide
+     * deck has.
+     */
     async getThumbnail(id) {
-      const config = await resolveConfig(runtime)
-      const figKey = documentFigKey(id)
-      const size = await headObjectSize(config, figKey)
-      if (size == null) return null
-      return extractFigThumbnailFromReader({
-        size,
-        async read(start: number, endExclusive: number) {
-          return (await getObjectRange(config, figKey, start, endExclusive)) ?? new Uint8Array()
-        }
-      })
+      const config = await resolve()
+      const version = await s3ResolveVersion(config, id, fallbackDocumentMetadata(id))
+      if (version?.manifest.metadata.sourceFormat === 'fig') {
+        const embedded = await figThumbnail(config, bodyKey(version.manifest.bodyId))
+        if (embedded) return embedded
+      }
+      if (!version) {
+        const legacy = await figThumbnail(config, documentFigKey(id))
+        if (legacy) return legacy
+      }
+      return getObject(config, documentThumbnailKey(id))
     },
 
     libraryObjects: {
       async getObject(key) {
-        return getObject(await resolveConfig(runtime), key)
+        return getObject(await resolve(), key)
       },
       async getObjectValue(key) {
-        return getObjectValue(await resolveConfig(runtime), key)
+        return getObjectValue(await resolve(), key)
       },
-      async putObject(key, bytes, contentType, options) {
+      async putObject(key, bytes, contentType, writeOptions) {
         try {
-          await putObject(await resolveConfig(runtime), key, bytes, contentType, undefined, options)
+          await putObject(await resolve(), key, bytes, contentType, undefined, writeOptions)
         } catch (error) {
           if (error instanceof S3HttpError && (error.status === 409 || error.status === 412)) {
             throw new Error('Library revision conflict: latest revision has changed')
@@ -300,7 +339,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         }
       },
       async listObjects(prefix) {
-        return (await listObjects(await resolveConfig(runtime), prefix)).map((object) => ({
+        return (await listObjects(await resolve(), prefix)).map((object) => ({
           key: object.key,
           size: object.size,
           etag: null
@@ -308,4 +347,11 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       }
     }
   }
+}
+
+export function createS3StorageAdapter(
+  runtime: StorageProviderRuntime,
+  options: S3AdapterOptions = {}
+): S3StorageAdapter {
+  return createS3StorageAdapterWithConfig(() => resolveConfig(runtime), options)
 }

@@ -27,8 +27,12 @@ class TestStorageAdapter implements StorageAdapter {
     return Promise.resolve(new Uint8Array())
   }
 
-  putDocument() {
-    return Promise.resolve()
+  putDocumentVersion() {
+    return Promise.resolve({ stateId: 'state', bodyId: 'body', parentStateId: null })
+  }
+
+  putMetadataVersion() {
+    return Promise.resolve({ stateId: 'state', bodyId: 'body', parentStateId: null })
   }
 
   deleteDocument() {

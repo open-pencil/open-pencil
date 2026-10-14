@@ -22,7 +22,11 @@ async function seed(
     providerId: 's3-compatible',
     name: id,
     figBytes: new Uint8Array(sizeMb * MB),
-    syncStatus
+    syncStatus,
+    bodyId: `sha256:${id}`,
+    // A synced row's body is confirmed by a versioned commit; only those bytes may go.
+    syncedBodyId: syncStatus === 'synced' ? `sha256:${id}` : null,
+    versionedConfirmed: syncStatus === 'synced'
   })
   await local.updateMeta(id, { lastOpenedAt })
 }
@@ -72,5 +76,13 @@ describe('evictLocalFigCache', () => {
     await local.updateMeta('legacy', { figSize: undefined })
     const evicted = await evictLocalFigCache(new Set(), 1 * MB)
     expect(evicted).toBe(1)
+  })
+
+  test('never evicts bytes the destination has not confirmed', async () => {
+    await seed('unconfirmed', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    await local.updateMeta('unconfirmed', { syncedBodyId: null })
+    expect(await evictLocalFigCache(new Set(), 1 * MB)).toBe(0)
+    expect((await local.getMeta('unconfirmed'))?.hasFig).toBe(true)
   })
 })

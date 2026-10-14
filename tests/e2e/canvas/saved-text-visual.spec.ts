@@ -46,7 +46,7 @@ test('wrapped text keeps its lines after a .fig is saved and reopened (#914)', a
   try {
     page.once('dialog', (dialog) => dialog.accept('Card.fig'))
     const download = page.waitForEvent('download')
-    await page.evaluate(() => window.openPencil?.getStore?.().saveFigFileAs())
+    await page.evaluate(() => window.openPencil?.getStore?.().saveLocalCopy())
     bytes = [...(await readFile(await (await download).path()))]
   } finally {
     await picker.evaluate((handle) => handle.restore())

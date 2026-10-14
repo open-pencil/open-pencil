@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 
 export type SettingsSection =
+  | 'setup'
   | 'general'
   | 'toolbar'
   | 'ai'

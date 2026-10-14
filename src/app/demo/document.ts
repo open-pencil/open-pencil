@@ -35,7 +35,7 @@ export async function openDemoDocument(store: EditorStore): Promise<void> {
   if (store.graph.getNode(store.state.currentPageId)) showFirstChapter(store)
 }
 
-/** Open the tour in a tab of its own, from the welcome dialog or the File menu. */
+/** Open the tour in a tab of its own, from the welcome dialog. */
 export function openTour(): Promise<void> {
   return openDemoDocument(createTab().store)
 }

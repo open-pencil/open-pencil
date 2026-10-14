@@ -81,6 +81,7 @@ export function createDocumentIOActions(
     getRecoveryId: sourceActions.getRecoveryId,
     adoptRecoverySnapshot: sourceActions.adoptRecoverySnapshot,
     persistRecoveryNow: sourceActions.persistRecoveryNow,
+    persistNow: sourceActions.persistNow,
     discardRecovery: sourceActions.discardRecovery,
     setDocumentSource: sourceActions.setDocumentSource,
     setStorageDocumentSource: sourceActions.setStorageDocumentSource,
@@ -95,6 +96,8 @@ export function createDocumentIOActions(
     hasUnsavedChanges: sourceActions.hasUnsavedChanges,
     markDocumentSaved: () => sourceActions.markDocumentSaved(),
     saveFigFile: sourceActions.saveFigFile,
-    saveFigFileAs: sourceActions.saveFigFileAs
+    saveLocalCopy: sourceActions.saveLocalCopy,
+    renameDocument: sourceActions.renameDocument,
+    rebindLibraryDocument: sourceActions.rebindLibraryDocument
   }
 }

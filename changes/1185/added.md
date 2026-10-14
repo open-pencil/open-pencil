@@ -1,0 +1,1 @@
+- Designs in Recents can be duplicated and renamed from their menu, as in Figma. A copy is named "<name> (Copy)", and a name is edited in place on the card.

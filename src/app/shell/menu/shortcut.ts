@@ -1,7 +1,11 @@
 import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue'
 
 import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
-import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
+import {
+  APP_MENU_SCHEMA,
+  MAIN_MENU_LEADING_ITEMS,
+  MAIN_MENU_TRAILING_ITEMS
+} from '@/app/shell/menu/schema'
 
 function isActionItem(entry: AppMenuEntry): entry is AppMenuActionItem {
   return !('type' in entry && entry.type === 'separator')
@@ -26,7 +30,7 @@ export function appMenuShortcut(id: string): string | undefined {
     const shortcut = findShortcutInEntries(group.items, id)
     if (shortcut) return shortcut
   }
-  return undefined
+  return findShortcutInEntries([...MAIN_MENU_LEADING_ITEMS, ...MAIN_MENU_TRAILING_ITEMS], id)
 }
 
 function normalizeShortcutToken(shortcut: string): string {

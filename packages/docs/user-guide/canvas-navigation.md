@@ -61,7 +61,7 @@ Enable **View → Rulers**, then drag from the top ruler for a horizontal guide 
 
 ## Snapping
 
-Under **View → Preferences**, toggle **Snap to Geometry**, **Snap to Objects**, and **Snap to Pixel Grid** independently. Preferences are saved between sessions.
+Under **Preferences** in the main menu (**File → Preferences** in the desktop app), toggle **Snap to Geometry**, **Snap to Objects**, and **Snap to Pixel Grid** independently. Preferences are saved between sessions.
 
 Geometry and object snapping help align vector points, moved layers, and resized edges with nearby geometry, objects, guides, and frame bounds. Alignment lines appear for those targets; pixel-grid rounding does not draw an alignment line for every pixel.
 

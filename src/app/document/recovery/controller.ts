@@ -19,6 +19,8 @@ interface DocumentRecoveryOptions {
 export interface DocumentRecoveryController {
   getRecoveryId(): string
   adoptRecoverySnapshot(id: string): Promise<void>
+  /** A different document now fills the editor, so it is no longer the one recovered before. */
+  renewRecoveryId(): void
   persistNow(): Promise<void>
   markProtectedVersion(version: number): Promise<void>
   discardRecovery(): Promise<void>
@@ -115,6 +117,10 @@ export function createDocumentRecovery({
 
   return {
     getRecoveryId: () => id,
+    renewRecoveryId() {
+      lifecycleGeneration++
+      id = createCanvasId()
+    },
     async adoptRecoverySnapshot(nextId) {
       const previousId = id
       await invalidateActiveWrite()

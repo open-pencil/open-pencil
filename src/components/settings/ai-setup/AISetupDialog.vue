@@ -5,7 +5,7 @@ import {
   closeAISetup
 } from '@/app/ai/models/settings/onboarding/dialog'
 import { openTour } from '@/app/demo/document'
-import { openSettingsDialog } from '@/app/settings/dialog'
+import { openSettingsDialog, type SettingsSection } from '@/app/settings/dialog'
 import { AppDialogRoot } from '@/components/ui/dialog'
 
 import AISetupFlow from './AISetupFlow.vue'
@@ -17,6 +17,12 @@ function onOpenChange(open: boolean): void {
 function openAdvancedSettings(): void {
   closeAISetup()
   openSettingsDialog('ai')
+}
+
+/** A Service setup row opens the section that sets its services up; the count opens the list. */
+function openServiceSetup(section: SettingsSection): void {
+  closeAISetup()
+  openSettingsDialog(section)
 }
 
 /** The tour opens in a tab of its own; AI stays one click away in Settings. */
@@ -40,6 +46,7 @@ function takeTour(): void {
       @close="closeAISetup"
       @advanced="openAdvancedSettings"
       @tour="takeTour"
+      @services="openServiceSetup"
     />
   </AppDialogRoot>
 </template>

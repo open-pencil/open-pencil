@@ -218,15 +218,13 @@ export const aiMessageDefaults = {
   aiSetupWelcomeTitle: 'Welcome to OpenPencil',
   aiSetupWelcomeDescription:
     'Create and edit designs on an open canvas. Import Figma files and make them your own.',
-  aiSetupWelcomeAITitle: 'Design with AI',
-  aiSetupWelcomeAIDescription:
-    'Connect the AI you already use to edit the canvas and review designs. You can change it later in Settings.',
   aiSetupWelcomeTourTitle: 'Take the tour',
   aiSetupWelcomeTourDescription:
     'A short file that walks through components and slots, working controls, modes, shaders, code, and lint, with a card on each that says what to try.',
   aiSetupTakeTour: 'Open the tour',
   aiSetupStart: 'Set up AI',
   aiSetupSkip: 'Start designing',
+  aiSetupDontShowAgain: "Don't show this again",
   aiSetupProgress: params('Step {current} of {total}'),
   aiSetupAdvanced: 'Advanced settings',
   aiSetupContinue: 'Continue',

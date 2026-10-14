@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { aiModelSettings } from '@/app/ai/models/store'
 import { appPreferences, updateAISetupState } from '@/app/settings/preferences/store'
@@ -11,29 +11,32 @@ export type AISetupEntry = 'welcome' | 'guided'
 export const aiSetupDialogOpen = ref(false)
 export const aiSetupEntry = ref<AISetupEntry>('guided')
 
+/** The welcome's "Don't show this again" choice, saved as soon as it is ticked. */
+export const hideWelcomeOnLaunch = computed({
+  get: () => appPreferences.value.onboarding.aiSetup === 'done',
+  set: (hide: boolean) => updateAISetupState(hide ? 'done' : 'pending')
+})
+
 export function openAISetup(entry: AISetupEntry = 'guided'): void {
   aiSetupEntry.value = entry
   aiSetupDialogOpen.value = true
 }
 
-/** Closing guided setup in any way counts as done, so the welcome is offered only once. */
+/** Closing hides the dialog for this visit only; opting out is a separate, explicit choice. */
 export function closeAISetup(): void {
   aiSetupDialogOpen.value = false
-  updateAISetupState('done')
 }
 
 /**
- * Offers the welcome to a fresh install; anyone who already configured AI never sees it.
- * Returns whether the welcome opened.
+ * Offers the welcome on each launch until AI is configured or the person opts out;
+ * anyone who already configured AI never sees it. Returns whether the welcome opened.
  */
-export function offerAISetupOnFirstRun(): boolean {
+export function offerAIWelcomeOnLaunch(): boolean {
   // The native test binary starts every run with an empty data store.
   if (import.meta.env.MODE === 'native-test') return false
-  if (appPreferences.value.onboarding.aiSetup === 'done') return false
-  if (!isUnconfiguredModelSettings(aiModelSettings.value)) {
-    updateAISetupState('done')
-    return false
-  }
+  if (hideWelcomeOnLaunch.value) return false
+  // Configured AI skips the welcome without touching the opt-out, which stays the person's choice.
+  if (!isUnconfiguredModelSettings(aiModelSettings.value)) return false
   openAISetup('welcome')
   return true
 }

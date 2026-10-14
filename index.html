@@ -39,12 +39,41 @@
         color: rgb(var(--loader-fg));
         background: var(--loader-bg);
       }
-      #boot-splash img { width: 40px; height: 40px; }
+      #boot-splash { transition: opacity 240ms ease-out; }
+      #boot-splash[data-state='closing'] { opacity: 0; pointer-events: none; }
+      #boot-splash[data-state='closing'] .bar { display: none; }
+      #boot-splash > svg { width: 112px; height: auto; }
+      /* The mark assembling: outlines draw in, the pieces slide together, colour wipes in. */
+      #boot-splash .p { animation: boot-join .55s cubic-bezier(.2,.9,.2,1) both; }
+      #boot-splash .p1 { --dx: -44px; --dy: -20px; animation-delay: .33s; }
+      #boot-splash .p2 { --dx: 44px; --dy: -20px; animation-delay: .43s; }
+      #boot-splash .p3 { --dx: -44px; --dy: 44px; animation-delay: .53s; }
+      #boot-splash .w { transform-box: fill-box; transform-origin: center; transform: scale(0); animation: boot-wipe .43s cubic-bezier(.5,0,.2,1) forwards; }
+      #boot-splash .w1 { animation-delay: .8s; }
+      #boot-splash .w2 { animation-delay: .9s; }
+      #boot-splash .w3 { animation-delay: 1s; }
+      #boot-splash .s { fill: none; stroke-width: 14; stroke-linejoin: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; stroke-opacity: 0;
+        animation: boot-draw .4s cubic-bezier(.2,.7,.1,1) forwards, boot-fade .2s linear forwards; }
+      #boot-splash .p1 .s { animation-delay: 0s, 1.17s; }
+      #boot-splash .p2 .s { animation-delay: .1s, 1.27s; }
+      #boot-splash .p3 .s { animation-delay: .2s, 1.37s; }
+      @keyframes boot-join { from { transform: translate(var(--dx), var(--dy)); } to { transform: translate(0, 0); } }
+      @keyframes boot-draw { 0% { stroke-dashoffset: 1; stroke-opacity: 0; } 8% { stroke-opacity: 1; } 100% { stroke-dashoffset: 0; stroke-opacity: 1; } }
+      @keyframes boot-wipe { to { transform: scale(1); } }
+      @keyframes boot-fade { to { opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash .p, #boot-splash .w, #boot-splash .s { animation: none; }
+        #boot-splash .p, #boot-splash .w { transform: none; }
+        #boot-splash .s { stroke-opacity: 0; }
+      }
       #boot-splash .bar {
         position: absolute;
         bottom: 50%;
         left: 50%;
-        transform: translate(-50%, 40px);
+        transform: translate(-50%, 92px);
+        opacity: 0;
+        /* Only for a load that is genuinely slow, well after the mark has assembled. */
+        animation: boot-bar-in .3s ease-out 8s forwards;
         width: 100px;
         height: 2px;
         background: rgba(var(--loader-fg), 0.08);
@@ -60,9 +89,15 @@
         border-radius: 1px;
         animation: slide 1s ease-in-out infinite;
       }
+      @keyframes boot-bar-in { to { opacity: 1; } }
       @keyframes slide {
         0% { transform: translateX(-100%); }
         100% { transform: translateX(350%); }
+      }
+      /* With reduced motion the bar still waits for a slow load, then appears without moving. */
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash .bar { animation-duration: 0s; }
+        #boot-splash .bar::after { animation: none; }
       }
       /* Pre-boot support notice; the app CSS never loads when it shows. */
       #boot-notice {
@@ -106,12 +141,34 @@
   </head>
 
   <body>
-    <div id="app">
-      <div id="boot-splash">
-        <img src="/brand/app-icon.svg" width="40" height="40" alt="OpenPencil" />
-        <div class="bar"></div>
-      </div>
+    <!-- Outside #app so mounting leaves it in place; boot-splash.ts removes it once the mark
+         has assembled and the app is ready. -->
+    <div id="boot-splash" role="status" aria-label="Loading OpenPencil">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="-75 -50 350 430" width="350" height="430" aria-hidden="true">
+        <defs>
+          <clipPath id="boot-c1"><path d="M50 0H100V60A40 40 0 0 0 60 100V140H100V200H0V50A50 50 0 0 1 50 0Z"/></clipPath>
+          <clipPath id="boot-c2"><path d="M100 0A100 100 0 0 1 100 200V140A40 40 0 0 0 100 60Z"/></clipPath>
+          <clipPath id="boot-c3"><path d="M0 200H100V300H50A50 50 0 0 1 0 250Z"/></clipPath>
+          <clipPath id="boot-w1"><circle class="w w1" cx="100" cy="100" r="270"/></clipPath>
+          <clipPath id="boot-w2"><circle class="w w2" cx="100" cy="100" r="270"/></clipPath>
+          <clipPath id="boot-w3"><circle class="w w3" cx="100" cy="100" r="270"/></clipPath>
+        </defs>
+        <g class="p p1">
+          <path clip-path="url(#boot-w1)" fill="#F5501E" d="M50 0H100V60A40 40 0 0 0 60 100V140H100V200H0V50A50 50 0 0 1 50 0Z"/>
+          <path class="s" clip-path="url(#boot-c1)" stroke="#F5501E" pathLength="1" d="M50 0H100V60A40 40 0 0 0 60 100V140H100V200H0V50A50 50 0 0 1 50 0Z"/>
+        </g>
+        <g class="p p2">
+          <path clip-path="url(#boot-w2)" fill="#FFD43B" d="M100 0A100 100 0 0 1 100 200V140A40 40 0 0 0 100 60Z"/>
+          <path class="s" clip-path="url(#boot-c2)" stroke="#FFD43B" pathLength="1" d="M100 0A100 100 0 0 1 100 200V140A40 40 0 0 0 100 60Z"/>
+        </g>
+        <g class="p p3">
+          <path clip-path="url(#boot-w3)" fill="#9B5CFF" d="M0 200H100V300H50A50 50 0 0 1 0 250Z"/>
+          <path class="s" clip-path="url(#boot-c3)" stroke="#9B5CFF" pathLength="1" d="M0 200H100V300H50A50 50 0 0 1 0 250Z"/>
+        </g>
+      </svg>
+      <div class="bar"></div>
     </div>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

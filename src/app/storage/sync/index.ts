@@ -2,10 +2,12 @@ export {
   clearStorageLocalMirror,
   enqueueDeleteCanvas,
   enqueuePutCanvas,
+  enqueuePutMetadata,
   enqueuePutThumb,
+  flushStorageSync,
   kickSyncEngine,
   resumeStorageSync
-} from './engine'
+} from './runtime'
 export { createMemoryOutbox, getOutbox, resetOutboxForTests } from './outbox'
 export {
   persistStorageCanvasLocally,

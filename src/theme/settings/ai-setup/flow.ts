@@ -4,11 +4,13 @@ export default {
   slots: {
     body: 'flex flex-col gap-3 text-xs text-surface',
     help: 'text-xs leading-relaxed text-muted',
-    intro: 'rounded-lg border border-accent/25 bg-accent/5 p-4',
+    services: 'rounded-lg border border-accent/25 bg-accent/5 p-4',
     introHeading: 'text-sm font-semibold text-surface',
     introText: 'mt-2 text-xs leading-relaxed text-muted',
     tour: 'flex items-start justify-between gap-4 rounded-lg border border-border p-4',
     tourAction: 'shrink-0',
+    optOut: 'flex cursor-pointer items-center gap-2 text-xs text-muted select-none',
+    footerActions: 'flex items-center gap-2',
     group: 'flex flex-col gap-2',
     groupHeading: 'text-[11px] font-semibold text-muted',
     // Reads as a group heading; the gap below lives inside the animated content.

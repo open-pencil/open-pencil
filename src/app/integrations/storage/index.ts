@@ -7,7 +7,7 @@ export {
 export type { StoragePreferences } from './preferences'
 export { S3_STORAGE_PROVIDER, storageProviderRegistry } from './providers'
 export { defineStorageProvider, StorageProviderRegistry } from './registry'
-export { createS3StorageAdapter } from './s3/adapter'
+export { createS3StorageAdapter, createS3StorageAdapterWithConfig } from './s3/adapter'
 export type { S3StorageAdapter } from './s3/adapter'
 export type { S3CompatibleConfig, S3ConnectionResult } from './s3/types'
 export {
@@ -16,14 +16,19 @@ export {
   storageCredentialRefs,
   storageCredentialStatuses
 } from './runtime'
+export { StorageConflictError } from './conflict'
 export type {
+  CommittedVersion,
+  GarbageCollectionResult,
   StorageAdapter,
   StorageAdapterContext,
   StorageConnectionResult,
   StorageCredentialField,
   StorageDocument,
   StorageDocumentBinding,
+  StorageDocumentFormat,
   StorageDocumentMetadata,
+  StorageDocumentVersion,
   StorageFieldID,
   LibraryObjectStore,
   LibraryObjectSummary,
@@ -34,5 +39,7 @@ export type {
   StorageProviderRegistration,
   StorageProviderRuntime,
   StorageTransferProgress,
-  StorageUsage
+  StorageUsage,
+  VersionCommitBase,
+  VersionCommitOptions
 } from './types'

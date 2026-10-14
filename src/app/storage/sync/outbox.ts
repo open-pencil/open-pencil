@@ -58,13 +58,19 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
 }
 
 /**
- * Queue with the new job applied: putCanvas supersedes older revisions,
- * and only one putThumb/delete per canvas survives (latest wins).
+ * Queue with the new job applied: putCanvas supersedes older document and metadata puts (it
+ * commits the row's metadata too), and only one metadata/thumbnail/delete job per canvas
+ * survives (latest wins).
  */
 function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
   let next = queue
   if (job.type === 'putCanvas') {
-    next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
+    next = supersedePutCanvasJobs(next, job.canvasId, job.revision).filter(
+      (queued) =>
+        queued.canvasId !== job.canvasId ||
+        queued.type !== 'putMetadata' ||
+        queued.revision > job.revision
+    )
   }
   next = next.filter(
     (queued) =>
@@ -125,7 +131,12 @@ export function createIdbOutbox(): Outbox {
     },
 
     async update(job) {
-      await (await database.open()).put(STORE, job)
+      // Only a job still queued: a retry written after the job completed or was superseded
+      // would otherwise resurrect it.
+      const transaction = (await database.open()).transaction(STORE, 'readwrite')
+      const store = transaction.objectStore(STORE)
+      if (await store.get(job.id)) await store.put(job)
+      await transaction.done
     },
 
     async remove(id) {

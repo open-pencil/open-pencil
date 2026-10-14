@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { openAppMenu } from '#tests/helpers/menu'
+import { openSettings } from '#tests/helpers/menu'
 
 test('configured storage lists previews through ranges before opening the document', async ({
   page
@@ -84,8 +84,8 @@ test('configured storage lists previews through ranges before opening the docume
   await page.goto('/storage?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
-  await page.keyboard.press('ControlOrMeta+KeyN')
-  await page.getByRole('button', { name: 'Settings' }).last().click()
+  await page.getByTestId('tabbar-home').click()
+  await page.getByTestId('recent-files-home').getByRole('button', { name: 'Settings' }).click()
   await page.getByTestId('settings-section-storage').click()
   const panel = page.getByTestId('settings-storage-panel')
   await panel.getByRole('button', { name: /S3 storage/ }).click()
@@ -112,23 +112,22 @@ test('configured storage lists previews through ranges before opening the docume
   expect(fullDocumentGets).toBe(1)
 })
 
-test('storage workspace directs unconfigured users to Settings', async ({ page }) => {
+test('the library keeps designs on this device until storage is set up', async ({ page }) => {
   await page.goto('/storage?test')
   await new CanvasHelper(page).waitForInit()
-  await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.getByTestId('tabbar-home').click()
 
-  await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'New design', exact: true })).toBeEnabled()
+  const home = page.getByTestId('recent-files-home')
+  await expect(home).toBeVisible()
+  await expect(home.getByTestId('home-library-location')).toHaveText('Saved on this device')
+  await expect(page.getByTestId('home-new-document')).toBeEnabled()
 
-  await page.getByRole('button', { name: 'Settings' }).last().click()
+  await home.getByRole('button', { name: 'Settings' }).click()
   await page.getByTestId('settings-section-storage').click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
 
-test('Save to storage uploads the open document and lists it in the workspace', async ({
-  page
-}) => {
+test('setting up storage syncs the designs already in the library', async ({ page }) => {
   const objects = new Map<string, Buffer>()
   await page.route('https://s3.example.com/**', async (route) => {
     const request = route.request()
@@ -168,12 +167,19 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
+  // Edited before storage exists: the design saves itself to the library on this device.
+  await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Editor unavailable')
+    store.createShape('RECTANGLE', 100, 100, 100, 100)
+    store.renameDocument('Synced later')
+    await store.persistNow()
+  })
+  expect(objects.size).toBe(0)
 
-  // Before storage is configured, the command opens storage settings.
-  let file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  await openSettings(page)
+  await page.getByTestId('settings-section-storage').click()
   const panel = page.getByTestId('settings-storage-panel')
-  await expect(panel).toBeVisible()
   await panel.getByRole('button', { name: /S3 storage/ }).click()
   await panel.getByLabel('Endpoint').fill('https://s3.example.com')
   await panel.getByLabel('Bucket').fill('designs')
@@ -182,20 +188,20 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await page.getByTestId('app-settings-done').click()
 
-  file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  // A versioned commit: a content-addressed body, an immutable manifest, and the head.
   await expect
-    .poll(() => [...objects.keys()].filter((key) => key.includes('/canvases/')).sort())
+    .poll(() => [...objects.keys()].filter((key) => !key.endsWith('.openpencil-namespace')).sort())
     .toEqual([
-      expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\.fig$/),
-      expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\.meta\.json$/)
+      expect.stringMatching(/^open_pencil_storage\/bodies\/sha256:[0-9a-f]+\.fig$/),
+      expect.stringMatching(/^open_pencil_storage\/canvases\/[^/]+\/head\.json$/),
+      expect.stringMatching(/^open_pencil_storage\/versions\/sha256:[0-9a-f]+\.json$/)
     ])
   const uploaded = [...objects].find(([key]) => key.endsWith('.fig'))?.[1]
   // An exported .fig is a zip archive holding the document and its thumbnail.
   expect(uploaded?.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
 
-  file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
-  await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Untitled/ }).first()).toBeVisible()
+  await page.getByTestId('tabbar-home').click()
+  const home = page.getByTestId('recent-files-home')
+  await expect(home.getByTestId('home-library-location')).toContainText('designs')
+  await expect(home.getByRole('button', { name: /Synced later/ })).toBeVisible()
 })

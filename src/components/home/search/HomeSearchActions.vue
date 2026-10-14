@@ -50,7 +50,7 @@ watch(
       autocomplete="off"
       class="md:flex-1"
       :density="isMobile ? 'comfortable' : 'compact'"
-      :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
+      :placeholder="files.searchFiles"
       :aria-label="files.searchFiles"
     >
       <template #leading><icon-lucide-search class="size-4" /></template>

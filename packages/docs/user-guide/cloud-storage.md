@@ -50,17 +50,21 @@ Add a rule like this one, with the origins you open OpenPencil from:
 
 Set it in the AWS console under the bucket's **Permissions → Cross-origin resource sharing**, in the Cloudflare dashboard under the R2 bucket's **Settings → CORS policy**, or with your provider's CLI. When the rule is missing, **Test connection** says the browser could not reach the bucket from the current site.
 
-## Save a Document to Storage
+## Designs in Storage
 
-Open or create a document, then choose **File → Save to storage…**. The document is saved into the bucket and the tab stays bound to it: **Save** and auto-save now write to storage instead of a local file. A local `.fig` you had open keeps its last saved contents.
+Every design saves itself to the library on this device. Once storage is set up, the library syncs to the bucket, the designs saved before included; there is nothing to save by hand. **File → Save Local Copy…** writes a design to a `.fig` file of your own.
 
-To open stored documents, choose **File → Open storage workspace…**. The workspace lists every document in the bucket with a preview read from the document itself, so listing a large file downloads only its embedded thumbnail.
+Stored designs appear in **Recents** on the start page, which the home button opens. Each card shows a preview read from the design itself, so listing a large file downloads only its embedded thumbnail.
 
 ## How Saving Works
 
 Saving writes the document on this device first and uploads it in the background, so editing never waits for the network. If an upload fails or you are offline, it is retried with increasing delays, and pending work resumes when you reconnect or change storage settings.
 
-Each document is uploaded whole. When two devices save the same document, the last upload wins.
+Each save becomes a version in the bucket. A design's content is stored once under its content hash, so renaming, trashing, or restoring it uploads only a few hundred bytes, and saving unchanged content uploads nothing. While a design is open, its changes go to the bucket at most every 30 seconds, and at once when you close it or leave the page.
+
+When another device changed a design that this device also changed, nothing is overwritten: the library keeps both, and this device's version becomes a new design named "(conflicted copy)". When only the name or the trash differs, the later change wins and no copy is made.
+
+Slide decks in the bucket appear in the library with a Deck label. They can be trashed, restored, deleted, or downloaded as a `.deck` file, but this version of OpenPencil cannot open them.
 
 Documents you have opened stay cached on the device for faster reopening, up to 500 MB. Only copies that are fully uploaded are removed when the cache is full, and they are downloaded again the next time you open them.
 
@@ -72,10 +76,15 @@ The bucket can also hold component libraries. In **Assets → Manage libraries**
 
 OpenPencil writes only under two prefixes and leaves everything else in the bucket alone:
 
-- `open_pencil_storage/canvases/` — each document as `<id>.fig`, with its name and modification time in `<id>.meta.json`.
+- `open_pencil_storage/canvases/<id>/head.json` — which version of each document is current, with its recent versions.
+- `open_pencil_storage/versions/` — one small manifest per version: the document's name, trash state, and which body holds its content.
+- `open_pencil_storage/bodies/` — document content as `.fig` files named by their SHA-256, shared by every version and document with the same content. Content no version refers to any more is removed a day later.
+- `open_pencil_storage/canvases/<id>.fig` and `<id>.meta.json` — documents saved by earlier versions of OpenPencil. They are still read, move to the layout above on their next save, and are removed when the document is permanently deleted.
 - `open-pencil/libraries/` — each library's `manifest.json` and its published revisions.
 
 ## Provider Notes
+
+- **Backblaze B2** keeps every overwritten version of an object by default. Add a lifecycle rule that keeps only the last version (`daysFromHidingToDeleting: 1`) so the head files OpenPencil rewrites on each save do not accumulate. B2 does not enforce conditional writes, so OpenPencil detects concurrent saves when it next reads the bucket rather than refusing them.
 
 - **Cloudflare R2** needs the exact web app origin in its CORS rule; it does not accept wildcard origins such as `https://*.example.com`.
 - **MinIO** answers CORS requests from any origin unless you configure otherwise.
