@@ -6,11 +6,16 @@ import {
   arrowCapOverflow,
   arrowLinesSegments,
   collectArrowEndpoints,
+  circleCapRadius,
+  diamondCapPoints,
   equilateralArrowPoints,
   isArrowCap,
-  lineArrowEndpoints
+  lineArrowEndpoints,
+  triangleCapPoints,
+  trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
 import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 const SQRT3 = Math.sqrt(3)
 
@@ -32,9 +37,12 @@ function straightOpenLine(): VectorNetwork {
 }
 
 describe('isArrowCap', () => {
-  test('recognizes both arrow cap kinds and nothing else', () => {
+  test('recognizes the arrow and filled head caps and nothing else', () => {
     expect(isArrowCap('ARROW_LINES')).toBe(true)
     expect(isArrowCap('ARROW_EQUILATERAL')).toBe(true)
+    expect(isArrowCap('TRIANGLE_FILLED')).toBe(true)
+    expect(isArrowCap('DIAMOND_FILLED')).toBe(true)
+    expect(isArrowCap('CIRCLE_FILLED')).toBe(true)
     expect(isArrowCap('ROUND')).toBe(false)
     expect(isArrowCap('SQUARE')).toBe(false)
     expect(isArrowCap('NONE')).toBe(false)
@@ -286,5 +294,62 @@ describe('strokeOverflow with arrow caps', () => {
 
   test('non-arrow strokes keep the align-based overflow', () => {
     expect(strokeOverflow([stroke()])).toBe(2)
+  })
+})
+
+// Stroke outlines Figma gives for a line from (0, 0) to (200, 0) at weight 4, recorded 2026-10-15.
+describe('filled heads', () => {
+  const rounded = (points: Vector[]) =>
+    points.map(({ x, y }) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000 + 0])
+
+  test('a triangle spreads across the end and narrows back to the line', () => {
+    expect(rounded(triangleCapPoints(200, 0, 0, 4))).toEqual([
+      [180, 2],
+      [200, 11.547],
+      [200, -11.547],
+      [180, -2]
+    ])
+  })
+
+  test('a diamond and a circle sit centred on the end', () => {
+    expect(rounded(diamondCapPoints(200, 0, 0, 4))).toEqual([
+      [211.547, 0],
+      [200, 11.547],
+      [188.453, 0],
+      [200, -11.547]
+    ])
+    expect(circleCapRadius(4)).toBeCloseTo(10.6667, 4)
+  })
+
+  test('a straight end stays straight when the line stops short, so its corner keeps its radius', () => {
+    const network: VectorNetwork = {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 0, y: 60 },
+        { x: 100, y: 60, strokeCap: 'TRIANGLE_FILLED' }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: []
+    }
+    const trimmed = trimArrowShafts(network, 'NONE', 8)
+    expect(trimmed.vertices[2]).toMatchObject({ x: 64, y: 60 })
+    expect(trimmed.segments[1]).toMatchObject({
+      tangentStart: { x: 0, y: 0 },
+      tangentEnd: { x: 0, y: 0 }
+    })
+  })
+
+  test('the line stops 4.5 weights short of a triangle or equilateral head only', () => {
+    const network = straightOpenLine()
+    network.vertices[0].strokeCap = 'CIRCLE_FILLED'
+    network.vertices[1].strokeCap = 'TRIANGLE_FILLED'
+    const trimmed = trimArrowShafts(network, 'NONE', 4)
+    expect(trimmed.vertices[0]).toMatchObject({ x: 0, y: 0 })
+    expect(trimmed.vertices[1].x).toBeCloseTo(82, 6)
+    expect(trimmed.vertices[1].y).toBeCloseTo(0, 6)
+    expect(network.vertices[1].x).toBe(100)
   })
 })

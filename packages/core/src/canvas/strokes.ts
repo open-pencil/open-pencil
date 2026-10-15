@@ -2,8 +2,14 @@ import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
-import { arrowLinesSegments, equilateralArrowPoints } from '@open-pencil/scene-graph/arrow-caps'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  arrowLinesSegments,
+  circleCapRadius,
+  diamondCapPoints,
+  equilateralArrowPoints,
+  triangleCapPoints
+} from '@open-pencil/scene-graph/arrow-caps'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
@@ -119,34 +125,57 @@ export function drawArrowHeads(
   opacity: number
 ): void {
   for (const endpoint of endpoints) {
-    if (endpoint.cap === 'ARROW_EQUILATERAL') {
-      const [tip, left, right] = equilateralArrowPoints(
-        endpoint.x,
-        endpoint.y,
-        endpoint.angle,
-        weight
-      )
-      const builder = new r.ck.PathBuilder()
-      builder.moveTo(tip.x, tip.y)
-      builder.lineTo(left.x, left.y)
-      builder.lineTo(right.x, right.y)
-      builder.close()
-      const path = builder.detachAndDelete()
-      r.fillPaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.fillPaint.setAlphaf(opacity)
-      canvas.drawPath(path, r.fillPaint)
-      path.delete()
-    } else {
-      r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.strokePaint.setAlphaf(opacity)
-      r.strokePaint.setStrokeWidth(weight)
-      r.strokePaint.setStrokeCap(r.ck.StrokeCap.Butt)
-      r.strokePaint.setPathEffect(null)
-      for (const wing of arrowLinesSegments(endpoint.x, endpoint.y, endpoint.angle, weight)) {
-        canvas.drawLine(wing.from.x, wing.from.y, wing.to.x, wing.to.y, r.strokePaint)
-      }
+    const { x, y, angle } = endpoint
+    switch (endpoint.cap) {
+      case 'ARROW_LINES':
+        r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+        r.strokePaint.setAlphaf(opacity)
+        r.strokePaint.setStrokeWidth(weight)
+        r.strokePaint.setStrokeCap(r.ck.StrokeCap.Butt)
+        r.strokePaint.setPathEffect(null)
+        for (const wing of arrowLinesSegments(x, y, angle, weight)) {
+          canvas.drawLine(wing.from.x, wing.from.y, wing.to.x, wing.to.y, r.strokePaint)
+        }
+        break
+      case 'CIRCLE_FILLED':
+        setHeadPaint(r, color, opacity)
+        canvas.drawCircle(x, y, circleCapRadius(weight), r.fillPaint)
+        break
+      case 'ARROW_EQUILATERAL':
+        fillHead(r, canvas, equilateralArrowPoints(x, y, angle, weight), color, opacity)
+        break
+      case 'TRIANGLE_FILLED':
+        fillHead(r, canvas, triangleCapPoints(x, y, angle, weight), color, opacity)
+        break
+      case 'DIAMOND_FILLED':
+        fillHead(r, canvas, diamondCapPoints(x, y, angle, weight), color, opacity)
+        break
     }
   }
+}
+
+function setHeadPaint(r: SkiaRenderer, color: Color, opacity: number) {
+  r.fillPaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.fillPaint.setAlphaf(opacity)
+}
+
+/** Fills a head outlined by `points` in the stroke's colour. */
+function fillHead(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  points: readonly Vector[],
+  color: Color,
+  opacity: number
+) {
+  const builder = new r.ck.PathBuilder()
+  points.forEach((point, index) =>
+    index === 0 ? builder.moveTo(point.x, point.y) : builder.lineTo(point.x, point.y)
+  )
+  builder.close()
+  const path = builder.detachAndDelete()
+  setHeadPaint(r, color, opacity)
+  canvas.drawPath(path, r.fillPaint)
+  path.delete()
 }
 
 /**

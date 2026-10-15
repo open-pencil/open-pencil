@@ -6,7 +6,9 @@ import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
 import {
   arrowCapOverflow,
   collectArrowEndpoints,
-  lineArrowEndpoints
+  hasTrimmedShaft,
+  lineArrowEndpoints,
+  trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -15,7 +17,12 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { createSceneGeometry, nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { shownText } from '#core/text/case'
 import { fontManager } from '#core/text/fonts'
-import { addStrokeRunToPath, strokeRuns, vectorNetworkToCenterlinePath } from '#core/vector'
+import {
+  addStrokeRunToPath,
+  strokeRuns,
+  vectorNetworkToCenterlinePath,
+  vectorNetworkToPath
+} from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
 import { renderBooleanOperation } from './boolean'
@@ -859,6 +866,23 @@ function paintNodeStrokes(
       const centerline = vectorNetworkToCenterlinePath(r.ck, node.vectorNetwork)
       drawVectorPathStrokes(r, canvas, [centerline], stroke, color, node.strokeMiterLimit)
       centerline.delete()
+      drawNodeArrowHeads(r, canvas, node, stroke, color)
+      return
+    }
+    const cap = stroke.cap ?? node.strokeCap
+    if (
+      !sg &&
+      stroke.align === 'CENTER' &&
+      node.type === 'VECTOR' &&
+      node.vectorNetwork &&
+      hasTrimmedShaft(node.vectorNetwork, cap)
+    ) {
+      // The line stops short of a triangle or equilateral head, so it is stroked from its own
+      // pulled-back copy rather than the cached paths; saved stroke geometry is already trimmed.
+      const network = trimArrowShafts(node.vectorNetwork, cap, stroke.weight)
+      const paths = vectorNetworkToPath(r.ck, network, node.cornerRadius)
+      drawVectorPathStrokes(r, canvas, paths, stroke, color, node.strokeMiterLimit)
+      for (const path of paths) path.delete()
       drawNodeArrowHeads(r, canvas, node, stroke, color)
       return
     }
