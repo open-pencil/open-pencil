@@ -15,6 +15,8 @@ export const syncStatusLabel = computed(() => {
       return 'Offline · will sync'
     case 'error':
       return syncUIDetail.value ?? 'Sync failed'
+    case 'conflict':
+      return syncUIDetail.value ?? 'Changed on another device'
     default:
       return null
   }

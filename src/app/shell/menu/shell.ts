@@ -1,6 +1,6 @@
 import { useI18n } from '@open-pencil/vue'
 
-import { openTour } from '@/app/demo/document'
+import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { requestAppExit } from '@/app/document/close/exit'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
@@ -10,8 +10,8 @@ import {
   syncNativeSnappingMenu
 } from '@/app/settings/preferences/native-menu'
 import { appPreferences } from '@/app/settings/preferences/store'
+import { HELP_MENU_ACTIONS } from '@/app/shell/menu/help'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
-import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater/check'
@@ -53,12 +53,8 @@ export function useShellMenu() {
   const { setTheme } = useAppTheme()
   const { updates } = useI18n()
   const actions: Partial<Record<string, () => void>> = {
-    'open-storage-workspace': () => {
-      void import('@/router').then(({ default: router }) => openStorageWorkspace(router))
-    },
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
+    'show-welcome': () => openAISetup('welcome'),
+    ...HELP_MENU_ACTIONS,
     settings: openSettingsDialog,
     'snap-geometry': () => {
       const current = appPreferences.value.editing.snapping.geometry

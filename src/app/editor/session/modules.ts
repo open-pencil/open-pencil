@@ -82,7 +82,9 @@ export function createEditorStoreModules(
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
     saveFigFile: documentIO.saveFigFile,
-    saveFigFileAs: documentIO.saveFigFileAs,
+    saveLocalCopy: documentIO.saveLocalCopy,
+    renameDocument: documentIO.renameDocument,
+    rebindLibraryDocument: documentIO.rebindLibraryDocument,
     getDocumentFilePath: documentIO.getDocumentFilePath,
     hasWritableSource: documentIO.hasWritableSource,
     getSourceIdentity: documentIO.getSourceIdentity,
@@ -90,6 +92,7 @@ export function createEditorStoreModules(
     getRecoveryId: documentIO.getRecoveryId,
     adoptRecoverySnapshot: documentIO.adoptRecoverySnapshot,
     persistRecoveryNow: documentIO.persistRecoveryNow,
+    persistNow: documentIO.persistNow,
     discardRecovery: documentIO.discardRecovery,
     setDocumentSource: documentIO.setDocumentSource,
     setStorageDocumentSource: documentIO.setStorageDocumentSource,

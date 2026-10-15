@@ -3,7 +3,8 @@ import type { StorageProviderID } from '@/app/integrations/storage/types'
 export type StorageWorkspaceEvent = {
   providerId: StorageProviderID
   documentId?: string
-  kind: 'changed' | 'synced'
+  /** `conflict`: another device changed the design too; the library keeps both versions. */
+  kind: 'changed' | 'synced' | 'conflict'
 }
 
 type StorageWorkspaceListener = (event: StorageWorkspaceEvent) => void

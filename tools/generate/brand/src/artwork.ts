@@ -19,17 +19,13 @@ export function recolor(
   adapter: ImageAdapter,
   mode: 'dark' | 'mono' | 'mono-dark'
 ) {
+  // The colour mark keeps its colours on dark backgrounds.
+  if (mode === 'dark') return source
+  // One colour: the single silhouette, since abutting pieces of one colour would show seams.
   const svg = stringToSVG(source, adapter)
-  if (mode === 'dark') {
-    for (const [part, color] of Object.entries(brand.darkPalette)) {
-      for (const path of svg.find(`[data-part="${part}"]`)) path.fill(color)
-    }
-    for (const grid of svg.find('[data-detail="grid"]')) grid.opacity(brand.darkGridOpacity)
-  } else {
-    for (const detail of svg.find('[data-detail]')) detail.remove()
-    for (const path of svg.find('[data-part]')) {
-      path.fill(mode === 'mono' ? brand.darkBackground : brand.background)
-    }
+  for (const path of svg.find('[data-part]')) path.remove()
+  for (const path of svg.find('[data-shape="silhouette"]')) {
+    path.fill(mode === 'mono' ? brand.ink : brand.paper)
   }
   return svg.svg()
 }
@@ -48,8 +44,12 @@ export function appArtwork(
     .move(inset, inset)
     .fill(brand.background)
   if (rounded) background.radius(brand.tileRadius)
-  const regularScale = kind === 'tile' ? brand.tileScale : brand.appScale
-  const scale = kind === 'maskable' ? brand.maskableScale : regularScale
+  const scale = {
+    web: brand.appScale,
+    maskable: brand.maskableScale,
+    tile: brand.tileScale,
+    desktop: brand.desktopScale
+  }[kind]
   const mark = stringToSVG(source, adapter).size(1024 * scale, 1024 * scale)
   mark.move((1024 * (1 - scale)) / 2, (1024 * (1 - scale)) / 2)
   svg.add(mark)

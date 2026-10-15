@@ -1,8 +1,9 @@
 import type { Router } from 'vue-router'
 
-export function openStorageWorkspace(router: Router): void {
+/** Shows the start page. */
+export function openHome(router: Router): void {
   void router
     .push('/')
     .then(() => import('@/app/tabs'))
-    .then(({ showNewTab }) => showNewTab())
+    .then(({ showHome }) => showHome())
 }

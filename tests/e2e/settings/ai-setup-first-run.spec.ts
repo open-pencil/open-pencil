@@ -2,23 +2,39 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { waitForDemo } from '#tests/helpers/demo'
+import { openAppMenu } from '#tests/helpers/menu'
 
 // `?test` suppresses the first-run offer, so these load the app as a person would, with none
 // of the stored preferences the other browser tests start from.
 test.use({ storageState: { cookies: [], origins: [] } })
 
-test('a fresh install offers guided AI setup once and remembers skipping it', async ({ page }) => {
+test('the welcome returns on each launch until the person opts out', async ({ page }) => {
+  // Three launches of the app take longer than one test's default budget.
+  test.setTimeout(45_000)
   await page.goto('/')
   // The offer is made while the workspace starts, so it is open once the canvas is ready.
   await new CanvasHelper(page).waitForInit()
   const setup = page.getByTestId('ai-setup-dialog')
-  await expect(setup.getByRole('heading', { name: 'Welcome to OpenPencil' })).toBeVisible()
+  const welcome = setup.getByRole('heading', { name: 'Welcome to OpenPencil' })
+  await expect(welcome).toBeVisible()
+  await setup.getByRole('button', { name: 'Start designing' }).click()
+  await expect(setup).toHaveCount(0)
+
+  await page.reload()
+  await new CanvasHelper(page).waitForInit()
+  await expect(welcome).toBeVisible()
+  await setup.getByRole('checkbox', { name: "Don't show this again" }).click()
   await setup.getByRole('button', { name: 'Start designing' }).click()
   await expect(setup).toHaveCount(0)
 
   await page.reload()
   await new CanvasHelper(page).waitForInit()
   await expect(setup).toHaveCount(0)
+
+  const menu = await openAppMenu(page, 'Help')
+  await menu.getByRole('menuitem', { name: /Show welcome/i }).click()
+  await expect(welcome).toBeVisible()
+  await expect(setup.getByRole('checkbox', { name: "Don't show this again" })).toBeChecked()
 })
 
 test('a first visit to the demo offers the welcome without pointing to the tour', async ({

@@ -5,32 +5,37 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 for (const deviceScaleFactor of [1, 2]) {
   test.describe(`brand at ${deviceScaleFactor}x`, () => {
     test.use({ deviceScaleFactor })
-    test('the editor keeps its 24px ivory tile in both app themes', async ({ page }) => {
+    test('the main menu button shows the outlined mark in both app themes', async ({ page }) => {
       await page.goto('/?test')
       await new CanvasHelper(page).waitForInit()
-      const logo = page.getByTestId('app-logo')
-      await expect(logo).toHaveAttribute('alt', 'OpenPencil')
+      // The browser shows the mark as an outline at the top of the navigation rail, as Figma does;
+      // the ink tile stays for the app icon, the favicon, and the desktop header.
+      const button = page.getByRole('button', { name: 'Main menu', exact: true })
+      const mark = button.locator('svg')
+      await expect(mark).toHaveCount(1)
+      await expect(mark).toHaveCSS('width', '24px')
       for (const appearance of ['light', 'dark'] as const) {
         await page.evaluate(async (appearance) => {
           const path = '/src/app/shell/theme.ts'
           const module = await import(path)
           module.useAppTheme().setTheme(appearance)
         }, appearance)
-        await expect(logo).toHaveAttribute('src', '/brand/app-icon.svg')
-        await expect(logo).toHaveCSS('width', '24px')
-        await expect(logo).toHaveCSS('height', '24px')
-        await expect(logo).toHaveScreenshot(
-          `brand-header-${appearance}-${deviceScaleFactor}x.png`,
-          {
-            maxDiffPixels: 0,
-            threshold: 0.1,
-            scale: 'device'
-          }
-        )
+        // Full strength, as Figma shows its logo in white: the theme's text color.
+        const surface = await page.evaluate(() => {
+          const probe = document.createElement('span')
+          probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(
+            '--color-surface'
+          )
+          document.body.append(probe)
+          const color = getComputedStyle(probe).color
+          probe.remove()
+          return color
+        })
+        await expect(mark).toHaveCSS('color', surface)
       }
     })
 
-    test('the 16px favicon keeps its edge-to-edge ivory tile in both browser themes', async ({
+    test('the 16px favicon keeps its edge-to-edge ink tile in both browser themes', async ({
       page,
       baseURL
     }) => {
@@ -62,7 +67,7 @@ test('the main SVG retains its approved appearance', async ({ page }) => {
   await expect(page.locator('svg')).toHaveScreenshot('brand-mark.png')
 })
 
-test('the larger dark SVG retains its palette and subtle grid', async ({ page }) => {
+test('the larger dark SVG keeps the colour mark on a dark surface', async ({ page }) => {
   await page.goto('/brand/mark-dark.svg')
   const mark = page.locator('svg')
   await mark.evaluate((svg) => {
@@ -71,7 +76,7 @@ test('the larger dark SVG retains its palette and subtle grid', async ({ page })
   await expect(mark).toHaveScreenshot('brand-mark-dark.png')
 })
 
-test('the ivory app tile works on light and dark surfaces', async ({ page }) => {
+test('the ink app tile works on light and dark surfaces', async ({ page }) => {
   await page.goto('/brand/app-icon.svg')
   const icon = page.locator('svg').first()
   for (const appearance of ['light', 'dark'] as const) {

@@ -13,7 +13,7 @@ import {
   getActiveStore,
   getTabsSnapshot,
   openFileInNewTab,
-  showNewTab,
+  showHome,
   tabCount
 } from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
@@ -162,18 +162,18 @@ describe('openFileInNewTab deduplication', () => {
     expect(resolveBrowserFileURL('/design.fig#selection').href).toBe('http://localhost/design.fig')
   })
 
-  test('reuses the existing New tab when navigating to the files workspace', () => {
+  test('reuses the one start page when navigating to the files workspace', () => {
     const initialCount = tabCount()
     const initialHomeCount = getTabsSnapshot().filter((tab) => tab.kind === 'home').length
 
-    showNewTab()
-    showNewTab()
+    showHome()
+    showHome()
 
     expect(tabCount()).toBe(initialCount + (initialHomeCount === 0 ? 1 : 0))
     expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
   })
 
-  test('converts the current New tab into a blank document', () => {
+  test('converts the start page into a blank document', () => {
     createHomeTab()
     const home = getTabsSnapshot().at(-1)
     const count = tabCount()
@@ -185,7 +185,7 @@ describe('openFileInNewTab deduplication', () => {
     expect(document.kind).toBe('document')
   })
 
-  test('opens a file in the current New tab', async () => {
+  test('opens a file from the start page in its place', async () => {
     createHomeTab()
     const home = getTabsSnapshot().at(-1)
     const count = tabCount()

@@ -1,19 +1,24 @@
-export type OutboxJobType = 'putCanvas' | 'putThumb' | 'deleteCanvas'
+export type OutboxJobType = 'putCanvas' | 'putMetadata' | 'putThumb' | 'deleteCanvas'
 
 export type OutboxJob = {
   id: string
   canvasId: string
   type: OutboxJobType
-  /** Local revision for putCanvas; used to supersede older puts. */
+  /** Local revision for document and metadata puts; used to supersede older puts. */
   revision: number
   createdAt: number
   attempts: number
   nextAttemptAt: number
 }
 
-export type SyncUIState = 'idle' | 'syncing' | 'offline' | 'error'
+/** `conflict` is not a fault: two devices edited one design and it is being kept as both. */
+export type SyncUIState = 'idle' | 'syncing' | 'offline' | 'error' | 'conflict'
 
-/** Pure helper: drop older putCanvas jobs for same canvas when a newer revision is enqueued. */
+/**
+ * Drop putCanvas jobs for the same canvas that a new one supersedes. An equal revision is
+ * superseded too: the engine always uploads the row's current body, so two jobs at one revision
+ * would send identical bytes twice.
+ */
 export function supersedePutCanvasJobs(
   jobs: OutboxJob[],
   canvasId: string,
@@ -21,7 +26,7 @@ export function supersedePutCanvasJobs(
 ): OutboxJob[] {
   return jobs.filter((job) => {
     if (job.canvasId !== canvasId || job.type !== 'putCanvas') return true
-    return job.revision >= revision
+    return job.revision > revision
   })
 }
 

@@ -38,8 +38,7 @@ function createSaveHarness(handle: FileSystemFileHandle) {
     setStorageBinding: vi.fn(),
     setSourceIdentity,
     setSavedVersion: vi.fn(),
-    setLastWriteTime: vi.fn(),
-    startWatchingFile: vi.fn()
+    setLastWriteTime: vi.fn()
   })
   return { actions, setSourceIdentity }
 }

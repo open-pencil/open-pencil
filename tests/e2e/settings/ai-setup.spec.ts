@@ -1,6 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openSettings } from '#tests/helpers/menu'
 
 const SERVER_URL = 'http://ai-setup.test/v1'
 const CORS_HEADERS = {
@@ -12,7 +13,7 @@ const CORS_HEADERS = {
 async function openGuidedSetup(page: Page) {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-run-ai-setup').click()
   const setup = page.getByTestId('ai-setup-dialog')

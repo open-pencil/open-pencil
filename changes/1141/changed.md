@@ -1,0 +1,2 @@
+- The left panel follows Figma's layout: a navigation rail holds the main menu and the File and Assets views (in place of the File and Assets switch), and the header shows the document's name with the sidebar toggle. In the browser, the OpenPencil mark at the top of the rail opens the main menu, drawn as the logo kit's modular outline in the text color, as Figma shows its logo; Settings stays in the main menu.
+- The dark theme's panels are `#2C2C2C`, Figma's panel gray, instead of `#2A2A2A`.

@@ -171,11 +171,6 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('export-selection') ?? '$mod+Shift+KeyE',
       run: ({ actions }) => actions.exportSelectionPNG()
     },
-    {
-      id: 'save-as',
-      keys: appMenuTinykeysShortcut('save-as') ?? '$mod+Shift+KeyS',
-      run: ({ store }) => void store.saveFigFileAs()
-    },
     ...commandShortcuts('selection.ungroup', 'edit.redo'),
     {
       id: 'toggle-preview',
@@ -278,9 +273,10 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       'selection.selectAll',
       'selection.selectInverse'
     ),
+    // Designs save themselves; the shortcut writes the latest edits to the library at once.
     {
       id: 'save',
-      keys: appMenuTinykeysShortcut('save') ?? '$mod+KeyS',
+      keys: '$mod+KeyS',
       run: ({ store }) => void store.saveFigFile()
     },
     {

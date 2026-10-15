@@ -57,7 +57,8 @@ export function createAutosave({
     (version) => {
       void requestSave(version).catch(reportFailure)
     },
-    { debounce: 3000 }
+    // Soon after an edit, and regularly during a long one: the library is where designs live.
+    { debounce: 1000, maxWait: 5000 }
   )
 
   return {

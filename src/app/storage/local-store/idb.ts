@@ -9,7 +9,13 @@ import {
   readStoredBinary,
   type StoredBinary
 } from '@/app/storage/idb'
-import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
+import {
+  buildIndexMeta,
+  buildWriteMeta,
+  normalizeLocalCanvasMeta,
+  sortAndFilterMetas,
+  type StoredLocalCanvasMeta
+} from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
 
@@ -30,7 +36,7 @@ const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
 interface LocalCanvasDatabase extends DBSchema {
   meta: {
     key: string
-    value: LocalCanvasMeta
+    value: StoredLocalCanvasMeta
   }
   fig: {
     key: string
@@ -60,7 +66,8 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     },
 
     async getMeta(id: string) {
-      return (await (await database.open()).get('meta', id)) ?? null
+      const stored = await (await database.open()).get('meta', id)
+      return stored ? normalizeLocalCanvasMeta(stored) : null
     },
 
     async readFig(id: string) {
@@ -77,7 +84,8 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       const figStore = transaction.objectStore('fig')
       const thumbStore = transaction.objectStore('thumb')
       const metaStore = transaction.objectStore('meta')
-      const existing = (await metaStore.get(input.id)) ?? null
+      const stored = await metaStore.get(input.id)
+      const existing = stored ? normalizeLocalCanvasMeta(stored) : null
 
       let hasThumb = existing?.hasThumb ?? false
       await figStore.put(storeBinary(input.figBytes), input.id)
@@ -101,8 +109,8 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     async upsertIndexMeta(input) {
       const transaction = (await database.open()).transaction('meta', 'readwrite')
       const store = transaction.objectStore('meta')
-      const existing = (await store.get(input.id)) ?? null
-      const meta = buildIndexMeta(input, existing)
+      const stored = await store.get(input.id)
+      const meta = buildIndexMeta(input, stored ? normalizeLocalCanvasMeta(stored) : null)
       await store.put(meta)
       await transaction.done
       return meta
@@ -120,7 +128,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       await transaction.objectStore('thumb').put(storeBinary(thumbBytes), id)
       // Thumb freshness is tracked by its own outbox job — never demote the
       // document's syncStatus here (it orphaned rows as 'pending' forever).
-      const meta: LocalCanvasMeta = { ...existing, hasThumb: true }
+      const meta: LocalCanvasMeta = { ...normalizeLocalCanvasMeta(existing), hasThumb: true }
       await metaStore.put(meta)
       await transaction.done
       return meta
@@ -137,7 +145,11 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         await transaction.done
         return null
       }
-      const next = { ...existing, ...patch, id: existing.id }
+      const next: LocalCanvasMeta = {
+        ...normalizeLocalCanvasMeta(existing),
+        ...patch,
+        id: existing.id
+      }
       await store.put(next)
       await transaction.done
       return next
@@ -160,7 +172,11 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         return null
       }
       await transaction.objectStore('fig').delete(id)
-      const meta: LocalCanvasMeta = { ...existing, hasFig: false, figSize: 0 }
+      const meta: LocalCanvasMeta = {
+        ...normalizeLocalCanvasMeta(existing),
+        hasFig: false,
+        figSize: 0
+      }
       await metaStore.put(meta)
       await transaction.done
       return meta

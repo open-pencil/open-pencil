@@ -17,29 +17,18 @@
         "label": "Open Recent"
       },
       {
-        "id": "open-storage-workspace",
-        "label": "Open Storage Workspace…"
+        "type": "separator"
       },
       {
-        "id": "open-tour",
-        "label": "Open the Tour"
+        "id": "insert-icon",
+        "label": "Insert Icon…"
       },
       {
         "type": "separator"
       },
       {
-        "id": "save",
-        "label": "Save",
-        "accelerator": "CmdOrCtrl+S"
-      },
-      {
-        "id": "save-as",
-        "label": "Save As…",
-        "accelerator": "CmdOrCtrl+Shift+S"
-      },
-      {
-        "id": "save-to-storage",
-        "label": "Save to Storage…"
+        "id": "save-local-copy",
+        "label": "Save Local Copy…"
       },
       {
         "type": "separator"
@@ -71,17 +60,58 @@
         "type": "separator"
       },
       {
-        "id": "autosave",
-        "label": "Autosave",
-        "checkbox": true
-      },
-      {
         "id": "close",
         "label": "Close Tab",
         "accelerator": "CmdOrCtrl+W"
       },
       {
         "type": "separator"
+      },
+      {
+        "id": "preferences",
+        "label": "Preferences",
+        "sub": [
+          {
+            "id": "theme",
+            "label": "Theme",
+            "sub": [
+              {
+                "id": "theme-light",
+                "label": "Light",
+                "checkbox": true
+              },
+              {
+                "id": "theme-dark",
+                "label": "Dark",
+                "checkbox": true
+              },
+              {
+                "id": "theme-auto",
+                "label": "Auto",
+                "checkbox": true
+              }
+            ]
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "id": "snap-geometry",
+            "label": "Snap to Geometry",
+            "checkbox": true
+          },
+          {
+            "id": "snap-objects",
+            "label": "Snap to Objects",
+            "checkbox": true
+          },
+          {
+            "id": "snap-pixel-grid",
+            "label": "Snap to Pixel Grid",
+            "accelerator": "CmdOrCtrl+Shift+'",
+            "checkbox": true
+          }
+        ]
       },
       {
         "id": "settings",
@@ -123,7 +153,7 @@
       },
       {
         "id": "paste-to-replace",
-        "label": "Paste to replace",
+        "label": "Paste to Replace",
         "accelerator": "CmdOrCtrl+Shift+R"
       },
       {
@@ -261,55 +291,6 @@
         "type": "separator"
       },
       {
-        "id": "theme",
-        "label": "Theme",
-        "sub": [
-          {
-            "id": "theme-light",
-            "label": "Light",
-            "checkbox": true
-          },
-          {
-            "id": "theme-dark",
-            "label": "Dark",
-            "checkbox": true
-          },
-          {
-            "id": "theme-auto",
-            "label": "Auto",
-            "checkbox": true
-          }
-        ]
-      },
-      {
-        "type": "separator"
-      },
-      {
-        "id": "preferences",
-        "label": "Preferences",
-        "sub": [
-          {
-            "id": "snap-geometry",
-            "label": "Snap to Geometry",
-            "checkbox": true
-          },
-          {
-            "id": "snap-objects",
-            "label": "Snap to Objects",
-            "checkbox": true
-          },
-          {
-            "id": "snap-pixel-grid",
-            "label": "Snap to Pixel Grid",
-            "accelerator": "CmdOrCtrl+Shift+'",
-            "checkbox": true
-          }
-        ]
-      },
-      {
-        "type": "separator"
-      },
-      {
         "id": "toggle-ui",
         "label": "Toggle UI",
         "accelerator": "CmdOrCtrl+\\"
@@ -318,14 +299,6 @@
         "id": "toggle-preview",
         "label": "Preview",
         "accelerator": "CmdOrCtrl+Alt+Enter"
-      },
-      {
-        "type": "separator"
-      },
-      {
-        "id": "dev-tools",
-        "label": "Developer Tools",
-        "accelerator": "CmdOrCtrl+Alt+I"
       }
     ]
   },
@@ -348,11 +321,9 @@
         "accelerator": "CmdOrCtrl+Shift+G"
       },
       {
-        "type": "separator"
-      },
-      {
-        "id": "insert-icon",
-        "label": "Insert Icon…"
+        "id": "selection.wrapInAutoLayout",
+        "label": "Wrap in Auto Layout",
+        "accelerator": "Shift+A"
       },
       {
         "type": "separator"
@@ -389,37 +360,30 @@
         "type": "separator"
       },
       {
-        "id": "selection.booleanUnion",
-        "label": "Union selection",
-        "accelerator": "Alt+Shift+U"
-      },
-      {
-        "id": "selection.booleanSubtract",
-        "label": "Subtract selection",
-        "accelerator": "Alt+Shift+S"
-      },
-      {
-        "id": "selection.booleanIntersect",
-        "label": "Intersect selection",
-        "accelerator": "Alt+Shift+I"
-      },
-      {
-        "id": "selection.booleanExclude",
-        "label": "Exclude selection",
-        "accelerator": "Alt+Shift+E"
-      },
-      {
-        "id": "selection.flatten",
-        "label": "Flatten",
-        "accelerator": "Alt+Shift+F"
-      },
-      {
-        "id": "selection.outlineText",
-        "label": "Outline text"
-      },
-      {
-        "id": "selection.outlineStroke",
-        "label": "Outline stroke"
+        "id": "boolean-operations",
+        "label": "Boolean Operations",
+        "sub": [
+          {
+            "id": "selection.booleanUnion",
+            "label": "Union Selection",
+            "accelerator": "Alt+Shift+U"
+          },
+          {
+            "id": "selection.booleanSubtract",
+            "label": "Subtract Selection",
+            "accelerator": "Alt+Shift+S"
+          },
+          {
+            "id": "selection.booleanIntersect",
+            "label": "Intersect Selection",
+            "accelerator": "Alt+Shift+I"
+          },
+          {
+            "id": "selection.booleanExclude",
+            "label": "Exclude Selection",
+            "accelerator": "Alt+Shift+E"
+          }
+        ]
       },
       {
         "type": "separator"
@@ -481,6 +445,24 @@
     ]
   },
   {
+    "label": "Vector",
+    "items": [
+      {
+        "id": "selection.flatten",
+        "label": "Flatten",
+        "accelerator": "Alt+Shift+F"
+      },
+      {
+        "id": "selection.outlineStroke",
+        "label": "Outline Stroke"
+      },
+      {
+        "id": "selection.outlineText",
+        "label": "Outline Text"
+      }
+    ]
+  },
+  {
     "label": "Text",
     "items": [
       {
@@ -503,14 +485,6 @@
   {
     "label": "Arrange",
     "items": [
-      {
-        "id": "selection.wrapInAutoLayout",
-        "label": "Wrap in Auto Layout",
-        "accelerator": "Shift+A"
-      },
-      {
-        "type": "separator"
-      },
       {
         "id": "arrange.align-left",
         "label": "Align Left",
@@ -554,6 +528,48 @@
       {
         "id": "selection.distributeVertical",
         "label": "Distribute Vertical Spacing"
+      }
+    ]
+  },
+  {
+    "label": "Help",
+    "items": [
+      {
+        "id": "show-welcome",
+        "label": "Show Welcome"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "help-docs",
+        "label": "Documentation"
+      },
+      {
+        "id": "help-whats-new",
+        "label": "What's New"
+      },
+      {
+        "id": "help-report-issue",
+        "label": "Report an Issue"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "check-updates",
+        "label": "Check for Updates…"
+      },
+      {
+        "id": "developer",
+        "label": "Developer",
+        "sub": [
+          {
+            "id": "dev-tools",
+            "label": "Developer Tools",
+            "accelerator": "CmdOrCtrl+Alt+I"
+          }
+        ]
       }
     ]
   }

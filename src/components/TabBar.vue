@@ -3,10 +3,10 @@ import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, useTemplateRef, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useInlineRename } from '@open-pencil/vue'
 
 import { animationsEnabled } from '@/app/shell/motion'
-import { useTabsStore, createHomeTab } from '@/app/tabs'
+import { createTab, getTabById, homeActive, showHome, useTabsStore } from '@/app/tabs'
 import PreparationIndicator from '@/components/preparation/tab/Indicator.vue'
 import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -15,6 +15,8 @@ import tabBarTheme from '@/theme/tab-bar'
 const { files } = useI18n()
 
 const { tabs, activeTabId, switchTab, closeTab } = useTabsStore()
+// The start page has the home button; the tabs are the open designs, as in Figma's desktop app.
+const designTabs = computed(() => tabs.value.filter((tab) => !tab.isHome))
 const tabBarStyles = tv(tabBarTheme)
 const baseStyles = tabBarStyles()
 
@@ -36,19 +38,34 @@ watch(
   { flush: 'post' }
 )
 
+// Double-click a tab to rename its design, as in Figma.
+const rename = useInlineRename<string>((tabId, name) => {
+  getTabById(tabId)?.store.renameDocument(name)
+})
+const renamingTabId = rename.editingId
+const renameInputs = useTemplateRef<HTMLInputElement[]>('renameInput')
+watch(
+  renameInputs,
+  (inputs) => {
+    const input = inputs?.at(0)
+    if (input) void rename.focusInput(input)
+  },
+  { flush: 'post' }
+)
+
 const modelValue = computed({
   get: () => activeTabId.value,
   set: (id: string) => switchTab(id)
 })
 
-function createNewTab(event: MouseEvent): void {
+function createNewDesign(event: MouseEvent): void {
   event.preventDefault()
   if (event.currentTarget instanceof HTMLElement) event.currentTarget.blur()
-  createHomeTab()
+  createTab()
 }
 
-function onMiddleClick(e: MouseEvent, tabId: string, isHome: boolean) {
-  if (e.button === 1 && (!isHome || tabs.value.length > 1)) {
+function onMiddleClick(e: MouseEvent, tabId: string) {
+  if (e.button === 1) {
     e.preventDefault()
     void closeTab(tabId)
   }
@@ -68,6 +85,18 @@ function onClose(e: MouseEvent, tabId: string) {
     activation-mode="automatic"
     :class="baseStyles.root()"
   >
+    <Tip :label="files.home" side="bottom">
+      <button
+        type="button"
+        data-test-id="tabbar-home"
+        :aria-label="files.home"
+        :aria-pressed="homeActive"
+        :class="tabBarStyles({ active: homeActive }).home()"
+        @click="showHome"
+      >
+        <icon-lucide-house :class="baseStyles.homeIcon()" />
+      </button>
+    </Tip>
     <div
       ref="scroller"
       :class="baseStyles.scroller()"
@@ -76,39 +105,41 @@ function onClose(e: MouseEvent, tabId: string) {
     >
       <TabsList :class="baseStyles.list()">
         <div
-          v-for="tab in tabs"
+          v-for="tab in designTabs"
           :key="tab.id"
           data-slot="tab-item"
           :data-active="tab.isActive || undefined"
           :class="tabBarStyles({ active: tab.isActive }).item()"
-          @mousedown="onMiddleClick($event, tab.id, tab.isHome)"
+          @mousedown="onMiddleClick($event, tab.id)"
         >
+          <input
+            v-if="renamingTabId === tab.id"
+            ref="renameInput"
+            data-test-id="tabbar-rename"
+            :class="baseStyles.renameInput()"
+            :value="tab.name"
+            @blur="rename.commit(tab.id, $event)"
+            @keydown="rename.onKeydown"
+          />
           <TabsTrigger
+            v-else
             :value="tab.id"
             data-test-id="tabbar-tab"
             :class="tabBarStyles({ active: tab.isActive }).trigger()"
             :data-active="tab.isActive || undefined"
-            :data-dirty="tab.isDirty || undefined"
+            @dblclick="rename.start(tab.id, tab.name)"
           >
-            <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
-            <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
-            <icon-lucide-file v-else :class="baseStyles.icon()" />
-            <span :class="baseStyles.label()">{{ tab.isHome ? files.newTab : tab.name }}</span>
-            <Tip v-if="tab.isDirty" :label="files.unsavedChanges" side="bottom">
-              <span role="img" :aria-label="files.unsavedChanges" :class="baseStyles.dirtyDot()" />
-            </Tip>
+            <PreparationIndicator v-if="tab.isPreparing" :progress="tab.preparationProgress" />
+            <icon-lucide-file v-else :class="tabBarStyles({ active: tab.isActive }).icon()" />
+            <span :class="baseStyles.label()">{{ tab.name }}</span>
           </TabsTrigger>
-          <Tip
-            v-if="!tab.isHome || tabs.length > 1"
-            :label="files.closeTab({ name: tab.isHome ? files.newTab : tab.name })"
-            side="bottom"
-          >
+          <Tip :label="files.closeTab({ name: tab.name })" side="bottom">
             <button
               type="button"
               data-test-id="tabbar-close"
               :class="tabBarStyles({ active: tab.isActive }).close()"
               :data-active="tab.isActive || undefined"
-              :aria-label="files.closeTab({ name: tab.isHome ? files.newTab : tab.name })"
+              :aria-label="files.closeTab({ name: tab.name })"
               tabindex="-1"
               @click="onClose($event, tab.id)"
             >
@@ -133,13 +164,13 @@ function onClose(e: MouseEvent, tabId: string) {
       <icon-lucide-chevron-right v-if="overflowEnd" :class="baseStyles.scrollIcon()" />
       <icon-lucide-chevron-left v-else :class="baseStyles.scrollIcon()" />
     </button>
-    <Tip :label="files.newTab" side="bottom">
+    <Tip :label="files.newDesign" side="bottom">
       <button
         type="button"
         data-test-id="tabbar-new"
-        :aria-label="files.newTab"
+        :aria-label="files.newDesign"
         :class="baseStyles.newTab()"
-        @click="createNewTab"
+        @click="createNewDesign"
       >
         <icon-lucide-plus :class="baseStyles.newIcon()" />
       </button>

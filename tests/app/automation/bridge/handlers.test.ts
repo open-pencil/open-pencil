@@ -342,15 +342,16 @@ describe('close_file and save_file never prompt', () => {
     expect(getTabById(tab.id)).toBeUndefined()
   })
 
-  test('saving a document that has no file asks for a path instead of a dialog', async () => {
+  test('saving a document without a path saves it to the library', async () => {
     const tab = dirtyTab()
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow(
-      'has not been saved to a file yet'
-    )
-    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
-      'has not been saved to a file yet'
-    )
-    expect(getTabById(tab.id)).toBeDefined()
+    const saved = await request('save_file', { document_id: tab.id })
+    expect(saved.result).toEqual({ saved: true })
+    expect(tab.store.hasUnsavedChanges()).toBe(false)
+
+    tab.store.createShape('RECTANGLE', 20, 0, 10, 10)
+    const closed = await request('close_file', { document_id: tab.id, unsaved: 'save' })
+    expect(closed.result).toEqual({ closed: true })
+    expect(getTabById(tab.id)).toBeUndefined()
   })
 
   test('a failed save to a path keeps the document source it had', async () => {
@@ -361,6 +362,7 @@ describe('close_file and save_file never prompt', () => {
     ).rejects.toThrow('Could not save')
     expect(tab.store.state.documentName).toBe('Untitled')
     expect(tab.store.getDocumentFilePath()).toBeNull()
-    expect(tab.store.hasWritableSource()).toBe(false)
+    // The design stays in the library it was saved to.
+    expect(tab.store.getStorageBinding()).not.toBeNull()
   })
 })
