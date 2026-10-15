@@ -43,7 +43,7 @@ import {
   resolveVectorNetwork,
   resolveVectorStyleOverrideFills
 } from './vector/geometry'
-import { decodeVectorNetworkBlob, type StyleOverride } from './vector/network'
+import { decodeVectorNetworkBlob, textPathStartSegment, type StyleOverride } from './vector/network'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style/runs'
@@ -606,7 +606,8 @@ function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['te
       network: decodeVectorNetworkBlob(blob, vectorData.styleOverrideTable),
       normalizedSize: { x: normalizedSize.x, y: normalizedSize.y },
       tValue: textPathStart?.tValue ?? 0,
-      forward: textPathStart?.forward ?? true
+      forward: textPathStart?.forward ?? true,
+      startSegment: textPathStartSegment(blob)
     }
   } catch {
     return null

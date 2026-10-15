@@ -1,7 +1,7 @@
 import { svgPathProperties } from 'svg-path-properties'
 
 import type { TextPathData } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 type PathProperties = InstanceType<typeof svgPathProperties>
 
@@ -96,4 +96,56 @@ export function nearestArcPoint(path: SampledPath, px: number, py: number): Path
   const point = pointAtArc(path, path.cum[best])
   const along = (px - point.x) * point.tx + (py - point.y) * point.ty
   return pointAtArc(path, point.s + along)
+}
+
+const lerp = (a: Vector, b: Vector, t: number): Vector => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t
+})
+
+function cubicLength(p0: Vector, p1: Vector, p2: Vector, p3: Vector): number {
+  const source = `M${p0.x} ${p0.y} C${p1.x} ${p1.y} ${p2.x} ${p2.y} ${p3.x} ${p3.y}`
+  return new svgPathProperties(source).getTotalLength()
+}
+
+/**
+ * How far along the sampled path, scaled into `box`, the text starts: on the segment Figma marks
+ * as the start, at `tValue` along it as a curve parameter. Null when the start segment is missing.
+ */
+export function textPathStartDistance(data: TextPathData, box: Rect): number | null {
+  if (!(data.normalizedSize.x > 0) || !(data.normalizedSize.y > 0)) return null
+  const sx = box.width / data.normalizedSize.x
+  const sy = box.height / data.normalizedSize.y
+  const { segments, vertices } = data.network
+  const startSegment = data.startSegment ?? 0
+  if (startSegment < 0 || startSegment >= segments.length) return null
+  const t = Math.min(Math.max(data.tValue, 0), 1)
+
+  let distance = 0
+  for (const [index, segment] of segments.entries()) {
+    const start = vertices.at(segment.start)
+    const end = vertices.at(segment.end)
+    if (!start || !end) return null
+    const p0 = { x: box.x + start.x * sx, y: box.y + start.y * sy }
+    const p1 = {
+      x: box.x + (start.x + segment.tangentStart.x) * sx,
+      y: box.y + (start.y + segment.tangentStart.y) * sy
+    }
+    const p2 = {
+      x: box.x + (end.x + segment.tangentEnd.x) * sx,
+      y: box.y + (end.y + segment.tangentEnd.y) * sy
+    }
+    const p3 = { x: box.x + end.x * sx, y: box.y + end.y * sy }
+    if (index < startSegment) {
+      distance += cubicLength(p0, p1, p2, p3)
+      continue
+    }
+    // The part of the start segment before `t`, by de Casteljau.
+    const a = lerp(p0, p1, t)
+    const b = lerp(p1, p2, t)
+    const ab = lerp(a, b, t)
+    const bc = lerp(b, lerp(p2, p3, t), t)
+    return distance + cubicLength(p0, a, ab, lerp(ab, bc, t))
+  }
+  return null
 }

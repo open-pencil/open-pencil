@@ -385,8 +385,11 @@ export interface PluginRelaunchDataEntry {
 export interface TextPathData {
   network: VectorNetwork
   normalizedSize: Vector
+  /** Where on the start segment the text starts, from 0 at its start to 1 at its end. */
   tValue: number
   forward: boolean
+  /** The segment the text starts on, which Figma marks in the network blob; 0 when unmarked. */
+  startSegment?: number
 }
 
 export interface DerivedTextGlyph {

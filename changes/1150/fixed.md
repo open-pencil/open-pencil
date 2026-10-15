@@ -1,0 +1,1 @@
+- Editing aligned text on a path lays it out from the path's text start point, as in Figma: left-aligned text starts there, centered text is centered on it and right-aligned text ends there. Opening a `.fig` keeps which segment that start point is on.

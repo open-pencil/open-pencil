@@ -206,3 +206,23 @@ export function encodeVectorNetworkBlob(
 
   return new Uint8Array(buffer)
 }
+
+/** The style word Figma writes on the one segment a text path starts on. */
+const TEXT_PATH_START_SEGMENT = 0x1ffffff
+
+/**
+ * The segment a text path starts on: Figma marks it by writing {@link TEXT_PATH_START_SEGMENT}
+ * as its style word, and `textPathStart.tValue` is the position within it. Segment 0 when none is
+ * marked, as in Figma.
+ */
+export function textPathStartSegment(blob: Uint8Array): number {
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
+  const vertexCount = view.getUint32(0, true)
+  const segmentCount = view.getUint32(4, true)
+  const segments = 12 + vertexCount * 12
+  for (let index = 0; index < segmentCount; index++) {
+    const word = view.getUint32(segments + index * 28, true)
+    if ((word & TEXT_PATH_START_SEGMENT) === TEXT_PATH_START_SEGMENT) return index
+  }
+  return 0
+}

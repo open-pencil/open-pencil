@@ -5,6 +5,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { pathTextEditChanges } from '#core/editor/text/path-edit'
 import { fontManager } from '#core/text/fonts'
 import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+import { nearestArcPoint, pointAtArc, sampleTextPath } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -192,5 +193,172 @@ describe('pathTextEditChanges — reflow on character edit', () => {
     for (const g of glyphs) {
       expect(g.fontSize).toBe(48)
     }
+  })
+})
+
+describe('pathTextEditChanges — alignment', () => {
+  /** "AB" at 40px on a 400-long straight path, glyph 0 at x = 150, aligned as given. */
+  async function alignedText(align: 'LEFT' | 'CENTER' | 'RIGHT', forward = true) {
+    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    if (!font) throw new Error('missing bundled font')
+    fontManager.markLoaded('Inter', 'Regular', font)
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const node = graph.createNode('TEXT', page.id, {
+      width: 400,
+      height: 100,
+      text: 'AB',
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      italic: false,
+      fontSize: 40,
+      textAlignHorizontal: align,
+      textPathBox: { x: 0, y: 0, width: 400, height: 100 },
+      derivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(4), x: 150, y: 50, fontSize: 40, rotation: 0 },
+        {
+          commandsBlob: new Uint8Array(4),
+          x: forward ? 177 : 123,
+          y: 50,
+          fontSize: 40,
+          rotation: 0
+        }
+      ]
+    })
+    node.textPathData = {
+      network: straightLineNetwork(),
+      normalizedSize: { x: 400, y: 100 },
+      tValue: 0,
+      forward
+    }
+    return node
+  }
+
+  /** How much wider "ABCD" is than "AB", measured as the reflow measures them. */
+  function growth() {
+    const width = (text: string) =>
+      expectDefined(getGlyphOutlineMetricsSync('Inter', 'Regular', text, 40)).reduce(
+        (sum, glyph) => sum + glyph.advance,
+        0
+      )
+    return width('ABCD') - width('AB')
+  }
+
+  /** Where "ABCD"'s first glyph lands, and where the path puts a point `shift` past "AB"'s. */
+  function firstGlyph(node: Awaited<ReturnType<typeof alignedText>>, shift: number) {
+    const glyphs = expectDefined(pathTextEditChanges(node, { text: 'ABCD' }).derivedTextGlyphs)
+    const path = expectDefined(
+      sampleTextPath(expectDefined(node.textPathData), expectDefined(node.textPathBox))
+    )
+    const start = nearestArcPoint(path, 150, 50).s
+    return { x: expectDefined(glyphs[0]).x, expected: pointAtArc(path, start + shift).x }
+  }
+
+  test('left-aligned text keeps its start', async () => {
+    const { x, expected } = firstGlyph(await alignedText('LEFT'), 0)
+    expect(x).toBeCloseTo(expected, 6)
+  })
+
+  test('centered text keeps its middle, growing both ways', async () => {
+    const { x, expected } = firstGlyph(await alignedText('CENTER'), -growth() / 2)
+    expect(x).toBeCloseTo(expected, 6)
+    expect(x).toBeLessThan(140)
+  })
+
+  test('right-aligned text keeps its end', async () => {
+    const { x, expected } = firstGlyph(await alignedText('RIGHT'), -growth())
+    expect(x).toBeCloseTo(expected, 6)
+  })
+
+  test('text running backwards along the path shifts the other way', async () => {
+    const { x, expected } = firstGlyph(await alignedText('RIGHT', false), growth())
+    expect(x).toBeCloseTo(expected, 6)
+    expect(x).toBeGreaterThan(170)
+  })
+})
+
+describe('aligned path text is laid out from the text path start, as in Figma', () => {
+  /** A straight 400-wide line in two segments; the text starts halfway along the second. */
+  function startedOnSecondSegment(
+    align: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED',
+    forward = true
+  ) {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const box = { x: 0, y: 0, width: 400, height: 100 }
+    const node = graph.createNode('TEXT', page.id, {
+      width: 400,
+      height: 100,
+      text: 'AB',
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      italic: false,
+      fontSize: 40,
+      textAlignHorizontal: align,
+      textPathBox: { ...box },
+      derivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(4), x: 10, y: 50, fontSize: 40, rotation: 0 },
+        { commandsBlob: new Uint8Array(4), x: 40, y: 50, fontSize: 40, rotation: 0 }
+      ]
+    })
+    const zero = { x: 0, y: 0 }
+    node.textPathData = {
+      network: {
+        vertices: [
+          { x: 0, y: 50 },
+          { x: 200, y: 50 },
+          { x: 400, y: 50 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: zero, tangentEnd: zero },
+          { start: 1, end: 2, tangentStart: zero, tangentEnd: zero }
+        ],
+        regions: []
+      },
+      normalizedSize: { x: 400, y: 100 },
+      tValue: 0.5,
+      forward,
+      startSegment: 1
+    }
+    return node
+  }
+
+  async function edited(align: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED', forward = true) {
+    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    if (!font) throw new Error('bundled font missing')
+    fontManager.markLoaded('Inter', 'Regular', font)
+    const text = 'Hello'
+    const width = expectDefined(getGlyphOutlineMetricsSync('Inter', 'Regular', text, 40)).reduce(
+      (sum, glyph) => sum + glyph.advance,
+      0
+    )
+    const changes = pathTextEditChanges(startedOnSecondSegment(align, forward), { text })
+    const glyphs = expectDefined(changes.derivedTextGlyphs, 'reflowed glyphs')
+    return { first: glyphs[0].x, width }
+  }
+
+  // The start is halfway along the second segment: x = 300. Arc sampling of a straight cubic is
+  // within about 0.35 px, so positions are compared to the nearest pixel.
+  test('left-aligned text starts at it', async () => {
+    expect((await edited('LEFT')).first).toBeCloseTo(300, 0)
+  })
+
+  test('centered text is centered on it', async () => {
+    const { first, width } = await edited('CENTER')
+    expect(first).toBeCloseTo(300 - width / 2, 0)
+  })
+
+  test('right-aligned text ends at it', async () => {
+    const { first, width } = await edited('RIGHT')
+    expect(first).toBeCloseTo(300 - width, 0)
+  })
+
+  test('text running backwards is centered on it from the other side', async () => {
+    const { first, width } = await edited('CENTER', false)
+    expect(first).toBeCloseTo(300 + width / 2, 0)
+  })
+
+  test('justified text on an open path starts at the path’s start', async () => {
+    expect((await edited('JUSTIFIED')).first).toBeCloseTo(0, 0)
   })
 })
