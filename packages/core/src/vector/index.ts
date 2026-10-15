@@ -26,6 +26,7 @@ import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 export { regenerateFillGeometry } from './fill-geometry'
+export { VECTOR_ICON_SIZE, vectorIconPath } from './icon-path'
 export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
 
 export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path[] {

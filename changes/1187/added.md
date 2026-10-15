@@ -1,0 +1,1 @@
+- Each vector's row in the layers panel shows the vector's own shape as its icon, as in Figma.

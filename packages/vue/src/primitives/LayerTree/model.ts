@@ -1,5 +1,6 @@
 import { isEqual } from 'es-toolkit'
 
+import { vectorIconPath } from '@open-pencil/core/vector'
 import { readIcon, slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -10,6 +11,12 @@ function explicitModeIds(node: SceneNode): string[] | undefined {
   return ids.length > 0 ? ids : undefined
 }
 
+/** A vector's row shows its own shape, as in Figma; other layers show their kind's glyph. */
+function layerIconPath(node: SceneNode): string | undefined {
+  if (node.type !== 'VECTOR' || !node.vectorNetwork) return undefined
+  return vectorIconPath(node.vectorNetwork) ?? undefined
+}
+
 function nodeToLayerNode(node: SceneNode): LayerNode {
   return {
     id: node.id,
@@ -18,6 +25,7 @@ function nodeToLayerNode(node: SceneNode): LayerNode {
     layoutMode: node.layoutMode,
     slot: !!slotPropertyId(node),
     icon: !!readIcon(node),
+    iconPath: layerIconPath(node),
     visible: node.visible,
     locked: node.locked,
     modeIds: explicitModeIds(node)
@@ -63,7 +71,9 @@ export function indexLayerNodes(items: readonly LayerNode[]): Map<string, LayerN
 }
 
 export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
+  const iconPath = layerIconPath(source)
   const changed =
+    target.iconPath !== iconPath ||
     target.name !== source.name ||
     target.type !== source.type ||
     target.layoutMode !== source.layoutMode ||
@@ -78,6 +88,7 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
   target.layoutMode = source.layoutMode
   target.slot = !!slotPropertyId(source)
   target.icon = !!readIcon(source)
+  target.iconPath = iconPath
   target.visible = source.visible
   target.locked = source.locked
   target.modeIds = explicitModeIds(source)

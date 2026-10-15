@@ -2,6 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { VECTOR_ICON_SIZE } from '@open-pencil/core/vector'
 import type { LayerNode } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -47,6 +48,19 @@ const modeNames = computed(() =>
     return []
   })
 )
+/**
+ * A vector's row shows its own outline, as in Figma: a 10 px icon, stroked 1 px and never filled,
+ * centered in the icon slot. It is drawn as a mask over the row's text color, so it follows
+ * selection and hidden states like the glyph icons.
+ */
+const vectorIconStyle = computed(() => {
+  if (!node.iconPath) return null
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VECTOR_ICON_SIZE} ${VECTOR_ICON_SIZE}">` +
+    `<path d="${node.iconPath}" fill="none" stroke="black" stroke-width="1"/></svg>`
+  const mask = `url("data:image/svg+xml,${encodeURIComponent(svg)}") center / ${VECTOR_ICON_SIZE}px ${VECTOR_ICON_SIZE}px no-repeat`
+  return { mask, WebkitMask: mask, backgroundColor: 'currentColor' }
+})
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
   layerTree({
@@ -92,7 +106,19 @@ const styles = computed(() =>
       @toggle="actions.toggleExpand"
     />
 
-    <component :is="nodeIcon(node)" data-slot="icon" :class="styles.icon({ class: ui?.icon })" />
+    <span
+      v-if="vectorIconStyle"
+      data-slot="icon"
+      aria-hidden="true"
+      :style="vectorIconStyle"
+      :class="styles.icon({ class: ui?.icon })"
+    />
+    <component
+      :is="nodeIcon(node)"
+      v-else
+      data-slot="icon"
+      :class="styles.icon({ class: ui?.icon })"
+    />
     <span data-slot="label" :class="styles.label({ class: ui?.label })">
       <span class="min-w-0 truncate">{{ node.name }}</span>
       <span
