@@ -15,6 +15,7 @@ import {
   createComponent,
   createInstance,
   createPage,
+  createConnectorTool,
   createShape,
   createSlice,
   createVector,
@@ -147,6 +148,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   createPage,
   createVector,
   createSlice,
+  createConnectorTool,
   importSVG,
   // Modify (advanced)
   setEffects,

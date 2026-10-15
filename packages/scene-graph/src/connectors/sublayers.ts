@@ -45,10 +45,13 @@ export function connectorSublayers(
   return { line, labelBackground, label }
 }
 
-/** FigJam keeps a connector's box to its route: it never turns or resizes on its own. */
+/**
+ * FigJam keeps a connector's box to its route, so it never turns or resizes on its own; typing
+ * into it edits its label.
+ */
 export const CONNECTOR_KIND: GeneratedFrameKind = {
   complete: (graph, frame) => connectorSublayers(graph, frame) !== null,
-  text: () => undefined,
+  text: (graph, frame) => connectorSublayers(graph, frame)?.label,
   rotates: false,
   resizes: false,
   namedByText: false

@@ -22,6 +22,7 @@ export type SupportedPluginAPI = Pick<
   | 'loadFontAsync'
   | 'notify'
   | 'createComponent'
+  | 'createConnector'
   | 'createEllipse'
   | 'createFrame'
   | 'createLine'

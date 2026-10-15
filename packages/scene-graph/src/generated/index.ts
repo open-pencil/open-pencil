@@ -36,7 +36,7 @@ export function generatedFrameOwner(graph: SceneGraph, node: SceneNode): SceneNo
   return node.parentId ? graph.closest(node.parentId, isGeneratedFrame) : undefined
 }
 
-/** The text a generated frame edits in place, such as a sticky note's body. */
+/** The text a generated frame edits in place: a sticky note's body or a connector's label. */
 export function generatedFrameText(graph: SceneGraph, node: SceneNode): SceneNode | undefined {
   return generatedFrameKind(node)?.text(graph, node)
 }
