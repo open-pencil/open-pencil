@@ -296,6 +296,8 @@ export class FigmaNodeProxy {
   set isMask(v: boolean) {
     prepareFollowedFieldEdit(this[INTERNAL_GRAPH], this._raw(), 'isMask', 'is-mask')
     this._update({ isMask: v })
+    // A mask limits what its group spans.
+    fitGroupsAround(this[INTERNAL_GRAPH], this._raw().parentId, this[INTERNAL_API].groupFitOptions)
   }
 
   get maskType(): string {

@@ -75,3 +75,66 @@ describe('group children in the plugin API', () => {
     expect(group.removed).toBe(true)
   })
 })
+
+// Recorded in Figma desktop 126 on the page: a group spans only the layers it shows.
+describe('hidden group children in the plugin API', () => {
+  function pageRects(...boxes: Array<[number, number, number, number]>) {
+    const figma = new FigmaAPI(new SceneGraph())
+    const nodes = boxes.map(([x, y, width, height]) => {
+      const node = figma.createRectangle()
+      node.resize(width, height)
+      node.x = x
+      node.y = y
+      return node
+    })
+    return { figma, nodes }
+  }
+
+  test('hiding and showing a child refits the group; with none shown it is empty in place', () => {
+    const { figma, nodes } = pageRects([200, 200, 50, 50], [300, 300, 30, 30])
+    const [a, b] = nodes
+    const group = figma.group(nodes, figma.currentPage)
+    a.visible = false
+    expect(box(group)).toEqual([300, 300, 30, 30])
+    b.visible = false
+    expect(box(group)).toEqual([300, 300, 0, 0])
+    expect([box(a), box(b)]).toEqual([
+      [200, 200, 50, 50],
+      [300, 300, 30, 30]
+    ])
+    a.visible = true
+    expect(box(group)).toEqual([200, 200, 50, 50])
+  })
+
+  test('a hidden child of a nested group leaves both groups', () => {
+    const { figma, nodes } = pageRects([0, 0, 50, 50], [100, 100, 30, 30], [200, 0, 10, 10])
+    const [a, b, c] = nodes
+    const inner = figma.group([a, b], figma.currentPage)
+    const outer = figma.group([inner, c], figma.currentPage)
+    b.visible = false
+    expect(box(inner)).toEqual([0, 0, 50, 50])
+    expect(box(outer)).toEqual([0, 0, 210, 50])
+    inner.visible = false
+    expect(box(outer)).toEqual([200, 0, 10, 10])
+  })
+
+  test('a hidden mask stops limiting the group', () => {
+    const { figma, nodes } = pageRects([0, 0, 40, 40], [20, 20, 100, 100])
+    const [mask] = nodes
+    const group = figma.group(nodes, figma.currentPage)
+    mask.isMask = true
+    expect(box(group)).toEqual([0, 0, 40, 40])
+    mask.visible = false
+    expect(box(group)).toEqual([20, 20, 100, 100])
+  })
+
+  test('grouping spans the shown layers, or none at the origin', () => {
+    const { figma, nodes } = pageRects([500, 500, 50, 50], [600, 600, 30, 30])
+    nodes[0].visible = false
+    expect(box(figma.group(nodes, figma.currentPage))).toEqual([600, 600, 30, 30])
+
+    const hidden = pageRects([500, 500, 50, 50], [600, 600, 30, 30])
+    for (const node of hidden.nodes) node.visible = false
+    expect(box(hidden.figma.group(hidden.nodes, hidden.figma.currentPage))).toEqual([0, 0, 0, 0])
+  })
+})

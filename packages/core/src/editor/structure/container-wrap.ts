@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { groupBounds, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 
 import { prepareSlotEdits } from '#core/editor/components/slots'
@@ -52,7 +52,11 @@ export function wrapNodes(
   index: number | undefined,
   props: Partial<SceneNode> = {}
 ): SceneNode {
-  const bounds = getAxisAlignedBoundsInParent(nodes, parentId, graph)
+  // A group spans only the layers it shows, as Figma's does; other containers span them all.
+  const bounds =
+    type === 'GROUP'
+      ? groupBounds(graph, inStackOrder(graph, nodes, parentId), parentId, { x: 0, y: 0 })
+      : getAxisAlignedBoundsInParent(nodes, parentId, graph)
   const container = graph.createNode(type, parentId, {
     name: CONTAINER_NAMES[type],
     ...bounds,

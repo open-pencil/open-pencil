@@ -2,7 +2,12 @@ import type { Element } from '@xmldom/xmldom'
 
 import type { SVGClipPathRegion, SVGElementLayer, SVGTextInfo } from '#core/icons/types'
 
-import { inlineStyles, opacityValue, type PresentationAttributes } from './presentation'
+import {
+  inlineStyles,
+  opacityValue,
+  presentationVisible,
+  type PresentationAttributes
+} from './presentation'
 
 export interface Traversal {
   root: Element
@@ -27,7 +32,7 @@ export function elementLayer(
   traversal: Traversal,
   element: Element,
   kind: SVGElementLayer['kind'],
-  scope: Pick<Scope, 'referenced'>,
+  scope: Pick<Scope, 'presentation' | 'referenced'>,
   clip: number | null
 ): SVGElementLayer {
   return {
@@ -35,6 +40,7 @@ export function elementLayer(
     kind,
     name: scope.referenced ? null : element.getAttribute('id') || null,
     opacity: opacityValue(inlineStyles(element).get('opacity') ?? element.getAttribute('opacity')),
+    visible: presentationVisible(scope.presentation),
     clip
   }
 }

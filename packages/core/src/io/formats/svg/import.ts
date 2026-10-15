@@ -71,10 +71,16 @@ function createClipGroup(
   parentIds: Set<string>
 ): string {
   const groupId = createGroup(graph, parentId, { name: 'Clip path group' })
-  const maskId = createGroup(graph, groupId, { name: clip.id, isMask: true, maskType: 'VECTOR' })
+  const maskId = createGroup(graph, groupId, {
+    name: clip.id,
+    isMask: true,
+    maskType: 'VECTOR',
+    visible: clip.visible
+  })
   for (const shape of clip.shapes) {
-    createPlacedVector(graph, maskId, shape, {
+    createPlacedVector(graph, maskId, shape.network, {
       name: 'Vector',
+      visible: shape.visible,
       fills: [{ type: 'SOLID', color: BLACK, opacity: 1, visible: true }]
     })
   }
@@ -106,6 +112,7 @@ function drawables(graph: SceneGraph, data: SVGImportData, parentIds: Set<string
       const vector = createPlacedVector(graph, parentId, path.vectorNetwork, {
         name: element.name ?? 'Vector',
         opacity: element.opacity,
+        visible: element.visible,
         ...vectorizedPathPaints(path)
       })
       if (vector) parentIds.add(parentId)
@@ -154,7 +161,8 @@ function createSVGLayers(graph: SceneGraph, rootId: string, data: SVGImportData)
       if (clip) parentId = createClipGroup(graph, parentId, clip, parentIds)
       parentId = createGroup(graph, parentId, {
         name: element.name ?? 'Group',
-        opacity: element.opacity
+        opacity: element.opacity,
+        visible: element.visible
       })
       open.push({ key: element.key, parentId })
     }

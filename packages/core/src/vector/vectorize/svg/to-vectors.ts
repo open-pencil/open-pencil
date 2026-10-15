@@ -15,8 +15,15 @@ import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import type { Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createPathStroke } from '#core/icons/path-style'
-import { extractSVGContent } from '#core/icons/svg'
-import type { IconPathInfo, SVGElementLayer, SVGTextPiece, SVGTextRun } from '#core/icons/types'
+import { extractSVGContent, isSVGPathShown } from '#core/icons/svg'
+import type {
+  IconPathInfo,
+  SVGClipPathInfo,
+  SVGClipPathRegion,
+  SVGElementLayer,
+  SVGTextPiece,
+  SVGTextRun
+} from '#core/icons/types'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
@@ -68,8 +75,10 @@ function resolveStrokes(path: IconPathInfo, defaultColor: string, strokeScale = 
 export interface VectorizedClip {
   /** The `<clipPath>` element's `id`. */
   id: string
-  /** One network per clip shape. */
-  shapes: VectorNetwork[]
+  /** False when the `<clipPath>` itself is hidden, so it clips nothing. */
+  visible: boolean
+  /** One network per clip shape, hidden ones included, as Figma keeps them. */
+  shapes: Array<{ network: VectorNetwork; visible: boolean }>
 }
 
 export interface VectorizedPath {
@@ -98,7 +107,7 @@ export interface VectorizedText {
 export interface SVGVectorizeResult {
   paths: VectorizedPath[]
   texts: VectorizedText[]
-  /** Tight bounds of path geometry in the target coordinate space. */
+  /** Tight bounds of the shown paths' geometry in the target coordinate space. */
   contentBounds: Rect
 }
 
@@ -169,7 +178,7 @@ export function svgToVectorPaths(
       elements: text.elements,
       pathIndex: text.pathIndex
     })),
-    contentBounds: unionPathBounds(vectorized)
+    contentBounds: unionPathBounds(vectorized.filter(isSVGPathShown))
   }
 }
 
@@ -190,25 +199,36 @@ function vectorizeClips(
   if (cached) return cached
   const clips = clipPaths.map((clipRegion) => ({
     id: clipRegion.id,
+    visible: clipRegion.visible,
     shapes:
       clipRegion.units === 'objectBoundingBox' && !objectBounds
         ? []
-        : clipRegion.paths.map((clipPath) => {
-            let clipData = applySVGTransformToPath(clipPath.d, clipPath.transform ?? null)
-            if (clipRegion.units === 'objectBoundingBox' && objectBounds) {
-              clipData = svgpath(clipData)
-                .scale(objectBounds.width, objectBounds.height)
-                .translate(objectBounds.x, objectBounds.y)
-                .toString()
-              return parseSVGPath(clipData, clipPath.fillRule, { includeOpenRegions: true })
-            }
-            return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule, {
-              includeOpenRegions: true
-            })
-          })
+        : clipRegion.paths.map((clipPath) => ({
+            network: clipNetwork(clipPath, clipRegion.units, viewport, objectBounds),
+            visible: clipPath.visible
+          }))
   }))
   if (!hasObjectBoundingBoxClip) cache.set(clipPaths, clips)
   return clips
+}
+
+function clipNetwork(
+  clipPath: SVGClipPathInfo,
+  units: SVGClipPathRegion['units'],
+  viewport: SVGViewportMapping,
+  objectBounds: Rect | null
+): VectorNetwork {
+  let clipData = applySVGTransformToPath(clipPath.d, clipPath.transform ?? null)
+  if (units === 'objectBoundingBox' && objectBounds) {
+    clipData = svgpath(clipData)
+      .scale(objectBounds.width, objectBounds.height)
+      .translate(objectBounds.x, objectBounds.y)
+      .toString()
+    return parseSVGPath(clipData, clipPath.fillRule, { includeOpenRegions: true })
+  }
+  return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule, {
+    includeOpenRegions: true
+  })
 }
 
 /** The matrix taking an element's own coordinates, under `transform`, into the target space. */
