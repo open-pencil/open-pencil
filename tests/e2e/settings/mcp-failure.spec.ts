@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openSettings } from '#tests/helpers/menu'
 
 async function openMCPPage(page: Page) {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByTestId('settings-section-mcp').click()
 }
 

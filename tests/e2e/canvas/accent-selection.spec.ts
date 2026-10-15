@@ -1,10 +1,11 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { openSettings } from '#tests/helpers/menu'
 
 const editor = useEditorSetupWithClear('/?test')
 
 test('selection chrome, size pill and ruler badges follow the accent color', async () => {
   const { page, canvas } = editor
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page
     .getByRole('radiogroup', { name: 'Accent color', exact: true })
     .getByRole('radio', { name: 'Green', exact: true })

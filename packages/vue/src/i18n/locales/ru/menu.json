@@ -8,7 +8,7 @@
   "new": "Создать",
   "open": "Открыть…",
   "openStorageWorkspace": "Открыть рабочее пространство хранилища…",
-  "openTour": "Открыть тур",
+  "showWelcome": "Показать приветствие",
   "save": "Сохранить",
   "saveAs": "Сохранить как…",
   "saveToStorage": "Сохранить в хранилище…",
@@ -78,5 +78,16 @@
   "exportSelectionAsSVG": "Экспортировать выделение как SVG",
   "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
   "exportSelectionAsFig": "Экспортировать выделение как .fig",
-  "togglePreview": "Просмотр"
+  "togglePreview": "Просмотр",
+  "vector": "Вектор",
+  "help": "Справка",
+  "mainMenu": "Главное меню",
+  "backToFiles": "Назад к файлам",
+  "actions": "Действия…",
+  "documentation": "Документация",
+  "whatsNew": "Что нового",
+  "reportIssue": "Сообщить о проблеме",
+  "getDesktopApp": "Скачать приложение для компьютера",
+  "developer": "Разработчик",
+  "navigation": "Навигация"
 }

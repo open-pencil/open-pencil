@@ -24,6 +24,7 @@ de:diagnostics.categoryRenderer
 de:diagnostics.durationMs
 de:editor.cornerRadius
 de:menu.text
+de:menu.navigation
 de:panels.alpha
 de:panels.blendModeNormal
 de:panels.chroma
@@ -355,7 +356,11 @@ fr:variables.mode
 it:variables.unitAuto
 pl:variables.unitAuto
 es:menu.variables
+es:menu.vector
 fr:menu.variables
+fr:menu.actions
+fr:menu.documentation
+fr:menu.navigation
 fr:variables.collections
 de:panels.gridAuto
 de:storage.cloudTitle

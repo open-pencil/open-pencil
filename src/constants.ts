@@ -98,11 +98,16 @@ export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
  * at the end of the section description; alerts link only to the fix, never to docs.
  */
 const DOCS_ORIGIN = 'https://openpencil.dev'
+/** The documentation home, opened from Help › Documentation. */
+export const DOCS_URL = DOCS_ORIGIN
 export const MCP_SERVER_DOCS_URL = `${DOCS_ORIGIN}/programmable/mcp-server`
 export const WEBMCP_DOCS_URL = `${MCP_SERVER_DOCS_URL}#webmcp`
 export const MCP_CONNECTIONS_DOCS_URL = `${DOCS_ORIGIN}/programmable/ai-chat#external-mcp-connections`
 export const CODING_AGENTS_GUIDE_URL = `${DOCS_ORIGIN}/programmable/coding-agents`
 export const PI_GUIDE_URL = `${CODING_AGENTS_GUIDE_URL}#pi`
+
+/** A new GitHub issue, opened from Help › Report an Issue. */
+export const NEW_ISSUE_URL = 'https://github.com/open-pencil/open-pencil/issues/new'
 
 /** The published release page, with its full notes, for a desktop version. */
 export function releaseNotesURL(version: string): string {

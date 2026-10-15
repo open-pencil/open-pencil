@@ -52,12 +52,21 @@ fn app_menu_file() -> tauri::Result<AppMenuFile> {
     ))?)
 }
 
-/// The macOS application menu holds Settings…, so the schema's copy is left out there, along
-/// with a separator it would leave at the end of its menu.
+/// Entries the macOS application menu already holds.
+const MACOS_APP_MENU_IDS: [&str; 2] = ["settings", "check-updates"];
+
+/// The macOS application menu holds Settings… and Check for Updates…, so the schema's copies
+/// are left out there, along with a separator they would leave at the end of their menu.
 fn platform_entries(items: &[MenuEntry]) -> Vec<&MenuEntry> {
     let mut entries: Vec<&MenuEntry> = items
         .iter()
-        .filter(|entry| !(cfg!(target_os = "macos") && entry.id.as_deref() == Some("settings")))
+        .filter(|entry| {
+            !(cfg!(target_os = "macos")
+                && entry
+                    .id
+                    .as_deref()
+                    .is_some_and(|id| MACOS_APP_MENU_IDS.contains(&id)))
+        })
         .collect();
     while entries
         .last()

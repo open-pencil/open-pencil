@@ -1,12 +1,34 @@
 # OpenPencil brand sources
 
-- `mark.svg` is the teal pencil-P master: a long pointed stem, contrasting teal blocks, a faint clipped pixel grid, and white editing handles with blue borders (`#005CFF`). The square sits at the top-left; the circle sits on the outer curve.
-- `mark-micro.svg` renders at 16px and preserves the main P's geometry and proportions. Its square and circular handles are enlarged for small sizes, with the circle slightly larger than the square. It has no grid.
-- Both use the same tight `28 28 228 228` viewBox. Keep the P geometry aligned between masters; optical adjustments belong to the handles, not the letter's proportions.
-- Both use real transparent counters and no white outline. Preserve the `data-part` attributes used for derived dark and monochrome artwork.
-- Dark artwork has its own brighter teal palette, lighter blue borders, soft-white handle centers, and a subtler grid. Monochrome artwork omits the grid.
+Logo kit v5 (published at https://github.com/rcoenen/openpencil-logo-kit): a P built from three primitives on a 2 × 3 grid of equal square cells, in flat colour.
 
-Edit these SVGs, not generated files. Platform backgrounds, padding, and dark colors live in `tools/generate/brand/src/config.ts`. The approved main colors are defined by the SVG artwork. The official app-icon variant puts the light-palette mark on an ivory (`#F5F5EF`) rounded tile that fills the image, with transparency only at the rounded corners. Native desktop assets retain their platform-specific outer margin. Desktop icons, any-purpose PWA icons, and larger in-app branding share this composition. The tile stays ivory in both themes; use `BrandMark` with `variant="app-icon"` for larger placements. The editor header uses a 24px tile. Favicons use the same tile with the optical micro master inside, in both browser themes. Generated `brand/app-icon.svg` and `brand/app-icon-1024.png` are suitable for profile images. Apple Touch keeps an opaque square for platform rounding; maskable artwork stays opaque and inside the central 80%-diameter safe circle.
+- `mark.svg` is the colour mark: a square stem, a half-disc bowl, and a rounded-square foot, the pencil. Rounded corners are half a cell. The counter is a circle of 0.4 cell with one sharp corner, centred on the seam so it locks stem and bowl together; its sharp corner points down-left, toward the foot.
+- `mark-micro.svg` is the same artwork at 16px, for favicons. The kit has no separate small drawing: below 24px it prefers the one-colour mark, which the generator derives.
+- Both draw the 200 × 300 mark centred on a square `0 0 300 300` canvas, so the generator can place them like any square artwork. Keep the two files' geometry identical.
+- Each piece carries a `data-part` (`stem`, `bowl`, `foot`). The hidden `data-shape="silhouette"` path is the whole P as one shape: the one-colour variants draw it in place of the pieces, whose shared edges would otherwise show seams.
+
+| Piece | `data-part` | Name  | Hex       |
+| ----- | ----------- | ----- | --------- |
+| Stem  | `stem`      | Flame | `#F5501E` |
+| Bowl  | `bowl`      | Sun   | `#FFD43B` |
+| Foot  | `foot`      | Dusk  | `#9B5CFF` |
+| One colour | —      | Ink   | `#111111` |
+
+A sunset read top to bottom: flame stem, sun bowl, dusk foot. Flat colour only: no gradients, shadows, or outlines on the colour mark.
+
+## Backgrounds and tiles
+
+The colour mark sits bare on white, black, and neutral greys, including the dark UI grey `#2C2C2C`, so the dark variants keep its colours. On colour or busy backgrounds, use a tile or the one-colour mark, and never place the bare colour mark on flame, sun, or dusk. The one-colour mark is ink on light backgrounds and white on dark ones.
+
+The app icon is the colour mark on the ink (`#111111`) rounded tile, holding the mark at 76% of the tile's height; it reads on light and dark tabs alike. The same tile is the favicon in both browser themes, the any-purpose PWA icon, the profile image, and the desktop app's 24px rail mark. Native desktop icons keep their platform-specific outer margin with the mark at the same share of the tile. Apple Touch keeps an opaque square for platform rounding; maskable artwork stays opaque and inside the central 80%-diameter safe circle.
+
+`icons/mark-modular.svg` is the kit's modular outline: the P and the lines between its three pieces, drawn with `currentColor` on a 24px grid with a 1.5px line. The browser's main-menu button at the top of the navigation rail shows it in the text color, as Figma shows its logo; Vite serves `icons/` as the `brand` icon collection (`<icon-brand-mark-modular />`). `icons/lockup.svg` is the horizontal lockup with its wordmark in `currentColor`.
+
+The loading screen in `index.html` inlines the assembling mark: each piece's outline draws in, the pieces slide together, and their colour wipes in, about 1.6s in all. `src/app/shell/boot-splash.ts` keeps it up until that animation has finished and the app has mounted, whichever is later; reduced motion, `?test`, and automated browsers skip the wait.
+
+Minimum sizes: the colour mark 24px tall; the one-colour mark 16px. Keep half a cell, a quarter of the mark's width, clear on every side.
+
+Edit these SVGs, not generated files. The tile colour, the one-colour ink and paper, and platform padding live in `tools/generate/brand/src/config.ts`.
 
 ## Generation
 
@@ -30,6 +52,6 @@ Preparation fingerprints the artwork, generator code/settings, lockfile and runt
 
 ## Review
 
-Use the **Brand/Mark** Storybook stories for main, micro, dark, and monochrome appearances. `tests/e2e/brand/icons.spec.ts` checks the browser assets, app theme selection, and the main mark's visual baseline. Review intentional changes before updating its snapshot. Run at actual 16/24/32 pixel sizes as well as large sizes.
+Use the **Brand/Mark** Storybook stories for the colour, micro, and one-colour appearances. `tests/e2e/brand/icons.spec.ts` checks the browser assets, app theme selection, and the main mark's visual baseline. Review intentional changes before updating its snapshot. Run at actual 16/24/32 pixel sizes as well as large sizes.
 
 Do not mechanically replace generic pencil/tool icons or historical screenshots. Social artwork, external profile avatars, and Apple Icon Composer layered icons are separate design/export tasks.

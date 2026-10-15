@@ -1,17 +1,47 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { openAppMenu } from '#tests/helpers/menu'
+import { openAppMenu, openMainMenu } from '#tests/helpers/menu'
 
 const editor = useEditorSetup()
 
-test('menu bar is visible in browser mode', async () => {
-  const menubar = editor.page.locator('[role="menubar"]')
-  await expect(menubar).toBeVisible()
+test('the logo opens the main menu in Figma order', async () => {
+  const menu = await openMainMenu(editor.page)
+  const labels = await menu.locator(':scope > [role^="menuitem"]').allTextContents()
+  expect(labels.map((label) => label.replace(/[⌘⇧⌥].*$|Ctrl.*$/, '').trim())).toEqual([
+    'Back to files',
+    'Actions…',
+    'File',
+    'Edit',
+    'View',
+    'Object',
+    'Vector',
+    'Text',
+    'Arrange',
+    'Preferences',
+    'Settings…',
+    'Help'
+  ])
+  await editor.page.keyboard.press('Escape')
 })
 
-test('menu bar has all top-level menus', async () => {
-  const triggers = editor.page.locator('[role="menubar"] [role="menuitem"]')
-  const labels = await triggers.allTextContents()
-  expect(labels).toEqual(['File', 'Edit', 'View', 'Object', 'Text', 'Arrange'])
+test('Actions… opens the command palette', async () => {
+  const menu = await openMainMenu(editor.page)
+  await menu.getByRole('menuitem', { name: /^Actions…/ }).click()
+  await expect(editor.page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()
+  await editor.page.keyboard.press('Escape')
+})
+
+test('Help menu offers the welcome, links, and the version', async () => {
+  const menu = await openAppMenu(editor.page, 'Help')
+  const items = await menu.locator(':scope > [role^="menuitem"]').allTextContents()
+  expect(items.slice(0, 5)).toEqual([
+    'Show welcome',
+    'Documentation',
+    "What's new",
+    'Report an issue',
+    'Get the desktop app'
+  ])
+  expect(items.at(-1)).toMatch(/^OpenPencil \d/)
+  await editor.page.keyboard.press('Escape')
 })
 
 test('File menu opens and shows items', async () => {
@@ -157,8 +187,8 @@ test('Zoom to fit via View menu works', async () => {
 })
 
 test('Open storage workspace navigates from the File menu', async () => {
-  await editor.page.getByRole('menuitem', { name: 'File', exact: true }).click()
-  await editor.page.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+  const file = await openAppMenu(editor.page, 'File')
+  await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
 
   await expect(editor.page).toHaveURL(/\/$/)
   await expect(editor.page.getByTestId('recent-files-home')).toBeVisible()
