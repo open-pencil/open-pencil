@@ -2,6 +2,7 @@ import type { EditorState } from '@open-pencil/core/editor'
 import { filesMessages } from '@open-pencil/vue'
 
 import { downloadBlob } from '@/app/document/io/browser'
+import { isFileWriteRefused } from '@/app/document/io/capability'
 import { documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
@@ -97,14 +98,25 @@ export function createSaveActions({
       setFileHandle(handle)
       setFilePath(null)
       state.documentName = documentNameFromFigPath(handle.name)
-      const wrote = await writeFile(data, version)
-      if (wrote) setSourceIdentity({ handle, path: null })
-      startWatchingFile()
-      return wrote
+      try {
+        const wrote = await writeFile(data, version)
+        if (wrote) setSourceIdentity({ handle, path: null })
+        startWatchingFile()
+        return wrote
+      } catch (error) {
+        if (!isFileWriteRefused(error)) throw error
+        // The browser gave out the file but will not write to it: download it under that name.
+        setFileHandle(null)
+        return downloadAs(handle.name, data, version)
+      }
     }
 
     const filename = prompt(filesMessages.get().saveAsPrompt, getDownloadName() ?? 'Untitled.fig')
     if (!filename) return false
+    return downloadAs(filename, data, version)
+  }
+
+  async function downloadAs(filename: string, data: Uint8Array, version: number) {
     setStorageBinding(null)
     setDownloadName(filename)
     state.documentName = documentNameFromFigPath(filename)

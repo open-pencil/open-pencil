@@ -12,6 +12,16 @@ export function supportsFileSystemAccess(): boolean {
  * Opens the browser save picker. Resolves to null when the browser has no picker, and rejects
  * with `AbortError` when the user cancels so callers can keep cancel and failure distinct.
  */
+/**
+ * Whether a write failed because the browser refuses to write to a file it handed out, as embedded
+ * browsers and sandboxed frames do: the picker works but `createWritable` throws. Callers download
+ * the file instead.
+ */
+export function isFileWriteRefused(error: unknown): boolean {
+  const name = (error as Error | undefined)?.name
+  return name === 'NotAllowedError' || name === 'SecurityError'
+}
+
 export async function pickBrowserSaveFile(
   options: FilePickerOptions
 ): Promise<FileSystemFileHandle | null> {
