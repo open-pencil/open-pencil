@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openSettings } from '#tests/helpers/menu'
 
 test('model editing keeps the Settings shell stable and isolates the form', async ({ page }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   const dialog = page.getByTestId('app-settings-dialog')
   await expect(dialog).toBeVisible()
@@ -41,7 +42,7 @@ for (const reducedMotion of ['reduce', 'no-preference'] as const) {
     await page.setViewportSize({ width: 900, height: 700 })
     await page.goto('/?test')
     await new CanvasHelper(page).waitForInit()
-    await page.getByTestId('app-settings-trigger').click()
+    await openSettings(page)
     await page.getByTestId('settings-section-ai').click()
     const dialog = page.getByTestId('app-settings-dialog')
     if (reducedMotion === 'reduce') await expect(dialog).toHaveCSS('animation-name', 'none')

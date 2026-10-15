@@ -203,6 +203,7 @@
   "aiSetupTakeTour": "Rundgang öffnen",
   "aiSetupStart": "KI einrichten",
   "aiSetupSkip": "Mit dem Gestalten beginnen",
+  "aiSetupDontShowAgain": "Nicht mehr anzeigen",
   "aiSetupProgress": "Schritt {current} von {total}",
   "aiSetupAdvanced": "Erweiterte Einstellungen",
   "aiSetupContinue": "Weiter",

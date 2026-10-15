@@ -193,7 +193,6 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
   await expect(page.getByTestId('asset-libraries-dialog')).toBeHidden()
 
   await page.keyboard.press('ControlOrMeta+KeyN')
-  await page.getByRole('button', { name: 'New design', exact: true }).click()
   await expect
     .poll(() =>
       page.evaluate(() => {

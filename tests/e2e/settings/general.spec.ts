@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openAppMenu, openSettings } from '#tests/helpers/menu'
 
 test('language can be changed from General settings and persists', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByRole('combobox', { name: 'Theme', exact: true }).click()
   await page.getByRole('option', { name: 'Dark', exact: true }).click()
   await page.getByTestId('settings-language').click()
@@ -18,7 +19,7 @@ test('language can be changed from General settings and persists', async ({ page
 
   await page.reload()
   await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await expect(page.getByTestId('settings-language')).toContainText('Русский')
 
   await page.getByTestId('settings-language').click()
@@ -33,7 +34,7 @@ test('general snapping preferences persist and apply to editor sessions', async 
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await expect(page.getByTestId('settings-general-panel')).toBeVisible()
   const geometry = page.getByRole('switch', { name: 'Snap to geometry' })
   const objects = page.getByRole('switch', { name: 'Snap to objects' })
@@ -54,7 +55,7 @@ test('general snapping preferences persist and apply to editor sessions', async 
   await page.getByTestId('app-settings-done').click()
   await page.reload()
   await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await expect(geometry).not.toBeChecked()
   await expect(objects).not.toBeChecked()
   await expect(pixelGrid).not.toBeChecked()
@@ -74,7 +75,7 @@ test('progressive tiled rendering preference persists and URL overrides take pre
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   const tiled = page.getByRole('switch', { name: 'Progressive rendering' })
   await expect(tiled).not.toBeChecked()
   await tiled.click()
@@ -82,7 +83,7 @@ test('progressive tiled rendering preference persists and URL overrides take pre
 
   await page.reload()
   await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await expect(tiled).toBeChecked()
   await expect(
     page.evaluate(() =>
@@ -96,7 +97,7 @@ test('progressive tiled rendering preference persists and URL overrides take pre
 
   await page.goto('/?test&renderer=retained')
   await canvas.waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await expect(tiled).toBeChecked()
   await expect(
     page.getByText(/current session renderer is controlled by a URL override/i)
@@ -119,17 +120,16 @@ test('Preferences menu snapping controls use the same preferences', async ({ pag
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  await page.getByTestId('menubar-view').click()
-  await page.getByRole('menuitem', { name: 'Preferences' }).hover()
-  const geometry = page.getByRole('menuitemcheckbox', { name: 'Snap to geometry' })
-  const objects = page.getByRole('menuitemcheckbox', { name: 'Snap to objects' })
-  const pixelGrid = page.getByRole('menuitemcheckbox', { name: 'Snap to pixel grid' })
+  const preferences = await openAppMenu(page, 'Preferences')
+  const geometry = preferences.getByRole('menuitemcheckbox', { name: 'Snap to geometry' })
+  const objects = preferences.getByRole('menuitemcheckbox', { name: 'Snap to objects' })
+  const pixelGrid = preferences.getByRole('menuitemcheckbox', { name: 'Snap to pixel grid' })
   await expect(geometry).toBeChecked()
   await expect(objects).toBeChecked()
   await expect(pixelGrid).toBeChecked()
   await objects.click()
 
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await expect(page.getByRole('switch', { name: 'Snap to objects' })).not.toBeChecked()
   await page.getByRole('switch', { name: 'Snap to objects' }).click()
 })
@@ -139,7 +139,7 @@ test('settings shortcut preserves the last visited section', async ({ page }) =>
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByTestId('settings-section-media').click()
   await page.getByTestId('app-settings-done').click()
 

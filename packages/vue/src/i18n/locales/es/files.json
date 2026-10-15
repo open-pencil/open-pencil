@@ -25,5 +25,14 @@
   "newDesign": "Nuevo diseño",
   "noMatchingFiles": "Ningún archivo coincide con «{query}».",
   "saveAsPrompt": "Guardar como:",
-  "browserFileAPINotSupported": "Tu navegador no admite la API de archivos locales. Los archivos se descargarán en lugar de guardarse en el mismo lugar."
+  "browserFileAPINotSupported": "Tu navegador no admite la API de archivos locales. Los archivos se descargarán en lugar de guardarse en el mismo lugar.",
+  "home": "Inicio",
+  "recents": "Recientes",
+  "recentlyViewed": "Vistos recientemente",
+  "storageList": "Almacenamiento",
+  "fileType": "Tipo de archivo",
+  "allFiles": "Todos los archivos",
+  "figmaFiles": "Archivos de Figma",
+  "pencilFiles": "Archivos de Pencil",
+  "otherFiles": "Otros archivos"
 }

@@ -25,5 +25,14 @@
   "newDesign": "Nuovo design",
   "noMatchingFiles": "Nessun file corrisponde a «{query}».",
   "saveAsPrompt": "Salva con nome:",
-  "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente."
+  "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente.",
+  "home": "Pagina iniziale",
+  "recents": "Recenti",
+  "recentlyViewed": "Visti di recente",
+  "storageList": "Archivio",
+  "fileType": "Tipo di file",
+  "allFiles": "Tutti i file",
+  "figmaFiles": "File Figma",
+  "pencilFiles": "File Pencil",
+  "otherFiles": "Altri file"
 }

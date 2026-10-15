@@ -14,6 +14,7 @@ import { useStorageSettingsFeedback } from '@/app/integrations/storage/settings/
 import { useStorageSettings } from '@/app/integrations/storage/settings/use'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
+import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import { focusInvalidField } from '@/components/settings/layout/focus'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
@@ -81,9 +82,9 @@ async function save() {
   }
   if ((await connection.save()) === 'saved') editing.value = false
 }
-async function openWorkspace() {
+function openWorkspace() {
   settingsDialogOpen.value = false
-  await router.push('/storage')
+  openStorageWorkspace(router)
 }
 async function testConnection() {
   if (busy.value) return

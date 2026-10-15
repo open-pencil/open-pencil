@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test'
 import type { Vector } from '@open-pencil/scene-graph'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { openAppMenu } from '#tests/helpers/menu'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
 
@@ -401,7 +402,7 @@ test('Canvas markers and Layers panel marks can be turned off from the View menu
       () => window.openPencil?.getStore?.().state.designIssues?.markers.length ?? 0
     )
 
-  await editor.page.getByRole('menuitem', { name: 'View' }).click()
+  await openAppMenu(editor.page, 'View')
   const toggle = editor.page.getByRole('menuitemcheckbox', { name: 'Design issues' })
   await expect(toggle).toHaveAttribute('aria-checked', 'true')
   await toggle.click()
@@ -411,7 +412,7 @@ test('Canvas markers and Layers panel marks can be turned off from the View menu
   await editor.canvas.hover(CLOSE_MARKER.x + 1, CLOSE_MARKER.y)
   await expect(editor.page.getByTestId('issue-marker-tooltip')).toHaveCount(0)
 
-  await editor.page.getByRole('menuitem', { name: 'View' }).click()
+  await openAppMenu(editor.page, 'View')
   await editor.page.getByRole('menuitemcheckbox', { name: 'Design issues' }).click()
   await expect.poll(markerCount).toBeGreaterThan(0)
 })

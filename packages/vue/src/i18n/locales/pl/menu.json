@@ -8,7 +8,7 @@
   "new": "Nowy",
   "open": "Otwórz…",
   "openStorageWorkspace": "Otwórz obszar przechowywania…",
-  "openTour": "Otwórz przewodnik",
+  "showWelcome": "Pokaż ekran powitalny",
   "save": "Zapisz",
   "saveAs": "Zapisz jako…",
   "saveToStorage": "Zapisz w obszarze przechowywania…",
@@ -78,5 +78,15 @@
   "exportSelectionAsSVG": "Eksportuj zaznaczenie jako SVG",
   "exportSelectionAsPPTX": "Eksportuj zaznaczenie jako PPTX",
   "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig",
-  "togglePreview": "Podgląd"
+  "togglePreview": "Podgląd",
+  "vector": "Wektor",
+  "help": "Pomoc",
+  "mainMenu": "Menu główne",
+  "actions": "Akcje…",
+  "documentation": "Dokumentacja",
+  "whatsNew": "Co nowego",
+  "reportIssue": "Zgłoś problem",
+  "getDesktopApp": "Pobierz aplikację desktopową",
+  "developer": "Deweloper",
+  "navigation": "Nawigacja"
 }

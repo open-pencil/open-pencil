@@ -39,7 +39,7 @@ const THEME_NUMBERS = [
 
 /** OpenPencil's own interface colors, from `src/app.css`, dark and light. */
 const CHROME_COLORS = [
-  ['panel', 'Panel', '#2A2A2A', '#FFFFFF'],
+  ['panel', 'Panel', '#2C2C2C', '#FFFFFF'],
   ['header', 'Header', '#1E1E1E', '#F3F4F6'],
   ['field', 'Field', '#383838', '#F0F1F3'],
   ['border', 'Border', '#3A3A3A', '#D8DCE3'],

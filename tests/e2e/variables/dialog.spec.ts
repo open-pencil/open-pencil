@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { openAppMenu } from '#tests/helpers/menu'
 import { variablesAddTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
@@ -213,8 +214,8 @@ test('the View menu opens the variables dialog', async () => {
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(dialog).toBeHidden()
 
-  await editor.page.locator('[role="menubar"] [role="menuitem"]', { hasText: 'View' }).click()
-  await editor.page.locator('[role="menu"] [role="menuitem"]', { hasText: 'Variables…' }).click()
+  const view = await openAppMenu(editor.page, 'View')
+  await view.getByRole('menuitem', { name: 'Variables…' }).click()
 
   await expect(dialog).toBeVisible()
   editor.canvas.assertNoErrors()

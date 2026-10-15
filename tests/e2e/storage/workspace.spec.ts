@@ -84,7 +84,7 @@ test('configured storage lists previews through ranges before opening the docume
   await page.goto('/storage?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
-  await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.getByTestId('tabbar-home').click()
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()
   const panel = page.getByTestId('settings-storage-panel')
@@ -115,11 +115,12 @@ test('configured storage lists previews through ranges before opening the docume
 test('storage workspace directs unconfigured users to Settings', async ({ page }) => {
   await page.goto('/storage?test')
   await new CanvasHelper(page).waitForInit()
-  await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.getByTestId('tabbar-home').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await page.getByRole('tab', { name: 'Storage', exact: true }).click()
   await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'New design', exact: true })).toBeEnabled()
+  await expect(page.getByTestId('home-new-document')).toBeEnabled()
 
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await page.getByTestId('settings-section-storage').click()

@@ -203,6 +203,7 @@
   "aiSetupTakeTour": "ツアーを開く",
   "aiSetupStart": "AI を設定",
   "aiSetupSkip": "デザインを始める",
+  "aiSetupDontShowAgain": "今後表示しない",
   "aiSetupProgress": "ステップ {current}/{total}",
   "aiSetupAdvanced": "詳細設定",
   "aiSetupContinue": "続ける",

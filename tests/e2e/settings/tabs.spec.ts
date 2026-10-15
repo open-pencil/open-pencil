@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { openSettings } from '#tests/helpers/menu'
 
 test('settings tabs associate panels and support vertical keyboard navigation', async ({
   page
 }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   const dialog = page.getByTestId('app-settings-dialog')
   const general = dialog.getByRole('tab', { name: 'General', exact: true })
   for (const tab of await dialog.getByRole('tab').all()) {

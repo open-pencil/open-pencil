@@ -7,6 +7,7 @@ import './app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
 import { preloadFonts } from '@/app/editor/fonts'
 import { installBundledFonts } from '@/app/editor/fonts/bundled'
+import { closeBootSplash } from '@/app/shell/boot-splash'
 import { observeBootErrors } from '@/app/shell/support/boot'
 import { reportBootFailure } from '@/app/shell/support/gate'
 import { IS_TAURI } from '@/constants'
@@ -34,6 +35,8 @@ export async function boot(): Promise<void> {
     await reportBootFailure(failure.error)
     return
   }
+  // The app is ready behind the splash; it closes once the mark has finished assembling.
+  void closeBootSplash()
   // Component errors after boot reach only this handler, not the window; keep them diagnosable.
   app.config.errorHandler = (error, _instance, info) => {
     recordRuntimeError(error, 'vue', info)

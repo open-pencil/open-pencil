@@ -25,5 +25,14 @@
   "newDesign": "Nouveau design",
   "noMatchingFiles": "Aucun fichier ne correspond à « {query} ».",
   "saveAsPrompt": "Enregistrer sous :",
-  "browserFileAPINotSupported": "Votre navigateur ne prend pas en charge l’API de fichiers locaux. Les fichiers seront téléchargés au lieu d’être enregistrés sur place."
+  "browserFileAPINotSupported": "Votre navigateur ne prend pas en charge l’API de fichiers locaux. Les fichiers seront téléchargés au lieu d’être enregistrés sur place.",
+  "home": "Accueil",
+  "recents": "Récents",
+  "recentlyViewed": "Consultés récemment",
+  "storageList": "Stockage",
+  "fileType": "Type de fichier",
+  "allFiles": "Tous les fichiers",
+  "figmaFiles": "Fichiers Figma",
+  "pencilFiles": "Fichiers Pencil",
+  "otherFiles": "Autres fichiers"
 }

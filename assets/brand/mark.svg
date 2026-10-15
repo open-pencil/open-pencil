@@ -1,20 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="28 28 228 228">
-  <defs>
-    <pattern id="pixel-grid" x="76" y="52" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M10 0H0V10" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="0.65"/>
-    </pattern>
-    <clipPath id="pencil-grid-clip">
-      <use href="#pencil-body"/>
-    </clipPath>
-  </defs>
-  <path id="pencil-body" clip-rule="evenodd" data-part="body" fill="#167C76" fill-rule="evenodd" d="M76 52H144C186 52 208 80 208 118S186 184 144 184H116V222L96 248L76 222ZM116 92V144H140C157 144 168 134 168 118S157 92 140 92Z"/>
-  <path data-part="upper" fill="#0A6C65" d="M76 52H116V92H76Z"/>
-  <path data-part="middle" fill="#65C2B1" d="M76 92H116V144H76Z"/>
-  <path data-part="lower" fill="#299D8D" d="M76 144H116V184H76Z"/>
-  <path data-part="point" fill="#095F58" d="M76 184H116V222L96 248L76 222Z"/>
-  <rect data-detail="grid" x="28" y="28" width="228" height="228" fill="url(#pixel-grid)" clip-path="url(#pencil-grid-clip)"/>
-  <path data-part="handle" fill="#005CFF" d="M60 36H92V68H60Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M68 44H84V60H68Z"/>
-  <path data-part="handle" fill="#005CFF" d="M226 118A18 18 0 1 1 190 118A18 18 0 1 1 226 118Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M218 118A10 10 0 1 1 198 118A10 10 0 1 1 218 118Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 300 300">
+  <g transform="translate(50 0)">
+    <!-- The one-colour mark: drawn by the mono variants in place of the pieces, which would leave seams. -->
+    <path data-shape="silhouette" fill="none" fill-rule="evenodd" d="M50 0H100A100 100 0 0 1 100 200V300H50A50 50 0 0 1 0 250V50A50 50 0 0 1 50 0ZM60 100A40 40 0 1 1 100 140H60Z"/>
+    <path data-part="stem" fill="#F5501E" d="M50 0H100V60A40 40 0 0 0 60 100V140H100V200H0V50A50 50 0 0 1 50 0Z"/>
+    <path data-part="bowl" fill="#FFD43B" d="M100 0A100 100 0 0 1 100 200V140A40 40 0 0 0 100 60Z"/>
+    <path data-part="foot" fill="#9B5CFF" d="M0 200H100V300H50A50 50 0 0 1 0 250Z"/>
+  </g>
 </svg>

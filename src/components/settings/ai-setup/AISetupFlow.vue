@@ -5,13 +5,14 @@ import { computed, ref } from 'vue'
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
 
-import type { AISetupEntry } from '@/app/ai/models/settings/onboarding/dialog'
+import { type AISetupEntry, hideWelcomeOnLaunch } from '@/app/ai/models/settings/onboarding/dialog'
 import type { OnboardingAccess } from '@/app/ai/models/settings/onboarding/plan'
 import { AI_SETUP_STEPS, useAIOnboarding } from '@/app/ai/models/settings/onboarding/use'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogBody, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 import AppCheckboxCard from '@/components/ui/toggle/AppCheckboxCard.vue'
 import theme from '@/theme/settings/ai-setup/flow'
 
@@ -217,10 +218,16 @@ async function finish(): Promise<void> {
 
   <AppDialogFooter :ui="{ footer: 'justify-between' }">
     <template v-if="phase === 'welcome'">
-      <AppButton variant="outline" @click="emit('close')">{{ ai.aiSetupSkip }}</AppButton>
-      <AppButton color="primary" variant="solid" @click="phase = 'wizard'">
-        {{ ai.aiSetupStart }}
-      </AppButton>
+      <label :class="styles.optOut()">
+        <AppCheckbox v-model="hideWelcomeOnLaunch" :ariaLabel="ai.aiSetupDontShowAgain" />
+        {{ ai.aiSetupDontShowAgain }}
+      </label>
+      <div :class="styles.footerActions()">
+        <AppButton variant="outline" @click="emit('close')">{{ ai.aiSetupSkip }}</AppButton>
+        <AppButton color="primary" variant="solid" @click="phase = 'wizard'">
+          {{ ai.aiSetupStart }}
+        </AppButton>
+      </div>
     </template>
     <template v-else-if="phase === 'saved'">
       <AppButton class="ml-auto" color="primary" variant="solid" @click="emit('close')">

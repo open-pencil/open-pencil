@@ -8,7 +8,7 @@
   "new": "Nouveau",
   "open": "Ouvrir…",
   "openStorageWorkspace": "Ouvrir l’espace de stockage…",
-  "openTour": "Ouvrir la visite",
+  "showWelcome": "Afficher l’accueil",
   "save": "Enregistrer",
   "saveAs": "Enregistrer sous…",
   "saveToStorage": "Enregistrer dans l’espace de stockage…",
@@ -78,5 +78,15 @@
   "exportSelectionAsSVG": "Exporter la sélection en SVG",
   "exportSelectionAsPPTX": "Exporter la sélection en PPTX",
   "exportSelectionAsFig": "Exporter la sélection en .fig",
-  "togglePreview": "Aperçu"
+  "togglePreview": "Aperçu",
+  "vector": "Vecteur",
+  "help": "Aide",
+  "mainMenu": "Menu principal",
+  "actions": "Actions…",
+  "documentation": "Documentation",
+  "whatsNew": "Nouveautés",
+  "reportIssue": "Signaler un problème",
+  "getDesktopApp": "Télécharger l'app de bureau",
+  "developer": "Développeur",
+  "navigation": "Navigation"
 }

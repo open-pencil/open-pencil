@@ -85,9 +85,9 @@ test('the toolbar inserts a picked icon, selected, as one undo step', async () =
   expect(await getPageChildren(page)).toEqual([])
 })
 
-test('the Object menu opens the same picker', async () => {
+test('the File menu opens the same picker', async () => {
   const { page } = ctx
-  const menu = await openAppMenu(page, 'Object')
+  const menu = await openAppMenu(page, 'File')
   await menu.getByRole('menuitem', { name: 'Insert Icon…' }).click()
   await pick(page, 'Insert icon', 'shape', 'ring')
 

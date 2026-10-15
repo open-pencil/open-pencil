@@ -1,11 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="28 28 228 228">
-  <path id="pencil-body" data-part="body" fill="#167C76" fill-rule="evenodd" d="M76 52H144C186 52 208 80 208 118S186 184 144 184H116V222L96 248L76 222ZM116 92V144H140C157 144 168 134 168 118S157 92 140 92Z"/>
-  <path data-part="upper" fill="#0A6C65" d="M76 52H116V92H76Z"/>
-  <path data-part="middle" fill="#65C2B1" d="M76 92H116V144H76Z"/>
-  <path data-part="lower" fill="#299D8D" d="M76 144H116V184H76Z"/>
-  <path data-part="point" fill="#095F58" d="M76 184H116V222L96 248L76 222Z"/>
-  <path data-part="handle" fill="#005CFF" d="M54 30H98V74H54Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M64 40H88V64H64Z"/>
-  <path data-part="handle" fill="#005CFF" d="M235 118A27 27 0 1 1 181 118A27 27 0 1 1 235 118Z"/>
-  <path data-part="handle-surface" fill="#FFFFFF" d="M225 118A17 17 0 1 1 191 118A17 17 0 1 1 225 118Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 300 300">
+  <g transform="translate(50 0)">
+    <!-- The one-colour mark: drawn by the mono variants in place of the pieces, which would leave seams. -->
+    <path data-shape="silhouette" fill="none" fill-rule="evenodd" d="M50 0H100A100 100 0 0 1 100 200V300H50A50 50 0 0 1 0 250V50A50 50 0 0 1 50 0ZM60 100A40 40 0 1 1 100 140H60Z"/>
+    <path data-part="stem" fill="#F5501E" d="M50 0H100V60A40 40 0 0 0 60 100V140H100V200H0V50A50 50 0 0 1 50 0Z"/>
+    <path data-part="bowl" fill="#FFD43B" d="M100 0A100 100 0 0 1 100 200V140A40 40 0 0 0 100 60Z"/>
+    <path data-part="foot" fill="#9B5CFF" d="M0 200H100V300H50A50 50 0 0 1 0 250Z"/>
+  </g>
 </svg>

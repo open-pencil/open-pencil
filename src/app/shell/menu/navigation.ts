@@ -1,8 +1,17 @@
 import type { Router } from 'vue-router'
 
-export function openStorageWorkspace(router: Router): void {
+import { homeSection } from '@/app/recent-files'
+
+/** Shows the start page. */
+export function openHome(router: Router): void {
   void router
     .push('/')
     .then(() => import('@/app/tabs'))
-    .then(({ showNewTab }) => showNewTab())
+    .then(({ showHome }) => showHome())
+}
+
+/** Shows the start page on its Storage list. */
+export function openStorageWorkspace(router: Router): void {
+  homeSection.value = 'storage'
+  openHome(router)
 }
