@@ -6,6 +6,7 @@ import { useMediaMessages, useSettingsMessages } from '@open-pencil/vue'
 import { vectorizeProviderID, VECTORIZE_PROVIDER_DEFINITIONS } from '@/app/editor/vectorize'
 import { pexelsKeyStatus, unsplashKeyStatus } from '@/app/settings/credentials/media'
 import type { MediaSettingsService } from '@/app/settings/media/use'
+import ConfiguredStatusIcon from '@/components/settings/layout/ConfiguredStatusIcon.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
@@ -41,6 +42,9 @@ const vectorProvider = computed(() =>
             :key="service.id"
             @click="editing = service.id"
           >
+            <template #leading
+              ><ConfiguredStatusIcon :configured="service.status === 'configured'"
+            /></template>
             {{ service.name }}
             <template #description>{{
               service.status === 'configured' ? settings.configured : settings.notConfigured

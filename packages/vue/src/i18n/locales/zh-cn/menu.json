@@ -8,7 +8,7 @@
   "new": "新建",
   "open": "打开…",
   "openStorageWorkspace": "打开存储工作区…",
-  "openTour": "打开导览",
+  "showWelcome": "显示欢迎页",
   "save": "保存",
   "saveAs": "另存为…",
   "saveToStorage": "保存到存储工作区…",
@@ -78,5 +78,15 @@
   "exportSelectionAsSVG": "将所选内容导出为 SVG",
   "exportSelectionAsPPTX": "将所选内容导出为 PPTX",
   "exportSelectionAsFig": "将所选内容导出为 .fig",
-  "togglePreview": "预览"
+  "togglePreview": "预览",
+  "vector": "矢量",
+  "help": "帮助",
+  "mainMenu": "主菜单",
+  "actions": "操作…",
+  "documentation": "文档",
+  "whatsNew": "新功能",
+  "reportIssue": "报告问题",
+  "getDesktopApp": "获取桌面应用",
+  "developer": "开发者",
+  "navigation": "导航"
 }

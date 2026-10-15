@@ -5,6 +5,7 @@ import * as v from 'valibot'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '#tests/helpers/chat/fixture'
+import { openSettings } from '#tests/helpers/menu'
 
 /** The JSON that Copy diagnostics puts on the clipboard, as far as these tests read it. */
 const ReportJSON = v.pipe(
@@ -34,7 +35,7 @@ test('Settings exports correlated chat telemetry without conversation content', 
   await expect(chat.input).toBeEnabled()
   await chat.submit('A second request in the same conversation')
   await expect(page.getByTestId('chat-message-assistant')).toHaveCount(2)
-  await page.getByTestId('app-settings-trigger').click()
+  await openSettings(page)
   await page.getByTestId('settings-section-diagnostics').click()
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible()

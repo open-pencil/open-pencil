@@ -64,7 +64,7 @@ export interface SharingPreferences {
   usageStats: UsageStatsConsent
 }
 
-/** Whether guided AI setup was offered and finished or skipped. */
+/** Whether the welcome opens on launch: `done` once AI is configured or the person opts out. */
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 

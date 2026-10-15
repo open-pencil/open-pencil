@@ -25,5 +25,14 @@
   "newDesign": "新建设计",
   "noMatchingFiles": "没有与“{query}”匹配的文件。",
   "saveAsPrompt": "另存为：",
-  "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。"
+  "browserFileAPINotSupported": "你的浏览器不支持本地文件 API。文件将被下载，而不是保存在原位置。",
+  "home": "主页",
+  "recents": "最近",
+  "recentlyViewed": "最近查看",
+  "storageList": "存储",
+  "fileType": "文件类型",
+  "allFiles": "所有文件",
+  "figmaFiles": "Figma 文件",
+  "pencilFiles": "Pencil 文件",
+  "otherFiles": "其他文件"
 }

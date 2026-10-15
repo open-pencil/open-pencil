@@ -4,9 +4,11 @@ import type { SupportNotice } from './guidance'
 
 /**
  * Root element the notice replaces. It is the app mount point, so the notice
- * takes over whatever the splash or a half-mounted app left behind.
+ * takes over whatever a half-mounted app left behind; the boot splash, which sits outside it,
+ * goes too.
  */
 const APP_ROOT_SELECTOR = '#app'
+const BOOT_SPLASH_ID = 'boot-splash'
 export const BOOT_NOTICE_ID = 'boot-notice'
 
 function openExternally(event: MouseEvent, href: string): void {
@@ -34,6 +36,7 @@ function createLink(doc: Document, label: string, href: string): HTMLAnchorEleme
 export function renderSupportNotice(notice: SupportNotice, doc: Document = document): void {
   const root = doc.querySelector(APP_ROOT_SELECTOR) ?? doc.body
   root.replaceChildren()
+  doc.getElementById(BOOT_SPLASH_ID)?.remove()
 
   const container = doc.createElement('section')
   container.id = BOOT_NOTICE_ID

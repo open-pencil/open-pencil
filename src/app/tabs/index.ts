@@ -62,6 +62,9 @@ const activeTabId = shallowRef('')
 
 export const activeTab = computed(() => tabsRef.value.find((t) => t.id === activeTabId.value))
 
+/** Whether the start page is showing. It is no tab of the tab bar, which lists designs only. */
+export const homeActive = computed(() => activeTab.value?.kind === 'home')
+
 export const allTabs = computed(() =>
   tabsRef.value.map((t) => ({
     id: t.id,
@@ -126,7 +129,8 @@ export function createDocumentInCurrentTab(): Tab {
   return getTabById(current.id) ?? current
 }
 
-export function showNewTab(): void {
+/** Shows the start page, the one home there is: the tab bar's home button. */
+export function showHome(): void {
   const homeTab = tabsRef.value.find((tab) => tab.kind === 'home')
   if (homeTab) {
     switchTab(homeTab.id)
@@ -163,7 +167,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
-  if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
+  if (closingTab.kind === 'home') return
   const choice = unsaved
     ? await confirmDocumentClose(closingTab.store, async () => unsaved)
     : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
@@ -179,14 +183,12 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   closingTab.store.dispose()
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
-  if (tabsRef.value.length === 0) {
-    createHomeTab()
-    return
-  }
-
-  if (wasActive) {
-    const newIdx = Math.min(idx, tabsRef.value.length - 1)
-    activateTab(tabsRef.value[newIdx])
+  // The next design takes over, and the start page once none is left.
+  const designs = tabsRef.value.filter((tab) => tab.kind === 'document')
+  if (designs.length === 0) showHome()
+  else if (wasActive) {
+    const before = tabsRef.value.slice(0, idx).filter((tab) => tab.kind === 'document').length
+    activateTab(designs[Math.min(before, designs.length - 1)])
   }
 }
 

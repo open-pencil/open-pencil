@@ -7,7 +7,9 @@ export type AppMenuIcon =
   | 'eye'
   | 'file'
   | 'folder-open'
+  | 'help'
   | 'layers'
+  | 'pen-tool'
   | 'pencil'
   | 'redo'
   | 'save'
@@ -69,6 +71,34 @@ const SETTINGS_MENU_ITEM = {
   accelerator: 'CmdOrCtrl+,'
 } satisfies AppMenuActionItem
 
+/** How the app looks and behaves while editing: Figma's Preferences, theme included. */
+const PREFERENCES_MENU_ITEM = {
+  id: 'preferences',
+  label: 'Preferences',
+  sub: [
+    {
+      id: 'theme',
+      label: 'Theme',
+      sub: [
+        { id: 'theme-light', label: 'Light', checkbox: true, handler: 'shell' },
+        { id: 'theme-dark', label: 'Dark', checkbox: true, handler: 'shell' },
+        { id: 'theme-auto', label: 'Auto', checkbox: true, handler: 'shell' }
+      ]
+    },
+    { id: 'language', label: 'Language', target: 'browser' },
+    { type: 'separator' },
+    { id: 'snap-geometry', label: 'Snap to Geometry', checkbox: true, handler: 'shell' },
+    { id: 'snap-objects', label: 'Snap to Objects', checkbox: true, handler: 'shell' },
+    {
+      id: 'snap-pixel-grid',
+      label: 'Snap to Pixel Grid',
+      checkbox: true,
+      shortcut: "MOD+SHIFT+'",
+      handler: 'shell'
+    }
+  ]
+} satisfies AppMenuActionItem
+
 export const APP_MENU_SCHEMA = [
   {
     label: 'File',
@@ -78,7 +108,13 @@ export const APP_MENU_SCHEMA = [
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
       { id: 'open-recent', label: 'Open Recent', target: 'native' },
       { id: 'open-storage-workspace', label: 'Open Storage Workspace…', handler: 'shell' },
-      { id: 'open-tour', label: 'Open the Tour', handler: 'shell' },
+      { type: 'separator' },
+      // Figma's File › Place image: bringing outside content into the file.
+      {
+        id: 'insert-icon',
+        label: 'Insert Icon…',
+        palette: { keywords: ['iconify', 'symbol', 'glyph', 'lucide'] }
+      },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
@@ -115,9 +151,11 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'autosave', label: 'Autosave', checkbox: true },
       { id: 'close', label: 'Close Tab', shortcut: 'MOD+W' },
-      // Windows, Linux, and the browser menu; macOS shows it in the application menu instead.
-      { type: 'separator' },
-      { ...SETTINGS_MENU_ITEM, handler: 'shell' }
+      // The native File menu; the browser shows both in its main menu, and macOS shows
+      // Settings… in the application menu instead.
+      { type: 'separator', target: 'native' },
+      { ...PREFERENCES_MENU_ITEM, target: 'native' },
+      { ...SETTINGS_MENU_ITEM, handler: 'shell', target: 'native' }
     ]
   },
   {
@@ -138,7 +176,7 @@ export const APP_MENU_SCHEMA = [
       { id: 'copy', label: 'Copy', shortcut: 'MOD+C' },
       { id: 'cut', label: 'Cut', shortcut: 'MOD+X' },
       { id: 'paste', label: 'Paste', shortcut: 'MOD+V' },
-      { id: 'paste-to-replace', label: 'Paste to replace', shortcut: 'MOD+SHIFT+R' },
+      { id: 'paste-to-replace', label: 'Paste to Replace', shortcut: 'MOD+SHIFT+R' },
       {
         id: 'selection.duplicate',
         label: 'Duplicate',
@@ -218,53 +256,8 @@ export const APP_MENU_SCHEMA = [
       { id: 'view-design-issues', label: 'Design Issues', checkbox: true, handler: 'shell' },
       { id: 'view-comments', label: 'Comments', checkbox: true, shortcut: 'SHIFT+C' },
       { type: 'separator' },
-      {
-        id: 'theme',
-        label: 'Theme',
-        sub: [
-          { id: 'theme-light', label: 'Light', checkbox: true, handler: 'shell' },
-          { id: 'theme-dark', label: 'Dark', checkbox: true, handler: 'shell' },
-          { id: 'theme-auto', label: 'Auto', checkbox: true, handler: 'shell' }
-        ]
-      },
-      { id: 'language', label: 'Language', target: 'browser' },
-      { type: 'separator' },
-      {
-        id: 'preferences',
-        label: 'Preferences',
-        sub: [
-          {
-            id: 'snap-geometry',
-            label: 'Snap to Geometry',
-            checkbox: true,
-            handler: 'shell'
-          },
-          {
-            id: 'snap-objects',
-            label: 'Snap to Objects',
-            checkbox: true,
-            handler: 'shell'
-          },
-          {
-            id: 'snap-pixel-grid',
-            label: 'Snap to Pixel Grid',
-            checkbox: true,
-            shortcut: "MOD+SHIFT+'",
-            handler: 'shell'
-          }
-        ]
-      },
-      { type: 'separator' },
       { id: 'toggle-ui', label: 'Toggle UI', shortcut: 'MOD+\\' },
-      { id: 'toggle-preview', label: 'Preview', shortcut: 'MOD+ALT+↩' },
-      { type: 'separator' },
-      { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
-      {
-        id: 'dev-tools',
-        label: 'Developer Tools',
-        accelerator: 'CmdOrCtrl+Alt+I',
-        target: 'native'
-      }
+      { id: 'toggle-preview', label: 'Preview', shortcut: 'MOD+ALT+↩' }
     ]
   },
   {
@@ -286,11 +279,11 @@ export const APP_MENU_SCHEMA = [
         label: 'Ungroup Selection',
         command: 'selection.ungroup'
       },
-      { type: 'separator' },
+      // Figma's Object › Add auto layout.
       {
-        id: 'insert-icon',
-        label: 'Insert Icon…',
-        palette: { keywords: ['iconify', 'symbol', 'glyph', 'lucide'] }
+        id: 'selection.wrapInAutoLayout',
+        label: 'Wrap in Auto Layout',
+        command: 'selection.wrapInAutoLayout'
       },
       { type: 'separator' },
       {
@@ -320,40 +313,32 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.flipVertical'
       },
       { type: 'separator' },
+      // Figma's Object › Boolean groups.
       {
-        id: 'selection.booleanUnion',
-        label: 'Union selection',
-        command: 'selection.booleanUnion'
-      },
-      {
-        id: 'selection.booleanSubtract',
-        label: 'Subtract selection',
-        command: 'selection.booleanSubtract'
-      },
-      {
-        id: 'selection.booleanIntersect',
-        label: 'Intersect selection',
-        command: 'selection.booleanIntersect'
-      },
-      {
-        id: 'selection.booleanExclude',
-        label: 'Exclude selection',
-        command: 'selection.booleanExclude'
-      },
-      {
-        id: 'selection.flatten',
-        label: 'Flatten',
-        command: 'selection.flatten'
-      },
-      {
-        id: 'selection.outlineText',
-        label: 'Outline text',
-        command: 'selection.outlineText'
-      },
-      {
-        id: 'selection.outlineStroke',
-        label: 'Outline stroke',
-        command: 'selection.outlineStroke'
+        id: 'boolean-operations',
+        label: 'Boolean Operations',
+        sub: [
+          {
+            id: 'selection.booleanUnion',
+            label: 'Union Selection',
+            command: 'selection.booleanUnion'
+          },
+          {
+            id: 'selection.booleanSubtract',
+            label: 'Subtract Selection',
+            command: 'selection.booleanSubtract'
+          },
+          {
+            id: 'selection.booleanIntersect',
+            label: 'Intersect Selection',
+            command: 'selection.booleanIntersect'
+          },
+          {
+            id: 'selection.booleanExclude',
+            label: 'Exclude Selection',
+            command: 'selection.booleanExclude'
+          }
+        ]
       },
       { type: 'separator' },
       {
@@ -421,6 +406,27 @@ export const APP_MENU_SCHEMA = [
     ]
   },
   {
+    label: 'Vector',
+    paletteIcon: 'pen-tool',
+    items: [
+      {
+        id: 'selection.flatten',
+        label: 'Flatten',
+        command: 'selection.flatten'
+      },
+      {
+        id: 'selection.outlineStroke',
+        label: 'Outline Stroke',
+        command: 'selection.outlineStroke'
+      },
+      {
+        id: 'selection.outlineText',
+        label: 'Outline Text',
+        command: 'selection.outlineText'
+      }
+    ]
+  },
+  {
     label: 'Text',
     paletteIcon: 'type',
     items: [
@@ -433,12 +439,6 @@ export const APP_MENU_SCHEMA = [
     label: 'Arrange',
     paletteIcon: 'layers',
     items: [
-      {
-        id: 'selection.wrapInAutoLayout',
-        label: 'Wrap in Auto Layout',
-        command: 'selection.wrapInAutoLayout'
-      },
-      { type: 'separator' },
       { id: 'arrange.align-left', label: 'Align Left', shortcut: 'ALT+A' },
       { id: 'arrange.align-center', label: 'Align Center', shortcut: 'ALT+H' },
       { id: 'arrange.align-right', label: 'Align Right', shortcut: 'ALT+D' },
@@ -458,8 +458,51 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.distributeVertical'
       }
     ]
+  },
+  {
+    label: 'Help',
+    paletteIcon: 'help',
+    items: [
+      // The welcome doubles as the About screen: what OpenPencil is, the tour, and AI setup.
+      { id: 'show-welcome', label: 'Show Welcome', handler: 'shell' },
+      { type: 'separator' },
+      { id: 'help-docs', label: 'Documentation', handler: 'shell' },
+      { id: 'help-whats-new', label: "What's New", handler: 'shell' },
+      { id: 'help-report-issue', label: 'Report an Issue', handler: 'shell' },
+      { id: 'help-desktop-app', label: 'Get the Desktop App', target: 'browser' },
+      // Windows and Linux; macOS shows it in the application menu instead.
+      { type: 'separator' },
+      { id: 'check-updates', label: 'Check for Updates…', target: 'native', handler: 'shell' },
+      {
+        id: 'developer',
+        label: 'Developer',
+        sub: [
+          { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
+          {
+            id: 'dev-tools',
+            label: 'Developer Tools',
+            accelerator: 'CmdOrCtrl+Alt+I',
+            target: 'native'
+          }
+        ]
+      }
+    ]
   }
 ] satisfies AppMenuGroupSchema[]
+
+/**
+ * The browser's main menu, opened from the logo, follows Figma's: searching actions first, then
+ * the schema's menus, then preferences, with Help last. The tab bar's home button stands in for
+ * Figma's Back to files. The desktop app shows the schema's menus in the native menu bar instead.
+ */
+export const MAIN_MENU_LEADING_ITEMS = [
+  { id: 'actions', label: 'Actions…', shortcut: 'MOD+K' }
+] satisfies AppMenuActionItem[]
+
+export const MAIN_MENU_TRAILING_ITEMS = [
+  PREFERENCES_MENU_ITEM,
+  SETTINGS_MENU_ITEM
+] satisfies AppMenuActionItem[]
 
 /**
  * Custom entries in the macOS application menu.

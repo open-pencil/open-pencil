@@ -25,5 +25,14 @@
   "newDesign": "Новый дизайн",
   "noMatchingFiles": "Нет файлов по запросу «{query}».",
   "saveAsPrompt": "Сохранить как:",
-  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться."
+  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться.",
+  "home": "Главная",
+  "recents": "Недавние",
+  "recentlyViewed": "Недавно просмотренные",
+  "storageList": "Хранилище",
+  "fileType": "Тип файла",
+  "allFiles": "Все файлы",
+  "figmaFiles": "Файлы Figma",
+  "pencilFiles": "Файлы Pencil",
+  "otherFiles": "Другие файлы"
 }

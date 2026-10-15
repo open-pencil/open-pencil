@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { AppMenuEntry } from '@/app/shell/menu/schema'
-import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
+import { APP_MENU_SCHEMA, MAIN_MENU_TRAILING_ITEMS } from '@/app/shell/menu/schema'
 
 function actionItems(entries: readonly AppMenuEntry[]): AppMenuEntry[] {
   const result: AppMenuEntry[] = []
@@ -50,16 +50,42 @@ describe('APP_MENU_SCHEMA', () => {
 
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
       'open-storage-workspace',
-      'open-tour',
-      'settings',
-      'view-design-issues',
       'theme-light',
       'theme-dark',
       'theme-auto',
       'snap-geometry',
       'snap-objects',
-      'snap-pixel-grid'
+      'snap-pixel-grid',
+      'settings',
+      'view-design-issues',
+      'show-welcome',
+      'help-docs',
+      'help-whats-new',
+      'help-report-issue',
+      'check-updates'
     ])
+  })
+
+  test('lists the native menu bar in Figma order, with Help last', () => {
+    expect(APP_MENU_SCHEMA.map((group) => group.label)).toEqual([
+      'File',
+      'Edit',
+      'View',
+      'Object',
+      'Vector',
+      'Text',
+      'Arrange',
+      'Help'
+    ])
+  })
+
+  test('keeps Preferences and Settings out of the browser File menu', () => {
+    const fileMenu = APP_MENU_SCHEMA.find((group) => group.label === 'File')
+    const entries = fileMenu ? actionItems(fileMenu.items) : []
+
+    expect(entries).toContainEqual(expect.objectContaining({ id: 'preferences', target: 'native' }))
+    expect(entries).toContainEqual(expect.objectContaining({ id: 'settings', target: 'native' }))
+    expect(MAIN_MENU_TRAILING_ITEMS.map((entry) => entry.id)).toEqual(['preferences', 'settings'])
   })
 
   test('includes storage workspace navigation in the shared File menu', () => {

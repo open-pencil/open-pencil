@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 import * as v from 'valibot'
 
+import { openSettings } from '#tests/helpers/menu'
+
 const pageResult = v.object({
   ok: v.literal(true),
   result: v.object({ id: v.string(), name: v.string() })
@@ -49,7 +51,7 @@ test('native WebMCP discovery, editing, validation and undo', async ({ page, bro
   try {
     await cdp.send('WebMCP.enable')
     expect(frames.size).toBe(0)
-    await page.getByTestId('app-settings-trigger').click()
+    await openSettings(page)
     await page.getByTestId('settings-section-mcp').click()
     const access = page.getByRole('combobox', { name: 'Browser agent access' })
     await expect(access).toHaveText('Off')
