@@ -111,4 +111,14 @@ describe('design JSX enums', () => {
     expect(node.textDecorationStyle).toBe('WAVY')
     expect(warnings).toEqual([])
   })
+
+  test('a connector cap is spelled as strokeCap spells it, and an unknown one warns', async () => {
+    const { graph, warnings } = await render(
+      '<Frame><Rectangle name="A" /><Rectangle name="B" /><Connector from="A" to="B" startCap="circle_filled" endCap="arrow" /></Frame>'
+    )
+    const connector = [...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR')
+    expect(connector?.connectorStartCap).toBe('CIRCLE_FILLED')
+    expect(connector?.connectorEndCap).toBe('ARROW_LINES')
+    expect(warnings[0]).toStartWith('Unknown endCap "arrow" on <connector> is ignored')
+  })
 })

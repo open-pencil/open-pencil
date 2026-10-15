@@ -1,14 +1,15 @@
 import { compact } from 'es-toolkit/array'
 
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { connectorLabel, connectorProps } from '../connectors'
 import { elementTag } from '../elements'
 import { rekaExport, type RekaExport } from './behaviours'
 import { iconProps } from './icons'
 import { collectProps } from './props'
 import { textChildren } from './text'
-import { propAttribute } from './value'
+import { plainValue, propAttribute, type JSXProp } from './value'
 
 /** Design JSX with the layer behind each element, in the order elements open. */
 export interface DesignJSXWithLayers {
@@ -46,6 +47,21 @@ function elementCount(nodes: readonly SyntaxNode[]): number {
  * A layer and the layers below it as JSX elements. A component with a behaviour is written as
  * Reka UI elements; a container JSX leaves implicit is written as its children alone.
  */
+/** What an element written its own way holds: its props, and the text it writes as children. */
+interface OwnElement {
+  props: JSXProp[]
+  text: string
+}
+
+/** The layers whose elements take props of their own rather than the layer props. */
+const OWN_ELEMENTS: Partial<Record<NodeType, (graph: SceneGraph, node: SceneNode) => OwnElement>> =
+  {
+    CONNECTOR: (graph, node) => ({
+      props: connectorProps(graph, node).map(([key, value]): JSXProp => [key, plainValue(value)]),
+      text: connectorLabel(graph, node)
+    })
+  }
+
 function nodeToJSX(
   node: SceneNode,
   graph: SceneGraph,
@@ -69,6 +85,11 @@ function nodeToJSX(
   const tag = reka.tags.get(node.id) ?? elementTag(node.type)
   if (!tag) return []
   layerIds?.push(node.id)
+  const own = OWN_ELEMENTS[node.type]?.(graph, node)
+  if (own) {
+    const children = own.text ? [jsx.text(own.text)] : []
+    return [jsx.element(tag, own.props.map(propAttribute), children, depth, true)]
+  }
   const ownProps = reka.props.get(node.id)
   // An item names its component; the instance's own layers are the component's to write.
   if (ownProps?.some(([name]) => name === 'of'))

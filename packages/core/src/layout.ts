@@ -134,6 +134,12 @@ export function layoutAuthoredNodes(graph: SceneGraph, rootIds: Iterable<string>
   layout()
   // Layout gives wrapping text its width, which its height follows.
   if (roots.map((id) => sizeAutoResizingText(graph, id, true)).some(Boolean)) layout()
+  // Connectors authored with the layers they join route once those layers are in place.
+  for (const id of roots) {
+    for (const { node } of graph.flattenTree(id)) {
+      if (node.type === 'CONNECTOR') layoutConnector(graph, node)
+    }
+  }
 }
 
 function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {
