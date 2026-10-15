@@ -28,6 +28,7 @@ export {
 export * from './slots/content'
 export * from './slots/authoring'
 export * from './slots/limits'
+export * from './connectors'
 export * from './generated'
 export * from './behaviours/kinds'
 export * from './icons/schema'
