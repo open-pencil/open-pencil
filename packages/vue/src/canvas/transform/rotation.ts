@@ -24,7 +24,7 @@ export function tryStartRotation(
   if (editor.state.selectedIds.size !== 1) return false
   const id = [...editor.state.selectedIds][0]
   const node = editor.graph.getNode(id)
-  // A generated frame such as a sticky note may stay upright.
+  // FigJam keeps sticky notes upright, and a connector follows its ends.
   if (!node || node.locked || !layerRotates(node)) return false
 
   const geometry = createSceneGeometry(editor.graph, editor.state.rotationPreview)

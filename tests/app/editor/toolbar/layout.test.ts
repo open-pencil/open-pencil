@@ -36,8 +36,8 @@ describe('normalizeToolbarLayout', () => {
     const groups = [['SELECT', 'LASSO', 'SELECT'], [], ['FRAME', 'SECTION', 'FRAME']]
     const result = normalizeToolbarLayout(groups, ['HAND', 'HAND', 'GHOST'])
     expect(result.groups.slice(0, 2)).toEqual([['SELECT'], ['FRAME', 'SECTION']])
-    // The sticky tool is placed hidden, as the default layout keeps it.
-    expect(result.hidden).toEqual(['HAND', 'STICKY'])
+    // The sticky and connector tools are placed hidden, as the default layout keeps them.
+    expect(result.hidden).toEqual(['HAND', 'STICKY', 'CONNECTOR'])
   })
 
   test('never hides Move', () => {
@@ -47,8 +47,8 @@ describe('normalizeToolbarLayout', () => {
   test('keeps commands out of flyouts', () => {
     const result = layout([['SELECT', 'insert-icon', 'HAND'], ['COMMENT']])
     expect(result.groups.slice(-5)).toEqual([
-      ['TEXT'],
       ['STICKY'],
+      ['CONNECTOR'],
       ['insert-icon'],
       ['HAND'],
       ['COMMENT']
@@ -66,6 +66,7 @@ describe('normalizeToolbarLayout', () => {
     expect(layout(stored).groups).toEqual([
       ['TEXT'],
       ['STICKY'],
+      ['CONNECTOR'],
       ['SELECT'],
       ['FRAME', 'SECTION'],
       SHAPES,

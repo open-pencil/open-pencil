@@ -40,6 +40,7 @@ export const toolIcons: Record<Tool, Component> = {
   PENCIL: IconPencil,
   TEXT: IconType,
   STICKY: IconStickyNote,
+  CONNECTOR: IconSpline,
   HAND: IconHand,
   COMMENT: IconMessageCircle
 }

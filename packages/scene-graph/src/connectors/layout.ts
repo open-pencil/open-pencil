@@ -67,10 +67,11 @@ function routeWrites(
   connector: SceneNode,
   { line, label, labelBackground }: ConnectorSublayers,
   pieces: ConnectorPiece[],
-  placed: ConnectorLabelLayout | null
+  placed: ConnectorLabelLayout | null,
+  labelled: boolean
 ): Write[] | null {
   const lineBox = pieces.length > 0 ? piecesBounds(pieces) : null
-  const boxes = compact([lineBox, placed?.plate])
+  const boxes = compact([lineBox, labelled ? placed?.plate : null])
   if (boxes.length === 0) return null
   const frame = computeBounds(boxes)
   const lineOrigin = lineBox ?? frame
@@ -90,14 +91,14 @@ function routeWrites(
       }
     ]
   ]
-  if (!placed)
-    return [...writes, [labelBackground, { visible: false }], [label, { visible: false }]]
+  if (!placed) return [...writes, [labelBackground, { visible: false }]]
   const x = placed.plate.x - frame.x
   const y = placed.plate.y - frame.y
   const { width, height } = placed.plate
+  // An empty label still sits where its text goes, ready to be typed into.
   return [
     ...writes,
-    [labelBackground, { x, y, width, height, visible: true }],
+    [labelBackground, { x, y, width, height, visible: labelled }],
     [label, { x: x + CONNECTOR_LABEL_PADDING, y: y + CONNECTOR_LABEL_PADDING, visible: true }]
   ]
 }
@@ -141,13 +142,13 @@ export function layoutConnector(
   if (!start || !end) return false
   const weight = line.strokes[0]?.weight ?? line.strokeWeight
   const pieces = routeConnector(connector.connectorLineType, start, end, weight)
-  const placed = label.text
-    ? placeConnectorLabel(pieces, {
-        width: label.width + CONNECTOR_LABEL_PADDING * 2,
-        height: label.height + CONNECTOR_LABEL_PADDING * 2
-      })
-    : null
-  const writes = routeWrites(connector, parts, placed?.pieces ?? pieces, placed)
+  const labelled = label.text !== ''
+  const placed = placeConnectorLabel(pieces, {
+    width: label.width + CONNECTOR_LABEL_PADDING * 2,
+    height: label.height + CONNECTOR_LABEL_PADDING * 2
+  })
+  const routed = labelled && placed ? placed.pieces : pieces
+  const writes = routeWrites(connector, parts, routed, placed, labelled)
   let moved = false
   for (const [node, changes] of writes ?? []) {
     const differing = changesFor(node, changes)
@@ -176,4 +177,22 @@ export function attachedConnectors(graph: SceneGraph, ids: Iterable<string>): Sc
     if (ends.some((id) => id && withinAny(graph, id, roots))) attached.push(node)
   }
   return attached
+}
+
+/**
+ * The connectors an edit to `ids` moves: those with an end on one of them or on a layer inside
+ * them, those inside them, and those whose line or label is among them.
+ */
+export function connectorsAffectedBy(graph: SceneGraph, ids: ReadonlySet<string>): SceneNode[] {
+  if (ids.size === 0) return []
+  const affected: SceneNode[] = []
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'CONNECTOR') continue
+    const watched = [node.id, node.connectorStart?.nodeId, node.connectorEnd?.nodeId]
+    const touched =
+      watched.some((id) => id && withinAny(graph, id, ids)) ||
+      node.childIds.some((id) => ids.has(id))
+    if (touched) affected.push(node)
+  }
+  return affected
 }

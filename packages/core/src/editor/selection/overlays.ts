@@ -4,6 +4,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuidePreview } from '#core/canvas/guides/types'
+import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { ShapeHandleHover, EditorContext } from '#core/editor/types'
 
 export function createSelectionOverlayActions(ctx: EditorContext) {
@@ -98,6 +99,12 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  function setConnectorTarget(target: ConnectorTarget | null) {
+    if (isEqual(ctx.state.connectorTarget, target)) return
+    ctx.state.connectorTarget = target
+    ctx.requestRepaint()
+  }
+
   function setShapeHandleHover(hover: ShapeHandleHover | null) {
     if (isEqual(ctx.state.shapeHandleHover, hover)) return
     ctx.state.shapeHandleHover = hover
@@ -105,6 +112,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
   }
 
   return {
+    setConnectorTarget,
     setMarquee,
     setSnapGuides,
     setGuidePreview,

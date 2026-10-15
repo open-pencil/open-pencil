@@ -21,9 +21,9 @@ export const PINNED_TOOLBAR_ENTRY: ToolbarEntry = 'SELECT'
 
 /**
  * Tools the toolbar keeps hidden until shown from Customize toolbar, such as FigJam's sticky
- * note, which Figma's own toolbar does not offer.
+ * note and connector, which Figma's own toolbar does not offer.
  */
-const HIDDEN_BY_DEFAULT: readonly ToolbarEntry[] = ['STICKY']
+const HIDDEN_BY_DEFAULT: readonly ToolbarEntry[] = ['STICKY', 'CONNECTOR']
 
 export const DEFAULT_TOOLBAR_LAYOUT: Readonly<ToolbarLayout> = {
   groups: [

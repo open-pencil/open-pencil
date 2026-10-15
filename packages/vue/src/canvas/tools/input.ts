@@ -5,6 +5,7 @@ import type { Editor } from '@open-pencil/core/editor'
 import { startPenInput } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
+import { startConnectorDraw } from '#vue/shared/input/connector/draw'
 import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
 import { startPanDrag } from '#vue/shared/input/pan/drag'
 import { handleSelectDown } from '#vue/shared/input/select'
@@ -80,6 +81,11 @@ export function handleToolMouseDown({
 
   if (tool === 'TEXT') {
     startTextDraw(cx, cy, editor, setDrag)
+    return
+  }
+
+  if (tool === 'CONNECTOR') {
+    startConnectorDraw(cx, cy, sx, sy, editor, setDrag)
     return
   }
 

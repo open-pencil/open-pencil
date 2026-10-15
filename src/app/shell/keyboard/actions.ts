@@ -55,8 +55,8 @@ export function createKeyboardActions({
       store.enterNodeEditMode(node.id)
       return
     }
-    // A generated frame opens its text, such as a sticky note's body, all of it selected,
-    // keeping the frame selected.
+    // A sticky note opens its body and a connector its label, all of it selected, keeping the
+    // note or connector selected.
     const text = (node && generatedFrameText(store.graph, node)) ?? node
     if (text?.type === 'TEXT') {
       requestAnimationFrame(() => {

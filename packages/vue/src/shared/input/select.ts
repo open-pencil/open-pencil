@@ -5,6 +5,7 @@ export { updateHoverCursor } from '#vue/shared/input/select/hover'
 import { editedGradient, type Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartResize } from '#vue/shared/input/resize'
 import {
@@ -51,6 +52,7 @@ function tryStartHandleDrag(
   // An open gradient's handles replace the layer's selection handles, which then do not respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
   if (tryStartShapeHandleDrag(editor, sx, sy, altKey, setDrag)) return true
+  if (tryStartConnectorEndDrag(editor, sx, sy, setDrag)) return true
   const scaleDrag = tryStartStickyScale(cx, cy, editor)
   if (scaleDrag) {
     setDrag(scaleDrag)

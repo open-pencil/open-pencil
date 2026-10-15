@@ -27,6 +27,11 @@ function subtree(editor: Editor, root: SceneNode): Map<string, SceneNode> {
   return nodes
 }
 
+/** Whether a layer's handles scale it as a sticky note's do, rather than resize it. */
+export function scalesByHandles(node: SceneNode): boolean {
+  return node.type === 'STICKY' && !node.locked
+}
+
 /**
  * Dragging a selected sticky note's handle changes it as FigJam does: a corner, the top, or the
  * bottom scales the whole note, its text included, and a side switches it between square and
@@ -39,7 +44,7 @@ export function tryStartStickyScale(
 ): DragStickyScale | null {
   if (editor.state.selectedIds.size !== 1) return null
   const node = editor.graph.getNode([...editor.state.selectedIds][0])
-  if (node?.type !== 'STICKY' || node.locked) return null
+  if (!node || !scalesByHandles(node)) return null
   const hit = getHitHandleByMatrix(
     cx,
     cy,

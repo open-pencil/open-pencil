@@ -82,10 +82,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     }
   }
 
-  /**
-   * A generated frame, such as a sticky note, keeps its selection while its text is edited, all of
-   * it selected, as in Figma.
-   */
+  /** Edits a sticky note's body or a connector's label with all of it selected, as FigJam does. */
   function startGeneratedTextEditing(frame: SceneNode) {
     const body = generatedFrameText(editor.graph, frame)
     if (!body) return
