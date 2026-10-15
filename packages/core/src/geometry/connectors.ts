@@ -1,4 +1,4 @@
-import { connectorSublayers, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { connectorLineEnds, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -12,14 +12,12 @@ export function connectorScreenEnds(
   viewport: ViewportTransform,
   preview?: RotationPreview | null
 ): { start: Vector; end: Vector } | null {
-  const line = connectorSublayers(graph, connector)?.line
-  const vertices = line?.vectorNetwork?.vertices ?? []
-  const first = vertices.at(0)
-  const last = vertices.at(-1)
-  if (!line || !first || !last) return null
+  const ends = connectorLineEnds(graph, connector)
+  if (!ends) return null
+  const { line, start, end } = ends
   const [sx, sy, ex, ey] = Matrix.mapPoints(
     createSceneGeometry(graph, preview).screenMatrix(line, viewport),
-    [first.x, first.y, last.x, last.y]
+    [start.x, start.y, end.x, end.y]
   )
   return { start: { x: sx, y: sy }, end: { x: ex, y: ey } }
 }

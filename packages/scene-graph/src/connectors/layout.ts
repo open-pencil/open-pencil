@@ -10,7 +10,7 @@ import { CONNECTOR_LABEL_PADDING, placeConnectorLabel, type ConnectorLabelLayout
 import { connectorNetwork, piecesBounds, type ConnectorPiece } from './pieces'
 import { routeConnector } from './route'
 import type { ConnectorRouteEnd } from './sides'
-import { connectorSublayers, type ConnectorSublayers } from './sublayers'
+import { connectorRouteEnds, connectorSublayers, type ConnectorSublayers } from './sublayers'
 
 /**
  * An end as the router sees it, in the connector's parent's axes: the box of the layer it follows
@@ -103,12 +103,6 @@ function routeWrites(
   ]
 }
 
-/** Where a connector's line last started or ended, for an end whose layer is gone. */
-function lastRoutePoint(connector: SceneNode, line: SceneNode, index: 0 | -1): Vector | undefined {
-  const vertex = line.vectorNetwork?.vertices.at(index)
-  return vertex && { x: connector.x + line.x + vertex.x, y: connector.y + line.y + vertex.y }
-}
-
 /**
  * Routes a connector again from the layers its ends follow and lays out its line, label plate,
  * and label to match, through `update` so the caller decides whether that is an edit or a
@@ -125,20 +119,16 @@ export function layoutConnector(
   const { connectorStart, connectorEnd } = connector
   if (!parts || !connectorStart || !connectorEnd) return false
   const { line, label } = parts
+  // Where the line last ran, for an end whose layer is gone.
+  const drawn = connectorRouteEnds(graph, connector)
   const start = routeEnd(
     graph,
     connector,
     connectorStart,
     connector.connectorStartCap,
-    lastRoutePoint(connector, line, 0)
+    drawn?.start
   )
-  const end = routeEnd(
-    graph,
-    connector,
-    connectorEnd,
-    connector.connectorEndCap,
-    lastRoutePoint(connector, line, -1)
-  )
+  const end = routeEnd(graph, connector, connectorEnd, connector.connectorEndCap, drawn?.end)
   if (!start || !end) return false
   const weight = line.strokes[0]?.weight ?? line.strokeWeight
   const pieces = routeConnector(connector.connectorLineType, start, end, weight)

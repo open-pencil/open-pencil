@@ -108,16 +108,25 @@ export function connectorRouteEnds(
   graph: SceneGraph,
   connector: SceneNode
 ): { start: Vector; end: Vector } | null {
+  const ends = connectorLineEnds(graph, connector)
+  if (!ends) return null
+  const at = (vertex: Vector) => ({
+    x: connector.x + ends.line.x + vertex.x,
+    y: connector.y + ends.line.y + vertex.y
+  })
+  return { start: at(ends.start), end: at(ends.end) }
+}
+
+/** A connector's line and where it starts and ends, in the line's own axes. */
+export function connectorLineEnds(
+  graph: SceneGraph,
+  connector: SceneNode
+): { line: SceneNode; start: Vector; end: Vector } | null {
   const line = connectorSublayers(graph, connector)?.line
   const vertices = line?.vectorNetwork?.vertices ?? []
-  const first = vertices.at(0)
-  const last = vertices.at(-1)
-  if (!line || !first || !last) return null
-  const at = (vertex: Vector) => ({
-    x: connector.x + line.x + vertex.x,
-    y: connector.y + line.y + vertex.y
-  })
-  return { start: at(first), end: at(last) }
+  const start = vertices.at(0)
+  const end = vertices.at(-1)
+  return line && start && end ? { line, start, end } : null
 }
 
 /** A free connector end at a point in the connector's parent's axes. */
