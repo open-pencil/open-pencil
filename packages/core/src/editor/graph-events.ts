@@ -29,8 +29,10 @@ type GraphEventOptions = {
   ) => void
 }
 
+// A vector's open corners are rounded by its corner radius, so its paths follow that too.
 const GEOMETRY_CACHE_KEYS = new Set<keyof SceneNode>([
   'vectorNetwork',
+  'cornerRadius',
   'fillGeometry',
   'strokeGeometry'
 ])

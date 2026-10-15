@@ -63,4 +63,49 @@ describe('vector corner radius', () => {
     ]
     expect(draw(own, 24)[1]).toBe('L92,0')
   })
+
+  test('rounds every corner of a closed outline, the one it starts at too, and closes it', () => {
+    const square: VectorVertex[] = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 }
+    ]
+    const path = recorder()
+    addOpenSegmentsToPath(path, [line(0, 1), line(1, 2), line(2, 3), line(3, 0)], square, 10)
+    expect(path.commands).toEqual([
+      'M10,0',
+      'L90,0',
+      'C95.5,0 100,4.5 100,10',
+      'L100,90',
+      'C100,95.5 95.5,100 90,100',
+      'L10,100',
+      'C4.5,100 0,95.5 0,90',
+      'L0,10',
+      'C0,4.5 4.5,0 10,0',
+      'Z'
+    ])
+  })
+
+  test('leaves a corner next to a curve sharp', () => {
+    const path = recorder()
+    const curve = { start: 1, end: 2, tangentStart: { x: 0, y: 40 }, tangentEnd: { x: 0, y: -40 } }
+    addOpenSegmentsToPath(path, [line(0, 1), curve], elbow, 24)
+    expect(path.commands.slice(0, 2)).toEqual(['M0,0', 'L100,0'])
+  })
+
+  test('leaves coincident and straight-through vertices as they are', () => {
+    const coincident: VectorVertex[] = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 0 }
+    ]
+    expect(draw(coincident, 24)).toEqual(['M0,0', 'L100,0', 'L100,0'])
+    const straight: VectorVertex[] = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 200, y: 0 }
+    ]
+    expect(draw(straight, 24)).toEqual(['M0,0', 'L100,0', 'L200,0'])
+  })
 })
