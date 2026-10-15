@@ -1,11 +1,13 @@
 import type { Component } from 'vue'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import IconHelp from '~icons/lucide/circle-help'
 import IconDownload from '~icons/lucide/download'
 import IconEye from '~icons/lucide/eye'
 import IconFile from '~icons/lucide/file'
 import IconFolderOpen from '~icons/lucide/folder-open'
 import IconLayers from '~icons/lucide/layers-2'
+import IconPenTool from '~icons/lucide/pen-tool'
 import IconPencil from '~icons/lucide/pencil'
 import IconRedo from '~icons/lucide/redo-2'
 import IconSave from '~icons/lucide/save'
@@ -20,9 +22,10 @@ import type { BuiltinIOFormatId } from '@open-pencil/core/io'
 import type { CommandPaletteGroup, CommandPaletteItem, MenuEntry } from '@open-pencil/vue'
 import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
 
-import { openTour } from '@/app/demo/document'
+import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openVariablesDialog } from '@/app/editor/tokens/dialog'
+import { APP_VERSION } from '@/app/runtime/version'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -30,8 +33,10 @@ import {
   setSnappingPreference
 } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
+import { openCommandPalette } from '@/app/shell/command-palette'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { HELP_MENU_ACTIONS } from '@/app/shell/menu/help'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import type {
   AppMenuActionItem,
@@ -39,7 +44,11 @@ import type {
   AppMenuGroupSchema,
   AppMenuIcon
 } from '@/app/shell/menu/schema'
-import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
+import {
+  APP_MENU_SCHEMA,
+  MAIN_MENU_LEADING_ITEMS,
+  MAIN_MENU_TRAILING_ITEMS
+} from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
@@ -47,6 +56,8 @@ import { saveDocumentToStorage } from '@/app/storage/workspace/save'
 import { closeTab, activeTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
+  /** The schema's English label, lowercased: stable across languages. */
+  id: string
   label: string
   paletteIcon?: Component
   items: MenuEntry[]
@@ -57,7 +68,9 @@ const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
   eye: IconEye,
   file: IconFile,
   'folder-open': IconFolderOpen,
+  help: IconHelp,
   layers: IconLayers,
+  'pen-tool': IconPenTool,
   pencil: IconPencil,
   redo: IconRedo,
   save: IconSave,
@@ -104,7 +117,15 @@ export function useAppMenu() {
     new: 'new',
     open: 'open',
     'open-storage-workspace': 'openStorageWorkspace',
-    'open-tour': 'openTour',
+    'show-welcome': 'showWelcome',
+    'back-to-files': 'backToFiles',
+    actions: 'actions',
+    'help-docs': 'documentation',
+    'help-whats-new': 'whatsNew',
+    'help-report-issue': 'reportIssue',
+    'help-desktop-app': 'getDesktopApp',
+    developer: 'developer',
+    'boolean-operations': 'booleanOperations',
     save: 'save',
     'save-as': 'saveAs',
     'save-to-storage': 'saveToStorage',
@@ -172,9 +193,10 @@ export function useAppMenu() {
     },
     open: () => void openFileDialog(),
     'open-storage-workspace': () => openStorageWorkspace(router),
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
+    'show-welcome': () => openAISetup('welcome'),
+    'back-to-files': () => openStorageWorkspace(router),
+    actions: openCommandPalette,
+    ...HELP_MENU_ACTIONS,
     save: () => void store.saveFigFile(),
     'save-as': () => void store.saveFigFileAs(),
     'save-to-storage': () => void saveDocumentToStorage(store),
@@ -339,7 +361,7 @@ export function useAppMenu() {
       disabled: disabled(entry),
       checked: checked(entry),
       onCheckedChange: onCheckedChange(entry),
-      sub: entry.sub?.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      sub: entry.sub ? buildEntries(entry.sub) : undefined
     }
   }
 
@@ -351,9 +373,10 @@ export function useAppMenu() {
   function buildGroup(group: AppMenuGroupSchema): AppMenuGroup | null {
     if (!isVisible(group)) return null
     return {
+      id: group.label.toLowerCase(),
       label: groupLabel(group),
       paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
-      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+      items: buildEntries(group.items)
     }
   }
 
@@ -385,17 +408,51 @@ export function useAppMenu() {
     return [item, ...children]
   }
 
+  function buildEntries(entries: readonly AppMenuEntry[]): MenuEntry[] {
+    return entries.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+  }
+
   const topMenus = computed<AppMenuGroup[]>(() =>
     APP_MENU_SCHEMA.map(buildGroup).filter((group): group is AppMenuGroup => group !== null)
   )
 
-  const commandGroups = computed<CommandPaletteGroup[]>(() =>
-    topMenus.value.map((group) => ({
-      id: group.label.toLowerCase(),
+  /** Preferences and Settings…, which the browser lists in its main menu rather than in File. */
+  const preferenceEntries = computed(() => buildEntries(MAIN_MENU_TRAILING_ITEMS))
+
+  /** The browser's main menu: see `MAIN_MENU_LEADING_ITEMS` for its order. */
+  const mainMenu = computed<MenuEntry[]>(() => {
+    const separator: MenuEntry = { separator: true }
+    const help = topMenus.value.find((group) => group.id === 'help')
+    const entries: MenuEntry[] = [
+      ...buildEntries(MAIN_MENU_LEADING_ITEMS),
+      separator,
+      ...topMenus.value
+        .filter((group) => group !== help)
+        .map((group) => ({ label: group.label, sub: group.items })),
+      separator,
+      ...preferenceEntries.value
+    ]
+    if (help) {
+      const version: MenuEntry = { label: `OpenPencil ${APP_VERSION}`, disabled: true }
+      entries.push(separator, { label: help.label, sub: [...help.items, separator, version] })
+    }
+    return entries
+  })
+
+  const commandGroups = computed<CommandPaletteGroup[]>(() => [
+    ...topMenus.value.map((group) => ({
+      id: group.id,
       label: group.label,
       items: group.items.flatMap((entry) => paletteEntries(entry, group.label, group.paletteIcon))
-    }))
-  )
+    })),
+    {
+      id: 'preferences',
+      label: menu.value.preferences,
+      items: preferenceEntries.value.flatMap((entry) =>
+        paletteEntries(entry, menu.value.preferences, IconSettings)
+      )
+    }
+  ])
 
-  return { topMenus, commandGroups }
+  return { topMenus, mainMenu, commandGroups }
 }

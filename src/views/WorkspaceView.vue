@@ -8,7 +8,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import {
   aiSetupDialogOpen,
-  offerAISetupOnFirstRun
+  offerAIWelcomeOnLaunch
 } from '@/app/ai/models/settings/onboarding/dialog'
 import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
@@ -25,6 +25,7 @@ import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { commandPaletteOpen } from '@/app/shell/command-palette'
 import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { useEditorMenu } from '@/app/shell/menu/use'
@@ -88,10 +89,10 @@ function openFirstTab(): Tab {
   }
 }
 
-// A first visit to the demo link is a first run too; the welcome there skips the tour offer.
+// The demo link offers the welcome too; there it skips the tour offer.
 const welcomeShown =
   createdInitialTab && (route.path === '/' || route.meta.demo) && !appRuntimeConfig.test
-    ? offerAISetupOnFirstRun({ inTour: route.meta.demo === true })
+    ? offerAIWelcomeOnLaunch({ inTour: route.meta.demo === true })
     : false
 const sharingStarted = startSharing()
 // One question per surface: a first run is asked about usage stats once the welcome closes.
@@ -248,7 +249,7 @@ onUnmounted(() => {
     <ColorSpaceBanner />
     <FontStatusBanner />
     <RenameSelectionDialog />
-    <CommandPalette />
+    <CommandPalette v-model:open="commandPaletteOpen" />
     <TabBar />
     <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
     <EditorWorkspace

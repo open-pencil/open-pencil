@@ -203,6 +203,7 @@
   "aiSetupTakeTour": "打开导览",
   "aiSetupStart": "设置 AI",
   "aiSetupSkip": "开始设计",
+  "aiSetupDontShowAgain": "不再显示",
   "aiSetupProgress": "第 {current} 步，共 {total} 步",
   "aiSetupAdvanced": "高级设置",
   "aiSetupContinue": "继续",

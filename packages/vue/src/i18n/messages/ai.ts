@@ -227,6 +227,7 @@ export const aiMessageDefaults = {
   aiSetupTakeTour: 'Open the tour',
   aiSetupStart: 'Set up AI',
   aiSetupSkip: 'Start designing',
+  aiSetupDontShowAgain: "Don't show this again",
   aiSetupProgress: params('Step {current} of {total}'),
   aiSetupAdvanced: 'Advanced settings',
   aiSetupContinue: 'Continue',

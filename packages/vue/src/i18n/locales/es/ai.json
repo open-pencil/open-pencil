@@ -203,6 +203,7 @@
   "aiSetupTakeTour": "Abrir el recorrido",
   "aiSetupStart": "Configurar IA",
   "aiSetupSkip": "Empezar a diseñar",
+  "aiSetupDontShowAgain": "No volver a mostrar",
   "aiSetupProgress": "Paso {current} de {total}",
   "aiSetupAdvanced": "Ajustes avanzados",
   "aiSetupContinue": "Continuar",

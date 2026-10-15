@@ -203,6 +203,7 @@
   "aiSetupTakeTour": "Ouvrir la visite",
   "aiSetupStart": "Configurer l’IA",
   "aiSetupSkip": "Commencer à concevoir",
+  "aiSetupDontShowAgain": "Ne plus afficher",
   "aiSetupProgress": "Étape {current} sur {total}",
   "aiSetupAdvanced": "Réglages avancés",
   "aiSetupContinue": "Continuer",

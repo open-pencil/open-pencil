@@ -14,7 +14,7 @@ Searching and placing icons needs a network connection to the Iconify API.
 Open the icon picker in any of these ways:
 
 - Click the **Insert icon** button at the end of the toolbar
-- Choose **Object → Insert Icon…**
+- Choose **File → Insert Icon…**
 - Search for **Insert Icon** in the command palette (<kbd>⌘</kbd><kbd>K</kbd>)
 
 Before you type, the picker shows the icons already placed in this file and the ones you picked lately. Type what you're looking for, such as `arrow` or `heart`, to search every set; each result shows a preview and the set it comes from.

@@ -24,45 +24,42 @@ describe('brand generation', () => {
     expect(icoSizes(file('favicon.ico')).sort((a, b) => a - b)).toEqual([16, 32, 48])
   })
 
-  test('preserves transparent counters and renders the micro master at 16px', async () => {
+  test('preserves the transparent counter and renders the micro master at 16px', async () => {
     const main = await sharp(file('brand/mark.svg')).ensureAlpha().raw().toBuffer()
-    expect(main[(80 * 256 + 130) * 4 + 3]).toBe(0)
-    expect(main[(80 * 256 + 90) * 4 + 3]).toBe(255)
+    expect(main[(85 * 256 + 128) * 4 + 3]).toBe(0)
+    expect(main[(43 * 256 + 64) * 4 + 3]).toBe(255)
     const micro = await sharp(file('brand/mark-micro.svg')).ensureAlpha().raw().toBuffer()
-    expect(micro[(6 * 16 + 8) * 4 + 3]).toBe(0)
-    expect(micro[(6 * 16 + 4) * 4 + 3]).toBe(255)
+    expect(micro[(5 * 16 + 8) * 4 + 3]).toBe(0)
+    expect(micro[(8 * 16 + 4) * 4 + 3]).toBe(255)
     expect(micro.length).toBe(16 * 16 * 4)
   })
 
-  test('preserves blue handle borders and white centers in both themes and sizes', async () => {
-    for (const name of ['mark', 'mark-micro']) {
-      for (const suffix of ['', '-dark']) {
-        const pixels = await sharp(file(`brand/${name}${suffix}.svg`), { density: 1152 })
-          .resize(256, 256)
-          .ensureAlpha()
-          .raw()
-          .toBuffer()
-        const center = suffix ? [244, 251, 250, 255] : [255, 255, 255, 255]
-        const border = suffix ? [67, 140, 255, 255] : [0, 92, 255, 255]
-        for (const [x, y, rgba] of [
-          [54, 27, center],
-          [202, 101, center],
-          [name === 'mark' ? 38 : 32, 27, border]
-        ] as const) {
-          const offset = (y * 256 + x) * 4
-          expect([...pixels.subarray(offset, offset + 4)]).toEqual([...rgba])
-        }
+  test('keeps the three piece colours in both themes', async () => {
+    for (const suffix of ['', '-dark']) {
+      const pixels = await sharp(file(`brand/mark${suffix}.svg`))
+        .ensureAlpha()
+        .raw()
+        .toBuffer()
+      for (const [x, y, hex] of [
+        [68, 26, 'f5501e'],
+        [68, 145, 'f5501e'],
+        [179, 85, 'ffd43b'],
+        [85, 213, '9b5cff']
+      ] as const) {
+        const offset = (y * 256 + x) * 4
+        expect(pixels.subarray(offset, offset + 4).toString('hex')).toBe(`${hex}ff`)
       }
     }
   })
 
-  test('keeps dark-mode favicon styling and separates light/dark UI artwork', () => {
+  test('keeps dark-mode favicon styling and the colour mark on dark backgrounds', () => {
     expect(file('brand/favicon.svg').toString()).toContain('prefers-color-scheme: dark')
-    expect(file('brand/mark-dark.svg').equals(file('brand/mark.svg'))).toBe(false)
-    expect(file('brand/mark-micro-dark.svg').equals(file('brand/mark-micro.svg'))).toBe(false)
+    // The kit places the colour mark bare on black as well as on white.
+    expect(file('brand/mark-dark.svg').equals(file('brand/mark.svg'))).toBe(true)
+    expect(file('brand/mark-micro-dark.svg').equals(file('brand/mark-micro.svg'))).toBe(true)
   })
 
-  test('keeps monochrome artwork flat rather than retaining the decorative grid', async () => {
+  test('draws the one-colour marks as a flat silhouette in ink and white', async () => {
     for (const suffix of ['', '-dark']) {
       const pixels = await sharp(file(`brand/mark-mono${suffix}.svg`))
         .ensureAlpha()
@@ -73,18 +70,11 @@ describe('brand generation', () => {
         if (pixels[offset + 3] === 255)
           colors.add(pixels.subarray(offset, offset + 3).toString('hex'))
       }
-      expect(colors.size).toBeGreaterThan(0)
-      const expected = Buffer.from(suffix ? 'f5f5ef' : '202b2d', 'hex')
-      for (const color of colors) {
-        // Overlapping antialiased edges can round a channel down by one.
-        expect(
-          Buffer.from(color, 'hex').every((channel, i) => Math.abs(channel - expected[i]) <= 1)
-        ).toBe(true)
-      }
+      expect([...colors]).toEqual([suffix ? 'ffffff' : '111111'])
     }
   })
 
-  test('shares the ivory rounded tile across profile and any-purpose PWA assets', async () => {
+  test('shares the ink rounded tile across profile and any-purpose PWA assets', async () => {
     for (const [name, size] of [
       ['brand/app-icon-1024.png', 1024],
       ['brand/favicon-96x96.png', 96],
@@ -97,7 +87,7 @@ describe('brand generation', () => {
         .toBuffer({ resolveWithObject: true })
       expect([info.width, info.height]).toEqual([size, size])
       expect(data[3]).toBe(0)
-      // No desktop-style inset: the ivory reaches the midpoint of each edge.
+      // No desktop-style inset: the ink reaches the midpoint of each edge.
       for (const [x, y] of [
         [size / 2, 0],
         [0, size / 2],
@@ -105,10 +95,10 @@ describe('brand generation', () => {
         [size / 2, size - 1]
       ]) {
         const edge = (y * size + x) * 4
-        expect([...data.subarray(edge, edge + 4)]).toEqual([245, 245, 239, 255])
+        expect([...data.subarray(edge, edge + 4)]).toEqual([17, 17, 17, 255])
       }
       const offset = (Math.round((size * 80) / 1024) * size + size / 2) * 4
-      expect([...data.subarray(offset, offset + 4)]).toEqual([245, 245, 239, 255])
+      expect([...data.subarray(offset, offset + 4)]).toEqual([17, 17, 17, 255])
     }
     const svg = await sharp(file('brand/app-icon.svg')).ensureAlpha().raw().toBuffer()
     const png = await sharp(file('brand/app-icon-1024.png')).ensureAlpha().raw().toBuffer()

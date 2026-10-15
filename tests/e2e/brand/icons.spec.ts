@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 for (const deviceScaleFactor of [1, 2]) {
   test.describe(`brand at ${deviceScaleFactor}x`, () => {
     test.use({ deviceScaleFactor })
-    test('the editor keeps its 24px ivory tile in both app themes', async ({ page }) => {
+    test('the editor keeps its 24px ink tile in both app themes', async ({ page }) => {
       await page.goto('/?test')
       await new CanvasHelper(page).waitForInit()
       const logo = page.getByTestId('app-logo')
@@ -30,7 +30,7 @@ for (const deviceScaleFactor of [1, 2]) {
       }
     })
 
-    test('the 16px favicon keeps its edge-to-edge ivory tile in both browser themes', async ({
+    test('the 16px favicon keeps its edge-to-edge ink tile in both browser themes', async ({
       page,
       baseURL
     }) => {
@@ -62,7 +62,7 @@ test('the main SVG retains its approved appearance', async ({ page }) => {
   await expect(page.locator('svg')).toHaveScreenshot('brand-mark.png')
 })
 
-test('the larger dark SVG retains its palette and subtle grid', async ({ page }) => {
+test('the larger dark SVG keeps the colour mark on a dark surface', async ({ page }) => {
   await page.goto('/brand/mark-dark.svg')
   const mark = page.locator('svg')
   await mark.evaluate((svg) => {
@@ -71,7 +71,7 @@ test('the larger dark SVG retains its palette and subtle grid', async ({ page })
   await expect(mark).toHaveScreenshot('brand-mark-dark.png')
 })
 
-test('the ivory app tile works on light and dark surfaces', async ({ page }) => {
+test('the ink app tile works on light and dark surfaces', async ({ page }) => {
   await page.goto('/brand/app-icon.svg')
   const icon = page.locator('svg').first()
   for (const appearance of ['light', 'dark'] as const) {
