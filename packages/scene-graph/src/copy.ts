@@ -11,6 +11,7 @@
 import type {
   ArcData,
   ComponentPropertyDefinition,
+  ConnectorEndpoint,
   Effect,
   DerivedTextGlyph,
   Fill,
@@ -218,6 +219,10 @@ export function copyDerivedGlyphs(glyphs: DerivedTextGlyph[] | null): DerivedTex
 // --- Complex structure copy functions ---
 // These replace structuredClone for known types, avoiding its ~24× overhead.
 
+export function copyConnectorEndpoint(endpoint: ConnectorEndpoint): ConnectorEndpoint {
+  return { ...endpoint, position: { ...endpoint.position } }
+}
+
 function copyArcData(a: ArcData): ArcData {
   return { startingAngle: a.startingAngle, endingAngle: a.endingAngle, innerRadius: a.innerRadius }
 }
@@ -302,6 +307,8 @@ export function cloneNodeProps(
     textPathData: src.textPathData ? structuredClone(src.textPathData) : null,
     textPathBox: src.textPathBox ? { ...src.textPathBox } : null,
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null,
-    targetAspectRatio: src.targetAspectRatio ? { ...src.targetAspectRatio } : null
+    targetAspectRatio: src.targetAspectRatio ? { ...src.targetAspectRatio } : null,
+    connectorStart: src.connectorStart ? copyConnectorEndpoint(src.connectorStart) : null,
+    connectorEnd: src.connectorEnd ? copyConnectorEndpoint(src.connectorEnd) : null
   }
 }

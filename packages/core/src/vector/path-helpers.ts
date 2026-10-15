@@ -75,25 +75,82 @@ export function addLoopToPath(
   path.close()
 }
 
+function isStraight(seg: VectorSegment): boolean {
+  const { tangentStart: ts, tangentEnd: te } = seg
+  return ts.x === 0 && ts.y === 0 && te.x === 0 && te.y === 0
+}
+
+/** Cubic handle length, as a fraction of the radius, of a circular arc turning by `angle`. */
+function arcHandle(angle: number): number {
+  return (4 / 3) * Math.tan(angle / 4)
+}
+
+/**
+ * Draws one chain, rounding each vertex where two straight segments meet by its corner radius, or
+ * `cornerRadius` when it has none, as Figma rounds a vector's corners. A radius never takes more
+ * than half of either segment.
+ */
+function addChainToPath(
+  path: PathSink,
+  chain: number[],
+  segments: VectorSegment[],
+  vertices: VectorVertex[],
+  cornerRadius: number
+): void {
+  let current = findChainStart(chain, segments)
+  path.moveTo(vertices[current].x, vertices[current].y)
+  for (let index = 0; index < chain.length; index++) {
+    const seg = segments[chain[index]]
+    const forward = seg.start === current
+    const next = forward ? seg.end : seg.start
+    const following = index + 1 < chain.length ? segments[chain[index + 1]] : undefined
+    const corner = vertices[next]
+    const radius = corner.cornerRadius ?? cornerRadius
+    if (radius > 0 && following && isStraight(seg) && isStraight(following)) {
+      const after = vertices[following.start === next ? following.end : following.start]
+      const from = vertices[current]
+      const inLength = Math.hypot(corner.x - from.x, corner.y - from.y)
+      const outLength = Math.hypot(after.x - corner.x, after.y - corner.y)
+      const inDir = { x: (corner.x - from.x) / inLength, y: (corner.y - from.y) / inLength }
+      const outDir = { x: (after.x - corner.x) / outLength, y: (after.y - corner.y) / outLength }
+      const turn = Math.acos(Math.max(-1, Math.min(1, inDir.x * outDir.x + inDir.y * outDir.y)))
+      if (inLength > 0 && outLength > 0 && turn > 1e-6) {
+        const reach = Math.min(radius * Math.tan(turn / 2), inLength / 2, outLength / 2)
+        const arcRadius = reach / Math.tan(turn / 2)
+        const handle = arcHandle(turn) * arcRadius
+        const start = { x: corner.x - inDir.x * reach, y: corner.y - inDir.y * reach }
+        const end = { x: corner.x + outDir.x * reach, y: corner.y + outDir.y * reach }
+        path.lineTo(start.x, start.y)
+        path.cubicTo(
+          start.x + inDir.x * handle,
+          start.y + inDir.y * handle,
+          end.x - outDir.x * handle,
+          end.y - outDir.y * handle,
+          end.x,
+          end.y
+        )
+        current = next
+        continue
+      }
+    }
+    addSegmentDirected(path, seg, vertices, forward)
+    current = next
+  }
+}
+
 export function addOpenSegmentsToPath(
   path: PathSink,
   segments: VectorSegment[],
-  vertices: VectorVertex[]
+  vertices: VectorVertex[],
+  cornerRadius = 0
 ): void {
   const visited = new Set<number>()
   const chains = buildChains(segments)
 
   for (const chain of chains) {
     if (chain.length === 0) continue
-    let current = findChainStart(chain, segments)
-    path.moveTo(vertices[current].x, vertices[current].y)
-    for (const segIdx of chain) {
-      visited.add(segIdx)
-      const seg = segments[segIdx]
-      const forward = seg.start === current
-      addSegmentDirected(path, seg, vertices, forward)
-      current = forward ? seg.end : seg.start
-    }
+    for (const segIdx of chain) visited.add(segIdx)
+    addChainToPath(path, chain, segments, vertices, cornerRadius)
   }
 
   for (let i = 0; i < segments.length; i++) {

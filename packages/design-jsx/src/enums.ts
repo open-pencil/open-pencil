@@ -61,7 +61,10 @@ export const STROKE_CAP = lowercaseEnum<StrokeCap>([
   'ROUND',
   'SQUARE',
   'ARROW_LINES',
-  'ARROW_EQUILATERAL'
+  'ARROW_EQUILATERAL',
+  'TRIANGLE_FILLED',
+  'DIAMOND_FILLED',
+  'CIRCLE_FILLED'
 ])
 export const STROKE_JOIN = lowercaseEnum<StrokeJoin>(['MITER', 'BEVEL', 'ROUND'])
 export const STROKE_ALIGN = lowercaseEnum<Stroke['align']>(['INSIDE', 'CENTER', 'OUTSIDE'])

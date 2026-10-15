@@ -15,6 +15,7 @@ import IconPenTool from '~icons/lucide/pen-tool'
 import IconPencil from '~icons/lucide/pencil'
 import IconRows from '~icons/lucide/rows-3'
 import IconSmile from '~icons/lucide/smile'
+import IconSpline from '~icons/lucide/spline'
 import IconSquare from '~icons/lucide/square'
 import IconSlot from '~icons/lucide/square-dashed'
 import IconStar from '~icons/lucide/star'
@@ -55,7 +56,8 @@ export const NODE_ICONS: Partial<Record<string, typeof IconSquare>> = {
   TEXT: IconType,
   VECTOR: IconPenTool,
   RECTANGLE: IconSquare,
-  STICKY: IconStickyNote
+  STICKY: IconStickyNote,
+  CONNECTOR: IconSpline
 }
 
 export const AUTO_LAYOUT_ICONS: Partial<Record<string, typeof IconSquare>> = {

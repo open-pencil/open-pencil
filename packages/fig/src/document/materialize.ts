@@ -317,6 +317,8 @@ function materializeReaderInto(
       if (occurrence.layoutScale !== undefined) layoutScales.set(node.id, occurrence.layoutScale)
     }
   }
+  /** Generated frames whose records name other layers, linked once the pass has made them. */
+  const linked: Array<{ node: SceneNode; record: NodeChange }> = []
   const createShells = (occurrence: InstanceOccurrence, parentId: string): void => {
     if (occurrence.mainComponentId !== null) return
     const existingId = sources.get(occurrence.sourceId)
@@ -330,7 +332,9 @@ function materializeReaderInto(
     const node = graph.createNode(nodeType, parentId, props)
     sources.set(occurrence.sourceId, node.id)
     if (node.type === 'COMPONENT') componentIds.set(occurrence.sourceId, node.id)
-    generatedFrameCodec(node.type)?.read(graph, node, occurrence.properties, blobs)
+    const codec = generatedFrameCodec(node.type)
+    codec?.read(graph, node, occurrence.properties, blobs)
+    if (codec?.link) linked.push({ node, record: occurrence.properties })
     for (const child of occurrence.children) createShells(child, node.id)
   }
   for (const page of pages) createShells(page, graph.rootId)
@@ -395,6 +399,12 @@ function materializeReaderInto(
   for (const page of pages) populateInstances(page)
   for (const instanceId of resync) graph.syncInstance(instanceId)
   if (resync.size > 0) restoreDerivedSizes(graph, derivedSizes)
+  // Records name other layers by GUID, so links wait until every layer of the pass exists,
+  // instances and the layers inside them included.
+  const layerOf = (sourceId: string) => sources.get(sourceId)
+  for (const { node, record } of linked) {
+    generatedFrameCodec(node.type)?.link?.(graph, node, record, layerOf)
+  }
   // Layers and ranges name their styles by the styles' own IDs, which the records' GUIDs are,
   // so only links to other layers are renamed to the layers this page added.
   for (const node of graph.getAllNodes()) {
