@@ -101,6 +101,10 @@ export interface RenderOverlays {
     selectedVertexIndices: Set<number>
     selectedHandles?: Set<number>
     hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
+    /** The region under the pointer, hatched as in Figma. */
+    hoveredRegion?: number | null
+    /** Regions picked by clicking inside them, hatched while selected. */
+    selectedRegions?: Set<number>
   } | null
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null

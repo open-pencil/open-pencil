@@ -26,6 +26,7 @@ import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 export { regenerateFillGeometry } from './fill-geometry'
+export { regionAtPoint, regionHatchPeriod, regionVertexIndices } from './region-hit'
 export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
 
 /**

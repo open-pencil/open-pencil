@@ -32,6 +32,10 @@ export type NodeEditState = {
     segmentIndex: number
     tangentField: 'tangentStart' | 'tangentEnd'
   } | null
+  /** The region under the pointer, hatched as in Figma. */
+  hoveredRegion: number | null
+  /** Regions picked by clicking inside them; their points are selected with them. */
+  selectedRegions: Set<number>
 }
 
 export type VectorEditState = EditorState & { nodeEditState: NodeEditState | null }
