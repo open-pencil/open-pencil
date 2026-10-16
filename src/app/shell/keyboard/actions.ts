@@ -78,6 +78,11 @@ export function createKeyboardActions({
       store.setRotationPreview(null)
       return
     }
+    // Esc leaves the eyedropper without touching the selection or a waiting color picker.
+    if (store.state.activeTool === 'EYEDROPPER') {
+      store.setTool('SELECT')
+      return
+    }
     if (store.state.nodeEditState) {
       store.exitNodeEditMode(true)
       return

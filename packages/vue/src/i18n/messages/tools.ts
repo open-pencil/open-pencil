@@ -14,7 +14,9 @@ export const toolMessageDefaults = {
   text: 'Text',
   sticky: 'Sticky note',
   hand: 'Hand',
-  comment: 'Comment'
+  comment: 'Comment',
+  eyedropper: 'Eyedropper',
+  eyedropperSample: 'Pick a color from the canvas'
 } as const
 
 export const toolMessages = i18n('tools', toolMessageDefaults)

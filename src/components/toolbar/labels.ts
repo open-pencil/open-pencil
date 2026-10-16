@@ -23,7 +23,8 @@ export function useToolLabels() {
     TEXT: tools.value.text,
     STICKY: tools.value.sticky,
     HAND: tools.value.hand,
-    COMMENT: tools.value.comment
+    COMMENT: tools.value.comment,
+    EYEDROPPER: tools.value.eyedropper
   }))
 }
 

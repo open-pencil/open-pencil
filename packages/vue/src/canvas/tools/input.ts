@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 
+import { handleEyedropperDown } from '#vue/canvas/eyedropper'
 import { startPenInput } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
@@ -51,6 +52,11 @@ export function handleToolMouseDown({
 
   // Comments are placed by the app's comments layer above the canvas.
   if (tool === 'COMMENT') return
+
+  if (tool === 'EYEDROPPER') {
+    if (event.button === 0) handleEyedropperDown(editor, cx, cy, event.altKey)
+    return
+  }
 
   if (tool === 'SELECT') {
     handleSelectDown(

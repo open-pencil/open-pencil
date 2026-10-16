@@ -15,11 +15,14 @@ export interface ColorPickerUI {
 const {
   color,
   label = 'Edit color',
-  ui
+  ui,
+  keepOpen
 } = defineProps<{
   color: Color
   label?: string
   ui?: ColorPickerUI
+  /** Whether a dismissal outside the picker should leave it open, such as while it samples the canvas. */
+  keepOpen?: () => boolean
 }>()
 
 const emit = defineEmits<{
@@ -33,6 +36,10 @@ const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
   emit('cancel')
   emit('openChange', false)
 })
+
+function keepOpenOutside(event: Event) {
+  if (keepOpen?.()) event.preventDefault()
+}
 
 function cancelFromEscape(event: KeyboardEvent) {
   event.stopPropagation()
@@ -60,6 +67,7 @@ function cancelFromEscape(event: KeyboardEvent) {
         side="left"
         data-picker-content
         @escape-key-down="cancelFromEscape"
+        @interact-outside="keepOpenOutside"
       >
         <slot :color="color" />
       </PopoverContent>

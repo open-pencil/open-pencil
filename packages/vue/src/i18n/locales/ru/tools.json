@@ -12,5 +12,7 @@
   "text": "Текст",
   "sticky": "Стикер",
   "hand": "Рука",
-  "comment": "Комментарий"
+  "comment": "Комментарий",
+  "eyedropper": "Пипетка",
+  "eyedropperSample": "Взять цвет с холста"
 }

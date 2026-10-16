@@ -1,6 +1,7 @@
 import type { Tool } from '@open-pencil/core/editor'
 
 import commentCursorSVG from '#vue/shared/assets/cursors/comment.svg?raw'
+import eyedropperCursorSVG from '#vue/shared/assets/cursors/eyedropper.svg?raw'
 import handGrabCursorSVG from '#vue/shared/assets/cursors/hand-grab.svg?raw'
 import handCursorSVG from '#vue/shared/assets/cursors/hand.svg?raw'
 import penCursorSVG from '#vue/shared/assets/cursors/pen.svg?raw'
@@ -14,6 +15,8 @@ function svgCursor(svg: string, x: number, y: number, fallback: string): string 
 export const PEN_CURSOR = svgCursor(penCursorSVG, 4, 4, 'crosshair')
 /** The pencil, pointing at its tip in the lower left. */
 const PENCIL_CURSOR = svgCursor(pencilCursorSVG, 4, 20, 'crosshair')
+/** The eyedropper, pointing at its tip in the lower left. */
+const EYEDROPPER_CURSOR = svgCursor(eyedropperCursorSVG, 4, 20, 'crosshair')
 /** A speech bubble whose tail tip places the comment pin. */
 const COMMENT_CURSOR = svgCursor(commentCursorSVG, 5, 24, 'crosshair')
 /** The open hand of the hand tool. */
@@ -35,7 +38,8 @@ const TOOL_CURSORS: Record<Tool, string> = {
   PEN: PEN_CURSOR,
   PENCIL: PENCIL_CURSOR,
   HAND: HAND_CURSOR,
-  COMMENT: COMMENT_CURSOR
+  COMMENT: COMMENT_CURSOR,
+  EYEDROPPER: EYEDROPPER_CURSOR
 }
 
 export function toolCursor(tool: Tool, override?: string | null): string {

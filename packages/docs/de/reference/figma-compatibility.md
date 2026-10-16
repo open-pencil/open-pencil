@@ -69,7 +69,7 @@ Direkte Textbearbeitung, CanvasKit Paragraph, Systemschriften, Schriftwahl, Grö
 
 ## Farben, Verläufe und Bilder
 
-Volltonfarben, lineare, radiale, Winkel- und Diamantverläufe sowie Bildfüllungen werden unterstützt. Muster, Mischmodi, Video, Bildkorrekturen, interaktiver Zuschnitt, Pipette und gemeinsame Farbbearbeitung fehlen.
+Volltonfarben, lineare, radiale, Winkel- und Diamantverläufe sowie Bildfüllungen werden unterstützt. Muster, Mischmodi, Video, Bildkorrekturen, interaktiver Zuschnitt und gemeinsame Farbbearbeitung fehlen.
 
 ## Effekte und Eigenschaften
 

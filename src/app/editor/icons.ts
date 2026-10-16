@@ -13,6 +13,7 @@ import IconMinus from '~icons/lucide/minus'
 import IconMousePointer from '~icons/lucide/mouse-pointer'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPencil from '~icons/lucide/pencil'
+import IconPipette from '~icons/lucide/pipette'
 import IconRows from '~icons/lucide/rows-3'
 import IconSmile from '~icons/lucide/smile'
 import IconSquare from '~icons/lucide/square'
@@ -40,7 +41,8 @@ export const toolIcons: Record<Tool, Component> = {
   TEXT: IconType,
   STICKY: IconStickyNote,
   HAND: IconHand,
-  COMMENT: IconMessageCircle
+  COMMENT: IconMessageCircle,
+  EYEDROPPER: IconPipette
 }
 
 export const NODE_ICONS: Partial<Record<string, typeof IconSquare>> = {

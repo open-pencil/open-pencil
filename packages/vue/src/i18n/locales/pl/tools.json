@@ -12,5 +12,7 @@
   "text": "Tekst",
   "sticky": "Karteczka",
   "hand": "Dłoń",
-  "comment": "Komentarz"
+  "comment": "Komentarz",
+  "eyedropper": "Zakraplacz",
+  "eyedropperSample": "Pobierz kolor z kanwy"
 }

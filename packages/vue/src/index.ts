@@ -23,6 +23,7 @@ export type { PresentationColorSpace } from '#vue/canvas/surface/color-space'
 export { useCanvas } from '#vue/canvas/surface/use'
 export type { UseCanvasOptions } from '#vue/canvas/surface/use'
 export { useCanvasInput } from '#vue/canvas/useCanvasInput'
+export { holdsPickerOpen, requestEyedropperSample } from '#vue/canvas/eyedropper'
 export {
   autoLayoutValueAnchor,
   type AutoLayoutValueField

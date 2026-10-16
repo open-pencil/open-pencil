@@ -12,5 +12,7 @@
   "text": "Texte",
   "sticky": "Note autocollante",
   "hand": "Main",
-  "comment": "Commentaire"
+  "comment": "Commentaire",
+  "eyedropper": "Pipette",
+  "eyedropperSample": "Prélever une couleur sur le canevas"
 }

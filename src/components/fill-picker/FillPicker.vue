@@ -8,6 +8,8 @@ import {
   applySolidFillColor,
   DEFAULT_SHADER_PRESET,
   FillRoot,
+  holdsPickerOpen,
+  useEditor,
   useI18n,
   useRetainedPopup
 } from '@open-pencil/vue'
@@ -60,6 +62,7 @@ const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })
 const { panels } = useI18n()
+const editor = useEditor()
 
 /** Dragging a gradient handle on the canvas leaves the picker open, as in Figma. */
 function keepOpenOnPress(event: PointerDownOutsideEvent) {
@@ -70,6 +73,11 @@ function keepOpenOnPress(event: PointerDownOutsideEvent) {
 function keepOpenOnFocus(event: FocusOutsideEvent) {
   if (keepOpen && event.detail.originalEvent.target instanceof HTMLCanvasElement)
     event.preventDefault()
+}
+
+/** While the picker samples the canvas, the click that answers it is not a dismissal. */
+function keepOpenWhileSampling(event: Event) {
+  if (holdsPickerOpen(editor)) event.preventDefault()
 }
 
 function cancelFromEscape(event: KeyboardEvent) {
@@ -106,6 +114,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           @escape-key-down="cancelFromEscape"
           @pointer-down-outside="keepOpenOnPress"
           @focus-outside="keepOpenOnFocus"
+          @interact-outside="keepOpenWhileSampling"
         >
           <div class="mb-2 flex items-center gap-0.5">
             <Tip :label="panels.solid">

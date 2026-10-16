@@ -60,7 +60,9 @@ function createColorPickerPanelContext(props: ColorPanelProps, emit: ColorPanelE
     updateRGBChannelValue: colorModel.updateRGBChannel,
     updateHSLChannelValue: colorModel.updateHSLChannel,
     updateHSBChannelValue: colorModel.updateHSBChannel,
-    updateOkHCLChannel: colorModel.updateOkHCLChannel
+    updateOkHCLChannel: colorModel.updateOkHCLChannel,
+    /** Replaces the color as a whole, as a sample from the eyedropper does. */
+    emitUpdate: (nextColor: Color) => emit('update', nextColor)
   }
 }
 

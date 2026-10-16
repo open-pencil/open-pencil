@@ -22,7 +22,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Canvas guides | 🔲 | Figma supports draggable guides from rulers |
 | Actions menu / command palette | 🔲 | Figma's quick actions search |
 | Context menu | ✅ | Right-click with clipboard, z-order, grouping, component, visibility, lock, move-to-page actions |
-| Keyboard shortcuts | 🟡 | Tools, editing, components, z-order, visibility/lock, flip, text formatting, and canvas and layer navigation implemented; Scale, Arrow, Eyedropper, and the zoom tool not yet wired |
+| Keyboard shortcuts | 🟡 | Tools, editing, components, z-order, visibility/lock, flip, text formatting, and canvas and layer navigation implemented; Scale, Arrow, and the zoom tool not yet wired |
 | Find and replace | 🔲 | Text search/replace across document |
 | Layer outlines view | 🔲 | Wireframe view of all layers |
 | Custom file thumbnails | 🔲 | Thumbnail generated on export, but no custom thumbnail picker |
@@ -114,7 +114,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Add images & videos | 🟡 | Image fills rendered; no drag-and-drop image import or video support |
 | Image property adjustment | 🔲 | Exposure, contrast, saturation, etc. |
 | Crop an image | 🔲 | Interactive image cropping |
-| Eyedropper tool | 🔲 | Sample colors from canvas |
+| Eyedropper tool | ✅ | <kbd>I</kbd> or the color picker button; samples the rendered canvas, <kbd>Alt</kbd> targets the stroke |
 | Mixed selection color editing | 🔲 | Adjust colors across heterogeneous selection |
 | Color models (RGB, HSL, HSB, Hex) | 🟡 | HSV + Hex in picker; no HSL or RGB mode toggle |
 

@@ -43,6 +43,8 @@ export { opacityFromBuffer } from './nodes'
 export { layerTypeOptions, type LayerType } from './structure/layer-type'
 export type { NodePreview } from './node-preview'
 export { EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
+export { applySampledColor, eyedropperChanges, sampleSceneColor } from './eyedropper'
+export type { EyedropperTarget } from './eyedropper'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
 export type {

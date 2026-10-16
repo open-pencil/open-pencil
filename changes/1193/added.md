@@ -1,0 +1,1 @@
+- The Eyedropper tool (I) and the color picker's eyedropper button pick any color shown on the canvas.
