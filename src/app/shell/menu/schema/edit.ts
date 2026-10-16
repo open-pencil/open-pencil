@@ -62,6 +62,11 @@ export const EDIT_MENU: AppMenuGroupSchema = {
       label: 'Rename Selection…',
       shortcut: 'Mod+R'
     },
+    {
+      id: 'selection.openImplementation',
+      feature: 'document',
+      label: 'Open implementation story…'
+    },
     { type: 'separator' },
     {
       id: 'selection.selectAll',

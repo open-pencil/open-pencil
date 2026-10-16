@@ -212,3 +212,27 @@ describe('withoutWebLinkParams', () => {
     expect(withoutWebLinkParams({ renderer: 'tiled' })).toEqual({ renderer: 'tiled' })
   })
 })
+
+test('persisted FIG URL parameters survive parsing and are removed from router queries', () => {
+  const revision = 'a'.repeat(64)
+  const target = parseWebOpenParams(
+    `?file=${encodeURIComponent('https://design.example.test/library.fig')}&node-id=42%3A9&revision=${revision}`
+  )
+  expect(target?.nodeId).toBe('42:9')
+  expect(target?.revision).toBe(revision)
+  expect(
+    withoutWebLinkParams({ file: 'design.fig', 'node-id': '42:9', revision, test: '1' })
+  ).toEqual({ test: '1' })
+})
+
+test('persisted identity URLs reject unsupported formats and malformed pins', () => {
+  expect(
+    parseWebOpenParams('?file=https://design.example.test/library.pen&node-id=42:9')
+  ).toBeNull()
+  expect(
+    parseWebOpenParams('?file=https://design.example.test/library.fig&node-id=runtime')
+  ).toBeNull()
+  expect(
+    parseWebOpenParams('?file=https://design.example.test/library.fig&node-id=42:9&revision=bad')
+  ).toBeNull()
+})

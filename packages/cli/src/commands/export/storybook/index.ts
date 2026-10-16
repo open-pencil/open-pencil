@@ -14,7 +14,7 @@ import {
 
 import { uniq } from 'es-toolkit'
 
-import { BUILTIN_IO_FORMATS, IORegistry, vectorElement } from '@open-pencil/core/io'
+import { vectorElement } from '@open-pencil/core/io'
 import {
   exportStorybook,
   STORYBOOK_FRAMEWORKS,
@@ -31,7 +31,9 @@ import { ok, printError } from '#cli/format'
 import { loadDocument, populateWholeDocument, requirePage } from '#cli/headless'
 
 import { documentFolder, storyFonts } from './fonts'
+import { createDesignImageRenderer } from './images'
 import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from './manifest'
+import { exportMappedReferences, printMappingInfo } from './mapping'
 import { readStoryRules, storyPlan } from './rules'
 
 interface StorybookArgs {
@@ -53,9 +55,9 @@ interface StorybookArgs {
   rules?: string
   /** `none` ships no font files with the stories. */
   fonts?: string
+  mapping?: string
+  'mapping-info'?: boolean
 }
-
-const io = new IORegistry(BUILTIN_IO_FORMATS)
 
 function isStorybookFramework(value: string): value is StorybookFramework {
   return STORYBOOK_FRAMEWORKS.some((framework) => framework === value)
@@ -181,23 +183,21 @@ async function writeStories(
     document: basename(file, extname(file)),
     linkPath: linkPath(file),
     vectorElement,
-    renderDesignImage: args['design-images']
-      ? async (nodeId) => {
-          const result = await io.exportContent(
-            'png',
-            { graph, target: { scope: 'node', nodeId } },
-            { format: 'PNG', scale: 2 }
-          )
-          if (!(result.data instanceof Uint8Array)) throw new Error('PNG export returned text.')
-          return result.data
-        }
-      : undefined
+    renderDesignImage: args['design-images'] ? createDesignImageRenderer(graph) : undefined
   })
   if (files.length === 0)
     throw new Error(`No components found in ${page ? `page "${page.name}"` : 'the document'}.`)
 
   // Relative to the output, the document's path is the same on every machine and cwd.
-  const scope = { source, page: page?.name }
+  await writeStoryFiles(outputDir, { source, page: page?.name }, files)
+  return files.filter((story) => story.path.endsWith('.stories.ts')).length
+}
+
+async function writeStoryFiles(
+  outputDir: string,
+  scope: ExportScope,
+  files: StorybookFile[]
+): Promise<void> {
   await mkdir(outputDir, { recursive: true })
   // Staged next to the output so a failed write leaves the previous export in place,
   // and in a dot folder, which Storybook's story globs skip.
@@ -216,7 +216,6 @@ async function writeStories(
   } finally {
     await rm(staging, { recursive: true, force: true })
   }
-  return files.filter((story) => story.path.endsWith('.stories.ts')).length
 }
 
 /**
@@ -282,6 +281,32 @@ function outputFor(args: StorybookArgs, file: string): string {
 /** An editor saves a file in a few writes; it is exported once they stop for this long. */
 const SAVE_SETTLE_MS = 200
 
+async function handleMappingExport(args: StorybookArgs, documents: string[]): Promise<boolean> {
+  if (!args.mapping && !args['mapping-info']) return false
+  if (requestedPage(args) || args.rules)
+    throw new Error('--mapping and --mapping-info do not accept --page, --page-id or --rules.')
+  if (args['mapping-info']) {
+    if (args.mapping || args.watch || args.output || args.beside || documents.length !== 1)
+      throw new Error(
+        '--mapping-info requires one document and cannot be combined with --mapping, --watch, --output or --beside.'
+      )
+    await printMappingInfo(documents[0])
+  } else if (args.mapping) {
+    if (args.watch)
+      throw new Error(
+        'Reference mapping exports do not support --watch yet; re-run after reviewing changes.'
+      )
+    await exportMappedReferences(args.mapping, documents, {
+      output: args.output,
+      beside: args.beside,
+      designImages: args['design-images'],
+      fontPolicy: args['font-policy'],
+      write: writeStoryFiles
+    })
+  }
+  return true
+}
+
 export async function exportStorybookFromFile(args: StorybookArgs): Promise<void> {
   if (args.node) {
     printError(
@@ -309,6 +334,12 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
     documents = await resolveDocuments(args)
   } catch (error) {
     printError(errorMessage(error))
+    process.exit(1)
+  }
+  try {
+    if (await handleMappingExport(args, documents)) return
+  } catch (error) {
+    printError(message(error))
     process.exit(1)
   }
   if (documents.length > 1 && !args.beside && !args.output) {
