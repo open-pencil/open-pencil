@@ -1,0 +1,1 @@
+- Design JSX draws connectors with `<Connector from="A" to="B">`, joining layers of the same JSX by name, and JSX export writes them back (#616).

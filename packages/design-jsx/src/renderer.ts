@@ -16,6 +16,7 @@ import {
   componentPropertyScope,
   inferComponentSetProperties
 } from './component-properties'
+import { CONNECTOR_ELEMENT, renderConnectorNode, resolveConnectorEnds } from './connectors'
 import { elementNodeType } from './elements'
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { prepareScalarBindings } from './scalar-bindings'
@@ -53,21 +54,28 @@ export async function renderRoots<Artwork>(
   const parentId = options.parentId ?? graph.getPages()[0].id
 
   const nodes: SceneNode[] = []
+  const connectors: Array<{ node: SceneNode; tree: TreeNode }> = []
+  const onNode = (element: TreeNode, node: SceneNode) => {
+    if (element.type === CONNECTOR_ELEMENT) connectors.push({ node, tree: element })
+    options.onNode?.(element, node)
+  }
   for (const root of roots) {
-    const node = await renderNode(services, graph, root, parentId, options.onNode)
+    const node = await renderNode(services, graph, root, parentId, onNode)
     if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
     if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
     nodes.push(node)
   }
 
   const rootIds = nodes.map((node) => node.id)
+  const warnings = resolveConnectorEnds(graph, rootIds, connectors)
   if (!options.deferLayout) services.layout(graph, rootIds)
 
   return nodes.map((node) => ({
     id: node.id,
     name: node.name,
     type: node.type,
-    childIds: node.childIds
+    childIds: node.childIds,
+    ...(warnings.length > 0 && { warnings })
   }))
 }
 
@@ -487,6 +495,8 @@ function renderOwnElement<Artwork>(
       return renderArtworkNode(services, graph, tree, parentId)
     case 'instance':
       return renderInstanceNode(graph, tree, parentId)
+    case CONNECTOR_ELEMENT:
+      return Promise.resolve(renderConnectorNode(graph, tree, parentId))
     default:
       return null
   }
