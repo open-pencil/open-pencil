@@ -1,0 +1,1 @@
+- `export_pdf` can write one PDF page per frame or per design page, and reports each page's name and size.

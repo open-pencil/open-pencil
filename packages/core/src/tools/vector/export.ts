@@ -1,6 +1,7 @@
 import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
+import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
@@ -84,19 +85,59 @@ export const exportSVG = defineTool({
 export const exportPDF = defineTool({
   name: 'export_pdf',
   description:
-    'Export nodes as a vector PDF document. Text remains selectable, paths stay sharp at any zoom. Returns base64-encoded PDF data.',
+    'Export nodes as a vector PDF document. Text remains selectable, paths stay sharp at any zoom. Returns base64-encoded PDF data and the size of each PDF page. ' +
+    'mode "single" (default) puts all ids on one PDF page; "frames" makes one PDF page per id (or per top-level frame of the current page); "pages" makes one PDF page per design page (all pages, or page_ids).',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
-  input: v.strictObject({ ...exportInputs }),
+  input: v.strictObject({
+    ...exportInputs,
+    mode: v.optional(
+      v.pipe(
+        v.picklist(PDF_MODES),
+        v.description(
+          '"single" (default): one PDF page for all ids. "frames": one PDF page per id or top-level frame. "pages": one PDF page per design page.'
+        )
+      ),
+      'single'
+    ),
+    page_ids: v.optional(
+      v.pipe(
+        v.array(v.string()),
+        v.description('mode "pages": the design pages to export, in order (default: all pages)')
+      )
+    )
+  }),
   execute: async (figma, args) => {
-    const { renderNodesToPDF } = await import('#core/io/formats/pdf')
-    const pageId = figma.currentPageId
-    const ids =
-      args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const data = await renderNodesToPDF(figma.graph, pageId, ids)
-    if (!data || data.length === 0) return { error: 'No visible nodes to export' }
-    const base64 = fromUint8Array(data)
-    return { mimeType: 'application/pdf', base64, byteLength: data.length }
+    const [{ renderPagesToPDFDetailed }, { preparePagesForPDF }] = await Promise.all([
+      import('#core/io/formats/pdf'),
+      import('#core/io/formats/pdf/prepare')
+    ])
+    try {
+      const specs = planPDFPages(figma.graph, {
+        mode: args.mode,
+        ids: args.ids,
+        pageIds: args.page_ids,
+        currentPageId: figma.currentPageId
+      })
+      if (args.mode === 'pages') await preparePagesForPDF(figma.graph, specs)
+      const result = await renderPagesToPDFDetailed(figma.graph, specs)
+      if (!result || result.data.length === 0) return { error: 'No visible nodes to export' }
+      return {
+        mimeType: 'application/pdf',
+        base64: fromUint8Array(result.data),
+        byteLength: result.data.length,
+        pageCount: result.pages.length,
+        pages: result.pages.map((page, index) => ({
+          page: index + 1,
+          ...(page.label ? { name: page.label } : {}),
+          width: Math.round(page.width),
+          height: Math.round(page.height)
+        }))
+      }
+    } catch (error) {
+      if (error instanceof PDFPlanError) return { error: error.message }
+      throw error
+    }
   }
 })
 
