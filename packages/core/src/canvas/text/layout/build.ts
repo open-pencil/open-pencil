@@ -95,7 +95,7 @@ function paragraphLines(
   // Lines are cut by character index, which the text's case must keep.
   if (shownText(node).length !== node.text.length) return undefined
   const lead = firstLineIndent > 0 ? 1 : 0
-  const ellipsis = buildTruncateOpts(node, node.fontSize || DEFAULT_FONT_SIZE).ellipsis
+  const ellipsis = buildTruncateOpts(node).ellipsis
   // A justified line is stretched only with text after it: lines are laid out with the rest
   // of the paragraph and cut, as truncated last lines are.
   const justified = node.textAlignHorizontal === 'JUSTIFIED'
@@ -211,7 +211,7 @@ function buildBlocks(
   )
   const digits = topLevelNumberDigits([...items.values()])
   const rtl = resolveNodeTextDirection(node) === 'RTL'
-  const truncation = buildTruncateOpts(node, node.fontSize || DEFAULT_FONT_SIZE)
+  const truncation = buildTruncateOpts(node)
   const maxLines = truncation.maxLines
   // Each paragraph starts one byte, its newline, after the one before it ends.
   const utf8Starts: number[] = []
@@ -339,14 +339,13 @@ function buildMarker(
   }
 }
 
-/** Lay a text node out as the renderer draws it, at its own width. */
-export function buildParagraph(
+function createTextLayout(
   r: TextRenderer,
   node: ParagraphNode,
-  color?: Float32Array,
-  options: ParagraphBuildOptions = {}
+  color: Float32Array | undefined,
+  options: ParagraphBuildOptions
 ): TextLayout {
-  const layout = needsParagraphLayout(node)
+  return needsParagraphLayout(node)
     ? buildBlocks(r, node, color, options)
     : TextLayout.ofParagraph(
         r.ck,
@@ -354,11 +353,38 @@ export function buildParagraph(
         shownText(node).length,
         paragraphLines(r, node, color, options)
       )
+}
+
+/** How many laid-out line boxes fit the fixed height, preserving the first line. */
+function linesWithinHeight(layout: TextLayout, height: number): number {
+  const lines = layout.getLineMetrics()
+  const firstOverflow = lines.findIndex((line) => line.baseline + line.descent > height)
+  return Math.max(1, firstOverflow === -1 ? lines.length : firstOverflow)
+}
+
+/** Lay a text node out as the renderer draws it, at its own width. */
+export function buildParagraph(
+  r: TextRenderer,
+  node: ParagraphNode,
+  color?: Float32Array,
+  options: ParagraphBuildOptions = {}
+): TextLayout {
+  const layout = createTextLayout(r, node, color, options)
+  const heightTruncation =
+    node.textTruncation === 'ENDING' &&
+    node.height > 0 &&
+    (node.maxLines == null || node.maxLines <= 0)
+  let fittingLines: number | undefined
   try {
     layoutForNode(layout, node)
-    return layout
+    if (heightTruncation) fittingLines = linesWithinHeight(layout, node.height)
   } catch (error) {
     layout.delete()
     throw error
   }
+  if (fittingLines !== undefined && fittingLines < layout.getLineMetrics().length) {
+    layout.delete()
+    return buildParagraph(r, { ...node, maxLines: fittingLines }, color, options)
+  }
+  return layout
 }

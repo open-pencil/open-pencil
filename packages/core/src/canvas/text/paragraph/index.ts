@@ -32,18 +32,12 @@ export function resolveParagraphLayoutWidth(node: ParagraphNode, maxWidth?: numb
   return node.width || 1e6
 }
 
-export function buildTruncateOpts(
-  node: ParagraphNode,
-  baseFontSize: number
-): { maxLines?: number; ellipsis?: string } {
+export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ellipsis?: string } {
   if (node.textTruncation !== 'ENDING') return {}
 
   const opts: { maxLines?: number; ellipsis: string } = { ellipsis: '…' }
   if (node.maxLines != null && node.maxLines > 0) {
     opts.maxLines = node.maxLines
-  } else if (node.height > 0) {
-    const lineH = node.lineHeight || baseFontSize * 1.2
-    opts.maxLines = Math.max(1, Math.floor(node.height / lineH))
   }
   return opts
 }
@@ -250,7 +244,7 @@ export function buildSkParagraph(
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)
 
-  const truncateOpts = block.truncation ?? buildTruncateOpts(node, baseFontSize)
+  const truncateOpts = block.truncation ?? buildTruncateOpts(node)
 
   const fontFamilies = (primary: string, weight: number, italic = false) =>
     resolveParagraphFontFamilies(

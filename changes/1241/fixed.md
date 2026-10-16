@@ -1,0 +1,1 @@
+- Text truncation to a fixed height now counts actual laid-out line heights, including mixed-size text.
