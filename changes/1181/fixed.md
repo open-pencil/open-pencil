@@ -1,0 +1,1 @@
+- Opening a `.fig` file in the browser falls back to parsing on the main thread when the parser worker does not start within 10 seconds, instead of waiting on it forever.

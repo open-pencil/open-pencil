@@ -74,6 +74,8 @@ export type FigSessionRequest =
   | FigSessionDisposeRequest
 
 export type FigSessionResponse =
+  /** Sent once the worker script runs and has the open request, before it parses. */
+  | { type: 'started' }
   | { type: 'page-manifest'; pages: FigPageManifestEntry[] }
   | {
       type: 'graph'

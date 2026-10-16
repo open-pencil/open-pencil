@@ -96,6 +96,7 @@ self.onmessage = (event: MessageEvent<FigSessionOpenRequest>) => {
   port = request.port
   port.onmessage = (message: MessageEvent<FigSessionRequest>) => handleRequest(message.data)
   port.start()
+  respond({ type: 'started' })
   // The worker copies the archive itself, so the main thread sends the file once.
   const archiveBytes = request.buffer.slice(0)
   try {
