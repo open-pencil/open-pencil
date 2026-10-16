@@ -7,7 +7,7 @@ import {
   ContextMenuPortal
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, useAttrs, watch } from 'vue'
+import { computed, ref, useAttrs, watch } from 'vue'
 
 import { LayerTreeRoot, LayerTreeItem, useInlineRename } from '@open-pencil/vue'
 import type {
@@ -26,6 +26,7 @@ import CanvasMenu from '../canvas/CanvasMenu.vue'
 import { LAYER_TREE_ROW_HEIGHT } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
+import LayerTreeStickyRow from './LayerTreeStickyRow.vue'
 import { provideLayerTreeUI } from './ui'
 import type { LayerTreeUI } from './ui'
 
@@ -53,6 +54,8 @@ const attrs = useAttrs()
 const styles = tv(layerTreeTheme)()
 provideLayerTreeUI(() => ui)
 const store = useEditorStore()
+/** How far the rows are scrolled, for the pinned top-level row. */
+const scrollTop = ref(0)
 const rename = useInlineRename((id, name) => store.renameNode(id, name))
 
 /** Issue marks follow the canvas markers' View → Design issues toggle. */
@@ -175,6 +178,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
             data-test-id="layers-scroll"
             data-slot="viewport"
             :class="styles.viewport({ class: ui?.viewport })"
+            @scroll="scrollTop = ($event.currentTarget as HTMLElement).scrollTop"
           >
             <TreeVirtualizer
               v-slot="{ item, virtualizer }"
@@ -244,6 +248,10 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
             </TreeVirtualizer>
           </div>
         </ContextMenuTrigger>
+        <LayerTreeStickyRow
+          :scroll-top="scrollTop"
+          :chrome="chrome({ ...scope, instruction: null, instructionTargetId: null })"
+        />
       </div>
       <ContextMenuPortal>
         <CanvasMenu />

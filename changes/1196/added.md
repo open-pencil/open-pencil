@@ -1,0 +1,1 @@
+- While you scroll through a top-level frame's layers, its row stays pinned at the top of the layers panel, as in Figma, until the next top-level layer pushes it out.

@@ -242,6 +242,7 @@ export {
   LayerTreeItem,
   LayerTreeRoot,
   patchLayerNode,
+  stickyTopLevelRow,
   useLayerTree,
   visibleLayerRows
 } from '#vue/primitives/LayerTree'
@@ -249,6 +250,7 @@ export type {
   LayerDragInstruction,
   LayerNode,
   LayerRow,
+  StickyLayerRow,
   LayerSelectionMode,
   LayerTreeContext,
   LayerTreeVirtualizer
