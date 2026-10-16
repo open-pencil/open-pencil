@@ -20,6 +20,16 @@ export function safeColor(color: Color | Omit<Color, 'a'>): Color {
   return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
 }
 
+/** Figma's file format calls a cropped image STRETCH; the plugin API, and this graph, call it CROP. */
+function kiwiImageScaleMode(mode: ImageScaleMode): string {
+  return mode === 'CROP' ? 'STRETCH' : mode
+}
+
+function imageScaleModeFromKiwi(mode: string | undefined): ImageScaleMode {
+  if (mode === 'STRETCH') return 'CROP'
+  return (mode ?? 'FILL') as ImageScaleMode
+}
+
 export function fillToKiwiPaint(fill: Fill): Paint {
   const paint: Paint = {
     type: fill.type,
@@ -36,7 +46,7 @@ export function fillToKiwiPaint(fill: Fill): Paint {
   }
   if (fill.gradientTransform) paint.transform = fill.gradientTransform
   if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
-  if (fill.imageScaleMode) paint.imageScaleMode = fill.imageScaleMode
+  if (fill.imageScaleMode) paint.imageScaleMode = kiwiImageScaleMode(fill.imageScaleMode)
   if (fill.imageTransform) paint.transform = fill.imageTransform
   if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
   if (fill.scale) paint.scale = fill.scale
@@ -124,7 +134,7 @@ function applyImagePaintFields(fill: Fill, p: Paint): void {
       fill.imageHash = img.hash
     }
   }
-  fill.imageScaleMode = (p.imageScaleMode ?? 'FILL') as ImageScaleMode
+  fill.imageScaleMode = imageScaleModeFromKiwi(p.imageScaleMode)
   if (p.transform) fill.imageTransform = convertGradientTransform(p.transform)
 }
 

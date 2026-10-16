@@ -1,0 +1,1 @@
+- Image fills set to Crop save to `.fig` files, and a cropped image from Figma opens as a crop instead of being drawn as Fill.
