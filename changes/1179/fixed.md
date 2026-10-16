@@ -1,0 +1,1 @@
+- The web build leaves `/oauth2/` navigations to the server, so signing in through a proxy such as oauth2-proxy completes; `OPENPENCIL_PWA_SERVER_PATHS` names more server-owned paths when building the editor.
