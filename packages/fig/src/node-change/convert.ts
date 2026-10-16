@@ -10,6 +10,7 @@ import {
 } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
+import { isShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -406,6 +407,27 @@ function convertParagraphProps(
   }
 }
 
+/** A size a record gives, or 0 (unset) when it is missing, negative or not a finite number. */
+function givenSize(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+}
+
+/**
+ * A FigJam shape with text's kind and the size it was given; its label is read as a sublayer.
+ * FigJam keeps the given height; OpenPencil keeps the given width too, in its plugin data.
+ */
+function convertShapeWithTextProps(
+  nc: NodeChange
+): Partial<Pick<SceneNode, 'shapeWithTextType' | 'shapeUserHeight' | 'shapeUserWidth'>> {
+  if (nc.type !== 'SHAPE_WITH_TEXT') return {}
+  const kind = isShapeWithTextType(nc.shapeWithTextType) ? nc.shapeWithTextType : 'SQUARE'
+  return {
+    shapeWithTextType: kind,
+    shapeUserHeight: givenSize(nc.shapeUserHeight),
+    shapeUserWidth: givenSize(readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.shapeUserWidth))
+  }
+}
+
 function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   return {
     text: nc.textData?.characters ?? '',
@@ -708,6 +730,7 @@ export function nodeChangeToProps(
     ...convertCornerProps(nc),
     ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),
+    ...convertShapeWithTextProps(nc),
     horizontalConstraint: mapConstraint(nc.horizontalConstraint as string),
     verticalConstraint: mapConstraint(nc.verticalConstraint as string),
     ...convertLayoutProps(nc),

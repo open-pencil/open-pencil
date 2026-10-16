@@ -1,6 +1,7 @@
 import type { SceneGraph } from '../index'
 import type { NodeType, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'
+import { SHAPE_WITH_TEXT_KIND } from './shape-with-text'
 import { STICKY_KIND } from './sticky'
 
 /**
@@ -13,6 +14,7 @@ import { STICKY_KIND } from './sticky'
  * the type.
  */
 const GENERATED_FRAME_KINDS: Partial<Record<NodeType, GeneratedFrameKind>> = {
+  SHAPE_WITH_TEXT: SHAPE_WITH_TEXT_KIND,
   STICKY: STICKY_KIND
 }
 
@@ -50,4 +52,5 @@ export function layerResizes(node: Pick<SceneNode, 'type'>): boolean {
 }
 
 export type { GeneratedFrameKind } from './kind'
+export * from './shape-with-text'
 export * from './sticky'

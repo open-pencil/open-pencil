@@ -7,7 +7,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
-import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+import { makeShapeWithTextDetailsPath, makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
@@ -258,6 +258,17 @@ export function drawNodeStroke(
       path.delete()
       break
     }
+    case 'SHAPE_WITH_TEXT': {
+      const path = r.makePolygonPath(node)
+      canvas.drawPath(path, r.strokePaint)
+      path.delete()
+      const details = makeShapeWithTextDetailsPath(r, node)
+      if (details) {
+        canvas.drawPath(details, r.strokePaint)
+        details.delete()
+      }
+      break
+    }
     default:
       if (nodeHasSmoothCorners(node)) {
         const path = makeSmoothRRectPath(r, node)
@@ -440,7 +451,8 @@ export function strokeNodeShape(
       canvas.drawLine(0, 0, node.width, node.height, paint)
       return
     case 'POLYGON':
-    case 'STAR': {
+    case 'STAR':
+    case 'SHAPE_WITH_TEXT': {
       const path = r.makePolygonPath(node)
       canvas.drawPath(path, paint)
       path.delete()

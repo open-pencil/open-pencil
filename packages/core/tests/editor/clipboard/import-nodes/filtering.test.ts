@@ -91,7 +91,6 @@ describe('importClipboardNodes: filtering', () => {
       'STAMP',
       'CONNECTOR',
       'CODE_BLOCK',
-      'SHAPE_WITH_TEXT',
       'TABLE_NODE',
       'TABLE_CELL'
     ]

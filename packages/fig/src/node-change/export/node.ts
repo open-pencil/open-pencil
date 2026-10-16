@@ -909,6 +909,13 @@ function applyNodeVisualProps(
  * remains (materialized path data + baked glyphs). After an edit that cannot
  * reflow glyphs, invalidation clears the path data so export falls back to TEXT.
  */
+/** The width a shape with text was given, which FigJam's record has no field for. */
+function applyShapeUserWidthPluginData(node: SceneNode): void {
+  const width =
+    node.type === 'SHAPE_WITH_TEXT' && node.shapeUserWidth > 0 ? node.shapeUserWidth : undefined
+  node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.shapeUserWidth, width)
+}
+
 function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): string {
   const isPathText =
     node.textPathData !== null && node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0
@@ -1048,6 +1055,7 @@ export function sceneNodeToKiwiWithContext(
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)
   serializeNodeStatus(node, nc)
+  applyShapeUserWidthPluginData(node)
   applyTextPathBoxPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData

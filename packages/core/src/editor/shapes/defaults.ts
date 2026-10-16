@@ -1,5 +1,5 @@
 import type { Fill, NodeType, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_WEIGHT, SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-graph'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import {
@@ -46,6 +46,14 @@ export function newLayerDefaults(
       return { fills: [], strokes: copyStrokes([BLACK_STROKE]) }
     case 'TEXT':
       return { fills: copyFills([BLACK_FILL]) }
+    case 'SHAPE_WITH_TEXT':
+      return {
+        fills: copyFills([DEFAULT_SHAPE_FILL]),
+        strokes: copyStrokes([BLACK_STROKE]),
+        width: SHAPE_WITH_TEXT_SIZE,
+        height: SHAPE_WITH_TEXT_SIZE,
+        shapeWithTextType: 'SQUARE'
+      }
     default:
       return {}
   }

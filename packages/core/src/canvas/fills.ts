@@ -107,7 +107,8 @@ export function drawNodeFill(
       canvas.drawLine(0, 0, node.width, node.height, r.fillPaint)
       break
     case 'POLYGON':
-    case 'STAR': {
+    case 'STAR':
+    case 'SHAPE_WITH_TEXT': {
       const path = r.makePolygonPath(node)
       canvas.drawPath(path, r.fillPaint)
       path.delete()

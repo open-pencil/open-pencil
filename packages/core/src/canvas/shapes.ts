@@ -1,7 +1,8 @@
 import type { Canvas, Path, PathBuilder } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { polygonOutline } from '@open-pencil/scene-graph/polygon'
+import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
+import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
@@ -384,7 +385,8 @@ export function makeNodeShapePath(
       break
     }
     case 'POLYGON':
-    case 'STAR': {
+    case 'STAR':
+    case 'SHAPE_WITH_TEXT': {
       const polyPath = r.makePolygonPath(node)
       path.addPath(polyPath)
       polyPath.delete()
@@ -404,10 +406,9 @@ export function makeNodeShapePath(
   return path.detachAndDelete()
 }
 
-/** The polygon or star with its corner radius and smoothing, as Figma draws it. */
-export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
+function outlinePath(r: SkiaRenderer, commands: PolygonOutlineCommand[]): Path {
   const path = new r.ck.PathBuilder()
-  for (const command of polygonOutline(node)) {
+  for (const command of commands) {
     if (command.type === 'M') path.moveTo(command.x, command.y)
     else if (command.type === 'L') path.lineTo(command.x, command.y)
     else if (command.type === 'C')
@@ -415,6 +416,28 @@ export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
     else path.close()
   }
   return path.detachAndDelete()
+}
+
+/**
+ * The polygon or star with its corner radius and smoothing, as Figma draws it, or the outline of
+ * a shape with text.
+ */
+export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
+  if (node.type === 'SHAPE_WITH_TEXT') {
+    return outlinePath(
+      r,
+      shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height, node.cornerRadius)
+        .outline
+    )
+  }
+  return outlinePath(r, polygonOutline(node))
+}
+
+/** A shape with text's stroke-only inner lines, such as a database's front rim, if it has any. */
+export function makeShapeWithTextDetailsPath(r: SkiaRenderer, node: SceneNode): Path | null {
+  if (node.type !== 'SHAPE_WITH_TEXT') return null
+  const { details } = shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height)
+  return details.length > 0 ? outlinePath(r, details) : null
 }
 
 export function makeRRect(r: SkiaRenderer, node: SceneNode): Float32Array {

@@ -42,6 +42,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 
+import { fitShapeWithTextFrame } from './layout/shape-with-text'
 import { estimateTextSize, getTextMeasurer } from './layout/text-measurement'
 import {
   applyMinMaxConstraints,
@@ -64,6 +65,8 @@ export function computeLayout(graph: SceneGraph, frameId: string): void {
 function computeLayoutInternal(graph: SceneGraph, frameId: string): void {
   const frame = graph.getNode(frameId)
   if (!frame || frame.layoutMode === 'NONE') return
+  // A shape with text takes its size from its label before laying the label out in it.
+  fitShapeWithTextFrame(graph, frame)
 
   const rootDirection = resolveComputedLayoutDirection(graph, frame)
   const yogaDirection = rootDirection === 'RTL' ? Direction.RTL : Direction.LTR
