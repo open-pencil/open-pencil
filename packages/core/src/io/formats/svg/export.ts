@@ -36,6 +36,7 @@ import type {
 import type { SVGExportContext } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
+import { laidOutTextSpans, type SVGTextLayout } from './text-lines'
 
 // --- Node rendering ---
 
@@ -218,10 +219,15 @@ function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
 function renderTextNode(
   node: SceneNode,
   fillAttr: string | null,
-  colorSpace: 'srgb' | 'display-p3'
+  colorSpace: 'srgb' | 'display-p3',
+  textLayout: SVGTextLayout | undefined
 ): SVGNode {
   const direction = resolveNodeTextDirection(node)
-  const textAnchor = textAnchorForNode(node, direction)
+  const lines = textLayout ? textLayout(node) : null
+  const laidOut = lines && lines.length > 0 ? lines : null
+  // Laid-out lines carry their own x, so each is anchored at its start (its end when RTL).
+  let textAnchor = textAnchorForNode(node, direction)
+  if (laidOut) textAnchor = direction === 'RTL' ? 'end' : undefined
 
   let textDecoration: 'underline' | 'line-through' | undefined
   if (node.textDecoration === 'UNDERLINE') textDecoration = 'underline'
@@ -237,6 +243,13 @@ function renderTextNode(
     'text-anchor': textAnchor,
     'text-decoration': textDecoration,
     'letter-spacing': node.letterSpacing ? round(node.letterSpacing) : undefined
+  }
+
+  if (laidOut) {
+    const spans = laidOutTextSpans(node, laidOut, direction === 'RTL', (style) =>
+      styleOverrideToTspanAttrs(style, colorSpace)
+    )
+    return svg('text', attrs, ...spans)
   }
 
   const x = textXForNode(node, direction)
@@ -396,7 +409,7 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (node.type === 'TEXT') {
     const firstFill = node.fills.find((f) => f.visible)
     const fillAttr = firstFill ? resolveFill(firstFill, node, ctx) : null
-    const textEl = renderTextNode(node, fillAttr, ctx.colorSpace)
+    const textEl = renderTextNode(node, fillAttr, ctx.colorSpace, ctx.textLayout)
     return svg('g', groupAttrs, textEl)
   }
 
@@ -460,6 +473,11 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
+  /**
+   * Line breaks of text nodes as the editor laid them out. Without them each text node is one
+   * line of SVG text, which renderers that do not wrap SVG text (such as PDF) keep on one line.
+   */
+  textLayout?: SVGTextLayout
 }
 
 export function renderNodesToSVG(
@@ -479,7 +497,8 @@ export function renderNodesToSVG(
     defs: [],
     defIdCounter: 0,
     graph,
-    colorSpace: options.colorSpace ?? 'srgb'
+    colorSpace: options.colorSpace ?? 'srgb',
+    textLayout: options.textLayout
   }
 
   const contentNodes: SVGNode[] = []

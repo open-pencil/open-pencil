@@ -22,6 +22,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
+import type { SVGTextLayout } from './text-lines'
 
 export interface SVGExportContext {
   defs: SVGNode[]
@@ -32,6 +33,8 @@ export interface SVGExportContext {
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
+  /** Line breaks of text nodes; without them each text node is drawn on one line. */
+  textLayout?: SVGTextLayout
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {

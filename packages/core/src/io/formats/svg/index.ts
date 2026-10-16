@@ -7,4 +7,5 @@ export {
   type SVGImportOptions
 } from './import'
 export { isSVGMarkup } from './metadata'
+export type { SVGTextLayout, SVGTextLine } from './text-lines'
 export { svgImportFonts } from './text'

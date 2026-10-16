@@ -1,0 +1,1 @@
+- `export_pdf` keeps the line breaks of wrapped text, and `embed_fonts` embeds the TrueType fonts the text uses and reports any face that falls back to a standard PDF font.
