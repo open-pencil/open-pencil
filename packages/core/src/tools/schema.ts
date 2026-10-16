@@ -36,6 +36,12 @@ interface ToolMetadata {
   exposure: ToolExposure
   capabilities: readonly ToolCapability[]
   availability: 'default' | 'eval'
+  /**
+   * The tool's `path` argument names a file to write the result to, as the export tools and
+   * get_jsx do. Tools whose `path` is data, such as create_vector's SVG path or path_set's
+   * VectorNetwork JSON, leave it off.
+   */
+  fileOutput?: boolean
 }
 
 export interface ToolDef extends ToolMetadata {
@@ -87,6 +93,20 @@ export function parseToolArgs<S extends v.GenericSchema>(
 
 export function toolChangesDocument(def: Pick<ToolDef, 'execution'>): boolean {
   return def.execution.mutation === 'properties' || def.execution.mutation === 'document'
+}
+
+/**
+ * True when the tool may read or write a file named by its arguments: it declares a
+ * `filesystem:*` capability or marks its `path` as a file output. A `path` argument on any other
+ * tool is data, not a file name.
+ */
+export function toolTakesFilePath(
+  def: Pick<ToolDef, 'capabilities'> & { fileOutput?: boolean }
+): boolean {
+  return (
+    def.fileOutput === true ||
+    def.capabilities.some((c) => c === 'filesystem:read' || c === 'filesystem:write')
+  )
 }
 
 export function isToolExposed(def: Pick<ToolDef, 'exposure'>, target: ToolInterface): boolean {

@@ -10,6 +10,7 @@ const MAX_JSX_LENGTH = 12_000
 
 export const getJSX = defineTool({
   name: 'get_jsx',
+  fileOutput: true,
   description:
     'Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool.',
   execution: { kind: 'sync', mutation: 'none' },

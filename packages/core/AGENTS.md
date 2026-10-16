@@ -28,6 +28,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 ## Tools (AI, MCP, CLI, WebMCP)
 
 - Operations are `ToolDef`s under `packages/core/src/tools/**`; `schema.ts` defines the contract and registries expose them. Each definition owns its native Valibot `input`, execution/mutation metadata, and optional per-interface exposure exclusions (`mcp`, `ai`, `webmcp`). Exposure defaults to inclusion; adapters use `isToolExposed()`, then apply execution support and user permissions independently.
+- A tool whose `path` argument names a file to write sets `fileOutput: true`; any other `path` is data. Adapters ask `toolTakesFilePath()` before treating a `path` as a file (`packages/core/tests/tools/file-output.test.ts`).
 - Infer arguments from the schema; derive effects and default capabilities from execution metadata. Do not maintain parameter DSLs or tool-name lists. Add work to the nearest existing domain and the appropriate registry.
 - `packages/core/src/tools/ai-adapter.ts` converts ToolDefs for Vercel AI; the app binds them to the active editor's `FigmaAPI` in `src/app/ai/tools/index.ts`. MCP v2 registration uses Standard Schema with Valibot JSON Schema conversion; AI and WebMCP adapters share the same input contract.
 - `packages/core/src/editor/history/atomic-tool.ts` owns synchronous property/variable transactions; Scene Graph owns checkpoint recovery. AI, MCP, and WebMCP share this execution path. Async and structural tools cannot declare atomic property execution.

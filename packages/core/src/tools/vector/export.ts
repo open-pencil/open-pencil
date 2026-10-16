@@ -66,6 +66,7 @@ export function boundedRasterScale(
 
 export const exportSVG = defineTool({
   name: 'export_svg',
+  fileOutput: true,
   description: 'Export nodes as SVG markup. Returns the SVG string.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
@@ -83,6 +84,7 @@ export const exportSVG = defineTool({
 
 export const exportPDF = defineTool({
   name: 'export_pdf',
+  fileOutput: true,
   description:
     'Export nodes as a vector PDF document. Text remains selectable, paths stay sharp at any zoom. Returns base64-encoded PDF data.',
   execution: { kind: 'async', mutation: 'none' },
@@ -102,6 +104,7 @@ export const exportPDF = defineTool({
 
 export const exportImage = defineTool({
   name: 'export_image',
+  fileOutput: true,
   description:
     'Export nodes as a raster image (PNG, JPG, or WEBP). Returns base64-encoded image data. Use to visually verify designs.',
   execution: { kind: 'async', mutation: 'none' },

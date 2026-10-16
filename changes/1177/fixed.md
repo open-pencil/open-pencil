@@ -1,0 +1,1 @@
+- MCP tools whose `path` argument is data, such as `create_vector` and `path_set`, no longer have it resolved as a file under the MCP root; among the core tools, only the export tools and `get_jsx` write to a path.
