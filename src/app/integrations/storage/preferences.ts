@@ -12,10 +12,35 @@ export const activeStorageProviderID = useLocalStorage<StorageProviderID>(
 
 const storedPreferences = useLocalStorage<StoragePreferences>('open-pencil:storage:preferences', {})
 
+/** Build-time storage defaults: only an address and a bucket, never keys. */
+export interface StoragePresetEnv {
+  readonly VITE_STORAGE_PRESET_ENDPOINT?: string
+  readonly VITE_STORAGE_PRESET_BUCKET?: string
+}
+
+/** The S3-compatible endpoint and bucket a self-hosted build fills in, when it sets both. */
+export function storagePreset(env: StoragePresetEnv): Partial<StoragePreferences> {
+  const endpoint = env.VITE_STORAGE_PRESET_ENDPOINT?.trim()
+  const bucket = env.VITE_STORAGE_PRESET_BUCKET?.trim()
+  if (!endpoint || !bucket) return {}
+  return { 's3-compatible': { endpoint, bucket } }
+}
+
+/** Saved values win; a preset only fills fields that are missing or empty. */
+export function withPreset(
+  saved: Readonly<Record<StorageFieldID, string>> | undefined,
+  preset: Readonly<Record<StorageFieldID, string>> | undefined
+): Record<StorageFieldID, string> {
+  const filled = Object.entries(saved ?? {}).filter(([, value]) => value.trim() !== '')
+  return { ...preset, ...Object.fromEntries(filled) }
+}
+
+const preset = storagePreset(import.meta.env)
+
 export function readStoragePreferences(
   providerID: StorageProviderID
 ): Readonly<Record<StorageFieldID, string>> {
-  return { ...storedPreferences.value[providerID] }
+  return withPreset(storedPreferences.value[providerID], preset[providerID])
 }
 
 export function writeStoragePreference(
