@@ -1,0 +1,1 @@
+- Figma Boolean visibility bindings survive page loading, variable edits, and saving, including instance-specific variable modes.

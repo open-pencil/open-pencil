@@ -194,15 +194,17 @@ function consumptionEntry(
     resolvedDataType: variable.type,
     value: { alias: variableAlias(graph, variableId, ids) }
   }
-  // Text content takes a number or boolean as its text, which Figma writes as STRINGIFY.
-  if (variableField === 'TEXT_DATA' && variable.type !== 'STRING') {
+  let conversion: 'IS_TRUTHY' | 'STRINGIFY' | undefined
+  if (variableField === 'VISIBLE' && variable.type === 'BOOLEAN') conversion = 'IS_TRUTHY'
+  else if (variableField === 'TEXT_DATA' && variable.type !== 'STRING') conversion = 'STRINGIFY'
+  if (conversion) {
     return {
       variableField,
       variableData: {
         dataType: 'EXPRESSION',
-        resolvedDataType: 'STRING',
+        resolvedDataType: conversion === 'IS_TRUTHY' ? 'BOOLEAN' : 'STRING',
         value: {
-          expressionValue: { expressionFunction: 'STRINGIFY', expressionArguments: [alias] }
+          expressionValue: { expressionFunction: conversion, expressionArguments: [alias] }
         }
       }
     }

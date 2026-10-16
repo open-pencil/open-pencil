@@ -38,6 +38,7 @@ export const OVERRIDE_FIELDS = {
   opacity: { scene: ['opacity'], kind: 'scalar' },
   fontSize: { scene: ['fontSize'], kind: 'scalar', length: true },
   visible: { scene: ['visible'], kind: 'visible' },
+  variableModeBySetMap: { scene: ['variableModes'], kind: 'node', absent: { entries: [] } },
   // Figma claims styled ranges and list lines with the characters (desktop 126).
   textData: { scene: ['text', 'styleRuns', 'textParagraphs'], kind: 'text' },
   styleIdForText: { scene: ['textStyleId'], kind: 'text-style' },

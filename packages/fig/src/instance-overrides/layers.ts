@@ -49,6 +49,14 @@ export function ownLayers(
 ): { structural: StructuralLayer[]; claims: PropertyLayer[] } {
   const structural: StructuralLayer[] = []
   const claims: PropertyLayer[] = []
+  // A mode on the placed record belongs to this instance, even when it is not repeated
+  // in symbolOverrides. Record that ownership before later component synchronization.
+  if (source.type === 'INSTANCE' && source.symbolData?.symbolID && source.variableModeBySetMap) {
+    claims.push({
+      path: [source.symbolData.symbolID],
+      props: { variableModeBySetMap: source.variableModeBySetMap }
+    })
+  }
   for (const override of symbolOverridesOf(source)) {
     const { guidPath, overriddenSymbolID: swap, componentPropAssignments, ...props } = override
     const path = guidPath?.guids ?? []

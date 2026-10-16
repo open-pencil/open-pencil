@@ -173,6 +173,15 @@ function serializeVariableModes(
   return entries.length > 0 ? { entries } : undefined
 }
 
+function applyVariableModes(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  record: KiwiNodeChange
+): void {
+  const modes = serializeVariableModes(node, context.varIdToGuid, context.modeIdToGuid)
+  if (modes) record.variableModeBySetMap = modes
+}
+
 const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
   'variableConsumptionMap',
   'parameterConsumptionMap'
@@ -982,6 +991,7 @@ export function overridableNodeFields(
   applyNodeStateProps(node, nc)
   applyNodeVisualProps({ ...context, fontDigestMap: undefined }, node, nc)
   context.serializeLayoutProps(node, nc)
+  applyVariableModes(context, node, nc)
   return nc
 }
 
@@ -1038,12 +1048,7 @@ export function sceneNodeToKiwiWithContext(
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)
-  const variableModeBySetMap = serializeVariableModes(
-    node,
-    context.varIdToGuid,
-    context.modeIdToGuid
-  )
-  if (variableModeBySetMap) nc.variableModeBySetMap = variableModeBySetMap
+  applyVariableModes(context, node, nc)
 
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)

@@ -27,7 +27,7 @@ import { figArchiveRecordInfo, type FigArchiveRecordInfo } from '../record-patch
 import { applyDocumentLayoutBindings } from './bindings/layout'
 import { applyDocumentPaintBindings } from './bindings/paint'
 import type { BindingReferenceDiagnostic } from './bindings/references'
-import { applyDocumentTextBindings } from './bindings/text'
+import { applyDocumentValueBindings } from './bindings/values'
 import {
   checkpointComponent,
   restoreComponentCheckpoint,
@@ -413,7 +413,7 @@ function materializeReaderInto(
     resolveVariantPropertyValues(graph, materialized)
     applyDocumentLayoutBindings(graph, savedSizeNodes, materialized, layoutScales)
     applyDocumentPaintBindings(graph, materialized)
-    applyDocumentTextBindings(graph, materialized)
+    applyDocumentValueBindings(graph, materialized)
   })
   return state
 }
