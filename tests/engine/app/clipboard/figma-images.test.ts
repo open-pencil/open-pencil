@@ -1,4 +1,4 @@
-import { describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
 
 import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
 
@@ -8,6 +8,22 @@ async function sha1Hex(bytes: Uint8Array) {
   const digest = await crypto.subtle.digest('SHA-1', Uint8Array.from(bytes))
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
+
+const HASH = '1111111111111111111111111111111111111111'
+
+/**
+ * The warnings `resolveFigmaClipboardImages` printed. The spy is on the global `console`, so it
+ * also catches warnings other code prints meanwhile; counting only these keeps the tests exact.
+ */
+function pastedImageWarnings() {
+  const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+  return () =>
+    warn.mock.calls.filter(([message]) => String(message).startsWith('Failed to fetch pasted'))
+}
+
+afterEach(() => {
+  mock.restore()
+})
 
 function pendingResponseUntilAbort(_input: RequestInfo | URL, init?: RequestInit) {
   return new Promise<Response>((_resolve, reject) => {
@@ -57,31 +73,24 @@ describe('resolveFigmaClipboardImages', () => {
   })
 
   test('drops a response whose bytes do not match the Figma hash', async () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warnings = pastedImageWarnings()
     const fetcher = async (input: RequestInfo | URL) => {
       if (String(input).includes('/image/batch')) {
         return Response.json({
           error: false,
           status: 200,
           meta: {
-            s3_urls: {
-              '1111111111111111111111111111111111111111': 'https://s3-alpha-sig.figma.com/image'
-            }
+            s3_urls: { [HASH]: 'https://s3-alpha-sig.figma.com/image' }
           }
         })
       }
       return new Response(new Uint8Array([9, 9, 9]))
     }
 
-    const images = await resolveFigmaClipboardImages(
-      'file-key',
-      ['1111111111111111111111111111111111111111'],
-      fetcher
-    )
+    const images = await resolveFigmaClipboardImages('file-key', [HASH], fetcher)
 
     expect(images.size).toBe(0)
-    expect(warn).toHaveBeenCalledTimes(1)
-    warn.mockRestore()
+    expect(warnings()).toEqual([[`Failed to fetch pasted Figma image ${HASH}`, expect.anything()]])
   })
 
   test('times out stalled batch requests', async () => {
@@ -91,10 +100,10 @@ describe('resolveFigmaClipboardImages', () => {
   })
 
   test('drops images whose signed URL request times out', async () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warnings = pastedImageWarnings()
     const images = await resolveFigmaClipboardImages(
       'file-key',
-      ['1111111111111111111111111111111111111111'],
+      [HASH],
       (input, init) => {
         if (String(input).includes('/image/batch')) {
           return Promise.resolve(
@@ -102,9 +111,7 @@ describe('resolveFigmaClipboardImages', () => {
               error: false,
               status: 200,
               meta: {
-                s3_urls: {
-                  '1111111111111111111111111111111111111111': 'https://s3-alpha-sig.figma.com/image'
-                }
+                s3_urls: { [HASH]: 'https://s3-alpha-sig.figma.com/image' }
               }
             })
           )
@@ -115,8 +122,7 @@ describe('resolveFigmaClipboardImages', () => {
     )
 
     expect(images.size).toBe(0)
-    expect(warn).toHaveBeenCalledTimes(1)
-    warn.mockRestore()
+    expect(warnings()).toEqual([[`Failed to fetch pasted Figma image ${HASH}`, expect.anything()]])
   })
 
   test('rejects failed and malformed batch responses', async () => {
