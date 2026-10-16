@@ -1,0 +1,5 @@
+export { countMatches, findInDocument, textMatchRanges } from './search'
+export type { FindContext, FindHit, FindScope, TextRange, TextSearchOptions } from './search'
+export { replaceRanges } from './replace'
+export type { TextReplacement } from './replace'
+export { replaceHits } from './apply'
