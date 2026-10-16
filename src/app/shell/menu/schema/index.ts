@@ -157,6 +157,11 @@ export const APP_MENU_SCHEMA = [
         label: 'Rename Selection…',
         shortcut: 'MOD+R'
       },
+      {
+        id: 'selection.openImplementation',
+        feature: 'document',
+        label: 'Open implementation story…'
+      },
       { type: 'separator' },
       {
         id: 'selection.selectAll',

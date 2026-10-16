@@ -12,6 +12,7 @@ import {
   figDownloadName,
   isFigArchiveName
 } from '@/app/document/io/names'
+import { invalidateLoadedRevision } from '@/app/document/io/revision'
 import { createSaveActions } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
@@ -64,6 +65,7 @@ export function createDocumentSourceActions({
 
   async function saveAndTrack(save: () => Promise<boolean>) {
     const revision = changes.capture()
+    if (changes.hasUnsavedChanges()) invalidateLoadedRevision(editor.graph)
     const saved = await save()
     if (saved) changes.markSaved(revision)
     return saved
@@ -146,6 +148,7 @@ export function createDocumentSourceActions({
     hasWritableSource,
     saveCurrentDocument: async (version) => {
       const revision = changes.capture()
+      if (changes.hasUnsavedChanges()) invalidateLoadedRevision(editor.graph)
       const data = await buildFigFile()
       if (await writeFile(data, version)) changes.markSaved(revision)
     }

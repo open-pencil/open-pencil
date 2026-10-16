@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "No se pudo iniciar el chat: {error}",
   "linkCopied": "Enlace copiado al portapapeles.",
+  "implementationStoryReady": "Historia de implementación lista.",
+  "implementationStoryUnpinned": "Historia de implementación lista. Esta asociación no está vinculada a una revisión del diseño.",
+  "openImplementationStory": "Abrir historia",
   "clipboardMissingDesignData": "El portapapeles no contiene datos de diseño.",
   "clipboardAccessBlocked": "El acceso al portapapeles está bloqueado en este contexto del navegador.",
   "copiedAs": "Copiado como {format}.",

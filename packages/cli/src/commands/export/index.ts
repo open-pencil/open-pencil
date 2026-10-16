@@ -353,6 +353,16 @@ export default defineCommand({
       description:
         'Storybook: rules file for which stories each component gets and its title (default: openpencil.stories.json when present)'
     },
+    mapping: {
+      type: 'string',
+      description:
+        'Storybook: export reference-only modules using a versioned component mapping file'
+    },
+    'mapping-info': {
+      type: 'boolean',
+      description:
+        'Storybook: print saved FIG component/property/variant identities and the original file SHA-256 as JSON'
+    },
     'font-policy': {
       type: 'string',
       description: 'Raster/PDF font policy: warn, strict, or allow (default: warn)',

@@ -92,6 +92,7 @@ pub fn run() {
             #[cfg(feature = "native-test")]
             system::opener::take_native_test_opened_urls,
             launch::paths::path_matches_suffix,
+            launch::paths::mapping_document_matches,
             list_system_fonts,
             load_system_font,
             icons::sf_symbols_catalogue,

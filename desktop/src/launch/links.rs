@@ -6,6 +6,8 @@ use url::Url;
 pub struct DeepLinkOpen {
     pub file: String,
     pub node: Option<String>,
+    pub node_id: Option<String>,
+    pub revision: Option<String>,
 }
 
 /// A collaboration room to open, from `openpencil://join?room=<id>`.
@@ -48,6 +50,8 @@ pub enum DeepLinkError {
     ParentSegment,
     BadExtension,
     BadRoom,
+    BadNodeIdentity,
+    BadRevision,
     BadOAuthProvider,
     BadCloudLink,
 }
@@ -173,10 +177,14 @@ pub fn parse_open_url(url: &Url) -> Result<DeepLinkOpen, DeepLinkError> {
     }
     let mut file = None;
     let mut node = None;
+    let mut node_id = None;
+    let mut revision = None;
     for (k, v) in url.query_pairs() {
         match k.as_ref() {
             "file" => file = Some(v.into_owned()),
             "node" => node = Some(v.into_owned()),
+            "node-id" => node_id = Some(v.into_owned()),
+            "revision" => revision = Some(v.into_owned()),
             _ => {}
         }
     }
@@ -196,9 +204,34 @@ pub fn parse_open_url(url: &Url) -> Result<DeepLinkOpen, DeepLinkError> {
     if !(lower.ends_with(".pen") || lower.ends_with(".fig")) {
         return Err(DeepLinkError::BadExtension);
     }
+    if let Some(id) = &node_id {
+        let parts: Vec<_> = id.split(':').collect();
+        if !lower.ends_with(".fig")
+            || parts.len() != 2
+            || parts.iter().any(|part| {
+                part.is_empty()
+                    || !part.bytes().all(|byte| byte.is_ascii_digit())
+                    || part.parse::<u32>().is_err()
+            })
+        {
+            return Err(DeepLinkError::BadNodeIdentity);
+        }
+    }
+    if let Some(hash) = &revision {
+        if node_id.is_none()
+            || hash.len() != 64
+            || !hash
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(DeepLinkError::BadRevision);
+        }
+    }
     Ok(DeepLinkOpen {
         file,
         node: node.filter(|n| !n.is_empty()),
+        node_id,
+        revision,
     })
 }
 
@@ -297,9 +330,30 @@ mod tests {
             parse("openpencil://open?file=web%2Fdesign%2Fhikyo.pen&node=Button%2FPrimary"),
             Ok(DeepLinkOpen {
                 file: "web/design/hikyo.pen".into(),
-                node: Some("Button/Primary".into())
+                node: Some("Button/Primary".into()),
+                node_id: None,
+                revision: None
             })
         );
+    }
+
+    #[test]
+    fn persisted_identity_and_revision_are_validated() {
+        let revision = "a".repeat(64);
+        let link = parse(&format!(
+            "openpencil://open?file=design.fig&node-id=42%3A9&revision={revision}"
+        ))
+        .unwrap();
+        assert_eq!(link.node_id, Some("42:9".into()));
+        assert_eq!(link.revision, Some(revision));
+        for url in [
+            "openpencil://open?file=a.fig&node-id=not-a-guid",
+            "openpencil://open?file=a.pen&node-id=42:9",
+            "openpencil://open?file=a.fig&node-id=42:9&revision=bad",
+            "openpencil://open?file=a.fig&revision=bad",
+        ] {
+            assert!(parse(url).is_err(), "{url}");
+        }
     }
 
     #[test]

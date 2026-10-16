@@ -73,6 +73,33 @@ fn path_ends_with_segments(candidate: &Path, suffix: &str) -> bool {
         .all(|(have, want)| segment_eq(have, want))
 }
 
+/// A picked mapping anchors its document locators; a matching suffix in another checkout
+/// cannot authorize opening that checkout's implementation. This command widens no FS scope.
+#[tauri::command(async)]
+pub fn mapping_document_matches(mapping_path: String, relative: String, document: String) -> bool {
+    let relative = Path::new(&relative);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_)))
+    {
+        return false;
+    }
+    let Ok(mapping) = Path::new(&mapping_path).canonicalize() else {
+        return false;
+    };
+    let Some(parent) = mapping.parent() else {
+        return false;
+    };
+    match (
+        parent.join(relative).canonicalize(),
+        Path::new(&document).canonicalize(),
+    ) {
+        (Ok(expected), Ok(actual)) => expected == actual,
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -209,5 +236,39 @@ mod tests {
         assert!(!matches(&file, "web/../design/hikyo.pen"));
         assert!(!matches(&file, "./hikyo.pen"));
         assert!(!matches(&file, ""));
+    }
+
+    #[test]
+    fn mapping_document_is_anchored_to_the_picked_config() {
+        let tree = TempTree::new("mapping");
+        let mapping = tree.file("one/openpencil.components.json");
+        let document = tree.file("one/design/library.fig");
+        let other = tree.file("two/design/library.fig");
+        let check = |relative: &str, candidate: &Path| {
+            mapping_document_matches(
+                mapping.to_string_lossy().into_owned(),
+                relative.into(),
+                candidate.to_string_lossy().into_owned(),
+            )
+        };
+        assert!(check("design/library.fig", &document));
+        assert!(!check("design/library.fig", &other));
+        assert!(!check("../two/design/library.fig", &other));
+        assert!(!check("missing.fig", &document));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn mapping_config_symlink_uses_its_canonical_parent() {
+        let tree = TempTree::new("mapping-config-link");
+        let mapping = tree.file("project/openpencil.components.json");
+        let document = tree.file("project/design/library.fig");
+        let link = tree.0.join("shortcut.json");
+        std::os::unix::fs::symlink(&mapping, &link).expect("link the config");
+        assert!(mapping_document_matches(
+            link.to_string_lossy().into_owned(),
+            "design/library.fig".into(),
+            document.to_string_lossy().into_owned()
+        ));
     }
 }

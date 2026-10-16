@@ -130,6 +130,7 @@ export function useAppMenu() {
     'paste-to-replace': 'pasteToReplace',
     'paste-as-layers': 'pasteAsLayers',
     'selection.rename': 'renameSelection',
+    'selection.openImplementation': 'openImplementationStory',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
     language: 'language',

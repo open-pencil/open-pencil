@@ -199,6 +199,10 @@
         "feature": "document"
       },
       {
+        "id": "selection.openImplementation",
+        "label": "Open implementation story…"
+      },
+      {
         "type": "separator"
       },
       {

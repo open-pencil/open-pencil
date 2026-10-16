@@ -1,7 +1,6 @@
 import { readFile as tauriRead } from '@tauri-apps/plugin-fs'
 
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
-
+import { readFigDocument } from '@/app/document/io/fig'
 import { isTauri } from '@/app/tauri/env'
 
 export type ReloadSourceOptions = {
@@ -23,13 +22,13 @@ export async function readReloadSource({
     signal?.throwIfAborted()
     const blob = new Blob([bytes])
     const file = new File([blob], `${documentName}.fig`)
-    return readFigFile(file, { populate: 'first-page', signal })
+    return readFigDocument(file, signal)
   }
 
   if (fileHandle) {
     const file = await fileHandle.getFile()
     signal?.throwIfAborted()
-    return readFigFile(file, { populate: 'first-page', signal })
+    return readFigDocument(file, signal)
   }
 
   return null
