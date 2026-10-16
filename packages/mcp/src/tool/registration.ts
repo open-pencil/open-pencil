@@ -6,7 +6,7 @@ import type { McpServer, ToolCallback, ToolAnnotations } from '@modelcontextprot
 import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
-import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
+import { CODEGEN_PROMPT, toolTakesFilePath } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
@@ -125,7 +125,9 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: Record<string, unknown>) => {
         try {
           const { target, args: toolArgs } = splitAutomationTarget(args)
-          if (policy.scope === 'selection' && toolArgs.path !== undefined) {
+          // `path` is a file only for file-output tools; create_vector and path_set carry geometry.
+          const takesFilePath = toolTakesFilePath(def)
+          if (policy.scope === 'selection' && takesFilePath && toolArgs.path !== undefined) {
             return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
           }
           const result = await sendRPC({
@@ -142,7 +144,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as RPCJSONObject | undefined
-          const filePath = typeof toolArgs.path === 'string' ? toolArgs.path : null
+          const filePath = takesFilePath && typeof toolArgs.path === 'string' ? toolArgs.path : null
           if (r && filePath && resolvedRoot) {
             const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
             if (written) return written

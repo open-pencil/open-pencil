@@ -239,7 +239,10 @@ export async function writeToolOutput(
     await resolveSafePath(realPath, root)
     return ok({ written: resolved, byteLength: Buffer.byteLength(result.svg, 'utf8') })
   }
-  if (toolName === 'export_image' && typeof result.base64 === 'string') {
+  if (
+    (toolName === 'export_image' || toolName === 'export_pdf') &&
+    typeof result.base64 === 'string'
+  ) {
     const bytes = toUint8Array(result.base64)
     await writeFile(realPath, bytes)
     await resolveSafePath(realPath, root)

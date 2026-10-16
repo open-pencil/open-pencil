@@ -1,0 +1,1 @@
+- `export_pdf` writes the PDF to its `path` under the MCP root instead of returning the bytes inline.
