@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "Chat konnte nicht initialisiert werden: {error}",
   "linkCopied": "Link in die Zwischenablage kopiert.",
+  "implementationStoryReady": "Implementierungsstory bereit.",
+  "implementationStoryUnpinned": "Implementierungsstory bereit. Diese Zuordnung ist an keine Designrevision gebunden.",
+  "openImplementationStory": "Story öffnen",
   "clipboardMissingDesignData": "Die Zwischenablage enthält keine Designdaten.",
   "clipboardAccessBlocked": "Der Zugriff auf die Zwischenablage ist in diesem Browserkontext blockiert.",
   "copiedAs": "Als {format} kopiert.",

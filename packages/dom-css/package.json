@@ -59,7 +59,7 @@
   ],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
-    "check": "bun run typecheck && bun run test && bun run build",
+    "check": "bun run typecheck && bun run test && bun run build && bun scripts/check-dist-types.ts",
     "prepack": "bun run build",
     "test": "bun test tests",
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
@@ -108,6 +108,7 @@
     "parse5": "^8.0.1",
     "postcss-value-parser": "^4.2.0",
     "tailwindcss": "^4.3.3",
-    "twirlwind": "^0.4.1"
+    "twirlwind": "^0.4.1",
+    "valibot": "^1.5.0"
   }
 }

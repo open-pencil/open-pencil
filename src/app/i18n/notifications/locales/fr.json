@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "Impossible d’initialiser le chat : {error}",
   "linkCopied": "Lien copié dans le presse-papiers.",
+  "implementationStoryReady": "Story d’implémentation prête.",
+  "implementationStoryUnpinned": "Story d’implémentation prête. Cette association n’est pas liée à une révision du design.",
+  "openImplementationStory": "Ouvrir la story",
   "clipboardMissingDesignData": "Le presse-papiers ne contient aucune donnée de design.",
   "clipboardAccessBlocked": "L’accès au presse-papiers est bloqué dans ce contexte de navigateur.",
   "copiedAs": "Copié au format {format}.",

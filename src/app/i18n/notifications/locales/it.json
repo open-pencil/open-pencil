@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "Impossibile inizializzare la chat: {error}",
   "linkCopied": "Link copiato negli appunti.",
+  "implementationStoryReady": "Storia di implementazione pronta.",
+  "implementationStoryUnpinned": "Storia di implementazione pronta. Questa associazione non è vincolata a una revisione del design.",
+  "openImplementationStory": "Apri storia",
   "clipboardMissingDesignData": "Gli appunti non contengono dati di design.",
   "clipboardAccessBlocked": "L’accesso agli appunti è bloccato in questo contesto del browser.",
   "copiedAs": "Copiato come {format}.",
