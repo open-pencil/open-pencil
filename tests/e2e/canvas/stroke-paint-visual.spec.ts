@@ -108,6 +108,18 @@ test('gradient strokes', async () => {
       })
     }
 
+    // A zero-height line makes CanvasKit return null for its gradient shader. Rendering must
+    // skip that shader without throwing, even though the stroke itself has a positive weight.
+    store.graph.createNode('LINE', pageId, {
+      name: 'zero-height gradient stroke',
+      x: 600,
+      y: 470,
+      width: 200,
+      height: 0,
+      fills: [],
+      strokes: [vectorStroke({ weight: 8 })]
+    })
+
     store.clearSelection()
     store.requestRender()
   })

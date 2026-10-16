@@ -1,0 +1,1 @@
+- Zero-size gradient strokes no longer abort canvas rendering when CanvasKit cannot create a shader.

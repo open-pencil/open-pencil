@@ -332,11 +332,11 @@ export function applyGradientFill(
   const h = node.height
 
   /** The paint keeps its own reference, so the caller's handle has to go or WASM memory grows. */
-  const setShader = (shader: ReturnType<typeof makeDiamondGradient>) => {
+  const setShader = (shader: ReturnType<typeof makeDiamondGradient> | null) => {
     try {
       paint.setShader(shader)
     } finally {
-      shader.delete()
+      shader?.delete()
     }
   }
 
