@@ -1,0 +1,1 @@
+- A Shape with text tool draws FigJam's flowchart shapes and starts typing into their label; double-click edits the label, the Appearance section switches the shape's kind, and scripts get `figma.createShapeWithText()` and `shapeType` (#1114).

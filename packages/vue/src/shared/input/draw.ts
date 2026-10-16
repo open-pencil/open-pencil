@@ -1,6 +1,11 @@
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import {
+  SHAPE_WITH_TEXT_SIZE,
+  shapeWithTextLabel,
+  type NodeType,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -103,6 +108,9 @@ function settleDrawnSize(preview: ReturnType<Editor['beginNodePreview']>, node: 
       height: clicked ? DEFAULT_TEXT_HEIGHT : node.height,
       textAutoResize: clicked ? 'WIDTH_AND_HEIGHT' : 'NONE'
     })
+  } else if (node.type === 'SHAPE_WITH_TEXT' && clicked) {
+    // A shape with text placed by a click takes FigJam's default size.
+    preview.update(node.id, { width: SHAPE_WITH_TEXT_SIZE, height: SHAPE_WITH_TEXT_SIZE })
   } else if (node.type === 'LINE' && node.width < 2) {
     preview.update(node.id, { width: 100, height: 0, rotation: 0 })
     return true
@@ -158,7 +166,10 @@ function createDraw(
       throw error
     }
     editor.setTool('SELECT')
+    // Text, and a shape with text's label, take typing as soon as they are drawn.
     if (node?.type === 'TEXT') editor.startTextEditing(node.id)
+    const label = node && shapeWithTextLabel(editor.graph, node)
+    if (label) editor.startTextEditing(label.id)
   }
 
   // Creation itself is already an edit: avoid rebuilding the backing on the first held frame.

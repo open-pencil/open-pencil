@@ -4,6 +4,7 @@ import type { ComputedRef, Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
@@ -159,6 +160,19 @@ export function createAppearanceState({
     )
   )
 
+  // A shape with text's kind shows while every selected layer is one.
+  const hasShapeKind = computed(
+    () =>
+      selectedNodes.value.length > 0 &&
+      selectedNodes.value.every((target) => target.type === 'SHAPE_WITH_TEXT')
+  )
+  const shapeKind = computed(() =>
+    sharedValue(
+      selectedNodes.value.map((target) => target.shapeWithTextType),
+      'SQUARE'
+    )
+  )
+
   const cornerSmoothingPercent = computed(() => {
     const value = isMulti.value
       ? sharedValue(
@@ -191,6 +205,8 @@ export function createAppearanceState({
     splitsCorners,
     hasPointCount,
     hasStarRatio,
+    hasShapeKind,
+    shapeKind,
     pointCount,
     starRatioPercent,
     independentCorners,
@@ -223,6 +239,23 @@ export function createAppearanceActions({
     editor.undo.runBatch('Change blend mode', () => {
       for (const target of changed) {
         editor.updateNodeWithUndo(target.id, { blendMode: value }, 'Change blend mode')
+      }
+    })
+  }
+
+  /** Switches the selected shapes with text to `value`, keeping their labels and styles. */
+  function setShapeKind(value: ShapeWithTextType) {
+    const selected = node.value
+    const targets = isMulti.value ? nodes.value : []
+    if (!isMulti.value && selected) targets.push(selected)
+    const changed = targets.filter(
+      (target) => target.type === 'SHAPE_WITH_TEXT' && target.shapeWithTextType !== value
+    )
+    if (changed.length === 0) return
+
+    editor.undo.runBatch('Change shape', () => {
+      for (const target of changed) {
+        editor.updateNodeWithUndo(target.id, { shapeWithTextType: value }, 'Change shape')
       }
     })
   }
@@ -388,6 +421,7 @@ export function createAppearanceActions({
     updateUniformRadius,
     commitUniformRadius,
     setBlendMode,
+    setShapeKind,
     toggleVisibility,
     toggleIndependentCorners,
     updateCornerProp,

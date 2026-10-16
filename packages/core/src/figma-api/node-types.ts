@@ -10,6 +10,7 @@ export type FigmaLineNode = FigmaNodeProxy & LineNode
 export type FigmaVectorNode = FigmaNodeProxy & VectorNode
 export type FigmaPolygonNode = FigmaNodeProxy & PolygonNode
 export type FigmaStarNode = FigmaNodeProxy & StarNode
+export type FigmaShapeWithTextNode = FigmaNodeProxy & ShapeWithTextNode
 export type FigmaComponentNode = FigmaNodeProxy & ComponentNode
 export type FigmaComponentSetNode = FigmaNodeProxy & ComponentSetNode
 export type FigmaInstanceNode = FigmaNodeProxy & InstanceNode

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isGeneratedFrame } from '@open-pencil/scene-graph'
 import { LAYOUT_CONTAINER_TYPES, LayoutControlsRoot, useI18n } from '@open-pencil/vue'
 
 import ClipContentControl from '@/components/properties/layout/ClipContentControl.vue'
@@ -18,7 +19,14 @@ const { panels } = useI18n()
 <template>
   <LayoutControlsRoot v-slot="ctx">
     <template v-if="ctx.node">
-      <PanelSection :label="ctx.node.layoutMode === 'NONE' ? panels.layout : panels.autoLayout">
+      <!-- A shape with text lays out its label itself; its own layout is not offered. -->
+      <PanelSection
+        :label="
+          ctx.node.layoutMode === 'NONE' || isGeneratedFrame(ctx.node)
+            ? panels.layout
+            : panels.autoLayout
+        "
+      >
         <template v-if="LAYOUT_CONTAINER_TYPES.has(ctx.node.type)" #actions>
           <IconButton
             :label="ctx.node.layoutMode === 'NONE' ? panels.addAutoLayout : panels.removeAutoLayout"

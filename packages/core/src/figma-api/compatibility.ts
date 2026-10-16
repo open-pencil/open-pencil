@@ -29,6 +29,7 @@ export type SupportedPluginAPI = Pick<
   | 'createPolygon'
   | 'createRectangle'
   | 'createSection'
+  | 'createShapeWithText'
   | 'createStar'
   | 'createText'
   | 'createVector'

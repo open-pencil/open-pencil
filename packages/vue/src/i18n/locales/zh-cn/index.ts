@@ -23,6 +23,7 @@ import recovery from './recovery.json'
 import rename from './rename.json'
 import rendering from './rendering.json'
 import settings from './settings.json'
+import shapes from './shapes.json'
 import statuses from './statuses.json'
 import storage from './storage.json'
 import tools from './tools.json'
@@ -54,6 +55,7 @@ export default {
   rendering,
   rename,
   settings,
+  shapes,
   statuses,
   storage,
   tools,

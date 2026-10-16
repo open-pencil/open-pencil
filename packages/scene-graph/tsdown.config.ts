@@ -26,6 +26,7 @@ export default defineConfig({
     geometry: './src/geometry.ts',
     gradient: './src/gradient.ts',
     polygon: './src/polygon.ts',
+    'shape-with-text': './src/shape-with-text.ts',
     guides: './src/guides.ts',
     layout: './src/layout/index.ts',
     text: './src/text/index.ts',

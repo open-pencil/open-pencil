@@ -24,6 +24,7 @@ import { recoveryMessageDefaults, recoveryMessages } from '#vue/i18n/messages/re
 import { renameMessageDefaults, renameMessages } from '#vue/i18n/messages/rename'
 import { renderingMessageDefaults, renderingMessages } from '#vue/i18n/messages/rendering'
 import { settingsMessageDefaults, settingsMessages } from '#vue/i18n/messages/settings'
+import { shapeMessageDefaults, shapeMessages } from '#vue/i18n/messages/shapes'
 import { statusMessageDefaults, statusMessages } from '#vue/i18n/messages/statuses'
 import { storageMessageDefaults, storageMessages } from '#vue/i18n/messages/storage'
 import { toolMessageDefaults, toolMessages } from '#vue/i18n/messages/tools'
@@ -58,6 +59,7 @@ export {
   settingsMessages,
   statusMessages,
   storageMessages,
+  shapeMessages,
   toolMessages,
   updatesMessages,
   cloudMessages,
@@ -90,6 +92,7 @@ export const messageDefaults = {
   settings: settingsMessageDefaults,
   statuses: statusMessageDefaults,
   storage: storageMessageDefaults,
+  shapes: shapeMessageDefaults,
   tools: toolMessageDefaults,
   updates: updatesMessageDefaults,
   cloud: cloudMessageDefaults,

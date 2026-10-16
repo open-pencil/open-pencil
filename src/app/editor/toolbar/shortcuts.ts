@@ -13,6 +13,7 @@ const TOOL_SHORTCUT_KEYS: Readonly<Record<Tool, string>> = {
   LINE: 'L',
   POLYGON: '',
   STAR: '',
+  SHAPE_WITH_TEXT: '',
   PEN: 'P',
   PENCIL: 'SHIFT+P',
   TEXT: 'T',

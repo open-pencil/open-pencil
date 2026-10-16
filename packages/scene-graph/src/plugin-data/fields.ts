@@ -227,6 +227,15 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   okhcl: jsonPluginDataField('okhcl', 'content', okhcl),
   /** How a main component or component set behaves as a control in preview. */
   behaviour: jsonPluginDataField('behaviour', 'content', behaviourSchema),
+  /**
+   * The width a shape with text was given, which it grows past only for a word too wide.
+   * FigJam keeps the height it was given (`shapeUserHeight`) but not the width.
+   */
+  shapeUserWidth: jsonPluginDataField(
+    'shapeUserWidth',
+    'format',
+    v.pipe(v.number(), v.finite(), v.minValue(0))
+  ),
   /** The icon a frame draws, such as `lucide:home`, on the frame its paths are in. */
   icon: jsonPluginDataField('icon', 'content', iconSchema),
   /** Which of an icon path's paints its icon's color sets, on each path the source drew in it. */

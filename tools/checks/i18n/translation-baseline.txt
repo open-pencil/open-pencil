@@ -472,3 +472,17 @@ pl:cloud.homeCloudOnHost
 ru:cloud.productName
 ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
+de:shapes.chevron
+de:shapes.ellipse
+de:shapes.plus
+fr:shapes.chevron
+fr:shapes.documentMultiple
+fr:shapes.documentSingle
+fr:shapes.ellipse
+fr:shapes.plus
+fr:shapes.triangleUp
+it:shapes.chevron
+it:shapes.engDatabase
+it:shapes.engFile
+pl:shapes.engFolder
+pl:shapes.plus

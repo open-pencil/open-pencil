@@ -40,6 +40,7 @@ export type Tool =
   | 'LINE'
   | 'POLYGON'
   | 'STAR'
+  | 'SHAPE_WITH_TEXT'
   | 'TEXT'
   | 'STICKY'
   | 'PEN'

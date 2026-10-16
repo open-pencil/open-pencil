@@ -9,6 +9,7 @@ export const toolMessageDefaults = {
   line: 'Line',
   polygon: 'Polygon',
   star: 'Star',
+  shapeWithText: 'Shape with text',
   pen: 'Pen',
   pencil: 'Pencil',
   text: 'Text',

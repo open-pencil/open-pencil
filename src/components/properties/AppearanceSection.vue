@@ -1,6 +1,13 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { BlendMode } from '@open-pencil/scene-graph'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
+import {
+  SHAPE_WITH_TEXT_TYPES,
+  isShapeWithTextType,
+  type ShapeWithTextType
+} from '@open-pencil/scene-graph/shape-with-text'
 import { AppearanceControlsRoot, MIXED, useI18n, useVariableModes } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -17,11 +24,52 @@ import PropertyBoundField from './component-properties/PropertyBoundField.vue'
 import VariableModeMenu from './variable-modes/VariableModeMenu.vue'
 import VariableModeRows from './variable-modes/VariableModeRows.vue'
 
-const { panels } = useI18n()
+const { panels, shapes } = useI18n()
 const variableModes = useVariableModes()
 type BlendModeSelectValue = BlendMode | 'MIXED'
 
 const baseBlendModeGroups = useBlendModeGroups(true)
+
+/** The label each FigJam shape kind takes in the interface language. */
+const SHAPE_KIND_LABELS = {
+  SQUARE: 'square',
+  ELLIPSE: 'ellipse',
+  DIAMOND: 'diamond',
+  TRIANGLE_UP: 'triangleUp',
+  TRIANGLE_DOWN: 'triangleDown',
+  ROUNDED_RECTANGLE: 'roundedRectangle',
+  PARALLELOGRAM_RIGHT: 'parallelogramRight',
+  PARALLELOGRAM_LEFT: 'parallelogramLeft',
+  ENG_DATABASE: 'engDatabase',
+  ENG_QUEUE: 'engQueue',
+  ENG_FILE: 'engFile',
+  ENG_FOLDER: 'engFolder',
+  TRAPEZOID: 'trapezoid',
+  PREDEFINED_PROCESS: 'predefinedProcess',
+  SHIELD: 'shield',
+  DOCUMENT_SINGLE: 'documentSingle',
+  DOCUMENT_MULTIPLE: 'documentMultiple',
+  MANUAL_INPUT: 'manualInput',
+  HEXAGON: 'hexagon',
+  CHEVRON: 'chevron',
+  PENTAGON: 'pentagon',
+  OCTAGON: 'octagon',
+  STAR: 'star',
+  PLUS: 'plus',
+  ARROW_LEFT: 'arrowLeft',
+  ARROW_RIGHT: 'arrowRight',
+  SUMMING_JUNCTION: 'summingJunction',
+  OR: 'or',
+  SPEECH_BUBBLE: 'speechBubble',
+  INTERNAL_STORAGE: 'internalStorage'
+} as const satisfies Record<ShapeWithTextType, string>
+
+const shapeKindOptions = computed(() =>
+  SHAPE_WITH_TEXT_TYPES.map((kind) => ({
+    value: kind,
+    label: shapes.value[SHAPE_KIND_LABELS[kind]]
+  }))
+)
 
 function blendModeGroups(value: BlendMode | typeof MIXED) {
   return value === MIXED
@@ -45,6 +93,8 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
       hasPointCount,
       hasStarRatio,
       pointCount,
+      hasShapeKind,
+      shapeKind,
       starRatioPercent,
       showIndependentCorners,
       cornerRadiusValue,
@@ -217,6 +267,21 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
             <icon-lucide-square-round-corner class="size-3" />
           </IconButton>
         </template>
+      </PanelGrid>
+
+      <PanelGrid v-if="hasShapeKind" :columns="1" class="mt-1.5">
+        <PanelFieldGroup :label="shapes.kind">
+          <AppSelect
+            :model-value="shapeKind === MIXED ? '' : shapeKind"
+            class="w-full"
+            :label="shapes.kind"
+            :options="shapeKindOptions"
+            data-property="shapeWithTextType"
+            @update:model-value="
+              (value: string | number) => isShapeWithTextType(value) && actions.setShapeKind(value)
+            "
+          />
+        </PanelFieldGroup>
       </PanelGrid>
 
       <PanelGrid v-if="hasPointCount" :columns="2" class="mt-1.5">

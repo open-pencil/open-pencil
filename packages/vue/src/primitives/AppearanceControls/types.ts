@@ -1,6 +1,7 @@
 import type { VNode } from 'vue'
 
 import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 import type { MixedValue } from '#vue/controls/node-props/use'
@@ -9,6 +10,7 @@ export interface AppearanceControlsActions {
   updateProp(key: string, value: number): void
   commitProp(key: string, value: number, previous: number): void
   setBlendMode(value: BlendMode): void
+  setShapeKind(value: ShapeWithTextType): void
   toggleVisibility(): void
   toggleIndependentCorners(): void
   updateUniformRadius(value: number): void
@@ -30,6 +32,9 @@ export interface AppearanceControlsRootSlotProps {
   hasPointCount: boolean
   /** Whether every selected layer is a star, which has an inner ratio. */
   hasStarRatio: boolean
+  /** Whether every selected layer is a shape with text, which has a FigJam kind. */
+  hasShapeKind: boolean
+  shapeKind: MixedValue<ShapeWithTextType>
   pointCount: MixedValue<number>
   /** A star's inner radius as a percentage of its outer radius, to one decimal. */
   starRatioPercent: MixedValue<number>

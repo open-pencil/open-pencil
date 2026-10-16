@@ -1,0 +1,1 @@
+- FigJam shapes with text open from `.fig` files and paste from FigJam with their kind, colour, corners, and label, grow to fit their label as FigJam does, and save back as FigJam shapes (#1114).

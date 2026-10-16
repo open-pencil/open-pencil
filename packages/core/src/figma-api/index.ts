@@ -1,5 +1,6 @@
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
+import { createShapeWithText as createShapeWithTextLayer } from '@open-pencil/scene-graph'
 import type {
   GroupFitOptions,
   SceneGraph,
@@ -44,6 +45,7 @@ import type {
   FigmaPolygonNode,
   FigmaRectangleNode,
   FigmaSectionNode,
+  FigmaShapeWithTextNode,
   FigmaStarNode,
   FigmaTextNode,
   FigmaVectorNode
@@ -213,6 +215,13 @@ export class FigmaAPI implements NodeProxyHost {
 
   createStar(): FigmaStarNode {
     return this._createNode('STAR') as FigmaStarNode
+  }
+
+  /** A FigJam shape with an empty label, a square until its `shapeType` changes. */
+  createShapeWithText(): FigmaShapeWithTextNode {
+    const defaults = newLayerDefaults('SHAPE_WITH_TEXT', this.theme)
+    const shape = createShapeWithTextLayer(this.graph, this._currentPageId, defaults)
+    return this.wrapNode(shape.id) as FigmaShapeWithTextNode
   }
 
   createVector(): FigmaVectorNode {

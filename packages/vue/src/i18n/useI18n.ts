@@ -28,6 +28,7 @@ import {
   settingsMessages,
   statusMessages,
   storageMessages,
+  shapeMessages,
   toolMessages,
   updatesMessages,
   cloudMessages,
@@ -63,6 +64,7 @@ export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
 export const useStatusMessages = () => useI18nNamespace(statusMessages)
 export const useStorageMessages = () => useI18nNamespace(storageMessages)
+export const useShapeMessages = () => useI18nNamespace(shapeMessages)
 export const useToolMessages = () => useI18nNamespace(toolMessages)
 export const useUpdateMessages = () => useI18nNamespace(updatesMessages)
 export const useCloudMessages = () => useI18nNamespace(cloudMessages)
@@ -93,6 +95,7 @@ export function useI18n() {
     rename: useRenameMessages(),
     settings: useSettingsMessages(),
     storage: useStorageMessages(),
+    shapes: useShapeMessages(),
     tools: useToolMessages(),
     updates: useUpdateMessages(),
     variables: useVariableMessages(),

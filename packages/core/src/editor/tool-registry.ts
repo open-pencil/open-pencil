@@ -14,7 +14,7 @@ export const EDITOR_TOOLS: EditorToolDef[] = [
     key: 'RECTANGLE',
     label: 'Rectangle',
     shortcut: 'R',
-    flyout: ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR']
+    flyout: ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR', 'SHAPE_WITH_TEXT']
   },
   { key: 'PEN', label: 'Pen', shortcut: 'P', flyout: ['PEN', 'PENCIL'] },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },

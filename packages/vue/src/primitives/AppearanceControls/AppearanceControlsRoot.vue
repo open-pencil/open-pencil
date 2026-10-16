@@ -8,6 +8,7 @@ const actions = {
   updateProp: ctx.updateProp,
   commitProp: ctx.commitProp,
   setBlendMode: ctx.setBlendMode,
+  setShapeKind: ctx.setShapeKind,
   toggleVisibility: ctx.toggleVisibility,
   toggleIndependentCorners: ctx.toggleIndependentCorners,
   updateUniformRadius: ctx.updateUniformRadius,
@@ -27,6 +28,8 @@ const actions = {
     :splits-corners="ctx.splitsCorners.value"
     :has-point-count="ctx.hasPointCount.value"
     :has-star-ratio="ctx.hasStarRatio.value"
+    :has-shape-kind="ctx.hasShapeKind.value"
+    :shape-kind="ctx.shapeKind.value"
     :point-count="ctx.pointCount.value"
     :star-ratio-percent="ctx.starRatioPercent.value"
     :independent-corners="ctx.independentCorners.value"

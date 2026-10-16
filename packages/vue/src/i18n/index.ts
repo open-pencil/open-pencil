@@ -24,6 +24,7 @@ export {
   useSettingsMessages,
   useStatusMessages,
   useStorageMessages,
+  useShapeMessages,
   useToolMessages,
   useUpdateMessages,
   useCloudMessages,

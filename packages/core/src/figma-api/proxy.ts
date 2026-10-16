@@ -22,6 +22,7 @@ import {
 } from '@open-pencil/scene-graph/color'
 import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaEffect } from '#core/figma-api/effects'
@@ -52,6 +53,7 @@ import { installInstanceOverrideAccessors, type FigmaInstanceOverride } from './
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
+import { checkedShapeType, shapeTypeOf } from './shape-with-text'
 import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slots'
 import type { FigmaLetterSpacing, FigmaLineHeight } from './text'
 import * as TextProxy from './text'
@@ -165,7 +167,10 @@ export class FigmaNodeProxy {
   declare readonly explicitVariableModes: Readonly<Record<string, string>>
   declare readonly resolvedVariableModes: Readonly<Record<string, string>>
   declare readonly overrides: FigmaInstanceOverride[] | undefined
-  /** A sticky note's body, its author line, and whether it is wide; undefined on other layers. */
+  /**
+   * A sticky note's body, its author line, and whether it is wide; undefined on other layers.
+   * A shape with text has `text` too: its label.
+   */
   declare readonly text: FigmaNodeProxy | undefined
   declare readonly authorName: string | undefined
   declare authorVisible: boolean | undefined
@@ -289,6 +294,16 @@ export class FigmaNodeProxy {
 
   deleteCharacters(start: number, end: number): void {
     TextProxy.deleteCharacters(this[INTERNAL_GRAPH], this._raw(), start, end)
+  }
+
+  /** A shape with text's FigJam kind; other layers have none. */
+  get shapeType(): ShapeWithTextType | undefined {
+    return shapeTypeOf(this._raw())
+  }
+  set shapeType(value: ShapeWithTextType) {
+    const kind = checkedShapeType(this._raw(), value)
+    prepareFollowedFieldEdit(this[INTERNAL_GRAPH], this._raw(), 'shapeType', 'shape-type')
+    this._update({ shapeWithTextType: kind })
   }
 
   get isMask(): boolean {

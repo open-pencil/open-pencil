@@ -18,6 +18,7 @@ export function useToolLabels() {
     LINE: tools.value.line,
     POLYGON: tools.value.polygon,
     STAR: tools.value.star,
+    SHAPE_WITH_TEXT: tools.value.shapeWithText,
     PEN: tools.value.pen,
     PENCIL: tools.value.pencil,
     TEXT: tools.value.text,

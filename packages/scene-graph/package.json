@@ -173,6 +173,12 @@
       "import": "./dist/polygon.js",
       "default": "./dist/polygon.js"
     },
+    "./shape-with-text": {
+      "types": "./dist/shape-with-text.d.ts",
+      "bun": "./src/shape-with-text.ts",
+      "import": "./dist/shape-with-text.js",
+      "default": "./dist/shape-with-text.js"
+    },
     "./resize": {
       "types": "./dist/resize.d.ts",
       "bun": "./src/resize.ts",
