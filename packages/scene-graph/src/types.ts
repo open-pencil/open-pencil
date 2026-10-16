@@ -775,7 +775,48 @@ export interface ComponentPropertyDefinition {
 }
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
-export type VariableValue = Color | number | string | boolean | { aliasId: string }
+export interface VariableAlias {
+  aliasId: string
+}
+
+/** Figma's two-argument color expression; opacity is a percentage, not an alpha multiplier. */
+export interface VariableColorExpression {
+  expression: 'COMPOSE_COLOR'
+  color: Color | VariableAlias
+  opacity: number | VariableAlias
+}
+
+export type VariableLiteral = Color | number | string | boolean
+export const VARIABLE_FORMULA_OPERATORS = [
+  'ADDITION',
+  'SUBTRACTION',
+  'MULTIPLY',
+  'DIVIDE',
+  'NEGATE',
+  'AND',
+  'OR',
+  'NOT',
+  'NOT_EQUAL'
+] as const
+export type VariableFormulaOperator = (typeof VARIABLE_FORMULA_OPERATORS)[number]
+export type VariableFormulaNode =
+  | number
+  | boolean
+  | VariableAlias
+  | {
+      operator: VariableFormulaOperator
+      operands: VariableFormulaNode[]
+    }
+export interface VariableFormula {
+  expression: 'FORMULA'
+  type: 'FLOAT' | 'BOOLEAN'
+  value: VariableFormulaNode
+}
+export type VariableValue =
+  | VariableLiteral
+  | VariableAlias
+  | VariableColorExpression
+  | VariableFormula
 export type VariableModeMap = Record<string, string>
 
 /** Property pickers a variable is offered in, as Figma names them. */

@@ -1,0 +1,2 @@
+- Number and Boolean variables support live formulas, edited in one value field with removable reference pills and resolved values, preserved through undo, copy/paste, sharing, and `.fig` saves.
+- Imported Figma color and opacity expressions retain their variable references.

@@ -118,5 +118,8 @@
   "importInvalidFile": "{file} 不是设计令牌文件",
   "importMissingFile": "未选择 {from} 引用的 {file}",
   "importNothing": "这些文件中没有设计令牌。",
-  "importAction": "导入"
+  "importAction": "导入",
+  "removeReference": "移除 {name}",
+  "insertReference": "插入变量",
+  "formulaResult": "计算结果"
 }

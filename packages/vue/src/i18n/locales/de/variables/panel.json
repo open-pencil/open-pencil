@@ -118,5 +118,8 @@
   "importInvalidFile": "{file} ist keine Design-Token-Datei",
   "importMissingFile": "{file}, auf die {from} verweist, wurde nicht ausgewählt",
   "importNothing": "Diese Dateien enthalten keine Design-Tokens.",
-  "importAction": "Importieren"
+  "importAction": "Importieren",
+  "removeReference": "„{name}“ entfernen",
+  "insertReference": "Variable einfügen",
+  "formulaResult": "Ergebnis"
 }

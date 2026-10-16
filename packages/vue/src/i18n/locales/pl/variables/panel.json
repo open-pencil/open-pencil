@@ -118,5 +118,8 @@
   "importInvalidFile": "{file} nie jest plikiem tokenów projektowych",
   "importMissingFile": "Nie wybrano pliku {file}, do którego odwołuje się {from}",
   "importNothing": "Te pliki nie zawierają tokenów projektowych.",
-  "importAction": "Importuj"
+  "importAction": "Importuj",
+  "removeReference": "Usuń {name}",
+  "insertReference": "Wstaw zmienną",
+  "formulaResult": "Wynik"
 }

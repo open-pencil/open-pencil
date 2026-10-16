@@ -34,7 +34,12 @@ const {
   ui
 } = defineProps<VariablePickerProps>()
 const open = defineModel<boolean>('open', { default: false })
-const emit = defineEmits<{ select: [id: string]; detach: []; create: [name: string] }>()
+const emit = defineEmits<{
+  select: [id: string]
+  detach: []
+  create: [name: string]
+  closeAutoFocus: [event: Event]
+}>()
 
 const { common } = useI18n()
 const creating = ref(false)
@@ -90,6 +95,7 @@ defineOptions({ inheritAttrs: false })
       :tooltip="triggerLabel"
       :side="side"
       @select="emit('select', $event)"
+      @close-auto-focus="emit('closeAutoFocus', $event)"
     >
       <template #trigger>
         <BindingTrigger
@@ -114,6 +120,14 @@ defineOptions({ inheritAttrs: false })
           :ui="{ root: 'size-3.5 shrink-0 rounded-sm' }"
         />
         <icon-lucide-diamond v-else class="size-3.5 text-muted" />
+      </template>
+      <template #trailing="{ item }">
+        <span
+          v-if="items.find((entry) => entry.id === item.value)?.text"
+          class="shrink-0 text-muted tabular-nums"
+        >
+          {{ items.find((entry) => entry.id === item.value)?.text }}
+        </span>
       </template>
       <template #footer>
         <AppButton

@@ -66,6 +66,13 @@ export default {
     /** A mode's value control beside the button that points it at a variable. */
     valueRow: 'flex items-center gap-1 [&>*:first-child]:min-w-0 [&>*:first-child]:flex-1',
     valueControl: 'flex min-w-0 items-center gap-1.5',
+    formulaInput: 'h-auto min-h-7 px-1.5 py-1 font-mono leading-6 break-words',
+    formulaPill:
+      'inline-flex max-w-full items-center gap-1 rounded-sm bg-component/10 px-1 align-middle font-sans text-component',
+    formulaPillLabel: 'min-w-0 truncate text-[11px] font-medium',
+    formulaPillValue: 'shrink-0 text-[11px] tabular-nums',
+    formulaPillRemove:
+      'inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-component/15 focus-visible:outline focus-visible:outline-accent',
     empty: 'px-4 py-8 text-center text-xs text-muted'
   },
   variants: {

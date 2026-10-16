@@ -136,7 +136,7 @@ function commitName(row: TokenRow, text: string) {
 /** Numbers and text edit in place; colors, booleans and aliases open the inspector instead. */
 function editableValue(row: TokenRow, modeId: string) {
   const value = row.variable.valuesByMode[modeId]
-  const aliased = typeof value === 'object' && 'aliasId' in value
+  const aliased = typeof value === 'object' && ('aliasId' in value || 'expression' in value)
   return !aliased && (row.variable.type === 'FLOAT' || row.variable.type === 'STRING')
 }
 

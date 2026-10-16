@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, type Color, type Variable } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  parseVariableFormula,
+  type Color,
+  type Variable
+} from '@open-pencil/scene-graph'
 
 import { openRoomSession, type RoomSession } from '@/app/collab/session'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
@@ -76,6 +81,35 @@ function brandOf(store: EditorStore, id: string): Variable {
 }
 
 describe('variables in a room', () => {
+  test('formula definitions and edits to their dependencies reach both peers', async () => {
+    await withRoom(async ({ host, guest, settle, ids }) => {
+      const base = host.graph.createVariable('space/base', 'FLOAT', ids.collection, 4)
+      const gap = host.graph.createVariable('space/gap', 'FLOAT', ids.collection, 8)
+      const enabled = host.graph.createVariable('enabled', 'BOOLEAN', ids.collection, true)
+      const visible = host.graph.createVariable('visible', 'BOOLEAN', ids.collection, false)
+      host.updateVariableValue(
+        gap.id,
+        ids.light,
+        parseVariableFormula(host.graph, gap.id, ids.light, '{space/base} * 2').value
+      )
+      host.updateVariableValue(
+        visible.id,
+        ids.light,
+        parseVariableFormula(host.graph, visible.id, ids.light, 'NOT {enabled}').value
+      )
+      await settle()
+      expect(guest.graph.resolveVariable(gap.id)).toBe(8)
+      expect(guest.graph.resolveVariable(visible.id)).toBe(false)
+      guest.updateVariableValue(base.id, ids.light, 6)
+      guest.updateVariableValue(enabled.id, ids.light, false)
+      await settle()
+      for (const store of [host, guest]) {
+        expect(store.graph.resolveVariable(gap.id)).toBe(12)
+        expect(store.graph.resolveVariable(visible.id)).toBe(true)
+      }
+    })
+  })
+
   test('a joined tab receives the collections, modes, and values of the shared document', async () => {
     await withRoom(async ({ guest, ids }) => {
       const collection = expectDefined(guest.graph.variableCollections.get(ids.collection), 'Theme')

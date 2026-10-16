@@ -24,6 +24,7 @@ function formatVariableValue(variable: Variable, graph: SceneGraph): string {
   if (typeof raw === 'object' && 'r' in raw) {
     return colorToHex(raw).toLowerCase()
   }
+  if (typeof raw === 'object' && 'expression' in raw) return JSON.stringify(raw)
 
   return String(raw)
 }

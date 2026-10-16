@@ -105,6 +105,8 @@ function modeValue(
   const expression = variable.expressions?.[modeId]
   if (expression) return expression.css
   if (value === undefined) return { issue: 'has no value in this mode' }
+  if (typeof value === 'object' && 'expression' in value)
+    return { issue: 'uses an expression that CSS token export does not support' }
   if (typeof value === 'object' && 'aliasId' in value) {
     const target = names.get(value.aliasId)
     return target ? `var(--${target})` : { issue: 'aliases a variable that does not exist' }

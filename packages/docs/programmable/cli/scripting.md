@@ -26,6 +26,17 @@ openpencil eval design.fig -c "
 "
 ```
 
+## Variable formulas
+
+Use `openpencil.setVariableFormula(collectionName, variableName, source, modeName?)` to replace a number or Boolean variable's definition. It validates before changing the document, returns the resolved value, and clears CSS expression metadata for the edited mode. Omitting the mode name edits the collection's default mode.
+
+```js
+openpencil.setVariableFormula('Spacing', 'large', '{base} * 2')
+openpencil.setVariableFormula('State', 'visible', 'NOT {loading}')
+```
+
+References use variable names or `{Collection::variable}` and are stored as stable IDs. Formulas use stored units, so lengths are in pixels. See [Variables](/user-guide/variables) for operators and export limitations.
+
 ## Query nodes
 
 ```sh

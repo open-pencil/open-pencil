@@ -52,6 +52,14 @@ The graph emits typed events via nanoevents: `node:created`, `node:updated`, `no
 
 See [Scene Graph Reference](/reference/scene-graph) for internals.
 
+### Variable expressions
+
+Scene Graph owns the canonical variable definitions: literals, stable-ID aliases, bounded numeric and Boolean formula trees, and composed colors. Shared Valibot schemas validate expression structure on FIG import, FIG export, and resolution. The resolver owns mode selection, dependency traversal, cycles, and evaluation; draft validation supplies an override without mutating the document. Canvas callers treat resolution failures as unresolved values, while the inspector retains diagnostics. Core applies edits, undo, binding reconciliation, and layout.
+
+A formula in `valuesByMode` is live document behavior. `expressions[modeId].css` is instead target-specific CSS source paired with a numeric canvas fallback. The value editor and `openpencil.setVariableFormula` replace that CSS source when committing a literal, reference, or formula. Low-level numeric fallback edits may retain CSS metadata; a live formula must not use it as a second source of truth.
+
+CSS and design-token export currently report live formulas as unsupported. Design JSX preserves node bindings through `designVar`, but does not yet bundle the referenced formula definitions. Extending design-to-code requires exporting those definitions and their transitive dependencies, compiling supported arithmetic with token units and binding scales, and redeclaring derived tokens in affected mode scopes. Boolean formulas need an explicit target runtime model. Any future export that resolves formulas into literals must expose that as a snapshot with a selected mode context rather than silently discarding relationships.
+
 ### Layout Engine (Yoga WASM)
 
 Meta's Yoga provides CSS flexbox and grid layout computation via a [fork](https://github.com/open-pencil/yoga/tree/grid) with CSS Grid support. A thin adapter maps Figma property names to Yoga equivalents:

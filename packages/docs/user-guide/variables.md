@@ -46,6 +46,18 @@ On the canvas, a layer shows a mode when you set the layer to it, whatever the c
 
 ## Managing Variables
 
+### Formula values
+
+Number and Boolean variables use one value field for literals, references, and formulas. Choose **Insert variable** to insert a removable reference pill with its current value, then add operators around it. References are stored by ID, so renaming a variable preserves the connection.
+
+- Numbers support `+`, `-`, `*`, `/`, and parentheses: `{space/base} * 2`.
+- Booleans support `AND`, `OR`, `NOT`, `XOR`, `NAND`, and `NOR`: `{enabled} AND NOT {loading}`.
+- A qualified reference such as `{Spacing::space/base}` distinguishes collections. Invalid references, circular dependencies, type mismatches, and division by zero show an error without changing the saved value.
+
+The result updates bound layers when a dependency changes and follows each layer's variable modes. Formulas use stored units: lengths are in pixels. For number variables, CSS such as `clamp(1rem, 4vw, 2rem)` can replace the field's value for code export while retaining the previous numeric canvas value.
+
+Formulas survive clipboard transfer, room synchronization, undo, and `.fig` saves. Imported Figma `COMPOSE_COLOR` expressions retain their color and opacity references. CSS and design-token exports currently report unsupported live formulas rather than flattening them silently.
+
 Variables are grouped by the folders in their names (`Brand/Primary` appears as *Primary* under *Brand*), with their CSS name and one value per mode.
 
 - **Create variable** — click **Create variable** (or **+**) and pick a type; the new variable opens for editing

@@ -5,6 +5,7 @@ import type { Color } from '../primitives'
 import type { Fill, SceneNode, Stroke, StyleRun, VariableValue } from '../types'
 import type { VariableModeFallback } from '../variables'
 import { NUMERIC_FIELDS, isNumericVariableBindingField } from './fields'
+import { variableValueReferences } from './value'
 export { isNumericVariableBindingField } from './fields'
 
 /** New declarations belong to the outermost occurrence, bounded by a component definition. */
@@ -205,8 +206,8 @@ export function variablesResolvingThrough(graph: SceneGraph, ids: Iterable<strin
     grew = false
     for (const variable of graph.variables.values()) {
       if (found.has(variable.id)) continue
-      const aliases = Object.values(variable.valuesByMode).some(
-        (value) => typeof value === 'object' && 'aliasId' in value && found.has(value.aliasId)
+      const aliases = Object.values(variable.valuesByMode).some((value) =>
+        variableValueReferences(value).some((id) => found.has(id))
       )
       if (aliases) {
         found.add(variable.id)
@@ -243,9 +244,8 @@ export function collectionsBoundIn(graph: SceneGraph, roots: Iterable<string>): 
     const variable = graph.variables.get(id)
     if (!variable) continue
     collections.add(variable.collectionId)
-    for (const value of Object.values(variable.valuesByMode)) {
-      if (typeof value === 'object' && 'aliasId' in value) pending.push(value.aliasId)
-    }
+    for (const value of Object.values(variable.valuesByMode))
+      pending.push(...variableValueReferences(value))
   }
   return collections
 }

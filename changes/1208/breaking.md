@@ -1,0 +1,1 @@
+- `VariableValue` includes formula and color-expression objects; API consumers should resolve variables before treating non-alias objects as colors.

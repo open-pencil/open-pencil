@@ -10,6 +10,8 @@ export interface VariablePickerItem {
   collection?: string
   /** A color variable's value, shown as a swatch in place of the variable icon. */
   color?: Color
+  /** Resolved numeric value, or mixed/unresolved state for the selected targets. */
+  text?: string
 }
 
 export interface VariablePickerProps {

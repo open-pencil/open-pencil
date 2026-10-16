@@ -4479,6 +4479,7 @@ enum ExpressionFunction {
   NEGATE = 17;
   IS_TRUTHY = 18;
   KEYFRAME = 19;
+  COMPOSE_COLOR = 20;
 }
 
 message Expression {

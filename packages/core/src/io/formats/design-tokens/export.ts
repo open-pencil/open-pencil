@@ -89,6 +89,10 @@ function variableToken(
   const value = variable.valuesByMode[mode.modeId]
   const figma: Record<string, unknown> = {}
   let $value: unknown
+  if (typeof value === 'object' && 'expression' in value) {
+    context.issues.push({ kind: 'unsupported-expression', ...where })
+    return undefined
+  }
   if (typeof value === 'object' && 'aliasId' in value) {
     const path = context.references.get(value.aliasId)
     const target = context.graph.variables.get(value.aliasId)

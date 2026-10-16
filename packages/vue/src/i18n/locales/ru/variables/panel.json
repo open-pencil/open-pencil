@@ -118,5 +118,8 @@
   "importInvalidFile": "{file} — не файл дизайн-токенов",
   "importMissingFile": "Не выбран {file}, на который ссылается {from}",
   "importNothing": "В этих файлах нет дизайн-токенов.",
-  "importAction": "Импортировать"
+  "importAction": "Импортировать",
+  "removeReference": "Удалить {name}",
+  "insertReference": "Вставить переменную",
+  "formulaResult": "Результат"
 }

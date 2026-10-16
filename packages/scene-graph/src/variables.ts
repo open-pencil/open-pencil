@@ -5,7 +5,6 @@ import { BLACK } from './constants'
 import type { SceneGraph } from './index'
 import { setInstanceOverride } from './instance-overrides'
 import { findInstanceAncestor } from './instances'
-import type { Color } from './primitives'
 import type {
   Variable,
   VariableCollection,
@@ -19,6 +18,8 @@ import {
   assignVariableBindingUnits
 } from './variables/bindings'
 import { BOOLEAN_BINDING_FIELDS, STRING_BINDING_FIELDS } from './variables/fields'
+
+export * from './variables/resolution'
 
 export function addVariable(graph: SceneGraph, variable: Variable): void {
   graph.variables.set(variable.id, variable)
@@ -129,36 +130,6 @@ export function removeCollection(graph: SceneGraph, id: string): void {
   graph.activeMode.delete(id)
 }
 
-export function getActiveModeId(graph: SceneGraph, collectionId: string): string {
-  const mode = graph.activeMode.get(collectionId)
-  if (mode) return mode
-  const collection = graph.variableCollections.get(collectionId)
-  return collection?.defaultModeId ?? ''
-}
-
-/**
- * What a node without an explicit mode falls back to: the mode the editor shows (`active`), or
- * the collection's default (`default`), which is what a saved document means to other tools.
- */
-export type VariableModeFallback = 'active' | 'default'
-
-export function getNodeVariableModeId(
-  graph: SceneGraph,
-  nodeId: string,
-  collectionId: string,
-  fallback: VariableModeFallback = 'active'
-): string {
-  let node = graph.nodes.get(nodeId)
-  while (node) {
-    const modeId = node.variableModes[collectionId]
-    if (modeId) return modeId
-    node = node.parentId ? graph.nodes.get(node.parentId) : undefined
-  }
-  if (fallback === 'default')
-    return graph.variableCollections.get(collectionId)?.defaultModeId ?? ''
-  return getActiveModeId(graph, collectionId)
-}
-
 export function setActiveMode(graph: SceneGraph, collectionId: string, modeId: string): void {
   graph.activeMode.set(collectionId, modeId)
 }
@@ -237,98 +208,6 @@ export function setDefaultMode(graph: SceneGraph, collectionId: string, modeId: 
 export function modesDefaultFirst(collection: VariableCollection): VariableCollectionMode[] {
   const [defaults, rest] = partition(collection.modes, (m) => m.modeId === collection.defaultModeId)
   return [...defaults, ...rest]
-}
-
-export function resolveVariable(
-  graph: SceneGraph,
-  variableId: string,
-  modeId?: string,
-  visited?: Set<string>
-): VariableValue | undefined {
-  if (visited?.has(variableId)) return undefined
-  const variable = graph.variables.get(variableId)
-  if (!variable) return undefined
-  const collection = graph.variableCollections.get(variable.collectionId)
-  const preferredModeId = modeId ?? getActiveModeId(graph, variable.collectionId)
-  const fallbackModeId = collection?.defaultModeId
-  let value = Object.hasOwn(variable.valuesByMode, preferredModeId)
-    ? variable.valuesByMode[preferredModeId]
-    : undefined
-  if (
-    value === undefined &&
-    fallbackModeId &&
-    Object.hasOwn(variable.valuesByMode, fallbackModeId)
-  ) {
-    value = variable.valuesByMode[fallbackModeId]
-  }
-  value ??= Object.values(variable.valuesByMode)[0]
-  if (value && typeof value === 'object' && 'aliasId' in value) {
-    const seen = visited ?? new Set<string>()
-    seen.add(variableId)
-    return resolveVariable(graph, value.aliasId, preferredModeId, seen)
-  }
-  return value
-}
-
-export function resolveColorVariable(graph: SceneGraph, variableId: string): Color | undefined {
-  const value = resolveVariable(graph, variableId)
-  if (value && typeof value === 'object' && 'r' in value) return value
-  return undefined
-}
-
-export function resolveNumberVariable(graph: SceneGraph, variableId: string): number | undefined {
-  const value = resolveVariable(graph, variableId)
-  return typeof value === 'number' ? value : undefined
-}
-
-export function resolveColorVariableForNode(
-  graph: SceneGraph,
-  nodeId: string,
-  variableId: string,
-  fallback: VariableModeFallback = 'active'
-): Color | undefined {
-  const variable = graph.variables.get(variableId)
-  if (!variable) return undefined
-  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
-  const value = resolveVariable(graph, variableId, modeId)
-  if (value && typeof value === 'object' && 'r' in value) return value
-  return undefined
-}
-
-export function resolveNumberVariableForNode(
-  graph: SceneGraph,
-  nodeId: string,
-  variableId: string,
-  fallback: VariableModeFallback = 'active'
-): number | undefined {
-  const variable = graph.variables.get(variableId)
-  if (!variable) return undefined
-  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
-  const value = resolveVariable(graph, variableId, modeId)
-  return typeof value === 'number' ? value : undefined
-}
-
-/** A variable's value in the mode a node is in, aliases followed. */
-export function resolveVariableForNode(
-  graph: SceneGraph,
-  nodeId: string,
-  variableId: string,
-  fallback: VariableModeFallback = 'active'
-): VariableValue | undefined {
-  const variable = graph.variables.get(variableId)
-  if (!variable) return undefined
-  const modeId = getNodeVariableModeId(graph, nodeId, variable.collectionId, fallback)
-  return resolveVariable(graph, variableId, modeId)
-}
-
-export function resolveStringVariableForNode(
-  graph: SceneGraph,
-  nodeId: string,
-  variableId: string,
-  fallback: VariableModeFallback = 'active'
-): string | undefined {
-  const value = resolveVariableForNode(graph, nodeId, variableId, fallback)
-  return typeof value === 'string' ? value : undefined
 }
 
 export function getVariablesForCollection(graph: SceneGraph, collectionId: string): Variable[] {

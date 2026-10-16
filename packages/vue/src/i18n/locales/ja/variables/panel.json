@@ -118,5 +118,8 @@
   "importInvalidFile": "{file} はデザイントークンのファイルではありません",
   "importMissingFile": "{from} が参照する {file} が選ばれていません",
   "importNothing": "これらのファイルにデザイントークンはありません。",
-  "importAction": "読み込む"
+  "importAction": "読み込む",
+  "removeReference": "{name} を削除",
+  "insertReference": "変数を挿入",
+  "formulaResult": "計算結果"
 }
