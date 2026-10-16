@@ -157,7 +157,8 @@ function sublayerProps(
 
 /**
  * Gives an imported CONNECTOR its line type, caps, and sublayers: the line as Figma last routed
- * it, and its label on its plate. Its ends are linked once their layers exist.
+ * it, and its label on its plate. Its ends are linked once their layers exist; one saved without a
+ * route is routed by layout, once its label is measured.
  */
 function readConnector(
   graph: SceneGraph,

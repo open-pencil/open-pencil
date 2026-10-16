@@ -1,6 +1,6 @@
+import { CONNECTOR_KIND } from '../connectors/sublayers'
 import type { SceneGraph } from '../index'
 import type { NodeType, SceneNode } from '../types'
-import { CONNECTOR_KIND } from './connector'
 import type { GeneratedFrameKind } from './kind'
 import { STICKY_KIND } from './sticky'
 
@@ -52,5 +52,4 @@ export function layerResizes(node: Pick<SceneNode, 'type'>): boolean {
 }
 
 export type { GeneratedFrameKind } from './kind'
-export * from './connector'
 export * from './sticky'

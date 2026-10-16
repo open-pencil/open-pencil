@@ -1,0 +1,1 @@
+- Connectors route as FigJam does when the layers they join move, resize, or change, including while dragging, and are deleted with those layers (#616).

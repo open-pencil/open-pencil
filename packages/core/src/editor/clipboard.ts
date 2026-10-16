@@ -1,4 +1,10 @@
-import { CommittedGraphEventError, cycleSafeParent } from '@open-pencil/scene-graph'
+import { uniq } from 'es-toolkit'
+
+import {
+  attachedConnectors,
+  CommittedGraphEventError,
+  cycleSafeParent
+} from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -387,13 +393,16 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   function deleteLayers(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
+    const requested = [...nodeIds]
+    // Connectors go with a layer they attach to, as in FigJam.
+    const attached = attachedConnectors(ctx.graph, requested).map((node) => node.id)
     const entries: Array<{
       id: string
       parentId: string
       index: number
       subtree: Map<string, SceneNode>
     }> = []
-    for (const id of nodeIds) {
+    for (const id of uniq([...requested, ...attached])) {
       const node = ctx.graph.getNode(id)
       if (!node || node.locked) continue
       const parentId = node.parentId ?? ctx.state.currentPageId
