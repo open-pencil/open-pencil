@@ -1,6 +1,7 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { vectorHandleParts } from '@open-pencil/core/vector'
+import { nearestPointOnNetwork, vectorHandleParts } from '@open-pencil/core/vector'
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 export type NodeEditState = {
   nodeId: string
@@ -38,6 +39,29 @@ export function hitTestEditVertex(editor: Editor, cx: number, cy: number): numbe
     if (Math.hypot(cx - v.x, cy - v.y) < NODE_HIT_THRESHOLD * iz) return i
   }
   return null
+}
+
+/** The segment of the path being edited under a canvas point, outside its points. */
+export function hitTestEditSegment(editor: Editor, cx: number, cy: number): number | null {
+  const es = getNodeEditState(editor)
+  if (!es) return null
+  const network = { vertices: es.vertices, segments: es.segments, regions: [] }
+  const hit = nearestPointOnNetwork(cx, cy, network, NODE_HIT_THRESHOLD / editor.state.zoom)
+  return hit?.segmentIndex ?? null
+}
+
+/** The points of the path being edited that lie inside a canvas rectangle. */
+export function editVerticesInRect(editor: Editor, rect: Rect): number[] {
+  const es = getNodeEditState(editor)
+  if (!es) return []
+  return es.vertices.flatMap((vertex, index) =>
+    vertex.x >= rect.x &&
+    vertex.x <= rect.x + rect.width &&
+    vertex.y >= rect.y &&
+    vertex.y <= rect.y + rect.height
+      ? [index]
+      : []
+  )
 }
 
 function getHandleVisibleVertices(editor: Editor): Set<number> {

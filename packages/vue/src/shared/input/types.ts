@@ -189,6 +189,15 @@ export interface DragEditHandle {
   initialTangent: Vector | null
 }
 
+/** A drag over empty space while editing a path: selects the points it encloses. */
+export interface DragEditMarquee {
+  type: 'edit-marquee'
+  startX: number
+  startY: number
+  /** Points kept selected alongside the enclosed ones, as with Shift held. */
+  baseSelection: Set<number>
+}
+
 export interface DragBendHandle {
   type: 'bend-handle'
   vertexIndex: number
@@ -250,6 +259,7 @@ export type DragState =
   | DragTextSelect
   | DragEditNode
   | DragEditHandle
+  | DragEditMarquee
   | DragBendHandle
   | DragGuide
 

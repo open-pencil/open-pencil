@@ -1,0 +1,1 @@
+- In vector edit mode, pressing a segment selects its two points so you can drag it, and Shift adds them to the selection. Dragging over empty space selects the points inside the marquee.

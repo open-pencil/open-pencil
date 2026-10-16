@@ -1,15 +1,25 @@
-import type { DragEditHandle, DragEditNode, DragState } from '#vue/shared/input/types'
+import { isPastPointerDragThreshold } from '#vue/shared/input/drag-threshold'
+import type {
+  DragEditHandle,
+  DragEditMarquee,
+  DragEditNode,
+  DragState
+} from '#vue/shared/input/types'
 import {
+  editVerticesInRect,
   getNodeEditState,
   hitTestEditHandle,
+  hitTestEditSegment,
   hitTestEditVertex,
-  isEndpoint
+  isEndpoint,
+  type NodeEditState
 } from '#vue/shared/input/vector/hit-test'
 import { applyNodeEditSnap } from '#vue/shared/input/vector/snap'
 
 export {
   getNodeEditState,
   hitTestEditHandle,
+  hitTestEditSegment,
   isEndpoint,
   NODE_HIT_THRESHOLD
 } from '#vue/shared/input/vector/hit-test'
@@ -102,25 +112,78 @@ export function handleNodeEditDown(
       nodeEditEditor.nodeEditSelectVertex?.(vi, e.shiftKey)
     }
 
-    const origPositions = new Map<number, Vector>()
-    for (const idx of es.selectedVertexIndices) {
-      origPositions.set(idx, { x: es.vertices[idx].x, y: es.vertices[idx].y })
-    }
-    if (!origPositions.has(vi)) {
-      origPositions.set(vi, { x: es.vertices[vi].x, y: es.vertices[vi].y })
-    }
-
-    nodeEditEditor.nodeEditPushHistory?.()
-    setDrag({
-      type: 'edit-node',
-      startX: cx,
-      startY: cy,
-      origPositions
-    })
+    startPointsDrag(es, [vi], cx, cy, nodeEditEditor, setDrag)
     return
   }
 
-  nodeEditEditor.exitNodeEditMode?.(true)
+  // As in Figma, a press on a segment selects its two points and drags them with it.
+  const si = hitTestEditSegment(editor, cx, cy)
+  if (si !== null) {
+    const { start, end } = es.segments[si]
+    es.selectedHandles = new Set()
+    if (e.shiftKey) es.selectedVertexIndices = new Set([...es.selectedVertexIndices, start, end])
+    else if (!es.selectedVertexIndices.has(start) || !es.selectedVertexIndices.has(end))
+      es.selectedVertexIndices = new Set([start, end])
+    editor.requestRepaint()
+    startPointsDrag(es, [start, end], cx, cy, nodeEditEditor, setDrag)
+    return
+  }
+
+  // Empty space: a drag selects the points it encloses; a click leaves the path, on release.
+  setDrag({
+    type: 'edit-marquee',
+    startX: cx,
+    startY: cy,
+    baseSelection: e.shiftKey ? new Set(es.selectedVertexIndices) : new Set()
+  })
+}
+
+/** Drags the selected points, and `pressed` with them, from where the pointer went down. */
+function startPointsDrag(
+  es: NodeEditState,
+  pressed: number[],
+  cx: number,
+  cy: number,
+  nodeEditEditor: NodeEditEditor,
+  setDrag: (d: DragState) => void
+) {
+  const origPositions = new Map<number, Vector>()
+  for (const index of [...es.selectedVertexIndices, ...pressed]) {
+    origPositions.set(index, { x: es.vertices[index].x, y: es.vertices[index].y })
+  }
+  nodeEditEditor.nodeEditPushHistory?.()
+  setDrag({ type: 'edit-node', startX: cx, startY: cy, origPositions })
+}
+
+/** Selects the points inside the marquee, with the ones it started with. */
+export function handleNodeEditMarqueeMove(
+  d: DragEditMarquee,
+  cx: number,
+  cy: number,
+  editor: Editor
+) {
+  const es = getNodeEditState(editor)
+  if (!es) return
+  const marquee = {
+    x: Math.min(d.startX, cx),
+    y: Math.min(d.startY, cy),
+    width: Math.abs(cx - d.startX),
+    height: Math.abs(cy - d.startY)
+  }
+  es.selectedVertexIndices = new Set([...d.baseSelection, ...editVerticesInRect(editor, marquee)])
+  es.selectedHandles = new Set()
+  editor.setMarquee(marquee)
+  editor.requestRepaint()
+}
+
+/** Ends a marquee over a path being edited; a click without a drag leaves the path. */
+export function finishNodeEditMarquee(editor: Editor) {
+  const marquee = editor.state.marquee
+  const zoom = editor.state.zoom
+  editor.setMarquee(null)
+  const dragged =
+    !!marquee && isPastPointerDragThreshold(0, 0, marquee.width * zoom, marquee.height * zoom)
+  if (!dragged) (editor as Editor & NodeEditEditor).exitNodeEditMode?.(true)
 }
 
 export function handlePenNodeEditDown(e: MouseEvent, cx: number, cy: number, editor: Editor) {

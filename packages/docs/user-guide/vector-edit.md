@@ -1,6 +1,6 @@
 ---
 title: Vector Object Editing
-description: "How to edit vector path geometry: anchors, bezier handles, modifiers, and Pen tool actions in edit mode."
+description: 'How to edit vector path geometry: anchors, bezier handles, modifiers, and Pen tool actions in edit mode.'
 ---
 
 # Vector Object Editing
@@ -18,6 +18,7 @@ This activates geometry editing for the selected vector.
 ## Exiting the Mode
 
 - Press <kbd>Escape</kbd>.
+- Click empty space on the canvas.
 - Or switch to another editing context.
 
 ## What Changes in This Mode
@@ -38,13 +39,24 @@ This activates geometry editing for the selected vector.
 - Drag a handle on the anchor.
 - By default, behavior follows the anchor's current handle composition.
 
+### Move a Segment
+
+- Press a segment to select the two anchors it joins, then drag to move them.
+- <kbd>Shift</kbd> + press adds the segment's anchors to the selection.
+
+### Select Anchors with a Marquee
+
+- Drag over empty space to select the anchors inside the rectangle.
+- <kbd>Shift</kbd> + drag adds them to the selection.
+- Press <kbd>Escape</kbd> during the drag to cancel it.
+
 ## Handle Drag Modifiers
 
-| Action | Mac | Windows / Linux |
-|----------|-----|-----------------|
-| Continuous (Smooth / Continuous) | <kbd>Cmd</kbd> + drag | <kbd>Ctrl</kbd> + drag |
-| Corner (Independent handles) | <kbd>Option</kbd> + drag | <kbd>Alt</kbd> + drag |
-| Direction lock (length only) | <kbd>Shift</kbd> + drag | <kbd>Shift</kbd> + drag |
+| Action                           | Mac                      | Windows / Linux         |
+| -------------------------------- | ------------------------ | ----------------------- |
+| Continuous (Smooth / Continuous) | <kbd>Cmd</kbd> + drag    | <kbd>Ctrl</kbd> + drag  |
+| Corner (Independent handles)     | <kbd>Option</kbd> + drag | <kbd>Alt</kbd> + drag   |
+| Direction lock (length only)     | <kbd>Shift</kbd> + drag  | <kbd>Shift</kbd> + drag |
 
 ### Continuous: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + drag
 
