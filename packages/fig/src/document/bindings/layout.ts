@@ -44,7 +44,8 @@ export function applyDocumentLayoutBindings(
       if (typeof value !== 'number') continue
       const effectiveValue = field === 'opacity' ? value : value * (scales[field] ?? 1)
       const updates = resolvedNumericBindingUpdate(field, effectiveValue)
-      if (updates) graph.updateNode(node.id, updates)
+      // Resolving a saved binding is not a typography edit that detaches its shared style.
+      if (updates) graph.updateNode(node.id, { ...updates, textStyleId: node.textStyleId })
     }
   }
 }
