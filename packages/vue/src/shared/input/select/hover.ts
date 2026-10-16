@@ -2,11 +2,13 @@ import type { Editor } from '@open-pencil/core/editor'
 import { layerResizes, layerRotates } from '@open-pencil/scene-graph'
 
 import {
+  MOVE_CURSOR,
   buildResizeCursor,
   cornerRotationCursor,
   getHitHandleByMatrix,
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
+import { lineEndAt } from '#vue/shared/input/line/end'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
 import { scalesByHandles } from '#vue/shared/input/sticky/scale'
@@ -85,8 +87,9 @@ export function updateHoverCursor(
     return null
   }
 
-  // As a press does: resizing first, then a label, then rotation.
+  // As a press does: a line's ends, then resizing, then a label, then rotation.
   const cursor =
+    (lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
     getResizeCursorForSelection(cx, cy, editor) ??
     (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor))
   updateHoveredNode(cx, cy, editor, fns, deep)

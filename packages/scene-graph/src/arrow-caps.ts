@@ -21,17 +21,26 @@ export interface ArrowWing {
   to: Vector
 }
 
-/** Arrow head side length relative to stroke weight, tuned to match Figma. */
-const ARROW_SIDE_PER_WEIGHT = 4
-const WING_SWEEP = Math.PI / 6
 /**
- * Filled triangle, diamond, and circle heads relative to stroke weight, from the stroke outlines
- * Figma gives for them: the triangle runs 5 back from the end and spreads to 5/√3 on either side
- * at it, the diamond reaches 5/√3 from the end every way, and the circle has radius 8/3.
+ * Arrow heads relative to stroke weight, from the stroke outlines Figma gives for them. The
+ * triangle heads run 5 back from the end and spread to 5/√3 on either side: the equilateral
+ * arrow comes to its point at the end, and the filled triangle has its base across it. The
+ * diamond reaches 5/√3 from the end every way, and the circle has radius 8/3. A line arrow's
+ * wings meet at the end and run 4.5 back at 45°, stroked at the line's weight with round ends.
  */
-const FILLED_HEAD_DEPTH = 5
-const FILLED_HEAD_HALF_WIDTH = 5 / Math.sqrt(3)
+const TRIANGLE_HEAD_DEPTH = 5
+const TRIANGLE_HEAD_HALF_WIDTH = 5 / Math.sqrt(3)
 const CIRCLE_HEAD_RADIUS = 8 / 3
+const WING_LENGTH = 4.5
+const WING_SWEEP = Math.PI / 4
+/** How far a line stops short of its end under a triangle head: half a weight inside its base. */
+const SHAFT_TRIM = TRIANGLE_HEAD_DEPTH - 0.5
+/** The furthest any head reaches from its line, a line arrow's wing ends with their round caps. */
+const HEAD_REACH = Math.max(
+  WING_LENGTH * Math.sin(WING_SWEEP) + 0.5,
+  TRIANGLE_HEAD_HALF_WIDTH,
+  CIRCLE_HEAD_RADIUS
+)
 
 const ARROW_CAPS: ReadonlySet<string> = new Set<ArrowCapKind>([
   'ARROW_LINES',
@@ -46,11 +55,9 @@ export function isArrowCap(cap: string | undefined): cap is ArrowCapKind {
 }
 
 /**
- * Worst-case reach of an arrow head past the path: a head's base corners sit
- * one full head side from the tip, and line-arrow wings are stroked at the
- * shaft weight on top of that. Used to widen visual bounds and render margins
- * so heads are not cropped by caches, exports, or culling. Vertex-level caps
- * in the network count even when no stroke or node cap is an arrow.
+ * Worst-case reach of an arrow head past the path. Used to widen visual bounds and render
+ * margins so heads are not cropped by caches, exports, or culling. Vertex-level caps in the
+ * network count even when no stroke or node cap is an arrow.
  */
 export function arrowCapOverflow(
   strokes?: Stroke[],
@@ -62,7 +69,7 @@ export function arrowCapOverflow(
   for (const stroke of strokes ?? []) {
     if (!stroke.visible) continue
     if (networkHasArrow || isArrowCap(stroke.cap ?? fallbackCap)) {
-      overflow = Math.max(overflow, (ARROW_SIDE_PER_WEIGHT + 0.5) * stroke.weight)
+      overflow = Math.max(overflow, HEAD_REACH * stroke.weight)
     }
   }
   return overflow
@@ -114,9 +121,8 @@ export function collectArrowEndpoints(
 }
 
 /**
- * Points of a filled equilateral arrow head: tip first, then the two base
- * corners. The tip sits exactly on the endpoint and the head sweeps back
- * along the path.
+ * Points of a filled equilateral arrow head: tip first, then the two base corners. The tip sits
+ * exactly on the endpoint and the head sweeps back along the path.
  */
 export function equilateralArrowPoints(
   x: number,
@@ -124,29 +130,25 @@ export function equilateralArrowPoints(
   angle: number,
   weight: number
 ): [Vector, Vector, Vector] {
-  const halfBase = (ARROW_SIDE_PER_WEIGHT / 2) * weight
-  const depth = halfBase * Math.sqrt(3)
-  const dirX = Math.cos(angle)
-  const dirY = Math.sin(angle)
-  const perpX = -dirY
-  const perpY = dirX
-  const baseX = x - depth * dirX
-  const baseY = y - depth * dirY
+  const { dir, perp } = headAxes(angle)
+  const half = TRIANGLE_HEAD_HALF_WIDTH * weight
+  const baseX = x - TRIANGLE_HEAD_DEPTH * weight * dir.x
+  const baseY = y - TRIANGLE_HEAD_DEPTH * weight * dir.y
   return [
     { x, y },
-    { x: baseX - halfBase * perpX, y: baseY - halfBase * perpY },
-    { x: baseX + halfBase * perpX, y: baseY + halfBase * perpY }
+    { x: baseX - half * perp.x, y: baseY - half * perp.y },
+    { x: baseX + half * perp.x, y: baseY + half * perp.y }
   ]
 }
 
-/** The two stroked wings of an open (lines-style) arrow head. */
+/** The two wings of an open (lines-style) arrow head, each from the tip to its end. */
 export function arrowLinesSegments(
   x: number,
   y: number,
   angle: number,
   weight: number
 ): [ArrowWing, ArrowWing] {
-  const wingLength = ARROW_SIDE_PER_WEIGHT * weight
+  const wingLength = WING_LENGTH * weight
   const tip = { x, y }
   const makeWing = (wingAngle: number): ArrowWing => ({
     from: tip,
@@ -172,14 +174,14 @@ export function triangleCapPoints(
 ): [Vector, Vector, Vector, Vector] {
   const { dir, perp } = headAxes(angle)
   const back = {
-    x: x - FILLED_HEAD_DEPTH * weight * dir.x,
-    y: y - FILLED_HEAD_DEPTH * weight * dir.y
+    x: x - TRIANGLE_HEAD_DEPTH * weight * dir.x,
+    y: y - TRIANGLE_HEAD_DEPTH * weight * dir.y
   }
   const at = (point: Vector, side: number) => ({
     x: point.x + side * perp.x,
     y: point.y + side * perp.y
   })
-  const half = FILLED_HEAD_HALF_WIDTH * weight
+  const half = TRIANGLE_HEAD_HALF_WIDTH * weight
   return [at(back, weight / 2), at({ x, y }, half), at({ x, y }, -half), at(back, -weight / 2)]
 }
 
@@ -191,7 +193,7 @@ export function diamondCapPoints(
   weight: number
 ): [Vector, Vector, Vector, Vector] {
   const { dir, perp } = headAxes(angle)
-  const reach = FILLED_HEAD_HALF_WIDTH * weight
+  const reach = TRIANGLE_HEAD_HALF_WIDTH * weight
   return [
     { x: x + reach * dir.x, y: y + reach * dir.y },
     { x: x + reach * perp.x, y: y + reach * perp.y },
@@ -203,15 +205,6 @@ export function diamondCapPoints(
 /** Radius of a filled circle head, centred on the end. */
 export function circleCapRadius(weight: number): number {
   return CIRCLE_HEAD_RADIUS * weight
-}
-
-/**
- * How far a line stops short of its end under a triangle or equilateral head, in stroke weights:
- * half a weight inside the head's base, as Figma draws its triangle 5 weights deep.
- */
-function shaftTrim(cap: StrokeCap): number {
-  if (cap === 'TRIANGLE_FILLED') return FILLED_HEAD_DEPTH - 0.5
-  return (ARROW_SIDE_PER_WEIGHT / 2) * Math.sqrt(3) - 0.5
 }
 
 function trimsShaft(cap: StrokeCap | undefined): boolean {
@@ -244,7 +237,7 @@ export function trimArrowShafts(
       (candidate) => candidate.start === index || candidate.end === index
     )
     if (index === -1 || !segment) continue
-    trimSegmentEnd(trimmed, segment, segment.end === index, shaftTrim(endpoint.cap) * weight)
+    trimSegmentEnd(trimmed, segment, segment.end === index, SHAFT_TRIM * weight)
   }
   return trimmed
 }

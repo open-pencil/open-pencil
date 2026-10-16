@@ -1,7 +1,7 @@
 import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
+import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
 import {
   arrowLinesSegments,
   circleCapRadius,
@@ -131,11 +131,11 @@ export function drawArrowHeads(
         r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
         r.strokePaint.setAlphaf(opacity)
         r.strokePaint.setStrokeWidth(weight)
-        r.strokePaint.setStrokeCap(r.ck.StrokeCap.Butt)
+        // One path, so the wings meet in a round join rather than overlapping at the tip.
+        r.strokePaint.setStrokeCap(r.ck.StrokeCap.Round)
+        r.strokePaint.setStrokeJoin(r.ck.StrokeJoin.Round)
         r.strokePaint.setPathEffect(null)
-        for (const wing of arrowLinesSegments(x, y, angle, weight)) {
-          canvas.drawLine(wing.from.x, wing.from.y, wing.to.x, wing.to.y, r.strokePaint)
-        }
+        strokeWings(r, canvas, arrowLinesSegments(x, y, angle, weight))
         break
       case 'CIRCLE_FILLED':
         setHeadPaint(r, color, opacity)
@@ -152,6 +152,16 @@ export function drawArrowHeads(
         break
     }
   }
+}
+
+function strokeWings(r: SkiaRenderer, canvas: Canvas, [first, second]: [ArrowWing, ArrowWing]) {
+  const builder = new r.ck.PathBuilder()
+  builder.moveTo(first.to.x, first.to.y)
+  builder.lineTo(first.from.x, first.from.y)
+  builder.lineTo(second.to.x, second.to.y)
+  const path = builder.detachAndDelete()
+  canvas.drawPath(path, r.strokePaint)
+  path.delete()
 }
 
 function setHeadPaint(r: SkiaRenderer, color: Color, opacity: number) {

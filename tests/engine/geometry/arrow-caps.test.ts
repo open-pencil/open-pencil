@@ -149,57 +149,54 @@ describe('collectArrowEndpoints', () => {
   })
 })
 
+// Figma's stroke outlines for a line from (0, 0) to (200, 0), measured on 2026-10-16.
 describe('equilateralArrowPoints', () => {
-  test('builds a weight-scaled equilateral head with the tip at the endpoint', () => {
-    const [tip, left, right] = equilateralArrowPoints(10, 5, 0, 1)
+  test('comes to its point at the end and spreads 5/√3 weights either side, 5 back', () => {
+    const [tip, left, right] = equilateralArrowPoints(200, 0, 0, 4)
 
-    expect(tip.x).toBeCloseTo(10, 5)
-    expect(tip.y).toBeCloseTo(5, 5)
-    expect(left.x).toBeCloseTo(10 - 2 * SQRT3, 5)
-    expect(left.y).toBeCloseTo(5 - 2, 5)
-    expect(right.x).toBeCloseTo(10 - 2 * SQRT3, 5)
-    expect(right.y).toBeCloseTo(5 + 2, 5)
+    expect(tip).toEqual({ x: 200, y: 0 })
+    expect(left.x).toBeCloseTo(180, 5)
+    expect(left.y).toBeCloseTo(-11.547, 3)
+    expect(right.x).toBeCloseTo(180, 5)
+    expect(right.y).toBeCloseTo(11.547, 3)
   })
 
   test('rotates with the endpoint angle', () => {
     const [tip, left, right] = equilateralArrowPoints(0, 0, Math.PI / 2, 1)
 
-    expect(tip.x).toBeCloseTo(0, 5)
-    expect(tip.y).toBeCloseTo(0, 5)
-    expect(left.y).toBeCloseTo(-2 * SQRT3, 5)
-    expect(right.y).toBeCloseTo(-2 * SQRT3, 5)
-    expect([left.x, right.x].sort((a, b) => a - b)[0]).toBeCloseTo(-2, 5)
-    expect([left.x, right.x].sort((a, b) => a - b)[1]).toBeCloseTo(2, 5)
+    expect(tip).toEqual({ x: 0, y: 0 })
+    expect(left.y).toBeCloseTo(-5, 5)
+    expect(right.y).toBeCloseTo(-5, 5)
+    expect([left.x, right.x].sort((p, q) => p - q)[0]).toBeCloseTo(-5 / SQRT3, 5)
+    expect([left.x, right.x].sort((p, q) => p - q)[1]).toBeCloseTo(5 / SQRT3, 5)
   })
 
   test('scales linearly with stroke weight', () => {
-    const [, left] = equilateralArrowPoints(0, 0, 0, 3)
+    const [, left] = equilateralArrowPoints(200, 0, 0, 10)
 
-    expect(left.x).toBeCloseTo(-6 * SQRT3, 5)
-    expect(left.y).toBeCloseTo(-6, 5)
+    expect(left.x).toBeCloseTo(150, 5)
+    expect(left.y).toBeCloseTo(-28.8675, 3)
   })
 })
 
 describe('arrowLinesSegments', () => {
-  test('builds two wings sweeping back from the tip', () => {
-    const [first, second] = arrowLinesSegments(10, 5, 0, 1)
+  test('meets at the end and runs 4.5 weights back at 45°', () => {
+    const [first, second] = arrowLinesSegments(200, 0, 0, 1)
 
-    expect(first.from.x).toBeCloseTo(10, 5)
-    expect(first.from.y).toBeCloseTo(5, 5)
-    expect(second.from.x).toBeCloseTo(10, 5)
-    expect(second.from.y).toBeCloseTo(5, 5)
-    const tips = [first.to, second.to].sort((a, b) => a.y - b.y)
-    expect(tips[0].x).toBeCloseTo(10 - 2 * SQRT3, 5)
-    expect(tips[0].y).toBeCloseTo(5 - 2, 5)
-    expect(tips[1].x).toBeCloseTo(10 - 2 * SQRT3, 5)
-    expect(tips[1].y).toBeCloseTo(5 + 2, 5)
+    expect(first.from).toEqual({ x: 200, y: 0 })
+    expect(second.from).toEqual({ x: 200, y: 0 })
+    const ends = [first.to, second.to].sort((p, q) => p.y - q.y)
+    expect(ends[0].x).toBeCloseTo(196.818, 3)
+    expect(ends[0].y).toBeCloseTo(-3.182, 3)
+    expect(ends[1].x).toBeCloseTo(196.818, 3)
+    expect(ends[1].y).toBeCloseTo(3.182, 3)
   })
 
   test('scales linearly with stroke weight', () => {
-    const [first] = arrowLinesSegments(0, 0, 0, 2)
-    const length = Math.hypot(first.to.x - first.from.x, first.to.y - first.from.y)
+    const [first] = arrowLinesSegments(200, 0, 0, 4)
 
-    expect(length).toBeCloseTo(8, 5)
+    expect(first.to.x).toBeCloseTo(187.272, 3)
+    expect(Math.abs(first.to.y)).toBeCloseTo(12.728, 3)
   })
 })
 
@@ -241,13 +238,19 @@ function stroke(overrides: Partial<Stroke> = {}): Stroke {
 }
 
 describe('arrowCapOverflow', () => {
-  test('an arrow cap reserves the full head reach plus wing stroke width', () => {
-    expect(arrowCapOverflow([stroke({ cap: 'ARROW_EQUILATERAL', weight: 3 })])).toBe(13.5)
-    expect(arrowCapOverflow([stroke({ cap: 'ARROW_LINES', weight: 2 })])).toBe(9)
+  // A line arrow's wing ends, with their round caps, reach furthest from the line.
+  const REACH = 4.5 * Math.SQRT1_2 + 0.5
+
+  test('an arrow cap reserves the furthest any head reaches', () => {
+    expect(arrowCapOverflow([stroke({ cap: 'ARROW_EQUILATERAL', weight: 3 })])).toBeCloseTo(
+      3 * REACH,
+      5
+    )
+    expect(arrowCapOverflow([stroke({ cap: 'ARROW_LINES', weight: 2 })])).toBeCloseTo(2 * REACH, 5)
   })
 
   test('the fallback cap applies when the stroke has none', () => {
-    expect(arrowCapOverflow([stroke({ weight: 2 })], 'ARROW_LINES')).toBe(9)
+    expect(arrowCapOverflow([stroke({ weight: 2 })], 'ARROW_LINES')).toBeCloseTo(2 * REACH, 5)
   })
 
   test('a vertex-only arrow cap still reserves overflow', () => {
@@ -259,7 +262,7 @@ describe('arrowCapOverflow', () => {
       segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
       regions: []
     }
-    expect(arrowCapOverflow([stroke({ weight: 2 })], 'NONE', network)).toBe(9)
+    expect(arrowCapOverflow([stroke({ weight: 2 })], 'NONE', network)).toBeCloseTo(2 * REACH, 5)
     expect(arrowCapOverflow([stroke({ weight: 2 })], 'NONE')).toBe(0)
   })
 
@@ -275,9 +278,11 @@ describe('arrowCapOverflow', () => {
 })
 
 describe('strokeOverflow with arrow caps', () => {
+  const REACH = 4 * (4.5 * Math.SQRT1_2 + 0.5)
+
   test('arrow heads widen the stroke overflow past the weight pad', () => {
-    expect(strokeOverflow([stroke({ cap: 'ARROW_EQUILATERAL' })])).toBe(18)
-    expect(strokeOverflow([stroke({ weight: 4 })], 'ARROW_LINES')).toBe(18)
+    expect(strokeOverflow([stroke({ cap: 'ARROW_EQUILATERAL' })])).toBeCloseTo(REACH, 5)
+    expect(strokeOverflow([stroke({ weight: 4 })], 'ARROW_LINES')).toBeCloseTo(REACH, 5)
   })
 
   test('a vertex-only arrow cap widens overflow through the network parameter', () => {
@@ -289,7 +294,7 @@ describe('strokeOverflow with arrow caps', () => {
       segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
       regions: []
     }
-    expect(strokeOverflow([stroke({ weight: 4 })], 'NONE', network)).toBe(18)
+    expect(strokeOverflow([stroke({ weight: 4 })], 'NONE', network)).toBeCloseTo(REACH, 5)
   })
 
   test('non-arrow strokes keep the align-based overflow', () => {
@@ -351,5 +356,11 @@ describe('filled heads', () => {
     expect(trimmed.vertices[1].x).toBeCloseTo(82, 6)
     expect(trimmed.vertices[1].y).toBeCloseTo(0, 6)
     expect(network.vertices[1].x).toBe(100)
+  })
+
+  test('the line stops 4.5 weights short of an equilateral head, as of a triangle', () => {
+    const network = straightOpenLine()
+    network.vertices[1].strokeCap = 'ARROW_EQUILATERAL'
+    expect(trimArrowShafts(network, 'NONE', 4).vertices[1].x).toBeCloseTo(82, 6)
   })
 })

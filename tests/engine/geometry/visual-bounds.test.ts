@@ -449,7 +449,8 @@ describe('computeVisualBounds', () => {
       (id) => nodes[id as keyof typeof nodes],
       () => ({ x: 0, y: 0 })
     )
-    expect(bounds?.minY).toBe(-18)
+    // A line arrow's round wing ends reach furthest: 4.5 weights back at 45°, plus half a weight.
+    expect(bounds?.minY).toBeCloseTo(-4 * (4.5 * Math.SQRT1_2 + 0.5), 5)
   })
 
   test('nested clipping stops descendants outside the ancestor clip', () => {

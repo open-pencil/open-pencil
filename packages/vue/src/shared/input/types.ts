@@ -55,6 +55,13 @@ export interface DragConnectorEnd {
   cancel: () => void
 }
 
+/** An end of a selected line or arrow dragged to aim it. */
+export interface DragLineEnd {
+  type: 'line-end'
+  commit: () => void
+  cancel: () => void
+}
+
 /** A layer placed where the pointer is released, such as a sticky note. */
 export interface DragPlace {
   type: 'place'
@@ -263,6 +270,7 @@ export type DragState =
   | DragPlace
   | DragConnectorDraw
   | DragConnectorEnd
+  | DragLineEnd
   | DragGradient
   | DragMove
   | DragPan
