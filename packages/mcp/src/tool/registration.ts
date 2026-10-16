@@ -9,7 +9,7 @@ import * as v from 'valibot'
 import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
-import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
+import { MAX_RESULT_BYTES, binaryContent, fail, ok, resultTooLargeMessage } from '#mcp/result'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
 import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
@@ -162,13 +162,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
               )
             }
             return {
-              content: [
-                {
-                  type: 'image' as const,
-                  data: base64,
-                  mimeType: r.mimeType as string
-                }
-              ]
+              content: [binaryContent(base64, String(r.mimeType), def.name)]
             }
           }
           return ok(r, def.name)
