@@ -61,8 +61,20 @@ test('Alt+Cmd+C then Alt+Cmd+V moves the look of one layer to another, in one un
 
   await selectAt(SOURCE)
   expect((await selectedLook())?.id).toBe(sourceId)
+  await editor.page.evaluate(() => navigator.clipboard.writeText(''))
   await editor.page.keyboard.press('ControlOrMeta+Alt+KeyC')
-  await expect(editor.page.getByText('Copied properties.')).toBeVisible()
+  await expect
+    .poll(() =>
+      editor.page.evaluate(async () => {
+        try {
+          return (await navigator.clipboard.read()).flatMap((item) => item.types)
+        } catch {
+          // A read overlapping the asynchronous copy can fail while the clipboard changes.
+          return []
+        }
+      })
+    )
+    .toContain('text/html')
 
   await selectAt(TARGET)
   await editor.page.keyboard.press('ControlOrMeta+Alt+KeyV')

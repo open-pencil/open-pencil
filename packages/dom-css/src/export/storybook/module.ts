@@ -52,7 +52,7 @@ export interface StoryModuleData {
 export type StoryDesign =
   | { type: 'link'; url: string }
   /** Refers to the design image of the variant with this index. */
-  | { type: 'image'; variant: number }
+  | { type: 'image'; variant: number; name?: string }
 
 const MODULE = es.parseModule(dedent`
   import type { Meta, StoryObj } from '$storybook'
@@ -223,7 +223,7 @@ function argTypes(data: StoryModuleData): es.SyntaxNode {
   return es.object(entries)
 }
 
-function parameters(design: StoryDesign[]): es.SyntaxNode {
+export function designParameters(design: StoryDesign[]): es.SyntaxNode {
   const entries = design.map((entry) =>
     entry.type === 'link'
       ? es.object([
@@ -232,7 +232,7 @@ function parameters(design: StoryDesign[]): es.SyntaxNode {
           ['url', es.string(entry.url)]
         ])
       : es.object([
-          ['name', es.string('Design')],
+          ['name', es.string(entry.name ?? 'Design')],
           ['type', es.string('image')],
           ['url', es.identifier(imageName(entry.variant))]
         ])
@@ -256,6 +256,13 @@ function argsType(data: StoryModuleData): es.SyntaxNode {
 export const stylesheets = (paths: readonly string[]) =>
   paths.flatMap((path) => es.fill(STYLESHEET, { $path: es.string(path) }).body)
 
+/** Bundle design images relative to the story file, in their metadata's variant order. */
+export const designImages = (paths: readonly string[]) =>
+  paths.flatMap(
+    (path, i) =>
+      es.fill(IMAGE, { $name: es.identifier(imageName(i)), $path: es.string(`./${path}`) }).body
+  )
+
 /** Print a CSF3 story module for one component or component set. */
 export function printStoryModule(data: StoryModuleData): string {
   const framework = FRAMEWORKS[data.framework]
@@ -269,15 +276,11 @@ export function printStoryModule(data: StoryModuleData): string {
     $missing: es.string(`${data.name} has no variant `),
     $title: es.string(data.title),
     $tags: es.array(data.tags.map(es.string)),
-    $parameters: data.metaDesign.length > 0 ? parameters(data.metaDesign) : es.OMIT,
+    $parameters: data.metaDesign.length > 0 ? designParameters(data.metaDesign) : es.OMIT,
     $args: argsObject(data, data.variants[0]?.values ?? []),
     $argTypes: argTypes(data),
     $render: rendered(data.framework, 'variantHTML(args)')
   }).body
-  const images = data.images.flatMap(
-    (path, i) =>
-      es.fill(IMAGE, { $name: es.identifier(imageName(i)), $path: es.string(`./${path}`) }).body
-  )
   const stories = data.stories.flatMap(
     (story) =>
       es.fill(STORY, {
@@ -287,7 +290,9 @@ export function printStoryModule(data: StoryModuleData): string {
           ...(story.tags.length > 0
             ? [['tags', es.array(story.tags.map(es.string))] as const]
             : []),
-          ...(story.design.length > 0 ? [['parameters', parameters(story.design)] as const] : []),
+          ...(story.design.length > 0
+            ? [['parameters', designParameters(story.design)] as const]
+            : []),
           ['args', argsObject(data, story.values)]
         ])
       }).body
@@ -309,7 +314,7 @@ export function printStoryModule(data: StoryModuleData): string {
       storybookImport,
       ...framework.imports,
       ...stylesheets(data.styles),
-      ...images,
+      ...designImages(data.images),
       ...body,
       ...stories,
       ...gallery

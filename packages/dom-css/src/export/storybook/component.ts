@@ -9,7 +9,7 @@ import type {
   GeneratedComponent,
   GeneratedKind
 } from '../components/model'
-import { stylesheets } from './module'
+import { designImages, designParameters, stylesheets, type StoryDesign } from './module'
 import { claimName, identifierName, VARIANT_TAG } from './names'
 
 /** Tells readers the file is generated; nothing parses it. */
@@ -131,8 +131,10 @@ export interface ComponentStoriesData {
   single?: boolean
   component: ComponentModel
   generated: Pick<GeneratedComponent, 'entry' | 'valueArg' | 'valueList'>
-  /** Design links for the whole file, as `parameters.design` entries. */
-  design: { name: string; type: string; url: string }[]
+  /** Labelled design references for the whole file, independent of controls and play state. */
+  design: StoryDesign[]
+  /** Import paths of the design images referenced by the metadata, in variant order. */
+  images: string[]
 }
 
 const FALSE = es.parseExpression('false')
@@ -280,23 +282,7 @@ function stories(
 /** CSF3 stories for a generated component, with a play function that operates it. */
 export function printComponentStories(data: ComponentStoriesData): string {
   const { component } = data
-  const parameters =
-    data.design.length > 0
-      ? es.object([
-          [
-            'design',
-            es.array(
-              data.design.map((entry) =>
-                es.object([
-                  ['name', es.string(entry.name)],
-                  ['type', es.string(entry.type)],
-                  ['url', es.string(entry.url)]
-                ])
-              )
-            )
-          ]
-        ])
-      : es.OMIT
+  const parameters = data.design.length > 0 ? designParameters(data.design) : es.OMIT
   const { entry, valueArg: model } = data.generated
   const list = data.generated.valueList ?? false
   const body = es.fill(MODULE, {
@@ -326,6 +312,7 @@ export function printComponentStories(data: ComponentStoriesData): string {
       ...imports,
       ...stylesheets(data.styles),
       ...componentImport,
+      ...designImages(data.images),
       ...rest,
       ...exported
     ])

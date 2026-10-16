@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "无法初始化聊天：{error}",
   "linkCopied": "链接已复制到剪贴板。",
+  "implementationStoryReady": "实现故事已就绪。",
+  "implementationStoryUnpinned": "实现故事已就绪。此映射未固定到设计修订版本。",
+  "openImplementationStory": "打开故事",
   "clipboardMissingDesignData": "剪贴板中没有设计数据。",
   "clipboardAccessBlocked": "当前浏览器环境阻止了剪贴板访问。",
   "copiedAs": "已复制为 {format}。",

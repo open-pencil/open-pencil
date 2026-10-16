@@ -6,6 +6,8 @@ use url::Url;
 pub struct DeepLinkOpen {
     pub file: String,
     pub node: Option<String>,
+    pub node_id: Option<String>,
+    pub revision: Option<String>,
 }
 
 /// A collaboration room to open, from `openpencil://join?room=<id>`.
@@ -48,6 +50,8 @@ pub enum DeepLinkError {
     ParentSegment,
     BadExtension,
     BadRoom,
+    BadNodeIdentity,
+    BadRevision,
     BadOAuthProvider,
     BadCloudLink,
 }
@@ -168,10 +172,14 @@ pub fn parse_open_url(url: &Url) -> Result<DeepLinkOpen, DeepLinkError> {
     }
     let mut file = None;
     let mut node = None;
+    let mut node_id = None;
+    let mut revision = None;
     for (k, v) in url.query_pairs() {
         match k.as_ref() {
             "file" => file = Some(v.into_owned()),
             "node" => node = Some(v.into_owned()),
+            "node-id" => node_id = Some(v.into_owned()),
+            "revision" => revision = Some(v.into_owned()),
             _ => {}
         }
     }
@@ -191,9 +199,34 @@ pub fn parse_open_url(url: &Url) -> Result<DeepLinkOpen, DeepLinkError> {
     if !(lower.ends_with(".pen") || lower.ends_with(".fig")) {
         return Err(DeepLinkError::BadExtension);
     }
+    if let Some(id) = &node_id {
+        let parts: Vec<_> = id.split(':').collect();
+        if !lower.ends_with(".fig")
+            || parts.len() != 2
+            || parts.iter().any(|part| {
+                part.is_empty()
+                    || !part.bytes().all(|byte| byte.is_ascii_digit())
+                    || part.parse::<u32>().is_err()
+            })
+        {
+            return Err(DeepLinkError::BadNodeIdentity);
+        }
+    }
+    if let Some(hash) = &revision {
+        if node_id.is_none()
+            || hash.len() != 64
+            || !hash
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(DeepLinkError::BadRevision);
+        }
+    }
     Ok(DeepLinkOpen {
         file,
         node: node.filter(|n| !n.is_empty()),
+        node_id,
+        revision,
     })
 }
 
@@ -355,9 +388,30 @@ mod tests {
             parse("openpencil://open?file=web%2Fdesign%2Fhikyo.pen&node=Button%2FPrimary"),
             Ok(DeepLinkOpen {
                 file: "web/design/hikyo.pen".into(),
-                node: Some("Button/Primary".into())
+                node: Some("Button/Primary".into()),
+                node_id: None,
+                revision: None
             })
         );
+    }
+
+    #[test]
+    fn persisted_identity_and_revision_are_validated() {
+        let revision = "a".repeat(64);
+        let link = parse(&format!(
+            "openpencil://open?file=design.fig&node-id=42%3A9&revision={revision}"
+        ))
+        .unwrap();
+        assert_eq!(link.node_id, Some("42:9".into()));
+        assert_eq!(link.revision, Some(revision));
+        for url in [
+            "openpencil://open?file=a.fig&node-id=not-a-guid",
+            "openpencil://open?file=a.pen&node-id=42:9",
+            "openpencil://open?file=a.fig&node-id=42:9&revision=bad",
+            "openpencil://open?file=a.fig&revision=bad",
+        ] {
+            assert!(parse(url).is_err(), "{url}");
+        }
     }
 
     #[test]
@@ -533,6 +587,40 @@ mod tests {
     }
 
     #[test]
+    fn mapping_document_is_anchored_to_the_picked_config() {
+        let tree = TempTree::new("mapping");
+        let mapping = tree.file("one/openpencil.components.json");
+        let document = tree.file("one/design/library.fig");
+        let other = tree.file("two/design/library.fig");
+        let check = |relative: &str, candidate: &Path| {
+            mapping_document_matches(
+                mapping.to_string_lossy().into_owned(),
+                relative.into(),
+                candidate.to_string_lossy().into_owned(),
+            )
+        };
+        assert!(check("design/library.fig", &document));
+        assert!(!check("design/library.fig", &other));
+        assert!(!check("../two/design/library.fig", &other));
+        assert!(!check("missing.fig", &document));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn mapping_config_symlink_uses_its_canonical_parent() {
+        let tree = TempTree::new("mapping-config-link");
+        let mapping = tree.file("project/openpencil.components.json");
+        let document = tree.file("project/design/library.fig");
+        let link = tree.0.join("shortcut.json");
+        std::os::unix::fs::symlink(&mapping, &link).expect("link the config");
+        assert!(mapping_document_matches(
+            link.to_string_lossy().into_owned(),
+            "design/library.fig".into(),
+            document.to_string_lossy().into_owned()
+        ));
+    }
+
+    #[test]
     fn command_matches_a_real_file_by_its_trailing_segments() {
         let tree = TempTree::new("exact");
         let file = tree.file("web/design/hikyo.pen");
@@ -594,5 +682,32 @@ mod tests {
         assert!(!matches(&file, "web/../design/hikyo.pen"));
         assert!(!matches(&file, "./hikyo.pen"));
         assert!(!matches(&file, ""));
+    }
+}
+
+/// A picked mapping anchors its document locators; a matching suffix in another checkout
+/// cannot authorize opening that checkout's implementation. This command widens no FS scope.
+#[tauri::command(async)]
+pub fn mapping_document_matches(mapping_path: String, relative: String, document: String) -> bool {
+    let relative = Path::new(&relative);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_)))
+    {
+        return false;
+    }
+    let Ok(mapping) = Path::new(&mapping_path).canonicalize() else {
+        return false;
+    };
+    let Some(parent) = mapping.parent() else {
+        return false;
+    };
+    match (
+        parent.join(relative).canonicalize(),
+        Path::new(&document).canonicalize(),
+    ) {
+        (Ok(expected), Ok(actual)) => expected == actual,
+        _ => false,
     }
 }

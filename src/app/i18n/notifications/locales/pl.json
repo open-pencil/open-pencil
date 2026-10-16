@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "Nie udało się uruchomić czatu: {error}",
   "linkCopied": "Link skopiowano do schowka.",
+  "implementationStoryReady": "Historia implementacji jest gotowa.",
+  "implementationStoryUnpinned": "Historia implementacji jest gotowa. To powiązanie nie jest przypięte do rewizji projektu.",
+  "openImplementationStory": "Otwórz historię",
   "clipboardMissingDesignData": "Schowek nie zawiera danych projektu.",
   "clipboardAccessBlocked": "Dostęp do schowka jest zablokowany w tym kontekście przeglądarki.",
   "copiedAs": "Skopiowano jako {format}.",

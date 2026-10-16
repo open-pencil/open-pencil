@@ -118,6 +118,7 @@ export function useAppMenu() {
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     'selection.rename': 'renameSelection',
+    'selection.openImplementation': 'openImplementationStory',
     'selection.moveToPage': 'moveToPage',
     language: 'language',
     preferences: 'preferences',

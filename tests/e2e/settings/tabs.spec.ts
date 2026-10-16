@@ -34,7 +34,13 @@ test('settings tabs associate panels and support vertical keyboard navigation', 
   await expect(general).toBeFocused()
   await expect(page.getByTestId('settings-general-panel')).toBeVisible()
   await general.press('End')
-  await expect(page.getByTestId('settings-section-storage')).toBeFocused()
+  const lastTab = dialog.getByRole('tab').last()
+  await expect(lastTab).toBeFocused()
+  await expect(lastTab).toHaveAttribute('aria-selected', 'true')
+  await expect(dialog.getByRole('tabpanel')).toHaveAttribute(
+    'aria-labelledby',
+    (await lastTab.getAttribute('id')) ?? ''
+  )
   await page.getByTestId('app-settings-done').click()
   await expect(dialog).not.toBeVisible()
 })

@@ -24,6 +24,8 @@ export {
 export { COMPONENT_STYLINGS, type ComponentStyling } from './components/styling'
 export * from '../tokens'
 export * from '../behaviours'
+export * from './storybook/mapping/schema'
+export * from './storybook/mapping/reference'
 export type {
   ExportHTMLBundle,
   ExportHTMLBundleOptions,

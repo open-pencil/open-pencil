@@ -68,6 +68,7 @@ export const menuMessageDefaults = {
   copyProperties: 'Copy properties',
   pasteProperties: 'Paste properties',
   renameSelection: 'Rename selection…',
+  openImplementationStory: 'Open implementation story…',
   copyPasteAs: 'Copy/Paste as',
   copyAsText: 'Copy as text',
   copyAsSVG: 'Copy as SVG',

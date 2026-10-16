@@ -18,6 +18,7 @@ async function getLayerNames(): Promise<string[]> {
 }
 
 interface SceneTreeNode {
+  id: string
   name: string
   type: string
   children: SceneTreeNode[]
@@ -32,6 +33,7 @@ async function getSceneTree(): Promise<SceneTreeNode> {
       const node = store.graph.getNode(id)
       if (!node) return null
       return {
+        id: node.id,
         name: node.name,
         type: node.type,
         children: node.childIds
@@ -56,19 +58,27 @@ async function getSelectedCount(): Promise<number> {
 const NUMBERED_GROUP = /^Group \d+$/
 
 test('demo layers visible in panel', async () => {
-  const names = await getLayerNames()
-  expect(names).toContain('Announcement system')
-  expect(names).toContain('Components')
+  await expect
+    .poll(
+      async () => (await getSceneTree()).children.filter((node) => node.type === 'SECTION').length
+    )
+    .toBeGreaterThanOrEqual(2)
+  const sections = (await getSceneTree()).children
+    .filter((node) => node.type === 'SECTION')
+    .slice(0, 2)
+  for (const section of sections)
+    await expect(editor.page.locator(`[data-node-id="${section.id}"]`)).toContainText(section.name)
 })
 
 test('clicking a node inside a frame does not reparent it', async () => {
   const target = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const nodes = [...store.graph.nodes.values()]
-    const root = nodes.find((node) => node.name === 'Announcement system')
-    const nested = nodes.find((node) => node.name === 'Source components')
-    if (!root || !nested?.parentId) throw new Error('Demo announcement structure not found')
+    const root = store.graph
+      .getChildren(store.state.currentPageId)
+      .find((node) => node.type === 'SECTION')
+    const nested = root && store.graph.getChildren(root.id).find((node) => node.type === 'FRAME')
+    if (!root || !nested?.parentId) throw new Error('Demo section with a nested frame not found')
     const origin = store.graph.getAbsolutePosition(nested.id)
     return {
       id: nested.id,
@@ -247,7 +257,9 @@ test('clearing a layer name keeps the name it had', async () => {
 test('double-click does not toggle tree expand', async () => {
   const rowCountBefore = await layerRows().count()
 
-  const containerRow = layerRows().filter({ hasText: 'Components' }).first()
+  const section = (await getSceneTree()).children.find((node) => node.type === 'SECTION')
+  if (!section) throw new Error('Demo section not found')
+  const containerRow = editor.page.locator(`[data-node-id="${section.id}"]`)
   await containerRow.dblclick()
   await editor.canvas.waitForRender()
 

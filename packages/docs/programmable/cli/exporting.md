@@ -188,7 +188,7 @@ A rule applies to every story file whose `<page>/<name>` path matches its glob, 
 
 Keep each component's design file in the component's folder and export with `--beside`: each document's stories, design images, and `.openpencil-stories.json` manifest go into that document's own folder, next to the component's code. A Storybook `stories` glob such as `../src/**/*.stories.ts` in `.storybook/main.ts` then picks them up without further configuration.
 
-Pass several documents, or a quoted glob such as `'src/**/*.pen'` that OpenPencil expands itself (Node.js 22 or later). Several documents need `--beside` or `--output`; `--page` works with one document only. Documents are exported one after another, and when one fails the rest are still exported before the command exits with an error. `--watch` watches every matched document; a document created after the watch started needs another run.
+Pass several documents, or a quoted glob such as `'src/**/*.pen'` that OpenPencil expands itself. Extglobs such as `'src/+(button|badge).fig'` are also supported; when running from source, use the Bun version pinned in `package.json`. Several documents need `--beside` or `--output`; `--page` works with one document only. Documents are exported one after another, and when one fails the rest are still exported before the command exits with an error. `--watch` watches every matched document; a document created after the watch started needs another run.
 
 Stories are titled by the document's file name, and then the page when more than one page has components: `pricing.fig` gives `pricing/Plan picker`, so documents exported together keep their stories apart. Each variant of a component set becomes a story, and its variant properties become `select` controls, so switching a control shows the matching variant. A set with a behaviour gets the control's own props instead: a Switch or Checkbox has a `checked` boolean, a Toggle `pressed`, a Collapsible `open`, and `disabled` when the set draws a disabled state; hover, pressed, and focus stay stories of their own. Standalone components named with slashes, such as `Button/Primary` and `Button/Secondary`, are grouped into one `Button` file with a `Variant` control. A combination the design has no variant for throws a named error in Storybook rather than showing a different variant.
 
@@ -207,9 +207,92 @@ Its stories render the component, and a play function clicks the control and che
 Stories carry `parameters.design` entries for [`@storybook/addon-designs`](https://github.com/storybookjs/addon-designs):
 
 - **OpenPencil** — when the document path is inside the current directory, an [`openpencil://` link](../index#url-scheme) that opens the document in the desktop app and selects the variant, or its component set when another layer shares the variant's name. The scheme addresses layers by name, so a story whose variant and component names are both shared by other layers gets no link.
-- **Design** — a 2× PNG of the variant, written to `<Name>.design/` next to the story and referenced with `new URL(…, import.meta.url)`, so Vite bundles it. Copy the parameter onto the story of your own component to compare the implementation with the design. `--no-design-images` skips rendering; font substitution follows `--font-policy` as in raster export.
+- **Design** — 2× PNG references written to `<Name>.design/` next to the story and referenced with `new URL(…, import.meta.url)`, so Vite bundles them. Static stories show their variant's image. Generated Vue and React components carry a labelled reference for every drawn variant, including in `single` mode; these references do not automatically follow controls or a play function's state. Copy the parameters onto the story of your own component to compare the implementation with the design. `--no-design-images` skips rendering; font substitution follows `--font-policy` as in raster export.
 
 `-o` names the output directory. A `.openpencil-stories.json` manifest there records which document, as a path relative to the output directory, and which page generated each story and design image; commit it with the stories. An export replaces the files that a previous export of the same document generated there, including those of components since deleted or renamed; with `--page`, only that page's. It refuses, before changing anything, to overwrite any other file — a hand-written story, another document's, or a stray image. A one-page export whose file names shifted onto another page's stories asks for a full export instead. Without the manifest, existing stories count as someone else's, so remove them before exporting again. `--watch` keeps the command running and re-exports whenever the document is saved, so Storybook's hot reload follows the design; a save that cannot be read is reported and the watch continues. A missing `--page` or a `--font-policy strict` substitution still ends the command.
+
+### Link an existing implementation
+
+Use a component mapping when a Vue or React component and its Storybook stories are already maintained in your repository. A mapping export writes design references and PNGs, leaving the implementation, stories, and custom play functions under your control. It requires a saved `.fig` document; `.pen` mappings are not supported yet.
+
+First inspect the saved identities:
+
+```sh
+openpencil export design/library.fig -f storybook --mapping-info
+```
+
+The JSON output lists persisted component, variant, and property IDs, plus the SHA-256 of the original file bytes. Use these IDs in the mapping, not the runtime IDs from `tree` or `node`. Renaming a layer preserves its saved identity; deleting and recreating it does not.
+
+Create `openpencil.components.json` at your repository root. Paths are relative to this file's directory, use `/`, and cannot contain `.` or `..` segments. Replace the example IDs with the inspection output:
+
+```json
+{
+  "version": 1,
+  "storybook": { "baseUrl": "https://storybook.example.com/" },
+  "components": [
+    {
+      "key": "badge",
+      "design": { "file": "design/library.fig", "id": "123:4" },
+      "implementation": { "import": "src/Badge.vue", "export": "default" },
+      "story": { "id": "components-badge--blue" },
+      "props": {
+        "123:7": { "prop": "tone", "values": { "Blue": "blue", "Green": "green" } }
+      },
+      "states": [
+        { "key": "green", "designId": "123:6", "storyId": "components-badge--green" }
+      ]
+    }
+  ]
+}
+```
+
+`key` determines the reference filename and stays stable when the design is renamed. `design.id` identifies a component or component set; each state's `designId` must identify a variant belonging to that set. Each mapping and state names a distinct, explicit Storybook story ID. Give the story metadata an explicit `id` so changing its display title does not change these links.
+
+`props` maps persisted design property IDs to implementation prop names. Variant and text values are strings, boolean properties become booleans, and `values` can translate them to string, boolean, number, or null values. A state's optional `args` supplies additional scalar fixture values; it cannot contradict a mapped design property. Slots and arbitrary application data remain in the developer-owned story. These are references for explicit states; they do not synchronize live Storybook controls with the design.
+
+Export the references:
+
+```sh
+openpencil export design/library.fig -f storybook \
+  --mapping openpencil.components.json --output src/design-references
+```
+
+This writes `badge.design.ts`, its `badge.design/` images, and the ownership manifest. The reference module records the implementation import/export, design identity and revision, implementation story URL, args, and `parameters.design`. Its type-only implementation import lets the consuming TypeScript project check that the named export exists; the exporter does not execute the implementation. `--no-design-images` leaves metadata and links without PNGs.
+
+Mapping exports do not accept `--watch`, `--page`, or `--rules`; rerun the command after reviewing a change. The reference module type-checks mapped args against the implementation's props when your consuming project runs TypeScript.
+
+Import the reference into your existing story, with the Designs addon registered in Storybook:
+
+```ts
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import Badge from './Badge.vue'
+import reference from './design-references/badge.design'
+
+const meta = {
+  id: 'components-badge',
+  title: 'Components/Badge',
+  component: Badge
+} satisfies Meta<typeof Badge>
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Blue: Story = {
+  args: reference.args,
+  parameters: reference.parameters
+}
+
+export const Green: Story = {
+  args: reference.states.green.args,
+  parameters: reference.states.green.parameters
+  // Keep your own render and play functions here.
+}
+```
+
+For React, use the React Storybook types and your component's default or named export in the mapping. Regeneration replaces only manifest-owned reference files and images. It rejects collisions with developer-owned files, missing design identities, duplicate mappings, and invalid property or state associations. Moving a document requires updating its configured path; a matching display name is never used as a fallback.
+
+The mapping's optional `design.revision` pins the exact input file SHA-256 and rejects export after that file changes until you review and update the pin. Without it, the mapping follows the current saved file. Every generated reference still records the actual exported revision, so its OpenPencil link can detect a stale document. There is no Git writeback or automatic implementation rewrite.
+
+In OpenPencil, select the mapped component or variant and choose **Edit → Open implementation story…**, then select the mapping JSON file. In the browser, click **Open story** in the resulting notification. On desktop the app also checks the document path against the mapping's directory; browser file pickers expose only filenames, so use a revision pin to distinguish same-named files with different revisions. Byte-identical copies share the same revision and saved IDs. Unpinned navigation is labelled as such. Revision-pinned navigation refuses live storage-backed documents and documents changed since they were opened; reopen the saved file to verify its bytes again. The reverse link in Storybook opens the saved design identity, retaining the existing file-picker permission boundary and reporting missing, ambiguous, or stale targets.
 
 ## Live App Mode
 

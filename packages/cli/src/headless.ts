@@ -18,6 +18,11 @@ const io = new IORegistry(CLI_IO_FORMATS)
 
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
+  return loadDocumentBytes(filePath, bytes)
+}
+
+/** Read the exact bytes a caller hashes, avoiding a second file read between revision and graph. */
+export async function loadDocumentBytes(filePath: string, bytes: Uint8Array): Promise<SceneGraph> {
   const { graph } = await io.readDocument({ name: filePath, data: bytes })
   graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph

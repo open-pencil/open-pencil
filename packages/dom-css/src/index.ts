@@ -1,5 +1,8 @@
 import type * as DesignTypes from './types'
 
+export * from './export/storybook/mapping/schema'
+export * from './export/storybook/mapping/reference'
+
 export { exportHTMLBundle } from './export/bundle'
 export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
 export { serializeHTML, serializeNode } from './export/html'

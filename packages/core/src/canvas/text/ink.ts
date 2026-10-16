@@ -4,6 +4,13 @@ import type { OutlineCommand } from '#core/text/opentype'
 
 /** Straight pieces a curve is followed in: a fraction of a pixel off at display sizes. */
 const CURVE_STEPS = 24
+const CURVE_SAMPLES: readonly Readonly<{ t: number; u: number }>[] = Array.from(
+  { length: CURVE_STEPS },
+  (_, index) => {
+    const t = (index + 1) / CURVE_STEPS
+    return { t, u: 1 - t }
+  }
+)
 
 /** Where a glyph's ink crosses a horizontal band: its leftmost and rightmost x there. */
 export type InkSpan = [number, number]
@@ -38,18 +45,14 @@ class BandInk {
 
   quadTo(x1: number, y1: number, x: number, y: number): void {
     const { x: x0, y: y0 } = this
-    for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
+    for (const { t, u } of CURVE_SAMPLES) {
       this.lineTo(u * u * x0 + 2 * u * t * x1 + t * t * x, u * u * y0 + 2 * u * t * y1 + t * t * y)
     }
   }
 
   cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
     const { x: x0, y: y0 } = this
-    for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
+    for (const { t, u } of CURVE_SAMPLES) {
       const a = u * u * u
       const b = 3 * u * u * t
       const c = 3 * u * t * t

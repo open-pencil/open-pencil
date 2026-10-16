@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test'
 
+import type * as PaintScene from '#tests/helpers/canvas/paint-effects/scene'
+
 /** Exercise the P3 surface negotiation even on an sRGB CI display. */
 export async function emulateWideGamutDisplay(page: Page) {
   await page.addInitScript(() => {
@@ -24,7 +26,20 @@ export async function dismissWideGamutBanner(page: Page) {
   if (await banner.isVisible()) await banner.locator('[data-slot="banner-dismiss"]').click()
 }
 
-/** Focus the demo's paint and effects page, where blends and masks live. */
+/** Builds a stable paint subject independently of the editable product tour. */
+export async function showPaintEffects(page: Page) {
+  await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Editor unavailable')
+    const sceneURL = '/tests/helpers/canvas/paint-effects/scene.ts'
+    const scene: typeof PaintScene = await import(sceneURL)
+    await scene.createPaintEffectsScene(store.graph, store.state.currentPageId)
+    store.setDocumentColorSpace('display-p3')
+    store.requestRender()
+  })
+}
+
+/** Focus the paint fixture's original blend, mask, fill and effect specimens. */
 export async function focusPaintEffects(page: Page) {
   // Zooming to a layer uses the viewport size the canvas last measured, so a window resize must
   // reach it first or the zoom fits the old size. The canvas sizes its pixels in the same step.
@@ -39,19 +54,13 @@ export async function focusPaintEffects(page: Page) {
       canvas.height === Math.round(canvas.clientHeight * dpr)
     )
   })
-  await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('Editor unavailable')
-    const paintPage = store.graph.getPages().find((candidate) => candidate.name.startsWith('03'))
-    if (!paintPage) throw new Error('Demo paint page unavailable')
-    store.setDocumentColorSpace('display-p3')
-    if (store.state.currentPageId !== paintPage.id) await store.switchPage(paintPage.id)
-  })
   await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
-    const subject = store.graph.getChildren(store.state.currentPageId)[0]
-    if (!subject) throw new Error('Demo paint page is empty')
+    const subject = store.graph
+      .getChildren(store.state.currentPageId)
+      .find((node) => node.name === 'Paint and effects')
+    if (!subject) throw new Error('Paint fixture unavailable')
     store.select([subject.id])
     store.zoomToSelection()
     store.clearSelection()

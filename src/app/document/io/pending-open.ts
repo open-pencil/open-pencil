@@ -40,7 +40,11 @@ export async function openPendingFiles(
 ): Promise<void> {
   await openDesignFileBatch(files, displayName, async (file) => {
     // Only the deep-link resolver may turn a link's relative path into a real one.
-    if (file.deepLink) await io.openLink({ path: file.path, node: file.node }, actions)
+    if (file.deepLink)
+      await io.openLink(
+        { path: file.path, node: file.node, nodeId: file.nodeId, revision: file.revision },
+        actions
+      )
     else await io.openPath(file.path)
   })
 }

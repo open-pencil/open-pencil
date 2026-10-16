@@ -169,9 +169,11 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  // Before storage is configured, the command opens storage settings.
+  // With no save destination configured, choose storage in Settings.
   let file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  await file.getByRole('menuitem', { name: 'Save to…', exact: true }).click()
+  await expect(page.getByTestId('app-settings-dialog')).toBeVisible()
+  await page.getByTestId('settings-section-storage').click()
   const panel = page.getByTestId('settings-storage-panel')
   await expect(panel).toBeVisible()
   await panel.getByRole('button', { name: /S3 storage/ }).click()
@@ -183,7 +185,7 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   await page.getByTestId('app-settings-done').click()
 
   file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Save to storage…' }).click()
+  await file.getByRole('menuitem', { name: 'Save to…', exact: true }).click()
   await expect
     .poll(() => [...objects.keys()].filter((key) => key.includes('/canvases/')).sort())
     .toEqual([
@@ -195,7 +197,11 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   expect(uploaded?.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
 
   file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+  await file.getByRole('menuitem', { name: 'Browse files…', exact: true }).click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await page
+    .getByRole('navigation', { name: 'Locations' })
+    .getByRole('button', { name: /^designs(?:\s|$)/ })
+    .click()
   await expect(page.getByRole('button', { name: /^Untitled/ }).first()).toBeVisible()
 })

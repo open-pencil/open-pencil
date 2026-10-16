@@ -72,6 +72,16 @@ The app matches `file` against the paths of the open tabs as a whole trailing se
 
 With a node name, the app selects every layer carrying that exact name on the current page and zooms the view to the whole selection. When the current page has none, it switches to the first page that does, loading pages as needed. An unknown name shows a notice and leaves the document open. Opening a file and selecting layers is all the scheme can do.
 
+For a durable link into a saved `.fig` document, use `node-id` instead of `node`:
+
+```text
+openpencil://open?file=design/library.fig&node-id=123%3A4
+```
+
+`node-id` is the persisted FIG identity, available through [`--mapping-info`](./cli/exporting#link-an-existing-implementation), rather than a runtime node handle or display name. Exactly one saved identity must match, including across pages. Renaming or adding another layer with the same name does not retarget the link. Durable links also reject ambiguous matching open files instead of choosing the first checkout.
+
+An optional `revision` query parameter contains the lowercase SHA-256 of the original FIG file bytes. A pinned link refuses a different revision or a document changed since opening; reopen the saved file to reverify it. Navigation never reloads an open document to overwrite live edits. [Mapped Storybook references](./cli/exporting#link-an-existing-implementation) emit both the persisted identity and actual revision automatically.
+
 The web app takes the same link from its own address bar:
 
 ```

@@ -7,6 +7,10 @@ import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue'
 export const notificationMessageDefaults = {
   chatInitializationFailed: params('Could not initialize chat: {error}'),
   linkCopied: 'Link copied to clipboard.',
+  implementationStoryReady: 'Implementation story ready.',
+  implementationStoryUnpinned:
+    'Implementation story ready. This mapping is not pinned to a design revision.',
+  openImplementationStory: 'Open story',
   clipboardMissingDesignData: 'Clipboard does not contain design data.',
   clipboardAccessBlocked: 'Clipboard access is blocked in this browser context.',
   copiedAs: params('Copied as {format}.'),

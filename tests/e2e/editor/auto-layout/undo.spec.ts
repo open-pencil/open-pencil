@@ -57,6 +57,7 @@ test('layout guide live numeric edits form one Undo record', async ({ page }) =>
       (id) => window.openPencil?.getStore?.().graph.getNode(id)?.layoutGrids[0].count,
       id
     )
+  await page.getByRole('button', { name: 'Layout guide settings', exact: true }).click()
   const field = page.getByRole('spinbutton', { name: 'Count', exact: true })
   await field.dblclick()
   await field.fill('12')

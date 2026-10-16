@@ -1,0 +1,1 @@
+- Include design images in generated Vue and React stories and preserve saved component identities when importing instance overrides.

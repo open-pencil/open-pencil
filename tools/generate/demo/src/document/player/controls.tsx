@@ -6,6 +6,7 @@
 import { Button, Component, Slider, Toggle, type TreeNode } from '@open-pencil/design-jsx'
 
 import { Icon } from '../elements'
+import type { IconProps } from '../elements'
 import type { Theme } from '../theme'
 
 export const TRACK_LENGTH = 230
@@ -34,7 +35,7 @@ export function progressSlider({ vars }: Theme): TreeNode {
 
 /** Play and pause: a toggle whose variants swap the icon. */
 export function playToggle({ vars }: Theme): TreeNode {
-  const variant = (state: 'Off' | 'On', icon: string) => (
+  const variant = (state: 'Off' | 'On', icon: IconProps['name']) => (
     <Component
       name={`Playing=${state}`}
       flex="row"

@@ -11,7 +11,7 @@ for (const suppressed of [false, true]) {
 
     async function toggleRulers() {
       await page.getByRole('button', { name: '100%', exact: true }).click()
-      await page.getByRole('menuitem', { name: 'Rulers', exact: true }).click()
+      await page.getByRole('menuitem', { name: /^Rulers(?:\s|$)/ }).click()
       await page.keyboard.press('Escape')
       await page.mouse.move(0, 0)
       await canvas.waitForRender()

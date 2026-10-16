@@ -4,6 +4,7 @@ import {
   findNodesByName,
   focusNodes,
   focusNodesByName,
+  focusNodeBySourceId,
   focusNodesOnTheirPage,
   type FocusStore
 } from '@/app/editor/selection/focus'
@@ -154,4 +155,27 @@ test('focuses nodes on their own page, switching to it first', async () => {
   expect(store.state.currentPageId).toBe(other.id)
   expect(selected).toEqual([[frame.id]])
   expect(await focusNodesOnTheirPage(store, ['missing'])).toBe(false)
+})
+
+test('persisted FIG identity selects a renamed layer across pages without matching a runtime handle', async () => {
+  const h = harness()
+  const second = h.graph.addPage('Second')
+  const target = h.graph.createNode('COMPONENT', second.id, { name: 'Renamed' })
+  target.source.id = '42:9'
+  expect(await focusNodeBySourceId(h.store, target.id)).toBe('missing')
+  expect(h.selected).toEqual([])
+  expect(await focusNodeBySourceId(h.store, '42:9')).toBe('found')
+  expect(h.selected).toEqual([[target.id]])
+  expect(h.store.state.currentPageId).toBe(second.id)
+})
+
+test('duplicate persisted identities and active-tab changes never select a layer', async () => {
+  const h = harness()
+  for (const page of [h.pageId, h.graph.addPage('Second').id]) {
+    h.graph.createNode('COMPONENT', page, { name: 'Duplicate' }).source.id = '42:9'
+  }
+  expect(await focusNodeBySourceId(h.store, '42:9')).toBe('ambiguous')
+  expect(h.selected).toEqual([])
+  expect(await focusNodeBySourceId(h.store, '42:9', () => false)).toBe('superseded')
+  expect(h.selected).toEqual([])
 })

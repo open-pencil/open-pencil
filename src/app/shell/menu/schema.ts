@@ -155,6 +155,7 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.delete'
       },
       { id: 'selection.rename', label: 'Rename Selection…', shortcut: 'MOD+R' },
+      { id: 'selection.openImplementation', label: 'Open implementation story…' },
       { type: 'separator' },
       {
         id: 'selection.selectAll',

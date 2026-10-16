@@ -143,6 +143,10 @@
         "accelerator": "CmdOrCtrl+R"
       },
       {
+        "id": "selection.openImplementation",
+        "label": "Open implementation story…"
+      },
+      {
         "type": "separator"
       },
       {

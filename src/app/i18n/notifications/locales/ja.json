@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "チャットを初期化できませんでした: {error}",
   "linkCopied": "リンクをクリップボードにコピーしました。",
+  "implementationStoryReady": "実装のストーリーを開く準備ができました。",
+  "implementationStoryUnpinned": "実装のストーリーを開く準備ができました。この対応付けはデザインのリビジョンに固定されていません。",
+  "openImplementationStory": "ストーリーを開く",
   "clipboardMissingDesignData": "クリップボードにデザインデータがありません。",
   "clipboardAccessBlocked": "このブラウザー環境ではクリップボードへのアクセスがブロックされています。",
   "copiedAs": "{format} としてコピーしました。",

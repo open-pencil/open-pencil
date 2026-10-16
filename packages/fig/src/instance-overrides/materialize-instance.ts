@@ -16,10 +16,14 @@ import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
 import { symbolDataOf } from './types'
 
-function occurrenceMetadata(
+function materializedMetadata(
   current: InstanceOccurrence,
-  converted: ReturnType<typeof nodeChangeToProps>
+  converted: ReturnType<typeof nodeChangeToProps>,
+  existing: SceneNode | undefined
 ) {
+  // Preallocated definition layers are actual saved records. Expanded instance copies
+  // have occurrence metadata instead, so they never borrow the definition's saved ID.
+  if (existing) return existing.source
   const metadata = createDefaultSourceMetadata()
   // Figma's own sibling key, so re-export keeps the order Figma saved.
   metadata.orderKey = current.properties.parentIndex?.position ?? null
@@ -143,7 +147,8 @@ export function materializeInstance(
     if (!converted) throw new Error('Missing prepared occurrence')
     const { nodeType, ...props } = converted
     assertMaterializableType(nodeType)
-    const metadata = occurrenceMetadata(current, converted)
+    const existing = existingNodes.get(current)
+    const metadata = materializedMetadata(current, converted, existing)
     const propsWithIdentity = {
       ...props,
       variableAssignmentScales: occurrenceAssignmentScales(current),
@@ -159,7 +164,6 @@ export function materializeInstance(
           : components.get(current.mainComponentId),
       source: metadata
     }
-    const existing = existingNodes.get(current)
     if (existing && existing.parentId !== parent) {
       throw new Error(`Preallocated occurrence has wrong parent ${current.sourceId}`)
     }

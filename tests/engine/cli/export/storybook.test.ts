@@ -35,39 +35,65 @@ async function writeComponentFixture(dir: string, names: string[], file = 'libra
   return figPath
 }
 
-test('export CLI writes Storybook stories with design images', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
-  const figPath = await writeComponentFixture(dir, ['Badge'])
-  const output = join(dir, 'stories')
+async function exportBeside(...files: string[]) {
+  return runOpenPencilCLI(['export', ...files, ...STORYBOOK, '--no-design-images', '--beside'])
+}
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
-    'export',
-    figPath,
-    ...STORYBOOK,
-    '--font-policy',
-    'allow',
-    '--output',
-    output
-  ])
+test.each([
+  { framework: 'html', storybook: '@storybook/html-vite', components: [] },
+  {
+    framework: 'vue',
+    storybook: '@storybook/vue3-vite',
+    components: ['Badge.vue']
+  },
+  {
+    framework: 'react',
+    storybook: '@storybook/react-vite',
+    components: ['Badge.tsx', 'Badge.module.css']
+  }
+])(
+  'export CLI writes $framework Storybook stories with design images',
+  async ({ framework, storybook, components }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
+    const figPath = await writeComponentFixture(dir, ['Badge'])
+    const output = join(dir, 'stories')
 
-  expect(stderr).toBe('')
-  expect(exitCode).toBe(0)
-  expect(stdout).toContain('Exported 1 story files')
-  const story = await Bun.file(join(output, 'Badge.stories.ts')).text()
-  expect(story).toContain("from '@storybook/html-vite'")
-  // Titled by the document's file name; its one page with components adds no level.
-  expect(story).toContain("title: 'library/Badge'")
-  const manifest: unknown = JSON.parse(await Bun.file(join(output, MANIFEST)).text())
-  expect(manifest).toEqual({
-    version: 1,
-    files: {
-      'Badge.design/Default.png': { source: '../library.fig', page: 'Library' },
-      'Badge.stories.ts': { source: '../library.fig', page: 'Library' }
-    }
-  })
-  const png = new Uint8Array(await Bun.file(join(output, 'Badge.design/Default.png')).arrayBuffer())
-  expect(new TextDecoder().decode(png.slice(1, 4))).toBe('PNG')
-})
+    const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+      'export',
+      figPath,
+      ...STORYBOOK_EXPORT,
+      '--framework',
+      framework,
+      '--font-policy',
+      'allow',
+      '--output',
+      output
+    ])
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    expect(stdout).toContain('Exported 1 story files')
+    const story = await Bun.file(join(output, 'Badge.stories.ts')).text()
+    expect(story).toContain(`from '${storybook}'`)
+    expect(story).toContain('Badge.design/Default.png')
+    expect(story).toContain("type: 'image'")
+    // Titled by the document's file name; its one page with components adds no level.
+    expect(story).toContain("title: 'library/Badge'")
+    const manifest: unknown = JSON.parse(await Bun.file(join(output, MANIFEST)).text())
+    expect(manifest).toEqual({
+      version: 1,
+      files: Object.fromEntries(
+        [...components, 'Badge.design/Default.png', 'Badge.stories.ts'].map((file) => [
+          file,
+          { source: '../library.fig', page: 'Library' }
+        ])
+      )
+    })
+    const image = Bun.file(join(output, 'Badge.design/Default.png'))
+    const png = new Uint8Array(await image.arrayBuffer())
+    expect(new TextDecoder().decode(png.slice(1, 4))).toBe('PNG')
+  }
+)
 
 test('export CLI replaces stale generated stories and keeps hand-written ones', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
@@ -323,18 +349,14 @@ test('export CLI --beside writes the stories of every matched document next to i
   await mkdir(join(dir, 'forms/input'), { recursive: true })
   await writeComponentFixture(join(dir, 'button'), ['Button'], 'button.fig')
   await writeComponentFixture(join(dir, 'forms/input'), ['Input'], 'input.fig')
+  await symlink(join(dir, 'button'), join(dir, 'linked'))
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
-    'export',
-    join(dir, '**/*.fig'),
-    ...STORYBOOK,
-    '--no-design-images',
-    '--beside'
-  ])
+  const { stdout, stderr, exitCode } = await exportBeside(join(dir, '**/*.fig'))
 
   expect(stderr).toBe('')
   expect(exitCode).toBe(0)
   expect(stdout).toContain('Exported 1 story files from')
+  expect(stdout.split('\n')).toHaveLength(2)
   expect(await outputEntries(join(dir, 'button'))).toEqual(['Button.stories.ts', 'button.fig'])
   expect(await outputEntries(join(dir, 'forms/input'))).toEqual(['Input.stories.ts', 'input.fig'])
   const manifest: unknown = JSON.parse(await Bun.file(join(dir, 'button', MANIFEST)).text())
@@ -342,54 +364,78 @@ test('export CLI --beside writes the stories of every matched document next to i
     version: 1,
     files: { 'Button.stories.ts': { source: 'button.fig', page: 'Library' } }
   })
+  for (const pattern of ['linked/*.fig', 'linked/**/*.fig']) {
+    const explicit = await exportBeside(join(dir, pattern))
+    expect(explicit.stderr).toBe('')
+    expect(explicit.exitCode).toBe(0)
+    expect(explicit.stdout).toContain(join(dir, 'linked', 'button.fig'))
+  }
 })
 
-test('export CLI expands an extglob pattern', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
-  await writeComponentFixture(dir, ['Card'], 'card.fig')
-  await writeComponentFixture(dir, ['Chip'], 'chip.fig')
-  await writeComponentFixture(dir, ['Draft'], 'draft.fig')
+test.each(['+(card|chip).fig', '!(draft).fig'])(
+  'export CLI expands an extglob pattern: %s',
+  async (pattern) => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
+    await writeComponentFixture(dir, ['Card'], 'card.fig')
+    await writeComponentFixture(dir, ['Chip'], 'chip.fig')
+    await writeComponentFixture(dir, ['Draft'], 'draft.fig')
+    await writeComponentFixture(dir, ['Hidden'], '.hidden.fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
-    'export',
-    join(dir, '+(card|chip).fig'),
-    ...STORYBOOK,
-    '--no-design-images',
-    '--beside'
-  ])
+    const { stderr, exitCode } = await exportBeside(join(dir, pattern))
 
-  expect(stderr).toBe('')
-  expect(exitCode).toBe(0)
-  const manifest: unknown = JSON.parse(await Bun.file(join(dir, MANIFEST)).text())
-  expect(manifest).toEqual({
-    version: 1,
-    files: {
-      'Card.stories.ts': { source: 'card.fig', page: 'Library' },
-      'Chip.stories.ts': { source: 'chip.fig', page: 'Library' }
-    }
-  })
-})
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    const manifest: unknown = JSON.parse(await Bun.file(join(dir, MANIFEST)).text())
+    expect(manifest).toEqual({
+      version: 1,
+      files: {
+        'Card.stories.ts': { source: 'card.fig', page: 'Library' },
+        'Chip.stories.ts': { source: 'chip.fig', page: 'Library' }
+      }
+    })
+  }
+)
 
-test('export CLI opens a document whose name contains glob syntax', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
-  const file = await writeComponentFixture(dir, ['Card'], 'card[1].fig')
+test.each(['card[1].fig', 'card[[]1[]].fig'])(
+  'export CLI opens a document whose name contains glob syntax: %s',
+  async (pattern) => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
+    await writeComponentFixture(dir, ['Card'], 'card[1].fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
-    'export',
-    file,
-    ...STORYBOOK,
-    '--no-design-images',
-    '--beside'
-  ])
+    const { stderr, exitCode } = await exportBeside(join(dir, pattern))
 
-  expect(stderr).toBe('')
-  expect(exitCode).toBe(0)
-  const manifest: unknown = JSON.parse(await Bun.file(join(dir, MANIFEST)).text())
-  expect(manifest).toEqual({
-    version: 1,
-    files: { 'Card.stories.ts': { source: 'card[1].fig', page: 'Library' } }
-  })
-})
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    const manifest: unknown = JSON.parse(await Bun.file(join(dir, MANIFEST)).text())
+    expect(manifest).toEqual({
+      version: 1,
+      files: { 'Card.stories.ts': { source: 'card[1].fig', page: 'Library' } }
+    })
+  }
+)
+
+test.each([
+  { pattern: '*.fig', stories: ['Alias.stories.ts', 'Card.stories.ts'] },
+  { pattern: '.*.fig', stories: ['Hidden.stories.ts'] }
+] satisfies { pattern: string; stories: `${string}.stories.ts`[] }[])(
+  'export CLI matches document names and symlinks: $pattern',
+  async ({ pattern, stories }) => {
+    const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
+    await writeComponentFixture(dir, ['Card'], 'card.fig')
+    await writeComponentFixture(dir, ['Hidden'], '.hidden.fig')
+    await mkdir(join(dir, 'target'))
+    const target = await writeComponentFixture(join(dir, 'target'), ['Alias'], 'source.fig')
+    await symlink(target, join(dir, 'alias.fig'))
+
+    const { stderr, exitCode } = await exportBeside(join(dir, pattern))
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    expect((await outputEntries(dir)).filter((entry) => entry.endsWith('.stories.ts'))).toEqual(
+      stories
+    )
+  }
+)
 
 test('export CLI --beside records documents that share a folder in one manifest', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-storybook-cli-'))
@@ -397,14 +443,7 @@ test('export CLI --beside records documents that share a folder in one manifest'
   const chip = await writeComponentFixture(dir, ['Chip'], 'chip.fig')
 
   // A shell expands an unquoted glob into several arguments.
-  const { exitCode } = await runOpenPencilCLI([
-    'export',
-    card,
-    chip,
-    ...STORYBOOK,
-    '--no-design-images',
-    '--beside'
-  ])
+  const { exitCode } = await exportBeside(card, chip)
 
   expect(exitCode).toBe(0)
   const manifest: unknown = JSON.parse(await Bun.file(join(dir, MANIFEST)).text())
@@ -451,13 +490,7 @@ test('export CLI exports the other documents when one fails, then exits 1', asyn
   await writeComponentFixture(dir, ['Card'], 'a.fig')
   await writeComponentFixture(dir, [], 'b.fig')
 
-  const { stderr, exitCode } = await runOpenPencilCLI([
-    'export',
-    join(dir, '*.fig'),
-    ...STORYBOOK,
-    '--no-design-images',
-    '--beside'
-  ])
+  const { stderr, exitCode } = await exportBeside(join(dir, '*.fig'))
 
   expect(exitCode).toBe(1)
   expect(stderr).toContain('b.fig: No components found')

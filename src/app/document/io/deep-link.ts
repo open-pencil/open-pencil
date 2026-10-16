@@ -9,12 +9,15 @@
 // not touch the list. No fs
 // scope is widened here: the dialog plugin scopes what it returns, and nothing
 // else is ever read from disk.
+import type { LinkedNodeIdentity, LinkedNodeResult } from '@/app/document/io/linked-node'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { activateTabForPath, chooseTauriOpenPaths, openFileFromPath } from '@/app/shell/menu/files'
 
 export interface DeepLinkTarget {
   path: string
   node?: string
+  nodeId?: string
+  revision?: string
 }
 
 export interface DeepLinkActions {
@@ -22,6 +25,7 @@ export interface DeepLinkActions {
   openPaths: () => string[]
   /** Selects the node and zooms to it. False when no node carries that name. */
   selectByName: (name: string) => boolean | Promise<boolean>
+  selectById?: (target: LinkedNodeIdentity) => Promise<LinkedNodeResult>
   notify: (message: string) => void
 }
 
@@ -62,12 +66,21 @@ const tauriMatchesSuffix: SuffixMatcher = async (candidate, relative) => {
 export async function resolveDeepLinkFile(
   file: string,
   openPaths: string[],
-  matches: SuffixMatcher = tauriMatchesSuffix
+  matches: SuffixMatcher = tauriMatchesSuffix,
+  unique = false
 ): Promise<string | null> {
+  const found: string[] = []
   for (const path of openPaths) {
-    if (await matches(path, file)) return path
+    if (await matches(path, file)) {
+      if (!unique) return path
+      found.push(path)
+    }
   }
-  return null
+  if (found.length > 1)
+    throw new Error(
+      `Several open or chosen documents match ${clamp(file)}. Close other checkouts or choose one file.`
+    )
+  return found[0] ?? null
 }
 
 /** File-system entry points, injected so tests can drive the picker branch. */
@@ -92,7 +105,13 @@ export async function openDeepLink(
   io: DeepLinkIo = tauriIo
 ): Promise<void> {
   const messages = notificationMessages.get()
-  const known = await resolveDeepLinkFile(target.path, actions.openPaths(), io.matchesSuffix)
+  const known = await resolveDeepLinkFile(
+    target.path,
+    actions.openPaths(),
+    io.matchesSuffix,
+    !!target.nodeId
+  )
+  let openedPath = known
   if (known) {
     // An already open document is focused, never re-read from disk: re-reading would
     // fail the whole link when the file moved or turned unreadable since it opened.
@@ -107,12 +126,22 @@ export async function openDeepLink(
       actions.notify(messages.deepLinkPickerDismissed)
       return
     }
-    const picked = await resolveDeepLinkFile(target.path, chosen, io.matchesSuffix)
+    const picked = await resolveDeepLinkFile(target.path, chosen, io.matchesSuffix, !!target.nodeId)
     if (!picked) {
       actions.notify(messages.deepLinkCancelled({ file: clamp(target.path) }))
       return
     }
     await io.openPath(picked)
+    openedPath = picked
+  }
+  if (target.nodeId && openedPath) {
+    const error = await linkedIdentityNotice(actions.selectById, {
+      id: target.nodeId,
+      file: openedPath,
+      revision: target.revision
+    })
+    if (error) actions.notify(error)
+    return
   }
   if (!target.node) return
   const search = await searchLinkedNode(actions.selectByName, target.node)
@@ -121,4 +150,25 @@ export async function openDeepLink(
     actions.notify(
       messages.deepLinkNodeNotFound({ node: clamp(target.node), file: clamp(target.path) })
     )
+}
+
+/** Stable identity failures never fall back to mutable names or imported graph handles. */
+export async function linkedIdentityNotice(
+  select: DeepLinkActions['selectById'],
+  target: LinkedNodeIdentity
+): Promise<string | null> {
+  if (!select) return 'This editor cannot resolve persisted design identities.'
+  try {
+    const result = await select(target)
+    if (result === 'found' || result === 'superseded') return null
+    if (result === 'stale')
+      return 'Design revision does not match, or this document has edits. Reopen the saved .fig and update the mapping or reference.'
+    if (result === 'ambiguous')
+      return 'Several layers carry this persisted design identity. Repair the document before following the link.'
+    return `Persisted design identity ${clamp(target.id)} was not found in this document.`
+  } catch (error) {
+    return notificationMessages
+      .get()
+      .operationFailed({ error: clamp(error instanceof Error ? error.message : String(error)) })
+  }
 }

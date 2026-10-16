@@ -14,16 +14,18 @@ test('menu bar has all top-level menus', async () => {
   expect(labels).toEqual(['File', 'Edit', 'View', 'Object', 'Text', 'Arrange'])
 })
 
-test('File menu opens and shows items', async () => {
+test('File menu offers open and save actions and dismisses with Escape', async () => {
   const menu = await openAppMenu(editor.page, 'File')
 
-  const items = await menu.locator('[role="menuitem"]').allTextContents()
-  expect(items.some((t) => t.includes('Open'))).toBe(true)
-  expect(items.some((t) => t.includes('Open storage workspace'))).toBe(true)
-  expect(items.some((t) => t.includes('Save'))).toBe(true)
-  expect(items.some((t) => t.includes('Save as'))).toBe(true)
+  await expect(menu.getByRole('menuitem', { name: /^Open…/ })).toBeEnabled()
+  await expect(menu.getByRole('menuitem', { name: 'Browse files…', exact: true })).toBeEnabled()
+  await expect(
+    menu.getByRole('menuitem').filter({ has: editor.page.getByText('Save', { exact: true }) })
+  ).toBeEnabled()
+  await expect(menu.getByRole('menuitem', { name: /^Save as…/ })).toBeEnabled()
 
   await editor.page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
 })
 
 test('Edit menu shows Undo/Redo/Delete', async () => {
@@ -156,11 +158,22 @@ test('Zoom to fit via View menu works', async () => {
   expect(zoomAfter).not.toBe(zoomBefore)
 })
 
-test('Open storage workspace navigates from the File menu', async () => {
-  await editor.page.getByRole('menuitem', { name: 'File', exact: true }).click()
-  await editor.page.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+test('Browse files opens Home in a new tab and preserves the document', async () => {
+  const tabs = editor.page.getByTestId('tabbar-tab')
+  const tabCount = await tabs.count()
+  const menu = await openAppMenu(editor.page, 'File')
+  await menu.getByRole('menuitem', { name: 'Browse files…', exact: true }).click()
 
   await expect(editor.page).toHaveURL(/\/$/)
-  await expect(editor.page.getByTestId('recent-files-home')).toBeVisible()
-  await expect(editor.page.getByRole('heading', { name: 'Storage workspace' })).toBeVisible()
+  const home = editor.page.getByTestId('recent-files-home')
+  await expect(home).toBeVisible()
+  await expect(tabs).toHaveCount(tabCount + 1)
+  await expect(editor.page.getByTestId('home-new-document')).toBeEnabled()
+  await expect(editor.page.getByTestId('home-open-file')).toBeEnabled()
+
+  await tabs.last().hover()
+  await editor.page.getByTestId('tabbar-close').last().click()
+  await expect(tabs).toHaveCount(tabCount)
+  await expect(home).toBeHidden()
+  await editor.canvas.waitForRender()
 })
