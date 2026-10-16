@@ -253,12 +253,6 @@ export class SkiaRenderer {
     selectedIds: Set<string>,
     targetId?: string | null
   ) => void
-  declare drawEnteredContainer: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    enteredContainerId?: string | null,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
   declare drawSelection: (
     canvas: Canvas,
     graph: SceneGraph,

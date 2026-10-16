@@ -1,0 +1,1 @@
+- `SkiaRenderer.drawEnteredContainer` and `RenderOverlays.enteredContainerId` are removed from `@open-pencil/core/canvas`: the canvas no longer draws a dashed box around a group or frame you have drilled into, as in Figma.

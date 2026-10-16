@@ -25,7 +25,7 @@ import {
 } from '#core/geometry'
 import { pathTextSelectionBand, pointAtArc } from '#core/text/path'
 
-import { inNodeSpace, outlineNode, withScreenStroke } from './outline'
+import { inNodeSpace, withScreenStroke } from './outline'
 
 /** The dash of faint selection bounds, in screen pixels. */
 const SELECTION_DASH = [4, 4] as const
@@ -70,17 +70,6 @@ export function drawCodeFocus(
     r.strokeNodeShape(canvas, node, r.auxFill)
     withScreenStroke(r, { color }, (paint) => r.strokeNodeShape(canvas, node, paint))
   })
-}
-
-export function drawEnteredContainer(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  enteredContainerId?: string | null,
-  preview?: RotationPreview | null
-): void {
-  const stroke = { color: r.selColor(SELECTION_DASH_ALPHA), dash: SELECTION_DASH }
-  outlineNode(r, canvas, graph, enteredContainerId, stroke, preview)
 }
 
 /** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,

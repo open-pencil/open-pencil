@@ -50,7 +50,6 @@ export interface RenderOverlays {
   gradientEdit?: GradientEdit | null
   transforming?: boolean
   measurementMode?: MeasurementMode
-  enteredContainerId?: string | null
   editingTextId?: string | null
   textEditor?: TextEditor | null
   marquee?: Rect | null

@@ -111,7 +111,6 @@ export function drawOverlayPass(
   if (!measuring) drawLayoutOutlines(r, canvas, graph, selectedIds, hoveredNodeId, overlays)
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
   drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
-  r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   drawDropTarget(r, canvas, graph, overlays.dropTargetId, overlays.rotationPreview)
   drawEditingText(r, canvas, graph, overlays)
   r.profiler.beginPhase('render:selection')

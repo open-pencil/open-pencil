@@ -1,5 +1,4 @@
 export {
-  drawEnteredContainer,
   drawGroupBounds,
   drawHandle,
   drawHoverHighlight,

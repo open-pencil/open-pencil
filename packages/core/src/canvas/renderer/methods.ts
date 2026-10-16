@@ -40,15 +40,6 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawMeasurements(this, canvas, graph, selectedIds, targetId)
   },
 
-  drawEnteredContainer(
-    canvas: Canvas,
-    graph: SceneGraph,
-    enteredContainerId?: string | null,
-    preview?: RenderOverlays['rotationPreview']
-  ): void {
-    Overlays.drawEnteredContainer(this, canvas, graph, enteredContainerId, preview)
-  },
-
   drawSelection(
     canvas: Canvas,
     graph: SceneGraph,
