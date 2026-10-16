@@ -1,0 +1,1 @@
+- Design JSX writes and reads FigJam sticky notes as `<Sticky color="yellow" author="Ada">…</Sticky>`, with their colour, author line, wide shape, text size, and scale, and JSX export no longer drops them (#1118).

@@ -15,6 +15,27 @@ export const DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES = [
   'indent'
 ] as const
 
+/** Props only `<Sticky>` takes. */
+export const DESIGN_JSX_STICKY_PROPERTY_NAMES = [
+  'color',
+  'author',
+  'authorVisible',
+  'wide',
+  'textSize',
+  'scale'
+] as const
+
+/** Layer props a sticky note takes too. */
+export const DESIGN_JSX_STICKY_LAYER_PROPERTY_NAMES = [
+  'name',
+  'key',
+  'x',
+  'y',
+  'position',
+  'visible',
+  'opacity'
+] as const
+
 /** Props `<Span>` takes: `<Text>`'s character styles, under the same names, and a link. */
 export const DESIGN_JSX_SPAN_PROPERTY_NAMES = [
   'style',

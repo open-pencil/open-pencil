@@ -146,6 +146,13 @@ function collectPositionProps(
   if (node.y !== 0) props.push(['y', node.y])
 }
 
+/** Where a layer sits in its parent, as the export writes any layer's position. */
+export function positionProps(node: SceneNode, graph: SceneGraph): JSXProp[] {
+  const props: JSXProp[] = []
+  collectPositionProps(node, getNodeContext(node, graph), props)
+  return props
+}
+
 function collectSizingProps(
   node: SceneNode,
   ctx: ReturnType<typeof getNodeContext>,
