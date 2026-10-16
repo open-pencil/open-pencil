@@ -128,13 +128,15 @@ export function useLayerDrag(
       const targetIndex = targetParent.childIds.indexOf(targetId)
       const at = (index: number) => dropIndex(targetParent.childIds, sourceId, index)
 
+      // The panel lists layers front-most first, so a row above the target is in front of it.
       if (inst.type === 'reorder-above') {
-        editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex))
-      } else if (inst.type === 'reorder-below') {
         editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex + 1))
+      } else if (inst.type === 'reorder-below') {
+        editor.reorderChildWithUndo(sourceId, targetParentId, at(targetIndex))
       } else {
         const container = editor.graph.getNode(targetId)
         if (!container || !editor.graph.isContainer(targetId)) return
+        // Into a container on top of its other layers, at the top of its rows.
         editor.reorderChildWithUndo(sourceId, targetId, container.childIds.length)
         onMakeChildDrop?.(targetId)
       }

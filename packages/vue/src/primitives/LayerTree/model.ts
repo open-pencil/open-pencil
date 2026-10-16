@@ -36,7 +36,8 @@ export function buildLayerTreeModel(graph: SceneGraph, parentId: string): LayerT
     const parent = graph.getNode(id)
     if (!parent) return []
     const children: LayerNode[] = []
-    for (const childId of parent.childIds) {
+    // Front-most first, as Figma lists layers: `childIds` runs from back to front.
+    for (const childId of parent.childIds.toReversed()) {
       const sceneNode = graph.getNode(childId)
       if (!sceneNode || sceneNode.internalOnly) continue
       const node = nodeToLayerNode(sceneNode)

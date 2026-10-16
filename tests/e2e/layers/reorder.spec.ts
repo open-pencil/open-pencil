@@ -29,14 +29,15 @@ test('dragging layers reorders scene nodes', async ({ page }) => {
   })
   await canvas.waitForRender()
 
-  const source = page.locator(`[data-node-id="${ids.third}"]`).getByTestId('layers-item')
-  const target = page.locator(`[data-node-id="${ids.first}"]`).getByTestId('layers-item')
+  // The panel lists the front-most layer first: C, B, A. Dropping A above C brings it to the front.
+  const source = page.locator(`[data-node-id="${ids.first}"]`).getByTestId('layers-item')
+  const target = page.locator(`[data-node-id="${ids.third}"]`).getByTestId('layers-item')
   await source.dragTo(target, { targetPosition: { x: 20, y: 2 } })
   await canvas.waitForRender()
 
   const order = await layerOrder(page)
 
-  expect(order).toEqual([ids.third, ids.first, ids.second])
+  expect(order).toEqual([ids.second, ids.third, ids.first])
   canvas.assertNoErrors()
 })
 

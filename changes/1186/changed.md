@@ -1,0 +1,1 @@
+- The layers panel lists the front-most layer first, as in Figma, and dropping a layer above another puts it in front of it.
