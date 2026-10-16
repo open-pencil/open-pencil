@@ -22,6 +22,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     pencilState: null,
     autoLayoutHover: null,
     shapeHandleHover: null,
+    connectorTarget: null,
     panX: 0,
     pageColor: { ...CANVAS_BG_COLOR },
     panY: 0,
@@ -50,6 +51,7 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     pencilState: structuredClone(source.pencilState),
     autoLayoutHover: structuredClone(source.autoLayoutHover),
     shapeHandleHover: structuredClone(source.shapeHandleHover),
+    connectorTarget: structuredClone(source.connectorTarget),
     pageColor: { ...source.pageColor },
     navigation: { ...source.navigation },
     nodeEditState: structuredClone(source.nodeEditState)

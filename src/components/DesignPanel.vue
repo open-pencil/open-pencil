@@ -23,6 +23,7 @@ import PropertyBoundField from './properties/component-properties/PropertyBoundF
 import SlotAuthoringSection from './properties/component-properties/slot/SlotAuthoringSection.vue'
 import { usePropertyBinding } from './properties/component-properties/usePropertyBinding'
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
+import ConnectorSection from './properties/connector/ConnectorSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
@@ -212,16 +213,22 @@ const { panels } = useI18n()
 
       <IconSection />
       <StickySection />
-      <PositionSection />
-      <ConstraintsSection />
-      <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
-      <LayoutSection v-if="layerResizes(node)" />
+      <ConnectorSection />
+      <!-- A connector is placed and shaped by its ends, and styled by its line. -->
+      <template v-if="node.type !== 'CONNECTOR'">
+        <PositionSection />
+        <ConstraintsSection />
+        <!-- A sticky note's size follows its text and its scale; Figma leaves W and H read-only. -->
+        <LayoutSection v-if="layerResizes(node)" />
+      </template>
       <AppearanceSection />
-      <MaskSection />
-      <TypographySection v-if="node.type === 'TEXT'" />
-      <FillSection />
-      <StrokeSection />
-      <EffectsSection />
+      <template v-if="node.type !== 'CONNECTOR'">
+        <MaskSection />
+        <TypographySection v-if="node.type === 'TEXT'" />
+        <FillSection />
+        <StrokeSection />
+        <EffectsSection />
+      </template>
       <SelectionColorsSection />
       <LayoutGridSection v-if="supportsLayoutGuides" />
 

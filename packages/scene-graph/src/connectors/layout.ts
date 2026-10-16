@@ -10,7 +10,7 @@ import { CONNECTOR_LABEL_PADDING, placeConnectorLabel, type ConnectorLabelLayout
 import { connectorNetwork, piecesBounds, type ConnectorPiece } from './pieces'
 import { routeConnector } from './route'
 import type { ConnectorRouteEnd } from './sides'
-import { connectorSublayers, type ConnectorSublayers } from './sublayers'
+import { connectorRouteEnds, connectorSublayers, type ConnectorSublayers } from './sublayers'
 
 /**
  * An end as the router sees it, in the connector's parent's axes: the box of the layer it follows
@@ -67,10 +67,11 @@ function routeWrites(
   connector: SceneNode,
   { line, label, labelBackground }: ConnectorSublayers,
   pieces: ConnectorPiece[],
-  placed: ConnectorLabelLayout | null
+  placed: ConnectorLabelLayout | null,
+  labelled: boolean
 ): Write[] | null {
   const lineBox = pieces.length > 0 ? piecesBounds(pieces) : null
-  const boxes = compact([lineBox, placed?.plate])
+  const boxes = compact([lineBox, labelled ? placed?.plate : null])
   if (boxes.length === 0) return null
   const frame = computeBounds(boxes)
   const lineOrigin = lineBox ?? frame
@@ -90,22 +91,16 @@ function routeWrites(
       }
     ]
   ]
-  if (!placed)
-    return [...writes, [labelBackground, { visible: false }], [label, { visible: false }]]
+  if (!placed) return [...writes, [labelBackground, { visible: false }]]
   const x = placed.plate.x - frame.x
   const y = placed.plate.y - frame.y
   const { width, height } = placed.plate
+  // An empty label still sits where its text goes, ready to be typed into.
   return [
     ...writes,
-    [labelBackground, { x, y, width, height, visible: true }],
+    [labelBackground, { x, y, width, height, visible: labelled }],
     [label, { x: x + CONNECTOR_LABEL_PADDING, y: y + CONNECTOR_LABEL_PADDING, visible: true }]
   ]
-}
-
-/** Where a connector's line last started or ended, for an end whose layer is gone. */
-function lastRoutePoint(connector: SceneNode, line: SceneNode, index: 0 | -1): Vector | undefined {
-  const vertex = line.vectorNetwork?.vertices.at(index)
-  return vertex && { x: connector.x + line.x + vertex.x, y: connector.y + line.y + vertex.y }
 }
 
 /**
@@ -124,30 +119,26 @@ export function layoutConnector(
   const { connectorStart, connectorEnd } = connector
   if (!parts || !connectorStart || !connectorEnd) return false
   const { line, label } = parts
+  // Where the line last ran, for an end whose layer is gone.
+  const drawn = connectorRouteEnds(graph, connector)
   const start = routeEnd(
     graph,
     connector,
     connectorStart,
     connector.connectorStartCap,
-    lastRoutePoint(connector, line, 0)
+    drawn?.start
   )
-  const end = routeEnd(
-    graph,
-    connector,
-    connectorEnd,
-    connector.connectorEndCap,
-    lastRoutePoint(connector, line, -1)
-  )
+  const end = routeEnd(graph, connector, connectorEnd, connector.connectorEndCap, drawn?.end)
   if (!start || !end) return false
   const weight = line.strokes[0]?.weight ?? line.strokeWeight
   const pieces = routeConnector(connector.connectorLineType, start, end, weight)
-  const placed = label.text
-    ? placeConnectorLabel(pieces, {
-        width: label.width + CONNECTOR_LABEL_PADDING * 2,
-        height: label.height + CONNECTOR_LABEL_PADDING * 2
-      })
-    : null
-  const writes = routeWrites(connector, parts, placed?.pieces ?? pieces, placed)
+  const labelled = label.text !== ''
+  const placed = placeConnectorLabel(pieces, {
+    width: label.width + CONNECTOR_LABEL_PADDING * 2,
+    height: label.height + CONNECTOR_LABEL_PADDING * 2
+  })
+  const routed = labelled && placed ? placed.pieces : pieces
+  const writes = routeWrites(connector, parts, routed, placed, labelled)
   let moved = false
   for (const [node, changes] of writes ?? []) {
     const differing = changesFor(node, changes)
@@ -176,4 +167,22 @@ export function attachedConnectors(graph: SceneGraph, ids: Iterable<string>): Sc
     if (ends.some((id) => id && withinAny(graph, id, roots))) attached.push(node)
   }
   return attached
+}
+
+/**
+ * The connectors an edit to `ids` moves: those with an end on one of them or on a layer inside
+ * them, those inside them, and those whose line or label is among them.
+ */
+export function connectorsAffectedBy(graph: SceneGraph, ids: ReadonlySet<string>): SceneNode[] {
+  if (ids.size === 0) return []
+  const affected: SceneNode[] = []
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'CONNECTOR') continue
+    const watched = [node.id, node.connectorStart?.nodeId, node.connectorEnd?.nodeId]
+    const touched =
+      watched.some((id) => id && withinAny(graph, id, ids)) ||
+      node.childIds.some((id) => ids.has(id))
+    if (touched) affected.push(node)
+  }
+  return affected
 }

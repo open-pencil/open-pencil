@@ -1,4 +1,5 @@
 import {
+  attachedConnectors,
   createsComponentCycle,
   recordInstanceOverride,
   slotPropertyId
@@ -28,6 +29,7 @@ import type { FigmaEffect } from '#core/figma-api/effects'
 
 import { prepareFollowedFieldEdit, fitGroupsAround } from './accessor-utils'
 import { installBasicNodeProxyAccessors } from './accessors/basic'
+import { installConnectorNodeProxyAccessors } from './accessors/connector'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
 import { installStickyNodeProxyAccessors, pluginChildren } from './accessors/sticky'
 import { installStrokeNodeProxyAccessors } from './accessors/strokes'
@@ -450,7 +452,10 @@ export class FigmaNodeProxy {
     assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     prepareSlotRemoval(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     const parentId = this._raw().parentId
+    // Connectors go with a layer they attach to, as Figma removes them.
+    const attached = attachedConnectors(this[INTERNAL_GRAPH], [this[INTERNAL_ID]])
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
+    for (const connector of attached) this[INTERNAL_GRAPH].deleteNode(connector.id)
     fitGroupsAround(this[INTERNAL_GRAPH], parentId, this[INTERNAL_API].groupFitOptions)
   }
 
@@ -579,6 +584,7 @@ const proxyInternals = {
 
 installStrokeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installStickyNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
+installConnectorNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installTextNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals, MIXED)
 installTextRangeMethods(FigmaNodeProxy.prototype, proxyInternals, MIXED)
 installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)

@@ -1,5 +1,5 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { layerRotates } from '@open-pencil/scene-graph'
+import { layerResizes, layerRotates } from '@open-pencil/scene-graph'
 
 import {
   buildResizeCursor,
@@ -9,12 +9,14 @@ import {
 } from '#vue/shared/input/geometry'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { hitTestLabel } from '#vue/shared/input/select/hit'
+import { scalesByHandles } from '#vue/shared/input/sticky/scale'
 import { getNodeEditState } from '#vue/shared/input/vector'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
-    if (!node) continue
+    // As a press does: only a layer its handles resize or scale shows a resize cursor on them.
+    if (!node || (!layerResizes(node) && !scalesByHandles(node))) continue
 
     const handleHit = getHitHandleByMatrix(
       cx,

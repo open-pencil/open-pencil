@@ -3,6 +3,7 @@ import { newStrokeGeometry, type SceneGraph, type SceneNode } from '@open-pencil
 import {
   nodeId,
   raw,
+  strokeOwner,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
@@ -42,10 +43,10 @@ export function installStrokeNodeProxyAccessors(
     // Figma keeps stroke weight and alignment on the node, with or without strokes.
     strokeWeight: {
       get(this: ProxyThis): number {
-        return newStrokeGeometry(raw(this, internals)).weight
+        return newStrokeGeometry(raw(strokeOwner(this, internals), internals)).weight
       },
       set(this: ProxyThis, value: number) {
-        setStrokeWeight(graph(this, internals), raw(this, internals), value)
+        setStrokeWeight(graph(this, internals), raw(strokeOwner(this, internals), internals), value)
       }
     },
     strokeAlign: {
@@ -58,10 +59,10 @@ export function installStrokeNodeProxyAccessors(
     },
     dashPattern: {
       get(this: ProxyThis): readonly number[] {
-        return Object.freeze([...raw(this, internals).dashPattern])
+        return Object.freeze([...raw(strokeOwner(this, internals), internals).dashPattern])
       },
       set(this: ProxyThis, value: readonly number[]) {
-        updateNode(this, internals, { dashPattern: [...value] })
+        updateNode(strokeOwner(this, internals), internals, { dashPattern: [...value] })
       }
     },
     strokeCap: {

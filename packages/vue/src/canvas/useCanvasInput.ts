@@ -21,6 +21,7 @@ import {
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
+import { handleConnectorDrawMove } from '#vue/shared/input/connector/draw'
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
 import { setupPanZoom } from '#vue/shared/input/pan/zoom'
@@ -243,6 +244,10 @@ export function useCanvasInput(
       editor.setShapeHandleHover(resolveShapeHandleHover(editor, sx, sy, e.altKey))
     }
 
+    if (!drag.value && editor.state.activeTool === 'CONNECTOR') {
+      editor.connectorHover(coords.cx, coords.cy)
+    }
+
     if (!drag.value && editor.state.activeTool === 'SELECT') {
       const { sx, sy, cx, cy } = coords
       const guideCursor = guideInput.updateHover(sx, sy)
@@ -336,6 +341,16 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'connector-draw') {
+      handleConnectorDrawMove(d, cx, cy, sx, sy, editor)
+      return
+    }
+
+    if (d.type === 'connector-end') {
+      editor.connectorEndpointDrag(cx, cy)
+      return
+    }
+
     if (d.type === 'sticky-scale') {
       applyStickyScale(d, cx, cy, editor)
       return
@@ -395,7 +410,8 @@ export function useCanvasInput(
   /** Drops what a resize or pencil stroke showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
     if (d.type === 'resize') cancelResizePreview(d, editor)
-    else if (d.type === 'sticky-scale') d.cancel()
+    else if (d.type === 'sticky-scale' || d.type === 'connector-draw' || d.type === 'connector-end')
+      d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }
 

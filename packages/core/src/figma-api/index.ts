@@ -1,5 +1,6 @@
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
+import { createConnector, freeEndpoint } from '@open-pencil/scene-graph'
 import type {
   GroupFitOptions,
   SceneGraph,
@@ -10,14 +11,12 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
-import { canMakeBooleanSourceNode, groupFitOptions } from '#core/canvas/boolean'
-import { flattenNodesToVectorProps } from '#core/canvas/flatten'
+import { groupFitOptions } from '#core/canvas/boolean'
 import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { booleanOperationPaints, createBooleanOperation } from '#core/editor/structure/boolean'
@@ -33,10 +32,12 @@ import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/sta
 import { fontManager } from '#core/text/fonts'
 
 import { combineComponentsAsVariants, componentFromNode, exposeInstanceSwap } from './components'
+import { flattenSceneNodes } from './flatten'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
   FigmaComponentSetNode,
+  FigmaConnectorNode,
   FigmaEllipseNode,
   FigmaFrameNode,
   FigmaGroupNode,
@@ -70,6 +71,7 @@ export type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
   FigmaComponentSetNode,
+  FigmaConnectorNode,
   FigmaEllipseNode,
   FigmaFrameNode,
   FigmaGroupNode,
@@ -225,6 +227,20 @@ export class FigmaAPI implements NodeProxyHost {
     const node = createSVGNodes(this.graph, this._currentPageId, svg, { keepEmpty: true })
     if (!node) throw new Error('in createNodeFromSvg: Failed to convert SVG file')
     return this.wrapNode(node.id) as FigmaFrameNode
+  }
+
+  /**
+   * A connector as Figma's plugin API makes one: "Connector line", free from the page origin to
+   * 200 px right of it, with no start cap and an arrow at the end.
+   */
+  createConnector(): FigmaConnectorNode {
+    const node = createConnector(this.graph, this._currentPageId, {
+      start: freeEndpoint(0, 0),
+      end: freeEndpoint(200, 0),
+      startCap: 'NONE',
+      endCap: 'ARROW_LINES'
+    })
+    return this.wrapNode(node.id) as FigmaConnectorNode
   }
 
   createComponent(): FigmaComponentNode {
@@ -472,38 +488,12 @@ export class FigmaAPI implements NodeProxyHost {
       if (!raw) throw new Error('Node not found')
       sourceNodes.push(raw)
     }
-    const vector = this._renderer
-      ? this._flattenWithRenderer(sourceNodes, parentId)
-      : this._flattenPlaceholder(sourceNodes, parentId)
+    const vector = flattenSceneNodes(this.graph, this._renderer, sourceNodes, parentId)
     if (index != null) this.graph.reorderChild(vector.id, parentId, index)
     for (const node of nodes) {
       this.graph.deleteNode(this._nodeId(node))
     }
     return this.wrapNode(vector.id) as FigmaVectorNode
-  }
-
-  private _flattenPlaceholder(nodes: CoreSceneNode[], parentId: string): CoreSceneNode {
-    const first = nodes[0]
-    return this.graph.createNode('VECTOR', parentId, {
-      name: 'Flatten',
-      x: first.x,
-      y: first.y,
-      width: first.width,
-      height: first.height,
-      fills: copyFills(first.fills)
-    })
-  }
-
-  private _flattenWithRenderer(nodes: CoreSceneNode[], parentId: string): CoreSceneNode {
-    const renderer = this._renderer
-    if (!renderer) return this._flattenPlaceholder(nodes, parentId)
-    if (nodes.some((node) => !canMakeBooleanSourceNode(node, this.graph))) {
-      throw new Error('Cannot flatten unsupported node type')
-    }
-
-    const vectorProps = flattenNodesToVectorProps(renderer, this.graph, nodes)
-    if (!vectorProps) throw new Error('Cannot flatten empty node path')
-    return this.graph.createNode('VECTOR', parentId, vectorProps)
   }
 
   flattenNode(nodeIds: string[]): FigmaVectorNode {

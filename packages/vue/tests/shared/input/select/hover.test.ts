@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { boundEndpoint, createConnector, createSticky, type SceneNode } from '@open-pencil/scene-graph'
 
 import {
   cornerRotationCursor,
@@ -46,3 +46,37 @@ test('a label does not take the press from a resize band', () => {
   expect(cursorAt(-3, -3)).toBe(buildResizeCursor(hit?.rotation ?? 0))
   expect(getHitHandleByMatrix(120, -5, frame, editor.graph)?.handle).toBe('n')
 })
+
+const NO_HITS = {
+  hitTestInScope: () => null,
+  hitTestFrameTitle: () => null,
+  hitTestSectionTitle: () => null,
+  hitTestComponentLabel: () => null
+}
+
+test('a connector has no resize cursor, its end handles included, as in FigJam', () => {
+  editor = createEditor()
+  const page = editor.state.currentPageId
+  const a = editor.graph.createNode('RECTANGLE', page, { x: 0, y: 0, width: 100, height: 100 })
+  const b = editor.graph.createNode('RECTANGLE', page, { x: 300, y: 0, width: 100, height: 100 })
+  const connector = createConnector(editor.graph, page, {
+    start: boundEndpoint(a.id),
+    end: boundEndpoint(b.id)
+  })
+  editor.graph.updateNode(connector.id, { x: 100, y: 30, width: 200, height: 40 })
+  editor.select([connector.id])
+  expect(getHitHandleByMatrix(300, 50, connector, editor.graph)?.handle).toBe('e')
+  expect(updateHoverCursor(300, 50, editor, NO_HITS)).toBeNull()
+})
+
+test("a sticky note's handles keep their cursor, since they scale it", () => {
+  editor = createEditor()
+  const sticky = createSticky(editor.graph, editor.state.currentPageId, { text: '' })
+  editor.select([sticky.id])
+  const hit = getHitHandleByMatrix(sticky.width, sticky.height, sticky, editor.graph)
+  expect(hit?.handle).toBe('se')
+  expect(updateHoverCursor(sticky.width, sticky.height, editor, NO_HITS)).toBe(
+    buildResizeCursor(hit?.rotation ?? 0)
+  )
+})
+

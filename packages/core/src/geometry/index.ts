@@ -37,6 +37,7 @@ export type {
   GradientHit,
   GradientStopLayout
 } from './gradient'
+export { connectorScreenEnds } from './connectors'
 export { createSceneGeometry, nodeOrientationMatrix, projectedNode, viewportMatrix } from './scene'
 export type { SceneGeometry } from './scene'
 export { selectionPath, selectionHandleRect, rotationHandleLayout } from './selection'

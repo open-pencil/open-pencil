@@ -32,6 +32,29 @@ export interface DragDraw {
   cancel: () => void
 }
 
+/**
+ * A connector drawn with the connector tool, from the press to the release or from one click to
+ * the next. Positions are screen pixels, to tell a click from a drag.
+ */
+export interface DragConnectorDraw {
+  type: 'connector-draw'
+  startSX: number
+  startSY: number
+  moved: boolean
+  /** Where the pointer is, in canvas coordinates. */
+  x: number
+  y: number
+  commit: () => void
+  cancel: () => void
+}
+
+/** An end of a selected connector dragged to another layer or point. */
+export interface DragConnectorEnd {
+  type: 'connector-end'
+  commit: () => void
+  cancel: () => void
+}
+
 /** A layer placed where the pointer is released, such as a sticky note. */
 export interface DragPlace {
   type: 'place'
@@ -238,6 +261,8 @@ export type DragState =
   | DragShapeHandle
   | DragDraw
   | DragPlace
+  | DragConnectorDraw
+  | DragConnectorEnd
   | DragGradient
   | DragMove
   | DragPan
