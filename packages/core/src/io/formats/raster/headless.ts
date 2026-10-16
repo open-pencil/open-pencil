@@ -3,6 +3,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
+import { fileURLToPath } from '#core/canvaskit'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
@@ -13,8 +14,9 @@ export async function initCanvasKit(): Promise<CanvasKit> {
   if (cachedCk) return cachedCk
   const CanvasKitInit = (await import('canvaskit-wasm/full')).default
   const ckPath = import.meta.resolve('canvaskit-wasm/full')
-  const binDir = new URL('.', ckPath).pathname
-  cachedCk = await CanvasKitInit({ locateFile: (file: string) => binDir + file })
+  cachedCk = await CanvasKitInit({
+    locateFile: (file: string) => fileURLToPath(new URL(file, ckPath))
+  })
   return cachedCk
 }
 
