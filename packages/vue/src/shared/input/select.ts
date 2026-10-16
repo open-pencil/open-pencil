@@ -7,6 +7,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
+import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
 import {
   createSelectionMoveDrag,
@@ -53,6 +54,7 @@ function tryStartHandleDrag(
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
   if (tryStartShapeHandleDrag(editor, sx, sy, altKey, setDrag)) return true
   if (tryStartConnectorEndDrag(editor, sx, sy, setDrag)) return true
+  if (tryStartLineEndDrag(editor, cx, cy, setDrag)) return true
   const scaleDrag = tryStartStickyScale(cx, cy, editor)
   if (scaleDrag) {
     setDrag(scaleDrag)

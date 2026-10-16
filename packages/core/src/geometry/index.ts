@@ -38,6 +38,14 @@ export type {
   GradientStopLayout
 } from './gradient'
 export { connectorScreenEnds } from './connectors'
+export {
+  aimLine,
+  draggedLineEnds,
+  isLineLike,
+  lineEndPoints,
+  lineWorldEnds,
+  type LineEnd
+} from './line-ends'
 export { createSceneGeometry, nodeOrientationMatrix, projectedNode, viewportMatrix } from './scene'
 export type { SceneGeometry } from './scene'
 export { selectionPath, selectionHandleRect, rotationHandleLayout } from './selection'

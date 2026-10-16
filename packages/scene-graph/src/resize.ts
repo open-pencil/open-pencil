@@ -180,10 +180,11 @@ export function scaleVectorNetworkForResize(
   width: number,
   height: number
 ): VectorNetwork | null {
-  if (!vectorNetwork || originalWidth <= 0 || originalHeight <= 0) return null
+  if (!vectorNetwork || (originalWidth <= 0 && originalHeight <= 0)) return null
 
-  const scaleX = width / originalWidth
-  const scaleY = height / originalHeight
+  // A flat side, as a straight line's, has nothing to scale along it.
+  const scaleX = originalWidth > 0 ? width / originalWidth : 1
+  const scaleY = originalHeight > 0 ? height / originalHeight : 1
   if (scaleX === 1 && scaleY === 1) return null
 
   return {

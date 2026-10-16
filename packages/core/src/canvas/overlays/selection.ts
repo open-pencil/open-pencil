@@ -18,6 +18,7 @@ import {
 import {
   createSceneGeometry,
   hasTransformHandles,
+  isLineLike,
   viewportMatrix,
   selectionPath,
   rotationHandleLayout,
@@ -362,8 +363,8 @@ export function drawNodeSelection(
         y1,
         x2,
         y2,
-        // A generated frame such as a sticky note may stay upright.
-        !layerRotates(node)
+        // A generated frame such as a sticky note may stay upright, and a line turns by its ends.
+        !layerRotates(node) || isLineLike(node)
           ? null
           : rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
               x: x1,

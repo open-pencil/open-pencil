@@ -351,6 +351,11 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'line-end') {
+      editor.lineEndDrag(cx, cy, { shift: e.shiftKey, alt: e.altKey })
+      return
+    }
+
     if (d.type === 'sticky-scale') {
       applyStickyScale(d, cx, cy, editor)
       return
@@ -410,7 +415,12 @@ export function useCanvasInput(
   /** Drops what a resize or pencil stroke showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
     if (d.type === 'resize') cancelResizePreview(d, editor)
-    else if (d.type === 'sticky-scale' || d.type === 'connector-draw' || d.type === 'connector-end')
+    else if (
+      d.type === 'sticky-scale' ||
+      d.type === 'connector-draw' ||
+      d.type === 'connector-end' ||
+      d.type === 'line-end'
+    )
       d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }

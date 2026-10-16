@@ -4,6 +4,7 @@ import { createEditor, type Editor } from '@open-pencil/core/editor'
 import { boundEndpoint, createConnector, createSticky, type SceneNode } from '@open-pencil/scene-graph'
 
 import {
+  MOVE_CURSOR,
   cornerRotationCursor,
   getHitHandleByMatrix,
   buildResizeCursor
@@ -78,5 +79,14 @@ test("a sticky note's handles keep their cursor, since they scale it", () => {
   expect(updateHoverCursor(sticky.width, sticky.height, editor, NO_HITS)).toBe(
     buildResizeCursor(hit?.rotation ?? 0)
   )
+})
+
+test("a line's ends show the move cursor, and its length takes no resize", () => {
+  editor = createEditor()
+  const line = editor.graph.createNode('LINE', editor.state.currentPageId, { width: 200, height: 0 })
+  editor.select([line.id])
+  expect(updateHoverCursor(200, 0, editor, NO_HITS)).toBe(MOVE_CURSOR)
+  expect(updateHoverCursor(0, 2, editor, NO_HITS)).toBe(MOVE_CURSOR)
+  expect(updateHoverCursor(100, 3, editor, NO_HITS)).toBeNull()
 })
 
