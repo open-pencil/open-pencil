@@ -528,7 +528,7 @@ export function getVectorPaths(r: SkiaRenderer, node: SceneNode): Path[] | null 
   if (!node.vectorNetwork) return null
   const cached = r.nodePaths.vector.get(node.id)
   if (cached) return cached
-  const paths = vectorNetworkToPath(r.ck, node.vectorNetwork)
+  const paths = vectorNetworkToPath(r.ck, node.vectorNetwork, node.cornerRadius)
   r.nodePaths.store(r.nodePaths.vector, node.id, paths)
   return paths
 }

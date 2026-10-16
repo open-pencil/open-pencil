@@ -188,7 +188,15 @@ export interface Fill {
   customEffectId?: string
 }
 
-export type StrokeCap = 'NONE' | 'ROUND' | 'SQUARE' | 'ARROW_LINES' | 'ARROW_EQUILATERAL'
+export type StrokeCap =
+  | 'NONE'
+  | 'ROUND'
+  | 'SQUARE'
+  | 'ARROW_LINES'
+  | 'ARROW_EQUILATERAL'
+  | 'TRIANGLE_FILLED'
+  | 'DIAMOND_FILLED'
+  | 'CIRCLE_FILLED'
 export type StrokeJoin = 'MITER' | 'BEVEL' | 'ROUND'
 export type SharedStyleType = 'FILL' | 'TEXT' | 'EFFECT' | 'GRID'
 export type SharedStyleKind = 'fill' | 'stroke' | 'text' | 'effect' | 'grid'
@@ -239,6 +247,32 @@ export interface Effect {
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
 export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'
+
+/** Where a connector end attaches to a layer: a side, the side Figma picks, or a fixed point. */
+export type ConnectorMagnet =
+  | 'NONE'
+  | 'AUTO'
+  | 'AUTO_HORIZONTAL'
+  | 'TOP'
+  | 'RIGHT'
+  | 'BOTTOM'
+  | 'LEFT'
+  | 'CENTER'
+  | 'EDGE'
+  | 'ABSOLUTE'
+
+/**
+ * One end of a connector. Bound to a layer, it follows the layer by `magnet`, or by `position`
+ * in the layer's own axes when the magnet is `NONE`. Free, `nodeId` is null and `position` is in
+ * the connector's parent's axes.
+ */
+export interface ConnectorEndpoint {
+  nodeId: string | null
+  magnet: ConnectorMagnet
+  position: Vector
+}
+
+export type ConnectorLineType = 'ELBOWED' | 'STRAIGHT' | 'CURVED'
 export type TextAlignVertical = 'TOP' | 'CENTER' | 'BOTTOM'
 export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
@@ -661,6 +695,13 @@ export interface SceneNode {
    * when the ratio was locked, not a reduced ratio. Null leaves the proportions free.
    */
   targetAspectRatio: Vector | null
+
+  /** A connector's ends and the line between them; null on other layers. */
+  connectorStart: ConnectorEndpoint | null
+  connectorEnd: ConnectorEndpoint | null
+  connectorLineType: ConnectorLineType
+  connectorStartCap: StrokeCap
+  connectorEndCap: StrokeCap
 
   isMask: boolean
   maskType: MaskType

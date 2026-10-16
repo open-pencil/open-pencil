@@ -101,6 +101,12 @@ export function prepareNodeTransfer(
       node: (id) => refs.nodes.get(id) ?? id
     })
   }
+  // A connector keeps the layers it was attached to when they are left behind; the end becomes
+  // free where nothing by that ID exists, as a pasted Figma connector does.
+  for (const field of ['connectorStart', 'connectorEnd'] as const) {
+    const endpoint = result[field]
+    if (endpoint?.nodeId) endpoint.nodeId = refs.nodes.get(endpoint.nodeId) ?? endpoint.nodeId
+  }
   for (const paths of [result.fillGeometry, result.strokeGeometry]) {
     for (const path of paths ?? []) if (path.fillStyleId) path.fillStyleId = style(path.fillStyleId)
   }

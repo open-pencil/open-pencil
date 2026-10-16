@@ -12,6 +12,16 @@ import type { KiwiNodeChange, SceneNodeToKiwiContext } from '../export/context'
 export interface GeneratedFrameCodec {
   /** Gives a frame read from its record the sublayers the record describes. */
   read(graph: SceneGraph, frame: SceneNode, record: NodeChange, blobs: Uint8Array[]): void
+  /**
+   * Points the frame at the layers its record names by GUID, as a connector's ends do. The reader
+   * calls it once every layer of the pass exists; `layerOf` gives the layer a record became.
+   */
+  link?(
+    graph: SceneGraph,
+    frame: SceneNode,
+    record: NodeChange,
+    layerOf: (sourceId: string) => string | undefined
+  ): void
   /** The frame's own record, with its sublayers written on it as Figma stores them. */
   write(context: SceneNodeToKiwiContext, frame: SceneNode, nc: KiwiNodeChange): KiwiNodeChange
 }

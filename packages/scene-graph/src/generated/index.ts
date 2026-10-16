@@ -1,5 +1,6 @@
 import type { SceneGraph } from '../index'
 import type { NodeType, SceneNode } from '../types'
+import { CONNECTOR_KIND } from './connector'
 import type { GeneratedFrameKind } from './kind'
 import { STICKY_KIND } from './sticky'
 
@@ -13,7 +14,8 @@ import { STICKY_KIND } from './sticky'
  * the type.
  */
 const GENERATED_FRAME_KINDS: Partial<Record<NodeType, GeneratedFrameKind>> = {
-  STICKY: STICKY_KIND
+  STICKY: STICKY_KIND,
+  CONNECTOR: CONNECTOR_KIND
 }
 
 export const GENERATED_FRAME_TYPES: ReadonlySet<NodeType> = new Set(
@@ -50,4 +52,5 @@ export function layerResizes(node: Pick<SceneNode, 'type'>): boolean {
 }
 
 export type { GeneratedFrameKind } from './kind'
+export * from './connector'
 export * from './sticky'

@@ -36,7 +36,12 @@ function fillType(ck: CanvasKit, windingRule: WindingRule) {
   return windingRule === 'EVENODD' ? ck.FillType.EvenOdd : ck.FillType.Winding
 }
 
-export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path[] {
+/** A vector network's paths; `cornerRadius` rounds open corners that set no radius of their own. */
+export function vectorNetworkToPath(
+  ck: CanvasKit,
+  network: VectorNetwork,
+  cornerRadius = 0
+): Path[] {
   const { vertices, segments, regions } = network
 
   if (regions.length > 0) {
@@ -56,14 +61,14 @@ export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path
     const openSegments = segments.filter((_, index) => !regionSegmentIndexes.has(index))
     if (openSegments.length > 0) {
       const openPath = new ck.PathBuilder()
-      addOpenSegmentsToPath(openPath, openSegments, vertices)
+      addOpenSegmentsToPath(openPath, openSegments, vertices, cornerRadius)
       paths.push(openPath.detachAndDelete())
     }
     return paths
   }
 
   const path = new ck.PathBuilder()
-  addOpenSegmentsToPath(path, segments, vertices)
+  addOpenSegmentsToPath(path, segments, vertices, cornerRadius)
   return [path.detachAndDelete()]
 }
 

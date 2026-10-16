@@ -72,7 +72,15 @@ describe('design JSX enums', () => {
     expect(BLEND_MODE.parse(3)).toBeUndefined()
   })
 
-  const caps: StrokeCap[] = ['ROUND', 'SQUARE', 'ARROW_LINES', 'ARROW_EQUILATERAL']
+  const caps: StrokeCap[] = [
+    'ROUND',
+    'SQUARE',
+    'ARROW_LINES',
+    'ARROW_EQUILATERAL',
+    'TRIANGLE_FILLED',
+    'DIAMOND_FILLED',
+    'CIRCLE_FILLED'
+  ]
 
   test.each(caps)('a %s stroke cap survives export and render', async (cap) => {
     const graph = new SceneGraph()
