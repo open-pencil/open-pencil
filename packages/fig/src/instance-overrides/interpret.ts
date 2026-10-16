@@ -16,6 +16,7 @@ import {
   declareVariableBindingUnits,
   declareSourceVariableBindingUnits
 } from './bindings/variables'
+import { revertClearedFillStyle } from './cleared-fill-style'
 import { applyDerivedEntry } from './derived-symbol-data'
 import { COMPONENT_IDENTITY_FIELDS } from './fields'
 import {
@@ -248,6 +249,7 @@ function interpretRoot(
       })
     )
     if (Object.keys(retained).length === 0) return
+    revertClearedFillStyle(target, retained, sources.get(target.sourceId))
     declareVariableBindingUnits(target, retained as NodeChange)
     invalidateInheritedTextData(target.properties, retained)
     Object.assign(
