@@ -1,4 +1,4 @@
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { repairHierarchy, SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
@@ -53,6 +53,7 @@ export function deserializeLibraryRevision(
   graph.variableCollections = new Map(revision.graph.variableCollections)
   graph.activeMode = new Map(revision.graph.activeMode)
   graph.documentColorSpace = revision.graph.documentColorSpace
+  repairHierarchy(graph)
   graph.instanceIndex = new Map()
   for (const node of graph.getAllNodes()) {
     if (!node.componentId) continue

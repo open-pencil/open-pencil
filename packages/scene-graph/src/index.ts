@@ -27,6 +27,7 @@ export * from './components/properties'
 export * from './components/variants'
 export * from './slots/frames'
 export { instanceMainComponent } from './instances/main-component'
+export { repairHierarchy } from './hierarchy/repair'
 export { canCreateInstance, createsComponentCycle, cycleSafeParent } from './instances/cycles'
 export {
   exposableInstances,
