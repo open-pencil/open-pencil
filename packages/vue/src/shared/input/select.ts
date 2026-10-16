@@ -25,10 +25,33 @@ export interface HitTestFns {
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
 }
 
-/** Clears the selection and starts a marquee in the open frame or section under the press. */
-function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragState) => void) {
+/** Leaves entered containers, innermost first, until one holds the point or none is entered. */
+function exitContainersOutside(cx: number, cy: number, editor: Editor, fns: HitTestFns) {
+  let entered = editor.state.enteredContainerId
+  while (entered && !fns.isInsideContainerBounds(cx, cy, entered)) {
+    editor.exitContainer()
+    if (editor.state.enteredContainerId === entered) return
+    entered = editor.state.enteredContainerId
+  }
+}
+
+/**
+ * Starts a marquee from a press on empty space, as in Figma: inside an entered group or frame it
+ * selects among that container's layers, and elsewhere among the layers of the open frame or
+ * section under the press, or of the page. Entered containers the press is outside are left first.
+ */
+export function startMarquee(
+  cx: number,
+  cy: number,
+  editor: Editor,
+  fns: HitTestFns,
+  setDrag: (d: DragState) => void
+) {
+  exitContainersOutside(cx, cy, editor, fns)
   editor.clearSelection()
-  const container = editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
+  const container = editor.state.enteredContainerId
+    ? undefined
+    : editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
   setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id })
 }
 
@@ -91,7 +114,7 @@ export function handleSelectDown(
   const hit =
     tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, editor, fns, e.metaKey || e.ctrlKey)
   if (!hit) {
-    if (!editor.state.enteredContainerId) startMarquee(cx, cy, editor, setDrag)
+    startMarquee(cx, cy, editor, fns, setDrag)
     return
   }
 

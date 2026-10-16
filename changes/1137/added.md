@@ -1,0 +1,1 @@
+- Dragging on empty space inside a group or frame you double-clicked into marquee-selects its layers, as in Figma; a drag that starts outside it leaves it and selects on the page.

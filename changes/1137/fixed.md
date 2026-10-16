@@ -1,0 +1,1 @@
+- Hovering and clicking follow the shape a layer draws, as its hover outline does: the empty corners of an ellipse's or a rounded rectangle's box, the gaps between a star's or polygon's points, and the empty area beside a vector's fill or along an unfilled path no longer select the layer, so a click there reaches the layer underneath.

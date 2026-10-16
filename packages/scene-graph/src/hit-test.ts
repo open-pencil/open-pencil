@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode, NodeType } from './'
 import { getWorldMatrix } from './coordinate'
 import Matrix from './matrix'
+import { shapeContainsLocalPoint } from './shape-hit'
 
 const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
@@ -49,6 +50,28 @@ function hasTransformedAncestor(
   return transformed
 }
 
+/** The canvas point in the node's local space, or null when its transform cannot be inverted. */
+function toLocalPoint(
+  px: number,
+  py: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  transformCache: Map<string, boolean>
+): [number, number] | null {
+  if (!hasTransformedAncestor(node, graph, transformCache)) {
+    const absolute = graph.getAbsolutePosition(node.id)
+    return [px - absolute.x, py - absolute.y]
+  }
+  const inv = Matrix.invert(getWorldMatrix(node, graph))
+  if (!inv) return null
+  const [localX, localY] = Matrix.mapPoints(inv, [px, py])
+  return [localX, localY]
+}
+
+function inPaddedBox(node: SceneNode, x: number, y: number, pad: number): boolean {
+  return x >= -pad && x <= node.width + pad && y >= -pad && y <= node.height + pad
+}
+
 /** Whether the point lies in the node's box, grown by `pad` canvas units on every side. */
 function containsPoint(
   px: number,
@@ -58,25 +81,26 @@ function containsPoint(
   transformCache: Map<string, boolean>,
   pad = 0
 ): boolean {
-  if (!hasTransformedAncestor(node, graph, transformCache)) {
-    const absolute = graph.getAbsolutePosition(node.id)
-    return (
-      px >= absolute.x - pad &&
-      px <= absolute.x + node.width + pad &&
-      py >= absolute.y - pad &&
-      py <= absolute.y + node.height + pad
-    )
-  }
+  const local = toLocalPoint(px, py, node, graph, transformCache)
+  return local !== null && inPaddedBox(node, local[0], local[1], pad)
+}
 
-  const m = getWorldMatrix(node, graph)
-
-  const inv = Matrix.invert(m)
-  if (!inv) return false
-
-  const [localX, localY] = Matrix.mapPoints(inv, [px, py])
-  return (
-    localX >= -pad && localX <= node.width + pad && localY >= -pad && localY <= node.height + pad
-  )
+/**
+ * Whether the point lies on the shape a leaf layer draws, as hover outlines it: an ellipse's oval,
+ * rounded corners, a polygon or star outline, a vector's filled regions or stroke. Layers whose
+ * box is their shape keep the padded box test.
+ */
+function containsLeafPoint(
+  px: number,
+  py: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  transformCache: Map<string, boolean>,
+  pad: number
+): boolean {
+  const local = toLocalPoint(px, py, node, graph, transformCache)
+  if (!local || !inPaddedBox(node, local[0], local[1], pad)) return false
+  return shapeContainsLocalPoint(node, local[0], local[1], pad) ?? true
 }
 
 function hitTestOpaqueContainer(
@@ -172,7 +196,7 @@ function hitTestChildren(
       continue
     }
 
-    if (containsPoint(px, py, child, graph, transformCache, pad)) return child
+    if (containsLeafPoint(px, py, child, graph, transformCache, pad)) return child
   }
 
   return null
