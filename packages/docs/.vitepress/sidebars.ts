@@ -133,6 +133,7 @@ export const developmentSidebar = (
             { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
             { text: 'Cloud Architecture', link: '/development/cloud' },
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
+            { text: 'Prototype State', link: '/development/prototype-state' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
             { text: 'Vector Conversion', link: '/development/vector-conversion' },
