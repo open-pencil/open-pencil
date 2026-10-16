@@ -1,6 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { openDeepLink, resolveDeepLinkFile } from '@/app/document/io/deep-link'
+import {
+  linkedIdentityNotice,
+  openDeepLink,
+  resolveDeepLinkFile
+} from '@/app/document/io/deep-link'
 
 /**
  * Stands in for the `path_matches_suffix` Tauri command. The real comparator asks the
@@ -229,4 +233,59 @@ describe('openDeepLink', () => {
     expect(notices).toHaveLength(2)
     expect(notices[1]).toContain('web/design/hikyo.pen')
   })
+})
+
+test('stable links refuse ambiguous checkout paths before focusing any tab', async () => {
+  const deps = io()
+  const selectById = mock(async () => 'found' as const)
+  await expect(
+    openDeepLink(
+      { path: 'design/library.fig', nodeId: '42:9' },
+      {
+        openPaths: () => ['/one/design/library.fig', '/two/design/library.fig'],
+        selectByName: () => true,
+        selectById,
+        notify: () => undefined
+      },
+      deps
+    )
+  ).rejects.toThrow('Several open or chosen documents')
+  expect(deps.activateTab).not.toHaveBeenCalled()
+  expect(selectById).not.toHaveBeenCalled()
+})
+
+test('stable links pass the resolved file and revision without falling back to names', async () => {
+  const deps = io()
+  const notices: string[] = []
+  const selectById = mock(async () => 'missing' as const)
+  const selectByName = mock(() => true)
+  const revision = 'a'.repeat(64)
+  await openDeepLink(
+    { path: 'design/library.fig', nodeId: '42:9', revision, node: 'Old name' },
+    {
+      openPaths: () => ['/repo/design/library.fig'],
+      selectByName,
+      selectById,
+      notify: (notice) => notices.push(notice)
+    },
+    deps
+  )
+  expect(selectById).toHaveBeenCalledWith({
+    id: '42:9',
+    revision,
+    file: '/repo/design/library.fig'
+  })
+  expect(selectByName).not.toHaveBeenCalled()
+  expect(notices).toHaveLength(1)
+})
+
+test('stable identity loading failures are actionable errors rather than missing layers', async () => {
+  const notice = await linkedIdentityNotice(
+    async () => {
+      throw new Error('Page decoding failed')
+    },
+    { id: '42:9', file: '/repo/library.fig' }
+  )
+  expect(notice).toContain('Page decoding failed')
+  expect(notice).not.toContain('was not found')
 })

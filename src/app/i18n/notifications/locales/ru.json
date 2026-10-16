@@ -1,6 +1,9 @@
 {
   "chatInitializationFailed": "Не удалось запустить чат: {error}",
   "linkCopied": "Ссылка скопирована в буфер обмена.",
+  "implementationStoryReady": "История реализации готова.",
+  "implementationStoryUnpinned": "История реализации готова. Эта связь не привязана к ревизии дизайна.",
+  "openImplementationStory": "Открыть историю",
   "clipboardMissingDesignData": "В буфере обмена нет данных дизайна.",
   "clipboardAccessBlocked": "Доступ к буферу обмена заблокирован в этом контексте браузера.",
   "copiedAs": "Скопировано как {format}.",

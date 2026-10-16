@@ -126,6 +126,7 @@ export function useAppMenu() {
     'copy-properties': 'copyProperties',
     'paste-properties': 'pasteProperties',
     'selection.rename': 'renameSelection',
+    'selection.openImplementation': 'openImplementationStory',
     'selection.moveToPage': 'moveToPage',
     'arrange-layout': 'autoArrange',
     language: 'language',
