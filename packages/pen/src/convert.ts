@@ -115,6 +115,9 @@ export interface PenNode {
   descendants?: Record<string, Partial<PenNode>>
   slot?: string[]
   geometry?: string
+  /** The glyph an `icon` node names, and the library it comes from. */
+  icon?: string
+  library?: string
   iconFontName?: string
   iconFontFamily?: string
   weight?: number
@@ -495,6 +498,17 @@ export function mapFontWeight(value: string | number | undefined): number {
   return 400
 }
 
+/**
+ * The Iconify name a `.pen` icon node declares, or undefined when nothing identifies its glyph.
+ * A document names the glyph and its library in separate fields, and Iconify writes them as one
+ * name, so the two are joined the way the graph's icon model reads them back.
+ */
+export function penIconName(pen: PenNode): string | undefined {
+  if (pen.type !== 'icon' || pen.icon === undefined) return undefined
+  if (pen.icon.includes(':')) return pen.icon
+  return pen.library === undefined ? undefined : `${pen.library}:${pen.icon}`
+}
+
 export function mapNodeType(pen: PenNode): NodeType {
   if (pen.type === 'frame') return pen.reusable ? 'COMPONENT' : 'FRAME'
   if (pen.type === 'rectangle') return 'RECTANGLE'
@@ -502,5 +516,8 @@ export function mapNodeType(pen: PenNode): NodeType {
   if (pen.type === 'text' || pen.type === 'icon_font') return 'TEXT'
   if (pen.type === 'path') return 'VECTOR'
   if (pen.type === 'ref') return 'INSTANCE'
+  // An icon names a glyph in a library. Until that library is resolved the node keeps its box and
+  // fill, and carries the reference in its plugin data.
+  if (pen.type === 'icon') return 'FRAME'
   return 'FRAME'
 }

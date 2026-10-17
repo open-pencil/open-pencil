@@ -1,0 +1,1 @@
+- An icon imported from a `.pen` document keeps the library reference it names, readable as `lucide:message-circle`, instead of arriving as an anonymous frame.

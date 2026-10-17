@@ -1,8 +1,16 @@
-import { fillSizingFields, SceneGraph } from '@open-pencil/scene-graph'
+import {
+  fillSizingFields,
+  ICON_NAME,
+  OPEN_PENCIL_PLUGIN_DATA,
+  SceneGraph,
+  withPluginData
+} from '@open-pencil/scene-graph'
 import type {
   AxisSizingMode,
+  Icon,
   LayoutMode,
   LayoutSizing,
+  PluginDataEntry,
   SceneNode,
   VectorNetwork
 } from '@open-pencil/scene-graph'
@@ -27,6 +35,7 @@ import {
   mapTextAlign,
   mapTextAlignVertical,
   parseSize,
+  penIconName,
   type PenDocument,
   type PenNode,
   type VarContext
@@ -66,8 +75,29 @@ function resolveFontFamily(raw: string | undefined, ctx: VarContext): string {
   return raw
 }
 
+/**
+ * The icon a `.pen` icon node references, in the graph's own icon model. A name that model cannot
+ * read is no reference at all, so nothing is stored for it: a metadata entry nothing resolves would
+ * only look like the glyph survived.
+ */
+function penIcon(pen: PenNode): Icon | undefined {
+  const name = penIconName(pen)
+  return name !== undefined && ICON_NAME.test(name) ? { name } : undefined
+}
+
+/**
+ * The plugin data a `.pen` node needs to keep what the graph cannot model yet. An icon names a
+ * glyph in a library such as Lucide; until that library is resolved, the reference is the only
+ * part of it worth preserving, and it goes where every reader of an icon already looks for it.
+ */
+function penPluginData(pen: PenNode): PluginDataEntry[] | undefined {
+  const icon = penIcon(pen)
+  if (!icon) return undefined
+  return withPluginData([], OPEN_PENCIL_PLUGIN_DATA.icon, icon)
+}
+
 function buildBaseOverrides(pen: PenNode): Partial<SceneNode> {
-  return {
+  const overrides: Partial<SceneNode> = {
     id: pen.id,
     name: pen.name ?? (pen.type === 'icon_font' ? (pen.iconFontName ?? 'Icon') : pen.type),
     x: pen.x ?? 0,
@@ -80,6 +110,9 @@ function buildBaseOverrides(pen: PenNode): Partial<SceneNode> {
     clipsContent: pen.clip ?? false,
     boundVariables: {}
   }
+  const pluginData = penPluginData(pen)
+  if (pluginData) overrides.pluginData = pluginData
+  return overrides
 }
 
 function applyAutoLayout(
