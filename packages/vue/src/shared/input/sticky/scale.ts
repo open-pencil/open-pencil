@@ -17,7 +17,8 @@ import type { DragStickyScale } from '#vue/shared/input/types'
 /** The smallest scale a corner drag takes a note to, so it never folds away. */
 const MIN_STICKY_SCALE = 0.1
 
-function subtree(editor: Editor, root: SceneNode): Map<string, SceneNode> {
+/** The note and every layer in it, as they are now, to scale from. */
+export function subtree(editor: Editor, root: SceneNode): Map<string, SceneNode> {
   const nodes = new Map<string, SceneNode>()
   const visit = (node: SceneNode) => {
     nodes.set(node.id, { ...node })

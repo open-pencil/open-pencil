@@ -185,6 +185,9 @@ export function useCanvasInput(
       e.preventDefault()
       return
     }
+    // Safari treats an unprevented press as the start of a text selection drag and freezes the
+    // cursor until the pointer leaves the canvas; the canvas handles its own drags.
+    if (e.button === 0) e.preventDefault()
     editor.setMeasurementMode('off')
     const openValueEdit = valueEdit.edit.value
     if (openValueEdit) valueEdit.commit(openValueEdit.value)
@@ -330,9 +333,8 @@ export function useCanvasInput(
       return
     }
 
-    if (d.type === 'place') {
-      d.x = cx
-      d.y = cy
+    if (d.type === 'sticky-draw') {
+      d.move(cx, cy)
       return
     }
 
@@ -395,7 +397,7 @@ export function useCanvasInput(
   /** Drops what a resize or pencil stroke showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
     if (d.type === 'resize') cancelResizePreview(d, editor)
-    else if (d.type === 'sticky-scale') d.cancel()
+    else if (d.type === 'sticky-scale' || d.type === 'sticky-draw') d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }
 
@@ -527,6 +529,7 @@ export function useCanvasInput(
         const type = drag.value?.type
         if (
           type === 'draw' ||
+          type === 'sticky-draw' ||
           type === 'rotate' ||
           type === 'shape-handle' ||
           type === 'sticky-scale'

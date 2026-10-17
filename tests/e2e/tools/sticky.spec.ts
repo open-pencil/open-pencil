@@ -1,3 +1,5 @@
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { stickyDriver } from '#tests/helpers/canvas/sticky-driver'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
@@ -31,12 +33,12 @@ test('the toolbar keeps the sticky tool hidden, and S does not pick it', async (
   expect((await sticky.focus()).tool).toBe('SELECT')
 })
 
-test('the sticky tool places a note centred on the click to type into', async () => {
+test('a click with the sticky tool places a note with its corner there, to type into', async () => {
   await sticky.showTool()
   await sticky.pickTool()
   await clickNote(300, 200)
   const placed = await lastNote()
-  expect(placed).toMatchObject({ x: 180, y: 80, width: 240, height: 240, body: { text: '' } })
+  expect(placed).toMatchObject({ x: 300, y: 200, width: 240, height: 240, body: { text: '' } })
   const focus = await sticky.focus()
   expect(focus.selected).toEqual([placed.id])
   expect(focus.editing).not.toBeNull()
@@ -50,6 +52,65 @@ test('the sticky tool places a note centred on the click to type into', async ()
     selected: [placed.id],
     editing: null
   })
+})
+
+/** Presses at `from` with the sticky tool and moves to `to`, both page points, holding the button. */
+async function pressAndDrag(from: Vector, to: Vector) {
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Missing canvas')
+  const start = sticky.point(from.x, from.y)
+  const end = sticky.point(to.x, to.y)
+  await editor.page.mouse.move(box.x + start.x, box.y + start.y)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + end.x, box.y + end.y, { steps: 6 })
+  await editor.canvas.waitForRender()
+}
+
+test('the sticky tool draws a note as a frame is drawn, growing with the drag', async () => {
+  await sticky.showTool()
+  await sticky.pickTool()
+  const before = (await sticky.notes()).length
+  await pressAndDrag({ x: 300, y: 200 }, { x: 420, y: 260 })
+  // While the button is held, the note is already there, as large as the drag.
+  expect(await sticky.notes()).toHaveLength(before + 1)
+  expect(await lastNote()).toMatchObject({ x: 300, y: 200, width: 120, height: 120 })
+  await editor.page.mouse.up()
+  await editor.canvas.waitForRender()
+  // Its text scales with it, as a note keeps its shape.
+  expect(await lastNote()).toMatchObject({
+    x: 300,
+    y: 200,
+    width: 120,
+    height: 120,
+    body: { fontSize: 8 }
+  })
+  expect((await sticky.focus()).editing).not.toBeNull()
+  await editor.page.keyboard.press('Escape')
+  // Drawing it was one step.
+  await editor.page.keyboard.press('ControlOrMeta+z')
+  await editor.canvas.waitForRender()
+  expect(await sticky.notes()).toHaveLength(before)
+})
+
+test('a note drawn up and to the left grows from the press that way', async () => {
+  await sticky.showTool()
+  await sticky.pickTool()
+  await pressAndDrag({ x: 600, y: 500 }, { x: 420, y: 440 })
+  await editor.page.mouse.up()
+  await editor.canvas.waitForRender()
+  expect(await lastNote()).toMatchObject({ x: 420, y: 320, width: 180, height: 180 })
+  await editor.page.keyboard.press('Escape')
+})
+
+test('Escape while drawing a note leaves no note', async () => {
+  await sticky.showTool()
+  await sticky.pickTool()
+  const before = (await sticky.notes()).length
+  await pressAndDrag({ x: 300, y: 200 }, { x: 400, y: 300 })
+  await editor.page.keyboard.press('Escape')
+  await editor.page.mouse.up()
+  await editor.canvas.waitForRender()
+  expect(await sticky.notes()).toHaveLength(before)
 })
 
 test('the Sticky note section recolours a note, sizes its text, and hides its author', async () => {

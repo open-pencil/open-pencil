@@ -32,13 +32,13 @@ export interface DragDraw {
   cancel: () => void
 }
 
-/** A layer placed where the pointer is released, such as a sticky note. */
-export interface DragPlace {
-  type: 'place'
-  /** Where the pointer is, in canvas coordinates. */
-  x: number
-  y: number
+/** A sticky note being drawn: it grows from the press corner with the drag, as a frame does. */
+export interface DragStickyDraw {
+  type: 'sticky-draw'
+  /** Grows the note to the pointer, in canvas coordinates. */
+  move: (cx: number, cy: number) => void
   commit: () => void
+  cancel: () => void
 }
 
 /**
@@ -237,7 +237,7 @@ export interface DragShapeHandle {
 export type DragState =
   | DragShapeHandle
   | DragDraw
-  | DragPlace
+  | DragStickyDraw
   | DragGradient
   | DragMove
   | DragPan
