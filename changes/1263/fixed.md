@@ -1,0 +1,1 @@
+- A path whose size the layout changes rescales its geometry, so a small instance of a component draws its mark at its own size instead of spilling outside its box.
