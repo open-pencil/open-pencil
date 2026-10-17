@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Path } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode, type SceneNode } from '@open-pencil/scene-graph'
 
 import { renderEffects } from '#core/canvas/shadows'
 
@@ -47,6 +47,35 @@ describe('Edge cases and bug fixes', () => {
 
     expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
     expect(canvas.drawPath).toHaveBeenCalled()
+  })
+
+  test('drop shadow is not drawn under a fill at 0% opacity', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node = createDefaultNode(() => 'transparent-fill', 'RECTANGLE', {
+      width: 200,
+      height: 200,
+      fills: [{ visible: true, type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0 }],
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 0, y: 0 },
+          radius: 8,
+          spread: 0,
+          showShadowBehindNode: false
+        }
+      ],
+      strokes: [],
+      strokeGeometry: [],
+      childIds: []
+    })
+
+    renderEffects(r, asCanvas(canvas), node, new Float32Array(4), false, 'behind')
+
+    expect(canvas.drawRect).not.toHaveBeenCalled()
+    expect(canvas.drawPath).not.toHaveBeenCalled()
   })
 
   test('drop shadow on stroked containers uses the container bounds', () => {

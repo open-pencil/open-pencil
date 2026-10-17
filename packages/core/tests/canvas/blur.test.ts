@@ -173,3 +173,27 @@ describe('blur effects fall off as in Figma', () => {
     expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16'])
   })
 })
+
+describe('drop shadow under a transparent fill', () => {
+  const shadowRow = (opacity: number, showShadowBehindNode = false) =>
+    edgeRow(
+      (graph, frameId) =>
+        square(graph, frameId, {
+          fills: [solid(1, 1, 1, opacity)],
+          effects: [{ ...effect('DROP_SHADOW', 16), showShadowBehindNode }]
+        }),
+      3
+    )
+
+  test('a fill at 0% opacity casts no shadow', () => {
+    expect(Math.max(...shadowRow(0))).toBe(0)
+  })
+
+  test('a visible fill casts one', () => {
+    expect(Math.max(...shadowRow(1).slice(0, 40))).toBeGreaterThan(0)
+  })
+
+  test('a fill at 0% opacity still casts one when the shadow shows behind the node', () => {
+    expect(Math.max(...shadowRow(0, true).slice(0, 40))).toBeGreaterThan(0)
+  })
+})

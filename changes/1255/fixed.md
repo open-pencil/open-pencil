@@ -1,0 +1,1 @@
+- A shape whose visible fills are all at 0% opacity and that has no visible stroke no longer casts a drop shadow when its shadow is not set to show behind the node.
