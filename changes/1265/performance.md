@@ -1,0 +1,1 @@
+- Arriving fonts drop only the text pictures they change instead of every cached picture, so the document repaints without rebuilding everything.

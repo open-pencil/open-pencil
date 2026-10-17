@@ -21,6 +21,29 @@ import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 
+/** The renderer calls dropping a stale picture needs; `SkiaRenderer` satisfies all of them. */
+interface PictureInvalidator {
+  invalidateNodePicture(nodeId: string): void
+  invalidateScenePicture(): void
+  readonly tiledScene: { invalidateStructure(): void }
+}
+
+/**
+ * Drops the pictures a newly loaded font makes stale. A font changes how text draws and nothing
+ * else, so the text pictures go, together with the pictures that contain them; the canvas is asked
+ * to repaint because what it shows changed. Vector, image and effect pictures survive. Dropping
+ * every picture instead made the next paint rebuild the whole document, which is what froze the
+ * window while the loader said it was resolving fonts.
+ */
+export function invalidateFontStalePictures(
+  renderer: PictureInvalidator,
+  nodes: Iterable<SceneNode>
+): void {
+  for (const node of nodes) if (node.type === 'TEXT') renderer.invalidateNodePicture(node.id)
+  renderer.invalidateScenePicture()
+  renderer.tiledScene.invalidateStructure()
+}
+
 export interface PageSwitchProgress {
   phase:
     | 'populating-page'
@@ -190,7 +213,8 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
       }
     } finally {
       fontManager.unblockNodes(childIds)
-      ctx.getRenderer()?.invalidateAllPictures()
+      const renderer = ctx.getRenderer()
+      if (renderer) invalidateFontStalePictures(renderer, requirements.nodes)
     }
   }
 
