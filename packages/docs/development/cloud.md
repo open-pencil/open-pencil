@@ -47,6 +47,25 @@ revision has its own object key.
 - Deleting a document is immediate for users; the cleanup worker removes revisions and objects once
   the retention period passes.
 
+### Version history
+
+Every save is a revision, but the history a person sees is its versions: checkpoints the server
+keeps on its own, and versions someone named (`document_version`, one per revision).
+
+- When a save lands and the newest version is half an hour old, the server keeps the revision that
+  save replaces as a checkpoint, so each stretch of editing and the state every session ended on stay
+  in the history. A document's first save is always one.
+- Naming the current state, or naming any version, makes it a named version; deleting its info turns
+  it back into a checkpoint. Viewers see the history; editors name, restore, and duplicate.
+- Restoring keeps the replaced state as a checkpoint, adds a revision that points at the restored
+  version's stored file, and advances the collaboration epoch, so the live room starts over on it.
+  Duplicating makes a new document in the same workspace from the same file. Neither uploads
+  anything or uses more storage.
+- The cleanup worker compacts saves that are neither current nor a version once they are a day old,
+  a batch at a time, and returns the bytes of files nothing else uses to the workspace's usage. A
+  freed file's row stays until the object store deletes it, so a failed delete is retried. With
+  the `revision_history` entitlement off, a workspace keeps 30 days of versions, as on a free plan.
+
 ## Authentication and authorization
 
 Better Auth owns users, sessions, social sign-in, email and password, passkeys, TOTP, and recovery
@@ -164,7 +183,7 @@ looser.
 ## Policy, entitlements, and quotas
 
 OpenFeature answers concrete questions such as whether capability links, anonymous viewing, or
-revision history are available, and what a numeric limit is. Its provider reads one entitlement
+full revision history is kept, and what a numeric limit is. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
 every workspace, or per-workspace rows in the database that the `entitlements` command sets. The two
 are alternatives, not layers. Technical limits cap the file size and participant limits the source
@@ -290,3 +309,10 @@ in `contract` and `client` stays MIT, so the editor and other clients stay MIT. 
 the paths rather than a separate package, which would have moved the protocol out of
 `packages/cloud` for no legal gain. `VITE_OPENPENCIL_CLOUD=off` swaps Cloud's two entry points for
 stand-ins, and `check:cloud-off` proves that build bundles none of Cloud.
+
+**2026-10 · History is versions over revisions, compacted on the server.** Every save stays a
+revision so saving and conflicts work as before, but the history lists only server-made checkpoints
+and named versions, and saves between them are compacted after a day. Checkpoints are made when a
+save lands rather than on a timer, so they need no client clock and cover every writer. History stores
+`.fig` revisions rather than Yjs snapshots: snapshots would need garbage collection off in every room
+and a version would still have to become a file to open, restore, or duplicate.

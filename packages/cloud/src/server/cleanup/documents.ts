@@ -2,6 +2,8 @@ import type { CloudDatabase } from '#cloud/server/db'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { Kysely } from 'kysely'
 
+import { unreferencedObject } from './objects'
+
 export type DocumentCleanupOptions = {
   batchSize: number
   leaseDurationMs: number
@@ -193,16 +195,7 @@ async function removeDocumentMetadata(
       const deleted = await transaction
         .deleteFrom('storageObject')
         .where('id', '=', object.id)
-        .where((expression) =>
-          expression.not(
-            expression.exists(
-              expression
-                .selectFrom('documentRevision')
-                .select('documentRevision.id')
-                .whereRef('documentRevision.storageObjectId', '=', 'storageObject.id')
-            )
-          )
-        )
+        .where(unreferencedObject)
         .executeTakeFirst()
       if (Number(deleted.numDeletedRows) > 0) {
         objectsDeleted++

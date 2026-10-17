@@ -8,6 +8,10 @@ import {
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRoutes } from '#cloud/server/documents'
+import {
+  createDocumentVersionRoutes,
+  type DocumentVersionService
+} from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
@@ -25,6 +29,7 @@ export type CloudAPIServices = {
   rateLimitSecret?: string
   collaboration: CollaborationTicketService
   documents: DocumentService
+  versions: DocumentVersionService
   sharing: DocumentSharingService
   resolveSession?: CloudSessionResolver
   entitlements?: EntitlementService
@@ -71,6 +76,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
           : undefined
       )
     )
+    .route('/', createDocumentVersionRoutes(services.versions))
     .route(
       '/',
       createDocumentSharingRoutes(

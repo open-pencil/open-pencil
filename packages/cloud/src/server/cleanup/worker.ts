@@ -1,5 +1,10 @@
 import { startPeriodicWorker } from '../worker/periodic'
 import type { DocumentCleanupResult, DocumentCleanupService } from './documents'
+import {
+  REVISION_COMPACTION_GRACE_MS,
+  type RevisionCompactionResult,
+  type RevisionCompactionService
+} from './revisions'
 import type { UploadCleanupResult, UploadCleanupService } from './uploads'
 
 export type CleanupWorkerOptions = {
@@ -14,12 +19,14 @@ export type CleanupWorkerOptions = {
 export type CleanupResult = {
   uploads: UploadCleanupResult
   documents: DocumentCleanupResult
+  revisions: RevisionCompactionResult | null
   rateLimits: number
 }
 
 export type CleanupServices = {
   documents: DocumentCleanupService
   uploads: UploadCleanupService
+  revisions?: RevisionCompactionService
   rateLimits?: { cleanupExpired(before: Date): Promise<number> }
 }
 
@@ -46,10 +53,16 @@ export function startCleanupWorker(
         leaseDurationMs: options.leaseDurationMs,
         retentionMs: options.documentRetentionMs
       })
+      const revisions = cleanup.revisions
+        ? await cleanup.revisions.compactRevisions({
+            batchSize: options.batchSize,
+            graceMs: REVISION_COMPACTION_GRACE_MS
+          })
+        : null
       const rateLimits = cleanup.rateLimits
         ? await cleanup.rateLimits.cleanupExpired(new Date(Date.now() - 24 * 60 * 60_000))
         : 0
-      return { uploads, documents, rateLimits }
+      return { uploads, documents, revisions, rateLimits }
     }
   })
 }

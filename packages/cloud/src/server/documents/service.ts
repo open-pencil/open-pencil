@@ -22,6 +22,7 @@ import {
 } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
+import { recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
 import type { ObjectStore } from '#cloud/server/objects'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -391,6 +392,13 @@ export function createDocumentService(
             })
             .where('id', '=', upload.documentId)
             .execute()
+          await recordCheckpoint(transaction, {
+            documentId: upload.documentId,
+            previousRevisionId: document.currentRevisionId,
+            revisionId,
+            userId,
+            now: new Date()
+          })
           await transaction
             .updateTable('upload')
             .set({ status: 'committed', finalizationStartedAt: null })

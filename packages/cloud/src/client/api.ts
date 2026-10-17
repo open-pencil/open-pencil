@@ -11,6 +11,9 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  documentVersionResponseSchema,
+  documentVersionsSchema,
+  restoredDocumentSchema,
   sharedDocumentSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
@@ -32,6 +35,11 @@ import {
   type DocumentInvitation,
   type DocumentShare,
   type DocumentSummary,
+  type DocumentVersion,
+  type DocumentVersions,
+  type DuplicateDocumentVersionInput,
+  type SaveDocumentVersionInput,
+  type UpdateDocumentVersionInput,
   type SharedDocument,
   type InvitationPreview,
   type LookupCloudUserInput,
@@ -41,6 +49,7 @@ import {
   type AcceptedInvitation
 } from '#cloud/contract'
 import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
+import { pickBy } from 'es-toolkit/object'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
@@ -437,6 +446,80 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = await parseResponse(
         client.uploads[':uploadId'].commit.$post({
           param: { uploadId },
+          json: input
+        }),
+        documentResponseSchema,
+        options.onDiagnostic
+      )
+      return response.document
+    },
+    /** A page of the document's version history, newest first. */
+    async listDocumentVersions(
+      documentId: string,
+      page: { before?: string; limit?: number } = {}
+    ): Promise<DocumentVersions> {
+      return parseResponse(
+        client.documents[':documentId'].versions.$get({
+          param: { documentId },
+          query: pickBy(page, (value) => value !== undefined)
+        }),
+        documentVersionsSchema,
+        options.onDiagnostic
+      )
+    },
+    async saveDocumentVersion(
+      documentId: string,
+      input: SaveDocumentVersionInput
+    ): Promise<DocumentVersion> {
+      const response = await parseResponse(
+        client.documents[':documentId'].versions.$post({ param: { documentId }, json: input }),
+        documentVersionResponseSchema,
+        options.onDiagnostic
+      )
+      return response.version
+    },
+    async updateDocumentVersion(
+      documentId: string,
+      versionId: string,
+      input: UpdateDocumentVersionInput
+    ): Promise<DocumentVersion> {
+      const response = await parseResponse(
+        client.documents[':documentId'].versions[':versionId'].$patch({
+          param: { documentId, versionId },
+          json: input
+        }),
+        documentVersionResponseSchema,
+        options.onDiagnostic
+      )
+      return response.version
+    },
+    async getDocumentVersion(documentId: string, versionId: string): Promise<DocumentDownload> {
+      const response = await parseResponse(
+        client.documents[':documentId'].versions[':versionId'].$get({
+          param: { documentId, versionId }
+        }),
+        downloadResponseSchema,
+        options.onDiagnostic
+      )
+      return response.document
+    },
+    async restoreDocumentVersion(documentId: string, versionId: string) {
+      return parseResponse(
+        client.documents[':documentId'].versions[':versionId'].restore.$post({
+          param: { documentId, versionId }
+        }),
+        restoredDocumentSchema,
+        options.onDiagnostic
+      )
+    },
+    async duplicateDocumentVersion(
+      documentId: string,
+      versionId: string,
+      input: DuplicateDocumentVersionInput
+    ): Promise<DocumentSummary> {
+      const response = await parseResponse(
+        client.documents[':documentId'].versions[':versionId'].duplicate.$post({
+          param: { documentId, versionId },
           json: input
         }),
         documentResponseSchema,

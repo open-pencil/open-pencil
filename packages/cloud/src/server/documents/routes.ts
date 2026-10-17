@@ -20,7 +20,8 @@ export type DocumentRouteEnvironment = {
   }
 }
 
-function domainError(context: Context, error: unknown): Response | null {
+/** The response a document domain error stands for, or null for any other error. */
+export function documentDomainError(context: Context, error: unknown): Response | null {
   if (error instanceof DocumentNotFoundError) {
     return context.json({ error: { code: 'not_found' as const } }, 404)
   }
@@ -84,7 +85,7 @@ export function createDocumentRoutes(
           usage: await service.usage(context.get('actor').userId, context.req.param('workspaceId'))
         })
       } catch (error) {
-        const response = domainError(context, error)
+        const response = documentDomainError(context, error)
         if (response) return response
         throw error
       }
@@ -101,7 +102,7 @@ export function createDocumentRoutes(
           )
           return context.json({ document }, 201)
         } catch (error) {
-          const response = domainError(context, error)
+          const response = documentDomainError(context, error)
           if (response) return response
           throw error
         }
@@ -112,7 +113,7 @@ export function createDocumentRoutes(
         await service.remove(context.get('actor').userId, context.req.param('documentId'))
         return context.body(null, 204)
       } catch (error) {
-        const response = domainError(context, error)
+        const response = documentDomainError(context, error)
         if (response) return response
         throw error
       }
@@ -123,7 +124,7 @@ export function createDocumentRoutes(
           access: await service.access(context.get('actor').userId, context.req.param('documentId'))
         })
       } catch (error) {
-        const response = domainError(context, error)
+        const response = documentDomainError(context, error)
         if (response) return response
         throw error
       }
@@ -137,7 +138,7 @@ export function createDocumentRoutes(
           )
         })
       } catch (error) {
-        const response = domainError(context, error)
+        const response = documentDomainError(context, error)
         if (response) return response
         throw error
       }
@@ -151,7 +152,7 @@ export function createDocumentRoutes(
         )
         return context.json(result, 201)
       } catch (error) {
-        const response = domainError(context, error)
+        const response = documentDomainError(context, error)
         if (response) return response
         throw error
       }
@@ -165,7 +166,7 @@ export function createDocumentRoutes(
         )
         return context.json({ document })
       } catch (error) {
-        const response = domainError(context, error)
+        const response = documentDomainError(context, error)
         if (response) return response
         throw error
       }

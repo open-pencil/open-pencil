@@ -55,7 +55,9 @@ export {
 } from './app'
 export {
   createDocumentCleanupService,
+  createRevisionCompactionService,
   createUploadCleanupService,
+  REVISION_COMPACTION_GRACE_MS,
   startCleanupWorker,
   type CleanupResult,
   type CleanupServices,
@@ -141,6 +143,13 @@ export {
   type DocumentRouteEnvironment,
   type DocumentService
 } from './documents'
+export {
+  CHECKPOINT_INTERVAL_MS,
+  createDocumentVersionRoutes,
+  createDocumentVersionService,
+  LIMITED_HISTORY_DAYS,
+  type DocumentVersionService
+} from './documents/versions'
 export {
   createInvitationOutbox,
   createTransactionalEmailService,

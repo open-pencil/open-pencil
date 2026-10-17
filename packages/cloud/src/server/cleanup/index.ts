@@ -5,6 +5,13 @@ export {
   type DocumentCleanupService
 } from './documents'
 export {
+  createRevisionCompactionService,
+  REVISION_COMPACTION_GRACE_MS,
+  type RevisionCompactionOptions,
+  type RevisionCompactionResult,
+  type RevisionCompactionService
+} from './revisions'
+export {
   createUploadCleanupService,
   type UploadCleanupOptions,
   type UploadCleanupResult,

@@ -1,10 +1,10 @@
 import { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/server/config'
 import {
-  OpenFeature,
+  DefaultLogger,
   TypedInMemoryProvider,
-  type Client,
   type EvaluationContext,
-  type Provider
+  type Provider,
+  type ResolutionDetails
 } from '@openfeature/server-sdk'
 
 import { CLOUD_FEATURE_KEYS, type CloudPolicyContext } from './keys'
@@ -64,20 +64,54 @@ function evaluationContext(context: CloudPolicyContext): EvaluationContext {
   return evaluation
 }
 
+const logger = new DefaultLogger()
+
+/** A flag's value, or the default when the provider failed or reported an error, as a client does. */
+async function resolved<T>(evaluation: () => Promise<ResolutionDetails<T>>, defaultValue: T) {
+  try {
+    const details = await evaluation()
+    return details.errorCode ? defaultValue : details.value
+  } catch {
+    return defaultValue
+  }
+}
+
+/**
+ * Answers entitlement questions from one OpenFeature provider. It asks the provider directly
+ * rather than through the global `OpenFeature` API: each app has its own provider, and the API
+ * keeps every provider registered under a domain reachable for the life of the process, with the
+ * database its entitlement source holds.
+ */
 export class CloudPolicy {
-  constructor(private readonly client: Client) {}
+  constructor(private readonly provider: Provider) {}
 
   boolean(key: string, defaultValue: boolean, context: CloudPolicyContext): Promise<boolean> {
-    return this.client.getBooleanValue(key, defaultValue, evaluationContext(context))
+    return resolved(
+      () =>
+        this.provider.resolveBooleanEvaluation(
+          key,
+          defaultValue,
+          evaluationContext(context),
+          logger
+        ),
+      defaultValue
+    )
   }
 
   number(key: string, defaultValue: number, context: CloudPolicyContext): Promise<number> {
-    return this.client.getNumberValue(key, defaultValue, evaluationContext(context))
+    return resolved(
+      () =>
+        this.provider.resolveNumberEvaluation(
+          key,
+          defaultValue,
+          evaluationContext(context),
+          logger
+        ),
+      defaultValue
+    )
   }
 }
 
 export function createDefaultCloudPolicy(provider?: Provider): CloudPolicy {
-  const domain = `openpencil-cloud-${crypto.randomUUID()}`
-  OpenFeature.setProvider(domain, provider ?? new TypedInMemoryProvider(DEFAULT_FLAGS))
-  return new CloudPolicy(OpenFeature.getClient(domain))
+  return new CloudPolicy(provider ?? new TypedInMemoryProvider(DEFAULT_FLAGS))
 }

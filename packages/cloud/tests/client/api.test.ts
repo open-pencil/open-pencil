@@ -44,6 +44,34 @@ describe('createCloudAPIClient', () => {
     expect(requests[0]?.credentials).toBe('include')
   })
 
+  test('pages through the version history of a document', async () => {
+    const version = {
+      id: '44444444-4444-4444-8444-444444444444',
+      revisionId,
+      kind: 'named' as const,
+      name: 'Hand-off',
+      description: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      createdBy: { id: 'alice', name: 'Alice' },
+      restoredFromVersionId: null,
+      current: true
+    }
+    const requests: Request[] = []
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async (input, init) => {
+        requests.push(new Request(input, init))
+        return Response.json({ versions: [version], nextCursor: null })
+      }
+    })
+
+    expect(
+      await client.listDocumentVersions(documentId, { before: version.id, limit: 20 })
+    ).toEqual({ versions: [version], nextCursor: null })
+    const url = new URL(requests[0]?.url ?? '')
+    expect(url.pathname).toBe(`/api/documents/${documentId}/versions`)
+    expect(Object.fromEntries(url.searchParams)).toEqual({ before: version.id, limit: '20' })
+  })
+
   test('lists documents shared with the person and rejects malformed entries', async () => {
     const shared = {
       ...document,

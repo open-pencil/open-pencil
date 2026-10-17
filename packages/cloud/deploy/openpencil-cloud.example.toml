@@ -97,6 +97,7 @@ source = "static"
 
 [entitlements.documents]
 maximum_file_bytes = 1_073_741_824
+# Keep every version; false keeps the last 30 days of version history.
 revision_history = true
 
 [entitlements.storage]

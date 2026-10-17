@@ -108,6 +108,19 @@ export interface DocumentRevisionTable {
   createdAt: TimestampColumn
 }
 
+/** A revision kept in the document's history; see migration 021. */
+export interface DocumentVersionTable {
+  id: string
+  documentId: string
+  revisionId: string
+  kind: 'checkpoint' | 'named'
+  name: string | null
+  description: string | null
+  createdBy: string
+  restoredFromVersionId: string | null
+  createdAt: TimestampColumn
+}
+
 export interface UploadTable {
   id: string
   documentId: string
@@ -292,6 +305,7 @@ export interface CloudDatabase {
   document: DocumentTable
   storageObject: StorageObjectTable
   documentRevision: DocumentRevisionTable
+  documentVersion: DocumentVersionTable
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
@@ -312,6 +326,7 @@ export type WorkspaceUpdate = Updateable<WorkspaceTable>
 export type Document = Selectable<DocumentTable>
 export type NewDocument = Insertable<DocumentTable>
 export type DocumentRevision = Selectable<DocumentRevisionTable>
+export type DocumentVersion = Selectable<DocumentVersionTable>
 export type NewDocumentRevision = Insertable<DocumentRevisionTable>
 export type DocumentShare = Selectable<DocumentShareTable>
 export type NewDocumentShare = Insertable<DocumentShareTable>

@@ -50,6 +50,14 @@ function services() {
         throw new Error('not used')
       }
     },
+    versions: {
+      list: notUsed,
+      save: notUsed,
+      update: notUsed,
+      download: notUsed,
+      restore: notUsed,
+      duplicate: notUsed
+    },
     sharing: {
       lookupUser: async () => null,
       userProfile: async () => null,

@@ -14,6 +14,7 @@ import {
   staticEntitlementValues,
   createDocumentCleanupService,
   createRateLimitCleanupService,
+  createRevisionCompactionService,
   createUploadCleanupService,
   startCleanupWorker,
   startTransactionalEmailWorker,
@@ -41,10 +42,21 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     transport: emailTransport
   } = createNodeTransactionalEmailRuntime(config, database)
   const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
+  const policy = createDefaultCloudPolicy(
+    new EntitlementOpenFeatureProvider(
+      config.staticEntitlements
+        ? new StaticEntitlementSource(staticEntitlementValues(config.staticEntitlements))
+        : new DatabaseEntitlementSource(database)
+    )
+  )
   const cleanup = config.cleanupEnabled
     ? startCleanupWorker(
         {
           documents: createDocumentCleanupService(database, objects),
+          revisions: createRevisionCompactionService(database, objects, {
+            policy,
+            deploymentMode: config.deployment
+          }),
           uploads: createUploadCleanupService(database, objects),
           rateLimits: createRateLimitCleanupService(database)
         },
@@ -67,13 +79,6 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     enrollment,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL)
   })
-  const policy = createDefaultCloudPolicy(
-    new EntitlementOpenFeatureProvider(
-      config.staticEntitlements
-        ? new StaticEntitlementSource(staticEntitlementValues(config.staticEntitlements))
-        : new DatabaseEntitlementSource(database)
-    )
-  )
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
     store: createCollaborationStateStore(database),
