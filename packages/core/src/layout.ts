@@ -42,7 +42,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 
-import { estimateTextSize, getTextMeasurer } from './layout/text-measurement'
+import { estimateTextSize, getTextMeasurer, measureTextForLayout } from './layout/text-measurement'
 import {
   applyMinMaxConstraints,
   applyLockedAspectRatio,
@@ -558,8 +558,7 @@ function configureTextLeaf(
       const cached = cache.get(cacheKey)
       if (cached) return cached
 
-      const measured = getTextMeasurer()?.(child, maxW)
-      const result = measured ?? estimateTextSize(child, maxW)
+      const result = measureTextForLayout(child, maxW)
       cache.set(cacheKey, result)
       return result
     })
@@ -589,11 +588,9 @@ function configureTextLeaf(
       if (constraintW === child.width && (child.derivedTextGlyphs?.length ?? 0) > 0) {
         return { width: constraintW, height: child.height }
       }
-      const measured = getTextMeasurer()?.(child, constraintW)
-      const result = {
-        width: constraintW,
-        height: measured?.height ?? estimateTextSize(child, constraintW).height
-      }
+      // One measurement per distinct text, not one per node carrying it, is what the shared cache
+      // buys here: an instance's clones ask for the same shape repeatedly.
+      const result = { width: constraintW, height: measureTextForLayout(child, constraintW).height }
       cache.set(cacheKey, result)
       return result
     })
