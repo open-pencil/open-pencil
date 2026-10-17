@@ -16,3 +16,8 @@ export function findFigThumbnailPageId(pages: readonly ThumbnailPage[]): string 
     normalizedNames.find(({ name }) => name.includes(COVER_PAGE_NAME))?.page.id
   )
 }
+
+/** The page a design's preview shows: its cover when it has one, otherwise its first page. */
+export function documentThumbnailPageId(pages: readonly ThumbnailPage[]): string | undefined {
+  return findFigThumbnailPageId(pages) ?? pages.at(0)?.id
+}

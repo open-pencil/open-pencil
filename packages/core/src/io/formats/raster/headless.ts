@@ -2,8 +2,9 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { SkiaRenderer } from '#core/canvas'
+import type { SkiaRenderer } from '#core/canvas'
 
+import { createOffscreenRenderer } from './offscreen'
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
 let cachedCk: CanvasKit | null = null
@@ -21,13 +22,7 @@ export async function initCanvasKit(): Promise<CanvasKit> {
 async function getRenderer(): Promise<{ ck: CanvasKit; renderer: SkiaRenderer }> {
   const ck = await initCanvasKit()
   if (cachedRenderer) return { ck, renderer: cachedRenderer }
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) throw new Error('Failed to create CanvasKit surface')
-  const renderer = new SkiaRenderer(ck, surface)
-  renderer.viewportWidth = 1
-  renderer.viewportHeight = 1
-  renderer.dpr = 1
-  await renderer.loadFonts()
+  const renderer = await createOffscreenRenderer(ck)
   cachedRenderer = renderer
   return { ck, renderer }
 }

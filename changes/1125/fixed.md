@@ -1,0 +1,1 @@
+- The cloud storage list on the home screen no longer flickers when it refreshes; a changed preview is swapped only once the new one has loaded.

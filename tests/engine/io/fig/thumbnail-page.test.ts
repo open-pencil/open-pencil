@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
+import {
+  documentThumbnailPageId,
+  findFigThumbnailPageId
+} from '#core/io/formats/fig/thumbnail-page'
 
 describe('FIG thumbnail page selection', () => {
   test('prefers an exact Cover page case-insensitively', () => {
@@ -25,5 +28,26 @@ describe('FIG thumbnail page selection', () => {
 
   test('does not fall back to an unrelated page', () => {
     expect(findFigThumbnailPageId([{ id: 'first', name: 'Homepage' }])).toBeUndefined()
+  })
+})
+
+describe('design preview page', () => {
+  test('shows the cover when there is one', () => {
+    expect(
+      documentThumbnailPageId([
+        { id: 'first', name: 'Homepage' },
+        { id: 'cover', name: 'Cover' }
+      ])
+    ).toBe('cover')
+  })
+
+  test('shows the first page when there is no cover', () => {
+    expect(
+      documentThumbnailPageId([
+        { id: 'first', name: 'Homepage' },
+        { id: 'second', name: 'Flows' }
+      ])
+    ).toBe('first')
+    expect(documentThumbnailPageId([])).toBeUndefined()
   })
 })

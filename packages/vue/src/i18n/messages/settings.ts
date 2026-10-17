@@ -7,6 +7,13 @@ export const settingsMessageDefaults = {
   animations: 'Animations',
   animationsSystem: 'Follow system',
   animationsOff: 'Off',
+  startup: 'On startup',
+  startupDescription:
+    'What OpenPencil shows when it starts. A link or file you open still opens on its own.',
+  startupReopen: 'Reopen last designs',
+  startupHome: 'Show the open screen',
+  startupNew: 'New design',
+  startupReopenIncomplete: 'Some designs from last time could not be reopened.',
   accentColor: 'Accent color',
   accentBlue: 'Blue',
   accentPurple: 'Purple',

@@ -21,7 +21,7 @@ describe('storage namespace', () => {
     const id = 'abc-123'
     expect(documentFigKey(id)).toBe('open_pencil_storage/canvases/abc-123.fig')
     expect(documentMetaKey(id)).toBe('open_pencil_storage/canvases/abc-123.meta.json')
-    expect(documentThumbnailKey(id)).toBe('open_pencil_storage/canvases/abc-123.thumb.jpg')
+    expect(documentThumbnailKey(id)).toBe('open_pencil_storage/canvases/abc-123.thumb.png')
   })
 
   test('parses document IDs from fig keys and ignores foreign keys', () => {
