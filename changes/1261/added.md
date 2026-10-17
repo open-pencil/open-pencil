@@ -1,0 +1,2 @@
+- A `.pen` document's image fills draw the assets it points at, read next to the document or over the network, with the fit mode it declares; opening one waits for them under a timeout and a size limit that can be cancelled, and an asset it cannot read opens without pixels instead of failing the document.
+- `.pen` gradient fills draw with their stops and kind, a linear gradient at the angle the document declares.

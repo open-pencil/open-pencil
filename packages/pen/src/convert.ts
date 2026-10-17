@@ -1,5 +1,4 @@
 import {
-  generateId,
   paddingFromShorthand,
   parseAutoLayoutDirection,
   parseCounterAxisAlign,
@@ -9,26 +8,29 @@ import type {
   Color,
   Effect,
   Fill,
+  FillType,
+  GradientTransform,
+  ImageScaleMode,
   LayoutAlign,
   LayoutCounterAlign,
   LayoutMode,
   LayoutSizing,
   NodeType,
-  SceneGraph,
   SceneNode,
   Stroke,
   StrokeCap,
   StrokeJoin,
-  TextAlignVertical,
-  Variable,
-  VariableCollection,
-  VariableCollectionMode,
-  VariableType,
-  VariableValue
+  TextAlignVertical
 } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import {
+  DEFAULT_GRADIENT_TRANSFORM,
+  linearGradientTransform
+} from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+
+import { bindIfVar, isVarRef, type PenVariable, type VarContext } from './variables'
 
 export interface PenDocument {
   version: string
@@ -37,19 +39,16 @@ export interface PenDocument {
   variables?: Record<string, PenVariable>
 }
 
-export interface PenVariable {
-  type: 'color' | 'string' | 'number'
-  value: PenVariableValue[] | PenVariableValue | string | number
-}
+type PenStrokeThickness = number | { top?: number; right?: number; bottom?: number; left?: number }
 
-interface PenVariableValue {
-  value: string | number
-  theme?: Record<string, string>
-}
-
+/**
+ * A `.pen` stroke in its nested form. Current Pencil documents write the colour as a plain
+ * `stroke` with a sibling `strokeWidth` instead; {@link normalizePenStroke} folds that into this
+ * shape so one reader handles both.
+ */
 interface PenStroke {
-  align: 'inside' | 'center' | 'outside'
-  thickness: number | { top?: number; right?: number; bottom?: number; left?: number }
+  align?: string
+  thickness?: PenStrokeThickness
   fill?: string
   join?: string
   cap?: string
@@ -64,10 +63,26 @@ interface PenEffect {
   spread?: number
 }
 
+interface PenGradientStop {
+  color: string
+  position: number
+}
+
 interface PenFillObject {
   type: string
-  color: string
+  /** The colour of a plain fill. An image fill carries its paint in `url` instead. */
+  color?: string
   enabled?: boolean
+  /** Where an image fill keeps its asset, relative to the document. */
+  url?: string
+  /** How an image fill fits its box: `fit`, `fill`, `crop` or `tile`. */
+  mode?: string
+  /** Which gradient this is: `linear`, `radial`, `angular` or `diamond`. */
+  gradientType?: string
+  /** A linear gradient's angle in degrees, turning clockwise from pointing up. */
+  rotation?: number
+  size?: { width?: number; height?: number }
+  colors?: PenGradientStop[]
 }
 
 type PenFill = string | PenFillObject | PenFillObject[]
@@ -94,9 +109,17 @@ export interface PenNode {
   flipY?: boolean
   reusable?: boolean
   cornerRadius?: number | string | (number | string)[]
-  stroke?: PenStroke
+  /** A colour, or the nested object form. See {@link normalizePenStroke}. */
+  stroke?: string | PenStroke
+  /** Stroke weight, written beside a plain `stroke` colour by current documents. */
+  strokeWidth?: PenStrokeThickness
+  strokeAlignment?: string
+  strokeLinejoin?: string
+  strokeLinecap?: string
   effect?: PenEffect | PenEffect[]
   layout?: string
+  /** `absolute` takes the node out of its parent's auto layout flow. */
+  layoutPosition?: string
   gap?: number | string
   padding?: PenPadding
   justifyContent?: string
@@ -106,6 +129,7 @@ export interface PenNode {
   fontFamily?: string
   fontSize?: number
   fontWeight?: string | number
+  fontStyle?: string
   lineHeight?: number
   letterSpacing?: number
   textAlign?: string
@@ -122,178 +146,125 @@ export interface PenNode {
   theme?: Record<string, string>
 }
 
-export interface VarContext {
-  byName: Map<string, { id: string; variable: Variable }>
-  activeModeId: string
-  collectionId: string
-  modeByThemeName: Map<string, string>
-  resolveColor(ref: string): Color
-  resolveNumber(ref: string): number
-  resolveString(ref: string): string
-  setActiveTheme(themeName: string): void
-}
-
-function penVarTypeToSceneType(t: string): VariableType {
-  if (t === 'color') return 'COLOR'
-  if (t === 'number') return 'FLOAT'
-  return 'STRING'
-}
-
-function penValueToSceneValue(raw: string | number, type: VariableType): VariableValue {
-  if (type === 'COLOR' && typeof raw === 'string') return parseColor(raw)
-  if (type === 'FLOAT' && typeof raw === 'number') return raw
-  if (type === 'STRING') return String(raw)
-  if (typeof raw === 'number') return raw
-  return String(raw)
-}
-
-function defaultForType(type: VariableType): VariableValue {
-  if (type === 'COLOR') return { ...BLACK }
-  if (type === 'FLOAT') return 0
-  if (type === 'BOOLEAN') return false
-  return ''
-}
-
-export function isVarRef(val: unknown): val is string {
-  return typeof val === 'string' && val.startsWith('$') && val.length > 1
-}
-
-function varName(ref: string): string {
-  return ref.replace(/^\$/, '')
-}
-
-export function bindIfVar(node: SceneNode, field: string, val: unknown, ctx: VarContext): void {
-  if (!isVarRef(val)) return
-  const entry = ctx.byName.get(varName(val))
-  if (entry) node.boundVariables[field] = entry.id
-}
-
-export function buildVarContext(
-  graph: SceneGraph,
-  penVars: Record<string, PenVariable>,
-  themes: Record<string, string[]>
-): VarContext {
-  const collectionId = generateId()
-  const modes: VariableCollectionMode[] = []
-  const themeKeys = Object.keys(themes)
-
-  if (themeKeys.length > 0) {
-    const themeKey = themeKeys[0]
-    for (const modeName of themes[themeKey]) {
-      modes.push({ modeId: generateId(), name: modeName })
-    }
-  }
-  if (modes.length === 0) {
-    modes.push({ modeId: generateId(), name: 'Default' })
-  }
-
-  const collection: VariableCollection = {
-    id: collectionId,
-    name: 'Variables',
-    modes,
-    defaultModeId: modes[0].modeId,
-    variableIds: []
-  }
-  graph.addCollection(collection)
-
-  const modeByThemeValue = new Map<string, string>()
-  if (themeKeys.length > 0) {
-    const themeKey = themeKeys[0]
-    for (const mode of modes) {
-      modeByThemeValue.set(`${themeKey}:${mode.name}`, mode.modeId)
-    }
-  }
-
-  const byName = new Map<string, { id: string; variable: Variable }>()
-
-  for (const [name, def] of Object.entries(penVars)) {
-    const varId = generateId()
-    const varType = penVarTypeToSceneType(def.type)
-    const valuesByMode: Record<string, VariableValue> = {}
-
-    if (Array.isArray(def.value)) {
-      for (const entry of def.value) {
-        if (entry.theme) {
-          const [tKey, tVal] = Object.entries(entry.theme)[0]
-          const modeId = modeByThemeValue.get(`${tKey}:${tVal}`)
-          if (modeId) valuesByMode[modeId] = penValueToSceneValue(entry.value, varType)
-        } else {
-          valuesByMode[modes[0].modeId] = penValueToSceneValue(entry.value, varType)
-        }
-      }
-    } else {
-      valuesByMode[modes[0].modeId] = penValueToSceneValue(def.value as string | number, varType)
-    }
-
-    for (const mode of modes) {
-      if (!(mode.modeId in valuesByMode)) {
-        valuesByMode[mode.modeId] = valuesByMode[modes[0].modeId] ?? defaultForType(varType)
-      }
-    }
-
-    const variable: Variable = {
-      id: varId,
-      name,
-      type: varType,
-      collectionId,
-      valuesByMode,
-      description: '',
-      hiddenFromPublishing: false
-    }
-    graph.addVariable(variable)
-    byName.set(name, { id: varId, variable })
-  }
-
-  let activeModeId = modes[0].modeId
-
-  function resolveVal(ref: string): VariableValue | undefined {
-    const entry = byName.get(ref.replace(/^\$/, ''))
-    if (!entry) return undefined
-    return (
-      entry.variable.valuesByMode[activeModeId] ?? Object.values(entry.variable.valuesByMode)[0]
-    )
-  }
-
-  return {
-    byName,
-    activeModeId,
-    collectionId,
-    modeByThemeName: modeByThemeValue,
-    resolveColor(ref: string): Color {
-      const val = resolveVal(ref)
-      if (val === undefined) return parseColor(ref)
-      if (typeof val === 'object' && 'r' in val) return val
-      if (typeof val === 'string') return parseColor(val)
-      return { ...BLACK }
-    },
-    resolveNumber(ref: string): number {
-      const val = resolveVal(ref)
-      return typeof val === 'number' ? val : 0
-    },
-    resolveString(ref: string): string {
-      const val = resolveVal(ref)
-      return typeof val === 'string' ? val : ''
-    },
-    setActiveTheme(themeName: string) {
-      const modeId = modeByThemeValue.get(`theme:${themeName}`)
-      if (modeId) {
-        activeModeId = modeId
-        graph.activeMode.set(collectionId, modeId)
-      }
-    }
-  }
-}
-
 function parseFillColor(fill: string | PenFillObject, ctx: VarContext): Color {
   const raw = typeof fill === 'string' ? fill : fill.color
+  if (raw === undefined) return { ...BLACK }
   return isVarRef(raw) ? ctx.resolveColor(raw) : parseColor(raw)
 }
 
-export function convertFill(fill: PenFill | undefined, ctx: VarContext, node?: SceneNode): Fill[] {
+/** Names the bytes an image asset is stored under, or nothing when it could not be read. */
+export type PenImageResolver = (url: string) => string | undefined
+
+/** How a `.pen` image fill fits the box it paints. */
+const IMAGE_SCALE_MODES: Record<string, ImageScaleMode> = {
+  fit: 'FIT',
+  contain: 'FIT',
+  cover: 'FILL',
+  fill: 'FILL',
+  crop: 'CROP',
+  tile: 'TILE'
+}
+
+/**
+ * An image fill keeps its paint and the way it fits its box. The pixels are the caller's to
+ * supply: a document names its assets relative to itself, and a renderer only has what the graph
+ * holds under `imageHash`.
+ */
+function convertImageFill(
+  item: PenFillObject,
+  visible: boolean,
+  resolveImage?: PenImageResolver
+): Fill {
+  const imageHash = item.url === undefined ? undefined : resolveImage?.(item.url)
+  const fill: Fill = {
+    type: 'IMAGE',
+    visible,
+    opacity: 1,
+    color: { ...BLACK },
+    imageScaleMode: IMAGE_SCALE_MODES[item.mode ?? ''] ?? 'FILL'
+  }
+  if (item.url !== undefined) fill.imageURL = item.url
+  if (imageHash !== undefined) fill.imageHash = imageHash
+  return fill
+}
+
+/** How a `.pen` gradient kind becomes a fill type; a kind not listed here has no equivalent. */
+const GRADIENT_FILL_TYPES: Partial<Record<string, FillType>> = {
+  linear: 'GRADIENT_LINEAR',
+  radial: 'GRADIENT_RADIAL',
+  angular: 'GRADIENT_ANGULAR',
+  diamond: 'GRADIENT_DIAMOND'
+}
+
+/**
+ * The transform a `.pen` gradient angle describes.
+ *
+ * `gradientTransform` maps the layer's unit square to gradient space, where a linear gradient runs
+ * from (0, 0.5) to (1, 0.5). The angle turns clockwise from pointing up, as CSS writes
+ * `linear-gradient`, so 90 is the engine's identity transform and 180 points down. Those are the
+ * two angles that pin the convention down: the documents triaged so far all use 180. The line the
+ * gradient spans is placed with the engine's own helper, so an imported angle and a handle dragged
+ * in the editor describe the same transform instead of two parallel reconstructions of it.
+ */
+function gradientTransformFor(rotation: number): GradientTransform {
+  const radians = (rotation * Math.PI) / 180
+  const along = Math.sin(radians)
+  const across = Math.cos(radians)
+  // The diagonal the angle's line spans, so the gradient reaches the layer's corners exactly.
+  const extent = Math.abs(along) + Math.abs(across)
+  const half = { x: (along * extent) / 2, y: (-across * extent) / 2 }
+  return linearGradientTransform(
+    { x: 0.5 - half.x, y: 0.5 - half.y },
+    { x: 0.5 + half.x, y: 0.5 + half.y }
+  )
+}
+
+/**
+ * A gradient fill keeps its stops and its kind. Only a linear gradient's angle is placed exactly;
+ * every other kind is drawn centred on the layer, because `.pen` describes their geometry with
+ * fields this reader does not interpret yet.
+ */
+function convertGradientFill(
+  item: PenFillObject,
+  visible: boolean,
+  ctx: VarContext
+): Fill | undefined {
+  const kind = item.gradientType ?? 'linear'
+  const type = GRADIENT_FILL_TYPES[kind]
+  if (type === undefined) return undefined
+  return {
+    type,
+    visible,
+    opacity: 1,
+    color: { ...BLACK },
+    gradientStops: (item.colors ?? []).map((stop) => ({
+      color: parseFillColor(stop.color, ctx),
+      position: stop.position
+    })),
+    gradientTransform:
+      type === 'GRADIENT_LINEAR'
+        ? gradientTransformFor(item.rotation ?? 180)
+        : { ...DEFAULT_GRADIENT_TRANSFORM }
+  }
+}
+
+export function convertFill(
+  fill: PenFill | undefined,
+  ctx: VarContext,
+  node?: SceneNode,
+  resolveImage?: PenImageResolver
+): Fill[] {
   if (fill === undefined) return []
   const fills = Array.isArray(fill) ? fill : [fill]
   return fills.map((item, index) => {
     const visible = typeof item === 'string' ? true : item.enabled !== false
+    if (typeof item !== 'string' && item.type === 'image') {
+      return convertImageFill(item, visible, resolveImage)
+    }
+    if (typeof item !== 'string' && item.type === 'gradient') {
+      const gradient = convertGradientFill(item, visible, ctx)
+      if (gradient) return gradient
+    }
     const color = parseFillColor(item, ctx)
     const result: Fill = { type: 'SOLID', visible, opacity: color.a, color }
     if (node) bindIfVar(node, `fills[${index}]`, typeof item === 'string' ? item : item.color, ctx)
@@ -301,10 +272,30 @@ export function convertFill(fill: PenFill | undefined, ctx: VarContext, node?: S
   })
 }
 
+/**
+ * One stroke, however the document declared it. Current `.pen` files put the colour in `stroke`
+ * and the weight in a sibling `strokeWidth`; older ones nest both in an object `stroke`. Returns
+ * `undefined` when the node declares no stroke at all.
+ */
+export function normalizePenStroke(pen: PenNode): PenStroke | undefined {
+  const stroke = pen.stroke
+  if (stroke === undefined) return undefined
+  if (typeof stroke !== 'string') return stroke
+  return {
+    fill: stroke,
+    thickness: pen.strokeWidth ?? 1,
+    align: pen.strokeAlignment,
+    join: pen.strokeLinejoin,
+    cap: pen.strokeLinecap
+  }
+}
+
 function strokeWeight(stroke: PenStroke): number {
-  return typeof stroke.thickness === 'number'
-    ? stroke.thickness
-    : Math.max(...Object.values(stroke.thickness))
+  const thickness = stroke.thickness
+  if (typeof thickness === 'number') return thickness
+  if (thickness === undefined) return 1
+  const sides = Object.values(thickness).filter((side) => typeof side === 'number')
+  return sides.length > 0 ? Math.max(...sides) : 1
 }
 
 export function convertStroke(
@@ -312,11 +303,18 @@ export function convertStroke(
   ctx: VarContext,
   node?: SceneNode
 ): Stroke[] {
-  if (!stroke?.fill) return []
-  const color = isVarRef(stroke.fill) ? ctx.resolveColor(stroke.fill) : parseColor(stroke.fill)
+  if (!stroke) return []
+  // A stroke with neither a colour nor a weight has nothing to draw.
+  if (!stroke.fill && stroke.thickness === undefined) return []
+  // Real documents leave the colour out on dividers: a cell declares a bottom thickness and no
+  // paint. A declared weight is a line meant to be seen, so it takes the default line colour.
+  let color: Color = { ...BLACK }
+  if (stroke.fill) {
+    color = isVarRef(stroke.fill) ? ctx.resolveColor(stroke.fill) : parseColor(stroke.fill)
+  }
   let align: Stroke['align'] = 'CENTER'
-  if (stroke.align === 'inside') align = 'INSIDE'
-  else if (stroke.align === 'outside') align = 'OUTSIDE'
+  if (stroke.align === 'inside' || stroke.align === 'inner') align = 'INSIDE'
+  else if (stroke.align === 'outside' || stroke.align === 'outer') align = 'OUTSIDE'
 
   const result: Stroke = {
     type: 'SOLID',

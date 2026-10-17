@@ -174,6 +174,11 @@ export interface Fill {
   gradientTransform?: GradientTransform
   imageHash?: string
   imageScaleMode?: ImageScaleMode
+  /**
+   * Where an imported document says this image lives, when it pointed at one rather than carrying
+   * the bytes. Kept so a document opened without its assets can resolve them afterwards.
+   */
+  imageURL?: string
   imageTransform?: GradientTransform
   sourceNodeId?: string
   scale?: number

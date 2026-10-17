@@ -12,6 +12,7 @@ import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics
 import { confirmAllDocuments } from '@/app/document/close/all'
 import { confirmDocumentClose } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
+import { readDocumentWithAssets } from '@/app/document/io/assets'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
@@ -475,11 +476,15 @@ export async function openFileInNewTab(
       imported = await readFigForTab(file, load.signal)
       sourceFormat = 'fig'
     } else {
-      const result = await io.readDocument({
-        name: file.name,
-        mimeType: file.type || undefined,
-        data: new Uint8Array(await file.arrayBuffer())
-      })
+      const result = await readDocumentWithAssets(
+        io,
+        file,
+        path,
+        (completed, total) => {
+          load.update({ phase: 'decoding', detail: `${completed}/${total}` })
+        },
+        load.signal
+      )
       imported = result.graph
       sourceFormat = result.sourceFormat
     }

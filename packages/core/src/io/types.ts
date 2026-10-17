@@ -62,6 +62,12 @@ export interface ExportRequest {
 export interface IOContext {
   canvasKit?: CanvasKit
   renderer?: SkiaRenderer
+  /**
+   * Reads a file a document references relative to itself, such as an image asset. A format that
+   * embeds referenced bytes needs it; without it the document opens with those references
+   * unresolved rather than failing.
+   */
+  resolveAsset?: (path: string) => Uint8Array | undefined
 }
 
 export interface FigWriteOptions {

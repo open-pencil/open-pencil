@@ -1,0 +1,3 @@
+- Every border and divider in a `.pen` document draws: the stroke form current Pencil files write is read, and a divider that declares a width but no colour draws in the default line colour instead of disappearing.
+- An instance's overrides reach the node they name inside a component, including a nested path, and an override's fill keeps the paint it sets instead of reverting to the component's variable.
+- `.pen` text keeps its growth setting and italic style, and a layer that declares absolute positioning stays out of its parent's auto layout flow.
