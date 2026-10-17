@@ -1,7 +1,12 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { setInstanceOverride, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  scaleGeometryPaths,
+  setInstanceOverride,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { nodeChangeToProps } from '../node-change'
@@ -69,6 +74,25 @@ export interface MaterializedInstance {
  * Component IDs must refer to existing COMPONENT nodes in the destination graph.
  * Occurrence provenance stays in the returned map, not in fabricated FIG metadata.
  */
+/** Outlines inherited from a component are drawn at its size; scale them to the instance's. */
+function scaleInheritedOutlines(
+  converted: ReturnType<typeof nodeChangeToProps>,
+  occurrence: InstanceOccurrence
+): void {
+  const scale = occurrence.inheritedOutlineScale
+  if (!scale) return
+  if (scale.fill !== 1 && converted.fillGeometry) {
+    converted.fillGeometry = scaleGeometryPaths(converted.fillGeometry, scale.fill, scale.fill)
+  }
+  if (scale.stroke !== 1 && converted.strokeGeometry) {
+    converted.strokeGeometry = scaleGeometryPaths(
+      converted.strokeGeometry,
+      scale.stroke,
+      scale.stroke
+    )
+  }
+}
+
 /** What an occurrence tree needs beyond the graph it is written into. */
 export interface MaterializeInstanceOptions {
   blobs?: Uint8Array[]
@@ -100,6 +124,7 @@ export function materializeInstance(
   const validate = (current: InstanceOccurrence): void => {
     if (prepared.has(current)) throw new Error('Repeated or cyclic instance occurrence')
     const converted = nodeChangeToProps(current.properties, blobs, 'occurrence')
+    scaleInheritedOutlines(converted, current)
     if (converted.nodeType === 'TEXT' && current.derivedSize) {
       converted.derivedLayout = { width: current.derivedSize.x, height: current.derivedSize.y }
     }

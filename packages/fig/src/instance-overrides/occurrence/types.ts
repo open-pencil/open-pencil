@@ -26,6 +26,11 @@ export interface InstanceOccurrence {
   propertyClaims: InstancePropertyClaim[]
   bindingClaims: BoundPropertyClaim[]
   derivedSize?: Vector
+  /**
+   * How much larger than the component the outlines this occurrence inherits are drawn. Saved
+   * derived outlines are already at the placed size and replace the inherited ones.
+   */
+  inheritedOutlineScale?: { fill: number; stroke: number }
   /** Cumulative scale for unresolved layout-distance variable values. */
   layoutScale?: number
   /** Per-field declaration-space multipliers, composed as owners expand. */

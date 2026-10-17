@@ -15,7 +15,13 @@ export function applyDerivedEntry(target: InstanceOccurrence, entry: DerivedSymb
   if (entry.transform) props.transform = structuredClone(entry.transform)
   // These are Kiwi geometry records with blob indexes, not SceneGraph geometry arrays.
   const { fillGeometry, strokeGeometry, vectorData } = entry
-  if (fillGeometry) props.fillGeometry = structuredClone(fillGeometry)
-  if (strokeGeometry) props.strokeGeometry = structuredClone(strokeGeometry)
+  if (fillGeometry) {
+    props.fillGeometry = structuredClone(fillGeometry)
+    if (target.inheritedOutlineScale) target.inheritedOutlineScale.fill = 1
+  }
+  if (strokeGeometry) {
+    props.strokeGeometry = structuredClone(strokeGeometry)
+    if (target.inheritedOutlineScale) target.inheritedOutlineScale.stroke = 1
+  }
   if (vectorData) props.vectorData = structuredClone(vectorData)
 }
