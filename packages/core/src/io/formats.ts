@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { layoutAuthoredNodes } from '#core/layout'
 
+import { drawioSource, isDrawioExportFileName, readDrawioDocument } from './formats/drawio'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -238,6 +239,30 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   }
 }
 
+export const drawioFormat: IOFormatAdapter<'drawio'> = {
+  id: 'drawio',
+  label: 'draw.io Diagram',
+  role: 'interchange-document',
+  category: 'document',
+  // PNG and SVG stay listed so a picker can offer draw.io's editable exports, `name.drawio.png`
+  // and `name.drawio.svg`; matchesFile accepts only those, never an ordinary image.
+  extensions: ['drawio', 'dio', 'png', 'svg'],
+  mimeTypes: ['application/vnd.jgraph.mxfile', 'application/x-drawio'],
+  support: {
+    readDocument: true
+  },
+  matchesFile(fileName) {
+    return ['drawio', 'dio'].includes(lowerExt(fileName)) || isDrawioExportFileName(fileName)
+  },
+  async readDocument(input) {
+    const source = drawioSource(input.data)
+    if (source === null) throw new Error('This image holds no draw.io diagram')
+    const graph = readDrawioDocument(source)
+    if (!graph) throw new Error('Not a draw.io diagram')
+    return { graph, sourceFormat: 'drawio' }
+  }
+}
+
 export const pngFormat = rasterFormat('PNG')
 export const jpgFormat = rasterFormat('JPG')
 export const webpFormat = rasterFormat('WEBP')
@@ -420,6 +445,7 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
+  drawioFormat,
   pngFormat,
   jpgFormat,
   webpFormat,

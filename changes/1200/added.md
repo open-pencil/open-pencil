@@ -1,0 +1,1 @@
+- Open, drag and drop, and `openpencil convert` read draw.io diagrams (`.drawio`, `.dio`, and draw.io's PNG and SVG exports, `name.drawio.png` and `name.drawio.svg`), plain or compressed: each tab becomes a page, and boxes, swimlanes and flowchart shapes, labels and arrows keep their look. A page that cannot be read is named in an error rather than left out.

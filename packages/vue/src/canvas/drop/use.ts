@@ -2,6 +2,7 @@ import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
+import { isDrawioExportFileName } from '@open-pencil/core/io'
 
 import { cycleSafeTarget, findMoveDropTarget } from '#vue/shared/input/drop-target'
 
@@ -107,7 +108,11 @@ function isSVGFile(file: File): boolean {
 
 export function filterCanvasFiles(files: ArrayLike<File> | Iterable<File> | null): File[] {
   if (!files) return []
-  return Array.from(files).filter((file) => RASTER_IMAGE_TYPES.has(file.type) || isSVGFile(file))
+  // A draw.io export, such as flow.drawio.png, opens as the diagram it embeds, not as an image.
+  return Array.from(files).filter(
+    (file) =>
+      !isDrawioExportFileName(file.name) && (RASTER_IMAGE_TYPES.has(file.type) || isSVGFile(file))
+  )
 }
 
 export function extractImageFilesFromClipboard(e: ClipboardEvent): File[] {

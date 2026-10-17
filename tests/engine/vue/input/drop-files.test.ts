@@ -15,4 +15,10 @@ describe('canvas file drops', () => {
     const svg = new File(['<svg/>'], 'mark.SVG')
     expect(filterCanvasFiles([svg])).toEqual([svg])
   })
+
+  test('leaves a draw.io export to open as the diagram it embeds', () => {
+    const exported = new File(['png'], 'flow.drawio.png', { type: 'image/png' })
+    const image = new File(['png'], 'flow.png', { type: 'image/png' })
+    expect(filterCanvasFiles([exported, image])).toEqual([image])
+  })
 })

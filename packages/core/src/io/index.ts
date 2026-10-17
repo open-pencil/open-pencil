@@ -5,6 +5,7 @@ export {
   type BuiltinIOFormatId,
   figFormat,
   penFormat,
+  drawioFormat,
   pngFormat,
   jpgFormat,
   webpFormat,
@@ -21,6 +22,7 @@ export {
   type ParseFigFileOptions
 } from './formats/fig'
 export { parsePenFile, readPenFile } from '@open-pencil/pen'
+export { isDrawioExportFileName } from './formats/drawio'
 export {
   computeContentBounds,
   renderNodesToImage,
