@@ -19,6 +19,7 @@ import {
   letterSpacingValue,
   lineHeightValue,
   paragraphStylesForCharacters,
+  styleRunsForCharacters,
   spacingProblem,
   type FigmaLetterSpacing,
   type FigmaLineHeight
@@ -100,7 +101,8 @@ export function installTextNodeProxyAccessors(
       },
       set(this: ProxyThis, value: string) {
         const textParagraphs = paragraphStylesForCharacters(raw(this, internals), value)
-        updateNode(this, internals, { text: value, textParagraphs })
+        const styleRuns = styleRunsForCharacters(raw(this, internals), value)
+        updateNode(this, internals, { text: value, textParagraphs, styleRuns })
       }
     },
     fontName: characterStyle<FigmaFontName>(internals, 'fontName', mixed, (_node, value) => {

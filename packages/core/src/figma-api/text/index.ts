@@ -17,9 +17,12 @@ import {
 import type {
   SceneGraph,
   SceneNode,
+  StyleRun,
   TextParagraphSpacingField,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
+
+import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
 
 import { assertTextRange } from './style'
 
@@ -53,12 +56,44 @@ export function letterSpacingValue(node: SceneNode, value: FigmaLetterSpacing | 
   return typeof value === 'number' ? value : pixels(value, node.fontSize)
 }
 
+/** Which neighbour inserted characters copy their style from, as Figma's `insertCharacters` takes it. */
+export type InsertStyleSource = 'BEFORE' | 'AFTER'
+
+const INSERT_STYLE_SOURCES: ReadonlySet<string> = new Set(['BEFORE', 'AFTER'])
+
+/**
+ * The style inserted characters take, as Figma gives it: the preceding character's for `BEFORE`
+ * and the following one's for `AFTER`, or the closest character's at either end of the text.
+ */
+function insertedStyle(node: SceneNode, start: number, useStyle: InsertStyleSource) {
+  if (node.text.length === 0) return {}
+  const preferred = useStyle === 'BEFORE' ? start - 1 : start
+  const index = Math.min(Math.max(preferred, 0), node.text.length - 1)
+  return getStyleAt(node.styleRuns, index)
+}
+
+/**
+ * A text's style runs once its characters are replaced. Figma resets the styles applied to
+ * character ranges, so the whole text keeps the style of its first character.
+ */
+export function styleRunsForCharacters(node: SceneNode, characters: string): StyleRun[] {
+  const first = node.text.length > 0 ? getStyleAt(node.styleRuns, 0) : {}
+  if (characters.length === 0 || Object.keys(first).length === 0) return []
+  return [{ start: 0, length: characters.length, style: { ...first } }]
+}
+
 export function insertCharacters(
   graph: SceneGraph,
   node: SceneNode,
   start: number,
-  characters: string
+  characters: string,
+  useStyle: InsertStyleSource = 'BEFORE'
 ): void {
+  // Scripts are not type-checked, so the value is checked as Figma checks it.
+  if (!INSERT_STYLE_SOURCES.has(useStyle)) {
+    throw new Error(`in insertCharacters: useStyle must be "BEFORE" or "AFTER"`)
+  }
+  assertEditPosition('insertCharacters', node, 'start', start)
   const text = node.text.slice(0, start) + characters + node.text.slice(start)
   const textParagraphs = paragraphStylesAfterEdit(
     node.textParagraphs,
@@ -67,8 +102,24 @@ export function insertCharacters(
     start,
     characters
   )
-  graph.updateNode(node.id, { text, textParagraphs })
-  recordInstanceOverride(graph, node.id, ['text', 'textParagraphs'])
+  const styleRuns = insertRunsWithStyle(
+    node.styleRuns,
+    start,
+    characters.length,
+    insertedStyle(node, start, useStyle)
+  )
+  graph.updateNode(node.id, { text, textParagraphs, styleRuns })
+  recordInstanceOverride(graph, node.id, ['text', 'textParagraphs', 'styleRuns'])
+}
+
+/** A position an edit can use: an integer from 0 through the text length, the end included. */
+function assertEditPosition(method: string, node: SceneNode, name: string, value: number) {
+  if (!Number.isInteger(value) || value < 0 || value > node.text.length) {
+    throw new Error(
+      `in ${method}: Property "${name}" failed validation: Expected an integer from 0 to ` +
+        `${node.text.length}, received ${String(value)}`
+    )
+  }
 }
 
 export function deleteCharacters(
@@ -77,10 +128,16 @@ export function deleteCharacters(
   start: number,
   end: number
 ): void {
+  assertEditPosition('deleteCharacters', node, 'start', start)
+  assertEditPosition('deleteCharacters', node, 'end', end)
+  if (end < start) {
+    throw new Error(`in deleteCharacters: 'end' must not be less than 'start'`)
+  }
   const text = node.text.slice(0, start) + node.text.slice(end)
   const textParagraphs = paragraphStylesAfterEdit(node.textParagraphs, node.text, start, end, '')
-  graph.updateNode(node.id, { text, textParagraphs })
-  recordInstanceOverride(graph, node.id, ['text', 'textParagraphs'])
+  const styleRuns = adjustRunsForDelete(node.styleRuns, start, end - start)
+  graph.updateNode(node.id, { text, textParagraphs, styleRuns })
+  recordInstanceOverride(graph, node.id, ['text', 'textParagraphs', 'styleRuns'])
 }
 
 type ListType = TextListOptions['type']
