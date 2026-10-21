@@ -1,0 +1,1 @@
+- MCP returns `export_pdf` and SVG exports as embedded resources instead of `image` content, which model APIs reject for anything but PNG, JPEG, GIF, and WEBP and which ended the whole conversation.
