@@ -18,14 +18,14 @@ export function createAIRoutes(
   rateLimit?: { database: Kysely<CloudDatabase>; secret: string }
 ) {
   const router = new Hono<AIRouteEnvironment>()
-  if (!service) return router
-  if (rateLimit) {
+  if (service && rateLimit) {
     router.use(
       '/ai/token',
       createActorRateLimiter(rateLimit.database, rateLimit.secret, CLOUD_RATE_LIMITS.aiToken)
     )
   }
   return router.post('/ai/token', validatedJSON(parseCreateAIToken), async (context) => {
+    if (!service) return context.json({ error: { code: 'not_found' as const } }, 404)
     try {
       return context.json(
         await service.issue(context.get('actor'), context.req.valid('json').workspaceId)

@@ -15,6 +15,8 @@ import {
   modelConnectionCredentialRef,
   modelCredentialRevision
 } from '@/app/ai/models'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudAIAvailable } from '@/app/cloud/integration'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
 import {
   refreshMediaCredentials,
@@ -45,6 +47,10 @@ export const isConfigured = computed(() => {
   if (isACPProvider.value) return IS_TAURI
   // Pi can use the CLI's own sign-in, so a key is optional.
   if (isHarnessProvider.value) return IS_TAURI
+  // Cloud's AI service needs no key: the Home server's sign-in and a workspace stand in for one.
+  if (providerID.value === OPENPENCIL_AI_PROVIDER) {
+    return cloudAIAvailable.value && Boolean(designModelConnection.value?.cloudWorkspaceId)
+  }
   if (apiKeyStatus.value !== 'configured') return false
   const needsBaseURL =
     providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
@@ -112,6 +118,8 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
   watch(customAPIType, markTransportDirty)
   watch(customBaseURL, markTransportDirty)
   watch(maxOutputTokens, markTransportDirty)
+  // Signing in or out of the Home server makes Cloud's AI service available or not.
+  watch(cloudAIAvailable, markTransportDirty)
   watch(credentialPersistenceRevision, () => {
     void refreshAIProviderStatus()
     markTransportDirty()

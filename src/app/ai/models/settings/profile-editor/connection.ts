@@ -12,6 +12,9 @@ import {
   testProviderConnection,
   type ProviderConnectionTestFailureReason
 } from '@/app/ai/models/connection-test'
+import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudAIClient } from '@/app/cloud/integration'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
 interface ConnectionOptions {
@@ -67,6 +70,17 @@ export function useProfileConnection({ draft, keyInput }: ConnectionOptions) {
     connectionTestStatus.value = 'testing'
     connectionTestReason.value = null
     try {
+      if (target.providerID === OPENPENCIL_AI_PROVIDER) {
+        const client = cloudAIClient(target.cloudWorkspaceId ?? '')
+        const cloud = client ? cloudModelConfig(client, target.modelID) : null
+        const result = cloud
+          ? await testProviderConnection(cloud.config, cloud.runtime)
+          : ({ ok: false, reason: 'auth' } as const)
+        if (!current(request)) return
+        connectionTestStatus.value = result.ok ? 'success' : 'error'
+        connectionTestReason.value = result.ok ? null : result.reason
+        return
+      }
       const connection = findModelConnectionForDraft(target)
       const existingKey =
         !replacement && !keyCleared.value && connection
@@ -82,7 +96,9 @@ export function useProfileConnection({ draft, keyInput }: ConnectionOptions) {
           customBaseURL: target.customBaseURL,
           customAPIType: target.customAPIType
         },
-        existingKey && connection ? modelConnectionCredentialStore(connection.id) : undefined
+        existingKey && connection
+          ? { credentials: modelConnectionCredentialStore(connection.id) }
+          : undefined
       )
       if (!current(request)) return
       connectionTestStatus.value = result.ok ? 'success' : 'error'

@@ -539,3 +539,11 @@ zh-cn:cloud.settingsSelfHostedDescription
 zh-cn:cloudPortal.errorEmailInvalid
 zh-cn:cloudPortal.verifiedDescription
 zh-cn:cloudPortal.welcomeTitle
+ja:ai.cloudAIUnavailable
+ja:ai.cloudAINoWorkspace
+ja:ai.chatCloudCreditsExhausted
+ja:ai.chatCloudUnavailable
+zh-cn:ai.cloudAIUnavailable
+zh-cn:ai.cloudAINoWorkspace
+zh-cn:ai.chatCloudCreditsExhausted
+zh-cn:ai.chatCloudUnavailable

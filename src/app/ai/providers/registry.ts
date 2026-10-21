@@ -50,6 +50,11 @@ const MODEL_PROVIDER_ADAPTERS = {
   }),
   'anthropic-compatible': createAnthropicCompatibleAdapter({
     baseURL: (config) => config.customBaseURL
+  }),
+  // The base URL and the token-carrying fetch come from Cloud's AI service, not from settings.
+  openpencil: createOpenAICompatibleAdapter({
+    baseURL: (config) => config.customBaseURL,
+    mode: 'chat'
   })
 } satisfies Record<DirectProviderID, ModelProviderAdapter>
 

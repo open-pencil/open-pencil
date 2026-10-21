@@ -6,6 +6,13 @@
 import { watchCloudRooms } from '../rooms/live'
 import { startCloudSessions } from '../sessions/startup'
 
+export {
+  cloudAIAvailable,
+  cloudAIClient,
+  cloudAIWorkspaces,
+  cloudBillingURL,
+  type CloudAIWorkspace
+} from '../ai/access'
 export { cloudDocumentAddress } from '../documents/link'
 export { isCloudBinding } from '../documents/status'
 export { openCloudShare } from '../sharing/dialog'

@@ -12,6 +12,9 @@ import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import { useProviderModelCatalog } from '@/app/ai/models/catalog/use'
 import { modelPickerOptions, type ModelPickerLabels } from '@/app/ai/models/picker/options'
 import { supportsThinkingLevel } from '@/app/ai/models/thinking'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+
+import { useCloudModelSelection } from './cloud'
 
 export function useProfileModelSelection(
   draft: AIModelProfileDraft,
@@ -29,7 +32,11 @@ export function useProfileModelSelection(
   )
   const catalogProviderID = computed(() => draft.providerID)
   const fallbackModels = computed(() => providerDef.value.models)
-  const { models: availableModels } = useProviderModelCatalog(catalogProviderID, fallbackModels)
+  const { models: providerModels } = useProviderModelCatalog(catalogProviderID, fallbackModels)
+  const cloud = useCloudModelSelection(draft, (modelID) => updateModel(modelID))
+  const availableModels = computed(() =>
+    cloud.isCloud.value ? cloud.models.value : providerModels.value
+  )
   const isACP = computed(() => draft.providerID.startsWith('acp:'))
   const isHarness = computed(() => draft.providerID === 'harness:pi')
   const supportsThinking = computed(() => supportsThinkingLevel(draft.providerID))
@@ -129,6 +136,7 @@ export function useProfileModelSelection(
     customModelSelected.value = providerID === 'harness:pi'
     draft.customBaseURL = ''
     draft.customAPIType = 'completions'
+    if (providerID !== OPENPENCIL_AI_PROVIDER) draft.cloudWorkspaceId = undefined
     if (providerID.startsWith('acp:')) {
       draft.capabilities = ['tools']
       if (!draft.name.trim()) draft.name = providerDisplayName.value
@@ -169,6 +177,9 @@ export function useProfileModelSelection(
     providerDef,
     isACP,
     isHarness,
+    isCloud: cloud.isCloud,
+    cloudWorkspaces: cloud.workspaces,
+    cloudState: cloud.state,
     customModelSelected,
     supportsThinking,
     providerDisplayName,

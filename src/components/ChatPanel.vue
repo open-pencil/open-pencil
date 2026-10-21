@@ -8,15 +8,18 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import { useChatRunLocation } from '@/app/ai/chat/run-location'
+import { providerID } from '@/app/ai/chat/storage'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { saveChatTrace } from '@/app/ai/chat/trace/export'
 import { useAIChat } from '@/app/ai/chat/use'
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { didHitStepLimit } from '@/app/ai/tools'
+import { cloudBillingURL } from '@/app/cloud/integration'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { toast } from '@/app/shell/ui'
+import { openExternalLink, toast } from '@/app/shell/ui'
 import { activeTab } from '@/app/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatHistory from '@/components/chat/ChatHistory.vue'
@@ -42,6 +45,7 @@ const submission = useChatSubmission({
     openSettings: ai.value.openProviderSettingsAction,
     requestFailed: ai.value.chatRequestFailed,
     visionUnavailable: ai.value.visionModelUnavailable,
+    cloudUnavailable: ai.value.chatCloudUnavailable,
     runSetup: ai.value.aiSetupRun,
     agentSetup: {
       'companion-missing': ai.value.chatPiCompanionMissing,
@@ -131,7 +135,9 @@ const failureMessage = computed(() => {
     case 'forbidden':
       return ai.value.chatForbidden
     case 'insufficient-credit':
-      return ai.value.chatInsufficientCredit
+      return providerID.value === OPENPENCIL_AI_PROVIDER
+        ? ai.value.chatCloudCreditsExhausted
+        : ai.value.chatInsufficientCredit
     case 'model-not-found':
       return ai.value.chatModelNotFound
     case 'network':
@@ -179,15 +185,23 @@ watch(
     const failedId = chat.value?.messages.at(-1)?.id
     failureToast = toast.error(
       failureMessage.value ?? ai.value.chatRequestFailed,
-      failureHasSettingsAction.value
-        ? {
-            label: ai.value.openProviderSettingsAction,
-            run: () => openSettingsDialog('ai')
-          }
-        : { label: ai.value.retryRequest, run: () => retryFailed(failedId) }
+      failureAction(failedId)
     )
   }
 )
+function failureAction(failedId: string | undefined): { label: string; run: () => void } {
+  const billingURL = cloudBillingURL.value
+  if (
+    chatFailure.value?.reason === 'insufficient-credit' &&
+    providerID.value === OPENPENCIL_AI_PROVIDER &&
+    billingURL
+  ) {
+    return { label: ai.value.manageCloudPlanAction, run: () => void openExternalLink(billingURL) }
+  }
+  return failureHasSettingsAction.value
+    ? { label: ai.value.openProviderSettingsAction, run: () => openSettingsDialog('ai') }
+    : { label: ai.value.retryRequest, run: () => retryFailed(failedId) }
+}
 watch(
   () => [activeTab.value?.id, activeTab.value?.store.state.preparation] as const,
   async ([tabId, preparation], [previousTabId]) => {
