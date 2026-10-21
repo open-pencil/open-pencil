@@ -5,7 +5,7 @@ export {
   compressFigDataSync,
   type FigFileExtrasOptions
 } from './write'
-export { findFigThumbnailPageId } from './thumbnail-page'
+export { documentThumbnailPageId, findFigThumbnailPageId } from './thumbnail-page'
 export {
   isReaderPagePending as isFigPagePending,
   populateFigPage,

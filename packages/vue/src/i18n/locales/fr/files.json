@@ -11,6 +11,7 @@
   "importing": "Importation…",
   "importToCanvas": "Importer dans le canevas",
   "newTab": "Nouvel onglet",
+  "homeTab": "Accueil",
   "closeTab": "Fermer {name}",
   "clipboardImageUnavailableWeb": "Le design collé contient 1 image qui ne peut pas être chargée dans l’application web. Utilisez l’application de bureau pour l’inclure.",
   "clipboardImagesUnavailableWeb": "Le design collé contient {count} images qui ne peuvent pas être chargées dans l’application web. Utilisez l’application de bureau pour les inclure.",

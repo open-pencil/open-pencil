@@ -11,6 +11,7 @@ export const filesMessageDefaults = {
   importing: 'Importing…',
   importToCanvas: 'Import to canvas',
   newTab: 'New tab',
+  homeTab: 'Home',
   closeTab: params('Close {name}'),
   unsavedChanges: 'Unsaved changes',
   saveBeforeClosing: params('Save changes to “{name}”?'),

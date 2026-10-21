@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
 import { useHomeCloud } from '@/app/cloud/integration'
-import { openSettingsDialog } from '@/app/settings/dialog'
+import { homeSettingsSection, type SettingsSection } from '@/app/settings/dialog'
 
 import { homeLocation, type HomeLocation } from './location'
 
@@ -11,11 +11,13 @@ export type HomeLocationView =
   | { kind: 'workspace'; id: string }
   | { kind: 'shared'; id: 'shared' }
   | { kind: 'storage'; id: 'storage' }
+  | { kind: 'settings'; id: 'settings' }
 
 const VIEWS = {
   recent: { kind: 'recent', id: 'recent' },
   shared: { kind: 'shared', id: 'shared' },
-  storage: { kind: 'storage', id: 'storage' }
+  storage: { kind: 'storage', id: 'storage' },
+  settings: { kind: 'settings', id: 'settings' }
 } as const satisfies Record<Exclude<HomeLocation['kind'], 'workspace'>, HomeLocationView>
 
 function toView(location: HomeLocation): HomeLocationView {
@@ -24,6 +26,12 @@ function toView(location: HomeLocation): HomeLocationView {
 
 function fromView(location: HomeLocationView): HomeLocation {
   return location.kind === 'workspace' ? location : { kind: location.kind }
+}
+
+/** Home shows Settings in place of the documents, at the section asked for. */
+function showSettings(section: SettingsSection): void {
+  homeSettingsSection.value = section
+  homeLocation.value = { kind: 'settings' }
 }
 
 /**
@@ -61,9 +69,9 @@ export function useHomeLocations() {
       homeLocation.value = fromView(next)
     },
     connect: cloud.connect,
-    accountSettings: () => openSettingsDialog('cloud'),
+    accountSettings: () => showSettings('cloud'),
     newWorkspace: cloud.newWorkspace,
-    storageSettings: () => openSettingsDialog('storage'),
+    storageSettings: () => showSettings('storage'),
     signOut: cloud.signOut
   }
 }

@@ -30,7 +30,6 @@ export type StorageDocumentMetadata = {
 
 export type StorageDocument = StorageDocumentMetadata & {
   id: string
-  thumbnailURL?: string | null
   metadataAuthoritative?: boolean
   /**
    * The provider's opaque version of the stored bytes, for providers that track revisions. A
@@ -114,6 +113,8 @@ export interface StorageAdapter {
   ): Promise<StoragePutResult>
   deleteDocument(id: string): Promise<void>
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
+  /** Whether the design itself is stored, whatever its metadata says. */
+  documentExists?(id: string): Promise<boolean>
   getUsage(): Promise<StorageUsage>
   getThumbnail?(id: string): Promise<Uint8Array | null>
   putThumbnail?(id: string, bytes: Uint8Array): Promise<void>

@@ -11,6 +11,7 @@
   "importing": "正在导入…",
   "importToCanvas": "导入到画布",
   "newTab": "新标签页",
+  "homeTab": "主页",
   "closeTab": "关闭 {name}",
   "clipboardImageUnavailableWeb": "粘贴的设计包含 1 张无法在网页应用中加载的图片。请使用桌面应用以包含该图片。",
   "clipboardImagesUnavailableWeb": "粘贴的设计包含 {count} 张无法在网页应用中加载的图片。请使用桌面应用以包含这些图片。",

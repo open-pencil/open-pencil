@@ -81,22 +81,18 @@ test('opens to the recent-files home and starts a new document', async ({ page }
   await page.getByTestId('home-new-document').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeHidden()
-  const tab = page.getByTestId('tabbar-tab')
-  await expect(tab).toHaveCount(1)
-  await expect(tab).toContainText('Untitled')
+  const tabs = page.getByTestId('tabbar-tab')
+  await expect(tabs).toHaveCount(2)
+  await expect(tabs.first()).toContainText('Home')
+  await expect(tabs.last()).toContainText('Untitled')
+  // Home stays and cannot be closed; only the design has a close button.
   await expect(page.getByTestId('tabbar-close')).toHaveCount(1)
 
   await page.getByTestId('tabbar-new').click()
 
-  await expect(page.getByTestId('recent-files-home')).toBeVisible()
-  await expect(page.getByTestId('tabbar-tab')).toHaveCount(2)
-  await expect(page.getByTestId('tabbar-tab').last()).toContainText('New tab')
-  await expect(page.getByLabel('Search files…')).toBeFocused()
-  await expect(page.getByTestId('tabbar-close')).toHaveCount(2)
+  await expect(tabs).toHaveCount(3)
+  await expect(page.getByTestId('recent-files-home')).toBeHidden()
 
-  await page.getByTestId('tabbar-tab').first().click()
-  await page.getByTestId('tabbar-tab').first().hover()
-  await page.locator('[data-slot="tab-item"]').first().getByTestId('tabbar-close').click()
-
+  await tabs.first().click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
 })

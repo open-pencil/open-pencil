@@ -11,6 +11,7 @@
   "importing": "Importazione…",
   "importToCanvas": "Importa nell’area di lavoro",
   "newTab": "Nuova scheda",
+  "homeTab": "Pagina iniziale",
   "closeTab": "Chiudi {name}",
   "clipboardImageUnavailableWeb": "Il design incollato contiene 1 immagine che non può essere caricata nell’app web. Usa l’app desktop per includerla.",
   "clipboardImagesUnavailableWeb": "Il design incollato contiene {count} immagini che non possono essere caricate nell’app web. Usa l’app desktop per includerle.",

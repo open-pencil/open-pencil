@@ -10,7 +10,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menu } from '@/components/ui/menu/menu'
@@ -54,6 +54,7 @@ const emit = defineEmits<{
 const ui = sideList()
 const menuUI = menu()
 const t = useCloudMessages()
+const { settings } = useI18n()
 const isActive = (location: HomeLocation) =>
   active.kind === location.kind && active.id === location.id
 const workspaceLocations = computed(() =>
@@ -186,6 +187,21 @@ const workspaceLocations = computed(() =>
           <icon-lucide-database :class="ui.icon()" />
           <span :class="ui.label()">{{ storage.label }}</span>
           <span :class="ui.trailing()">{{ storage.detail }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div :class="ui.group()">
+      <div :class="ui.items()">
+        <button
+          type="button"
+          :class="ui.item()"
+          :data-active="isActive({ kind: 'settings', id: 'settings' })"
+          data-test-id="home-settings"
+          @click="emit('select', { kind: 'settings', id: 'settings' })"
+        >
+          <icon-lucide-settings :class="ui.icon()" />
+          <span :class="ui.label()">{{ settings.title }}</span>
         </button>
       </div>
     </div>

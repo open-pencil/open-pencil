@@ -1,3 +1,4 @@
+import { sameStorageLocation, storageLocationOf } from '@/app/integrations/storage'
 import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
@@ -53,9 +54,13 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       return meta
     },
 
-    async writeThumb(id: string, thumbBytes: Uint8Array) {
+    async writeThumb(id: string, thumbBytes: Uint8Array, expectedLocation) {
       const existing = metas.get(id)
-      if (!existing) return null
+      if (
+        !existing ||
+        (expectedLocation && !sameStorageLocation(storageLocationOf(existing), expectedLocation))
+      )
+        return null
       thumbs.set(id, new Uint8Array(thumbBytes))
       // Thumb freshness is tracked by its own outbox job — never demote the
       // document's syncStatus here (it orphaned rows as 'pending' forever).

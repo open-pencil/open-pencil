@@ -11,6 +11,7 @@
   "importing": "Importowanie…",
   "importToCanvas": "Importuj na obszar roboczy",
   "newTab": "Nowa karta",
+  "homeTab": "Start",
   "closeTab": "Zamknij {name}",
   "clipboardImageUnavailableWeb": "Wklejony projekt zawiera 1 obraz, którego nie można wczytać w aplikacji internetowej. Użyj aplikacji komputerowej, aby go dołączyć.",
   "clipboardImagesUnavailableWeb": "Wklejony projekt zawiera {count} obrazy, których nie można wczytać w aplikacji internetowej. Użyj aplikacji komputerowej, aby je dołączyć.",

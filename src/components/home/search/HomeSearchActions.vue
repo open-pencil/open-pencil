@@ -4,9 +4,11 @@ import { nextTick, watch } from 'vue'
 
 import { useI18n, useViewportKind } from '@open-pencil/vue'
 
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 import HomeJoinRoom from './HomeJoinRoom.vue'
@@ -15,7 +17,7 @@ import HomeJoinRoom from './HomeJoinRoom.vue'
 const { destination = null } = defineProps<{ destination?: string | null }>()
 const emit = defineEmits<{ 'new-document': [] }>()
 const query = defineModel<string>({ required: true })
-const { menu, files } = useI18n()
+const { menu, files, settings } = useI18n()
 const { isMobile } = useViewportKind()
 const searchInput = templateRef<{ focus: (options?: FocusOptions) => void }>('searchInput')
 
@@ -44,19 +46,29 @@ watch(
 
 <template>
   <div class="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center">
-    <AppInput
-      ref="searchInput"
-      v-model="query"
-      type="search"
-      name="file-search"
-      autocomplete="off"
-      class="md:flex-1"
-      :density="isMobile ? 'comfortable' : 'compact'"
-      :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
-      :aria-label="files.searchFiles"
-    >
-      <template #leading><icon-lucide-search class="size-4" /></template>
-    </AppInput>
+    <div class="flex items-center gap-2 md:contents">
+      <AppInput
+        ref="searchInput"
+        v-model="query"
+        type="search"
+        name="file-search"
+        autocomplete="off"
+        class="flex-1"
+        :density="isMobile ? 'comfortable' : 'compact'"
+        :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
+        :aria-label="files.searchFiles"
+      >
+        <template #leading><icon-lucide-search class="size-4" /></template>
+      </AppInput>
+      <IconButton
+        :label="settings.title"
+        class="size-10 shrink-0 md:order-last md:size-8"
+        data-test-id="home-open-settings"
+        @click="openSettingsDialog()"
+      >
+        <icon-lucide-settings class="size-4" />
+      </IconButton>
+    </div>
     <div class="grid grid-cols-2 gap-2 md:contents">
       <div class="col-span-2 grid md:contents">
         <HomeJoinRoom :size="isMobile ? 'lg' : 'md'" />

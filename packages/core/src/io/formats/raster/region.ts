@@ -3,8 +3,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import type { Color, SceneGraph } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { SkiaRenderer } from '#core/canvas'
-
+import { createOffscreenRenderer } from './offscreen'
 import { drawRegionToImage } from './render'
 
 export interface RegionRenderOptions {
@@ -27,12 +26,9 @@ export async function renderRegionToImage(
   scale: number,
   options: RegionRenderOptions = {}
 ): Promise<Uint8Array | null> {
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) return null
-  const renderer = new SkiaRenderer(ck, surface)
+  const renderer = await createOffscreenRenderer(ck)
   try {
     if (options.pageColor) renderer.pageColor = options.pageColor
-    await renderer.loadFonts()
     await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
     return drawRegionToImage(ck, renderer, graph, pageId, bounds, scale)
   } finally {

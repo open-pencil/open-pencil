@@ -6,7 +6,7 @@ import { computed, useTemplateRef, watch } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { animationsEnabled } from '@/app/shell/motion'
-import { useTabsStore, createHomeTab } from '@/app/tabs'
+import { useTabsStore, createTab } from '@/app/tabs'
 import PreparationIndicator from '@/components/preparation/tab/Indicator.vue'
 import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -44,11 +44,11 @@ const modelValue = computed({
 function createNewTab(event: MouseEvent): void {
   event.preventDefault()
   if (event.currentTarget instanceof HTMLElement) event.currentTarget.blur()
-  createHomeTab()
+  createTab()
 }
 
 function onMiddleClick(e: MouseEvent, tabId: string, isHome: boolean) {
-  if (e.button === 1 && (!isHome || tabs.value.length > 1)) {
+  if (e.button === 1 && !isHome) {
     e.preventDefault()
     void closeTab(tabId)
   }
@@ -93,22 +93,18 @@ function onClose(e: MouseEvent, tabId: string) {
             <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
             <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
             <icon-lucide-file v-else :class="baseStyles.icon()" />
-            <span :class="baseStyles.label()">{{ tab.isHome ? files.newTab : tab.name }}</span>
+            <span :class="baseStyles.label()">{{ tab.isHome ? files.homeTab : tab.name }}</span>
             <Tip v-if="tab.isDirty" :label="files.unsavedChanges" side="bottom">
               <span role="img" :aria-label="files.unsavedChanges" :class="baseStyles.dirtyDot()" />
             </Tip>
           </TabsTrigger>
-          <Tip
-            v-if="!tab.isHome || tabs.length > 1"
-            :label="files.closeTab({ name: tab.isHome ? files.newTab : tab.name })"
-            side="bottom"
-          >
+          <Tip v-if="!tab.isHome" :label="files.closeTab({ name: tab.name })" side="bottom">
             <button
               type="button"
               data-test-id="tabbar-close"
               :class="tabBarStyles({ active: tab.isActive }).close()"
               :data-active="tab.isActive || undefined"
-              :aria-label="files.closeTab({ name: tab.isHome ? files.newTab : tab.name })"
+              :aria-label="files.closeTab({ name: tab.name })"
               tabindex="-1"
               @click="onClose($event, tab.id)"
             >

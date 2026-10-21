@@ -1,3 +1,4 @@
+import { usablePreview } from '@/app/document/io/preview-bytes'
 import type { StorageDocument, StorageLocation } from '@/app/integrations/storage'
 import {
   activeStorageProviderID,
@@ -8,6 +9,7 @@ import {
 } from '@/app/integrations/storage'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
+import { drawMissingStoragePreview } from '@/app/storage/workspace/background-previews'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 export type StorageWorkspaceSnapshot = {
@@ -35,7 +37,7 @@ export function createStorageWorkspaceSource(
   return {
     subscribe(listener: () => void): () => void {
       return onStorageWorkspaceEvent((event) => {
-        if (isCurrent(event)) listener()
+        if (event.kind !== 'preview' && isCurrent(event)) listener()
       })
     },
 
@@ -91,14 +93,19 @@ export function createStorageWorkspaceSource(
     async loadPreview(id: string): Promise<Uint8Array | null> {
       const requested = location()
       const localStore = getLocalCanvasStore()
-      const local = await localStore.readThumb(id)
-      if (local?.byteLength) return local
+      const metadata = await localStore.getMeta(id)
+      const own = metadata != null && sameStorageLocation(storageLocationOf(metadata), requested)
+      const local = own ? usablePreview(await localStore.readThumb(id)) : null
+      if (local) return isCurrent(requested) ? local : null
       const adapter = createStorageAdapter(requested)
-      if (!adapter.getThumbnail) return null
-      const remote = await adapter.getThumbnail(id)
-      if (!remote?.byteLength) return null
-      if (isCurrent(requested)) await localStore.writeThumb(id, remote)
-      return remote
+      const remote = usablePreview(adapter.getThumbnail ? await adapter.getThumbnail(id) : null)
+      if (remote) {
+        if (!isCurrent(requested)) return null
+        await localStore.writeThumb(id, remote, requested)
+        return remote
+      }
+      // Nothing to show yet: draw one in the background, without opening the design.
+      return drawMissingStoragePreview(requested, id, () => isCurrent(requested))
     }
   }
 }

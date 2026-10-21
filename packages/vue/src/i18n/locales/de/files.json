@@ -11,6 +11,7 @@
   "importing": "Wird importiert…",
   "importToCanvas": "Auf die Arbeitsfläche importieren",
   "newTab": "Neuer Tab",
+  "homeTab": "Start",
   "closeTab": "{name} schließen",
   "clipboardImageUnavailableWeb": "Das eingefügte Design enthält 1 Bild, das in der Web-App nicht geladen werden kann. Verwende die Desktop-App, um es einzuschließen.",
   "clipboardImagesUnavailableWeb": "Das eingefügte Design enthält {count} Bilder, die in der Web-App nicht geladen werden können. Verwende die Desktop-App, um sie einzuschließen.",

@@ -81,6 +81,29 @@ describe('local canvas store (memory)', () => {
     expect(meta.hasFig).toBe(false)
     expect(await store.readFig('remote-1')).toBeNull()
   })
+
+  test('keeps a preview only for the place the design is kept for', async () => {
+    const store = createMemoryLocalCanvasStore()
+    await store.upsertIndexMeta({
+      id: 'remote-2',
+      providerId: 's3-compatible',
+      containerId: 'bucket-a',
+      name: 'From bucket',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      syncStatus: 'synced',
+      lastSyncedAt: '2026-01-01T00:00:00.000Z',
+      lastSyncError: null,
+      hasFig: false
+    })
+    const thumb = new Uint8Array([1, 2, 3])
+
+    const other = { providerId: 's3-compatible', containerId: 'bucket-b' }
+    expect(await store.writeThumb('remote-2', thumb, other)).toBeNull()
+    expect(await store.readThumb('remote-2')).toBeNull()
+
+    const own = { providerId: 's3-compatible', containerId: 'bucket-a' }
+    expect((await store.writeThumb('remote-2', thumb, own))?.hasThumb).toBe(true)
+  })
 })
 
 describe('local canvas store (IndexedDB)', () => {

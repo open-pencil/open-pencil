@@ -1,3 +1,4 @@
+import type { StorageLocation } from '@/app/integrations/storage'
 import { createIdbLocalCanvasStore } from '@/app/storage/local-store/idb'
 import { createMemoryLocalCanvasStore } from '@/app/storage/local-store/memory'
 import type {
@@ -19,7 +20,12 @@ export type LocalCanvasStore = {
   writeCanvas(input: LocalCanvasWriteInput): Promise<LocalCanvasMeta>
   /** Index-only row for remote canvases not yet downloaded (no fig body). */
   upsertIndexMeta(meta: LocalCanvasIndexInput): Promise<LocalCanvasMeta>
-  writeThumb(id: string, thumbBytes: Uint8Array): Promise<LocalCanvasMeta | null>
+  /** Null when the design is not kept locally, or is kept for another place than `expectedLocation`. */
+  writeThumb(
+    id: string,
+    thumbBytes: Uint8Array,
+    expectedLocation?: StorageLocation
+  ): Promise<LocalCanvasMeta | null>
   updateMeta(
     id: string,
     patch: Partial<LocalCanvasMeta>,

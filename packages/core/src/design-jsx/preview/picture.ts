@@ -2,8 +2,9 @@ import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 
 import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'
+import { offscreenRenderer } from '#core/io/formats/raster/offscreen'
 
 import type { StagedJSXPreview } from './stage'
 
@@ -53,9 +54,7 @@ export async function recordJSXPreview(
   signal: AbortSignal
 ): Promise<SkPicture | null> {
   signal.throwIfAborted()
-  const surface = ck.MakeSurface(1, 1)
-  if (!surface) return null
-  const renderer = new SkiaRenderer(ck, surface)
+  const renderer = offscreenRenderer(ck)
   try {
     return await recordStaged(renderer, staged, signal)
   } finally {

@@ -31,7 +31,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
-import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
+import { documentThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
 import {
   makeCanvasNodeChange,
@@ -542,7 +542,7 @@ export async function figFileExtras(
   imageNames: ReadonlyMap<string, string>,
   options: FigFileExtrasOptions
 ): Promise<FigFileExtras> {
-  const thumbnailPageId = options.pageId ?? findFigThumbnailPageId(graph.getPages(true))
+  const thumbnailPageId = options.pageId ?? documentThumbnailPageId(graph.getPages(true))
   const thumbnail = await renderFigThumbnail(graph, thumbnailPageId, options)
   const metaJSON = figArchiveMetaJSON({
     fileName: options.documentName || UNTITLED_FILE_NAME,

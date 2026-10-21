@@ -15,7 +15,6 @@ test('keyboard switches document tabs and middle-click closes an inactive tab', 
   await expect(tabs.last()).toHaveAttribute('aria-selected', 'true')
   await tabs.first().click({ button: 'middle' })
   await expect(tabs).toHaveCount(1)
-  await expect(page.getByTestId('recent-files-home')).toBeVisible()
 })
 
 test('closing an inactive document tab does not select it', async ({ page }) => {
@@ -32,5 +31,4 @@ test('closing an inactive document tab does not select it', async ({ page }) => 
     .getByRole('button', { name: /Close/ })
     .click()
   await expect(tabs.getByRole('tab')).toHaveCount(1)
-  await expect(page.getByTestId('recent-files-home')).toBeVisible()
 })

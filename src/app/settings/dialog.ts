@@ -15,6 +15,8 @@ export type SettingsSection =
 
 export const settingsDialogOpen = ref(false)
 export const settingsDialogSection = ref<SettingsSection>('general')
+/** The section Settings shows on the Home tab, apart from the one in the window. */
+export const homeSettingsSection = ref<SettingsSection>('general')
 
 type SettingsNavigationRequest = (action: () => void) => void
 let requestNavigation: SettingsNavigationRequest | null = null

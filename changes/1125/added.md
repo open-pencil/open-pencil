@@ -1,0 +1,6 @@
+- The home screen has a Settings button next to search, so Settings is reachable before a design is open.
+- Designs in cloud storage show a preview on the home screen, in the browser too: a design without a saved preview gets one drawn from its cover or first page, kept beside the design in the bucket, and recent files keep their previews. Previews are saved as `.thumb.png`; previews saved earlier as `.thumb.jpg` still load.
+- Settings → General → On startup chooses what OpenPencil shows when it starts without a specific file or link: reopen the designs that were open last, show the open screen, or start a new design. Reopening is the default; shared rooms are rejoined and a design in cloud storage opens its newest copy. A design that cannot reopen shows a short notice and the open screen instead of a blank design.
+- The Home tab stays in front of your designs. It cannot be closed, opening or creating a design opens it in a tab of its own, and the + button starts a blank design.
+- Settings opens inside the Home tab from a Settings entry in the sidebar, or the locations menu on a phone, so every section can be checked without the Settings window. The Storage and Cloud account buttons on Home go to their section there.
+- File → Browse Files… opens Home on your storage bucket when one is set up, so designs in storage are one click away.

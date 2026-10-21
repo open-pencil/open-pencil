@@ -50,12 +50,12 @@ export function useDocumentWorkspace<Item extends DocumentWorkspaceItem>(
   function refresh(): Promise<void> {
     if (refreshPromise) return refreshPromise
     loading.value = true
-    error.value = null
     const nextRefresh = options.source
       .refresh()
       .then((items) => {
         if (!disposed && items) {
           previews.reconcile(documents.value, items)
+          error.value = null
           documents.value = items
           lastRefreshedAt.value = new Date()
         }

@@ -1,5 +1,6 @@
 import type { DBSchema } from 'idb'
 
+import { sameStorageLocation, storageLocationOf } from '@/app/integrations/storage'
 import {
   APP_DATABASE_NAMES,
   binaryStorage,
@@ -108,12 +109,15 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       return meta
     },
 
-    async writeThumb(id: string, thumbBytes: Uint8Array) {
+    async writeThumb(id: string, thumbBytes: Uint8Array, expectedLocation) {
       const storeBinary = await binaryStorage()
       const transaction = (await database.open()).transaction(['meta', 'thumb'], 'readwrite')
       const metaStore = transaction.objectStore('meta')
       const existing = await metaStore.get(id)
-      if (!existing) {
+      if (
+        !existing ||
+        (expectedLocation && !sameStorageLocation(storageLocationOf(existing), expectedLocation))
+      ) {
         await transaction.done
         return null
       }

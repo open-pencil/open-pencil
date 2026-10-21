@@ -11,6 +11,7 @@
   "importing": "インポート中…",
   "importToCanvas": "キャンバスにインポート",
   "newTab": "新しいタブ",
+  "homeTab": "ホーム",
   "closeTab": "{name} を閉じる",
   "clipboardImageUnavailableWeb": "貼り付けたデザインには、ウェブアプリで読み込めない画像が1件含まれています。その画像を含めるにはデスクトップアプリを使用してください。",
   "clipboardImagesUnavailableWeb": "貼り付けたデザインには、ウェブアプリで読み込めない画像が{count}件含まれています。それらの画像を含めるにはデスクトップアプリを使用してください。",

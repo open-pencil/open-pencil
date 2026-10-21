@@ -11,7 +11,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCloudMessages } from '@open-pencil/vue'
+import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
 import { menu } from '@/components/ui/menu/menu'
 import { homeLocationMenu } from '@/theme/home/location-menu'
@@ -48,10 +48,12 @@ const emit = defineEmits<{
 const ui = homeLocationMenu()
 const menuUI = menu()
 const t = useCloudMessages()
+const { settings } = useI18n()
 const current = computed(() => {
   if (active.kind === 'recent') return t.value.homeRecent
   if (active.kind === 'shared') return t.value.homeSharedWithYou
   if (active.kind === 'storage') return storage?.label ?? t.value.homeStorage
+  if (active.kind === 'settings') return settings.value.title
   return workspaces.find((workspace) => workspace.id === active.id)?.name ?? t.value.workspace
 })
 const isActive = (location: HomeLocation) =>
@@ -64,6 +66,7 @@ const isActive = (location: HomeLocation) =>
       <icon-lucide-clock v-if="active.kind === 'recent'" :class="ui.icon()" />
       <icon-lucide-users v-else-if="active.kind === 'shared'" :class="ui.icon()" />
       <icon-lucide-database v-else-if="active.kind === 'storage'" :class="ui.icon()" />
+      <icon-lucide-settings v-else-if="active.kind === 'settings'" :class="ui.icon()" />
       <icon-lucide-layers v-else :class="ui.icon()" />
       <span :class="ui.label()">{{ current }}</span>
       <icon-lucide-chevrons-up-down :class="ui.chevron()" />
@@ -158,6 +161,19 @@ const isActive = (location: HomeLocation) =>
             <span v-else :class="ui.count()">{{ storage.detail }}</span>
           </DropdownMenuItem>
         </template>
+
+        <DropdownMenuSeparator :class="menuUI.separator()" />
+        <DropdownMenuItem
+          :class="menuUI.item({ justify: 'start' })"
+          @select="emit('select', { kind: 'settings', id: 'settings' })"
+        >
+          <icon-lucide-settings :class="menuUI.icon()" />
+          <span :class="ui.itemLabel()">{{ settings.title }}</span>
+          <icon-lucide-check
+            v-if="isActive({ kind: 'settings', id: 'settings' })"
+            :class="ui.check()"
+          />
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenuPortal>
   </DropdownMenuRoot>

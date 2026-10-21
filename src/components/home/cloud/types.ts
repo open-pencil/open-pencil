@@ -1,9 +1,5 @@
 /** A place the home tab lists documents from. */
-export type HomeLocation =
-  | { kind: 'recent'; id: 'recent' }
-  | { kind: 'workspace'; id: string }
-  | { kind: 'shared'; id: 'shared' }
-  | { kind: 'storage'; id: 'storage' }
+export type { HomeLocationView as HomeLocation } from '@/app/home/locations'
 
 export type HomeCloudAccount = {
   id: string

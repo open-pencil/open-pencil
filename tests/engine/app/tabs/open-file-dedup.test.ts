@@ -7,7 +7,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import {
-  createDocumentInCurrentTab,
+  closeTab,
   createHomeTab,
   createTab,
   getActiveStore,
@@ -173,30 +173,45 @@ describe('openFileInNewTab deduplication', () => {
     expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
   })
 
-  test('converts the current New tab into a blank document', () => {
+  test('opens a blank document beside Home and keeps Home', () => {
     createHomeTab()
-    const home = getTabsSnapshot().at(-1)
+    const home = getTabsSnapshot().find((tab) => tab.kind === 'home')
     const count = tabCount()
 
-    const document = createDocumentInCurrentTab()
+    const document = createTab()
 
-    expect(tabCount()).toBe(count)
-    expect(document.id).toBe(expectDefined(home, 'home tab').id)
+    expect(tabCount()).toBe(count + 1)
+    expect(document.id).not.toBe(expectDefined(home, 'home tab').id)
     expect(document.kind).toBe('document')
+    expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
   })
 
-  test('opens a file in the current New tab', async () => {
+  test('opens a file from Home in a tab of its own', async () => {
     createHomeTab()
-    const home = getTabsSnapshot().at(-1)
+    const home = getTabsSnapshot().find((tab) => tab.kind === 'home')
     const count = tabCount()
 
     await settleFileOpen(
       openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/from-home.fig')
     )
 
-    expect(tabCount()).toBe(count)
-    expect(getTabsSnapshot().at(-1)?.id).toBe(home?.id)
+    expect(tabCount()).toBe(count + 1)
+    expect(getTabsSnapshot().at(-1)?.id).not.toBe(home?.id)
     expect(getTabsSnapshot().at(-1)?.kind).toBe('document')
+    expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
+  })
+
+  test('Home cannot be closed', async () => {
+    createHomeTab()
+    createTab()
+    const home = expectDefined(
+      getTabsSnapshot().find((tab) => tab.kind === 'home'),
+      'home tab'
+    )
+
+    await closeTab(home.id)
+
+    expect(getTabsSnapshot().some((tab) => tab.id === home.id)).toBe(true)
   })
 
   test('activates the existing tab when the same path is opened again', async () => {

@@ -33,8 +33,8 @@ import { useEditorMenu } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
 import {
   activeTab,
-  createDocumentInCurrentTab,
   createHomeTab,
+  ensureHomeTab,
   createTab,
   getActiveStore,
   getTabsSnapshot,
@@ -42,6 +42,12 @@ import {
   type Tab
 } from '@/app/tabs'
 import { syncTabAddress } from '@/app/tabs/address'
+import {
+  recordOpenDocuments,
+  reopenLastSession,
+  startupFirstTab,
+  startupOpenChoice
+} from '@/app/tabs/open/startup'
 import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
@@ -77,9 +83,9 @@ watch(
 )
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
-const shouldCreateHome =
-  route.path === '/' && !appRuntimeConfig.test && !route.meta.demo && recentFilesAvailable()
-const { collaboration } = useI18n()
+const startupOpen =
+  route.path === '/' && !appRuntimeConfig.test && !route.meta.demo ? startupOpenChoice() : 'new'
+const { collaboration, settings } = useI18n()
 const joinRoomFromInput = useJoinRoom()
 
 /** A share link opens its room in a tab of its own, so nothing editable shows before it. */
@@ -89,7 +95,7 @@ function openFirstTab(): Tab {
     if (joinRoomFromInput(roomId) && activeTab.value) return activeTab.value
     toast.error(collaboration.value.invalidRoomLink)
   }
-  return shouldCreateHome ? createHomeTab() : createTab()
+  return startupFirstTab(startupOpen) === 'new' ? createTab() : createHomeTab()
 }
 
 // Block-scoped so the view does not keep the first tab's store after that tab closes.
@@ -106,6 +112,11 @@ function openFirstTab(): Tab {
       )
     })
   }
+}
+
+// Home stays in front of the designs wherever the app keeps a list of recent files.
+if (route.path === '/' && !appRuntimeConfig.test && !route.meta.demo && recentFilesAvailable()) {
+  ensureHomeTab()
 }
 
 // A first visit to the demo link is a first run too; the welcome there skips the tour offer.
@@ -147,6 +158,10 @@ useEventListener(
   },
   { passive: false }
 )
+
+// Recording waits for the reopen so a half-restored start does not overwrite the list.
+const sessionRestored = ref(false)
+recordOpenDocuments(() => sessionRestored.value)
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const roomLinksCleanup = ref<(() => void) | null>(null)
@@ -252,6 +267,24 @@ onMounted(async () => {
       console.error('[Web link]', error)
     }
   }
+
+  // A link or file opened at launch shows just that design, so only a bare start reopens.
+  if (
+    createdInitialTab &&
+    startupOpen === 'reopen' &&
+    tabCount() === 1 &&
+    activeTab.value?.kind === 'home'
+  ) {
+    try {
+      await reopenLastSession({
+        sharedFile: collaboration.value.sharedFile,
+        reopenIncomplete: settings.value.startupReopenIncomplete
+      })
+    } catch (error) {
+      console.error('[Startup]', error)
+    }
+  }
+  sessionRestored.value = true
 })
 
 onUnmounted(() => {
@@ -270,7 +303,7 @@ onUnmounted(() => {
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />
-    <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
+    <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createTab" />
     <CloudVersionDialog />
     <EditorWorkspace v-if="shown && shown.tab.kind !== 'home'" :key="shown.key" :tab="shown.tab" />
   </div>

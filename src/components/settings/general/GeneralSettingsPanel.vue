@@ -7,9 +7,10 @@ import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/pre
 import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/limit'
 import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/preferences'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
-import { appPreferences } from '@/app/settings/preferences/store'
+import { appPreferences, updateStartupOpen } from '@/app/settings/preferences/store'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
+import { startupOpenChoice } from '@/app/tabs/open/startup'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
@@ -45,6 +46,11 @@ const languageOptions = availableLocales.map((value) => ({
 const preserveUnsavedWork = computed({
   get: () => recoveryEnabled.value,
   set: setRecoveryEnabled
+})
+
+const startupOpen = computed({
+  get: startupOpenChoice,
+  set: updateStartupOpen
 })
 
 const snapToGeometry = computed({
@@ -118,6 +124,27 @@ const snapToPixelGrid = computed({
     </SettingsSection>
 
     <CollaborationNameSection />
+
+    <SettingsSection>
+      <template #title>{{ settings.startup }}</template>
+      <template #description>{{ settings.startupDescription }}</template>
+      <SettingsGroup>
+        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
+          <span class="text-xs text-surface">{{ settings.startup }}</span>
+          <AppSelect
+            v-model="startupOpen"
+            :label="settings.startup"
+            :options="[
+              { value: 'reopen', label: settings.startupReopen },
+              { value: 'home', label: settings.startupHome },
+              { value: 'new', label: settings.startupNew }
+            ]"
+            :ui="selectUI"
+            data-test-id="settings-startup-open"
+          />
+        </label>
+      </SettingsGroup>
+    </SettingsSection>
 
     <SettingsSection>
       <template #title>{{ recovery.settingsTitle }}</template>

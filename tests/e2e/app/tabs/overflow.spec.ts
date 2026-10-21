@@ -42,6 +42,8 @@ function scrollTabsToStart(page: Page) {
 }
 
 test('overflowing tabs keep the new-tab button and active tab in view', async ({ page }) => {
+  // Every new tab is a design with its own editor, so twenty of them take a while to open.
+  test.setTimeout(120_000)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()

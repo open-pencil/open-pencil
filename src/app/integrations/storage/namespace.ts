@@ -11,7 +11,15 @@ export function documentMetaKey(documentId: string): string {
   return `${STORAGE_DOCUMENTS_PREFIX}${documentId}.meta.json`
 }
 
+/** Previews are drawn as PNG; the stored Content-Type always follows the bytes themselves. */
+export const DOCUMENT_THUMBNAIL_CONTENT_TYPE = 'image/png'
+
 export function documentThumbnailKey(documentId: string): string {
+  return `${STORAGE_DOCUMENTS_PREFIX}${documentId}.thumb.png`
+}
+
+/** Earlier builds wrote the same PNG bytes under a `.jpg` key; still read and delete it. */
+export function legacyDocumentThumbnailKey(documentId: string): string {
   return `${STORAGE_DOCUMENTS_PREFIX}${documentId}.thumb.jpg`
 }
 
