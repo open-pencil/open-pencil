@@ -26,6 +26,10 @@ export function opacityFromBuffer(buffer: string): number {
   return Math.min(100, Math.max(0, percent)) / 100
 }
 
+function changesMoreThanModes(changes: Partial<SceneNode>): boolean {
+  return Object.keys(changes).some((key) => key !== 'variableModes')
+}
+
 export function createNodeActions(ctx: EditorContext) {
   // Function declarations below are hoisted, so the preview can wrap updateNode here.
   const previewActions = createNodePreviewActions(ctx, updateNode)
@@ -37,7 +41,9 @@ export function createNodeActions(ctx: EditorContext) {
     // A layer's modes reach the layers inside it.
     if (changes.variableModes) reconcileVariableLayouts(ctx.graph, { subtrees: [id] })
     if (changes.visible !== undefined) refitGroupsAroundLayers(ctx, [id])
-    ctx.runLayoutForNode(id)
+    if (changesMoreThanModes(changes)) {
+      ctx.runLayoutForNode(id)
+    }
   }
 
   function updateNode(id: string, changes: Partial<SceneNode>) {
