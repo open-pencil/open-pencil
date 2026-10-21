@@ -224,7 +224,7 @@ First inspect the saved identities:
 openpencil export design/library.fig -f storybook --mapping-info
 ```
 
-The JSON output lists persisted component, variant, and property IDs, plus the SHA-256 of the original file bytes. Use these IDs in the mapping, not the runtime IDs from `tree` or `node`. Renaming a layer preserves its saved identity; deleting and recreating it does not.
+The JSON output lists persisted component, variant, and property IDs, plus the SHA-256 of the original file bytes. Use these IDs in the mapping. Imported record-backed layers also use their saved GUIDs as runtime IDs, while generated instance copies and unsaved layers may have runtime handles without a saved component identity. `--mapping-info` identifies the supported saved targets. Renaming a layer preserves its saved identity; deleting and recreating it does not.
 
 Create `openpencil.components.json` at your repository root. Paths are relative to this file's directory, use `/`, and cannot contain `.` or `..` segments. Replace the example IDs with the inspection output:
 
