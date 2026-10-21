@@ -71,7 +71,7 @@
   "snapToObjects": "Привязка к объектам",
   "snapToPixelGrid": "Привязка к пиксельной сетке",
   "renameSelection": "Переименовать выделение…",
-  "openImplementationStory": "Открыть историю реализации…",
+  "openImplementationStory": "Открыть story реализации в Storybook…",
   "rulers": "Линейки",
   "pixelGrid": "Пиксельная сетка",
   "settings": "Настройки…",

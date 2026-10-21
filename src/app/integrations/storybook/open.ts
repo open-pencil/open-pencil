@@ -2,6 +2,7 @@ import {
   findComponentMapping,
   implementationStoryURL,
   parseComponentMappings,
+  type ComponentMapping,
   type ComponentMappings
 } from '@open-pencil/dom-css/export'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -39,6 +40,15 @@ function selectedComponent(store: ImplementationStore): SceneNode | undefined {
   const node = id ? store.graph.getNode(id) : undefined
   if (node?.type !== 'INSTANCE') return node
   return node.componentId ? store.graph.getNode(node.componentId) : undefined
+}
+
+/** Keep shared parser diagnostics as the cause, outside the localized user-facing message. */
+function readComponentMappings(text: string): ComponentMappings {
+  try {
+    return parseComponentMappings(text)
+  } catch (cause) {
+    throw new Error(notificationMessages.get().implementationMappingInvalid, { cause })
+  }
 }
 
 async function mappedCandidates(
@@ -82,7 +92,7 @@ export async function openImplementationStory(
     !['COMPONENT', 'COMPONENT_SET'].includes(component.type) ||
     !component.source.id
   )
-    throw new Error('Select one component or component instance from a saved .fig document.')
+    throw new Error(notificationMessages.get().implementationSelectionRequired)
   const current = () =>
     navigation.isCurrent() &&
     store.graph === graph &&
@@ -90,10 +100,9 @@ export async function openImplementationStory(
     store.state.selectedIds.has(selected)
   const picked = await navigation.pick()
   if (!picked || !current()) return
-  const config = parseComponentMappings(picked.text)
+  const config = readComponentMappings(picked.text)
   const fileName = loadedFigFileName(graph)
-  if (!fileName)
-    throw new Error('Reopen the saved .fig document before choosing its implementation mapping.')
+  if (!fileName) throw new Error(notificationMessages.get().implementationMappingReopenRequired)
   const candidates = await mappedCandidates(
     config,
     picked,
@@ -105,9 +114,14 @@ export async function openImplementationStory(
   if (!current()) return
   if (candidates.length !== 1)
     throw new Error(
-      `Expected one implementation mapping for this document and saved component; found ${candidates.length}.`
+      notificationMessages.get().implementationMappingCount({ count: candidates.length })
     )
-  const mapping = findComponentMapping(config, candidates[0].design.file, component.source.id)
+  let mapping: ComponentMapping
+  try {
+    mapping = findComponentMapping(config, candidates[0].design.file, component.source.id)
+  } catch (cause) {
+    throw new Error(notificationMessages.get().implementationMappingInvalid, { cause })
+  }
   const revision = mapping.design.revision
   if (
     revision &&
@@ -115,12 +129,10 @@ export async function openImplementationStory(
       store.getStorageBinding() ||
       !(await matchesLoadedRevision(graph, revision)))
   )
-    throw new Error(
-      'Design revision does not match, or this document has edits. Reopen the saved .fig and update its mapping.'
-    )
+    throw new Error(notificationMessages.get().implementationMappingRevisionMismatch)
   if (!current()) return
   if (revision && store.hasUnsavedChanges())
-    throw new Error('The document changed while checking its revision.')
+    throw new Error(notificationMessages.get().implementationDocumentChanged)
   const state = mapping.states.find((item) => item.designId === component.source.id)
   await navigation.open(implementationStoryURL(config, mapping, state), !!revision)
 }
