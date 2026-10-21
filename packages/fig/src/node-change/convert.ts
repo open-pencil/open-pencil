@@ -100,7 +100,7 @@ interface FigVariableModeMap {
   }>
 }
 
-function extractVariableModes(nc: NodeChange): VariableModeMap {
+export function extractVariableModes(nc: NodeChange): VariableModeMap {
   const result: VariableModeMap = {}
   const modeMap = nc.variableModeBySetMap as FigVariableModeMap | undefined
   for (const entry of modeMap?.entries ?? []) {
