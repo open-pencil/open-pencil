@@ -188,6 +188,27 @@ function modeValues(
   return values
 }
 
+type SavedMode = NonNullable<NodeChange['variableSetModes']>[number]
+
+function bySortPosition(a: SavedMode, b: SavedMode): number {
+  const left = a.sortPosition || null
+  const right = b.sortPosition || null
+  if (left === right) {
+    return 0
+  }
+  if (left === null) {
+    return 1
+  }
+  if (right === null) {
+    return -1
+  }
+  return left < right ? -1 : 1
+}
+
+function modesInListedOrder(resource: NodeChange): SavedMode[] {
+  return (resource.variableSetModes ?? []).toSorted(bySortPosition)
+}
+
 /** No invented values or fallback collections: unsupported resources remain explicit. */
 export function materializeVariableResources(
   graph: SceneGraph,
@@ -201,7 +222,7 @@ export function materializeVariableResources(
   }
   for (const resource of resources) {
     if (resource.type !== 'VARIABLE_SET') continue
-    const modes = resource.variableSetModes ?? []
+    const modes = modesInListedOrder(resource)
     if (!resource.guid || modes.length === 0) {
       report(resource, 'missing collection identity or modes')
       continue

@@ -102,3 +102,51 @@ test('repeated instances resolve nested bindings using inherited collection mode
     expect(child.width).toBe(expected)
   }
 })
+
+test('bindings without an explicit mode resolve in the first listed mode', () => {
+  const changes = [
+    { guid: guid(1), type: 'DOCUMENT' },
+    { guid: guid(2), type: 'CANVAS', parentIndex: { guid: guid(1), position: '!' } },
+    {
+      guid: guid(3),
+      type: 'VARIABLE_SET',
+      variableSetModes: [
+        { id: guid(10), name: 'Listed second', sortPosition: 'b' },
+        { id: guid(11), name: 'Listed first', sortPosition: 'a' }
+      ]
+    },
+    {
+      guid: guid(4),
+      type: 'VARIABLE',
+      variableResolvedType: 'FLOAT',
+      variableSetID: { guid: guid(3) },
+      variableDataValues: {
+        entries: [10, 11].map((mode) => ({
+          modeID: guid(mode),
+          variableData: { dataType: 'FLOAT', value: { floatValue: mode } }
+        }))
+      }
+    },
+    {
+      guid: guid(5),
+      type: 'FRAME',
+      parentIndex: { guid: guid(2), position: 'a' },
+      stackMode: 'HORIZONTAL',
+      stackSpacing: 10,
+      variableConsumptionMap: {
+        entries: [
+          {
+            variableField: 'STACK_SPACING',
+            variableData: { dataType: 'ALIAS', value: { alias: { guid: guid(4) } } }
+          }
+        ]
+      }
+    }
+  ] as NodeChange[]
+  const { graph, sources } = materializeDocument(changes)
+  const id = sources.get('1:5')
+  if (!id) {
+    throw new Error('Missing frame')
+  }
+  expect(graph.nodes.get(id)?.itemSpacing).toBe(11)
+})

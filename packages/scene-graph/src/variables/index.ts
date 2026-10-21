@@ -5,6 +5,7 @@ import { BLACK } from '../constants'
 import type { SceneGraph } from '../graph'
 import { findInstanceAncestor } from '../instances'
 import { bindingOverrideField, setInstanceOverride } from '../instances/overrides'
+import { siblingOrderKeys } from '../order-keys'
 import type {
   Variable,
   VariableCollection,
@@ -207,7 +208,15 @@ export function setDefaultMode(graph: SceneGraph, collectionId: string, modeId: 
   if (!collection) return
   if (!collection.modes.some((m) => m.modeId === modeId)) return
   collection.defaultModeId = modeId
-  collection.modes = modesDefaultFirst(collection)
+  collection.modes = withSortPositionsInOrder(modesDefaultFirst(collection))
+}
+
+function withSortPositionsInOrder(modes: VariableCollectionMode[]): VariableCollectionMode[] {
+  if (modes.every((mode) => !mode.sortPosition)) {
+    return modes
+  }
+  const positions = siblingOrderKeys(modes.map((mode) => mode.sortPosition))
+  return modes.map((mode, index) => ({ ...mode, sortPosition: positions[index] }))
 }
 
 /** Figma has no default-mode field: the first mode is the default. */
