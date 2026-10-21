@@ -6,12 +6,13 @@ import {
   type CloudAIClient,
   type CloudAITokenSource
 } from '@open-pencil/cloud/client'
+import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import { homeCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection, cloudFetch } from '../sessions/connection'
 import { createCloudAITokens } from './tokens'
 
-export type CloudAIWorkspace = { id: string; name: string }
+export type CloudAIWorkspace = Pick<WorkspaceSummary, 'id' | 'name'>
 
 /** The Home server's AI service, while someone is signed in there and it advertises one. */
 const homeAI = computed(() => {
