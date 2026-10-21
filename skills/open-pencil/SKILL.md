@@ -129,7 +129,7 @@ openpencil convert design.fig -o design.pen
 openpencil formats
 ```
 
-For developer-owned Storybook components, create the mapping config using the [component mapping guide](https://openpencil.dev/programmable/cli/exporting#link-an-existing-implementation). Use the persisted IDs from `--mapping-info`; these differ from runtime node handles. Mapping export requires `.fig` and writes typed references and design images while preserving the implementation and stories. Rerun it after saved design changes; mapping mode does not support `--watch`.
+For developer-owned Storybook components, create the mapping config using the [component mapping guide](https://openpencil.dev/programmable/cli/exporting#link-an-existing-implementation). Inspect saved targets with `--mapping-info`; runtime handles for generated instance copies or unsaved layers are not mapping targets. Mapping export requires `.fig` and writes typed references and design images while preserving the implementation and stories. Rerun it after saved design changes; mapping mode does not support `--watch`.
 
 ### Analyze and lint
 
