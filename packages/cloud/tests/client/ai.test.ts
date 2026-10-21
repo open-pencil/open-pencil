@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CloudAIError, createCloudAIClient, createCloudAPIClient } from '#cloud/client'
+import {
+  CloudAIError,
+  cloudAIFetch,
+  createCloudAIClient,
+  createCloudAPIClient
+} from '#cloud/client'
 import { CLOUD_AI_API_PATHS } from '#cloud/contract'
 
 const workspaceId = '11111111-1111-4111-8111-111111111111'
@@ -95,5 +100,27 @@ describe('Cloud AI client', () => {
     })
     await expect(refused.catalog()).rejects.toMatchObject({ status: 401, code: undefined })
     expect(calls).toBe(2)
+  })
+
+  test('does not resend a body it cannot replay', async () => {
+    let calls = 0
+    const fetch = cloudAIFetch(tokens('one', 'two', 'three').source, async () => {
+      calls++
+      return new Response(null, { status: 401 })
+    })
+    const body = new ReadableStream({
+      start(controller) {
+        controller.close()
+      }
+    })
+    expect(
+      (await fetch('https://ai.example.com/v1/chat/completions', { method: 'POST', body })).status
+    ).toBe(401)
+    expect(calls).toBe(1)
+    expect(
+      (await fetch('https://ai.example.com/v1/chat/completions', { method: 'POST', body: '{}' }))
+        .status
+    ).toBe(401)
+    expect(calls).toBe(3)
   })
 })

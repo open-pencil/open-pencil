@@ -153,6 +153,7 @@
   "cloudWorkspaceHint": "L’espace de travail dont l’abonnement paie ces requêtes.",
   "cloudAIUnavailable": "Connectez-vous à un serveur OpenPencil Cloud qui propose l’IA pour utiliser ces modèles.",
   "cloudAINoWorkspace": "Aucun de vos espaces de travail sur ce serveur n’inclut l’IA.",
+  "cloudAICatalogFailed": "OpenPencil Cloud n’a pas pu lister ses modèles. Vérifiez votre connexion et réessayez.",
   "chatCloudCreditsExhausted": "Cet espace de travail a utilisé les crédits d’IA de ce mois. Gérez son abonnement pour en ajouter.",
   "manageCloudPlanAction": "Gérer l’abonnement",
   "chatCloudUnavailable": "L’IA d’OpenPencil Cloud n’est pas disponible. Connectez-vous à OpenPencil Cloud et choisissez un espace de travail dans les paramètres.",

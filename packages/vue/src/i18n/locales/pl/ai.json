@@ -153,6 +153,7 @@
   "cloudWorkspaceHint": "Obszar roboczy, którego plan opłaca te żądania.",
   "cloudAIUnavailable": "Zaloguj się na serwerze OpenPencil Cloud oferującym AI, aby korzystać z tych modeli.",
   "cloudAINoWorkspace": "Żaden z Twoich obszarów roboczych na tym serwerze nie obejmuje AI.",
+  "cloudAICatalogFailed": "OpenPencil Cloud nie może wyświetlić swoich modeli. Sprawdź połączenie i spróbuj ponownie.",
   "chatCloudCreditsExhausted": "Ten obszar roboczy wykorzystał kredyty AI na ten miesiąc. Zarządzaj jego planem, aby dodać więcej.",
   "manageCloudPlanAction": "Zarządzaj planem",
   "chatCloudUnavailable": "AI OpenPencil Cloud jest niedostępne. Zaloguj się do OpenPencil Cloud i wybierz obszar roboczy w ustawieniach.",

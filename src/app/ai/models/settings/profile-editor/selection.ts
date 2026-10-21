@@ -180,6 +180,7 @@ export function useProfileModelSelection(
     isCloud: cloud.isCloud,
     cloudWorkspaces: cloud.workspaces,
     cloudState: cloud.state,
+    retryCloudCatalog: cloud.retryCatalog,
     customModelSelected,
     supportsThinking,
     providerDisplayName,

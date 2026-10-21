@@ -547,3 +547,5 @@ zh-cn:ai.cloudAIUnavailable
 zh-cn:ai.cloudAINoWorkspace
 zh-cn:ai.chatCloudCreditsExhausted
 zh-cn:ai.chatCloudUnavailable
+ja:ai.cloudAICatalogFailed
+zh-cn:ai.cloudAICatalogFailed

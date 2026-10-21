@@ -153,6 +153,7 @@
   "cloudWorkspaceHint": "Рабочее пространство, тариф которого оплачивает эти запросы.",
   "cloudAIUnavailable": "Войдите на сервер OpenPencil Cloud с ИИ, чтобы пользоваться этими моделями.",
   "cloudAINoWorkspace": "Ни одно из ваших рабочих пространств на этом сервере не включает ИИ.",
+  "cloudAICatalogFailed": "OpenPencil Cloud не удалось получить список моделей. Проверьте подключение и повторите попытку.",
   "chatCloudCreditsExhausted": "Это рабочее пространство израсходовало кредиты ИИ за этот месяц. Управляйте его тарифом, чтобы добавить ещё.",
   "manageCloudPlanAction": "Управлять тарифом",
   "chatCloudUnavailable": "ИИ OpenPencil Cloud недоступен. Войдите в OpenPencil Cloud и выберите рабочее пространство в настройках.",

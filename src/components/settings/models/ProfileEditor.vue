@@ -48,6 +48,7 @@ const {
   isCloud,
   cloudWorkspaces,
   cloudState,
+  retryCloudCatalog,
   supportsThinking,
   modelOptions,
   selectedModelValue,
@@ -82,6 +83,7 @@ const cloudWorkspaceOptions = computed(() =>
 const cloudNotice = computed(() => {
   if (cloudState.value === 'unavailable') return ai.value.cloudAIUnavailable
   if (cloudState.value === 'no-workspace') return ai.value.cloudAINoWorkspace
+  if (cloudState.value === 'catalog-failed') return ai.value.cloudAICatalogFailed
   return null
 })
 useSettingsFormGuard({ dirty, busy, cancel: () => emit('done') })
@@ -186,13 +188,21 @@ async function remove() {
             />
           </div>
 
-          <p
+          <div
             v-if="isCloud && cloudNotice"
-            class="text-[11px] leading-relaxed text-muted"
+            class="flex items-start justify-between gap-2"
             data-test-id="settings-cloud-ai-notice"
           >
-            {{ cloudNotice }}
-          </p>
+            <p class="text-[11px] leading-relaxed text-muted">{{ cloudNotice }}</p>
+            <AppButton
+              v-if="cloudState === 'catalog-failed'"
+              variant="outline"
+              size="sm"
+              @click="retryCloudCatalog"
+            >
+              {{ ai.retryRequest }}
+            </AppButton>
+          </div>
 
           <ProviderSettingsField
             v-if="isCloud && cloudWorkspaceOptions.length"

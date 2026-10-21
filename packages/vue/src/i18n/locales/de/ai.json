@@ -153,6 +153,7 @@
   "cloudWorkspaceHint": "Der Arbeitsbereich, dessen Tarif diese Anfragen bezahlt.",
   "cloudAIUnavailable": "Melde dich bei einem OpenPencil-Cloud-Server mit KI an, um diese Modelle zu nutzen.",
   "cloudAINoWorkspace": "Keiner deiner Arbeitsbereiche auf diesem Server enthält KI.",
+  "cloudAICatalogFailed": "OpenPencil Cloud konnte seine Modelle nicht auflisten. Prüfe deine Verbindung und versuche es erneut.",
   "chatCloudCreditsExhausted": "Dieser Arbeitsbereich hat das KI-Guthaben dieses Monats verbraucht. Verwalte seinen Tarif, um mehr hinzuzufügen.",
   "manageCloudPlanAction": "Tarif verwalten",
   "chatCloudUnavailable": "OpenPencil-Cloud-KI ist nicht verfügbar. Melde dich bei OpenPencil Cloud an und wähle in den Einstellungen einen Arbeitsbereich.",

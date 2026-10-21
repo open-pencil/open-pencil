@@ -14,9 +14,15 @@ import {
 
 /**
  * Where a draft for Cloud's AI service stands: the Home server is signed out or has no service,
- * its workspaces are loading, none of them includes AI, or one is chosen.
+ * its workspaces are loading, none of them includes AI, one is chosen, or its models could not
+ * be listed.
  */
-export type CloudModelSelectionState = 'unavailable' | 'loading' | 'no-workspace' | 'ready'
+export type CloudModelSelectionState =
+  | 'unavailable'
+  | 'loading'
+  | 'no-workspace'
+  | 'ready'
+  | 'catalog-failed'
 
 /**
  * The workspaces and models Cloud's AI service offers while a draft uses it. The first workspace
@@ -42,7 +48,8 @@ export function useCloudModelSelection(
       }
       state.value = 'loading'
       const listed = await cloudAIWorkspaces()
-      if (!isCloud.value) return
+      // Signing out or choosing another provider meanwhile owns the state now.
+      if (!isCloud.value || !cloudAIAvailable.value) return
       workspaces.value = listed
       if (!listed.some((workspace) => workspace.id === draft.cloudWorkspaceId)) {
         draft.cloudWorkspaceId = listed[0]?.id
@@ -52,14 +59,20 @@ export function useCloudModelSelection(
     { immediate: true }
   )
 
+  const catalogAttempt = ref(0)
   watch(
-    () => (isCloud.value ? draft.cloudWorkspaceId : undefined),
-    async (workspaceId) => {
+    () => [isCloud.value ? draft.cloudWorkspaceId : undefined, catalogAttempt.value] as const,
+    async ([workspaceId]) => {
       models.value = []
       const client = workspaceId ? cloudAIClient(workspaceId) : null
       if (!client) return
       const catalog = await client.catalog().catch(() => null)
-      if (!catalog || draft.cloudWorkspaceId !== workspaceId) return
+      if (draft.cloudWorkspaceId !== workspaceId) return
+      if (!catalog) {
+        state.value = 'catalog-failed'
+        return
+      }
+      if (state.value === 'catalog-failed') state.value = 'ready'
       models.value = cloudCatalogModels(catalog)
       if (!models.value.some((model) => model.id === draft.modelID)) {
         chooseModel(catalog.defaultModelID)
@@ -68,5 +81,12 @@ export function useCloudModelSelection(
     { immediate: true }
   )
 
-  return { isCloud, workspaces, models, state }
+  return {
+    isCloud,
+    workspaces,
+    models,
+    state,
+    /** Lists the models again after a failure. */
+    retryCatalog: () => catalogAttempt.value++
+  }
 }

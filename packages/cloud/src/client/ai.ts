@@ -28,9 +28,16 @@ export class CloudAIError extends Error {
   }
 }
 
+/** Whether a request can be sent twice: a stream, in `init` or a `Request`, is read by the first. */
+function replayable(input: RequestInfo | URL, body: RequestInit['body']): boolean {
+  if (input instanceof Request && input.body) return false
+  return !(body instanceof ReadableStream)
+}
+
 /**
  * Sends each request with a current token. A token the service refuses, for instance one signed
- * by a key Cloud has since replaced, is dropped and the request is sent once more with a new one.
+ * by a key Cloud has since replaced, is dropped and a request that can be replayed is sent once
+ * more with a new one.
  */
 export function cloudAIFetch(tokens: CloudAITokenSource, fetch: CloudFetch): CloudFetch {
   const send = async (input: RequestInfo | URL, init: RequestInit | undefined, token: string) => {
@@ -43,6 +50,7 @@ export function cloudAIFetch(tokens: CloudAITokenSource, fetch: CloudFetch): Clo
     const response = await send(input, init, token)
     if (response.status !== 401) return response
     tokens.invalidate(token)
+    if (!replayable(input, init?.body)) return response
     return send(input, init, await tokens.token())
   }
 }

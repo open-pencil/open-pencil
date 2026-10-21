@@ -75,7 +75,7 @@ export function useProfileConnection({ draft, keyInput }: ConnectionOptions) {
         const cloud = client ? cloudModelConfig(client, target.modelID) : null
         const result = cloud
           ? await testProviderConnection(cloud.config, cloud.runtime)
-          : ({ ok: false, reason: 'auth' } as const)
+          : ({ ok: false, reason: 'cloud-unavailable' } as const)
         if (!current(request)) return
         connectionTestStatus.value = result.ok ? 'success' : 'error'
         connectionTestReason.value = result.ok ? null : result.reason

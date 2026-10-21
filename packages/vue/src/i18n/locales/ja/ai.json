@@ -159,6 +159,7 @@
   "cloudWorkspaceHint": "これらのリクエストの料金を支払うプランのワークスペースです。",
   "cloudAIUnavailable": "これらのモデルを使うには、AI を提供している OpenPencil Cloud サーバーにサインインしてください。",
   "cloudAINoWorkspace": "このサーバーにある AI を含むワークスペースはありません。",
+  "cloudAICatalogFailed": "OpenPencil Cloud のモデル一覧を取得できませんでした。接続を確認して、もう一度お試しください。",
   "chatCloudCreditsExhausted": "このワークスペースは今月の AI クレジットを使い切りました。追加するにはプランを管理してください。",
   "manageCloudPlanAction": "プランを管理",
   "chatCloudUnavailable": "OpenPencil Cloud の AI を利用できません。OpenPencil Cloud にサインインし、設定でワークスペースを選んでください。",

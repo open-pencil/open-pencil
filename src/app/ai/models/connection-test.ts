@@ -29,6 +29,7 @@ export type ProviderConnectionTestFailureReason =
   | 'api-type'
   | 'browser-network'
   | 'network'
+  | 'cloud-unavailable'
   | 'unknown'
 
 function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
