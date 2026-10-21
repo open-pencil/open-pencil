@@ -38,6 +38,15 @@ export function estimateTextSize(
   return { width: singleLineWidth, height: lineH }
 }
 
+export function autoWidthWrapWidth(
+  node: Pick<SceneNode, 'minWidth' | 'maxWidth'>
+): number | undefined {
+  if (node.maxWidth == null) {
+    return undefined
+  }
+  return Math.max(node.maxWidth, node.minWidth ?? 0)
+}
+
 export function getTextMeasurer(): TextMeasurer | null {
   return globalTextMeasurer
 }
