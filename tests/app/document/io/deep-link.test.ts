@@ -1,10 +1,15 @@
 import { describe, expect, mock, test } from 'bun:test'
 
 import {
+  clamp,
   linkedIdentityNotice,
   openDeepLink,
   resolveDeepLinkFile
 } from '@/app/document/io/deep-link'
+import { openWebLink } from '@/app/document/io/web-link'
+import { notificationMessages } from '@/app/i18n/notifications'
+
+import { withNotificationLocale } from '#tests/helpers/i18n/notifications'
 
 /**
  * Stands in for the `path_matches_suffix` Tauri command. The real comparator asks the
@@ -288,4 +293,54 @@ test('stable identity loading failures are actionable errors rather than missing
   )
   expect(notice).toContain('Page decoding failed')
   expect(notice).not.toContain('was not found')
+})
+
+test('saved identity notices use the active catalog, interpolate clamped identities and reach web links', async () => {
+  const english = notificationMessages.get()
+  await withNotificationLocale('fr', async () => {
+    const messages = notificationMessages.get()
+    expect(messages.persistedIdentityUnavailable).not.toBe(english.persistedIdentityUnavailable)
+    expect(await linkedIdentityNotice(undefined, { id: '42:9', file: 'library.fig' })).toBe(
+      messages.persistedIdentityUnavailable
+    )
+    for (const result of ['stale', 'ambiguous'] as const) {
+      const notice = await linkedIdentityNotice(async () => result, {
+        id: '42:9',
+        file: 'library.fig'
+      })
+      expect(notice).toBe(
+        result === 'stale'
+          ? messages.persistedIdentityRevisionMismatch
+          : messages.persistedIdentityAmbiguous
+      )
+    }
+    const id = `42:${'9'.repeat(400)}`
+    const notices: string[] = []
+    await openWebLink(
+      { file: new URL('https://example.test/library.fig'), nodeId: id },
+      {
+        selectByName: () => {
+          throw new Error('Persisted identity navigation must not fall back to names')
+        },
+        selectById: async () => 'missing',
+        notify: (message) => notices.push(message)
+      },
+      { open: async () => undefined }
+    )
+    expect(notices).toEqual([messages.persistedIdentityNotFound({ id: clamp(id) })])
+    expect(notices[0]).not.toContain(id)
+    expect(notices[0]).toContain(clamp(id))
+  })
+  expect(notificationMessages.get().persistedIdentityUnavailable).toBe(
+    english.persistedIdentityUnavailable
+  )
+})
+
+test('ambiguous saved document paths report the translated file parameter', async () => {
+  await withNotificationLocale('fr', async () => {
+    const file = `design/${'x'.repeat(400)}.fig`
+    await expect(
+      resolveDeepLinkFile(file, ['/one/library.fig', '/two/library.fig'], async () => true, true)
+    ).rejects.toThrow(notificationMessages.get().deepLinkFileAmbiguous({ file: clamp(file) }))
+  })
 })

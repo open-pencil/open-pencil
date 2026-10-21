@@ -78,9 +78,7 @@ export async function resolveDeepLinkFile(
     }
   }
   if (found.length > 1)
-    throw new Error(
-      `Several open or chosen documents match ${clamp(file)}. Close other checkouts or choose one file.`
-    )
+    throw new Error(notificationMessages.get().deepLinkFileAmbiguous({ file: clamp(file) }))
   return found[0] ?? null
 }
 
@@ -158,15 +156,14 @@ export async function linkedIdentityNotice(
   select: DeepLinkActions['selectById'],
   target: LinkedNodeIdentity
 ): Promise<string | null> {
-  if (!select) return 'This editor cannot resolve persisted design identities.'
+  const messages = notificationMessages.get()
+  if (!select) return messages.persistedIdentityUnavailable
   try {
     const result = await select(target)
     if (result === 'found' || result === 'superseded') return null
-    if (result === 'stale')
-      return 'Design revision does not match, or this document has edits. Reopen the saved .fig and update the mapping or reference.'
-    if (result === 'ambiguous')
-      return 'Several layers carry this persisted design identity. Repair the document before following the link.'
-    return `Persisted design identity ${clamp(target.id)} was not found in this document.`
+    if (result === 'stale') return messages.persistedIdentityRevisionMismatch
+    if (result === 'ambiguous') return messages.persistedIdentityAmbiguous
+    return messages.persistedIdentityNotFound({ id: clamp(target.id) })
   } catch (error) {
     return notificationMessages
       .get()

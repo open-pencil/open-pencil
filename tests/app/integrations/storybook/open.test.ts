@@ -1,21 +1,23 @@
 import { expect, mock, test } from 'bun:test'
 
 import { rememberLoadedRevision } from '@/app/document/io/revision'
+import { notificationMessages } from '@/app/i18n/notifications'
 import {
   openImplementationStory,
   type ImplementationNavigation,
   type ImplementationStore
 } from '@/app/integrations/storybook/open'
 
+import { withNotificationLocale } from '#tests/helpers/i18n/notifications'
 import { firstPageId, makeSceneGraph } from '#tests/helpers/scene'
 
 const SHA256_ABC = 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
 
-function harness(revision?: string) {
+function harness(revision?: string, remember = true) {
   const graph = makeSceneGraph()
   const node = graph.createNode('COMPONENT', firstPageId(graph), { name: 'Renamed button' })
   node.source.id = '42:9'
-  rememberLoadedRevision(graph, new File(['abc'], 'library.fig'))
+  if (remember) rememberLoadedRevision(graph, new File(['abc'], 'library.fig'))
   const store: ImplementationStore = {
     graph,
     state: { selectedIds: new Set([node.id]) },
@@ -93,4 +95,79 @@ test('a cancelled picker or changed selection never opens a story', async () => 
   }
   await openImplementationStory(h.store, h.navigation)
   expect(h.open).not.toHaveBeenCalled()
+})
+
+test('mapping navigation errors follow the active locale and interpolate the actual candidate count', async () => {
+  const english = notificationMessages.get()
+  await withNotificationLocale('fr', async () => {
+    const h = harness()
+    const messages = notificationMessages.get()
+    expect(messages.implementationSelectionRequired).not.toBe(
+      english.implementationSelectionRequired
+    )
+    h.store.state.selectedIds.clear()
+    await expect(openImplementationStory(h.store, h.navigation)).rejects.toThrow(
+      messages.implementationSelectionRequired
+    )
+    h.store.state.selectedIds.add(h.node.id)
+    h.navigation.matchesDocument = async () => false
+    await expect(openImplementationStory(h.store, h.navigation)).rejects.toThrow(
+      messages.implementationMappingCount({ count: 0 })
+    )
+    expect(h.open).not.toHaveBeenCalled()
+
+    const unopened = harness(undefined, false)
+    await expect(openImplementationStory(unopened.store, unopened.navigation)).rejects.toThrow(
+      messages.implementationMappingReopenRequired
+    )
+    expect(unopened.open).not.toHaveBeenCalled()
+
+    const stale = harness('0'.repeat(64))
+    await expect(openImplementationStory(stale.store, stale.navigation)).rejects.toThrow(
+      messages.implementationMappingRevisionMismatch
+    )
+    expect(stale.open).not.toHaveBeenCalled()
+
+    const changing = harness(SHA256_ABC)
+    let checks = 0
+    changing.store.hasUnsavedChanges = () => ++checks > 1
+    await expect(openImplementationStory(changing.store, changing.navigation)).rejects.toThrow(
+      messages.implementationDocumentChanged
+    )
+    expect(changing.open).not.toHaveBeenCalled()
+  })
+  expect(notificationMessages.get().implementationSelectionRequired).toBe(
+    english.implementationSelectionRequired
+  )
+})
+
+test('invalid mapping files report a localized error while retaining parser diagnostics as the cause', async () => {
+  await withNotificationLocale('fr', async () => {
+    const h = harness()
+    h.navigation.pick = async () => ({ text: '{' })
+    try {
+      await openImplementationStory(h.store, h.navigation)
+      throw new Error('Invalid mappings must not open implementation stories')
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+      if (!(error instanceof Error)) throw error
+      expect(error.message).toBe(notificationMessages.get().implementationMappingInvalid)
+      expect(error.cause).toBeInstanceOf(Error)
+    }
+    expect(h.open).not.toHaveBeenCalled()
+  })
+})
+
+test('a saved identity changed during mapping lookup retains localized validation and never opens a story', async () => {
+  await withNotificationLocale('fr', async () => {
+    const h = harness()
+    h.navigation.matchesDocument = async () => {
+      h.node.source.id = '42:99'
+      return true
+    }
+    await expect(openImplementationStory(h.store, h.navigation)).rejects.toThrow(
+      notificationMessages.get().implementationMappingInvalid
+    )
+    expect(h.open).not.toHaveBeenCalled()
+  })
 })
