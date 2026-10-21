@@ -306,6 +306,8 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 
 ### MCP workflow
 
+To reorder pages, call `move_page { page_id, index }` with the page ID and zero-based destination index; the new order persists when saved and reopened.
+
 1. **Find or open a document** — `list_documents` for open tabs and their IDs; `open_document { path }` within the effective filesystem root (`list_recent_documents` lists recently opened files there), or `create_document {}`. Pass `document_id` and `page_id` explicitly instead of relying on the active tab; `activate_document { document_id }` brings a tab to the front when the user should see it.
 2. **Query** — `get_page_tree`, `find_nodes`, `query_nodes`, `get_node`, `list_pages`, `get_current_page`.
 3. **Inspect** — `get_jsx`, `diff_nodes`, `diff_pixels`, `describe`, `export_image`, `export_svg`, `export_pdf`.
@@ -332,6 +334,7 @@ Discover available tools and their arguments from the connected server or browse
 ## Key tools for agents
 
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
+- **`move_page`** — reorder a document page by its ID and zero-based index.
 - **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
 - **`diff_nodes`** — compare two nodes as an appliable patch of JSX attributes; `preview_patch` previews setting attributes and `apply_patch` applies a patch only if the nodes still match it.
 - **`diff_pixels`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.

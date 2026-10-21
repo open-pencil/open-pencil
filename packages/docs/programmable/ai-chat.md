@@ -32,6 +32,8 @@ Open **Settings → Tool access** to choose which tools direct AI model connecti
 
 Preferences are saved locally and apply to the next message, including in an existing conversation. They do not change an already-running request. Enabling many tools increases the schemas sent to the model.
 
+Extended tools such as `move_page` can be enabled individually in Tool access when an agent needs to reorder document pages.
+
 The **Local MCP** segment has independent settings for clients connected to OpenPencil's MCP server, including ACP and Pi agents. Restart the server and reconnect stdio clients after changing those settings. Remote MCP connections, WebMCP access, and Pi's shell/filesystem permissions remain separate.
 
 Tool toggles control which tools are offered, not which operations scripts may perform. An enabled `eval` or other script-capable tool can perform design operations whose dedicated tools are disabled; these switches are not a sandbox.

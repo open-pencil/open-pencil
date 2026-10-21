@@ -155,7 +155,7 @@ Endpoints are available over both active transports:
 3. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
 4. **Create** — `create_shape`, `render` (JSX)
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
-6. **Structure** — `reparent_node`, `group_nodes`, `clone_nodes`, `delete_nodes`
+6. **Structure** — `reparent_node`, `group_nodes`, `clone_nodes`, `delete_nodes`, `move_page`
 7. **Save** — `save_document` to write back to `.fig`
 8. **Close** — `close_document` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
 
@@ -267,6 +267,8 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `arrange`             | Spread overlapping layers apart, pack them, place them in a grid, row, or column, or lay them out along their connectors as a flow, tree, radial map, or network |
 
 ### Structure
+
+`move_page { page_id, index }` moves a page to a zero-based position in the document page list; its order persists when the document is saved and reopened.
 
 | Tool            | Description                                                       |
 | --------------- | ----------------------------------------------------------------- |

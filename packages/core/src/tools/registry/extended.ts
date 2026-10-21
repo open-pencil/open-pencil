@@ -64,6 +64,7 @@ import {
   nodeBindings,
   nodeReplaceWith,
   nodeToComponent,
+  movePage,
   ungroupNodes
 } from '#core/tools/structure'
 import {
@@ -105,6 +106,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   listLibraries,
   insertLibraryComponent,
   switchPage,
+  movePage,
   getBounds,
   getComments,
   addComment,
