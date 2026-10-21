@@ -123,6 +123,7 @@ function submission(
       openSettings: '',
       requestFailed: '',
       visionUnavailable: '',
+      cloudUnavailable: '',
       runSetup: '',
       agentSetup: {
         'companion-missing': '',

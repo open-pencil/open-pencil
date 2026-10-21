@@ -14,6 +14,7 @@ const messages = ref({
   openSettings: 'Open settings',
   requestFailed: 'Request failed',
   visionUnavailable: 'Vision unavailable',
+  cloudUnavailable: 'Cloud AI unavailable',
   runSetup: 'Run guided setup',
   agentSetup: {
     'companion-missing': 'Companion missing',

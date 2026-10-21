@@ -25,6 +25,7 @@ const values = {
   customModelID: '',
   baseURL: '',
   credential: false,
+  cloudWorkspace: '',
   tools: true
 }
 

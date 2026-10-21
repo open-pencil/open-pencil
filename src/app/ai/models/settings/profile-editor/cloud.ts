@@ -60,19 +60,22 @@ export function useCloudModelSelection(
   )
 
   const catalogAttempt = ref(0)
+  // Each run supersedes the last, so an older answer never replaces a newer one.
+  let catalogRequest = 0
   watch(
     () => [isCloud.value ? draft.cloudWorkspaceId : undefined, catalogAttempt.value] as const,
     async ([workspaceId]) => {
+      const request = ++catalogRequest
       models.value = []
+      if (state.value === 'catalog-failed') state.value = 'ready'
       const client = workspaceId ? cloudAIClient(workspaceId) : null
       if (!client) return
       const catalog = await client.catalog().catch(() => null)
-      if (draft.cloudWorkspaceId !== workspaceId) return
+      if (request !== catalogRequest) return
       if (!catalog) {
         state.value = 'catalog-failed'
         return
       }
-      if (state.value === 'catalog-failed') state.value = 'ready'
       models.value = cloudCatalogModels(catalog)
       if (!models.value.some((model) => model.id === draft.modelID)) {
         chooseModel(catalog.defaultModelID)
