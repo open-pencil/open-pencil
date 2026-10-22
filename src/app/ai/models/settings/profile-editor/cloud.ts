@@ -77,15 +77,21 @@ export function useCloudModelSelection(
   )
 
   const catalogAttempt = ref(0)
-  // Each run supersedes the last, so an older answer never replaces a newer one.
+  // Each run supersedes the last, so an older answer, or one for an earlier sign-in, is dropped.
   let catalogRequest = 0
   watch(
-    () => [isCloud.value ? draft.cloudWorkspaceId : undefined, catalogAttempt.value] as const,
-    async ([workspaceId]) => {
+    () =>
+      [
+        isCloud.value ? draft.cloudWorkspaceId : undefined,
+        cloud.identity.value,
+        catalogAttempt.value
+      ] as const,
+    async ([workspaceId, identity]) => {
       const request = ++catalogRequest
       models.value = []
+      if (!workspaceId || !identity) return
       if (state.value === 'catalog-failed') state.value = 'ready'
-      const client = workspaceId ? cloud.client(workspaceId) : null
+      const client = cloud.client(workspaceId)
       if (!client) return
       const catalog = await client.catalog().catch(() => null)
       if (request !== catalogRequest) return

@@ -134,4 +134,37 @@ describe('useCloudModelSelection', () => {
     expect(editor.selection.models.value.map((model) => model.id)).toEqual(['newest'])
     expect(editor.draft.modelID).toBe('newest')
   })
+
+  test('drops a catalog that answers after signing out', async () => {
+    const home = homeCloud()
+    const editor = select(home.source)
+    home.workspaceAnswers[0]?.resolve([{ id: 'team', name: 'Team' }])
+    await settle()
+    home.identity.value = null
+    await settle()
+
+    home.catalogAnswers[0]?.resolve(catalog('stale'))
+    await settle()
+
+    expect(editor.selection.state.value).toBe('unavailable')
+    expect(editor.selection.models.value).toEqual([])
+  })
+
+  test('lists the models again for another account on the same workspace', async () => {
+    const home = homeCloud()
+    const editor = select(home.source)
+    home.workspaceAnswers[0]?.resolve([{ id: 'team', name: 'Team' }])
+    await settle()
+    home.identity.value = BOB
+    await settle()
+    home.workspaceAnswers[1]?.resolve([{ id: 'team', name: 'Team' }])
+    await settle()
+
+    home.catalogAnswers[1]?.resolve(catalog('bob-model'))
+    await settle()
+    home.catalogAnswers[0]?.resolve(catalog('alice-model'))
+    await settle()
+
+    expect(editor.selection.models.value.map((model) => model.id)).toEqual(['bob-model'])
+  })
 })
