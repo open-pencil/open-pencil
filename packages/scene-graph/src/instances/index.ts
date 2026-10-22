@@ -1,17 +1,23 @@
 import type { NodeCloneMode } from '../copy'
 import type { SceneGraph } from '../graph'
-import { detachOwnedSlotContent, restoreOwnedSlotContent } from '../slots/frames'
+import {
+  detachOwnedSlotContent,
+  restoreOwnedSlotContent,
+  type ParkedSlotContent
+} from '../slots/frames'
 import type { SceneNode } from '../types'
 import { keepOwnContentSize } from './content-size'
 import { createInstanceSyncContext, groupCopyRemovals, removeLeftoverCopies } from './copies'
 import { canCreateInstance } from './cycles'
 import { INSTANCE_OVERRIDE_FIELDS, INSTANCE_SYNC_PROPS } from './fields'
+import { findInstanceAncestor, instanceMainComponent } from './main-component'
 import {
   clearInstanceOverrides,
   getInstanceOverride,
   hasInstanceOverride as hasNodeInstanceOverride,
   setInstanceOverride
 } from './overrides'
+import { followComponentLayers } from './swap'
 import {
   bindingProtection,
   cloneChildrenWithMapping,
@@ -25,7 +31,7 @@ import {
 } from './sync'
 
 export { canCreateInstance, createsComponentCycle, cycleSafeParent } from './cycles'
-export { instanceMainComponent } from './main-component'
+export { findInstanceAncestor, instanceMainComponent } from './main-component'
 export {
   INSTANCE_FOLLOWED_FIELDS,
   INSTANCE_OVERRIDE_FIELDS,
@@ -111,6 +117,19 @@ export interface SwapInstanceOptions {
   keepName?: boolean
 }
 
+function namedAfter(
+  graph: SceneGraph,
+  instance: SceneNode,
+  component: SceneNode
+): SceneNode | undefined {
+  const main = instanceMainComponent(graph, instance)
+  const set = main?.parentId ? graph.nodes.get(main.parentId) : undefined
+  if (set?.type === 'COMPONENT_SET' && component.parentId === set.id) {
+    return main
+  }
+  return instance.componentId ? graph.nodes.get(instance.componentId) : undefined
+}
+
 export function swapInstanceComponent(
   graph: SceneGraph,
   instanceId: string,
@@ -122,24 +141,45 @@ export function swapInstanceComponent(
   if (!instance || component?.type !== 'COMPONENT' || instance.type !== 'INSTANCE') return
   if (instance.parentId && !canCreateInstance(graph, componentId, instance.parentId)) return
 
-  const previousComponent = instance.componentId ? graph.nodes.get(instance.componentId) : undefined
+  const previousComponent = namedAfter(graph, instance, component)
   recordNestedSwap(graph, instance, componentId)
-  const updates: Partial<SceneNode> = { componentId }
   const source = sourceInTargetCoordinates(component, instance.componentScale)
-  for (const key of INSTANCE_SYNC_PROPS) {
-    if (hasNodeInstanceOverride(instance.instanceOverrides, instance.id, instance.id, key)) continue
-    copyProp(updates, source, key)
-  }
+  const updates: Partial<SceneNode> = { componentId, ...ownSyncedProps(graph, instance, source) }
 
   if (!keepName && (!previousComponent || instance.name === previousComponent.name))
     updates.name = component.name
 
-  const childIds = Array.from(instance.childIds)
   const slotContent = detachOwnedSlotContent(graph, instance)
-  for (const childId of childIds) graph.deleteNode(childId)
   graph.updateNode(instanceId, updates)
-  cloneChildrenWithMapping(graph, componentId, instanceId)
+  followComponentLayers(graph, instance, component, parkedContent(slotContent))
   restoreOwnedSlotContent(graph, instance, slotContent)
+}
+
+const NOTHING_PARKED: ReadonlySet<string> = new Set()
+
+function parkedContent(parked: ParkedSlotContent): ReadonlySet<string> {
+  if (parked.slots.length === 0) {
+    return NOTHING_PARKED
+  }
+  return new Set(parked.slots.flatMap((slot) => slot.content))
+}
+
+function ownSyncedProps(
+  graph: SceneGraph,
+  instance: SceneNode,
+  source: SceneNode
+): Partial<SceneNode> {
+  const enclosing = enclosingInstanceOverrideFields(graph, instance)
+  enclosing.push(new Set(instance.instanceOverrides.self.keys()))
+  const protectedField = bindingProtection(enclosing)
+  const updates: Partial<SceneNode> = {}
+  syncBindingFields(instance, source, updates, protectedField)
+  for (const key of INSTANCE_SYNC_PROPS) {
+    if (key !== 'boundVariables' && !isProtectedSyncField(instance, key, protectedField)) {
+      copyProp(updates, source, key)
+    }
+  }
+  return updates
 }
 
 const syncingComponentsByGraph = new WeakMap<SceneGraph, Set<string>>()
@@ -182,17 +222,8 @@ function syncInstancesOf(
   try {
     groupCopyRemovals(graph, (removals) => {
       for (const instance of instances) {
-        const enclosing = enclosingInstanceOverrideFields(graph, instance)
-        enclosing.push(new Set(instance.instanceOverrides.self.keys()))
-        const protectedField = bindingProtection(enclosing)
         const source = sourceInTargetCoordinates(component, instance.componentScale)
-        const updates: Partial<SceneNode> = {}
-        syncBindingFields(instance, source, updates, protectedField)
-        for (const key of INSTANCE_SYNC_PROPS) {
-          if (key === 'boundVariables') continue
-          if (isProtectedSyncField(instance, key, protectedField)) continue
-          copyProp(updates, source, key)
-        }
+        const updates = ownSyncedProps(graph, instance, source)
         // An instance that hugs its layers sizes to what it shows, not to the component.
         keepOwnContentSize(graph, updates, instance, source)
         updateSyncedProps(graph, instance, updates)
@@ -232,16 +263,6 @@ export function getInstances(graph: SceneGraph, componentId: string): SceneNode[
     if (node) instances.push(node)
   }
   return instances
-}
-
-/** Nearest INSTANCE at or above `nodeId` — self, parent, grandparent, etc. */
-export function findInstanceAncestor(graph: SceneGraph, nodeId: string): SceneNode | undefined {
-  let current = graph.nodes.get(nodeId)
-  while (current) {
-    if (current.type === 'INSTANCE') return current
-    current = current.parentId ? graph.nodes.get(current.parentId) : undefined
-  }
-  return undefined
 }
 
 /**

@@ -21,6 +21,7 @@ import { completeClearedStyleClaim } from './cleared-style'
 import { applyDerivedEntry } from './derived-symbol-data'
 import { COMPONENT_IDENTITY_FIELDS } from './fields'
 import {
+  ownerAssignedProperties,
   ownLayers,
   type AssignmentGroup,
   type Owner,
@@ -553,11 +554,13 @@ function interpretRoot(
       },
       children: expanded
     }
-    if (source.type === 'INSTANCE')
+    if (source.type === 'INSTANCE') {
       occurrence.properties.componentPropAssignments = groups
         .flatMap((g) => g.assignments)
         // A slot whose content frame is gone falls back to its component's content.
         .filter((assignment) => !namesMissingSlotContent(assignment))
+      occurrence.ownerAssignedProperties = ownerAssignedProperties(groups)
+    }
     // A swapped instance without a name of its own takes the replacement's default name.
     if (base && replaced.length && !occurrence.hasOwnName)
       occurrence.properties.name = base.defaultInstanceName ?? base.properties.name

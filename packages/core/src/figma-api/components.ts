@@ -9,6 +9,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
+  recordAssignmentOverride,
   componentPropertyDefinitions as sharedComponentPropertyDefinitions,
   removeComponentProperty,
   createComponentPropertyId,
@@ -324,6 +325,7 @@ function applyProperty(
   const scene = graph(target, internals)
   const result = applyComponentPropertyValue(scene, node.id, definition, String(value))
   if (!result) throw new Error(`Unable to apply component property: ${propertyName(definition)}`)
+  recordAssignmentOverride(scene, node.id, definition.id)
   measurePropertyText({ graph: scene }, node.id, definition)
 }
 export function installComponentPropertyAccessors(

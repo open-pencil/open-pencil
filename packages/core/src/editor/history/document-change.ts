@@ -149,9 +149,9 @@ function captureNode(node: SceneNode): SceneNode {
   }
 }
 
-/** Copies a page's layers not copied yet; a layer moved in from another page keeps its copy. */
-function capturePage(graph: SceneGraph, pageId: string, captured: Map<string, SceneNode>): void {
-  const stack = [pageId]
+/** Copies a layer and its descendants not copied yet; a layer moved in keeps its copy. */
+function captureLayers(graph: SceneGraph, rootId: string, captured: Map<string, SceneNode>): void {
+  const stack = [rootId]
   for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
     const node = graph.getNode(id)
     if (!node) continue
@@ -248,13 +248,27 @@ function restoreRecords<T extends object>(
  * done, also when it failed, to stop recording and get what the edit changed.
  *
  * The page is copied up front, so values written into its layers in place are kept too. Another
- * page, or the document node, is copied the first time the edit is about to change it.
+ * page, or the document node, is copied the first time the edit is about to change it. An edit
+ * that writes in place only within one layer passes it as `layerId`: that layer, its descendants
+ * and its ancestors are copied up front instead of the page, and any other layer the first time
+ * the edit is about to change it.
  */
-export function captureDocumentChange(graph: SceneGraph, pageId: string): () => DocumentChange {
+export function captureDocumentChange(
+  graph: SceneGraph,
+  pageId: string,
+  layerId?: string
+): () => DocumentChange {
   const captured = new Map<string, SceneNode>()
   const capturedPages = new Set([pageId])
   const created = new Set<string>()
-  capturePage(graph, pageId, captured)
+  if (layerId) {
+    captureLayers(graph, layerId, captured)
+    for (const node of lineage(graph.nodes, layerId)) {
+      if (!captured.has(node.id)) captured.set(node.id, captureNode(node))
+    }
+  } else {
+    captureLayers(graph, pageId, captured)
+  }
   const variables = structuredClone(graph.variables)
   const collections = structuredClone(graph.variableCollections)
   const impact = createSceneMutationImpact()
@@ -266,7 +280,7 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
       const page = pageOf(graph.nodes, node.id)
       if (page && !capturedPages.has(page)) {
         capturedPages.add(page)
-        capturePage(graph, page, captured)
+        captureLayers(graph, page, captured)
       }
       if (!captured.has(node.id)) captured.set(node.id, captureNode(node))
     }

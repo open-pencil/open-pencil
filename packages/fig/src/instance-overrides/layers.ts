@@ -1,5 +1,6 @@
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import type { InstanceAssignmentDiagnostic } from './occurrence/types'
 import { symbolOverridesOf, type ComponentPropAssignment } from './types'
@@ -41,6 +42,13 @@ export interface PropertyLayer {
 export interface AssignmentGroup {
   readonly assignments: readonly ComponentPropAssignment[]
   readonly rank: number
+}
+
+export function ownerAssignedProperties(groups: readonly AssignmentGroup[]): string[] {
+  return groups
+    .slice(1)
+    .flatMap((group) => group.assignments)
+    .flatMap((assignment) => (assignment.defID ? [guidToString(assignment.defID)] : []))
 }
 
 /** Split an owner's saved overrides into structural layers and property claims. */

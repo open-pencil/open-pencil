@@ -1,6 +1,5 @@
 import type { SceneGraph } from '../graph'
-import { findInstanceAncestor } from '../instances'
-import { instanceMainComponent } from '../instances/main-component'
+import { findInstanceAncestor, instanceMainComponent } from '../instances/main-component'
 import { setInstanceOverride } from '../instances/overrides'
 import { walkInstanceSources } from '../instances/source-walk'
 import { randomHex } from '../random'
@@ -170,6 +169,60 @@ export function applyComponentPropertyValue(
     }
   })
   return definition.type === 'INSTANCE_SWAP' ? target : instance
+}
+
+export function reapplyComponentPropertyAssignments(
+  graph: SceneGraph,
+  instanceId: string
+): ComponentPropertyDefinition[] {
+  const instance = graph.getNode(instanceId)
+  if (instance?.type !== 'INSTANCE') {
+    return []
+  }
+  const definitions = new Map(
+    componentPropertyDefinitions(graph, instance).map((definition) => [definition.id, definition])
+  )
+  const applied: ComponentPropertyDefinition[] = []
+  for (const [propertyId, value] of Object.entries(instance.componentPropertyAssignments)) {
+    const definition = definitions.get(propertyId)
+    if (definition && definition.type !== 'VARIANT') {
+      applyComponentPropertyValue(graph, instanceId, definition, value)
+      applied.push(definition)
+    }
+  }
+  return applied
+}
+
+const ASSIGNMENT_OVERRIDE_PREFIX = 'componentPropertyAssignments/'
+
+export function assignmentOverrideField(propertyId: string): string {
+  return `${ASSIGNMENT_OVERRIDE_PREFIX}${propertyId}`
+}
+
+export function overriddenAssignmentId(field: string): string | undefined {
+  return field.startsWith(ASSIGNMENT_OVERRIDE_PREFIX)
+    ? field.slice(ASSIGNMENT_OVERRIDE_PREFIX.length)
+    : undefined
+}
+
+export function recordAssignmentOverride(
+  graph: SceneGraph,
+  instanceId: string,
+  propertyId: string
+): void {
+  const instance = graph.getNode(instanceId)
+  const owner = instance?.parentId ? findInstanceAncestor(graph, instance.parentId) : undefined
+  if (!instance || !owner) {
+    return
+  }
+  setInstanceOverride(
+    owner.instanceOverrides,
+    owner.id,
+    instance.id,
+    assignmentOverrideField(propertyId),
+    instance.componentPropertyAssignments[propertyId]
+  )
+  graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
 }
 
 function componentSubtree(graph: SceneGraph, componentId: string): SceneNode[] {
