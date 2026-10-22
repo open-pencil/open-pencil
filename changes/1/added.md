@@ -1,0 +1,1 @@
+- Design JSX `<Text>` and `<Span>` take `fontFeatures`, `fontVariations`, and `lang`, and JSX export keeps OpenType features, variable-font axes, and language instead of dropping them.

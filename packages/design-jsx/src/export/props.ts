@@ -12,6 +12,7 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-directio
 
 import { BLEND_MODE, TEXT_ALIGN, TEXT_ALIGN_VERTICAL, TEXT_CASE, TEXT_DECORATION } from '../enums'
 import { collectDecorationProps } from './decoration'
+import { collectFontSettingProps, FONT_SETTING_FIELDS } from './font'
 import {
   collectCornerRadii,
   collectPadding,
@@ -232,8 +233,16 @@ const DECORATION_FIELDS = [
 
 const TEXT_DEFAULTS = pick(
   createDefaultNode(() => '', 'TEXT'),
-  DECORATION_FIELDS
+  [...DECORATION_FIELDS, ...FONT_SETTING_FIELDS]
 )
+
+/** The fields of `node` that differ from a new text's. */
+function ownTextFields<K extends keyof typeof TEXT_DEFAULTS>(
+  node: SceneNode,
+  fields: readonly K[]
+) {
+  return omitBy(pick(node, fields), (value, key) => isEqual(value, TEXT_DEFAULTS[key]))
+}
 
 /** A font weight as `weight` writes it, by name for the weights that have one. */
 export function fontWeightValue(weight: number): string | number {
@@ -260,11 +269,8 @@ function collectTextNodeProps(node: SceneNode, props: JSXProp[]): void {
   if (node.letterSpacing !== 0) props.push(['letterSpacing', node.letterSpacing])
   if (node.textDecoration !== 'NONE')
     props.push(['textDecoration', TEXT_DECORATION.print(node.textDecoration)])
-  collectDecorationProps(
-    omitBy(pick(node, DECORATION_FIELDS), (value, key) => isEqual(value, TEXT_DEFAULTS[key])),
-    node,
-    props
-  )
+  collectDecorationProps(ownTextFields(node, DECORATION_FIELDS), node, props)
+  collectFontSettingProps(ownTextFields(node, FONT_SETTING_FIELDS), props)
   if (node.textCase !== 'ORIGINAL') props.push(['textCase', TEXT_CASE.print(node.textCase)])
   if (node.maxLines != null) props.push(['maxLines', node.maxLines])
   if (node.textTruncation === 'ENDING' && node.maxLines == null) props.push(['truncate', true])

@@ -14,6 +14,8 @@ export const CURRENT_COLOR = 'currentColor'
 
 const Length = v.pipe(v.number(), v.finite())
 const AutoLength = v.union([Length, v.literal(AUTO)])
+/** An OpenType feature or axis tag: four printable ASCII characters, such as `tnum` or `wght`. */
+const OpenTypeTag = v.pipe(v.string(), v.regex(/^[\x20-\x7E]{4}$/, 'Expected a four-character tag'))
 
 const TextProps = v.object({
   // Read by TEXT_DECORATION_STYLE, so an unknown style warns rather than failing the render.
@@ -24,6 +26,9 @@ const TextProps = v.object({
   textDecorationThickness: v.optional(AutoLength),
   textUnderlineOffset: v.optional(AutoLength),
   textDecorationSkipInk: v.optional(v.boolean()),
+  fontFeatures: v.optional(v.record(OpenTypeTag, v.boolean())),
+  fontVariations: v.optional(v.record(OpenTypeTag, Length)),
+  lang: v.optional(v.nullable(v.pipe(v.string(), v.trim(), v.nonEmpty()))),
   paragraphSpacing: v.optional(Length),
   listSpacing: v.optional(Length),
   paragraphIndent: v.optional(Length),
@@ -34,7 +39,10 @@ function autoLength(value: number | typeof AUTO): number | null {
   return value === AUTO ? null : value
 }
 
-/** The decoration details and text-wide paragraph spacing a `<Text>` or `<Span>` sets. */
+/**
+ * The decoration details, font settings, and text-wide paragraph spacing a `<Text>` or `<Span>`
+ * sets. Font settings replace the ones around them as a whole, as CSS's do.
+ */
 export function applyTextDetailOverrides(
   props: Record<string, unknown>,
   o: Partial<SceneNode>
@@ -55,6 +63,16 @@ export function applyTextDetailOverrides(
     o.textUnderlineOffset = autoLength(parsed.textUnderlineOffset)
   if (parsed.textDecorationSkipInk !== undefined)
     o.textDecorationSkipInk = parsed.textDecorationSkipInk
+  if (parsed.fontFeatures) {
+    o.fontFeatures = Object.entries(parsed.fontFeatures).map(([tag, enabled]) => ({ tag, enabled }))
+  }
+  if (parsed.fontVariations) {
+    o.fontVariations = Object.entries(parsed.fontVariations).map(([axis, value]) => ({
+      axis,
+      value
+    }))
+  }
+  if (parsed.lang !== undefined) o.textLanguage = parsed.lang
   if (parsed.paragraphSpacing !== undefined) o.paragraphSpacing = parsed.paragraphSpacing
   if (parsed.listSpacing !== undefined) o.listSpacing = parsed.listSpacing
   if (parsed.paragraphIndent !== undefined) o.paragraphIndent = parsed.paragraphIndent

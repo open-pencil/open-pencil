@@ -172,6 +172,12 @@ export type StyleProps = {
   fontSize?: number | DesignVariable
   lineHeight?: number | 'auto' | DesignVariable
   letterSpacing?: number | DesignVariable
+  /** OpenType features on or off by tag, as CSS's `font-feature-settings`: `{ tnum: true }`. */
+  fontFeatures?: Record<string, boolean>
+  /** Variable-font axis values by tag, as CSS's `font-variation-settings`: `{ wght: 650 }`. */
+  fontVariations?: Record<string, number>
+  /** The language the text is in, as a BCP 47 tag such as `de` or `sr-Latn`. */
+  lang?: string | null
   font?: string
   fontFamily?: string
   weight?: number | 'bold' | 'medium' | 'normal'
@@ -221,6 +227,9 @@ export type SpanProps = Pick<
   | 'fills'
   | 'lineHeight'
   | 'letterSpacing'
+  | 'fontFeatures'
+  | 'fontVariations'
+  | 'lang'
 > & {
   key?: string | number
   style?: Record<string, unknown>

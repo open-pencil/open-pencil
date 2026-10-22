@@ -97,6 +97,39 @@ describe('Span', () => {
     expect(warnings).toEqual([])
   })
 
+  test('takes font features, variations, and language', async () => {
+    const { node, warnings } = await renderText(
+      '<Text fontFeatures={{ liga: false }} fontVariations={{ wght: 450 }} lang="en">a<Span fontFeatures={{ tnum: true, liga: false }} fontVariations={{ wght: 650, wdth: 90 }} lang="de">b</Span></Text>'
+    )
+    expect(node.fontFeatures).toEqual([{ tag: 'liga', enabled: false }])
+    expect(node.fontVariations).toEqual([{ axis: 'wght', value: 450 }])
+    expect(node.textLanguage).toBe('en')
+    expect(node.styleRuns).toEqual([
+      {
+        start: 1,
+        length: 1,
+        style: {
+          fontFeatures: [
+            { tag: 'tnum', enabled: true },
+            { tag: 'liga', enabled: false }
+          ],
+          fontVariations: [
+            { axis: 'wght', value: 650 },
+            { axis: 'wdth', value: 90 }
+          ],
+          textLanguage: 'de'
+        }
+      }
+    ])
+    expect(warnings).toEqual([])
+  })
+
+  test('rejects a font setting tag that is not four characters', async () => {
+    await expect(renderText('<Text fontFeatures={{ tabular: true }}>a</Text>')).rejects.toThrow(
+      'Invalid <Text> props'
+    )
+  })
+
   test('warns about a decoration style it cannot draw', async () => {
     const { node, warnings } = await renderText('<Text textDecorationStyle="dashed">a</Text>')
     expect(node.textDecorationStyle).toBe('SOLID')

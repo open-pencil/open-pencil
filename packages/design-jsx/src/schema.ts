@@ -36,6 +36,9 @@ export const DESIGN_JSX_SPAN_PROPERTY_NAMES = [
   'textDecorationThickness',
   'textUnderlineOffset',
   'textDecorationSkipInk',
+  'fontFeatures',
+  'fontVariations',
+  'lang',
   'textCase',
   'href'
 ] as const
@@ -152,6 +155,9 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'textDecorationThickness',
   'textUnderlineOffset',
   'textDecorationSkipInk',
+  'fontFeatures',
+  'fontVariations',
+  'lang',
   'textCase',
   'paragraphSpacing',
   'paragraphIndent',
