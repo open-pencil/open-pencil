@@ -1,6 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import { applyComponentPropertyValue, SceneGraph } from '@open-pencil/scene-graph'
+import {
+  applyComponentPropertyValue,
+  recordInstanceOverride,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 
 function graphWithAssignedLabel() {
   const graph = new SceneGraph()
@@ -34,6 +38,20 @@ test('synchronizing leaves a field the enclosing instance assigns alone', () => 
   graph.syncInstances(component.id)
 
   expect(graph.getNode(clone.id)?.text).toBe('Assigned')
+})
+
+test('synchronizing preserves a direct text override over a property assignment', () => {
+  const { graph, component, label, instance } = graphWithAssignedLabel()
+  const clone = graph.getChildren(instance.id)[0]
+  graph.updateNode(instance.id, { componentPropertyAssignments: { '207:1': 'Assigned' } })
+  graph.updateNode(clone.id, { text: 'Local override' })
+  recordInstanceOverride(graph, clone.id, ['text'])
+  graph.updateNode(label.id, { opacity: 0.5 })
+
+  graph.syncInstances(component.id)
+
+  expect(clone.text).toBe('Local override')
+  expect(clone.opacity).toBe(0.5)
 })
 
 test('synchronizing still carries the default to an instance that assigns nothing', () => {
