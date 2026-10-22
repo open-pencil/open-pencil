@@ -21,6 +21,7 @@ export { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 export type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 
 export const cloudAIAvailable = computed(() => false)
+export const cloudAIIdentity = computed<string | null>(() => null)
 export const cloudBillingURL = computed<string | null>(() => null)
 
 export function cloudAIClient(): CloudAIClient | null {

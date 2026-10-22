@@ -8,6 +8,7 @@ import { startCloudSessions } from '../sessions/startup'
 
 export {
   cloudAIAvailable,
+  cloudAIIdentity,
   cloudAIClient,
   cloudAIWorkspaces,
   cloudBillingURL,

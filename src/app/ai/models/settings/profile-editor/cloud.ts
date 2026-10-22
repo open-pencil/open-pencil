@@ -1,13 +1,14 @@
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 
+import type { CloudAIClient } from '@open-pencil/cloud/client'
 import type { ModelOption } from '@open-pencil/core/constants'
 
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import { cloudCatalogModels } from '@/app/ai/providers/openpencil/catalog'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import {
-  cloudAIAvailable,
   cloudAIClient,
+  cloudAIIdentity,
   cloudAIWorkspaces,
   type CloudAIWorkspace
 } from '@/app/cloud/integration'
@@ -24,6 +25,19 @@ export type CloudModelSelectionState =
   | 'ready'
   | 'catalog-failed'
 
+/** The Home server's AI service as the selection reads it. */
+export interface CloudModelSource {
+  identity: Readonly<Ref<string | null>>
+  workspaces: () => Promise<CloudAIWorkspace[]>
+  client: (workspaceId: string) => Pick<CloudAIClient, 'catalog'> | null
+}
+
+const HOME_CLOUD: CloudModelSource = {
+  identity: cloudAIIdentity,
+  workspaces: cloudAIWorkspaces,
+  client: cloudAIClient
+}
+
 /**
  * The workspaces and models Cloud's AI service offers while a draft uses it. The first workspace
  * whose plan includes AI is chosen unless the draft names another, and the catalog's default model
@@ -31,25 +45,28 @@ export type CloudModelSelectionState =
  */
 export function useCloudModelSelection(
   draft: AIModelProfileDraft,
-  chooseModel: (modelID: string) => void
+  chooseModel: (modelID: string) => void,
+  cloud: CloudModelSource = HOME_CLOUD
 ) {
   const isCloud = computed(() => draft.providerID === OPENPENCIL_AI_PROVIDER)
   const workspaces = ref<CloudAIWorkspace[]>([])
   const models = ref<ModelOption[]>([])
   const state = ref<CloudModelSelectionState>('unavailable')
 
+  // Signing out, switching accounts or choosing another provider supersedes a pending list.
+  let workspaceRequest = 0
   watch(
-    [isCloud, cloudAIAvailable],
-    async ([cloud, available]) => {
-      if (!cloud || !available) {
+    [isCloud, cloud.identity],
+    async ([usesCloud, identity]) => {
+      const request = ++workspaceRequest
+      if (!usesCloud || !identity) {
         workspaces.value = []
         state.value = 'unavailable'
         return
       }
       state.value = 'loading'
-      const listed = await cloudAIWorkspaces()
-      // Signing out or choosing another provider meanwhile owns the state now.
-      if (!isCloud.value || !cloudAIAvailable.value) return
+      const listed = await cloud.workspaces()
+      if (request !== workspaceRequest) return
       workspaces.value = listed
       if (!listed.some((workspace) => workspace.id === draft.cloudWorkspaceId)) {
         draft.cloudWorkspaceId = listed[0]?.id
@@ -68,7 +85,7 @@ export function useCloudModelSelection(
       const request = ++catalogRequest
       models.value = []
       if (state.value === 'catalog-failed') state.value = 'ready'
-      const client = workspaceId ? cloudAIClient(workspaceId) : null
+      const client = workspaceId ? cloud.client(workspaceId) : null
       if (!client) return
       const catalog = await client.catalog().catch(() => null)
       if (request !== catalogRequest) return

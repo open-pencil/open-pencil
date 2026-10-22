@@ -26,6 +26,12 @@ const homeAI = computed(() => {
 
 export const cloudAIAvailable = computed(() => homeAI.value !== null)
 
+/** Who uses the Home server's AI service, so answers for an earlier sign-in can be told apart. */
+export const cloudAIIdentity = computed(() => {
+  const home = homeAI.value
+  return home ? `${home.server.id}:${home.account.id}` : null
+})
+
 /** Where people manage the plan that pays for AI, when the Home server bills. */
 export const cloudBillingURL = computed(() => homeAI.value?.discovery.billing?.portalURL ?? null)
 
@@ -36,7 +42,7 @@ const tokenSources = new Map<string, CloudAITokenSource>()
 export function cloudAIClient(workspaceId: string): CloudAIClient | null {
   const home = homeAI.value
   if (!home || !workspaceId) return null
-  const key = `${home.server.id}:${home.account.id}:${workspaceId}`
+  const key = `${cloudAIIdentity.value}:${workspaceId}`
   let tokens = tokenSources.get(key)
   if (!tokens) {
     const api = cloudAPIClient(home.server, home.discovery)
