@@ -1,0 +1,1 @@
+- A rescaled instance of a component with a vector shape draws that shape at the instance size after the file is reopened, instead of at the component's size.
