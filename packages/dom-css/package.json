@@ -47,6 +47,12 @@
       "bun": "./src/import/jsx/dev-runtime.ts",
       "import": "./dist/jsx-dev-runtime.js",
       "default": "./dist/jsx-dev-runtime.js"
+    },
+    "./export/storybook/mapping": {
+      "types": "./dist/export/storybook/mapping/index.d.ts",
+      "bun": "./src/export/storybook/mapping/index.ts",
+      "import": "./dist/export/storybook/mapping/index.js",
+      "default": "./dist/export/storybook/mapping/index.js"
     }
   },
   "main": "./dist/index.js",
