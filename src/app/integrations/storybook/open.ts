@@ -4,7 +4,7 @@ import {
   parseComponentMappings,
   type ComponentMapping,
   type ComponentMappings
-} from '@open-pencil/dom-css/export'
+} from '@open-pencil/dom-css/export/storybook/mapping'
 
 import { loadedFigFileName, matchesLoadedRevision } from '@/app/document/io/revision'
 import { getActiveEditorStore } from '@/app/editor/active-store'

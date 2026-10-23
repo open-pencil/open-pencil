@@ -2,13 +2,13 @@ import { createHash } from 'node:crypto'
 import { readFile, realpath, stat } from 'node:fs/promises'
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 
+import type { StorybookFile } from '@open-pencil/dom-css'
 import {
   exportComponentReference,
   parseComponentMappings,
-  validateComponentReference,
-  type StorybookFile
-} from '@open-pencil/dom-css'
-import { behaviourProperties } from '@open-pencil/scene-graph'
+  validateComponentReference
+} from '@open-pencil/dom-css/export/storybook/mapping'
+import { behaviourProperties } from '@open-pencil/scene-graph/behaviours'
 
 import { applyExportFontPolicy } from '#cli/commands/export/font-policy'
 import { ok } from '#cli/format'
