@@ -6,6 +6,7 @@
   "workspaces": [
     "packages/scene-graph",
     "packages/pen",
+    "packages/drawio",
     "packages/kiwi",
     "packages/fig",
     "packages/core",

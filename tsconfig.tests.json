@@ -100,6 +100,12 @@
       "@open-pencil/scene-graph/*": [
         "./packages/scene-graph/src/*"
       ],
+      "#drawio/*": [
+        "./packages/drawio/src/*"
+      ],
+      "@open-pencil/drawio": [
+        "./packages/drawio/src/index.ts"
+      ],
       "#emit/*": [
         "./packages/emit/src/*"
       ],
