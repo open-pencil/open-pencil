@@ -1,9 +1,6 @@
-import {
-  behaviourProperties,
-  restingVariant,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { behaviourProperties } from '@open-pencil/scene-graph/behaviours'
+import { restingVariant } from '@open-pencil/scene-graph/components'
 
 import type { ComponentMapping, ComponentMappingArgs } from './schema'
 

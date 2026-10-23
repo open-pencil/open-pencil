@@ -1,6 +1,6 @@
 import { translationsLoading } from '@nanostores/i18n'
 
-import { localeSetting, type Locale } from '@open-pencil/vue'
+import { localeSetting, type Locale } from '@open-pencil/vue/i18n'
 
 import { notificationMessages } from '@/app/i18n/notifications'
 

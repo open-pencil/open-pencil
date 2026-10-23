@@ -10,52 +10,61 @@ function repositoryPath(path: string): boolean {
   )
 }
 
-const Path = v.pipe(v.string(), v.check(repositoryPath, 'Use a repository-relative POSIX path.'))
-const Key = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]*$/, 'Use a stable lowercase key.'))
-const Guid = v.pipe(v.string(), v.regex(/^\d+:\d+$/, 'Use the saved FIG GUID from source.id.'))
-const Revision = v.pipe(v.string(), v.regex(/^[a-f0-9]{64}$/, 'Expected a lowercase SHA-256 hash.'))
-const StoryId = v.pipe(
+const pathSchema = v.pipe(
+  v.string(),
+  v.check(repositoryPath, 'Use a repository-relative POSIX path.')
+)
+const keySchema = v.pipe(v.string(), v.regex(/^[a-z][a-z0-9-]*$/, 'Use a stable lowercase key.'))
+const guidSchema = v.pipe(
+  v.string(),
+  v.regex(/^\d+:\d+$/, 'Use the saved FIG GUID from source.id.')
+)
+const revisionSchema = v.pipe(
+  v.string(),
+  v.regex(/^[a-f0-9]{64}$/, 'Expected a lowercase SHA-256 hash.')
+)
+const storyIdSchema = v.pipe(
   v.string(),
   v.regex(/^[a-z0-9][a-z0-9-]*--[a-z0-9-]+$/, 'Expected a Storybook story ID.')
 )
-const Identifier = v.pipe(
+const identifierSchema = v.pipe(
   v.string(),
   v.regex(/^[A-Za-z_$][\w$]*$/, 'Expected a JavaScript identifier.'),
   v.check((name) => name !== '__proto__', 'The __proto__ key is not supported.')
 )
-const Scalar = v.union([v.string(), v.boolean(), v.pipe(v.number(), v.finite()), v.null()])
-const Args = v.record(Identifier, Scalar)
-const Property = v.strictObject({
-  prop: Identifier,
-  values: v.optional(v.record(v.string(), Scalar))
+const scalarSchema = v.union([v.string(), v.boolean(), v.pipe(v.number(), v.finite()), v.null()])
+const argsSchema = v.record(identifierSchema, scalarSchema)
+const propertySchema = v.strictObject({
+  prop: identifierSchema,
+  values: v.optional(v.record(v.string(), scalarSchema))
 })
-const State = v.strictObject({
+const stateSchema = v.strictObject({
   key: v.pipe(
-    Key,
+    keySchema,
     v.check((key) => key !== 'default', 'The state key default is reserved.')
   ),
-  designId: Guid,
-  storyId: StoryId,
-  args: v.optional(Args)
+  designId: guidSchema,
+  storyId: storyIdSchema,
+  args: v.optional(argsSchema)
 })
 
-const Component = v.strictObject({
-  key: Key,
+const componentSchema = v.strictObject({
+  key: keySchema,
   design: v.strictObject({
     file: v.pipe(
-      Path,
+      pathSchema,
       v.endsWith('.fig', 'Durable mappings currently require a saved .fig document.')
     ),
-    id: Guid,
-    revision: v.optional(Revision)
+    id: guidSchema,
+    revision: v.optional(revisionSchema)
   }),
-  implementation: v.strictObject({ import: Path, export: Identifier }),
-  story: v.strictObject({ id: StoryId }),
-  props: v.optional(v.record(Guid, Property), {}),
-  states: v.optional(v.array(State), [])
+  implementation: v.strictObject({ import: pathSchema, export: identifierSchema }),
+  story: v.strictObject({ id: storyIdSchema }),
+  props: v.optional(v.record(guidSchema, propertySchema), {}),
+  states: v.optional(v.array(stateSchema), [])
 })
 
-const BaseURL = v.pipe(
+const baseURLSchema = v.pipe(
   v.string(),
   v.url(),
   v.check((text) => {
@@ -70,20 +79,20 @@ const BaseURL = v.pipe(
   }, 'Use an HTTP(S) Storybook base URL without credentials, query or fragment.')
 )
 
-const Config = v.strictObject({
+const configSchema = v.strictObject({
   version: v.literal(1),
-  storybook: v.strictObject({ baseUrl: BaseURL }),
-  components: v.pipe(v.array(Component), v.minLength(1))
+  storybook: v.strictObject({ baseUrl: baseURLSchema }),
+  components: v.pipe(v.array(componentSchema), v.minLength(1))
 })
 
-export type ComponentMappings = v.InferOutput<typeof Config>
+export type ComponentMappings = v.InferOutput<typeof configSchema>
 export type ComponentMapping = ComponentMappings['components'][number]
 export type ComponentMappingState = ComponentMapping['states'][number]
-export type ComponentMappingArgs = v.InferOutput<typeof Args>
+export type ComponentMappingArgs = v.InferOutput<typeof argsSchema>
 
 /** Parse the shared browser/CLI contract and reject ambiguous associations before use. */
 export function parseComponentMappings(text: string): ComponentMappings {
-  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), Config), text)
+  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), configSchema), text)
   if (!result.success) throw new Error(`Invalid component mapping: ${v.summarize(result.issues)}`)
   const seen = new Map<string, string>()
   const claim = (kind: string, key: string, owner: string) => {
