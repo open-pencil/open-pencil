@@ -1,8 +1,17 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { createHash } from 'node:crypto'
-import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  symlink,
+  writeFile
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import { CLI_ENTRY } from '#cli-tests/helpers/paths'
 import * as v from 'valibot'
@@ -80,6 +89,54 @@ async function fixture() {
 const MAPPED = ['--mapping', 'openpencil.components.json', '--beside', '--font-policy', 'allow']
 
 describe('mapped Storybook reference CLI', () => {
+  test.each([
+    { implementation: 'Button.ts', output: '.', expected: './Button.ts' },
+    { implementation: '.storybook/Button.ts', output: '.', expected: './.storybook/Button.ts' },
+    { implementation: '.Button.ts', output: '.', expected: './.Button.ts' },
+    { implementation: '.storybook/Button.ts', output: '.storybook', expected: './Button.ts' },
+    { implementation: '.Button.ts', output: 'references', expected: '../.Button.ts' },
+    {
+      implementation: '.storybook/Button.ts',
+      output: 'references',
+      expected: '../.storybook/Button.ts'
+    }
+  ])(
+    'resolves $implementation relative to output $output',
+    async ({ implementation, output, expected }) => {
+      const { folder, config, mapping, componentCode } = await fixture()
+      await mkdir(dirname(join(folder, implementation)), { recursive: true })
+      await writeFile(join(folder, implementation), componentCode)
+      await writeFile(
+        join(folder, 'openpencil.components.json'),
+        JSON.stringify({
+          ...config,
+          components: [
+            { ...mapping, implementation: { ...mapping.implementation, import: implementation } }
+          ]
+        })
+      )
+      const result = await cli(folder, [
+        '--mapping',
+        'openpencil.components.json',
+        '--output',
+        output,
+        '--no-design-images'
+      ])
+      expect(result.stderr).toBe('')
+      expect(result.exitCode).toBe(0)
+      const referencePath = join(folder, output, 'button.design.ts')
+      const source = await readFile(referencePath, 'utf8')
+      const module = es.parseModule(source)
+      const imported = module.body.find((node) => node.type === 'ImportDeclaration')
+      const specifier = es.child(imported, 'source')?.value
+      expect(specifier).toBe(expected)
+      if (typeof specifier !== 'string') throw new Error('Expected an implementation import')
+      expect(await realpath(Bun.resolveSync(specifier, dirname(referencePath)))).toBe(
+        await realpath(join(folder, implementation))
+      )
+    }
+  )
+
   test('keeps imports portable through a symlinked output ancestor that does not exist yet', async () => {
     const { folder } = await fixture()
     await symlink(folder, join(folder, 'alias'), 'dir')
