@@ -167,7 +167,10 @@ export async function exportMappedReferences(
           config,
           mapping,
           revision,
-          implementationImport: importPath.startsWith('.') ? importPath : `./${importPath}`,
+          implementationImport:
+            importPath.startsWith('./') || importPath.startsWith('../')
+              ? importPath
+              : `./${importPath}`,
           renderDesignImage: options.designImages ? createDesignImageRenderer(graph) : undefined
         }))
       )

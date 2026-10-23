@@ -4,6 +4,21 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 export const REVISION = 'a'.repeat(64)
 
+export function mappingConfigFixture() {
+  return {
+    version: 1,
+    storybook: { baseUrl: 'https://storybook.example.test/components/' },
+    components: [
+      {
+        key: 'button',
+        design: { file: 'components/Button.fig', id: '12:10' },
+        implementation: { import: 'components/Button.ts', export: 'Button' },
+        story: { id: 'components-button--default' }
+      }
+    ]
+  }
+}
+
 export function mappedFixture() {
   const graph = new SceneGraph()
   const page = graph.addPage('Library')
@@ -34,16 +49,13 @@ export function mappedFixture() {
     height: 16
   })
   large.source.id = '12:12'
+  const input = mappingConfigFixture()
   const config = parseComponentMappings(
     JSON.stringify({
-      version: 1,
-      storybook: { baseUrl: 'https://storybook.example.test/components/' },
+      ...input,
       components: [
         {
-          key: 'button',
-          design: { file: 'components/Button.fig', id: '12:10' },
-          implementation: { import: 'components/Button.ts', export: 'Button' },
-          story: { id: 'components-button--default' },
+          ...input.components[0],
           props: { '12:20': { prop: 'size', values: { Small: 'sm', Large: 'lg' } } },
           states: [
             {
