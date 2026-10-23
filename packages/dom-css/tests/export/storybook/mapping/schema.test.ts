@@ -9,6 +9,27 @@ import {
 import { mappedFixture } from './fixtures'
 
 describe('component mapping contract', () => {
+  test.each(['not a URL', '', '/storybook', 'https://[invalid]/'])(
+    'reports malformed base URL %j through mapping validation',
+    (baseURL) => {
+      const { config } = mappedFixture()
+      expect(() =>
+        parseComponentMappings(JSON.stringify({ ...config, storybook: { baseUrl: baseURL } }))
+      ).toThrow('Invalid component mapping')
+    }
+  )
+
+  test.each(['http://storybook.example.test/', 'https://storybook.example.test/components/'])(
+    'preserves valid HTTP(S) base URL %j',
+    (baseURL) => {
+      const { config } = mappedFixture()
+      expect(
+        parseComponentMappings(JSON.stringify({ ...config, storybook: { baseUrl: baseURL } }))
+          .storybook.baseUrl
+      ).toBe(baseURL)
+    }
+  )
+
   test('resolves saved root and state IDs and builds explicit Storybook URLs', () => {
     const { config, mapping } = mappedFixture()
     expect(findComponentMapping(config, mapping.design.file, '12:10')).toBe(mapping)
@@ -64,8 +85,11 @@ describe('component mapping contract', () => {
       ).toThrow('Invalid component mapping')
     for (const baseURL of [
       'data:text/html,unsafe',
+      'ftp://example.test/',
+      'https://user@example.test/',
       'https://user:pass@example.test/',
-      'https://example.test/?path=x'
+      'https://example.test/?path=x',
+      'https://example.test/#story'
     ])
       expect(() =>
         parseComponentMappings(JSON.stringify({ ...config, storybook: { baseUrl: baseURL } }))
