@@ -68,14 +68,18 @@ const baseURLSchema = v.pipe(
   v.string(),
   v.url(),
   v.check((text) => {
-    const url = new URL(text)
-    return (
-      ['http:', 'https:'].includes(url.protocol) &&
-      !url.username &&
-      !url.password &&
-      !url.search &&
-      !url.hash
-    )
+    try {
+      const url = new URL(text)
+      return (
+        ['http:', 'https:'].includes(url.protocol) &&
+        !url.username &&
+        !url.password &&
+        !url.search &&
+        !url.hash
+      )
+    } catch {
+      return false
+    }
   }, 'Use an HTTP(S) Storybook base URL without credentials, query or fragment.')
 )
 
