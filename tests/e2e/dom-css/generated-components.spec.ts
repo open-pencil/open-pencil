@@ -400,7 +400,7 @@ const APPS: Record<
     entry: 'main.ts',
     main: (component, stories) =>
       [
-        "import { createApp, h } from 'vue'",
+        "import { createApp, h, nextTick } from 'vue'",
         `import Control from './${component}'`,
         `import * as stories from './${stories}'`,
         "import { playDefault } from './play'",
@@ -408,6 +408,8 @@ const APPS: Record<
         "const story = document.getElementById('story')",
         'if (story) {',
         '  createApp({ render: () => h(Control, { ...stories.default.args, ...stories.Default.args }) }).mount(story)',
+        '  // Flush mounted hooks and Reka collection registration before story play queries controls.',
+        '  await nextTick()',
         '  void playDefault(story, stories.Default.play)',
         '}'
       ].join('\n'),
