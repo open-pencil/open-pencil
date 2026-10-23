@@ -649,6 +649,11 @@ export interface SceneNode {
 
   styleRuns: StyleRun[]
   fontVariations: FontVariation[]
+  /**
+   * Whether a variable font's optical size follows the font size, as Figma's "Set optical size
+   * automatically" does by default; when it does not, the `opsz` in `fontVariations` applies.
+   */
+  opticalSizeFromFontSize: boolean
   fontFeatures: FontFeature[]
 
   horizontalConstraint: ConstraintType

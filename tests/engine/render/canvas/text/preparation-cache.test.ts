@@ -248,6 +248,7 @@ describe('text preparation cache', () => {
         italic: true,
         fontFeatures: [{ tag: 'liga', enabled: false }],
         fontVariations: [{ axis: 'wght', value: 700 }],
+        opticalSizeFromFontSize: false,
         textLanguage: 'ar',
         textDirection: 'RTL',
         textCase: 'UPPER',

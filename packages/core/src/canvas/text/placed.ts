@@ -4,14 +4,16 @@ import { uniq } from 'es-toolkit/array'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
-import { loadedFace, resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import {
+  drawnFontVariations,
+  loadedFace,
+  resolveParagraphFontFamilies
+} from '#core/canvas/text/font-families'
 import { laidOutText } from '#core/canvas/text/keycap'
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
-import { textFontVariations } from '#core/canvas/text/paragraph'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { ELLIPSIS } from '#core/text/ellipsis'
-import { fontManager } from '#core/text/fonts'
 import { glyphOutlineSourceSync, type GlyphOutlineSource } from '#core/text/opentype'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
@@ -50,11 +52,14 @@ function fontAt(node: SceneNode, index: number) {
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
   const style = weightToStyle(weight, italic)
-  const variations =
-    textFontVariations(
-      run?.style.fontVariations ?? node.fontVariations,
-      fontManager.namedInstanceVariations(family, style)
-    ) ?? []
+  const variations = drawnFontVariations({
+    family,
+    weight,
+    italic,
+    fontSize: run?.style.fontSize ?? node.fontSize,
+    variations: run?.style.fontVariations ?? node.fontVariations,
+    opticalSizeFromFontSize: node.opticalSizeFromFontSize
+  })
   const drawn = loadedFace(family, weight, italic) ?? { weight, italic }
   return { family, weight, italic, style, variations, drawn }
 }

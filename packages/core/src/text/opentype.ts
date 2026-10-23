@@ -21,6 +21,11 @@ interface OutlinePath {
 interface OutlineGlyph {
   path: OutlinePath
   advanceWidth?: number
+  /**
+   * The default instance's advance, which opentype.js sets aside when it draws a variable font's
+   * instance and overwrites `advanceWidth` with that instance's.
+   */
+  _advanceWidth?: number
   getPath(
     x: number,
     y: number,
@@ -102,8 +107,9 @@ function glyphsForCodePoints(font: OutlineFont, text: string): OutlineGlyph[] {
   return Array.from(text, (character) => font.charToGlyph(character))
 }
 
+/** A glyph's advance in the font's default instance, whatever instance was last drawn. */
 function glyphAdvanceWidth(font: OutlineFont, glyph: OutlineGlyph, fontSize: number): number {
-  return ((glyph.advanceWidth ?? 0) * fontSize) / font.unitsPerEm
+  return ((glyph._advanceWidth ?? glyph.advanceWidth ?? 0) * fontSize) / font.unitsPerEm
 }
 
 export function measureTextWithOpenType(

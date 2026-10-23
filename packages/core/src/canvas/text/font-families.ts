@@ -1,5 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 
+import type { FontVariation } from '@open-pencil/scene-graph'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -9,6 +10,35 @@ import type { FamilyFace } from '#core/text/font/faces'
 import { fontManager, fontWeightMatchOrder } from '#core/text/fonts'
 
 const familiesCache = new ResourceCache<string, string[]>({ maxEntries: 256 })
+
+/** What decides the axis values of a variable font text is drawn in. */
+export interface DrawnFontAxes {
+  family: string
+  weight: number
+  italic: boolean
+  fontSize: number
+  /** The axes the text sets. */
+  variations: readonly FontVariation[]
+  opticalSizeFromFontSize: boolean
+}
+
+/**
+ * The axis values text is drawn at, as Figma draws a variable font: its style's named instance,
+ * then the axes it sets. While the optical size follows the font size, `opsz` is the font size and
+ * a stored `opsz` is ignored. Fonts without an axis ignore its value.
+ */
+export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
+  const named =
+    fontManager.namedInstanceVariations(font.family, weightToStyle(font.weight, font.italic)) ?? []
+  const set = font.opticalSizeFromFontSize
+    ? [
+        ...font.variations.filter((variation) => variation.axis !== 'opsz'),
+        { axis: 'opsz', value: font.fontSize }
+      ]
+    : font.variations
+  const axes = new Map([...named, ...set].map(({ axis, value }) => [axis, value]))
+  return [...axes].map(([axis, value]) => ({ axis, value }))
+}
 
 /**
  * The loaded face of a family that text asking for a style is drawn in: that style, or the

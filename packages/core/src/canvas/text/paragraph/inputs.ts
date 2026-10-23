@@ -12,6 +12,7 @@ export const PARAGRAPH_INPUT_KEYS = [
   'italic',
   'styleRuns',
   'fontVariations',
+  'opticalSizeFromFontSize',
   'fontFeatures',
   'textLanguage',
   'textDirection',

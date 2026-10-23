@@ -7,7 +7,7 @@ import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { facesFromStyles, hasFamilyFace, type FamilyFace } from '#core/text/font/faces'
 import { chooseLocalFontMatch } from '#core/text/font/style'
-import { isVariableFont, namedInstanceVariations } from '#core/text/font/variation'
+import { fontAxes, namedInstanceVariations } from '#core/text/font/variation'
 
 export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
@@ -15,6 +15,7 @@ export * from '#core/text/font/variation'
 export * from '#core/text/font/woff2'
 import {
   normalizeFontFamily,
+  parseFontStyle,
   styleToWeight,
   weightToStyle
 } from '@open-pencil/scene-graph/font-style'
@@ -34,8 +35,6 @@ import type {
 import { collectGraphFontKeys } from '#core/text/requirements'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-fonts'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-fonts'
-
-type FindLocalFontOptions = { allowVariable?: boolean }
 
 const BUNDLED_FONTS: Record<string, string> = {
   'Inter|Regular': '/Inter-Regular.ttf',
@@ -362,9 +361,7 @@ export class FontManager {
     if (!bundledURL) return null
     try {
       const buffer = await this.fetchBundledFont(bundledURL)
-      return buffer && !isVariableFont(buffer)
-        ? this.registerAndCache(family, style, buffer, 'bundled')
-        : null
+      return buffer ? this.registerAndCache(family, style, buffer, 'bundled') : null
     } catch (e) {
       console.warn(`Bundled font load failed for "${family}" ${style}:`, e)
       return null
@@ -434,10 +431,29 @@ export class FontManager {
     }
 
     return (
+      this.sharedVariableFace(family, style) ??
       (await this.loadLocalFont(family, style)) ??
       (await this.loadCachedFont(family, style, characters)) ??
       (await this.loadRemoteFont(family, style, characters, signal))
     )
+  }
+
+  /**
+   * A variable font the family loaded for another style in the same slant whose weight axis
+   * reaches this style's weight, registered for this style too: one file draws every weight.
+   */
+  private sharedVariableFace(family: string, style: string): ArrayBuffer | null {
+    const { weight, italic } = parseFontStyle(style)
+    for (const [key, data] of this.loadedFamilies) {
+      if (!key.startsWith(`${family}|`)) continue
+      if (parseFontStyle(key.slice(family.length + 1)).italic !== italic) continue
+      const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+      if (!wght || weight < wght.min || weight > wght.max) continue
+      const coverage = this.remoteCoverage.get(key)
+      if (coverage) this.remoteCoverage.set(`${family}|${style}`, new Set(coverage))
+      return this.registerAndCache(family, style, data, this.loadedFamilySources.get(key))
+    }
+    return null
   }
 
   async ensureNodeFont(family: string, weight: number): Promise<void> {
@@ -507,9 +523,7 @@ export class FontManager {
     if (this.cjkFallbackFamilies.length > 0) return this.cjkFallbackFamilies
     if (this.cjkFallbackPromise) return this.cjkFallbackPromise
 
-    this.cjkFallbackPromise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies, {
-      allowVariableLocalFonts: true
-    })
+    this.cjkFallbackPromise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies)
     return this.cjkFallbackPromise
   }
 
@@ -543,19 +557,13 @@ export class FontManager {
         signal?.throwIfAborted()
         const target = script === 'arabic' ? this.arabicFallbackFamilies : this.cjkFallbackFamilies
         if (signal) {
-          result[script] = await this.ensureFallbackFamilies(
-            script,
-            target,
-            { allowVariableLocalFonts: script === 'cjk' },
-            characters,
-            signal
-          )
+          result[script] = await this.ensureFallbackFamilies(script, target, characters, signal)
         } else if (script === 'arabic' && !characters) {
           result[script] = await this.ensureArabicFallback()
         } else if (script === 'cjk' && !characters) {
           result[script] = await this.ensureCJKFallback()
         } else {
-          result[script] = await this.ensureFallbackFamilies(script, target, {}, characters)
+          result[script] = await this.ensureFallbackFamilies(script, target, characters)
         }
       })
     )
@@ -576,7 +584,6 @@ export class FontManager {
   private async ensureFallbackFamilies(
     script: FontFallbackScript,
     targetFamilies: string[],
-    options: { allowVariableLocalFonts?: boolean } = {},
     characters = '',
     signal?: AbortSignal
   ): Promise<string[]> {
@@ -586,10 +593,7 @@ export class FontManager {
     for (const family of manifest.localFamilies) {
       signal?.throwIfAborted()
       const buffer =
-        (await this.loadHostFont(family, 'Regular')) ??
-        (await this.findLocalFont(family, undefined, {
-          allowVariable: options.allowVariableLocalFonts
-        }))
+        (await this.loadHostFont(family, 'Regular')) ?? (await this.findLocalFont(family))
       if (
         buffer &&
         this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
@@ -667,11 +671,7 @@ export class FontManager {
     }
   }
 
-  private async findLocalFont(
-    family: string,
-    style?: string,
-    options: FindLocalFontOptions = {}
-  ): Promise<ArrayBuffer | null> {
+  private async findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
     if (!IS_BROWSER || !window.queryLocalFonts) return null
     if (this.localFontAccessState !== 'granted') return null
     try {
@@ -679,9 +679,7 @@ export class FontManager {
       const match = chooseLocalFontMatch(fonts, family, style)
       if (!match) return null
       const blob: Blob = await match.blob()
-      const buffer = await blob.arrayBuffer()
-      if (!options.allowVariable && isVariableFont(buffer)) return null
-      return buffer
+      return await blob.arrayBuffer()
     } catch (e) {
       console.warn(`Local font access failed for "${family}" ${style ?? ''}:`, e)
       return null

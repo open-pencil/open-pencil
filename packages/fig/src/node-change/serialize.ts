@@ -101,6 +101,7 @@ function serializeTextProps(
   if (node.fontVariations.length > 0) {
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
+  if (!node.opticalSizeFromFontSize) nc.detachOpticalSizeFromFontSize = true
   const autoResize = node.textAutoResize
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
   if (!node.source.id || autoResize !== 'NONE' || 'textAutoResize' in rawNodeFields) {
