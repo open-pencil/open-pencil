@@ -40,6 +40,10 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
       replacement: resolve(rootDir, 'packages/dom-css/src/browser.ts')
     },
     {
+      find: /^@open-pencil\/dom-css\/export\/storybook\/mapping$/,
+      replacement: resolve(rootDir, 'packages/dom-css/src/export/storybook/mapping/index.ts')
+    },
+    {
       find: /^@open-pencil\/dom-css\/export$/,
       replacement: resolve(rootDir, 'packages/dom-css/src/export/index.ts')
     },
