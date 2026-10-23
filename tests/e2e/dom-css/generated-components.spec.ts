@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import type { Page } from '@playwright/test'
 import react from '@vitejs/plugin-react'
 import vue from '@vitejs/plugin-vue'
 import { createServer, type PluginOption, type ViteDevServer } from 'vite'
@@ -475,6 +476,12 @@ async function serveComponent(
   return server
 }
 
+async function openComponentPage(page: Page, server: ViteDevServer) {
+  await page.goto(server.resolvedUrls?.local[0] ?? '')
+  // Story play uses the page's focus and keyboard; finish it before the test interacts.
+  await expect(page.locator('#story')).toHaveAttribute('data-played', 'yes')
+}
+
 for (const framework of ['vue', 'react'] as const) {
   test.describe(`generated ${framework} components in a browser`, () => {
     let server: ViteDevServer | undefined
@@ -487,7 +494,7 @@ for (const framework of ['vue', 'react'] as const) {
       page
     }, info) => {
       server = await serveComponent(switchGraph(), framework, info.outputPath('switch'))
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const control = page.locator('#enabled').getByRole('switch')
       const thumb = page.locator('#enabled [class*="switch__thumb"]')
       await expect(control).toHaveAttribute('data-state', 'unchecked')
@@ -508,7 +515,7 @@ for (const framework of ['vue', 'react'] as const) {
 
     test("the default story's play function turns the switch on", async ({ page }, info) => {
       server = await serveComponent(switchGraph(), framework, info.outputPath('story'))
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       await expect(page.locator('#story')).toHaveAttribute('data-played', 'yes')
       await expect(page.locator('#story').getByRole('switch')).toHaveAttribute(
         'data-state',
@@ -525,7 +532,7 @@ for (const framework of ['vue', 'react'] as const) {
         info.outputPath('section'),
         'Section'
       )
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       await page.locator('#enabled').getByRole('button').first().click()
       const nested = page.locator('#enabled').getByRole('switch')
       // It starts as the design draws it and keeps working as a switch.
@@ -541,7 +548,7 @@ for (const framework of ['vue', 'react'] as const) {
       page
     }, info) => {
       server = await serveComponent(radioGroupGraph(), framework, info.outputPath('plan'), 'Plan')
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const enabled = page.locator('#enabled')
       await expect(enabled.getByRole('radio', { name: 'Basic' })).toBeChecked()
       await enabled.getByRole('radio', { name: 'Pro' }).click()
@@ -551,7 +558,7 @@ for (const framework of ['vue', 'react'] as const) {
 
     test('tabs show the panel of the tab clicked', async ({ page }, info) => {
       server = await serveComponent(tabsGraph(), framework, info.outputPath('tabs'), 'Settings')
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const enabled = page.locator('#enabled')
       await expect(enabled.getByText('Account settings')).toBeVisible()
       await enabled.getByRole('tab', { name: 'Password' }).click()
@@ -563,7 +570,7 @@ for (const framework of ['vue', 'react'] as const) {
       page
     }, info) => {
       server = await serveComponent(sliderGraph(), framework, info.outputPath('slider'))
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const thumb = page.locator('#enabled').getByRole('slider')
       await expect(thumb).toHaveAttribute('aria-valuenow', '60')
       // The root lays out at the size the design draws, though Reka and Radix render a span.
@@ -580,7 +587,7 @@ for (const framework of ['vue', 'react'] as const) {
       page
     }, info) => {
       server = await serveComponent(numberFieldGraph(), framework, info.outputPath('quantity'))
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const enabled = page.locator('#enabled')
       const field = enabled.getByRole('spinbutton')
       await expect(field).toHaveValue('9')
@@ -594,7 +601,7 @@ for (const framework of ['vue', 'react'] as const) {
 
     test('a text field takes its filled look while it has words', async ({ page }, info) => {
       server = await serveComponent(textFieldGraph(), framework, info.outputPath('email'))
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const field = page.locator('#enabled').getByRole('textbox')
       const root = page.locator('#enabled > *').first()
       await expect(field).toHaveAttribute('placeholder', 'Email')
@@ -607,7 +614,7 @@ for (const framework of ['vue', 'react'] as const) {
 
     test('a collapsible shows its content when its trigger opens it', async ({ page }, info) => {
       server = await serveComponent(disclosureGraph(), framework, info.outputPath('disclosure'))
-      await page.goto(server.resolvedUrls?.local[0] ?? '')
+      await openComponentPage(page, server)
       const content = page.locator('#enabled [class*="disclosure__content"]')
       await expect(content).toBeHidden()
       await page.locator('#enabled').getByRole('button').click()
