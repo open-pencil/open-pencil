@@ -4,7 +4,7 @@ import type { LanguageModel } from 'ai'
 
 import { createCloudAIClient } from '@open-pencil/cloud/client'
 
-import { createLanguageModel } from '@/app/ai/chat/model'
+import { createLanguageModel } from '@/app/ai/models/language-model'
 import { cloudCatalogModels } from '@/app/ai/providers/openpencil/catalog'
 import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
 
