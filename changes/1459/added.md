@@ -1,0 +1,1 @@
+- Material Symbols icons draw from Google's variable fonts in the Outlined, Rounded, and Sharp sets, each icon at its own optical size, weight, fill, and grade, and `.pen` files' Material icons import as these icons at pen.dev's weight.
