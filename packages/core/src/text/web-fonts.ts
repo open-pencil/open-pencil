@@ -5,6 +5,7 @@ import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 
 import { IS_BROWSER } from '#core/constants'
 import type { FamilyFace } from '#core/text/font/faces'
+import { sfntFont } from '#core/text/font/woff2'
 import {
   createProviderUnifont,
   isRemoteFontSource,
@@ -410,7 +411,7 @@ export class WebFontResolver {
       const buffers = await Promise.all(
         faces.map(async ({ source, init }) => {
           const response = await this.fetchRemote(source.url, { ...init, signal })
-          return response.ok ? response.arrayBuffer() : null
+          return response.ok ? sfntFont(await response.arrayBuffer()) : null
         })
       )
       return buffers.filter(isArrayBuffer)

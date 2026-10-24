@@ -12,6 +12,7 @@ import { isVariableFont, namedInstanceVariations } from '#core/text/font/variati
 export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
 export * from '#core/text/font/variation'
+export * from '#core/text/font/woff2'
 import {
   normalizeFontFamily,
   styleToWeight,
