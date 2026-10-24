@@ -15,7 +15,7 @@ import { booleanOperationPaints, createBooleanOperation } from '#core/editor/str
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 import { ungroupNode } from '#core/editor/structure/group/ungroup'
 import { setDefaultPageBackground } from '#core/figma-api/page-backgrounds'
-import { iconify, type IconProvider } from '#core/icons'
+import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { createSVGNodes } from '#core/io/formats/svg'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
@@ -537,7 +537,7 @@ export class FigmaAPI implements NodeProxyHost {
 
   exportImage?: (nodeIds: string[], options: ExportImageOptions) => Promise<Uint8Array | null>
   /** Where icon tools search and fetch icons; hosts may pass a self-hosted or bundled set. */
-  icons: IconProvider = iconify
+  icons: IconProvider = defaultIcons
   rasterCodec?: RasterCodec
   /** The document as it was before the current AI run first edited `pageId`, or null if unedited. */
   changeBaseline?: (pageId: string) => SceneGraph | null

@@ -1,4 +1,5 @@
 import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 export interface IconPath {
   vectorNetwork: VectorNetwork
@@ -15,7 +16,14 @@ export interface IconData {
   width: number
   height: number
   paths: IconPath[]
+  /** How a set we draw ourselves drew it, every option filled in; none for Iconify icons. */
+  options?: IconOptions
 }
+
+/** A control for how a set's icons are drawn: a range, such as a font axis, or a choice. */
+export type IconOption =
+  | { key: string; name: string; min: number; max: number; default: number; step: number }
+  | { key: string; name: string; values: readonly string[]; default: string }
 
 export interface IconifyIconEntry {
   body: string
@@ -48,6 +56,8 @@ export interface IconCollection {
   license: string | null
   /** Drawn in the set's own colors, which an icon color does not change. */
   multicolor: boolean
+  /** How the set's icons can be drawn, for a set we draw ourselves. */
+  options?: readonly IconOption[]
 }
 
 export interface IconPathInfo {

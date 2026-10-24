@@ -1,10 +1,11 @@
 export {
-  iconFontFamily,
   iconName,
+  iconOptions,
   isDataURL,
   isDocumentAssetPath,
   penAssets,
-  type PenAssets
+  type PenAssets,
+  type PenIconRequest
 } from './assets'
 export type { PenIconSource } from './nodes'
 export {
