@@ -106,3 +106,45 @@ export function vertexKind(style: DrawioStyle, hasChildren: boolean): VertexKind
   } else if (shape === 'SQUARE' && style.values.rounded === '1') shape = 'ROUNDED_RECTANGLE'
   return { type: 'SHAPE_WITH_TEXT', shape, rotation, stencil: !SHAPES.has(name) }
 }
+
+/**
+ * The draw.io style that draws each FigJam shape, the other way round: built-in shapes where
+ * draw.io has one, its flowchart and basic stencils otherwise. A shield, which draw.io has no
+ * shape for, goes as a rectangle.
+ */
+const DRAWIO_SHAPES: Record<ShapeWithTextType, Record<string, string>> = {
+  SQUARE: {},
+  ROUNDED_RECTANGLE: { rounded: '1' },
+  ELLIPSE: { shape: 'ellipse' },
+  DIAMOND: { shape: 'rhombus' },
+  TRIANGLE_UP: { shape: 'triangle', direction: 'north' },
+  TRIANGLE_DOWN: { shape: 'triangle', direction: 'south' },
+  PARALLELOGRAM_RIGHT: { shape: 'parallelogram' },
+  PARALLELOGRAM_LEFT: { shape: 'parallelogram', flipH: '1' },
+  ENG_DATABASE: { shape: 'cylinder3' },
+  ENG_QUEUE: { shape: 'mxgraph.flowchart.direct_data' },
+  ENG_FILE: { shape: 'note' },
+  ENG_FOLDER: { shape: 'folder' },
+  TRAPEZOID: { shape: 'trapezoid' },
+  PREDEFINED_PROCESS: { shape: 'process' },
+  SHIELD: {},
+  DOCUMENT_SINGLE: { shape: 'document' },
+  DOCUMENT_MULTIPLE: { shape: 'mxgraph.flowchart.multi-document' },
+  MANUAL_INPUT: { shape: 'manualInput' },
+  HEXAGON: { shape: 'hexagon' },
+  CHEVRON: { shape: 'step' },
+  PENTAGON: { shape: 'mxgraph.basic.pentagon' },
+  OCTAGON: { shape: 'mxgraph.basic.octagon2' },
+  STAR: { shape: 'mxgraph.basic.star' },
+  PLUS: { shape: 'cross' },
+  ARROW_LEFT: { shape: 'singleArrow', direction: 'west' },
+  ARROW_RIGHT: { shape: 'singleArrow' },
+  SUMMING_JUNCTION: { shape: 'sumEllipse' },
+  OR: { shape: 'orEllipse' },
+  SPEECH_BUBBLE: { shape: 'callout' },
+  INTERNAL_STORAGE: { shape: 'internalStorage' }
+}
+
+export function drawioShapeValues(shape: ShapeWithTextType): Record<string, string> {
+  return { ...DRAWIO_SHAPES[shape] }
+}

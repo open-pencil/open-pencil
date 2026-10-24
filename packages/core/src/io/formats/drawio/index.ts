@@ -175,3 +175,4 @@ export function drawioToSceneGraph(file: DrawioFile): SceneGraph {
   return graph
 }
 
+export { sceneGraphToDrawio } from './export'
