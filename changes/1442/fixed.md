@@ -1,0 +1,1 @@
+- Repeated native fallback-font preparation reuses system font data instead of retaining duplicate copies in CanvasKit.

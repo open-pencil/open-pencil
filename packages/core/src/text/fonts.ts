@@ -79,6 +79,7 @@ export class FontManager {
   private downloadedFontCache: DownloadedFontCache | null = null
   private fallbackUserAgent: string | undefined
   private hostFontLoader: HostFontLoader | null = null
+  private readonly hostFontRequests = new Map<string, Promise<ArrayBuffer | null>>()
   private webFonts = new WebFontResolver()
   private cjkFallbackFamilies: string[] = []
   private cjkFallbackPromise: Promise<string[]> | null = null
@@ -158,6 +159,7 @@ export class FontManager {
 
   setHostFontLoader(loader: HostFontLoader | null): void {
     this.hostFontLoader = loader
+    this.hostFontRequests.clear()
   }
 
   /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
@@ -589,6 +591,7 @@ export class FontManager {
         (await this.findLocalFont(family, undefined, {
           allowVariable: options.allowVariableLocalFonts
         }))
+      signal?.throwIfAborted()
       if (
         buffer &&
         this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
@@ -621,11 +624,31 @@ export class FontManager {
     return targetFamilies
   }
 
-  private async loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
-    if (!this.hostFontLoader) return null
+  private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
+    const loader = this.hostFontLoader
+    if (!loader) return Promise.resolve(null)
+    const key = `${family}|${style}`
+    const existing = this.hostFontRequests.get(key)
+    if (existing) return existing
+    // Native reads return a fresh buffer each time. Registration deduplicates by identity:
+    // rereading a fallback face would retain another full font in every CanvasKit provider.
+    const loading = this.readHostFont(loader, family, style)
+    this.hostFontRequests.set(key, loading)
+    void loading.then((data) => {
+      if (!data && this.hostFontRequests.get(key) === loading) this.hostFontRequests.delete(key)
+      return undefined
+    })
+    return loading
+  }
+
+  private async readHostFont(
+    loader: HostFontLoader,
+    family: string,
+    style: string
+  ): Promise<ArrayBuffer | null> {
     const key = `${family}|${style}`
     try {
-      const data = await this.hostFontLoader(family, style)
+      const data = await loader(family, style)
       if (data) this.unavailableFaces.delete(key)
       return data
     } catch (e) {
