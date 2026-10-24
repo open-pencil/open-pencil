@@ -1,0 +1,1 @@
+- Variable fonts draw every style they cover from one file, fonts installed locally included, at the axes Figma draws them: a style's named instance, the axes the text sets, and an optical size that follows the font size unless the text detaches it, which `.fig` files keep. Inter ships as its variable files, so every weight and italic draws offline.

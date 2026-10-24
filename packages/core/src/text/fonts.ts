@@ -5,9 +5,10 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
+import { fontFaceRenderFamily } from '#core/text/face'
 import { facesFromStyles, hasFamilyFace, type FamilyFace } from '#core/text/font/faces'
 import { chooseLocalFontMatch } from '#core/text/font/style'
-import { isVariableFont, namedInstanceVariations } from '#core/text/font/variation'
+import { fontAxes, namedInstanceVariations } from '#core/text/font/variation'
 
 export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
@@ -15,6 +16,7 @@ export * from '#core/text/font/variation'
 export * from '#core/text/font/woff2'
 import {
   normalizeFontFamily,
+  parseFontStyle,
   styleToWeight,
   weightToStyle
 } from '@open-pencil/scene-graph/font-style'
@@ -35,20 +37,30 @@ import { collectGraphFontKeys } from '#core/text/requirements'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-fonts'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-fonts'
 
-type FindLocalFontOptions = { allowVariable?: boolean }
+/** Inter's weights, each drawn from Inter's variable files at its named instance. */
+const INTER_WEIGHTS = [
+  'Thin',
+  'ExtraLight',
+  'Light',
+  'Regular',
+  'Medium',
+  'SemiBold',
+  'Bold',
+  'ExtraBold',
+  'Black'
+]
 
 const BUNDLED_FONTS: Record<string, string> = {
-  'Inter|Regular': '/Inter-Regular.ttf',
-  'Inter|Medium': '/Inter-Medium.ttf',
-  'Inter|SemiBold': '/Inter-SemiBold.ttf',
-  'Inter|Bold': '/Inter-Bold.ttf',
-  'Inter|ExtraBold': '/Inter-ExtraBold.ttf',
+  ...Object.fromEntries(INTER_WEIGHTS.map((weight) => [`Inter|${weight}`, '/InterVariable.ttf'])),
+  ...Object.fromEntries(
+    INTER_WEIGHTS.map((weight) => [`Inter|${weight} Italic`, '/InterVariable-Italic.ttf'])
+  ),
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf',
   'OpenPencil Emoji Metrics|Regular': '/OpenPencilEmojiMetrics-Regular.ttf'
 }
 
 /**
- * Maps a bundled font's file name (`Inter-Regular.ttf`) to the URL a browser fetches it from.
+ * Maps a bundled font's file name (`InterVariable.ttf`) to the URL a browser fetches it from.
  * Mirrors CanvasKit's `locateFile`; the default expects the host to serve
  * `@open-pencil/core/assets` at the site root.
  */
@@ -61,6 +73,8 @@ export class FontManager {
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
+  /** The name each file of a family loaded from several files is registered under. */
+  private fileFamilies = new Map<ArrayBuffer, string>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private blockedNodeIds = new Set<string>()
@@ -362,9 +376,7 @@ export class FontManager {
     if (!bundledURL) return null
     try {
       const buffer = await this.fetchBundledFont(bundledURL)
-      return buffer && !isVariableFont(buffer)
-        ? this.registerAndCache(family, style, buffer, 'bundled')
-        : null
+      return buffer ? this.registerAndCache(family, style, buffer, 'bundled') : null
     } catch (e) {
       console.warn(`Bundled font load failed for "${family}" ${style}:`, e)
       return null
@@ -434,10 +446,29 @@ export class FontManager {
     }
 
     return (
+      this.sharedVariableFace(family, style) ??
       (await this.loadLocalFont(family, style)) ??
       (await this.loadCachedFont(family, style, characters)) ??
       (await this.loadRemoteFont(family, style, characters, signal))
     )
+  }
+
+  /**
+   * A variable font the family loaded for another style in the same slant whose weight axis
+   * reaches this style's weight, registered for this style too: one file draws every weight.
+   */
+  private sharedVariableFace(family: string, style: string): ArrayBuffer | null {
+    const { weight, italic } = parseFontStyle(style)
+    for (const [key, data] of this.loadedFamilies) {
+      if (!key.startsWith(`${family}|`)) continue
+      if (parseFontStyle(key.slice(family.length + 1)).italic !== italic) continue
+      const wght = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+      if (!wght || weight < wght.min || weight > wght.max) continue
+      const coverage = this.remoteCoverage.get(key)
+      if (coverage) this.remoteCoverage.set(`${family}|${style}`, new Set(coverage))
+      return this.registerAndCache(family, style, data, this.loadedFamilySources.get(key))
+    }
+    return null
   }
 
   async ensureNodeFont(family: string, weight: number): Promise<void> {
@@ -492,11 +523,33 @@ export class FontManager {
     return byStyle.get(style) ?? null
   }
 
-  renderFamily(family: string, _style: string): string {
-    // CanvasKit can shape metrics but paint no glyphs for some CJK/Arabic faces registered under a
-    // synthetic alias. Keep every shard under the font's source family; character-aware remote
-    // requests already fetch cumulative coverage before replacing the primary buffer.
-    return family
+  /**
+   * The family CanvasKit is asked for to draw `style` of `family`. A family loaded from one file
+   * draws under its own name, with every coverage shard, as some CJK and Arabic faces need to
+   * paint. Loaded from several files, such as a bundled static face beside a downloaded variable
+   * one, CanvasKit would pick among them by the weight each file declares, which can tie; each
+   * style then draws from the file loaded for it, registered with its shards under a name of the
+   * file's own.
+   */
+  renderFamily(family: string, style: string): string {
+    const data = this.loadedData(family, style)
+    if (!data || this.familyFileCount(family) < 2) return family
+    let name = this.fileFamilies.get(data)
+    if (!name) {
+      name = fontFaceRenderFamily(family, `file ${this.fileFamilies.size + 1}`)
+      this.fileFamilies.set(data, name)
+    }
+    this.registerFontInCanvasKit(name, data)
+    for (const shard of this.supplementalFamilyData.get(`${family}|${style}`) ?? [])
+      this.registerFontInCanvasKit(name, shard)
+    return name
+  }
+
+  /** How many files the family's loaded styles come from. */
+  private familyFileCount(family: string): number {
+    const files = new Set<ArrayBuffer>()
+    for (const [key, data] of this.loadedFamilies) if (key.startsWith(`${family}|`)) files.add(data)
+    return files.size
   }
 
   collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[string, string]> {
@@ -507,9 +560,7 @@ export class FontManager {
     if (this.cjkFallbackFamilies.length > 0) return this.cjkFallbackFamilies
     if (this.cjkFallbackPromise) return this.cjkFallbackPromise
 
-    this.cjkFallbackPromise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies, {
-      allowVariableLocalFonts: true
-    })
+    this.cjkFallbackPromise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies)
     return this.cjkFallbackPromise
   }
 
@@ -543,19 +594,13 @@ export class FontManager {
         signal?.throwIfAborted()
         const target = script === 'arabic' ? this.arabicFallbackFamilies : this.cjkFallbackFamilies
         if (signal) {
-          result[script] = await this.ensureFallbackFamilies(
-            script,
-            target,
-            { allowVariableLocalFonts: script === 'cjk' },
-            characters,
-            signal
-          )
+          result[script] = await this.ensureFallbackFamilies(script, target, characters, signal)
         } else if (script === 'arabic' && !characters) {
           result[script] = await this.ensureArabicFallback()
         } else if (script === 'cjk' && !characters) {
           result[script] = await this.ensureCJKFallback()
         } else {
-          result[script] = await this.ensureFallbackFamilies(script, target, {}, characters)
+          result[script] = await this.ensureFallbackFamilies(script, target, characters)
         }
       })
     )
@@ -576,7 +621,6 @@ export class FontManager {
   private async ensureFallbackFamilies(
     script: FontFallbackScript,
     targetFamilies: string[],
-    options: { allowVariableLocalFonts?: boolean } = {},
     characters = '',
     signal?: AbortSignal
   ): Promise<string[]> {
@@ -586,10 +630,7 @@ export class FontManager {
     for (const family of manifest.localFamilies) {
       signal?.throwIfAborted()
       const buffer =
-        (await this.loadHostFont(family, 'Regular')) ??
-        (await this.findLocalFont(family, undefined, {
-          allowVariable: options.allowVariableLocalFonts
-        }))
+        (await this.loadHostFont(family, 'Regular')) ?? (await this.findLocalFont(family))
       if (
         buffer &&
         this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
@@ -667,11 +708,7 @@ export class FontManager {
     }
   }
 
-  private async findLocalFont(
-    family: string,
-    style?: string,
-    options: FindLocalFontOptions = {}
-  ): Promise<ArrayBuffer | null> {
+  private async findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
     if (!IS_BROWSER || !window.queryLocalFonts) return null
     if (this.localFontAccessState !== 'granted') return null
     try {
@@ -679,9 +716,7 @@ export class FontManager {
       const match = chooseLocalFontMatch(fonts, family, style)
       if (!match) return null
       const blob: Blob = await match.blob()
-      const buffer = await blob.arrayBuffer()
-      if (!options.allowVariable && isVariableFont(buffer)) return null
-      return buffer
+      return await blob.arrayBuffer()
     } catch (e) {
       console.warn(`Local font access failed for "${family}" ${style ?? ''}:`, e)
       return null

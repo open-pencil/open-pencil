@@ -12,7 +12,7 @@ import { fontManager } from '#core/text/fonts'
  */
 describe('startTextEditing — path-text font gate', () => {
   test('blocks unavailable-font path text, allows available-font + normal text', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
     fontManager.markLoaded('Inter', 'Regular', font)

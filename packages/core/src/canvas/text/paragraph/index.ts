@@ -15,7 +15,11 @@ import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { loadedFace, resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import {
+  drawnFontVariations,
+  loadedFace,
+  resolveParagraphFontFamilies
+} from '#core/canvas/text/font-families'
 import { laidOutText } from '#core/canvas/text/keycap'
 import {
   pushParagraphStyle,
@@ -179,8 +183,14 @@ function pushStyleRun(
     locale: styleRunLanguage(style, node),
     fontStyle: drawnFontStyle(ck, runFamily, runWeight, runItalic),
     fontVariations: textFontVariations(
-      style.fontVariations ?? node.fontVariations,
-      fontManager.namedInstanceVariations(runFamily, weightToStyle(runWeight, runItalic))
+      drawnFontVariations({
+        family: runFamily,
+        weight: runWeight,
+        italic: runItalic,
+        fontSize: runFontSize,
+        variations: style.fontVariations ?? node.fontVariations,
+        opticalSizeFromFontSize: node.opticalSizeFromFontSize
+      })
     ),
     fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
     letterSpacing: style.letterSpacing ?? (node.letterSpacing || 0),
@@ -292,11 +302,14 @@ export function buildSkParagraph(
       node.italic
     ),
     fontVariations: textFontVariations(
-      node.fontVariations,
-      fontManager.namedInstanceVariations(
-        node.fontFamily || DEFAULT_FONT_FAMILY,
-        weightToStyle(node.fontWeight, node.italic)
-      )
+      drawnFontVariations({
+        family: node.fontFamily || DEFAULT_FONT_FAMILY,
+        weight: node.fontWeight,
+        italic: node.italic,
+        fontSize: baseFontSize,
+        variations: node.fontVariations,
+        opticalSizeFromFontSize: node.opticalSizeFromFontSize
+      })
     ),
     fontFeatures: textFontFeatures(node.fontFeatures),
     letterSpacing: node.letterSpacing || 0,

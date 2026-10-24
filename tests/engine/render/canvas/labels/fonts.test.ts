@@ -5,6 +5,7 @@ import { initCanvasKit } from '#cli/headless'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
 import { resolveLabelFontCoverage } from '#core/canvas/renderer/fonts'
 import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import { fontManager } from '#core/text/fonts'
 import { FontResolver, missingGlyphOccurrences } from '#core/text/resolver'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -30,7 +31,9 @@ test.each([
   }
 ])('labels reuse shared fallback loading and render real $family glyphs', async (fixture) => {
   const provider = ck.TypefaceFontProvider.Make()
-  provider.registerFont(readFileSync(repoPath('packages/core/assets/Inter-Regular.ttf')), 'Inter')
+  // Attached, as the renderer's provider is, so faces the font manager names are registered in it.
+  fontManager.attachProvider(ck, provider)
+  provider.registerFont(readFileSync(repoPath('packages/core/assets/InterVariable.ttf')), 'Inter')
   const release = Promise.withResolvers<undefined>()
   const settled = Promise.withResolvers<undefined>()
   let generation = 1
@@ -142,6 +145,7 @@ test.each([
     cache.clear()
     fresh.clear()
     surface.delete()
+    fontManager.detachProvider(provider)
     provider.delete()
   }
 })

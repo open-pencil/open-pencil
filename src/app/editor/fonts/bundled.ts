@@ -1,8 +1,6 @@
-import interBold from '@open-pencil/core/assets/Inter-Bold.ttf?url'
-import interExtraBold from '@open-pencil/core/assets/Inter-ExtraBold.ttf?url'
-import interMedium from '@open-pencil/core/assets/Inter-Medium.ttf?url'
-import interRegular from '@open-pencil/core/assets/Inter-Regular.ttf?url'
 import interSemiBold from '@open-pencil/core/assets/Inter-SemiBold.ttf?url'
+import interVariableItalic from '@open-pencil/core/assets/InterVariable-Italic.ttf?url'
+import interVariable from '@open-pencil/core/assets/InterVariable.ttf?url'
 import notoNaskhArabic from '@open-pencil/core/assets/NotoNaskhArabic-Regular.ttf?url'
 import emojiMetrics from '@open-pencil/core/assets/OpenPencilEmojiMetrics-Regular.ttf?url'
 import { fontManager } from '@open-pencil/core/text'
@@ -14,11 +12,9 @@ import { fontManager } from '@open-pencil/core/text'
  * in a Vite build, not in the Bun test runner.
  */
 const BUNDLED_FONT_URLS: Record<string, string> = {
-  'Inter-Regular.ttf': interRegular,
-  'Inter-Medium.ttf': interMedium,
+  'InterVariable.ttf': interVariable,
+  'InterVariable-Italic.ttf': interVariableItalic,
   'Inter-SemiBold.ttf': interSemiBold,
-  'Inter-Bold.ttf': interBold,
-  'Inter-ExtraBold.ttf': interExtraBold,
   'NotoNaskhArabic-Regular.ttf': notoNaskhArabic,
   'OpenPencilEmojiMetrics-Regular.ttf': emojiMetrics
 }

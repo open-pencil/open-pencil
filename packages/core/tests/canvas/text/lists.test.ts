@@ -45,7 +45,7 @@ function lineStarts(shaped: ShapedText): number[] {
 describe('text lists', () => {
   beforeAll(async () => {
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
     fontManager.markLoaded('Inter', 'Regular', inter)

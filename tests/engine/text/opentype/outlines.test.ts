@@ -4,7 +4,7 @@ import { fontManager, probeGlyphOutlineCommands } from '@open-pencil/core/text'
 
 describe('clipboard text outline probe', () => {
   test('lazy-loads opentype.js and extracts glyph commands from a loaded font', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
 

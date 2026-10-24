@@ -38,7 +38,7 @@ async function shape(props: Partial<SceneNode>): Promise<ShapedText | null> {
 describe('text shaping for saved glyphs', () => {
   beforeAll(async () => {
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
     fontManager.markLoaded('Inter', 'Regular', inter)
