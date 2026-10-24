@@ -28,7 +28,10 @@ export interface SVGCharacterEdges {
   right: number
 }
 
-/** The lines of a text node from the host's text layout, or null to keep the text on one line. */
+/**
+ * Measured lines of a text node, or null when this node has none. Export then keeps only the
+ * text's explicit newlines, each on its own baseline.
+ */
 export type SVGTextLayout = (node: SceneNode) => readonly SVGTextLine[] | null
 
 type SpanAttrs = (style: CharacterStyleOverride) => Record<string, string | number | undefined>
@@ -73,8 +76,13 @@ function lineSpans(
   line: SVGTextLine,
   spanAttrs: SpanAttrs
 ): SVGNode[] {
-  // The newline that ends a line is not drawn.
-  const end = node.text[line.end - 1] === '\n' ? line.end - 1 : line.end
+  // The newline that ends a line is not drawn. A CR is dropped only with that LF, so a
+  // literal trailing CR stays.
+  let end = line.end
+  if (end > line.start && node.text[end - 1] === '\n') {
+    end -= 1
+    if (end > line.start && node.text[end - 1] === '\r') end -= 1
+  }
   const y = round(line.y)
   const spans: SVGNode[] = []
   for (const piece of pieces) {
@@ -90,6 +98,91 @@ function lineSpans(
     spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, from, to)))
   }
   return spans
+}
+
+/**
+ * Baseline-to-baseline distance with no measured layout. A line height is pixels — a percent is
+ * already that fraction of the font size — and automatic (`null` or `0`) is 1.2 times the font
+ * size, the estimate text layout uses when it has no font metrics.
+ */
+function resolvedLineHeight(fontSize: number, lineHeight: number | null): number {
+  return lineHeight || fontSize * 1.2
+}
+
+/** The line height a run contributes: its own when it sets one, otherwise the node's. */
+function runLineHeight(node: SceneNode, style: CharacterStyleOverride | null): number {
+  const fontSize = style?.fontSize ?? node.fontSize
+  const lineHeight =
+    style != null && style.lineHeight !== undefined ? style.lineHeight : node.lineHeight
+  return resolvedLineHeight(fontSize, lineHeight)
+}
+
+/**
+ * The characters that set a line's height. Text excludes the LF that ends the line and the CR
+ * of that CRLF, as the canvas does. An empty line is the newline that makes it.
+ */
+function lineHeightSpan(text: string, start: number, end: number): { from: number; to: number } {
+  if (end > start && text[end - 1] === '\n') {
+    let contentEnd = end - 1
+    if (contentEnd > start && text[contentEnd - 1] === '\r') contentEnd -= 1
+    if (contentEnd > start) return { from: start, to: contentEnd }
+    return { from: end - 1, to: end }
+  }
+  if (end > start) return { from: start, to: end }
+  // A trailing empty line has no characters of its own; the newline that opened it does.
+  return { from: Math.max(0, start - 1), to: start }
+}
+
+/**
+ * How far this line's baseline stands below the one before it. The line is as tall as the
+ * tallest line height on it, and an empty line is as tall as the newline that makes it.
+ */
+function explicitLineHeight(
+  node: SceneNode,
+  pieces: readonly TextPiece[],
+  start: number,
+  end: number
+): number {
+  const { from, to } = lineHeightSpan(node.text, start, end)
+  let height = 0
+  let covered = false
+  for (const piece of pieces) {
+    const pieceFrom = Math.max(piece.from, from)
+    const pieceTo = Math.min(piece.to, to)
+    if (pieceTo <= pieceFrom) continue
+    covered = true
+    height = Math.max(height, runLineHeight(node, piece.style))
+  }
+  return covered ? height : resolvedLineHeight(node.fontSize, node.lineHeight)
+}
+
+/**
+ * One line per explicit newline, for text exported without a measured layout. `x` is the
+ * alignment anchor and `firstBaseline` the first line's baseline, both as the single-line
+ * fallback computes them. Each later baseline stands the height of that line below the one
+ * before it, as the canvas lays lines out. `null` when the text has no newline, so a single
+ * line stays one `<text>`.
+ */
+export function explicitNewlineLines(
+  node: SceneNode,
+  x: number,
+  firstBaseline: number
+): SVGTextLine[] | null {
+  if (!node.text.includes('\n')) return null
+  const pieces = textPieces(node)
+  const parts = node.text.split('\n')
+  const lines: SVGTextLine[] = []
+  let start = 0
+  let y = firstBaseline
+  for (const [index, part] of parts.entries()) {
+    // The newline that ends a line stays inside the range, as a measured line's `end` does.
+    const endsWithBreak = index < parts.length - 1
+    const end = start + part.length + (endsWithBreak ? 1 : 0)
+    if (index > 0) y += explicitLineHeight(node, pieces, start, end)
+    lines.push({ start, end, x, y, width: node.width })
+    start = end
+  }
+  return lines
 }
 
 /**

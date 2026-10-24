@@ -399,8 +399,8 @@ export interface SVGExportOptions {
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
   /**
-   * Line breaks of text nodes as the editor laid them out. Without them each text node is one
-   * line of SVG text, which renderers that do not wrap SVG text (such as PDF) keep on one line.
+   * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
+   * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
    */
   textLayout?: SVGTextLayout
   /**

@@ -68,7 +68,7 @@ export function pdfFontFaces(status: DocumentFontStatus): PDFFontFace[] {
 /**
  * Runs `render` with the line breaks the canvas gives each text node (same paragraph builder and
  * fonts), so a wrapped paragraph stays wrapped in the PDF. Without CanvasKit, `render` gets no
- * layout and each text node is exported on one line.
+ * layout and only explicit newlines start a new line.
  */
 export async function withPDFTextLayout<T>(
   render: (textLayout: SVGTextLayout | undefined) => Promise<T>

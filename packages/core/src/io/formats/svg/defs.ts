@@ -31,7 +31,7 @@ export interface SVGExportContext {
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
-  /** Line breaks of text nodes; without them each text node is drawn on one line. */
+  /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
   fontAlias?: SVGFontAlias
 }

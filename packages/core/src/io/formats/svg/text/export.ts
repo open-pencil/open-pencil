@@ -4,7 +4,7 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/directio
 import { formatColor, type SVGExportContext, type SVGFontAlias } from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
-import { laidOutTextSpans } from '#core/io/formats/svg/text/lines'
+import { explicitNewlineLines, laidOutTextSpans } from '#core/io/formats/svg/text/lines'
 import { shownText, shownTextSlice } from '#core/text/case'
 import type { FontFaceRef } from '#core/text/face'
 import { textFontFace } from '#core/text/requirements'
@@ -69,6 +69,42 @@ function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
   return 0
 }
 
+type SpanAttrs = (style: CharacterStyleOverride) => Record<string, string | number | undefined>
+
+/** Text with no measured layout: explicit newlines on their own baselines, otherwise one line. */
+function renderUnmeasuredText(
+  node: SceneNode,
+  attrs: Record<string, string | number | undefined>,
+  spanAttrs: SpanAttrs,
+  direction: 'LTR' | 'RTL'
+): SVGNode {
+  const x = textXForNode(node, direction)
+  const y = node.fontSize || 14
+  // No measured wraps: an explicit newline still starts a line, on the same anchor as one line.
+  const newlineLines = explicitNewlineLines(node, x, y)
+  if (newlineLines) {
+    return svg(
+      'text',
+      { ...attrs, 'xml:space': 'preserve' },
+      ...laidOutTextSpans(node, newlineLines, spanAttrs)
+    )
+  }
+
+  if (node.styleRuns.length > 0) {
+    const spans: SVGNode[] = []
+    let pos = 0
+    for (const run of node.styleRuns) {
+      const text = shownTextSlice(node, pos, pos + run.length)
+      pos += run.length
+      spans.push(svg('tspan', spanAttrs(run.style), text))
+    }
+
+    return svg('text', { x, y, ...attrs }, ...spans)
+  }
+
+  return svg('text', { x, y, ...attrs }, shownText(node))
+}
+
 export function renderTextNode(
   node: SceneNode,
   fillAttr: string | null,
@@ -110,20 +146,5 @@ export function renderTextNode(
     )
   }
 
-  const x = textXForNode(node, direction)
-  const y = node.fontSize || 14
-
-  if (node.styleRuns.length > 0) {
-    const spans: SVGNode[] = []
-    let pos = 0
-    for (const run of node.styleRuns) {
-      const text = shownTextSlice(node, pos, pos + run.length)
-      pos += run.length
-      spans.push(svg('tspan', spanAttrs(run.style), text))
-    }
-
-    return svg('text', { x, y, ...attrs }, ...spans)
-  }
-
-  return svg('text', { x, y, ...attrs }, shownText(node))
+  return renderUnmeasuredText(node, attrs, spanAttrs, direction)
 }
