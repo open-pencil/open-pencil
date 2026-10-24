@@ -35,6 +35,7 @@ export function createNodePreviewActions(
     const subscriptions: Array<() => void> = []
 
     function capture(node: SceneNode, changes: Partial<SceneNode>) {
+      graph.willChangeNode(node)
       if (!originals.has(node.id) && graph.isApplyingLayout) layoutOnly.add(node.id)
       if (!graph.isApplyingLayout) {
         layoutOnly.delete(node.id)

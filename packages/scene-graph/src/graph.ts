@@ -442,6 +442,9 @@ export class SceneGraph {
       if (beforeUpdate) this.previewObservers.pop()
     }
   }
+  get isApplyingPreview(): boolean {
+    return this.scopeDepths.preview > 0
+  }
   preserveSourceMetadataDuring<T>(fn: () => T): T {
     return this.withScope('sourceMetadata', fn)
   }

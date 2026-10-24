@@ -1,0 +1,1 @@
+- Layer edits made by scrubbing a number field or dragging a handle in an opened `.fig` file are saved with the file instead of being dropped.

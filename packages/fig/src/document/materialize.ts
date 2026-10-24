@@ -210,12 +210,14 @@ export function createFigDocumentSession(
 /**
  * Whether the graph may hold edits made since the file loaded, which a page load has to
  * reconcile its new instances with. A resumed session's graph may; a fresh one's does once a
- * layer changes outside page loads and derived layout, the edits the archive tracker counts.
+ * layer changes outside page loads, derived layout and node previews, whose provisional values
+ * are an edit only once committed.
  */
 function watchGraphEdits(graph: SceneGraph, resumed: boolean): { readonly edited: boolean } {
   let edited = resumed
   if (edited) return { edited }
-  const isEdit = () => !graph.isApplyingImportedState && !graph.isApplyingDerivedLayout
+  const isEdit = () =>
+    !graph.isApplyingImportedState && !graph.isApplyingDerivedLayout && !graph.isApplyingPreview
   const markEdited = () => {
     if (!isEdit()) return
     edited = true
