@@ -5,6 +5,8 @@ export const cloudIdentitySchema = v.object({
   userId: v.string(),
   email: v.pipe(v.string(), v.email()),
   name: v.string(),
+  /** The account's picture, such as one a social provider gave it. */
+  image: v.optional(v.nullable(v.string())),
   deploymentRole: v.optional(v.picklist(['user', 'admin']))
 })
 
@@ -40,7 +42,10 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'password_too_long',
   'last_authentication_method',
   'session_not_fresh',
-  'authentication_method_failed'
+  'authentication_method_failed',
+  'email_unchanged',
+  'email_change_unavailable',
+  'current_session'
 ])
 export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
@@ -93,6 +98,74 @@ export function parseCloudUnlinkAuthenticationMethod(input: unknown) {
 
 export const cloudAccountMutationResponseSchema = v.object({ ok: v.literal(true) })
 
+/** What a person can see and change about themselves. */
+export const cloudProfileSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  email: v.pipe(v.string(), v.email()),
+  image: v.nullable(v.string()),
+  createdAt: v.string(),
+  /** Whether the server can send the verification a new email address needs. */
+  emailChangeAvailable: v.boolean()
+})
+export const cloudProfileResponseSchema = v.object({ profile: cloudProfileSchema })
+export const cloudProfileUpdateSchema = v.object({
+  name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100))
+})
+export const cloudEmailChangeSchema = v.object({
+  newEmail: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email()),
+  callbackURL: v.pipe(v.string(), v.url())
+})
+
+/** How a sign-in was made: the method it used, or the desktop app's approved code. */
+export const cloudSignInMethodSchema = v.picklist([
+  'password',
+  'google',
+  'apple',
+  'passkey',
+  'two-step',
+  'email-link',
+  'desktop',
+  'other'
+])
+export const cloudAccountSessionSchema = v.object({
+  id: v.string(),
+  /** The session this request was made with. */
+  current: v.boolean(),
+  method: v.nullable(cloudSignInMethodSchema),
+  ipAddress: v.nullable(v.string()),
+  /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
+  browser: v.nullable(v.string()),
+  system: v.nullable(v.string()),
+  createdAt: v.string(),
+  lastActiveAt: v.string(),
+  expiresAt: v.string()
+})
+export const cloudAccountSessionsResponseSchema = v.object({
+  sessions: v.array(cloudAccountSessionSchema)
+})
+export const cloudSessionRevokeSchema = v.object({ sessionId: v.pipe(v.string(), v.minLength(1)) })
+export const cloudSignInSchema = v.object({
+  id: v.string(),
+  method: cloudSignInMethodSchema,
+  ipAddress: v.nullable(v.string()),
+  /** The browser and system the server read from the client's user agent, such as `Chrome 141`. */
+  browser: v.nullable(v.string()),
+  system: v.nullable(v.string()),
+  createdAt: v.string()
+})
+export const cloudSignInsResponseSchema = v.object({ signIns: v.array(cloudSignInSchema) })
+
+export function parseCloudProfileUpdate(input: unknown) {
+  return v.parse(cloudProfileUpdateSchema, input)
+}
+export function parseCloudEmailChange(input: unknown) {
+  return v.parse(cloudEmailChangeSchema, input)
+}
+export function parseCloudSessionRevoke(input: unknown) {
+  return v.parse(cloudSessionRevokeSchema, input)
+}
+
 export type AccountSecurityErrorCode = v.InferOutput<typeof accountSecurityErrorCodeSchema>
 export type CloudAuthenticationProvider = v.InferOutput<typeof cloudAuthenticationProviderSchema>
 export type CloudAuthenticationMethod = v.InferOutput<typeof cloudAuthenticationMethodSchema>
@@ -101,3 +174,7 @@ export type CloudAuthenticationMethods = v.InferOutput<
 >
 
 export type CloudAccountStatus = v.InferOutput<typeof cloudAccountStatusResponseSchema>
+export type CloudProfile = v.InferOutput<typeof cloudProfileSchema>
+export type CloudSignInMethod = v.InferOutput<typeof cloudSignInMethodSchema>
+export type CloudAccountSession = v.InferOutput<typeof cloudAccountSessionSchema>
+export type CloudSignIn = v.InferOutput<typeof cloudSignInSchema>

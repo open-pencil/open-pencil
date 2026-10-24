@@ -12,7 +12,7 @@ try {
   const normalized = email.trim().toLowerCase()
   if (operation === 'approve') {
     await database
-      .insertInto('cloudEnrollment')
+      .insertInto('enrollment')
       .values({
         id: crypto.randomUUID(),
         emailNormalized: normalized,
@@ -42,7 +42,7 @@ try {
       .executeTakeFirstOrThrow()
     await database.updateTable('user').set({ role: 'admin' }).where('id', '=', user.id).execute()
     await database
-      .insertInto('cloudAdminAuditEvent')
+      .insertInto('adminAuditEvent')
       .values({
         id: crypto.randomUUID(),
         actorUserId: 'cli-bootstrap',

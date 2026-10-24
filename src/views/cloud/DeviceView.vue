@@ -76,7 +76,7 @@ const {
         size="lg"
         variant="outline"
         class="w-full"
-        @click="router.push({ name: 'security' })"
+        @click="router.push({ name: 'profile' })"
       >
         {{ messages.accountSettings }}
       </AppButton>

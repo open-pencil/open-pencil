@@ -8,5 +8,6 @@ export type {
   TransactionalEmailContent,
   TransactionalEmailKind,
   TransactionalEmailMessage,
-  TransactionalEmailPayloadByKind
+  TransactionalEmailPayloadByKind,
+  TwoStepChange
 } from './schema'

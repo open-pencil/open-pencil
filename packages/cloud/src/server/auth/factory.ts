@@ -15,6 +15,7 @@ import {
 import { importPKCS8, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
+import { accountActivity, createSignInActivity } from './activity'
 import type { CloudAuthAdapter } from './adapter'
 import type { AuthenticationEmailService } from './email'
 import { createMFAAssuranceService } from './mfa-assurance'
@@ -139,6 +140,9 @@ export function createBetterAuthAdapter(
 ): CloudAuthAdapter {
   const authenticationEmail = runtime.email
   const assurance = createMFAAssuranceService(database, config)
+  const activity = createSignInActivity(database, authenticationEmail)
+  // A new address is confirmed through a link sent to it, so changing one needs email delivery.
+  const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     baseURL: config.publicURL,
@@ -223,14 +227,19 @@ export function createBetterAuthAdapter(
             // Signing in unverified only says so; people ask for another link with Send again.
             sendOnSignIn: false,
             autoSignInAfterVerification: true,
+            // A change of address sends the link to the new address as `user.email`, on the
+            // account it already confirmed; a new account has not confirmed one yet. This runs
+            // inside sign-up's transaction, so it must not query the database itself.
             sendVerificationEmail: ({ user, url, token }) =>
               authenticationEmail.sendVerification({
                 email: user.email,
                 name: user.name,
                 url,
-                token
+                token,
+                purpose: user.emailVerified ? 'change' : 'account'
               }),
             afterEmailVerification: async (user) => {
+              await enrollment.followEmailChange(user.id, user.email)
               if (config.enrollmentMode === 'approval') {
                 await enrollment.request({ email: user.email, name: user.name })
               }
@@ -239,6 +248,7 @@ export function createBetterAuthAdapter(
           }
         : undefined,
     user: {
+      changeEmail: { enabled: emailChangeAvailable },
       validateUserInfo: ({ source }) => {
         if (source.action === 'create-user' && config.enrollmentMode === 'closed') {
           return { error: 'enrollment_closed', errorDescription: 'Cloud enrollment is closed' }
@@ -292,7 +302,9 @@ export function createBetterAuthAdapter(
       deviceAuthorization({
         verificationUri: new URL('/auth/device', config.publicURL).href,
         validateClient: (clientId) => clientId.startsWith('openpencil-desktop:')
-      })
+      }),
+      // After two-step sign-in's own hooks, so a sign-in waiting for its second step is skipped.
+      accountActivity(activity, (user) => notifyTwoStep(user, 'passkey-added'))
     ],
     socialProviders: socialProviders(config),
     trustedOrigins: [
@@ -313,8 +325,42 @@ export function createBetterAuthAdapter(
       userId: session.user.id,
       email: session.user.email,
       name: session.user.name,
+      image: session.user.image ?? null,
       deploymentRole: deploymentRole(session.user)
     }
+  }
+
+  /** The signed-in person, read past the cookie cache, for changes about their own account. */
+  const currentSession = (headers: Headers) =>
+    auth.api.getSession({ headers, query: { disableCookieCache: true } })
+
+  /** The current session when it signed in recently enough to change how the account is reached. */
+  async function freshSession(headers: Headers) {
+    const session = await currentSession(headers)
+    const createdAt = session?.session.createdAt
+    if (
+      !session ||
+      !createdAt ||
+      Date.now() - new Date(createdAt).getTime() >= ACCOUNT_SECURITY_FRESH_AGE_SECONDS * 1000
+    ) {
+      throw APIError.from('FORBIDDEN', {
+        code: 'SESSION_NOT_FRESH',
+        message: 'Session is not fresh'
+      })
+    }
+    return session
+  }
+
+  async function notifyTwoStep(
+    user: { id: string; email: string; name: string },
+    change: Parameters<AuthenticationEmailService['sendTwoStepChanged']>[0]['change']
+  ): Promise<void> {
+    await authenticationEmail?.sendTwoStepChanged({
+      email: user.email,
+      name: user.name,
+      userId: user.id,
+      change
+    })
   }
 
   return {
@@ -365,17 +411,7 @@ export function createBetterAuthAdapter(
       }
     },
     async startSocialLink(headers, input) {
-      const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } })
-      const createdAt = session?.session.createdAt
-      if (
-        !createdAt ||
-        Date.now() - new Date(createdAt).getTime() >= ACCOUNT_SECURITY_FRESH_AGE_SECONDS * 1000
-      ) {
-        throw APIError.from('FORBIDDEN', {
-          code: 'SESSION_NOT_FRESH',
-          message: 'Session is not fresh'
-        })
-      }
+      await freshSession(headers)
       const response = await auth.api.linkSocialAccount({
         headers,
         body: {
@@ -389,22 +425,6 @@ export function createBetterAuthAdapter(
     },
     async unlinkAuthenticationMethod(headers, methodId) {
       await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })
-    },
-    async listUsers(headers, query) {
-      // Paging by offset needs a stable order, or people skip or repeat between pages.
-      const page = {
-        limit: query?.limit,
-        offset: query?.offset,
-        // Better Auth sorts by one field, so accounts created in the same millisecond, such as a
-        // bulk import, can trade places between pages; ordinary sign-ups never collide.
-        sortBy: 'createdAt',
-        sortDirection: 'asc' as const
-      }
-      const listQuery = query?.searchValue
-        ? { ...page, searchValue: query.searchValue, searchField: 'email' as const }
-        : page
-      const response = await auth.api.listUsers({ headers, query: listQuery })
-      return { users: response.users, total: response.total }
     },
     async banUser(headers, userId, reason) {
       await auth.api.banUser({ headers, body: { userId, banReason: reason } })
@@ -440,7 +460,21 @@ export function createBetterAuthAdapter(
       return { totpURI: response.totpURI, backupCodes: response.backupCodes }
     },
     async verifyTOTP(headers, code) {
-      return verifySecondFactor(auth, config, database, assurance, headers, code, 'totp')
+      const before = await currentSession(headers)
+      const response = await verifySecondFactor(
+        auth,
+        config,
+        database,
+        assurance,
+        headers,
+        code,
+        'totp'
+      )
+      // The first code from a new authenticator is what turns it on.
+      if (before && !('twoFactorEnabled' in before.user && before.user.twoFactorEnabled === true)) {
+        await notifyTwoStep(before.user, 'authenticator-on')
+      }
+      return response
     },
     async verifyRecoveryCode(headers, code) {
       return verifySecondFactor(auth, config, database, assurance, headers, code, 'recovery-code')
@@ -450,6 +484,8 @@ export function createBetterAuthAdapter(
     },
     async disableTOTP(headers, password) {
       await auth.api.disableTwoFactor({ headers, body: { password } })
+      const session = await currentSession(headers)
+      if (session) await notifyTwoStep(session.user, 'authenticator-off')
     },
     async listPasskeys(headers) {
       return (await auth.api.listPasskeys({ headers })).map((item) => ({
@@ -460,6 +496,68 @@ export function createBetterAuthAdapter(
     },
     async deletePasskey(headers, id) {
       await auth.api.deletePasskey({ headers, body: { id } })
+      const session = await currentSession(headers)
+      if (session) await notifyTwoStep(session.user, 'passkey-removed')
+    },
+    emailChangeAvailable,
+    async profile(headers) {
+      const session = await currentSession(headers)
+      if (!session) return null
+      return {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image ?? null,
+        createdAt: new Date(session.user.createdAt)
+      }
+    },
+    async updateProfile(headers, input) {
+      await auth.api.updateUser({ headers, body: { name: input.name } })
+    },
+    async changeEmail(headers, input) {
+      const session = await freshSession(headers)
+      if (session.user.email === input.newEmail) {
+        throw APIError.from('BAD_REQUEST', {
+          code: 'EMAIL_UNCHANGED',
+          message: 'Email is the same'
+        })
+      }
+      await auth.api.changeEmail({ headers, body: input })
+      await authenticationEmail?.sendEmailChangeRequested({
+        email: session.user.email,
+        name: session.user.name,
+        userId: session.user.id,
+        newEmail: input.newEmail
+      })
+    },
+    async sessions(headers) {
+      const session = await currentSession(headers)
+      if (!session) return null
+      return activity.sessions(session.user.id, session.session.id)
+    },
+    async revokeSession(headers, sessionId) {
+      const session = await currentSession(headers)
+      if (!session) throw APIError.fromStatus('UNAUTHORIZED')
+      if (session.session.id === sessionId) {
+        throw APIError.from('BAD_REQUEST', {
+          code: 'CURRENT_SESSION',
+          message: 'Sign out to end this session'
+        })
+      }
+      const target = await database
+        .selectFrom('session')
+        .select('token')
+        .where('id', '=', sessionId)
+        .where('userId', '=', session.user.id)
+        .executeTakeFirst()
+      if (target) await auth.api.revokeSession({ headers, body: { token: target.token } })
+    },
+    async revokeOtherSessions(headers) {
+      await auth.api.revokeOtherSessions({ headers })
+    },
+    async signIns(headers) {
+      const session = await currentSession(headers)
+      return session ? activity.signIns(session.user.id) : null
     },
     schemaVersion: BETTER_AUTH_SCHEMA_VERSION,
     async migrate() {

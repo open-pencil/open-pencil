@@ -5,7 +5,10 @@ import {
   parseCloudMFAVerify,
   parseCloudPasskeyDelete,
   parseCloudSocialLink,
-  parseCloudUnlinkAuthenticationMethod
+  parseCloudUnlinkAuthenticationMethod,
+  parseCloudEmailChange,
+  parseCloudProfileUpdate,
+  parseCloudSessionRevoke
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import {
@@ -188,6 +191,71 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         return result instanceof Response ? result : context.json({ ok: true as const })
       }
     )
+    .use('/api/account/profile', requireActiveSession)
+    .use('/api/account/profile/*', requireActiveSession)
+    .use('/api/account/sessions', requireActiveSession)
+    .use('/api/account/sessions/*', requireActiveSession)
+    .use('/api/account/sign-ins', requireActiveSession)
+    .use('/api/account/profile', authenticatedMutationLimiter)
+    .use('/api/account/profile/*', authenticatedMutationLimiter)
+    .use('/api/account/sessions/*', authenticatedMutationLimiter)
+    .get('/api/account/profile', async (context) => {
+      const profile = await services.auth.profile(context.req.raw.headers)
+      if (!profile) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      return context.json({
+        profile: {
+          ...profile,
+          createdAt: profile.createdAt.toISOString(),
+          emailChangeAvailable: services.auth.emailChangeAvailable
+        }
+      })
+    })
+    .post('/api/account/profile', validatedJSON(parseCloudProfileUpdate), async (context) => {
+      const result = await accountAction(
+        () => services.auth.updateProfile(context.req.raw.headers, context.req.valid('json')),
+        context
+      )
+      return result instanceof Response ? result : context.json({ ok: true as const })
+    })
+    .post('/api/account/profile/email', validatedJSON(parseCloudEmailChange), async (context) => {
+      const result = await accountAction(
+        () => accountAuthentication.changeEmail(context.req.raw.headers, context.req.valid('json')),
+        context
+      )
+      return result instanceof Response ? result : context.json({ ok: true as const })
+    })
+    .get('/api/account/sessions', async (context) => {
+      const sessions = await services.auth.sessions(context.req.raw.headers)
+      if (!sessions) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      return context.json({ sessions })
+    })
+    .post(
+      '/api/account/sessions/revoke',
+      validatedJSON(parseCloudSessionRevoke),
+      async (context) => {
+        const result = await accountAction(
+          () =>
+            services.auth.revokeSession(
+              context.req.raw.headers,
+              context.req.valid('json').sessionId
+            ),
+          context
+        )
+        return result instanceof Response ? result : context.json({ ok: true as const })
+      }
+    )
+    .post('/api/account/sessions/revoke-others', async (context) => {
+      const result = await accountAction(
+        () => services.auth.revokeOtherSessions(context.req.raw.headers),
+        context
+      )
+      return result instanceof Response ? result : context.json({ ok: true as const })
+    })
+    .get('/api/account/sign-ins', async (context) => {
+      const signIns = await services.auth.signIns(context.req.raw.headers)
+      if (!signIns) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      return context.json({ signIns })
+    })
     .get('/api/account/authentication', async (context) => {
       const result = await accountAction(
         () => accountAuthentication.methods(context.req.raw.headers),

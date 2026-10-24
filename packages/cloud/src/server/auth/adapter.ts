@@ -1,14 +1,5 @@
+import type { CloudAccountSession, CloudSignIn } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
-
-export type CloudAdminUser = {
-  id: string
-  name: string
-  email: string
-  role?: string
-  banned: boolean | null
-  banReason?: string | null
-  createdAt: Date
-}
 
 export type CloudMFAStatus = {
   required: boolean
@@ -25,7 +16,16 @@ export type CloudIdentity = {
   userId: string
   email: string
   name: string
+  image?: string | null
   deploymentRole?: 'user' | 'admin'
+}
+
+export type CloudAccountProfile = {
+  id: string
+  name: string
+  email: string
+  image: string | null
+  createdAt: Date
 }
 
 export type CloudAuthenticationMethodRecord = {
@@ -48,10 +48,6 @@ export interface CloudAuthAdapter {
     input: { provider: 'google' | 'apple'; callbackURL: string }
   ): Promise<string>
   unlinkAuthenticationMethod(headers: Headers, methodId: string): Promise<void>
-  listUsers(
-    headers: Headers,
-    query?: { searchValue?: string; limit?: number; offset?: number }
-  ): Promise<{ users: CloudAdminUser[]; total: number }>
   banUser(headers: Headers, userId: string, reason?: string): Promise<void>
   unbanUser(headers: Headers, userId: string): Promise<void>
   revokeUserSessions(headers: Headers, userId: string): Promise<void>
@@ -67,6 +63,17 @@ export interface CloudAuthAdapter {
   disableTOTP(headers: Headers, password?: string): Promise<void>
   listPasskeys(headers: Headers): Promise<Array<{ id: string; name?: string; createdAt: Date }>>
   deletePasskey(headers: Headers, id: string): Promise<void>
+  /** Whether the server can confirm a new email address, which changing one needs. */
+  emailChangeAvailable: boolean
+  profile(headers: Headers): Promise<CloudAccountProfile | null>
+  updateProfile(headers: Headers, input: { name: string }): Promise<void>
+  /** Sends the confirmation to the new address and tells the old one which address it is. */
+  changeEmail(headers: Headers, input: { newEmail: string; callbackURL: string }): Promise<void>
+  sessions(headers: Headers): Promise<CloudAccountSession[] | null>
+  /** Ends one of the person's other sessions; their current one ends by signing out. */
+  revokeSession(headers: Headers, sessionId: string): Promise<void>
+  revokeOtherSessions(headers: Headers): Promise<void>
+  signIns(headers: Headers): Promise<CloudSignIn[] | null>
   migrate: () => Promise<void>
   schemaVersion: string
 }

@@ -131,7 +131,7 @@ describe('createCloudApp', () => {
       })
       expect(
         await runtime.database
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .select(['emailNormalized', 'status'])
           .executeTakeFirstOrThrow()
       ).toEqual({ emailNormalized: 'pending@example.com', status: 'pending' })
@@ -322,7 +322,7 @@ describe('createCloudApp', () => {
       expect(authCalls).toBe(8)
       expect(
         await runtime.database
-          .selectFrom('cloudRateLimit')
+          .selectFrom('apiRateLimit')
           .select(({ fn }) => fn.countAll<number>().as('count'))
           .executeTakeFirstOrThrow()
       ).toEqual({ count: 0 })

@@ -21,11 +21,21 @@ Servers that review new accounts say so before you sign up. Until an administrat
 Each server in **Settings → Cloud** shows who is signed in to it:
 
 - **Sign-in expired** keeps your account, so **Sign in** goes back to the same one.
-- **Account and security** in the server's **…** menu opens the server's own account page, where you change your password, two-step sign-in, and passkeys.
+- **Account and security** in the server's **…** menu opens the server's own account pages. See [Your Account](#your-account).
 - **Sign out** ends the session on the server. If the server can't be reached, you stay signed in so you can try again. At the server's own editor address, signing out of that server goes back to its welcome page, unless the server lets you use its editor without an account and you chose to on this browser.
 - **Disconnect server** signs you out and forgets the server on this device; your documents stay on it, and you can connect again anytime. It warns you when documents still have changes that haven't reached the server, because disconnecting discards them.
 
 The desktop app keeps its sign-in in the system credential store. In the browser, a sign-in through the server's page lasts as long as the server's session; a sign-in with a code follows **Settings → General → Remember API keys on this device**.
+
+## Your Account
+
+A server's account pages have three parts:
+
+- **Profile** changes your name and shows your account ID, which an administrator may ask for. A picture comes from a linked Google or Apple account; without one, your initials stand in. **Change email** sends a link to the new address, and your email changes once you open it. The old address gets a note saying which address is taking over. If you signed in a while ago, the server asks for your password first.
+- **Sign-in and security** links Google or Apple, changes your password, and sets up two-step sign-in with an authenticator app or passkeys. Recovery codes are shown once: copy or download them before you close the dialog.
+- **Sessions** lists every browser and desktop app signed in to your account, with when each was last active, and your recent sign-ins. Sign out any session you don't recognize, or all of them except the one you're using.
+
+The server emails you when your account is signed in from an address it has never been signed in from, and when an authenticator app or a passkey is added or removed.
 
 ## Find Documents on Home
 
@@ -35,12 +45,11 @@ A workspace lists its documents with where each one stands, how much of the work
 
 ## Work in a Team Workspace
 
-Every account starts with a workspace of its own. To work with a team, select **+** beside **OpenPencil Cloud** in Home's sidebar, name the workspace, and you administer it. **Members** in the workspace's header lists who is in it:
+Every account starts with a workspace of its own. To work with a team, select **+** beside **OpenPencil Cloud** in Home's sidebar, name the workspace, and you administer it. **Members** in the workspace's header has three tabs:
 
-- Admins rename the workspace, invite people by email as an admin, editor, or viewer, change roles, and remove people. Editors and admins change documents; viewers only look.
-- An invitation arrives by email. If the server doesn't send email, copy the invitation link from the dialog and pass it on. Invitations expire after seven days, and inviting the same address again replaces the earlier one.
-- Anyone can leave a workspace, except its last admin: make someone else an admin first.
-- Admins can delete a workspace once it holds no documents. Deleted documents are kept for a while before they are gone for good, and the workspace can be deleted after that.
+- **Members** lists who is in the workspace and when each person joined. Admins invite people by email as an admin, editor, or viewer, change roles, and remove people. Editors and admins change documents; viewers only look.
+- **Invited**, for admins, lists invitations nobody has accepted yet, with who sent each one and when it expires. An invitation arrives by email; if the server doesn't send email, copy the invitation link from the dialog and pass it on. Invitations expire after seven days. **Resend** sends one again with a new link, and the earlier link stops working; so does inviting the same address again.
+- **Settings** renames the workspace, and holds leaving and deleting it. Anyone can leave a workspace, except its last admin: make someone else an admin first. Admins can delete a workspace once it holds no documents. Deleted documents are kept for a while before they are gone for good, and the workspace can be deleted after that.
 
 Opening a workspace invitation works like a document invitation: sign in with the invited address, choose **Join workspace**, and Home shows the workspace.
 
@@ -56,10 +65,10 @@ A Cloud document saves as you work, and the tab's dot shows edits that haven't r
 
 | State                     | What it means                                                                                                                 |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Saved on this device**  | You are offline. Your changes are kept here and upload once you are back online.                                             |
+| **Saved on this device**  | You are offline. Your changes are kept here and upload once you are back online.                                              |
 | **Changed in two places** | Someone saved a newer version while you had changes the server didn't have.                                                   |
 | **Couldn't save**         | The server refused the upload. Your changes are safe on this device; **Try again**, or sign in again if your sign-in expired. |
-| **View only**             | You can look, select, copy, and follow others; the document can't be edited, so only Move and Hand are in the toolbar.       |
+| **View only**             | You can look, select, copy, and follow others; the document can't be edited, so only Move and Hand are in the toolbar.        |
 
 ## When a Document Changed in Two Places
 

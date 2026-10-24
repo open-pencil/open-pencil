@@ -1,5 +1,5 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { DocumentPermission, WorkspaceRole } from '#cloud/contract'
+import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
 import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
@@ -171,7 +171,8 @@ export interface AuthUserTable {
   banned: Generated<boolean | null>
   banReason: Generated<string | null>
   banExpires: TimestampColumn | null
-  twoFactorEnabled: Generated<boolean>
+  /** Unset on accounts that never turned two-step sign-in on. */
+  twoFactorEnabled: Generated<boolean | null>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
 }
@@ -200,11 +201,21 @@ export interface PasskeyTable {
   aaguid: string | null
 }
 
-export interface CloudMFAAssuranceTable {
+export interface MFAAssuranceTable {
   sessionId: string
   userId: string
   method: 'totp' | 'recovery-code' | 'passkey'
   verifiedAt: TimestampColumn
+}
+
+export interface SignInTable {
+  id: string
+  userId: string
+  sessionId: string | null
+  method: CloudSignInMethod
+  ipAddress: string | null
+  userAgent: string | null
+  createdAt: TimestampColumn
 }
 
 export interface DocumentCollaborationStateTable {
@@ -275,7 +286,7 @@ export interface TransactionalEmailTable {
 
 export type TransactionalEmailPayload = TransactionalEmailPayloadByKind[TransactionalEmailKind]
 
-export interface CloudEnrollmentTable {
+export interface EnrollmentTable {
   id: string
   emailNormalized: string
   name: string | null
@@ -289,14 +300,14 @@ export interface CloudEnrollmentTable {
   approvedUserId: string | null
 }
 
-export interface CloudRateLimitTable {
+export interface APIRateLimitTable {
   keyHash: string
   windowStartedAt: TimestampColumn
   requestCount: Generated<number>
   updatedAt: TimestampColumn
 }
 
-export interface CloudAdminAuditEventTable {
+export interface AdminAuditEventTable {
   id: string
   actorUserId: string
   action: string
@@ -306,7 +317,7 @@ export interface CloudAdminAuditEventTable {
   createdAt: TimestampColumn
 }
 
-export interface CloudAuthSchemaTable {
+export interface AuthSchemaVersionTable {
   id: string
   version: string
   updatedAt: TimestampColumn
@@ -317,12 +328,13 @@ export interface CloudDatabase {
   session: Session
   twoFactor: TwoFactorTable
   passkey: PasskeyTable
-  cloudMfaAssurance: CloudMFAAssuranceTable
+  mfaAssurance: MFAAssuranceTable
+  signIn: SignInTable
   user: AuthUserTable
-  cloudAuthSchema: CloudAuthSchemaTable
-  cloudEnrollment: CloudEnrollmentTable
-  cloudRateLimit: CloudRateLimitTable
-  cloudAdminAuditEvent: CloudAdminAuditEventTable
+  authSchemaVersion: AuthSchemaVersionTable
+  enrollment: EnrollmentTable
+  apiRateLimit: APIRateLimitTable
+  adminAuditEvent: AdminAuditEventTable
   workspace: WorkspaceTable
   workspaceMember: WorkspaceMemberTable
   workspaceInvitation: WorkspaceInvitationTable

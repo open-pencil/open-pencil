@@ -82,13 +82,31 @@ export function createCloudPortalRouter(context: PortalContext) {
       },
       {
         path: '/account',
+        name: 'profile',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true }
+      },
+      {
+        path: '/account/security',
         name: 'security',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true }
+      },
+      {
+        path: '/account/sessions',
+        name: 'sessions',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true }
       },
       {
         path: '/admin/:section(overview|requests|people|email|activity)?',
         name: 'admin',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true, admin: true }
+      },
+      {
+        path: '/admin/people/:userId',
+        name: 'person',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true, admin: true }
       }

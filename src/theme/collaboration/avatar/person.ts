@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 export const avatar = tv({
   base: 'flex shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white',
   variants: {
-    size: { sm: 'size-6', md: 'size-7' },
+    size: { sm: 'size-6', md: 'size-7', lg: 'size-12 text-base' },
     bordered: { true: 'border-2 border-panel', false: '' },
     following: { true: 'ring-2 ring-white/40', false: '' },
     /** A collaborator's avatar, which follows them when clicked. */

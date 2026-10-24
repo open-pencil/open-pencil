@@ -124,6 +124,20 @@ Database rows use UUIDs. Capability secrets and invitation tokens are random hex
 digests are stored, and they travel in URL fragments so they never reach access logs or `Referer`
 headers. Invitation continuations through OAuth are single-use compact JWE.
 
+Every sign-in is recorded in `sign_in` with the session it made and how it was made. A Better
+Auth plugin, `accountActivity` in `src/server/auth/activity.ts`, reads the session an endpoint
+issued from the hook context's `newSession`, which two-step sign-in leaves empty until the second
+step, and the method from the endpoint, as Better Auth's own `lastLoginMethod` does: a password,
+Google or Apple, a passkey, a second step, an email link, or the desktop app's device code. A person's Sessions page lists their live sessions with
+that method and the browser the server reads from the user agent, and their latest sign-ins. A
+sign-in from an address the account was never signed in from is emailed to its owner, except the
+account's first. Adding or removing an authenticator app or a passkey is emailed too, and so is
+an administrator resetting them.
+
+A new email address is confirmed from that address through Better Auth's change-email link, and
+the old address is told which address is taking over. An approved enrollment follows the account
+to its new address, so the approval stays with the account.
+
 Collaboration tickets are signed, epoch-scoped JWTs naming the principal and permission. Rotating a
 capability secret keeps the current epoch; revoking access advances it so old tickets stop working.
 
@@ -192,11 +206,18 @@ pending request that a deployment administrator approves or rejects; approval ca
 Deployment administrators are separate from workspace administrators, and startup never grants
 either role: the first operator is approved and promoted through the `admin` command.
 
+The console's People list pages through accounts in sign-up order, searched by name or email and
+filtered to administrators, suspended accounts, or accounts without two-step sign-in, with a count
+for each filter. A person's page shows how they sign in, their workspaces, sessions, and recent
+sign-ins. Administrators make and remove administrators, sign people out everywhere, suspend
+with a reason the activity log keeps, and reset a locked-out person's two-step sign-in, which
+removes their authenticator app, recovery codes, and passkeys. Every action asks once more.
+
 ## Portal
 
 The server shows its own pages on its public address: a welcome page, sign-in and sign-up, email
-verification, password reset, two-step sign-in, desktop sign-in approval, account security, and the
-administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
+verification, password reset, two-step sign-in, desktop sign-in approval, account pages (profile,
+sign-in and security, and sessions), and the administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
 reuse the editor's components and theme without loading the editor. `bun run build:cloud` writes
 them to `dist-cloud/` beside the editor itself, which every Cloud server serves at its root. The
 editor never embeds these pages; when it needs them, for a social provider or a second sign-in
@@ -311,11 +332,11 @@ a Cron Trigger retries the rest; `email.transport = "none"` disables delivery.
 
 ## Tests
 
-| Level       | Location                                                | Needs                   |
-| ----------- | ------------------------------------------------------- | ----------------------- |
-| Unit        | `packages/cloud/tests/{client,contract,runtime,server}` | nothing                 |
-| Integration | `packages/cloud/tests/integration`, mirroring `src`     | PGlite, in process      |
-| End-to-end  | `packages/cloud/tests/e2e`                              | Docker Compose services |
+| Level       | Location                                                      | Needs                   |
+| ----------- | ------------------------------------------------------------- | ----------------------- |
+| Unit        | `packages/cloud/tests/{client,contract,email,runtime,server}` | nothing                 |
+| Integration | `packages/cloud/tests/integration`, mirroring `src`           | PGlite, in process      |
+| End-to-end  | `packages/cloud/tests/e2e`                                    | Docker Compose services |
 
 `bun run test:cloud` type-checks the package and runs unit and integration tests. The end-to-end
 runners start PostgreSQL and SeaweedFS (or Garage) in an isolated Compose project, exercise presigned
@@ -456,3 +477,14 @@ no `server` parameter and no `/cloud` prefix, and the server has no separate edi
 send them to. Peer-to-peer rooms move to `/rooms/:id` so "share" names a shared document. The
 cost is that a browser editor at any other address cannot keep a Cloud document in its address
 bar; every server serves its own editor, and the desktop app gets links through `openpencil://`.
+
+**2026-10 · Workspaces are deleted at once, not after a grace period.** GitLab keeps a deleted group
+for 30 days so it can be restored; a Cloud workspace can only be deleted once it holds no
+documents, and deleted documents already have their own retention, so a delay would protect
+nothing but the name and members. Workspace settings stay in the editor's Members dialog, which
+the desktop app reaches without leaving for a browser.
+
+**2026-10 · Tables are named for what they hold.** OpenPencil's tables beside Better Auth's had a
+`cloud_` prefix the rest never had; they lose it, and only a name Better Auth already uses gets a
+qualifier (`api_rate_limit` beside its `rate_limit`). Migrations that shipped before the rename
+type their queries against the names they ran with, so their SQL never changes.

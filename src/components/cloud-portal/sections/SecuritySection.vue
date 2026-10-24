@@ -144,7 +144,7 @@ const error = computed(
 
 function link(provider: PortalSignInMethod) {
   void change.run(async () => {
-    const { url } = await portal.api.linkSocial(provider, portalURL('/account'))
+    const { url } = await portal.api.linkSocial(provider, portalURL('/account/security'))
     globalThis.location.assign(url)
   })
 }

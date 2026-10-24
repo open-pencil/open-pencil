@@ -2,6 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { createCloudDatabase, migrateCloudDatabase } from '#cloud/server'
 import { up as relaxAccountIssuer } from '#cloud/server/db/migrations/019_better_auth_account_issuer'
+import {
+  down as restoreTableNames,
+  up as renameTables
+} from '#cloud/server/db/migrations/025_table_names'
+import type { LegacyAuthSchemaDatabase } from '#cloud/server/db/migrations/helpers'
 import { PGlite } from '@electric-sql/pglite'
 import { CamelCasePlugin, Kysely, sql } from 'kysely'
 import { PGliteDialect } from 'kysely-pglite-dialect'
@@ -124,7 +129,7 @@ describe('Better Auth schema ledger', () => {
       await migrateCloudDatabase(database, migration)
       expect(runs).toBe(1)
       expect(
-        await database.selectFrom('cloudAuthSchema').selectAll().executeTakeFirstOrThrow()
+        await database.selectFrom('authSchemaVersion').selectAll().executeTakeFirstOrThrow()
       ).toMatchObject({ id: 'better-auth', version: '1.7.7+mfa.1' })
     } finally {
       await database.destroy()
@@ -143,7 +148,7 @@ describe('Better Auth schema ledger', () => {
         }
       })
       expect(
-        await database.selectFrom('cloudAuthSchema').select('version').executeTakeFirstOrThrow()
+        await database.selectFrom('authSchemaVersion').select('version').executeTakeFirstOrThrow()
       ).toEqual({ version: '1.7.7+mfa.1' })
     } finally {
       await database.destroy()
@@ -159,7 +164,7 @@ describe('Better Auth schema ledger', () => {
         migrateCloudDatabase(database, { schemaVersion: '1.7.2', run: async () => undefined })
       ).rejects.toThrow('Existing Better Auth schema is incomplete')
       await database
-        .insertInto('cloudAuthSchema')
+        .insertInto('authSchemaVersion')
         .values({ id: 'better-auth', version: '1.7.2', updatedAt: new Date() })
         .execute()
       await expect(
@@ -180,6 +185,9 @@ describe('Better Auth schema ledger', () => {
     })
     try {
       await migrateCloudDatabase(database)
+      // The schema as 019 found it, before the tables lost their `cloud_` prefix.
+      await restoreTableNames(untyped)
+      const legacy = untyped as Kysely<LegacyAuthSchemaDatabase>
       await database.schema
         .createTable('account')
         .addColumn('id', 'uuid', (column) => column.primaryKey())
@@ -193,15 +201,16 @@ describe('Better Auth schema ledger', () => {
         .columns(['issuer', 'account_id'])
         .unique()
         .execute()
-      await database
+      await legacy
         .insertInto('cloudAuthSchema')
         .values({ id: 'better-auth', version: '1.7.2+mfa.1', updatedAt: new Date() })
         .execute()
 
       await relaxAccountIssuer(untyped)
+      await renameTables(untyped)
 
       expect(
-        await database.selectFrom('cloudAuthSchema').select('version').executeTakeFirstOrThrow()
+        await database.selectFrom('authSchemaVersion').select('version').executeTakeFirstOrThrow()
       ).toEqual({ version: '1.7.7+mfa.1' })
       const account = (await database.introspection.getTables()).find(
         (table) => table.name === 'account'

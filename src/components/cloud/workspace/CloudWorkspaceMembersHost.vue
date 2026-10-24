@@ -8,6 +8,7 @@ import {
   deleteWorkspace,
   inviteToWorkspace,
   lastInvitationLink,
+  lastResentEmail,
   leaveWorkspace,
   membersBusy,
   membersFailure,
@@ -17,6 +18,7 @@ import {
   membersWorkspace,
   removeWorkspaceMember,
   renameWorkspace,
+  resendWorkspaceInvitation,
   revokeWorkspaceInvitation,
   workspaceMembers,
   type WorkspaceFailure
@@ -54,9 +56,11 @@ const failure = computed(() => {
     :busy="membersBusy"
     :failure="failure"
     :invitation-link="lastInvitationLink"
+    :resent-email="lastResentEmail"
     @rename="renameWorkspace"
     @invite="inviteToWorkspace"
     @revoke="revokeWorkspaceInvitation"
+    @resend="resendWorkspaceInvitation"
     @change-role="changeWorkspaceRole"
     @remove="removeWorkspaceMember"
     @leave="leaveWorkspace"

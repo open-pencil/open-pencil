@@ -1,4 +1,5 @@
 export { createAccountAuthenticationService, type AccountAuthenticationService } from './account'
+export { createSignInActivity, type SignInActivity } from './activity'
 export type { CloudAuthAdapter } from './adapter'
 export { createAuthenticationEmailService, type AuthenticationEmailService } from './email'
 export { createMFAAssuranceService, type MFAAssuranceService } from './mfa-assurance'

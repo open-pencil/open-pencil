@@ -42,6 +42,7 @@ export const workspaceMemberSchema = v.object({
   userId: v.string(),
   name: v.string(),
   email: v.string(),
+  image: v.nullable(v.string()),
   role: workspaceRoleSchema,
   joinedAt: v.string()
 })
@@ -52,6 +53,8 @@ export const workspaceInvitationSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   email: v.string(),
   role: workspaceRoleSchema,
+  /** Who sent it; the name is null once their account is gone. */
+  invitedBy: v.object({ id: v.string(), name: v.nullable(v.string()) }),
   invitedAt: v.string(),
   expiresAt: v.string()
 })

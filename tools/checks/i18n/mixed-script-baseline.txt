@@ -522,6 +522,9 @@ ja:cloud.settingsSelfHostedDescription
 ja:cloudPortal.errorEmailInvalid
 ja:cloudPortal.verifiedDescription
 ja:cloudPortal.welcomeTitle
+ja:cloudPortal.accountId
+ja:cloudPortal.desktopApp
+ja:cloudPortal.methodDesktop
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -539,3 +542,7 @@ zh-cn:cloud.settingsSelfHostedDescription
 zh-cn:cloudPortal.errorEmailInvalid
 zh-cn:cloudPortal.verifiedDescription
 zh-cn:cloudPortal.welcomeTitle
+zh-cn:cloudPortal.accountId
+zh-cn:cloudPortal.accountIdDescription
+zh-cn:cloudPortal.desktopApp
+zh-cn:cloudPortal.methodDesktop

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { ignoredSecurityNotices } from '#cloud-tests/helpers/account-authentication'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import {
   createAuthenticationEmailService,
@@ -31,7 +32,13 @@ const config = parseCloudServerConfig({
   s3SecretAccessKey: 'secret-key'
 })
 
-async function runtime(authenticationEmail?: AuthenticationEmailService) {
+/** The account emails a test watches; security notices go nowhere. */
+type WatchedEmail = Pick<
+  AuthenticationEmailService,
+  'sendVerification' | 'sendPasswordReset' | 'sendPasswordChanged'
+>
+
+async function runtime(authenticationEmail?: WatchedEmail) {
   const databaseRuntime = await createCloudTestDatabase()
   const email = createTransactionalEmailService(databaseRuntime.database, {
     encryptionSecret: config.authSecret,
@@ -43,7 +50,9 @@ async function runtime(authenticationEmail?: AuthenticationEmailService) {
     email
   })
   const auth = createBetterAuthAdapter(config, databaseRuntime.database, enrollment, {
-    email: authenticationEmail ?? createAuthenticationEmailService(email, config.publicURL)
+    email: authenticationEmail
+      ? { ...ignoredSecurityNotices, ...authenticationEmail }
+      : createAuthenticationEmailService(email, config.publicURL)
   })
   return { ...databaseRuntime, auth, enrollment }
 }

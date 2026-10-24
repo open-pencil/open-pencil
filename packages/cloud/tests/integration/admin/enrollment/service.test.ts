@@ -45,7 +45,7 @@ describe('Cloud enrollment integration', () => {
       expect(await enrollment.statusForEmail('PERSON@example.com')).toBe('approved')
       expect(
         await runtime.database
-          .selectFrom('cloudAdminAuditEvent')
+          .selectFrom('adminAuditEvent')
           .select('action')
           .executeTakeFirstOrThrow()
       ).toEqual({ action: 'enrollment.approved' })
@@ -108,7 +108,7 @@ describe('Cloud enrollment integration', () => {
       expect(Math.max(...results.map((result) => result.totalHits))).toBe(20)
       expect(
         await runtime.database
-          .selectFrom('cloudRateLimit')
+          .selectFrom('apiRateLimit')
           .select(['keyHash', 'requestCount'])
           .executeTakeFirstOrThrow()
       ).toMatchObject({

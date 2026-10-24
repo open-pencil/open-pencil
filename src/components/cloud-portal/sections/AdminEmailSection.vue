@@ -34,7 +34,7 @@ const {
     recipient: row.recipientEmailNormalized,
     status: deliveryStatus(row.status),
     attempts: row.attemptCount,
-    when: formatDate(row.nextAttemptAt, 'date', locale.value),
+    when: formatDate(row.nextAttemptAt, 'dateTime', locale.value),
     error: row.lastErrorCode
   }))
 }, [])

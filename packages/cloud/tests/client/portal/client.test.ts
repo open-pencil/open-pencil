@@ -100,7 +100,7 @@ describe('Cloud portal client', () => {
     ])
     requests.length = 0
     await client.enrollments('pending').catch(() => undefined)
-    await client.users('ada').catch(() => undefined)
+    await client.users({ search: 'ada' }).catch(() => undefined)
     await client.accountStatus().catch(() => undefined)
     expect(requests.map((request) => request.url)).toEqual([
       'https://cloud.example.com/api/admin/enrollments?status=pending',

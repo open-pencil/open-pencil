@@ -11,6 +11,7 @@ import {
   parseUserRoleMutation
 } from '#cloud/admin/schema'
 import type { AdminUserService } from '#cloud/admin/users/service'
+import { cloudAdminUserFilterSchema } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -26,10 +27,17 @@ const parseEnrollmentQuery = (input: unknown) =>
   v.parse(v.object({ status: v.optional(enrollmentStatusSchema) }), input)
 const parseUserQuery = (input: unknown) =>
   v.parse(
-    v.object({ search: v.optional(v.string()), limit: countSchema, offset: countSchema }),
+    v.object({
+      search: v.optional(v.string()),
+      filter: v.optional(cloudAdminUserFilterSchema),
+      limit: countSchema,
+      offset: countSchema
+    }),
     input
   )
 const parseLimitQuery = (input: unknown) => v.parse(v.object({ limit: countSchema }), input)
+/** Accounts are named by UUID; anything else names no one, rather than failing the query. */
+const accountIdSchema = v.pipe(v.string(), v.uuid())
 
 export type CloudAdminServices = {
   email: AdminEmailService
@@ -126,15 +134,22 @@ export function createCloudAdminRoutes(
         )
       })
     )
-    .get('/users', validatedQuery(parseUserQuery), async (context) => {
-      const query = context.req.valid('query')
-      return context.json(
-        await services.users.list(context.req.raw.headers, {
-          searchValue: query.search,
-          limit: query.limit ?? 100,
-          offset: query.offset ?? 0
-        })
-      )
+    .get('/users', validatedQuery(parseUserQuery), async (context) =>
+      context.json(await services.users.list(context.req.valid('query')))
+    )
+    .get('/users/:id', async (context) => {
+      const id = context.req.param('id')
+      const detail = v.is(accountIdSchema, id) ? await services.users.detail(id) : null
+      if (!detail) return context.json({ error: { code: 'not_found' as const } }, 404)
+      return context.json(detail)
+    })
+    .post('/users/reset-two-step', validatedJSON(parseUserMutation), async (context) => {
+      const { userId } = context.req.valid('json')
+      if (!v.is(accountIdSchema, userId)) {
+        return context.json({ error: { code: 'not_found' as const } }, 404)
+      }
+      await services.users.resetTwoStep(context.get('actor').userId, userId)
+      return context.json({ ok: true as const })
     })
     .post('/users/ban', validatedJSON(parseUserMutation), async (context) => {
       const input = context.req.valid('json')

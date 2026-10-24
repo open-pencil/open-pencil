@@ -5,7 +5,7 @@ export function createRateLimitCleanupService(database: Kysely<CloudDatabase>) {
   return {
     async cleanupExpired(before: Date): Promise<number> {
       const result = await database
-        .deleteFrom('cloudRateLimit')
+        .deleteFrom('apiRateLimit')
         .where('windowStartedAt', '<', before)
         .executeTakeFirst()
       return Number(result.numDeletedRows)

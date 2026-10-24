@@ -381,6 +381,9 @@ pl:statuses.status
 es:cloudPortal.productName
 es:cloudPortal.providerGoogle
 es:cloudPortal.providerApple
+es:cloudPortal.methodGoogle
+es:cloudPortal.methodApple
+es:cloudPortal.workspaceRoleEditor
 es:cloudPortal.deploymentOfficial
 es:cloudPortal.emailTransportSMTP
 es:cloudPortal.emailTransportCloudflare
@@ -390,6 +393,11 @@ it:cloudPortal.password
 it:cloudPortal.sectionServer
 it:cloudPortal.providerGoogle
 it:cloudPortal.providerApple
+it:cloudPortal.methodGoogle
+it:cloudPortal.methodApple
+it:cloudPortal.methodPassword
+it:cloudPortal.personAccount
+it:cloudPortal.workspaceRoleEditor
 it:cloudPortal.unnamedPasskey
 it:cloudPortal.serverSection
 it:cloudPortal.deploymentOfficial
@@ -402,6 +410,8 @@ de:cloudPortal.name
 de:cloudPortal.sectionServer
 de:cloudPortal.providerGoogle
 de:cloudPortal.providerApple
+de:cloudPortal.methodGoogle
+de:cloudPortal.methodApple
 de:cloudPortal.passkeys
 de:cloudPortal.unnamedPasskey
 de:cloudPortal.administrator
@@ -412,6 +422,9 @@ de:cloudPortal.emailTransportCloudflare
 fr:cloudPortal.productName
 fr:cloudPortal.providerGoogle
 fr:cloudPortal.providerApple
+fr:cloudPortal.sessions
+fr:cloudPortal.personSessions
+fr:cloudPortal.documents
 fr:cloudPortal.deploymentOfficial
 fr:cloudPortal.emailTransportSMTP
 fr:cloudPortal.emailTransportCloudflare
@@ -419,6 +432,8 @@ ja:cloudPortal.productName
 ja:cloudPortal.emailPlaceholder
 ja:cloudPortal.providerGoogle
 ja:cloudPortal.providerApple
+ja:cloudPortal.methodGoogle
+ja:cloudPortal.methodApple
 ja:cloudPortal.deploymentOfficial
 ja:cloudPortal.emailTransportSMTP
 ja:cloudPortal.emailTransportCloudflare
@@ -426,6 +441,8 @@ zh-cn:cloudPortal.productName
 zh-cn:cloudPortal.emailPlaceholder
 zh-cn:cloudPortal.providerGoogle
 zh-cn:cloudPortal.providerApple
+zh-cn:cloudPortal.methodGoogle
+zh-cn:cloudPortal.methodApple
 zh-cn:cloudPortal.deploymentOfficial
 zh-cn:cloudPortal.emailTransportSMTP
 zh-cn:cloudPortal.emailTransportCloudflare
@@ -433,6 +450,8 @@ pl:cloudPortal.productName
 pl:cloudPortal.emailPlaceholder
 pl:cloudPortal.providerGoogle
 pl:cloudPortal.providerApple
+pl:cloudPortal.methodGoogle
+pl:cloudPortal.methodApple
 pl:cloudPortal.administrator
 pl:cloudPortal.deploymentOfficial
 pl:cloudPortal.emailTransportSMTP
@@ -441,6 +460,8 @@ ru:cloudPortal.productName
 ru:cloudPortal.emailPlaceholder
 ru:cloudPortal.providerGoogle
 ru:cloudPortal.providerApple
+ru:cloudPortal.methodGoogle
+ru:cloudPortal.methodApple
 ru:cloudPortal.deploymentOfficial
 ru:cloudPortal.emailTransportSMTP
 ru:cloudPortal.emailTransportCloudflare

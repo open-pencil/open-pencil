@@ -21,6 +21,7 @@ import {
   type CloudAPIEnvironment
 } from '#cloud/server/api'
 import {
+  createAuthenticationEmailService,
   createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudAuthAdapter,
@@ -186,7 +187,10 @@ export function createCloudApp(services: CloudServices) {
       }),
       enrollment,
       users: createAdminUserService(services.database, services.auth, {
-        requireMFA: services.config.deploymentAdminMFARequired
+        requireMFA: services.config.deploymentAdminMFARequired,
+        notify: services.transactionalEmail
+          ? createAuthenticationEmailService(services.transactionalEmail, services.config.publicURL)
+          : undefined
       }),
       audit: createAdminAuditService(services.database),
       operations: createAdminOperationsService(services.database, services.config)

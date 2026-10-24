@@ -19,7 +19,7 @@ import type { PortalSection } from '../types'
  */
 const { host, account, sections, active, heading, description } = defineProps<{
   host: string
-  account: { id: string; name: string; email: string }
+  account: { id: string; name: string; email: string; image?: string | null }
   sections: PortalSection[]
   active: string
   heading: string
@@ -45,7 +45,7 @@ const editorLink = useAppButtonUI({ variant: 'outline', size: 'sm' })
       <div :class="ui.barEnd()">
         <a href="/" :class="editorLink.base">{{ messages.openEditor }}</a>
         <span :class="ui.barHost()">{{ account.email }}</span>
-        <AccountAvatar :id="account.id" :name="account.name" />
+        <AccountAvatar :id="account.id" :name="account.name" :image="account.image" />
         <IconButton :label="messages.signOut" @click="emit('signOut')">
           <icon-lucide-log-out class="size-3.5" />
         </IconButton>

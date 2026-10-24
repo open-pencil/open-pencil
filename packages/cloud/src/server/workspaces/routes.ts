@@ -68,6 +68,17 @@ export function createWorkspaceRoutes(
         (context) => context.req.method !== 'POST'
       )
     )
+    // Resending mails the invitation again, so it counts against the same budget as sending.
+    router.use(
+      '/:workspaceId/invitations/:invitationId/resend',
+      createActorRateLimiter(
+        rateLimit.database,
+        rateLimit.secret,
+        CLOUD_RATE_LIMITS.invitationMutation,
+        () => false,
+        (context) => context.req.param('workspaceId') ?? 'unknown'
+      )
+    )
     router.use(
       '/:workspaceId/invitations',
       createActorRateLimiter(
@@ -139,6 +150,17 @@ export function createWorkspaceRoutes(
             context.req.valid('json')
           ),
           201
+        )
+      )
+    )
+    .post('/:workspaceId/invitations/:invitationId/resend', (context) =>
+      memberRoute(context, async () =>
+        context.json(
+          await members.resendInvitation(
+            context.get('actor').userId,
+            context.req.param('workspaceId'),
+            context.req.param('invitationId')
+          )
         )
       )
     )

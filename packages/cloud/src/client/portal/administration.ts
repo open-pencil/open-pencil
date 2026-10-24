@@ -4,9 +4,11 @@ import {
   adminMutationResponseSchema,
   adminOperationsResponseSchema,
   cloudAdminSessionResponseSchema,
+  cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
+  type CloudAdminUserFilter,
   type enrollmentStatusSchema
 } from '#cloud/contract'
 import type * as v from 'valibot'
@@ -44,15 +46,36 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    users(search?: string, signal?: AbortSignal) {
+    users(
+      query: { search?: string; filter?: CloudAdminUserFilter; limit?: number; offset?: number },
+      signal?: AbortSignal
+    ) {
       return call(
-        (options) => admin.users.$get({ query: { search: search || undefined } }, options),
+        (options) =>
+          admin.users.$get(
+            {
+              query: {
+                search: query.search || undefined,
+                filter: query.filter,
+                limit: query.limit,
+                offset: query.offset
+              }
+            },
+            options
+          ),
         cloudAdminUsersResponseSchema,
         signal
       )
     },
+    user(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => admin.users[':id'].$get({ param: { id } }, options),
+        cloudAdminUserDetailSchema,
+        signal
+      )
+    },
     userAction(
-      action: 'ban' | 'unban' | 'revoke-sessions',
+      action: 'ban' | 'unban' | 'revoke-sessions' | 'reset-two-step',
       userId: string,
       reason?: string,
       signal?: AbortSignal

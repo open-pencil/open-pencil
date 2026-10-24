@@ -61,7 +61,7 @@ export function createAdminEmailService(
         }
         const kind = original.kind
         const enrollment = await transaction
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .selectAll()
           .where('emailNormalized', '=', original.recipientEmailNormalized)
           .executeTakeFirst()
@@ -89,7 +89,7 @@ export function createAdminEmailService(
           transaction
         )
         await transaction
-          .insertInto('cloudAdminAuditEvent')
+          .insertInto('adminAuditEvent')
           .values({
             id: crypto.randomUUID(),
             actorUserId: actorId,

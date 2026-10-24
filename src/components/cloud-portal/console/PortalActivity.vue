@@ -21,7 +21,8 @@ const actions = computed<Record<string, string>>(() => ({
   'user.sessions-revoked': messages.value.activitySignedOut,
   'user.admin-granted': messages.value.activityMadeAdmin,
   'user.admin-revoked': messages.value.activityRemovedAdmin,
-  'email.regenerated': messages.value.activityEmailRetried
+  'email.regenerated': messages.value.activityEmailRetried,
+  'user.two-step-reset': messages.value.activityTwoStepReset
 }))
 </script>
 
@@ -29,11 +30,16 @@ const actions = computed<Record<string, string>>(() => ({
   <ul :class="ui.list()">
     <li v-for="entry in entries" :key="entry.id" :class="ui.row()">
       <AccountAvatar :id="entry.actor.id" :name="entry.actor.name" />
-      <p :class="[ui.body(), 'text-xs text-muted']">
-        <span class="font-medium text-surface">{{ entry.actor.name }}</span>
-        {{ actions[entry.action] ?? messages.activityChanged }}
-        <span class="text-surface">{{ entry.target }}</span>
-      </p>
+      <div :class="ui.body()">
+        <p class="text-xs text-muted">
+          <span class="font-medium text-surface">{{ entry.actor.name }}</span>
+          {{ actions[entry.action] ?? messages.activityChanged }}
+          <span class="text-surface">{{ entry.target }}</span>
+        </p>
+        <p v-if="entry.reason" :class="ui.detail()">
+          {{ messages.activityReason({ reason: entry.reason }) }}
+        </p>
+      </div>
       <span :class="ui.meta()">{{ entry.when }}</span>
     </li>
   </ul>

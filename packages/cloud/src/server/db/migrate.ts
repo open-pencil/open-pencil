@@ -24,6 +24,8 @@ import * as workspaceInvitations from './migrations/020_workspace_invitations'
 import * as documentVersions from './migrations/021_document_versions'
 import * as entitlementExternalVersion from './migrations/022_entitlement_external_version'
 import * as documentImages from './migrations/023_document_images'
+import * as accountActivity from './migrations/024_account_activity'
+import * as tableNames from './migrations/025_table_names'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -49,7 +51,9 @@ const migrations: Record<string, Migration> = {
   '020_workspace_invitations': workspaceInvitations,
   '021_document_versions': documentVersions,
   '022_entitlement_external_version': entitlementExternalVersion,
-  '023_document_images': documentImages
+  '023_document_images': documentImages,
+  '024_account_activity': accountActivity,
+  '025_table_names': tableNames
 }
 
 class CloudMigrationProvider implements MigrationProvider {
@@ -108,7 +112,7 @@ async function migrateAuthSchema(
   migration: CloudAuthMigration
 ): Promise<void> {
   const recorded = await database
-    .selectFrom('cloudAuthSchema')
+    .selectFrom('authSchemaVersion')
     .select('version')
     .where('id', '=', 'better-auth')
     .executeTakeFirst()
@@ -138,7 +142,7 @@ async function migrateAuthSchema(
   }
 
   await database
-    .insertInto('cloudAuthSchema')
+    .insertInto('authSchemaVersion')
     .values({ id: 'better-auth', version: migration.schemaVersion, updatedAt: new Date() })
     .execute()
 }

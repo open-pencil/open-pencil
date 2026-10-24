@@ -1,13 +1,14 @@
 import { CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
-import type { CloudDatabase } from '#cloud/server/db/tables'
 import type { Kysely } from 'kysely'
+
+import type { LegacyAuthSchemaDatabase } from './helpers'
 
 async function tableNames(database: Kysely<unknown>): Promise<Set<string>> {
   return new Set((await database.introspection.getTables()).map((table) => table.name))
 }
 
 export async function up(database: Kysely<unknown>): Promise<void> {
-  const cloud = database as Kysely<CloudDatabase>
+  const cloud = database as Kysely<LegacyAuthSchemaDatabase>
   const tables = await tableNames(database)
   await database.schema
     .createTable('cloud_mfa_assurance')

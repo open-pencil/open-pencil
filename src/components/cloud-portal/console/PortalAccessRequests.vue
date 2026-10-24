@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import { portalForm } from '@/theme/cloud-portal/form'
 import { portalList } from '@/theme/cloud-portal/list'
 
 import type { AccessRequest, AccessRequestStatus } from '../types'
@@ -18,9 +21,14 @@ const { requests, busy = null } = defineProps<{
   busy?: string | null
 }>()
 const filter = defineModel<AccessRequestStatus>('filter', { default: 'pending' })
-const emit = defineEmits<{ approve: [id: string]; reject: [id: string]; revoke: [id: string] }>()
+const emit = defineEmits<{
+  approve: [id: string]
+  reject: [id: string, note?: string]
+  revoke: [id: string, note?: string]
+}>()
 
 const ui = portalList()
+const form = portalForm()
 const messages = useCloudPortalMessages()
 const tones = {
   pending: 'warning',
@@ -38,7 +46,43 @@ function detail(request: AccessRequest) {
   const asked = messages.value.asked({ date: request.requestedOn })
   if (!request.reviewedBy || request.status === 'pending') return asked
   const decision = labels.value[request.status]
-  return `${asked} · ${messages.value.reviewedBy({ decision, name: request.reviewedBy })}`
+  const reviewed = `${asked} · ${messages.value.reviewedBy({ decision, name: request.reviewedBy })}`
+  return request.note
+    ? `${reviewed} · ${messages.value.noteDetail({ note: request.note })}`
+    : reviewed
+}
+
+/** Declining or taking access away is asked once more, with a note for the other administrators. */
+const confirming = ref<{ kind: 'reject' | 'revoke'; request: AccessRequest } | null>(null)
+const note = ref('')
+const confirmation = computed(() => {
+  const pending = confirming.value
+  if (!pending) return null
+  const words = messages.value
+  const name = pending.request.name ?? pending.request.email
+  return pending.kind === 'reject'
+    ? {
+        heading: words.declineHeading({ name }),
+        description: words.declineDescription,
+        confirm: words.decline
+      }
+    : {
+        heading: words.removeAccessHeading({ name }),
+        description: words.removeAccessDescription,
+        confirm: words.removeAccess
+      }
+})
+function ask(kind: 'reject' | 'revoke', request: AccessRequest) {
+  note.value = ''
+  confirming.value = { kind, request }
+}
+function confirm() {
+  const pending = confirming.value
+  confirming.value = null
+  if (!pending) return
+  const written = note.value.trim() || undefined
+  if (pending.kind === 'reject') emit('reject', pending.request.id, written)
+  else emit('revoke', pending.request.id, written)
 }
 </script>
 
@@ -81,7 +125,7 @@ function detail(request: AccessRequest) {
               size="sm"
               variant="ghost"
               :disabled="busy === request.id"
-              @click="emit('reject', request.id)"
+              @click="ask('reject', request)"
             >
               {{ messages.decline }}
             </AppButton>
@@ -100,7 +144,7 @@ function detail(request: AccessRequest) {
             size="sm"
             variant="ghost"
             :loading="busy === request.id"
-            @click="emit('revoke', request.id)"
+            @click="ask('revoke', request)"
           >
             {{ messages.removeAccess }}
           </AppButton>
@@ -116,5 +160,20 @@ function detail(request: AccessRequest) {
     >
       <template #icon><icon-lucide-inbox class="size-5" /></template>
     </AppPlaceholder>
+    <AppConfirmationDialog
+      :open="confirmation !== null"
+      tone="danger"
+      :heading="confirmation?.heading ?? ''"
+      :description="confirmation?.description"
+      :cancel-label="messages.cancel"
+      :confirm-label="confirmation?.confirm ?? ''"
+      @update:open="(open) => !open && (confirming = null)"
+      @confirm="confirm"
+    >
+      <div :class="[form.field(), 'mt-3']">
+        <label for="portal-review-note" :class="form.label()">{{ messages.reviewNote }}</label>
+        <AppTextarea id="portal-review-note" v-model="note" :rows="2" maxlength="1000" />
+      </div>
+    </AppConfirmationDialog>
   </div>
 </template>

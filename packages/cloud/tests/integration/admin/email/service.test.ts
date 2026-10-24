@@ -14,7 +14,7 @@ describe('admin email regeneration', () => {
     const runtime = await createCloudTestDatabase()
     try {
       await runtime.database
-        .insertInto('cloudEnrollment')
+        .insertInto('enrollment')
         .values({
           id: crypto.randomUUID(),
           emailNormalized: 'person@example.com',
@@ -55,7 +55,7 @@ describe('admin email regeneration', () => {
       expect(rows[1]).toMatchObject({ kind: 'enrollment-approved', status: 'pending' })
       expect(
         await runtime.database
-          .selectFrom('cloudAdminAuditEvent')
+          .selectFrom('adminAuditEvent')
           .select('action')
           .executeTakeFirstOrThrow()
       ).toEqual({ action: 'email.regenerated' })
@@ -94,7 +94,7 @@ describe('admin email regeneration', () => {
     const runtime = await createCloudTestDatabase()
     try {
       await runtime.database
-        .insertInto('cloudEnrollment')
+        .insertInto('enrollment')
         .values({
           id: crypto.randomUUID(),
           emailNormalized: 'revoked@example.com',

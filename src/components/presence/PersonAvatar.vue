@@ -24,7 +24,7 @@ const {
   name: string
   color: Color
   agentCount?: number
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
   following?: boolean
   interactive?: boolean
   voice?: PresenceVoice

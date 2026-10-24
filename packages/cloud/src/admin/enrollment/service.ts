@@ -76,7 +76,7 @@ export function createEnrollmentService(
 ) {
   const statusForEmail = async (email: string): Promise<EnrollmentStatus | null> => {
     const row = await database
-      .selectFrom('cloudEnrollment')
+      .selectFrom('enrollment')
       .select('status')
       .where('emailNormalized', '=', normalizeEnrollmentEmail(email))
       .executeTakeFirst()
@@ -87,7 +87,7 @@ export function createEnrollmentService(
       const emailNormalized = normalizeEnrollmentEmail(input.email)
       await database.transaction().execute(async (transaction) => {
         const existing = await transaction
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .selectAll()
           .where('emailNormalized', '=', emailNormalized)
           .forUpdate()
@@ -106,14 +106,14 @@ export function createEnrollmentService(
         let row: EnrollmentRow
         if (existing) {
           row = await transaction
-            .updateTable('cloudEnrollment')
+            .updateTable('enrollment')
             .set(values)
             .where('id', '=', existing.id)
             .returningAll()
             .executeTakeFirstOrThrow()
         } else {
           row = await transaction
-            .insertInto('cloudEnrollment')
+            .insertInto('enrollment')
             .values({
               id: crypto.randomUUID(),
               emailNormalized,
@@ -137,7 +137,7 @@ export function createEnrollmentService(
       return (await statusForEmail(email)) === 'approved'
     },
     async list(status?: EnrollmentStatus): Promise<EnrollmentRecord[]> {
-      let query = database.selectFrom('cloudEnrollment').selectAll()
+      let query = database.selectFrom('enrollment').selectAll()
       if (status) query = query.where('status', '=', status)
       return (await query.orderBy('requestedAt', 'desc').execute()).map(enrollmentRecord)
     },
@@ -149,7 +149,7 @@ export function createEnrollmentService(
     ): Promise<EnrollmentRecord> {
       return database.transaction().execute(async (transaction) => {
         const current = await transaction
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .selectAll()
           .where('id', '=', enrollmentId)
           .forUpdate()
@@ -170,7 +170,7 @@ export function createEnrollmentService(
                 .executeTakeFirst()
             : undefined
         const row = await transaction
-          .updateTable('cloudEnrollment')
+          .updateTable('enrollment')
           .set({
             status,
             reviewedAt: now,
@@ -183,7 +183,7 @@ export function createEnrollmentService(
           .returningAll()
           .executeTakeFirstOrThrow()
         await transaction
-          .insertInto('cloudAdminAuditEvent')
+          .insertInto('adminAuditEvent')
           .values({
             id: crypto.randomUUID(),
             actorUserId: actorId,
@@ -206,15 +206,43 @@ export function createEnrollmentService(
     },
     async bindApprovedUser(email: string, userId: string): Promise<void> {
       await database
-        .updateTable('cloudEnrollment')
+        .updateTable('enrollment')
         .set({ approvedUserId: userId })
         .where('emailNormalized', '=', normalizeEnrollmentEmail(email))
         .where('status', '=', 'approved')
         .execute()
     },
+    /**
+     * Moves an approved account's enrollment to the address it changed to, so the approval stays
+     * with the account rather than with an address it no longer uses. Any other request from the
+     * new address gives way to it.
+     */
+    async followEmailChange(userId: string, email: string): Promise<void> {
+      const emailNormalized = normalizeEnrollmentEmail(email)
+      await database.transaction().execute(async (transaction) => {
+        const approved = await transaction
+          .selectFrom('enrollment')
+          .select(['id', 'emailNormalized'])
+          .where('approvedUserId', '=', userId)
+          .where('status', '=', 'approved')
+          .forUpdate()
+          .executeTakeFirst()
+        if (!approved || approved.emailNormalized === emailNormalized) return
+        await transaction
+          .deleteFrom('enrollment')
+          .where('emailNormalized', '=', emailNormalized)
+          .where('id', '!=', approved.id)
+          .execute()
+        await transaction
+          .updateTable('enrollment')
+          .set({ emailNormalized })
+          .where('id', '=', approved.id)
+          .execute()
+      })
+    },
     async pendingCount(): Promise<number> {
       const row = await database
-        .selectFrom('cloudEnrollment')
+        .selectFrom('enrollment')
         .select(({ fn }) => fn.countAll<number>().as('count'))
         .where('status', '=', 'pending')
         .executeTakeFirstOrThrow()

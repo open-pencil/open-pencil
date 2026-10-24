@@ -81,6 +81,8 @@ export const membersBusy = ref(false)
 export const membersFailure = ref<WorkspaceFailure | null>(null)
 /** The link of the invitation just sent, to pass on when the server sends no email. */
 export const lastInvitationLink = ref<string | null>(null)
+/** The address an invitation was last sent to again, so its row can say so. */
+export const lastResentEmail = ref<string | null>(null)
 
 /** The workspace the dialog manages, as the server last listed it to this person. */
 export const membersWorkspace = computed(() => {
@@ -113,6 +115,7 @@ export async function openWorkspaceMembers(serverId: string, workspaceId: string
   workspaceMembers.value = null
   membersFailure.value = null
   lastInvitationLink.value = null
+  lastResentEmail.value = null
   membersOpen.value = true
   membersLoading.value = true
   await reload()
@@ -147,6 +150,15 @@ export function inviteToWorkspace(email: string, role: WorkspaceRole): Promise<b
   return change(async ({ client, workspaceId }) => {
     const created = await client.inviteToWorkspace(workspaceId, { email, role })
     lastInvitationLink.value = created.acceptanceURL
+  })
+}
+
+/** Sends an invitation again under a new link; the one sent before stops working. */
+export function resendWorkspaceInvitation(invitationId: string): Promise<boolean> {
+  return change(async ({ client, workspaceId }) => {
+    const resent = await client.resendWorkspaceInvitation(workspaceId, invitationId)
+    lastInvitationLink.value = resent.acceptanceURL
+    lastResentEmail.value = resent.invitation.email
   })
 }
 
