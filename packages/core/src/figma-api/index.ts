@@ -4,7 +4,6 @@ import type { SceneGraph, SceneNode as CoreSceneNode, NodeType } from '@open-pen
 import { createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -23,6 +22,7 @@ import { fontManager } from '#core/text/fonts'
 
 import { componentFromNode } from './components'
 import { flattenSceneNodes } from './flatten'
+import { fetchImage, storeImage } from './images'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -51,6 +51,7 @@ import {
 } from './proxy'
 import { newShapeWithText } from './shape-with-text'
 import type { ExportImageOptions } from './types'
+import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
 import { combineComponentsAsVariants } from './variants'
 
@@ -103,6 +104,8 @@ export class FigmaAPI implements NodeProxyHost {
   theme: InterfaceTheme = 'light'
 
   readonly mixed = MIXED
+  /** Figma's color and Markdown helpers, as `figma.util`. */
+  readonly util: UtilAPI = figmaUtil
   /** The document's variables and collections, as Figma's `figma.variables`. */
   readonly variables: FigmaVariablesAPI
 
@@ -491,10 +494,13 @@ export class FigmaAPI implements NodeProxyHost {
     this._viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
   }
 
-  createImage(data: Uint8Array): { hash: string } {
-    const hash = computeImageHash(data)
-    this.graph.images.set(hash, data)
-    return { hash }
+  createImage(data: Uint8Array): Image {
+    return storeImage(this.graph, data)
+  }
+
+  /** Fetches the image at `src` and stores it as `createImage` does. */
+  createImageAsync(src: string): Promise<Image> {
+    return fetchImage(this.graph, src)
   }
 
   // --- Stubs ---
@@ -525,6 +531,19 @@ export class FigmaAPI implements NodeProxyHost {
   notify(message: string): { cancel: () => void } {
     if (typeof console !== 'undefined') console.warn(`[figma.notify] ${message}`)
     return { cancel: noop }
+  }
+
+  /**
+   * A script is one call rather than a plugin with a lifetime, so nothing closes; the message is
+   * shown as Figma shows it, through `notify`.
+   */
+  closePlugin(message?: string): void {
+    if (message) this.notify(message)
+  }
+
+  /** Every page is already in memory. */
+  async loadAllPagesAsync(): Promise<void> {
+    return undefined
   }
 
   commitUndo(): void {

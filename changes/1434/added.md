@@ -1,0 +1,1 @@
+- Scripts can call `figma.util.rgb`, `figma.util.rgba`, `figma.util.solidPaint`, `figma.closePlugin()`, `figma.loadAllPagesAsync()`, and `figma.createImageAsync(url)` as in Figma, and `figma.createImage` returns Figma's `Image` with `getBytesAsync()` and `getSizeAsync()`, instead of stopping at the call after keeping the edits made before it.
