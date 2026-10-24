@@ -174,6 +174,15 @@ export class FigmaAPI implements NodeProxyHost {
     return this.getNodeById(id)
   }
 
+  /** The page switch Figma requires in dynamic-page mode; sets currentPage, and only to a page. */
+  setCurrentPageAsync(page: FigmaNodeProxy): Promise<void>
+  setCurrentPageAsync(page: PageNode): Promise<void>
+  async setCurrentPageAsync(page: PageNode | FigmaNodeProxy): Promise<void> {
+    if (this._rawNode(page).type !== 'CANVAS')
+      throw new Error('setCurrentPageAsync() can only switch to pages')
+    this._currentPageId = this._nodeId(page)
+  }
+
   // --- Node Creation ---
 
   /** New layers start as the editor's tools make them, which is how Figma's plugin API makes them. */

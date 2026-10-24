@@ -346,6 +346,11 @@ export class FigmaNodeProxy {
     return this.mainComponent
   }
 
+  /** Figma loads a page's layers on demand in dynamic-page mode; every page here is loaded. */
+  async loadAsync(): Promise<void> {
+    if (this._raw().type !== 'CANVAS') throw new Error('loadAsync() can only be called on pages')
+  }
+
   get mainComponent(): FigmaNodeProxy | null {
     const n = this._raw()
     if (!n.componentId) return null

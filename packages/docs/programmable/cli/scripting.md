@@ -247,6 +247,7 @@ Common node properties are readable/writable through the proxy, including:
 - `figma.loadFontAsync(fontName)` no-ops because OpenPencil does not gate text edits on plugin font loading
 - `figma.listAvailableFontsAsync()` returns host-provided fonts when available
 - `figma.getNodeByIdAsync(id)` and `instance.getMainComponentAsync()` resolve to the same nodes as `figma.getNodeById(id)` and `instance.mainComponent`, for scripts written for Figma's dynamic-page mode
+- `figma.setCurrentPageAsync(page)` switches pages as setting `figma.currentPage` does, and `page.loadAsync()` resolves at once because every page is already loaded, for scripts written for Figma's dynamic-page mode
 - `figma.notify(message)` logs a warning in headless mode
 - `instance.swapComponent(component)` points an instance at another component
 - A layer inside an instance refuses `x`, `y`, `rotation`, `relativeTransform`, `constraints`, `isMask`, and `maskType` with Figma's error, such as `in set_x: This property cannot be overridden in an instance: relative-transform`; those always follow the component. Slot content keeps them, and setting one on a slot's default content makes the instance own the slot
