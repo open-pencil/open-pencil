@@ -1,0 +1,2 @@
+- SVG export keeps solid fill and stroke opacity in sRGB, including the alpha of a `.pen` paint and of a text fill.
+- A tinted solid fill keeps its opacity in a Display P3 SVG, written beside `currentColor`.

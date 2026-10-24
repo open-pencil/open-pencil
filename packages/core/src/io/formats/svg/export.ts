@@ -7,9 +7,10 @@ import { computeContentBounds } from '#core/io/formats/raster'
 
 import {
   nextDefId,
-  formatColor,
+  formatSolidColor,
   createFilterDef,
   resolveFill,
+  solidFillOpacity,
   SVG_STROKE_CAP,
   SVG_STROKE_JOIN,
   SVG_BLEND_MODE
@@ -76,6 +77,7 @@ function vectorShapeElements(
           svg('path', {
             ...attrs,
             fill: fillAttr,
+            'fill-opacity': solidFillOpacity(fill, ctx.colorSpace),
             stroke: index === visibleFills.length - 1 ? common.stroke : 'none'
           })
         )
@@ -120,11 +122,13 @@ function lineDashAttrs(stroke: Stroke | undefined, length: number) {
 function nodeShapeElements(
   node: SceneNode,
   fillAttr: string | null,
+  fillOpacity: number | undefined,
   strokeAttrs: Record<string, string | number | undefined>,
   ctx: SVGExportContext
 ): SVGNode[] {
   const common: Record<string, string | number | undefined> = {
     fill: fillAttr ?? 'none',
+    'fill-opacity': fillOpacity,
     ...strokeAttrs
   }
 
@@ -261,7 +265,9 @@ function buildSVGStrokeAttrs(
   const stroke = visibleStrokes[0]
   const cap = stroke.cap ?? nodeCap
   const attrs: Record<string, string | number | undefined> = {
-    stroke: formatColor(stroke.color, 1, colorSpace),
+    // Opacity 1 keeps the color opaque. Display P3 must not also keep color alpha here, or a
+    // viewer multiplies it by stroke-opacity; the canvas paints stroke.opacity alone.
+    stroke: formatSolidColor(stroke.color, 1, colorSpace),
     'stroke-width': round(stroke.weight)
   }
   if (stroke.opacity < 1) attrs['stroke-opacity'] = round(stroke.opacity)
@@ -283,6 +289,7 @@ function buildShapeChildren(
   node: SceneNode,
   visibleFills: Fill[],
   fillAttr: string | null,
+  fillOpacity: number | undefined,
   strokeAttrs: Record<string, string | number | undefined>,
   visibleStrokeCount: number,
   ctx: SVGExportContext
@@ -290,7 +297,7 @@ function buildShapeChildren(
   if (hasPathLevelFills(node)) {
     return vectorShapeElements(
       node,
-      { fill: fillAttr ?? 'none', ...strokeAttrs },
+      { fill: fillAttr ?? 'none', 'fill-opacity': fillOpacity, ...strokeAttrs },
       strokeAttrs,
       ctx,
       visibleFills
@@ -306,6 +313,7 @@ function buildShapeChildren(
           ...nodeShapeElements(
             node,
             ref,
+            solidFillOpacity(fill, ctx.colorSpace),
             fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {},
             ctx
           )
@@ -317,7 +325,7 @@ function buildShapeChildren(
 
   const hasFillOrStroke = fillAttr || visibleStrokeCount > 0
   if (hasFillOrStroke && !isGroupLike(node)) {
-    return nodeShapeElements(node, fillAttr, strokeAttrs, ctx)
+    return nodeShapeElements(node, fillAttr, fillOpacity, strokeAttrs, ctx)
   }
 
   return []
@@ -326,26 +334,43 @@ function buildShapeChildren(
 /** The paint CSS `color` sets, for a tinted icon path. */
 const CURRENT_COLOR = 'currentColor'
 
+/** A paint's SVG color and, for an sRGB solid, the `fill-opacity` beside it. */
+function exportedFill(
+  fill: Fill | undefined,
+  node: SceneNode,
+  ctx: SVGExportContext
+): { color: string | null; opacity: number | undefined } {
+  if (!fill) return { color: null, opacity: undefined }
+  return {
+    color: resolveFill(fill, node, ctx),
+    opacity: solidFillOpacity(fill, ctx.colorSpace)
+  }
+}
+
 function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (!node.visible) return null
 
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
-    const firstFill = node.fills.find((f) => f.visible)
-    const fillAttr = firstFill ? resolveFill(firstFill, node, ctx) : null
-    const textEl = renderTextNode(node, fillAttr, ctx)
-    return svg('g', groupAttrs, textEl)
+    const fill = exportedFill(
+      node.fills.find((f) => f.visible),
+      node,
+      ctx
+    )
+    return svg('g', groupAttrs, renderTextNode(node, fill.color, ctx, fill.opacity))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
   const visibleStrokes = node.strokes.filter((s) => s.visible)
   const tint = ctx.tint?.(node) ?? []
-  const ownFill =
-    visibleFills.length > 0 && !hasPathLevelFills(node)
-      ? resolveFill(visibleFills[0], node, ctx)
-      : null
-  const fillAttr = ownFill && tint.includes('fill') ? CURRENT_COLOR : ownFill
+  const ownFill = visibleFills.length > 0 && !hasPathLevelFills(node) ? visibleFills[0] : undefined
+  const fill = exportedFill(ownFill, node, ctx)
+  const tintedFill = fill.color !== null && tint.includes('fill')
+  const fillAttr = tintedFill ? CURRENT_COLOR : fill.color
+  // `currentColor` has no alpha. Display P3 normally bakes solid opacity into the color, which a
+  // tint throws away, so a tinted solid keeps `fill-opacity` in every color space.
+  const fillOpacity = ownFill ? solidFillOpacity(ownFill, ctx.colorSpace, tintedFill) : fill.opacity
   const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace, node.strokeCap)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
@@ -356,6 +381,7 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     node,
     visibleFills,
     fillAttr,
+    fillOpacity,
     strokeAttrs,
     visibleStrokes.length,
     ctx

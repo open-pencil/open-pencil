@@ -11,7 +11,8 @@ import { textFontFace } from '#core/text/requirements'
 
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,
-  colorSpace: 'srgb' | 'display-p3'
+  colorSpace: 'srgb' | 'display-p3',
+  parentFillOpacity: number | undefined
 ): Record<string, string | number | undefined> {
   const attrs: Record<string, string | number | undefined> = {}
   if (style.fontFamily) attrs['font-family'] = style.fontFamily
@@ -24,7 +25,16 @@ function styleOverrideToTspanAttrs(
   if (style.fills) {
     const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
     if (visibleFill) {
-      attrs.fill = formatColor(visibleFill.color, visibleFill.opacity, colorSpace)
+      // Paragraphs and saved glyphs draw a run at color.a * opacity. Shapes paint opacity alone.
+      const alpha = round(visibleFill.color.a * visibleFill.opacity)
+      if (colorSpace === 'display-p3') {
+        attrs.fill = formatColor({ ...visibleFill.color, a: 1 }, alpha, colorSpace)
+      } else {
+        attrs.fill = formatColor(visibleFill.color, 1, colorSpace)
+        if (alpha < 1) attrs['fill-opacity'] = alpha
+      }
+      // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
+      if (alpha >= 1 && parentFillOpacity !== undefined) attrs['fill-opacity'] = 1
     }
   }
   return attrs
@@ -72,7 +82,8 @@ function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
 export function renderTextNode(
   node: SceneNode,
   fillAttr: string | null,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  fillOpacity?: number
 ): SVGNode {
   const { colorSpace, textLayout, fontAlias } = ctx
   const direction = resolveNodeTextDirection(node)
@@ -89,6 +100,7 @@ export function renderTextNode(
     'font-weight': node.fontWeight !== 400 ? node.fontWeight : undefined,
     'font-style': node.italic ? 'italic' : undefined,
     fill: fillAttr ?? undefined,
+    'fill-opacity': fillOpacity,
     // Laid-out spans each start at their own left edge, so they take no direction or anchor.
     direction: direction === 'RTL' && !laidOut ? 'rtl' : undefined,
     'text-anchor': laidOut ? undefined : textAnchorForNode(node, direction),
@@ -97,7 +109,7 @@ export function renderTextNode(
     ...(fontAlias ? aliasedFontAttrs(textFontFace(node), fontAlias) : {})
   }
   const spanAttrs = (style: CharacterStyleOverride) => ({
-    ...styleOverrideToTspanAttrs(style, colorSpace),
+    ...styleOverrideToTspanAttrs(style, colorSpace, fillOpacity),
     ...(fontAlias ? aliasedFontAttrs(textFontFace(node, style), fontAlias) : {})
   })
 
