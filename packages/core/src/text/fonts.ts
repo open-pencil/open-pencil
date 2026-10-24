@@ -7,7 +7,7 @@ import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { facesFromStyles, hasFamilyFace, type FamilyFace } from '#core/text/font/faces'
 import { chooseLocalFontMatch } from '#core/text/font/style'
-import { isVariableFont, namedInstanceVariations } from '#core/text/font/variation'
+import { isVariableFont, namedInstanceVariations, withWeightClass } from '#core/text/font/variation'
 
 export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
@@ -60,6 +60,8 @@ export class FontManager {
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
+  /** Each loaded font as registered for a weight, so registering it again finds the same face. */
+  private weightedFaces = new WeakMap<ArrayBuffer, Map<number, ArrayBuffer>>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private blockedNodeIds = new Set<string>()
@@ -687,7 +689,18 @@ export class FontManager {
     }
   }
 
-  private registerSupplemental(family: string, style: string, buffer: ArrayBuffer): void {
+  /** The font as drawn for `style`: declaring the style's weight, as {@link withWeightClass} sets. */
+  private faceFor(style: string, buffer: ArrayBuffer): ArrayBuffer {
+    const weight = styleToWeight(style)
+    const faces = this.weightedFaces.get(buffer) ?? new Map<number, ArrayBuffer>()
+    this.weightedFaces.set(buffer, faces)
+    const face = faces.get(weight) ?? withWeightClass(buffer, weight)
+    faces.set(weight, face)
+    return face
+  }
+
+  private registerSupplemental(family: string, style: string, loaded: ArrayBuffer): void {
+    const buffer = this.faceFor(style, loaded)
     const key = `${family}|${style}`
     const supplemental = this.supplementalFamilyData.get(key) ?? []
     if (supplemental.includes(buffer)) return
@@ -700,9 +713,10 @@ export class FontManager {
   private registerAndCache(
     family: string,
     style: string,
-    buffer: ArrayBuffer,
+    loaded: ArrayBuffer,
     source?: FontLoadedSource
   ): ArrayBuffer | null {
+    const buffer = this.faceFor(style, loaded)
     const key = `${family}|${style}`
     const existing = this.loadedFamilies.get(key)
     if (existing === buffer) {

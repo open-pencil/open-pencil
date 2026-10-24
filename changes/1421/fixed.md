@@ -1,0 +1,1 @@
+- Text in a family whose static faces declare the same weight class, such as Material Symbols at weights 100 and 200, draws each weight in its own face.

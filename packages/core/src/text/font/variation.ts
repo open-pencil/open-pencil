@@ -34,6 +34,30 @@ export function isVariableFont(data: ArrayBuffer): boolean {
   return sfntTable(new DataView(data), 'fvar') !== null
 }
 
+/** The sfnt versions of a single font: TrueType 1.0, Apple's `true`, and CFF's `OTTO`. */
+const SFNT_VERSIONS = new Set([0x00010000, 0x74727565, 0x4f54544f])
+/** `usWeightClass` in the OS/2 table. */
+const WEIGHT_CLASS_OFFSET = 4
+
+/**
+ * The font, declaring `weight` as its weight class. CanvasKit picks among a family's faces by the
+ * weight class each file declares, and some families declare one class for several weights, such
+ * as Google's Material Symbols at 100 and 200; set to the weight it was loaded for, each face draws
+ * for its own style. Variable fonts, which draw every weight from one face, and files that are not
+ * a single sfnt font stay as they are; so does a font that already declares the weight.
+ */
+export function withWeightClass(data: ArrayBuffer, weight: number): ArrayBuffer {
+  if (data.byteLength < 12) return data
+  const view = new DataView(data)
+  if (!SFNT_VERSIONS.has(view.getUint32(0)) || sfntTable(view, 'fvar')) return data
+  const os2 = sfntTable(view, 'OS/2')
+  if (!os2 || os2.length < WEIGHT_CLASS_OFFSET + 2) return data
+  if (view.getUint16(os2.offset + WEIGHT_CLASS_OFFSET) === weight) return data
+  const copy = data.slice(0)
+  new DataView(copy).setUint16(os2.offset + WEIGHT_CLASS_OFFSET, weight)
+  return copy
+}
+
 /** The sfnt versions of a font with TrueType outlines: 1.0, and Apple's `true`. */
 const TRUETYPE_VERSIONS = new Set([0x00010000, 0x74727565])
 

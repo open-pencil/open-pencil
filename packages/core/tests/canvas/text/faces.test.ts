@@ -1,18 +1,20 @@
 import { describe, expect, test } from 'bun:test'
-
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+import { join } from 'node:path'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-
-import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { FIXTURES } from '#core-tests/helpers/paths'
+import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { buildParagraph } from '#core/canvas/text'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, fontManager } from '#core/text/fonts'
 import { glyphOutlineSourceSync } from '#core/text/opentype'
+
+const testFont = (name: string) => join(FIXTURES, 'fonts', name)
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */
 const FAMILY = 'Faces Test Sans'
@@ -25,11 +27,12 @@ async function bundled(file: string): Promise<ArrayBuffer> {
 function drawn(
   ck: CanvasKit,
   fontProvider: TypefaceFontProvider,
-  style: { fontWeight: number; italic: boolean }
+  style: { fontWeight: number; italic: boolean },
+  family = FAMILY
 ): Uint8Array {
   const node = createDefaultNode(() => 'face-text', 'TEXT', {
     text: 'Faces',
-    fontFamily: FAMILY,
+    fontFamily: family,
     fontSize: 40,
     width: 300,
     height: 60,
@@ -44,7 +47,15 @@ function drawn(
     paragraph.layout(300)
     paragraph.draw(surface.getCanvas(), 0, 0)
     return expectDefined(
-      surface.getCanvas().readPixels(0, 0, { width: 300, height: 60, colorType: ck.ColorType.RGBA_8888, alphaType: ck.AlphaType.Unpremul, colorSpace: ck.ColorSpace.SRGB }),
+      surface
+        .getCanvas()
+        .readPixels(0, 0, {
+          width: 300,
+          height: 60,
+          colorType: ck.ColorType.RGBA_8888,
+          alphaType: ck.AlphaType.Unpremul,
+          colorSpace: ck.ColorSpace.SRGB
+        }),
       'pixels'
     ) as Uint8Array
   } finally {
@@ -76,6 +87,25 @@ describe('text faces', () => {
     fontManager.markLoaded(FAMILY, 'Bold', await bundled('/Inter-Bold.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).not.toEqual(regular)
+  })
+
+  test('draws each static face for the style it was loaded as, whatever weight it declares', async () => {
+    const ck = await getCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    // Static Thin and ExtraLight Inter that both declare weight class 250, as Google serves the
+    // Material Symbols faces of those weights.
+    const thin = await Bun.file(testFont('InterThin-WeightClass250.ttf')).arrayBuffer()
+    const extraLight = await Bun.file(testFont('InterExtraLight-WeightClass250.ttf')).arrayBuffer()
+    fontManager.markLoaded('Faces Test Both', 'Thin', thin)
+    fontManager.markLoaded('Faces Test Both', 'ExtraLight', extraLight)
+    fontManager.markLoaded('Faces Test Thin', 'Thin', thin)
+    fontManager.markLoaded('Faces Test ExtraLight', 'ExtraLight', extraLight)
+    const face = (fontWeight: number, family: string) =>
+      drawn(ck, fontProvider, { fontWeight, italic: false }, family)
+    expect(face(100, 'Faces Test Both')).toEqual(face(100, 'Faces Test Thin'))
+    expect(face(200, 'Faces Test Both')).toEqual(face(200, 'Faces Test ExtraLight'))
+    expect(face(200, 'Faces Test Both')).not.toEqual(face(100, 'Faces Test Both'))
   })
 
   /**
