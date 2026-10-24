@@ -4,6 +4,7 @@ import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 
+import { firstFontFamily } from '../import/css-values'
 import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { mergeClassNames, serializeHTML, splitWhitespace } from './html'
@@ -216,20 +217,6 @@ async function compileTailwindClasses(classNames: string[], tokens: string): Pro
   ])
   const compiler = await compile(`${themeCSS}\n${tokens}\n${utilitiesCSS}`)
   return compiler.build(classNames)
-}
-
-function stripFontFamilyQuotes(value: string): string {
-  if (value.length < 2) return value
-  const first = value[0]
-  const last = value[value.length - 1]
-  if ((first === '"' && last === '"') || (first === "'" && last === "'")) return value.slice(1, -1)
-  return value
-}
-
-function firstFontFamily(value: string): string {
-  const commaIndex = value.indexOf(',')
-  const raw = commaIndex !== -1 ? value.slice(0, commaIndex) : value
-  return stripFontFamilyQuotes(raw.trim())
 }
 
 function collectFontRequests(node: DesignNode, fonts: Map<string, WebFontFaceRequest>): void {

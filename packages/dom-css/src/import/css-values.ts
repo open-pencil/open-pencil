@@ -29,3 +29,18 @@ export function mergedStyle(node: {
 }) {
   return { ...node.inlineStyle, ...node.computedStyle }
 }
+
+function stripFontFamilyQuotes(value: string): string {
+  if (value.length < 2) return value
+  const first = value[0]
+  const last = value[value.length - 1]
+  if ((first === '"' && last === '"') || (first === "'" && last === "'")) return value.slice(1, -1)
+  return value
+}
+
+/** The first family of a CSS `font-family` list, without its quotes. */
+export function firstFontFamily(value: string): string {
+  const commaIndex = value.indexOf(',')
+  const raw = commaIndex !== -1 ? value.slice(0, commaIndex) : value
+  return stripFontFamilyQuotes(raw.trim())
+}

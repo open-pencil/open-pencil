@@ -1,0 +1,1 @@
+- HTML import reads a single-quoted `font-family`, such as `'Noto Sans KR'`, as the font family instead of keeping the quotes in its name.
