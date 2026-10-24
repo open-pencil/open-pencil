@@ -127,6 +127,8 @@ class PageBuilder {
         visible: cell.visible,
         rotation: kind.rotation,
         shapeWithTextType: kind.shape,
+        // draw.io sized it, so it keeps its size, as a FigJam shape whose height was set does.
+        shapeTruncates: true,
         ...shapePaint(cell.style),
         // A stencil FigJam has no shape for keeps its name, so it can be found and replaced.
         name: kind.stencil ? known : nameOf(label.text, 'Shape with text')
@@ -172,3 +174,4 @@ export function drawioToSceneGraph(file: DrawioFile): SceneGraph {
   }
   return graph
 }
+
