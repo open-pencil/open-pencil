@@ -474,6 +474,7 @@
         "@ai-sdk/harness-pi": "1.0.140",
         "@ai-sdk/sandbox-just-bash": "1.0.138",
         "@earendil-works/pi-tui": "0.85.1",
+        "amaro": "1.2.2",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
@@ -2683,6 +2684,8 @@
     "ajv-formats": ["ajv-formats@3.0.1", "", { "dependencies": { "ajv": "^8.0.0" } }, "sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ=="],
 
     "alien-signals": ["alien-signals@3.2.1", "", {}, "sha512-I8FjmltrfnDFoZedi5CG8DghVYNhzb/Ijluz7tCSJH0xpd0484Kowhbb1XDYOxfJpU1p5wnM2X54dA+IfGyD1g=="],
+
+    "amaro": ["amaro@1.2.2", "", {}, "sha512-H1ReZZ8Te6HHaWAy9171A/iWkGZOusKCtdzmh6EnTgluiNiAV9OSmUIN5rZI1TZnw6+NAUNz+n6pAWoJAHhRIQ=="],
 
     "ansi-colors": ["ansi-colors@4.1.3", "", {}, "sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw=="],
 

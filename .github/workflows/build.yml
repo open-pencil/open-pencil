@@ -61,7 +61,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - uses: ./.pipeline/.github/actions/setup-bun
         with:
           cache-scope: desktop
@@ -128,7 +128,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -211,7 +211,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
           registry-url: https://registry.npmjs.org/
       - uses: ./.pipeline/.github/actions/setup-bun
         with:
