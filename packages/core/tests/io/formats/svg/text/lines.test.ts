@@ -139,6 +139,16 @@ describe('SVG text with laid-out lines', () => {
 })
 
 describe('SVG text case', () => {
+  test('keeps text before and after a style run on one line', () => {
+    const svg = exportText({
+      text: 'Hello bold world',
+      styleRuns: [{ start: 6, length: 4, style: { fontWeight: 700 } }]
+    })
+
+    expect(svg).toContain('xml:space="preserve"')
+    expect(svg).toContain('<tspan>Hello </tspan><tspan font-weight="700">bold</tspan><tspan> world</tspan>')
+  })
+
   test('text on one line is written in the case it is shown in', () => {
     expect(exportText({ text: 'Mixed Case', textCase: 'UPPER' })).toContain('>MIXED CASE</text>')
     const runs = exportText({

@@ -4,8 +4,8 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/directio
 import { formatColor, type SVGExportContext, type SVGFontAlias } from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
-import { laidOutTextSpans } from '#core/io/formats/svg/text/lines'
-import { shownText, shownTextSlice } from '#core/text/case'
+import { laidOutTextSpans, textStyleSpans } from '#core/io/formats/svg/text/lines'
+import { shownText } from '#core/text/case'
 import type { FontFaceRef } from '#core/text/face'
 import { textFontFace } from '#core/text/requirements'
 
@@ -114,15 +114,11 @@ export function renderTextNode(
   const y = node.fontSize || 14
 
   if (node.styleRuns.length > 0) {
-    const spans: SVGNode[] = []
-    let pos = 0
-    for (const run of node.styleRuns) {
-      const text = shownTextSlice(node, pos, pos + run.length)
-      pos += run.length
-      spans.push(svg('tspan', spanAttrs(run.style), text))
-    }
-
-    return svg('text', { x, y, ...attrs }, ...spans)
+    return svg(
+      'text',
+      { x, y, ...attrs, 'xml:space': 'preserve' },
+      ...textStyleSpans(node, spanAttrs)
+    )
   }
 
   return svg('text', { x, y, ...attrs }, shownText(node))

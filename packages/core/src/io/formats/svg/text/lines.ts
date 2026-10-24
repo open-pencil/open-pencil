@@ -54,6 +54,17 @@ function textPieces(node: SceneNode): TextPiece[] {
   return pieces
 }
 
+/** One unpositioned span per style run, including uncovered text in the node's own style. */
+export function textStyleSpans(node: SceneNode, spanAttrs: SpanAttrs): SVGNode[] {
+  return textPieces(node).map((piece) =>
+    svg(
+      'tspan',
+      piece.style ? spanAttrs(piece.style) : {},
+      shownTextSlice(node, piece.from, piece.to)
+    )
+  )
+}
+
 /** The left and right edges of the characters from `from` to `to` that have glyphs. */
 function spanEdges(line: SVGTextLine, from: number, to: number): SVGCharacterEdges | null {
   let left = Infinity

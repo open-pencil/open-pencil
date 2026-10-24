@@ -1,0 +1,1 @@
+- SVG export preserves text outside styled character ranges.
