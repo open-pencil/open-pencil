@@ -41,7 +41,7 @@ SceneGraph → NodeChange[] → Kiwi encode → compress (Zstd)
   → write .fig file
 ```
 
-Export uses <kbd>⌘</kbd><kbd>S</kbd> (Save) and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> (Save As) with native OS dialogs on the desktop app. The exported file includes a `thumbnail.png` required by Figma for file preview. OpenPencil uses the first page named exactly `Cover` (case-insensitive), then the first page whose name contains `Cover`. The desktop app also caches this Cover after opening a file so Recent Files can prefer the generated preview without modifying the source `.fig`.
+Export uses <kbd>⌘</kbd><kbd>S</kbd> (Save) and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> (Save As) with native OS dialogs on the desktop app. The exported file includes a `thumbnail.png` required by Figma for file preview. OpenPencil uses the first page named exactly `Cover` (case-insensitive), then the first page whose name contains `Cover`. When `eval`, `tool call`, or `diff apply` saves with `--write` or `--output`, the CLI draws the thumbnail from that page, as `export --format fig` does, and writes a 1×1 placeholder when the document has none. The desktop app also caches this Cover after opening a file so Recent Files can prefer the generated preview without modifying the source `.fig`.
 
 Compression uses Zstd at the level the document asks for (see [Compression](#compression)): through a Tauri Rust command on desktop, Bun's own Zstd in the CLI, and a WebAssembly build in the browser.
 

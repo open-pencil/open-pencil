@@ -70,9 +70,12 @@ export const documentWriteOptions = {
   output: { type: 'string', alias: 'o', description: 'Write to a different file', required: false }
 } as const
 
-/** Save a headless document as `.fig`, as `eval --write` and `diff apply --write` do. */
+/**
+ * Save a headless document as `.fig`, as `eval`, `tool call`, and `diff apply` do with `--write`,
+ * with the thumbnail `export --format fig` renders.
+ */
 export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
-  const result = await io.writeDocument('fig', graph)
+  const result = await io.writeDocument('fig', graph, { renderThumbnail: true })
   await writeFile(filePath, result.data as Uint8Array)
 }
 

@@ -1,0 +1,1 @@
+- `openpencil eval`, `tool call`, and `diff apply` save a `.fig` with `--write` or `--output` with the same Cover page thumbnail `openpencil export` renders, instead of a blank 1×1 placeholder.
