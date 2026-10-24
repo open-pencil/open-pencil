@@ -8,16 +8,71 @@
     <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
     <link rel="icon" type="image/png" sizes="96x96" href="/brand/favicon-96x96.png" />
     <style>
-      html, body, #app { height: 100%; margin: 0; }
-      body { background: #1e1e1e; }
+      :root {
+        --loader-bg: #1e1e1e;
+        --loader-fg: 255, 255, 255;
+      }
       @media (prefers-color-scheme: light) {
-        body { background: #f3f4f6; }
+        :root {
+          --loader-bg: #f3f4f6;
+          --loader-fg: 32, 33, 36;
+        }
+      }
+      html[data-theme='dark'] {
+        --loader-bg: #1e1e1e;
+        --loader-fg: 255, 255, 255;
+      }
+      html[data-theme='light'] {
+        --loader-bg: #f3f4f6;
+        --loader-fg: 32, 33, 36;
+      }
+      html, body, #app { height: 100%; margin: 0; }
+      body { background: var(--loader-bg); }
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        color: rgb(var(--loader-fg));
+        background: var(--loader-bg);
+      }
+      #boot-splash img { width: 40px; height: 40px; }
+      #boot-splash .bar {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform: translate(-50%, 40px);
+        width: 100px;
+        height: 2px;
+        background: rgba(var(--loader-fg), 0.08);
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      #boot-splash .bar::after {
+        content: '';
+        display: block;
+        height: 100%;
+        width: 40%;
+        background: rgba(var(--loader-fg), 0.25);
+        border-radius: 1px;
+        animation: slide 1s ease-in-out infinite;
+      }
+      @keyframes slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(350%); }
       }
     </style>
   </head>
 
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div id="boot-splash">
+        <img src="/brand/app-icon.svg" width="40" height="40" alt="OpenPencil" />
+        <div class="bar"></div>
+      </div>
+    </div>
     <script type="module" src="/src/cloud/main.ts"></script>
   </body>
 </html>

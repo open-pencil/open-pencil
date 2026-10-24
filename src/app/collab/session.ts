@@ -178,7 +178,9 @@ export function openRoomSession({
 
   const status = computed(() =>
     deriveRoomStatus({
-      hasDocument: hasDocument.value,
+      // A tab that holds the document keeps showing it while the room's copy arrives in parts:
+      // the room's root can come before its layers, and the tab follows it once they are here.
+      hasDocument: holdsDocument || hasDocument.value,
       savedCopyLoaded: savedCopyLoaded.value,
       openFor: now.value - openedAt,
       connectedFor: connectedSince.value === null ? null : now.value - connectedSince.value,

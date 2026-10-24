@@ -12,6 +12,7 @@ import { ACCENT_TOKENS, type AccentPalette } from '@/app/shell/accent/palette'
 export const APP_THEMES = ['dark', 'light', 'auto'] as const
 export type AppTheme = (typeof APP_THEMES)[number]
 
+// `index.html` reads the same key, so its boot splash starts in this theme.
 const THEME_STORAGE_KEY = 'open-pencil:theme'
 const DEFAULT_THEME: AppTheme = 'dark'
 

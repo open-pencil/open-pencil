@@ -1,0 +1,2 @@
+- A document that fails to open from Home leaves Home in place instead of an empty tab.
+- The startup splash uses the app's theme, so it no longer changes colour as the app starts on a light system.

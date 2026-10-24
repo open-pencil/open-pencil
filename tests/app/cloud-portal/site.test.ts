@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
 
 import {
-  isCloudLink,
+  isSecretCloudLink,
   leaveAfterSignOut,
   openLocalEditor,
   siteDestination,
@@ -20,10 +20,11 @@ function account(state: CloudAccountStatus['state']): CloudAccountStatus {
 const visit = (
   path: string,
   who: SiteAccount,
-  options: { localEditor?: boolean; choseLocalEditor?: boolean } = {}
+  options: { localEditor?: boolean; choseLocalEditor?: boolean; search?: string } = {}
 ) =>
   siteDestination({
     path,
+    search: options.search,
     account: who,
     localEditor: options.localEditor ?? true,
     choseLocalEditor: options.choseLocalEditor ?? false
@@ -52,9 +53,20 @@ describe('Cloud server editor pages', () => {
     expect(visit('/rooms/room', account('pending'), { localEditor: false })).toBe('/welcome')
   })
 
-  test('tell links, which sign in on their own, from look-alike addresses', () => {
-    const link = (address: string) => isCloudLink(new URL(address, 'https://cloud.example'))
-    expect(link('/documents/a')).toBe(true)
+  test('send a document link to sign in first, and back to the document afterwards', () => {
+    expect(visit('/documents/a', null, { search: '?version=v' })).toBe(
+      '/auth/sign-in?redirect=%2Fdocuments%2Fa%3Fversion%3Dv'
+    )
+    expect(visit('/documents/a', null, { choseLocalEditor: true })).toBe(
+      '/auth/sign-in?redirect=%2Fdocuments%2Fa'
+    )
+    expect(visit('/documents/a', account('pending'))).toBe('/welcome')
+    expect(visit('/documents/a', account('active'))).toBeNull()
+  })
+
+  test('tell links that carry their secret, which open on their own, from look-alikes', () => {
+    const link = (address: string) => isSecretCloudLink(new URL(address, 'https://cloud.example'))
+    expect(link('/documents/a')).toBe(false)
     expect(link('/share/b#secret')).toBe(true)
     expect(link('/invitations/c#token')).toBe(true)
     expect(link('/share/b')).toBe(false)

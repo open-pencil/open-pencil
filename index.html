@@ -103,6 +103,14 @@
         -webkit-user-select: text;
       }
     </style>
+    <script>
+      // The splash takes the app's theme, dark unless chosen otherwise (`src/app/shell/theme.ts`),
+      // so the page does not change colour when the app starts.
+      try {
+        const theme = localStorage.getItem('open-pencil:theme')
+        if (theme !== 'auto') document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark'
+      } catch {}
+    </script>
   </head>
 
   <body>

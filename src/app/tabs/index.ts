@@ -203,19 +203,35 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
-function reusableTabStore(): { store: EditorStore; created: boolean } {
+/** A tab a document opens in: a new one, Home, or an untouched empty document. */
+type OpeningTab = { store: EditorStore; created: boolean; fromHome: boolean }
+
+function reusableTabStore(): OpeningTab {
   const current = activeTab.value
   if (current?.kind === 'home') {
     leaveHome(current.id)
-    return { store: current.store, created: false }
+    return { store: current.store, created: false, fromHome: true }
   }
   const isUntouched =
     current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
   if (isUntouched) {
     leaveHome(current.id)
-    return { store: current.store, created: false }
+    return { store: current.store, created: false, fromHome: false }
   }
-  return { store: createTab().store, created: true }
+  return { store: createTab().store, created: true, fromHome: false }
+}
+
+/** After a document failed to open: a tab opened for it closes, and Home is Home again. */
+async function releaseOpeningTab(opening: OpeningTab): Promise<void> {
+  const tab = getTabForStore(opening.store)
+  if (!tab) return
+  if (opening.created) {
+    await closeTab(tab.id)
+    return
+  }
+  if (!opening.fromHome) return
+  const tabIndex = tabsRef.value.findIndex((candidate) => candidate.id === tab.id)
+  if (tabIndex !== -1) tabsRef.value = tabsRef.value.with(tabIndex, { ...tab, kind: 'home' })
 }
 
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
@@ -393,7 +409,8 @@ export async function openStorageDocumentInNewTab(
     return existing.store
   }
 
-  const { store, created } = reusableTabStore()
+  const opening = reusableTabStore()
+  const { store } = opening
   store.state.documentName = document.name
   const load = store.preparationController.begin({
     kind: 'storage-open',
@@ -420,10 +437,7 @@ export async function openStorageDocumentInNewTab(
         })
       )
     }
-    if (created) {
-      const tab = getTabForStore(store)
-      if (tab) await closeTab(tab.id)
-    }
+    await releaseOpeningTab(opening)
     throw error
   } finally {
     if (succeeded) load.complete()
@@ -460,7 +474,8 @@ export async function openFileInNewTab(
       return { kind: 'existing' as const, store: existing.store }
     }
 
-    const { store, created } = reusableTabStore()
+    const opening = reusableTabStore()
+    const { store } = opening
     store.state.documentName = file.name.replace(/\.[^.]+$/i, '')
     const load = store.preparationController.begin({
       kind: isDOMImportFile(file) ? 'dom-import' : 'document-open',
@@ -471,7 +486,7 @@ export async function openFileInNewTab(
     void completion.promise.catch(() => undefined)
     const pendingOpen = { completion: completion.promise, identity, store }
     fileOpenCoordinator.add(pendingOpen)
-    return { kind: 'owner' as const, completion, pendingOpen, store, created, load }
+    return { kind: 'owner' as const, completion, pendingOpen, store, opening, load }
   })
 
   if (decision.kind === 'existing') return decision.store
@@ -480,7 +495,7 @@ export async function openFileInNewTab(
     return decision.store
   }
 
-  const { completion, pendingOpen, store, created, load } = decision
+  const { completion, pendingOpen, store, opening, load } = decision
   let succeeded = false
   try {
     if (isDOMImportFile(file)) {
@@ -530,10 +545,7 @@ export async function openFileInNewTab(
   } catch (error) {
     failPreparation(load, 'decode-failed', error)
     completion.reject(error)
-    if (created) {
-      const tab = getTabForStore(store)
-      if (tab) await closeTab(tab.id)
-    }
+    await releaseOpeningTab(opening)
     throw error
   } finally {
     if (succeeded) load.complete()

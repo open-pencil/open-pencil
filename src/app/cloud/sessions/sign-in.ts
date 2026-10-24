@@ -35,11 +35,23 @@ function returnURL(): string {
 export function redirectToCloudSignIn(
   serverId: string,
   discovery: CloudDiscovery,
-  method: CloudSignInMethod
+  options: {
+    /** How to sign in; the pages offer every way when none is chosen. */
+    method?: CloudSignInMethod
+    /** Leaves this page out of history, as one that showed nothing yet. */
+    replace?: boolean
+  } = {}
 ): void {
   pendingSignIn.value = serverId
-  const provider = method === 'email' ? undefined : method
-  globalThis.location.assign(cloudSignInURL(discovery, returnURL(), provider))
+  const provider = options.method === 'email' ? undefined : options.method
+  const url = cloudSignInURL(discovery, returnURL(), provider)
+  if (options.replace) globalThis.location.replace(url)
+  else globalThis.location.assign(url)
+}
+
+/** Whether this tab left, or is leaving, to sign in, and has yet to pick the server up again. */
+export function leftForCloudSignIn(): boolean {
+  return pendingSignIn.value !== null
 }
 
 /** The server this tab left to sign in to, once, after coming back. */

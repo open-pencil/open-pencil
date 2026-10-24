@@ -11,6 +11,7 @@ export { isCloudBinding } from '../documents/status'
 export { openCloudShare } from '../sharing/dialog'
 export { cloudSaveDestinations, cloudUploadFailure, signInToSaveTo } from '../documents/save'
 export { useHomeCloud } from '../home'
+export { openingCloudLink } from '../sessions/startup'
 export { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 export {
   isVersionHistoryOpen,

@@ -26,7 +26,12 @@ async function start(): Promise<void> {
     console.error(error)
   }
   app.provide(PORTAL_CONTEXT, context)
-  app.use(createCloudPortalRouter(context)).use(head).mount('#app')
+  const router = createCloudPortalRouter(context)
+  app.use(router).use(head)
+  // The splash stays until the first page can show, rather than a blank page between. A first
+  // navigation the guards stop leaves for the editor, so nothing mounts then.
+  await router.isReady().catch((error: unknown) => console.error(error))
+  app.mount('#app')
 }
 
 void start()

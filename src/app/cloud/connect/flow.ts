@@ -15,7 +15,12 @@ import { IS_TAURI, OFFICIAL_CLOUD_URL } from '@/constants'
 import { normalizeCloudServerURL } from '../servers/address'
 import { addCloudServer, findCloudServer, type CloudServer } from '../servers/store'
 import type { CloudAccountCredentials } from '../sessions/account-form'
-import { cloudFetch, discoverCloudServer, refreshCloudConnection } from '../sessions/connection'
+import {
+  cloudConnection,
+  cloudFetch,
+  discoverCloudServer,
+  refreshCloudConnection
+} from '../sessions/connection'
 import { createCloudDeviceSignIn } from '../sessions/device'
 import {
   cloudSignInRoute,
@@ -134,6 +139,20 @@ export function openCloudConnect(options: { kind?: CloudServer['kind']; serverId
   cloudConnectStep.value = 'server'
 }
 
+/**
+ * Signs in to a known server to open something only an account may: on the server's own editor,
+ * its sign-in page, in place of this one and coming back to it, so no dialog stands in front of an
+ * editor with nothing in it; anywhere else the connect dialog.
+ */
+export function signInToOpen(serverId: string): void {
+  const discovery = cloudConnection(serverId).discovery
+  if (discovery && cloudSignInRoute(discovery) === 'redirect') {
+    redirectToCloudSignIn(serverId, discovery, { replace: true })
+    return
+  }
+  openCloudConnect({ serverId })
+}
+
 /** Checks the chosen server answers as OpenPencil Cloud before asking anyone to sign in. */
 export function continueCloudConnect(): void {
   const url =
@@ -194,7 +213,7 @@ export async function signInToCloudServer(method: CloudSignInMethod): Promise<vo
   const server = await addCloudServer({ kind: target.kind, url: target.url })
   if (attempt !== generation) return
   if (cloudSignInRoute(target.discovery) === 'redirect') {
-    redirectToCloudSignIn(server.id, target.discovery, method)
+    redirectToCloudSignIn(server.id, target.discovery, { method })
     return
   }
   cloudConnectStep.value = 'device'

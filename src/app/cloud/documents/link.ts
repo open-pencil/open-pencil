@@ -14,7 +14,7 @@ import { toast } from '@/app/shell/ui'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
-import { cloudSignedIn, openCloudConnect } from '../connect/flow'
+import { cloudSignedIn, signInToOpen } from '../connect/flow'
 import { cloudServerHost, normalizeCloudServerURL } from '../servers/address'
 import { cloudServerForLink, findCloudServer, isCloudSiteServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection } from '../sessions/connection'
@@ -102,7 +102,7 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
   const connection = cloudConnection(server.id)
   if (connection.state !== 'signed-in' || !connection.discovery) {
     stored.value = JSON.stringify(link satisfies CloudDocumentLink)
-    openCloudConnect({ serverId: server.id })
+    signInToOpen(server.id)
     return
   }
   stored.value = null
@@ -141,13 +141,18 @@ export function forgetCloudDocumentLink(): void {
   stored.value = null
 }
 
+/** Opens the document link kept while signing in to `serverId`, if one was. */
+export async function reopenCloudDocumentLink(serverId: string): Promise<void> {
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), linkSchema), stored.value ?? '')
+  if (!parsed.success) return
+  const url = normalizeCloudServerURL(parsed.output.server)
+  if (url !== findCloudServer(serverId)?.url) return
+  await openCloudDocumentLink(parsed.output)
+}
+
 /** Picks a document link back up once signing in for it finished. */
 export function resumeCloudDocumentLink(): () => void {
   return watch(cloudSignedIn, (signedIn) => {
-    const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), linkSchema), stored.value ?? '')
-    if (!signedIn || !parsed.success) return
-    const url = normalizeCloudServerURL(parsed.output.server)
-    if (url !== findCloudServer(signedIn.serverId)?.url) return
-    void openCloudDocumentLink(parsed.output)
+    if (signedIn) void reopenCloudDocumentLink(signedIn.serverId)
   })
 }
