@@ -292,8 +292,12 @@ export class FigmaNodeProxy {
     return n
   }
 
-  insertCharacters(start: number, characters: string): void {
-    TextProxy.insertCharacters(this[INTERNAL_GRAPH], this._raw(), start, characters)
+  insertCharacters(
+    start: number,
+    characters: string,
+    useStyle: TextProxy.InsertStyleSource = 'BEFORE'
+  ): void {
+    TextProxy.insertCharacters(this[INTERNAL_GRAPH], this._raw(), start, characters, useStyle)
   }
 
   deleteCharacters(start: number, end: number): void {
