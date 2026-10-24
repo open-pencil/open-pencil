@@ -23,7 +23,7 @@ export function loadTypeScriptDependencies(): void {
       try {
         return {
           format: 'module',
-          source: stripTypeScriptTypes(source, { mode: 'transform' }),
+          source: stripTypeScriptTypes(source, { mode: 'strip' }),
           shortCircuit: true
         }
       } finally {

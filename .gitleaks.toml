@@ -15,7 +15,9 @@ paths = [
   '''^packages/docs/\.vitepress/cache/''',
   '''^packages/cloud/dist-standalone/''',
   '''^test-results/''',
-  '''^scratch/'''
+  '''^scratch/''',
+  '''(^|/)\.agents/''',
+  '''(^|/)\.claude/'''
 ]
 
 [[allowlists]]

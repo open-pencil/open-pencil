@@ -22,8 +22,9 @@ export function keycapOutline(font: Uint8Array): OutlineCommand[] {
   const em = parsed.unitsPerEm
   return glyph.path.commands.map((command) => {
     const scaled: OutlineCommand = { type: command.type }
+    const coords = command as Partial<Record<'x' | 'y' | 'x1' | 'y1' | 'x2' | 'y2', number>>
     for (const key of ['x', 'y', 'x1', 'y1', 'x2', 'y2'] as const) {
-      const value = (command as Record<string, number | undefined>)[key]
+      const value = coords[key]
       if (value !== undefined) scaled[key] = round(key.startsWith('y') ? -value / em : value / em)
     }
     return scaled

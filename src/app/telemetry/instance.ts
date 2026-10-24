@@ -6,7 +6,7 @@ import { createSharingClient } from './client'
 import { FEEDBACK_ENABLED } from './config'
 import { sharingDisabledByEnvironment, sharingState } from './state'
 
-async function accepted(request: Promise<Response>): Promise<boolean> {
+async function accepted(request: Promise<{ ok: boolean }>): Promise<boolean> {
   const response = await request.catch(() => null)
   return response?.ok ?? false
 }

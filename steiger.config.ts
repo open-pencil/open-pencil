@@ -12,6 +12,7 @@ export default defineConfig([
   {
     ignores: [
       '.claude/**',
+      '.agents/**',
       'node_modules/**',
       'dist/**',
       'desktop/**',
