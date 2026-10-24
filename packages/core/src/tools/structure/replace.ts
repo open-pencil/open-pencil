@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { revertOnFailure } from '#core/editor/history/document-change'
 import { defineTool } from '#core/tools/schema'
 
 export const nodeReplaceWith = defineTool({
@@ -15,12 +16,17 @@ export const nodeReplaceWith = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return { error: `Node "${args.id}" not found` }
     const parentId = node.parent?.id ?? figma.currentPageId
+    const pageId = figma.graph.pageOf(node.id) ?? figma.currentPageId
     const x = node.x
     const y = node.y
-    node.remove()
     const { designJSXRenderer } = await import('#core/design-jsx')
     const { renderJSX } = designJSXRenderer(figma.icons)
-    const results = await renderJSX(figma.graph, args.jsx, { parentId, x, y })
+    // The original goes before its replacement renders, so a render that fails partway brings it
+    // back along with removing what it made.
+    const results = await revertOnFailure(figma.graph, pageId, async () => {
+      node.remove()
+      return renderJSX(figma.graph, args.jsx, { parentId, x, y })
+    })
     const result = results[0]
     return {
       id: result.id,

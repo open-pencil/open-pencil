@@ -14,6 +14,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
+import { revertOnFailure } from '#core/editor/history/document-change'
 import type { FigmaAPI } from '#core/figma-api'
 
 import type { DiffOperation } from './operations'
@@ -216,8 +217,8 @@ type Placed = Plan & { place: Placement }
 
 /**
  * Render added nodes before changing anything else. Rendering can still fail, for example on
- * an icon that cannot be fetched; then the nodes rendered so far are deleted and nothing else
- * is committed, so a patch never half-applies.
+ * an icon that cannot be fetched; then what the failing render made is put back, the nodes
+ * rendered before it are deleted, and nothing else is committed, so a patch never half-applies.
  */
 async function renderAdditions(figma: FigmaAPI, plans: Placed[]): Promise<boolean> {
   const { designJSXRenderer } = await import('#core/design-jsx')
@@ -227,7 +228,10 @@ async function renderAdditions(figma: FigmaAPI, plans: Placed[]): Promise<boolea
     const { jsx, parentId } = plan.place
     if (jsx === undefined) continue
     try {
-      const results = await renderJSX(figma.graph, jsx, { parentId })
+      const pageId = figma.graph.pageOf(parentId) ?? figma.currentPageId
+      const results = await revertOnFailure(figma.graph, pageId, () =>
+        renderJSX(figma.graph, jsx, { parentId })
+      )
       plan.place.ids = results.map((result) => result.id)
       plan.result.id = results[0].id
       rendered.push(...plan.place.ids)

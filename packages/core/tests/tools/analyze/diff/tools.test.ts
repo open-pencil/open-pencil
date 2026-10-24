@@ -195,6 +195,22 @@ describe('diff_create and diff_apply', () => {
     expect(getNodeOrThrow(graph, card.id).childIds).toEqual(children)
   })
 
+  test('leaves nothing of an added node that fails partway through rendering', async () => {
+    const { graph, figma, card } = setup()
+    const children = [...getNodeOrThrow(graph, card.id).childIds]
+    const nodesBefore = graph.nodes.size
+    const patch = [
+      `@@ /Card/Badge added to #${card.id} at 0`,
+      '+<Frame name="Badge" w={40} h={40}><Rect name="Backdrop" w={40} h={40} /><Icon name="Icon" /></Frame>'
+    ].join('\n')
+
+    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch })
+    expect(applied.error).toBe('Patch does not apply')
+    expect(applied.results?.[0]?.error).toContain('Invalid icon name "Icon"')
+    expect(getNodeOrThrow(graph, card.id).childIds).toEqual(children)
+    expect(graph.nodes.size).toBe(nodesBefore)
+  })
+
   test('reports a hunk it cannot read', async () => {
     const { figma } = setup()
     const applied = await run<ApplyResult>(figma, 'diff_apply', { patch: 'w={1}' })

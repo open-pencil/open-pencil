@@ -308,6 +308,28 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
   }
 }
 
+/**
+ * Runs an edit made from `pageId` and, when it throws, puts the document back as it was before
+ * passing the error on, so an edit that fails partway, such as a render whose icon does not
+ * exist, leaves none of what it made. An edit that returns keeps its changes.
+ */
+export async function revertOnFailure<T>(
+  graph: SceneGraph,
+  pageId: string,
+  edit: () => Promise<T>
+): Promise<T> {
+  const finish = captureDocumentChange(graph, pageId)
+  let result: T
+  try {
+    result = await edit()
+  } catch (error) {
+    applyDocumentChange(graph, finish(), 'before')
+    throw error
+  }
+  finish()
+  return result
+}
+
 export function isEmptyDocumentChange(change: DocumentChange): boolean {
   return (
     change.created.length === 0 &&

@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
+import { revertOnFailure } from '#core/editor/history/document-change'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
@@ -36,8 +37,13 @@ export const render = defineTool({
     const { renderJSX } = designJSXRenderer(figma.icons)
 
     const placement = resolveRenderPlacement(figma.graph, args, figma.currentPageId)
-    const results = await renderJSX(figma.graph, args.jsx, placement)
-    finishRenderPlacement(figma.graph, results, placement)
+    // Layers are made as the JSX is walked, so a failure partway, such as an icon that does not
+    // exist, would leave the ones before it on the page.
+    const results = await revertOnFailure(figma.graph, placement.pageId, async () => {
+      const rendered = await renderJSX(figma.graph, args.jsx, placement)
+      finishRenderPlacement(figma.graph, rendered, placement)
+      return rendered
+    })
     const result = results[0]
 
     const response: {
