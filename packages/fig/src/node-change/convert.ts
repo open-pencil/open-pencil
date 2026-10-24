@@ -324,19 +324,33 @@ function convertPolygonProps(
  * A text's line height. Figma writes auto as 100 percent, and OpenPencil once wrote none for
  * it; a text in auto lines up each line at its own font's height. Figma saves each line at the
  * larger of its line height and its tallest font's height, so a first line shorter than the
- * text's height in pixels was laid out at another one, which a style the text uses set.
+ * text's height in pixels was laid out at another one, which a style the text uses set. A first
+ * line with a range of its own line height was laid out at the range's, not the text's.
  */
 function importedTextLineHeight(nc: NodeChange): number | null {
   if (!nc.lineHeight || isFigmaAutoLineHeight(nc.lineHeight)) return null
-  const derivedLineHeight = nc.derivedTextData?.baselines?.[0]?.lineHeight
+  const firstLine = nc.derivedTextData?.baselines?.[0]
   if (
     nc.lineHeight.units === 'PIXELS' &&
-    derivedLineHeight !== undefined &&
-    Number.isFinite(derivedLineHeight) &&
-    derivedLineHeight < nc.lineHeight.value
+    firstLine !== undefined &&
+    Number.isFinite(firstLine.lineHeight) &&
+    firstLine.lineHeight < nc.lineHeight.value &&
+    !rangeSetsLineHeight(nc, firstLine.firstCharacter, firstLine.endCharacter)
   )
-    return derivedLineHeight
+    return firstLine.lineHeight
   return convertLineHeight(nc.lineHeight, nc.fontSize)
+}
+
+/** Whether a character from `start` up to `end` has a line height from its range's style. */
+function rangeSetsLineHeight(nc: NodeChange, start: number, end: number): boolean {
+  const ids = new Set(
+    (nc.textData?.styleOverrideTable ?? [])
+      .filter((style) => style.lineHeight)
+      .map((style) => style.styleID as number | undefined)
+  )
+  return (nc.textData?.characterStyleIDs ?? [])
+    .slice(start, end)
+    .some((id) => id !== 0 && ids.has(id))
 }
 
 type TextProps = Pick<
