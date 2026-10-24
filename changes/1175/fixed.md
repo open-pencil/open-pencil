@@ -1,0 +1,1 @@
+- An instance that clears a fill style an intermediate component applied shows the fill of the component it comes from again, instead of the intermediate component's fill.
