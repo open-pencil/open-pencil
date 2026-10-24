@@ -9,7 +9,7 @@ use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "native-test"))]
-const CREDENTIAL_SERVICE: &str = "net.dannote.open-pencil.credentials";
+const CREDENTIAL_SERVICE: &str = env!("OPENPENCIL_CREDENTIAL_SERVICE");
 const AVAILABILITY_ACCOUNT: &str = "v1:system:default:availability";
 const MAX_SEGMENT_LENGTH: usize = 64;
 const MAX_CREDENTIAL_LENGTH: usize = 16 * 1024;

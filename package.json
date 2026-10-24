@@ -44,6 +44,7 @@
     "tools/generate/landing-posters",
     "tools/generate/tauri-menu",
     "tools/generate/visual-oracles",
+    "tools/release/local-build",
     "tools/release/package-artifacts",
     "tools/release/release-packages"
   ],
@@ -60,6 +61,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "tauri": "tauri",
+    "build:local": "bun tools/release/local-build/src/cli.ts",
+    "install:local": "bun tools/release/local-build/src/cli.ts --install",
     "build:native-test": "bun run generate:icons --target desktop && bun run build:packages && bun tauri build --debug --no-bundle --features native-test --config desktop/tauri.native-test.conf.json",
     "benchmark:navigation": "bun tools/dev/navigation-benchmark/src/cli.ts run",
     "test:native": "bun run build:native-test && wdio run wdio.conf.ts",

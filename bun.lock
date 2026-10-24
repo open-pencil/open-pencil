@@ -769,6 +769,12 @@
         "citty": "^0.1.6",
       },
     },
+    "tools/release/local-build": {
+      "name": "@open-pencil/local-build-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+      },
+    },
     "tools/release/package-artifacts": {
       "name": "@open-pencil/package-artifacts-tools",
       "dependencies": {
@@ -1625,6 +1631,8 @@
     "@open-pencil/landing-posters-tools": ["@open-pencil/landing-posters-tools@workspace:tools/generate/landing-posters"],
 
     "@open-pencil/lint-tools": ["@open-pencil/lint-tools@workspace:tools/checks/lint"],
+
+    "@open-pencil/local-build-tools": ["@open-pencil/local-build-tools@workspace:tools/release/local-build"],
 
     "@open-pencil/mcp": ["@open-pencil/mcp@workspace:packages/mcp"],
 

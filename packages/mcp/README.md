@@ -15,4 +15,16 @@ Streamable HTTP clients initialize with a POST, then open GET/SSE with the retur
 - Setup and client configuration: https://openpencil.dev/programmable/mcp-server
 - Source and issues: https://github.com/open-pencil/open-pencil
 
+## Link a local checkout
+
+From the repository root:
+
+```sh
+bun install
+bun run build:packages
+(cd packages/mcp && bun link)
+```
+
+This explicitly registers the global executables with Bun. They point at this checkout: keep it in place and rebuild packages after changes. Linking can replace an existing global command. The local native build tool does not create these links.
+
 MIT License.

@@ -29,6 +29,8 @@ For macOS release builds with ad-hoc signing (no Apple Developer account, local 
 APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArtifacts": false }}'
 ```
 
+After `bun install`, run `bun run build:local` to build local native bundles for the host platform and print their directory. The Tauri hook builds the packages and frontend. OpenPencil Local uses its own application identifier and credential service, disables updater endpoints/artifacts and file/deep-link associations, and uses ad-hoc signing on macOS. Incremental Rust builds remain under `desktop/target/local`. On macOS, quit OpenPencil Local and use `bun run build:local --install` (or `bun run install:local`) to copy it to `~/Applications/OpenPencil Local.app`, without replacing the released app or changing global CLI/MCP links.
+
 ## Making a change
 
 - Before adding a helper, type, component, state mechanism, parser, or test utility, inspect the owning folder, nearby implementations, existing dependencies, and tests. Reuse or extend the established mechanism; extract genuinely shared logic instead of introducing a parallel implementation.

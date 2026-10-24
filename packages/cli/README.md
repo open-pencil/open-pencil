@@ -14,4 +14,16 @@ Inspection commands support `--json` for automation. The MCP server ships separa
 - Scripting with the Plugin API: https://openpencil.dev/programmable/cli/scripting
 - Source and issues: https://github.com/open-pencil/open-pencil
 
+## Link a local checkout
+
+From the repository root:
+
+```sh
+bun install
+bun run build:packages
+(cd packages/cli && bun link)
+```
+
+This explicitly registers the global executables with Bun. They point at this checkout: keep it in place and rebuild packages after changes. Linking can replace an existing global command. The local native build tool does not create these links.
+
 MIT License.
