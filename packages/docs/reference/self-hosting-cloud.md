@@ -88,6 +88,17 @@ Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and
 | `bun --filter @open-pencil/cloud entitlements`    | Inspect or set a workspace's entitlements       |
 | `bun --filter @open-pencil/cloud admin`           | Approve enrollment and grant deployment admin   |
 
+## AI
+
+Cloud does not run models itself. It advertises an AI service and signs short-lived tokens that let workspace members use it, and the service holds each workspace to the credit allowance its entitlements grant. The repository's AI relay is a minimal service for this: it forwards chat completions to one OpenAI-compatible upstream, such as OpenRouter, with your key.
+
+1. Create a P-256 signing key, `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`, and pass the PEM in `OPENPENCIL_CLOUD_AI_SIGNING_KEY`. Cloud refuses to start with a key it cannot sign with.
+2. Add `[ai] endpoint` to the Cloud TOML with the relay's address, and enable `[entitlements.ai]`, optionally with a `monthly_credit_allowance`; without one, the relay does not limit spend. With entitlements from the database, set them per workspace with the `entitlements` command instead.
+3. Copy [`openpencil-ai-relay.example.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/openpencil-ai-relay.example.toml), set `relay.cloud_url` to Cloud's `public_url`, `allowed_origins` to the browser editors, and list the models with their credit prices.
+4. Start it with `OPENPENCIL_AI_RELAY_CONFIG`, `OPENPENCIL_AI_RELAY_UPSTREAM_KEY`, and `DATABASE_URL` set: `node --env-file=.env dist-standalone/ai-relay.mjs`. It listens on `PORT` (default `8788`) and can share Cloud's database, keeping its own tables and migration history.
+
+The relay charges a request once the upstream reports its usage, and admits one while the workspace has credits left, so requests already in flight can overdraw the month's allowance by what they cost; `relay.max_concurrent_requests` bounds them. A workspace's allowance renews at the start of each UTC month. It refuses a model request larger than `relay.max_request_bytes` (16 MiB by default) before reading it all. Choose an upstream that reports token usage: a request it reports none for is logged as an error and not charged.
+
 ## Email
 
 Set `email.transport = "smtp"` with an `[email.smtp]` table, `"cloudflare"` on Cloudflare Workers to send through Cloudflare Email Service from an address on a domain onboarded to it (the Worker needs the `send_email` binding named `EMAIL`, and sending to addresses you haven't verified needs Workers Paid), or `"none"` to send nothing; invitations still work through their links. Messages go through an encrypted outbox in PostgreSQL, tuned under `[workers.email]`. Delivery records that the SMTP server accepted a message, not that it reached the inbox.

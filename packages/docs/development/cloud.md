@@ -288,6 +288,18 @@ share, including the service's catalog, wallet, and error codes, is `src/contrac
 own version so a service can change without a Cloud release. A `[billing]` table only advertises
 where people manage their plan.
 
+A service answers below its endpoint at the paths in `CLOUD_AI_API_PATHS`: model requests follow
+the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
+catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
+`src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
+forwards completions to one upstream with one key, and keeps one usage row per settled request, so a
+workspace's monthly spend is the sum of its rows. It reads usage from the upstream's answer, asking
+streams for it with `stream_options.include_usage`, and keeps reading after the editor disconnects
+so a request is still charged. It admits a request while credits remain and charges it afterwards,
+so in-flight requests can overdraw an allowance; the official service reserves credits instead. It forwards only
+chat completion fields, so a router's fallback or provider fields cannot run a model outside the
+catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
+
 Services that decide entitlements, such as billing, write them through the internal API rather than
 the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP
 with a bearer token (`[internal_api]`) or a private transport of their own. Every write carries an

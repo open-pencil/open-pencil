@@ -213,6 +213,7 @@
         "@better-auth/passkey": "1.7.7",
         "@better-auth/utils": "0.4.2",
         "@hono/node-server": "^1.19.17",
+        "@internationalized/date": "^3.12.3",
         "@noble/hashes": "^2.4.0",
         "@open-pencil/feedback": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",

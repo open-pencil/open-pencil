@@ -143,14 +143,8 @@ async function migrateAuthSchema(
     .execute()
 }
 
-export async function migrateCloudDatabase(
-  database: Kysely<CloudDatabase>,
-  authMigration?: CloudAuthMigration
-): Promise<void> {
-  const migrator = new Migrator({
-    db: database,
-    provider: new CloudMigrationProvider()
-  })
+/** Runs a migrator to its latest migration, failing with every error it reports. */
+export async function migrateToLatest(migrator: Migrator, failure: string): Promise<void> {
   const result = await migrator.migrateToLatest()
   const failed = result.results?.find((migration) => migration.status === 'Error')
   if (result.error || failed) {
@@ -158,8 +152,18 @@ export async function migrateCloudDatabase(
       [result.error, failed ? new Error(`Migration failed: ${failed.migrationName}`) : null].filter(
         (error): error is Error => error instanceof Error
       ),
-      'OpenPencil Cloud database migration failed'
+      failure
     )
   }
+}
+
+export async function migrateCloudDatabase(
+  database: Kysely<CloudDatabase>,
+  authMigration?: CloudAuthMigration
+): Promise<void> {
+  await migrateToLatest(
+    new Migrator({ db: database, provider: new CloudMigrationProvider() }),
+    'OpenPencil Cloud database migration failed'
+  )
   if (authMigration) await migrateAuthSchema(database, authMigration)
 }
