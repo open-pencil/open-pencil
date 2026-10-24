@@ -1,6 +1,8 @@
 import { iconToHTML, iconToSVG } from '@iconify/utils'
 import { chunk } from 'es-toolkit'
 
+import type { IconOptions } from '@open-pencil/scene-graph/icons'
+
 import { createIconifyAPIClient } from './api'
 import { buildIconData } from './svg'
 import type { IconCollection, IconData, IconifyIconEntry, IconSearchResult } from './types'
@@ -18,8 +20,15 @@ export interface IconSearchOptions {
  */
 export interface IconProvider {
   search(query: string, options?: IconSearchOptions): Promise<IconSearchResult>
-  /** Each named icon at `size`, by name; names the source lacks are left out. */
-  icons(names: readonly string[], size: number): Promise<Map<string, IconData>>
+  /**
+   * Each named icon at `size`, by name; names the source lacks are left out. `options` sets how
+   * a set that has options draws them, its defaults filling in the rest; other sets ignore it.
+   */
+  icons(
+    names: readonly string[],
+    size: number,
+    options?: IconOptions
+  ): Promise<Map<string, IconData>>
   /**
    * Each named icon as SVG markup for pickers to show, painted in `currentColor` where the icon
    * takes its color; names the source lacks are left out.

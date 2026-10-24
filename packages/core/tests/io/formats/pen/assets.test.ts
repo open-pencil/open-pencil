@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { fromUint8Array, toUint8Array } from 'js-base64'
 
 import type { IconData, IconProvider } from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
+import { readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 // A 2 × 1 PNG.
@@ -11,8 +13,13 @@ const PNG = toUint8Array(
   'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAADElEQVR4nGP8zwACAAYIAQFazwZIAAAAAElFTkSuQmCC'
 )
 
-function iconProvider(available: string[], requested: string[][]): IconProvider {
-  const glyph = (name: string, size: number): IconData => {
+interface IconRequest {
+  names: string[]
+  options?: IconOptions
+}
+
+function iconProvider(available: string[], requested: IconRequest[]): IconProvider {
+  const glyph = (name: string, size: number, options?: IconOptions): IconData => {
     const [prefix = '', iconName = ''] = name.split(':')
     return {
       prefix,
@@ -28,14 +35,17 @@ function iconProvider(available: string[], requested: string[][]): IconProvider 
           strokeCap: 'butt',
           strokeJoin: 'miter'
         }
-      ]
+      ],
+      ...(options ? { options } : {})
     }
   }
   return {
-    async icons(names, size) {
-      requested.push([...names])
+    async icons(names, size, options) {
+      requested.push(options ? { names: [...names], options } : { names: [...names] })
       return new Map(
-        names.filter((name) => available.includes(name)).map((name) => [name, glyph(name, size)])
+        names
+          .filter((name) => available.includes(name))
+          .map((name) => [name, glyph(name, size, options)])
       )
     },
     search: () => Promise.resolve({ icons: [], total: 0, collections: {} }),
@@ -52,27 +62,20 @@ function penBytes(children: unknown[]) {
 }
 
 describe('penFormat.readDocument — assets', () => {
-  test('draws Iconify icons from the provider', async () => {
-    const requested: string[][] = []
-    const icons = iconProvider(['lucide:house'], requested)
+  test('draws every library from its set, Material Symbols at their weight', async () => {
+    const requested: IconRequest[] = []
+    const icons = iconProvider(['lucide:house', 'material-symbols-outlined:home'], requested)
     const { graph } = await io.readDocument(
       {
         name: 'icons.pen',
         data: penBytes([
-          {
-            id: 'home',
-            type: 'icon',
-            library: 'lucide',
-            icon: 'house',
-            width: 48,
-            height: 48,
-            fill: '#222222'
-          },
+          { id: 'house', type: 'icon', library: 'lucide', icon: 'house', width: 48, height: 48 },
           {
             id: 'symbol',
             type: 'icon',
             library: 'Material Symbols Outlined',
             icon: 'home',
+            weight: 650,
             width: 48,
             height: 48
           }
@@ -80,11 +83,18 @@ describe('penFormat.readDocument — assets', () => {
       },
       { icons }
     )
-    expect(requested).toEqual([['lucide:house']])
-    const glyphs = graph.getChildren('home')
-    expect(glyphs).toHaveLength(1)
-    expect(glyphs[0]?.width).toBe(48)
-    expect(graph.getChildren('symbol').map((glyph) => glyph.type)).toEqual(['TEXT'])
+    expect(requested).toEqual(
+      expect.arrayContaining([
+        { names: ['lucide:house'] },
+        { names: ['material-symbols-outlined:home'], options: { wght: 650 } }
+      ])
+    )
+    expect(readIcon(getNodeOrThrow(graph, 'house'))).toMatchObject({ name: 'lucide:house' })
+    expect(readIcon(getNodeOrThrow(graph, 'symbol'))).toMatchObject({
+      name: 'material-symbols-outlined:home',
+      options: { wght: 650 }
+    })
+    expect(graph.getChildren('symbol').map((glyph) => glyph.type)).toEqual(['VECTOR'])
   })
 
   test('reads image files through the host and leaves unreadable ones unpainted', async () => {

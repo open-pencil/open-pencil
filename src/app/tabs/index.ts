@@ -18,6 +18,7 @@ import { applyImportedDocument } from '@/app/document/io/imported-document'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { setActiveEditorStore } from '@/app/editor/active-store'
+import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
@@ -500,12 +501,15 @@ export async function openFileInNewTab(
       imported = await readFigForTab(file, load.signal)
       sourceFormat = 'fig'
     } else {
-      const result = await io.readDocument({
-        name: file.name,
-        mimeType: file.type || undefined,
-        data: new Uint8Array(await file.arrayBuffer()),
-        readAsset: documentAssetReader(path)
-      })
+      const result = await io.readDocument(
+        {
+          name: file.name,
+          mimeType: file.type || undefined,
+          data: new Uint8Array(await file.arrayBuffer()),
+          readAsset: documentAssetReader(path)
+        },
+        { icons: appIcons }
+      )
       imported = result.graph
       sourceFormat = result.sourceFormat
     }

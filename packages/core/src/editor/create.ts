@@ -13,7 +13,7 @@ import {
   hasStoredBackground,
   setDefaultPageBackground
 } from '#core/figma-api/page-backgrounds'
-import { iconify } from '#core/icons'
+import { defaultIcons } from '#core/icons'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { installTextMeasurer } from '#core/layout'
@@ -258,7 +258,7 @@ export function createEditor(options?: EditorOptions) {
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
     getUserName: () => options?.getUserName?.() ?? '',
-    icons: options?.icons ?? iconify,
+    icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
     getRenderer: () => _renderer,
     getRenderers: () => _renderers,

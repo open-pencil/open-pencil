@@ -1,14 +1,17 @@
+import { groupBy } from 'es-toolkit'
+
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import {
   buildPenGraph,
   isDataURL,
   parsePenDocument,
   penAssets,
+  type PenIconRequest,
   type PenIconSource
 } from '@open-pencil/pen'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { drawIcon, iconify, type IconData, type IconProvider } from '#core/icons'
+import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
 
 import { exportFigFile, parseFigFile } from './formats/fig'
@@ -253,17 +256,32 @@ async function loadPenImages(
 }
 
 /** Icons from `provider`; a document whose icons cannot be fetched opens with empty icons. */
+/** A request's options as a key, so requests drawn the same way share a fetch. */
+const optionsKey = (options: Record<string, number> | undefined) => JSON.stringify(options ?? null)
+
+/**
+ * Icons from `provider`, fetched once for each way they are drawn; a document whose icons cannot
+ * be fetched opens with empty icons.
+ */
 async function loadPenIcons(
-  names: readonly string[],
+  requests: readonly PenIconRequest[],
   provider: IconProvider
 ): Promise<PenIconSource> {
-  const glyphs: Map<string, IconData> =
-    names.length > 0
-      ? await provider.icons(names, PEN_ICON_SIZE).catch(() => new Map<string, IconData>())
-      : new Map()
+  const glyphs = new Map<string, IconData>()
+  const byOptions = groupBy(requests, (request) => optionsKey(request.options))
+  await Promise.all(
+    Object.values(byOptions).map(async (group) => {
+      const names = group.map((request) => request.name)
+      const found = await provider
+        .icons(names, PEN_ICON_SIZE, group[0]?.options)
+        .catch(() => new Map<string, IconData>())
+      for (const [name, icon] of found)
+        glyphs.set(`${name}\0${optionsKey(group[0]?.options)}`, icon)
+    })
+  )
   return {
-    draw(graph, frameId, name, size, color) {
-      const icon = glyphs.get(name)
+    draw(graph, frameId, name, size, color, options) {
+      const icon = glyphs.get(`${name}\0${optionsKey(options)}`)
       if (!icon) return false
       drawIcon(graph, frameId, icon, size, color)
       return true
@@ -289,7 +307,7 @@ export const penFormat: IOFormatAdapter<'pen'> = {
     const assets = penAssets(doc)
     const [images, icons] = await Promise.all([
       loadPenImages(assets.images, input),
-      loadPenIcons(assets.icons, context?.icons ?? iconify)
+      loadPenIcons(assets.icons, context?.icons ?? defaultIcons)
     ])
     // A .pen file stores its layout intent, not the sizes and positions it implies.
     const graph = buildPenGraph(doc, {
