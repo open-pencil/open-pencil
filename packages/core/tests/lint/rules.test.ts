@@ -6,6 +6,7 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 const WHITE = { r: 1, g: 1, b: 1, a: 1 }
 const BLUE = { r: 0.23, g: 0.51, b: 0.96, a: 1 }
 const LIGHT_GRAY = { r: 0.8, g: 0.8, b: 0.8, a: 1 }
+const DARK_GREEN = { r: 25 / 255, g: 62 / 255, b: 51 / 255, a: 1 }
 
 function solid(color: SceneNode['fills'][number]['color']): SceneNode['fills'] {
   return [{ type: 'SOLID', visible: true, opacity: 1, color }]
@@ -96,7 +97,13 @@ describe('color-contrast', () => {
     // 3.2:1 against white.
     const grey = { r: 0.55, g: 0.55, b: 0.55, a: 1 }
     const text = (name: string, fontSize: number, fontWeight: number) =>
-      graph.createNode('TEXT', card.id, { name, text: name, fontSize, fontWeight, fills: solid(grey) })
+      graph.createNode('TEXT', card.id, {
+        name,
+        text: name,
+        fontSize,
+        fontWeight,
+        fills: solid(grey)
+      })
     const body = text('Body', 16, 400)
     const boldBody = text('Bold body', 18, 700)
     text('Display', 24, 400)
@@ -135,6 +142,64 @@ describe('color-contrast', () => {
 
     expect(messages.map((message) => message.nodeId)).toEqual([mixed.id])
     expect(messages[0]?.data?.minRatio).toBe(4.5)
+  })
+
+  test('does not use an ancestor fill when a filled sibling overlaps the text', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const card = graph.createNode('FRAME', pageId, { name: 'Card', fills: solid(WHITE) })
+    graph.createNode('VECTOR', card.id, {
+      name: 'Background',
+      width: 240,
+      height: 120,
+      fills: solid(DARK_GREEN)
+    })
+    graph.createNode('TEXT', card.id, {
+      name: 'Label',
+      text: 'Hello',
+      x: 24,
+      y: 46,
+      width: 120,
+      height: 30,
+      fills: solid(WHITE)
+    })
+
+    expect(lint(graph, 'color-contrast')).toEqual([])
+  })
+
+  test('uses the ancestor fill when sibling fills do not affect the text background', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const card = graph.createNode('FRAME', pageId, {
+      name: 'Card',
+      width: 240,
+      height: 120,
+      fills: solid(WHITE)
+    })
+    graph.createNode('VECTOR', card.id, {
+      name: 'Non-overlapping background',
+      width: 10,
+      height: 10,
+      fills: solid(DARK_GREEN)
+    })
+    const label = graph.createNode('TEXT', card.id, {
+      name: 'Label',
+      text: 'Hello',
+      x: 24,
+      y: 46,
+      width: 120,
+      height: 30,
+      fills: solid(WHITE)
+    })
+
+    graph.createNode('VECTOR', card.id, {
+      name: 'Overlay',
+      width: 240,
+      height: 120,
+      fills: solid(DARK_GREEN)
+    })
+
+    expect(lint(graph, 'color-contrast').map((message) => message.nodeId)).toEqual([label.id])
   })
 })
 

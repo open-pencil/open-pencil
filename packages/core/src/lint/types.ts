@@ -1,3 +1,5 @@
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 export type Severity = 'error' | 'warning' | 'info' | 'off'
 
 export type Category =
@@ -72,6 +74,8 @@ export interface LintConfig {
   rules: Record<string, Severity | { severity: Severity; options?: Record<string, unknown> }>
 }
 
+type LintColor = Pick<Color, 'r' | 'g' | 'b'> & Partial<Pick<Color, 'a'>>
+
 export interface LintNode {
   id: string
   name: string
@@ -83,6 +87,7 @@ export interface LintNode {
   rotation: number
   visible: boolean
   locked: boolean
+  opacity?: number
   layoutMode: string
   layoutPositioning: 'AUTO' | 'ABSOLUTE'
   layoutGrow: number
@@ -111,7 +116,7 @@ export interface LintNode {
     type: string
     visible: boolean
     opacity: number
-    color?: { r: number; g: number; b: number }
+    color?: LintColor
   }>
   strokes: Array<{
     visible: boolean

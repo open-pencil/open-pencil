@@ -1,0 +1,1 @@
+- Accessibility contrast lint avoids a definitive ratio when an overlapping sibling makes the visible text background ambiguous.
