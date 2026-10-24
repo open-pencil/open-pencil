@@ -47,6 +47,22 @@ describe('copy helpers — mutation isolation', () => {
     expect(expectDefined(original.gradientTransform, 'original gradient transform').m00).toBe(1)
   })
 
+  test("copyFill: an image's adjustments are independent", () => {
+    const original: Fill = {
+      type: 'IMAGE',
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true,
+      imageHash: 'ab'.repeat(20),
+      imageScaleMode: 'FILL',
+      filters: { exposure: 0.5, saturation: -0.25 }
+    }
+    const copy = copyFill(original)
+    expect(copy.filters).toEqual({ exposure: 0.5, saturation: -0.25 })
+    expectDefined(copy.filters, 'copied filters').exposure = 0
+    expect(original.filters).toEqual({ exposure: 0.5, saturation: -0.25 })
+  })
+
   /** A stroke is a paint, so its nested paint data copies as deeply as a fill's does. */
   test('copyStroke: dash pattern and nested paint data are independent', () => {
     const original: Stroke = {

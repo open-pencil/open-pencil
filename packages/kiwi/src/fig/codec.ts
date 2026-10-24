@@ -133,6 +133,19 @@ export interface Paint {
   imageScaleMode?: string
   /** Degrees an image turns in Fill, Fit, and Tile; a crop's transform holds its own turn. */
   rotation?: number
+  /** An image's adjustments; the schema has no `saturation`, and `vibrance` holds Figma's. */
+  paintFilter?: {
+    tint?: number
+    shadows?: number
+    highlights?: number
+    detail?: number
+    exposure?: number
+    vignette?: number
+    temperature?: number
+    vibrance?: number
+    contrast?: number
+    brightness?: number
+  }
   sourceNodeId?: GUID
   scale?: number
   spacing?: number
