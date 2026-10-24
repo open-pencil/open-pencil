@@ -154,7 +154,7 @@ Endpoints are available over both active transports:
 3. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
 4. **Create** — `create_shape`, `render` (JSX)
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
-6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
+6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`, `move_page`
 7. **Save** — `save_file` to write back to `.fig`
 8. **Close** — `close_file` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
 
@@ -162,7 +162,7 @@ Endpoints are available over both active transports:
 
 Each MCP session shows in the app as an agent with a callsign, like the built-in chat: its cursor and outline sit on the layers each tool reads or changes, it rests after a quiet spell and leaves when the session ends, and people can follow it from their avatar. Collaborators in a shared room see it too.
 
-Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
+Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page. To place a page, use `move_page` with its `page_id` and zero-based index from `list_pages`; the order survives saving and reopening.
 
 ## AI Agent Skill
 
@@ -375,6 +375,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | Tool | Description |
 |------|-------------|
 | `switch_page` | Switch to a page by name or ID |
+| `move_page` | Move a page to a zero-based `list_pages` index and persist its order |
 
 ### Escape Hatch
 

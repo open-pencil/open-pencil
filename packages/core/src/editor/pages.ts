@@ -21,6 +21,7 @@ import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 
 import { createPageViewportStore } from './page-viewports'
 import { createPageLayouts } from './pages/layouts'
+import { movePageInGraph } from './pages/move'
 import type { EditorContext } from './types'
 
 export interface PageSwitchProgress {
@@ -353,14 +354,7 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
   }
 
   function movePage(pageId: string, index: number) {
-    const pages = ctx.graph.getPages()
-    const currentIndex = pages.findIndex((page) => page.id === pageId)
-    if (currentIndex === -1) return
-
-    const nextIndex = Math.max(0, Math.min(index, pages.length - 1))
-    if (nextIndex === currentIndex) return
-
-    ctx.graph.insertChildAt(pageId, ctx.graph.rootId, nextIndex)
+    movePageInGraph(ctx.graph, pageId, index)
   }
 
   function renamePage(pageId: string, name: string) {
