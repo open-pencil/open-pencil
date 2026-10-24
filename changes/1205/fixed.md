@@ -1,0 +1,1 @@
+- Preserve text, fill, and stroke style assignments when resolving variables during `.fig` save and reopen.
