@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { statusLabelCenter } from '#tests/helpers/canvas/status-labels'
 import { propertySection } from '#tests/helpers/properties'
 
 const editor = useEditorSetupWithClear('/?test')
@@ -48,12 +49,7 @@ test('sets a status from the Status section and from the label on the canvas', a
   expect(await statusOf(id)).toBe('ready-for-dev')
 
   await editor.canvas.waitForRender()
-  const pill = await editor.page.evaluate((nodeId) => {
-    const store = window.openPencil?.getStore?.()
-    const label = store?.renderer?.statusLabels.find((entry) => entry.nodeId === nodeId)
-    if (!label) throw new Error('Status label not drawn')
-    return { x: label.rect.x + label.rect.width / 2, y: label.rect.y + label.rect.height / 2 }
-  }, id)
+  const pill = await statusLabelCenter(editor.page, id)
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     store?.clearSelection()
