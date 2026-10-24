@@ -70,8 +70,8 @@ export const createVector = defineTool({
     node.y = args.y
     if (args.name) node.name = args.name
     if (parsedPath) {
-      figma.graph.updateNode(node.id, { vectorNetwork: parsedPath.network })
       if (parsedPath.size) node.resize(parsedPath.size.width, parsedPath.size.height)
+      figma.graph.updateNode(node.id, { vectorNetwork: parsedPath.network })
     }
     if (args.fill) {
       node.fills = [{ type: 'SOLID', color: parseColor(args.fill), opacity: 1, visible: true }]

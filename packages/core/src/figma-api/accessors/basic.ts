@@ -11,6 +11,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
   createResizeSnapshot,
+  scaledGeometryChanges,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
@@ -283,6 +284,10 @@ function resizeNode(
     constrained || node.type === 'INSTANCE'
       ? new Map(descendants(scene, node).map((child) => [child.id, createResizeSnapshot(child)]))
       : new Map<string, ResizeSnapshot>()
+  const geometry =
+    node.type === 'VECTOR'
+      ? scaledGeometryChanges(createResizeSnapshot(node), size.width, size.height, width, height)
+      : {}
   // Text given a size stops sizing itself to its content, as in Figma.
   const fixesText =
     node.type === 'TEXT' &&
@@ -300,6 +305,7 @@ function resizeNode(
   scene.updateNode(node.id, {
     width,
     height,
+    ...geometry,
     ...recaptured,
     ...sizing,
     ...(fixesText ? { textAutoResize: 'NONE' as const } : {})
@@ -311,6 +317,7 @@ function resizeNode(
   recordInstanceOverride(scene, node.id, [
     'width',
     'height',
+    ...Object.keys(geometry),
     ...Object.keys(recaptured),
     ...Object.keys(sizing),
     ...(fixesText ? ['textAutoResize'] : [])

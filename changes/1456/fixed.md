@@ -1,0 +1,1 @@
+- Resizing an imported SVG vector through the Plugin API scales its geometry to the requested dimensions.

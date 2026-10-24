@@ -62,3 +62,34 @@ test('pasted SVG text measures and draws as Figma lays it out', async () => {
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('svg-text-layers.png')
 })
+
+test('resizing an imported SVG vector through the Plugin API scales its path', async () => {
+  const dimensions = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const modulePath = '/src/app/automation/bridge/figma-factory.ts'
+    const { makeFigmaFromStore } = await import(/* @vite-ignore */ modulePath)
+    const figma = makeFigmaFromStore(store)
+    const frame = figma.createNodeFromSvg(
+      '<svg width="318" height="80"><rect width="318" height="80" rx="12" fill="#558855"/></svg>'
+    )
+    frame.x = 80
+    frame.y = 80
+    const [vector] = frame.children
+    if (!vector || vector.type !== 'VECTOR') throw new Error('SVG rectangle is not a vector')
+    const originalNetwork = vector.vectorNetwork
+    if (!originalNetwork) throw new Error('SVG vector has no network')
+    const before = Math.max(...originalNetwork.vertices.map((vertex: { y: number }) => vertex.y))
+    vector.resize(318, 64)
+    const resizedNetwork = vector.vectorNetwork
+    if (!resizedNetwork) throw new Error('Resized SVG vector has no network')
+    const after = Math.max(...resizedNetwork.vertices.map((vertex: { y: number }) => vertex.y))
+    store.clearSelection()
+    store.requestRender()
+    return { width: vector.width, height: vector.height, before, after }
+  })
+  expect(dimensions).toEqual({ width: 318, height: 64, before: 80, after: 64 })
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('svg-resized-vector.png')
+})
