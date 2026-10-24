@@ -49,6 +49,7 @@ import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 const PEN_MCP_SERVER =
   '/Applications/Pen.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64'
 const ICONIFY_API = 'https://api.iconify.design'
+const EXPORT_TIMEOUT_MS = 300_000
 const GOOGLE_FONTS_CSS = 'https://fonts.googleapis.com/css2'
 
 const iconSetSchema = v.pipe(
@@ -109,17 +110,24 @@ const missing = [...wanted].filter((id) => !frames.some((frame) => frame.id === 
 if (missing.length > 0) throw new Error(`The document has no top-level ${missing.join(', ')}`)
 const assets = penAssets(doc)
 
+// pen.dev exports first, so a failed export leaves the fixtures as they were.
+const exported = join(output, 'pen-export')
+rmSync(exported, { recursive: true, force: true })
+mkdirSync(exported, { recursive: true })
+await exportFromPen(
+  source,
+  frames.map((frame) => frame.id),
+  exported
+)
 clearFixtures()
 writeFileSync(join(fixtures, 'probes.pen'), text)
 for (const image of assets.images.filter(isDocumentAssetPath)) {
   mkdirSync(dirname(join(fixtures, image)), { recursive: true })
   copyFileSync(join(dirname(source), image), join(fixtures, image))
 }
-await exportFromPen(
-  source,
-  frames.map((frame) => frame.id),
-  fixtures
-)
+for (const frame of frames) {
+  copyFileSync(join(exported, `${frame.id}.png`), join(fixtures, `${frame.id}.png`))
+}
 
 const iconSets = await fetchIconSets(assets.icons)
 for (const set of iconSets.values()) {
@@ -248,13 +256,17 @@ async function exportFromPen(document: string, frameIds: string[], directory: st
     new StdioClientTransport({ command: values.server, args: ['--app', 'desktop'] })
   )
   try {
-    const result = await client.callTool({
-      name: 'execute',
-      arguments: {
-        filePath: document,
-        input: `Export(${JSON.stringify(frameIds)}, "png", ${JSON.stringify(directory)}, { scale: 1 })`
-      }
-    })
+    const result = await client.callTool(
+      {
+        name: 'execute',
+        arguments: {
+          filePath: document,
+          input: `Export(${JSON.stringify(frameIds)}, "png", ${JSON.stringify(directory)}, { scale: 1 })`
+        }
+      },
+      // Exporting every frame takes pen.dev a while.
+      { timeout: EXPORT_TIMEOUT_MS }
+    )
     if (result.isError) throw new Error(`pen.dev export failed: ${JSON.stringify(result.content)}`)
   } finally {
     await client.close()

@@ -72,5 +72,7 @@ export function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): 
     node.lineHeight = resolveNumber(pen.lineHeight, ctx) * node.fontSize
   if (pen.letterSpacing !== undefined) node.letterSpacing = resolveNumber(pen.letterSpacing, ctx)
   node.textAutoResize = TEXT_GROWTH[pen.textGrowth ?? 'auto'] ?? 'WIDTH_AND_HEIGHT'
+  // pen.dev draws every font at its default optical size, whatever the text's size.
+  node.opticalSizeFromFontSize = false
   node.strokes = []
 }

@@ -57,6 +57,10 @@ describe('parsePenFile — text', () => {
     expect(textOf({ fontSize: 10, lineHeight: 6 }).lineHeight).toBe(60)
   })
 
+  test('keeps every font at its default optical size, as pen.dev draws it', () => {
+    expect(textOf({ fontSize: 96 }).opticalSizeFromFontSize).toBe(false)
+  })
+
   test('draws no text stroke, as pen.dev does not', () => {
     expect(textOf({ stroke: '#FF0000', strokeWidth: 1 }).strokes).toEqual([])
   })
