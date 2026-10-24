@@ -195,7 +195,7 @@ describe('renderText', () => {
 
   test('keeps native paragraph layout even when outline font data is available', async () => {
     const interData = await Bun.file(
-      repoPath('packages/core/assets/Inter-Regular.ttf')
+      repoPath('packages/core/assets/InterVariable.ttf')
     ).arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', interData)
     const r = createMockRenderer()
@@ -317,8 +317,8 @@ describe('paragraph font weights', () => {
   test('bold Inter paragraph is wider than regular Inter', async () => {
     const { renderer, surface } = await createTextRenderer()
     await renderer.loadFonts()
-    const regular = await Bun.file(repoPath('packages/core/assets/Inter-Regular.ttf')).arrayBuffer()
-    const bold = await Bun.file(repoPath('packages/core/assets/Inter-Bold.ttf')).arrayBuffer()
+    const regular = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const bold = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', regular)
     fontManager.markLoaded('Inter', 'Bold', bold)
 
@@ -343,7 +343,7 @@ describe('paragraph font weights', () => {
   test('shapes italic text when only the regular family face is available', async () => {
     const { renderer, surface } = await createTextRenderer()
     await renderer.loadFonts()
-    const regular = await Bun.file(repoPath('packages/core/assets/Inter-Regular.ttf')).arrayBuffer()
+    const regular = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', regular)
     const demand = fontFaceDemand('Inter', 'Regular Italic', 'Synthetic italic')
     fontResolver.reset(demand)
@@ -379,7 +379,7 @@ describe('renderText headless visual', () => {
     const ck = await initCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    const interData = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
@@ -409,7 +409,7 @@ describe('renderText headless visual', () => {
     const ck = await initCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    const interData = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]
@@ -462,7 +462,7 @@ describe('renderText headless visual', () => {
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
 
-    const interData = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', interData)
 
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
@@ -534,7 +534,7 @@ describe('renderText headless visual', () => {
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
 
-    const interData = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', interData)
 
@@ -613,7 +613,7 @@ describe('renderText headless visual', () => {
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
 
-    const interData = await Bun.file('packages/core/assets/Inter-Regular.ttf').arrayBuffer()
+    const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', interData)
 

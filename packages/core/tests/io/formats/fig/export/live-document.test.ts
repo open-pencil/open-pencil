@@ -15,7 +15,7 @@ import { fontManager } from '#core/text/fonts'
 // a font an edit brought in while they loaded.
 test('font digests cover a font added while they load', async () => {
   const inter = expectDefined(
-    await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
   fontManager.markLoaded('Inter', 'Regular', inter)

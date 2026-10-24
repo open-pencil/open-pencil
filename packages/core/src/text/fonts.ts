@@ -5,6 +5,7 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
+import { fontFaceRenderFamily } from '#core/text/face'
 import { facesFromStyles, hasFamilyFace, type FamilyFace } from '#core/text/font/faces'
 import { chooseLocalFontMatch } from '#core/text/font/style'
 import { fontAxes, namedInstanceVariations } from '#core/text/font/variation'
@@ -36,18 +37,30 @@ import { collectGraphFontKeys } from '#core/text/requirements'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-fonts'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-fonts'
 
+/** Inter's weights, each drawn from Inter's variable files at its named instance. */
+const INTER_WEIGHTS = [
+  'Thin',
+  'ExtraLight',
+  'Light',
+  'Regular',
+  'Medium',
+  'SemiBold',
+  'Bold',
+  'ExtraBold',
+  'Black'
+]
+
 const BUNDLED_FONTS: Record<string, string> = {
-  'Inter|Regular': '/Inter-Regular.ttf',
-  'Inter|Medium': '/Inter-Medium.ttf',
-  'Inter|SemiBold': '/Inter-SemiBold.ttf',
-  'Inter|Bold': '/Inter-Bold.ttf',
-  'Inter|ExtraBold': '/Inter-ExtraBold.ttf',
+  ...Object.fromEntries(INTER_WEIGHTS.map((weight) => [`Inter|${weight}`, '/InterVariable.ttf'])),
+  ...Object.fromEntries(
+    INTER_WEIGHTS.map((weight) => [`Inter|${weight} Italic`, '/InterVariable-Italic.ttf'])
+  ),
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf',
   'OpenPencil Emoji Metrics|Regular': '/OpenPencilEmojiMetrics-Regular.ttf'
 }
 
 /**
- * Maps a bundled font's file name (`Inter-Regular.ttf`) to the URL a browser fetches it from.
+ * Maps a bundled font's file name (`InterVariable.ttf`) to the URL a browser fetches it from.
  * Mirrors CanvasKit's `locateFile`; the default expects the host to serve
  * `@open-pencil/core/assets` at the site root.
  */
@@ -60,6 +73,8 @@ export class FontManager {
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
+  /** The name each file of a family loaded from several files is registered under. */
+  private fileFamilies = new Map<ArrayBuffer, string>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
   private blockedNodeIds = new Set<string>()
@@ -508,11 +523,33 @@ export class FontManager {
     return byStyle.get(style) ?? null
   }
 
-  renderFamily(family: string, _style: string): string {
-    // CanvasKit can shape metrics but paint no glyphs for some CJK/Arabic faces registered under a
-    // synthetic alias. Keep every shard under the font's source family; character-aware remote
-    // requests already fetch cumulative coverage before replacing the primary buffer.
-    return family
+  /**
+   * The family CanvasKit is asked for to draw `style` of `family`. A family loaded from one file
+   * draws under its own name, with every coverage shard, as some CJK and Arabic faces need to
+   * paint. Loaded from several files, such as a bundled static face beside a downloaded variable
+   * one, CanvasKit would pick among them by the weight each file declares, which can tie; each
+   * style then draws from the file loaded for it, registered with its shards under a name of the
+   * file's own.
+   */
+  renderFamily(family: string, style: string): string {
+    const data = this.loadedData(family, style)
+    if (!data || this.familyFileCount(family) < 2) return family
+    let name = this.fileFamilies.get(data)
+    if (!name) {
+      name = fontFaceRenderFamily(family, `file ${this.fileFamilies.size + 1}`)
+      this.fileFamilies.set(data, name)
+    }
+    this.registerFontInCanvasKit(name, data)
+    for (const shard of this.supplementalFamilyData.get(`${family}|${style}`) ?? [])
+      this.registerFontInCanvasKit(name, shard)
+    return name
+  }
+
+  /** How many files the family's loaded styles come from. */
+  private familyFileCount(family: string): number {
+    const files = new Set<ArrayBuffer>()
+    for (const [key, data] of this.loadedFamilies) if (key.startsWith(`${family}|`)) files.add(data)
+    return files.size
   }
 
   collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[string, string]> {

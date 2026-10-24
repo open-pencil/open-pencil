@@ -13,7 +13,7 @@ beforeAll(async () => {
   fontManager.markLoaded(
     'Inter',
     'Regular',
-    expectDefined(await fontManager.fetchBundledFont('/Inter-Regular.ttf'), 'bundled Inter font')
+    expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'bundled Inter font')
   )
 })
 

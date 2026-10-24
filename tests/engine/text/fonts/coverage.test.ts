@@ -6,7 +6,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { repoPath } from '#tests/helpers/paths'
 
 async function loadInter() {
-  const interData = await Bun.file(repoPath('packages/core/assets/Inter-Regular.ttf')).arrayBuffer()
+  const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
   fontManager.markLoaded('Inter', 'Regular', interData)
 }
 

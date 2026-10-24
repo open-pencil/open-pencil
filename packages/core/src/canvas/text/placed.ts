@@ -7,7 +7,7 @@ import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import {
   drawnFontVariations,
   loadedFace,
-  resolveParagraphFontFamilies
+  paragraphSourceFamilies
 } from '#core/canvas/text/font-families'
 import { laidOutText } from '#core/canvas/text/keycap'
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
@@ -66,7 +66,7 @@ function fontAt(node: SceneNode, index: number) {
 
 /** The outline source of each font the paragraph may have drawn a character in, in its order. */
 function* candidateSources(font: ReturnType<typeof fontAt>) {
-  for (const family of resolveParagraphFontFamilies(font.family, font.style)) {
+  for (const family of paragraphSourceFamilies(font.family)) {
     const style = loadedStyle(family, font.drawn.weight, font.drawn.italic)
     const source = style ? glyphOutlineSourceSync(family, style, font.variations) : null
     if (source) yield source
@@ -82,7 +82,7 @@ export function characterFamily(node: SceneNode, text: string, index: number): s
   if (codePoint === undefined) return null
   const character = String.fromCodePoint(codePoint)
   const font = fontAt(node, index)
-  for (const family of resolveParagraphFontFamilies(font.family, font.style)) {
+  for (const family of paragraphSourceFamilies(font.family)) {
     const style = loadedStyle(family, font.drawn.weight, font.drawn.italic)
     if (style && glyphOutlineSourceSync(family, style, font.variations)?.covers(character))
       return family

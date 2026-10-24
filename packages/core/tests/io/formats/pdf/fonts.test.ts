@@ -34,7 +34,8 @@ let interVariable: ArrayBuffer
 let cff: ArrayBuffer
 
 beforeAll(async () => {
-  inter = expectDefined(await fontManager.fetchBundledFont('/Inter-Regular.ttf'), 'Inter')
+  // Static, as jsPDF embeds only static TrueType; the canvas labels' face.
+  inter = expectDefined(await fontManager.fetchBundledFont('/Inter-SemiBold.ttf'), 'Inter')
   interVariable = await fixture('InterVariable-Latin.ttf')
   cff = await fixture('NotoSansCJK-Test.otf')
 })

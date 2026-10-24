@@ -11,7 +11,7 @@ import { fontManager } from '#core/text/fonts'
 const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.'
 
 beforeAll(async () => {
-  const inter = expectDefined(await fontManager.fetchBundledFont('/Inter-Regular.ttf'), 'Inter')
+  const inter = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
   fontManager.markLoaded('Inter', 'Regular', inter)
 })
 

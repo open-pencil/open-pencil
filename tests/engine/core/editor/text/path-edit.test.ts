@@ -23,7 +23,7 @@ function straightLineNetwork() {
 
 describe('pathTextEditChanges — reflow on character edit', () => {
   test('re-lays out glyphs along the path instead of clearing them', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
     fontManager.markLoaded('Inter', 'Regular', font)
@@ -69,7 +69,7 @@ describe('pathTextEditChanges — reflow on character edit', () => {
   })
 
   test('uses opentype.js glyph positioning when the font supports its shaping pipeline', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
     fontManager.markLoaded('Inter', 'Regular', font)
@@ -83,7 +83,7 @@ describe('pathTextEditChanges — reflow on character edit', () => {
   })
 
   test('folds letterSpacing into the pen-walk advance', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
     fontManager.markLoaded('Inter', 'Regular', font)
@@ -156,7 +156,7 @@ describe('pathTextEditChanges — reflow on character edit', () => {
   })
 
   test('uses pending fontSize from the same update batch', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
     fontManager.markLoaded('Inter', 'Regular', font)
@@ -199,7 +199,7 @@ describe('pathTextEditChanges — reflow on character edit', () => {
 describe('pathTextEditChanges — alignment', () => {
   /** "OO" at 40px on a 400-long straight path, glyph 0 at x = 150, aligned as given. */
   async function alignedText(align: 'LEFT' | 'CENTER' | 'RIGHT', forward = true) {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('missing bundled font')
     fontManager.markLoaded('Inter', 'Regular', font)
     const graph = new SceneGraph()
@@ -320,7 +320,7 @@ describe('aligned path text is laid out from the text path start, as in Figma', 
   }
 
   async function edited(align: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED', forward = true) {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('bundled font missing')
     fontManager.markLoaded('Inter', 'Regular', font)
     const text = 'Hello'
@@ -383,7 +383,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
 
   /** A straight 400-wide line in two segments; the text starts at x = 300. */
   async function overflowing(align: 'LEFT' | 'CENTER' | 'RIGHT', tValue = 0.5) {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('bundled font missing')
     fontManager.markLoaded('Inter', 'Regular', font)
     const graph = new SceneGraph()
@@ -464,7 +464,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
 })
 
 test('overflowing text on a closed path keeps what fits one loop', async () => {
-  const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+  const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
   if (!font) throw new Error('bundled font missing')
   fontManager.markLoaded('Inter', 'Regular', font)
   const graph = new SceneGraph()
@@ -527,7 +527,7 @@ test('overflowing text on a closed path keeps what fits one loop', async () => {
 // wrong side and scrambled the run once the sides changed length.
 describe('resizedPathTextGlyphs — resize lays the text out again', () => {
   test('a squashed or stretched square keeps every letter on the path, in order', async () => {
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('expected the bundled Inter font')
     fontManager.markLoaded('Inter', 'Regular', font)
 

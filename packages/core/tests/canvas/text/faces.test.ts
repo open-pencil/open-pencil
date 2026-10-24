@@ -44,15 +44,13 @@ function drawn(
     paragraph.layout(300)
     paragraph.draw(surface.getCanvas(), 0, 0)
     return expectDefined(
-      surface
-        .getCanvas()
-        .readPixels(0, 0, {
-          width: 300,
-          height: 60,
-          colorType: ck.ColorType.RGBA_8888,
-          alphaType: ck.AlphaType.Unpremul,
-          colorSpace: ck.ColorSpace.SRGB
-        }),
+      surface.getCanvas().readPixels(0, 0, {
+        width: 300,
+        height: 60,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      }),
       'pixels'
     ) as Uint8Array
   } finally {
@@ -70,7 +68,7 @@ describe('text faces', () => {
     const ck = await getCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    fontManager.markLoaded(FAMILY, 'Regular', await bundled('/Inter-Regular.ttf'))
+    fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 400, italic: true })).toEqual(regular)
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).toEqual(regular)
@@ -80,8 +78,8 @@ describe('text faces', () => {
     const ck = await getCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    fontManager.markLoaded(FAMILY, 'Regular', await bundled('/Inter-Regular.ttf'))
-    fontManager.markLoaded(FAMILY, 'Bold', await bundled('/Inter-Bold.ttf'))
+    fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
+    fontManager.markLoaded(FAMILY, 'Bold', await bundled('/InterVariable.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).not.toEqual(regular)
   })
@@ -108,6 +106,24 @@ describe('text faces', () => {
     ).toEqual(automatic)
   })
 
+  test('draws each style of a family loaded from several files from its own file', async () => {
+    const ck = await getCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+    // A static Regular and a variable file loaded for Light both declare weight 400, which
+    // CanvasKit would tie between.
+    const regular = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
+    const variable = await Bun.file(
+      join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')
+    ).arrayBuffer()
+    fontManager.markLoaded('Faces Test Mixed', 'Regular', regular)
+    fontManager.markLoaded('Faces Test Mixed', 'Light', variable)
+    fontManager.markLoaded('Faces Test Variable Only', 'Light', variable)
+    const light = (fontFamily: string) =>
+      drawn(ck, fontProvider, { fontFamily, fontWeight: 300, italic: false })
+    expect(light('Faces Test Mixed')).toEqual(light('Faces Test Variable Only'))
+  })
+
   /**
    * One face for the whole text: a family without the requested face draws its own, and the
    * characters it lacks fall back in that same face, which is the outline saved for them.
@@ -115,8 +131,8 @@ describe('text faces', () => {
   test('saves fallback characters in the face the text is drawn in', async () => {
     const primary = 'Faces Test Naskh'
     fontManager.markLoaded(primary, 'Regular', await bundled('/NotoNaskhArabic-Regular.ttf'))
-    fontManager.markLoaded('Inter', 'Regular', await bundled('/Inter-Regular.ttf'))
-    fontManager.markLoaded('Inter', 'Bold', await bundled('/Inter-Bold.ttf'))
+    fontManager.markLoaded('Inter', 'Regular', await bundled('/InterVariable.ttf'))
+    fontManager.markLoaded('Inter', 'Bold', await bundled('/InterVariable.ttf'))
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', graph.getPages()[0].id, {
       text: 'F',

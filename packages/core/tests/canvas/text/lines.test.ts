@@ -92,7 +92,7 @@ describe('lines of mixed sizes', () => {
     provider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, provider)
     const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
     provider.registerFont(inter, 'Inter')

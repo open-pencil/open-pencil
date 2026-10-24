@@ -31,7 +31,7 @@ describe('app font loading', () => {
 
   test('ensureGraphFonts loads fallback packs when loaded primary font misses CJK glyphs', async () => {
     const interData = await Bun.file(
-      repoPath('packages/core/assets/Inter-Regular.ttf')
+      repoPath('packages/core/assets/InterVariable.ttf')
     ).arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', interData)
 
