@@ -1,4 +1,4 @@
-import { extractVariableModes } from '#fig/node-change/convert'
+import { variableModeLayer } from '#fig/node-change/variable/maps'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -10,11 +10,12 @@ import { createBoundCollections } from './bound-collections'
 import type { InstanceOccurrence } from './types'
 
 type ModesByCollection = ReadonlyMap<string, string>
+type ModeLayer = ReadonlyMap<string, string | undefined>
 type Sources = InterpreterIndex['sources']
 
 interface ModeClaim {
   readonly path: readonly GUID[]
-  readonly modes: ModesByCollection
+  readonly modes: ModeLayer
 }
 
 export interface ModeScope {
@@ -25,10 +26,10 @@ export interface ModeScope {
 
 const NO_MODES: ModesByCollection = new Map()
 const NO_CLAIMS: readonly ModeClaim[] = []
-const extractedModes = new WeakMap<object, ModesByCollection>()
+const extractedModes = new WeakMap<object, ModeLayer>()
 const documentModes = new WeakMap<Sources, Map<string, ModesByCollection>>()
 
-function modesSetBy(holder: NodeChange | undefined): ModesByCollection | undefined {
+function modesSetBy(holder: NodeChange | undefined): ModeLayer | undefined {
   const map = holder?.variableModeBySetMap
   if (!holder || typeof map !== 'object' || map === null) {
     return undefined
@@ -37,20 +38,26 @@ function modesSetBy(holder: NodeChange | undefined): ModesByCollection | undefin
   if (known) {
     return known
   }
-  const modes: ModesByCollection = new Map(Object.entries(extractVariableModes(holder)))
+  const modes = variableModeLayer(holder)
   extractedModes.set(map, modes)
   return modes
 }
 
-function layered(
-  base: ModesByCollection,
-  ...layers: (ModesByCollection | undefined)[]
-): ModesByCollection {
-  const present = layers.filter((layer): layer is ModesByCollection => !!layer?.size)
+function layered(base: ModesByCollection, ...layers: (ModeLayer | undefined)[]): ModesByCollection {
+  const present = layers.filter((layer): layer is ModeLayer => !!layer?.size)
   if (present.length === 0) {
     return base
   }
-  return new Map([...base, ...present.flatMap((layer) => [...layer])])
+  const modes = new Map(base)
+  for (const [collection, mode] of present.flatMap((layer) => [...layer])) {
+    const effective = mode ?? base.get(collection)
+    if (effective) {
+      modes.set(collection, effective)
+    } else {
+      modes.delete(collection)
+    }
+  }
+  return modes
 }
 
 function documentOf(sources: Sources): Map<string, ModesByCollection> {
@@ -81,7 +88,7 @@ function insideComponent(
 }
 
 interface ClaimRouting {
-  readonly ending: ModesByCollection | undefined
+  readonly ending: ModeLayer | undefined
   readonly continuing: readonly ModeClaim[]
   readonly elsewhere: readonly ModeClaim[]
 }
@@ -118,7 +125,7 @@ export function createModeScopes(index: InterpreterIndex) {
     const inherited = parentId ? modesInDocument(parentId) : NO_MODES
     const component =
       record?.type === 'INSTANCE' ? recordOf(record.symbolData?.symbolID) : undefined
-    const modes = layered(inherited, modesSetBy(component), modesSetBy(record))
+    const modes = layered(inherited, modesSetBy(record) ?? modesSetBy(component))
     byRecord.set(id, modes)
     return modes
   }
@@ -175,20 +182,21 @@ export function createModeScopes(index: InterpreterIndex) {
       const routing = scope.descendantClaims.length
         ? routeClaims(scope.descendantClaims, record)
         : undefined
-      const own = routing?.ending ?? modesSetBy(record)
+      const own = modesSetBy(record)
+      const claimed = routing?.ending
       if (!component) {
         if (!own && !routing) {
           return scope
         }
         return {
-          placed: layered(scope.placed, own),
+          placed: layered(scope.placed, own, claimed),
           descendantClaims: routing?.elsewhere ?? scope.descendantClaims
         }
       }
       const expandedComponent = recordOf(component)
       const claims = [...(routing?.continuing ?? NO_CLAIMS), ...claimsOfOwner(ownClaims)]
       return {
-        placed: layered(scope.placed, modesSetBy(expandedComponent), own),
+        placed: layered(scope.placed, own ?? modesSetBy(expandedComponent), claimed),
         descendantClaims: expansionClaims(record, component, claims),
         expandedComponent
       }

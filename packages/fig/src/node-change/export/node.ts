@@ -58,6 +58,7 @@ import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-cl
 import { exportedNode } from './resolved-bindings'
 import { slotDefinitionFields } from './slots'
 import { serializeText } from './text'
+import { applyVariableModes } from './variable-modes'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -123,29 +124,6 @@ export function buildAssetRefToVarGuidMap(
 function componentPropertyTypeForKiwi(type: string) {
   if (type === 'BOOLEAN') return 'BOOL'
   return type
-}
-
-function serializeVariableModes(
-  node: SceneNode,
-  variableIdToGuid?: Map<string, GUID>,
-  modeIdToGuid?: Map<string, GUID>
-): NonNullable<KiwiNodeChange['variableModeBySetMap']> | undefined {
-  const entries = Object.entries(node.variableModes).flatMap(([collectionId, modeId]) => {
-    const collectionGuid = variableIdToGuid?.get(collectionId) ?? parseGuidOrNull(collectionId)
-    const modeGuid = modeIdToGuid?.get(modeId) ?? parseGuidOrNull(modeId)
-    if (!collectionGuid || !modeGuid) return []
-    return [{ variableSetID: { guid: collectionGuid }, variableModeID: modeGuid }]
-  })
-  return entries.length > 0 ? { entries } : undefined
-}
-
-function applyVariableModes(
-  context: SceneNodeToKiwiContext,
-  node: SceneNode,
-  record: KiwiNodeChange
-): void {
-  const modes = serializeVariableModes(node, context.varIdToGuid, context.modeIdToGuid)
-  if (modes) record.variableModeBySetMap = modes
 }
 
 const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([

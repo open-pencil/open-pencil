@@ -92,13 +92,7 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
-
-interface FigVariableModeMap {
-  entries?: Array<{
-    variableSetID?: { guid?: GUID }
-    variableModeID?: GUID
-  }>
-}
+import type { FigVariableModeMap } from './variable/maps'
 
 export function extractVariableModes(nc: NodeChange): VariableModeMap {
   const result: VariableModeMap = {}

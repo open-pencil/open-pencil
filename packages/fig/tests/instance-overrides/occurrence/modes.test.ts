@@ -200,14 +200,23 @@ test('an explicit default mode on the outer instance matches an absent one', () 
   expect(nestedWidth(fixture({ [OUTER]: modes([SIZES, COMPACT]) }))).toBe(SAVED_WIDTH)
 })
 
-test('an instance keeps the component root mode of a collection it does not set', () => {
-  const savedInWide = 63
-  const patches = {
+const SAVED_IN_WIDE = 63
+
+function pinnedCard(outer: Partial<NodeChange>): Patches {
+  return {
     [CARD]: modes([SIZES, WIDE]),
-    [NESTED]: { size: { x: savedInWide, y: 10 } },
-    [OUTER]: modes([THEME, LIGHT])
+    [NESTED]: { size: { x: SAVED_IN_WIDE, y: 10 } },
+    [OUTER]: outer
   }
-  expect(nestedWidth(fixture(patches))).toBe(savedInWide)
+}
+
+test('an instance record that repeats its component root mode keeps the saved size', () => {
+  const outer = modes([SIZES, WIDE], [THEME, LIGHT])
+  expect(nestedWidth(fixture(pinnedCard(outer)))).toBe(SAVED_IN_WIDE)
+})
+
+test('an instance record mode map replaces the modes its component root sets', () => {
+  expect(nestedWidth(fixture(pinnedCard(modes([THEME, LIGHT]))))).toBe(WIDTH_BY_MODE[COMPACT])
 })
 
 test('a swapped nested instance takes the mode of the component that replaced it', () => {
@@ -236,4 +245,82 @@ test('a collection the nested binding reaches through an alias drops its saved s
 
   expect(nested?.properties.size).toEqual({ x: SAVED_WIDTH, y: 10 })
   expect(nested?.derivedSize).toBeUndefined()
+})
+
+function modeUnset(collection: number): Partial<NodeChange> {
+  return { variableModeBySetMap: { entries: [{ variableSetID: { guid: guid(collection) } }] } }
+}
+
+function nestedNode(changes: NodeChange[]) {
+  const { graph, sources } = materializeDocument(changes, [], { derivedBounds: true })
+  const outer = sources.get(`1:${OUTER}`)
+  const nested = outer ? graph.getChildren(outer)[0] : undefined
+  if (!nested) {
+    throw new Error('Missing nested instance')
+  }
+  return { graph, nested }
+}
+
+test('an override naming a collection without a mode clears the nested component mode', () => {
+  const patches = {
+    [NESTED]: { ...instanceOf(WIDE_LEAF), size: { x: WIDTH_BY_MODE[WIDE], y: 10 } },
+    [OUTER]: instanceOf(CARD, [at([NESTED], modeUnset(SIZES))])
+  }
+  const { graph, nested } = nestedNode(fixture(patches))
+
+  expect(graph.getNodeVariableModeId(nested.id, `1:${SIZES}`)).toBe(`1:${COMPACT}`)
+})
+
+test('an override naming a collection without a mode clears the nested layer mode', () => {
+  const patches = {
+    [NESTED]: { ...modes([SIZES, WIDE]), size: { x: WIDTH_BY_MODE[WIDE], y: 10 } },
+    [OUTER]: instanceOf(CARD, [at([NESTED], modeUnset(SIZES))])
+  }
+  expect(nestedWidth(fixture(patches))).toBe(WIDTH_BY_MODE[COMPACT])
+})
+
+test('a cleared component mode drops the saved size of the nested instance', () => {
+  const patches = {
+    [NESTED]: { ...instanceOf(WIDE_LEAF), size: { x: WIDTH_BY_MODE[WIDE], y: 10 } },
+    [OUTER]: instanceOf(CARD, [at([NESTED], modeUnset(SIZES))])
+  }
+  expect(nestedWidth(fixture(patches))).toBe(WIDTH_BY_MODE[COMPACT])
+})
+
+test('a cleared mode takes the mode the outer instance sets', () => {
+  const patches = {
+    [NESTED]: { ...modes([SIZES, COMPACT]), size: { x: WIDTH_BY_MODE[COMPACT], y: 10 } },
+    [OUTER]: { ...modes([SIZES, WIDE]), ...instanceOf(CARD, [at([NESTED], modeUnset(SIZES))]) }
+  }
+  expect(nestedWidth(fixture(patches))).toBe(WIDTH_BY_MODE[WIDE])
+})
+
+test('an override mode replaces the nested layer mode of the same collection', () => {
+  const patches = {
+    [NESTED]: { ...modes([SIZES, WIDE]), size: { x: WIDTH_BY_MODE[WIDE], y: 10 } },
+    [OUTER]: instanceOf(CARD, [at([NESTED], modes([SIZES, COMPACT]))])
+  }
+  expect(nestedWidth(fixture(patches))).toBe(WIDTH_BY_MODE[COMPACT])
+})
+
+test('an override of one collection keeps the nested layer mode of another', () => {
+  const patches = {
+    [NESTED]: { ...modes([SIZES, WIDE], [THEME, DARK]), size: { x: WIDTH_BY_MODE[WIDE], y: 10 } },
+    [OUTER]: instanceOf(CARD, [at([NESTED], modeUnset(THEME))])
+  }
+  const { graph, nested } = nestedNode(fixture(patches))
+
+  expect(nested.width).toBe(WIDTH_BY_MODE[WIDE])
+  expect(nested.variableModes).toEqual({ [`1:${SIZES}`]: `1:${WIDE}` })
+  expect(graph.getNodeVariableModeId(nested.id, `1:${THEME}`)).toBe(`1:${LIGHT}`)
+})
+
+test('an instance record mode map stands for all of its modes', () => {
+  const patches = {
+    [NESTED]: { ...instanceOf(WIDE_LEAF), ...modes([THEME, DARK]) },
+    [OUTER]: instanceOf(CARD)
+  }
+  const { nested } = nestedNode(fixture(patches))
+
+  expect(nested.variableModes).toEqual({ [`1:${THEME}`]: `1:${DARK}` })
 })
