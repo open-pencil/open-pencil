@@ -49,6 +49,8 @@ const resultMessage = computed(() => {
       return ai.value.connectionTestBrowserNetworkFailed
     case 'network':
       return ai.value.connectionTestNetworkFailed
+    case 'cloud-unavailable':
+      return ai.value.cloudAIUnavailable
     default:
       return ai.value.connectionTestUnknownFailed
   }

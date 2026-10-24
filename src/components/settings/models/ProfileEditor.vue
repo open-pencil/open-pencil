@@ -45,6 +45,10 @@ const {
   providerDef,
   isACP,
   isHarness,
+  isCloud,
+  cloudWorkspaces,
+  cloudState,
+  retryCloud,
   supportsThinking,
   modelOptions,
   selectedModelValue,
@@ -73,6 +77,16 @@ const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
 const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
+const cloudWorkspaceOptions = computed(() =>
+  cloudWorkspaces.value.map((workspace) => ({ value: workspace.id, label: workspace.name }))
+)
+const cloudNotice = computed(() => {
+  if (cloudState.value === 'unavailable') return ai.value.cloudAIUnavailable
+  if (cloudState.value === 'workspaces-failed') return ai.value.cloudAIWorkspacesFailed
+  if (cloudState.value === 'no-workspace') return ai.value.cloudAINoWorkspace
+  if (cloudState.value === 'catalog-failed') return ai.value.cloudAICatalogFailed
+  return null
+})
 useSettingsFormGuard({ dirty, busy, cancel: () => emit('done') })
 const CUSTOM_MODEL_VALUE = '__custom__'
 const advancedOpen = ref(Boolean(draft.customModelID.trim()))
@@ -175,6 +189,37 @@ async function remove() {
             />
           </div>
 
+          <div
+            v-if="isCloud && cloudNotice"
+            class="flex items-start justify-between gap-2"
+            data-test-id="settings-cloud-ai-notice"
+          >
+            <p class="text-[11px] leading-relaxed text-muted">{{ cloudNotice }}</p>
+            <AppButton
+              v-if="cloudState === 'catalog-failed' || cloudState === 'workspaces-failed'"
+              variant="outline"
+              size="sm"
+              @click="retryCloud"
+            >
+              {{ ai.retryRequest }}
+            </AppButton>
+          </div>
+
+          <ProviderSettingsField
+            v-if="isCloud && cloudWorkspaceOptions.length"
+            :label="ai.cloudWorkspace"
+            :hint="ai.cloudWorkspaceHint"
+            :error="fieldErrors.cloudWorkspace"
+          >
+            <AppSelect
+              :model-value="draft.cloudWorkspaceId ?? ''"
+              :label="ai.cloudWorkspace"
+              :options="cloudWorkspaceOptions"
+              data-test-id="settings-cloud-ai-workspace"
+              @update:model-value="draft.cloudWorkspaceId = String($event)"
+            />
+          </ProviderSettingsField>
+
           <template v-if="!isACP">
             <div class="flex items-center gap-2 pt-1">
               <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
@@ -269,7 +314,7 @@ async function remove() {
               @sign-out="clearKey"
             />
             <ProviderSettingsKeyField
-              v-else
+              v-else-if="!isCloud"
               v-model="keyInput"
               :label="ai.apiKey"
               :saved="hasExistingKey"

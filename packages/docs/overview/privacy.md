@@ -82,14 +82,14 @@ If you join the OpenPencil Cloud waitlist on this site, we store your email addr
 
 OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on its own; everything else below connects only when you use that feature, and only to the service named.
 
-| Feature | Where it connects |
-| --- | --- |
-| Update checks (desktop) | GitHub Releases, for the latest version number |
-| AI chat and image tools | The provider you configure, with your own key; the model list comes from models.dev |
-| Collaboration rooms | Other people in the room directly; public brokers introduce peers, and a TURN relay carries traffic when a direct connection is not possible |
-| Cloud storage | The storage provider you configure |
-| Fonts | Google Fonts, which can supply a font a document uses that is not installed |
-| Icons | The Iconify API, when you search or insert icons |
-| Stock images | Unsplash or Pexels, when you search them |
+| Feature                 | Where it connects                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Update checks (desktop) | GitHub Releases, for the latest version number                                                                                                                                                          |
+| AI chat and image tools | The provider you configure, with your own key; the model list comes from models.dev. With **OpenPencil Cloud** as the provider, the AI service your Cloud server names, with a token for your workspace |
+| Collaboration rooms     | Other people in the room directly; public brokers introduce peers, and a TURN relay carries traffic when a direct connection is not possible                                                            |
+| Cloud storage           | The storage provider you configure                                                                                                                                                                      |
+| Fonts                   | Google Fonts, which can supply a font a document uses that is not installed                                                                                                                             |
+| Icons                   | The Iconify API, when you search or insert icons                                                                                                                                                        |
+| Stock images            | Unsplash or Pexels, when you search them                                                                                                                                                                |
 
 The app, the feedback service, and this page are open source. The event list lives in [`packages/feedback/src/contract`](https://github.com/open-pencil/open-pencil/tree/master/packages/feedback/src/contract), and the tables above are generated from it.

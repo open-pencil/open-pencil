@@ -8,7 +8,7 @@ import {
   resolveLanguageModelID,
   type ModelConfig
 } from '@/app/ai/models/language-model'
-import type { ModelCredentialStore } from '@/app/ai/providers/types'
+import type { ModelProviderRuntime } from '@/app/ai/providers/types'
 import { isTauri } from '@/app/tauri/env'
 
 export type ProviderConnectionTestResult =
@@ -29,6 +29,7 @@ export type ProviderConnectionTestFailureReason =
   | 'api-type'
   | 'browser-network'
   | 'network'
+  | 'cloud-unavailable'
   | 'unknown'
 
 function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
@@ -106,19 +107,20 @@ function classifyError(error: unknown): ProviderConnectionTestFailureReason {
 }
 
 /**
- * Sends a one-token request. A test of a saved credential passes its store, so a sign-in the
- * request refreshes keeps the new tokens instead of leaving a spent refresh token saved.
+ * Sends a one-token request. A test of a saved credential passes its store in `runtime`, so a
+ * sign-in the request refreshes keeps the new tokens instead of leaving a spent refresh token
+ * saved; a `runtime` with its own fetch, such as Cloud's AI service, is used instead of the default.
  */
 export async function testProviderConnection(
   config: ModelConfig,
-  credentials?: ModelCredentialStore
+  runtime?: ModelProviderRuntime
 ): Promise<ProviderConnectionTestResult> {
   const invalidReason = validateConfig(config)
   if (invalidReason) return { ok: false, reason: invalidReason }
 
   try {
     await generateText({
-      model: createLanguageModel(config, credentials),
+      model: createLanguageModel(config, runtime),
       prompt: 'Reply with OK.',
       maxOutputTokens: 1,
       abortSignal: AbortSignal.timeout(15_000)

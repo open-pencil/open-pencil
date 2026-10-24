@@ -14,7 +14,7 @@ import {
   type CloudDiscovery
 } from '#cloud/contract'
 import { createAccountRoutes } from '#cloud/server/account/routes'
-import { createAIRoutes, createAITokenService, type AISigningKey } from '#cloud/server/ai'
+import { createAITokenService, type AISigningKey } from '#cloud/server/ai'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -308,6 +308,7 @@ export function createCloudApp(services: CloudServices) {
     documents,
     versions,
     entitlements,
+    aiTokens,
     sharing,
     workspaces,
     workspaceMembers,
@@ -402,10 +403,6 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/*', requireActiveSession)
     .route('/api/admin', admin)
     .use('/api/*', authenticatedMutationLimiter)
-    .route(
-      '/api',
-      createAIRoutes(aiTokens, { database: services.database, secret: services.config.authSecret })
-    )
     .route('/api', cloudAPI)
 }
 

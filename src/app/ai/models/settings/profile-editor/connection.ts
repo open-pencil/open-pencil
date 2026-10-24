@@ -10,9 +10,23 @@ import {
 } from '@/app/ai/models'
 import {
   testProviderConnection,
-  type ProviderConnectionTestFailureReason
+  type ProviderConnectionTestFailureReason,
+  type ProviderConnectionTestResult
 } from '@/app/ai/models/connection-test'
+import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import { cloudAIClient } from '@/app/cloud/integration'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
+
+/** Tests Cloud's AI service with the Home server's sign-in, which needs no key. */
+async function testCloudConnection(
+  target: AIModelProfileDraft
+): Promise<ProviderConnectionTestResult> {
+  const client = cloudAIClient(target.cloudWorkspaceId ?? '')
+  if (!client) return { ok: false, reason: 'cloud-unavailable' }
+  const cloud = cloudModelConfig(client, target.modelID)
+  return testProviderConnection(cloud.config, cloud.runtime)
+}
 
 interface ConnectionOptions {
   draft: AIModelProfileDraft
@@ -60,6 +74,33 @@ export function useProfileConnection({ draft, keyInput }: ConnectionOptions) {
     resetConnectionTest()
   }
 
+  /** Tests with the replacement key or the saved one; `null` once a newer test supersedes it. */
+  async function testKeyConnection(
+    target: AIModelProfileDraft,
+    replacement: string,
+    request: number
+  ): Promise<ProviderConnectionTestResult | null> {
+    const connection = findModelConnectionForDraft(target)
+    const existingKey =
+      !replacement && !keyCleared.value && connection
+        ? await resolveModelConnectionAPIKey(connection.id)
+        : null
+    if (!current(request)) return null
+    return testProviderConnection(
+      {
+        providerID: target.providerID,
+        apiKey: replacement || existingKey || '',
+        modelID: target.modelID,
+        customModelID: target.customModelID,
+        customBaseURL: target.customBaseURL,
+        customAPIType: target.customAPIType
+      },
+      existingKey && connection
+        ? { credentials: modelConnectionCredentialStore(connection.id) }
+        : undefined
+    )
+  }
+
   async function testConnection(): Promise<void> {
     const request = ++version
     const target = { ...draft }
@@ -67,24 +108,11 @@ export function useProfileConnection({ draft, keyInput }: ConnectionOptions) {
     connectionTestStatus.value = 'testing'
     connectionTestReason.value = null
     try {
-      const connection = findModelConnectionForDraft(target)
-      const existingKey =
-        !replacement && !keyCleared.value && connection
-          ? await resolveModelConnectionAPIKey(connection.id)
-          : null
-      if (!current(request)) return
-      const result = await testProviderConnection(
-        {
-          providerID: target.providerID,
-          apiKey: replacement || existingKey || '',
-          modelID: target.modelID,
-          customModelID: target.customModelID,
-          customBaseURL: target.customBaseURL,
-          customAPIType: target.customAPIType
-        },
-        existingKey && connection ? modelConnectionCredentialStore(connection.id) : undefined
-      )
-      if (!current(request)) return
+      const result =
+        target.providerID === OPENPENCIL_AI_PROVIDER
+          ? await testCloudConnection(target)
+          : await testKeyConnection(target, replacement, request)
+      if (!result || !current(request)) return
       connectionTestStatus.value = result.ok ? 'success' : 'error'
       connectionTestReason.value = result.ok ? null : result.reason
     } catch {

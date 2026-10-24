@@ -1,3 +1,11 @@
+export {
+  CloudAIError,
+  cloudAIFetch,
+  createCloudAIClient,
+  type CloudAIClient,
+  type CloudAIClientOptions,
+  type CloudAITokenSource
+} from './ai'
 export { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from './auth/navigation'
 export {
   CloudAPIError,
