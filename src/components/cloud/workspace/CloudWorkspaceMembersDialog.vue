@@ -14,6 +14,7 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import { cloudWorkspace } from '@/theme/cloud/workspace'
 
@@ -98,8 +99,9 @@ const renamed = computed(() => name.value.trim() && name.value.trim() !== worksp
 const confirming = ref<
   { kind: 'leave' } | { kind: 'delete' } | { kind: 'remove'; userId: string; name: string } | null
 >(null)
+const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
-  const pending = confirming.value
+  const pending = confirmingShown.value
   if (!pending) return null
   if (pending.kind === 'delete') {
     return {
@@ -122,11 +124,14 @@ const confirmation = computed(() => {
 })
 /** Deleting can't be undone, so it waits for the workspace's name. */
 const typedName = ref('')
-watch(confirming, () => {
-  typedName.value = ''
-})
+watch(
+  () => confirming.value !== null,
+  (isOpen) => {
+    if (isOpen) typedName.value = ''
+  }
+)
 const confirmBlocked = computed(
-  () => confirming.value?.kind === 'delete' && typedName.value.trim() !== workspaceName.trim()
+  () => confirmingShown.value?.kind === 'delete' && typedName.value.trim() !== workspaceName.trim()
 )
 function confirm() {
   const pending = confirming.value
@@ -213,8 +218,9 @@ function invite() {
         <AppAlert v-if="failure" tone="error" :heading="failure" />
 
         <section :class="ui.section()">
-          <h3 :class="ui.sectionTitle()">
-            {{ t.shareMemberCount(members?.members.length ?? 0) }}
+          <!-- Counted once known; "0 members" while loading would be a wrong first frame. -->
+          <h3 v-if="members" :class="ui.sectionTitle()">
+            {{ t.shareMemberCount(members.members.length) }}
           </h3>
           <p v-if="loading" :class="ui.note()" role="status">{{ t.membersLoading }}</p>
           <ul v-else :class="ui.list()">
@@ -304,7 +310,7 @@ function invite() {
     </AppDialogFooter>
   </AppDialogRoot>
   <AppConfirmationDialog
-    :open="confirmation !== null"
+    :open="confirming !== null"
     tone="danger"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
@@ -314,7 +320,7 @@ function invite() {
     @update:open="(isOpen) => !isOpen && (confirming = null)"
     @confirm="confirm"
   >
-    <div v-if="confirming?.kind === 'delete'" :class="ui.confirmName()">
+    <div v-if="confirmingShown?.kind === 'delete'" :class="ui.confirmName()">
       <label for="cloud-workspace-delete-name" :class="ui.label()">
         {{ t.deleteWorkspaceTypeName({ workspace: workspaceName }) }}
       </label>

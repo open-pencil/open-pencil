@@ -63,6 +63,8 @@ export function modelConnectionState({
     }
   }
   if (credential === 'locked' || credential === 'unavailable') return 'unavailable'
+  // Not read yet: saying the key is missing before knowing would flash a wrong state.
+  if (credential === undefined) return 'checking'
   return 'needs-credential'
 }
 

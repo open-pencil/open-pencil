@@ -17,6 +17,7 @@ import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-class
 import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
 import { noRawSQLRule } from '#lint/rules/sql.ts'
+import { noOverlayContentFromOpenState } from '#lint/rules/vue/overlays.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
@@ -436,6 +437,7 @@ const plugin = {
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
+    'no-overlay-content-from-open-state': noOverlayContentFromOpenState,
     'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
     'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates,
     'no-ui-helper-calls-in-vue-templates': noUiHelperCallsInVueTemplates,

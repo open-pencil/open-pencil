@@ -37,8 +37,9 @@ const current = ref('')
 const next = ref('')
 const repeat = ref('')
 const errors = ref<{ current?: string; next?: string; repeat?: string }>({})
+// Cleared as it opens: clearing as it closes would empty the fields during its exit animation.
 watch(open, (value) => {
-  if (!value) {
+  if (value) {
     current.value = ''
     next.value = ''
     repeat.value = ''

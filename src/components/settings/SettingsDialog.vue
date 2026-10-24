@@ -71,9 +71,12 @@ function onSectionChange(section: string | number): void {
 function onOpenChange(open: boolean): void {
   if (open) settingsDialogOpen.value = true
   else
-    navigation.request(() => {
-      settingsDialogOpen.value = false
-    })
+    navigation.request(
+      () => {
+        settingsDialogOpen.value = false
+      },
+      { closesWindow: true }
+    )
 }
 </script>
 

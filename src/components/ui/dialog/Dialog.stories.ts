@@ -3,6 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import AppConfirmationDialog from './AppConfirmationDialog.vue'
 import AppDialog from './AppDialog.vue'
@@ -84,6 +85,36 @@ export const SemanticWrapper: Story = {
         <p class="text-xs text-surface">Content slot.</p>
         <template #footer><AppButton color="primary" @click="open = false">Done</AppButton></template>
       </AppDialog>
+    `
+  })
+}
+
+/**
+ * A confirmation whose `open` follows a target that closing clears, as a list's remove action
+ * does. The dialog keeps naming the target while it animates closed.
+ */
+export const TargetedConfirmation: Story = {
+  render: () => ({
+    components: { AppButton, AppConfirmationDialog },
+    setup() {
+      const removing = ref<{ name: string; unsaved: boolean } | null>(null)
+      const shown = useHeldContent(removing)
+      return { removing, shown }
+    },
+    template: `
+      <div class="flex gap-2">
+        <AppButton @click="removing = { name: 'Alpha', unsaved: true }">Remove Alpha</AppButton>
+        <AppButton @click="removing = { name: 'Beta', unsaved: false }">Remove Beta</AppButton>
+      </div>
+      <AppConfirmationDialog
+        :open="removing !== null"
+        tone="danger"
+        :heading="'Remove ' + (shown?.name ?? '')"
+        :description="shown?.unsaved ? 'Unsaved changes will be lost.' : 'This cannot be undone.'"
+        cancel-label="Cancel"
+        :confirm-label="shown?.unsaved ? 'Discard and remove' : 'Remove'"
+        @update:open="(open) => !open && (removing = null)"
+      />
     `
   })
 }

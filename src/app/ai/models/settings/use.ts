@@ -12,6 +12,12 @@ import {
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
+/**
+ * Credential statuses as last read, shared by every view of the model list, so reopening
+ * Settings draws them at once instead of starting from nothing.
+ */
+const knownStatuses = ref<Record<string, CredentialStatus>>({})
+
 export function useModelSettings() {
   let version = 0
   let disposed = false
@@ -20,7 +26,7 @@ export function useModelSettings() {
     disposed = true
   })
 
-  const statusByConnection = ref<Record<string, CredentialStatus>>({})
+  const statusByConnection = knownStatuses
 
   const profiles = computed(() =>
     aiModelSettings.value.models.map((profile) => {

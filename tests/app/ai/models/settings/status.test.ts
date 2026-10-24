@@ -20,6 +20,7 @@ describe('model connection state', () => {
     expect(state({ credential: 'configured' })).toBe('connected')
     expect(state({ credential: 'missing' })).toBe('needs-credential')
     expect(state({ credential: 'locked' })).toBe('unavailable')
+    expect(state({ credential: undefined })).toBe('checking')
     expect(state({ providerID: 'chatgpt', credential: 'configured' })).toBe('connected')
   })
 

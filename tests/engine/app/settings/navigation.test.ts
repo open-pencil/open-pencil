@@ -73,3 +73,33 @@ test('busy and replaced editors cannot be discarded by stale requests', () => {
   expect(navigated).toBe(false)
   expect(navigation.editing.value).toBe(true)
 })
+
+test('closing the window leaves an editor without cancelling it back to its list', () => {
+  const navigation = createSettingsNavigation()
+  const dirty = ref(false)
+  let cancelled = 0
+  let closed = 0
+  const form = {
+    dirty,
+    busy: ref(false),
+    cancel: () => {
+      cancelled++
+    }
+  }
+  const close = () => {
+    closed++
+  }
+  const unregister = navigation.register(form)
+  navigation.request(close, { closesWindow: true })
+  expect([cancelled, closed]).toEqual([0, 1])
+  // The window keeps showing the editor until it unmounts with the closed window.
+  expect(navigation.editing.value).toBe(true)
+  unregister()
+  expect(navigation.editing.value).toBe(false)
+
+  dirty.value = true
+  navigation.register(form)
+  navigation.request(close, { closesWindow: true })
+  navigation.discard()
+  expect([cancelled, closed]).toEqual([0, 2])
+})

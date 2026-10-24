@@ -54,18 +54,25 @@ const choice = ref<CloudConflictChoice>('keep-both')
 const localPreview = shallowRef<Blob | null>(null)
 const localPreviewURL = useObjectUrl(localPreview)
 const cloudSavedAt = ref<string | null>(null)
+let conflictRequest = 0
 
 async function openConflict() {
   const binding = store.getStorageBinding()
   if (!binding) return
+  const request = ++conflictRequest
   choice.value = 'keep-both'
-  resolving.value = true
-  const thumb = await getLocalCanvasStore().readThumb(binding.documentId)
+  const thumb = await getLocalCanvasStore()
+    .readThumb(binding.documentId)
+    .catch(() => null)
   localPreview.value = thumb ? new Blob([Uint8Array.from(thumb)], { type: 'image/png' }) : null
   const stored = await createStorageAdapter(binding)
     .getDocumentMetadata?.(binding.documentId)
     .catch(() => null)
+  // A later request supersedes this one, and its own reads open the dialog.
+  if (request !== conflictRequest) return
   cloudSavedAt.value = stored?.updatedAt ?? null
+  // Opened once both copies are read, so it never shows the last conflict's preview or time.
+  resolving.value = true
 }
 
 async function confirm(picked: CloudConflictChoice) {

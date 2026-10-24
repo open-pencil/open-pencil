@@ -155,6 +155,7 @@
     "open-pencil/no-structuredclone-scene-arrays": "error",
     "open-pencil/no-vue-style-blocks": "error",
     "open-pencil/no-native-title-attributes-in-vue": "error",
+    "open-pencil/no-overlay-content-from-open-state": "error",
     "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
     "open-pencil/no-raw-svg-in-app-vue-templates": "error",
     "open-pencil/no-ui-helper-calls-in-vue-templates": "error",

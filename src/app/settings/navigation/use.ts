@@ -9,11 +9,22 @@ interface SettingsFormGuard {
 /** One navigation policy for every editor in the Settings window. */
 export function createSettingsNavigation() {
   const active = shallowRef<SettingsFormGuard | null>(null)
-  const pending = shallowRef<{ form: SettingsFormGuard; action: () => void } | null>(null)
+  const pending = shallowRef<{
+    form: SettingsFormGuard
+    action: () => void
+    closesWindow: boolean
+  } | null>(null)
 
-  function leave(form: SettingsFormGuard | null, action: () => void) {
-    active.value = null
-    form?.cancel()
+  /**
+   * Leaves the open editor. Closing the window instead keeps it, and the window as it was, until
+   * the window has animated out and the editor unmounts and unregisters; cancelling it first
+   * would slide it back to its list in front of the person.
+   */
+  function leave(form: SettingsFormGuard | null, action: () => void, closesWindow: boolean) {
+    if (!closesWindow) {
+      active.value = null
+      form?.cancel()
+    }
     action()
   }
 
@@ -27,11 +38,11 @@ export function createSettingsNavigation() {
         if (pending.value?.form === form) pending.value = null
       }
     },
-    request(action: () => void) {
+    request(action: () => void, { closesWindow = false } = {}) {
       const form = active.value
       if (form?.busy.value) return
-      if (form?.dirty.value) pending.value = { form, action }
-      else leave(form, action)
+      if (form?.dirty.value) pending.value = { form, action, closesWindow }
+      else leave(form, action, closesWindow)
     },
     keepEditing() {
       pending.value = null
@@ -40,7 +51,7 @@ export function createSettingsNavigation() {
       const request = pending.value
       if (!request || request.form !== active.value || request.form.busy.value) return
       pending.value = null
-      leave(request.form, request.action)
+      leave(request.form, request.action, request.closesWindow)
     }
   }
 }
