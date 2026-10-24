@@ -1,4 +1,4 @@
-import type { Fill, GradientStop, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, GradientStop, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { normalizeColor } from '@open-pencil/scene-graph/color'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
@@ -91,6 +91,34 @@ export function figmaPaintToFill(
   }
 }
 
+/**
+ * Copies of `node`'s fills as Figma's plugin API reads them: bound colours resolved and named,
+ * transforms as two rows of three.
+ */
+export function figmaFills(sceneGraph: SceneGraph, node: SceneNode): WithFigmaTransforms<Fill>[] {
+  const bound = paintBindings(node, 'fills')
+  const fills = bound.size
+    ? (resolvedPaintBindings(sceneGraph, node).fills ?? node.fills)
+    : node.fills
+  return copyFills(fills).map((fill, index) =>
+    toFigmaPaint(withPaintBinding(fill, bound.get(index)))
+  )
+}
+
+/** Copies of `node`'s strokes as Figma's plugin API reads them, as {@link figmaFills} reads fills. */
+export function figmaStrokes(
+  sceneGraph: SceneGraph,
+  node: SceneNode
+): WithFigmaTransforms<Stroke>[] {
+  const bound = paintBindings(node, 'strokes')
+  const strokes = bound.size
+    ? (resolvedPaintBindings(sceneGraph, node).strokes ?? node.strokes)
+    : node.strokes
+  return copyStrokes(strokes).map((stroke, index) =>
+    toFigmaPaint(withPaintBinding(stroke, bound.get(index)))
+  )
+}
+
 export function installVisualNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals,
@@ -101,17 +129,7 @@ export function installVisualNodeProxyAccessors(
       // Text reads mixed while its characters are filled differently, and setting it fills them all.
       get(this: ProxyThis): readonly WithFigmaTransforms<Fill>[] | symbol {
         const node = raw(this, internals)
-        if (node.type !== 'TEXT') {
-          const bound = paintBindings(node, 'fills')
-          const fills = bound.size
-            ? (resolvedPaintBindings(graph(this, internals), node).fills ?? node.fills)
-            : node.fills
-          return Object.freeze(
-            copyFills(fills).map((fill, index) =>
-              toFigmaPaint(withPaintBinding(fill, bound.get(index)))
-            )
-          )
-        }
+        if (node.type !== 'TEXT') return Object.freeze(figmaFills(graph(this, internals), node))
         const fills = getTextStyle(node, 'fills', mixed)
         // Text styles read for scripts already give Figma's paints.
         return typeof fills === 'symbol'
@@ -132,15 +150,7 @@ export function installVisualNodeProxyAccessors(
     strokes: {
       get(this: ProxyThis): readonly WithFigmaTransforms<Stroke>[] {
         const owner = raw(strokeOwner(this, internals), internals)
-        const bound = paintBindings(owner, 'strokes')
-        const strokes = bound.size
-          ? (resolvedPaintBindings(graph(this, internals), owner).strokes ?? owner.strokes)
-          : owner.strokes
-        return Object.freeze(
-          copyStrokes(strokes).map((stroke, index) =>
-            toFigmaPaint(withPaintBinding(stroke, bound.get(index)))
-          )
-        )
+        return Object.freeze(figmaStrokes(graph(this, internals), owner))
       },
       // Figma paints carry no geometry; a stroke takes the node's weight and alignment, which
       // outlast its strokes.

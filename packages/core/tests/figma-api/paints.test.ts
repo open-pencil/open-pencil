@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 
 import { FigmaAPI } from '#core/figma-api'
 
@@ -131,5 +131,64 @@ describe('an image transform', () => {
         ]
       })
     ])
+  })
+})
+
+// `get_node`, `get_selection`, and `eval` print a layer through toJSON, so a script reads the same
+// paints there as through `fills` and `strokes`, and can assign them back.
+describe('a layer printed as JSON', () => {
+  // Laid out as a document read from a file holds it, with a colour bound to a variable.
+  function paintedRectangle() {
+    const { graph, figma } = api()
+    const collection = figma.variables.createVariableCollection('Tokens')
+    const blue = figma.variables.createVariable('blue', collection, 'COLOR')
+    blue.setValueForMode(collection.defaultModeId, { r: 0, g: 0, b: 1 })
+    const gradient: Fill = {
+      ...GRADIENT,
+      type: 'GRADIENT_LINEAR',
+      gradientStops: STOPS,
+      gradientTransform: { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
+    }
+    const rectangle = figma.createRectangle()
+    graph.updateNode(rectangle.id, {
+      fills: [
+        gradient,
+        { ...GRADIENT, type: 'IMAGE', imageHash: 'hash', imageScaleMode: 'FILL' },
+        { ...GRADIENT, type: 'SOLID' }
+      ],
+      strokes: [{ ...gradient, weight: 1, align: 'CENTER' }]
+    })
+    graph.bindVariable(rectangle.id, 'fills/2/color', blue.id)
+    return { figma, rectangle }
+  }
+
+  test('prints paints as fills and strokes read them', () => {
+    const { rectangle } = paintedRectangle()
+    const json = rectangle.toJSON()
+    expect(json.fills).toEqual(rectangle.fills)
+    expect(json.strokes).toEqual(rectangle.strokes)
+    expect(json.fills).toEqual([
+      expect.objectContaining({ gradientTransform: SWAPPED }),
+      expect.objectContaining({
+        imageTransform: [
+          [1, 0, 0],
+          [0, 1, 0]
+        ]
+      }),
+      expect.objectContaining({ color: { r: 0, g: 0, b: 1, a: 1 } })
+    ])
+  })
+
+  test('prints paints a script can assign to another layer', () => {
+    const { figma, rectangle } = paintedRectangle()
+    const { fills, strokes } = rectangle.toJSON()
+    const copy = figma.createRectangle()
+    expect(() => {
+      copy.fills = fills as never
+      copy.strokes = strokes as never
+    }).not.toThrow()
+    expect(copy.fills).toEqual(rectangle.fills)
+    expect(copy.strokes).toEqual(rectangle.strokes)
+    expect(copy.boundVariables).toEqual(rectangle.boundVariables)
   })
 })

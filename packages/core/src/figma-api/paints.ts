@@ -1,5 +1,8 @@
 import type { Fill, GradientTransform } from '@open-pencil/scene-graph'
-import { IDENTITY_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
+import {
+  gradientTransformRows,
+  IDENTITY_GRADIENT_TRANSFORM
+} from '@open-pencil/scene-graph/gradient'
 
 import type { FigmaTransform } from './types'
 
@@ -12,14 +15,6 @@ type TransformField = (typeof TRANSFORM_FIELDS)[number]
 export type WithFigmaTransforms<T> = Omit<T, TransformField> & {
   gradientTransform?: FigmaTransform
   imageTransform?: FigmaTransform
-}
-
-/** A scene transform as Figma's plugin API gives it: two rows of three. */
-export function toFigmaTransform(t: GradientTransform): FigmaTransform {
-  return [
-    [t.m00, t.m01, t.m02],
-    [t.m10, t.m11, t.m12]
-  ]
 }
 
 function isRow(value: unknown): value is [number, number, number] {
@@ -82,7 +77,7 @@ export function toFigmaPaint<T extends Fill>(paint: T): WithFigmaTransforms<T> {
   const image = imageTransform ?? (paint.type === 'IMAGE' ? IDENTITY_GRADIENT_TRANSFORM : undefined)
   return {
     ...rest,
-    ...(gradientTransform && { gradientTransform: toFigmaTransform(gradientTransform) }),
-    ...(image && { imageTransform: toFigmaTransform(image) })
+    ...(gradientTransform && { gradientTransform: gradientTransformRows(gradientTransform) }),
+    ...(image && { imageTransform: gradientTransformRows(image) })
   }
 }

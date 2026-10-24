@@ -232,6 +232,49 @@ describe('sceneNodeToJSX', () => {
     expect(jsx).toContain('strokeWidth={2}')
   })
 
+  // As Figma's plugin API gives them, so an author reads and writes the form a script does.
+  test("a gradient's transform exports as Figma's rows", () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+            { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+          ],
+          gradientTransform: { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
+        }
+      ]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toContain(
+      'linearGradient([["#FF0000", 0], ["#0000FF", 1]], { transform: [[0, 1, 0], [-1, 0, 1]] })'
+    )
+  })
+
+  test("an image crop exports its window as Figma's rows", () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 1, g: 1, b: 1, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: 'abc123',
+          imageScaleMode: 'CROP',
+          imageTransform: { m00: 0.5, m01: 0, m02: 0.25, m10: 0, m11: 0.5, m12: 0.25 }
+        }
+      ]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toContain(
+      'imageTransform: [[0.5, 0, 0.25], [0, 0.5, 0.25]]'
+    )
+  })
+
   test('hidden children are kept and marked hidden', () => {
     const graph = makeGraph()
     const frame = graph.createNode('FRAME', pageId(graph), {

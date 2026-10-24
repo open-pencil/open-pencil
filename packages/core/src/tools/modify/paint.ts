@@ -2,11 +2,10 @@ import { isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
-import { linearGradientTransform } from '@open-pencil/scene-graph/gradient'
+import { gradientTransformRows, linearGradientTransform } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
-import { toFigmaTransform } from '#core/figma-api/paints'
 import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
 
 export const setFill = defineTool({
@@ -66,7 +65,7 @@ export const setFill = defineTool({
             { position: 0, color: c },
             { position: 1, color: cEnd }
           ],
-          gradientTransform: toFigmaTransform(linearGradientTransform(start, end))
+          gradientTransform: gradientTransformRows(linearGradientTransform(start, end))
         }
       ]
       return { id, gradient, start: c, end: cEnd }
