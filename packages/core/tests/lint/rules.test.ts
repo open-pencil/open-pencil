@@ -96,7 +96,13 @@ describe('color-contrast', () => {
     // 3.2:1 against white.
     const grey = { r: 0.55, g: 0.55, b: 0.55, a: 1 }
     const text = (name: string, fontSize: number, fontWeight: number) =>
-      graph.createNode('TEXT', card.id, { name, text: name, fontSize, fontWeight, fills: solid(grey) })
+      graph.createNode('TEXT', card.id, {
+        name,
+        text: name,
+        fontSize,
+        fontWeight,
+        fills: solid(grey)
+      })
     const body = text('Body', 16, 400)
     const boldBody = text('Bold body', 18, 700)
     text('Display', 24, 400)
@@ -135,6 +141,117 @@ describe('color-contrast', () => {
 
     expect(messages.map((message) => message.nodeId)).toEqual([mixed.id])
     expect(messages[0]?.data?.minRatio).toBe(4.5)
+  })
+})
+
+describe('color-contrast over translucent fills', () => {
+  const DARK = { r: 0.1, g: 0.1, b: 0.1, a: 1 }
+  const tint = (opacity: number): SceneNode['fills'] => [
+    { type: 'SOLID', visible: true, opacity, color: WHITE }
+  ]
+
+  function textOn(layers: SceneNode['fills'][], text: SceneNode['fills']) {
+    const graph = new SceneGraph()
+    let parentId = graph.getPages()[0].id
+    for (const fills of layers) parentId = graph.createNode('FRAME', parentId, { fills }).id
+    const label = graph.createNode('TEXT', parentId, { name: 'Label', text: 'Hi', fills: text })
+    return { graph, label }
+  }
+
+  test('composites a translucent card over the opaque fill below it', () => {
+    // A 10% white tint over a dark page stays dark: white text on it reads well.
+    const { graph } = textOn([solid(DARK), tint(0.1)], solid(WHITE))
+
+    expect(lint(graph, 'color-contrast')).toEqual([])
+  })
+
+  test('reports against the composited background', () => {
+    // A 90% white tint over a dark page is nearly white: white text on it does not read.
+    const { graph, label } = textOn([solid(DARK), tint(0.9)], solid(WHITE))
+    const messages = lint(graph, 'color-contrast')
+
+    expect(messages.map((message) => message.nodeId)).toEqual([label.id])
+    expect(messages[0]?.data?.background).not.toBe('#FFFFFF')
+  })
+
+  test('composites translucent text over its background', () => {
+    const faint: SceneNode['fills'] = [
+      { type: 'SOLID', visible: true, opacity: 0.2, color: { r: 0, g: 0, b: 0, a: 1 } }
+    ]
+    const { graph, label } = textOn([solid(WHITE)], faint)
+
+    expect(lint(graph, 'color-contrast').map((message) => message.nodeId)).toEqual([label.id])
+  })
+
+  test('skips text whose only backdrop is translucent', () => {
+    const { graph } = textOn([tint(0.1)], solid(WHITE))
+
+    expect(lint(graph, 'color-contrast')).toEqual([])
+  })
+
+  test('composites a translucent fill over an opaque fill on the same frame', () => {
+    // The frame paints white, then a 10% dark tint over it: dark gray text on it does not read.
+    const frame: SceneNode['fills'] = [
+      ...solid(WHITE),
+      { type: 'SOLID', visible: true, opacity: 0.1, color: DARK }
+    ]
+    const gray = solid({ r: 0.75, g: 0.75, b: 0.75, a: 1 })
+    const { graph, label } = textOn([solid(DARK), frame], gray)
+    const messages = lint(graph, 'color-contrast')
+
+    expect(messages.map((message) => message.nodeId)).toEqual([label.id])
+    expect(messages[0]?.data?.background).toBe('#E8E8E8')
+  })
+
+  test('composites every text fill in paint order', () => {
+    // Half-white over black paints mid gray; the other way round, black would cover the white.
+    const text: SceneNode['fills'] = [
+      ...solid({ r: 0, g: 0, b: 0, a: 1 }),
+      { type: 'SOLID', visible: true, opacity: 0.5, color: WHITE }
+    ]
+    const { graph, label } = textOn([solid(DARK)], text)
+    const messages = lint(graph, 'color-contrast')
+
+    expect(messages.map((message) => message.nodeId)).toEqual([label.id])
+    expect(messages[0]?.data?.foreground).toBe('#808080')
+  })
+
+  test('skips text with a gradient in its fills', () => {
+    const text: SceneNode['fills'] = [
+      { type: 'GRADIENT_LINEAR', visible: true, opacity: 1, color: WHITE },
+      { type: 'SOLID', visible: true, opacity: 0.5, color: WHITE }
+    ]
+    const { graph } = textOn([solid(WHITE)], text)
+
+    expect(lint(graph, 'color-contrast')).toEqual([])
+  })
+
+  test('measures text whose gradient is covered by an opaque fill', () => {
+    const text: SceneNode['fills'] = [
+      { type: 'GRADIENT_LINEAR', visible: true, opacity: 1, color: WHITE },
+      ...solid(WHITE)
+    ]
+    const { graph, label } = textOn([solid(WHITE)], text)
+
+    expect(lint(graph, 'color-contrast').map((message) => message.nodeId)).toEqual([label.id])
+  })
+
+  test('skips text under a gradient that covers the opaque fill', () => {
+    // A light gradient covers the dark fill: dark text on it is not dark on dark.
+    const frame: SceneNode['fills'] = [
+      ...solid(DARK),
+      { type: 'GRADIENT_LINEAR', visible: true, opacity: 1, color: WHITE }
+    ]
+    const { graph } = textOn([frame], solid({ r: 0.15, g: 0.15, b: 0.15, a: 1 }))
+
+    expect(lint(graph, 'color-contrast')).toEqual([])
+  })
+
+  test('skips fully transparent text', () => {
+    const hidden: SceneNode['fills'] = [{ type: 'SOLID', visible: true, opacity: 0, color: WHITE }]
+    const { graph } = textOn([solid(WHITE)], hidden)
+
+    expect(lint(graph, 'color-contrast')).toEqual([])
   })
 })
 
