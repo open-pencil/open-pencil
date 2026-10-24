@@ -60,7 +60,7 @@ import {
   isReflowedPathText
 } from './text/derived'
 import { drawLaidOutEmoji, drawSavedEmoji } from './text/emoji'
-import { stickyPlaceholderNode } from './text/sticky-placeholder'
+import { stickyPlaceholderNode } from './text/placeholder'
 
 function drawVisibleFills(
   r: SkiaRenderer,

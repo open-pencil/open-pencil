@@ -4,7 +4,9 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type {
+  ConnectorControlPoint,
   ConnectorEndpoint,
+  ConnectorLabelPosition,
   ConnectorLineType,
   ConnectorMagnet,
   SceneGraph,
@@ -51,6 +53,69 @@ const CONNECTOR_RECORD_FIELDS = [
   'pluginData',
   'pluginRelaunchData'
 ] as const
+
+interface KiwiControlPoint {
+  position?: Vector
+  axis?: Vector
+}
+
+/**
+ * A record's control points, in its parent's axes, as points in the connector's own: an elbow's
+ * segments along their axes, or a curve's two control points.
+ */
+function controlPointsOf(value: unknown, origin: Vector): ConnectorControlPoint[] {
+  if (!Array.isArray(value)) return []
+  return (value as KiwiControlPoint[]).map(({ position, axis }) => ({
+    position: { x: (position?.x ?? 0) - origin.x, y: (position?.y ?? 0) - origin.y },
+    direction: axis?.x ? 'HORIZONTAL' : 'VERTICAL'
+  }))
+}
+
+function curveHandlesOf(value: unknown, origin: Vector): [Vector, Vector] | null {
+  const points = controlPointsOf(value, origin)
+  const first = points.at(0)
+  const second = points.at(1)
+  return first && second ? [first.position, second.position] : null
+}
+
+/** Control points as Figma writes them, in the connector's parent's axes. */
+function kiwiControlPoints(points: ConnectorControlPoint[], origin: Vector) {
+  return points.map(({ position, direction }) => ({
+    position: { x: position.x + origin.x, y: position.y + origin.y },
+    axis: direction === 'HORIZONTAL' ? { x: 1, y: 0 } : { x: 0, y: 1 }
+  }))
+}
+
+const LABEL_SECTIONS: ReadonlySet<string> = new Set<ConnectorLabelPosition['section']>([
+  'MIDDLE_TO_START',
+  'MIDDLE_TO_END'
+])
+const LABEL_OFF_AXES: ReadonlySet<string> = new Set<ConnectorLabelPosition['offAxis']>([
+  'NONE',
+  'ABOVE',
+  'BELOW'
+])
+
+interface KiwiTextMidpoint {
+  section?: string
+  offset?: number
+  offAxisOffset?: string
+}
+
+/** Where a record's label was dragged to, from Figma's `connectorTextMidpoint`. */
+function labelPositionOf(value: unknown): ConnectorLabelPosition | null {
+  if (!value || typeof value !== 'object') return null
+  const { section, offset, offAxisOffset } = value as KiwiTextMidpoint
+  if (!section || !LABEL_SECTIONS.has(section) || typeof offset !== 'number') return null
+  return {
+    section: section as ConnectorLabelPosition['section'],
+    offset,
+    offAxis:
+      offAxisOffset && LABEL_OFF_AXES.has(offAxisOffset)
+        ? (offAxisOffset as ConnectorLabelPosition['offAxis'])
+        : 'NONE'
+  }
+}
 
 interface KiwiConnectorEndpoint {
   endpointNodeID?: GUID
@@ -179,7 +244,10 @@ function readConnector(
         ? (lineType as ConnectorLineType)
         : 'ELBOWED',
     connectorStartCap: capOf(record.connectorStartCap, 'ROUND'),
-    connectorEndCap: capOf(record.connectorEndCap, 'ARROW_LINES')
+    connectorEndCap: capOf(record.connectorEndCap, 'ARROW_LINES'),
+    connectorControlPoints: controlPointsOf(record.connectorControlPoints, connector),
+    connectorCurveHandles: curveHandlesOf(record.connectorBezierControlPoints, connector),
+    connectorLabelPosition: labelPositionOf(record.connectorTextMidpoint)
   })
   const text = overrides.get(label)?.textData?.characters ?? ''
   const plate = sublayerProps(
@@ -227,6 +295,39 @@ function kiwiConnectorEndpoint(
 }
 
 /**
+ * Joins the ends of the connectors in `records` to the layers they are bound to, once every layer
+ * an export writes has its GUID. A connector written before a layer its end joins found no GUID
+ * for that layer and was written free; when the layer turns out to be written too, the end joins
+ * it again, as Figma pastes it.
+ */
+export function relinkConnectorEnds(
+  records: readonly KiwiNodeChange[],
+  graph: SceneGraph,
+  nodeIdToGuid: ReadonlyMap<string, GUID>
+): void {
+  const recordByGuid = new Map(
+    records.flatMap((record) => (record.guid ? [[guidToString(record.guid), record] as const] : []))
+  )
+  for (const [nodeId, guid] of nodeIdToGuid) {
+    const node = graph.getNode(nodeId)
+    const record = recordByGuid.get(guidToString(guid))
+    if (node?.type !== 'CONNECTOR' || record?.type !== 'CONNECTOR') continue
+    for (const [field, endpoint] of [
+      ['connectorStart', node.connectorStart],
+      ['connectorEnd', node.connectorEnd]
+    ] as const) {
+      const joined = endpoint?.nodeId ? nodeIdToGuid.get(endpoint.nodeId) : undefined
+      if (!endpoint || !joined || !recordByGuid.has(guidToString(joined))) continue
+      record[field] = {
+        endpointNodeID: { ...joined },
+        position: { ...endpoint.position },
+        magnet: endpoint.magnet
+      }
+    }
+  }
+}
+
+/**
  * A connector's record: its ends, line type, and caps, and its line, label, and label plate as
  * `nodeGenerationData` entries, with the route as drawn under `derivedImmutableFrameData`. As for
  * a sticky note, the derived data is written only when the label is shaped, since Figma draws a
@@ -246,6 +347,20 @@ function writeConnector(
   record.connectorLineStyle = node.connectorLineType
   record.connectorStartCap = node.connectorStartCap
   record.connectorEndCap = node.connectorEndCap
+  if (node.connectorControlPoints.length > 0) {
+    record.connectorControlPoints = kiwiControlPoints(node.connectorControlPoints, node)
+  }
+  if (node.connectorCurveHandles) {
+    // Figma gives a curve's control points a horizontal axis, which nothing reads.
+    record.connectorBezierControlPoints = kiwiControlPoints(
+      node.connectorCurveHandles.map((position) => ({ position, direction: 'HORIZONTAL' })),
+      node
+    )
+  }
+  if (node.connectorLabelPosition) {
+    const { section, offset, offAxis } = node.connectorLabelPosition
+    record.connectorTextMidpoint = { section, offset, offAxisOffset: offAxis }
+  }
   record.connectorType = 'MANUAL'
   record.connectorVersion = 1
   const { line, label, labelBackground } = sublayers

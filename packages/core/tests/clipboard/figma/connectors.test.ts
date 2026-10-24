@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import * as v from 'valibot'
+
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
@@ -8,7 +10,13 @@ import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { connectorSublayers, layoutConnector } from '@open-pencil/scene-graph/connectors'
+import {
+  boundEndpoint,
+  connectorSublayers,
+  createConnector,
+  freeEndpoint,
+  layoutConnector
+} from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** Two FigJam stickies joined by four connectors, as FigJam copies them. */
@@ -126,6 +134,119 @@ describe('FigJam connectors', () => {
         route: pageRoute(drawn.graph, figma)
       })
     }
+  })
+})
+
+/** A curve's control points as a `.fig` record keeps them. */
+const HANDLES = v.optional(
+  v.array(v.object({ position: v.object({ x: v.number(), y: v.number() }) }))
+)
+
+test('a connector copied before a layer it joins keeps both ends joined', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const target = graph.createNode('RECTANGLE', page, { name: 'Target', x: 400, width: 100, height: 100 })
+  const connector = createConnector(graph, page, {
+    start: freeEndpoint(0, 0),
+    end: freeEndpoint(0, 0)
+  })
+  const before = graph.createNode('RECTANGLE', page, { name: 'Before', width: 100, height: 100 })
+  graph.updateNode(connector.id, {
+    name: 'Joined',
+    connectorStart: boundEndpoint(before.id),
+    connectorEnd: boundEndpoint(target.id)
+  })
+  // The connector is written before Before, whose GUID it then has no record of yet.
+  const nodes = [target, connector, before].map((node) => expectDefined(graph.getNode(node.id)))
+  const parsed = expectDefined(
+    await parseFigmaClipboard(expectDefined(await buildFigmaClipboardHTML(nodes, graph)))
+  )
+  const guidOf = (name: string) => parsed.nodes.find((node) => node.name === name)?.guid
+  const record = expectDefined(parsed.nodes.find((node) => node.name === 'Joined'))
+  expect(record.connectorStart).toMatchObject({ endpointNodeID: guidOf('Before'), magnet: 'AUTO' })
+  expect(record.connectorEnd).toMatchObject({ endpointNodeID: guidOf('Target'), magnet: 'AUTO' })
+})
+
+/**
+ * A FigJam section holding two shapes, an elbow dragged at its middle and then its first segment,
+ * and a curve dragged at its midpoint, as FigJam copies them.
+ */
+const DRAGGED = join(FIXTURES, 'clipboard/figjam-connector-controls.html')
+
+describe('FigJam connectors dragged into place', () => {
+  test('keep their control points and route again as Figma drew them', async () => {
+    const { graph } = await importFixture(await Bun.file(DRAGGED).text())
+    // They sit inside the section the copy holds.
+    const named = (name: string) =>
+      expectDefined([...graph.getAllNodes()].find((node) => node.name === name))
+    const elbow = named('cp-elbow')
+    const curve = named('cp-curve')
+    // Figma keeps them in the section's axes; here they are in the connector's own.
+    expect(
+      elbow.connectorControlPoints.map(({ position, direction }) => [
+        direction,
+        position.x + elbow.x,
+        position.y + elbow.y
+      ])
+    ).toEqual([
+      ['VERTICAL', 304, 80],
+      ['HORIZONTAL', 376, 48],
+      ['VERTICAL', 448, 240]
+    ])
+    expect(curve.connectorCurveHandles).not.toBeNull()
+    for (const connector of [elbow, curve]) {
+      const figma = pageRoute(graph, connector)
+      layoutConnector(graph, connector)
+      expect({ name: connector.name, route: pageRoute(graph, connector) }).toEqual({
+        name: connector.name,
+        route: figma
+      })
+    }
+  })
+
+  test('export writes their control points where Figma wrote them', async () => {
+    const html = await Bun.file(DRAGGED).text()
+    const source = expectDefined(await parseFigmaClipboard(html))
+    const { graph, ids } = await importFixture(html)
+    // A label dragged along the line keeps its place.
+    const elbow = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.name === 'cp-elbow')
+    )
+    graph.updateNode(elbow.id, {
+      connectorLabelPosition: { section: 'MIDDLE_TO_END', offset: 0.5, offAxis: 'ABOVE' }
+    })
+    const exported = expectDefined(
+      await parseFigmaClipboard(
+        expectDefined(
+          await buildFigmaClipboardHTML(
+            ids.map((id) => expectDefined(graph.getNode(id))),
+            graph
+          )
+        )
+      )
+    )
+    for (const name of ['cp-elbow', 'cp-curve']) {
+      const before = expectDefined(source.nodes.find((node) => node.name === name))
+      const after = expectDefined(exported.nodes.find((node) => node.name === name))
+      expect({ name, points: after.connectorControlPoints }).toEqual({
+        name,
+        points: before.connectorControlPoints
+      })
+      const handles = (node: typeof before) =>
+        v
+          .parse(HANDLES, node.connectorBezierControlPoints)
+          ?.map(({ position }) => [
+            Math.round(position.x * 100) / 100,
+            Math.round(position.y * 100) / 100
+          ])
+      expect({ name, handles: handles(after) }).toEqual({ name, handles: handles(before) })
+    }
+    const reread = expectDefined(exported.nodes.find((node) => node.name === 'cp-elbow'))
+    expect(reread.connectorTextMidpoint).toEqual({
+      section: 'MIDDLE_TO_END',
+      offset: 0.5,
+      offAxisOffset: 'ABOVE'
+    })
   })
 })
 

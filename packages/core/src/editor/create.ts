@@ -36,6 +36,7 @@ import { createColorSpaceActions } from './color-space'
 import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
 import { createConnectorDrawActions, createConnectorEndpointActions } from './connectors/draw'
+import { createConnectorLineActions } from './connectors/line'
 import { createConnectorRouting } from './connectors/routing'
 import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
@@ -314,6 +315,7 @@ export function createEditor(options?: EditorOptions) {
     nodes.beginNodePreview,
     clipboard.deleteNodes
   )
+  const connectorLines = createConnectorLineActions(ctx, nodes.beginNodePreview)
   const connectorStyles = createConnectorStyleActions(ctx)
   const lineEnds = createLineEndActions(ctx, nodes.beginNodePreview)
   const shaders = createShaderActions(ctx, nodes)
@@ -491,6 +493,7 @@ export function createEditor(options?: EditorOptions) {
     setStatusWorkflow: statuses.setStatusWorkflow,
     ...connectorDrawing,
     ...connectorEndpoints,
+    ...connectorLines,
     ...lineEnds,
     ...connectorStyles,
     ...shaders,

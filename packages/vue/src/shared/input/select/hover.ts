@@ -1,6 +1,7 @@
 import type { Editor } from '@open-pencil/core'
 import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
 
+import { connectorLineCursor } from '#vue/shared/input/connector/line'
 import {
   MOVE_CURSOR,
   buildResizeCursor,
@@ -87,11 +88,12 @@ export function updateHoverCursor(
     return null
   }
 
-  // As a press does: a line's ends, then resizing, then a label, then rotation; a read-only
-  // document has none.
+  // As a press does: a line's ends, a connector's line handles, then resizing, then a label, then
+  // rotation; a read-only document has none.
   const cursor = editor.state.readOnly
     ? null
     : ((lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
+      connectorLineCursor(editor, cx, cy) ??
       getResizeCursorForSelection(cx, cy, editor) ??
       (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor)))
   updateHoveredNode(cx, cy, editor, fns, deep)

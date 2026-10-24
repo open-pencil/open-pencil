@@ -191,3 +191,11 @@ export function boundEndpoint(
 ): ConnectorEndpoint {
   return { nodeId, magnet, position: { x: 0, y: 0 } }
 }
+
+/** The connector whose label `node` is, if it is one. */
+export function labelledConnector(graph: SceneGraph, node: SceneNode): SceneNode | null {
+  if (node.type !== 'TEXT' || !node.parentId) return null
+  const owner = graph.getNode(node.parentId)
+  if (owner?.type !== 'CONNECTOR') return null
+  return connectorSublayers(graph, owner)?.label.id === node.id ? owner : null
+}

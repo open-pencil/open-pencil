@@ -173,6 +173,8 @@ export class SkiaRenderer {
    * null for a canvas that draws only the document, such as an export.
    */
   stickyPlaceholder: string | null = null
+  /** What an empty connector label shows while it is typed into; null draws nothing. */
+  connectorLabelPlaceholder: string | null = null
   tracksSceneSettlement = true
   /** Colour space this renderer's surface presents; colours convert into it when painting. */
   presentationColorSpace: RenderColorSpace = 'srgb'

@@ -277,6 +277,26 @@ export interface ConnectorEndpoint {
 }
 
 export type ConnectorLineType = 'ELBOWED' | 'STRAIGHT' | 'CURVED'
+
+/**
+ * A segment of an elbow connector that was dragged into place: the line it runs along, through
+ * `position`, in the connector's own axes. `position` lies midway along the segment as last drawn.
+ */
+export interface ConnectorControlPoint {
+  position: Vector
+  direction: 'HORIZONTAL' | 'VERTICAL'
+}
+
+/**
+ * Where a connector's label was dragged along its line: `offset` of the way from the middle of
+ * the line towards one end, by length, on the line or to one side of it. `ABOVE` is the side to
+ * the left of the line's direction.
+ */
+export interface ConnectorLabelPosition {
+  section: 'MIDDLE_TO_START' | 'MIDDLE_TO_END'
+  offset: number
+  offAxis: 'NONE' | 'ABOVE' | 'BELOW'
+}
 export type TextAlignVertical = 'TOP' | 'CENTER' | 'BOTTOM'
 export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
 export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
@@ -716,6 +736,18 @@ export interface SceneNode {
   connectorLineType: ConnectorLineType
   connectorStartCap: StrokeCap
   connectorEndCap: StrokeCap
+  /**
+   * An elbow connector's segments between its first and last, in order, once one was dragged;
+   * empty while it routes itself. Kept, unused, while the line is straight or curved.
+   */
+  connectorControlPoints: ConnectorControlPoint[]
+  /**
+   * A curved connector's two cubic control points, in the connector's own axes, once its curve
+   * was dragged; null while it curves by itself. Kept, unused, while the line is not curved.
+   */
+  connectorCurveHandles: [Vector, Vector] | null
+  /** Where a connector's label was dragged to; null while it sits midway along the line. */
+  connectorLabelPosition: ConnectorLabelPosition | null
 
   isMask: boolean
   maskType: MaskType

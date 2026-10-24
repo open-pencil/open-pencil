@@ -315,6 +315,9 @@ export function cloneNodeProps(
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null,
     targetAspectRatio: src.targetAspectRatio ? { ...src.targetAspectRatio } : null,
     connectorStart: src.connectorStart ? copyConnectorEndpoint(src.connectorStart) : null,
-    connectorEnd: src.connectorEnd ? copyConnectorEndpoint(src.connectorEnd) : null
+    connectorEnd: src.connectorEnd ? copyConnectorEndpoint(src.connectorEnd) : null,
+    connectorControlPoints: structuredClone(src.connectorControlPoints),
+    connectorCurveHandles: structuredClone(src.connectorCurveHandles),
+    connectorLabelPosition: src.connectorLabelPosition ? { ...src.connectorLabelPosition } : null
   }
 }

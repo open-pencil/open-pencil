@@ -9,6 +9,8 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import {
+  CONNECTOR_SEGMENT_HANDLE,
+  connectorRouteHandles,
   connectorScreenEnds,
   createSceneGeometry,
   viewportMatrix,
@@ -66,7 +68,36 @@ export function drawConnectorHover(
   strokeConnectorLine(r, canvas, graph, connector, r.auxStroke, preview)
 }
 
-/** A selected connector, as FigJam shows it: its line outlined and a handle at each end. */
+/**
+ * The handles that drag a selected connector's line, as FigJam draws them: a bar along the middle
+ * of each elbow segment, no longer than the segment, and a dot midway along a curve, both solid.
+ */
+function drawConnectorRouteHandles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  connector: SceneNode,
+  preview?: RotationPreview | null
+) {
+  r.auxFill.setMaskFilter(null)
+  r.auxFill.setColor(r.selColor())
+  const { length, thickness } = CONNECTOR_SEGMENT_HANDLE
+  for (const handle of connectorRouteHandles(graph, connector, r, preview)) {
+    if (handle.kind === 'curve') {
+      canvas.drawCircle(handle.at.x, handle.at.y, CONNECTOR_HANDLE_RADIUS, r.auxFill)
+      continue
+    }
+    const along = Math.min(length, handle.length)
+    const [width, height] = handle.vertical ? [thickness, along] : [along, thickness]
+    const rect = r.ck.XYWHRect(handle.at.x - width / 2, handle.at.y - height / 2, width, height)
+    canvas.drawRRect(r.ck.RRectXY(rect, thickness / 2, thickness / 2), r.auxFill)
+  }
+}
+
+/**
+ * A selected connector, as FigJam shows it: its line outlined, the handles that drag its line,
+ * and a handle at each end.
+ */
 export function drawConnectorSelection(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -75,6 +106,7 @@ export function drawConnectorSelection(
   preview?: RotationPreview | null
 ) {
   drawConnectorHover(r, canvas, graph, connector, preview)
+  drawConnectorRouteHandles(r, canvas, graph, connector, preview)
   const ends = connectorScreenEnds(graph, connector, r, preview)
   if (!ends) return
   drawDot(r, canvas, ends.start, CONNECTOR_HANDLE_RADIUS, false)

@@ -19,6 +19,8 @@ export const editorMessageDefaults = {
   arcRatio: 'Ratio',
   /** What an empty sticky note shows in its body on the canvas. */
   stickyPlaceholder: 'Type anything, @mention anyone',
+  /** What an empty connector label shows on the canvas while it is typed into. */
+  connectorLabelPlaceholder: 'Add text',
   showUI: params('Show UI ({shortcut})'),
   previewing: 'Previewing',
   startPreview: params('Preview ({shortcut})'),

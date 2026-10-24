@@ -5,6 +5,7 @@ import {
 } from '@open-pencil/fig/clipboard'
 import {
   placeSlotContent,
+  relinkConnectorEnds,
   type FigNodeChangeExportRuntime,
   sceneNodeToKiwi,
   makeDocumentNodeChange,
@@ -230,6 +231,8 @@ async function writeFigmaClipboardHTML(
   ).length
   placeSlotContent(slotContentRecords, dependencyCanvas, written, fractionalPosition)
   nodeChanges.push(...slotContentRecords)
+  // A connector copied before a layer its end joins is joined to it now that both have GUIDs.
+  relinkConnectorEnds(nodeChanges, graph, nodeIdToGuid)
   // Pair each text record with the node it was written from; instance content and slot
   // content are not emitted in traversal order.
   const textById = new Map(exportedTextNodes.map((node) => [node.id, node]))

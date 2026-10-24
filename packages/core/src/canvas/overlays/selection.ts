@@ -119,7 +119,9 @@ function drawSingleSelection(
 
   const rotation = node.rotation
   if (node.type === 'CONNECTOR') {
-    drawConnectorSelection(r, canvas, graph, node, preview)
+    // While its label is typed into, FigJam shows only the label's box.
+    const label = overlays.editingTextId ? graph.getNode(overlays.editingTextId) : undefined
+    if (label?.parentId !== node.id) drawConnectorSelection(r, canvas, graph, node, preview)
   } else if (isPathText) {
     drawTextPathSelection(r, canvas, node, rotation, graph, editing, preview)
     if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)

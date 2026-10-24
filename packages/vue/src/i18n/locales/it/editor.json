@@ -8,6 +8,7 @@
   "arcSweep": "Ampiezza",
   "arcRatio": "Rapporto",
   "stickyPlaceholder": "Scrivi qualsiasi cosa, @menziona qualcuno",
+  "connectorLabelPlaceholder": "Aggiungi testo",
   "showUI": "Mostra interfaccia ({shortcut})",
   "previewing": "Anteprima",
   "resetPreview": "Ripristina",

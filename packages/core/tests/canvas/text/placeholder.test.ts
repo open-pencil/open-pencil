@@ -3,9 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { createConnector, connectorSublayers, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
 
-import { stickyPlaceholderNode } from '#core/canvas/text/sticky-placeholder'
+import { connectorLabelPlaceholderNode, stickyPlaceholderNode } from '#core/canvas/text/placeholder'
 
 function emptyNote() {
   const graph = new SceneGraph()
@@ -34,5 +35,32 @@ describe('sticky note placeholder', () => {
     expect(
       stickyPlaceholderNode(graph, expectDefined(graph.getNode(body.id)), 'Type anything')
     ).toBeNull()
+  })
+})
+
+describe('connector label placeholder', () => {
+  function emptyLabel() {
+    const graph = new SceneGraph()
+    const connector = createConnector(graph, graph.getPages()[0].id, {
+      start: freeEndpoint(0, 0),
+      end: freeEndpoint(200, 0)
+    })
+    return { graph, ...expectDefined(connectorSublayers(graph, connector)) }
+  }
+
+  test('an empty label shows it only while it is typed into, at 30% black', () => {
+    const { graph, label } = emptyLabel()
+    const drawn = expectDefined(connectorLabelPlaceholderNode(graph, label, 'Add text', label.id))
+    expect(drawn.text).toBe('Add text')
+    expect(drawn.fills[0]).toMatchObject({ opacity: 0.3, color: { r: 0, g: 0, b: 0 } })
+    expect(connectorLabelPlaceholderNode(graph, label, 'Add text', null)).toBeNull()
+  })
+
+  test('a label with text, or other text being edited, shows none', () => {
+    const { graph, label, line } = emptyLabel()
+    expect(connectorLabelPlaceholderNode(graph, line, 'Add text', line.id)).toBeNull()
+    graph.updateNode(label.id, { text: 'Next' })
+    const typed = expectDefined(graph.getNode(label.id))
+    expect(connectorLabelPlaceholderNode(graph, typed, 'Add text', label.id)).toBeNull()
   })
 })

@@ -55,6 +55,13 @@ export interface DragConnectorEnd {
   cancel: () => void
 }
 
+/** An elbow segment or the curve of a selected connector dragged into place. */
+export interface DragConnectorLine {
+  type: 'connector-line'
+  commit: () => void
+  cancel: () => void
+}
+
 /** An end of a selected line or arrow dragged to aim it. */
 export interface DragLineEnd {
   type: 'line-end'
@@ -286,6 +293,7 @@ export type DragState =
   | DragStickyDraw
   | DragConnectorDraw
   | DragConnectorEnd
+  | DragConnectorLine
   | DragLineEnd
   | DragGradient
   | DragMove

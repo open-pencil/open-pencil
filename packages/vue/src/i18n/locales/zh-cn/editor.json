@@ -8,6 +8,7 @@
   "arcSweep": "扫掠",
   "arcRatio": "比例",
   "stickyPlaceholder": "输入任意内容，@提及任何人",
+  "connectorLabelPlaceholder": "添加文本",
   "showUI": "显示界面（{shortcut}）",
   "previewing": "预览中",
   "resetPreview": "重置",

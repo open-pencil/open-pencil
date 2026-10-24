@@ -86,6 +86,8 @@ describe('shapes with text', () => {
     })
     expect(shape.fills[0]?.color).toEqual(green)
     expect(shape.strokes[0]).toMatchObject({ color: darkGreen, weight: 4 })
+    // Connectors keep clear of the stroke by its weight.
+    expect(shape).toMatchObject({ strokeWeight: 4, strokeAlign: 'CENTER' })
     const label = expectDefined(shapeWithTextLabel(graph, shape))
     expect(label).toMatchObject({
       text: 'Decision',
