@@ -1,5 +1,5 @@
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
-import { isDrawioExportFileName, readDrawioBytes } from '@open-pencil/drawio'
+import { isDrawioExportFileName, readDrawioBytes, writeDrawioFile } from '@open-pencil/drawio'
 import {
   buildPenGraph,
   isDataURL,
@@ -12,7 +12,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { drawIcon, iconify, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
 
-import { drawioToSceneGraph } from './formats/drawio'
+import { drawioToSceneGraph, sceneGraphToDrawio } from './formats/drawio'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -315,8 +315,14 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
   extensions: ['drawio', 'dio'],
   mimeTypes: ['application/vnd.jgraph.mxfile'],
   support: {
-    readDocument: true
+    readDocument: true,
+    writeDocument: true,
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
   },
+  exportOptions: FIXED_SIZE_EXPORT,
   // A draw.io PNG or SVG export opens as its diagram when its name says it is one.
   matchesFile(fileName, mimeType) {
     const ext = lowerExt(fileName)
@@ -340,6 +346,30 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
       graph.getPages().map((page) => page.id)
     )
     return { graph, sourceFormat: 'drawio' }
+  },
+  async writeDocument(graph) {
+    const pageIds = graph.getPages().map((page) => page.id)
+    return drawioResult(writeDrawioFile(sceneGraphToDrawio(graph, { pageIds })))
+  },
+  // A page or a selection goes as a one-page diagram; the document, every page.
+  async exportContent(request) {
+    if (request.target.scope === 'document') {
+      const pageIds = request.graph.getPages().map((page) => page.id)
+      return drawioResult(writeDrawioFile(sceneGraphToDrawio(request.graph, { pageIds })))
+    }
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    return drawioResult(writeDrawioFile(sceneGraphToDrawio(request.graph, target)))
+  }
+}
+
+function drawioResult(data: string): ExportResult {
+  return {
+    format: 'drawio',
+    mimeType: 'application/vnd.jgraph.mxfile',
+    extension: 'drawio',
+    data,
+    encoding: 'utf8'
   }
 }
 
