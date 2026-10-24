@@ -17,7 +17,12 @@ describe('Tauri file actions', () => {
       expect(cmd).toBe('plugin:dialog|open')
       expect(args).toEqual({
         options: {
-          filters: [{ name: 'Design file', extensions: ['fig', 'pen', 'html', 'htm', 'xhtml'] }],
+          filters: [
+            {
+              name: 'Design file',
+              extensions: ['fig', 'pen', 'drawio', 'dio', 'html', 'htm', 'xhtml']
+            }
+          ],
           multiple: true
         }
       })

@@ -1,4 +1,5 @@
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
+import { isDrawioExportFileName, readDrawioBytes } from '@open-pencil/drawio'
 import {
   buildPenGraph,
   isDataURL,
@@ -11,6 +12,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { drawIcon, iconify, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
 
+import { drawioToSceneGraph } from './formats/drawio'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -305,6 +307,42 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   }
 }
 
+export const drawioFormat: IOFormatAdapter<'drawio'> = {
+  id: 'drawio',
+  label: 'draw.io Diagram',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['drawio', 'dio'],
+  mimeTypes: ['application/vnd.jgraph.mxfile'],
+  support: {
+    readDocument: true
+  },
+  // A draw.io PNG or SVG export opens as its diagram when its name says it is one.
+  matchesFile(fileName, mimeType) {
+    const ext = lowerExt(fileName)
+    return (
+      ext === 'drawio' ||
+      ext === 'dio' ||
+      isDrawioExportFileName(fileName) ||
+      mimeType === 'application/vnd.jgraph.mxfile'
+    )
+  },
+  async readDocument(input) {
+    const file = readDrawioBytes(input.data)
+    if (!file) throw new Error('This file holds no draw.io diagram')
+    if (file.unreadable.length > 0) {
+      throw new Error(`Could not read the draw.io pages ${file.unreadable.join(', ')}`)
+    }
+    const graph = drawioToSceneGraph(file)
+    // draw.io stores label text, not the sizes it lays out to.
+    layoutAuthoredNodes(
+      graph,
+      graph.getPages().map((page) => page.id)
+    )
+    return { graph, sourceFormat: 'drawio' }
+  }
+}
+
 export const pngFormat = rasterFormat('PNG')
 export const jpgFormat = rasterFormat('JPG')
 export const webpFormat = rasterFormat('WEBP')
@@ -487,6 +525,7 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
+  drawioFormat,
   pngFormat,
   jpgFormat,
   webpFormat,
