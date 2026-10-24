@@ -50,6 +50,7 @@ test('canonical destinations are registered before they hold files', async () =>
     'dom-css',
     'design-jsx',
     'emit',
+    'drawio',
     'pen',
     'cli',
     'mcp'
