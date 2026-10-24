@@ -52,16 +52,24 @@ export function cloudAIClient(workspaceId: string): CloudAIClient | null {
   return createCloudAIClient({ endpoint: home.endpoint, tokens, fetch: cloudFetch })
 }
 
-/** The Home server's workspaces whose plan includes AI, in the order the server lists them. */
+/**
+ * The Home server's workspaces whose plan includes AI, in the order the server lists them. Rejects
+ * when none qualifies and a check failed, since an eligible workspace may be among the failed.
+ */
 export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
   const home = homeAI.value
   if (!home) return []
   const api = cloudAPIClient(home.server, home.discovery)
-  const entitled = await Promise.all(
+  const checks = await Promise.allSettled(
     home.connection.workspaces.map(async (workspace) => {
-      const entitlements = await api.getWorkspaceEntitlements(workspace.id).catch(() => null)
-      return entitlements?.features.cloudAI ? { id: workspace.id, name: workspace.name } : null
+      const entitlements = await api.getWorkspaceEntitlements(workspace.id)
+      return entitlements.features.cloudAI ? { id: workspace.id, name: workspace.name } : null
     })
   )
-  return compact(entitled)
+  const entitled = compact(
+    checks.map((check) => (check.status === 'fulfilled' ? check.value : null))
+  )
+  const failure = checks.find((check) => check.status === 'rejected')
+  if (!entitled.length && failure) throw failure.reason
+  return entitled
 }

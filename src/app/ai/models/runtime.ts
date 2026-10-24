@@ -7,9 +7,9 @@ import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/lan
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
-import type { ModelCredentialStore } from '@/app/ai/providers/types'
 import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import type { ModelCredentialStore } from '@/app/ai/providers/types'
 import { cloudAIClient } from '@/app/cloud/integration'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import {

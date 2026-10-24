@@ -219,6 +219,8 @@ export const aiMessageDefaults = {
   cloudAINoWorkspace: 'None of your workspaces on this server includes AI.',
   cloudAICatalogFailed:
     'OpenPencil Cloud could not list its models. Check your connection and try again.',
+  cloudAIWorkspacesFailed:
+    'OpenPencil Cloud could not check which of your workspaces include AI. Check your connection and try again.',
   chatCloudCreditsExhausted:
     'This workspace has used this month’s AI credits. Manage its plan to add more.',
   manageCloudPlanAction: 'Manage plan',

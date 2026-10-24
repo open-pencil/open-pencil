@@ -15,15 +15,18 @@ import {
 
 /**
  * Where a draft for Cloud's AI service stands: the Home server is signed out or has no service,
- * its workspaces are loading, none of them includes AI, one is chosen, or its models could not
- * be listed.
+ * its workspaces are loading, could not be checked, or none of them includes AI, one is chosen,
+ * or its models could not be listed.
  */
 export type CloudModelSelectionState =
   | 'unavailable'
   | 'loading'
+  | 'workspaces-failed'
   | 'no-workspace'
   | 'ready'
   | 'catalog-failed'
+
+type WorkspaceListState = Exclude<CloudModelSelectionState, 'ready' | 'catalog-failed'> | 'listed'
 
 /** The Home server's AI service as the selection reads it. */
 export interface CloudModelSource {
@@ -51,27 +54,38 @@ export function useCloudModelSelection(
   const isCloud = computed(() => draft.providerID === OPENPENCIL_AI_PROVIDER)
   const workspaces = ref<CloudAIWorkspace[]>([])
   const models = ref<ModelOption[]>([])
-  const state = ref<CloudModelSelectionState>('unavailable')
+  // The workspace list and the catalog load separately, so neither's answer hides the other's failure.
+  const workspaceState = ref<WorkspaceListState>('unavailable')
+  const catalogFailed = ref(false)
+  const state = computed<CloudModelSelectionState>(() => {
+    if (workspaceState.value !== 'listed') return workspaceState.value
+    return catalogFailed.value ? 'catalog-failed' : 'ready'
+  })
 
+  const workspaceAttempt = ref(0)
   // Signing out, switching accounts or choosing another provider supersedes a pending list.
   let workspaceRequest = 0
   watch(
-    [isCloud, cloud.identity],
+    [isCloud, cloud.identity, workspaceAttempt],
     async ([usesCloud, identity]) => {
       const request = ++workspaceRequest
       if (!usesCloud || !identity) {
         workspaces.value = []
-        state.value = 'unavailable'
+        workspaceState.value = 'unavailable'
         return
       }
-      state.value = 'loading'
-      const listed = await cloud.workspaces()
+      workspaceState.value = 'loading'
+      const listed = await cloud.workspaces().catch(() => null)
       if (request !== workspaceRequest) return
+      if (!listed) {
+        workspaceState.value = 'workspaces-failed'
+        return
+      }
       workspaces.value = listed
       if (!listed.some((workspace) => workspace.id === draft.cloudWorkspaceId)) {
         draft.cloudWorkspaceId = listed[0]?.id
       }
-      state.value = listed.length ? 'ready' : 'no-workspace'
+      workspaceState.value = listed.length ? 'listed' : 'no-workspace'
     },
     { immediate: true }
   )
@@ -89,14 +103,14 @@ export function useCloudModelSelection(
     async ([workspaceId, identity]) => {
       const request = ++catalogRequest
       models.value = []
+      catalogFailed.value = false
       if (!workspaceId || !identity) return
-      if (state.value === 'catalog-failed') state.value = 'ready'
       const client = cloud.client(workspaceId)
       if (!client) return
       const catalog = await client.catalog().catch(() => null)
       if (request !== catalogRequest) return
       if (!catalog) {
-        state.value = 'catalog-failed'
+        catalogFailed.value = true
         return
       }
       models.value = cloudCatalogModels(catalog)
@@ -112,7 +126,10 @@ export function useCloudModelSelection(
     workspaces,
     models,
     state,
-    /** Lists the models again after a failure. */
-    retryCatalog: () => catalogAttempt.value++
+    /** Lists the workspaces or the models again, whichever failed. */
+    retry: () => {
+      if (state.value === 'workspaces-failed') workspaceAttempt.value++
+      else catalogAttempt.value++
+    }
   }
 }

@@ -160,6 +160,7 @@
   "cloudAIUnavailable": "登录提供 AI 的 OpenPencil Cloud 服务器后即可使用这些模型。",
   "cloudAINoWorkspace": "你在此服务器上的工作区都不包含 AI。",
   "cloudAICatalogFailed": "OpenPencil Cloud 无法列出其模型。请检查网络连接后重试。",
+  "cloudAIWorkspacesFailed": "OpenPencil Cloud 无法确认你的哪些工作区包含 AI。请检查网络连接后重试。",
   "chatCloudCreditsExhausted": "此工作区已用完本月的 AI 额度。请管理其方案以增加额度。",
   "manageCloudPlanAction": "管理方案",
   "chatCloudUnavailable": "OpenPencil Cloud AI 不可用。请登录 OpenPencil Cloud，并在设置中选择一个工作区。",

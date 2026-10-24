@@ -48,7 +48,7 @@ const {
   isCloud,
   cloudWorkspaces,
   cloudState,
-  retryCloudCatalog,
+  retryCloud,
   supportsThinking,
   modelOptions,
   selectedModelValue,
@@ -82,6 +82,7 @@ const cloudWorkspaceOptions = computed(() =>
 )
 const cloudNotice = computed(() => {
   if (cloudState.value === 'unavailable') return ai.value.cloudAIUnavailable
+  if (cloudState.value === 'workspaces-failed') return ai.value.cloudAIWorkspacesFailed
   if (cloudState.value === 'no-workspace') return ai.value.cloudAINoWorkspace
   if (cloudState.value === 'catalog-failed') return ai.value.cloudAICatalogFailed
   return null
@@ -195,10 +196,10 @@ async function remove() {
           >
             <p class="text-[11px] leading-relaxed text-muted">{{ cloudNotice }}</p>
             <AppButton
-              v-if="cloudState === 'catalog-failed'"
+              v-if="cloudState === 'catalog-failed' || cloudState === 'workspaces-failed'"
               variant="outline"
               size="sm"
-              @click="retryCloudCatalog"
+              @click="retryCloud"
             >
               {{ ai.retryRequest }}
             </AppButton>

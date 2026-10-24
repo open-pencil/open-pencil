@@ -160,6 +160,7 @@
   "cloudAIUnavailable": "Inicia sesión en un servidor de OpenPencil Cloud que ofrezca IA para usar estos modelos.",
   "cloudAINoWorkspace": "Ninguno de tus espacios de trabajo en este servidor incluye IA.",
   "cloudAICatalogFailed": "OpenPencil Cloud no pudo listar sus modelos. Comprueba tu conexión e inténtalo de nuevo.",
+  "cloudAIWorkspacesFailed": "OpenPencil Cloud no pudo comprobar cuáles de tus espacios de trabajo incluyen IA. Comprueba tu conexión e inténtalo de nuevo.",
   "chatCloudCreditsExhausted": "Este espacio de trabajo ha usado los créditos de IA de este mes. Gestiona su plan para añadir más.",
   "manageCloudPlanAction": "Gestionar plan",
   "chatCloudUnavailable": "La IA de OpenPencil Cloud no está disponible. Inicia sesión en OpenPencil Cloud y elige un espacio de trabajo en Ajustes.",

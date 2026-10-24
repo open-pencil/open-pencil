@@ -9,6 +9,7 @@ import {
   type CloudModelSource
 } from '@/app/ai/models/settings/profile-editor/cloud'
 import { createModelProfileDraft } from '@/app/ai/models/store'
+import type { AIModelProfileDraft } from '@/app/ai/models/types'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import type { CloudAIWorkspace } from '@/app/cloud/integration'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
@@ -63,6 +64,10 @@ afterEach(() => {
 function select(source: CloudModelSource) {
   const draft = reactive(createModelProfileDraft())
   draft.providerID = OPENPENCIL_AI_PROVIDER
+  return selectDraft(draft, source)
+}
+
+function selectDraft(draft: AIModelProfileDraft, source: CloudModelSource) {
   const scope = effectScope()
   scopes.push(scope)
   const selection = scope.run(() =>
@@ -121,10 +126,10 @@ describe('useCloudModelSelection', () => {
     await settle()
     expect(editor.selection.state.value).toBe('catalog-failed')
 
-    editor.selection.retryCatalog()
+    editor.selection.retry()
     await settle()
     expect(editor.selection.state.value).toBe('ready')
-    editor.selection.retryCatalog()
+    editor.selection.retry()
     await settle()
     home.catalogAnswers[2]?.resolve(catalog('newest'))
     await settle()
@@ -166,5 +171,35 @@ describe('useCloudModelSelection', () => {
     await settle()
 
     expect(editor.selection.models.value.map((model) => model.id)).toEqual(['bob-model'])
+  })
+
+  test('offers a retry when the workspaces could not be checked', async () => {
+    const home = homeCloud()
+    const editor = select(home.source)
+    home.workspaceAnswers[0]?.reject(new Error('offline'))
+    await settle()
+    expect(editor.selection.state.value).toBe('workspaces-failed')
+
+    editor.selection.retry()
+    await settle()
+    home.workspaceAnswers[1]?.resolve([{ id: 'team', name: 'Team' }])
+    await settle()
+
+    expect(editor.selection.state.value).toBe('ready')
+    expect(editor.draft.cloudWorkspaceId).toBe('team')
+  })
+
+  test('keeps a catalog failure for a saved workspace when the list arrives later', async () => {
+    const home = homeCloud()
+    const draft = reactive(createModelProfileDraft())
+    draft.providerID = OPENPENCIL_AI_PROVIDER
+    draft.cloudWorkspaceId = 'team'
+    const editor = selectDraft(draft, home.source)
+    home.catalogAnswers[0]?.reject(new Error('offline'))
+    await settle()
+    home.workspaceAnswers[0]?.resolve([{ id: 'team', name: 'Team' }])
+    await settle()
+
+    expect(editor.selection.state.value).toBe('catalog-failed')
   })
 })
