@@ -26,7 +26,13 @@ const { fill, layerSize = null } = defineProps<{
   /** The layer the fill is on, which a new crop starts by covering, as Fill does. */
   layerSize?: { width: number; height: number } | null
 }>()
-const emit = defineEmits<{ update: [fill: Fill] }>()
+/** `commit` follows an update that is a step of its own, such as a new image, which Escape keeps. */
+const emit = defineEmits<{ update: [fill: Fill]; commit: [] }>()
+
+function updateStep(next: Fill) {
+  emit('update', next)
+  emit('commit')
+}
 
 const store = useEditorStore()
 const { panels } = useI18n()
@@ -45,7 +51,7 @@ onFileChange(async (files) => {
   if (!file) return
   const bytes = new Uint8Array(await file.arrayBuffer())
   const hash = store.storeImage(bytes)
-  emit('update', {
+  updateStep({
     ...fill,
     type: 'IMAGE',
     imageHash: hash,
@@ -69,7 +75,7 @@ const scaleMode = computed({
     if (mode === scaleMode.value) return
     const next: Fill = { ...fill, imageScaleMode: mode }
     if (mode === 'CROP') next.imageTransform = cropStart()
-    emit('update', next)
+    updateStep(next)
   }
 })
 
@@ -80,7 +86,7 @@ function setTileScale(percent: number) {
 }
 
 function rotate() {
-  emit('update', { ...fill, imageRotation: ((fill.imageRotation ?? 0) + 90) % 360 })
+  updateStep({ ...fill, imageRotation: ((fill.imageRotation ?? 0) + 90) % 360 })
 }
 </script>
 

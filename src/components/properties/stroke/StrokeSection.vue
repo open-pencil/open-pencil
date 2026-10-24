@@ -187,6 +187,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
                   )
                 "
                 @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
+                @commit="commitPaintMutation(binding.actions)"
                 @cancel="cancelPaintMutation(binding.actions)"
               />
             </template>
