@@ -25,6 +25,7 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { fillsOwnSizingAxis } from './fill-sizing'
+import { nestedSlotAssignments } from './nested-slot-claims'
 import { exportedNode } from './resolved-bindings'
 
 function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
@@ -254,6 +255,14 @@ export function serializeRuntimePropertyOverrides(
         )
         if (claim) result.push(claim)
       })
+    if (node.type === 'INSTANCE' && node.id !== instance.id) {
+      const resolved = resolveTarget(node, node.id)
+      const assignments = resolved
+        ? nestedSlotAssignments(context, instance, node, localIdCounter)
+        : []
+      if (resolved && assignments.length > 0)
+        result.push({ guidPath: { guids: resolved.path }, componentPropAssignments: assignments })
+    }
     // Slot content the instance owns carries its own values; it has no component address.
     if (ownsSlotContent(context.graph, node)) return
     for (const child of context.graph.getChildren(node.id)) visit(child)

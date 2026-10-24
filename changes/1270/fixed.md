@@ -1,0 +1,1 @@
+- A copy of a component that holds an instance keeps its edits to that instance's slot content, such as a hidden or recoloured layer, after the file is saved and reopened.
