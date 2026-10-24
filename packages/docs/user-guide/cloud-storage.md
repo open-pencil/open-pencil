@@ -30,6 +30,18 @@ Select **Test connection** to check the endpoint, keys, and bucket before saving
 
 Access keys are kept in the system credential store in the desktop app. In the browser they are encrypted in browser storage, or kept only until you close the session when **Settings → General → Remember API keys on this device** is off.
 
+### Self-Hosted Builds
+
+A team that hosts its own copy of the web app can build it with the storage address already filled in, so people only enter their keys. Set both variables when building; keys are never built in:
+
+```sh
+VITE_STORAGE_PRESET_ENDPOINT=https://files.example.com \
+VITE_STORAGE_PRESET_BUCKET=designs \
+bun run build
+```
+
+The preset fills only fields that are empty, so an address someone saved still wins.
+
 ## Allow the Web App in CORS
 
 The browser can only reach a bucket that allows requests from the page's origin, so the web app needs a CORS rule on the bucket. The desktop app sends its requests natively and needs none.
