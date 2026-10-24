@@ -28,13 +28,22 @@ function readOracle() {
   return v.parse(maskOracleSchema, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
 }
 
+/** The plugin API reports a vector mask as VECTOR. The .fig MaskType enum stores it as OUTLINE. */
+function kiwiMaskType(maskType: (typeof MASK_TYPE_VALUES)[number]) {
+  return maskType === 'VECTOR' ? 'OUTLINE' : maskType
+}
+
 describe('Figma mask oracle', () => {
   test('imports live Figma mask types from schema fields', () => {
     const oracle = readOracle()
 
     for (const mask of oracle.masks) {
       const props = nodeChangeToProps(
-        { type: 'RECTANGLE', mask: mask.isMask, maskType: mask.maskType } as NodeChange,
+        {
+          type: 'RECTANGLE',
+          mask: mask.isMask,
+          maskType: kiwiMaskType(mask.maskType)
+        } as NodeChange,
         []
       )
 
@@ -63,7 +72,7 @@ describe('Figma mask oracle', () => {
       )
 
       expect(changes[0].mask).toBe(true)
-      expect(changes[0].maskType).toBe(mask.maskType)
+      expect(changes[0].maskType).toBe(kiwiMaskType(mask.maskType))
     }
   })
 

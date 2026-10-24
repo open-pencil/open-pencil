@@ -360,7 +360,8 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
 function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
   if (node.isMask) {
     nc.mask = true
-    nc.maskType = node.maskType
+    // Figma's MaskType names a vector mask OUTLINE. ALPHA and LUMINANCE already match.
+    nc.maskType = node.maskType === 'VECTOR' ? 'OUTLINE' : node.maskType
     if (node.maskIsOutline) nc.maskIsOutline = true
   }
 
