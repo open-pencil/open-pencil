@@ -37,6 +37,10 @@ export interface LinePiece {
   paragraph: Paragraph
   x: number
   y: number
+  /** Local vertical band to draw from the source paragraph without rebuilding its lines. */
+  clip?: { top: number; bottom: number }
+  /** False when `paragraph` is borrowed from the block instead of rebuilt for this piece. */
+  ownsParagraph?: boolean
 }
 
 /** Where a block's lines go when they do not stack as its paragraph has them. */
@@ -45,7 +49,7 @@ export interface BlockPlacement {
   /** How far each line stands below where the paragraph has it. */
   offsets: number[]
   boxes: LineBox[]
-  /** Paragraphs of lines that move together, drawn in place of the block's when lines move apart. */
+  /** Paragraph pieces that replace or clip the block's paragraph when lines move apart. */
   pieces: LinePiece[] | null
 }
 
@@ -181,6 +185,58 @@ function pieceShift(
   return shift && { ...shift, agrees: own.length }
 }
 
+function sourcePiece(
+  block: LineBlock,
+  lines: readonly LineMetrics[],
+  shaped: ReadonlyArray<ShapedLine | undefined>,
+  from: number,
+  to: number
+): LinePiece {
+  return {
+    paragraph: block.paragraph,
+    x: 0,
+    y: 0,
+    clip: {
+      top: shaped[from]?.top ?? lines[from].baseline - lines[from].ascent,
+      bottom:
+        shaped[to - 1]?.bottom ??
+        lines[to - 1].baseline - lines[to - 1].ascent + lines[to - 1].height
+    },
+    ownsParagraph: false
+  }
+}
+
+function movedPiece(
+  block: LineBlock,
+  lines: readonly LineMetrics[],
+  shaped: ReadonlyArray<ShapedLine | undefined>,
+  offsets: readonly number[],
+  from: number,
+  to: number,
+  width: number,
+  truncated: boolean
+): LinePiece | null {
+  const count = to - from
+  const start = lines[from].startIndex
+  const end = to === lines.length ? block.lead + block.length : lines[to - 1].endIndex
+  const paragraph = block.lines?.build?.(start, end, count, to === lines.length && truncated)
+  if (!paragraph) return null
+  paragraph.layout(Math.max(1, width - block.inset))
+  const own = paragraph.getLineMetrics().length === count ? shapedLinesByLine(paragraph) : null
+  const shift = own && pieceShift(shaped.slice(from, to), own)
+  if (!shift || shift.agrees < count) {
+    paragraph.delete()
+    return null
+  }
+  return { paragraph, x: shift.x, y: shift.y + offsets[from], ownsParagraph: true }
+}
+
+export function deleteOwnedPieces(pieces: readonly LinePiece[]): void {
+  for (const piece of pieces) {
+    if (piece.ownsParagraph !== false) piece.paragraph.delete()
+  }
+}
+
 /**
  * The block's lines as paragraphs of their own, one for each run of lines that move by the
  * same offset, or one per line when not `grouped`, placed so their glyphs land where the
@@ -211,18 +267,20 @@ function buildPieces(
       from = to
       continue
     }
-    const count = to - from
-    const paragraph = build(start, end, count, to === lines.length && truncated)
-    paragraph.layout(Math.max(1, width - block.inset))
-    const own = paragraph.getLineMetrics().length === count ? shapedLinesByLine(paragraph) : null
-    const shift = own && pieceShift(shaped.slice(from, to), own)
-    if (!shift || shift.agrees < count) {
-      paragraph.delete()
-      for (const piece of pieces) piece.paragraph.delete()
+    if (Math.abs(offsets[from]) < LINE_EPSILON) {
+      // These lines already have their target baseline in the source paragraph. Clip that
+      // paragraph to their line band rather than rebuilding the unchanged text as a piece.
+      pieces.push(sourcePiece(block, lines, shaped, from, to))
+      from = to
+      continue
+    }
+    const piece = movedPiece(block, lines, shaped, offsets, from, to, width, truncated)
+    if (!piece) {
+      deleteOwnedPieces(pieces)
       // Lines that lay out or snap apart are drawn one by one.
       return grouped ? buildPieces(block, width, offsets, false) : null
     }
-    pieces.push({ paragraph, x: shift.x, y: shift.y + offsets[from] })
+    pieces.push(piece)
     from = to
   }
   return pieces
@@ -284,7 +342,7 @@ export function placeLines<Block extends LineBlock>(
     // Lines that cannot be drawn apart keep the paragraph's placement, and so does the text.
     if (apart && !pieces) {
       for (const placement of placed.values()) {
-        for (const piece of placement.pieces ?? []) piece.paragraph.delete()
+        deleteOwnedPieces(placement.pieces ?? [])
       }
       return null
     }

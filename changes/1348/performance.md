@@ -1,0 +1,1 @@
+- Mixed-size text layout reuses the original paragraph for lines that keep their baseline.
