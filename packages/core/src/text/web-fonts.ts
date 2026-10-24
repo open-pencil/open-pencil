@@ -80,10 +80,11 @@ export function webFontSubsetsForText(text: string): string[] {
 
 function preferredRemoteSource(face: FontFaceData): RemoteFontSource | undefined {
   const sources = face.src.filter(isRemoteFontSource)
+  // WOFF2 is decoded on arrival, and it is the only format Google serves variable fonts in.
   return (
+    sources.find((source) => source.format === 'woff2') ??
     sources.find((source) => source.format === 'truetype' || source.format === 'ttf') ??
     sources.find((source) => source.format === 'opentype' || source.format === 'otf') ??
-    sources.find((source) => source.format === 'woff2') ??
     sources.find((source) => source.format === 'woff') ??
     sources[0]
   )
@@ -321,6 +322,36 @@ export class WebFontResolver {
     }
   }
 
+  /**
+   * The weights to ask for a style in, and the other axes: a variable family's whole range, so one
+   * file draws every weight and axis it has, or the style's own weight. unifont narrows each range
+   * to what the provider serves.
+   */
+  private async requestedAxes(
+    unifont: WebUnifont,
+    family: string,
+    weight: number,
+    signal?: AbortSignal
+  ): Promise<Pick<WebFontResolveOptions, 'weights' | 'variableAxis'>> {
+    const properties = await this.withFetchProxy(() => unifont.getFontProperties(family), signal)
+    const axes = properties?.axes ?? []
+    const wght = axes.find((axis) => axis.tag === 'wght')
+    const range = wght
+      ? [wght.min, wght.max]
+      : properties?.weights
+          ?.map((value) => value.split(' ').map(Number))
+          .find((bounds) => bounds.length === 2)
+    const [min = weight, max = weight] = range ?? []
+    if (!range || weight < min || weight > max) return { weights: [String(weight)] }
+    const others = axes.filter((axis) => axis.tag !== 'wght' && axis.tag !== 'ital')
+    return {
+      weights: [`${min} ${max}`],
+      variableAxis: Object.fromEntries(
+        others.map((axis) => [axis.tag, [{ min: axis.min, max: axis.max }]])
+      )
+    }
+  }
+
   private async fetchRemote(url: string, init?: RequestInit): Promise<Response> {
     if (this.remoteFetch) return this.remoteFetch(url, init)
     return fetch(url, init)
@@ -393,15 +424,22 @@ export class WebFontResolver {
       signal?.throwIfAborted()
       const parsed = parseFontStyle(style)
       const unifont = await this.unifont(provider, signal)
-      const options = {
-        weights: [String(parsed.weight)],
+      const { weights, variableAxis } = await this.requestedAxes(
+        unifont,
+        family,
+        parsed.weight,
+        signal
+      )
+      const options: WebFontResolveOptions = {
+        weights,
         styles: [parsed.italic ? 'italic' : 'normal'],
-        formats: ['ttf', 'otf', 'woff2', 'woff'],
+        formats: ['woff2', 'ttf', 'otf', 'woff'],
         subsets: webFontSubsetsForText(characters),
-        ...(provider === 'google' && characters
-          ? { options: { google: { experimental: { glyphs: [characters] } } } }
-          : {})
-      } satisfies WebFontResolveOptions
+        variableAxis
+      }
+      if (provider === 'google' && characters) {
+        options.options = { google: { experimental: { glyphs: [characters] } } }
+      }
       const result = await this.withFetchProxy<ResolveFontResult>(
         () => unifont.resolveFont(family, options),
         signal
