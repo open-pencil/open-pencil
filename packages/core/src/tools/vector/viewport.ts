@@ -38,23 +38,25 @@ export const viewportZoomToFit = defineTool({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Node IDs to fit in view'))
   }),
   execute: (figma, { ids }) => {
+    const nodes = ids
+      .map((id) => figma.getNodeById(id))
+      .filter((node): node is NonNullable<typeof node> => node !== null)
+    if (nodes.length === 0) return { error: 'No valid nodes found' }
+
     let minX = Infinity
     let minY = Infinity
     let maxX = -Infinity
     let maxY = -Infinity
-    for (const id of ids) {
-      const node = figma.getNodeById(id)
-      if (!node) continue
+    for (const node of nodes) {
       const bounds = node.absoluteBoundingBox
       minX = Math.min(minX, bounds.x)
       minY = Math.min(minY, bounds.y)
       maxX = Math.max(maxX, bounds.x + bounds.width)
       maxY = Math.max(maxY, bounds.y + bounds.height)
     }
-    if (minX === Infinity) return { error: 'No valid nodes found' }
     const centerX = (minX + maxX) / 2
     const centerY = (minY + maxY) / 2
-    figma.viewport = { center: { x: centerX, y: centerY }, zoom: 1 }
+    figma.viewport.scrollAndZoomIntoView(nodes)
     return {
       center: { x: centerX, y: centerY },
       bounds: { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
