@@ -1,11 +1,10 @@
 {
-  "toolAccessDescription": "分别配置内置 AI 和本地 MCP 服务器的设计工具。",
   "toolAccessTarget": "配置工具访问权限的对象",
   "builtInAI": "内置 AI",
   "localMCP": "本地 MCP",
   "restoreToolDefaults": "恢复默认设置",
   "aiToolAccessDescription": "选择直接连接 AI 模型时可用的工具。ACP 和 Pi 智能体使用 MCP 访问权限。",
-  "mcpToolAccessDescription": "选择本地服务器向已连接的智能体和客户端提供的工具。",
+  "toolAccessDescription": "选择每类智能体可以调用的工具。内置 AI 直接调用模型；Claude Code、Pi 等编程智能体通过本地 MCP 服务器连接 OpenPencil。",
   "aiToolsNotice": "更改从下一条消息开始生效。工具开关不是沙箱：已启用的脚本工具仍可执行其他设计操作。",
   "addConnection": "添加连接",
   "connectionName": "连接名称",

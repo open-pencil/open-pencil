@@ -69,11 +69,8 @@ function setExpanded(key: string, open: boolean) {
     :search-label="automation.searchTools"
     data-slot="tool-access"
   >
-    <template #description>
-      {{
-        target === 'ai' ? automation.aiToolAccessDescription : automation.mcpToolAccessDescription
-      }}
-    </template>
+    <!-- The same for both kinds of agent, so switching between them moves nothing above. -->
+    <template #description>{{ automation.toolAccessDescription }}</template>
     <template #tabs>
       <SegmentedControl
         :model-value="target"

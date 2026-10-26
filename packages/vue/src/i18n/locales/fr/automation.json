@@ -1,11 +1,10 @@
 {
-  "toolAccessDescription": "Configurez séparément les outils de conception pour l’IA intégrée et le serveur MCP local.",
   "toolAccessTarget": "Configurer l’accès aux outils pour",
   "builtInAI": "IA intégrée",
   "localMCP": "MCP local",
   "restoreToolDefaults": "Rétablir les valeurs par défaut",
   "aiToolAccessDescription": "Choisissez les outils pour les connexions directes aux modèles d’IA. Les agents ACP et Pi utilisent l’accès MCP.",
-  "mcpToolAccessDescription": "Choisissez les outils que le serveur local propose aux agents et clients connectés.",
+  "toolAccessDescription": "Choisissez les outils que chaque type d’agent peut appeler. L’IA intégrée appelle les modèles directement ; les agents de code comme Claude Code et Pi accèdent à OpenPencil via le serveur MCP local.",
   "aiToolsNotice": "Les modifications s’appliquent au prochain message. Les interrupteurs ne constituent pas un bac à sable : les outils de script activés peuvent effectuer d’autres opérations de conception.",
   "addConnection": "Ajouter une connexion",
   "connectionName": "Nom de la connexion",

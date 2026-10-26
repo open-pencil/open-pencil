@@ -1,11 +1,10 @@
 {
-  "toolAccessDescription": "Skonfiguruj narzędzia projektowe osobno dla wbudowanej AI i lokalnego serwera MCP.",
   "toolAccessTarget": "Skonfiguruj dostęp do narzędzi dla",
   "builtInAI": "Wbudowana AI",
   "localMCP": "Lokalny MCP",
   "restoreToolDefaults": "Przywróć domyślne",
   "aiToolAccessDescription": "Wybierz narzędzia dla bezpośrednich połączeń z modelami AI. Agenci ACP i Pi korzystają z dostępu MCP.",
-  "mcpToolAccessDescription": "Wybierz narzędzia udostępniane przez lokalny serwer połączonym agentom i klientom.",
+  "toolAccessDescription": "Wybierz, z których narzędzi może korzystać każdy rodzaj agenta. Wbudowana AI wywołuje modele bezpośrednio; agenci programistyczni, tacy jak Claude Code i Pi, łączą się z OpenPencil przez lokalny serwer MCP.",
   "aiToolsNotice": "Zmiany obowiązują od następnej wiadomości. Przełączniki nie izolują wykonania: włączone narzędzia skryptowe mogą wykonywać inne operacje projektowe.",
   "addConnection": "Dodaj połączenie",
   "connectionName": "Nazwa połączenia",

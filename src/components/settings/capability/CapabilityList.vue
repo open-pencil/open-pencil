@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import IconButton from '@/components/ui/button/IconButton.vue'
+import { useId } from 'vue'
+
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
@@ -8,7 +9,7 @@ import type { CapabilityGroup, CapabilityItem } from './types'
 /**
  * Groups of things the AI can use as one dense list, as Linear lists issues: a row per group with
  * its switch, then a row per item with its switch, name, and description on one line. Given
- * `openLabel`, a row's › opens the item's details.
+ * `openLabel`, a row opens the item's details; without it, a row works its switch.
  */
 const { groups, expanded, openLabel } = defineProps<{
   groups: CapabilityGroup[]
@@ -29,6 +30,8 @@ defineSlots<{
   'group-actions'?: (props: { group: CapabilityGroup }) => unknown
 }>()
 
+const baseId = useId()
+
 function isOpen(group: CapabilityGroup) {
   return expanded[group.key] ?? true
 }
@@ -36,7 +39,7 @@ function isOpen(group: CapabilityGroup) {
 
 <template>
   <div
-    class="@container/capabilities overflow-hidden rounded border border-border text-xs"
+    class="@container/capabilities shrink-0 overflow-hidden rounded border border-border text-xs"
     data-slot="capability-list"
   >
     <template v-for="group in groups" :key="group.key">
@@ -84,42 +87,52 @@ function isOpen(group: CapabilityGroup) {
           </p>
           <ul v-else>
             <li
-              v-for="item in group.items"
+              v-for="(item, index) in group.items"
               :key="item.key"
-              class="flex min-h-8 items-center gap-3 border-t border-border px-3 py-1 @max-md/capabilities:flex-wrap"
+              class="flex min-h-8 items-stretch border-t border-border transition-colors hover:bg-hover"
               :data-item="item.name"
             >
-              <span class="flex w-7 shrink-0">
+              <span class="flex shrink-0 items-center py-1 pr-3 pl-3">
                 <AppSwitch
+                  :id="`${baseId}-${group.key}-${index}`"
                   :model-value="item.enabled"
                   :label="item.name"
                   :disabled="item.locked"
                   @update:model-value="emit('set-item', group.key, item.key, $event)"
                 />
               </span>
-              <code
-                class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
-                >{{ item.name }}</code
+              <!-- The rest of the row opens the item's details, or else works its switch. -->
+              <component
+                :is="openLabel ? 'button' : 'label'"
+                v-bind="
+                  openLabel
+                    ? { type: 'button', 'aria-label': openLabel(item) }
+                    : { for: `${baseId}-${group.key}-${index}` }
+                "
+                class="flex min-w-0 flex-1 items-center gap-3 py-1 pr-3 text-left @max-md/capabilities:flex-wrap"
+                :class="item.locked && !openLabel ? 'cursor-default' : 'cursor-pointer'"
+                @click="openLabel && emit('open', group.key, item.key)"
               >
-              <!-- One line each, so the full text is a hover away. -->
-              <Tip :label="item.description" as-child>
-                <span
-                  class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full @max-md/capabilities:pl-10"
-                  >{{ item.description }}</span
+                <code
+                  class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
+                  >{{ item.name }}</code
                 >
-              </Tip>
-              <span v-if="item.note" class="shrink-0 text-[11px] text-warning">{{
-                item.note
-              }}</span>
-              <IconButton
-                v-if="openLabel"
-                :label="openLabel(item)"
-                size="xs"
-                class="shrink-0"
-                @click="emit('open', group.key, item.key)"
-              >
-                <icon-lucide-chevron-right class="size-3.5" />
-              </IconButton>
+                <!-- One line each, so the full text is a hover away. -->
+                <Tip :label="item.description" as-child>
+                  <span
+                    class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full"
+                    >{{ item.description }}</span
+                  >
+                </Tip>
+                <span v-if="item.note" class="shrink-0 text-[11px] text-warning">{{
+                  item.note
+                }}</span>
+                <icon-lucide-chevron-right
+                  v-if="openLabel"
+                  class="size-3.5 shrink-0 text-muted"
+                  aria-hidden="true"
+                />
+              </component>
             </li>
           </ul>
         </template>
