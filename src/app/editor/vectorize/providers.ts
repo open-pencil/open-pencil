@@ -1,4 +1,5 @@
 import { fromUint8Array } from 'js-base64'
+import * as v from 'valibot'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 
@@ -14,6 +15,8 @@ import {
 } from './types'
 
 const REQUEST_TIMEOUT_MS = 30_000
+/** Arrow writes the SVG token by token, so a detailed image takes it minutes, not seconds. */
+const QUIVER_TIMEOUT_MS = 180_000
 const NATIVE_TIMEOUT_GRACE_MS = 1000
 const MAX_SVG_BYTES = 20 * 1024 * 1024
 const MAX_API_RESPONSE_BYTES = 1024 * 1024
@@ -33,27 +36,31 @@ const FAL_DEFINITION = {
   keyPlaceholder: 'fal API key'
 } satisfies VectorizeProviderDefinition
 
+const QUIVER_DEFINITION = {
+  id: 'quiver',
+  name: 'QuiverAI',
+  keyURL: 'https://platform.quiver.ai/api-keys',
+  keyPlaceholder: 'QuiverAI API key'
+} satisfies VectorizeProviderDefinition
+
 export const VECTORIZE_PROVIDER_DEFINITIONS: readonly VectorizeProviderDefinition[] = [
   RECRAFT_DEFINITION,
-  FAL_DEFINITION
+  FAL_DEFINITION,
+  QUIVER_DEFINITION
 ]
 
 async function vectorizeFetch(
   input: string,
   init?: RequestInit,
-  maxResponseBytes = MAX_API_RESPONSE_BYTES
+  maxResponseBytes = MAX_API_RESPONSE_BYTES,
+  timeoutMs = REQUEST_TIMEOUT_MS
 ): Promise<Response> {
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const requestInit = { ...init, signal: controller.signal }
     return await (IS_TAURI
-      ? tauriFetch(
-          input,
-          requestInit,
-          maxResponseBytes,
-          REQUEST_TIMEOUT_MS + NATIVE_TIMEOUT_GRACE_MS
-        )
+      ? tauriFetch(input, requestInit, maxResponseBytes, timeoutMs + NATIVE_TIMEOUT_GRACE_MS)
       : fetch(input, requestInit))
   } catch (error) {
     if (controller.signal.aborted) throw new VectorizeTimeoutError()
@@ -99,8 +106,15 @@ export function extractVectorizedSVGURL(payload: unknown): string | null {
   return readURLField(record)
 }
 
+/** Where each service serves the SVGs it links to; Quiver returns its SVG inline. */
+const ASSET_HOSTS: Record<VectorizeProviderID, readonly string[]> = {
+  recraft: ['recraft.ai'],
+  fal: ['fal.media', 'fal.run', 'fal.ai'],
+  quiver: []
+}
+
 function isAllowedAssetHost(providerID: VectorizeProviderID, hostname: string): boolean {
-  const suffixes = providerID === 'recraft' ? ['recraft.ai'] : ['fal.media', 'fal.run', 'fal.ai']
+  const suffixes = ASSET_HOSTS[providerID]
   return suffixes.some((suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`))
 }
 
@@ -230,7 +244,54 @@ const fal: VectorizeProvider = {
   }
 }
 
-const providers: Record<VectorizeProviderID, VectorizeProvider> = { recraft, fal }
+/** Quiver's Image to SVG answer, which carries the SVG markup itself rather than a link to it. */
+const quiverResponseSchema = v.object({
+  data: v.pipe(v.array(v.object({ svg: v.pipe(v.string(), v.minLength(1)) })), v.minLength(1))
+})
+
+const quiver: VectorizeProvider = {
+  ...QUIVER_DEFINITION,
+  async vectorize(pngBytes, apiKey) {
+    if (pngBytes.byteLength > MAX_IMAGE_BYTES) throw new Error('Image is too large to vectorize')
+    const response = await vectorizeFetch(
+      'https://api.quiver.ai/v1/svgs/vectorizations',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'arrow-2',
+          image: { base64: fromUint8Array(pngBytes) },
+          stream: false
+        }),
+        credentials: 'omit',
+        redirect: 'error'
+      },
+      MAX_SVG_BYTES,
+      QUIVER_TIMEOUT_MS
+    )
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new VectorizeAuthError(quiver.name)
+      }
+      const detail = await responseErrorDetail(response)
+      throw new Error(
+        detail
+          ? `${quiver.name} vectorization failed (${response.status}): ${detail}`
+          : `${quiver.name} vectorization failed (${response.status})`
+      )
+    }
+    const text = await readBoundedResponse(
+      response,
+      MAX_SVG_BYTES,
+      `${quiver.name} response is too large`
+    )
+    const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), quiverResponseSchema), text)
+    if (!parsed.success) throw new Error(`${quiver.name} returned no SVG`)
+    return parsed.output.data[0].svg
+  }
+}
+
+const providers: Record<VectorizeProviderID, VectorizeProvider> = { recraft, fal, quiver }
 
 export function getVectorizeProvider(providerID: VectorizeProviderID): VectorizeProvider {
   return providers[providerID]

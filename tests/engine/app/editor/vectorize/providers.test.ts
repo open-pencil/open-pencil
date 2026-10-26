@@ -66,5 +66,58 @@ describe('vectorization providers', () => {
     const keys = appCredentialRefs().map(credentialKey)
     expect(keys).toContain('v1:vectorize-recraft:default:api-key')
     expect(keys).toContain('v1:vectorize-fal:default:api-key')
+    expect(keys).toContain('v1:vectorize-quiver:default:api-key')
+  })
+
+  test('Quiver sends the image to Arrow 2 and returns the SVG its answer carries', async () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4"><path d="M0 0h4v4z"/></svg>'
+    const requests: { url: string; init?: RequestInit }[] = []
+    const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async (input, init) => {
+        requests.push({ url: String(input), init })
+        return Response.json({
+          id: 'resp_1',
+          created: 1,
+          data: [{ mime_type: 'image/svg+xml', svg }]
+        })
+      })
+    )
+    try {
+      expect(
+        await getVectorizeProvider('quiver').vectorize(new Uint8Array([1, 2, 3]), 'sk_test_1')
+      ).toBe(svg)
+      expect(requests).toHaveLength(1)
+      expect(requests[0].url).toBe('https://api.quiver.ai/v1/svgs/vectorizations')
+      expect(new Headers(requests[0].init?.headers).get('authorization')).toBe('Bearer sk_test_1')
+      expect(JSON.parse(String(requests[0].init?.body))).toEqual({
+        model: 'arrow-2',
+        image: { base64: 'AQID' },
+        stream: false
+      })
+    } finally {
+      fetchSpy.mockRestore()
+    }
+  })
+
+  test('Quiver reports a rejected key, and an answer without an SVG as a failure', async () => {
+    const answers = [
+      new Response('{"error":"invalid key"}', { status: 401 }),
+      Response.json({ id: 'resp_1', created: 1, data: [] })
+    ]
+    const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async () => answers.shift() ?? new Response(null, { status: 500 }))
+    )
+    const quiver = getVectorizeProvider('quiver')
+    try {
+      await expect(quiver.vectorize(new Uint8Array([1]), 'bad')).rejects.toThrow(
+        'QuiverAI API key was rejected'
+      )
+      await expect(quiver.vectorize(new Uint8Array([1]), 'key')).rejects.toThrow(
+        'QuiverAI returned no SVG'
+      )
+    } finally {
+      fetchSpy.mockRestore()
+    }
   })
 })

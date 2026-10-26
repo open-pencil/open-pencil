@@ -10,7 +10,8 @@ export function vectorizeCredentialRef(providerID: VectorizeProviderID): Credent
 
 export const VECTORIZE_CREDENTIAL_REFS = [
   vectorizeCredentialRef('recraft'),
-  vectorizeCredentialRef('fal')
+  vectorizeCredentialRef('fal'),
+  vectorizeCredentialRef('quiver')
 ] as const
 
 export function vectorizeCredentialStatus(

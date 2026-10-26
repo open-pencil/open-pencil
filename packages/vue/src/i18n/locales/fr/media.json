@@ -1,6 +1,6 @@
 {
   "vectorization": "Vectorisation d’image",
-  "vectorizationDescription": "Envoie les calques d’image à Recraft ou fal.ai et renvoie des vecteurs modifiables. Des frais peuvent s’appliquer.",
+  "vectorizationDescription": "Envoie les calques d’image à Recraft, fal.ai ou QuiverAI et renvoie des vecteurs modifiables. Des frais peuvent s’appliquer.",
   "vectorizeProvider": "Service de vectorisation",
   "pexelsAPIKey": "Clé API Pexels",
   "unsplashAccessKey": "Clé d’accès Unsplash",
