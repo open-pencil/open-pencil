@@ -22,6 +22,7 @@ test('settings tabs associate panels and support vertical keyboard navigation', 
   await expect(page.getByTestId('settings-editor-panel')).toBeVisible()
   // Group headings sit between the tabs without taking a stop.
   await editor.press('ArrowDown')
+  await page.getByTestId('settings-section-fonts').press('ArrowDown')
   await page.getByTestId('settings-section-storage').press('ArrowDown')
   await page.getByTestId('settings-section-cloud').press('ArrowDown')
   const ai = page.getByTestId('settings-section-ai')

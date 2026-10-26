@@ -62,6 +62,7 @@ export const settingsMessageDefaults = {
   zoomSpeedDefault: params('{speed} (default)'),
   usage: 'Usage',
   privacy: 'Privacy',
+  fonts: 'Fonts',
   media: 'Media',
   mcp: 'MCP',
   toolAccess: 'Tool access',

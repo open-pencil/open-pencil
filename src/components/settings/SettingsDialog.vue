@@ -13,6 +13,7 @@ import IconSettings from '~icons/lucide/settings'
 import IconShield from '~icons/lucide/shield'
 import IconSlidersHorizontal from '~icons/lucide/sliders-horizontal'
 import IconSparkles from '~icons/lucide/sparkles'
+import IconType from '~icons/lucide/type'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -29,6 +30,7 @@ import { CloudSettingsSection } from '@/components/cloud/integration'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import EditorSettingsPanel from '@/components/settings/editor/EditorSettingsPanel.vue'
+import FontSettingsPanel from '@/components/settings/fonts/FontSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
 import SettingsBreadcrumb from '@/components/settings/layout/SettingsBreadcrumb.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -74,6 +76,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
     sections: [
       { value: 'general', label: settings.value.general, icon: IconSettings },
       { value: 'editor', label: settings.value.editor, icon: IconPenTool },
+      { value: 'fonts', label: settings.value.fonts, icon: IconType },
       { value: 'storage', label: settings.value.storage, icon: IconDatabase },
       ...(CLOUD_INCLUDED
         ? [{ value: 'cloud' as const, label: settings.value.cloud, icon: IconCloud }]
@@ -182,6 +185,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="editor" as-child>
         <EditorSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="fonts" as-child>
+        <FontSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="storage" as-child>
         <StorageSettingsPanel />

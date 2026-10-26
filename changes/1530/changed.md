@@ -1,1 +1,1 @@
-- Settings groups its pages under App, AI, and Data & privacy: snapping, the toolbar, fonts, and rendering are on **Editor**; diagnostics on **Privacy**; AI & agents is **Models** and Media is **Image services**.
+- Settings groups its pages under App, AI, and Data & privacy: snapping, the toolbar, and rendering are on **Editor**; diagnostics on **Privacy**; AI & agents is **Models** and Media is **Image services**.

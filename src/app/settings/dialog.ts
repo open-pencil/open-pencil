@@ -4,6 +4,7 @@ import { ref } from 'vue'
 export type SettingsSection =
   | 'general'
   | 'editor'
+  | 'fonts'
   | 'storage'
   | 'cloud'
   | 'ai'
@@ -14,8 +15,8 @@ export type SettingsSection =
   | 'usage'
   | 'privacy'
 
-/** A part of a page that opening Settings scrolls to, such as the fonts on the Editor page. */
-export type SettingsAnchor = 'toolbar' | 'fonts'
+/** A part of a page that opening Settings scrolls to, such as the toolbar on the Editor page. */
+export type SettingsAnchor = 'toolbar'
 
 export const settingsDialogOpen = ref(false)
 export const settingsDialogSection = ref<SettingsSection>('general')
