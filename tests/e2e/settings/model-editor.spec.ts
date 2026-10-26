@@ -35,6 +35,7 @@ test('model editing keeps the Settings shell stable and isolates the form', asyn
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   await page.getByTestId('settings-add-model').click()
   await expect(editor).toBeVisible()
+  await editor.locator('[data-provider="openrouter"]').click()
 
   // Accidental dismissal must not throw away an in-progress profile.
   await editor.getByRole('textbox', { name: 'Name', exact: true }).fill('Draft profile')
@@ -68,7 +69,8 @@ for (const reducedMotion of ['reduce', 'no-preference'] as const) {
     for (let attempt = 0; attempt < 3; attempt++) {
       await add.click()
       const editor = page.getByTestId('settings-model-editor')
-      await expect(editor.locator('input').first()).toBeFocused()
+      // A new model opens on its first provider choice.
+      await expect(editor.locator('[data-provider]').first()).toBeFocused()
       await editor.getByRole('button', { name: 'Cancel', exact: true }).click()
       await expect(add).toBeFocused()
       await expect(dialog.getByRole('tabpanel')).toHaveCount(1)
