@@ -362,6 +362,7 @@
   "skillsDescription": "Instrukcje, które czat AI wczytuje, gdy prośba pasuje do ich opisu. Prześlij ZIP folderu umiejętności lub plik SKILL.md albo użyj umiejętności zainstalowanych przez twoich agentów programistycznych.",
   "skillsEnabledCount": "Włączone: {enabled} z {total}",
   "searchSkills": "Szukaj umiejętności",
+  "noMatchingSkills": "Brak umiejętności pasujących do wyszukiwania.",
   "skillsUpload": "Prześlij umiejętność",
   "skillsUploadedSource": "Przesłane",
   "skillsProjectSource": "Obok tego dokumentu",

@@ -362,6 +362,7 @@
   "skillsDescription": "Istruzioni che la chat IA carica quando una richiesta corrisponde alla loro descrizione. Carica uno ZIP della cartella di una skill o un SKILL.md, oppure usa le skill installate dai tuoi agenti di programmazione.",
   "skillsEnabledCount": "{enabled} di {total} attive",
   "searchSkills": "Cerca skill",
+  "noMatchingSkills": "Nessuna skill corrisponde alla ricerca.",
   "skillsUpload": "Carica competenza",
   "skillsUploadedSource": "Caricate",
   "skillsProjectSource": "Accanto a questo documento",

@@ -362,6 +362,7 @@
   "skillsDescription": "Instrucciones que el chat de IA carga cuando una solicitud coincide con su descripción. Sube un ZIP de la carpeta de una habilidad o un SKILL.md, o usa las habilidades que instalaron tus agentes de programación.",
   "skillsEnabledCount": "{enabled} de {total} activadas",
   "searchSkills": "Buscar habilidades",
+  "noMatchingSkills": "Ninguna habilidad coincide con tu búsqueda.",
   "skillsUpload": "Subir habilidad",
   "skillsUploadedSource": "Subidas",
   "skillsProjectSource": "Junto a este documento",

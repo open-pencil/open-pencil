@@ -420,6 +420,7 @@ export const aiMessageDefaults = {
     'Instructions the AI chat loads when a request matches their description. Upload a ZIP of a skill’s folder or a SKILL.md, or use the skills your coding agents installed.',
   skillsEnabledCount: params('{enabled} of {total} enabled'),
   searchSkills: 'Search skills',
+  noMatchingSkills: 'No skills match your search.',
   skillsUpload: 'Upload skill',
   skillsUploadedSource: 'Uploaded',
   skillsProjectSource: 'Next to this document',

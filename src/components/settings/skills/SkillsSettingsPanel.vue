@@ -16,6 +16,7 @@ import type { CapabilityGroup, CapabilityItem } from '@/components/settings/capa
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppAlertDialogRoot, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 import { useSkillMessages } from './messages'
@@ -89,6 +90,11 @@ const listGroups = computed<CapabilityGroup[]>(() => {
     ...(!query && { empty: group.folder ? ai.value.skillsNoneInFolder : ai.value.skillsNoUploads })
   }))
 })
+
+// Without a search, empty groups say why they are empty instead.
+const hasMatches = computed(
+  () => !search.value.trim() || listGroups.value.some((group) => group.items.length)
+)
 
 const entries = computed(() => groups.value.flatMap((group) => group.skills))
 const enabledCount = computed(() => entries.value.filter((entry) => entry.enabled).length)
@@ -202,7 +208,14 @@ async function remove() {
           </AppAlert>
         </template>
       </div>
+      <AppPlaceholder
+        v-if="!hasMatches"
+        size="compact"
+        :fill="false"
+        :label="ai.noMatchingSkills"
+      />
       <CapabilityList
+        v-else
         :groups="listGroups"
         :expanded="expanded"
         :open-label="(item) => ai.openSkillSettings({ name: item.name })"

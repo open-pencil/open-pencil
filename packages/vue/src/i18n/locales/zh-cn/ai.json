@@ -362,6 +362,7 @@
   "skillsDescription": "当请求与描述相符时，AI 聊天会加载这些说明。上传技能文件夹的 ZIP 或一个 SKILL.md，或使用编程智能体安装的技能。",
   "skillsEnabledCount": "已启用 {enabled} / {total}",
   "searchSkills": "搜索技能",
+  "noMatchingSkills": "没有与搜索匹配的技能。",
   "skillsUpload": "上传技能",
   "skillsUploadedSource": "已上传",
   "skillsProjectSource": "此文档旁边",

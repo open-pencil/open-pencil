@@ -362,6 +362,7 @@
   "skillsDescription": "Des instructions que le chat IA charge quand une demande correspond à leur description. Importez un ZIP du dossier d’une compétence ou un SKILL.md, ou utilisez les compétences installées par vos agents de code.",
   "skillsEnabledCount": "{enabled} sur {total} activées",
   "searchSkills": "Rechercher des compétences",
+  "noMatchingSkills": "Aucune compétence ne correspond à votre recherche.",
   "skillsUpload": "Importer une compétence",
   "skillsUploadedSource": "Importées",
   "skillsProjectSource": "À côté de ce document",

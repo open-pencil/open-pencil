@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import CapabilityList from './CapabilityList.vue'
 import type { CapabilityGroup, CapabilityItem } from './types'
@@ -33,8 +33,17 @@ const meta = {
   render: (args) => ({
     components: { CapabilityList },
     setup: () => {
-      const disabled = ref([...args.disabled])
-      const expanded = ref<Record<string, boolean>>({ read: !args.collapsed, write: false })
+      const disabled = ref<string[]>([])
+      const expanded = ref<Record<string, boolean>>({})
+      // Controls restart the list from their values; clicks change it until then.
+      watch(
+        () => [args.disabled, args.collapsed] as const,
+        ([initial, collapsed]) => {
+          disabled.value = [...initial]
+          expanded.value = { read: !collapsed, write: false }
+        },
+        { immediate: true }
+      )
       const groups = computed<CapabilityGroup[]>(() =>
         [
           { key: 'read', label: 'Read-only', members: reads },

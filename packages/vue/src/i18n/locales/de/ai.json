@@ -362,6 +362,7 @@
   "skillsDescription": "Anweisungen, die der KI-Chat lädt, wenn eine Anfrage zu ihrer Beschreibung passt. Lade ein ZIP eines Skill-Ordners oder eine SKILL.md hoch oder nutze die Skills deiner Coding-Agenten.",
   "skillsEnabledCount": "{enabled} von {total} aktiv",
   "searchSkills": "Skills durchsuchen",
+  "noMatchingSkills": "Keine Skills entsprechen deiner Suche.",
   "skillsUpload": "Skill hochladen",
   "skillsUploadedSource": "Hochgeladen",
   "skillsProjectSource": "Neben diesem Dokument",

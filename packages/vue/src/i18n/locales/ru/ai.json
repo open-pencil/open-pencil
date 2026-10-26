@@ -362,6 +362,7 @@
   "skillsDescription": "Инструкции, которые ИИ-чат загружает, когда запрос подходит под их описание. Загрузите ZIP папки навыка или SKILL.md либо используйте навыки, установленные вашими агентами для кода.",
   "skillsEnabledCount": "Включено {enabled} из {total}",
   "searchSkills": "Поиск навыков",
+  "noMatchingSkills": "По вашему запросу навыки не найдены.",
   "skillsUpload": "Загрузить навык",
   "skillsUploadedSource": "Загруженные",
   "skillsProjectSource": "Рядом с этим документом",

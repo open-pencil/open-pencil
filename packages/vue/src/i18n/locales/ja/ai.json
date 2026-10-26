@@ -362,6 +362,7 @@
   "skillsDescription": "リクエストが説明に合うときに AI チャットが読み込む指示です。スキルのフォルダーの ZIP か SKILL.md をアップロードするか、コーディングエージェントがインストールしたスキルを使えます。",
   "skillsEnabledCount": "{total} 件中 {enabled} 件が有効",
   "searchSkills": "スキルを検索",
+  "noMatchingSkills": "検索に一致するスキルはありません。",
   "skillsUpload": "スキルをアップロード",
   "skillsUploadedSource": "アップロード済み",
   "skillsProjectSource": "このドキュメントの近く",
