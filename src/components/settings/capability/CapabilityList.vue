@@ -39,7 +39,7 @@ function isOpen(group: CapabilityGroup) {
 
 <template>
   <div
-    class="@container/capabilities shrink-0 overflow-hidden rounded border border-border text-xs"
+    class="@container/capabilities shrink-0 overflow-clip rounded border border-border text-xs"
     data-slot="capability-list"
   >
     <template v-for="group in groups" :key="group.key">
@@ -49,7 +49,10 @@ function isOpen(group: CapabilityGroup) {
         :data-group="group.key"
         :aria-label="group.label"
       >
-        <div class="flex min-h-8 items-center gap-3 bg-panel-secondary px-3 py-1">
+        <!-- Pinned at the top of the scrolling page, above its padding (CapabilityPage). -->
+        <div
+          class="sticky -top-5 z-10 flex min-h-8 items-center gap-3 bg-panel-secondary px-3 py-1 sm:-top-6"
+        >
           <span class="flex w-7 shrink-0">
             <AppSwitch
               v-if="group.toggle"
@@ -117,8 +120,8 @@ function isOpen(group: CapabilityGroup) {
                   class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
                   >{{ item.name }}</code
                 >
-                <!-- One line each, so the full text is a hover away. -->
-                <Tip :label="item.description" as-child>
+                <!-- One line each, so text cut off is a hover away. -->
+                <Tip :label="item.description" as-child truncated>
                   <span
                     class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full"
                     >{{ item.description }}</span
