@@ -70,7 +70,7 @@ export function useHomeLocations() {
     connect: cloud.connect,
     openAccount: cloud.openAccount,
     newWorkspace: cloud.newWorkspace,
-    storageSettings: () => openSettingsDialog('account'),
+    storageSettings: () => openSettingsDialog('storage'),
     signOut: cloud.signOut
   }
 }

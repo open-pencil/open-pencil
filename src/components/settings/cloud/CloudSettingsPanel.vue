@@ -12,6 +12,7 @@ import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -50,7 +51,7 @@ const title = (server: CloudServerEntry) =>
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
+  <SettingsPage>
     <SettingsSection>
       <template #title>{{ t.settingsTitle }}</template>
       <template #description>
@@ -188,5 +189,5 @@ const title = (server: CloudServerEntry) =>
         </div>
       </SettingsGroup>
     </SettingsSection>
-  </div>
+  </SettingsPage>
 </template>

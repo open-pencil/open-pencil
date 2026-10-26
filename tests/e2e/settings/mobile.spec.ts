@@ -21,7 +21,7 @@ for (const theme of ['light', 'dark']) {
     await expect(page.getByTestId('settings-ai-panel')).toBeVisible()
     await expect(dialog).toHaveScreenshot(`mobile-settings-models-${theme}.png`)
     await section.click()
-    await page.getByRole('option', { name: 'Account & storage', exact: true }).click()
+    await page.getByRole('option', { name: 'Storage', exact: true }).click()
     await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
     await expect(dialog).toHaveScreenshot(`mobile-settings-storage-${theme}.png`)
   })

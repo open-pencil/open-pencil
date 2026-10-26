@@ -9,7 +9,7 @@ OpenPencil Cloud keeps documents on a server so they follow you across devices a
 
 ## Connect a Server
 
-Open **Settings → Account & storage**. Until the hosted service opens, its card there takes your email for the waitlist; **Your team's server** asks for the address your team uses. OpenPencil checks that the address answers as an OpenPencil Cloud server before asking you to sign in, and says when nothing answers, when the address belongs to something else, or when the server runs a version this app doesn't support.
+Open **Settings → Cloud**. Until the hosted service opens, its card there takes your email for the waitlist; **Your team's server** asks for the address your team uses. OpenPencil checks that the address answers as an OpenPencil Cloud server before asking you to sign in, and says when nothing answers, when the address belongs to something else, or when the server runs a version this app doesn't support.
 
 The ways to sign in come from the server: Google, Apple, or email and password.
 
@@ -18,7 +18,7 @@ The ways to sign in come from the server: Google, Apple, or email and password.
 
 Servers that review new accounts say so before you sign up. Until an administrator approves you, Settings shows that your account is waiting.
 
-Each server in **Settings → Account & storage** shows who is signed in to it:
+Each server in **Settings → Cloud** shows who is signed in to it:
 
 - **Sign-in expired** keeps your account, so **Sign in** goes back to the same one.
 - **Account and security** in the server's **…** menu opens the server's own account pages, as does **Account settings** in the **…** menu beside **OpenPencil Cloud** in Home's sidebar. See [Your Account](#your-account).
@@ -94,7 +94,7 @@ People who can only view see the history and can copy links, but can't change it
 
 ## Document Links
 
-In the web app, the address bar shows the Cloud document you're looking at, and the version you have open in the history, so you can reload or pass the address on. Opening it signs you in to the document's server if needed, then opens the document for anyone with access to it. A link to a server you have never used only names the server; connect to it in **Settings → Account & storage** first.
+In the web app, the address bar shows the Cloud document you're looking at, and the version you have open in the history, so you can reload or pass the address on. Opening it signs you in to the document's server if needed, then opens the document for anyone with access to it. A link to a server you have never used only names the server; connect to it in **Settings → Cloud** first.
 
 ## Share a Document
 

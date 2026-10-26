@@ -36,7 +36,6 @@ export const settingsMessageDefaults = {
   groupAI: 'AI',
   groupDataAndPrivacy: 'Data & privacy',
   editor: 'Editor',
-  accountAndStorage: 'Account & storage',
   models: 'Models',
   imageServices: 'Image services',
   recentFiles: 'Recent files',
@@ -88,6 +87,7 @@ export const settingsMessageDefaults = {
   keepEditing: 'Keep editing',
   discard: 'Discard',
   storage: 'Storage',
+  cloud: 'Cloud',
   mobilePanelNavigation: 'Mobile panel navigation',
   notifications: 'Notifications'
 } as const

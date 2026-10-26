@@ -264,7 +264,7 @@ function formattedDate(updatedAt: string): string {
             <IconButton
               :label="settings.title"
               class="size-10 sm:size-7"
-              @click="openSettingsDialog('account')"
+              @click="openSettingsDialog('storage')"
             >
               <icon-lucide-settings-2 class="size-3.5" />
             </IconButton>
@@ -346,7 +346,7 @@ function formattedDate(updatedAt: string): string {
           class="rounded-lg border border-dashed border-border px-4 py-4 text-center text-xs text-muted sm:py-6"
         >
           <p>{{ storage.notConfigured }}</p>
-          <AppButton variant="outline" class="mt-3" @click="openSettingsDialog('account')">
+          <AppButton variant="outline" class="mt-3" @click="openSettingsDialog('storage')">
             {{ settings.title }}
           </AppButton>
         </div>

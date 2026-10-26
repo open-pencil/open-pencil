@@ -7,7 +7,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-account').click()
+  await page.getByTestId('settings-section-storage').click()
   const connection = page.getByRole('button', { name: /S3 storage/ })
   await connection.click()
   await page.getByLabel('Endpoint', { exact: true }).fill('https://s3.example.com')
@@ -36,7 +36,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   await page.reload()
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-account').click()
+  await page.getByTestId('settings-section-storage').click()
   await connection.click()
   await expect(page.getByLabel('Endpoint', { exact: true })).toHaveValue('https://s3.example.com')
   await expect(secret).not.toHaveAttribute('placeholder', /Key saved/)
@@ -200,7 +200,7 @@ test('remembered browser credentials survive reload and clear centrally', async 
   await page.getByRole('tab', { name: 'AI' }).click()
   await page.getByTestId('provider-setup-open-settings').click()
 
-  await page.getByTestId('settings-section-account').click()
+  await page.getByTestId('settings-section-general').click()
   const remember = page.getByRole('switch', { name: 'Remember API keys on this device' })
   await expect(remember).toHaveAttribute('aria-checked', 'true')
   await page.getByTestId('settings-section-ai').click()
@@ -227,7 +227,7 @@ test('remembered browser credentials survive reload and clear centrally', async 
     .getByTestId('settings-model-editor')
     .getByRole('button', { name: 'Cancel', exact: true })
     .click()
-  await page.getByTestId('settings-section-account').click()
+  await page.getByTestId('settings-section-general').click()
   await remember.click()
   await page.getByTestId('app-settings-done').click()
 
@@ -237,14 +237,11 @@ test('remembered browser credentials survive reload and clear centrally', async 
   await expect(page.getByTestId('provider-setup-open-settings')).toBeVisible()
 })
 
-test('browser credential preferences live in Account & storage, not the footer', async ({
-  page
-}) => {
+test('browser credential preferences live in General, not the footer', async ({ page }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   await page.keyboard.press('ControlOrMeta+,')
-  await page.getByTestId('settings-section-account').click()
-  const panel = page.getByTestId('settings-storage-panel')
+  const panel = page.getByTestId('settings-general-panel')
   const remember = panel.getByRole('switch', { name: 'Remember API keys on this device' })
   await expect(remember).toBeVisible()
   if ((await remember.getAttribute('aria-checked')) === 'true') await remember.click()

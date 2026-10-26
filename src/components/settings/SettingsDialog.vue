@@ -4,7 +4,8 @@ import { AlertDialogCancel, DialogClose } from 'reka-ui'
 import { computed, type Component } from 'vue'
 import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
-import IconCircleUser from '~icons/lucide/circle-user'
+import IconCloud from '~icons/lucide/cloud'
+import IconDatabase from '~icons/lucide/database'
 import IconImage from '~icons/lucide/image'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPlug from '~icons/lucide/plug'
@@ -16,6 +17,7 @@ import IconSparkles from '~icons/lucide/sparkles'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import {
   settingsDialogOpen,
   registerSettingsNavigation,
@@ -23,7 +25,7 @@ import {
   type SettingsSection
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
-import AccountSettingsPanel from '@/components/settings/account/AccountSettingsPanel.vue'
+import { CloudSettingsSection } from '@/components/cloud/integration'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import EditorSettingsPanel from '@/components/settings/editor/EditorSettingsPanel.vue'
@@ -35,6 +37,7 @@ import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.v
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
+import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -71,7 +74,10 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
     sections: [
       { value: 'general', label: settings.value.general, icon: IconSettings },
       { value: 'editor', label: settings.value.editor, icon: IconPenTool },
-      { value: 'account', label: settings.value.accountAndStorage, icon: IconCircleUser }
+      { value: 'storage', label: settings.value.storage, icon: IconDatabase },
+      ...(CLOUD_INCLUDED
+        ? [{ value: 'cloud' as const, label: settings.value.cloud, icon: IconCloud }]
+        : [])
     ]
   },
   {
@@ -177,8 +183,11 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="editor" as-child>
         <EditorSettingsPanel />
       </AppTabsContent>
-      <AppTabsContent value="account" as-child>
-        <AccountSettingsPanel />
+      <AppTabsContent value="storage" as-child>
+        <StorageSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent v-if="CLOUD_INCLUDED" value="cloud" as-child>
+        <CloudSettingsSection />
       </AppTabsContent>
       <AppTabsContent value="ai" as-child>
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">

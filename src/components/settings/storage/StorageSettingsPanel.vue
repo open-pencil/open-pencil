@@ -216,8 +216,6 @@ async function testConnection() {
     <SettingsPage>
       <!-- Sections are spaced as other multi-section pages space them. -->
       <div class="flex flex-col gap-6">
-        <!-- The page this list sits on puts its other sections around it. -->
-        <slot />
         <SettingsSection>
           <template #title>{{ settings.storage }}</template>
           <template #description>{{ provider.description }}</template>
@@ -242,7 +240,6 @@ async function testConnection() {
             {{ settings.configureStorageHint }}
           </p>
         </SettingsSection>
-        <slot name="after" />
       </div>
     </SettingsPage>
   </PanelDrillIn>

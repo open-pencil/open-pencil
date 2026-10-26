@@ -49,7 +49,7 @@ test('model Save and Test explain missing fields and focus the first error', asy
 
 test('storage validates preferences and test credentials without saving', async ({ page }) => {
   await openSettings(page)
-  await page.getByTestId('settings-section-account').click()
+  await page.getByTestId('settings-section-storage').click()
   await expect(
     page.getByText('Configure the connection before opening the workspace.')
   ).toBeVisible()

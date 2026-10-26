@@ -8,7 +8,9 @@ import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/prefe
 import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/schema'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
+import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
+import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -97,6 +99,8 @@ const preserveUnsavedWork = computed({
       </SettingsGroup>
     </SettingsSection>
 
+    <CollaborationNameSection />
+
     <SettingsSection>
       <template #title>{{ recovery.settingsTitle }}</template>
 
@@ -135,5 +139,7 @@ const preserveUnsavedWork = computed({
         </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
+
+    <CredentialSettingsSection />
   </section>
 </template>

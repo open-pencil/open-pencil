@@ -179,7 +179,7 @@ const drawerTransition = useMotionTransition({
           <div data-test-id="mobile-drawer-layers" class="flex h-full flex-col">
             <PagesPanel />
             <div class="border-t border-border" />
-            <header class="shrink-0 px-3 py-2 text-[11px] tracking-wider text-muted uppercase">
+            <header class="shrink-0 px-3 py-2 text-[11px] font-semibold text-muted">
               Layers
             </header>
             <LayerTree class="min-h-0 flex-1" />
