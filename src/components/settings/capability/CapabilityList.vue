@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { useId } from 'vue'
 
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 import type { CapabilityGroup, CapabilityItem } from './types'
 
@@ -43,11 +45,15 @@ function isOpen(group: CapabilityGroup) {
     data-slot="capability-list"
   >
     <template v-for="group in groups" :key="group.key">
-      <section
+      <!-- Reka directly, as collapsibles with their own header shape do (theme/collapsible). -->
+      <CollapsibleRoot
         v-if="group.items.length || group.empty"
+        as="section"
         class="border-border not-first:border-t"
         :data-group="group.key"
         :aria-label="group.label"
+        :open="isOpen(group)"
+        @update:open="emit('update:expanded', group.key, $event)"
       >
         <!-- Pinned at the top of the scrolling page, above its padding (CapabilityPage). -->
         <div
@@ -62,26 +68,22 @@ function isOpen(group: CapabilityGroup) {
               @update:model-value="emit('set-group', group.key, $event)"
             />
           </span>
-          <button
-            type="button"
-            class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left"
-            :aria-expanded="isOpen(group)"
-            @click="emit('update:expanded', group.key, !isOpen(group))"
+          <CollapsibleTrigger
+            class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             <icon-lucide-chevron-right
-              class="size-3 shrink-0 text-muted transition-transform"
-              :class="isOpen(group) && 'rotate-90'"
+              class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none"
               aria-hidden="true"
             />
             <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
             <code v-if="group.detail" class="min-w-0 truncate text-[11px] text-muted">{{
               group.detail
             }}</code>
-          </button>
+          </CollapsibleTrigger>
           <span v-if="group.count" class="shrink-0 text-[11px] text-muted">{{ group.count }}</span>
           <slot name="group-actions" :group="group" />
         </div>
-        <template v-if="isOpen(group)">
+        <CollapsibleContent :class="collapsibleContentMotion">
           <p
             v-if="!group.items.length"
             class="border-t border-border py-2 pr-3 pl-13 text-[11px] text-muted"
@@ -138,8 +140,8 @@ function isOpen(group: CapabilityGroup) {
               </component>
             </li>
           </ul>
-        </template>
-      </section>
+        </CollapsibleContent>
+      </CollapsibleRoot>
     </template>
   </div>
 </template>
