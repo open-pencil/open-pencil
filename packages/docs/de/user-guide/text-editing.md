@@ -49,7 +49,7 @@ Ist die Schrift variabel, etwa Inter, zeigt der Bereich Typografie ihre Achsen (
 - Chrome und Edge können Systemschriften im Browser verwenden.
 - Heruntergeladene Schriftschnitte werden lokal gespeichert.
 
-Zugriff auf Systemschriften und Online-Anbieter verwaltest du unter **Einstellungen › Schriften**, die das Zahnrad neben der Schriftfamilie öffnet; in der Desktop-App verwaltet die Seite auch heruntergeladene Schriften und Fallback-Pakete.
+Zugriff auf Systemschriften und Online-Anbieter verwaltest du unter **Einstellungen › Editor**, den das Zahnrad neben der Schriftfamilie öffnet; in der Desktop-App verwaltet die Seite auch heruntergeladene Schriften und Fallback-Pakete.
 
 ## Fehlende Schriften
 

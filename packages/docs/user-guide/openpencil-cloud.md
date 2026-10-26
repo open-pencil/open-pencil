@@ -9,7 +9,7 @@ OpenPencil Cloud keeps documents on a server so they follow you across devices a
 
 ## Connect a Server
 
-Open **Settings → Cloud**. Until the hosted service opens, its card there takes your email for the waitlist; **Your team's server** asks for the address your team uses. OpenPencil checks that the address answers as an OpenPencil Cloud server before asking you to sign in, and says when nothing answers, when the address belongs to something else, or when the server runs a version this app doesn't support.
+Open **Settings → Account & storage**. Until the hosted service opens, its card there takes your email for the waitlist; **Your team's server** asks for the address your team uses. OpenPencil checks that the address answers as an OpenPencil Cloud server before asking you to sign in, and says when nothing answers, when the address belongs to something else, or when the server runs a version this app doesn't support.
 
 The ways to sign in come from the server: Google, Apple, or email and password.
 
@@ -18,7 +18,7 @@ The ways to sign in come from the server: Google, Apple, or email and password.
 
 Servers that review new accounts say so before you sign up. Until an administrator approves you, Settings shows that your account is waiting.
 
-Each server in **Settings → Cloud** shows who is signed in to it:
+Each server in **Settings → Account & storage** shows who is signed in to it:
 
 - **Sign-in expired** keeps your account, so **Sign in** goes back to the same one.
 - **Account and security** in the server's **…** menu opens the server's own account pages, as does **Account settings** in the **…** menu beside **OpenPencil Cloud** in Home's sidebar. See [Your Account](#your-account).
@@ -94,7 +94,7 @@ People who can only view see the history and can copy links, but can't change it
 
 ## Document Links
 
-In the web app, the address bar shows the Cloud document you're looking at, and the version you have open in the history, so you can reload or pass the address on. Opening it signs you in to the document's server if needed, then opens the document for anyone with access to it. A link to a server you have never used only names the server; connect to it in **Settings → Cloud** first.
+In the web app, the address bar shows the Cloud document you're looking at, and the version you have open in the history, so you can reload or pass the address on. Opening it signs you in to the document's server if needed, then opens the document for anyone with access to it. A link to a server you have never used only names the server; connect to it in **Settings → Account & storage** first.
 
 ## Share a Document
 
@@ -120,6 +120,6 @@ People who open a link without an account, where the server allows it, join unde
 
 ## AI on Cloud
 
-When your workspace's plan includes AI and the server offers it, the AI assistant can use models through Cloud instead of a key of your own. In **Settings → AI**, add a model, choose **OpenPencil Cloud** as the provider, and pick the workspace whose plan pays for it; the models and their prices come from the server. **OpenPencil Cloud** is listed while you are signed in to the server Home shows.
+When your workspace's plan includes AI and the server offers it, the AI assistant can use models through Cloud instead of a key of your own. In **Settings → Models**, add a model, choose **OpenPencil Cloud** as the provider, and pick the workspace whose plan pays for it; the models and their prices come from the server. **OpenPencil Cloud** is listed while you are signed in to the server Home shows.
 
 Each request uses the workspace's AI credits for the month. When they run out, the assistant says so and, if the server bills, offers **Manage plan**. Self-hosted servers run their own AI service with their own models and limits ([self-hosting guide](/reference/self-hosting-cloud#ai)).

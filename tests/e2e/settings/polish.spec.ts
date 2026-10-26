@@ -60,7 +60,7 @@ test('external Settings requests respect a dirty editor', async ({ page }) => {
     page.evaluate(async () => {
       const path = '/src/app/settings/dialog.ts'
       const { openSettingsDialog } = await import(path)
-      openSettingsDialog('media')
+      openSettingsDialog('services')
     })
   await requestSection()
   await expect(page.getByRole('alertdialog')).toBeVisible()

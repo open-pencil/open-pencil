@@ -9,7 +9,7 @@ OpenPencil can keep documents in a bucket you own on any S3-compatible service: 
 
 ## Connect a Bucket
 
-Open **Settings → Storage**, select **S3 storage**, and fill in:
+Open **Settings → Account & storage**, select **S3 storage**, and fill in:
 
 | Field                 | What to enter                                                                     |
 | --------------------- | --------------------------------------------------------------------------------- |

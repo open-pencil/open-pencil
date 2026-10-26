@@ -1,7 +1,7 @@
 import { useLocalStorage, useOnline } from '@vueuse/core'
 import { markRaw, reactive, ref, shallowRef, type Raw } from 'vue'
 
-import { CLOUD_INCLUDED, cloudUploadFailure, signInToSaveTo } from '@/app/cloud/integration'
+import { cloudUploadFailure, signInToSaveTo } from '@/app/cloud/integration'
 import type { EditorStore } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
@@ -57,7 +57,7 @@ export async function openSaveTo(store: EditorStore): Promise<void> {
   const writable = destinations.filter(canSaveTo)
   const first = writable.at(0)
   if (!first) {
-    if (!signInToSaveTo()) openSettingsDialog(CLOUD_INCLUDED ? 'cloud' : 'storage')
+    if (!signInToSaveTo()) openSettingsDialog('account')
     return
   }
   const last = writable.find((destination) => destination.key === lastDestination.value)

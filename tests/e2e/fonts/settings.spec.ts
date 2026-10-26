@@ -47,7 +47,7 @@ test('the font settings gear opens Settings › Fonts without desktop-only cache
 
   const panel = page.getByTestId('font-settings-panel')
   await expect(panel).toBeVisible()
-  await expect(page.getByTestId('settings-section-fonts')).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByTestId('settings-section-editor')).toHaveAttribute('aria-selected', 'true')
   await expect(panel.getByText('Allow browser access to local fonts')).toBeVisible()
   await expect(page.getByTestId('font-settings-request-access')).toBeVisible()
   const online = panel.getByRole('switch', { name: 'Online fonts', exact: true })

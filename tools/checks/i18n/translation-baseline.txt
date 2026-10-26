@@ -186,7 +186,6 @@ fr:panels.variableModeAuto
 fr:panels.variableModeAutoMixed
 fr:panels.variableModeHeading
 fr:settings.animations
-fr:settings.diagnostics
 fr:settings.mcp
 fr:settings.navigation
 fr:settings.notifications
@@ -477,9 +476,6 @@ ru:cloudPortal.methodApple
 ru:cloudPortal.deploymentOfficial
 ru:cloudPortal.emailTransportSMTP
 ru:cloudPortal.emailTransportCloudflare
-de:settings.cloud
-fr:settings.cloud
-it:settings.cloud
 es:cloud.productName
 es:cloud.roleEditor
 es:cloud.homeCloudOnHost
@@ -530,3 +526,11 @@ ru:cloud.inviteEmailPlaceholder
 de:settings.skills
 de:ai.chatReferenceSkills
 fr:ai.chatReferencePages
+de:settings.groupApp
+de:settings.editor
+es:settings.editor
+it:settings.groupApp
+it:settings.editor
+ja:settings.groupAI
+pl:settings.groupAI
+zh-cn:settings.groupAI

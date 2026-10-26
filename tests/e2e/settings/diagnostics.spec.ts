@@ -35,7 +35,7 @@ test('Settings exports correlated chat telemetry without conversation content', 
   await chat.submit('A second request in the same conversation')
   await expect(page.getByTestId('chat-message-assistant')).toHaveCount(2)
   await page.getByTestId('app-settings-trigger').click()
-  await page.getByTestId('settings-section-diagnostics').click()
+  await page.getByTestId('settings-section-privacy').click()
   await page.getByRole('button', { name: 'Copy diagnostics', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible()
   const text = await page.evaluate(() => navigator.clipboard.readText())
@@ -75,7 +75,7 @@ test('Settings saves the diagnostics report as a file', async ({ configuredChat:
 
 async function openDiagnostics(page: Page) {
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
-  await page.getByTestId('settings-section-diagnostics').click()
+  await page.getByTestId('settings-section-privacy').click()
 }
 
 async function reloadAndOpenDiagnostics(page: Page) {

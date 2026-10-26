@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { tryOnScopeDispose } from '@vueuse/core'
 import { AlertDialogCancel, DialogClose } from 'reka-ui'
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
+import IconBookOpen from '~icons/lucide/book-open'
+import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
+import IconCircleUser from '~icons/lucide/circle-user'
+import IconImage from '~icons/lucide/image'
+import IconPenTool from '~icons/lucide/pen-tool'
+import IconPlug from '~icons/lucide/plug'
+import IconSettings from '~icons/lucide/settings'
+import IconShield from '~icons/lucide/shield'
+import IconSlidersHorizontal from '~icons/lucide/sliders-horizontal'
+import IconSparkles from '~icons/lucide/sparkles'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { CLOUD_INCLUDED } from '@/app/cloud/integration'
 import {
   settingsDialogOpen,
   registerSettingsNavigation,
@@ -14,10 +23,10 @@ import {
   type SettingsSection
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
-import { CloudSettingsSection } from '@/components/cloud/integration'
+import AccountSettingsPanel from '@/components/settings/account/AccountSettingsPanel.vue'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
-import FontSettingsPanel from '@/components/settings/fonts/FontSettingsPanel.vue'
+import EditorSettingsPanel from '@/components/settings/editor/EditorSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
 import SettingsBreadcrumb from '@/components/settings/layout/SettingsBreadcrumb.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -26,9 +35,7 @@ import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.v
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
-import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
-import ToolbarSettingsPanel from '@/components/settings/toolbar/ToolbarSettingsPanel.vue'
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import {
@@ -38,30 +45,57 @@ import {
   AppDialogRoot
 } from '@/components/ui/dialog'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { AppTabsContent, AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
+import {
+  AppTabsContent,
+  AppTabsHeading,
+  AppTabsList,
+  AppTabsRoot,
+  AppTabsTrigger
+} from '@/components/ui/tabs'
 
 const { isMobile } = useViewportKind()
 const { settings, common } = useI18n()
 const navigation = provideSettingsNavigation()
 tryOnScopeDispose(registerSettingsNavigation(navigation.request))
 const { editing, confirming, crumb } = navigation
-const sections = computed(
-  () =>
-    [
-      { value: 'general', label: settings.value.general },
-      { value: 'toolbar', label: settings.value.toolbar },
-      { value: 'ai', label: settings.value.aiAndAgents },
-      { value: 'usage', label: settings.value.usage },
-      { value: 'diagnostics', label: settings.value.diagnostics },
-      { value: 'privacy', label: settings.value.privacy },
-      { value: 'mcp', label: settings.value.mcp },
-      { value: 'tools', label: settings.value.toolAccess },
-      { value: 'skills', label: settings.value.skills },
-      { value: 'fonts', label: settings.value.fonts },
-      { value: 'media', label: settings.value.media },
-      { value: 'storage', label: settings.value.storage },
-      ...(CLOUD_INCLUDED ? [{ value: 'cloud' as const, label: settings.value.cloud }] : [])
-    ] satisfies { value: SettingsSection; label: string }[]
+interface SectionItem {
+  value: SettingsSection
+  label: string
+  icon: Component
+}
+
+/** The sidebar's pages, grouped as macOS and VS Code group their settings. */
+const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
+  {
+    label: settings.value.groupApp,
+    sections: [
+      { value: 'general', label: settings.value.general, icon: IconSettings },
+      { value: 'editor', label: settings.value.editor, icon: IconPenTool },
+      { value: 'account', label: settings.value.accountAndStorage, icon: IconCircleUser }
+    ]
+  },
+  {
+    label: settings.value.groupAI,
+    sections: [
+      { value: 'ai', label: settings.value.models, icon: IconSparkles },
+      { value: 'tools', label: settings.value.toolAccess, icon: IconSlidersHorizontal },
+      { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
+      { value: 'services', label: settings.value.imageServices, icon: IconImage },
+      { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
+      { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
+    ]
+  },
+  {
+    label: settings.value.groupDataAndPrivacy,
+    sections: [{ value: 'privacy', label: settings.value.privacy, icon: IconShield }]
+  }
+])
+const sections = computed(() => groups.value.flatMap((group) => group.sections))
+const selectGroups = computed(() =>
+  groups.value.map((group) => ({
+    label: group.label,
+    options: group.sections.map(({ value, label }) => ({ value, label }))
+  }))
 )
 function onSectionChange(section: string | number): void {
   const match = sections.value.find((item) => item.value === section)
@@ -116,72 +150,35 @@ function onOpenChange(open: boolean): void {
       <div v-if="isMobile" class="shrink-0 border-b border-border p-3">
         <AppSelect
           :model-value="settingsDialogSection"
-          :options="sections"
+          :groups="selectGroups"
           :label="settings.title"
           :ui="{ trigger: 'w-full' }"
           @update:model-value="onSectionChange"
         />
       </div>
       <AppTabsList v-show="!isMobile" :label="settings.title">
-        <AppTabsTrigger value="general" data-test-id="settings-section-general">
-          <template #leading><icon-lucide-settings class="size-3.5" /></template>
-          {{ settings.general }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="toolbar" data-test-id="settings-section-toolbar">
-          <template #leading><icon-lucide-panel-bottom class="size-3.5" /></template>
-          {{ settings.toolbar }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="ai" data-test-id="settings-section-ai">
-          <template #leading><icon-lucide-sparkles class="size-3.5" /></template>
-          {{ settings.aiAndAgents }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="usage" data-test-id="settings-section-usage">
-          <template #leading><icon-lucide-chart-no-axes-combined class="size-3.5" /></template>
-          {{ settings.usage }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="diagnostics" data-test-id="settings-section-diagnostics">
-          <template #leading><icon-lucide-activity class="size-3.5" /></template>
-          {{ settings.diagnostics }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="privacy" data-test-id="settings-section-privacy">
-          <template #leading><icon-lucide-shield class="size-3.5" /></template>
-          {{ settings.privacy }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="mcp" data-test-id="settings-section-mcp">
-          <template #leading><icon-lucide-plug class="size-3.5" /></template>
-          {{ settings.mcp }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="tools" data-test-id="settings-section-tools">
-          <template #leading><icon-lucide-sliders-horizontal class="size-3.5" /></template>
-          {{ settings.toolAccess }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="skills" data-test-id="settings-section-skills">
-          <template #leading><icon-lucide-book-open class="size-3.5" /></template>
-          {{ settings.skills }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="fonts" data-test-id="settings-section-fonts">
-          <template #leading><icon-lucide-type class="size-3.5" /></template>
-          {{ settings.fonts }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="media" data-test-id="settings-section-media">
-          <template #leading><icon-lucide-image class="size-3.5" /></template>
-          {{ settings.media }}
-        </AppTabsTrigger>
-        <AppTabsTrigger value="storage" data-test-id="settings-section-storage">
-          <template #leading><icon-lucide-database class="size-3.5" /></template>
-          {{ settings.storage }}
-        </AppTabsTrigger>
-        <AppTabsTrigger v-if="CLOUD_INCLUDED" value="cloud" data-test-id="settings-section-cloud">
-          <template #leading><icon-lucide-cloud class="size-3.5" /></template>
-          {{ settings.cloud }}
-        </AppTabsTrigger>
+        <template v-for="group in groups" :key="group.label">
+          <AppTabsHeading>{{ group.label }}</AppTabsHeading>
+          <AppTabsTrigger
+            v-for="section in group.sections"
+            :key="section.value"
+            :value="section.value"
+            :data-test-id="`settings-section-${section.value}`"
+          >
+            <template #leading><component :is="section.icon" class="size-3.5" /></template>
+            {{ section.label }}
+          </AppTabsTrigger>
+        </template>
       </AppTabsList>
 
       <AppTabsContent value="general" as-child>
         <SettingsPage><GeneralSettingsPanel /></SettingsPage>
       </AppTabsContent>
-      <AppTabsContent value="toolbar" as-child>
-        <SettingsPage><ToolbarSettingsPanel /></SettingsPage>
+      <AppTabsContent value="editor" as-child>
+        <EditorSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="account" as-child>
+        <AccountSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="ai" as-child>
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">
@@ -190,35 +187,28 @@ function onOpenChange(open: boolean): void {
           </ModelsPanel>
         </section>
       </AppTabsContent>
-      <AppTabsContent value="usage" as-child>
-        <SettingsPage><UsageSettingsPanel /></SettingsPage>
-      </AppTabsContent>
-      <AppTabsContent value="diagnostics" as-child>
-        <SettingsPage><DiagnosticsSettingsPanel /></SettingsPage>
-      </AppTabsContent>
-      <AppTabsContent value="privacy" as-child>
-        <SettingsPage><PrivacySettingsPanel /></SettingsPage>
-      </AppTabsContent>
-      <AppTabsContent value="mcp" as-child>
-        <MCPWorkspacePanel />
-      </AppTabsContent>
       <AppTabsContent value="tools" as-child>
         <ToolAccessSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="skills" as-child>
         <SkillsSettingsPanel />
       </AppTabsContent>
-      <AppTabsContent value="fonts" as-child>
-        <FontSettingsPanel />
-      </AppTabsContent>
-      <AppTabsContent value="media" as-child>
+      <AppTabsContent value="services" as-child>
         <MediaSettingsPanel />
       </AppTabsContent>
-      <AppTabsContent value="storage" as-child>
-        <StorageSettingsPanel />
+      <AppTabsContent value="mcp" as-child>
+        <MCPWorkspacePanel />
       </AppTabsContent>
-      <AppTabsContent v-if="CLOUD_INCLUDED" value="cloud" as-child>
-        <CloudSettingsSection />
+      <AppTabsContent value="usage" as-child>
+        <SettingsPage><UsageSettingsPanel /></SettingsPage>
+      </AppTabsContent>
+      <AppTabsContent value="privacy" as-child>
+        <SettingsPage>
+          <div class="flex flex-col gap-6">
+            <PrivacySettingsPanel />
+            <DiagnosticsSettingsPanel />
+          </div>
+        </SettingsPage>
       </AppTabsContent>
     </AppTabsRoot>
 

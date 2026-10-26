@@ -86,7 +86,7 @@ test('configured storage lists previews through ranges before opening the docume
   await canvas.waitForInit()
   await page.keyboard.press('ControlOrMeta+KeyN')
   await page.getByRole('button', { name: 'Settings' }).last().click()
-  await page.getByTestId('settings-section-storage').click()
+  await page.getByTestId('settings-section-account').click()
   const panel = page.getByTestId('settings-storage-panel')
   await panel.getByRole('button', { name: /S3 storage/ }).click()
   await panel.getByLabel('Endpoint').fill('https://s3.example.com')
@@ -122,7 +122,7 @@ test('storage workspace directs unconfigured users to Settings', async ({ page }
   await expect(page.getByRole('button', { name: 'New design', exact: true })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Settings' }).last().click()
-  await page.getByTestId('settings-section-storage').click()
+  await page.getByTestId('settings-section-account').click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
 

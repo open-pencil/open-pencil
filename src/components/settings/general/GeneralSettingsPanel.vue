@@ -6,19 +6,9 @@ import { type Locale, useI18n } from '@open-pencil/vue/i18n'
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
 import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/preferences'
 import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/schema'
-import { setSnappingPreference } from '@/app/settings/preferences/apply'
-import {
-  appPreferences,
-  updateZoomSpeed,
-  ZOOM_SPEEDS,
-  type ZoomSpeed
-} from '@/app/settings/preferences/store'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
-import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
-import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
-import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -50,34 +40,6 @@ const languageOptions = availableLocales.map((value) => ({
 const preserveUnsavedWork = computed({
   get: () => recoveryEnabled.value,
   set: setRecoveryEnabled
-})
-
-const snapToGeometry = computed({
-  get: () => appPreferences.value.editing.snapping.geometry,
-  set: (enabled: boolean) => setSnappingPreference('geometry', enabled)
-})
-
-const snapToObjects = computed({
-  get: () => appPreferences.value.editing.snapping.objects,
-  set: (enabled: boolean) => setSnappingPreference('objects', enabled)
-})
-
-const snapToPixelGrid = computed({
-  get: () => appPreferences.value.editing.snapping.pixelGrid,
-  set: (enabled: boolean) => setSnappingPreference('pixelGrid', enabled)
-})
-
-const zoomSpeed = computed<ZoomSpeed>({
-  get: () => appPreferences.value.navigation.zoomSpeed,
-  set: updateZoomSpeed
-})
-
-const zoomSpeedOptions = computed(() => {
-  const format = new Intl.NumberFormat(locale.value)
-  return ZOOM_SPEEDS.map((value) => {
-    const speed = `${format.format(value)}×`
-    return { value, label: value === 1 ? settings.value.zoomSpeedDefault({ speed }) : speed }
-  })
 })
 </script>
 
@@ -135,8 +97,6 @@ const zoomSpeedOptions = computed(() => {
       </SettingsGroup>
     </SettingsSection>
 
-    <CollaborationNameSection />
-
     <SettingsSection>
       <template #title>{{ recovery.settingsTitle }}</template>
 
@@ -150,66 +110,6 @@ const zoomSpeedOptions = computed(() => {
             v-model="preserveUnsavedWork"
             :label="recovery.preserveUnsavedWork"
             data-test-id="settings-recovery-enabled"
-          />
-        </SettingsRow>
-      </SettingsGroup>
-    </SettingsSection>
-
-    <SettingsSection>
-      <template #title>{{ settings.editing }}</template>
-      <template #description>{{ settings.snappingDescription }}</template>
-
-      <SettingsGroup>
-        <SettingsRow
-          as="label"
-          :label="settings.snapToGeometry"
-          :description="settings.snapToGeometryDescription"
-        >
-          <AppSwitch
-            v-model="snapToGeometry"
-            :label="settings.snapToGeometry"
-            data-test-id="settings-snap-geometry"
-          />
-        </SettingsRow>
-        <SettingsRow
-          as="label"
-          :label="settings.snapToObjects"
-          :description="settings.snapToObjectsDescription"
-        >
-          <AppSwitch
-            v-model="snapToObjects"
-            :label="settings.snapToObjects"
-            data-test-id="settings-snap-objects"
-          />
-        </SettingsRow>
-        <SettingsRow
-          as="label"
-          :label="settings.snapToPixelGrid"
-          :description="settings.snapToPixelGridDescription"
-        >
-          <AppSwitch
-            v-model="snapToPixelGrid"
-            :label="settings.snapToPixelGrid"
-            data-test-id="settings-snap-pixel-grid"
-          />
-        </SettingsRow>
-      </SettingsGroup>
-
-      <p class="text-[11px] text-muted">{{ settings.temporaryDisableSnappingHint }}</p>
-    </SettingsSection>
-
-    <SettingsSection>
-      <template #title>{{ settings.navigation }}</template>
-      <template #description>{{ settings.navigationDescription }}</template>
-
-      <SettingsGroup>
-        <SettingsRow :label="settings.zoomSpeed" :description="settings.zoomSpeedDescription">
-          <AppSelect
-            v-model="zoomSpeed"
-            :label="settings.zoomSpeed"
-            :options="zoomSpeedOptions"
-            :ui="selectUI"
-            data-test-id="settings-zoom-speed"
           />
         </SettingsRow>
       </SettingsGroup>
@@ -235,8 +135,5 @@ const zoomSpeedOptions = computed(() => {
         </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
-
-    <CredentialSettingsSection />
-    <RenderingSettingsSection />
   </section>
 </template>
