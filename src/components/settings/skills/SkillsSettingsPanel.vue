@@ -3,31 +3,33 @@ import { useFileDialog } from '@vueuse/core'
 import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
 import { computed, ref } from 'vue'
 
+import { IS_TAURI } from '@open-pencil/core/constants'
 import { useAIMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue/i18n'
 
+import { skillPreferenceKey } from '@/app/ai/skills/preferences'
 import { useSkillsSettings, type SkillSourceGroup } from '@/app/ai/skills/settings/use'
+import type { Skill, SkillSourceID } from '@/app/ai/skills/types'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
-import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
-import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
-import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
-import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import CapabilityList from '@/components/settings/capability/CapabilityList.vue'
+import CapabilityPage from '@/components/settings/capability/CapabilityPage.vue'
+import type { CapabilityGroup, CapabilityItem } from '@/components/settings/capability/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppAlertDialogRoot, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 import { useSkillMessages } from './messages'
 import SkillDetails from './SkillDetails.vue'
-import SkillList from './SkillList.vue'
 
+/** Skills as Tool access lists tools: a group per source with its switch, a switch per skill. */
 const ai = useAIMessages()
 const common = useCommonMessages()
 const settings = useSettingsMessages()
 const messages = useSkillMessages()
 const skills = useSkillsSettings()
 const { groups, loading, uploading, uploadFailure, selected, detailOpen } = skills
+const search = ref('')
+const expanded = ref<Record<string, boolean>>({})
 const deleteOpen = ref(false)
 const trustOpen = ref(false)
 /** The folder near the document the person is asked to trust; kept while the dialog closes. */
@@ -54,32 +56,82 @@ fileDialog.onChange((files) => {
   if (file) void skills.upload(file)
 })
 
-function sourceTitle(group: SkillSourceGroup): string {
-  if (group.source === 'project') return ai.value.skillsProjectSource
-  if (group.source === 'agents') return ai.value.skillsAgentsSource
-  if (group.source === 'claude') return ai.value.skillsClaudeSource
-  return ai.value.skillsUploadedSource
+const SOURCE_TITLES: Record<SkillSourceID, () => string> = {
+  openpencil: () => ai.value.skillsUploadedSource,
+  project: () => ai.value.skillsProjectSource,
+  agents: () => ai.value.skillsAgentsSource,
+  claude: () => ai.value.skillsClaudeSource
 }
 
-function sourceDescription(group: SkillSourceGroup): string {
-  const folder = group.folder ?? ''
-  if (group.source === 'project') {
-    return group.enabled
-      ? ai.value.skillsProjectSourceTrusted({ folder })
-      : ai.value.skillsProjectSourceDescription({ folder })
-  }
-  if (group.source === 'agents') return ai.value.skillsAgentsSourceDescription({ folder })
-  if (group.source === 'claude') return ai.value.skillsClaudeSourceDescription({ folder })
-  return ai.value.skillsUploadedSourceDescription
+function matches(skill: Skill, query: string): boolean {
+  return `${skill.name} ${skill.description}`.toLowerCase().includes(query)
+}
+
+const listGroups = computed<CapabilityGroup[]>(() => {
+  const query = search.value.trim().toLowerCase()
+  return groups.value.map((group) => ({
+    key: group.key,
+    label: SOURCE_TITLES[group.source](),
+    ...(group.folder && { detail: group.folder }),
+    // A folder next to the document is trusted rather than switched on.
+    toggle: group.trustPath ? null : { enabled: group.enabled, state: 'idle' },
+    items: group.skills
+      .filter((entry) => !query || matches(entry.skill, query))
+      .map((entry): CapabilityItem => ({
+        key: skillPreferenceKey(entry.skill),
+        name: entry.skill.name,
+        description: entry.skill.description,
+        enabled: entry.enabled,
+        locked: !group.enabled,
+        ...(entry.untrusted && { note: ai.value.skillsNotTrusted }),
+        ...(entry.shadowed && { note: ai.value.skillsNotUsed })
+      })),
+    ...(!query && { empty: group.folder ? ai.value.skillsNoneInFolder : ai.value.skillsNoUploads })
+  }))
+})
+
+const entries = computed(() => groups.value.flatMap((group) => group.skills))
+const enabledCount = computed(() => entries.value.filter((entry) => entry.enabled).length)
+const hasProblems = computed(() => groups.value.some((group) => group.problems.length))
+
+function sourceGroup(key: string): SkillSourceGroup | undefined {
+  return groups.value.find((group) => group.key === key)
+}
+
+function find(groupKey: string, itemKey: string): Skill | undefined {
+  return sourceGroup(groupKey)?.skills.find(({ skill }) => skillPreferenceKey(skill) === itemKey)
+    ?.skill
+}
+
+function setGroup(groupKey: string, enabled: boolean) {
+  const group = sourceGroup(groupKey)
+  if (group && !group.trustPath) skills.setSourceEnabled(group.source, enabled)
+}
+
+function setItem(groupKey: string, itemKey: string, enabled: boolean) {
+  const skill = find(groupKey, itemKey)
+  if (skill) skills.setSkillEnabled(skill, enabled)
+}
+
+function open(groupKey: string, itemKey: string) {
+  const skill = find(groupKey, itemKey)
+  if (skill) skills.open(skill)
 }
 
 const trustDescription = computed(() =>
   ai.value.skillsTrustDescription({ folder: trusting.value?.folder ?? '' })
 )
 
-function askTrust(group: SkillSourceGroup) {
+function askTrust(groupKey: string) {
+  const group = sourceGroup(groupKey)
+  if (!group) return
   trusting.value = group
   trustOpen.value = true
+}
+
+function stopTrusting(groupKey: string) {
+  const path = sourceGroup(groupKey)?.trustPath
+  if (path) skills.setFolderTrusted(path, false)
 }
 
 function trust() {
@@ -114,59 +166,32 @@ async function remove() {
         @set-enabled="skills.setSkillEnabled(selected.skill, $event)"
       />
     </template>
-    <SettingsPage>
-      <div class="flex flex-col gap-6" :aria-busy="loading">
-        <SettingsSection v-for="group in groups" :key="group.key" :data-skill-source="group.source">
-          <template #title>{{ sourceTitle(group) }}</template>
-          <template #description>{{ sourceDescription(group) }}</template>
-          <template #actions>
-            <AppButton
-              v-if="group.source === 'openpencil'"
-              variant="outline"
-              :loading="uploading"
-              @click="fileDialog.open()"
-            >
-              <template #leading><icon-lucide-upload class="size-3.5" /></template>
-              {{ ai.skillsUpload }}
-            </AppButton>
-            <AppButton
-              v-else-if="group.trustPath && group.enabled"
-              variant="outline"
-              @click="skills.setFolderTrusted(group.trustPath, false)"
-            >
-              {{ ai.skillsStopTrusting }}
-            </AppButton>
-            <AppButton v-else-if="group.trustPath" variant="outline" @click="askTrust(group)">
-              <template #leading><icon-lucide-shield-check class="size-3.5" /></template>
-              {{ ai.skillsTrustFolder }}
-            </AppButton>
-            <AppButton v-else variant="outline" :loading="loading" @click="skills.reload">
-              <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
-              {{ common.refresh }}
-            </AppButton>
-          </template>
-          <AppAlert
-            v-if="group.source === 'openpencil' && uploadFailure"
-            tone="error"
-            :heading="ai.skillsUploadFailed"
-            :description="messages.uploadFailure(uploadFailure)"
-          />
-          <SettingsGroup v-if="group.folder && !group.trustPath">
-            <SettingsRow as="label" :label="ai.skillsUseSource">
-              <AppSwitch
-                :model-value="group.enabled"
-                :label="ai.skillsUseSource"
-                @update:model-value="skills.setSourceEnabled(group.source, $event)"
-              />
-            </SettingsRow>
-          </SettingsGroup>
-          <SkillList v-if="group.skills.length" :entries="group.skills" @open="skills.open" />
-          <AppPlaceholder
-            v-else
-            size="compact"
-            :fill="false"
-            :label="group.folder ? ai.skillsNoneInFolder : ai.skillsNoUploads"
-          />
+    <CapabilityPage
+      v-model:search="search"
+      :count="ai.skillsEnabledCount({ enabled: enabledCount, total: entries.length })"
+      :search-label="ai.searchSkills"
+      :aria-busy="loading"
+    >
+      <template #leading>
+        <AppButton size="xs" variant="outline" :loading="uploading" @click="fileDialog.open()">
+          <template #leading><icon-lucide-upload class="size-3.5" /></template>
+          {{ ai.skillsUpload }}
+        </AppButton>
+      </template>
+      <template v-if="IS_TAURI" #actions>
+        <AppButton size="xs" variant="link" :loading="loading" @click="skills.reload">
+          {{ common.refresh }}
+        </AppButton>
+      </template>
+      <p class="pb-3 text-xs leading-relaxed text-muted">{{ ai.skillsDescription }}</p>
+      <div v-if="uploadFailure || hasProblems" class="flex flex-col gap-2 pb-3">
+        <AppAlert
+          v-if="uploadFailure"
+          tone="error"
+          :heading="ai.skillsUploadFailed"
+          :description="messages.uploadFailure(uploadFailure)"
+        />
+        <template v-for="group in groups" :key="group.key">
           <AppAlert v-if="group.problems.length" tone="warning" :heading="ai.skillsProblems">
             <ul class="flex flex-col gap-0.5">
               <li v-for="problem in group.problems" :key="problem.location">
@@ -175,9 +200,35 @@ async function remove() {
               </li>
             </ul>
           </AppAlert>
-        </SettingsSection>
+        </template>
       </div>
-    </SettingsPage>
+      <CapabilityList
+        :groups="listGroups"
+        :expanded="expanded"
+        :open-label="(item) => ai.openSkillSettings({ name: item.name })"
+        @update:expanded="(key, isOpen) => (expanded = { ...expanded, [key]: isOpen })"
+        @set-group="setGroup"
+        @set-item="setItem"
+        @open="open"
+      >
+        <template #group-actions="{ group }">
+          <template v-if="sourceGroup(group.key)?.trustPath">
+            <AppButton
+              v-if="sourceGroup(group.key)?.enabled"
+              size="xs"
+              variant="link"
+              @click.stop="stopTrusting(group.key)"
+            >
+              {{ ai.skillsStopTrusting }}
+            </AppButton>
+            <AppButton v-else size="xs" variant="outline" @click.stop="askTrust(group.key)">
+              <template #leading><icon-lucide-shield-check class="size-3.5" /></template>
+              {{ ai.skillsTrustFolder }}
+            </AppButton>
+          </template>
+        </template>
+      </CapabilityList>
+    </CapabilityPage>
   </PanelDrillIn>
   <AppAlertDialogRoot v-model:open="trustOpen">
     <AppDialogHeader

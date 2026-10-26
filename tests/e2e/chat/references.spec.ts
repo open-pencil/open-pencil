@@ -60,7 +60,7 @@ test('/ starts a message with a skill', async ({ configuredChat: chat }) => {
     mimeType: 'application/zip',
     buffer: Buffer.from(zipSync({ 'grid/SKILL.md': strToU8(SKILL) }))
   })
-  await expect(page.locator('[data-skill="grid"]')).toBeVisible()
+  await expect(page.locator('[data-item="grid"]')).toBeVisible()
   await page.getByTestId('app-settings-done').click()
 
   await chat.input.click()

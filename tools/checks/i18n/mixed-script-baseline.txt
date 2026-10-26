@@ -568,8 +568,6 @@ ja:ai.connectionTestCloudCreditsExhausted
 zh-cn:ai.chatCloudAllowanceUsed
 zh-cn:ai.chatCloudAllowanceUsedUntil
 zh-cn:ai.connectionTestCloudCreditsExhausted
-ja:ai.skillsUploadedSourceDescription
-ja:ai.skillsAgentsSourceDescription
 ja:ai.skillsClaudeSource
 ja:ai.skillsUploadTooLarge
 ja:ai.skillsUploadNoSkill
@@ -582,8 +580,6 @@ ja:ai.skillErrorNoFrontmatter
 ja:ai.skillErrorInvalidFrontmatter
 ja:ai.skillErrorNoDescription
 ja:ai.skillErrorNoName
-zh-cn:ai.skillsUploadedSourceDescription
-zh-cn:ai.skillsAgentsSourceDescription
 zh-cn:ai.skillsClaudeSource
 zh-cn:ai.skillsUploadTooLarge
 zh-cn:ai.skillsUploadNoSkill
@@ -601,3 +597,5 @@ ja:ai.skillsTrustDescription
 zh-cn:ai.skillsTrustDescription
 zh-cn:ai.queueMessage
 ja:ai.queueMessage
+ja:ai.skillsDescription
+zh-cn:ai.skillsDescription

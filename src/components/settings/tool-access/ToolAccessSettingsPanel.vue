@@ -7,14 +7,13 @@ import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { useToolAccess } from '@/app/automation/tool-access/settings/list'
 import { useToolAccessSettings } from '@/app/automation/tool-access/settings/use'
-import type { ToolAccessGroup } from '@/app/automation/tool-access/types'
+import type { ToolAccessEntry } from '@/app/automation/tool-access/types'
+import CapabilityList from '@/components/settings/capability/CapabilityList.vue'
+import CapabilityPage from '@/components/settings/capability/CapabilityPage.vue'
+import type { CapabilityGroup } from '@/components/settings/capability/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { AppDialogBody } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-
-import ToolAccessList from './ToolAccessList.vue'
 
 const automation = useAutomationMessages()
 const { target, tools, disabled, selectTarget, reset } = useToolAccessSettings()
@@ -26,25 +25,38 @@ const targetOptions = computed(() => [
   { value: 'ai', label: automation.value.builtInAI },
   { value: 'mcp', label: automation.value.localMCP }
 ])
-const labelledGroups = computed<ToolAccessGroup[]>(() =>
+const listGroups = computed<CapabilityGroup[]>(() =>
   groups.value.map((group) => ({
-    ...group,
+    key: group.effect,
     label:
-      group.effect === 'read' ? automation.value.readOnlyTools : automation.value.sideEffectTools
+      group.effect === 'read' ? automation.value.readOnlyTools : automation.value.sideEffectTools,
+    toggle: { enabled: group.enabled, state: group.state },
+    items: group.tools.map((tool) => ({
+      key: tool.name,
+      name: tool.name,
+      description: tool.description,
+      enabled: isEnabled(tool)
+    }))
   }))
 )
-const hasMatches = computed(() => labelledGroups.value.some((group) => group.tools.length))
-function setExpanded(effect: 'read' | 'write', open: boolean) {
-  expanded.value = { ...expanded.value, [effect]: open }
+const hasMatches = computed(() => listGroups.value.some((group) => group.items.length))
+
+function effectOf(key: string): ToolAccessEntry['effect'] {
+  return key === 'write' ? 'write' : 'read'
+}
+function setExpanded(key: string, open: boolean) {
+  expanded.value = { ...expanded.value, [effectOf(key)]: open }
 }
 </script>
 
 <template>
-  <div class="flex min-h-0 min-w-0 flex-1 flex-col" data-slot="tool-access">
-    <div
-      class="flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-5 py-3 sm:px-6"
-      data-slot="tool-access-toolbar"
-    >
+  <CapabilityPage
+    v-model:search="search"
+    :count="automation.toolsEnabled({ enabled: enabledCount, total: tools.length })"
+    :search-label="automation.searchTools"
+    data-slot="tool-access"
+  >
+    <template #leading>
       <SegmentedControl
         :model-value="target"
         :options="targetOptions"
@@ -52,62 +64,51 @@ function setExpanded(effect: 'read' | 'write', open: boolean) {
         class="max-sm:w-full"
         @update:model-value="selectTarget"
       />
-      <span class="text-xs text-muted">
-        {{ automation.toolsEnabled({ enabled: enabledCount, total: tools.length }) }}
-      </span>
+    </template>
+    <template #actions>
       <AppButton size="xs" variant="link" @click="reset">{{
         automation.restoreToolDefaults
       }}</AppButton>
-      <AppInput
-        v-model="search"
-        type="search"
-        class="ml-auto min-w-40 flex-1 sm:max-w-60"
-        :placeholder="automation.searchTools"
-        :aria-label="automation.searchTools"
-      />
+    </template>
+    <p class="pb-3 text-xs leading-relaxed text-muted">
+      {{
+        target === 'ai' ? automation.aiToolAccessDescription : automation.mcpToolAccessDescription
+      }}
+    </p>
+    <AppPlaceholder
+      v-if="!hasMatches"
+      size="compact"
+      :fill="false"
+      :label="automation.noMatchingTools"
+    />
+    <CapabilityList
+      v-else
+      :groups="listGroups"
+      :expanded="expanded"
+      @update:expanded="setExpanded"
+      @set-group="(key, enabled) => setGroupEnabled(effectOf(key), enabled)"
+      @set-item="(_group, name, enabled) => setToolEnabled(name, enabled)"
+    />
+    <p class="border-t border-border pt-3 text-xs leading-relaxed text-muted">
+      {{
+        target === 'ai'
+          ? automation.aiToolsNotice
+          : mcpRuntime.externallyManaged
+            ? automation.externalRestartNotice
+            : automation.toolsRestartNotice
+      }}
+    </p>
+    <div v-if="target === 'mcp'" class="pt-2">
+      <AppButton
+        color="primary"
+        variant="solid"
+        :disabled="mcpRuntime.externallyManaged"
+        :loading="mcpRuntime.status === 'starting' || mcpRuntime.checking"
+        @click="restart"
+        >{{
+          mcpRuntime.externallyManaged ? automation.externallyManaged : automation.restart
+        }}</AppButton
+      >
     </div>
-    <AppDialogBody :ui="{ body: 'p-5 sm:p-6' }">
-      <p class="pb-3 text-xs leading-relaxed text-muted">
-        {{
-          target === 'ai' ? automation.aiToolAccessDescription : automation.mcpToolAccessDescription
-        }}
-      </p>
-      <AppPlaceholder
-        v-if="!hasMatches"
-        size="compact"
-        :fill="false"
-        :label="automation.noMatchingTools"
-      />
-      <ToolAccessList
-        v-else
-        :groups="labelledGroups"
-        :expanded="expanded"
-        :is-enabled="isEnabled"
-        @update:expanded="setExpanded"
-        @set-group="setGroupEnabled"
-        @set-tool="setToolEnabled"
-      />
-      <p class="border-t border-border pt-3 text-xs leading-relaxed text-muted">
-        {{
-          target === 'ai'
-            ? automation.aiToolsNotice
-            : mcpRuntime.externallyManaged
-              ? automation.externalRestartNotice
-              : automation.toolsRestartNotice
-        }}
-      </p>
-      <div v-if="target === 'mcp'" class="pt-2">
-        <AppButton
-          color="primary"
-          variant="solid"
-          :disabled="mcpRuntime.externallyManaged"
-          :loading="mcpRuntime.status === 'starting' || mcpRuntime.checking"
-          @click="restart"
-          >{{
-            mcpRuntime.externallyManaged ? automation.externallyManaged : automation.restart
-          }}</AppButton
-        >
-      </div>
-    </AppDialogBody>
-  </div>
+  </CapabilityPage>
 </template>

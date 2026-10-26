@@ -416,15 +416,13 @@ export const aiMessageDefaults = {
   chatReferenceSkills: 'Skills',
   chatReferenceCommands: 'Commands',
   openSkillSettings: params('Open skill “{name}”'),
+  skillsDescription:
+    'Instructions the AI chat loads when a request matches their description. Upload a ZIP of a skill’s folder or a SKILL.md, or use the skills your coding agents installed.',
+  skillsEnabledCount: params('{enabled} of {total} enabled'),
+  searchSkills: 'Search skills',
   skillsUpload: 'Upload skill',
   skillsUploadedSource: 'Uploaded',
-  skillsUploadedSourceDescription:
-    'Skills the AI chat loads when a request matches their description. Upload a ZIP of a skill’s folder or a SKILL.md.',
   skillsProjectSource: 'Next to this document',
-  skillsProjectSourceDescription: params(
-    'Read from {folder}. Skills here are off until you trust the folder.'
-  ),
-  skillsProjectSourceTrusted: params('Read from {folder}, which you trust.'),
   skillsTrustFolder: 'Trust folder',
   skillsStopTrusting: 'Stop trusting',
   skillsTrustTitle: 'Trust this folder?',
@@ -433,11 +431,7 @@ export const aiMessageDefaults = {
   ),
   skillsFolderUntrusted: 'Trust its folder to use this skill.',
   skillsAgentsSource: 'Shared agent skills',
-  skillsAgentsSourceDescription: params(
-    'Read from {folder}, where pi, Codex, Gemini CLI, Cursor, and other agents install skills.'
-  ),
   skillsClaudeSource: 'Claude Code skills',
-  skillsClaudeSourceDescription: params('Read from {folder}.'),
   skillsNoUploads: 'No uploaded skills yet.',
   skillsNoneInFolder: 'No skills in this folder.',
   skillsProblems: 'Some folders could not be read as skills',
@@ -452,7 +446,6 @@ export const aiMessageDefaults = {
   skillsFiles: 'Files',
   skillsInstructions: 'Instructions',
   skillsWarnings: 'This skill departs from the Agent Skills specification',
-  skillsUseSource: 'Use skills from this folder',
   skillsUse: 'Use this skill',
   skillsUseDescription: 'The AI chat lists it and loads its instructions when a request matches.',
   skillsSourceOff: 'Skills from this folder are turned off.',

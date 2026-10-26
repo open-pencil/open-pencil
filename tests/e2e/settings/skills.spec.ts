@@ -17,35 +17,36 @@ async function upload(page: Page, name: string, buffer: Buffer) {
   await (await chooser).setFiles({ name, mimeType: 'application/octet-stream', buffer })
 }
 
-test('an uploaded skill can be read, turned off, and deleted', async ({ page }) => {
+test('an uploaded skill is switched in the list, read in its details, and deleted', async ({
+  page
+}) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await openSkills(page)
 
   await upload(page, 'grid.zip', Buffer.from(zipSync({ 'grid/SKILL.md': strToU8(SKILL) })))
-  const row = page.getByRole('button', { name: /^grid / })
-  await row.click()
-
-  const details = page.getByTestId('settings-skill-details')
-  await expect(details.getByRole('heading', { name: 'Grid', exact: true })).toBeVisible()
-  await expect(page.getByTestId('settings-breadcrumb')).toContainText('grid')
-  const use = details.getByRole('switch')
-  await expect(use).toHaveAttribute('data-state', 'checked')
-  await use.click()
-  await page.getByTestId('settings-editor-back').click()
-  await expect(details).toBeHidden()
+  const panel = page.getByTestId('settings-skills-panel')
+  const toggle = panel.getByRole('switch', { name: 'grid', exact: true })
+  await expect(toggle).toHaveAttribute('data-state', 'checked')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('data-state', 'unchecked')
 
   await page.reload()
   await canvas.waitForInit()
   await openSkills(page)
-  await row.click()
-  await expect(use).toHaveAttribute('data-state', 'unchecked')
+  await expect(toggle).toHaveAttribute('data-state', 'unchecked')
+
+  await panel.locator('[data-item="grid"]').getByRole('button').first().click()
+  const details = page.getByTestId('settings-skill-details')
+  await expect(details.getByRole('heading', { name: 'Grid', exact: true })).toBeVisible()
+  await expect(page.getByTestId('settings-breadcrumb')).toContainText('grid')
+  await expect(details.getByRole('switch')).toHaveAttribute('data-state', 'unchecked')
 
   await details.getByRole('button', { name: 'Delete skill' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete skill' }).click()
   await expect(details).toBeHidden()
-  await expect(row).toHaveCount(0)
+  await expect(panel.locator('[data-item="grid"]')).toHaveCount(0)
 })
 
 test('a file that holds no skill is refused', async ({ page }) => {
@@ -54,5 +55,5 @@ test('a file that holds no skill is refused', async ({ page }) => {
   await openSkills(page)
   await upload(page, 'notes.zip', Buffer.from(zipSync({ 'README.md': strToU8('# Notes') })))
   await expect(page.getByRole('alert')).toBeVisible()
-  await expect(page.locator('[data-skill]')).toHaveCount(0)
+  await expect(page.locator('[data-item]')).toHaveCount(0)
 })
