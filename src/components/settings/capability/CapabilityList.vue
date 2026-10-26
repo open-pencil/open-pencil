@@ -55,10 +55,8 @@ function isOpen(group: CapabilityGroup) {
         :open="isOpen(group)"
         @update:open="emit('update:expanded', group.key, $event)"
       >
-        <!-- Pinned at the top of the scrolling page, above its padding (CapabilityPage). -->
-        <div
-          class="sticky -top-5 z-10 flex min-h-8 items-center gap-3 bg-panel-secondary px-3 py-1 sm:-top-6"
-        >
+        <!-- Pinned at the top edge of the scrolling page (CapabilityPage). -->
+        <div class="sticky top-0 z-10 flex min-h-8 items-center gap-3 bg-panel-secondary px-3 py-1">
           <span class="flex w-7 shrink-0">
             <AppSwitch
               v-if="group.toggle"

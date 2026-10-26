@@ -56,8 +56,11 @@ const showOptions = computed(() => [
         <slot name="tools" />
       </div>
     </div>
-    <AppDialogBody :ui="{ body: 'flex flex-col gap-3 p-5 sm:p-6' }">
-      <slot />
+    <!-- Padded inside the scroll area, so the list's group rows stick to its very top. -->
+    <AppDialogBody :ui="{ body: 'p-0' }">
+      <div class="flex flex-col gap-3 p-5 sm:p-6">
+        <slot />
+      </div>
     </AppDialogBody>
   </div>
 </template>

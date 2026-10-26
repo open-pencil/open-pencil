@@ -12,14 +12,19 @@ export const motionStyles = {
   pulse: 'animate-pulse motion-reduce:animate-none'
 } as const
 
-/** A detail view sliding in over its list and back out the way it came. */
+/**
+ * A detail view sliding in over its list and back out the way it came. The view's background
+ * covers the list at once and only its content moves, so the two never show through each other;
+ * `duration` tells Vue how long that is, since the view itself has no transition to time.
+ */
 export const drillInTransition = {
+  duration: { enter: 150, leave: 100 },
   enterActiveClass:
-    'transition-[opacity,translate] duration-150 ease-out motion-reduce:transition-none',
-  enterFromClass: 'translate-x-3 opacity-0 motion-reduce:translate-x-0',
+    '*:transition-[opacity,translate] *:duration-150 *:ease-out motion-reduce:*:transition-none',
+  enterFromClass: '*:translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0',
   leaveActiveClass:
-    'transition-[opacity,translate] duration-100 ease-in motion-reduce:transition-none',
-  leaveToClass: 'translate-x-3 opacity-0 motion-reduce:translate-x-0'
+    '*:transition-[opacity,translate] *:duration-100 *:ease-in motion-reduce:*:transition-none',
+  leaveToClass: '*:translate-x-3 *:opacity-0 motion-reduce:*:translate-x-0'
 } as const
 
 /** One view replacing another in place, such as an inspector switching to another item. */
