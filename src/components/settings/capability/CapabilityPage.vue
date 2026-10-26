@@ -38,7 +38,6 @@ const showOptions = computed(() => [
           <slot name="actions" />
         </div>
       </div>
-      <slot name="tabs" />
       <div class="flex flex-wrap items-center gap-2">
         <AppInput
           v-model="search"

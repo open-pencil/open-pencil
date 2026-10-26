@@ -1,10 +1,7 @@
 {
-  "toolAccessTarget": "ツールアクセスの設定対象",
-  "builtInAI": "内蔵 AI",
-  "localMCP": "ローカル MCP",
   "restoreToolDefaults": "既定値に戻す",
   "aiToolAccessDescription": "AI モデルへの直接接続で使うツールを選択します。ACP と Pi エージェントは MCP アクセスを使用します。",
-  "toolAccessDescription": "各種エージェントが呼び出せるツールを選択します。組み込み AI はモデルを直接呼び出し、Claude Code や Pi などのコーディングエージェントはローカル MCP サーバー経由で OpenPencil に接続します。",
+  "mcpToolAccessDescription": "ローカルサーバーが接続中のエージェントやクライアントに公開するツールを選択します。",
   "aiToolsNotice": "変更は次のメッセージから適用されます。ツールの切り替えはサンドボックスではありません。有効なスクリプトツールは他のデザイン操作も実行できます。",
   "addConnection": "接続を追加",
   "connectionName": "接続名",

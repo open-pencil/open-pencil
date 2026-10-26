@@ -3,14 +3,11 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const automationMessageDefaults = {
-  toolAccessTarget: 'Configure tool access for',
-  builtInAI: 'Built-in AI',
-  localMCP: 'Local MCP',
   restoreToolDefaults: 'Restore defaults',
   aiToolAccessDescription:
     'Choose tools for direct AI model connections. ACP and Pi agents use MCP access instead.',
-  toolAccessDescription:
-    'Choose which tools each kind of agent can call. The built-in AI calls models directly; coding agents such as Claude Code and Pi reach OpenPencil through the local MCP server.',
+  mcpToolAccessDescription:
+    'Choose tools advertised by the local server to connected agents and clients.',
   aiToolsNotice:
     'Changes apply to your next message. Tool switches are not a sandbox: enabled script tools can still perform other design operations.',
   mcpFailureNotInstalled: 'MCP server is not installed',

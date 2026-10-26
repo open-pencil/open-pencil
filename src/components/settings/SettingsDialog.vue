@@ -212,7 +212,7 @@ function onOpenChange(open: boolean): void {
         </section>
       </AppTabsContent>
       <AppTabsContent value="tools" as-child>
-        <ToolAccessSettingsPanel />
+        <ToolAccessSettingsPanel target="ai" />
       </AppTabsContent>
       <AppTabsContent value="skills" as-child>
         <SkillsSettingsPanel />

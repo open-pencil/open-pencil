@@ -6,33 +6,29 @@ import { useAutomationMessages } from '@open-pencil/vue/i18n'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { useToolAccess } from '@/app/automation/tool-access/settings/list'
-import { toolAccessCounts, useToolAccessSettings } from '@/app/automation/tool-access/settings/use'
-import type { ToolAccessEntry } from '@/app/automation/tool-access/types'
+import { useToolAccessSettings } from '@/app/automation/tool-access/settings/use'
+import type { ToolAccessEntry, ToolAccessTarget } from '@/app/automation/tool-access/types'
 import CapabilityList from '@/components/settings/capability/CapabilityList.vue'
 import CapabilityPage from '@/components/settings/capability/CapabilityPage.vue'
 import { filterCapabilities } from '@/components/settings/capability/filter'
 import type { CapabilityFilter, CapabilityGroup } from '@/components/settings/capability/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+
+/**
+ * The tools one kind of agent can call: the built-in AI's on Tool access, the local MCP server's
+ * on the MCP page.
+ */
+const { target } = defineProps<{ target: ToolAccessTarget }>()
 
 const automation = useAutomationMessages()
-const { target, tools, disabled, selectTarget, reset } = useToolAccessSettings()
+const { tools, disabled, reset } = useToolAccessSettings(target)
 const { search, groups, expanded, setGroupEnabled, isEnabled, setToolEnabled } = useToolAccess(
   tools,
   disabled
 )
 const { restart } = useMCPSettings()
 const show = ref<CapabilityFilter>('all')
-
-const targetOptions = computed(() => [
-  { value: 'ai', label: automation.value.builtInAI },
-  { value: 'mcp', label: automation.value.localMCP }
-])
-function targetCount(value: string) {
-  const counts = toolAccessCounts.value[value === 'mcp' ? 'mcp' : 'ai']
-  return `${counts.enabled}/${counts.total}`
-}
 
 const listGroups = computed<CapabilityGroup[]>(() =>
   filterCapabilities(
@@ -68,23 +64,11 @@ function setExpanded(key: string, open: boolean) {
     v-model:show="show"
     :search-label="automation.searchTools"
     data-slot="tool-access"
+    :data-target="target"
   >
-    <!-- The same for both kinds of agent, so switching between them moves nothing above. -->
-    <template #description>{{ automation.toolAccessDescription }}</template>
-    <template #tabs>
-      <SegmentedControl
-        :model-value="target"
-        :options="targetOptions"
-        :label="automation.toolAccessTarget"
-        class="self-start @max-md/capability-page:w-full"
-        @update:model-value="selectTarget"
-      >
-        <template #option="{ option }">
-          <span class="truncate">{{ option.label }}</span>
-          <span class="text-muted tabular-nums">{{ targetCount(option.value) }}</span>
-        </template>
-      </SegmentedControl>
-    </template>
+    <template #description>{{
+      target === 'ai' ? automation.aiToolAccessDescription : automation.mcpToolAccessDescription
+    }}</template>
     <template #tools>
       <AppButton size="sm" variant="outline" @click="reset">{{
         automation.restoreToolDefaults
