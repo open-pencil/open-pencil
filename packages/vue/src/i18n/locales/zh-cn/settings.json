@@ -37,6 +37,8 @@
   "media": "媒体",
   "mcp": "MCP",
   "toolAccess": "工具访问权限",
+  "capabilityShow": "显示",
+  "capabilityShowAll": "全部",
   "skills": "技能",
   "storage": "存储",
   "cloud": "云",

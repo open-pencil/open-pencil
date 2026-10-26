@@ -37,6 +37,8 @@
   "media": "メディア",
   "mcp": "MCP",
   "toolAccess": "ツールへのアクセス",
+  "capabilityShow": "表示",
+  "capabilityShowAll": "すべて",
   "skills": "スキル",
   "storage": "ストレージ",
   "cloud": "クラウド",

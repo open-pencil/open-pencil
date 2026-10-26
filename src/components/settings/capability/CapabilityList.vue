@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import SettingsDisclosure from '@/components/settings/layout/SettingsDisclosure.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 import type { CapabilityGroup, CapabilityItem } from './types'
 
 /**
- * Groups of things the AI can use, each with a switch, as Tool access and Skills list them.
- * Given `openLabel`, an item's name opens its details too.
+ * Groups of things the AI can use as one dense list, as Linear lists issues: a row per group with
+ * its switch, then a row per item with its switch, name, and description on one line. Given
+ * `openLabel`, a row's › opens the item's details.
  */
 const { groups, expanded, openLabel } = defineProps<{
   groups: CapabilityGroup[]
@@ -24,32 +25,29 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  /** Buttons beside a group's switch, such as Trust folder. */
+  /** Buttons at the end of a group's row, such as Trust folder. */
   'group-actions'?: (props: { group: CapabilityGroup }) => unknown
 }>()
+
+function isOpen(group: CapabilityGroup) {
+  return expanded[group.key] ?? true
+}
 </script>
 
 <template>
-  <div data-slot="capability-list">
+  <div
+    class="@container/capabilities overflow-hidden rounded border border-border text-xs"
+    data-slot="capability-list"
+  >
     <template v-for="group in groups" :key="group.key">
-      <SettingsDisclosure
+      <section
         v-if="group.items.length || group.empty"
-        :open="expanded[group.key] ?? true"
-        class="border-b border-border"
+        class="border-border not-first:border-t"
         :data-group="group.key"
-        @update:open="emit('update:expanded', group.key, $event)"
+        :aria-label="group.label"
       >
-        <template #label>
-          <span class="flex min-w-0 flex-col">
-            <span>{{ group.label }}</span>
-            <span v-if="group.detail" class="truncate text-[11px] font-normal text-muted">{{
-              group.detail
-            }}</span>
-          </span>
-        </template>
-        <template v-if="group.toggle || $slots['group-actions']" #actions>
-          <span class="flex items-center gap-2">
-            <slot name="group-actions" :group="group" />
+        <div class="flex min-h-8 items-center gap-3 bg-panel-secondary px-3 py-1">
+          <span class="flex w-7 shrink-0">
             <AppSwitch
               v-if="group.toggle"
               :model-value="group.toggle.enabled"
@@ -58,58 +56,74 @@ defineSlots<{
               @update:model-value="emit('set-group', group.key, $event)"
             />
           </span>
-        </template>
-        <p v-if="!group.items.length" class="py-3 text-xs text-muted">
-          {{ group.empty }}
-        </p>
-        <ul v-else class="divide-y divide-border">
-          <li
-            v-for="item in group.items"
-            :key="item.key"
-            class="flex items-start gap-3 py-3"
-            :data-item="item.name"
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left"
+            :aria-expanded="isOpen(group)"
+            @click="emit('update:expanded', group.key, !isOpen(group))"
           >
-            <div class="min-w-0 flex-1">
-              <button
-                v-if="openLabel"
-                type="button"
-                class="cursor-pointer text-left hover:text-primary"
-                @click="emit('open', group.key, item.key)"
+            <icon-lucide-chevron-right
+              class="size-3 shrink-0 text-muted transition-transform"
+              :class="isOpen(group) && 'rotate-90'"
+              aria-hidden="true"
+            />
+            <span class="shrink-0 font-semibold text-surface">{{ group.label }}</span>
+            <code v-if="group.detail" class="min-w-0 truncate text-[11px] text-muted">{{
+              group.detail
+            }}</code>
+          </button>
+          <span v-if="group.count" class="shrink-0 text-[11px] text-muted">{{ group.count }}</span>
+          <slot name="group-actions" :group="group" />
+        </div>
+        <template v-if="isOpen(group)">
+          <p
+            v-if="!group.items.length"
+            class="border-t border-border py-2 pr-3 pl-13 text-[11px] text-muted"
+          >
+            {{ group.empty }}
+          </p>
+          <ul v-else>
+            <li
+              v-for="item in group.items"
+              :key="item.key"
+              class="flex min-h-8 items-center gap-3 border-t border-border px-3 py-1 @max-md/capabilities:flex-wrap"
+              :data-item="item.name"
+            >
+              <span class="flex w-7 shrink-0">
+                <AppSwitch
+                  :model-value="item.enabled"
+                  :label="item.name"
+                  :disabled="item.locked"
+                  @update:model-value="emit('set-item', group.key, item.key, $event)"
+                />
+              </span>
+              <code
+                class="w-40 shrink-0 truncate font-medium text-surface @max-md/capabilities:flex-1"
+                >{{ item.name }}</code
               >
-                <code class="break-all text-xs font-medium text-surface">{{ item.name }}</code>
-              </button>
-              <code v-else class="break-all text-xs font-medium text-surface">{{ item.name }}</code>
-              <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">
-                {{ item.description }}
-              </p>
-              <p v-if="item.note" class="mt-1 text-[11px] text-warning">{{ item.note }}</p>
-            </div>
-            <!-- The button is taller than the switch; lifting the pair keeps the switch in line. -->
-            <span v-if="openLabel" class="-mt-1 flex shrink-0 items-center gap-1">
+              <!-- One line each, so the full text is a hover away. -->
+              <Tip :label="item.description" as-child>
+                <span
+                  class="min-w-0 flex-1 truncate text-muted @max-md/capabilities:order-last @max-md/capabilities:basis-full @max-md/capabilities:pl-10"
+                  >{{ item.description }}</span
+                >
+              </Tip>
+              <span v-if="item.note" class="shrink-0 text-[11px] text-warning">{{
+                item.note
+              }}</span>
               <IconButton
+                v-if="openLabel"
                 :label="openLabel(item)"
-                size="sm"
+                size="xs"
+                class="shrink-0"
                 @click="emit('open', group.key, item.key)"
               >
                 <icon-lucide-chevron-right class="size-3.5" />
               </IconButton>
-              <AppSwitch
-                :model-value="item.enabled"
-                :label="item.name"
-                :disabled="item.locked"
-                @update:model-value="emit('set-item', group.key, item.key, $event)"
-              />
-            </span>
-            <AppSwitch
-              v-else
-              :model-value="item.enabled"
-              :label="item.name"
-              :disabled="item.locked"
-              @update:model-value="emit('set-item', group.key, item.key, $event)"
-            />
-          </li>
-        </ul>
-      </SettingsDisclosure>
+            </li>
+          </ul>
+        </template>
+      </section>
     </template>
   </div>
 </template>

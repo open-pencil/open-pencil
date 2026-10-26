@@ -37,6 +37,8 @@
   "media": "Multimedia",
   "mcp": "MCP",
   "toolAccess": "Acceso a herramientas",
+  "capabilityShow": "Mostrar",
+  "capabilityShowAll": "Todos",
   "skills": "Habilidades",
   "storage": "Almacenamiento",
   "cloud": "Nube",

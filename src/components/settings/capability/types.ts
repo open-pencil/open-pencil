@@ -19,9 +19,14 @@ export interface CapabilityGroup {
   label: string
   /** Where the group comes from, such as a folder, shown under its name. */
   detail?: string
+  /** How many of its items are on, such as "2 of 7 enabled". */
+  count?: string
   /** The group's own switch, or none when something else turns it on, such as trusting it. */
   toggle: { enabled: boolean; state: 'mixed' | 'idle' } | null
   items: CapabilityItem[]
   /** Shown in place of items when the group has none. */
   empty?: string
 }
+
+/** Which items a capability page lists: all of them, or only those on or off. */
+export type CapabilityFilter = 'all' | 'enabled' | 'disabled'

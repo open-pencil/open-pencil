@@ -1,0 +1,1 @@
+- Tool access and Skills in Settings list their items in a compact table you can search and filter to what is on or off, and the MCP page shows the server's status and address apart from its access settings.

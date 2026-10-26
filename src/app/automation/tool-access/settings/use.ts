@@ -5,7 +5,7 @@ import { aiToolOverrides, disabledAITools } from '@/app/ai/tools/preferences'
 import { configurableMCPTools, disabledMCPTools } from '@/app/automation/mcp/preferences'
 import { openSettingsDialog } from '@/app/settings/dialog'
 
-import type { ToolAccessTarget } from '../types'
+import type { ToolAccessEntry, ToolAccessTarget } from '../types'
 
 const target = ref<ToolAccessTarget>('ai')
 
@@ -13,6 +13,19 @@ export function openToolAccessSettings(value: ToolAccessTarget) {
   target.value = value
   openSettingsDialog('tools')
 }
+
+function countOn(tools: ToolAccessEntry[], disabled: string[]) {
+  const off = new Set(disabled)
+  return { enabled: tools.filter((tool) => !off.has(tool.name)).length, total: tools.length }
+}
+
+/** How many tools each kind of agent can call, for the tabs and the MCP page. */
+export const toolAccessCounts = computed<
+  Record<ToolAccessTarget, { enabled: number; total: number }>
+>(() => ({
+  ai: countOn(configurableAITools, disabledAITools.value),
+  mcp: countOn(configurableMCPTools.value, disabledMCPTools.value)
+}))
 
 export function useToolAccessSettings() {
   const tools = computed(() =>

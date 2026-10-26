@@ -12,8 +12,14 @@ import type { Skill, SkillSourceID } from '@/app/ai/skills/types'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import CapabilityList from '@/components/settings/capability/CapabilityList.vue'
 import CapabilityPage from '@/components/settings/capability/CapabilityPage.vue'
-import type { CapabilityGroup, CapabilityItem } from '@/components/settings/capability/types'
+import { filterCapabilities } from '@/components/settings/capability/filter'
+import type {
+  CapabilityFilter,
+  CapabilityGroup,
+  CapabilityItem
+} from '@/components/settings/capability/types'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppAlertDialogRoot, AppDialogFooter, AppDialogHeader } from '@/components/ui/dialog'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
@@ -30,6 +36,7 @@ const messages = useSkillMessages()
 const skills = useSkillsSettings()
 const { groups, loading, uploading, uploadFailure, selected, detailOpen } = skills
 const search = ref('')
+const show = ref<CapabilityFilter>('all')
 const expanded = ref<Record<string, boolean>>({})
 const deleteOpen = ref(false)
 const trustOpen = ref(false)
@@ -70,10 +77,16 @@ function matches(skill: Skill, query: string): boolean {
 
 const listGroups = computed<CapabilityGroup[]>(() => {
   const query = search.value.trim().toLowerCase()
-  return groups.value.map((group) => ({
+  const all = groups.value.map((group): CapabilityGroup => ({
     key: group.key,
     label: SOURCE_TITLES[group.source](),
     ...(group.folder && { detail: group.folder }),
+    ...(group.skills.length > 0 && {
+      count: ai.value.skillsEnabledCount({
+        enabled: group.skills.filter((entry) => entry.enabled).length,
+        total: group.skills.length
+      })
+    }),
     // A folder next to the document is trusted rather than switched on.
     toggle: group.trustPath ? null : { enabled: group.enabled, state: 'idle' },
     items: group.skills
@@ -89,15 +102,16 @@ const listGroups = computed<CapabilityGroup[]>(() => {
       })),
     ...(!query && { empty: group.folder ? ai.value.skillsNoneInFolder : ai.value.skillsNoUploads })
   }))
+  return filterCapabilities(all, show.value)
 })
 
-// Without a search, empty groups say why they are empty instead.
+// Without a search or filter, empty groups say why they are empty instead.
 const hasMatches = computed(
-  () => !search.value.trim() || listGroups.value.some((group) => group.items.length)
+  () =>
+    (!search.value.trim() && show.value === 'all') ||
+    listGroups.value.some((group) => group.items.length)
 )
 
-const entries = computed(() => groups.value.flatMap((group) => group.skills))
-const enabledCount = computed(() => entries.value.filter((entry) => entry.enabled).length)
 const hasProblems = computed(() => groups.value.some((group) => group.problems.length))
 
 function sourceGroup(key: string): SkillSourceGroup | undefined {
@@ -174,23 +188,23 @@ async function remove() {
     </template>
     <CapabilityPage
       v-model:search="search"
-      :count="ai.skillsEnabledCount({ enabled: enabledCount, total: entries.length })"
+      v-model:show="show"
       :search-label="ai.searchSkills"
       :aria-busy="loading"
     >
-      <template #leading>
-        <AppButton size="xs" variant="outline" :loading="uploading" @click="fileDialog.open()">
+      <template #description>{{ ai.skillsDescription }}</template>
+      <template #actions>
+        <AppButton color="primary" variant="solid" :loading="uploading" @click="fileDialog.open()">
           <template #leading><icon-lucide-upload class="size-3.5" /></template>
           {{ ai.skillsUpload }}
         </AppButton>
       </template>
-      <template v-if="IS_TAURI" #actions>
-        <AppButton size="xs" variant="link" :loading="loading" @click="skills.reload">
-          {{ common.refresh }}
-        </AppButton>
+      <template v-if="IS_TAURI" #tools>
+        <IconButton :label="common.refresh" :disabled="loading" @click="skills.reload">
+          <icon-lucide-refresh-cw class="size-3.5" :class="loading && 'motion-safe:animate-spin'" />
+        </IconButton>
       </template>
-      <p class="pb-3 text-xs leading-relaxed text-muted">{{ ai.skillsDescription }}</p>
-      <div v-if="uploadFailure || hasProblems" class="flex flex-col gap-2 pb-3">
+      <div v-if="uploadFailure || hasProblems" class="flex flex-col gap-2">
         <AppAlert
           v-if="uploadFailure"
           tone="error"
