@@ -28,6 +28,7 @@ import {
   lookupAgents,
   type AgentLookup
 } from './native'
+import { AgentNotInstalledError } from './not-installed'
 
 export type DetectedAgent = {
   definition: ACPAgentDef
@@ -49,12 +50,25 @@ export function resolveAgentCommand(
   return agentCommandNames(agent).find((name) => executables[name]) ?? agent.command
 }
 
+/**
+ * The executable to spawn from a finished lookup. `null` means the lookup itself failed, so the
+ * canonical command is tried. A lookup that found none of the names refuses to start.
+ */
+export function spawnCommandFromLookup(
+  agent: ACPAgentDef,
+  executables: AgentLookup['executables'] | null
+): string {
+  if (!executables) return agent.command
+  const found = agentCommandNames(agent).find((name) => executables[name])
+  if (!found) throw new AgentNotInstalledError(agent)
+  return found
+}
+
 export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
-  if (!agent.commandAliases?.length) return agent.command
   try {
-    const executables = (await lookupAgents()).executables
-    return resolveAgentCommand(agent, executables)
-  } catch {
+    return spawnCommandFromLookup(agent, (await lookupAgents()).executables)
+  } catch (error) {
+    if (error instanceof AgentNotInstalledError) throw error
     return agent.command
   }
 }

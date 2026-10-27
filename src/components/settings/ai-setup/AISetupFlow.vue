@@ -213,6 +213,7 @@ async function finish(): Promise<void> {
           @sign-in-agent="onboarding.signInAgent(providerID)"
           @cancel-agent-sign-in="onboarding.cancelAgentSignIn(providerID)"
           @submit-agent-sign-in-code="onboarding.submitAgentSignInCode(providerID, $event)"
+          @clear="onboarding.clearSavedKey(providerID)"
         />
       </template>
 

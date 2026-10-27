@@ -72,6 +72,7 @@ const emit = defineEmits<{
   signInAgent: []
   cancelAgentSignIn: []
   submitAgentSignInCode: [code: string]
+  clear: []
 }>()
 const { ai, credentials, settings } = useI18n()
 const styles = tv(theme)()
@@ -128,7 +129,9 @@ const keyHint = computed(() => {
         :placeholder="hasSavedKey ? credentials.savedReplace : agent.apiKey.placeholder"
         :key-u-r-l="agent.apiKey.url"
         :key-u-r-l-label="credentials.getAPIKey"
+        :error="state.keyError === 'clear-failed' ? credentials.clearFailed : undefined"
         @update:model-value="emit('update', { apiKey: $event })"
+        @clear="emit('clear')"
       />
     </template>
     <PiSetup

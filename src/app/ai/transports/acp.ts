@@ -18,6 +18,7 @@ import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import { linkOwnTools } from '@/app/ai/agents/acp/tools'
 import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
+import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
@@ -289,6 +290,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       })
     } catch (e) {
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
+      if (e instanceof AgentNotInstalledError) throw e
+      const message = e instanceof Error ? e.message : String(e)
+      if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
     const { child, input, output } = process

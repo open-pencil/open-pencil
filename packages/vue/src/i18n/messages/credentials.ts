@@ -11,6 +11,7 @@ export const credentialsMessageDefaults = {
   rememberDevice: 'Remember API keys on this device',
   sessionOnly: 'Keys are kept only until you close this session.',
   retryFailed: 'Could not reset credential access. Try again.',
+  clearFailed: 'Could not remove the saved credential. Try again.',
   storage: params('Credentials: {backend}'),
   backendNative: 'system credential store',
   backendBrowser: 'encrypted browser storage',

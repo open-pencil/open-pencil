@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
@@ -9,6 +9,8 @@ import {
   setModelConnectionAPIKey,
   type AIModelSettings
 } from '@/app/ai/models'
+import { appCredentialServices } from '@/app/settings/credentials/app'
+import { CredentialStoreError } from '@/app/settings/credentials/types'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -113,5 +115,40 @@ describe('agent process environment', () => {
     replaceAIModelSettings(settings('cursor'))
 
     expect(await agentProcessEnv(cursor)).toEqual({})
+  })
+
+  test('does not read a key the store cannot confirm', async () => {
+    replaceAIModelSettings(settings('cursor'))
+    const resolve = spyOn(appCredentialServices.resolver, 'resolve')
+    const status = spyOn(appCredentialServices.manager, 'status')
+    try {
+      for (const value of ['missing', 'locked', 'unavailable'] as const) {
+        resolve.mockClear()
+        status.mockResolvedValue(value)
+        expect(await agentProcessEnv(cursor)).toEqual({})
+        expect(resolve).not.toHaveBeenCalled()
+      }
+      status.mockRejectedValue(new Error('credential store unavailable'))
+      expect(await agentProcessEnv(cursor)).toEqual({})
+      expect(resolve).not.toHaveBeenCalled()
+    } finally {
+      status.mockRestore()
+      resolve.mockRestore()
+    }
+  })
+
+  test('reports a saved key that cannot be read', async () => {
+    replaceAIModelSettings(settings('cursor'))
+    const status = spyOn(appCredentialServices.manager, 'status').mockResolvedValue('configured')
+    const resolve = spyOn(appCredentialServices.resolver, 'resolve').mockRejectedValue(
+      new CredentialStoreError('locked', 'locked')
+    )
+    try {
+      await expect(agentProcessEnv(cursor)).rejects.toBeInstanceOf(CredentialStoreError)
+      expect(resolve).toHaveBeenCalled()
+    } finally {
+      status.mockRestore()
+      resolve.mockRestore()
+    }
   })
 })

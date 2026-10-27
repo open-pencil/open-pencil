@@ -5,10 +5,14 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 import {
   createAgentDiscovery,
   detectedAgents,
-  resolveAgentCommand
+  resolveAgentCommand,
+  spawnCommandFromLookup
 } from '@/app/ai/agents/setup/discovery'
 import type { AgentLookup } from '@/app/ai/agents/setup/native'
+import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { createDeferred } from '@/app/runtime/deferred'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 // Installed companions report the version of the app under test, as matching ones do.
 const COMPANION_PACKAGES: Record<string, string> = {
@@ -162,6 +166,34 @@ describe('local agent discovery', () => {
       ['gemini-cli', 'not-installed'],
       ['cursor', 'not-installed']
     ])
+  })
+
+  test('starts the name lookup found and refuses a lookup that found none', () => {
+    const agents = detectedAgents(lookup())
+    const cursor = expectDefined(
+      agents.find((agent) => agent.definition.id === 'cursor'),
+      'Cursor'
+    )
+    const gemini = expectDefined(
+      agents.find((agent) => agent.definition.id === 'gemini-cli'),
+      'Gemini CLI'
+    )
+    expect(spawnCommandFromLookup(cursor.definition, { 'cursor-agent': '/bin/cursor-agent' })).toBe(
+      'cursor-agent'
+    )
+    expect(
+      spawnCommandFromLookup(cursor.definition, {
+        agent: '/bin/agent',
+        'cursor-agent': '/bin/cursor-agent'
+      })
+    ).toBe('agent')
+    expect(spawnCommandFromLookup(cursor.definition, null)).toBe('agent')
+    expect(() =>
+      spawnCommandFromLookup(cursor.definition, { agent: null, 'cursor-agent': null })
+    ).toThrow(AgentNotInstalledError)
+    expect(() => spawnCommandFromLookup(gemini.definition, { gemini: null })).toThrow(
+      AgentNotInstalledError
+    )
   })
 
   test('starts cursor-agent when agent itself is not installed', () => {
