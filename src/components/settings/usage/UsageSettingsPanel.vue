@@ -43,6 +43,8 @@ const totals = computed(() => {
         as="label"
         :label="diagnosticMessages.usageHistory"
         :description="diagnosticMessages.usageHistoryDescription"
+        :modified="!usageEnabled"
+        @reset="usageEnabled = true"
       >
         <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
       </SettingsRow>

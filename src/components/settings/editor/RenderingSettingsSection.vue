@@ -4,7 +4,11 @@ import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { appRuntimeConfig } from '@/app/runtime/config'
-import { appPreferences, updateCanvasRenderingMode } from '@/app/settings/preferences/store'
+import {
+  appPreferences,
+  DEFAULT_APP_PREFERENCES,
+  updateCanvasRenderingMode
+} from '@/app/settings/preferences/store'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
@@ -15,6 +19,7 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 const { rendering } = useI18n()
 const hasURLOverride = appRuntimeConfig.sceneRendererOverride
 const tiledRendering = computed(() => appPreferences.value.rendering.canvasMode === 'tiled')
+const defaultTiledRendering = DEFAULT_APP_PREFERENCES.rendering.canvasMode === 'tiled'
 const changed = computed(
   () => appPreferences.value.rendering.canvasMode !== appRuntimeConfig.sceneRenderer
 )
@@ -30,7 +35,12 @@ function setTiledRendering(enabled: boolean): void {
     <template #description>{{ rendering.settingsDescription }}</template>
 
     <SettingsGroup>
-      <SettingsRow as="label" :description="rendering.progressiveTiledDescription">
+      <SettingsRow
+        as="label"
+        :description="rendering.progressiveTiledDescription"
+        :modified="tiledRendering !== defaultTiledRendering"
+        @reset="setTiledRendering(defaultTiledRendering)"
+      >
         <template #label>
           <span class="flex flex-wrap items-center gap-2">
             {{ rendering.progressiveTiled }}

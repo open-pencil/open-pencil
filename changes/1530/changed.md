@@ -1,2 +1,3 @@
 - Settings groups its pages under App, AI, and Data & privacy: snapping, the toolbar, and rendering are on **Editor**; AI & agents is **Models** and Media is **Image services**.
+- A setting changed from its default shows a **Reset to default** button beside it, and Zoom speed no longer labels its default.
 - **File → Diagnostics…** and the command palette open the Diagnostics settings, a file that fails to open offers **View diagnostics**, and the **Usage history** switch is on the **Usage** page.

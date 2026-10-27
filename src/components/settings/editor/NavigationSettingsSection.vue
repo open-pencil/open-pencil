@@ -5,6 +5,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   appPreferences,
+  DEFAULT_APP_PREFERENCES,
   updateZoomSpeed,
   ZOOM_SPEEDS,
   type ZoomSpeed
@@ -22,12 +23,11 @@ const zoomSpeed = computed<ZoomSpeed>({
   set: updateZoomSpeed
 })
 
+const defaultZoomSpeed = DEFAULT_APP_PREFERENCES.navigation.zoomSpeed
+
 const zoomSpeedOptions = computed(() => {
   const format = new Intl.NumberFormat(locale.value)
-  return ZOOM_SPEEDS.map((value) => {
-    const speed = `${format.format(value)}×`
-    return { value, label: value === 1 ? settings.value.zoomSpeedDefault({ speed }) : speed }
-  })
+  return ZOOM_SPEEDS.map((value) => ({ value, label: `${format.format(value)}×` }))
 })
 </script>
 
@@ -37,7 +37,12 @@ const zoomSpeedOptions = computed(() => {
     <template #description>{{ settings.navigationDescription }}</template>
 
     <SettingsGroup>
-      <SettingsRow :label="settings.zoomSpeed" :description="settings.zoomSpeedDescription">
+      <SettingsRow
+        :label="settings.zoomSpeed"
+        :description="settings.zoomSpeedDescription"
+        :modified="zoomSpeed !== defaultZoomSpeed"
+        @reset="zoomSpeed = defaultZoomSpeed"
+      >
         <AppSelect
           v-model="zoomSpeed"
           :label="settings.zoomSpeed"

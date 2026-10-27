@@ -8,6 +8,7 @@ import { diagnostics } from '@/app/diagnostics'
 import { diagnosticsEnvironment } from '@/app/diagnostics/environment'
 import { saveDiagnosticsReport } from '@/app/diagnostics/save'
 import {
+  DIAGNOSTICS_RETENTION_DEFAULT,
   DIAGNOSTICS_RETENTION_MAX,
   DIAGNOSTICS_RETENTION_MIN,
   diagnosticsRetentionPresets,
@@ -49,6 +50,11 @@ async function commitRetention(value: number): Promise<void> {
   await refreshDiagnosticsStats()
 }
 
+async function resetRetention(): Promise<void> {
+  retentionValue.value = DIAGNOSTICS_RETENTION_DEFAULT
+  await commitRetention(DIAGNOSTICS_RETENTION_DEFAULT)
+}
+
 async function clearDiagnostics() {
   await diagnostics.clear()
   await refreshDiagnosticsStats()
@@ -82,6 +88,8 @@ async function saveDiagnostics() {
         as="label"
         :label="diagnosticMessages.localDiagnostics"
         :description="diagnosticMessages.localDiagnosticsDescription"
+        :modified="!diagnosticsEnabled"
+        @reset="diagnosticsEnabled = true"
       >
         <AppSwitch v-model="diagnosticsEnabled" :label="diagnosticMessages.localDiagnostics" />
       </SettingsRow>
@@ -89,6 +97,8 @@ async function saveDiagnostics() {
         :label="diagnosticMessages.retention"
         :description="diagnosticMessages.retentionDescription"
         class="max-sm:flex-col max-sm:items-stretch"
+        :modified="retentionValue !== DIAGNOSTICS_RETENTION_DEFAULT"
+        @reset="resetRetention"
       >
         <PresetNumberField
           v-model:number="retentionValue"

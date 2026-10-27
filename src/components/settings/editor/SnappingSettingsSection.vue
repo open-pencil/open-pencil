@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { DEFAULT_SNAPPING_PREFERENCES } from '@open-pencil/core'
 import { useSettingsMessages } from '@open-pencil/vue/i18n'
 
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
@@ -38,6 +39,8 @@ const snapToPixelGrid = computed({
         as="label"
         :label="settings.snapToGeometry"
         :description="settings.snapToGeometryDescription"
+        :modified="snapToGeometry !== DEFAULT_SNAPPING_PREFERENCES.geometry"
+        @reset="snapToGeometry = DEFAULT_SNAPPING_PREFERENCES.geometry"
       >
         <AppSwitch
           v-model="snapToGeometry"
@@ -49,6 +52,8 @@ const snapToPixelGrid = computed({
         as="label"
         :label="settings.snapToObjects"
         :description="settings.snapToObjectsDescription"
+        :modified="snapToObjects !== DEFAULT_SNAPPING_PREFERENCES.objects"
+        @reset="snapToObjects = DEFAULT_SNAPPING_PREFERENCES.objects"
       >
         <AppSwitch
           v-model="snapToObjects"
@@ -60,6 +65,8 @@ const snapToPixelGrid = computed({
         as="label"
         :label="settings.snapToPixelGrid"
         :description="settings.snapToPixelGridDescription"
+        :modified="snapToPixelGrid !== DEFAULT_SNAPPING_PREFERENCES.pixelGrid"
+        @reset="snapToPixelGrid = DEFAULT_SNAPPING_PREFERENCES.pixelGrid"
       >
         <AppSwitch
           v-model="snapToPixelGrid"
