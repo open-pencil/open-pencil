@@ -117,6 +117,10 @@ function onSectionChange(section: string | number): void {
     settingsDialogSection.value = match.value
   })
 }
+/** The page an editor was opened from, picked again in the sidebar, leads back to its list. */
+function onTriggerClick(section: string): void {
+  if (section === settingsDialogSection.value && editing.value) navigation.back()
+}
 function onOpenChange(open: boolean): void {
   if (open) settingsDialogOpen.value = true
   else
@@ -177,6 +181,7 @@ function onOpenChange(open: boolean): void {
             :key="section.value"
             :value="section.value"
             :data-test-id="`settings-section-${section.value}`"
+            @click="onTriggerClick(section.value)"
           >
             <template #leading><component :is="section.icon" class="size-3.5" /></template>
             {{ section.label }}
