@@ -270,9 +270,8 @@ const quiver: VectorizeProvider = {
       QUIVER_TIMEOUT_MS
     )
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        throw new VectorizeAuthError(quiver.name)
-      }
+      // Quiver answers 403 for a frozen account or a refused request, never for the key.
+      if (response.status === 401) throw new VectorizeAuthError(quiver.name)
       const detail = await responseErrorDetail(response)
       throw new Error(
         detail

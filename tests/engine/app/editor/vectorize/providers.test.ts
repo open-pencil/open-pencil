@@ -100,9 +100,10 @@ describe('vectorization providers', () => {
     }
   })
 
-  test('Quiver reports a rejected key, and an answer without an SVG as a failure', async () => {
+  test('Quiver reports a rejected key, a frozen account and an answer without an SVG apart', async () => {
     const answers = [
       new Response('{"error":"invalid key"}', { status: 401 }),
+      Response.json({ code: 'account_frozen' }, { status: 403 }),
       Response.json({ id: 'resp_1', created: 1, data: [] })
     ]
     const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
@@ -112,6 +113,9 @@ describe('vectorization providers', () => {
     try {
       await expect(quiver.vectorize(new Uint8Array([1]), 'bad')).rejects.toThrow(
         'QuiverAI API key was rejected'
+      )
+      await expect(quiver.vectorize(new Uint8Array([1]), 'key')).rejects.toThrow(
+        'QuiverAI vectorization failed (403)'
       )
       await expect(quiver.vectorize(new Uint8Array([1]), 'key')).rejects.toThrow(
         'QuiverAI returned no SVG'
