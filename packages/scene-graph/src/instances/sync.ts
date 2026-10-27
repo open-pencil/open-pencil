@@ -313,7 +313,7 @@ function childBindingProtection(
   return (field: string) => protectedField(field) || ownsSelfFillField(child, field)
 }
 
-/** Links a copy to the component layer it matched, reporting each node it writes into first. */
+/** Links a copy to the component layer it matched, reporting each changed node and its owner. */
 function linkMatchedChild(
   graph: SceneGraph,
   context: InstanceSyncContext,
@@ -322,7 +322,6 @@ function linkMatchedChild(
   compChildId: string
 ): void {
   const { overrides } = context
-  // A recorded link outranks `componentId`, so one a file recorded must follow the match too.
   const recorded = hasNodeInstanceOverride(
     overrides,
     instParentId,
@@ -330,13 +329,12 @@ function linkMatchedChild(
     'sourceComponentId'
   )
   if (instChild.type === 'INSTANCE' || recorded) {
-    graph.willChangeNode(graph.nodes.get(context.instanceId))
+    const owner = graph.nodes.get(context.instanceId)
+    graph.willChangeNode(owner)
     setInstanceOverride(overrides, instParentId, instChild.id, 'sourceComponentId', compChildId)
+    if (owner) graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
   }
-  if (instChild.type !== 'INSTANCE') {
-    graph.willChangeNode(instChild)
-    instChild.componentId = compChildId
-  }
+  if (instChild.type !== 'INSTANCE') graph.updateNode(instChild.id, { componentId: compChildId })
 }
 
 function matchFallbackChildren(
