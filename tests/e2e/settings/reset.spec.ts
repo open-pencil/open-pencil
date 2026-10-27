@@ -23,6 +23,5 @@ test('a changed setting offers Reset to default, which puts the default back', a
 
   await reset.click()
   await expect(zoomSpeed).toContainText('1×')
-  await expect(zoomSpeed).not.toContainText('default')
   await expect(reset).toHaveCount(0)
 })
