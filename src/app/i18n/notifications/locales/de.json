@@ -7,6 +7,7 @@
   "copiedProperties": "Eigenschaften kopiert.",
   "pngClipboardUnavailable": "Der PNG-Export in die Zwischenablage ist in diesem Browser nicht verfügbar.",
   "openFileFailed": "„{name}“ konnte nicht geöffnet werden: {error}",
+  "viewDiagnostics": "Diagnose anzeigen",
   "importedDOMCSS": "DOM/CSS-Dokument importiert.",
   "importDOMCSSFailed": "DOM/CSS konnte nicht importiert werden: {error}",
   "openDOMCSSFailed": "DOM/CSS-Datei konnte nicht geöffnet werden: {error}",

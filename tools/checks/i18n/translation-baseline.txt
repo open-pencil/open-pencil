@@ -186,6 +186,7 @@ fr:panels.variableModeAuto
 fr:panels.variableModeAutoMixed
 fr:panels.variableModeHeading
 fr:settings.animations
+fr:settings.diagnostics
 fr:settings.mcp
 fr:settings.navigation
 fr:settings.notifications
@@ -360,6 +361,7 @@ it:variables.formula
 it:variables.unitAuto
 pl:variables.unitAuto
 es:menu.variables
+fr:menu.diagnostics
 fr:menu.variables
 fr:variables.collections
 de:panels.gridAuto

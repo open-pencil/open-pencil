@@ -7,6 +7,7 @@
   "copiedProperties": "已复制属性。",
   "pngClipboardUnavailable": "此浏览器不支持将 PNG 导出到剪贴板。",
   "openFileFailed": "无法打开“{name}”：{error}",
+  "viewDiagnostics": "查看诊断",
   "importedDOMCSS": "已导入 DOM/CSS 文档。",
   "importDOMCSSFailed": "无法导入 DOM/CSS：{error}",
   "openDOMCSSFailed": "无法打开 DOM/CSS 文件：{error}",

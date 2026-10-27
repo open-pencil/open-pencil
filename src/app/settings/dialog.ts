@@ -14,6 +14,7 @@ export type SettingsSection =
   | 'mcp'
   | 'usage'
   | 'privacy'
+  | 'diagnostics'
 
 /** A part of a page that opening Settings scrolls to, such as the toolbar on the Editor page. */
 export type SettingsAnchor = 'toolbar'

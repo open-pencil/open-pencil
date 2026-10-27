@@ -7,6 +7,7 @@
   "copiedProperties": "Skopiowano właściwości.",
   "pngClipboardUnavailable": "Eksport PNG do schowka nie jest dostępny w tej przeglądarce.",
   "openFileFailed": "Nie udało się otworzyć „{name}”: {error}",
+  "viewDiagnostics": "Pokaż diagnostykę",
   "importedDOMCSS": "Zaimportowano dokument DOM/CSS.",
   "importDOMCSSFailed": "Nie udało się zaimportować DOM/CSS: {error}",
   "openDOMCSSFailed": "Nie udało się otworzyć pliku DOM/CSS: {error}",

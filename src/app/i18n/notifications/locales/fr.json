@@ -7,6 +7,7 @@
   "copiedProperties": "Propriétés copiées.",
   "pngClipboardUnavailable": "L’export PNG vers le presse-papiers n’est pas disponible dans ce navigateur.",
   "openFileFailed": "Impossible d’ouvrir « {name} » : {error}",
+  "viewDiagnostics": "Voir les diagnostics",
   "importedDOMCSS": "Document DOM/CSS importé.",
   "importDOMCSSFailed": "Impossible d’importer le DOM/CSS : {error}",
   "openDOMCSSFailed": "Impossible d’ouvrir le fichier DOM/CSS : {error}",

@@ -30,7 +30,6 @@ const clearOpen = ref(false)
 
 const {
   diagnosticsEnabled,
-  usageEnabled,
   diagnosticsCount,
   diagnosticsSize,
   diagnosticsRetention,
@@ -85,13 +84,6 @@ async function saveDiagnostics() {
         :description="diagnosticMessages.localDiagnosticsDescription"
       >
         <AppSwitch v-model="diagnosticsEnabled" :label="diagnosticMessages.localDiagnostics" />
-      </SettingsRow>
-      <SettingsRow
-        as="label"
-        :label="diagnosticMessages.usageHistory"
-        :description="usageEnabled ? diagnosticMessages.usageHistoryDescription : undefined"
-      >
-        <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
       </SettingsRow>
       <SettingsRow
         :label="diagnosticMessages.retention"

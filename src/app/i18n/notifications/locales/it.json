@@ -7,6 +7,7 @@
   "copiedProperties": "Proprietà copiate.",
   "pngClipboardUnavailable": "L’esportazione PNG negli appunti non è disponibile in questo browser.",
   "openFileFailed": "Impossibile aprire «{name}»: {error}",
+  "viewDiagnostics": "Mostra diagnostica",
   "importedDOMCSS": "Documento DOM/CSS importato.",
   "importDOMCSSFailed": "Impossibile importare DOM/CSS: {error}",
   "openDOMCSSFailed": "Impossibile aprire il file DOM/CSS: {error}",

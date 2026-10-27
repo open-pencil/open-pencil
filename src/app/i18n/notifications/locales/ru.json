@@ -7,6 +7,7 @@
   "copiedProperties": "Свойства скопированы.",
   "pngClipboardUnavailable": "Экспорт PNG в буфер обмена недоступен в этом браузере.",
   "openFileFailed": "Не удалось открыть «{name}»: {error}",
+  "viewDiagnostics": "Открыть диагностику",
   "importedDOMCSS": "Документ DOM/CSS импортирован.",
   "importDOMCSSFailed": "Не удалось импортировать DOM/CSS: {error}",
   "openDOMCSSFailed": "Не удалось открыть файл DOM/CSS: {error}",

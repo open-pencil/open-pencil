@@ -38,7 +38,7 @@ test('settings tabs associate panels and support vertical keyboard navigation', 
   await expect(general).toBeFocused()
   await expect(page.getByTestId('settings-general-panel')).toBeVisible()
   await general.press('End')
-  await expect(page.getByTestId('settings-section-privacy')).toBeFocused()
+  await expect(page.getByTestId('settings-section-diagnostics')).toBeFocused()
   await page.getByTestId('app-settings-done').click()
   await expect(dialog).not.toBeVisible()
 })

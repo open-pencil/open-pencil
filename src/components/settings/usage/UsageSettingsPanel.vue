@@ -3,8 +3,12 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { useDiagnosticsSettings } from '@/app/diagnostics/settings'
 import { useUsageSettings } from '@/app/usage/settings/use'
+import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { diagnostics: diagnosticMessages, settings } = useI18n()
 
@@ -13,6 +17,7 @@ function formatTokenValue(value: number | null): string {
 }
 
 const { summary } = useUsageSettings()
+const { usageEnabled } = useDiagnosticsSettings()
 
 const totals = computed(() => {
   const messages = diagnosticMessages.value
@@ -32,6 +37,16 @@ const totals = computed(() => {
   <SettingsSection data-test-id="settings-usage-panel">
     <template #title>{{ settings.usage }}</template>
     <template #description>{{ diagnosticMessages.usageDescription }}</template>
+
+    <SettingsGroup>
+      <SettingsRow
+        as="label"
+        :label="diagnosticMessages.usageHistory"
+        :description="diagnosticMessages.usageHistoryDescription"
+      >
+        <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
+      </SettingsRow>
+    </SettingsGroup>
 
     <div class="grid grid-cols-2 gap-2">
       <div v-for="total in totals" :key="total.label" class="rounded border border-border p-3">

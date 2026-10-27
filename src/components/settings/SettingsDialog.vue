@@ -2,6 +2,7 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { AlertDialogCancel, DialogClose } from 'reka-ui'
 import { computed, type Component } from 'vue'
+import IconActivity from '~icons/lucide/activity'
 import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
@@ -96,7 +97,10 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
   },
   {
     label: settings.value.groupDataAndPrivacy,
-    sections: [{ value: 'privacy', label: settings.value.privacy, icon: IconShield }]
+    sections: [
+      { value: 'privacy', label: settings.value.privacy, icon: IconShield },
+      { value: 'diagnostics', label: settings.value.diagnostics, icon: IconActivity }
+    ]
   }
 ])
 const sections = computed(() => groups.value.flatMap((group) => group.sections))
@@ -218,12 +222,10 @@ function onOpenChange(open: boolean): void {
         <SettingsPage><UsageSettingsPanel /></SettingsPage>
       </AppTabsContent>
       <AppTabsContent value="privacy" as-child>
-        <SettingsPage>
-          <div class="flex flex-col gap-6">
-            <PrivacySettingsPanel />
-            <DiagnosticsSettingsPanel />
-          </div>
-        </SettingsPage>
+        <SettingsPage><PrivacySettingsPanel /></SettingsPage>
+      </AppTabsContent>
+      <AppTabsContent value="diagnostics" as-child>
+        <SettingsPage><DiagnosticsSettingsPanel /></SettingsPage>
       </AppTabsContent>
     </AppTabsRoot>
 
