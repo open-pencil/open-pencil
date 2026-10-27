@@ -1,5 +1,6 @@
 mod agents;
 mod credentials;
+mod explicit_sync;
 mod files;
 mod fonts;
 mod icons;
@@ -27,6 +28,9 @@ use tauri::{Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    explicit_sync::disable_nvidia_explicit_sync();
+
     let _ = fix_path_env::fix();
     agents::path::augment_process_path();
 
