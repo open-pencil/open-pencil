@@ -419,13 +419,26 @@ export function paintBooleanOperation(
       if (!stroke.visible) continue
       const color = r.resolveStrokeColor(stroke, 0, node, graph)
       r.strokePaint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
-      r.strokePaint.setStrokeWidth(stroke.weight)
       r.strokePaint.setAlphaf(stroke.opacity)
-      canvas.drawPath(path, r.strokePaint)
+      drawAlignedStroke(r, canvas, path, stroke)
     }
   } finally {
     path.delete()
   }
+}
+
+function drawAlignedStroke(r: SkiaRenderer, canvas: Canvas, path: Path, stroke: Stroke): void {
+  if (stroke.align === 'CENTER') {
+    r.strokePaint.setStrokeWidth(stroke.weight)
+    canvas.drawPath(path, r.strokePaint)
+    return
+  }
+  const keptSide = stroke.align === 'INSIDE' ? r.ck.ClipOp.Intersect : r.ck.ClipOp.Difference
+  canvas.save()
+  canvas.clipPath(path, keptSide, true)
+  r.strokePaint.setStrokeWidth(stroke.weight * 2)
+  canvas.drawPath(path, r.strokePaint)
+  canvas.restore()
 }
 
 /** Draws a boolean operation with its shadows: inner shadows sit over its fills, under strokes. */
