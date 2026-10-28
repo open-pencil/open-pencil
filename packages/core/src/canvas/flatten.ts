@@ -1,8 +1,9 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
-import { makeBooleanSourcePath, nodePathTransform } from './boolean'
+import { makeBooleanSourcePath } from './boolean'
 import type { SkiaRenderer } from './renderer'
 
 export type VectorFlattenProps = Pick<
@@ -29,7 +30,7 @@ function nodesToVectorProps(
       path.delete()
       return null
     }
-    path.addPath(nodePath, nodePathTransform(renderer, node))
+    path.addPath(nodePath, getNodeLocalMatrix(node))
     nodePath.delete()
   }
 

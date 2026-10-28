@@ -113,6 +113,29 @@ describe('boolean operation paths', () => {
     path?.delete()
   })
 
+  test('reflects a turned child after turning it, as the canvas places it', async () => {
+    const r = await createRenderer()
+    const api = createAPI()
+    const first = api.createRectangle()
+    const second = api.createRectangle()
+    for (const stick of [first, second]) {
+      stick.resize(160, 20)
+      stick.y = 70
+    }
+    api.graph.updateNode(first.id, { rotation: 45 })
+    api.graph.updateNode(second.id, { rotation: 45, flipX: true })
+
+    const booleanNode = api.union([first, second], asPageNode(api.currentPage))
+    const node = api.graph.getNode(booleanNode.id)
+    expect(node).toBeDefined()
+    if (!node) return
+    const path = makeBooleanOperationPath(r, node, api.graph)
+    const crossing = (x: number) => path?.contains(x, 30)
+
+    expect([crossing(30), crossing(node.width - 30)]).toEqual([true, true])
+    path?.delete()
+  })
+
   test('supports ellipse arc wedges', async () => {
     const r = await createRenderer()
     const api = createAPI()
