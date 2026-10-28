@@ -20,20 +20,39 @@ function normalizeDefaults(node: NodeChange): void {
   }
 }
 
+function refsTheParameterMapCannotCarry(node: NodeChange): ComponentPropRef[] {
+  const refs = (node.componentPropRefs as ComponentPropRef[] | undefined) ?? []
+  if (!node.parameterConsumptionMap) {
+    return structuredClone(refs)
+  }
+  return structuredClone(refs.filter((ref) => !BOUND_FIELDS.has(ref.componentPropNodeField)))
+}
+
 export function normalizeComponentPropertyRecords(node: NodeChange): void {
   normalizeDefaults(node)
   const parameters = node.parameterConsumptionMap
-  const refs = structuredClone((node.componentPropRefs as ComponentPropRef[] | undefined) ?? [])
+  const refs = refsTheParameterMapCannotCarry(node)
   for (const entry of parameters?.entries ?? []) {
     const id = entry.variableData?.value?.propRefValue?.defId
-    if (entry.variableData?.dataType !== 'PROP_REF' || !id || !entry.variableField) continue
-    if (!BOUND_FIELDS.has(entry.variableField)) continue
+    if (entry.variableData?.dataType !== 'PROP_REF' || !id || !entry.variableField) {
+      continue
+    }
+    if (!BOUND_FIELDS.has(entry.variableField)) {
+      continue
+    }
     const ref = { defID: structuredClone(id), componentPropNodeField: entry.variableField }
     const index = refs.findIndex(
       (candidate) => candidate.componentPropNodeField === entry.variableField
     )
-    if (index === -1) refs.push(ref)
-    else refs[index] = ref
+    if (index === -1) {
+      refs.push(ref)
+    } else {
+      refs[index] = ref
+    }
   }
-  if (refs.length) node.componentPropRefs = refs
+  if (refs.length) {
+    node.componentPropRefs = refs
+  } else {
+    Reflect.deleteProperty(node, 'componentPropRefs')
+  }
 }
