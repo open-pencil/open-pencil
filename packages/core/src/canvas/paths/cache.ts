@@ -56,6 +56,7 @@ export class NodePathCaches {
   readonly strokeOutline: NodePathCache
   readonly fillGeometry: NodePathCache
   readonly strokeGeometry: NodePathCache
+  readonly fillShape: NodePathCache
   private readonly caches: readonly NodePathCache[]
   private uncached: Path[][] = []
 
@@ -65,12 +66,14 @@ export class NodePathCaches {
     this.strokeOutline = createPathCache(limits)
     this.fillGeometry = createPathCache(limits)
     this.strokeGeometry = createPathCache(limits)
+    this.fillShape = createPathCache(limits)
     this.caches = [
       this.vector,
       this.vectorStroke,
       this.strokeOutline,
       this.fillGeometry,
-      this.strokeGeometry
+      this.strokeGeometry,
+      this.fillShape
     ]
   }
 
