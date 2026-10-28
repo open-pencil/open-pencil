@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
 import { movePageInGraph } from '#core/editor/pages/move'
-import { defineTool } from '#core/tools/schema'
+import { defineTool, toolNumber } from '#core/tools/schema'
 
 export const movePage = defineTool({
   name: 'move_page',
@@ -10,7 +10,12 @@ export const movePage = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     page_id: v.pipe(v.string(), v.minLength(1), v.description('ID of the page to move')),
-    index: v.pipe(v.number(), v.integer(), v.minValue(0), v.description('Zero-based page index'))
+    index: v.pipe(
+      toolNumber(v.number()),
+      v.integer(),
+      v.minValue(0),
+      v.description('Zero-based page index')
+    )
   }),
   execute: (figma, { page_id, index }) => {
     const page = figma.graph.getNode(page_id)
