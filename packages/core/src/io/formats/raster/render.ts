@@ -25,16 +25,6 @@ function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: s
   return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
 }
 
-function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
-  const node = graph.getNode(nodeId)
-  if (!node) return false
-  if (node.blendMode !== 'NORMAL' && node.blendMode !== 'PASS_THROUGH') return true
-  if (node.effects.some((effect) => effect.visible && effect.type === 'BACKGROUND_BLUR')) {
-    return true
-  }
-  return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
-}
-
 export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
   return computeDescendantVisualBounds(
     nodeIds,
@@ -268,6 +258,18 @@ function applyWorldTransform(node: SceneNode, matrix: Mat3): void {
   node.flipY = false
 }
 
+function isolateSelection(
+  graph: SceneGraph,
+  nodeIds: string[]
+): { graph: SceneGraph; pageId: string } | null {
+  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
+  if (!extracted.pageId) {
+    return null
+  }
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
+  return { graph: extracted.graph, pageId: extracted.pageId }
+}
+
 export function renderNodesToImage(
   ck: CanvasKit,
   renderer: SkiaRenderer,
@@ -291,23 +293,17 @@ export function renderNodesToImage(
   const pixelH = Math.ceil(contentH * options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
-  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
-  if (!extracted.pageId) return null
-
-  const renderGraph = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
-    ? graph
-    : extracted.graph
-  const renderPageId = renderGraph === graph ? pageId : extracted.pageId
-  if (renderGraph !== graph) {
-    prepareSelectionRenderGraph(graph, renderGraph, renderPageId, nodeIds)
+  const selection = isolateSelection(graph, nodeIds)
+  if (!selection) {
+    return null
   }
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(
     ck,
     renderer,
-    renderGraph,
-    renderPageId,
+    selection.graph,
+    selection.pageId,
     pixelW,
     pixelH,
     options.format,
