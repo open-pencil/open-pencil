@@ -3,9 +3,11 @@ import type { Canvas, Path, PathBuilder, PathOp } from 'canvaskit-wasm'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
+import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
+import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
 import type { SkiaRenderer } from './renderer'
 import { makeLineStrokeOutline } from './strokes/line'
@@ -342,6 +344,36 @@ export function makeBooleanOperationPath(
     }
     result = combined
   }
+  if (node.cornerRadius <= 0) {
+    return result
+  }
+  const rounded = cachedRoundedCorners(r, node, result)
+  result.delete()
+  return rounded.copy()
+}
+
+function cachedRoundedCorners(r: SkiaRenderer, node: SceneNode, combined: Path): Path {
+  const key = `${node.id}|rounded|${node.cornerRadius}`
+  const cached = r.nodePaths.strokeOutline.get(key)
+  if (cached?.[0].equals(combined)) {
+    return cached[1]
+  }
+  const rounded = withRoundedCorners(r, combined, node.cornerRadius)
+  r.nodePaths.store(r.nodePaths.strokeOutline, key, [combined.copy(), rounded])
+  return rounded
+}
+
+function withRoundedCorners(r: SkiaRenderer, path: Path, radius: number): Path {
+  const { vertices, segments, regions } = parseSVGPath(path.toSVGString())
+  const rounded = new r.ck.PathBuilder()
+  for (const region of regions) {
+    for (const loop of region.loops) {
+      const contour = loop.map((index) => segments[index])
+      addOpenSegmentsToPath(rounded, contour, vertices, radius)
+    }
+  }
+  const result = rounded.detachAndDelete()
+  result.setFillType(path.getFillType())
   return result
 }
 
