@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { IS_TAURI, type AIProviderID } from '@open-pencil/core/constants'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
+import { aiModelSettings, modelConnection } from '@/app/ai/models'
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import {
   ONBOARDING_AGENTS,
@@ -18,6 +19,7 @@ import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import { DESKTOP_DOWNLOAD_URL } from '@/constants'
 
@@ -27,6 +29,16 @@ import { DESKTOP_DOWNLOAD_URL } from '@/constants'
  */
 const emit = defineEmits<{ choose: [providerID: AIProviderID] }>()
 const ai = useAIMessages()
+
+/** Providers a model in the list already runs on; choosing one again adds another model. */
+const setUp = computed(
+  () =>
+    new Set(
+      aiModelSettings.value.models.flatMap(
+        (model) => modelConnection(model.connectionId)?.providerID ?? []
+      )
+    )
+)
 
 interface Choice {
   id: AIProviderID
@@ -104,7 +116,12 @@ const groups = computed(() => {
           <template #leading><ProviderLogo :provider="choice.id" /></template>
           {{ modelProviderName(choice.id) }}
           <template v-if="choice.description" #description>{{ choice.description }}</template>
-          <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
+          <template #trailing>
+            <AppBadge v-if="setUp.has(choice.id)" :ui="{ base: 'bg-hover text-surface' }">{{
+              ai.modelProviderSetUp
+            }}</AppBadge>
+            <icon-lucide-chevron-right class="size-3.5" />
+          </template>
         </AppActionRow>
       </div>
     </SettingsSection>

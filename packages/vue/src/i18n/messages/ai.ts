@@ -274,6 +274,7 @@ export const aiMessageDefaults = {
   aiSetupAccessAgentsDescription:
     'Use your existing subscription. The agent chooses its own model.',
   aiSetupAccessAgentsDesktop: 'Coding agents are available in the OpenPencil desktop app.',
+  modelProviderSetUp: 'Set up',
   aiSetupAccessAPI: 'API accounts',
   aiSetupAccessServer: 'Local model or company server',
   aiSetupAccessMore: 'More providers',

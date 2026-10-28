@@ -241,6 +241,7 @@
   "aiSetupAccessAgents": "Coding-Agenten auf diesem Computer",
   "aiSetupAccessAgentsDescription": "Nutze dein bestehendes Abo. Der Agent wählt sein Modell selbst.",
   "aiSetupAccessAgentsDesktop": "Coding-Agenten sind in der Desktop-App von OpenPencil verfügbar.",
+  "modelProviderSetUp": "Eingerichtet",
   "aiSetupAccessAPI": "API-Konten",
   "aiSetupAccessServer": "Lokales Modell oder Firmenserver",
   "aiSetupAccessServerDescription": "Jeder Server, der die OpenAI-API spricht, etwa Ollama oder LM Studio.",

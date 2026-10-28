@@ -241,6 +241,7 @@
   "aiSetupAccessAgents": "このコンピューターのコーディングエージェント",
   "aiSetupAccessAgentsDescription": "既存のサブスクリプションを使います。モデルはエージェントが選びます。",
   "aiSetupAccessAgentsDesktop": "コーディングエージェントは OpenPencil デスクトップアプリで利用できます。",
+  "modelProviderSetUp": "設定済み",
   "aiSetupAccessAPI": "API アカウント",
   "aiSetupAccessServer": "ローカルモデルまたは社内サーバー",
   "aiSetupAccessServerDescription": "Ollama や LM Studio など、OpenAI API 互換のサーバー。",

@@ -241,6 +241,7 @@
   "aiSetupAccessAgents": "这台电脑上的编程智能体",
   "aiSetupAccessAgentsDescription": "使用你现有的订阅，模型由智能体自行选择。",
   "aiSetupAccessAgentsDesktop": "编程智能体可在 OpenPencil 桌面应用中使用。",
+  "modelProviderSetUp": "已设置",
   "aiSetupAccessAPI": "API 账户",
   "aiSetupAccessServer": "本地模型或公司服务器",
   "aiSetupAccessServerDescription": "任何兼容 OpenAI API 的服务器，例如 Ollama 或 LM Studio。",
