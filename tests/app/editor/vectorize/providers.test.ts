@@ -124,4 +124,32 @@ describe('vectorization providers', () => {
       fetchSpy.mockRestore()
     }
   })
+
+  test('an answer that stalls after its headers times out instead of waiting forever', async () => {
+    const realSetTimeout = globalThis.setTimeout
+    // The deadline runs out at once, after the headers have arrived.
+    const timerSpy = spyOn(globalThis, 'setTimeout').mockImplementation(((handler: () => void) =>
+      realSetTimeout(handler, 0)) as typeof setTimeout)
+    const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async (_input, init) => {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"data":['))
+            init?.signal?.addEventListener('abort', () =>
+              controller.error(new DOMException('aborted', 'AbortError'))
+            )
+          }
+        })
+        return new Response(body)
+      })
+    )
+    try {
+      await expect(
+        getVectorizeProvider('quiver').vectorize(new Uint8Array([1]), 'key')
+      ).rejects.toThrow('timed out')
+    } finally {
+      fetchSpy.mockRestore()
+      timerSpy.mockRestore()
+    }
+  })
 })
