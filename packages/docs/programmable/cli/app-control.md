@@ -86,6 +86,7 @@ Values are read as JSON when they parse (`false`, `100`, `"auto"`) and as plain 
 | `editing.snapping.geometry`  | `true`, `false`                                                                                                                                                           |
 | `editing.snapping.objects`   | `true`, `false`                                                                                                                                                           |
 | `editing.snapping.pixelGrid` | `true`, `false`                                                                                                                                                           |
+| `rendering.canvasMode`       | `retained`, `tiled` (applies after a reload) |
 | `recovery.enabled`           | `true`, `false`                                                                                                                                                           |
 | `chat.reasoningDisplay`      | `collapsed`, `while-thinking`, `expanded`                                                                                                                                 |
 | `chat.maxAgentSteps`         | integer 1–1000                                                                                                                                                            |

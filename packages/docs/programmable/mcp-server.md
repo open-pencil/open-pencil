@@ -274,6 +274,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | --------------- | ----------------------------------------------------------------- |
 | `delete_nodes`  | Delete nodes                                                      |
 | `clone_nodes`   | Duplicate nodes                                                   |
+| `move_page`    | Move a page to a zero-based position in the page list, persisting its order |
 | `reparent_node` | Move a node into a different parent                               |
 | `set_selection` | Select nodes by ID                                                |
 | `group_nodes`   | Group nodes                                                       |
