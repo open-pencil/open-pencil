@@ -4,6 +4,7 @@ import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
+import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import type { SkiaRenderer } from './renderer'
 import { makeLineStrokeOutline } from './strokes/line'
@@ -77,18 +78,27 @@ export function nodeHasVisibleStroke(node: SceneNode): boolean {
   return node.strokes.some((stroke) => stroke.visible && stroke.weight > 0)
 }
 
-/**
- * The area a stroke paints along `source`, as the canvas draws it: centred on the path, or, on a
- * layer whose outline it keeps to, twice its weight cut to inside or outside the outline. Vectors
- * stroke their paths centred whatever the alignment, as the canvas draws them.
- */
-function strokeArea(r: SkiaRenderer, source: Path, node: SceneNode, stroke: Stroke): Path | null {
-  const aligned = stroke.align !== 'CENTER' && node.type !== 'VECTOR'
-  const outline = source.makeStroked({ width: aligned ? stroke.weight * 2 : stroke.weight })
-  if (!outline || !aligned) return outline
-  const op = stroke.align === 'INSIDE' ? r.ck.PathOp.Intersect : r.ck.PathOp.Difference
-  const area = r.ck.Path.MakeFromOp(outline, source, op)
-  outline.delete()
+function strokeSide(node: SceneNode, stroke: Stroke): Stroke['align'] {
+  const network = node.type === 'VECTOR' ? node.vectorNetwork : null
+  return network && isOpenVectorNetwork(network) ? 'CENTER' : stroke.align
+}
+
+function strokeArea(
+  r: SkiaRenderer,
+  source: Path,
+  weight: number,
+  side: Stroke['align']
+): Path | null {
+  if (side === 'CENTER') {
+    return source.makeStroked({ width: weight })
+  }
+  const band = source.makeStroked({ width: weight * 2 })
+  if (!band) {
+    return null
+  }
+  const keptSide = side === 'INSIDE' ? r.ck.PathOp.Intersect : r.ck.PathOp.Difference
+  const area = r.ck.Path.MakeFromOp(band, source, keptSide)
+  band.delete()
   // An op's result fills even-odd; turned to non-zero, it keeps its holes when added to others.
   const winding = area?.makeAsWinding() ?? null
   area?.delete()
@@ -113,11 +123,38 @@ function addVisibleStrokeOutlines(
 ): void {
   for (const stroke of node.strokes) {
     if (!stroke.visible || stroke.weight <= 0) continue
-    const area = strokeArea(r, source, node, stroke)
+    const side = strokeSide(node, stroke)
+    if (node.type === 'VECTOR' && side !== 'CENTER') {
+      const cachedArea = cachedVectorStrokeArea(r, source, node, stroke.weight, side)
+      if (cachedArea) {
+        target.addPath(cachedArea)
+      }
+      continue
+    }
+    const area = strokeArea(r, source, stroke.weight, side)
     if (!area) continue
     target.addPath(area)
     area.delete()
   }
+}
+
+function cachedVectorStrokeArea(
+  r: SkiaRenderer,
+  source: Path,
+  node: SceneNode,
+  weight: number,
+  side: Stroke['align']
+): Path | null {
+  const key = `${node.id}|aligned|${weight}|${side}`
+  const cached = r.nodePaths.strokeOutline.get(key)
+  if (cached) {
+    return cached[0]
+  }
+  const area = strokeArea(r, source, weight, side)
+  if (area) {
+    r.nodePaths.store(r.nodePaths.strokeOutline, key, [area])
+  }
+  return area
 }
 
 export function canContainFlattenableChildren(node: SceneNode): boolean {
@@ -202,7 +239,9 @@ export function makeBooleanSourcePath(
   if (!path) return null
   if (!nodeHasVisibleStroke(node)) return path
   const combined = new r.ck.PathBuilder()
-  combined.addPath(path)
+  if (nodeHasVisibleFill(node)) {
+    combined.addPath(path)
+  }
   addVisibleStrokeOutlines(r, combined, path, node)
   path.delete()
   return combined.detachAndDelete()
