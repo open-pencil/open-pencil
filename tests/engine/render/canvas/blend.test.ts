@@ -29,7 +29,8 @@ const blendModes = {
   Hue: 'Hue',
   Saturation: 'Saturation',
   Color: 'Color',
-  Luminosity: 'Luminosity'
+  Luminosity: 'Luminosity',
+  Plus: 'Plus'
 }
 
 function createCanvas() {
@@ -92,9 +93,11 @@ describe('canvas blend modes', () => {
       ['PASS_THROUGH', 'SrcOver'],
       ['DARKEN', 'Darken'],
       ['MULTIPLY', 'Multiply'],
+      ['LINEAR_BURN', 'ColorBurn'],
       ['COLOR_BURN', 'ColorBurn'],
       ['LIGHTEN', 'Lighten'],
       ['SCREEN', 'Screen'],
+      ['LINEAR_DODGE', 'Plus'],
       ['COLOR_DODGE', 'ColorDodge'],
       ['OVERLAY', 'Overlay'],
       ['SOFT_LIGHT', 'SoftLight'],

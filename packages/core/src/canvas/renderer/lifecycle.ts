@@ -25,6 +25,17 @@ export function releaseLiveImages(r: Pick<SkiaRenderer, 'liveImages' | 'surface'
   r.liveImages.clear()
 }
 
+function releaseRuntimeEffects(r: SkiaRenderer): void {
+  r.diamondGradientEffect?.delete()
+  r.diamondGradientEffect = null
+  r.pixelGridEffect?.delete()
+  r.pixelGridEffect = null
+  r.linearBurnBlender?.delete()
+  r.linearBurnBlender = null
+  r.linearDodgeBlender?.delete()
+  r.linearDodgeBlender = null
+}
+
 export function destroyRenderer(r: SkiaRenderer): void {
   if (r.destroyed) return
   r.destroyed = true
@@ -36,10 +47,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   releaseLiveImages(r)
   disposePathCaches(r)
   r.fillPaint.delete()
-  r.diamondGradientEffect?.delete()
-  r.diamondGradientEffect = null
-  r.pixelGridEffect?.delete()
-  r.pixelGridEffect = null
+  releaseRuntimeEffects(r)
   r.strokePaint.delete()
   r.selectionPaint.delete()
   r.parentOutlinePaint.delete()

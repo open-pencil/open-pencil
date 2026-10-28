@@ -53,6 +53,7 @@ import type {
   CanvasKit,
   Surface,
   Canvas,
+  Blender,
   Paint,
   Font,
   FontMgr,
@@ -102,6 +103,8 @@ export class SkiaRenderer {
   declare fillPaint: Paint
   diamondGradientEffect: RuntimeEffect | null = null
   pixelGridEffect: RuntimeEffect | null = null
+  linearBurnBlender: Blender | null = null
+  linearDodgeBlender: Blender | null = null
   declare strokePaint: Paint
   declare selectionPaint: Paint
   declare parentOutlinePaint: Paint
