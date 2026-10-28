@@ -46,7 +46,8 @@ import {
   drawStyledRRectStroke,
   getStrokeCapEntity,
   getStrokeJoinEntity,
-  normalizeDashPattern
+  normalizeDashPattern,
+  setStrokeBlendMode
 } from './strokes'
 import { drawLineStroke } from './strokes/line'
 import { drawOutlinedDashes } from './strokes/outlined-dashes'
@@ -433,11 +434,13 @@ function forVisibleStrokes(
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
     const draws = applyStrokeShader(r, stroke, index, node, graph)
+    setStrokeBlendMode(r, stroke.blendMode)
     try {
       if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
     } finally {
       r.strokePaint.setShader(null)
       r.fillPaint.setShader(null)
+      setStrokeBlendMode(r, 'NORMAL')
     }
   }
 }

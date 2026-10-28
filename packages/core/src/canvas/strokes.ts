@@ -1,6 +1,6 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { BlendMode, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
 import {
   arrowLinesSegments,
@@ -11,6 +11,7 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { figmaBlendModeToSkia } from './blend'
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
 import {
@@ -285,6 +286,12 @@ export function applyStrokeShader(
     return applied
   }
   return true
+}
+
+export function setStrokeBlendMode(r: SkiaRenderer, mode: BlendMode | undefined): void {
+  const blendMode = figmaBlendModeToSkia(r.ck, mode)
+  r.strokePaint.setBlendMode(blendMode)
+  r.fillPaint.setBlendMode(blendMode)
 }
 
 /** Leaves any shader in place: a shaded stroke's color is unused, but its alpha still applies. */
