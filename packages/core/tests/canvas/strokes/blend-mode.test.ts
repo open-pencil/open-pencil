@@ -137,3 +137,21 @@ describe('a stroke paint blends with what is under it, as a fill paint does', ()
     expect(rgbAt(pixels, 62, 30)).toEqual([0, 255, 0])
   })
 })
+
+test('a plus darker stroke adds itself to what is under it, less white', () => {
+  const pixels = renderPixels((graph, pageId) => {
+    graph.createNode('RECTANGLE', pageId, {
+      x: 10,
+      y: 10,
+      width: 40,
+      height: 40,
+      fills: [{ ...RED_FILL[0], color: { r: 0.6, g: 0.4, b: 0.2, a: 1 } }],
+      strokes: [{ ...greenStroke('LINEAR_BURN'), color: { r: 0.2, g: 0.8, b: 0.7, a: 1 } }]
+    })
+  })
+  const burned = [0, 51, 0]
+  rgbAt(pixels, 12, 30).forEach((channel, index) => {
+    expect(Math.abs(channel - burned[index])).toBeLessThan(2)
+  })
+  expect(rgbAt(pixels, 30, 30)).toEqual([153, 102, 51])
+})

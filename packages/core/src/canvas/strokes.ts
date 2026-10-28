@@ -11,7 +11,7 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { figmaBlendModeToSkia } from './blend'
+import { setPaintBlendMode } from './blend'
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
 import {
@@ -289,9 +289,8 @@ export function applyStrokeShader(
 }
 
 export function setStrokeBlendMode(r: SkiaRenderer, mode: BlendMode | undefined): void {
-  const blendMode = figmaBlendModeToSkia(r.ck, mode)
-  r.strokePaint.setBlendMode(blendMode)
-  r.fillPaint.setBlendMode(blendMode)
+  setPaintBlendMode(r, r.strokePaint, mode)
+  setPaintBlendMode(r, r.fillPaint, mode)
 }
 
 /** Leaves any shader in place: a shaded stroke's color is unused, but its alpha still applies. */
