@@ -49,25 +49,61 @@ export const VECTORIZE_PROVIDER_DEFINITIONS: readonly VectorizeProviderDefinitio
   QUIVER_DEFINITION
 ]
 
+/** An answer read in full: the body of a success, or the start of a failure's for its message. */
+interface VectorizeResponse {
+  ok: boolean
+  status: number
+  url: string
+  text: string
+}
+
+/** How much of a failure's body its message quotes. */
+const ERROR_DETAIL_BYTES = 4096
+const ERROR_DETAIL_CHARS = 500
+
+/**
+ * Sends a request and reads its answer under one deadline. A browser's fetch resolves on the
+ * headers, so a service that stalls in the body would otherwise hold the layer's vectorization
+ * open with no timeout left.
+ */
 async function vectorizeFetch(
   input: string,
-  init?: RequestInit,
-  maxResponseBytes = MAX_API_RESPONSE_BYTES,
-  timeoutMs = REQUEST_TIMEOUT_MS
-): Promise<Response> {
+  init: RequestInit,
+  {
+    maxResponseBytes = MAX_API_RESPONSE_BYTES,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    sizeError = 'Vectorization response is too large'
+  }: { maxResponseBytes?: number; timeoutMs?: number; sizeError?: string } = {}
+): Promise<VectorizeResponse> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const requestInit = { ...init, signal: controller.signal }
-    return await (IS_TAURI
+    const response = await (IS_TAURI
       ? tauriFetch(input, requestInit, maxResponseBytes, timeoutMs + NATIVE_TIMEOUT_GRACE_MS)
       : fetch(input, requestInit))
+    const text = response.ok
+      ? await readBoundedResponse(response, maxResponseBytes, sizeError)
+      : await readBoundedResponse(response, ERROR_DETAIL_BYTES, sizeError).then(
+          (detail) => detail.trim().slice(0, ERROR_DETAIL_CHARS),
+          () => ''
+        )
+    if (controller.signal.aborted) throw new VectorizeTimeoutError()
+    return { ok: response.ok, status: response.status, url: response.url, text }
   } catch (error) {
     if (controller.signal.aborted) throw new VectorizeTimeoutError()
     throw error
   } finally {
     clearTimeout(timeout)
   }
+}
+
+function providerFailure(name: string, response: VectorizeResponse): Error {
+  return new Error(
+    response.text
+      ? `${name} vectorization failed (${response.status}): ${response.text}`
+      : `${name} vectorization failed (${response.status})`
+  )
 }
 
 type VectorizeResponseRecord = {
@@ -137,29 +173,21 @@ async function readBoundedResponse(
 
 async function fetchSVGFromURL(providerID: VectorizeProviderID, rawURL: string): Promise<string> {
   const url = validateVectorizedAssetURL(providerID, rawURL)
-  let response: Response
+  let response: VectorizeResponse
   try {
     response = await vectorizeFetch(
       url.href,
       { credentials: 'omit', redirect: 'error' },
-      MAX_SVG_BYTES
+      { maxResponseBytes: MAX_SVG_BYTES, sizeError: 'Vectorized SVG is too large' }
     )
   } catch (error) {
     if (error instanceof VectorizeTimeoutError) throw error
+    if (error instanceof Error && error.message === 'Vectorized SVG is too large') throw error
     throw new Error('Vectorized SVG could not be downloaded. Try again or use the desktop app.')
   }
   if (!response.ok) throw new Error(`Failed to download vectorized SVG (${response.status})`)
   if (response.url) validateVectorizedAssetURL(providerID, response.url)
-  return readBoundedResponse(response, MAX_SVG_BYTES, 'Vectorized SVG is too large')
-}
-
-async function responseErrorDetail(response: Response): Promise<string> {
-  const detail = await readBoundedResponse(
-    response,
-    4096,
-    'Provider error response is too large'
-  ).catch(() => '')
-  return detail.trim().slice(0, 500)
+  return response.text
 }
 
 const recraft: VectorizeProvider = {
@@ -173,33 +201,24 @@ const recraft: VectorizeProvider = {
     ) as ArrayBuffer
     form.append('file', new Blob([payload], { type: 'image/png' }), 'image.png')
 
-    const response = await vectorizeFetch('https://external.api.recraft.ai/v1/images/vectorize', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
-      credentials: 'omit',
-      redirect: 'error'
-    })
+    const response = await vectorizeFetch(
+      'https://external.api.recraft.ai/v1/images/vectorize',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+        credentials: 'omit',
+        redirect: 'error'
+      },
+      { sizeError: `${recraft.name} response is too large` }
+    )
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         throw new VectorizeAuthError(recraft.name)
       }
-      const detail = await responseErrorDetail(response)
-      throw new Error(
-        detail
-          ? `${recraft.name} vectorization failed (${response.status}): ${detail}`
-          : `${recraft.name} vectorization failed (${response.status})`
-      )
+      throw providerFailure(recraft.name, response)
     }
-    const url = extractVectorizedSVGURL(
-      JSON.parse(
-        await readBoundedResponse(
-          response,
-          MAX_API_RESPONSE_BYTES,
-          `${recraft.name} response is too large`
-        )
-      )
-    )
+    const url = extractVectorizedSVGURL(JSON.parse(response.text))
     if (!url) throw new Error(`${recraft.name} returned no SVG URL`)
     return fetchSVGFromURL(recraft.id, url)
   }
@@ -209,36 +228,27 @@ const fal: VectorizeProvider = {
   ...FAL_DEFINITION,
   async vectorize(pngBytes, apiKey) {
     if (pngBytes.byteLength > MAX_IMAGE_BYTES) throw new Error('Image is too large to vectorize')
-    const response = await vectorizeFetch('https://fal.run/fal-ai/recraft/vectorize', {
-      method: 'POST',
-      headers: {
-        Authorization: `Key ${apiKey}`,
-        'Content-Type': 'application/json'
+    const response = await vectorizeFetch(
+      'https://fal.run/fal-ai/recraft/vectorize',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Key ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image_url: `data:image/png;base64,${fromUint8Array(pngBytes)}` }),
+        credentials: 'omit',
+        redirect: 'error'
       },
-      body: JSON.stringify({ image_url: `data:image/png;base64,${fromUint8Array(pngBytes)}` }),
-      credentials: 'omit',
-      redirect: 'error'
-    })
+      { sizeError: `${fal.name} response is too large` }
+    )
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         throw new VectorizeAuthError(fal.name)
       }
-      const detail = await responseErrorDetail(response)
-      throw new Error(
-        detail
-          ? `${fal.name} vectorization failed (${response.status}): ${detail}`
-          : `${fal.name} vectorization failed (${response.status})`
-      )
+      throw providerFailure(fal.name, response)
     }
-    const url = extractVectorizedSVGURL(
-      JSON.parse(
-        await readBoundedResponse(
-          response,
-          MAX_API_RESPONSE_BYTES,
-          `${fal.name} response is too large`
-        )
-      )
-    )
+    const url = extractVectorizedSVGURL(JSON.parse(response.text))
     if (!url) throw new Error(`${fal.name} returned no SVG URL`)
     return fetchSVGFromURL(fal.id, url)
   }
@@ -266,25 +276,21 @@ const quiver: VectorizeProvider = {
         credentials: 'omit',
         redirect: 'error'
       },
-      MAX_SVG_BYTES,
-      QUIVER_TIMEOUT_MS
+      {
+        maxResponseBytes: MAX_SVG_BYTES,
+        timeoutMs: QUIVER_TIMEOUT_MS,
+        sizeError: `${quiver.name} response is too large`
+      }
     )
     if (!response.ok) {
       // Quiver answers 403 for a frozen account or a refused request, never for the key.
       if (response.status === 401) throw new VectorizeAuthError(quiver.name)
-      const detail = await responseErrorDetail(response)
-      throw new Error(
-        detail
-          ? `${quiver.name} vectorization failed (${response.status}): ${detail}`
-          : `${quiver.name} vectorization failed (${response.status})`
-      )
+      throw providerFailure(quiver.name, response)
     }
-    const text = await readBoundedResponse(
-      response,
-      MAX_SVG_BYTES,
-      `${quiver.name} response is too large`
+    const parsed = v.safeParse(
+      v.pipe(v.string(), v.parseJson(), quiverResponseSchema),
+      response.text
     )
-    const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), quiverResponseSchema), text)
     if (!parsed.success) throw new Error(`${quiver.name} returned no SVG`)
     return parsed.output.data[0].svg
   }
