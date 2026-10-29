@@ -37,7 +37,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .columns(['document_id', 'created_at desc', 'id desc'])
     .execute()
   // History starts with what each document holds now.
-  await keepCurrentRevisions(database)
+  await keepCurrentRevisions(database as Kysely<CloudDatabase>)
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {

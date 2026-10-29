@@ -7,7 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { useTabsStore, createTab } from '@/app/tabs'
-import PreparationTabIndicator from '@/components/preparation/tab/PreparationTabIndicator.vue'
+import PreparationIndicator from '@/components/preparation/tab/PreparationIndicator.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import tabBarTheme from '@/theme/tab-bar'
@@ -98,10 +98,7 @@ function onClose(e: MouseEvent, tabId: string) {
             :data-dirty="tab.isDirty || undefined"
           >
             <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
-            <PreparationTabIndicator
-              v-else-if="tab.isPreparing"
-              :progress="tab.preparationProgress"
-            />
+            <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
             <icon-lucide-file v-else :class="baseStyles.icon()" />
             <span v-if="!tab.isHome" :class="baseStyles.label()">{{ tab.name }}</span>
             <Tip v-if="tab.isDirty" :label="files.unsavedChanges" side="bottom">
