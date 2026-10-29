@@ -2,6 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
+import { isRecordingPatternTile } from '#core/canvas/patterns/tiles'
 import { recordPicture } from '#core/canvas/renderer/picture'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { localPaintBounds } from '#core/geometry/render-bounds'
@@ -37,7 +38,7 @@ export function drawShapeThroughNodePicture(
   node: SceneNode,
   draw: (target: Canvas) => void
 ): void {
-  if (samplesImagesForExport(r, node)) {
+  if (samplesImagesForExport(r, node) || isRecordingPatternTile(r)) {
     draw(canvas)
     return
   }

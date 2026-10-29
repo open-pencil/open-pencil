@@ -28,6 +28,11 @@ function createRenderer() {
   }
 
   return asRenderer({
+    fontGeneration: 0,
+    viewportImageRendering: false,
+    renderingSceneBacking: false,
+    worldViewport: { x: 0, y: 0, w: 0, h: 0 },
+    renderNode: mock(() => undefined),
     fillPaint: {
       setShader: mock(() => undefined),
       setColor: mock(() => undefined),

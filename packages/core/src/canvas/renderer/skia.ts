@@ -16,6 +16,7 @@ import { LabelParagraphCache } from '#core/canvas/labels/paragraphs'
 import { labelHitOptions } from '#core/canvas/labels/style'
 import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
+import { forgetPatternTarget, invalidatePatternTargets } from '#core/canvas/patterns/tiles'
 import * as RenderText from '#core/canvas/text'
 import { createTextCaches } from '#core/canvas/text/caches'
 import { savedTextInk } from '#core/canvas/text/ink-bounds'
@@ -559,11 +560,16 @@ export class SkiaRenderer {
     this.textFonts.pending.delete(nodeId)
     this.textFonts.pictureGenerations.delete(nodeId)
     this.invalidateNodePicture(nodeId)
+    forgetPatternTarget(this, nodeId)
   }
 
   /** Drops `nodeId`'s cached drawing; `changedKeys`, when known, lets text keep its glyph coverage. */
   invalidateNodePicture(nodeId: string, changedKeys?: readonly (keyof SceneNode)[]): void {
     RendererState.invalidateNodePicture(this, nodeId, changedKeys)
+  }
+
+  redrawPatternTargetsAround(nodeId: string): void {
+    invalidatePatternTargets(this, nodeId)
   }
 
   /** Draws `nodeId` afresh next frame: its picture and the tiles that hold it are dropped. */
