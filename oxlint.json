@@ -438,6 +438,12 @@
   },
   "overrides": [
     {
+      "files": ["packages/cloud/src/server/db/migrations/*.ts"],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "off"
+      }
+    },
+    {
       "files": ["packages/docs/.vitepress/theme/landing/**/*.{ts,vue}"],
       "rules": {
         "open-pencil/no-app-imports-in-packages": "off"
