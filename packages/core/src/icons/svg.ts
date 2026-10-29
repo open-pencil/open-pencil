@@ -398,7 +398,9 @@ function arcEndpoints(d: string): ArcEndpoints[] {
 
 /**
  * Rounding to two decimals can put an arc's end on its start. That arc is degenerate and becomes a
- * point, so those paths are turned into curves first. Every other path still rounds as before.
+ * point, so those paths are turned into curves first. Expand smooth commands before that
+ * conversion, as the path parser does, so a following S uses the arc's end as its first control.
+ * Every other path still rounds as before.
  */
 function roundingCollapsesArc(precise: string): boolean {
   if (!/[Aa]/.test(precise)) return false
@@ -427,7 +429,7 @@ export function scalePathInfos(
     if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
     const precise = transformedPath.toString()
     const scaledD = roundingCollapsesArc(precise)
-      ? svgpath(precise).unarc().round(2).toString()
+      ? svgpath(precise).abs().unshort().unarc().round(2).toString()
       : transformedPath.round(2).toString()
     const fill = normalizeSVGPaint(path.fill)
     const stroke = normalizeSVGPaint(path.stroke)
