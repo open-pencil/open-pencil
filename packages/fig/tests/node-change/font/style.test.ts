@@ -79,3 +79,15 @@ test('writes Inter under the names of the Inter Figma ships', () => {
   expect(write({ fontFamily: 'Inter', italic: true }).fontName?.style).toBe('Italic')
   expect(write({ fontFamily: 'Inter', fontWeight: 700 }).fontName?.style).toBe('Bold')
 })
+
+test('names a range that sets another face without a name by that face, not the text’s name', () => {
+  // As HTML or `.pen` import a bold span: a weight and no name.
+  const written = write({
+    fontFamily: 'Avenir',
+    fontStyle: 'Book',
+    text: 'Book Bold',
+    styleRuns: [{ start: 5, length: 4, style: { fontWeight: 700 } }]
+  })
+  expect(written.fontName?.style).toBe('Book')
+  expect(written.textData?.styleOverrideTable?.[0]?.fontName?.style).toBe('Bold')
+})

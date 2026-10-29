@@ -1,5 +1,6 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { normalizeFontFamily, standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 
 /** The name a family's font gives its face at a weight and slant. */
 export type StyleNamer = (family: string, weight: number, italic: boolean) => string
@@ -34,7 +35,7 @@ export function figmaStyleName(
   nameFace: StyleNamer
 ): string {
   const family = style.fontFamily ?? node.fontFamily
-  const own = style.fontStyle !== undefined ? style.fontStyle : node.fontStyle
+  const own = rangeFontStyle(node, style)
   const name =
     own ?? nameFace(family, style.fontWeight ?? node.fontWeight, style.italic ?? node.italic)
   return FIGMA_STYLE_NAMES[normalizeFontFamily(family)]?.[name] ?? name

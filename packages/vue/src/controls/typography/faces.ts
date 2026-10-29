@@ -50,9 +50,15 @@ export function useFamilyFaces(nodes: ComputedRef<SceneNode[]>) {
         nodes.value.every((node) => supports(node, value, node.italic))
     ).map(({ value, label }) => ({
       value,
-      label: first ? faceStyleName(first.fontFamily, value, first.italic) : label
+      label: first ? weightName(first, value) : label
     }))
   })
+
+  /** A weight's name in a layer's family; its own weight keeps the name the layer has for it. */
+  function weightName(node: SceneNode, weight: number): string {
+    if (weight === node.fontWeight) return textStyleName(node)
+    return faceStyleName(node.fontFamily, weight, node.italic)
+  }
 
   /** The name of the face a layer is set in, as its font names it once its faces arrive. */
   function styleName(node: SceneNode): string {

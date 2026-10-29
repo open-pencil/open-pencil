@@ -1,8 +1,12 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { uniqBy } from 'es-toolkit/array'
+
+import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { parseFontStyle, standardStyleName } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 
 import type { FamilyFace } from '#core/text/font/faces'
 import { fontManager } from '#core/text/font/manager'
+import { textFontFace } from '#core/text/requirements/collect'
 
 /** A text's or a character's face: its family, weight, and slant, and the name it was given. */
 export type TextFace = Pick<SceneNode, 'fontFamily' | 'fontWeight' | 'italic' | 'fontStyle'>
@@ -40,4 +44,28 @@ export function faceForStyle(family: string, style: string): FamilyFace {
     faces.find((candidate) => candidate.style === style) ??
     faces.find((candidate) => spellingKey(candidate.style) === spellingKey(style))
   return face ?? { ...parseFontStyle(style), style }
+}
+
+/** The name of the face characters with `style` over the text draw in, as the text names it. */
+export function textFaceName(node: SceneNode, style: CharacterStyleOverride = {}): string {
+  const face = textFontFace(node, style)
+  return textStyleName({
+    fontFamily: face.family,
+    fontWeight: face.weight,
+    italic: face.italic,
+    fontStyle: rangeFontStyle(node, style)
+  })
+}
+
+/** Each face a text draws in, with the style it loads as and its name, once per name. */
+export function collectNamedNodeFontFaces(
+  node: SceneNode
+): Array<{ family: string; style: string; name: string }> {
+  if (node.type !== 'TEXT') return []
+  const styles: CharacterStyleOverride[] = [{}, ...node.styleRuns.map((run) => run.style)]
+  const faces = styles.map((style) => {
+    const { family, style: load } = textFontFace(node, style)
+    return { family, style: load, name: textFaceName(node, style) }
+  })
+  return uniqBy(faces, (face) => `${face.family}\0${face.name}`)
 }

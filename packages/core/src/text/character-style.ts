@@ -12,6 +12,7 @@ import {
 } from '@open-pencil/scene-graph'
 import {
   FACE_KEYS,
+  rangeFontStyle,
   SHARED_TEXT_STYLE_FIELDS,
   styleDetachmentChanges
 } from '@open-pencil/scene-graph/shared-styles'
@@ -116,7 +117,11 @@ export function characterStyles(node: SceneNode, start: number, end: number): Ch
     const from = Math.max(start, run.start)
     const to = Math.min(end, run.start + run.length)
     for (let index = from; index < to; index++) {
-      styles[index - start] = { ...styles[index - start], ...definedOverrides(run.style) }
+      styles[index - start] = {
+        ...styles[index - start],
+        ...definedOverrides(run.style),
+        fontStyle: rangeFontStyle(node, run.style)
+      }
     }
   }
   return styles

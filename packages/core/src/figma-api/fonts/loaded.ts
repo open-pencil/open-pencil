@@ -3,7 +3,7 @@ import { uniqBy } from 'es-toolkit/array'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
 import { fontManager } from '#core/text/font/manager'
-import { textStyleName } from '#core/text/font/names'
+import { textFaceName } from '#core/text/font/names'
 import { textFontFace } from '#core/text/requirements/collect'
 
 /** A face text draws in, and its name as Figma names it in its messages. */
@@ -18,13 +18,7 @@ interface DescribedFace {
 /** The face characters with `style` over the text draw in, named as the text names it. */
 function describedFace(node: SceneNode, style: CharacterStyleOverride = {}): DescribedFace {
   const face = textFontFace(node, style)
-  const name = textStyleName({
-    fontFamily: face.family,
-    fontWeight: face.weight,
-    italic: face.italic,
-    fontStyle: style.fontStyle !== undefined ? style.fontStyle : node.fontStyle
-  })
-  return { family: face.family, loadStyle: face.style, style: name }
+  return { family: face.family, loadStyle: face.style, style: textFaceName(node, style) }
 }
 
 function loadHint({ family, style }: DescribedFace): string {

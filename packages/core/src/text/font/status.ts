@@ -2,14 +2,17 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { fontManager, type FontManager } from '#core/text/font/manager'
+import { collectNamedNodeFontFaces } from '#core/text/font/names'
 import type { FontLoadedSource, FontUnavailableReason } from '#core/text/font/sources'
-import { collectNodeFontFaces } from '#core/text/requirements/collect'
 
 export type FontFaceStatus = 'available' | 'substituted' | 'unresolved'
 
 export interface DocumentFontFaceStatus {
   family: string
+  /** The style the font manager loads the face as. */
   style: string
+  /** The face's name, as its text names it ("Book", "Semi Bold"). */
+  name: string
   status: FontFaceStatus
   source: FontLoadedSource | null
   substituteFamily: string | null
@@ -28,12 +31,13 @@ export interface DocumentFontStatus {
 interface MutableFontFaceUse {
   family: string
   style: string
+  name: string
   nodeIds: Set<string>
   nodeNames: Set<string>
 }
 
-function faceKey(family: string, style: string): string {
-  return `${family}\0${style}`
+function faceKey(family: string, name: string): string {
+  return `${family}\0${name}`
 }
 
 /** The text nodes under each root, and each root that is itself text. */
@@ -49,11 +53,13 @@ function rootTextNodes(graph: SceneGraph, rootIds: readonly string[]): SceneNode
 function collectFaceUses(graph: SceneGraph, rootIds: readonly string[]): MutableFontFaceUse[] {
   const uses = new Map<string, MutableFontFaceUse>()
   for (const node of rootTextNodes(graph, rootIds)) {
-    for (const { family, style } of collectNodeFontFaces(node)) {
-      const key = faceKey(family, style)
+    // Faces that load as one style ("Book" and "Roman" at 400) are still faces of their own.
+    for (const { family, style, name } of collectNamedNodeFontFaces(node)) {
+      const key = faceKey(family, name)
       const use = uses.get(key) ?? {
         family,
         style,
+        name,
         nodeIds: new Set<string>(),
         nodeNames: new Set<string>()
       }
@@ -71,6 +77,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
     return {
       family: use.family,
       style: use.style,
+      name: use.name,
       status: 'available',
       source: exactSource,
       substituteFamily: null,
@@ -84,6 +91,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
     return {
       family: use.family,
       style: use.style,
+      name: use.name,
       status: 'substituted',
       source: null,
       substituteFamily: use.family,
@@ -97,6 +105,7 @@ function faceStatus(use: MutableFontFaceUse, manager: FontManager): DocumentFont
   return {
     family: use.family,
     style: use.style,
+    name: use.name,
     status: defaultSource ? 'substituted' : 'unresolved',
     source: null,
     substituteFamily: defaultSource ? DEFAULT_FONT_FAMILY : null,
@@ -114,7 +123,7 @@ export function documentFontStatus(
   const roots = typeof rootIds === 'string' ? [rootIds] : rootIds
   const faces = collectFaceUses(graph, roots)
     .map((use) => faceStatus(use, manager))
-    .sort((a, b) => a.family.localeCompare(b.family) || a.style.localeCompare(b.style))
+    .sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name))
   const issues = faces.filter((face) => face.status !== 'available')
   return { faithful: issues.length === 0, faces, issues }
 }
