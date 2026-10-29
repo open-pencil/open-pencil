@@ -16,7 +16,23 @@ export const completionListStyles = {
     fontFamily: 'inherit',
     maxHeight: '15rem',
     minWidth: '14rem',
-    maxWidth: '18rem'
+    maxWidth: '18rem',
+    // The desktop WebKit lays the rows out before the scrollbar appears, so the list keeps room
+    // for it from the start.
+    scrollbarGutter: 'stable'
+  },
+  // The app's thin scrollbar (`scrollbar-thin`), which takes its own width: macOS's overlay
+  // scrollbar would cover the ends of the rows.
+  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar': { width: '6px' },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-track': {
+    background: 'transparent'
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-thumb': {
+    background: 'var(--color-border)',
+    borderRadius: '3px'
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul::-webkit-scrollbar-thumb:hover': {
+    background: 'var(--color-muted)'
   },
   '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
     display: 'flex',

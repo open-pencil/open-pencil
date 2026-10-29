@@ -34,7 +34,7 @@ export function chatComposerTheme(dark: boolean) {
       '.cm-content[aria-disabled="true"]': { opacity: '0.6', cursor: 'not-allowed' },
       ...completionListStyles,
       '.cm-tooltip.cm-tooltip-autocomplete > ul': {
-        fontFamily: 'inherit',
+        ...completionListStyles['.cm-tooltip.cm-tooltip-autocomplete > ul'],
         maxHeight: '18rem',
         minWidth: '16rem',
         maxWidth: '22rem'
