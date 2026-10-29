@@ -106,7 +106,7 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     scale: number,
     format: RasterExportFormat,
     pageId = state.currentPageId
-  ): Promise<Uint8Array | null> {
+  ): Promise<Uint8Array<ArrayBuffer> | null> {
     const renderer = editor.renderer
     if (!renderer) return null
     const ids = nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(pageId).map((n) => n.id)

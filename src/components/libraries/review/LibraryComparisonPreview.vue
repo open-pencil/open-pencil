@@ -26,8 +26,7 @@ watch(
       scale: 320 / maxDimension,
       format: 'PNG'
     })
-    if (request === requestId)
-      blob.value = data ? new Blob([new Uint8Array(data)], { type: 'image/png' }) : null
+    if (request === requestId) blob.value = data ? new Blob([data], { type: 'image/png' }) : null
   },
   { immediate: true }
 )

@@ -38,7 +38,7 @@ async function updatePreview() {
       findAssetPage(node, editor.graph)?.id ?? editor.state.currentPageId
     )
     if (currentRequest !== requestId) return
-    previewBlob.value = data ? new Blob([new Uint8Array(data)], { type: 'image/png' }) : null
+    previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
   } catch {
     if (currentRequest === requestId) previewBlob.value = null
   }
