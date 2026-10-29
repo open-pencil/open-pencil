@@ -118,3 +118,35 @@ test('right-clicking a pin opens comment actions, not the layer menu', async () 
   await expect(pins()).toHaveCount(0)
   await expect(items()).toHaveCount(0)
 })
+
+test('middle mouse pans the canvas while the Comment tool is selected', async () => {
+  await commentTool().click()
+  await placeComment(200, 180, 'pan anchor')
+  await editor.page.keyboard.press('Escape')
+
+  const before = expectDefined(await pins().first().boundingBox(), 'pin bounds')
+  const canvas = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
+  const x = canvas.x + canvas.width * 0.75
+  const y = canvas.y + canvas.height * 0.75
+  await editor.page.mouse.move(x, y)
+  await editor.page.mouse.down({ button: 'middle' })
+  await editor.page.mouse.move(x + 60, y + 45, { steps: 4 })
+  await editor.page.mouse.up({ button: 'middle' })
+
+  await expect
+    .poll(async () => {
+      const after = await pins().first().boundingBox()
+      return after ? Math.hypot(after.x - before.x, after.y - before.y) : 0
+    })
+    .toBeGreaterThan(20)
+  await expect(editor.page.getByRole('textbox', { name: 'Add a comment' })).toHaveCount(0)
+})
+
+test('right-clicking empty canvas in the Comment tool does not open the layer menu', async () => {
+  await commentTool().click()
+  const canvas = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
+  await editor.page.mouse.click(canvas.x + canvas.width * 0.75, canvas.y + canvas.height * 0.75, {
+    button: 'right'
+  })
+  await expect(editor.page.getByRole('menu')).toHaveCount(0)
+})
