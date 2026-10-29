@@ -9,6 +9,7 @@ import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
+import { sharedPath } from './paths/shared'
 import type { SkiaRenderer } from './renderer'
 import { makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
@@ -70,7 +71,9 @@ function fillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
   if (!regions || regions.length === 0) {
     return null
   }
-  return unitedPath(r, regions)
+  return sharedPath(r.nodePaths, `${node.id}|saved-fill`, 'united', regions, () =>
+    unitedPath(r, regions)
+  )
 }
 
 function networkRegionsPath(r: SkiaRenderer, node: SceneNode): Path | null {
@@ -81,19 +84,13 @@ function networkRegionsPath(r: SkiaRenderer, node: SceneNode): Path | null {
   if (!regions || regions.length === 0) {
     return null
   }
-  return unitedPath(r, regions)
+  return sharedPath(r.nodePaths, `${node.id}|network-fill`, 'united', regions, () =>
+    unitedPath(r, regions)
+  )
 }
 
-function cachedFillShape(r: SkiaRenderer, node: SceneNode): Path | null {
-  const cached = r.nodePaths.fillShape.get(node.id)
-  if (cached) {
-    return cached[0]
-  }
-  const path = fillGeometryPath(r, node) ?? networkRegionsPath(r, node)
-  if (path) {
-    r.nodePaths.store(r.nodePaths.fillShape, node.id, [path])
-  }
-  return path
+function savedFillShape(r: SkiaRenderer, node: SceneNode): Path | null {
+  return fillGeometryPath(r, node) ?? networkRegionsPath(r, node)
 }
 
 /** A layer's shape in its own box: its outline, a line's stroke, or text's glyph outlines. */
@@ -154,7 +151,7 @@ function strokeArea(
 /** The area every visible stroke of `node` paints along `source`, or null when none paints. */
 export function strokeAreaPath(r: SkiaRenderer, source: Path, node: SceneNode): Path | null {
   const builder = new r.ck.PathBuilder()
-  addVisibleStrokeOutlines(r, builder, source, node, false)
+  addVisibleStrokeOutlines(r, builder, source, node, null)
   const path = builder.detachAndDelete()
   if (!path.isEmpty()) return path
   path.delete()
@@ -166,15 +163,16 @@ function addVisibleStrokeOutlines(
   target: PathBuilder,
   source: Path,
   node: SceneNode,
-  reuseVectorAreas: boolean
+  vectorFill: Path | null
 ): void {
   for (const stroke of node.strokes) {
     if (!stroke.visible || stroke.weight <= 0) continue
     const side = strokeSide(node, stroke)
-    if (reuseVectorAreas && node.type === 'VECTOR' && side !== 'CENTER') {
-      const cachedArea = cachedVectorStrokeArea(r, source, node, stroke.weight, side)
-      if (cachedArea) {
-        target.addPath(cachedArea)
+    if (vectorFill && side !== 'CENTER') {
+      const sharedArea = vectorStrokeArea(r, source, node, stroke.weight, side, vectorFill)
+      if (sharedArea) {
+        target.addPath(sharedArea)
+        sharedArea.delete()
       }
       continue
     }
@@ -185,24 +183,21 @@ function addVisibleStrokeOutlines(
   }
 }
 
-function cachedVectorStrokeArea(
+function vectorStrokeArea(
   r: SkiaRenderer,
   source: Path,
   node: SceneNode,
   weight: number,
-  side: Stroke['align']
+  side: Stroke['align'],
+  filledShape: Path
 ): Path | null {
-  const key = `${node.id}|aligned|${weight}|${side}`
-  const cached = r.nodePaths.strokeOutline.get(key)
-  if (cached) {
-    return cached[0]
-  }
-  const filledShape = cachedFillShape(r, node) ?? source
-  const area = strokeArea(r, source, weight, side, filledShape)
-  if (area) {
-    r.nodePaths.store(r.nodePaths.strokeOutline, key, [area])
-  }
-  return area
+  return sharedPath(
+    r.nodePaths,
+    `${node.id}|aligned|${weight}|${side}`,
+    `band|${weight}|${side}`,
+    [source, filledShape],
+    () => strokeArea(r, source, weight, side, filledShape)
+  )
 }
 
 export function canContainFlattenableChildren(node: SceneNode): boolean {
@@ -245,7 +240,7 @@ function containerSourcePath(r: SkiaRenderer, node: SceneNode, graph: SceneGraph
     const ownPath = baseShapePath(r, node)
     if (ownPath) {
       if (nodeHasVisibleFill(node)) path.addPath(ownPath)
-      addVisibleStrokeOutlines(r, path, ownPath, node, false)
+      addVisibleStrokeOutlines(r, path, ownPath, node, null)
       ownPath.delete()
       hasPath = true
     }
@@ -281,13 +276,14 @@ export function makeBooleanSourcePath(
   if (canContainFlattenableChildren(node)) return containerSourcePath(r, node, graph)
   if (node.type === 'LINE') return baseShapePath(r, node)
 
-  const savedFill = node.type === 'VECTOR' ? cachedFillShape(r, node) : null
+  const savedFill = node.type === 'VECTOR' ? savedFillShape(r, node) : null
   const stroked = nodeHasVisibleStroke(node)
   if (savedFill && !stroked) {
-    return savedFill.copy()
+    return savedFill
   }
   const outline = strokeSourcePath(r, node)
   if (!outline) {
+    savedFill?.delete()
     return null
   }
   if (!stroked) {
@@ -297,7 +293,9 @@ export function makeBooleanSourcePath(
   if (nodeHasVisibleFill(node)) {
     combined.addPath(savedFill ?? outline)
   }
-  addVisibleStrokeOutlines(r, combined, outline, node, node.type === 'VECTOR')
+  const vectorFill = node.type === 'VECTOR' ? (savedFill ?? outline) : null
+  addVisibleStrokeOutlines(r, combined, outline, node, vectorFill)
+  savedFill?.delete()
   outline.delete()
   return combined.detachAndDelete()
 }
@@ -321,45 +319,54 @@ export function makeBooleanOperationPath(
   node: SceneNode,
   graph: SceneGraph
 ): Path | null {
-  const childPaths: Path[] = []
+  const operands: Path[] = []
   for (const childId of node.childIds) {
     const child = graph.getNode(childId)
-    if (!child || !child.visible) continue
+    if (!child || !child.visible) {
+      continue
+    }
     const path = transformedShapePath(r, child, graph)
-    if (path) childPaths.push(path)
+    if (path) {
+      operands.push(path)
+    }
   }
+  if (operands.length === 0) {
+    return fillGeometryPath(r, node)
+  }
+  const signature = `${node.booleanOperation ?? 'UNION'}|${node.cornerRadius}`
+  const result = sharedPath(
+    r.nodePaths,
+    `${node.id}|boolean|${signature}`,
+    `boolean|${signature}`,
+    operands,
+    () => combinedOperands(r, node, operands)
+  )
+  deletePaths(operands)
+  return result ?? fillGeometryPath(r, node)
+}
 
-  if (childPaths.length === 0) return fillGeometryPath(r, node)
-
-  let result = childPaths[0]
-  const operation = operationForNode(r, node)
-  for (let index = 1; index < childPaths.length; index++) {
-    const path = childPaths[index]
-    const combined = r.ck.Path.MakeFromOp(result, path, operation)
-    result.delete()
+function deletePaths(paths: Path[]): void {
+  for (const path of paths) {
     path.delete()
+  }
+}
+
+function combinedOperands(r: SkiaRenderer, node: SceneNode, operands: Path[]): Path | null {
+  const operation = operationForNode(r, node)
+  let result = operands[0].copy()
+  for (let index = 1; index < operands.length; index++) {
+    const combined = r.ck.Path.MakeFromOp(result, operands[index], operation)
+    result.delete()
     if (!combined) {
-      for (const remaining of childPaths.slice(index + 1)) remaining.delete()
-      return fillGeometryPath(r, node)
+      return null
     }
     result = combined
   }
   if (node.cornerRadius <= 0) {
     return result
   }
-  const rounded = cachedRoundedCorners(r, node, result)
+  const rounded = withRoundedCorners(r, result, node.cornerRadius)
   result.delete()
-  return rounded.copy()
-}
-
-function cachedRoundedCorners(r: SkiaRenderer, node: SceneNode, combined: Path): Path {
-  const key = `${node.id}|rounded|${node.cornerRadius}`
-  const cached = r.nodePaths.strokeOutline.get(key)
-  if (cached?.[0].equals(combined)) {
-    return cached[1]
-  }
-  const rounded = withRoundedCorners(r, combined, node.cornerRadius)
-  r.nodePaths.store(r.nodePaths.strokeOutline, key, [combined.copy(), rounded])
   return rounded
 }
 
