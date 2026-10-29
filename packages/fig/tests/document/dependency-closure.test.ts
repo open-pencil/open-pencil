@@ -4,7 +4,7 @@ import { collectSceneDependencies } from '#fig/document/dependency-closure'
 import { createSourceIndex } from '#fig/instance-overrides/source-index'
 
 import { materializeDocument } from '@open-pencil/fig'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('retains external preferred choices separately from required component dependencies', () => {
@@ -184,4 +184,74 @@ test('reads a root record with what it needs, and none of its siblings', () => {
   expect([...result.contentIds].toSorted()).toEqual(['1:6', '1:7', '1:8'])
   expect(result.ancestorIds.has('1:4')).toBe(true)
   expect(result.contentIds.has('1:5')).toBe(false)
+})
+
+function patternPaint(source: number): Paint {
+  return { type: 'PATTERN', opacity: 1, visible: true, sourceNodeId: guid(source) }
+}
+
+function patternDocument(target: Partial<NodeChange>): NodeChange[] {
+  return [
+    { guid: guid(1), type: 'DOCUMENT' },
+    { guid: guid(2), type: 'CANVAS', parentIndex: { guid: guid(1), position: '!' } },
+    {
+      guid: guid(3),
+      type: 'CANVAS',
+      internalOnly: true,
+      parentIndex: { guid: guid(1), position: '"' }
+    },
+    { guid: guid(4), type: 'FRAME', parentIndex: { guid: guid(3), position: '!' } },
+    { guid: guid(5), type: 'SYMBOL', parentIndex: { guid: guid(4), position: '!' } },
+    { guid: guid(6), type: 'VECTOR', parentIndex: { guid: guid(5), position: '!' } },
+    { guid: guid(7), type: 'FRAME', parentIndex: { guid: guid(3), position: '"' } },
+    {
+      guid: guid(8),
+      type: 'ROUNDED_RECTANGLE',
+      parentIndex: { guid: guid(2), position: '!' },
+      ...target
+    }
+  ] as NodeChange[]
+}
+
+test('reaches the layer a pattern paint tiles, wherever it is kept', () => {
+  for (const target of [
+    { fillPaints: [patternPaint(5)] },
+    { strokePaints: [patternPaint(5)] },
+    {
+      type: 'VECTOR',
+      vectorData: { styleOverrideTable: [{ styleID: 1, fillPaints: [patternPaint(5)] }] }
+    }
+  ] as Partial<NodeChange>[]) {
+    const changes = patternDocument(target)
+    const result = collectSceneDependencies(changes, undefined, createSourceIndex(changes))
+    expect([...result.contentIds].sort()).toEqual(['1:2', '1:5', '1:6', '1:8'])
+    expect(result.ancestorIds.has('1:4')).toBe(true)
+    expect(result.missingIds.size).toBe(0)
+  }
+  const assembled = materializeDocument(patternDocument({ fillPaints: [patternPaint(5)] }))
+  const sourceId = assembled.sources.get('1:5')
+  if (!sourceId) {
+    throw new Error('Missing pattern source')
+  }
+  expect(assembled.graph.getNode(sourceId)?.childIds).toHaveLength(1)
+  expect(assembled.sources.has('1:7')).toBe(false)
+})
+
+test('reaches a pattern source an instance override paints with', () => {
+  const changes = patternDocument({
+    type: 'INSTANCE',
+    symbolData: {
+      symbolID: guid(7),
+      symbolOverrides: [{ guidPath: { guids: [guid(9)] }, fillPaints: [patternPaint(5)] }]
+    }
+  } as Partial<NodeChange>)
+  const result = collectSceneDependencies(changes, undefined, createSourceIndex(changes))
+  expect(result.contentIds.has('1:5')).toBe(true)
+})
+
+test('leaves a pattern source the archive lacks out of the missing records', () => {
+  const changes = patternDocument({ fillPaints: [patternPaint(99)] })
+  const result = collectSceneDependencies(changes, undefined, createSourceIndex(changes))
+  expect(result.missingIds.size).toBe(0)
+  expect(result.contentIds.has('1:99')).toBe(false)
 })
