@@ -38,5 +38,15 @@ for (const [kind, create] of [
       await purgeUnchangedCopies(store, read, [id])
       expect(await store.getMeta(id)).toMatchObject({ syncStatus: 'pending', revision: 2 })
     })
+
+    test('keeps a copy replaced by a newer synced one while the provider was listed', async () => {
+      const store = create()
+      const id = crypto.randomUUID()
+      await write(store, id, 'synced')
+      const read = await store.listMetas(true)
+      await write(store, id, 'synced')
+      await purgeUnchangedCopies(store, read, [id])
+      expect(await store.getMeta(id)).toMatchObject({ syncStatus: 'synced', revision: 2 })
+    })
   })
 }

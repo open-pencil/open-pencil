@@ -19,11 +19,15 @@ const common = useCommonMessages()
 // so it holds the document it was asked about apart from the model.
 const open = ref(false)
 const target = shallowRef<StorageDocument | null>(null)
-watch(document, (next) => {
-  if (!next) return
-  target.value = next
-  open.value = true
-})
+watch(
+  document,
+  (next) => {
+    if (!next) return
+    target.value = next
+    open.value = true
+  },
+  { immediate: true }
+)
 watch(open, (value) => {
   if (!value) document.value = null
 })

@@ -6,6 +6,7 @@ import { resetLocalCanvasStoreForTests } from '@/app/storage/local-store/store'
 import { createMemoryOutbox, getOutbox, resetOutboxForTests } from '@/app/storage/sync'
 import { deleteStoredDocument } from '@/app/storage/workspace/delete'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
+import { closeTab, createTab, getTabsSnapshot } from '@/app/tabs'
 
 const BUCKET = { providerId: 's3-compatible' }
 const CLOUD = { providerId: 'cloud', profileId: 'server', containerId: 'workspace' }
@@ -44,6 +45,7 @@ describe('deleting a stored document', () => {
       syncStatus: 'synced'
     })
     rememberRecentStorageDocument({ ...BUCKET, documentId: POSTER.id }, POSTER.name)
+    rememberRecentStorageDocument({ ...BUCKET, documentId: 'flyer' }, 'Flyer')
     expect(recentPoster()).toBe(true)
     const events: string[] = []
     const stop = onStorageWorkspaceEvent((event) =>
@@ -56,6 +58,7 @@ describe('deleting a stored document', () => {
     expect(await store.listMetas()).toEqual([])
     expect(await getOutbox().list()).toMatchObject([{ canvasId: POSTER.id, type: 'deleteCanvas' }])
     expect(recentPoster()).toBe(false)
+    expect(recentDocuments.value.map((document) => document.name)).toEqual(['Flyer'])
     expect(events).toContain(`changed:${POSTER.id}`)
   })
 
@@ -112,5 +115,18 @@ describe('deleting a stored document', () => {
 
     await expect(deleteStoredDocument(POSTER, BUCKET)).rejects.toThrow('quota exceeded')
     expect(await store.getMeta(POSTER.id)).toMatchObject({ tombstoned: true })
+  })
+  test("closes this document's tabs and leaves other tabs open", async () => {
+    const deleted = createTab()
+    deleted.store.setStorageDocumentSource({ ...BUCKET, documentId: POSTER.id }, POSTER.name)
+    const other = createTab()
+    other.store.setStorageDocumentSource({ ...BUCKET, documentId: 'flyer' }, 'Flyer')
+
+    await deleteStoredDocument(POSTER, BUCKET)
+
+    const open = getTabsSnapshot().map((tab) => tab.id)
+    expect(open).not.toContain(deleted.id)
+    expect(open).toContain(other.id)
+    await closeTab(other.id, 'discard')
   })
 })

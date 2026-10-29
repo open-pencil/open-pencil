@@ -10,6 +10,8 @@ import { StorageRevisionConflictError } from '@/app/integrations/storage'
 import { createCloudStorageAdapter } from '@/app/integrations/storage/cloud/adapter'
 
 const WORKSPACE = '0b5a4e0a-2d1c-4d6e-9f1a-6b2c3d4e5f60'
+/** A document the signed-in person may not delete. */
+const FORBIDDEN = '5f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b'
 
 async function sha256(bytes: Uint8Array): Promise<string> {
   return fromUint8Array(
@@ -160,10 +162,12 @@ function cloudServer() {
     [
       'DELETE',
       /^\/documents\/([^/]+)$/,
-      ([, id = '']) =>
-        documents.delete(id)
+      ([, id = '']) => {
+        if (id === FORBIDDEN) return json({ error: { code: 'forbidden' } }, 403)
+        return documents.delete(id)
           ? new Response(null, { status: 204 })
           : json({ error: { code: 'not_found' } }, 404)
+      }
     ],
     [
       'GET',
@@ -305,6 +309,11 @@ describe('Cloud storage adapter', () => {
     await storage.deleteDocument(id)
     await storage.deleteDocument(id)
     expect(await storage.listDocuments()).toEqual([])
+  })
+
+  test('reports a deletion Cloud refuses', async () => {
+    const storage = adapter(cloudServer())
+    await expect(storage.deleteDocument(FORBIDDEN)).rejects.toMatchObject({ code: 'forbidden' })
   })
 
   test('creates the document on its first save and opens what it saved', async () => {
