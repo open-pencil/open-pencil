@@ -28,7 +28,10 @@ function setLayout(sizes: number[]) {
     :data-pane-id="node.paneId"
     class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
   >
-    <CanvasPaneHeader v-if="store.visiblePaneCount.value > 1" :pane-id="node.paneId" />
+    <CanvasPaneHeader
+      v-if="store.state.showUI && store.visiblePaneCount.value > 1"
+      :pane-id="node.paneId"
+    />
     <EditorCanvas :pane-id="node.paneId" />
   </div>
 

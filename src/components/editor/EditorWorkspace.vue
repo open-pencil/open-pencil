@@ -40,13 +40,21 @@ const { tab } = defineProps<{ tab: Tab }>()
 const store = tab.store
 provideTabEditorStore(store)
 const { isMobile } = useViewportKind()
-const initialEditorLayout = loadEditorLayout()
+let editorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 /** One canvas previewing takes the whole window, in the canvas-only layout; split view keeps panels. */
 const playingAlone = computed(() => store.state.play !== null && store.visiblePaneCount.value <= 1)
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
+const showPanels = computed(() => store.state.showUI && !playingAlone.value)
+
+function rememberLayout(layout: number[]) {
+  // Removing the side panels leaves a one-panel layout, not a new saved preference.
+  if (!showPanels.value || layout.length !== 3) return
+  editorLayout = layout
+  saveEditorLayout(layout)
+}
 </script>
 
 <template>
@@ -55,15 +63,17 @@ const { pending: roomPending } = useRoomActions()
   </div>
 
   <SplitterGroup
-    v-else-if="!isMobile && showChrome && store.state.showUI && !playingAlone"
+    v-else-if="!isMobile && showChrome"
     :key="tab.id"
     direction="horizontal"
     class="flex-1 overflow-hidden"
-    @layout="saveEditorLayout"
+    @layout="rememberLayout"
   >
     <SplitterPanel
+      v-if="showPanels"
       id="layers"
-      :default-size="initialEditorLayout[0]"
+      :order="0"
+      :default-size="editorLayout[0]"
       :min-size="10"
       :max-size="30"
       class="flex"
@@ -71,24 +81,42 @@ const { pending: roomPending } = useRoomActions()
       <LayersPanel />
     </SplitterPanel>
     <SplitterResizeHandle
+      v-if="showPanels"
       data-test-id="left-splitter-handle"
       :class="horizontalSplitterStyles.handle()"
     >
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
-    <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
+    <SplitterPanel id="canvas" :order="1" :min-size="30" class="flex">
       <div class="relative flex min-w-0 flex-1">
         <CanvasSplitRoot />
         <ActiveRoomOverlay />
-        <Toolbar />
+        <Toolbar v-if="showPanels" />
+        <WorkspacePill
+          v-else-if="playingAlone"
+          mode="preview"
+          :document-name="store.state.documentName"
+          :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"
+          @reset="store.resetPlay()"
+          @leave="store.stopPlay()"
+        />
+        <WorkspacePill
+          v-else
+          mode="collapsed"
+          :document-name="store.state.documentName"
+          :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
+          @show-ui="store.state.showUI = true"
+        />
       </div>
     </SplitterPanel>
-    <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+    <SplitterResizeHandle v-if="showPanels" :class="horizontalSplitterStyles.handle()">
       <div :class="horizontalSplitterStyles.divider()" />
     </SplitterResizeHandle>
     <SplitterPanel
+      v-if="showPanels"
       id="properties"
-      :default-size="initialEditorLayout[2]"
+      :order="2"
+      :default-size="editorLayout[2]"
       :min-size="10"
       :max-size="30"
       class="flex flex-col"
@@ -129,21 +157,6 @@ const { pending: roomPending } = useRoomActions()
     <div class="relative flex min-w-0 flex-1">
       <EditorCanvas />
       <ActiveRoomOverlay />
-      <WorkspacePill
-        v-if="!isMobile && playingAlone"
-        mode="preview"
-        :document-name="store.state.documentName"
-        :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"
-        @reset="store.resetPlay()"
-        @leave="store.stopPlay()"
-      />
-      <WorkspacePill
-        v-else-if="!isMobile"
-        mode="collapsed"
-        :document-name="store.state.documentName"
-        :shortcut="formatShortcut(appMenuShortcut('toggle-ui')) ?? ''"
-        @show-ui="store.state.showUI = true"
-      />
     </div>
   </div>
 
