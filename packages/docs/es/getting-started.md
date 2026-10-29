@@ -74,7 +74,7 @@ El editor estará disponible en `http://localhost:1420`.
 | ------------------------------- | ------------------------------------------------------------------------------------- |
 | `bun run dev` | Inicia el servidor de desarrollo con HMR |
 | `bun run build` | Genera la versión de producción |
-| `bun run check` | Ejecuta oxlint y comprueba los tipos con tsgo |
+| `bun run check` | Ejecuta oxlint y comprueba los tipos con TypeScript 7 |
 | `bun run test` | Ejecuta las pruebas E2E y de regresión visual con Playwright |
 | `bun run test:update` | Actualiza las capturas de referencia |
 | `bun run test:unit` | Ejecuta las pruebas unitarias con bun:test |

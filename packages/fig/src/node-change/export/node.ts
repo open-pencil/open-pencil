@@ -587,9 +587,7 @@ interface ExportedParameterEntry {
   }
 }
 function mergeParameterBindings(nc: KiwiNodeChange): void {
-  const parameters = nc.parameterConsumptionMap as
-    | { entries?: Array<{ variableField?: string }> }
-    | undefined
+  const parameters = nc.parameterConsumptionMap
   const entries = parameters?.entries ?? []
   const fields = new Set(entries.map((entry) => entry.variableField))
   const variables = nc.variableConsumptionMap?.entries ?? []

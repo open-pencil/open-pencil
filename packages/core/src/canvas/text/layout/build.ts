@@ -67,7 +67,7 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
     // Runs at one line height measure as one, whatever else they style.
-    if (last && last.end === start && last.lineHeight === lineHeight) last.end = end
+    if (last?.end === start && last.lineHeight === lineHeight) last.end = end
     else runs.push({ start, end, lineHeight })
   }
   let position = 0

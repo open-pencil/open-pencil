@@ -14,7 +14,7 @@ import { $ } from 'bun'
 const FILE_DIAGNOSTIC = /^(?<file>\S[^(]*)\(\d+,\d+\): error TS/
 const TEST_FILE = /^(tests|packages\/[^/]+\/tests)\//
 
-const result = await $`bunx tsgo --noEmit -p tsconfig.tests.json`.nothrow().quiet()
+const result = await $`bunx tsc --noEmit -p tsconfig.tests.json`.nothrow().quiet()
 const lines = `${result.stdout.toString()}${result.stderr.toString()}`.split('\n')
 
 const failures: string[] = []
@@ -47,7 +47,7 @@ if (
   failures.length === 0 &&
   lines.every((line) => !line.includes('error TS'))
 ) {
-  console.error(lines.join('\n').trim() || `tsgo exited with ${result.exitCode}`)
+  console.error(lines.join('\n').trim() || `tsc exited with ${result.exitCode}`)
   console.error('\nThe test type check could not run.')
   process.exit(1)
 }

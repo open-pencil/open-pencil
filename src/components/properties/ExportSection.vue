@@ -104,7 +104,7 @@ async function updatePreview() {
   const scale = maxW > 0 ? Math.min(PREVIEW_WIDTH / maxW, 2) : 1
   const data = await editorStore.renderExportImage(ids, scale, 'PNG')
   if (version !== previewVersion) return
-  previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
+  previewBlob.value = data ? new Blob([new Uint8Array(data)], { type: 'image/png' }) : null
 }
 
 const previewKey = computed(

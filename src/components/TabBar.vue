@@ -98,7 +98,10 @@ function onClose(e: MouseEvent, tabId: string) {
             :data-dirty="tab.isDirty || undefined"
           >
             <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
-            <PreparationTabIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
+            <PreparationTabIndicator
+              v-else-if="tab.isPreparing"
+              :progress="tab.preparationProgress"
+            />
             <icon-lucide-file v-else :class="baseStyles.icon()" />
             <span v-if="!tab.isHome" :class="baseStyles.label()">{{ tab.name }}</span>
             <Tip v-if="tab.isDirty" :label="files.unsavedChanges" side="bottom">

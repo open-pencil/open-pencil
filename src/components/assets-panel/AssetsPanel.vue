@@ -243,7 +243,7 @@ async function updatePreview(opening = false) {
     const scale = Math.min(176 / maxSize, 2)
     const data = await editor.renderExportImage([nodeId], scale, 'PNG', selectedAsset.value?.pageId)
     if (requestId !== previewRequestId) return
-    previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
+    previewBlob.value = data ? new Blob([new Uint8Array(data)], { type: 'image/png' }) : null
   } catch {
     if (requestId === previewRequestId) clearPreview()
   } finally {

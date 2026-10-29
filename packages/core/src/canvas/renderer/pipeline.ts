@@ -102,11 +102,11 @@ export function renderFromEditorState(
       dropTargetId: state.dropTargetId,
       layoutInsertIndicator: state.layoutInsertIndicator,
       penState: state.penState
-        ? ({
+        ? {
             ...state.penState,
             cursorX: state.penCursorX ?? undefined,
             cursorY: state.penCursorY ?? undefined
-          } as RenderOverlays['penState'])
+          }
         : null,
       pencilState: state.pencilState,
       nodeEditState: state.nodeEditState ?? null,

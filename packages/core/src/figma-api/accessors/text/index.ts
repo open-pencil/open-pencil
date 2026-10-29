@@ -91,7 +91,7 @@ function field<Field extends keyof SceneNode>(
     },
     set(this: ProxyThis, value: SceneNode[Field]) {
       if (needsFonts) assertTextFontsLoaded(`set_${name}`, raw(this, internals))
-      updateNode(this, internals, { [name]: value } as Partial<SceneNode>)
+      updateNode(this, internals, { [name]: value })
     }
   }
 }

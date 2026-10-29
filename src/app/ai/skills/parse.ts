@@ -35,7 +35,7 @@ function readPlainFrontmatter(source: string): Record<string, string | boolean> 
     const field = PLAIN_LINE.exec(line)
     if (field?.[1] !== undefined) {
       key = field[1]
-      fields[key] = field[2]?.trim() ?? ''
+      fields[key] = field.at(2)?.trim() ?? ''
     } else if (key !== null && /^\s+\S/.test(line)) {
       fields[key] = `${fields[key] ?? ''} ${line.trim()}`.trim()
     }
@@ -56,7 +56,7 @@ function readFrontmatter(
 ): { data: unknown; body: string; plain?: true } | { error: SkillParseError } {
   const match = FRONTMATTER.exec(text)
   if (!match) return { error: { code: 'no-frontmatter' } }
-  const source = match[1] ?? ''
+  const source = match.at(1) ?? ''
   const body = text.slice(match[0].length)
   try {
     return { data: parseYAML(source), body }

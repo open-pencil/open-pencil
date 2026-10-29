@@ -33,7 +33,9 @@ export function relayFor(env: CloudflareCloudEnvironment, documentId: string) {
  * Sends a relay socket to its document's relay object. The ticket's URL names the document; the
  * object refuses tickets for any other.
  */
-export function routeToRelay(c: Context<{ Bindings: CloudflareCloudEnvironment }>) {
+export async function routeToRelay(
+  c: Context<{ Bindings: CloudflareCloudEnvironment }>
+): Promise<Response> {
   if (c.req.header('Upgrade')?.toLowerCase() !== 'websocket') {
     return c.text('Expected a WebSocket upgrade', 426)
   }

@@ -1,11 +1,4 @@
-import type {
-  Canvas,
-  CanvasKit,
-  Font,
-  FontWeight,
-  Paragraph,
-  TypefaceFontProvider
-} from 'canvaskit-wasm'
+import type { Canvas, CanvasKit, Font, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import type { Size } from '@open-pencil/scene-graph/primitives'
@@ -80,7 +73,7 @@ function buildEntry(
       color,
       fontFamilies: fonts.families?.(fontWeight) ?? labelFontFamilies(fontWeight),
       fontSize,
-      fontStyle: { weight: { value: fontWeight } as FontWeight }
+      fontStyle: { weight: { value: fontWeight } }
     }
   })
   const builder = ck.ParagraphBuilder.MakeFromFontProvider(style, provider)

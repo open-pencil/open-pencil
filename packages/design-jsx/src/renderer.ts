@@ -437,7 +437,7 @@ function applyInstanceOverrides(
     const prop = key.slice(sep + 1)
     const child = descendants.find((n) => n.name === childName)
     if (!child || !(prop in child)) continue
-    graph.updateNode(child.id, { [prop]: value } as Partial<SceneNode>)
+    graph.updateNode(child.id, { [prop]: value })
     setInstanceOverride(instance.instanceOverrides, instance.id, child.id, prop, value)
     mutated = true
   }

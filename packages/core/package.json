@@ -179,7 +179,7 @@
     "build": "bunx tsdown --config tsdown.config.ts",
     "prepublishOnly": "bun run build",
     "test": "bun test tests",
-    "typecheck": "bunx tsgo --noEmit -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",
@@ -232,7 +232,7 @@
     "@types/culori": "^4.0.1",
     "@types/diff": "^8.0.0",
     "@types/rbush": "^4.0.0",
-    "typescript": "~5.8.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "unplugin-raw": "^0.7.0"
   },
   "peerDependencies": {

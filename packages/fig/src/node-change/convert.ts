@@ -407,7 +407,7 @@ function convertTextDecorationProps(
   | 'textUnderlineOffset'
 > {
   return {
-    textDecoration: mapTextDecoration(nc.textDecoration as string),
+    textDecoration: mapTextDecoration(nc.textDecoration),
     textDecorationStyle: (nc.textDecorationStyle ?? 'SOLID') as SceneNode['textDecorationStyle'],
     textDecorationThickness: nc.textDecorationThickness?.value ?? null,
     textDecorationFills: convertFills(nc.textDecorationFillPaints),
@@ -765,8 +765,8 @@ export function nodeChangeToProps(
     ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),
     ...convertShapeWithTextProps(nc),
-    horizontalConstraint: mapConstraint(nc.horizontalConstraint as string),
-    verticalConstraint: mapConstraint(nc.verticalConstraint as string),
+    horizontalConstraint: mapConstraint(nc.horizontalConstraint),
+    verticalConstraint: mapConstraint(nc.verticalConstraint),
     ...convertLayoutProps(nc),
     ...vectorAndStrokeProps,
     minWidth: minimumSizeDimension(nc.minSize, 'x'),

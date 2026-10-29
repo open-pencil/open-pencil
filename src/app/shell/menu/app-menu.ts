@@ -359,8 +359,8 @@ export function useAppMenu() {
   }
 
   function groupLabel(group: AppMenuGroupSchema): string {
-    const key = group.label.toLowerCase() as keyof typeof menu.value
-    return menu.value[key] ?? group.label
+    const key = group.label.toLowerCase()
+    return key in menu.value ? menu.value[key as keyof typeof menu.value] : group.label
   }
 
   function buildGroup(group: AppMenuGroupSchema): AppMenuGroup | null {

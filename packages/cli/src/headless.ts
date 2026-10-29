@@ -97,7 +97,7 @@ export const documentWriteOptions = {
 /** Save a headless document as `.fig`, with the thumbnail `export --format fig` renders. */
 export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
   const result = await io.writeDocument('fig', graph, { renderThumbnail: true })
-  await writeFileAtomic(filePath, result.data as Uint8Array, { symlink: 'follow' })
+  await writeFileAtomic(filePath, result.data, { symlink: 'follow' })
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {

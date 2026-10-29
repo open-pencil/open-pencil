@@ -55,13 +55,13 @@ const statusMessage = computed(
 const statusTone = computed(
   () =>
     (
-      ({
+      {
         idle: 'neutral',
         starting: 'pending',
         running: 'success',
         stopped: 'neutral',
         error: 'error'
-      }) as const
+      } as const
     )[mcpRuntime.status]
 )
 const { restart, chooseRootDirectory } = useMCPSettings()

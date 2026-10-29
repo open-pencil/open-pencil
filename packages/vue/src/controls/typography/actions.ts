@@ -5,7 +5,6 @@ import type { Editor } from '@open-pencil/core'
 import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
-  TextDecoration,
   TextLength,
   TextListType,
   TextParagraphSpacingField
@@ -359,7 +358,7 @@ export function createTypographyActions({
   function toggleDecoration(deco: 'UNDERLINE' | 'STRIKETHROUGH') {
     const on = activeFormatting.value.includes(deco.toLowerCase())
     update(`Toggle ${deco.toLowerCase()}`, {
-      textDecoration: (on ? 'NONE' : deco) as TextDecoration
+      textDecoration: on ? 'NONE' : deco
     })
   }
 
@@ -384,7 +383,7 @@ export function createTypographyActions({
     for (const target of nodes.value) {
       if (!beforePreview.has(target.id))
         beforePreview.set(target.id, { value: target[key], textStyleId: target.textStyleId })
-      editor.updateNode(target.id, { [key]: value } as Partial<SceneNode>)
+      editor.updateNode(target.id, { [key]: value })
     }
   }
 
@@ -400,7 +399,7 @@ export function createTypographyActions({
           {
             [key]: snapshot ? snapshot.value : previous,
             ...(snapshot ? { textStyleId: snapshot.textStyleId } : {})
-          } as Partial<SceneNode>,
+          },
           `Change ${String(key)}`
         )
       }
