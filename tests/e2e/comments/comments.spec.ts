@@ -193,6 +193,20 @@ test('right-clicking a guide in the Comment tool preserves selection and leaves 
   expect(await selectedGuide()).toBeNull()
 })
 
+test('right and middle clicks preserve a selected guide in the Comment tool', async () => {
+  const guides = new CanvasGuideDriver(editor.page)
+  const guidePoint = await guides.addFromRuler('x', 400, 300)
+  const guideSelection = await selectedGuide()
+  expect(guideSelection).not.toBeNull()
+
+  await commentTool().click()
+  await editor.page.mouse.click(guidePoint.x, guidePoint.y, { button: 'right' })
+  expect(await selectedGuide()).toEqual(guideSelection)
+
+  await editor.page.mouse.click(guidePoint.x, guidePoint.y, { button: 'middle' })
+  expect(await selectedGuide()).toEqual(guideSelection)
+})
+
 test('double-clicking text does not start editing in the Comment tool', async () => {
   const textPosition = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
