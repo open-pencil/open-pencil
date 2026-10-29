@@ -1,5 +1,6 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
+import { CanvasGuideDriver } from '#tests/helpers/canvas/guides'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
@@ -163,13 +164,15 @@ test('right-clicking a guide in the Comment tool preserves selection and leaves 
   expect(selection).toHaveLength(1)
   expect(await selectedGuide()).toBeNull()
 
-  const guideViewport = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const guideId = store.addGuide(store.state.currentPageId, 'x', 400)
-    if (!guideId) throw new Error('Canvas guide was not created')
-    return { panX: store.state.panX, zoom: store.state.zoom }
-  })
+  const guides = new CanvasGuideDriver(editor.page)
+  const guidePoint = await guides.addFromRuler('x', 400, 300)
+  await expect.poll(() => selectedGuide()).not.toBeNull()
+
+  await moveTool().click()
+  await editor.canvas.click(150, 140)
+  expect(await selectedIds()).toEqual(selection)
+  expect(await selectedGuide()).toBeNull()
+  await commentTool().click()
 
   const contextMenuEvent = editor.page.waitForEvent('console', {
     predicate: (message) => message.text().startsWith('contextmenu-default-prevented:')
@@ -183,12 +186,7 @@ test('right-clicking a guide in the Comment tool preserves selection and leaves 
     )
   })
 
-  const canvas = expectDefined(await editor.canvas.canvas.boundingBox(), 'canvas bounds')
-  await editor.page.mouse.click(
-    canvas.x + guideViewport.panX + 400 * guideViewport.zoom,
-    canvas.y + canvas.height * 0.75,
-    { button: 'right' }
-  )
+  await editor.page.mouse.click(guidePoint.x, guidePoint.y, { button: 'right' })
   await expect(editor.page.getByRole('menu')).toHaveCount(0)
   expect((await contextMenuEvent).text()).toBe('contextmenu-default-prevented:true')
   expect(await selectedIds()).toEqual(selection)
