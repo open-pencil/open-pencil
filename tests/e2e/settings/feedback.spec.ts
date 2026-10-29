@@ -131,7 +131,7 @@ test('Test connection tries the photo key typed against the service and says wha
       : route.fulfill({ status: 401, body: 'OAuth error: The access token is invalid' })
   )
   await openSettings(page)
-  await page.getByTestId('settings-section-media').click()
+  await page.getByTestId('settings-section-services').click()
   await page.getByRole('button', { name: /Unsplash/ }).click()
   const test = page.getByRole('button', { name: 'Test connection' })
   const result = page.getByTestId('provider-test-connection-result')

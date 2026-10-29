@@ -160,7 +160,7 @@ test('the picker opens on a service with a key when the last one searched has no
 
   // Pexels was searched last; its key goes, Unsplash's stays.
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
-  await page.getByTestId('settings-section-media').click()
+  await page.getByTestId('settings-section-services').click()
   await page
     .getByTestId('settings-media-panel')
     .getByRole('button', { name: /Pexels/ })

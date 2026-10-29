@@ -68,7 +68,7 @@ const emptyLabel = computed(() => {
 /** The keys are set where every service's are, in Settings, with room to read and paste. */
 function openKeySettings() {
   open.value = false
-  openSettingsDialog('media')
+  openSettingsDialog('services')
 }
 
 /** Both services ask for the credit to link to the photographer's page with the service. */
