@@ -1,5 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import type { SVGExportWarning } from '#core/io/formats/svg'
 import { fontManager } from '#core/text/fonts'
 
 import { renderPagesToPDFDetailed, type PDFExportResult } from './export'
@@ -9,6 +10,8 @@ import { pdfFontFaces, preparePagesForPDF, preparePDFFonts, withPDFTextLayout } 
 export interface PDFDocumentOptions {
   /** Embed the font files the text uses; without them, text uses standard PDF fonts. */
   embedFonts: boolean
+  /** Receives explanations when the PDF export omits an unsupported effect. */
+  onWarning?: (warning: SVGExportWarning) => void
   /** Lay the pages out first, as pages other than the open one have no layout yet. */
   layOutPages?: boolean
   title?: string
@@ -31,6 +34,7 @@ export async function exportPDFDocument(
     renderPagesToPDFDetailed(graph, specs, {
       fonts,
       textLayout,
+      onWarning: options.onWarning,
       fallbackFile: (family, style, file) =>
         file === 0
           ? fontManager.loadedData(family, style)

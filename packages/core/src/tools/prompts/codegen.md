@@ -112,7 +112,7 @@ For each component, bottom-up (primitives first, then composites, then screens):
 ```
 get_jsx  id=<component_id>   → read structure
 describe id=<component_id>   → understand semantic role
-export_svg ids=[<icon_ids>]  → extract vector assets
+export_svg ids=[<icon_ids>]  → extract vector assets; only retry with skip_unsupported_effects=true when omitting a reported effect is acceptable
 ```
 
 **Rules:**
