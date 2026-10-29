@@ -1,4 +1,4 @@
-import type { VisualBounds } from './geometry'
+import { computeBounds, type VisualBounds } from './geometry'
 import type { Vector } from './primitives'
 
 /**
@@ -106,15 +106,7 @@ export function clipBoundsToPolygon(
   const polygon = clipPolygon(subject, clipCorners)
   if (!polygon) return null
 
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  for (const p of polygon) {
-    if (p.x < minX) minX = p.x
-    if (p.y < minY) minY = p.y
-    if (p.x > maxX) maxX = p.x
-    if (p.y > maxY) maxY = p.y
-  }
-  return minX < maxX && minY < maxY ? { minX, minY, maxX, maxY } : null
+  const box = computeBounds(polygon.map(({ x, y }) => ({ x, y, width: 0, height: 0 })))
+  if (box.width <= 0 || box.height <= 0) return null
+  return { minX: box.x, minY: box.y, maxX: box.x + box.width, maxY: box.y + box.height }
 }
