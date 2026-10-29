@@ -111,6 +111,7 @@ const groups = computed(() => {
           v-for="choice in group.choices"
           :key="choice.id"
           :data-provider="choice.id"
+          :data-set-up="setUp.has(choice.id) || undefined"
           @click="emit('choose', choice.id)"
         >
           <template #leading><ProviderLogo :provider="choice.id" /></template>

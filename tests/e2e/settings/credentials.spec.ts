@@ -169,8 +169,8 @@ test('model library keeps reusable profiles and role assignments', async ({ page
 
   await page.getByTestId('settings-add-model').click()
   // The chooser marks the provider the saved model runs on.
-  await expect(page.locator('[data-provider="google"]')).toContainText('Set up')
-  await expect(page.locator('[data-provider="openrouter"]')).not.toContainText('Set up')
+  await expect(page.locator('[data-provider="google"]')).toHaveAttribute('data-set-up')
+  await expect(page.locator('[data-provider="openrouter"]')).not.toHaveAttribute('data-set-up')
   await page.locator('[data-provider="openrouter"]').click()
   await page.getByLabel('Name').fill('Vision model')
   await page.getByLabel('Model ID').first().click()
