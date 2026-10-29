@@ -142,4 +142,12 @@ test('a typed % or px switches the unit of line height and letter spacing', asyn
   await expect.poll(() => read('letterSpacing')).toEqual({ value: 4, unit: 'PERCENT' })
   await letterSpacing.press('Escape')
   await expect.poll(() => read('letterSpacing')).toEqual({ value: -1, unit: 'PIXELS' })
+
+  // A change of unit alone, with the number kept, is a commit and an undo step of its own.
+  await expect.poll(() => read('lineHeight')).toEqual({ value: 151, unit: 'PERCENT' })
+  await type('Line height', '151px')
+  await expect.poll(() => read('lineHeight')).toEqual({ value: 151, unit: 'PIXELS' })
+  await page.getByRole('heading', { name: 'Typography', exact: true }).click()
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z')
+  await expect.poll(() => read('lineHeight')).toEqual({ value: 151, unit: 'PERCENT' })
 })
