@@ -1,6 +1,6 @@
 {
   "vectorization": "Wektoryzacja obrazów",
-  "vectorizationDescription": "Wysyła warstwy obrazów do Recraft lub fal.ai i zwraca edytowalne wektory. Mogą obowiązywać opłaty dostawcy.",
+  "vectorizationDescription": "Wysyła warstwy obrazów do Recraft, fal.ai lub QuiverAI i zwraca edytowalne wektory. Mogą obowiązywać opłaty dostawcy.",
   "vectorizeProvider": "Usługa wektoryzacji",
   "pexelsAPIKey": "Klucz API Pexels",
   "unsplashAccessKey": "Klucz dostępu Unsplash",

@@ -3,6 +3,7 @@ import { filename } from 'pathe/utils'
 import type { Editor, EditorState } from '@open-pencil/core'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
+import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { yieldToUI } from '@/app/document/io/browser'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -83,7 +84,8 @@ export function createOpenActions({
         notificationMessages.get().openFileFailed({
           name: file.name,
           error: e instanceof Error ? e.message : String(e)
-        })
+        }),
+        viewDiagnosticsAction()
       )
     } finally {
       if (succeeded) load.complete()
@@ -143,7 +145,8 @@ export function createReloadActions({
         notificationMessages.get().openFileFailed({
           name: state.documentName,
           error: error instanceof Error ? error.message : String(error)
-        })
+        }),
+        viewDiagnosticsAction()
       )
     } finally {
       if (succeeded) load.complete()

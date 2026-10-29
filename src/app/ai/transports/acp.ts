@@ -13,6 +13,7 @@ import * as v from 'valibot'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
+import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
 import { linkOwnTools } from '@/app/ai/agents/acp/tools'
@@ -293,6 +294,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let onUpdate: ACPSession['onUpdate'] = null
     // Set once the session exists; the client reads it to record the model the agent names.
     let sessionRef: ACPSession | null = null
+    const agentId = this.agentDef.id
 
     const clientImpl: Client = {
       async requestPermission(
@@ -308,6 +310,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
+        }
+        if (update.sessionUpdate === 'available_commands_update') {
+          setAgentCommands(agentId, update.availableCommands)
         }
         onUpdate?.(params)
       },

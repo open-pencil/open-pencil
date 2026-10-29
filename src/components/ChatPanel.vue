@@ -7,6 +7,13 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
+import {
+  clearQueuedMessages,
+  enqueueMessage,
+  queuedMessages,
+  removeQueuedMessage,
+  takeNextMessage
+} from '@/app/ai/chat/queue'
 import { useChatRunLocation } from '@/app/ai/chat/run-location'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
@@ -29,7 +36,7 @@ import FollowAgentsToggle from '@/components/chat/FollowAgentsToggle.vue'
 import { useImageDrop } from '@/components/chat/input/useImageDrop'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
-const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
+const { isConfigured, ensureChat, history, chatFailure, clearChatFailure, providerID } = useAIChat()
 const { ai } = useI18n()
 const dates = useDateFormat()
 const runLocation = useChatRunLocation()
@@ -97,16 +104,34 @@ const historyOptions = computed(() => {
 const agentHistoryReadOnly = computed(
   () => !chat.value && messages.value.length > 0 && history.current.value?.backend !== 'direct'
 )
+/** Set while the conversation changes, so stopping its reply does not send what waits. */
+let queueHeld = false
 async function historyAction(action: () => Promise<unknown>) {
   const generation = ++viewGeneration
+  const left = history.current.value?.id
+  let switched = false
   submission.cancel()
+  queueHeld = true
   try {
     await chat.value?.stop()
     await action()
-    if (generation !== viewGeneration) return
-    chat.value = null
+    switched = true
   } catch {
     toast.error(ai.value.chatHistoryFailed)
+  } finally {
+    queueHeld = false
+    if (generation === viewGeneration) {
+      // Waiting messages belong to the conversation that was left, which a switch failing part
+      // way, after it opened another, has left too; a switch that failed before keeps them.
+      if (switched || history.current.value?.id !== left) {
+        chat.value = null
+        clearQueuedMessages()
+      } else if (status.value === 'ready') {
+        // The stopped reply may have ended while the switch held the queue, which then waits
+        // for no reply to end.
+        sendNextQueued()
+      }
+    }
   }
 }
 
@@ -171,6 +196,27 @@ const failureHasSettingsAction = computed(() =>
   )
 )
 const status = computed(() => chat.value?.status ?? 'ready')
+
+/**
+ * A message written while the agent works waits for it: Enter steers, which the built-in chat
+ * takes in once the current tool calls finish, and Alt+Enter waits until all work is done.
+ */
+function sendOrQueue(message: ChatSubmission, afterWork: boolean) {
+  if (status.value === 'streaming' || status.value === 'submitted') {
+    enqueueMessage(message, afterWork ? 'follow-up' : 'steer')
+    return
+  }
+  void submitMessage(message)
+}
+// Once a reply ends, what waited goes next, one message per reply; a failed reply keeps them.
+function sendNextQueued() {
+  const next = takeNextMessage()
+  if (next) void submitMessage(next)
+}
+watch(status, (now, before) => {
+  if (now !== 'ready' || before === 'ready' || queueHeld) return
+  sendNextQueued()
+})
 const showContinue = computed(() => {
   if (history.readOnly.value || agentHistoryReadOnly.value) return false
   if (status.value !== 'ready') return false
@@ -210,6 +256,8 @@ function failureAction(failedId: string | undefined): { label: string; run: () =
 watch(
   () => [activeTab.value?.id, activeTab.value?.store.state.preparation] as const,
   async ([tabId, preparation], [previousTabId]) => {
+    // Another tab's waiting messages never go to this one, even one that opens still preparing.
+    if (tabId !== previousTabId) clearQueuedMessages()
     if (preparation) {
       viewGeneration++
       submission.cancel()
@@ -276,6 +324,9 @@ function handleStop() {
         :messages="messages"
         :status="status"
         :show-continue="showContinue"
+        :queued="queuedMessages"
+        :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
+        @remove-queued="removeQueuedMessage"
         :nodes-live="!history.readOnly.value"
         :interactive="chat !== null && !submission.busy.value"
         @regenerate="submission.regenerate()"
@@ -310,8 +361,9 @@ function handleStop() {
         :status="status"
         :dragging="draggingImages"
         :disabled="submission.busy.value || history.busy.value"
-        @submit="submitMessage"
+        @submit="sendOrQueue"
         @stop="handleStop"
+        @interrupt="handleStop"
         @error="toast.error"
       />
 

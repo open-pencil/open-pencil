@@ -17,6 +17,7 @@ import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
+import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
 import ToolCallGroup from '@/components/chat/tool/ToolCallGroup.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
 import ChatTurnActions from '@/components/chat/turn/ChatTurnActions.vue'
@@ -192,7 +193,7 @@ function groupKey(group: MessagePartGroup): string {
             data-test-id="chat-text-bubble"
             class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
-            {{ userText }}
+            <ChatReferenceText :text="userText" />
           </div>
           <IconButton
             v-if="canEdit"

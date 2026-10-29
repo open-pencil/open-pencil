@@ -112,6 +112,7 @@ export function useAppMenu() {
     open: 'open',
     'browse-files': 'browseFiles',
     'open-tour': 'openTour',
+    diagnostics: 'diagnostics',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -196,6 +197,7 @@ export function useAppMenu() {
     'previous-tab': () => switchAdjacentTab(-1),
     'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
+    diagnostics: () => openSettingsDialog('diagnostics'),
     variables: () => openVariablesDialog(store),
     'insert-icon': () => {
       store.state.iconPickerOpen = true

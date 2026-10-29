@@ -16,7 +16,7 @@ Coding agents need the desktop app; the browser cannot start programs on your co
 
 4. The agent signed in to your account. Pi can use an AI Gateway key instead (see [Pi](#pi)).
 
-Then open **Settings → AI & agents → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Install adapter** runs the npm command shown under it. Once the ACP program is installed, guided setup asks the agent which account it uses and shows what it reports, such as the plan and email; when it is not signed in, **Sign in** opens the agent's own login in your browser. For a signed-in agent, **OpenPencil tools** shows whether a session reaches OpenPencil's MCP server, checked the way a chat starts, without sending a message. **Check again** repeats the check after you install something or sign in elsewhere.
+Then open **Settings → Models → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Install adapter** runs the npm command shown under it. Once the ACP program is installed, guided setup asks the agent which account it uses and shows what it reports, such as the plan and email; when it is not signed in, **Sign in** opens the agent's own login in your browser. For a signed-in agent, **OpenPencil tools** shows whether a session reaches OpenPencil's MCP server, checked the way a chat starts, without sending a message. **Check again** repeats the check after you install something or sign in elsewhere.
 
 ### Let your agent set itself up
 

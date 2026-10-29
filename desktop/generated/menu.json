@@ -25,6 +25,10 @@
         "label": "Open the Tour"
       },
       {
+        "id": "diagnostics",
+        "label": "Diagnostics…"
+      },
+      {
         "type": "separator"
       },
       {

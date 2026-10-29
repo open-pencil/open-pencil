@@ -3,7 +3,33 @@ import * as v from 'valibot'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
+import type { FigmaNodeProxy } from '#core/figma-api'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
+
+/** The size of a layer and how auto layout or its text sizes it, which a resize may change. */
+function sizing(node: FigmaNodeProxy) {
+  return {
+    width: node.width,
+    height: node.height,
+    layoutSizingHorizontal: node.layoutSizingHorizontal,
+    layoutSizingVertical: node.layoutSizingVertical,
+    textAutoResize: node.textAutoResize
+  }
+}
+
+/**
+ * Resizes a layer and names what the resize changed: a layer inside an instance keeps its size,
+ * as in Figma, while an auto layout frame or a text given its own size stops sizing itself.
+ */
+function resized(node: FigmaNodeProxy, width = node.width, height = node.height): string[] {
+  const before = sizing(node)
+  node.resize(width, height)
+  const after = sizing(node)
+  const changed = after.width !== before.width || after.height !== before.height ? ['size'] : []
+  for (const key of ['layoutSizingHorizontal', 'layoutSizingVertical', 'textAutoResize'] as const)
+    if (after[key] !== before[key]) changed.push(key)
+  return changed
+}
 
 export const updateNode = defineTool({
   name: 'update_node',
@@ -57,10 +83,8 @@ export const updateNode = defineTool({
       node.y = args.y
       updated.push('y')
     }
-    if (args.width !== undefined || args.height !== undefined) {
-      node.resize(args.width ?? node.width, args.height ?? node.height)
-      updated.push('size')
-    }
+    if (args.width !== undefined || args.height !== undefined)
+      updated.push(...resized(node, args.width, args.height))
     if (args.opacity !== undefined) {
       node.opacity = args.opacity
       updated.push('opacity')

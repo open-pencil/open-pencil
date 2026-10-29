@@ -1,0 +1,3 @@
+- Tool access and Skills in Settings list their items in a compact table you can search and filter to what is on or off, and the MCP page shows the server's status and address apart from its access settings.
+- Tool access sets the built-in AI's tools, and the local MCP server's tools are set from the MCP page.
+- **Add model** starts by choosing what the model runs on: a coding agent, a subscription, an API account, a local or company server, or OpenPencil Cloud; the ones a saved model already uses are marked **Set up**.

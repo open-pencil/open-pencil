@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import type { QueuedMessage as QueuedMessageItem } from '@/app/ai/chat/queue'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -15,6 +16,7 @@ import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 import ChatMessage from './ChatMessage.vue'
 import { useScrollFollowing } from './transcript/useScrollFollowing'
+import QueuedMessage from './turn/QueuedMessage.vue'
 
 const {
   messages,
@@ -23,7 +25,9 @@ const {
   presentations,
   interactive = false,
   nodesLive = true,
-  reasoningDisplay
+  reasoningDisplay,
+  queued = [],
+  steers = false
 } = defineProps<{
   messages: UIMessage[]
   status: ChatStatus
@@ -35,6 +39,10 @@ const {
   nodesLive?: boolean
   /** Overrides the reasoning display preference, for a surface that always shows it. */
   reasoningDisplay?: ReasoningDisplay
+  /** Messages written while the agent works, shown after its reply until it takes them in. */
+  queued?: readonly QueuedMessageItem[]
+  /** Whether the agent takes a waiting message mid-turn. */
+  steers?: boolean
 }>()
 const emit = defineEmits<{
   continue: []
@@ -42,6 +50,7 @@ const emit = defineEmits<{
   revert: [messageId: string]
   restore: [messageId: string]
   edit: [messageId: string, text: string]
+  removeQueued: [id: string]
 }>()
 const { ai } = useI18n()
 provide(
@@ -66,8 +75,13 @@ const lastRequest = computed(() => messages.findLast((m) => m.role === 'user'))
 /** Messages with attachments carry context a plain text edit would drop. */
 const editableRequestId = computed(() => {
   const request = lastRequest.value
-  if (!request || presentations?.[request.id]?.attachments?.length) return undefined
-  return attachmentsForMessage(request.id).value.length > 0 ? undefined : request.id
+  if (!request) return undefined
+  // Images would be lost when the text is sent again; layer previews follow the edited text.
+  const attachments = [
+    ...(presentations?.[request.id]?.attachments ?? []),
+    ...attachmentsForMessage(request.id).value
+  ]
+  return attachments.some((attachment) => attachment.kind !== 'node') ? undefined : request.id
 })
 const transcriptContent = ref<HTMLDivElement>()
 const viewportComponent = ref<{ viewportElement?: HTMLElement }>()
@@ -132,6 +146,14 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
             />
           </div>
         </div>
+
+        <QueuedMessage
+          v-for="item in queued"
+          :key="item.id"
+          :message="item"
+          :steers="steers"
+          @remove="emit('removeQueued', item.id)"
+        />
 
         <!-- Continue button when step limit reached -->
         <div v-if="showContinue" class="flex justify-center py-2">

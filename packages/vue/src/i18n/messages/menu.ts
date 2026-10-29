@@ -12,6 +12,7 @@ export const menuMessageDefaults = {
   open: 'Open…',
   browseFiles: 'Browse files…',
   openTour: 'Open the Tour',
+  diagnostics: 'Diagnostics…',
   save: 'Save',
   saveAs: 'Save as…',
   saveTo: 'Save to…',

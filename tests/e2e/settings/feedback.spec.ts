@@ -13,6 +13,7 @@ test('model Save and Test explain missing fields and focus the first error', asy
   await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-add-model').click()
+  await page.locator('[data-provider="openrouter"]').click()
   const editor = page.getByTestId('settings-model-editor')
   const name = editor.getByRole('textbox', { name: 'Name', exact: true })
   const save = page.getByRole('button', { name: 'Save model', exact: true })
@@ -91,7 +92,7 @@ async function failCredentialWrites(page: Page) {
 
 test('media explains optional keys and preserves input after a failed save', async ({ page }) => {
   await openSettings(page)
-  await page.getByTestId('settings-section-media').click()
+  await page.getByTestId('settings-section-services').click()
   await page.getByRole('button', { name: /Pexels/ }).click()
   const key = page.getByRole('textbox', { name: 'API key', exact: true })
   await expect(page.getByRole('link', { name: 'Get API key' })).toHaveAttribute(
@@ -164,9 +165,8 @@ test('a partial model save is explained and retry does not duplicate the profile
   await openSettings(page)
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-add-model').click()
+  await page.locator('[data-provider="google"]').click()
   await page.getByLabel('Name', { exact: true }).fill('Partial model')
-  await page.getByTestId('settings-model-provider').click()
-  await page.getByRole('option', { name: 'Google AI', exact: true }).click()
   await page.getByLabel('Model ID', { exact: true }).click()
   await page.getByRole('option').first().click()
   await page.getByTestId('provider-settings-api-key').fill('test-only-key')

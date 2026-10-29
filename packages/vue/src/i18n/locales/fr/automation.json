@@ -1,8 +1,4 @@
 {
-  "toolAccessDescription": "Configurez séparément les outils de conception pour l’IA intégrée et le serveur MCP local.",
-  "toolAccessTarget": "Configurer l’accès aux outils pour",
-  "builtInAI": "IA intégrée",
-  "localMCP": "MCP local",
   "restoreToolDefaults": "Rétablir les valeurs par défaut",
   "aiToolAccessDescription": "Choisissez les outils pour les connexions directes aux modèles d’IA. Les agents ACP et Pi utilisent l’accès MCP.",
   "mcpToolAccessDescription": "Choisissez les outils que le serveur local propose aux agents et clients connectés.",
