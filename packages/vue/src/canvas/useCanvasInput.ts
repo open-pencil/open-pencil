@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { createAutoLayoutValueEdit } from '#vue/canvas/auto-layout/value-edit'
@@ -193,7 +193,7 @@ export function useCanvasInput(
   } = createCanvasTransformInput(editor, setDrag)
 
   function onDblClick(e: MouseEvent) {
-    if (editor.state.play) return
+    if (resolveEditorProfile(editor.state).pointer === 'pan') return
     const { cx, cy } = getCoords(e)
     if (!editor.state.readOnly && valueEdit.start(cx, cy)) {
       e.preventDefault()
@@ -206,8 +206,9 @@ export function useCanvasInput(
   function onMouseDown(e: MouseEvent) {
     onActivate?.()
     if (!isEnabled()) return
-    // Preview: controls live in islands above the canvas; the canvas itself only pans.
-    if (editor.state.play && e.button === 0 && editor.state.activeTool !== 'HAND') {
+    // A canvas that only pans, as a preview's does, leaves its controls to the islands above it.
+    const panOnly = resolveEditorProfile(editor.state).pointer === 'pan'
+    if (panOnly && e.button === 0 && editor.state.activeTool !== 'HAND') {
       e.preventDefault()
       return
     }
@@ -261,7 +262,7 @@ export function useCanvasInput(
       onCursorMove(coords.cx, coords.cy)
     }
 
-    if (editor.state.play && !drag.value) return
+    if (resolveEditorProfile(editor.state).pointer === 'pan' && !drag.value) return
 
     if (!drag.value) {
       const { cx, cy } = coords

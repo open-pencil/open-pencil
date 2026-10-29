@@ -72,10 +72,7 @@ export function createKeyboardActions({
   }
 
   function escapeOrDeselect() {
-    if (store.state.play) {
-      store.stopPlay()
-      return
-    }
+    if (store.leaveCanvasView()) return
     if (store.state.rotationPreview) {
       store.setRotationPreview(null)
       return

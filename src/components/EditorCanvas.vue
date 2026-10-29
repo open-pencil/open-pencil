@@ -15,6 +15,7 @@ import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
 import IconLucidePanelTop from '~icons/lucide/panel-top'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import type { PlacedStatusLabel } from '@open-pencil/core/canvas'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
@@ -79,6 +80,7 @@ function updatePaneCursor(cx: number, cy: number) {
 const getRenderState = paneId ? () => store.getPaneRenderState(paneId) : undefined
 /** This pane's view: its pan, zoom, page, and whether it previews. */
 const paneView = computed(() => (paneId ? store.getPaneRenderState(paneId) : store.state))
+const paneProfile = computed(() => resolveEditorProfile(paneView.value))
 const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
@@ -136,7 +138,7 @@ const {
   // The scene canvas reports a canvas that cannot start.
   onFailed: () => undefined,
   get showRulers() {
-    return appRuntimeConfig.showRulers && store.state.showRulers && paneView.value.play === null
+    return appRuntimeConfig.showRulers && store.state.showRulers && paneProfile.value.editChrome
   },
   getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
   shouldSuspendRender,

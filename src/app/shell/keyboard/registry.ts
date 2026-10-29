@@ -2,6 +2,7 @@ import { useEventListener } from '@vueuse/core'
 import { createKeybindingsHandler } from 'tinykeys'
 import type { KeyBindingMap } from 'tinykeys'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
 import { editorCommandMetadata, type EditorCommandId } from '@open-pencil/vue/editor/commands'
 
@@ -32,8 +33,8 @@ type ShortcutDefinition = {
   run: ShortcutAction
   shouldPreventDefault?: (event: KeyboardEvent) => boolean
   global?: boolean
-  /** Whether the shortcut also works while a canvas previews. */
-  preview?: boolean
+  /** Whether the shortcut switches or leaves the canvas's view, so it runs in every view. */
+  view?: boolean
 }
 
 function commandShortcut(
@@ -217,7 +218,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       id: 'toggle-preview',
       keys: appMenuTinykeysShortcut('toggle-preview') ?? '$mod+Alt+Enter',
       run: ({ actions }) => actions.togglePlay(),
-      preview: true
+      view: true
     },
     {
       id: 'toggle-rulers',
@@ -361,7 +362,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       id: 'escape',
       keys: 'Escape',
       run: ({ actions }) => actions.escapeOrDeselect(),
-      preview: true
+      view: true
     },
     siblingShortcut('selection.selectNextSibling'),
     siblingShortcut('selection.selectPreviousSibling'),
@@ -370,9 +371,9 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
 
   const bindings: KeyBindingMap = {}
   const globalBindings: KeyBindingMap = {}
-  /** Keys that keep working while a canvas previews; everything else would edit the design. */
-  const previewKeys = new Set(
-    shortcuts.filter((shortcut) => shortcut.preview).flatMap((shortcut) => [shortcut.keys].flat())
+  /** Keys that switch or leave the canvas's view, which every view keeps. */
+  const viewKeys = new Set(
+    shortcuts.filter((shortcut) => shortcut.view).flatMap((shortcut) => [shortcut.keys].flat())
   )
   const historyKeys = new Set(
     shortcuts
@@ -394,7 +395,8 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
         keys,
         (event: KeyboardEvent) => {
           if (shouldIgnoreShortcut(event, options, historyKeys.has(keys))) return
-          if (options.store.state.play && !previewKeys.has(keys)) return
+          const { shortcuts: allowed } = resolveEditorProfile(options.store.state)
+          if (allowed === 'view' && !viewKeys.has(keys)) return
           handler(event)
         }
       ])

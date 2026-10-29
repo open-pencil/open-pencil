@@ -50,7 +50,6 @@ import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
-import { createPlayActions } from './play/actions'
 import { createReadOnlyActions, guardReadOnly, guardUndo, READ_ONLY_TOOLS } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
@@ -76,6 +75,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
+import { createCanvasViewActions } from './views'
 
 export { createDefaultEditorState } from './state'
 
@@ -320,7 +320,7 @@ export function createEditor(options?: EditorOptions) {
   const lineEnds = createLineEndActions(ctx, nodes.beginNodePreview)
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
-  const preview = createPlayActions(ctx)
+  const canvasViews = createCanvasViewActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
   const structureBridge = createStructureBridge(structure, selection)
@@ -478,8 +478,8 @@ export function createEditor(options?: EditorOptions) {
     // Alignment (align, flip, rotate)
     ...alignment,
 
-    // Preview: instances with a behaviour respond to the pointer on this canvas
-    ...preview,
+    // Canvas views: editing, or a preview where instances with a behaviour respond to the pointer
+    ...canvasViews,
 
     // Bitmap-to-vector replacement
     ...vectorize,

@@ -26,9 +26,9 @@ import type {
 } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
-import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { CanvasView } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
 import type { TextEditor } from '#core/text/editor'
@@ -186,8 +186,8 @@ export interface EditorViewState {
   nodeEditState?: RenderOverlays['nodeEditState'] | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
-  /** This canvas's preview, or null while it edits. */
-  play: PlayState | null
+  /** What this canvas shows: the design being edited, or running as a preview. */
+  canvasView: CanvasView
 }
 
 export type NavigationPhase = 'idle' | 'pan' | 'zoom' | 'momentum' | 'settling'

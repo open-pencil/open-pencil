@@ -3,6 +3,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { formatShortcut } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -58,8 +59,13 @@ function saveResizedLayout(layout: number[]) {
   saveEditorLayout(layout)
 }
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
-/** One canvas previewing takes the whole window, in the canvas-only layout; split view keeps panels. */
-const playingAlone = computed(() => store.state.play !== null && store.visiblePaneCount.value <= 1)
+/**
+ * A canvas whose view hides the panels takes the whole window when it is the only one shown, in the
+ * canvas-only layout; split view keeps the panels for the other panes.
+ */
+const canvasAlone = computed(
+  () => !resolveEditorProfile(store.state).panels && store.visiblePaneCount.value <= 1
+)
 const { editor } = useI18n()
 // Until a room's document arrives there is nothing to edit, so its screen replaces the editor.
 const { pending: roomPending } = useRoomActions()
@@ -71,7 +77,7 @@ const { pending: roomPending } = useRoomActions()
   </div>
 
   <SplitterGroup
-    v-else-if="!isMobile && showChrome && store.state.showUI && !playingAlone"
+    v-else-if="!isMobile && showChrome && store.state.showUI && !canvasAlone"
     :key="tab.id"
     direction="horizontal"
     class="flex-1 overflow-hidden"
@@ -149,7 +155,7 @@ const { pending: roomPending } = useRoomActions()
       <EditorCanvas />
       <ActiveRoomOverlay />
       <WorkspacePill
-        v-if="!isMobile && playingAlone"
+        v-if="!isMobile && canvasAlone"
         mode="preview"
         :document-name="store.state.documentName"
         :shortcut="formatShortcut(appMenuShortcut('toggle-preview')) ?? ''"

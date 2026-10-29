@@ -1,4 +1,4 @@
-import { normalizedFilename } from '#lint/support/context.ts'
+import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
 import { createProgramFilenameRule } from '#lint/support/factories.ts'
 import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
@@ -132,4 +132,45 @@ const noConditionalObjectSpreads = {
   }
 } satisfies RuleDefinition
 
-export { noMixedCaseAcronymIdentifiers, noFlatKiwiModules, noConditionalObjectSpreads }
+/**
+ * A canvas behaves by the profile its view resolves to, so code reads the profile's values rather
+ * than which view is showing; checks of the view's id outside the views module are how preview
+ * came to branch at every place it behaves differently.
+ */
+const noCanvasViewChecks: RuleDefinition = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        "Disallow reading a canvas view's id outside core editor views — read resolveEditorProfile instead"
+    },
+    schema: []
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/src/') || file.includes('/packages/core/src/editor/views/')) return {}
+    return {
+      MemberExpression(node) {
+        if (node.computed || staticPropertyName(node.property) !== 'id') return
+        const owner = node.object
+        if (
+          owner.type !== 'MemberExpression' ||
+          staticPropertyName(owner.property) !== 'canvasView'
+        )
+          return
+        context.report({
+          node,
+          message:
+            "Read the canvas's behaviour from resolveEditorProfile instead of checking which view it shows."
+        })
+      }
+    }
+  }
+}
+
+export {
+  noCanvasViewChecks,
+  noMixedCaseAcronymIdentifiers,
+  noFlatKiwiModules,
+  noConditionalObjectSpreads
+}
